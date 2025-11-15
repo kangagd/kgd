@@ -101,29 +101,32 @@ export default function JobDetails({ job, onClose, onEdit, onStatusChange }) {
                 <p className="text-xs md:text-sm text-slate-500 mt-1">Job #{job.job_number}</p>
               </div>
             </div>
-            {!isTechnician && (
-              <div className="hidden md:flex gap-2">
-                <Button 
-                  variant="outline"
-                  onClick={() => setShowAssistant(true)}
-                  className="border-orange-200 text-orange-700 hover:bg-orange-50"
-                >
-                  <Sparkles className="w-4 h-4 mr-2" />
-                  AI Assistant
-                </Button>
-                <Button 
-                  variant="outline"
-                  onClick={() => setShowPriceList(true)}
-                >
-                  <DollarSign className="w-4 h-4 mr-2" />
-                  Price List
-                </Button>
-                <Button onClick={() => onEdit(job)} className="bg-orange-600 hover:bg-orange-700">
-                  <Edit className="w-4 h-4 mr-2" />
-                  Edit
-                </Button>
-              </div>
-            )}
+            <div className="flex gap-2">
+              <Button 
+                variant="outline"
+                onClick={() => setShowPriceList(true)}
+                className="h-8 w-8 md:h-10 md:w-auto md:px-4"
+              >
+                <DollarSign className="w-4 h-4 md:mr-2" />
+                <span className="hidden md:inline">Price List</span>
+              </Button>
+              {!isTechnician && (
+                <>
+                  <Button 
+                    variant="outline"
+                    onClick={() => setShowAssistant(true)}
+                    className="hidden md:flex border-orange-200 text-orange-700 hover:bg-orange-50"
+                  >
+                    <Sparkles className="w-4 h-4 mr-2" />
+                    AI Assistant
+                  </Button>
+                  <Button onClick={() => onEdit(job)} className="hidden md:flex bg-orange-600 hover:bg-orange-700">
+                    <Edit className="w-4 h-4 mr-2" />
+                    Edit
+                  </Button>
+                </>
+              )}
+            </div>
           </div>
         </CardHeader>
         <CardContent className="p-2 md:p-6">
@@ -138,12 +141,7 @@ export default function JobDetails({ job, onClose, onEdit, onStatusChange }) {
                 <ImageIcon className="w-3 h-3 md:w-4 md:h-4 md:mr-2" />
                 <span className="hidden md:inline">Files</span>
               </TabsTrigger>
-              {isTechnician ? (
-                <TabsTrigger value="pricing" className="text-xs md:text-sm">
-                  <DollarSign className="w-3 h-3 md:w-4 md:h-4 md:mr-2" />
-                  <span className="hidden md:inline">Pricing</span>
-                </TabsTrigger>
-              ) : (
+              {!isTechnician && (
                 <TabsTrigger value="assistant" className="text-xs md:text-sm">
                   <Sparkles className="w-3 h-3 md:w-4 md:h-4 md:mr-2" />
                   <span className="hidden md:inline">AI</span>
@@ -199,10 +197,24 @@ export default function JobDetails({ job, onClose, onEdit, onStatusChange }) {
               </div>
 
               {job.notes && (
+                <div className="border-t pt-3 md:pt-4">
+                  <h3 className="text-sm md:text-base font-semibold text-slate-900 mb-2 flex items-center gap-2">
+                    <FileText className="w-4 h-4 text-slate-600" />
+                    Notes & Instructions
+                  </h3>
+                  <div className="bg-amber-50 border border-amber-200 rounded-lg p-3 md:p-4">
+                    <p className="text-xs md:text-sm text-slate-700 whitespace-pre-wrap leading-relaxed">
+                      {job.notes}
+                    </p>
+                  </div>
+                </div>
+              )}
+
+              {job.additional_info && (
                 <div>
-                  <h3 className="text-xs md:text-sm font-medium text-slate-500 mb-2">Notes</h3>
+                  <h3 className="text-xs md:text-sm font-medium text-slate-500 mb-2">Additional Information</h3>
                   <p className="text-xs md:text-sm text-slate-700 whitespace-pre-wrap bg-slate-50 p-2 md:p-3 rounded-lg">
-                    {job.notes}
+                    {job.additional_info}
                   </p>
                 </div>
               )}
@@ -303,11 +315,7 @@ export default function JobDetails({ job, onClose, onEdit, onStatusChange }) {
               </div>
             </TabsContent>
 
-            {isTechnician ? (
-              <TabsContent value="pricing" className="mt-3 md:mt-4">
-                <PriceListModal open={true} onClose={() => {}} />
-              </TabsContent>
-            ) : (
+            {!isTechnician && (
               <TabsContent value="assistant" className="mt-3 md:mt-4">
                 <div className="bg-white rounded-lg">
                   <TechnicianAssistant job={job} open={true} onClose={() => {}} />
@@ -318,19 +326,17 @@ export default function JobDetails({ job, onClose, onEdit, onStatusChange }) {
         </CardContent>
       </Card>
 
-      {!isTechnician && (
-        <>
-          <PriceListModal 
-            open={showPriceList} 
-            onClose={() => setShowPriceList(false)} 
-          />
+      <PriceListModal 
+        open={showPriceList} 
+        onClose={() => setShowPriceList(false)} 
+      />
 
-          <TechnicianAssistant
-            open={showAssistant}
-            onClose={() => setShowAssistant(false)}
-            job={job}
-          />
-        </>
+      {!isTechnician && (
+        <TechnicianAssistant
+          open={showAssistant}
+          onClose={() => setShowAssistant(false)}
+          job={job}
+        />
       )}
     </>
   );
