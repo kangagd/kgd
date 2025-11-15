@@ -3,7 +3,7 @@ import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Textarea } from "@/components/ui/textarea";
-import { ArrowLeft, Edit, MapPin, Phone, Calendar, Clock, User, Briefcase, FileText, Image as ImageIcon, DollarSign, Sparkles, LogIn, FileCheck, History } from "lucide-react";
+import { ArrowLeft, Edit, MapPin, Phone, Calendar, Clock, User, Briefcase, FileText, Image as ImageIcon, DollarSign, Sparkles, LogIn, FileCheck, History, Package } from "lucide-react";
 import { format, parseISO } from "date-fns";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { base44 } from "@/api/base44Client";
@@ -26,6 +26,14 @@ const outcomeColors = {
   send_invoice: "bg-blue-100 text-blue-800 border-blue-200",
   completed: "bg-green-100 text-green-800 border-green-200",
   return_visit_required: "bg-amber-100 text-amber-800 border-amber-200",
+};
+
+const productColors = {
+  "Garage Door": "bg-blue-100 text-blue-700",
+  "Gate": "bg-green-100 text-green-700",
+  "Roller Shutter": "bg-purple-100 text-purple-700",
+  "Multiple": "bg-orange-100 text-orange-700",
+  "Custom Garage Door": "bg-pink-100 text-pink-700",
 };
 
 export default function JobDetails({ job, onClose, onEdit, onStatusChange }) {
@@ -235,12 +243,20 @@ export default function JobDetails({ job, onClose, onEdit, onStatusChange }) {
                       </div>
                     )}
                   </div>
-                  {job.job_type_name && (
-                    <div className="flex items-center gap-2 p-2 md:p-3 bg-slate-50 rounded-lg">
-                      <Briefcase className="w-3 h-3 md:w-4 md:h-4 text-slate-400" />
-                      <span className="text-xs md:text-sm">{job.job_type_name}</span>
-                    </div>
-                  )}
+                  <div className="grid grid-cols-2 gap-2 md:gap-3">
+                    {job.product && (
+                      <div className={`flex items-center gap-2 p-2 md:p-3 rounded-lg ${productColors[job.product]}`}>
+                        <Package className="w-3 h-3 md:w-4 md:h-4" />
+                        <span className="text-xs md:text-sm font-medium">{job.product}</span>
+                      </div>
+                    )}
+                    {job.job_type_name && (
+                      <div className="flex items-center gap-2 p-2 md:p-3 bg-slate-50 rounded-lg">
+                        <Briefcase className="w-3 h-3 md:w-4 md:h-4 text-slate-400" />
+                        <span className="text-xs md:text-sm">{job.job_type_name}</span>
+                      </div>
+                    )}
+                  </div>
                 </div>
               </div>
 
