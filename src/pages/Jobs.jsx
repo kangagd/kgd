@@ -3,7 +3,7 @@ import { base44 } from "@/api/base44Client";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Plus, Search, Filter } from "lucide-react";
+import { Plus, Search } from "lucide-react";
 import JobForm from "../components/jobs/JobForm";
 import JobList from "../components/jobs/JobList";
 import JobDetails from "../components/jobs/JobDetails";
@@ -15,6 +15,7 @@ export default function Jobs() {
   const [showForm, setShowForm] = useState(false);
   const [selectedJob, setSelectedJob] = useState(null);
   const [editingJob, setEditingJob] = useState(null);
+  const [preselectedCustomerId, setPreselectedCustomerId] = useState(null);
   const queryClient = useQueryClient();
 
   const { data: jobs = [], isLoading } = useQuery({
@@ -38,6 +39,7 @@ export default function Jobs() {
       queryClient.invalidateQueries({ queryKey: ['jobs'] });
       setShowForm(false);
       setEditingJob(null);
+      setPreselectedCustomerId(null);
     },
   });
 
@@ -55,9 +57,13 @@ export default function Jobs() {
     const params = new URLSearchParams(window.location.search);
     const action = params.get('action');
     const jobId = params.get('id');
+    const customerId = params.get('customer_id');
     
     if (action === 'new') {
       setShowForm(true);
+      if (customerId) {
+        setPreselectedCustomerId(customerId);
+      }
     }
     
     if (jobId) {
@@ -84,7 +90,7 @@ export default function Jobs() {
     const matchesSearch = 
       job.customer_name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
       job.address?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      job.job_number?.toLowerCase().includes(searchTerm.toLowerCase());
+      job.job_number?.toString().includes(searchTerm);
     
     const matchesStatus = statusFilter === "all" || job.status === statusFilter;
     
@@ -103,8 +109,10 @@ export default function Jobs() {
             onCancel={() => {
               setShowForm(false);
               setEditingJob(null);
+              setPreselectedCustomerId(null);
             }}
             isSubmitting={createJobMutation.isPending || updateJobMutation.isPending}
+            preselectedCustomerId={preselectedCustomerId}
           />
         </div>
       </div>
