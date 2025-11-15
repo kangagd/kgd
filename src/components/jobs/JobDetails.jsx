@@ -2,14 +2,14 @@ import React, { useState, useEffect } from "react";
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { ArrowLeft, Edit, MapPin, Phone, Mail, Calendar, Clock, User, Briefcase, FileText, Image as ImageIcon, ExternalLink, DollarSign, Sparkles, MessageSquare } from "lucide-react";
+import { ArrowLeft, Edit, MapPin, Phone, Calendar, Clock, User, Briefcase, FileText, Image as ImageIcon, DollarSign, Sparkles, LogIn, FileCheck } from "lucide-react";
 import { format, parseISO } from "date-fns";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { base44 } from "@/api/base44Client";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import PriceListModal from "./PriceListModal";
 import TechnicianAssistant from "./TechnicianAssistant";
-import SMSNotifications from "./SMSNotifications";
-import PipedriveIntegration from "./PipedriveIntegration";
+import MeasurementsForm from "./MeasurementsForm";
 
 const statusColors = {
   scheduled: "bg-blue-100 text-blue-800 border-blue-200",
@@ -30,6 +30,8 @@ export default function JobDetails({ job, onClose, onEdit, onStatusChange }) {
   const [showPriceList, setShowPriceList] = useState(false);
   const [showAssistant, setShowAssistant] = useState(false);
   const [user, setUser] = useState(null);
+  const [measurements, setMeasurements] = useState(job.measurements || null);
+  const queryClient = useQueryClient();
 
   useEffect(() => {
     const loadUser = async () => {
@@ -43,43 +45,78 @@ export default function JobDetails({ job, onClose, onEdit, onStatusChange }) {
     loadUser();
   }, []);
 
+  const { data: checkIns = [] } = useQuery({
+    queryKey: ['checkIns', job.id],
+    queryFn: () => base44.entities.CheckInOut.filter({ job_id: job.id }),
+  });
+
+  const activeCheckIn = checkIns.find(c => !c.check_out_time && c.technician_email === user?.email);
+
+  const checkInMutation = useMutation({
+    mutationFn: async () => {
+      const checkIn = await base44.entities.CheckInOut.create({
+        job_id: job.id,
+        technician_email: user.email,
+        technician_name: user.full_name,
+        check_in_time: new Date().toISOString(),
+      });
+      await base44.entities.Job.update(job.id, { status: 'in_progress' });
+      return checkIn;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['checkIns', job.id] });
+      queryClient.invalidateQueries({ queryKey: ['jobs'] });
+    },
+  });
+
+  const updateMeasurementsMutation = useMutation({
+    mutationFn: (data) => base44.entities.Job.update(job.id, { measurements: data }),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['jobs'] });
+    },
+  });
+
   const isTechnician = user?.is_field_technician && user?.role !== 'admin';
 
-  const handlePipedriveUpdate = async (data) => {
-    await base44.entities.Job.update(job.id, data);
-    window.location.reload();
+  const handleCheckIn = () => {
+    checkInMutation.mutate();
+  };
+
+  const handleMeasurementsChange = (data) => {
+    setMeasurements(data);
+    updateMeasurementsMutation.mutate(data);
   };
 
   return (
     <>
       <Card className={`border-none shadow-lg ${isTechnician ? 'rounded-none' : ''}`}>
-        <CardHeader className="border-b border-slate-100">
+        <CardHeader className="border-b border-slate-100 p-3 md:p-6">
           <div className="flex items-center justify-between">
-            <div className="flex items-center gap-4">
-              <Button variant="ghost" size="icon" onClick={onClose}>
+            <div className="flex items-center gap-2 md:gap-4">
+              <Button variant="ghost" size="icon" onClick={onClose} className="h-8 w-8 md:h-10 md:w-10">
                 <ArrowLeft className="w-4 h-4" />
               </Button>
               <div>
-                <CardTitle className="text-xl md:text-2xl font-bold">{job.customer_name}</CardTitle>
-                <p className="text-sm text-slate-500 mt-1">Job #{job.job_number}</p>
+                <CardTitle className="text-lg md:text-2xl font-bold">{job.customer_name}</CardTitle>
+                <p className="text-xs md:text-sm text-slate-500 mt-1">Job #{job.job_number}</p>
               </div>
             </div>
             {!isTechnician && (
-              <div className="flex gap-2">
+              <div className="hidden md:flex gap-2">
                 <Button 
                   variant="outline"
                   onClick={() => setShowAssistant(true)}
                   className="border-orange-200 text-orange-700 hover:bg-orange-50"
                 >
                   <Sparkles className="w-4 h-4 mr-2" />
-                  <span className="hidden md:inline">AI Assistant</span>
+                  AI Assistant
                 </Button>
                 <Button 
                   variant="outline"
                   onClick={() => setShowPriceList(true)}
                 >
                   <DollarSign className="w-4 h-4 mr-2" />
-                  <span className="hidden md:inline">Price List</span>
+                  Price List
                 </Button>
                 <Button onClick={() => onEdit(job)} className="bg-orange-600 hover:bg-orange-700">
                   <Edit className="w-4 h-4 mr-2" />
@@ -89,30 +126,32 @@ export default function JobDetails({ job, onClose, onEdit, onStatusChange }) {
             )}
           </div>
         </CardHeader>
-        <CardContent className="p-4 md:p-6">
+        <CardContent className="p-2 md:p-6">
           <Tabs defaultValue="details" className="w-full">
-            <TabsList className="w-full grid grid-cols-3 md:grid-cols-4">
+            <TabsList className="w-full grid grid-cols-4">
               <TabsTrigger value="details" className="text-xs md:text-sm">Details</TabsTrigger>
+              <TabsTrigger value="form" className="text-xs md:text-sm">
+                <FileCheck className="w-3 h-3 md:w-4 md:h-4 md:mr-2" />
+                <span className="hidden md:inline">Form</span>
+              </TabsTrigger>
+              <TabsTrigger value="files" className="text-xs md:text-sm">
+                <ImageIcon className="w-3 h-3 md:w-4 md:h-4 md:mr-2" />
+                <span className="hidden md:inline">Files</span>
+              </TabsTrigger>
               {isTechnician ? (
-                <>
-                  <TabsTrigger value="assistant" className="text-xs md:text-sm">
-                    <Sparkles className="w-4 h-4 md:mr-2" />
-                    <span className="hidden md:inline">Assistant</span>
-                  </TabsTrigger>
-                  <TabsTrigger value="pricing" className="text-xs md:text-sm">
-                    <DollarSign className="w-4 h-4 md:mr-2" />
-                    <span className="hidden md:inline">Pricing</span>
-                  </TabsTrigger>
-                </>
+                <TabsTrigger value="pricing" className="text-xs md:text-sm">
+                  <DollarSign className="w-3 h-3 md:w-4 md:h-4 md:mr-2" />
+                  <span className="hidden md:inline">Pricing</span>
+                </TabsTrigger>
               ) : (
-                <>
-                  <TabsTrigger value="sms" className="text-xs md:text-sm">SMS</TabsTrigger>
-                  <TabsTrigger value="pipedrive" className="text-xs md:text-sm">Pipedrive</TabsTrigger>
-                </>
+                <TabsTrigger value="assistant" className="text-xs md:text-sm">
+                  <Sparkles className="w-3 h-3 md:w-4 md:h-4 md:mr-2" />
+                  <span className="hidden md:inline">AI</span>
+                </TabsTrigger>
               )}
             </TabsList>
 
-            <TabsContent value="details" className="space-y-4 mt-4">
+            <TabsContent value="details" className="space-y-3 md:space-y-4 mt-3 md:mt-4">
               <div className="flex gap-2 flex-wrap">
                 <Badge className={statusColors[job.status]}>
                   {job.status.replace('_', ' ')}
@@ -124,36 +163,36 @@ export default function JobDetails({ job, onClose, onEdit, onStatusChange }) {
                 )}
               </div>
 
-              <div className="grid gap-4">
-                <div className="space-y-3">
+              <div className="grid gap-3 md:gap-4">
+                <div className="space-y-2 md:space-y-3">
                   {job.customer_phone && (
-                    <a href={`tel:${job.customer_phone}`} className="flex items-center gap-3 p-3 bg-slate-50 rounded-lg hover:bg-slate-100 transition-colors">
-                      <Phone className="w-5 h-5 text-orange-600" />
-                      <span className="font-medium">{job.customer_phone}</span>
+                    <a href={`tel:${job.customer_phone}`} className="flex items-center gap-3 p-2 md:p-3 bg-slate-50 rounded-lg hover:bg-slate-100 transition-colors">
+                      <Phone className="w-4 h-4 md:w-5 md:h-5 text-orange-600" />
+                      <span className="font-medium text-sm md:text-base">{job.customer_phone}</span>
                     </a>
                   )}
-                  <div className="flex items-start gap-3 p-3 bg-slate-50 rounded-lg">
-                    <MapPin className="w-5 h-5 text-slate-400 mt-0.5" />
-                    <span className="text-sm">{job.address}</span>
+                  <div className="flex items-start gap-3 p-2 md:p-3 bg-slate-50 rounded-lg">
+                    <MapPin className="w-4 h-4 md:w-5 md:h-5 text-slate-400 mt-0.5" />
+                    <span className="text-xs md:text-sm">{job.address}</span>
                   </div>
-                  <div className="grid grid-cols-2 gap-3">
-                    <div className="flex items-center gap-2 p-3 bg-slate-50 rounded-lg">
-                      <Calendar className="w-4 h-4 text-slate-400" />
-                      <span className="text-sm">
+                  <div className="grid grid-cols-2 gap-2 md:gap-3">
+                    <div className="flex items-center gap-2 p-2 md:p-3 bg-slate-50 rounded-lg">
+                      <Calendar className="w-3 h-3 md:w-4 md:h-4 text-slate-400" />
+                      <span className="text-xs md:text-sm">
                         {job.scheduled_date && format(parseISO(job.scheduled_date), 'MMM d, yyyy')}
                       </span>
                     </div>
                     {job.scheduled_time && (
-                      <div className="flex items-center gap-2 p-3 bg-slate-50 rounded-lg">
-                        <Clock className="w-4 h-4 text-slate-400" />
-                        <span className="text-sm">{job.scheduled_time}</span>
+                      <div className="flex items-center gap-2 p-2 md:p-3 bg-slate-50 rounded-lg">
+                        <Clock className="w-3 h-3 md:w-4 md:h-4 text-slate-400" />
+                        <span className="text-xs md:text-sm">{job.scheduled_time}</span>
                       </div>
                     )}
                   </div>
                   {job.job_type_name && (
-                    <div className="flex items-center gap-2 p-3 bg-slate-50 rounded-lg">
-                      <Briefcase className="w-4 h-4 text-slate-400" />
-                      <span className="text-sm">{job.job_type_name}</span>
+                    <div className="flex items-center gap-2 p-2 md:p-3 bg-slate-50 rounded-lg">
+                      <Briefcase className="w-3 h-3 md:w-4 md:h-4 text-slate-400" />
+                      <span className="text-xs md:text-sm">{job.job_type_name}</span>
                     </div>
                   )}
                 </div>
@@ -161,35 +200,29 @@ export default function JobDetails({ job, onClose, onEdit, onStatusChange }) {
 
               {job.notes && (
                 <div>
-                  <h3 className="text-sm font-medium text-slate-500 mb-2">Notes</h3>
-                  <p className="text-sm text-slate-700 whitespace-pre-wrap bg-slate-50 p-3 rounded-lg">
+                  <h3 className="text-xs md:text-sm font-medium text-slate-500 mb-2">Notes</h3>
+                  <p className="text-xs md:text-sm text-slate-700 whitespace-pre-wrap bg-slate-50 p-2 md:p-3 rounded-lg">
                     {job.notes}
                   </p>
                 </div>
               )}
 
-              {job.image_urls && job.image_urls.length > 0 && (
-                <div>
-                  <h3 className="text-sm font-medium text-slate-500 mb-2">Photos ({job.image_urls.length})</h3>
-                  <div className="grid grid-cols-3 gap-2">
-                    {job.image_urls.map((url, index) => (
-                      <a key={index} href={url} target="_blank" rel="noopener noreferrer">
-                        <img 
-                          src={url} 
-                          alt={`Job ${index + 1}`} 
-                          className="w-full h-24 object-cover rounded border hover:opacity-80"
-                        />
-                      </a>
-                    ))}
-                  </div>
-                </div>
-              )}
-
-              <div className="flex gap-2 pt-2">
+              <div className="flex flex-col gap-2 pt-2">
+                {!activeCheckIn && job.status === 'scheduled' && (
+                  <Button
+                    onClick={handleCheckIn}
+                    disabled={checkInMutation.isPending}
+                    className="w-full bg-blue-600 hover:bg-blue-700"
+                    size="lg"
+                  >
+                    <LogIn className="w-4 h-4 mr-2" />
+                    {checkInMutation.isPending ? 'Checking In...' : 'Check In'}
+                  </Button>
+                )}
                 {job.status === 'scheduled' && (
                   <Button
                     onClick={() => onStatusChange('in_progress')}
-                    className="flex-1 bg-orange-600 hover:bg-orange-700"
+                    className="w-full bg-orange-600 hover:bg-orange-700"
                     size="lg"
                   >
                     Start Job
@@ -198,7 +231,7 @@ export default function JobDetails({ job, onClose, onEdit, onStatusChange }) {
                 {job.status === 'in_progress' && (
                   <Button
                     onClick={() => onStatusChange('completed')}
-                    className="flex-1 bg-green-600 hover:bg-green-700"
+                    className="w-full bg-green-600 hover:bg-green-700"
                     size="lg"
                   >
                     Complete Job
@@ -207,30 +240,79 @@ export default function JobDetails({ job, onClose, onEdit, onStatusChange }) {
               </div>
             </TabsContent>
 
-            {isTechnician && (
-              <>
-                <TabsContent value="assistant" className="mt-4">
-                  <div className="bg-white rounded-lg">
-                    <TechnicianAssistant job={job} open={true} onClose={() => {}} />
+            <TabsContent value="form" className="mt-3 md:mt-4">
+              <div className="space-y-3 md:space-y-4">
+                <h3 className="text-sm md:text-base font-semibold text-slate-900">Measurements & Form</h3>
+                <MeasurementsForm
+                  measurements={measurements}
+                  onChange={handleMeasurementsChange}
+                />
+              </div>
+            </TabsContent>
+
+            <TabsContent value="files" className="mt-3 md:mt-4">
+              <div className="space-y-3 md:space-y-4">
+                <h3 className="text-sm md:text-base font-semibold text-slate-900">Photos & Attachments</h3>
+                
+                {job.image_urls && job.image_urls.length > 0 ? (
+                  <div>
+                    <h4 className="text-xs md:text-sm font-medium text-slate-500 mb-2">Photos ({job.image_urls.length})</h4>
+                    <div className="grid grid-cols-2 md:grid-cols-3 gap-2">
+                      {job.image_urls.map((url, index) => (
+                        <a key={index} href={url} target="_blank" rel="noopener noreferrer">
+                          <img 
+                            src={url} 
+                            alt={`Job ${index + 1}`} 
+                            className="w-full h-24 md:h-32 object-cover rounded border hover:opacity-80"
+                          />
+                        </a>
+                      ))}
+                    </div>
                   </div>
-                </TabsContent>
+                ) : (
+                  <p className="text-xs md:text-sm text-slate-500 text-center py-8">No photos uploaded</p>
+                )}
 
-                <TabsContent value="pricing" className="mt-4">
-                  <PriceListModal open={true} onClose={() => {}} />
-                </TabsContent>
-              </>
-            )}
+                <div className="grid md:grid-cols-2 gap-3 md:gap-4 pt-4 border-t">
+                  {job.quote_url ? (
+                    <a href={job.quote_url} target="_blank" rel="noopener noreferrer" 
+                       className="flex items-center gap-2 p-3 bg-slate-50 rounded-lg hover:bg-slate-100 transition-colors">
+                      <FileText className="w-4 h-4 text-slate-400" />
+                      <span className="text-xs md:text-sm font-medium">View Quote</span>
+                    </a>
+                  ) : (
+                    <div className="flex items-center gap-2 p-3 bg-slate-50 rounded-lg text-slate-400">
+                      <FileText className="w-4 h-4" />
+                      <span className="text-xs md:text-sm">No quote</span>
+                    </div>
+                  )}
 
-            {!isTechnician && (
-              <>
-                <TabsContent value="sms" className="mt-4">
-                  <SMSNotifications job={job} />
-                </TabsContent>
+                  {job.invoice_url ? (
+                    <a href={job.invoice_url} target="_blank" rel="noopener noreferrer"
+                       className="flex items-center gap-2 p-3 bg-slate-50 rounded-lg hover:bg-slate-100 transition-colors">
+                      <FileText className="w-4 h-4 text-slate-400" />
+                      <span className="text-xs md:text-sm font-medium">View Invoice</span>
+                    </a>
+                  ) : (
+                    <div className="flex items-center gap-2 p-3 bg-slate-50 rounded-lg text-slate-400">
+                      <FileText className="w-4 h-4" />
+                      <span className="text-xs md:text-sm">No invoice</span>
+                    </div>
+                  )}
+                </div>
+              </div>
+            </TabsContent>
 
-                <TabsContent value="pipedrive" className="mt-4">
-                  <PipedriveIntegration job={job} onUpdate={handlePipedriveUpdate} />
-                </TabsContent>
-              </>
+            {isTechnician ? (
+              <TabsContent value="pricing" className="mt-3 md:mt-4">
+                <PriceListModal open={true} onClose={() => {}} />
+              </TabsContent>
+            ) : (
+              <TabsContent value="assistant" className="mt-3 md:mt-4">
+                <div className="bg-white rounded-lg">
+                  <TechnicianAssistant job={job} open={true} onClose={() => {}} />
+                </div>
+              </TabsContent>
             )}
           </Tabs>
         </CardContent>
