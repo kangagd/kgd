@@ -209,14 +209,12 @@ export default function Jobs() {
           </div>
           
           <Tabs value={statusFilter} onValueChange={setStatusFilter}>
-            <TabsList className="w-full grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-7">
+            <TabsList className="w-full grid grid-cols-2 sm:grid-cols-5">
               <TabsTrigger value="all">All</TabsTrigger>
+              <TabsTrigger value="scheduled">Scheduled</TabsTrigger>
               <TabsTrigger value="in_progress">In Progress</TabsTrigger>
-              <TabsTrigger value="new_quote">New Quote</TabsTrigger>
-              <TabsTrigger value="update_quote">Update Quote</TabsTrigger>
-              <TabsTrigger value="send_invoice">Send Invoice</TabsTrigger>
               <TabsTrigger value="completed">Completed</TabsTrigger>
-              <TabsTrigger value="return_visit_required">Return Visit</TabsTrigger>
+              <TabsTrigger value="cancelled">Cancelled</TabsTrigger>
             </TabsList>
           </Tabs>
         </div>
