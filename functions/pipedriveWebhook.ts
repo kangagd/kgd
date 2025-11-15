@@ -7,9 +7,9 @@ Deno.serve(async (req) => {
     const payload = await req.json();
     console.log('Pipedrive webhook received:', JSON.stringify(payload, null, 2));
 
-    // Check if this is a deal update event
-    if (payload.event !== 'updated.deal') {
-      return Response.json({ message: 'Event ignored - not a deal update' });
+    // Check if this is a deal change event
+    if (payload.event !== 'updated.deal' && payload.event !== 'change.deal') {
+      return Response.json({ message: 'Event ignored - not a deal change' });
     }
 
     const deal = payload.current;

@@ -72,7 +72,7 @@ Deno.serve(async (req) => {
         '3. Go to Pipedrive Settings → Webhooks',
         '4. Click "Create a webhook"',
         `5. Set endpoint URL: ${webhookUrl}`,
-        '6. Select event: "Updated Deal"',
+        '6. Select event: "Deal" with action "Changed"',
         '7. Set HTTP method: POST',
         '8. Save the webhook',
         '9. Test by moving a deal to "Job Booked" stage in Pipedrive'
