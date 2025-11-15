@@ -1,3 +1,4 @@
+
 import React, { useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -138,7 +139,7 @@ export default function MeasurementsForm({ measurements, onChange }) {
                 />
               </div>
               <div>
-                <Label className="text-xs">Right</Label>
+                <Label className="text-xs">Right Side</Label> {/* Changed from "Right" to "Right Side" */}
                 <Input
                   type="number"
                   value={data.new_door.laser_floor_right || ""}
