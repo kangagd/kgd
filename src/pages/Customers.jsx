@@ -1,13 +1,20 @@
 import React, { useState } from "react";
 import { base44 } from "@/api/base44Client";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Plus, Search, User, Phone, Mail } from "lucide-react";
-import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
+import { Plus, Search, Phone, Mail, Tag, ExternalLink } from "lucide-react";
 import CustomerForm from "../components/customers/CustomerForm";
 import CustomerDetails from "../components/customers/CustomerDetails";
+
+const customerTypeColors = {
+  "Owner": "bg-purple-100 text-purple-700 border-purple-200",
+  "Builder": "bg-blue-100 text-blue-700 border-blue-200",
+  "Real Estate - Tenant": "bg-green-100 text-green-700 border-green-200",
+  "Strata - Owner": "bg-amber-100 text-amber-700 border-amber-200",
+};
 
 export default function Customers() {
   const [searchTerm, setSearchTerm] = useState("");
@@ -18,7 +25,7 @@ export default function Customers() {
 
   const { data: customers = [], isLoading } = useQuery({
     queryKey: ['customers'],
-    queryFn: () => base44.entities.Customer.list('-updated_date'),
+    queryFn: () => base44.entities.Customer.list('name'),
   });
 
   const createCustomerMutation = useMutation({
@@ -54,7 +61,7 @@ export default function Customers() {
     setSelectedCustomer(null);
   };
 
-  const filteredCustomers = customers.filter(customer =>
+  const filteredCustomers = customers.filter(customer => 
     customer.name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
     customer.phone?.includes(searchTerm) ||
     customer.email?.toLowerCase().includes(searchTerm.toLowerCase())
@@ -100,20 +107,29 @@ export default function Customers() {
             <h1 className="text-3xl font-bold text-slate-900">Customers</h1>
             <p className="text-slate-500 mt-1">Manage your customer database</p>
           </div>
-          <Button 
-            onClick={() => setShowForm(true)}
-            className="bg-orange-600 hover:bg-orange-700"
-          >
-            <Plus className="w-4 h-4 mr-2" />
-            New Customer
-          </Button>
+          <div className="flex gap-2">
+            <Button
+              variant="outline"
+              onClick={() => window.open('https://app.pipedrive.com/persons', '_blank')}
+            >
+              <ExternalLink className="w-4 h-4 mr-2" />
+              Pipedrive
+            </Button>
+            <Button 
+              onClick={() => setShowForm(true)}
+              className="bg-orange-600 hover:bg-orange-700"
+            >
+              <Plus className="w-4 h-4 mr-2" />
+              New Customer
+            </Button>
+          </div>
         </div>
 
         <div className="mb-6">
           <div className="relative">
             <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-slate-400" />
             <Input
-              placeholder="Search by name, phone, or email..."
+              placeholder="Search customers..."
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
               className="pl-10"
@@ -123,51 +139,64 @@ export default function Customers() {
 
         {isLoading ? (
           <div className="grid gap-4">
-            {[1, 2, 3].map((i) => (
-              <Card key={i} className="p-6 animate-pulse">
-                <div className="h-6 bg-slate-200 rounded w-1/3 mb-4"></div>
-                <div className="h-4 bg-slate-200 rounded w-1/2"></div>
+            {[1, 2, 3, 4, 5].map((i) => (
+              <Card key={i} className="animate-pulse">
+                <CardContent className="p-6">
+                  <div className="h-6 bg-slate-200 rounded w-1/3 mb-4"></div>
+                  <div className="h-4 bg-slate-200 rounded w-2/3"></div>
+                </CardContent>
               </Card>
             ))}
           </div>
         ) : filteredCustomers.length === 0 ? (
           <Card className="p-12 text-center">
-            <User className="w-16 h-16 mx-auto text-slate-300 mb-4" />
+            <Search className="w-16 h-16 mx-auto text-slate-300 mb-4" />
             <h3 className="text-lg font-semibold text-slate-700 mb-2">No customers found</h3>
-            <p className="text-slate-500">Start by adding your first customer</p>
+            <p className="text-slate-500">Try adjusting your search</p>
           </Card>
         ) : (
           <div className="grid gap-4">
             {filteredCustomers.map((customer) => (
-              <Card
+              <Card 
                 key={customer.id}
-                className="p-6 hover:shadow-md transition-all cursor-pointer border-none"
+                className="hover:shadow-lg transition-shadow cursor-pointer"
                 onClick={() => setSelectedCustomer(customer)}
               >
-                <div className="flex items-start justify-between">
-                  <div className="flex-1">
-                    <div className="flex items-center gap-3 mb-3">
-                      <h3 className="text-lg font-semibold text-slate-900">{customer.name}</h3>
-                      {customer.status === 'inactive' && (
-                        <Badge variant="outline" className="text-slate-500">Inactive</Badge>
-                      )}
-                    </div>
-                    <div className="grid md:grid-cols-2 gap-3 text-sm text-slate-600">
-                      {customer.phone && (
-                        <div className="flex items-center gap-2">
-                          <Phone className="w-4 h-4 text-slate-400" />
-                          <span>{customer.phone}</span>
-                        </div>
-                      )}
-                      {customer.email && (
-                        <div className="flex items-center gap-2">
-                          <Mail className="w-4 h-4 text-slate-400" />
-                          <span>{customer.email}</span>
-                        </div>
-                      )}
+                <CardContent className="p-6">
+                  <div className="flex items-start justify-between mb-3">
+                    <div>
+                      <h3 className="font-semibold text-lg text-slate-900">{customer.name}</h3>
+                      <div className="flex gap-2 mt-2">
+                        <Badge className={customer.status === 'active' ? 
+                          "bg-green-100 text-green-700" : 
+                          "bg-slate-100 text-slate-700"
+                        }>
+                          {customer.status}
+                        </Badge>
+                        {customer.customer_type && (
+                          <Badge className={customerTypeColors[customer.customer_type]}>
+                            <Tag className="w-3 h-3 mr-1" />
+                            {customer.customer_type}
+                          </Badge>
+                        )}
+                      </div>
                     </div>
                   </div>
-                </div>
+                  <div className="space-y-2">
+                    {customer.phone && (
+                      <div className="flex items-center gap-2 text-slate-600">
+                        <Phone className="w-4 h-4 text-slate-400" />
+                        <span className="text-sm">{customer.phone}</span>
+                      </div>
+                    )}
+                    {customer.email && (
+                      <div className="flex items-center gap-2 text-slate-600">
+                        <Mail className="w-4 h-4 text-slate-400" />
+                        <span className="text-sm">{customer.email}</span>
+                      </div>
+                    )}
+                  </div>
+                </CardContent>
               </Card>
             ))}
           </div>

@@ -9,6 +9,7 @@ import { base44 } from "@/api/base44Client";
 import PriceListModal from "./PriceListModal";
 import TechnicianAssistant from "./TechnicianAssistant";
 import SMSNotifications from "./SMSNotifications";
+import PipedriveIntegration from "./PipedriveIntegration";
 
 const statusColors = {
   scheduled: "bg-blue-100 text-blue-800 border-blue-200",
@@ -35,6 +36,11 @@ export default function JobDetails({ job, onClose, onEdit, onStatusChange }) {
   }, []);
 
   const isTechnician = user?.is_field_technician && user?.role !== 'admin';
+
+  const handlePipedriveUpdate = async (data) => {
+    await base44.entities.Job.update(job.id, data);
+    window.location.reload();
+  };
 
   return (
     <>
@@ -77,25 +83,24 @@ export default function JobDetails({ job, onClose, onEdit, onStatusChange }) {
         </CardHeader>
         <CardContent className="p-4 md:p-6">
           <Tabs defaultValue="details" className="w-full">
-            <TabsList className="w-full">
-              <TabsTrigger value="details" className="flex-1 text-sm">Details</TabsTrigger>
-              {isTechnician && (
+            <TabsList className="w-full grid grid-cols-3 md:grid-cols-4">
+              <TabsTrigger value="details" className="text-xs md:text-sm">Details</TabsTrigger>
+              {isTechnician ? (
                 <>
-                  <TabsTrigger value="assistant" className="flex-1 text-sm">
+                  <TabsTrigger value="assistant" className="text-xs md:text-sm">
                     <Sparkles className="w-4 h-4 md:mr-2" />
                     <span className="hidden md:inline">Assistant</span>
                   </TabsTrigger>
-                  <TabsTrigger value="pricing" className="flex-1 text-sm">
+                  <TabsTrigger value="pricing" className="text-xs md:text-sm">
                     <DollarSign className="w-4 h-4 md:mr-2" />
                     <span className="hidden md:inline">Pricing</span>
                   </TabsTrigger>
                 </>
-              )}
-              {!isTechnician && (
-                <TabsTrigger value="sms" className="flex-1 text-sm">
-                  <MessageSquare className="w-4 h-4 md:mr-2" />
-                  <span className="hidden md:inline">SMS</span>
-                </TabsTrigger>
+              ) : (
+                <>
+                  <TabsTrigger value="sms" className="text-xs md:text-sm">SMS</TabsTrigger>
+                  <TabsTrigger value="pipedrive" className="text-xs md:text-sm">Pipedrive</TabsTrigger>
+                </>
               )}
             </TabsList>
 
@@ -207,9 +212,15 @@ export default function JobDetails({ job, onClose, onEdit, onStatusChange }) {
             )}
 
             {!isTechnician && (
-              <TabsContent value="sms" className="mt-4">
-                <SMSNotifications job={job} />
-              </TabsContent>
+              <>
+                <TabsContent value="sms" className="mt-4">
+                  <SMSNotifications job={job} />
+                </TabsContent>
+
+                <TabsContent value="pipedrive" className="mt-4">
+                  <PipedriveIntegration job={job} onUpdate={handlePipedriveUpdate} />
+                </TabsContent>
+              </>
             )}
           </Tabs>
         </CardContent>
