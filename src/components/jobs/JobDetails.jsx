@@ -146,17 +146,17 @@ export default function JobDetails({ job, onClose, onEdit, onStatusChange }) {
     <>
       <Card className={`border-none shadow-lg ${isTechnician ? 'rounded-none' : ''}`}>
         <CardHeader className="border-b border-slate-100 p-3 md:p-6">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-2 md:gap-4 flex-1 min-w-0">
+          <div className="flex items-start justify-between">
+            <div className="flex items-start gap-2 md:gap-4 flex-1 min-w-0">
               <Button variant="ghost" size="icon" onClick={onClose} className="h-8 w-8 md:h-10 md:w-10 flex-shrink-0">
                 <ArrowLeft className="w-4 h-4" />
               </Button>
               <div className="flex-1 min-w-0">
                 <CardTitle className="text-lg md:text-2xl font-bold">{job.customer_name}</CardTitle>
                 <p className="text-xs md:text-sm text-slate-500 mt-1">Job #{job.job_number}</p>
-                <div className="flex items-start gap-2 mt-2">
-                  <MapPin className="w-4 h-4 text-orange-600 mt-0.5 flex-shrink-0" />
-                  <span className="text-xs md:text-sm text-slate-700 flex-1">{job.address}</span>
+                <div className="flex items-center gap-1.5 mt-2">
+                  <MapPin className="w-4 h-4 text-orange-600 flex-shrink-0" />
+                  <span className="text-sm md:text-base font-bold text-slate-900 flex-1">{job.address}</span>
                   <button
                     onClick={handleNavigate}
                     className="flex-shrink-0 p-1.5 rounded-lg bg-orange-600 hover:bg-orange-700 text-white transition-colors"
@@ -165,9 +165,21 @@ export default function JobDetails({ job, onClose, onEdit, onStatusChange }) {
                     <Car className="w-4 h-4" />
                   </button>
                 </div>
+                {job.customer_phone && (
+                  <a href={`tel:${job.customer_phone}`} className="flex items-center gap-2 mt-2 text-slate-700 hover:text-orange-600 transition-colors">
+                    <Phone className="w-4 h-4 text-orange-600" />
+                    <span className="text-sm md:text-base font-medium">{job.customer_phone}</span>
+                  </a>
+                )}
               </div>
             </div>
             <div className="flex flex-col gap-2 flex-shrink-0">
+              {!isTechnician && (
+                <Button onClick={() => onEdit(job)} className="h-8 px-2 bg-orange-600 hover:bg-orange-700">
+                  <Edit className="w-4 h-4 md:mr-1" />
+                  <span className="hidden md:inline text-xs">Edit</span>
+                </Button>
+              )}
               <Button 
                 variant="outline"
                 size="sm"
@@ -177,12 +189,6 @@ export default function JobDetails({ job, onClose, onEdit, onStatusChange }) {
                 <History className="w-4 h-4 md:mr-1" />
                 <span className="hidden md:inline text-xs">History</span>
               </Button>
-              {!isTechnician && (
-                <Button onClick={() => onEdit(job)} className="h-8 px-2 bg-orange-600 hover:bg-orange-700">
-                  <Edit className="w-4 h-4 md:mr-1" />
-                  <span className="hidden md:inline text-xs">Edit</span>
-                </Button>
-              )}
               <Button 
                 variant="outline"
                 onClick={() => setShowPriceList(true)}
@@ -191,16 +197,6 @@ export default function JobDetails({ job, onClose, onEdit, onStatusChange }) {
                 <DollarSign className="w-4 h-4 md:mr-1" />
                 <span className="hidden md:inline text-xs">Price List</span>
               </Button>
-              {!isTechnician && (
-                <Button 
-                  variant="outline"
-                  onClick={() => setShowAssistant(true)}
-                  className="h-8 px-2 border-orange-200 text-orange-700 hover:bg-orange-50"
-                >
-                  <Sparkles className="w-4 h-4 md:mr-1" />
-                  <span className="hidden md:inline text-xs">AI Assistant</span>
-                </Button>
-              )}
             </div>
           </div>
         </CardHeader>
@@ -238,12 +234,6 @@ export default function JobDetails({ job, onClose, onEdit, onStatusChange }) {
 
               <div className="grid gap-3 md:gap-4">
                 <div className="space-y-2 md:space-y-3">
-                  {job.customer_phone && (
-                    <a href={`tel:${job.customer_phone}`} className="flex items-center gap-3 p-2 md:p-3 bg-slate-50 rounded-lg hover:bg-slate-100 transition-colors">
-                      <Phone className="w-4 h-4 md:w-5 md:h-5 text-orange-600" />
-                      <span className="font-medium text-sm md:text-base">{job.customer_phone}</span>
-                    </a>
-                  )}
                   <div className="grid grid-cols-2 gap-2 md:gap-3">
                     <div className="flex items-center gap-2 p-2 md:p-3 bg-slate-50 rounded-lg">
                       <Calendar className="w-3 h-3 md:w-4 md:h-4 text-slate-400" />
