@@ -5,17 +5,25 @@ import { MapPin, Calendar, Clock, User, Briefcase, FileText, Tag } from "lucide-
 import { format, parseISO } from "date-fns";
 
 const statusColors = {
-  scheduled: "bg-blue-100 text-blue-800 border-blue-200",
-  in_progress: "bg-orange-100 text-orange-800 border-orange-200",
+  in_progress: "bg-blue-100 text-blue-800 border-blue-200",
+  new_quote: "bg-purple-100 text-purple-800 border-purple-200",
+  update_quote: "bg-indigo-100 text-indigo-800 border-indigo-200",
+  send_invoice: "bg-orange-100 text-orange-800 border-orange-200",
   completed: "bg-green-100 text-green-800 border-green-200",
-  cancelled: "bg-slate-100 text-slate-800 border-slate-200",
+  return_visit_required: "bg-amber-100 text-amber-800 border-amber-200",
+  scheduled: "bg-slate-100 text-slate-800 border-slate-200",
+  cancelled: "bg-slate-100 text-slate-800 border-slate-200"
 };
 
-const priorityColors = {
-  low: "bg-slate-100 text-slate-700",
-  medium: "bg-blue-100 text-blue-700",
-  high: "bg-orange-100 text-orange-700",
-  emergency: "bg-red-100 text-red-700",
+const statusLabels = {
+  in_progress: "In Progress",
+  new_quote: "New Quote",
+  update_quote: "Update Quote",
+  send_invoice: "Send Invoice",
+  completed: "Completed",
+  return_visit_required: "Return Visit Required",
+  scheduled: "Scheduled",
+  cancelled: "Cancelled"
 };
 
 const customerTypeColors = {
@@ -68,13 +76,8 @@ export default function JobList({ jobs, isLoading, onSelectJob }) {
               </div>
               <div className="flex flex-wrap gap-2 justify-end">
                 <Badge className={statusColors[job.status]}>
-                  {job.status.replace('_', ' ')}
+                  {statusLabels[job.status] || job.status}
                 </Badge>
-                {job.priority !== 'medium' && (
-                  <Badge className={priorityColors[job.priority]}>
-                    {job.priority}
-                  </Badge>
-                )}
               </div>
             </div>
 

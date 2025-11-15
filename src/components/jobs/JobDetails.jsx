@@ -122,9 +122,6 @@ export default function JobDetails({ job, onClose, onEdit, onStatusChange }) {
                     {job.outcome.replace(/_/g, ' ')}
                   </Badge>
                 )}
-                {job.priority && job.priority !== 'medium' && (
-                  <Badge variant="outline">{job.priority} priority</Badge>
-                )}
               </div>
 
               <div className="grid gap-4">

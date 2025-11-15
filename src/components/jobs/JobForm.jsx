@@ -34,7 +34,6 @@ export default function JobForm({ job, jobTypes, technicians, onSubmit, onCancel
     scheduled_time: "",
     status: "scheduled",
     outcome: "",
-    priority: "medium",
     notes: "",
     additional_info: "",
     measurements: null,
@@ -256,21 +255,6 @@ export default function JobForm({ job, jobTypes, technicians, onSubmit, onCancel
                         {tech.full_name}
                       </SelectItem>
                     ))}
-                  </SelectContent>
-                </Select>
-              </div>
-
-              <div className="space-y-2">
-                <Label htmlFor="priority">Priority</Label>
-                <Select value={formData.priority} onValueChange={(val) => setFormData({ ...formData, priority: val })}>
-                  <SelectTrigger>
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="low">Low</SelectItem>
-                    <SelectItem value="medium">Medium</SelectItem>
-                    <SelectItem value="high">High</SelectItem>
-                    <SelectItem value="emergency">Emergency</SelectItem>
                   </SelectContent>
                 </Select>
               </div>
