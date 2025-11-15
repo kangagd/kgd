@@ -1,4 +1,3 @@
-// Updated: 2025-11-15 - Direct Base44 initialization for webhook
 import { Base44 } from 'npm:@base44/sdk@0.8.4';
 
 Deno.serve(async (req) => {
