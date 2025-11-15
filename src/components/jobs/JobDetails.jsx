@@ -10,12 +10,24 @@ import PriceListModal from "./PriceListModal";
 import TechnicianAssistant from "./TechnicianAssistant";
 import SMSNotifications from "./SMSNotifications";
 import PipedriveIntegration from "./PipedriveIntegration";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 
 const statusColors = {
-  scheduled: "bg-blue-100 text-blue-800 border-blue-200",
-  in_progress: "bg-orange-100 text-orange-800 border-orange-200",
+  in_progress: "bg-blue-100 text-blue-800 border-blue-200",
+  new_quote: "bg-purple-100 text-purple-800 border-purple-200",
+  update_quote: "bg-indigo-100 text-indigo-800 border-indigo-200",
+  send_invoice: "bg-orange-100 text-orange-800 border-orange-200",
   completed: "bg-green-100 text-green-800 border-green-200",
-  cancelled: "bg-slate-100 text-slate-800 border-slate-200",
+  return_visit_required: "bg-amber-100 text-amber-800 border-amber-200"
+};
+
+const statusLabels = {
+  in_progress: "In Progress",
+  new_quote: "New Quote",
+  update_quote: "Update Quote",
+  send_invoice: "Send Invoice",
+  completed: "Completed",
+  return_visit_required: "Return Visit Required"
 };
 
 export default function JobDetails({ job, onClose, onEdit, onStatusChange }) {
@@ -105,13 +117,30 @@ export default function JobDetails({ job, onClose, onEdit, onStatusChange }) {
             </TabsList>
 
             <TabsContent value="details" className="space-y-4 mt-4">
-              <div className="flex gap-2 flex-wrap">
+              <div className="flex gap-2 flex-wrap items-center">
                 <Badge className={statusColors[job.status]}>
-                  {job.status.replace('_', ' ')}
+                  {statusLabels[job.status]}
                 </Badge>
                 {job.priority && job.priority !== 'medium' && (
                   <Badge variant="outline">{job.priority} priority</Badge>
                 )}
+              </div>
+
+              <div>
+                <label className="text-sm font-medium text-slate-700 mb-2 block">Update Status</label>
+                <Select value={job.status} onValueChange={onStatusChange}>
+                  <SelectTrigger className="w-full">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="in_progress">In Progress</SelectItem>
+                    <SelectItem value="new_quote">New Quote</SelectItem>
+                    <SelectItem value="update_quote">Update Quote</SelectItem>
+                    <SelectItem value="send_invoice">Send Invoice</SelectItem>
+                    <SelectItem value="completed">Completed</SelectItem>
+                    <SelectItem value="return_visit_required">Return Visit Required</SelectItem>
+                  </SelectContent>
+                </Select>
               </div>
 
               <div className="grid gap-4">
@@ -174,27 +203,6 @@ export default function JobDetails({ job, onClose, onEdit, onStatusChange }) {
                   </div>
                 </div>
               )}
-
-              <div className="flex gap-2 pt-2">
-                {job.status === 'scheduled' && (
-                  <Button
-                    onClick={() => onStatusChange('in_progress')}
-                    className="flex-1 bg-orange-600 hover:bg-orange-700"
-                    size="lg"
-                  >
-                    Start Job
-                  </Button>
-                )}
-                {job.status === 'in_progress' && (
-                  <Button
-                    onClick={() => onStatusChange('completed')}
-                    className="flex-1 bg-green-600 hover:bg-green-700"
-                    size="lg"
-                  >
-                    Complete Job
-                  </Button>
-                )}
-              </div>
             </TabsContent>
 
             {isTechnician && (
