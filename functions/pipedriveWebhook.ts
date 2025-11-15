@@ -1,14 +1,19 @@
-import { createClientFromRequest } from 'npm:@base44/sdk@0.8.4';
+import { Base44Client } from 'npm:@base44/sdk@0.8.4';
 
 Deno.serve(async (req) => {
   try {
-    const base44 = createClientFromRequest(req);
+    // Initialize Base44 client with service role for webhook
+    const base44 = new Base44Client({
+      apiUrl: Deno.env.get('BASE44_API_URL'),
+      appId: Deno.env.get('BASE44_APP_ID'),
+      serviceRoleKey: Deno.env.get('BASE44_SERVICE_ROLE_KEY')
+    });
     
     const payload = await req.json();
     console.log('Pipedrive webhook received:', JSON.stringify(payload, null, 2));
 
     // Check if this is a deal change event
-    if (payload.event !== 'change.deal' && payload.event !== 'change.deal') {
+    if (payload.event !== 'change.deal') {
       return Response.json({ message: 'Event ignored - not a deal change' });
     }
 
@@ -34,7 +39,7 @@ Deno.serve(async (req) => {
     }
 
     // Check if job already exists for this deal
-    const existingJobs = await base44.asServiceRole.entities.Job.filter({ 
+    const existingJobs = await base44.entities.Job.filter({ 
       pipedrive_deal_id: deal.id.toString() 
     });
 
@@ -63,7 +68,7 @@ Deno.serve(async (req) => {
     
     // Try to find existing customer by email or name
     if (personEmail) {
-      const existingCustomers = await base44.asServiceRole.entities.Customer.filter({ 
+      const existingCustomers = await base44.entities.Customer.filter({ 
         email: personEmail 
       });
       if (existingCustomers && existingCustomers.length > 0) {
@@ -73,7 +78,7 @@ Deno.serve(async (req) => {
     
     // If no customer found, create one
     if (!customer) {
-      customer = await base44.asServiceRole.entities.Customer.create({
+      customer = await base44.entities.Customer.create({
         name: personName,
         email: personEmail,
         phone: personPhone,
@@ -83,7 +88,7 @@ Deno.serve(async (req) => {
     }
 
     // Get the next job number
-    const allJobs = await base44.asServiceRole.entities.Job.list('-job_number', 1);
+    const allJobs = await base44.entities.Job.list('-job_number', 1);
     const lastJobNumber = allJobs && allJobs[0]?.job_number ? allJobs[0].job_number : 4999;
     const newJobNumber = lastJobNumber + 1;
 
@@ -91,7 +96,7 @@ Deno.serve(async (req) => {
     const scheduledDate = fullDeal.expected_close_date || new Date().toISOString().split('T')[0];
 
     // Create the job
-    const job = await base44.asServiceRole.entities.Job.create({
+    const job = await base44.entities.Job.create({
       job_number: newJobNumber,
       customer_id: customer.id,
       customer_name: customer.name,
