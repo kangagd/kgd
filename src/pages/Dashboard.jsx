@@ -1,11 +1,12 @@
+
 import React, { useState, useEffect } from "react";
 import { base44 } from "@/api/base44Client";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { Link } from "react-router-dom";
 import { createPageUrl } from "@/utils";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Calendar, Clock, CheckCircle, AlertCircle, Plus, TrendingUp } from "lucide-react";
+import { Calendar, Clock, CheckCircle, AlertCircle, Plus, TrendingUp, Search } from "lucide-react";
 import { format, isToday, isTomorrow, parseISO } from "date-fns";
 import { Badge } from "@/components/ui/badge";
 
@@ -75,23 +76,42 @@ export default function Dashboard() {
     }
   });
 
+  const handleTestPipedrive = async () => {
+    try {
+      const response = await base44.functions.invoke('testPipedriveWebhook');
+      console.log("Pipedrive Test Response:", response.data);
+      alert(JSON.stringify(response.data, null, 2));
+    } catch (error) {
+      console.error("Error testing Pipedrive webhook:", error);
+      alert("Error: " + error.message);
+    }
+  };
+
   return (
     <div className="p-4 md:p-8 bg-slate-50 min-h-screen">
       <div className="max-w-7xl mx-auto">
         <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-8 gap-4">
           <div>
             <h1 className="text-3xl font-bold text-slate-900">
-              Good {new Date().getHours() < 12 ? 'Morning' : 'Afternoon'}
-              {user ? `, ${user.full_name?.split(' ')[0]}` : ''}
+              Good {new Date().getHours() < 12 ? 'Morning' : new Date().getHours() < 18 ? 'Afternoon' : 'Evening'}, {user?.full_name?.split(' ')[0] || 'there'}!
             </h1>
             <p className="text-slate-500 mt-1">Here's what's happening today</p>
           </div>
-          <Link to={createPageUrl("Jobs") + "?action=new"}>
-            <Button className="bg-orange-600 hover:bg-orange-700">
+          <div className="flex gap-2">
+            <Button
+              variant="outline"
+              onClick={handleTestPipedrive}
+            >
+              Test Pipedrive
+            </Button>
+            <Button
+              onClick={() => window.location.href = '/Jobs?action=new'}
+              className="bg-orange-600 hover:bg-orange-700"
+            >
               <Plus className="w-4 h-4 mr-2" />
               New Job
             </Button>
-          </Link>
+          </div>
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
