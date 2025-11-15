@@ -317,9 +317,7 @@ export default function JobDetails({ job, onClose, onEdit, onStatusChange }) {
 
             {!isTechnician && (
               <TabsContent value="assistant" className="mt-3 md:mt-4">
-                <div className="bg-white rounded-lg">
-                  <TechnicianAssistant job={job} open={true} onClose={() => {}} />
-                </div>
+                <TechnicianAssistant job={job} embedded={true} />
               </TabsContent>
             )}
           </Tabs>

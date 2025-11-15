@@ -12,24 +12,94 @@ import { ScrollArea } from "@/components/ui/scroll-area";
 import { Send, Sparkles, Loader2 } from "lucide-react";
 import MessageBubble from "../assistant/MessageBubble";
 
-export default function TechnicianAssistant({ open, onClose, job }) {
-  const [conversation, setConversation] = useState(null);
-  const [messages, setMessages] = useState([]);
-  const [input, setInput] = useState("");
-  const [isLoading, setIsLoading] = useState(false);
+function AssistantContent({ job, conversation, messages, isLoading, input, setInput, handleSend, handleKeyPress }) {
   const scrollRef = useRef(null);
-
-  useEffect(() => {
-    if (open && !conversation) {
-      initConversation();
-    }
-  }, [open]);
 
   useEffect(() => {
     if (scrollRef.current) {
       scrollRef.current.scrollTop = scrollRef.current.scrollHeight;
     }
   }, [messages]);
+
+  const quickPrompts = [
+    "What parts might I need for this job?",
+    "Help me write completion notes",
+    "How do I adjust motor limits?",
+    "What safety checks should I perform?"
+  ];
+
+  return (
+    <>
+      <ScrollArea className="flex-1 pr-4 h-[500px]" ref={scrollRef}>
+        <div className="space-y-4 pb-4">
+          {messages.length === 0 ? (
+            <div className="text-center py-8">
+              <Sparkles className="w-12 h-12 mx-auto text-slate-300 mb-3" />
+              <p className="text-slate-600 mb-4">
+                I'm here to help with parts recommendations, completion notes, and technical questions.
+              </p>
+              <div className="grid grid-cols-2 gap-2 max-w-md mx-auto">
+                {quickPrompts.map((prompt, index) => (
+                  <Button
+                    key={index}
+                    variant="outline"
+                    size="sm"
+                    onClick={() => setInput(prompt)}
+                    className="text-xs"
+                  >
+                    {prompt}
+                  </Button>
+                ))}
+              </div>
+            </div>
+          ) : (
+            messages
+              .filter(msg => msg.content || msg.tool_calls?.length > 0)
+              .map((message, index) => (
+                <MessageBubble key={index} message={message} />
+              ))
+          )}
+          {isLoading && (
+            <div className="flex items-center gap-2 text-slate-500">
+              <Loader2 className="w-4 h-4 animate-spin" />
+              <span className="text-sm">Thinking...</span>
+            </div>
+          )}
+        </div>
+      </ScrollArea>
+
+      <div className="flex gap-2 pt-4 border-t">
+        <Textarea
+          value={input}
+          onChange={(e) => setInput(e.target.value)}
+          onKeyPress={handleKeyPress}
+          placeholder="Ask about parts, completion notes, or technical questions..."
+          className="resize-none"
+          rows={2}
+        />
+        <Button
+          onClick={handleSend}
+          disabled={!input.trim() || isLoading}
+          className="bg-orange-600 hover:bg-orange-700"
+        >
+          <Send className="w-4 h-4" />
+        </Button>
+      </div>
+    </>
+  );
+}
+
+export default function TechnicianAssistant({ open, onClose, job, embedded = false }) {
+  const [conversation, setConversation] = useState(null);
+  const [messages, setMessages] = useState([]);
+  const [input, setInput] = useState("");
+  const [isLoading, setIsLoading] = useState(false);
+
+  useEffect(() => {
+    if ((open || embedded) && !conversation) {
+      initConversation();
+    }
+  }, [open, embedded]);
 
   const initConversation = async () => {
     try {
@@ -42,13 +112,11 @@ export default function TechnicianAssistant({ open, onClose, job }) {
       });
       setConversation(conv);
       
-      // Subscribe to updates
       const unsubscribe = base44.agents.subscribeToConversation(conv.id, (data) => {
         setMessages(data.messages || []);
         setIsLoading(false);
       });
 
-      // Send initial context message
       if (job) {
         const contextMessage = `I'm working on Job #${job.job_number} for ${job.customer_name}. Job type: ${job.job_type_name || 'Not specified'}. ${job.notes ? `Notes: ${job.notes}` : ''}`;
         
@@ -89,12 +157,22 @@ export default function TechnicianAssistant({ open, onClose, job }) {
     }
   };
 
-  const quickPrompts = [
-    "What parts might I need for this job?",
-    "Help me write completion notes",
-    "How do I adjust motor limits?",
-    "What safety checks should I perform?"
-  ];
+  if (embedded) {
+    return (
+      <div className="flex flex-col h-full">
+        <AssistantContent
+          job={job}
+          conversation={conversation}
+          messages={messages}
+          isLoading={isLoading}
+          input={input}
+          setInput={setInput}
+          handleSend={handleSend}
+          handleKeyPress={handleKeyPress}
+        />
+      </div>
+    );
+  }
 
   return (
     <Dialog open={open} onOpenChange={(isOpen) => { if (!isOpen) onClose(); }}>
@@ -111,61 +189,16 @@ export default function TechnicianAssistant({ open, onClose, job }) {
           )}
         </DialogHeader>
 
-        <ScrollArea className="flex-1 pr-4" ref={scrollRef}>
-          <div className="space-y-4 pb-4">
-            {messages.length === 0 ? (
-              <div className="text-center py-8">
-                <Sparkles className="w-12 h-12 mx-auto text-slate-300 mb-3" />
-                <p className="text-slate-600 mb-4">
-                  I'm here to help with parts recommendations, completion notes, and technical questions.
-                </p>
-                <div className="grid grid-cols-2 gap-2 max-w-md mx-auto">
-                  {quickPrompts.map((prompt, index) => (
-                    <Button
-                      key={index}
-                      variant="outline"
-                      size="sm"
-                      onClick={() => setInput(prompt)}
-                      className="text-xs"
-                    >
-                      {prompt}
-                    </Button>
-                  ))}
-                </div>
-              </div>
-            ) : (
-              messages
-                .filter(msg => msg.content || msg.tool_calls?.length > 0)
-                .map((message, index) => (
-                  <MessageBubble key={index} message={message} />
-                ))
-            )}
-            {isLoading && (
-              <div className="flex items-center gap-2 text-slate-500">
-                <Loader2 className="w-4 h-4 animate-spin" />
-                <span className="text-sm">Thinking...</span>
-              </div>
-            )}
-          </div>
-        </ScrollArea>
-
-        <div className="flex gap-2 pt-4 border-t">
-          <Textarea
-            value={input}
-            onChange={(e) => setInput(e.target.value)}
-            onKeyPress={handleKeyPress}
-            placeholder="Ask about parts, completion notes, or technical questions..."
-            className="resize-none"
-            rows={2}
-          />
-          <Button
-            onClick={handleSend}
-            disabled={!input.trim() || isLoading}
-            className="bg-orange-600 hover:bg-orange-700"
-          >
-            <Send className="w-4 h-4" />
-          </Button>
-        </div>
+        <AssistantContent
+          job={job}
+          conversation={conversation}
+          messages={messages}
+          isLoading={isLoading}
+          input={input}
+          setInput={setInput}
+          handleSend={handleSend}
+          handleKeyPress={handleKeyPress}
+        />
       </DialogContent>
     </Dialog>
   );
