@@ -4,6 +4,7 @@ import CheckIn from './pages/CheckIn';
 import Team from './pages/Team';
 import Schedule from './pages/Schedule';
 import Customers from './pages/Customers';
+import PriceList from './pages/PriceList';
 import Layout from './Layout.jsx';
 
 
@@ -14,6 +15,7 @@ export const PAGES = {
     "Team": Team,
     "Schedule": Schedule,
     "Customers": Customers,
+    "PriceList": PriceList,
 }
 
 export const pagesConfig = {
