@@ -67,7 +67,9 @@ export default function JobList({ jobs, isLoading, onSelectJob }) {
     );
   }
 
-  if (jobs.length === 0) {
+  const validJobs = (jobs || []).filter(job => job && job.id);
+
+  if (validJobs.length === 0) {
     return (
       <Card className="p-12 text-center">
         <Briefcase className="w-16 h-16 mx-auto text-slate-300 mb-4" />
@@ -79,7 +81,7 @@ export default function JobList({ jobs, isLoading, onSelectJob }) {
 
   return (
     <div className="grid gap-4">
-      {jobs.filter(job => job != null).map((job) => (
+      {validJobs.map((job) => (
         <Card 
           key={job.id}
           className="hover:shadow-lg transition-shadow cursor-pointer"
@@ -88,34 +90,38 @@ export default function JobList({ jobs, isLoading, onSelectJob }) {
           <CardContent className="p-4 md:p-6">
             <div className="flex items-start justify-between mb-3">
               <div className="flex-1">
-                <h3 className="font-semibold text-lg text-slate-900">{job.customer_name}</h3>
-                <p className="text-sm text-slate-500 mb-1">Job #{job.job_number}</p>
-                <a
-                  href={`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(job.address)}`}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  onClick={(e) => handleAddressClick(e, job.address)}
-                  className="flex items-start gap-2 text-slate-700 hover:text-orange-600 transition-colors group"
-                >
-                  <MapPin className="w-4 h-4 text-orange-600 mt-0.5 flex-shrink-0" />
-                  <span className="text-sm group-hover:underline">{job.address}</span>
-                </a>
+                <h3 className="font-semibold text-lg text-slate-900">{job.customer_name || 'Unknown Customer'}</h3>
+                <p className="text-sm text-slate-500 mb-1">Job #{job.job_number || 'N/A'}</p>
+                {job.address && (
+                  <a
+                    href={`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(job.address)}`}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    onClick={(e) => handleAddressClick(e, job.address)}
+                    className="flex items-start gap-2 text-slate-700 hover:text-orange-600 transition-colors group"
+                  >
+                    <MapPin className="w-4 h-4 text-orange-600 mt-0.5 flex-shrink-0" />
+                    <span className="text-sm group-hover:underline">{job.address}</span>
+                  </a>
+                )}
               </div>
               <div className="flex flex-wrap gap-2 justify-end items-start">
-                <Badge className={statusColors[job.status]}>
-                  {statusLabels[job.status] || job.status}
+                <Badge className={statusColors[job.status] || statusColors.scheduled}>
+                  {statusLabels[job.status] || job.status || 'Scheduled'}
                 </Badge>
               </div>
             </div>
 
             <div className="space-y-2">
               <div className="flex flex-wrap gap-4">
-                <div className="flex items-center gap-2 text-slate-700">
-                  <Calendar className="w-4 h-4 text-slate-400" />
-                  <span className="text-sm">
-                    {job.scheduled_date && format(parseISO(job.scheduled_date), 'MMM d, yyyy')}
-                  </span>
-                </div>
+                {job.scheduled_date && (
+                  <div className="flex items-center gap-2 text-slate-700">
+                    <Calendar className="w-4 h-4 text-slate-400" />
+                    <span className="text-sm">
+                      {format(parseISO(job.scheduled_date), 'MMM d, yyyy')}
+                    </span>
+                  </div>
+                )}
                 
                 {job.scheduled_time && (
                   <div className="flex items-center gap-2 text-slate-700">
