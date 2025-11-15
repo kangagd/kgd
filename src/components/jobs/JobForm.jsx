@@ -59,6 +59,19 @@ export default function JobForm({ job, jobTypes, technicians, onSubmit, onCancel
     }
   }, [preselectedCustomerId, customers]);
 
+  // Auto-set status to scheduled if date is in the future
+  useEffect(() => {
+    if (formData.scheduled_date) {
+      const scheduledDate = new Date(formData.scheduled_date);
+      const today = new Date();
+      today.setHours(0, 0, 0, 0);
+      
+      if (scheduledDate >= today && formData.status !== 'scheduled') {
+        setFormData(prev => ({ ...prev, status: 'scheduled' }));
+      }
+    }
+  }, [formData.scheduled_date]);
+
   const handleSubmit = async (e) => {
     e.preventDefault();
     
