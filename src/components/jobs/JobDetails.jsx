@@ -3,7 +3,7 @@ import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Textarea } from "@/components/ui/textarea";
-import { ArrowLeft, Edit, MapPin, Phone, Calendar, Clock, User, Briefcase, FileText, Image as ImageIcon, DollarSign, Sparkles, FileCheck, History, Camera } from "lucide-react";
+import { ArrowLeft, Edit, MapPin, Phone, Calendar, Clock, User, Briefcase, FileText, Image as ImageIcon, DollarSign, Sparkles, FileCheck, History, Camera, LogIn, LogOut } from "lucide-react";
 import { format, parseISO } from "date-fns";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { base44 } from "@/api/base44Client";
@@ -13,6 +13,7 @@ import TechnicianAssistant from "./TechnicianAssistant";
 import MeasurementsForm from "./MeasurementsForm";
 import ChangeHistoryModal from "./ChangeHistoryModal";
 import NavigationCard from "./NavigationCard";
+import CheckOutDialog from "./CheckOutDialog";
 
 const statusColors = {
   scheduled: "bg-blue-100 text-blue-800 border-blue-200",
@@ -33,6 +34,7 @@ export default function JobDetails({ job, onClose, onEdit, onStatusChange }) {
   const [showPriceList, setShowPriceList] = useState(false);
   const [showAssistant, setShowAssistant] = useState(false);
   const [showHistory, setShowHistory] = useState(false);
+  const [showCheckOutDialog, setShowCheckOutDialog] = useState(false);
   const [user, setUser] = useState(null);
   const [measurements, setMeasurements] = useState(job?.measurements || null);
   const [notes, setNotes] = useState(job?.notes || "");
@@ -56,6 +58,54 @@ export default function JobDetails({ job, onClose, onEdit, onStatusChange }) {
   const { data: allJobs = [] } = useQuery({
     queryKey: ['jobs'],
     queryFn: () => base44.entities.Job.list('-scheduled_date'),
+  });
+
+  const { data: checkIns = [] } = useQuery({
+    queryKey: ['checkIns', job?.id],
+    queryFn: () => base44.entities.CheckInOut.filter({ job_id: job.id }),
+    enabled: !!job?.id,
+  });
+
+  const activeCheckIn = checkIns.find(c => !c.check_out_time && c.technician_email === user?.email);
+
+  const checkInMutation = useMutation({
+    mutationFn: async () => {
+      const checkIn = await base44.entities.CheckInOut.create({
+        job_id: job.id,
+        technician_email: user.email,
+        technician_name: user.full_name,
+        check_in_time: new Date().toISOString(),
+      });
+      await base44.entities.Job.update(job.id, { status: 'in_progress' });
+      return checkIn;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['checkIns', job.id] });
+      queryClient.invalidateQueries({ queryKey: ['jobs'] });
+    },
+  });
+
+  const checkOutMutation = useMutation({
+    mutationFn: async (outcome) => {
+      const checkOutTime = new Date().toISOString();
+      const checkInTime = new Date(activeCheckIn.check_in_time);
+      const durationHours = (new Date(checkOutTime) - checkInTime) / (1000 * 60 * 60);
+
+      await base44.entities.CheckInOut.update(activeCheckIn.id, {
+        check_out_time: checkOutTime,
+        duration_hours: Math.round(durationHours * 100) / 100,
+      });
+
+      await base44.entities.Job.update(job.id, {
+        status: 'completed',
+        outcome: outcome,
+      });
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['checkIns', job.id] });
+      queryClient.invalidateQueries({ queryKey: ['jobs'] });
+      setShowCheckOutDialog(false);
+    },
   });
 
   const updateMeasurementsMutation = useMutation({
@@ -111,6 +161,18 @@ export default function JobDetails({ job, onClose, onEdit, onStatusChange }) {
   });
 
   const isTechnician = user?.is_field_technician && user?.role !== 'admin';
+
+  const handleCheckIn = () => {
+    checkInMutation.mutate();
+  };
+
+  const handleCheckOut = () => {
+    setShowCheckOutDialog(true);
+  };
+
+  const handleConfirmCheckOut = (outcome) => {
+    checkOutMutation.mutate(outcome);
+  };
 
   const handleMeasurementsChange = (data) => {
     setMeasurements(data);
@@ -177,7 +239,7 @@ export default function JobDetails({ job, onClose, onEdit, onStatusChange }) {
               </Button>
               <div className="flex-1 min-w-0">
                 <div className="flex items-center gap-2 flex-wrap">
-                  <CardTitle className="text-lg md:text-2xl font-bold">{job.customer_name}</CardTitle>
+                  <CardTitle className="text-lg md:text-2xl font-bold">{job.customer_name || 'Unknown Customer'}</CardTitle>
                   <Badge className={statusColors[job.status]}>
                     {job.status.replace('_', ' ')}
                   </Badge>
@@ -196,6 +258,26 @@ export default function JobDetails({ job, onClose, onEdit, onStatusChange }) {
               </div>
             </div>
             <div className="flex flex-col gap-2 flex-shrink-0">
+              {isTechnician && !activeCheckIn && job.status === 'scheduled' && (
+                <Button
+                  onClick={handleCheckIn}
+                  disabled={checkInMutation.isPending}
+                  className="h-8 px-2 bg-blue-600 hover:bg-blue-700"
+                >
+                  <LogIn className="w-4 h-4 md:mr-1" />
+                  <span className="hidden md:inline text-xs">Check In</span>
+                </Button>
+              )}
+              {isTechnician && activeCheckIn && (
+                <Button
+                  onClick={handleCheckOut}
+                  disabled={checkOutMutation.isPending}
+                  className="h-8 px-2 bg-green-600 hover:bg-green-700"
+                >
+                  <LogOut className="w-4 h-4 md:mr-1" />
+                  <span className="hidden md:inline text-xs">Check Out</span>
+                </Button>
+              )}
               {!isTechnician && (
                 <Button onClick={() => onEdit(job)} className="h-8 px-2 bg-orange-600 hover:bg-orange-700">
                   <Edit className="w-4 h-4 md:mr-1" />
@@ -311,26 +393,28 @@ export default function JobDetails({ job, onClose, onEdit, onStatusChange }) {
                 </div>
               </div>
 
-              <div className="flex flex-col gap-2 pt-2">
-                {job.status === 'scheduled' && (
-                  <Button
-                    onClick={() => onStatusChange('in_progress')}
-                    className="w-full bg-orange-600 hover:bg-orange-700"
-                    size="lg"
-                  >
-                    Start Job
-                  </Button>
-                )}
-                {job.status === 'in_progress' && (
-                  <Button
-                    onClick={() => onStatusChange('completed')}
-                    className="w-full bg-green-600 hover:bg-green-700"
-                    size="lg"
-                  >
-                    Complete Job
-                  </Button>
-                )}
-              </div>
+              {!isTechnician && (
+                <div className="flex flex-col gap-2 pt-2">
+                  {job.status === 'scheduled' && (
+                    <Button
+                      onClick={() => onStatusChange('in_progress')}
+                      className="w-full bg-orange-600 hover:bg-orange-700"
+                      size="lg"
+                    >
+                      Start Job
+                    </Button>
+                  )}
+                  {job.status === 'in_progress' && (
+                    <Button
+                      onClick={() => onStatusChange('completed')}
+                      className="w-full bg-green-600 hover:bg-green-700"
+                      size="lg"
+                    >
+                      Complete Job
+                    </Button>
+                  )}
+                </div>
+              )}
             </TabsContent>
 
             <TabsContent value="files" className="mt-3 md:mt-4">
@@ -433,6 +517,14 @@ export default function JobDetails({ job, onClose, onEdit, onStatusChange }) {
         open={showHistory}
         onClose={() => setShowHistory(false)}
         jobId={job.id}
+      />
+
+      <CheckOutDialog
+        open={showCheckOutDialog}
+        onClose={() => setShowCheckOutDialog(false)}
+        job={job}
+        onConfirm={handleConfirmCheckOut}
+        isSubmitting={checkOutMutation.isPending}
       />
 
       {!isTechnician && (
