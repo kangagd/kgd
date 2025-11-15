@@ -1,8 +1,13 @@
-import { createClientFromRequest } from 'npm:@base44/sdk@0.8.4';
+import { Base44 } from 'npm:@base44/sdk@0.8.4';
 
 Deno.serve(async (req) => {
   try {
-    const base44 = createClientFromRequest(req);
+    // Initialize with service role since Pipedrive doesn't send auth headers
+    const base44 = new Base44({
+      url: Deno.env.get('BASE44_API_URL'),
+      apiKey: Deno.env.get('BASE44_SERVICE_ROLE_KEY')
+    });
+    
     const body = await req.json();
     
     // Pipedrive webhook event
@@ -14,9 +19,8 @@ Deno.serve(async (req) => {
     console.log('Event:', event);
     console.log('Current stage_id:', current?.stage_id);
     console.log('Previous stage_id:', previous?.stage_id);
-    console.log('Full body:', JSON.stringify(body, null, 2));
     
-    // Handle deal stage changes - Pipedrive uses "change.deal" event type
+    // Handle deal stage changes - Pipedrive uses "updated.deal" event type
     if ((event === 'updated.deal' || event === 'changed.deal') && current && previous) {
       const currentStage = current.stage_id;
       const previousStage = previous.stage_id;
@@ -48,22 +52,6 @@ Deno.serve(async (req) => {
             `https://api.pipedrive.com/v1/deals/${dealId}?api_token=${apiToken}`
           );
           
-          if (dealResponse.status === 401) {
-            console.error('Pipedrive authentication failed');
-            return Response.json({ 
-              success: false, 
-              error: 'Invalid Pipedrive API token' 
-            }, { status: 401 });
-          }
-          
-          if (dealResponse.status === 429) {
-            console.error('Pipedrive API rate limit exceeded');
-            return Response.json({ 
-              success: false, 
-              error: 'Pipedrive API rate limit exceeded. Please try again later.' 
-            }, { status: 429 });
-          }
-          
           if (!dealResponse.ok) {
             console.error('Failed to fetch deal from Pipedrive:', dealResponse.status);
             return Response.json({ 
@@ -89,9 +77,7 @@ Deno.serve(async (req) => {
                 `https://api.pipedrive.com/v1/persons/${deal.person_id}?api_token=${apiToken}`
               );
               
-              if (personResponse.status === 429) {
-                console.warn('Rate limit hit while fetching person, continuing without person data');
-              } else if (personResponse.ok) {
+              if (personResponse.ok) {
                 const personResult = await personResponse.json();
                 if (personResult.success) {
                   personData = personResult.data;
@@ -104,7 +90,7 @@ Deno.serve(async (req) => {
           }
           
           // Check if job already exists for this deal
-          const existingJobs = await base44.asServiceRole.entities.Job.filter({
+          const existingJobs = await base44.entities.Job.filter({
             pipedrive_deal_id: dealId.toString()
           });
           
@@ -127,7 +113,7 @@ Deno.serve(async (req) => {
           
           // Try to find existing customer by email or phone
           if (customerEmail) {
-            const existingCustomers = await base44.asServiceRole.entities.Customer.filter({
+            const existingCustomers = await base44.entities.Customer.filter({
               email: customerEmail
             });
             if (existingCustomers.length > 0) {
@@ -137,7 +123,7 @@ Deno.serve(async (req) => {
           }
           
           if (!customer && customerPhone) {
-            const existingCustomers = await base44.asServiceRole.entities.Customer.filter({
+            const existingCustomers = await base44.entities.Customer.filter({
               phone: customerPhone
             });
             if (existingCustomers.length > 0) {
@@ -148,7 +134,7 @@ Deno.serve(async (req) => {
           
           // Create customer if not found
           if (!customer) {
-            customer = await base44.asServiceRole.entities.Customer.create({
+            customer = await base44.entities.Customer.create({
               name: customerName,
               email: customerEmail,
               phone: customerPhone,
@@ -159,7 +145,7 @@ Deno.serve(async (req) => {
           }
           
           // Get the latest job number
-          const allJobs = await base44.asServiceRole.entities.Job.list('-job_number', 1);
+          const allJobs = await base44.entities.Job.list('-job_number', 1);
           const lastJobNumber = allJobs && allJobs[0]?.job_number ? allJobs[0].job_number : 4999;
           const newJobNumber = lastJobNumber + 1;
           
@@ -172,7 +158,7 @@ Deno.serve(async (req) => {
           console.log('Creating job with:', { newJobNumber, address, scheduledDate });
           
           // Create job
-          const job = await base44.asServiceRole.entities.Job.create({
+          const job = await base44.entities.Job.create({
             job_number: newJobNumber,
             customer_id: customer.id,
             customer_name: customer.name,
@@ -202,11 +188,7 @@ Deno.serve(async (req) => {
               }
             );
             
-            if (updateResponse.status === 429) {
-              console.warn('Rate limit hit while updating deal with job number');
-            } else if (!updateResponse.ok) {
-              console.warn('Failed to update deal with job number:', updateResponse.status);
-            } else {
+            if (updateResponse.ok) {
               console.log('✓ Updated Pipedrive deal with job number');
             }
           } catch (updateError) {
@@ -227,15 +209,13 @@ Deno.serve(async (req) => {
             error: `Failed to process deal: ${pipedriveError.message}` 
           }, { status: 500 });
         }
-      } else {
-        console.log('× Stage change not matching criteria');
       }
     }
     
     // Handle deal updates to sync status changes
     if ((event === 'updated.deal' || event === 'changed.deal') && current) {
       const dealId = current.id;
-      const existingJobs = await base44.asServiceRole.entities.Job.filter({
+      const existingJobs = await base44.entities.Job.filter({
         pipedrive_deal_id: dealId.toString()
       });
       
@@ -251,7 +231,7 @@ Deno.serve(async (req) => {
         }
         
         if (newStatus !== job.status) {
-          await base44.asServiceRole.entities.Job.update(job.id, {
+          await base44.entities.Job.update(job.id, {
             status: newStatus
           });
           console.log('✓ Updated job status:', job.id, 'to', newStatus);
