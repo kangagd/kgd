@@ -16,7 +16,20 @@ export default function Jobs() {
   const [selectedJob, setSelectedJob] = useState(null);
   const [editingJob, setEditingJob] = useState(null);
   const [preselectedCustomerId, setPreselectedCustomerId] = useState(null);
+  const [user, setUser] = useState(null);
   const queryClient = useQueryClient();
+
+  useEffect(() => {
+    const loadUser = async () => {
+      try {
+        const currentUser = await base44.auth.me();
+        setUser(currentUser);
+      } catch (error) {
+        console.error("Error loading user:", error);
+      }
+    };
+    loadUser();
+  }, []);
 
   const { data: jobs = [], isLoading } = useQuery({
     queryKey: ['jobs'],
@@ -86,7 +99,14 @@ export default function Jobs() {
     setSelectedJob(null);
   };
 
+  const isTechnician = user?.is_field_technician && user?.role !== 'admin';
+  
   const filteredJobs = jobs.filter(job => {
+    // For technicians, only show their assigned jobs
+    if (isTechnician && job.assigned_to !== user?.email) {
+      return false;
+    }
+    
     const matchesSearch = 
       job.customer_name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
       job.address?.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -121,8 +141,8 @@ export default function Jobs() {
 
   if (selectedJob) {
     return (
-      <div className="p-4 md:p-8 bg-slate-50 min-h-screen">
-        <div className="max-w-4xl mx-auto">
+      <div className="bg-slate-50 min-h-screen">
+        <div className={isTechnician ? "" : "p-4 md:p-8 max-w-4xl mx-auto"}>
           <JobDetails
             job={selectedJob}
             onClose={() => setSelectedJob(null)}
@@ -142,25 +162,33 @@ export default function Jobs() {
   return (
     <div className="p-4 md:p-8 bg-slate-50 min-h-screen">
       <div className="max-w-7xl mx-auto">
-        <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-6 gap-4">
-          <div>
-            <h1 className="text-3xl font-bold text-slate-900">Jobs</h1>
-            <p className="text-slate-500 mt-1">Manage all scheduled jobs</p>
+        {!isTechnician && (
+          <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-6 gap-4">
+            <div>
+              <h1 className="text-3xl font-bold text-slate-900">Jobs</h1>
+              <p className="text-slate-500 mt-1">Manage all scheduled jobs</p>
+            </div>
+            <Button 
+              onClick={() => setShowForm(true)}
+              className="bg-orange-600 hover:bg-orange-700"
+            >
+              <Plus className="w-4 h-4 mr-2" />
+              New Job
+            </Button>
           </div>
-          <Button 
-            onClick={() => setShowForm(true)}
-            className="bg-orange-600 hover:bg-orange-700"
-          >
-            <Plus className="w-4 h-4 mr-2" />
-            New Job
-          </Button>
-        </div>
+        )}
 
-        <div className="flex flex-col md:flex-row gap-4 mb-6">
+        {isTechnician && (
+          <div className="mb-4">
+            <h1 className="text-2xl font-bold text-slate-900">My Jobs</h1>
+          </div>
+        )}
+
+        <div className="flex flex-col gap-4 mb-6">
           <div className="relative flex-1">
             <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-slate-400" />
             <Input
-              placeholder="Search by customer, address, or job number..."
+              placeholder="Search jobs..."
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
               className="pl-10"
@@ -168,11 +196,11 @@ export default function Jobs() {
           </div>
           
           <Tabs value={statusFilter} onValueChange={setStatusFilter}>
-            <TabsList>
+            <TabsList className="w-full grid grid-cols-4">
               <TabsTrigger value="all">All</TabsTrigger>
               <TabsTrigger value="scheduled">Scheduled</TabsTrigger>
-              <TabsTrigger value="in_progress">In Progress</TabsTrigger>
-              <TabsTrigger value="completed">Completed</TabsTrigger>
+              <TabsTrigger value="in_progress">Active</TabsTrigger>
+              <TabsTrigger value="completed">Done</TabsTrigger>
             </TabsList>
           </Tabs>
         </div>

@@ -18,42 +18,20 @@ import {
 } from "@/components/ui/sidebar";
 import { base44 } from "@/api/base44Client";
 
-const navigationItems = [
-  {
-    title: "Dashboard",
-    url: createPageUrl("Dashboard"),
-    icon: LayoutDashboard,
-  },
-  {
-    title: "Schedule",
-    url: createPageUrl("Schedule"),
-    icon: Calendar,
-  },
-  {
-    title: "Jobs",
-    url: createPageUrl("Jobs"),
-    icon: Briefcase,
-  },
-  {
-    title: "Customers",
-    url: createPageUrl("Customers"),
-    icon: UserCircle,
-  },
-  {
-    title: "Price List",
-    url: createPageUrl("PriceList"),
-    icon: DollarSign,
-  },
-  {
-    title: "Check In/Out",
-    url: createPageUrl("CheckIn"),
-    icon: Clock,
-  },
-  {
-    title: "Team",
-    url: createPageUrl("Team"),
-    icon: Users,
-  },
+const adminNavigationItems = [
+  { title: "Dashboard", url: createPageUrl("Dashboard"), icon: LayoutDashboard },
+  { title: "Schedule", url: createPageUrl("Schedule"), icon: Calendar },
+  { title: "Jobs", url: createPageUrl("Jobs"), icon: Briefcase },
+  { title: "Customers", url: createPageUrl("Customers"), icon: UserCircle },
+  { title: "Price List", url: createPageUrl("PriceList"), icon: DollarSign },
+  { title: "Check In/Out", url: createPageUrl("CheckIn"), icon: Clock },
+  { title: "Team", url: createPageUrl("Team"), icon: Users },
+];
+
+const technicianNavigationItems = [
+  { title: "Schedule", url: createPageUrl("Schedule"), icon: Calendar },
+  { title: "Jobs", url: createPageUrl("Jobs"), icon: Briefcase },
+  { title: "Price List", url: createPageUrl("PriceList"), icon: DollarSign },
 ];
 
 export default function Layout({ children, currentPageName }) {
@@ -76,6 +54,63 @@ export default function Layout({ children, currentPageName }) {
     await base44.auth.logout();
   };
 
+  const isTechnician = user?.is_field_technician && user?.role !== 'admin';
+  const navigationItems = isTechnician ? technicianNavigationItems : adminNavigationItems;
+
+  // Mobile-first layout for technicians
+  if (isTechnician) {
+    return (
+      <div className="min-h-screen flex flex-col bg-slate-50">
+        <header className="bg-white border-b border-slate-200 px-4 py-3 sticky top-0 z-50">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-2">
+              <div className="w-8 h-8 bg-gradient-to-br from-orange-500 to-orange-600 rounded-lg flex items-center justify-center">
+                <Wrench className="w-4 h-4 text-white" />
+              </div>
+              <div>
+                <h1 className="font-bold text-slate-900 text-sm">KGD</h1>
+              </div>
+            </div>
+            <div className="flex items-center gap-2">
+              <div className="w-7 h-7 bg-slate-200 rounded-full flex items-center justify-center">
+                <span className="text-slate-700 font-medium text-xs">
+                  {user?.full_name?.charAt(0)?.toUpperCase() || 'U'}
+                </span>
+              </div>
+            </div>
+          </div>
+        </header>
+
+        <main className="flex-1 overflow-auto pb-20">
+          {children}
+        </main>
+
+        <nav className="fixed bottom-0 left-0 right-0 bg-white border-t border-slate-200 px-2 py-2">
+          <div className="flex justify-around items-center max-w-screen-sm mx-auto">
+            {navigationItems.map((item) => {
+              const isActive = location.pathname === item.url;
+              return (
+                <Link
+                  key={item.title}
+                  to={item.url}
+                  className={`flex flex-col items-center gap-1 px-4 py-2 rounded-lg transition-colors ${
+                    isActive 
+                      ? 'text-orange-600 bg-orange-50' 
+                      : 'text-slate-600 hover:text-orange-600 hover:bg-slate-50'
+                  }`}
+                >
+                  <item.icon className="w-5 h-5" />
+                  <span className="text-xs font-medium">{item.title}</span>
+                </Link>
+              );
+            })}
+          </div>
+        </nav>
+      </div>
+    );
+  }
+
+  // Desktop layout for admins
   return (
     <SidebarProvider>
       <div className="min-h-screen flex w-full bg-slate-50">
