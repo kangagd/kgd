@@ -2,7 +2,8 @@ import React, { useState, useEffect } from "react";
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { ArrowLeft, Edit, MapPin, Phone, Calendar, Clock, User, Briefcase, FileText, Image as ImageIcon, DollarSign, Sparkles, LogIn, FileCheck } from "lucide-react";
+import { Textarea } from "@/components/ui/textarea";
+import { ArrowLeft, Edit, MapPin, Phone, Calendar, Clock, User, Briefcase, FileText, Image as ImageIcon, DollarSign, Sparkles, LogIn, FileCheck, Save } from "lucide-react";
 import { format, parseISO } from "date-fns";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { base44 } from "@/api/base44Client";
@@ -31,6 +32,8 @@ export default function JobDetails({ job, onClose, onEdit, onStatusChange }) {
   const [showAssistant, setShowAssistant] = useState(false);
   const [user, setUser] = useState(null);
   const [measurements, setMeasurements] = useState(job.measurements || null);
+  const [notes, setNotes] = useState(job.notes || "");
+  const [isEditingNotes, setIsEditingNotes] = useState(false);
   const queryClient = useQueryClient();
 
   useEffect(() => {
@@ -76,6 +79,14 @@ export default function JobDetails({ job, onClose, onEdit, onStatusChange }) {
     },
   });
 
+  const updateNotesMutation = useMutation({
+    mutationFn: (data) => base44.entities.Job.update(job.id, { notes: data }),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['jobs'] });
+      setIsEditingNotes(false);
+    },
+  });
+
   const isTechnician = user?.is_field_technician && user?.role !== 'admin';
 
   const handleCheckIn = () => {
@@ -85,6 +96,10 @@ export default function JobDetails({ job, onClose, onEdit, onStatusChange }) {
   const handleMeasurementsChange = (data) => {
     setMeasurements(data);
     updateMeasurementsMutation.mutate(data);
+  };
+
+  const handleSaveNotes = () => {
+    updateNotesMutation.mutate(notes);
   };
 
   return (
@@ -196,19 +211,49 @@ export default function JobDetails({ job, onClose, onEdit, onStatusChange }) {
                 </div>
               </div>
 
-              {job.notes && (
-                <div className="border-t pt-3 md:pt-4">
-                  <h3 className="text-sm md:text-base font-semibold text-slate-900 mb-2 flex items-center gap-2">
+              <div className="border-t pt-3 md:pt-4">
+                <div className="flex items-center justify-between mb-2">
+                  <h3 className="text-sm md:text-base font-semibold text-slate-900 flex items-center gap-2">
                     <FileText className="w-4 h-4 text-slate-600" />
                     Notes & Instructions
                   </h3>
-                  <div className="bg-amber-50 border border-amber-200 rounded-lg p-3 md:p-4">
-                    <p className="text-xs md:text-sm text-slate-700 whitespace-pre-wrap leading-relaxed">
-                      {job.notes}
-                    </p>
-                  </div>
+                  {!isEditingNotes ? (
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => setIsEditingNotes(true)}
+                    >
+                      <Edit className="w-3 h-3 mr-1" />
+                      Edit
+                    </Button>
+                  ) : (
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={handleSaveNotes}
+                      disabled={updateNotesMutation.isPending}
+                    >
+                      <Save className="w-3 h-3 mr-1" />
+                      {updateNotesMutation.isPending ? 'Saving...' : 'Save'}
+                    </Button>
+                  )}
                 </div>
-              )}
+                <div className="bg-amber-50 border border-amber-200 rounded-lg p-3 md:p-4">
+                  {isEditingNotes ? (
+                    <Textarea
+                      value={notes}
+                      onChange={(e) => setNotes(e.target.value)}
+                      placeholder="Add notes and instructions for this job..."
+                      rows={5}
+                      className="text-xs md:text-sm bg-white"
+                    />
+                  ) : (
+                    <p className="text-xs md:text-sm text-slate-700 whitespace-pre-wrap leading-relaxed">
+                      {notes || "No notes added yet. Click Edit to add notes and instructions."}
+                    </p>
+                  )}
+                </div>
+              </div>
 
               {job.additional_info && (
                 <div>
