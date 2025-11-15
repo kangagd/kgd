@@ -3,7 +3,7 @@ import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Textarea } from "@/components/ui/textarea";
-import { ArrowLeft, Edit, MapPin, Phone, Calendar, Clock, User, Briefcase, FileText, Image as ImageIcon, DollarSign, Sparkles, LogIn, FileCheck } from "lucide-react";
+import { ArrowLeft, Edit, MapPin, Phone, Calendar, Clock, User, Briefcase, FileText, Image as ImageIcon, DollarSign, Sparkles, LogIn, FileCheck, History } from "lucide-react";
 import { format, parseISO } from "date-fns";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { base44 } from "@/api/base44Client";
@@ -11,6 +11,7 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import PriceListModal from "./PriceListModal";
 import TechnicianAssistant from "./TechnicianAssistant";
 import MeasurementsForm from "./MeasurementsForm";
+import ChangeHistoryModal from "./ChangeHistoryModal";
 
 const statusColors = {
   scheduled: "bg-blue-100 text-blue-800 border-blue-200",
@@ -30,6 +31,7 @@ const outcomeColors = {
 export default function JobDetails({ job, onClose, onEdit, onStatusChange }) {
   const [showPriceList, setShowPriceList] = useState(false);
   const [showAssistant, setShowAssistant] = useState(false);
+  const [showHistory, setShowHistory] = useState(false);
   const [user, setUser] = useState(null);
   const [measurements, setMeasurements] = useState(job.measurements || null);
   const [notes, setNotes] = useState(job.notes || "");
@@ -79,6 +81,22 @@ export default function JobDetails({ job, onClose, onEdit, onStatusChange }) {
     },
   });
 
+  const logChange = async (fieldName, oldValue, newValue) => {
+    if (!user) return;
+    try {
+      await base44.entities.ChangeHistory.create({
+        job_id: job.id,
+        field_name: fieldName,
+        old_value: oldValue || "",
+        new_value: newValue || "",
+        changed_by: user.email,
+        changed_by_name: user.full_name,
+      });
+    } catch (error) {
+      console.error("Error logging change:", error);
+    }
+  };
+
   const updateNotesMutation = useMutation({
     mutationFn: (data) => base44.entities.Job.update(job.id, { notes: data }),
     onSuccess: () => {
@@ -106,12 +124,14 @@ export default function JobDetails({ job, onClose, onEdit, onStatusChange }) {
 
   const handleNotesBlur = () => {
     if (notes !== job.notes) {
+      logChange('notes', job.notes, notes);
       updateNotesMutation.mutate(notes);
     }
   };
 
   const handleAdditionalInfoBlur = () => {
     if (additionalInfo !== job.additional_info) {
+      logChange('additional_info', job.additional_info, additionalInfo);
       updateAdditionalInfoMutation.mutate(additionalInfo);
     }
   };
@@ -131,6 +151,15 @@ export default function JobDetails({ job, onClose, onEdit, onStatusChange }) {
               </div>
             </div>
             <div className="flex gap-2">
+              <Button 
+                variant="outline"
+                size="sm"
+                onClick={() => setShowHistory(true)}
+                className="h-8 w-8 md:h-9 md:w-auto md:px-3"
+              >
+                <History className="w-4 h-4 md:mr-1" />
+                <span className="hidden md:inline text-xs">History</span>
+              </Button>
               <Button 
                 variant="outline"
                 onClick={() => setShowPriceList(true)}
@@ -362,6 +391,12 @@ export default function JobDetails({ job, onClose, onEdit, onStatusChange }) {
       <PriceListModal 
         open={showPriceList} 
         onClose={() => setShowPriceList(false)} 
+      />
+
+      <ChangeHistoryModal
+        open={showHistory}
+        onClose={() => setShowHistory(false)}
+        jobId={job.id}
       />
 
       {!isTechnician && (
