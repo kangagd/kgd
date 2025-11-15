@@ -16,8 +16,8 @@ Deno.serve(async (req) => {
     console.log('Previous stage_id:', previous?.stage_id);
     console.log('Full body:', JSON.stringify(body, null, 2));
     
-    // Handle deal stage changes
-    if (event === 'updated.deal' && current && previous) {
+    // Handle deal stage changes - Pipedrive uses "change.deal" event type
+    if ((event === 'updated.deal' || event === 'changed.deal') && current && previous) {
       const currentStage = current.stage_id;
       const previousStage = previous.stage_id;
       
@@ -233,7 +233,7 @@ Deno.serve(async (req) => {
     }
     
     // Handle deal updates to sync status changes
-    if (event === 'updated.deal' && current) {
+    if ((event === 'updated.deal' || event === 'changed.deal') && current) {
       const dealId = current.id;
       const existingJobs = await base44.asServiceRole.entities.Job.filter({
         pipedrive_deal_id: dealId.toString()
