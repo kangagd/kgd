@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from "react";
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -215,13 +214,13 @@ export default function JobDetails({ job, onClose, onEdit, onStatusChange }) {
           <Tabs defaultValue="details" className="w-full">
             <TabsList className="w-full grid grid-cols-4">
               <TabsTrigger value="details" className="text-xs md:text-sm">Details</TabsTrigger>
-              <TabsTrigger value="form" className="text-xs md:text-sm">
-                <FileCheck className="w-3 h-3 md:w-4 md:h-4 md:mr-2" />
-                <span className="hidden md:inline">Form</span>
-              </TabsTrigger>
               <TabsTrigger value="files" className="text-xs md:text-sm">
                 <ImageIcon className="w-3 h-3 md:w-4 md:h-4 md:mr-2" />
                 <span className="hidden md:inline">Files</span>
+              </TabsTrigger>
+              <TabsTrigger value="form" className="text-xs md:text-sm">
+                <FileCheck className="w-3 h-3 md:w-4 md:h-4 md:mr-2" />
+                <span className="hidden md:inline">Form</span>
               </TabsTrigger>
               {!isTechnician && (
                 <TabsTrigger value="assistant" className="text-xs md:text-sm">
@@ -319,16 +318,6 @@ export default function JobDetails({ job, onClose, onEdit, onStatusChange }) {
               </div>
             </TabsContent>
 
-            <TabsContent value="form" className="mt-3 md:mt-4">
-              <div className="space-y-3 md:space-y-4">
-                <h3 className="text-sm md:text-base font-semibold text-slate-900">Measurements & Form</h3>
-                <MeasurementsForm
-                  measurements={measurements}
-                  onChange={handleMeasurementsChange}
-                />
-              </div>
-            </TabsContent>
-
             <TabsContent value="files" className="mt-3 md:mt-4">
               <div className="space-y-3 md:space-y-4">
                 <h3 className="text-sm md:text-base font-semibold text-slate-900">Photos & Attachments</h3>
@@ -379,6 +368,16 @@ export default function JobDetails({ job, onClose, onEdit, onStatusChange }) {
                     </div>
                   )}
                 </div>
+              </div>
+            </TabsContent>
+
+            <TabsContent value="form" className="mt-3 md:mt-4">
+              <div className="space-y-3 md:space-y-4">
+                <h3 className="text-sm md:text-base font-semibold text-slate-900">Measurements & Form</h3>
+                <MeasurementsForm
+                  measurements={measurements}
+                  onChange={handleMeasurementsChange}
+                />
               </div>
             </TabsContent>
 
