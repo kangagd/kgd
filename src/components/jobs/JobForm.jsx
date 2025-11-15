@@ -26,6 +26,7 @@ export default function JobForm({ job, jobTypes, technicians, onSubmit, onCancel
     customer_email: "",
     customer_type: "",
     address: "",
+    door_gate_type: "",
     job_type_id: "",
     job_type_name: "",
     assigned_to: "",
@@ -240,6 +241,21 @@ export default function JobForm({ job, jobTypes, technicians, onSubmit, onCancel
             </div>
 
             <div className="grid md:grid-cols-2 gap-6">
+              <div className="space-y-2">
+                <Label htmlFor="door_gate_type">Type</Label>
+                <Select value={formData.door_gate_type} onValueChange={(val) => setFormData({ ...formData, door_gate_type: val })}>
+                  <SelectTrigger>
+                    <SelectValue placeholder="Select type" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="Garage Door">Garage Door</SelectItem>
+                    <SelectItem value="Gate">Gate</SelectItem>
+                    <SelectItem value="Roller Shutter">Roller Shutter</SelectItem>
+                    <SelectItem value="Garage & Gate">Garage & Gate</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+
               <div className="space-y-2">
                 <Label htmlFor="job_type">Job Type</Label>
                 <Select value={formData.job_type_id} onValueChange={handleJobTypeChange}>
