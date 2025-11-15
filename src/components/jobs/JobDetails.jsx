@@ -1,10 +1,12 @@
+
 import React, { useState } from "react";
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { ArrowLeft, Edit, MapPin, Phone, Mail, Calendar, Clock, User, Briefcase, FileText, Image as ImageIcon, ExternalLink, DollarSign } from "lucide-react";
+import { ArrowLeft, Edit, MapPin, Phone, Mail, Calendar, Clock, User, Briefcase, FileText, Image as ImageIcon, ExternalLink, DollarSign, Sparkles } from "lucide-react";
 import { format, parseISO } from "date-fns";
 import PriceListModal from "./PriceListModal";
+import TechnicianAssistant from "./TechnicianAssistant";
 
 const statusColors = {
   scheduled: "bg-blue-100 text-blue-800 border-blue-200",
@@ -15,6 +17,7 @@ const statusColors = {
 
 export default function JobDetails({ job, onClose, onEdit, onStatusChange }) {
   const [showPriceList, setShowPriceList] = useState(false);
+  const [showAssistant, setShowAssistant] = useState(false);
 
   return (
     <>
@@ -31,6 +34,14 @@ export default function JobDetails({ job, onClose, onEdit, onStatusChange }) {
               </div>
             </div>
             <div className="flex gap-2">
+              <Button 
+                variant="outline"
+                onClick={() => setShowAssistant(true)}
+                className="border-orange-200 text-orange-700 hover:bg-orange-50"
+              >
+                <Sparkles className="w-4 h-4 mr-2" />
+                AI Assistant
+              </Button>
               <Button 
                 variant="outline"
                 onClick={() => setShowPriceList(true)}
@@ -234,6 +245,12 @@ export default function JobDetails({ job, onClose, onEdit, onStatusChange }) {
       <PriceListModal 
         open={showPriceList} 
         onClose={() => setShowPriceList(false)} 
+      />
+
+      <TechnicianAssistant
+        open={showAssistant}
+        onClose={() => setShowAssistant(false)}
+        job={job}
       />
     </>
   );
