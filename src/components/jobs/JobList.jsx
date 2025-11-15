@@ -2,7 +2,7 @@ import React, { useState, useEffect } from "react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { MapPin, Calendar, Clock, User, Briefcase, FileText, Tag, LogIn } from "lucide-react";
+import { MapPin, Calendar, Clock, User, Briefcase, FileText, Tag, LogIn, Package } from "lucide-react";
 import { format, parseISO } from "date-fns";
 import { base44 } from "@/api/base44Client";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
@@ -34,6 +34,14 @@ const customerTypeColors = {
   "Builder": "bg-blue-100 text-blue-700",
   "Real Estate - Tenant": "bg-green-100 text-green-700",
   "Strata - Owner": "bg-amber-100 text-amber-700",
+};
+
+const productColors = {
+  "Garage Door": "bg-blue-100 text-blue-700",
+  "Gate": "bg-green-100 text-green-700",
+  "Roller Shutter": "bg-purple-100 text-purple-700",
+  "Multiple": "bg-orange-100 text-orange-700",
+  "Custom Garage Door": "bg-pink-100 text-pink-700",
 };
 
 export default function JobList({ jobs, isLoading, onSelectJob }) {
@@ -176,6 +184,13 @@ export default function JobList({ jobs, isLoading, onSelectJob }) {
                   <Badge variant="outline" className="text-slate-700">
                     <User className="w-3 h-3 mr-1" />
                     {job.assigned_to_name}
+                  </Badge>
+                )}
+                
+                {job.product && (
+                  <Badge variant="outline" className={productColors[job.product]}>
+                    <Package className="w-3 h-3 mr-1" />
+                    {job.product}
                   </Badge>
                 )}
                 
