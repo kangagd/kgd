@@ -51,7 +51,7 @@ Deno.serve(async (req) => {
     }
 
     // Fetch full deal details from Pipedrive to get person info
-    const apiToken = Deno.env.get('PIPEDRIVE_API_TOKEN');
+    const apiToken = Deno.env.get('Pipedrive');
     const dealResponse = await fetch(
       `https://api.pipedrive.com/v1/deals/${deal.id}?api_token=${apiToken}`
     );
