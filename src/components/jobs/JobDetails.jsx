@@ -18,6 +18,7 @@ import CheckOutDialog from "./CheckOutDialog";
 const statusColors = {
   scheduled: "bg-blue-100 text-blue-800 border-blue-200",
   in_progress: "bg-orange-100 text-orange-800 border-orange-200",
+  open: "bg-purple-100 text-purple-800 border-purple-200",
   completed: "bg-green-100 text-green-800 border-green-200",
   cancelled: "bg-slate-100 text-slate-800 border-slate-200",
 };
@@ -28,6 +29,14 @@ const outcomeColors = {
   send_invoice: "bg-blue-100 text-blue-800 border-blue-200",
   completed: "bg-green-100 text-green-800 border-green-200",
   return_visit_required: "bg-amber-100 text-amber-800 border-amber-200",
+};
+
+const outcomeToStatusMap = {
+  send_invoice: 'completed',
+  completed: 'completed',
+  return_visit_required: 'scheduled',
+  new_quote: 'open',
+  update_quote: 'open',
 };
 
 export default function JobDetails({ job, onClose, onEdit, onStatusChange }) {
@@ -96,8 +105,10 @@ export default function JobDetails({ job, onClose, onEdit, onStatusChange }) {
         duration_hours: Math.round(durationHours * 100) / 100,
       });
 
+      const newStatus = outcomeToStatusMap[outcome] || 'completed';
+
       await base44.entities.Job.update(job.id, {
-        status: 'completed',
+        status: newStatus,
         outcome: outcome,
       });
     },
@@ -392,29 +403,6 @@ export default function JobDetails({ job, onClose, onEdit, onStatusChange }) {
                   />
                 </div>
               </div>
-
-              {!isTechnician && (
-                <div className="flex flex-col gap-2 pt-2">
-                  {job.status === 'scheduled' && (
-                    <Button
-                      onClick={() => onStatusChange('in_progress')}
-                      className="w-full bg-orange-600 hover:bg-orange-700"
-                      size="lg"
-                    >
-                      Start Job
-                    </Button>
-                  )}
-                  {job.status === 'in_progress' && (
-                    <Button
-                      onClick={() => onStatusChange('completed')}
-                      className="w-full bg-green-600 hover:bg-green-700"
-                      size="lg"
-                    >
-                      Complete Job
-                    </Button>
-                  )}
-                </div>
-              )}
             </TabsContent>
 
             <TabsContent value="files" className="mt-3 md:mt-4">
