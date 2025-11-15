@@ -10,7 +10,11 @@ Deno.serve(async (req) => {
     const current = body.current;
     const previous = body.previous;
     
-    console.log('Pipedrive webhook received:', event);
+    console.log('=== Pipedrive webhook received ===');
+    console.log('Event:', event);
+    console.log('Current stage_id:', current?.stage_id);
+    console.log('Previous stage_id:', previous?.stage_id);
+    console.log('Full body:', JSON.stringify(body, null, 2));
     
     // Handle deal stage changes
     if (event === 'updated.deal' && current && previous) {
@@ -20,8 +24,12 @@ Deno.serve(async (req) => {
       // Check if deal moved to "Job Booked" stage
       const JOB_BOOKED_STAGE_ID = parseInt(Deno.env.get('PIPEDRIVE_JOB_BOOKED_STAGE_ID') || '0');
       
+      console.log('Job Booked Stage ID from env:', JOB_BOOKED_STAGE_ID);
+      console.log('Stage changed?', currentStage !== previousStage);
+      console.log('Matches Job Booked stage?', currentStage === JOB_BOOKED_STAGE_ID);
+      
       if (currentStage === JOB_BOOKED_STAGE_ID && currentStage !== previousStage) {
-        console.log('Deal moved to Job Booked stage:', current.id);
+        console.log('✓ Deal moved to Job Booked stage:', current.id);
         
         const dealId = current.id;
         const apiToken = Deno.env.get('PIPEDRIVE_API_TOKEN');
@@ -71,6 +79,7 @@ Deno.serve(async (req) => {
           }
           
           const deal = dealData.data;
+          console.log('✓ Fetched deal from Pipedrive:', deal.title);
           
           // Fetch person (contact) details
           let personData = null;
@@ -86,6 +95,7 @@ Deno.serve(async (req) => {
                 const personResult = await personResponse.json();
                 if (personResult.success) {
                   personData = personResult.data;
+                  console.log('✓ Fetched person data:', personData.name);
                 }
               }
             } catch (personError) {
@@ -99,7 +109,7 @@ Deno.serve(async (req) => {
           });
           
           if (existingJobs.length > 0) {
-            console.log('Job already exists for deal:', dealId);
+            console.log('! Job already exists for deal:', dealId);
             return Response.json({ 
               success: true, 
               message: 'Job already exists',
@@ -113,6 +123,8 @@ Deno.serve(async (req) => {
           const customerEmail = personData?.email?.[0]?.value || '';
           const customerPhone = personData?.phone?.[0]?.value || '';
           
+          console.log('Customer data:', { customerName, customerEmail, customerPhone });
+          
           // Try to find existing customer by email or phone
           if (customerEmail) {
             const existingCustomers = await base44.asServiceRole.entities.Customer.filter({
@@ -120,6 +132,7 @@ Deno.serve(async (req) => {
             });
             if (existingCustomers.length > 0) {
               customer = existingCustomers[0];
+              console.log('✓ Found existing customer by email:', customer.id);
             }
           }
           
@@ -129,6 +142,7 @@ Deno.serve(async (req) => {
             });
             if (existingCustomers.length > 0) {
               customer = existingCustomers[0];
+              console.log('✓ Found existing customer by phone:', customer.id);
             }
           }
           
@@ -141,6 +155,7 @@ Deno.serve(async (req) => {
               status: 'active',
               notes: `Imported from Pipedrive deal #${dealId}`
             });
+            console.log('✓ Created new customer:', customer.id);
           }
           
           // Get the latest job number
@@ -153,6 +168,8 @@ Deno.serve(async (req) => {
           
           // Parse expected close date for scheduled date
           const scheduledDate = deal.expected_close_date || new Date().toISOString().split('T')[0];
+          
+          console.log('Creating job with:', { newJobNumber, address, scheduledDate });
           
           // Create job
           const job = await base44.asServiceRole.entities.Job.create({
@@ -170,7 +187,7 @@ Deno.serve(async (req) => {
             pipedrive_deal_id: dealId.toString()
           });
           
-          console.log('Created job:', job.id, 'for deal:', dealId);
+          console.log('✓✓✓ SUCCESS: Created job:', job.id, 'Job #', newJobNumber);
           
           // Update deal in Pipedrive with job number
           try {
@@ -189,6 +206,8 @@ Deno.serve(async (req) => {
               console.warn('Rate limit hit while updating deal with job number');
             } else if (!updateResponse.ok) {
               console.warn('Failed to update deal with job number:', updateResponse.status);
+            } else {
+              console.log('✓ Updated Pipedrive deal with job number');
             }
           } catch (updateError) {
             console.warn('Failed to update deal with job number:', updateError.message);
@@ -202,12 +221,14 @@ Deno.serve(async (req) => {
           });
           
         } catch (pipedriveError) {
-          console.error('Error processing Pipedrive deal:', pipedriveError);
+          console.error('ERROR processing Pipedrive deal:', pipedriveError);
           return Response.json({ 
             success: false, 
             error: `Failed to process deal: ${pipedriveError.message}` 
           }, { status: 500 });
         }
+      } else {
+        console.log('× Stage change not matching criteria');
       }
     }
     
@@ -233,7 +254,7 @@ Deno.serve(async (req) => {
           await base44.asServiceRole.entities.Job.update(job.id, {
             status: newStatus
           });
-          console.log('Updated job status:', job.id, 'to', newStatus);
+          console.log('✓ Updated job status:', job.id, 'to', newStatus);
         }
       }
     }
@@ -241,7 +262,7 @@ Deno.serve(async (req) => {
     return Response.json({ success: true, message: 'Webhook processed' });
     
   } catch (error) {
-    console.error('Webhook error:', error);
+    console.error('WEBHOOK ERROR:', error);
     return Response.json({ 
       success: false, 
       error: `Internal error: ${error.message}` 
