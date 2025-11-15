@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from "react";
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -154,12 +155,12 @@ export default function JobDetails({ job, onClose, onEdit, onStatusChange }) {
               <div className="flex-1 min-w-0">
                 <CardTitle className="text-lg md:text-2xl font-bold">{job.customer_name}</CardTitle>
                 <p className="text-xs md:text-sm text-slate-500 mt-1">Job #{job.job_number}</p>
-                <div className="flex items-center gap-1.5 mt-2">
+                <div className="flex items-center gap-1 mt-2">
                   <MapPin className="w-4 h-4 text-orange-600 flex-shrink-0" />
                   <span className="text-sm md:text-base font-bold text-slate-900 flex-1">{job.address}</span>
                   <button
                     onClick={handleNavigate}
-                    className="flex-shrink-0 p-1.5 rounded-lg bg-orange-600 hover:bg-orange-700 text-white transition-colors"
+                    className="flex-shrink-0 p-1 rounded-lg bg-orange-600 hover:bg-orange-700 text-white transition-colors ml-1"
                     title="Navigate with Google Maps"
                   >
                     <Car className="w-4 h-4" />
