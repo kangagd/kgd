@@ -3,7 +3,7 @@ import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Textarea } from "@/components/ui/textarea";
-import { ArrowLeft, Edit, MapPin, Phone, Calendar, Clock, User, Briefcase, FileText, Image as ImageIcon, DollarSign, Sparkles, LogIn, FileCheck, Save } from "lucide-react";
+import { ArrowLeft, Edit, MapPin, Phone, Calendar, Clock, User, Briefcase, FileText, Image as ImageIcon, DollarSign, Sparkles, LogIn, FileCheck } from "lucide-react";
 import { format, parseISO } from "date-fns";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { base44 } from "@/api/base44Client";
@@ -33,7 +33,7 @@ export default function JobDetails({ job, onClose, onEdit, onStatusChange }) {
   const [user, setUser] = useState(null);
   const [measurements, setMeasurements] = useState(job.measurements || null);
   const [notes, setNotes] = useState(job.notes || "");
-  const [isEditingNotes, setIsEditingNotes] = useState(false);
+  const [additionalInfo, setAdditionalInfo] = useState(job.additional_info || "");
   const queryClient = useQueryClient();
 
   useEffect(() => {
@@ -83,7 +83,13 @@ export default function JobDetails({ job, onClose, onEdit, onStatusChange }) {
     mutationFn: (data) => base44.entities.Job.update(job.id, { notes: data }),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['jobs'] });
-      setIsEditingNotes(false);
+    },
+  });
+
+  const updateAdditionalInfoMutation = useMutation({
+    mutationFn: (data) => base44.entities.Job.update(job.id, { additional_info: data }),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['jobs'] });
     },
   });
 
@@ -98,8 +104,16 @@ export default function JobDetails({ job, onClose, onEdit, onStatusChange }) {
     updateMeasurementsMutation.mutate(data);
   };
 
-  const handleSaveNotes = () => {
-    updateNotesMutation.mutate(notes);
+  const handleNotesBlur = () => {
+    if (notes !== job.notes) {
+      updateNotesMutation.mutate(notes);
+    }
+  };
+
+  const handleAdditionalInfoBlur = () => {
+    if (additionalInfo !== job.additional_info) {
+      updateAdditionalInfoMutation.mutate(additionalInfo);
+    }
   };
 
   return (
@@ -212,57 +226,33 @@ export default function JobDetails({ job, onClose, onEdit, onStatusChange }) {
               </div>
 
               <div className="border-t pt-3 md:pt-4">
-                <div className="flex items-center justify-between mb-2">
-                  <h3 className="text-sm md:text-base font-semibold text-slate-900 flex items-center gap-2">
-                    <FileText className="w-4 h-4 text-slate-600" />
-                    Notes & Instructions
-                  </h3>
-                  {!isEditingNotes ? (
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      onClick={() => setIsEditingNotes(true)}
-                    >
-                      <Edit className="w-3 h-3 mr-1" />
-                      Edit
-                    </Button>
-                  ) : (
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      onClick={handleSaveNotes}
-                      disabled={updateNotesMutation.isPending}
-                    >
-                      <Save className="w-3 h-3 mr-1" />
-                      {updateNotesMutation.isPending ? 'Saving...' : 'Save'}
-                    </Button>
-                  )}
-                </div>
+                <h3 className="text-sm md:text-base font-semibold text-slate-900 mb-2 flex items-center gap-2">
+                  <FileText className="w-4 h-4 text-slate-600" />
+                  Notes & Instructions
+                </h3>
                 <div className="bg-amber-50 border border-amber-200 rounded-lg p-3 md:p-4">
-                  {isEditingNotes ? (
-                    <Textarea
-                      value={notes}
-                      onChange={(e) => setNotes(e.target.value)}
-                      placeholder="Add notes and instructions for this job..."
-                      rows={5}
-                      className="text-xs md:text-sm bg-white"
-                    />
-                  ) : (
-                    <p className="text-xs md:text-sm text-slate-700 whitespace-pre-wrap leading-relaxed">
-                      {notes || "No notes added yet. Click Edit to add notes and instructions."}
-                    </p>
-                  )}
+                  <Textarea
+                    value={notes}
+                    onChange={(e) => setNotes(e.target.value)}
+                    onBlur={handleNotesBlur}
+                    placeholder="Add notes and instructions for this job..."
+                    rows={4}
+                    className="text-xs md:text-sm bg-white border-amber-300 focus:border-amber-400 focus:ring-amber-400"
+                  />
                 </div>
               </div>
 
-              {job.additional_info && (
-                <div>
-                  <h3 className="text-xs md:text-sm font-medium text-slate-500 mb-2">Additional Information</h3>
-                  <p className="text-xs md:text-sm text-slate-700 whitespace-pre-wrap bg-slate-50 p-2 md:p-3 rounded-lg">
-                    {job.additional_info}
-                  </p>
-                </div>
-              )}
+              <div>
+                <h3 className="text-sm md:text-base font-semibold text-slate-900 mb-2">Additional Information</h3>
+                <Textarea
+                  value={additionalInfo}
+                  onChange={(e) => setAdditionalInfo(e.target.value)}
+                  onBlur={handleAdditionalInfoBlur}
+                  placeholder="Add any additional information..."
+                  rows={3}
+                  className="text-xs md:text-sm bg-slate-50 border-slate-300"
+                />
+              </div>
 
               <div className="flex flex-col gap-2 pt-2">
                 {!activeCheckIn && job.status === 'scheduled' && (
