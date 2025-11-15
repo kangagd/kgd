@@ -33,6 +33,7 @@ export default function JobForm({ job, jobTypes, technicians, onSubmit, onCancel
     scheduled_date: "",
     scheduled_time: "",
     status: "scheduled",
+    outcome: "",
     priority: "medium",
     notes: "",
     additional_info: "",
@@ -285,6 +286,22 @@ export default function JobForm({ job, jobTypes, technicians, onSubmit, onCancel
                     <SelectItem value="in_progress">In Progress</SelectItem>
                     <SelectItem value="completed">Completed</SelectItem>
                     <SelectItem value="cancelled">Cancelled</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="outcome">Outcome</Label>
+                <Select value={formData.outcome} onValueChange={(val) => setFormData({ ...formData, outcome: val })}>
+                  <SelectTrigger>
+                    <SelectValue placeholder="Select outcome" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="new_quote">New Quote</SelectItem>
+                    <SelectItem value="update_quote">Update Quote</SelectItem>
+                    <SelectItem value="send_invoice">Send Invoice</SelectItem>
+                    <SelectItem value="completed">Completed</SelectItem>
+                    <SelectItem value="return_visit_required">Return Visit Required</SelectItem>
                   </SelectContent>
                 </Select>
               </div>
