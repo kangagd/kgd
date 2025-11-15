@@ -86,98 +86,98 @@ export default function Dashboard() {
   };
 
   return (
-    <div className="p-4 md:p-8 bg-slate-50 min-h-screen">
+    <div className="p-2 md:p-8 bg-slate-50 min-h-screen">
       <div className="max-w-7xl mx-auto">
-        <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-8 gap-4">
+        <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-4 md:mb-8 gap-3">
           <div>
-            <h1 className="text-3xl font-bold text-slate-900">
+            <h1 className="text-2xl md:text-3xl font-bold text-slate-900">
               Good {new Date().getHours() < 12 ? 'Morning' : new Date().getHours() < 18 ? 'Afternoon' : 'Evening'}, {user?.full_name?.split(' ')[0] || 'there'}!
             </h1>
-            <p className="text-slate-500 mt-1">Here's what's happening today</p>
+            <p className="text-slate-500 mt-1 text-sm">Here's what's happening today</p>
           </div>
           <Button
             onClick={() => window.location.href = '/Jobs?action=new'}
-            className="bg-orange-600 hover:bg-orange-700"
+            className="bg-orange-600 hover:bg-orange-700 w-full md:w-auto"
           >
             <Plus className="w-4 h-4 mr-2" />
             New Job
           </Button>
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
+        <div className="grid grid-cols-2 md:grid-cols-2 lg:grid-cols-4 gap-2 md:gap-4 mb-4 md:mb-8">
           <div 
             onClick={() => handleCardClick('today')}
-            className="bg-white rounded-xl border border-slate-200 p-6 cursor-pointer hover:shadow-lg hover:border-blue-300 transition-all"
+            className="bg-white rounded-lg md:rounded-xl border border-slate-200 p-3 md:p-6 cursor-pointer hover:shadow-lg hover:border-blue-300 transition-all"
           >
-            <div className="flex items-center justify-between mb-2">
-              <h3 className="text-sm font-medium text-slate-500">Today's Jobs</h3>
-              <div className="w-10 h-10 bg-blue-100 rounded-lg flex items-center justify-center">
-                <span className="text-blue-600 font-bold text-lg">{todayJobs.length}</span>
+            <div className="flex items-center justify-between mb-1 md:mb-2">
+              <h3 className="text-xs md:text-sm font-medium text-slate-500">Today's Jobs</h3>
+              <div className="w-8 h-8 md:w-10 md:h-10 bg-blue-100 rounded-lg flex items-center justify-center">
+                <span className="text-blue-600 font-bold text-base md:text-lg">{todayJobs.length}</span>
               </div>
             </div>
-            <p className="text-2xl font-bold text-slate-900">{todayJobs.length}</p>
+            <p className="text-xl md:text-2xl font-bold text-slate-900">{todayJobs.length}</p>
             <p className="text-xs text-slate-500 mt-1">Click to view →</p>
           </div>
 
           <div 
             onClick={() => handleCardClick('active')}
-            className="bg-white rounded-xl border border-slate-200 p-6 cursor-pointer hover:shadow-lg hover:border-orange-300 transition-all"
+            className="bg-white rounded-lg md:rounded-xl border border-slate-200 p-3 md:p-6 cursor-pointer hover:shadow-lg hover:border-orange-300 transition-all"
           >
-            <div className="flex items-center justify-between mb-2">
-              <h3 className="text-sm font-medium text-slate-500">Active Jobs</h3>
-              <div className="w-10 h-10 bg-orange-100 rounded-lg flex items-center justify-center">
-                <span className="text-orange-600 font-bold text-lg">{activeJobs.length}</span>
+            <div className="flex items-center justify-between mb-1 md:mb-2">
+              <h3 className="text-xs md:text-sm font-medium text-slate-500">Active Jobs</h3>
+              <div className="w-8 h-8 md:w-10 md:h-10 bg-orange-100 rounded-lg flex items-center justify-center">
+                <span className="text-orange-600 font-bold text-base md:text-lg">{activeJobs.length}</span>
               </div>
             </div>
-            <p className="text-2xl font-bold text-slate-900">{activeJobs.length}</p>
+            <p className="text-xl md:text-2xl font-bold text-slate-900">{activeJobs.length}</p>
             <p className="text-xs text-slate-500 mt-1">Click to view →</p>
           </div>
 
           <div 
             onClick={() => handleCardClick('completed')}
-            className="bg-white rounded-xl border border-slate-200 p-6 cursor-pointer hover:shadow-lg hover:border-green-300 transition-all"
+            className="bg-white rounded-lg md:rounded-xl border border-slate-200 p-3 md:p-6 cursor-pointer hover:shadow-lg hover:border-green-300 transition-all"
           >
-            <div className="flex items-center justify-between mb-2">
-              <h3 className="text-sm font-medium text-slate-500">Completed</h3>
-              <div className="w-10 h-10 bg-green-100 rounded-lg flex items-center justify-center">
-                <span className="text-green-600 font-bold text-lg">{completedToday.length}</span>
+            <div className="flex items-center justify-between mb-1 md:mb-2">
+              <h3 className="text-xs md:text-sm font-medium text-slate-500">Completed</h3>
+              <div className="w-8 h-8 md:w-10 md:h-10 bg-green-100 rounded-lg flex items-center justify-center">
+                <span className="text-green-600 font-bold text-base md:text-lg">{completedToday.length}</span>
               </div>
             </div>
-            <p className="text-2xl font-bold text-slate-900">{completedToday.length}</p>
+            <p className="text-xl md:text-2xl font-bold text-slate-900">{completedToday.length}</p>
             <p className="text-xs text-slate-500 mt-1">Click to view →</p>
           </div>
 
           <div 
             onClick={() => navigate(createPageUrl("Jobs"))}
-            className="bg-white rounded-xl border border-slate-200 p-6 cursor-pointer hover:shadow-lg hover:border-purple-300 transition-all"
+            className="bg-white rounded-lg md:rounded-xl border border-slate-200 p-3 md:p-6 cursor-pointer hover:shadow-lg hover:border-purple-300 transition-all"
           >
-            <div className="flex items-center justify-between mb-2">
-              <h3 className="text-sm font-medium text-slate-500">Total Jobs</h3>
-              <div className="w-10 h-10 bg-purple-100 rounded-lg flex items-center justify-center">
-                <span className="text-purple-600 font-bold text-lg">{jobs.length}</span>
+            <div className="flex items-center justify-between mb-1 md:mb-2">
+              <h3 className="text-xs md:text-sm font-medium text-slate-500">Total Jobs</h3>
+              <div className="w-8 h-8 md:w-10 md:h-10 bg-purple-100 rounded-lg flex items-center justify-center">
+                <span className="text-purple-600 font-bold text-base md:text-lg">{jobs.length}</span>
               </div>
             </div>
-            <p className="text-2xl font-bold text-slate-900">{jobs.length}</p>
+            <p className="text-xl md:text-2xl font-bold text-slate-900">{jobs.length}</p>
             <p className="text-xs text-slate-500 mt-1">Click to view →</p>
           </div>
         </div>
 
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-          <div className="bg-white rounded-xl border border-slate-200 p-6">
-            <h2 className="text-lg font-semibold text-slate-900 mb-4">Today's Schedule</h2>
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-3 md:gap-6">
+          <div className="bg-white rounded-lg md:rounded-xl border border-slate-200 p-3 md:p-6">
+            <h2 className="text-base md:text-lg font-semibold text-slate-900 mb-3 md:mb-4">Today's Schedule</h2>
             {todayJobs.length === 0 ? (
-              <p className="text-slate-500 text-center py-8">No jobs scheduled for today</p>
+              <p className="text-slate-500 text-center py-6 md:py-8 text-sm">No jobs scheduled for today</p>
             ) : (
-              <div className="space-y-3">
+              <div className="space-y-2 md:space-y-3">
                 {todayJobs.map(job => (
                   <div 
                     key={job.id} 
-                    className="flex items-center justify-between p-3 rounded-lg border border-slate-200 hover:bg-slate-50 cursor-pointer transition-colors"
+                    className="flex items-center justify-between p-2 md:p-3 rounded-lg border border-slate-200 hover:bg-slate-50 cursor-pointer transition-colors"
                     onClick={() => window.location.href = `/Jobs?id=${job.id}`}
                   >
                     <div className="flex-1">
                       <div className="flex items-center gap-2 mb-1">
-                        <span className="font-medium text-slate-900">#{job.job_number}</span>
+                        <span className="font-medium text-slate-900 text-sm">#{job.job_number}</span>
                         <span className={`text-xs px-2 py-0.5 rounded-full ${statusColors[job.status]}`}>
                           {statusLabels[job.status] || job.status}
                         </span>
@@ -191,16 +191,16 @@ export default function Dashboard() {
             )}
           </div>
 
-          <div className="bg-white rounded-xl border border-slate-200 p-6">
-            <h2 className="text-lg font-semibold text-slate-900 mb-4">Recent Check-ins</h2>
+          <div className="bg-white rounded-lg md:rounded-xl border border-slate-200 p-3 md:p-6">
+            <h2 className="text-base md:text-lg font-semibold text-slate-900 mb-3 md:mb-4">Recent Check-ins</h2>
             {todayCheckIns.length === 0 ? (
-              <p className="text-slate-500 text-center py-8">No check-ins today</p>
+              <p className="text-slate-500 text-center py-6 md:py-8 text-sm">No check-ins today</p>
             ) : (
-              <div className="space-y-3">
+              <div className="space-y-2 md:space-y-3">
                 {todayCheckIns.slice(0, 5).map(checkIn => (
-                  <div key={checkIn.id} className="p-3 rounded-lg border border-slate-200">
+                  <div key={checkIn.id} className="p-2 md:p-3 rounded-lg border border-slate-200">
                     <div className="flex items-center justify-between mb-2">
-                      <span className="font-medium text-slate-900">{checkIn.technician_name}</span>
+                      <span className="font-medium text-slate-900 text-sm">{checkIn.technician_name}</span>
                       {checkIn.duration_hours && (
                         <span className="text-sm text-slate-600">{checkIn.duration_hours.toFixed(1)}h</span>
                       )}

@@ -132,7 +132,7 @@ export default function Jobs() {
 
   if (showForm) {
     return (
-      <div className="p-4 md:p-8 bg-slate-50 min-h-screen">
+      <div className="p-2 md:p-8 bg-slate-50 min-h-screen">
         <div className="max-w-4xl mx-auto">
           <JobForm
             job={editingJob}
@@ -155,7 +155,7 @@ export default function Jobs() {
   if (selectedJob) {
     return (
       <div className="bg-slate-50 min-h-screen">
-        <div className={isTechnician ? "" : "p-4 md:p-8 max-w-4xl mx-auto"}>
+        <div className={isTechnician ? "" : "p-2 md:p-8 max-w-4xl mx-auto"}>
           <JobDetails
             job={selectedJob}
             onClose={() => setSelectedJob(null)}
@@ -173,17 +173,17 @@ export default function Jobs() {
   }
 
   return (
-    <div className="p-4 md:p-8 bg-slate-50 min-h-screen">
+    <div className="p-2 md:p-8 bg-slate-50 min-h-screen">
       <div className="max-w-7xl mx-auto">
         {!isTechnician && (
-          <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-6 gap-4">
+          <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-4 md:mb-6 gap-3">
             <div>
-              <h1 className="text-3xl font-bold text-slate-900">Jobs</h1>
-              <p className="text-slate-500 mt-1">Manage all scheduled jobs</p>
+              <h1 className="text-2xl md:text-3xl font-bold text-slate-900">Jobs</h1>
+              <p className="text-slate-500 mt-1 text-sm">Manage all scheduled jobs</p>
             </div>
             <Button 
               onClick={() => setShowForm(true)}
-              className="bg-orange-600 hover:bg-orange-700"
+              className="bg-orange-600 hover:bg-orange-700 w-full md:w-auto"
             >
               <Plus className="w-4 h-4 mr-2" />
               New Job
@@ -192,12 +192,12 @@ export default function Jobs() {
         )}
 
         {isTechnician && (
-          <div className="mb-4">
-            <h1 className="text-2xl font-bold text-slate-900">My Jobs</h1>
+          <div className="mb-3 md:mb-4">
+            <h1 className="text-xl md:text-2xl font-bold text-slate-900">My Jobs</h1>
           </div>
         )}
 
-        <div className="flex flex-col gap-4 mb-6">
+        <div className="flex flex-col gap-3 md:gap-4 mb-4 md:mb-6">
           <div className="relative flex-1">
             <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-slate-400" />
             <Input
