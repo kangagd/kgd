@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from "react";
 import { base44 } from "@/api/base44Client";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
@@ -66,7 +67,42 @@ export default function Dashboard() {
     try {
       const response = await base44.functions.invoke('debugPipedrive');
       console.log("Pipedrive Debug Response:", response.data);
-      alert(JSON.stringify(response.data, null, 2));
+      
+      // Open results in a new window
+      const newWindow = window.open('', '_blank', 'width=800,height=600');
+      newWindow.document.write(`
+        <!DOCTYPE html>
+        <html>
+          <head>
+            <title>Pipedrive Debug Results</title>
+            <style>
+              body { 
+                font-family: monospace; 
+                padding: 20px; 
+                background: #1e293b;
+                color: #e2e8f0;
+              }
+              pre { 
+                background: #0f172a; 
+                padding: 20px; 
+                border-radius: 8px; 
+                overflow: auto;
+                white-space: pre-wrap;
+                word-wrap: break-word;
+              }
+              h1 {
+                color: #f97316;
+                margin-bottom: 20px;
+              }
+            </style>
+          </head>
+          <body>
+            <h1>Pipedrive Debug Results</h1>
+            <pre>${JSON.stringify(response.data, null, 2)}</pre>
+          </body>
+        </html>
+      `);
+      newWindow.document.close();
     } catch (error) {
       console.error("Error debugging Pipedrive:", error);
       alert("Error: " + error.message);
