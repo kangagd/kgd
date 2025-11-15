@@ -119,7 +119,7 @@ export default function JobList({ jobs, isLoading, onSelectJob }) {
 
   return (
     <div className="grid gap-4">
-      {jobs.map((job) => (
+      {jobs.filter(job => job != null).map((job) => (
         <Card 
           key={job.id}
           className="hover:shadow-lg transition-shadow cursor-pointer"
