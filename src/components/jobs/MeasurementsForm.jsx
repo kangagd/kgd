@@ -54,11 +54,11 @@ export default function MeasurementsForm({ measurements, onChange }) {
         <CardContent className="space-y-4">
           <div className="grid grid-cols-3 gap-4">
             <div>
-              <Label>Right H</Label>
+              <Label>Left H</Label>
               <Input
                 type="number"
-                value={data.new_door.height_right || ""}
-                onChange={(e) => updateField('new_door', 'height_right', parseFloat(e.target.value))}
+                value={data.new_door.height_left || ""}
+                onChange={(e) => updateField('new_door', 'height_left', parseFloat(e.target.value))}
               />
             </div>
             <div>
@@ -70,11 +70,11 @@ export default function MeasurementsForm({ measurements, onChange }) {
               />
             </div>
             <div>
-              <Label>Left H</Label>
+              <Label>Right H</Label>
               <Input
                 type="number"
-                value={data.new_door.height_left || ""}
-                onChange={(e) => updateField('new_door', 'height_left', parseFloat(e.target.value))}
+                value={data.new_door.height_right || ""}
+                onChange={(e) => updateField('new_door', 'height_right', parseFloat(e.target.value))}
               />
             </div>
           </div>
