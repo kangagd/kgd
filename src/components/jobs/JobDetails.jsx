@@ -3,7 +3,7 @@ import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Textarea } from "@/components/ui/textarea";
-import { ArrowLeft, Edit, MapPin, Phone, Calendar, Clock, User, Briefcase, FileText, Image as ImageIcon, DollarSign, Sparkles, LogIn, FileCheck, History } from "lucide-react";
+import { ArrowLeft, Edit, MapPin, Phone, Calendar, Clock, User, Briefcase, FileText, Image as ImageIcon, DollarSign, Sparkles, LogIn, FileCheck, History, Car } from "lucide-react";
 import { format, parseISO } from "date-fns";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { base44 } from "@/api/base44Client";
@@ -136,21 +136,38 @@ export default function JobDetails({ job, onClose, onEdit, onStatusChange }) {
     }
   };
 
+  const handleNavigate = (e) => {
+    e.preventDefault();
+    const mapsUrl = `https://www.google.com/maps/dir/?api=1&destination=${encodeURIComponent(job.address)}`;
+    window.open(mapsUrl, '_blank');
+  };
+
   return (
     <>
       <Card className={`border-none shadow-lg ${isTechnician ? 'rounded-none' : ''}`}>
         <CardHeader className="border-b border-slate-100 p-3 md:p-6">
           <div className="flex items-center justify-between">
-            <div className="flex items-center gap-2 md:gap-4">
-              <Button variant="ghost" size="icon" onClick={onClose} className="h-8 w-8 md:h-10 md:w-10">
+            <div className="flex items-center gap-2 md:gap-4 flex-1 min-w-0">
+              <Button variant="ghost" size="icon" onClick={onClose} className="h-8 w-8 md:h-10 md:w-10 flex-shrink-0">
                 <ArrowLeft className="w-4 h-4" />
               </Button>
-              <div>
+              <div className="flex-1 min-w-0">
                 <CardTitle className="text-lg md:text-2xl font-bold">{job.customer_name}</CardTitle>
                 <p className="text-xs md:text-sm text-slate-500 mt-1">Job #{job.job_number}</p>
+                <div className="flex items-start gap-2 mt-2">
+                  <MapPin className="w-4 h-4 text-orange-600 mt-0.5 flex-shrink-0" />
+                  <span className="text-xs md:text-sm text-slate-700 flex-1">{job.address}</span>
+                  <button
+                    onClick={handleNavigate}
+                    className="flex-shrink-0 p-1.5 rounded-lg bg-orange-600 hover:bg-orange-700 text-white transition-colors"
+                    title="Navigate with Google Maps"
+                  >
+                    <Car className="w-4 h-4" />
+                  </button>
+                </div>
               </div>
             </div>
-            <div className="flex gap-2">
+            <div className="flex gap-2 flex-shrink-0">
               <Button 
                 variant="outline"
                 size="sm"
@@ -227,10 +244,6 @@ export default function JobDetails({ job, onClose, onEdit, onStatusChange }) {
                       <span className="font-medium text-sm md:text-base">{job.customer_phone}</span>
                     </a>
                   )}
-                  <div className="flex items-start gap-3 p-2 md:p-3 bg-slate-50 rounded-lg">
-                    <MapPin className="w-4 h-4 md:w-5 md:h-5 text-slate-400 mt-0.5" />
-                    <span className="text-xs md:text-sm">{job.address}</span>
-                  </div>
                   <div className="grid grid-cols-2 gap-2 md:gap-3">
                     <div className="flex items-center gap-2 p-2 md:p-3 bg-slate-50 rounded-lg">
                       <Calendar className="w-3 h-3 md:w-4 md:h-4 text-slate-400" />
