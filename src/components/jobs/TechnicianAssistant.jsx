@@ -97,7 +97,7 @@ export default function TechnicianAssistant({ open, onClose, job }) {
   ];
 
   return (
-    <Dialog open={open} onOpenChange={onClose}>
+    <Dialog open={open} onOpenChange={(isOpen) => !isOpen && onClose()}>
       <DialogContent className="max-w-3xl max-h-[85vh] flex flex-col">
         <DialogHeader>
           <div className="flex items-center gap-2">
