@@ -65,51 +65,6 @@ export default function Dashboard() {
     sum + (c.duration_hours || 0), 0
   );
 
-  const handleTestPipedrive = async () => {
-    try {
-      const response = await base44.functions.invoke('debugPipedrive');
-      console.log("Pipedrive Debug Response:", response.data);
-      
-      const newWindow = window.open('', '_blank', 'width=800,height=600');
-      newWindow.document.write(`
-        <!DOCTYPE html>
-        <html>
-          <head>
-            <title>Pipedrive Debug Results</title>
-            <style>
-              body { 
-                font-family: monospace; 
-                padding: 20px; 
-                background: #1e293b;
-                color: #e2e8f0;
-              }
-              pre { 
-                background: #0f172a; 
-                padding: 20px; 
-                border-radius: 8px; 
-                overflow: auto;
-                white-space: pre-wrap;
-                word-wrap: break-word;
-              }
-              h1 {
-                color: #f97316;
-                margin-bottom: 20px;
-              }
-            </style>
-          </head>
-          <body>
-            <h1>Pipedrive Debug Results</h1>
-            <pre>${JSON.stringify(response.data, null, 2)}</pre>
-          </body>
-        </html>
-      `);
-      newWindow.document.close();
-    } catch (error) {
-      console.error("Error debugging Pipedrive:", error);
-      alert("Error: " + error.message);
-    }
-  };
-
   const handleCardClick = (filterType) => {
     let url = createPageUrl("Jobs");
     if (filterType === 'today') {
@@ -132,21 +87,13 @@ export default function Dashboard() {
             </h1>
             <p className="text-slate-500 mt-1">Here's what's happening today</p>
           </div>
-          <div className="flex gap-2">
-            <Button
-              variant="outline"
-              onClick={handleTestPipedrive}
-            >
-              Test Pipedrive
-            </Button>
-            <Button
-              onClick={() => window.location.href = '/Jobs?action=new'}
-              className="bg-orange-600 hover:bg-orange-700"
-            >
-              <Plus className="w-4 h-4 mr-2" />
-              New Job
-            </Button>
-          </div>
+          <Button
+            onClick={() => window.location.href = '/Jobs?action=new'}
+            className="bg-orange-600 hover:bg-orange-700"
+          >
+            <Plus className="w-4 h-4 mr-2" />
+            New Job
+          </Button>
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-8">

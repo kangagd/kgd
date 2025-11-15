@@ -3,16 +3,13 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
-import { ExternalLink, Link as LinkIcon, Copy, CheckCircle, RefreshCw, Info } from "lucide-react";
+import { ExternalLink, Link as LinkIcon, Copy, CheckCircle } from "lucide-react";
 import { Label } from "@/components/ui/label";
-import { Alert, AlertDescription } from "@/components/ui/alert";
-import { base44 } from "@/api/base44Client";
 
 export default function PipedriveIntegration({ job, onUpdate }) {
   const [dealId, setDealId] = useState(job.pipedrive_deal_id || "");
   const [isSaving, setIsSaving] = useState(false);
   const [copied, setCopied] = useState(false);
-  const [syncing, setSyncing] = useState(false);
 
   const handleLinkDeal = async () => {
     setIsSaving(true);
@@ -33,19 +30,6 @@ export default function PipedriveIntegration({ job, onUpdate }) {
       console.error("Error unlinking deal:", error);
     }
     setIsSaving(false);
-  };
-
-  const handleSyncStatus = async () => {
-    setSyncing(true);
-    try {
-      await base44.functions.invoke('updatePipedriveDeal', {
-        job_id: job.id,
-        status: job.status
-      });
-    } catch (error) {
-      console.error("Error syncing status:", error);
-    }
-    setSyncing(false);
   };
 
   const copyDealData = () => {
@@ -81,11 +65,6 @@ export default function PipedriveIntegration({ job, onUpdate }) {
     return stageMap[job.status] || 'Job Booked';
   };
 
-  const getWebhookUrl = () => {
-    const appUrl = window.location.origin;
-    return `${appUrl}/api/functions/pipedriveWebhook`;
-  };
-
   return (
     <Card>
       <CardHeader>
@@ -97,19 +76,6 @@ export default function PipedriveIntegration({ job, onUpdate }) {
         </CardTitle>
       </CardHeader>
       <CardContent className="space-y-4">
-        <Alert className="bg-blue-50 border-blue-200">
-          <Info className="h-4 w-4 text-blue-600" />
-          <AlertDescription className="text-sm text-blue-800">
-            <strong>Auto-sync enabled!</strong> Configure webhook in Pipedrive:
-            <div className="mt-2 p-2 bg-white rounded border border-blue-200 font-mono text-xs break-all">
-              {getWebhookUrl()}
-            </div>
-            <p className="mt-2 text-xs">
-              Set webhook for "Updated Deal" events. When deals move to "Job Booked" stage, jobs are created automatically.
-            </p>
-          </AlertDescription>
-        </Alert>
-
         {job.pipedrive_deal_id ? (
           <div className="space-y-3">
             <div className="flex items-center justify-between p-3 bg-green-50 rounded-lg">
@@ -133,20 +99,6 @@ export default function PipedriveIntegration({ job, onUpdate }) {
               >
                 <ExternalLink className="w-4 h-4 mr-2" />
                 Open in Pipedrive
-              </Button>
-              <Button
-                variant="outline"
-                onClick={handleSyncStatus}
-                disabled={syncing}
-              >
-                {syncing ? (
-                  <RefreshCw className="w-4 h-4 animate-spin" />
-                ) : (
-                  <>
-                    <RefreshCw className="w-4 h-4 mr-2" />
-                    Sync
-                  </>
-                )}
               </Button>
               <Button
                 variant="outline"
