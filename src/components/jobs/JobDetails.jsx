@@ -3,7 +3,7 @@ import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Textarea } from "@/components/ui/textarea";
-import { ArrowLeft, Edit, MapPin, Phone, Calendar, Clock, User, Briefcase, FileText, Image as ImageIcon, DollarSign, Sparkles, LogIn, FileCheck, History, Car, Camera } from "lucide-react";
+import { ArrowLeft, Edit, MapPin, Phone, Calendar, Clock, User, Briefcase, FileText, Image as ImageIcon, DollarSign, Sparkles, LogIn, FileCheck, History, Camera } from "lucide-react";
 import { format, parseISO } from "date-fns";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { base44 } from "@/api/base44Client";
@@ -12,6 +12,7 @@ import PriceListModal from "./PriceListModal";
 import TechnicianAssistant from "./TechnicianAssistant";
 import MeasurementsForm from "./MeasurementsForm";
 import ChangeHistoryModal from "./ChangeHistoryModal";
+import NavigationCard from "./NavigationCard";
 
 const statusColors = {
   scheduled: "bg-blue-100 text-blue-800 border-blue-200",
@@ -51,6 +52,11 @@ export default function JobDetails({ job, onClose, onEdit, onStatusChange }) {
     };
     loadUser();
   }, []);
+
+  const { data: allJobs = [] } = useQuery({
+    queryKey: ['jobs'],
+    queryFn: () => base44.entities.Job.list('-scheduled_date'),
+  });
 
   const { data: checkIns = [] } = useQuery({
     queryKey: ['checkIns', job?.id],
@@ -154,12 +160,6 @@ export default function JobDetails({ job, onClose, onEdit, onStatusChange }) {
     }
   };
 
-  const handleNavigate = (e) => {
-    e.preventDefault();
-    const mapsUrl = `https://www.google.com/maps/dir/?api=1&destination=${encodeURIComponent(job.address)}`;
-    window.open(mapsUrl, '_blank');
-  };
-
   const handleFileChange = async (e) => {
     const file = e.target.files?.[0];
     if (file) {
@@ -167,6 +167,29 @@ export default function JobDetails({ job, onClose, onEdit, onStatusChange }) {
       uploadImageMutation.mutate(file);
     }
   };
+
+  // Find next scheduled job for the technician on the same day
+  const getNextJob = () => {
+    if (!job || !user || !isTechnician) return null;
+    
+    const todayJobs = allJobs
+      .filter(j => 
+        j.scheduled_date === job.scheduled_date &&
+        j.assigned_to === user.email &&
+        j.id !== job.id &&
+        (j.status === 'scheduled' || j.status === 'in_progress')
+      )
+      .sort((a, b) => {
+        const timeA = a.scheduled_time || '23:59';
+        const timeB = b.scheduled_time || '23:59';
+        return timeA.localeCompare(timeB);
+      });
+
+    const currentJobTime = job.scheduled_time || '00:00';
+    return todayJobs.find(j => (j.scheduled_time || '23:59') > currentJobTime);
+  };
+
+  const nextJob = getNextJob();
 
   if (!job) {
     return null;
@@ -192,13 +215,6 @@ export default function JobDetails({ job, onClose, onEdit, onStatusChange }) {
                 <div className="flex items-center gap-1 mt-2">
                   <MapPin className="w-4 h-4 text-orange-600 flex-shrink-0" />
                   <span className="text-sm md:text-base font-bold text-slate-900 flex-1">{job.address}</span>
-                  <button
-                    onClick={handleNavigate}
-                    className="flex-shrink-0 p-1 rounded-lg bg-orange-600 hover:bg-orange-700 text-white transition-colors ml-1"
-                    title="Navigate with Google Maps"
-                  >
-                    <Car className="w-4 h-4" />
-                  </button>
                 </div>
                 {job.customer_phone && (
                   <a href={`tel:${job.customer_phone}`} className="flex items-center gap-2 mt-2 text-slate-700 hover:text-orange-600 transition-colors">
@@ -268,6 +284,10 @@ export default function JobDetails({ job, onClose, onEdit, onStatusChange }) {
             </TabsList>
 
             <TabsContent value="details" className="space-y-3 md:space-y-4 mt-3 md:mt-4">
+              {isTechnician && (
+                <NavigationCard currentJob={job} nextJob={nextJob} />
+              )}
+
               {job.outcome && (
                 <div className="flex gap-2 flex-wrap">
                   <Badge className={outcomeColors[job.outcome]}>
