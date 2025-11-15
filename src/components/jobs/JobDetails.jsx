@@ -33,9 +33,9 @@ export default function JobDetails({ job, onClose, onEdit, onStatusChange }) {
   const [showAssistant, setShowAssistant] = useState(false);
   const [showHistory, setShowHistory] = useState(false);
   const [user, setUser] = useState(null);
-  const [measurements, setMeasurements] = useState(job.measurements || null);
-  const [notes, setNotes] = useState(job.notes || "");
-  const [additionalInfo, setAdditionalInfo] = useState(job.additional_info || "");
+  const [measurements, setMeasurements] = useState(job?.measurements || null);
+  const [notes, setNotes] = useState(job?.notes || "");
+  const [additionalInfo, setAdditionalInfo] = useState(job?.additional_info || "");
   const [uploading, setUploading] = useState(false);
   const fileInputRef = useRef(null);
   const queryClient = useQueryClient();
@@ -53,8 +53,9 @@ export default function JobDetails({ job, onClose, onEdit, onStatusChange }) {
   }, []);
 
   const { data: checkIns = [] } = useQuery({
-    queryKey: ['checkIns', job.id],
+    queryKey: ['checkIns', job?.id],
     queryFn: () => base44.entities.CheckInOut.filter({ job_id: job.id }),
+    enabled: !!job?.id,
   });
 
   const activeCheckIn = checkIns.find(c => !c.check_out_time && c.technician_email === user?.email);
@@ -166,6 +167,10 @@ export default function JobDetails({ job, onClose, onEdit, onStatusChange }) {
       uploadImageMutation.mutate(file);
     }
   };
+
+  if (!job) {
+    return null;
+  }
 
   return (
     <>
