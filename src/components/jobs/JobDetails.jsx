@@ -1,9 +1,9 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Textarea } from "@/components/ui/textarea";
-import { ArrowLeft, Edit, MapPin, Phone, Calendar, Clock, User, Briefcase, FileText, Image as ImageIcon, DollarSign, Sparkles, LogIn, FileCheck, History, Car } from "lucide-react";
+import { ArrowLeft, Edit, MapPin, Phone, Calendar, Clock, User, Briefcase, FileText, Image as ImageIcon, DollarSign, Sparkles, LogIn, FileCheck, History, Car, Camera } from "lucide-react";
 import { format, parseISO } from "date-fns";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { base44 } from "@/api/base44Client";
@@ -36,6 +36,8 @@ export default function JobDetails({ job, onClose, onEdit, onStatusChange }) {
   const [measurements, setMeasurements] = useState(job.measurements || null);
   const [notes, setNotes] = useState(job.notes || "");
   const [additionalInfo, setAdditionalInfo] = useState(job.additional_info || "");
+  const [uploading, setUploading] = useState(false);
+  const fileInputRef = useRef(null);
   const queryClient = useQueryClient();
 
   useEffect(() => {
@@ -111,6 +113,21 @@ export default function JobDetails({ job, onClose, onEdit, onStatusChange }) {
     },
   });
 
+  const uploadImageMutation = useMutation({
+    mutationFn: async (file) => {
+      const { file_url } = await base44.integrations.Core.UploadFile({ file });
+      const currentImages = job.image_urls || [];
+      await base44.entities.Job.update(job.id, {
+        image_urls: [...currentImages, file_url]
+      });
+      return file_url;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['jobs'] });
+      setUploading(false);
+    },
+  });
+
   const isTechnician = user?.is_field_technician && user?.role !== 'admin';
 
   const handleCheckIn = () => {
@@ -142,6 +159,14 @@ export default function JobDetails({ job, onClose, onEdit, onStatusChange }) {
     window.open(mapsUrl, '_blank');
   };
 
+  const handleFileChange = async (e) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      setUploading(true);
+      uploadImageMutation.mutate(file);
+    }
+  };
+
   return (
     <>
       <Card className={`border-none shadow-lg ${isTechnician ? 'rounded-none' : ''}`}>
@@ -152,7 +177,12 @@ export default function JobDetails({ job, onClose, onEdit, onStatusChange }) {
                 <ArrowLeft className="w-4 h-4" />
               </Button>
               <div className="flex-1 min-w-0">
-                <CardTitle className="text-lg md:text-2xl font-bold">{job.customer_name}</CardTitle>
+                <div className="flex items-center gap-2 flex-wrap">
+                  <CardTitle className="text-lg md:text-2xl font-bold">{job.customer_name}</CardTitle>
+                  <Badge className={statusColors[job.status]}>
+                    {job.status.replace('_', ' ')}
+                  </Badge>
+                </div>
                 <p className="text-xs md:text-sm text-slate-500 mt-1">Job #{job.job_number}</p>
                 <div className="flex items-center gap-1 mt-2">
                   <MapPin className="w-4 h-4 text-orange-600 flex-shrink-0" />
@@ -190,15 +220,17 @@ export default function JobDetails({ job, onClose, onEdit, onStatusChange }) {
                   <span className="hidden md:inline text-xs">Edit</span>
                 </Button>
               )}
-              <Button 
-                variant="outline"
-                size="sm"
-                onClick={() => setShowHistory(true)}
-                className="h-8 px-2"
-              >
-                <History className="w-4 h-4 md:mr-1" />
-                <span className="hidden md:inline text-xs">History</span>
-              </Button>
+              {!isTechnician && (
+                <Button 
+                  variant="outline"
+                  size="sm"
+                  onClick={() => setShowHistory(true)}
+                  className="h-8 px-2"
+                >
+                  <History className="w-4 h-4 md:mr-1" />
+                  <span className="hidden md:inline text-xs">History</span>
+                </Button>
+              )}
               <Button 
                 variant="outline"
                 onClick={() => setShowPriceList(true)}
@@ -231,16 +263,13 @@ export default function JobDetails({ job, onClose, onEdit, onStatusChange }) {
             </TabsList>
 
             <TabsContent value="details" className="space-y-3 md:space-y-4 mt-3 md:mt-4">
-              <div className="flex gap-2 flex-wrap">
-                <Badge className={statusColors[job.status]}>
-                  {job.status.replace('_', ' ')}
-                </Badge>
-                {job.outcome && (
+              {job.outcome && (
+                <div className="flex gap-2 flex-wrap">
                   <Badge className={outcomeColors[job.outcome]}>
                     {job.outcome.replace(/_/g, ' ')}
                   </Badge>
-                )}
-              </div>
+                </div>
+              )}
 
               <div className="grid gap-3 md:gap-4">
                 <div className="space-y-2 md:space-y-3">
@@ -320,7 +349,26 @@ export default function JobDetails({ job, onClose, onEdit, onStatusChange }) {
 
             <TabsContent value="files" className="mt-3 md:mt-4">
               <div className="space-y-3 md:space-y-4">
-                <h3 className="text-sm md:text-base font-semibold text-slate-900">Photos & Attachments</h3>
+                <div className="flex items-center justify-between">
+                  <h3 className="text-sm md:text-base font-semibold text-slate-900">Photos & Attachments</h3>
+                  <Button
+                    onClick={() => fileInputRef.current?.click()}
+                    disabled={uploading}
+                    className="bg-orange-600 hover:bg-orange-700"
+                    size="sm"
+                  >
+                    <Camera className="w-4 h-4 mr-2" />
+                    {uploading ? 'Uploading...' : 'Take Photo'}
+                  </Button>
+                  <input
+                    ref={fileInputRef}
+                    type="file"
+                    accept="image/*"
+                    capture="environment"
+                    onChange={handleFileChange}
+                    className="hidden"
+                  />
+                </div>
                 
                 {job.image_urls && job.image_urls.length > 0 ? (
                   <div>
