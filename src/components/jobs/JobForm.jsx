@@ -15,6 +15,7 @@ import {
   DialogTitle,
   DialogFooter,
 } from "@/components/ui/dialog";
+import MeasurementsForm from "./MeasurementsForm";
 
 export default function JobForm({ job, jobTypes, technicians, onSubmit, onCancel, isSubmitting, preselectedCustomerId }) {
   const [formData, setFormData] = useState(job || {
@@ -35,6 +36,7 @@ export default function JobForm({ job, jobTypes, technicians, onSubmit, onCancel
     priority: "medium",
     notes: "",
     additional_info: "",
+    measurements: null,
     image_urls: [],
     quote_url: "",
     invoice_url: "",
@@ -328,6 +330,14 @@ export default function JobForm({ job, jobTypes, technicians, onSubmit, onCancel
                 onChange={(e) => setFormData({ ...formData, additional_info: e.target.value })}
                 rows={3}
                 placeholder="Add any additional information..."
+              />
+            </div>
+
+            <div className="pt-4 border-t border-slate-200">
+              <h3 className="font-semibold text-slate-900 mb-4">Measurements</h3>
+              <MeasurementsForm
+                measurements={formData.measurements}
+                onChange={(measurements) => setFormData({ ...formData, measurements })}
               />
             </div>
 
