@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from "react";
 import { base44 } from "@/api/base44Client";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
@@ -172,13 +171,13 @@ export default function Dashboard() {
 
           <div className="bg-white rounded-xl border border-slate-200 p-6">
             <div className="flex items-center justify-between mb-2">
-              <h3 className="text-sm font-medium text-slate-500">Hours Logged</h3>
+              <h3 className="text-sm font-medium text-slate-500">Total Jobs</h3>
               <div className="w-10 h-10 bg-purple-100 rounded-lg flex items-center justify-center">
-                <span className="text-purple-600 font-bold text-lg">{Math.round(totalHoursToday)}</span>
+                <span className="text-purple-600 font-bold text-lg">{jobs.length}</span>
               </div>
             </div>
-            <p className="text-2xl font-bold text-slate-900">{totalHoursToday.toFixed(1)}h</p>
-            <p className="text-xs text-slate-500 mt-1">Today's total</p>
+            <p className="text-2xl font-bold text-slate-900">{jobs.length}</p>
+            <p className="text-xs text-slate-500 mt-1">All jobs</p>
           </div>
         </div>
 
