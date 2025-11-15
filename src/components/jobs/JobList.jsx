@@ -55,7 +55,7 @@ export default function JobList({ jobs, isLoading, onSelectJob }) {
               <div className="flex items-start justify-between mb-3">
                 <div>
                   <h3 className="text-lg font-semibold text-slate-900">{job.customer_name}</h3>
-                  <p className="text-sm text-slate-500 mt-1">{job.job_number}</p>
+                  <p className="text-sm text-slate-500 mt-1">Job #{job.job_number}</p>
                 </div>
                 <div className="flex gap-2">
                   <Badge className={statusColors[job.status]}>

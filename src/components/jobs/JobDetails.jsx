@@ -2,7 +2,7 @@ import React from "react";
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { ArrowLeft, Edit, MapPin, Phone, Mail, Calendar, Clock, User, Briefcase } from "lucide-react";
+import { ArrowLeft, Edit, MapPin, Phone, Mail, Calendar, Clock, User, Briefcase, FileText, Image as ImageIcon, ExternalLink } from "lucide-react";
 import { format, parseISO } from "date-fns";
 
 const statusColors = {
@@ -23,7 +23,7 @@ export default function JobDetails({ job, onClose, onEdit, onStatusChange }) {
             </Button>
             <div>
               <CardTitle className="text-2xl font-bold">{job.customer_name}</CardTitle>
-              <p className="text-sm text-slate-500 mt-1">{job.job_number}</p>
+              <p className="text-sm text-slate-500 mt-1">Job #{job.job_number}</p>
             </div>
           </div>
           <Button onClick={() => onEdit(job)} className="bg-orange-600 hover:bg-orange-700">
@@ -109,12 +109,75 @@ export default function JobDetails({ job, onClose, onEdit, onStatusChange }) {
           </div>
         )}
 
+        {job.additional_info && (
+          <div>
+            <h3 className="text-sm font-medium text-slate-500 mb-2">Additional Info</h3>
+            <p className="text-slate-700 whitespace-pre-wrap bg-slate-50 p-4 rounded-lg">
+              {job.additional_info}
+            </p>
+          </div>
+        )}
+
         {job.completion_notes && (
           <div>
             <h3 className="text-sm font-medium text-slate-500 mb-2">Completion Notes</h3>
             <p className="text-slate-700 whitespace-pre-wrap bg-green-50 p-4 rounded-lg">
               {job.completion_notes}
             </p>
+          </div>
+        )}
+
+        {(job.image_urls?.length > 0 || job.quote_url || job.invoice_url) && (
+          <div className="pt-4 border-t border-slate-200">
+            <h3 className="text-sm font-medium text-slate-500 mb-3">Attachments</h3>
+            
+            {job.image_urls && job.image_urls.length > 0 && (
+              <div className="mb-4">
+                <div className="flex items-center gap-2 mb-2">
+                  <ImageIcon className="w-4 h-4 text-slate-400" />
+                  <span className="text-sm font-medium text-slate-700">Images ({job.image_urls.length})</span>
+                </div>
+                <div className="grid grid-cols-3 md:grid-cols-4 gap-2">
+                  {job.image_urls.map((url, index) => (
+                    <a key={index} href={url} target="_blank" rel="noopener noreferrer">
+                      <img 
+                        src={url} 
+                        alt={`Job image ${index + 1}`} 
+                        className="w-full h-24 object-cover rounded border hover:opacity-80 transition-opacity"
+                      />
+                    </a>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            <div className="flex flex-wrap gap-3">
+              {job.quote_url && (
+                <a 
+                  href={job.quote_url} 
+                  target="_blank" 
+                  rel="noopener noreferrer"
+                  className="flex items-center gap-2 px-4 py-2 bg-blue-50 text-blue-700 rounded-lg hover:bg-blue-100 transition-colors"
+                >
+                  <FileText className="w-4 h-4" />
+                  <span className="text-sm font-medium">View Quote</span>
+                  <ExternalLink className="w-3 h-3" />
+                </a>
+              )}
+              
+              {job.invoice_url && (
+                <a 
+                  href={job.invoice_url} 
+                  target="_blank" 
+                  rel="noopener noreferrer"
+                  className="flex items-center gap-2 px-4 py-2 bg-green-50 text-green-700 rounded-lg hover:bg-green-100 transition-colors"
+                >
+                  <FileText className="w-4 h-4" />
+                  <span className="text-sm font-medium">View Invoice</span>
+                  <ExternalLink className="w-3 h-3" />
+                </a>
+              )}
+            </div>
           </div>
         )}
 
