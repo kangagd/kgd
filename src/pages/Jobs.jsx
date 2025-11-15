@@ -108,11 +108,9 @@ export default function Jobs() {
   const isTechnician = user?.is_field_technician && user?.role !== 'admin';
   
   const filteredJobs = jobs.filter(job => {
-    // For technicians, only show their assigned scheduled jobs
-    if (isTechnician) {
-      if (job.assigned_to !== user?.email || job.status !== 'scheduled') {
-        return false;
-      }
+    // For technicians, only show their assigned jobs
+    if (isTechnician && job.assigned_to !== user?.email) {
+      return false;
     }
 
     // Apply URL date filter if present
@@ -210,17 +208,15 @@ export default function Jobs() {
             />
           </div>
           
-          {!isTechnician && (
-            <Tabs value={statusFilter} onValueChange={setStatusFilter}>
-              <TabsList className="w-full grid grid-cols-2 sm:grid-cols-5">
-                <TabsTrigger value="all">All</TabsTrigger>
-                <TabsTrigger value="scheduled">Scheduled</TabsTrigger>
-                <TabsTrigger value="in_progress">In Progress</TabsTrigger>
-                <TabsTrigger value="completed">Completed</TabsTrigger>
-                <TabsTrigger value="cancelled">Cancelled</TabsTrigger>
-              </TabsList>
-            </Tabs>
-          )}
+          <Tabs value={statusFilter} onValueChange={setStatusFilter}>
+            <TabsList className="w-full grid grid-cols-2 sm:grid-cols-5">
+              <TabsTrigger value="all">All</TabsTrigger>
+              <TabsTrigger value="scheduled">Scheduled</TabsTrigger>
+              <TabsTrigger value="in_progress">In Progress</TabsTrigger>
+              <TabsTrigger value="completed">Completed</TabsTrigger>
+              <TabsTrigger value="cancelled">Cancelled</TabsTrigger>
+            </TabsList>
+          </Tabs>
         </div>
 
         <JobList 

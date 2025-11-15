@@ -38,7 +38,7 @@ export default function MeasurementsForm({ measurements, onChange }) {
   };
 
   return (
-    <div className="space-y-3">
+    <div className="space-y-6">
       <div className="flex items-center gap-2">
         <Checkbox
           checked={data.is_islo || false}
@@ -48,94 +48,85 @@ export default function MeasurementsForm({ measurements, onChange }) {
       </div>
 
       <Card>
-        <CardHeader className="p-3">
-          <CardTitle className="text-sm">New Door Measurements</CardTitle>
+        <CardHeader>
+          <CardTitle>New Door Measurements</CardTitle>
         </CardHeader>
-        <CardContent className="space-y-3 p-3">
-          <div className="grid grid-cols-3 gap-2">
+        <CardContent className="space-y-4">
+          <div className="grid grid-cols-3 gap-4">
             <div>
-              <Label className="text-xs">Left H</Label>
+              <Label>Left H</Label>
               <Input
                 type="number"
-                className="h-8 text-xs"
                 value={data.new_door.height_left || ""}
                 onChange={(e) => updateField('new_door', 'height_left', parseFloat(e.target.value))}
               />
             </div>
             <div>
-              <Label className="text-xs">Mid H</Label>
+              <Label>Mid H</Label>
               <Input
                 type="number"
-                className="h-8 text-xs"
                 value={data.new_door.height_mid || ""}
                 onChange={(e) => updateField('new_door', 'height_mid', parseFloat(e.target.value))}
               />
             </div>
             <div>
-              <Label className="text-xs">Right H</Label>
+              <Label>Right H</Label>
               <Input
                 type="number"
-                className="h-8 text-xs"
                 value={data.new_door.height_right || ""}
                 onChange={(e) => updateField('new_door', 'height_right', parseFloat(e.target.value))}
               />
             </div>
           </div>
 
-          <div className="grid grid-cols-3 gap-2">
+          <div className="grid grid-cols-3 gap-4">
             <div>
-              <Label className="text-xs">Top W</Label>
+              <Label>Top W</Label>
               <Input
                 type="number"
-                className="h-8 text-xs"
                 value={data.new_door.width_top || ""}
                 onChange={(e) => updateField('new_door', 'width_top', parseFloat(e.target.value))}
               />
             </div>
             <div>
-              <Label className="text-xs">Mid W</Label>
+              <Label>Mid W</Label>
               <Input
                 type="number"
-                className="h-8 text-xs"
                 value={data.new_door.width_mid || ""}
                 onChange={(e) => updateField('new_door', 'width_mid', parseFloat(e.target.value))}
               />
             </div>
             <div>
-              <Label className="text-xs">Bottom W</Label>
+              <Label>Bottom W</Label>
               <Input
                 type="number"
-                className="h-8 text-xs"
                 value={data.new_door.width_bottom || ""}
                 onChange={(e) => updateField('new_door', 'width_bottom', parseFloat(e.target.value))}
               />
             </div>
           </div>
 
-          <div className="grid grid-cols-3 gap-2">
+          <div className="grid grid-cols-3 gap-4">
             <div>
-              <Label className="text-xs">Left Sideroom</Label>
+              <Label>Left Sideroom</Label>
               <Input
                 type="number"
-                className="h-8 text-xs"
                 value={data.new_door.sideroom_left || ""}
                 onChange={(e) => updateField('new_door', 'sideroom_left', parseFloat(e.target.value))}
               />
             </div>
             <div>
-              <Label className="text-xs">Right Sideroom</Label>
+              <Label>Right Sideroom</Label>
               <Input
                 type="number"
-                className="h-8 text-xs"
                 value={data.new_door.sideroom_right || ""}
                 onChange={(e) => updateField('new_door', 'sideroom_right', parseFloat(e.target.value))}
               />
             </div>
             <div>
-              <Label className="text-xs">Headroom</Label>
+              <Label>Headroom</Label>
               <Input
                 type="number"
-                className="h-8 text-xs"
                 value={data.new_door.headroom || ""}
                 onChange={(e) => updateField('new_door', 'headroom', parseFloat(e.target.value))}
               />
@@ -143,31 +134,28 @@ export default function MeasurementsForm({ measurements, onChange }) {
           </div>
 
           <div className="space-y-2">
-            <Label className="text-xs font-semibold">Laser Floor</Label>
-            <div className="grid grid-cols-3 gap-2">
+            <Label className="text-sm font-semibold">Laser Floor</Label>
+            <div className="grid grid-cols-3 gap-4">
               <div>
-                <Label className="text-xs text-slate-500">Left Side</Label>
+                <Label className="text-xs">Left Side</Label>
                 <Input
                   type="number"
-                  className="h-8 text-xs"
                   value={data.new_door.laser_floor_left || ""}
                   onChange={(e) => updateField('new_door', 'laser_floor_left', parseFloat(e.target.value))}
                 />
               </div>
               <div>
-                <Label className="text-xs text-slate-500">Middle</Label>
+                <Label className="text-xs">Middle</Label>
                 <Input
                   type="number"
-                  className="h-8 text-xs"
                   value={data.new_door.laser_floor_mid || ""}
                   onChange={(e) => updateField('new_door', 'laser_floor_mid', parseFloat(e.target.value))}
                 />
               </div>
               <div>
-                <Label className="text-xs text-slate-500">Right Side</Label>
+                <Label className="text-xs">Right Side</Label>
                 <Input
                   type="number"
-                  className="h-8 text-xs"
                   value={data.new_door.laser_floor_right || ""}
                   onChange={(e) => updateField('new_door', 'laser_floor_right', parseFloat(e.target.value))}
                 />
@@ -176,31 +164,28 @@ export default function MeasurementsForm({ measurements, onChange }) {
           </div>
 
           <div className="space-y-2">
-            <Label className="text-xs font-semibold">Laser Top</Label>
-            <div className="grid grid-cols-3 gap-2">
+            <Label className="text-sm font-semibold">Laser Top</Label>
+            <div className="grid grid-cols-3 gap-4">
               <div>
-                <Label className="text-xs text-slate-500">Left Side</Label>
+                <Label className="text-xs">Left Side</Label>
                 <Input
                   type="number"
-                  className="h-8 text-xs"
                   value={data.new_door.laser_top_left || ""}
                   onChange={(e) => updateField('new_door', 'laser_top_left', parseFloat(e.target.value))}
                 />
               </div>
               <div>
-                <Label className="text-xs text-slate-500">Middle</Label>
+                <Label className="text-xs">Middle</Label>
                 <Input
                   type="number"
-                  className="h-8 text-xs"
                   value={data.new_door.laser_top_mid || ""}
                   onChange={(e) => updateField('new_door', 'laser_top_mid', parseFloat(e.target.value))}
                 />
               </div>
               <div>
-                <Label className="text-xs text-slate-500">Right Side</Label>
+                <Label className="text-xs">Right Side</Label>
                 <Input
                   type="number"
-                  className="h-8 text-xs"
                   value={data.new_door.laser_top_right || ""}
                   onChange={(e) => updateField('new_door', 'laser_top_right', parseFloat(e.target.value))}
                 />
@@ -208,27 +193,24 @@ export default function MeasurementsForm({ measurements, onChange }) {
             </div>
           </div>
 
-          <div className="grid grid-cols-3 gap-2">
+          <div className="grid grid-cols-3 gap-4">
             <div>
-              <Label className="text-xs">Type</Label>
+              <Label>Type</Label>
               <Input
-                className="h-8 text-xs"
                 value={data.new_door.type || ""}
                 onChange={(e) => updateField('new_door', 'type', e.target.value)}
               />
             </div>
             <div>
-              <Label className="text-xs">Finish</Label>
+              <Label>Finish</Label>
               <Input
-                className="h-8 text-xs"
                 value={data.new_door.finish || ""}
                 onChange={(e) => updateField('new_door', 'finish', e.target.value)}
               />
             </div>
             <div>
-              <Label className="text-xs">Colour</Label>
+              <Label>Colour</Label>
               <Input
-                className="h-8 text-xs"
                 value={data.new_door.colour || ""}
                 onChange={(e) => updateField('new_door', 'colour', e.target.value)}
               />
@@ -238,70 +220,64 @@ export default function MeasurementsForm({ measurements, onChange }) {
       </Card>
 
       <Card>
-        <CardHeader className="p-3">
-          <CardTitle className="text-sm flex items-center gap-3">
+        <CardHeader>
+          <CardTitle className="flex items-center gap-3">
             <span>Existing Door</span>
             <div className="flex items-center gap-2">
               <Checkbox
                 checked={data.existing_door.removal_required || false}
                 onCheckedChange={(checked) => updateField('existing_door', 'removal_required', checked)}
               />
-              <Label className="text-xs font-normal">Removal Required</Label>
+              <Label className="text-sm font-normal">Removal Required</Label>
             </div>
           </CardTitle>
         </CardHeader>
-        <CardContent className="space-y-3 p-3">
-          <div className="grid grid-cols-3 gap-2">
+        <CardContent className="space-y-4">
+          <div className="grid grid-cols-3 gap-4">
             <div>
-              <Label className="text-xs">Height Left Side</Label>
+              <Label>Height Left Side</Label>
               <Input
                 type="number"
-                className="h-8 text-xs"
                 value={data.existing_door.height_left || ""}
                 onChange={(e) => updateField('existing_door', 'height_left', parseFloat(e.target.value))}
               />
             </div>
             <div>
-              <Label className="text-xs">Height Right Side</Label>
+              <Label>Height Right Side</Label>
               <Input
                 type="number"
-                className="h-8 text-xs"
                 value={data.existing_door.height_right || ""}
                 onChange={(e) => updateField('existing_door', 'height_right', parseFloat(e.target.value))}
               />
             </div>
             <div>
-              <Label className="text-xs">Width</Label>
+              <Label>Width</Label>
               <Input
                 type="number"
-                className="h-8 text-xs"
                 value={data.existing_door.width || ""}
                 onChange={(e) => updateField('existing_door', 'width', parseFloat(e.target.value))}
               />
             </div>
           </div>
 
-          <div className="grid grid-cols-3 gap-2">
+          <div className="grid grid-cols-3 gap-4">
             <div>
-              <Label className="text-xs">Type</Label>
+              <Label>Type</Label>
               <Input
-                className="h-8 text-xs"
                 value={data.existing_door.type || ""}
                 onChange={(e) => updateField('existing_door', 'type', e.target.value)}
               />
             </div>
             <div>
-              <Label className="text-xs">Finish</Label>
+              <Label>Finish</Label>
               <Input
-                className="h-8 text-xs"
                 value={data.existing_door.finish || ""}
                 onChange={(e) => updateField('existing_door', 'finish', e.target.value)}
               />
             </div>
             <div>
-              <Label className="text-xs">Colour</Label>
+              <Label>Colour</Label>
               <Input
-                className="h-8 text-xs"
                 value={data.existing_door.colour || ""}
                 onChange={(e) => updateField('existing_door', 'colour', e.target.value)}
               />
@@ -311,15 +287,14 @@ export default function MeasurementsForm({ measurements, onChange }) {
       </Card>
 
       <Card>
-        <CardHeader className="p-3">
-          <CardTitle className="text-sm">Additional Information</CardTitle>
+        <CardHeader>
+          <CardTitle>Additional Information</CardTitle>
         </CardHeader>
-        <CardContent className="p-3">
+        <CardContent>
           <Textarea
-            className="text-xs"
             value={data.additional_info || ""}
             onChange={(e) => updateAdditionalInfo(e.target.value)}
-            rows={3}
+            rows={4}
           />
         </CardContent>
       </Card>

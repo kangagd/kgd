@@ -1,23 +1,31 @@
 import React, { useState, useEffect } from "react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { MapPin, Calendar, Clock, User, Briefcase, FileText, Tag } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { MapPin, Calendar, Clock, User, Briefcase, FileText, Tag, LogIn } from "lucide-react";
 import { format, parseISO } from "date-fns";
 import { base44 } from "@/api/base44Client";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 
 const statusColors = {
-  in_progress: "bg-orange-100 text-orange-800 border-orange-200",
-  scheduled: "bg-blue-100 text-blue-800 border-blue-200",
-  open: "bg-purple-100 text-purple-800 border-purple-200",
+  in_progress: "bg-blue-100 text-blue-800 border-blue-200",
+  new_quote: "bg-purple-100 text-purple-800 border-purple-200",
+  update_quote: "bg-indigo-100 text-indigo-800 border-indigo-200",
+  send_invoice: "bg-orange-100 text-orange-800 border-orange-200",
   completed: "bg-green-100 text-green-800 border-green-200",
+  return_visit_required: "bg-amber-100 text-amber-800 border-amber-200",
+  scheduled: "bg-slate-100 text-slate-800 border-slate-200",
   cancelled: "bg-slate-100 text-slate-800 border-slate-200"
 };
 
 const statusLabels = {
   in_progress: "In Progress",
-  scheduled: "Scheduled",
-  open: "Open",
+  new_quote: "New Quote",
+  update_quote: "Update Quote",
+  send_invoice: "Send Invoice",
   completed: "Completed",
+  return_visit_required: "Return Visit Required",
+  scheduled: "Scheduled",
   cancelled: "Cancelled"
 };
 
@@ -30,6 +38,7 @@ const customerTypeColors = {
 
 export default function JobList({ jobs, isLoading, onSelectJob }) {
   const [user, setUser] = useState(null);
+  const queryClient = useQueryClient();
 
   useEffect(() => {
     const loadUser = async () => {
@@ -43,10 +52,41 @@ export default function JobList({ jobs, isLoading, onSelectJob }) {
     loadUser();
   }, []);
 
+  const { data: checkIns = [] } = useQuery({
+    queryKey: ['allCheckIns'],
+    queryFn: () => base44.entities.CheckInOut.filter({}),
+  });
+
+  const checkInMutation = useMutation({
+    mutationFn: async (jobId) => {
+      const checkIn = await base44.entities.CheckInOut.create({
+        job_id: jobId,
+        technician_email: user.email,
+        technician_name: user.full_name,
+        check_in_time: new Date().toISOString(),
+      });
+      await base44.entities.Job.update(jobId, { status: 'in_progress' });
+      return checkIn;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['allCheckIns'] });
+      queryClient.invalidateQueries({ queryKey: ['jobs'] });
+    },
+  });
+
+  const handleCheckIn = (e, jobId) => {
+    e.stopPropagation();
+    checkInMutation.mutate(jobId);
+  };
+
   const handleAddressClick = (e, address) => {
     e.stopPropagation();
     const mapsUrl = `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(address)}`;
     window.open(mapsUrl, '_blank');
+  };
+
+  const hasActiveCheckIn = (jobId) => {
+    return checkIns.some(c => c.job_id === jobId && !c.check_out_time && c.technician_email === user?.email);
   };
 
   const isTechnician = user?.is_field_technician && user?.role !== 'admin';
@@ -67,9 +107,7 @@ export default function JobList({ jobs, isLoading, onSelectJob }) {
     );
   }
 
-  const validJobs = (jobs || []).filter(job => job && job.id);
-
-  if (validJobs.length === 0) {
+  if (jobs.length === 0) {
     return (
       <Card className="p-12 text-center">
         <Briefcase className="w-16 h-16 mx-auto text-slate-300 mb-4" />
@@ -81,7 +119,7 @@ export default function JobList({ jobs, isLoading, onSelectJob }) {
 
   return (
     <div className="grid gap-4">
-      {validJobs.map((job) => (
+      {jobs.map((job) => (
         <Card 
           key={job.id}
           className="hover:shadow-lg transition-shadow cursor-pointer"
@@ -90,38 +128,45 @@ export default function JobList({ jobs, isLoading, onSelectJob }) {
           <CardContent className="p-4 md:p-6">
             <div className="flex items-start justify-between mb-3">
               <div className="flex-1">
-                <h3 className="font-semibold text-lg text-slate-900">{job.customer_name || 'Unknown Customer'}</h3>
-                <p className="text-sm text-slate-500 mb-1">Job #{job.job_number || 'N/A'}</p>
-                {job.address && (
-                  <a
-                    href={`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(job.address)}`}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    onClick={(e) => handleAddressClick(e, job.address)}
-                    className="flex items-start gap-2 text-slate-700 hover:text-orange-600 transition-colors group"
-                  >
-                    <MapPin className="w-4 h-4 text-orange-600 mt-0.5 flex-shrink-0" />
-                    <span className="text-sm group-hover:underline">{job.address}</span>
-                  </a>
-                )}
+                <h3 className="font-semibold text-lg text-slate-900">{job.customer_name}</h3>
+                <p className="text-sm text-slate-500 mb-1">Job #{job.job_number}</p>
+                <a
+                  href={`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(job.address)}`}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  onClick={(e) => handleAddressClick(e, job.address)}
+                  className="flex items-start gap-2 text-slate-700 hover:text-orange-600 transition-colors group"
+                >
+                  <MapPin className="w-4 h-4 text-orange-600 mt-0.5 flex-shrink-0" />
+                  <span className="text-sm group-hover:underline">{job.address}</span>
+                </a>
               </div>
               <div className="flex flex-wrap gap-2 justify-end items-start">
-                <Badge className={statusColors[job.status] || statusColors.scheduled}>
-                  {statusLabels[job.status] || job.status || 'Scheduled'}
+                <Badge className={statusColors[job.status]}>
+                  {statusLabels[job.status] || job.status}
                 </Badge>
+                {isTechnician && job.status === 'scheduled' && job.assigned_to === user?.email && !hasActiveCheckIn(job.id) && (
+                  <Button
+                    size="sm"
+                    onClick={(e) => handleCheckIn(e, job.id)}
+                    disabled={checkInMutation.isPending}
+                    className="bg-blue-600 hover:bg-blue-700 h-7 text-xs"
+                  >
+                    <LogIn className="w-3 h-3 mr-1" />
+                    Check In
+                  </Button>
+                )}
               </div>
             </div>
 
             <div className="space-y-2">
               <div className="flex flex-wrap gap-4">
-                {job.scheduled_date && (
-                  <div className="flex items-center gap-2 text-slate-700">
-                    <Calendar className="w-4 h-4 text-slate-400" />
-                    <span className="text-sm">
-                      {format(parseISO(job.scheduled_date), 'MMM d, yyyy')}
-                    </span>
-                  </div>
-                )}
+                <div className="flex items-center gap-2 text-slate-700">
+                  <Calendar className="w-4 h-4 text-slate-400" />
+                  <span className="text-sm">
+                    {job.scheduled_date && format(parseISO(job.scheduled_date), 'MMM d, yyyy')}
+                  </span>
+                </div>
                 
                 {job.scheduled_time && (
                   <div className="flex items-center gap-2 text-slate-700">

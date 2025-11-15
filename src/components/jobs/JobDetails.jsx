@@ -1,9 +1,9 @@
-import React, { useState, useEffect, useRef } from "react";
+import React, { useState, useEffect } from "react";
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Textarea } from "@/components/ui/textarea";
-import { ArrowLeft, Edit, MapPin, Phone, Calendar, Clock, User, Briefcase, FileText, Image as ImageIcon, DollarSign, Sparkles, FileCheck, History, Camera, LogIn, LogOut, Tag } from "lucide-react";
+import { ArrowLeft, Edit, MapPin, Phone, Calendar, Clock, User, Briefcase, FileText, Image as ImageIcon, DollarSign, Sparkles, LogIn, FileCheck, History, Car } from "lucide-react";
 import { format, parseISO } from "date-fns";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { base44 } from "@/api/base44Client";
@@ -12,13 +12,10 @@ import PriceListModal from "./PriceListModal";
 import TechnicianAssistant from "./TechnicianAssistant";
 import MeasurementsForm from "./MeasurementsForm";
 import ChangeHistoryModal from "./ChangeHistoryModal";
-import NavigationCard from "./NavigationCard";
-import CheckOutDialog from "./CheckOutDialog";
 
 const statusColors = {
   scheduled: "bg-blue-100 text-blue-800 border-blue-200",
   in_progress: "bg-orange-100 text-orange-800 border-orange-200",
-  open: "bg-purple-100 text-purple-800 border-purple-200",
   completed: "bg-green-100 text-green-800 border-green-200",
   cancelled: "bg-slate-100 text-slate-800 border-slate-200",
 };
@@ -31,25 +28,14 @@ const outcomeColors = {
   return_visit_required: "bg-amber-100 text-amber-800 border-amber-200",
 };
 
-const outcomeToStatusMap = {
-  send_invoice: 'completed',
-  completed: 'completed',
-  return_visit_required: 'scheduled',
-  new_quote: 'open',
-  update_quote: 'open',
-};
-
 export default function JobDetails({ job, onClose, onEdit, onStatusChange }) {
   const [showPriceList, setShowPriceList] = useState(false);
   const [showAssistant, setShowAssistant] = useState(false);
   const [showHistory, setShowHistory] = useState(false);
-  const [showCheckOutDialog, setShowCheckOutDialog] = useState(false);
   const [user, setUser] = useState(null);
-  const [measurements, setMeasurements] = useState(job?.measurements || null);
-  const [notes, setNotes] = useState(job?.notes || "");
-  const [additionalInfo, setAdditionalInfo] = useState(job?.additional_info || "");
-  const [uploading, setUploading] = useState(false);
-  const fileInputRef = useRef(null);
+  const [measurements, setMeasurements] = useState(job.measurements || null);
+  const [notes, setNotes] = useState(job.notes || "");
+  const [additionalInfo, setAdditionalInfo] = useState(job.additional_info || "");
   const queryClient = useQueryClient();
 
   useEffect(() => {
@@ -64,15 +50,9 @@ export default function JobDetails({ job, onClose, onEdit, onStatusChange }) {
     loadUser();
   }, []);
 
-  const { data: allJobs = [] } = useQuery({
-    queryKey: ['jobs'],
-    queryFn: () => base44.entities.Job.list('-scheduled_date'),
-  });
-
   const { data: checkIns = [] } = useQuery({
-    queryKey: ['checkIns', job?.id],
+    queryKey: ['checkIns', job.id],
     queryFn: () => base44.entities.CheckInOut.filter({ job_id: job.id }),
-    enabled: !!job?.id,
   });
 
   const activeCheckIn = checkIns.find(c => !c.check_out_time && c.technician_email === user?.email);
@@ -91,31 +71,6 @@ export default function JobDetails({ job, onClose, onEdit, onStatusChange }) {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['checkIns', job.id] });
       queryClient.invalidateQueries({ queryKey: ['jobs'] });
-    },
-  });
-
-  const checkOutMutation = useMutation({
-    mutationFn: async (outcome) => {
-      const checkOutTime = new Date().toISOString();
-      const checkInTime = new Date(activeCheckIn.check_in_time);
-      const durationHours = (new Date(checkOutTime) - checkInTime) / (1000 * 60 * 60);
-
-      await base44.entities.CheckInOut.update(activeCheckIn.id, {
-        check_out_time: checkOutTime,
-        duration_hours: Math.round(durationHours * 100) / 100,
-      });
-
-      const newStatus = outcomeToStatusMap[outcome] || 'completed';
-
-      await base44.entities.Job.update(job.id, {
-        status: newStatus,
-        outcome: outcome,
-      });
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['checkIns', job.id] });
-      queryClient.invalidateQueries({ queryKey: ['jobs'] });
-      setShowCheckOutDialog(false);
     },
   });
 
@@ -156,33 +111,10 @@ export default function JobDetails({ job, onClose, onEdit, onStatusChange }) {
     },
   });
 
-  const uploadImageMutation = useMutation({
-    mutationFn: async (file) => {
-      const { file_url } = await base44.integrations.Core.UploadFile({ file });
-      const currentImages = job.image_urls || [];
-      await base44.entities.Job.update(job.id, {
-        image_urls: [...currentImages, file_url]
-      });
-      return file_url;
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['jobs'] });
-      setUploading(false);
-    },
-  });
-
   const isTechnician = user?.is_field_technician && user?.role !== 'admin';
 
   const handleCheckIn = () => {
     checkInMutation.mutate();
-  };
-
-  const handleCheckOut = () => {
-    setShowCheckOutDialog(true);
-  };
-
-  const handleConfirmCheckOut = (outcome) => {
-    checkOutMutation.mutate(outcome);
   };
 
   const handleMeasurementsChange = (data) => {
@@ -204,40 +136,11 @@ export default function JobDetails({ job, onClose, onEdit, onStatusChange }) {
     }
   };
 
-  const handleFileChange = async (e) => {
-    const file = e.target.files?.[0];
-    if (file) {
-      setUploading(true);
-      uploadImageMutation.mutate(file);
-    }
+  const handleNavigate = (e) => {
+    e.preventDefault();
+    const mapsUrl = `https://www.google.com/maps/dir/?api=1&destination=${encodeURIComponent(job.address)}`;
+    window.open(mapsUrl, '_blank');
   };
-
-  // Find next scheduled job for the technician on the same day
-  const getNextJob = () => {
-    if (!job || !user || !isTechnician) return null;
-    
-    const todayJobs = allJobs
-      .filter(j => 
-        j.scheduled_date === job.scheduled_date &&
-        j.assigned_to === user.email &&
-        j.id !== job.id &&
-        (j.status === 'scheduled' || j.status === 'in_progress')
-      )
-      .sort((a, b) => {
-        const timeA = a.scheduled_time || '23:59';
-        const timeB = b.scheduled_time || '23:59';
-        return timeA.localeCompare(timeB);
-      });
-
-    const currentJobTime = job.scheduled_time || '00:00';
-    return todayJobs.find(j => (j.scheduled_time || '23:59') > currentJobTime);
-  };
-
-  const nextJob = getNextJob();
-
-  if (!job) {
-    return null;
-  }
 
   return (
     <>
@@ -249,16 +152,18 @@ export default function JobDetails({ job, onClose, onEdit, onStatusChange }) {
                 <ArrowLeft className="w-4 h-4" />
               </Button>
               <div className="flex-1 min-w-0">
-                <div className="flex items-center gap-2 flex-wrap">
-                  <CardTitle className="text-lg md:text-2xl font-bold">{job.customer_name || 'Unknown Customer'}</CardTitle>
-                  <Badge className={statusColors[job.status]}>
-                    {job.status.replace('_', ' ')}
-                  </Badge>
-                </div>
+                <CardTitle className="text-lg md:text-2xl font-bold">{job.customer_name}</CardTitle>
                 <p className="text-xs md:text-sm text-slate-500 mt-1">Job #{job.job_number}</p>
-                <div className="flex items-center gap-1 mt-2">
+                <div className="flex items-center gap-1.5 mt-2">
                   <MapPin className="w-4 h-4 text-orange-600 flex-shrink-0" />
                   <span className="text-sm md:text-base font-bold text-slate-900 flex-1">{job.address}</span>
+                  <button
+                    onClick={handleNavigate}
+                    className="flex-shrink-0 p-1.5 rounded-lg bg-orange-600 hover:bg-orange-700 text-white transition-colors"
+                    title="Navigate with Google Maps"
+                  >
+                    <Car className="w-4 h-4" />
+                  </button>
                 </div>
                 {job.customer_phone && (
                   <a href={`tel:${job.customer_phone}`} className="flex items-center gap-2 mt-2 text-slate-700 hover:text-orange-600 transition-colors">
@@ -269,43 +174,21 @@ export default function JobDetails({ job, onClose, onEdit, onStatusChange }) {
               </div>
             </div>
             <div className="flex flex-col gap-2 flex-shrink-0">
-              {isTechnician && !activeCheckIn && job.status === 'scheduled' && (
-                <Button
-                  onClick={handleCheckIn}
-                  disabled={checkInMutation.isPending}
-                  className="h-8 px-2 bg-blue-600 hover:bg-blue-700"
-                >
-                  <LogIn className="w-4 h-4 md:mr-1" />
-                  <span className="hidden md:inline text-xs">Check In</span>
-                </Button>
-              )}
-              {isTechnician && activeCheckIn && (
-                <Button
-                  onClick={handleCheckOut}
-                  disabled={checkOutMutation.isPending}
-                  className="h-8 px-2 bg-green-600 hover:bg-green-700"
-                >
-                  <LogOut className="w-4 h-4 md:mr-1" />
-                  <span className="hidden md:inline text-xs">Check Out</span>
-                </Button>
-              )}
               {!isTechnician && (
                 <Button onClick={() => onEdit(job)} className="h-8 px-2 bg-orange-600 hover:bg-orange-700">
                   <Edit className="w-4 h-4 md:mr-1" />
                   <span className="hidden md:inline text-xs">Edit</span>
                 </Button>
               )}
-              {!isTechnician && (
-                <Button 
-                  variant="outline"
-                  size="sm"
-                  onClick={() => setShowHistory(true)}
-                  className="h-8 px-2"
-                >
-                  <History className="w-4 h-4 md:mr-1" />
-                  <span className="hidden md:inline text-xs">History</span>
-                </Button>
-              )}
+              <Button 
+                variant="outline"
+                size="sm"
+                onClick={() => setShowHistory(true)}
+                className="h-8 px-2"
+              >
+                <History className="w-4 h-4 md:mr-1" />
+                <span className="hidden md:inline text-xs">History</span>
+              </Button>
               <Button 
                 variant="outline"
                 onClick={() => setShowPriceList(true)}
@@ -321,13 +204,13 @@ export default function JobDetails({ job, onClose, onEdit, onStatusChange }) {
           <Tabs defaultValue="details" className="w-full">
             <TabsList className="w-full grid grid-cols-4">
               <TabsTrigger value="details" className="text-xs md:text-sm">Details</TabsTrigger>
-              <TabsTrigger value="files" className="text-xs md:text-sm">
-                <ImageIcon className="w-3 h-3 md:w-4 md:h-4 md:mr-2" />
-                <span className="hidden md:inline">Files</span>
-              </TabsTrigger>
               <TabsTrigger value="form" className="text-xs md:text-sm">
                 <FileCheck className="w-3 h-3 md:w-4 md:h-4 md:mr-2" />
                 <span className="hidden md:inline">Form</span>
+              </TabsTrigger>
+              <TabsTrigger value="files" className="text-xs md:text-sm">
+                <ImageIcon className="w-3 h-3 md:w-4 md:h-4 md:mr-2" />
+                <span className="hidden md:inline">Files</span>
               </TabsTrigger>
               {!isTechnician && (
                 <TabsTrigger value="assistant" className="text-xs md:text-sm">
@@ -338,17 +221,16 @@ export default function JobDetails({ job, onClose, onEdit, onStatusChange }) {
             </TabsList>
 
             <TabsContent value="details" className="space-y-3 md:space-y-4 mt-3 md:mt-4">
-              {isTechnician && (
-                <NavigationCard currentJob={job} nextJob={nextJob} />
-              )}
-
-              {job.outcome && (
-                <div className="flex gap-2 flex-wrap">
+              <div className="flex gap-2 flex-wrap">
+                <Badge className={statusColors[job.status]}>
+                  {job.status.replace('_', ' ')}
+                </Badge>
+                {job.outcome && (
                   <Badge className={outcomeColors[job.outcome]}>
                     {job.outcome.replace(/_/g, ' ')}
                   </Badge>
-                </div>
-              )}
+                )}
+              </div>
 
               <div className="grid gap-3 md:gap-4">
                 <div className="space-y-2 md:space-y-3">
@@ -366,36 +248,16 @@ export default function JobDetails({ job, onClose, onEdit, onStatusChange }) {
                       </div>
                     )}
                   </div>
-                  <div className="grid grid-cols-2 gap-2 md:gap-3">
-                    {job.door_gate_type && (
-                      <div className="flex items-center gap-2 p-2 md:p-3 bg-slate-50 rounded-lg">
-                        <Tag className="w-3 h-3 md:w-4 md:h-4 text-slate-400" />
-                        <span className="text-xs md:text-sm">{job.door_gate_type}</span>
-                      </div>
-                    )}
-                    {job.job_type_name && (
-                      <div className="flex items-center gap-2 p-2 md:p-3 bg-slate-50 rounded-lg">
-                        <Briefcase className="w-3 h-3 md:w-4 md:h-4 text-slate-400" />
-                        <span className="text-xs md:text-sm">{job.job_type_name}</span>
-                      </div>
-                    )}
-                  </div>
+                  {job.job_type_name && (
+                    <div className="flex items-center gap-2 p-2 md:p-3 bg-slate-50 rounded-lg">
+                      <Briefcase className="w-3 h-3 md:w-4 md:h-4 text-slate-400" />
+                      <span className="text-xs md:text-sm">{job.job_type_name}</span>
+                    </div>
+                  )}
                 </div>
               </div>
 
               <div className="border-t pt-3 md:pt-4">
-                <h3 className="text-sm md:text-base font-semibold text-slate-900 mb-2">Additional Information</h3>
-                <Textarea
-                  value={additionalInfo}
-                  onChange={(e) => setAdditionalInfo(e.target.value)}
-                  onBlur={handleAdditionalInfoBlur}
-                  placeholder="Add any additional information..."
-                  rows={3}
-                  className="text-xs md:text-sm bg-slate-50 border-slate-300"
-                />
-              </div>
-
-              <div>
                 <h3 className="text-sm md:text-base font-semibold text-slate-900 mb-2 flex items-center gap-2">
                   <FileText className="w-4 h-4 text-slate-600" />
                   Notes & Instructions
@@ -411,30 +273,65 @@ export default function JobDetails({ job, onClose, onEdit, onStatusChange }) {
                   />
                 </div>
               </div>
+
+              <div>
+                <h3 className="text-sm md:text-base font-semibold text-slate-900 mb-2">Additional Information</h3>
+                <Textarea
+                  value={additionalInfo}
+                  onChange={(e) => setAdditionalInfo(e.target.value)}
+                  onBlur={handleAdditionalInfoBlur}
+                  placeholder="Add any additional information..."
+                  rows={3}
+                  className="text-xs md:text-sm bg-slate-50 border-slate-300"
+                />
+              </div>
+
+              <div className="flex flex-col gap-2 pt-2">
+                {!activeCheckIn && job.status === 'scheduled' && (
+                  <Button
+                    onClick={handleCheckIn}
+                    disabled={checkInMutation.isPending}
+                    className="w-full bg-blue-600 hover:bg-blue-700"
+                    size="lg"
+                  >
+                    <LogIn className="w-4 h-4 mr-2" />
+                    {checkInMutation.isPending ? 'Checking In...' : 'Check In'}
+                  </Button>
+                )}
+                {job.status === 'scheduled' && (
+                  <Button
+                    onClick={() => onStatusChange('in_progress')}
+                    className="w-full bg-orange-600 hover:bg-orange-700"
+                    size="lg"
+                  >
+                    Start Job
+                  </Button>
+                )}
+                {job.status === 'in_progress' && (
+                  <Button
+                    onClick={() => onStatusChange('completed')}
+                    className="w-full bg-green-600 hover:bg-green-700"
+                    size="lg"
+                  >
+                    Complete Job
+                  </Button>
+                )}
+              </div>
+            </TabsContent>
+
+            <TabsContent value="form" className="mt-3 md:mt-4">
+              <div className="space-y-3 md:space-y-4">
+                <h3 className="text-sm md:text-base font-semibold text-slate-900">Measurements & Form</h3>
+                <MeasurementsForm
+                  measurements={measurements}
+                  onChange={handleMeasurementsChange}
+                />
+              </div>
             </TabsContent>
 
             <TabsContent value="files" className="mt-3 md:mt-4">
               <div className="space-y-3 md:space-y-4">
-                <div className="flex items-center justify-between">
-                  <h3 className="text-sm md:text-base font-semibold text-slate-900">Photos & Attachments</h3>
-                  <Button
-                    onClick={() => fileInputRef.current?.click()}
-                    disabled={uploading}
-                    className="bg-orange-600 hover:bg-orange-700"
-                    size="sm"
-                  >
-                    <Camera className="w-4 h-4 mr-2" />
-                    {uploading ? 'Uploading...' : 'Take Photo'}
-                  </Button>
-                  <input
-                    ref={fileInputRef}
-                    type="file"
-                    accept="image/*"
-                    capture="environment"
-                    onChange={handleFileChange}
-                    className="hidden"
-                  />
-                </div>
+                <h3 className="text-sm md:text-base font-semibold text-slate-900">Photos & Attachments</h3>
                 
                 {job.image_urls && job.image_urls.length > 0 ? (
                   <div>
@@ -485,16 +382,6 @@ export default function JobDetails({ job, onClose, onEdit, onStatusChange }) {
               </div>
             </TabsContent>
 
-            <TabsContent value="form" className="mt-3 md:mt-4">
-              <div className="space-y-3 md:space-y-4">
-                <h3 className="text-sm md:text-base font-semibold text-slate-900">Measurements & Form</h3>
-                <MeasurementsForm
-                  measurements={measurements}
-                  onChange={handleMeasurementsChange}
-                />
-              </div>
-            </TabsContent>
-
             {!isTechnician && (
               <TabsContent value="assistant" className="mt-3 md:mt-4">
                 <TechnicianAssistant job={job} embedded={true} />
@@ -513,14 +400,6 @@ export default function JobDetails({ job, onClose, onEdit, onStatusChange }) {
         open={showHistory}
         onClose={() => setShowHistory(false)}
         jobId={job.id}
-      />
-
-      <CheckOutDialog
-        open={showCheckOutDialog}
-        onClose={() => setShowCheckOutDialog(false)}
-        job={job}
-        onConfirm={handleConfirmCheckOut}
-        isSubmitting={checkOutMutation.isPending}
       />
 
       {!isTechnician && (
