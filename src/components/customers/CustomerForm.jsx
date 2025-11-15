@@ -10,6 +10,7 @@ import { ArrowLeft } from "lucide-react";
 export default function CustomerForm({ customer, onSubmit, onCancel, isSubmitting }) {
   const [formData, setFormData] = useState(customer || {
     name: "",
+    customer_type: "",
     phone: "",
     email: "",
     secondary_phone: "",
@@ -44,6 +45,21 @@ export default function CustomerForm({ customer, onSubmit, onCancel, isSubmittin
               onChange={(e) => setFormData({ ...formData, name: e.target.value })}
               required
             />
+          </div>
+
+          <div className="space-y-2">
+            <Label htmlFor="customer_type">Customer Type</Label>
+            <Select value={formData.customer_type} onValueChange={(val) => setFormData({ ...formData, customer_type: val })}>
+              <SelectTrigger>
+                <SelectValue placeholder="Select customer type" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="Owner">Owner</SelectItem>
+                <SelectItem value="Builder">Builder</SelectItem>
+                <SelectItem value="Real Estate - Tenant">Real Estate - Tenant</SelectItem>
+                <SelectItem value="Strata - Owner">Strata - Owner</SelectItem>
+              </SelectContent>
+            </Select>
           </div>
 
           <div className="grid md:grid-cols-2 gap-6">
