@@ -18,136 +18,196 @@ Deno.serve(async (req) => {
       const previousStage = previous.stage_id;
       
       // Check if deal moved to "Job Booked" stage
-      // You'll need to replace this with your actual "Job Booked" stage ID from Pipedrive
       const JOB_BOOKED_STAGE_ID = parseInt(Deno.env.get('PIPEDRIVE_JOB_BOOKED_STAGE_ID') || '0');
       
       if (currentStage === JOB_BOOKED_STAGE_ID && currentStage !== previousStage) {
         console.log('Deal moved to Job Booked stage:', current.id);
         
-        // Fetch full deal details from Pipedrive
         const dealId = current.id;
         const apiToken = Deno.env.get('PIPEDRIVE_API_TOKEN');
         
-        const dealResponse = await fetch(
-          `https://api.pipedrive.com/v1/deals/${dealId}?api_token=${apiToken}`
-        );
-        const dealData = await dealResponse.json();
-        
-        if (!dealData.success) {
-          throw new Error('Failed to fetch deal from Pipedrive');
+        if (!apiToken) {
+          console.error('PIPEDRIVE_API_TOKEN not set');
+          return Response.json({ 
+            success: false, 
+            error: 'Pipedrive API token not configured' 
+          }, { status: 500 });
         }
         
-        const deal = dealData.data;
-        
-        // Fetch person (contact) details
-        let personData = null;
-        if (deal.person_id) {
-          const personResponse = await fetch(
-            `https://api.pipedrive.com/v1/persons/${deal.person_id}?api_token=${apiToken}`
+        try {
+          // Fetch full deal details from Pipedrive
+          const dealResponse = await fetch(
+            `https://api.pipedrive.com/v1/deals/${dealId}?api_token=${apiToken}`
           );
-          const personResult = await personResponse.json();
-          if (personResult.success) {
-            personData = personResult.data;
+          
+          if (dealResponse.status === 401) {
+            console.error('Pipedrive authentication failed');
+            return Response.json({ 
+              success: false, 
+              error: 'Invalid Pipedrive API token' 
+            }, { status: 401 });
           }
-        }
-        
-        // Check if job already exists for this deal
-        const existingJobs = await base44.asServiceRole.entities.Job.filter({
-          pipedrive_deal_id: dealId.toString()
-        });
-        
-        if (existingJobs.length > 0) {
-          console.log('Job already exists for deal:', dealId);
+          
+          if (dealResponse.status === 429) {
+            console.error('Pipedrive API rate limit exceeded');
+            return Response.json({ 
+              success: false, 
+              error: 'Pipedrive API rate limit exceeded. Please try again later.' 
+            }, { status: 429 });
+          }
+          
+          if (!dealResponse.ok) {
+            console.error('Failed to fetch deal from Pipedrive:', dealResponse.status);
+            return Response.json({ 
+              success: false, 
+              error: `Pipedrive API error: ${dealResponse.status}` 
+            }, { status: dealResponse.status });
+          }
+          
+          const dealData = await dealResponse.json();
+          
+          if (!dealData.success) {
+            throw new Error('Pipedrive returned unsuccessful response');
+          }
+          
+          const deal = dealData.data;
+          
+          // Fetch person (contact) details
+          let personData = null;
+          if (deal.person_id) {
+            try {
+              const personResponse = await fetch(
+                `https://api.pipedrive.com/v1/persons/${deal.person_id}?api_token=${apiToken}`
+              );
+              
+              if (personResponse.status === 429) {
+                console.warn('Rate limit hit while fetching person, continuing without person data');
+              } else if (personResponse.ok) {
+                const personResult = await personResponse.json();
+                if (personResult.success) {
+                  personData = personResult.data;
+                }
+              }
+            } catch (personError) {
+              console.warn('Failed to fetch person data, continuing without it:', personError.message);
+            }
+          }
+          
+          // Check if job already exists for this deal
+          const existingJobs = await base44.asServiceRole.entities.Job.filter({
+            pipedrive_deal_id: dealId.toString()
+          });
+          
+          if (existingJobs.length > 0) {
+            console.log('Job already exists for deal:', dealId);
+            return Response.json({ 
+              success: true, 
+              message: 'Job already exists',
+              job_id: existingJobs[0].id 
+            });
+          }
+          
+          // Find or create customer
+          let customer = null;
+          const customerName = personData?.name || deal.person_name || deal.title;
+          const customerEmail = personData?.email?.[0]?.value || '';
+          const customerPhone = personData?.phone?.[0]?.value || '';
+          
+          // Try to find existing customer by email or phone
+          if (customerEmail) {
+            const existingCustomers = await base44.asServiceRole.entities.Customer.filter({
+              email: customerEmail
+            });
+            if (existingCustomers.length > 0) {
+              customer = existingCustomers[0];
+            }
+          }
+          
+          if (!customer && customerPhone) {
+            const existingCustomers = await base44.asServiceRole.entities.Customer.filter({
+              phone: customerPhone
+            });
+            if (existingCustomers.length > 0) {
+              customer = existingCustomers[0];
+            }
+          }
+          
+          // Create customer if not found
+          if (!customer) {
+            customer = await base44.asServiceRole.entities.Customer.create({
+              name: customerName,
+              email: customerEmail,
+              phone: customerPhone,
+              status: 'active',
+              notes: `Imported from Pipedrive deal #${dealId}`
+            });
+          }
+          
+          // Get the latest job number
+          const allJobs = await base44.asServiceRole.entities.Job.list('-job_number', 1);
+          const lastJobNumber = allJobs && allJobs[0]?.job_number ? allJobs[0].job_number : 4999;
+          const newJobNumber = lastJobNumber + 1;
+          
+          // Extract address from deal
+          const address = deal.org_address || personData?.address || deal.title || 'Address TBD';
+          
+          // Parse expected close date for scheduled date
+          const scheduledDate = deal.expected_close_date || new Date().toISOString().split('T')[0];
+          
+          // Create job
+          const job = await base44.asServiceRole.entities.Job.create({
+            job_number: newJobNumber,
+            customer_id: customer.id,
+            customer_name: customer.name,
+            customer_phone: customer.phone || '',
+            customer_email: customer.email || '',
+            customer_type: customer.customer_type || '',
+            address: address,
+            scheduled_date: scheduledDate,
+            status: 'scheduled',
+            priority: 'medium',
+            notes: deal.notes || `Imported from Pipedrive\nDeal: ${deal.title}\nValue: $${deal.value || 0}`,
+            pipedrive_deal_id: dealId.toString()
+          });
+          
+          console.log('Created job:', job.id, 'for deal:', dealId);
+          
+          // Update deal in Pipedrive with job number
+          try {
+            const updateResponse = await fetch(
+              `https://api.pipedrive.com/v1/deals/${dealId}?api_token=${apiToken}`,
+              {
+                method: 'PUT',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                  [Deno.env.get('PIPEDRIVE_JOB_NUMBER_FIELD_KEY') || 'job_number']: `#${newJobNumber}`
+                })
+              }
+            );
+            
+            if (updateResponse.status === 429) {
+              console.warn('Rate limit hit while updating deal with job number');
+            } else if (!updateResponse.ok) {
+              console.warn('Failed to update deal with job number:', updateResponse.status);
+            }
+          } catch (updateError) {
+            console.warn('Failed to update deal with job number:', updateError.message);
+          }
+          
           return Response.json({ 
             success: true, 
-            message: 'Job already exists',
-            job_id: existingJobs[0].id 
+            message: 'Job created successfully',
+            job_id: job.id,
+            job_number: newJobNumber
           });
+          
+        } catch (pipedriveError) {
+          console.error('Error processing Pipedrive deal:', pipedriveError);
+          return Response.json({ 
+            success: false, 
+            error: `Failed to process deal: ${pipedriveError.message}` 
+          }, { status: 500 });
         }
-        
-        // Find or create customer
-        let customer = null;
-        const customerName = personData?.name || deal.person_name || deal.title;
-        const customerEmail = personData?.email?.[0]?.value || '';
-        const customerPhone = personData?.phone?.[0]?.value || '';
-        
-        // Try to find existing customer by email or phone
-        if (customerEmail) {
-          const existingCustomers = await base44.asServiceRole.entities.Customer.filter({
-            email: customerEmail
-          });
-          if (existingCustomers.length > 0) {
-            customer = existingCustomers[0];
-          }
-        }
-        
-        if (!customer && customerPhone) {
-          const existingCustomers = await base44.asServiceRole.entities.Customer.filter({
-            phone: customerPhone
-          });
-          if (existingCustomers.length > 0) {
-            customer = existingCustomers[0];
-          }
-        }
-        
-        // Create customer if not found
-        if (!customer) {
-          customer = await base44.asServiceRole.entities.Customer.create({
-            name: customerName,
-            email: customerEmail,
-            phone: customerPhone,
-            status: 'active',
-            notes: `Imported from Pipedrive deal #${dealId}`
-          });
-        }
-        
-        // Get the latest job number
-        const allJobs = await base44.asServiceRole.entities.Job.list('-job_number', 1);
-        const lastJobNumber = allJobs && allJobs[0]?.job_number ? allJobs[0].job_number : 4999;
-        const newJobNumber = lastJobNumber + 1;
-        
-        // Extract address from deal
-        const address = deal.org_address || personData?.address || deal.title || 'Address TBD';
-        
-        // Parse expected close date for scheduled date
-        const scheduledDate = deal.expected_close_date || new Date().toISOString().split('T')[0];
-        
-        // Create job
-        const job = await base44.asServiceRole.entities.Job.create({
-          job_number: newJobNumber,
-          customer_id: customer.id,
-          customer_name: customer.name,
-          customer_phone: customer.phone || '',
-          customer_email: customer.email || '',
-          customer_type: customer.customer_type || '',
-          address: address,
-          scheduled_date: scheduledDate,
-          status: 'scheduled',
-          priority: 'medium',
-          notes: deal.notes || `Imported from Pipedrive\nDeal: ${deal.title}\nValue: $${deal.value || 0}`,
-          pipedrive_deal_id: dealId.toString()
-        });
-        
-        console.log('Created job:', job.id, 'for deal:', dealId);
-        
-        // Update deal in Pipedrive with job number
-        await fetch(
-          `https://api.pipedrive.com/v1/deals/${dealId}?api_token=${apiToken}`,
-          {
-            method: 'PUT',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-              '${Deno.env.get('PIPEDRIVE_JOB_NUMBER_FIELD_KEY') || 'job_number'}': `#${newJobNumber}`
-            })
-          }
-        );
-        
-        return Response.json({ 
-          success: true, 
-          message: 'Job created successfully',
-          job_id: job.id,
-          job_number: newJobNumber
-        });
       }
     }
     
@@ -184,7 +244,7 @@ Deno.serve(async (req) => {
     console.error('Webhook error:', error);
     return Response.json({ 
       success: false, 
-      error: error.message 
+      error: `Internal error: ${error.message}` 
     }, { status: 500 });
   }
 });
