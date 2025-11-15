@@ -3,7 +3,7 @@ import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Textarea } from "@/components/ui/textarea";
-import { ArrowLeft, Edit, MapPin, Phone, Calendar, Clock, User, Briefcase, FileText, Image as ImageIcon, DollarSign, Sparkles, LogIn, FileCheck, History, Car } from "lucide-react";
+import { ArrowLeft, Edit, MapPin, Phone, Calendar, Clock, User, Briefcase, FileText, Image as ImageIcon, DollarSign, Sparkles, LogIn, FileCheck, History } from "lucide-react";
 import { format, parseISO } from "date-fns";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { base44 } from "@/api/base44Client";
@@ -136,12 +136,6 @@ export default function JobDetails({ job, onClose, onEdit, onStatusChange }) {
     }
   };
 
-  const handleNavigate = (e) => {
-    e.preventDefault();
-    const mapsUrl = `https://www.google.com/maps/dir/?api=1&destination=${encodeURIComponent(job.address)}`;
-    window.open(mapsUrl, '_blank');
-  };
-
   return (
     <>
       <Card className={`border-none shadow-lg ${isTechnician ? 'rounded-none' : ''}`}>
@@ -156,14 +150,7 @@ export default function JobDetails({ job, onClose, onEdit, onStatusChange }) {
                 <p className="text-xs md:text-sm text-slate-500 mt-1">Job #{job.job_number}</p>
                 <div className="flex items-center gap-1.5 mt-2">
                   <MapPin className="w-4 h-4 text-orange-600 flex-shrink-0" />
-                  <span className="text-sm md:text-base font-bold text-slate-900 flex-1">{job.address}</span>
-                  <button
-                    onClick={handleNavigate}
-                    className="flex-shrink-0 p-1.5 rounded-lg bg-orange-600 hover:bg-orange-700 text-white transition-colors"
-                    title="Navigate with Google Maps"
-                  >
-                    <Car className="w-4 h-4" />
-                  </button>
+                  <span className="text-sm md:text-base font-bold text-slate-900">{job.address}</span>
                 </div>
                 {job.customer_phone && (
                   <a href={`tel:${job.customer_phone}`} className="flex items-center gap-2 mt-2 text-slate-700 hover:text-orange-600 transition-colors">
