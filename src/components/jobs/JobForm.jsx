@@ -23,6 +23,7 @@ export default function JobForm({ job, jobTypes, technicians, onSubmit, onCancel
     customer_name: "",
     customer_phone: "",
     customer_email: "",
+    customer_type: "",
     address: "",
     job_type_id: "",
     job_type_name: "",
@@ -77,6 +78,7 @@ export default function JobForm({ job, jobTypes, technicians, onSubmit, onCancel
         customer_name: customer.name,
         customer_phone: customer.phone || "",
         customer_email: customer.email || "",
+        customer_type: customer.customer_type || "",
       });
     }
   };
@@ -90,6 +92,7 @@ export default function JobForm({ job, jobTypes, technicians, onSubmit, onCancel
         customer_name: newCustomer.name,
         customer_phone: newCustomer.phone || "",
         customer_email: newCustomer.email || "",
+        customer_type: newCustomer.customer_type || "",
       });
       setShowNewCustomerDialog(false);
       setNewCustomerData({ name: "", phone: "", email: "" });
