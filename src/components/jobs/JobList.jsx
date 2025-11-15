@@ -79,12 +79,6 @@ export default function JobList({ jobs, isLoading, onSelectJob }) {
     checkInMutation.mutate(jobId);
   };
 
-  const handleAddressClick = (e, address) => {
-    e.stopPropagation();
-    const mapsUrl = `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(address)}`;
-    window.open(mapsUrl, '_blank');
-  };
-
   const hasActiveCheckIn = (jobId) => {
     return checkIns.some(c => c.job_id === jobId && !c.check_out_time && c.technician_email === user?.email);
   };
@@ -130,16 +124,10 @@ export default function JobList({ jobs, isLoading, onSelectJob }) {
               <div className="flex-1">
                 <h3 className="font-semibold text-lg text-slate-900">{job.customer_name}</h3>
                 <p className="text-sm text-slate-500 mb-1">Job #{job.job_number}</p>
-                <a
-                  href={`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(job.address)}`}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  onClick={(e) => handleAddressClick(e, job.address)}
-                  className="flex items-start gap-2 text-slate-700 hover:text-orange-600 transition-colors group"
-                >
+                <div className="flex items-start gap-2 text-slate-700">
                   <MapPin className="w-4 h-4 text-orange-600 mt-0.5 flex-shrink-0" />
-                  <span className="text-sm group-hover:underline">{job.address}</span>
-                </a>
+                  <span className="text-sm">{job.address}</span>
+                </div>
               </div>
               <div className="flex flex-wrap gap-2 justify-end items-start">
                 <Badge className={statusColors[job.status]}>

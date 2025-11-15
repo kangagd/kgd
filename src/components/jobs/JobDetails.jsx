@@ -285,15 +285,6 @@ export default function JobDetails({ job, onClose, onEdit, onStatusChange }) {
                     {checkInMutation.isPending ? 'Checking In...' : 'Check In'}
                   </Button>
                 )}
-                {job.status === 'scheduled' && (
-                  <Button
-                    onClick={() => onStatusChange('in_progress')}
-                    className="w-full bg-orange-600 hover:bg-orange-700"
-                    size="lg"
-                  >
-                    Start Job
-                  </Button>
-                )}
                 {job.status === 'in_progress' && (
                   <Button
                     onClick={() => onStatusChange('completed')}
