@@ -1,4 +1,3 @@
-
 import React, { useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -10,7 +9,8 @@ export default function MeasurementsForm({ measurements, onChange }) {
   const [data, setData] = useState(measurements || {
     new_door: {},
     existing_door: { removal_required: false },
-    additional_info: ""
+    additional_info: "",
+    is_islo: false
   });
 
   const updateField = (section, field, value) => {
@@ -31,8 +31,22 @@ export default function MeasurementsForm({ measurements, onChange }) {
     onChange(updated);
   };
 
+  const updateIslo = (value) => {
+    const updated = { ...data, is_islo: value };
+    setData(updated);
+    onChange(updated);
+  };
+
   return (
     <div className="space-y-6">
+      <div className="flex items-center gap-2">
+        <Checkbox
+          checked={data.is_islo || false}
+          onCheckedChange={updateIslo}
+        />
+        <Label>ISLO</Label>
+      </div>
+
       <Card>
         <CardHeader>
           <CardTitle>New Door Measurements</CardTitle>
@@ -139,7 +153,7 @@ export default function MeasurementsForm({ measurements, onChange }) {
                 />
               </div>
               <div>
-                <Label className="text-xs">Right Side</Label> {/* Changed from "Right" to "Right Side" */}
+                <Label className="text-xs">Right Side</Label>
                 <Input
                   type="number"
                   value={data.new_door.laser_floor_right || ""}
