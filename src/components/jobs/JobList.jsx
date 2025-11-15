@@ -1,11 +1,9 @@
 import React, { useState, useEffect } from "react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
-import { MapPin, Calendar, Clock, User, Briefcase, FileText, Tag, LogIn } from "lucide-react";
+import { MapPin, Calendar, Clock, User, Briefcase, FileText, Tag } from "lucide-react";
 import { format, parseISO } from "date-fns";
 import { base44 } from "@/api/base44Client";
-import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 
 const statusColors = {
   in_progress: "bg-blue-100 text-blue-800 border-blue-200",
@@ -38,7 +36,6 @@ const customerTypeColors = {
 
 export default function JobList({ jobs, isLoading, onSelectJob }) {
   const [user, setUser] = useState(null);
-  const queryClient = useQueryClient();
 
   useEffect(() => {
     const loadUser = async () => {
@@ -52,41 +49,10 @@ export default function JobList({ jobs, isLoading, onSelectJob }) {
     loadUser();
   }, []);
 
-  const { data: checkIns = [] } = useQuery({
-    queryKey: ['allCheckIns'],
-    queryFn: () => base44.entities.CheckInOut.filter({}),
-  });
-
-  const checkInMutation = useMutation({
-    mutationFn: async (jobId) => {
-      const checkIn = await base44.entities.CheckInOut.create({
-        job_id: jobId,
-        technician_email: user.email,
-        technician_name: user.full_name,
-        check_in_time: new Date().toISOString(),
-      });
-      await base44.entities.Job.update(jobId, { status: 'in_progress' });
-      return checkIn;
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['allCheckIns'] });
-      queryClient.invalidateQueries({ queryKey: ['jobs'] });
-    },
-  });
-
-  const handleCheckIn = (e, jobId) => {
-    e.stopPropagation();
-    checkInMutation.mutate(jobId);
-  };
-
   const handleAddressClick = (e, address) => {
     e.stopPropagation();
     const mapsUrl = `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(address)}`;
     window.open(mapsUrl, '_blank');
-  };
-
-  const hasActiveCheckIn = (jobId) => {
-    return checkIns.some(c => c.job_id === jobId && !c.check_out_time && c.technician_email === user?.email);
   };
 
   const isTechnician = user?.is_field_technician && user?.role !== 'admin';
@@ -145,17 +111,6 @@ export default function JobList({ jobs, isLoading, onSelectJob }) {
                 <Badge className={statusColors[job.status]}>
                   {statusLabels[job.status] || job.status}
                 </Badge>
-                {isTechnician && job.status === 'scheduled' && job.assigned_to === user?.email && !hasActiveCheckIn(job.id) && (
-                  <Button
-                    size="sm"
-                    onClick={(e) => handleCheckIn(e, job.id)}
-                    disabled={checkInMutation.isPending}
-                    className="bg-blue-600 hover:bg-blue-700 h-7 text-xs"
-                  >
-                    <LogIn className="w-3 h-3 mr-1" />
-                    Check In
-                  </Button>
-                )}
               </div>
             </div>
 
