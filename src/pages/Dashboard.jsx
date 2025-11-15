@@ -3,6 +3,8 @@ import { base44 } from "@/api/base44Client";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
 import { Plus, Search } from "lucide-react";
+import { useNavigate } from "react-router-dom";
+import { createPageUrl } from "@/utils";
 
 const statusColors = {
   scheduled: "bg-blue-100 text-blue-800 border-blue-200",
@@ -20,6 +22,7 @@ const priorityColors = {
 
 export default function Dashboard() {
   const [user, setUser] = useState(null);
+  const navigate = useNavigate();
 
   useEffect(() => {
     const loadUser = async () => {
@@ -67,7 +70,6 @@ export default function Dashboard() {
       const response = await base44.functions.invoke('debugPipedrive');
       console.log("Pipedrive Debug Response:", response.data);
       
-      // Open results in a new window
       const newWindow = window.open('', '_blank', 'width=800,height=600');
       newWindow.document.write(`
         <!DOCTYPE html>
@@ -108,6 +110,18 @@ export default function Dashboard() {
     }
   };
 
+  const handleCardClick = (filterType) => {
+    let url = createPageUrl("Jobs");
+    if (filterType === 'today') {
+      url += `?date=${today}`;
+    } else if (filterType === 'active') {
+      url += `?status=in_progress`;
+    } else if (filterType === 'completed') {
+      url += `?status=completed&date=${today}`;
+    }
+    navigate(url);
+  };
+
   return (
     <div className="p-4 md:p-8 bg-slate-50 min-h-screen">
       <div className="max-w-7xl mx-auto">
@@ -136,7 +150,10 @@ export default function Dashboard() {
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
-          <div className="bg-white rounded-xl border border-slate-200 p-6">
+          <div 
+            onClick={() => handleCardClick('today')}
+            className="bg-white rounded-xl border border-slate-200 p-6 cursor-pointer hover:shadow-lg hover:border-blue-300 transition-all"
+          >
             <div className="flex items-center justify-between mb-2">
               <h3 className="text-sm font-medium text-slate-500">Today's Jobs</h3>
               <div className="w-10 h-10 bg-blue-100 rounded-lg flex items-center justify-center">
@@ -144,10 +161,13 @@ export default function Dashboard() {
               </div>
             </div>
             <p className="text-2xl font-bold text-slate-900">{todayJobs.length}</p>
-            <p className="text-xs text-slate-500 mt-1">Scheduled for today</p>
+            <p className="text-xs text-slate-500 mt-1">Click to view →</p>
           </div>
 
-          <div className="bg-white rounded-xl border border-slate-200 p-6">
+          <div 
+            onClick={() => handleCardClick('active')}
+            className="bg-white rounded-xl border border-slate-200 p-6 cursor-pointer hover:shadow-lg hover:border-orange-300 transition-all"
+          >
             <div className="flex items-center justify-between mb-2">
               <h3 className="text-sm font-medium text-slate-500">Active Jobs</h3>
               <div className="w-10 h-10 bg-orange-100 rounded-lg flex items-center justify-center">
@@ -155,10 +175,13 @@ export default function Dashboard() {
               </div>
             </div>
             <p className="text-2xl font-bold text-slate-900">{activeJobs.length}</p>
-            <p className="text-xs text-slate-500 mt-1">In progress</p>
+            <p className="text-xs text-slate-500 mt-1">Click to view →</p>
           </div>
 
-          <div className="bg-white rounded-xl border border-slate-200 p-6">
+          <div 
+            onClick={() => handleCardClick('completed')}
+            className="bg-white rounded-xl border border-slate-200 p-6 cursor-pointer hover:shadow-lg hover:border-green-300 transition-all"
+          >
             <div className="flex items-center justify-between mb-2">
               <h3 className="text-sm font-medium text-slate-500">Completed</h3>
               <div className="w-10 h-10 bg-green-100 rounded-lg flex items-center justify-center">
@@ -166,10 +189,13 @@ export default function Dashboard() {
               </div>
             </div>
             <p className="text-2xl font-bold text-slate-900">{completedToday.length}</p>
-            <p className="text-xs text-slate-500 mt-1">Finished today</p>
+            <p className="text-xs text-slate-500 mt-1">Click to view →</p>
           </div>
 
-          <div className="bg-white rounded-xl border border-slate-200 p-6">
+          <div 
+            onClick={() => navigate(createPageUrl("Jobs"))}
+            className="bg-white rounded-xl border border-slate-200 p-6 cursor-pointer hover:shadow-lg hover:border-purple-300 transition-all"
+          >
             <div className="flex items-center justify-between mb-2">
               <h3 className="text-sm font-medium text-slate-500">Total Jobs</h3>
               <div className="w-10 h-10 bg-purple-100 rounded-lg flex items-center justify-center">
@@ -177,7 +203,7 @@ export default function Dashboard() {
               </div>
             </div>
             <p className="text-2xl font-bold text-slate-900">{jobs.length}</p>
-            <p className="text-xs text-slate-500 mt-1">All jobs</p>
+            <p className="text-xs text-slate-500 mt-1">Click to view →</p>
           </div>
         </div>
 

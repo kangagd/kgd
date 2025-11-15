@@ -71,6 +71,8 @@ export default function Jobs() {
     const action = params.get('action');
     const jobId = params.get('id');
     const customerId = params.get('customer_id');
+    const status = params.get('status');
+    const date = params.get('date');
     
     if (action === 'new') {
       setShowForm(true);
@@ -82,6 +84,10 @@ export default function Jobs() {
     if (jobId) {
       const job = jobs.find(j => j.id === jobId);
       if (job) setSelectedJob(job);
+    }
+
+    if (status) {
+      setStatusFilter(status);
     }
   }, [jobs]);
 
@@ -104,6 +110,13 @@ export default function Jobs() {
   const filteredJobs = jobs.filter(job => {
     // For technicians, only show their assigned jobs
     if (isTechnician && job.assigned_to !== user?.email) {
+      return false;
+    }
+
+    // Apply URL date filter if present
+    const params = new URLSearchParams(window.location.search);
+    const dateFilter = params.get('date');
+    if (dateFilter && job.scheduled_date !== dateFilter) {
       return false;
     }
     
