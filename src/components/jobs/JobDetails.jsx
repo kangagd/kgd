@@ -175,6 +175,16 @@ export default function JobDetails({ job, onClose, onEdit, onStatusChange }) {
               </div>
             </div>
             <div className="flex flex-col gap-2 flex-shrink-0">
+              {!activeCheckIn && job.status === 'scheduled' && (
+                <Button
+                  onClick={handleCheckIn}
+                  disabled={checkInMutation.isPending}
+                  className="h-8 px-2 bg-blue-600 hover:bg-blue-700"
+                >
+                  <LogIn className="w-4 h-4 md:mr-1" />
+                  <span className="hidden md:inline text-xs">Check In</span>
+                </Button>
+              )}
               {!isTechnician && (
                 <Button onClick={() => onEdit(job)} className="h-8 px-2 bg-orange-600 hover:bg-orange-700">
                   <Edit className="w-4 h-4 md:mr-1" />
@@ -259,6 +269,18 @@ export default function JobDetails({ job, onClose, onEdit, onStatusChange }) {
               </div>
 
               <div className="border-t pt-3 md:pt-4">
+                <h3 className="text-sm md:text-base font-semibold text-slate-900 mb-2">Additional Information</h3>
+                <Textarea
+                  value={additionalInfo}
+                  onChange={(e) => setAdditionalInfo(e.target.value)}
+                  onBlur={handleAdditionalInfoBlur}
+                  placeholder="Add any additional information..."
+                  rows={3}
+                  className="text-xs md:text-sm bg-slate-50 border-slate-300"
+                />
+              </div>
+
+              <div>
                 <h3 className="text-sm md:text-base font-semibold text-slate-900 mb-2 flex items-center gap-2">
                   <FileText className="w-4 h-4 text-slate-600" />
                   Notes & Instructions
@@ -275,30 +297,7 @@ export default function JobDetails({ job, onClose, onEdit, onStatusChange }) {
                 </div>
               </div>
 
-              <div>
-                <h3 className="text-sm md:text-base font-semibold text-slate-900 mb-2">Additional Information</h3>
-                <Textarea
-                  value={additionalInfo}
-                  onChange={(e) => setAdditionalInfo(e.target.value)}
-                  onBlur={handleAdditionalInfoBlur}
-                  placeholder="Add any additional information..."
-                  rows={3}
-                  className="text-xs md:text-sm bg-slate-50 border-slate-300"
-                />
-              </div>
-
               <div className="flex flex-col gap-2 pt-2">
-                {!activeCheckIn && job.status === 'scheduled' && (
-                  <Button
-                    onClick={handleCheckIn}
-                    disabled={checkInMutation.isPending}
-                    className="w-full bg-blue-600 hover:bg-blue-700"
-                    size="lg"
-                  >
-                    <LogIn className="w-4 h-4 mr-2" />
-                    {checkInMutation.isPending ? 'Checking In...' : 'Check In'}
-                  </Button>
-                )}
                 {job.status === 'scheduled' && (
                   <Button
                     onClick={() => onStatusChange('in_progress')}
