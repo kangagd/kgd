@@ -3,7 +3,7 @@ import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Textarea } from "@/components/ui/textarea";
-import { ArrowLeft, Edit, MapPin, Phone, Calendar, Clock, User, Briefcase, FileText, Image as ImageIcon, DollarSign, Sparkles, FileCheck, History, Camera, LogIn, LogOut } from "lucide-react";
+import { ArrowLeft, Edit, MapPin, Phone, Calendar, Clock, User, Briefcase, FileText, Image as ImageIcon, DollarSign, Sparkles, FileCheck, History, Camera, LogIn, LogOut, Tag } from "lucide-react";
 import { format, parseISO } from "date-fns";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { base44 } from "@/api/base44Client";
@@ -366,12 +366,20 @@ export default function JobDetails({ job, onClose, onEdit, onStatusChange }) {
                       </div>
                     )}
                   </div>
-                  {job.job_type_name && (
-                    <div className="flex items-center gap-2 p-2 md:p-3 bg-slate-50 rounded-lg">
-                      <Briefcase className="w-3 h-3 md:w-4 md:h-4 text-slate-400" />
-                      <span className="text-xs md:text-sm">{job.job_type_name}</span>
-                    </div>
-                  )}
+                  <div className="grid grid-cols-2 gap-2 md:gap-3">
+                    {job.door_gate_type && (
+                      <div className="flex items-center gap-2 p-2 md:p-3 bg-slate-50 rounded-lg">
+                        <Tag className="w-3 h-3 md:w-4 md:h-4 text-slate-400" />
+                        <span className="text-xs md:text-sm">{job.door_gate_type}</span>
+                      </div>
+                    )}
+                    {job.job_type_name && (
+                      <div className="flex items-center gap-2 p-2 md:p-3 bg-slate-50 rounded-lg">
+                        <Briefcase className="w-3 h-3 md:w-4 md:h-4 text-slate-400" />
+                        <span className="text-xs md:text-sm">{job.job_type_name}</span>
+                      </div>
+                    )}
+                  </div>
                 </div>
               </div>
 
