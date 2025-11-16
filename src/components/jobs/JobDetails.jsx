@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from "react";
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -5,7 +6,7 @@ import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Label } from "@/components/ui/label";
-import { ArrowLeft, MapPin, Phone, Calendar, Clock, User, Briefcase, FileText, Image as ImageIcon, DollarSign, Sparkles, LogIn, FileCheck, History, Package, ClipboardCheck, LogOut, Timer, AlertCircle, ChevronDown, Mail, Navigation } from "lucide-react";
+import { ArrowLeft, MapPin, Phone, Calendar, Clock, User, Briefcase, FileText, Image as ImageIcon, DollarSign, Sparkles, LogIn, FileCheck, History, Package, ClipboardCheck, LogOut, Timer, AlertCircle, ChevronDown, Mail, Navigation, Trash2 } from "lucide-react";
 import { format, parseISO } from "date-fns";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
@@ -19,6 +20,16 @@ import EditableField from "./EditableField";
 import EditableFileUpload from "./EditableFileUpload";
 import CustomerEditModal from "../customers/CustomerEditModal";
 import RichTextEditor from "../common/RichTextEditor";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 
 const statusColors = {
   open: "bg-slate-100 text-slate-800 border-slate-200",
@@ -78,11 +89,12 @@ const getAvatarColor = (name) => {
   return avatarColors[index];
 };
 
-export default function JobDetails({ job, onClose, onStatusChange }) {
+export default function JobDetails({ job, onClose, onStatusChange, onDelete }) {
   const [showPriceList, setShowPriceList] = useState(false);
   const [showAssistant, setShowAssistant] = useState(false);
   const [showHistory, setShowHistory] = useState(false);
   const [showCustomerEdit, setShowCustomerEdit] = useState(false);
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   const [user, setUser] = useState(null);
   const [measurements, setMeasurements] = useState(job.measurements || null);
   const [notes, setNotes] = useState(job.notes || "");
@@ -324,6 +336,11 @@ export default function JobDetails({ job, onClose, onStatusChange }) {
     updateCustomerMutation.mutate({ id: job.customer_id, data });
   };
 
+  const handleDelete = () => {
+    onDelete(job.id);
+    setShowDeleteConfirm(false);
+  };
+
   return (
     <>
       <Card className={`border-2 border-slate-200 shadow-lg ${isTechnician ? 'rounded-none' : 'rounded-2xl'}`}>
@@ -358,6 +375,16 @@ export default function JobDetails({ job, onClose, onStatusChange }) {
             </div>
             
             <div className="flex gap-1 flex-shrink-0">
+              {!isTechnician && (
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => setShowDeleteConfirm(true)}
+                  className="h-8 md:h-9 px-2 hover:bg-red-100 hover:text-red-600 transition-all"
+                >
+                  <Trash2 className="w-4 h-4" />
+                </Button>
+              )}
               <Button
                 variant="outline"
                 size="sm"
@@ -812,6 +839,26 @@ export default function JobDetails({ job, onClose, onStatusChange }) {
           job={job}
         />
       )}
+
+      <AlertDialog open={showDeleteConfirm} onOpenChange={setShowDeleteConfirm}>
+        <AlertDialogContent className="rounded-2xl border-2 border-slate-200">
+          <AlertDialogHeader>
+            <AlertDialogTitle className="text-xl font-bold text-[#000000]">Delete Job?</AlertDialogTitle>
+            <AlertDialogDescription className="text-slate-600">
+              This job will be moved to the archive. You can restore it within 30 days.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel className="rounded-xl font-semibold border-2">Cancel</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={handleDelete}
+              className="bg-red-600 hover:bg-red-700 rounded-xl font-semibold"
+            >
+              Delete
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </>
   );
 }
