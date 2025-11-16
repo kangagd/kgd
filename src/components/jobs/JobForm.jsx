@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from "react";
 import { Card, CardHeader, CardTitle, CardContent, CardFooter } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -35,7 +34,7 @@ export default function JobForm({ job, jobTypes, technicians, onSubmit, onCancel
     scheduled_date: "",
     scheduled_time: "",
     expected_duration: null,
-    status: "open", // Changed from "scheduled" to "open"
+    status: "open",
     outcome: "",
     notes: "",
     additional_info: "",
@@ -71,11 +70,10 @@ export default function JobForm({ job, jobTypes, technicians, onSubmit, onCancel
       formData.job_number = lastJobNumber + 1;
     }
     
-    // Auto-set status to scheduled if date is in the future
     if (formData.scheduled_date) {
       const scheduledDate = new Date(formData.scheduled_date);
       const today = new Date();
-      today.setHours(0, 0, 0, 0); // Normalize today's date to start of day
+      today.setHours(0, 0, 0, 0);
       
       if (scheduledDate >= today && formData.status === 'open') {
         formData.status = 'scheduled';
@@ -198,13 +196,18 @@ export default function JobForm({ job, jobTypes, technicians, onSubmit, onCancel
 
   return (
     <>
-      <Card className="border-none shadow-lg">
-        <CardHeader className="border-b border-slate-100">
+      <Card className="border-2 border-slate-200 shadow-lg rounded-2xl">
+        <CardHeader className="border-b-2 border-slate-200 bg-gradient-to-r from-slate-50 to-white p-6">
           <div className="flex items-center gap-4">
-            <Button variant="ghost" size="icon" onClick={onCancel}>
-              <ArrowLeft className="w-4 h-4" />
+            <Button 
+              variant="ghost" 
+              size="icon" 
+              onClick={onCancel}
+              className="hover:bg-slate-200 transition-colors"
+            >
+              <ArrowLeft className="w-5 h-5" />
             </Button>
-            <CardTitle className="text-2xl font-bold">
+            <CardTitle className="text-2xl font-bold text-[#000000] tracking-tight">
               {job ? `Edit Job #${job.job_number}` : 'Create New Job'}
             </CardTitle>
           </div>
@@ -212,10 +215,10 @@ export default function JobForm({ job, jobTypes, technicians, onSubmit, onCancel
         <form onSubmit={handleSubmit}>
           <CardContent className="p-6 space-y-6">
             <div className="space-y-2">
-              <Label htmlFor="customer_id">Customer *</Label>
+              <Label htmlFor="customer_id" className="text-sm font-semibold text-[#000000]">Customer *</Label>
               <div className="flex gap-2">
                 <Select value={formData.customer_id} onValueChange={handleCustomerChange} required>
-                  <SelectTrigger className="flex-1">
+                  <SelectTrigger className="flex-1 border-2 border-slate-300 focus:border-[#fae008] focus:ring-2 focus:ring-[#fae008]/20 transition-all">
                     <SelectValue placeholder="Select customer" />
                   </SelectTrigger>
                   <SelectContent>
@@ -230,6 +233,7 @@ export default function JobForm({ job, jobTypes, technicians, onSubmit, onCancel
                   type="button"
                   variant="outline"
                   onClick={() => setShowNewCustomerDialog(true)}
+                  className="border-2 hover:bg-slate-100"
                 >
                   <Plus className="w-4 h-4" />
                 </Button>
@@ -237,20 +241,21 @@ export default function JobForm({ job, jobTypes, technicians, onSubmit, onCancel
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="address">Service Address *</Label>
+              <Label htmlFor="address" className="text-sm font-semibold text-[#000000]">Service Address *</Label>
               <Input
                 id="address"
                 value={formData.address}
                 onChange={(e) => setFormData({ ...formData, address: e.target.value })}
                 required
+                className="border-2 border-slate-300 focus:border-[#fae008] focus:ring-2 focus:ring-[#fae008]/20 transition-all"
               />
             </div>
 
             <div className="grid md:grid-cols-2 gap-6">
               <div className="space-y-2">
-                <Label htmlFor="product">Product</Label>
+                <Label htmlFor="product" className="text-sm font-semibold text-[#000000]">Product</Label>
                 <Select value={formData.product} onValueChange={(val) => setFormData({ ...formData, product: val })}>
-                  <SelectTrigger>
+                  <SelectTrigger className="border-2 border-slate-300 focus:border-[#fae008] focus:ring-2 focus:ring-[#fae008]/20">
                     <SelectValue placeholder="Select product" />
                   </SelectTrigger>
                   <SelectContent>
@@ -264,9 +269,9 @@ export default function JobForm({ job, jobTypes, technicians, onSubmit, onCancel
               </div>
 
               <div className="space-y-2">
-                <Label htmlFor="job_type">Job Type</Label>
+                <Label htmlFor="job_type" className="text-sm font-semibold text-[#000000]">Job Type</Label>
                 <Select value={formData.job_type_id} onValueChange={handleJobTypeChange}>
-                  <SelectTrigger>
+                  <SelectTrigger className="border-2 border-slate-300 focus:border-[#fae008] focus:ring-2 focus:ring-[#fae008]/20">
                     <SelectValue placeholder="Select job type" />
                   </SelectTrigger>
                   <SelectContent>
@@ -280,7 +285,7 @@ export default function JobForm({ job, jobTypes, technicians, onSubmit, onCancel
               </div>
 
               <div className="space-y-2">
-                <Label htmlFor="assigned_to">Assign Technicians</Label>
+                <Label htmlFor="assigned_to" className="text-sm font-semibold text-[#000000]">Assign Technicians</Label>
                 <MultiTechnicianSelect
                   selectedEmails={formData.assigned_to}
                   technicians={technicians}
@@ -289,9 +294,9 @@ export default function JobForm({ job, jobTypes, technicians, onSubmit, onCancel
               </div>
 
               <div className="space-y-2">
-                <Label htmlFor="status">Status</Label>
+                <Label htmlFor="status" className="text-sm font-semibold text-[#000000]">Status</Label>
                 <Select value={formData.status} onValueChange={(val) => setFormData({ ...formData, status: val })}>
-                  <SelectTrigger>
+                  <SelectTrigger className="border-2 border-slate-300 focus:border-[#fae008] focus:ring-2 focus:ring-[#fae008]/20">
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent>
@@ -305,28 +310,30 @@ export default function JobForm({ job, jobTypes, technicians, onSubmit, onCancel
               </div>
 
               <div className="space-y-2">
-                <Label htmlFor="scheduled_date">Scheduled Date *</Label>
+                <Label htmlFor="scheduled_date" className="text-sm font-semibold text-[#000000]">Scheduled Date *</Label>
                 <Input
                   id="scheduled_date"
                   type="date"
                   value={formData.scheduled_date}
                   onChange={(e) => setFormData({ ...formData, scheduled_date: e.target.value })}
                   required
+                  className="border-2 border-slate-300 focus:border-[#fae008] focus:ring-2 focus:ring-[#fae008]/20 transition-all"
                 />
               </div>
 
               <div className="space-y-2">
-                <Label htmlFor="scheduled_time">Scheduled Time</Label>
+                <Label htmlFor="scheduled_time" className="text-sm font-semibold text-[#000000]">Scheduled Time</Label>
                 <Input
                   id="scheduled_time"
                   type="time"
                   value={formData.scheduled_time}
                   onChange={(e) => setFormData({ ...formData, scheduled_time: e.target.value })}
+                  className="border-2 border-slate-300 focus:border-[#fae008] focus:ring-2 focus:ring-[#fae008]/20 transition-all"
                 />
               </div>
 
               <div className="space-y-2">
-                <Label htmlFor="expected_duration">Expected Duration (hours)</Label>
+                <Label htmlFor="expected_duration" className="text-sm font-semibold text-[#000000]">Expected Duration (hours)</Label>
                 <Input
                   id="expected_duration"
                   type="number"
@@ -334,12 +341,13 @@ export default function JobForm({ job, jobTypes, technicians, onSubmit, onCancel
                   value={formData.expected_duration || ""}
                   onChange={(e) => setFormData({ ...formData, expected_duration: e.target.value ? parseFloat(e.target.value) : null })}
                   placeholder="Auto-populated from job type"
+                  className="border-2 border-slate-300 focus:border-[#fae008] focus:ring-2 focus:ring-[#fae008]/20 transition-all"
                 />
               </div>
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="notes">Notes & Instructions</Label>
+              <Label htmlFor="notes" className="text-sm font-semibold text-[#000000]">Notes & Instructions</Label>
               <RichTextEditor
                 value={formData.notes}
                 onChange={(value) => setFormData({ ...formData, notes: value })}
@@ -348,7 +356,7 @@ export default function JobForm({ job, jobTypes, technicians, onSubmit, onCancel
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="additional_info">Additional Info</Label>
+              <Label htmlFor="additional_info" className="text-sm font-semibold text-[#000000]">Additional Info</Label>
               <RichTextEditor
                 value={formData.additional_info}
                 onChange={(value) => setFormData({ ...formData, additional_info: value })}
@@ -356,17 +364,18 @@ export default function JobForm({ job, jobTypes, technicians, onSubmit, onCancel
               />
             </div>
 
-            <div className="space-y-4 pt-4 border-t border-slate-200">
-              <h3 className="font-semibold text-slate-900">File Uploads</h3>
+            <div className="space-y-4 pt-4 border-t-2 border-slate-200">
+              <h3 className="font-bold text-[#000000] tracking-tight">File Uploads</h3>
               
               <div className="space-y-2">
-                <Label>Images</Label>
+                <Label className="text-sm font-semibold text-[#000000]">Images</Label>
                 <div className="flex items-center gap-2">
                   <Button
                     type="button"
                     variant="outline"
                     onClick={() => document.getElementById('image-upload').click()}
                     disabled={uploadingImages}
+                    className="border-2 hover:bg-slate-100"
                   >
                     {uploadingImages ? (
                       <><Loader2 className="w-4 h-4 mr-2 animate-spin" />Uploading...</>
@@ -387,7 +396,7 @@ export default function JobForm({ job, jobTypes, technicians, onSubmit, onCancel
                   <div className="grid grid-cols-3 gap-2 mt-2">
                     {formData.image_urls.map((url, index) => (
                       <div key={index} className="relative group">
-                        <img src={url} alt={`Upload ${index + 1}`} className="w-full h-24 object-cover rounded border" />
+                        <img src={url} alt={`Upload ${index + 1}`} className="w-full h-24 object-cover rounded-lg border-2 border-slate-200" />
                         <button
                           type="button"
                           onClick={() => removeImage(index)}
@@ -403,13 +412,14 @@ export default function JobForm({ job, jobTypes, technicians, onSubmit, onCancel
 
               <div className="grid md:grid-cols-2 gap-4">
                 <div className="space-y-2">
-                  <Label>Quote</Label>
+                  <Label className="text-sm font-semibold text-[#000000]">Quote</Label>
                   <div className="flex items-center gap-2">
                     <Button
                       type="button"
                       variant="outline"
                       onClick={() => document.getElementById('quote-upload').click()}
                       disabled={uploadingQuote}
+                      className="border-2 hover:bg-slate-100"
                     >
                       {uploadingQuote ? (
                         <><Loader2 className="w-4 h-4 mr-2 animate-spin" />Uploading...</>
@@ -435,13 +445,14 @@ export default function JobForm({ job, jobTypes, technicians, onSubmit, onCancel
                 </div>
 
                 <div className="space-y-2">
-                  <Label>Invoice</Label>
+                  <Label className="text-sm font-semibold text-[#000000]">Invoice</Label>
                   <div className="flex items-center gap-2">
                     <Button
                       type="button"
                       variant="outline"
                       onClick={() => document.getElementById('invoice-upload').click()}
                       disabled={uploadingInvoice}
+                      className="border-2 hover:bg-slate-100"
                     >
                       {uploadingInvoice ? (
                         <><Loader2 className="w-4 h-4 mr-2 animate-spin" />Uploading...</>
@@ -468,11 +479,20 @@ export default function JobForm({ job, jobTypes, technicians, onSubmit, onCancel
               </div>
             </div>
           </CardContent>
-          <CardFooter className="border-t border-slate-100 flex justify-end gap-3">
-            <Button type="button" variant="outline" onClick={onCancel}>
+          <CardFooter className="border-t-2 border-slate-200 flex justify-end gap-3 p-6 bg-slate-50">
+            <Button 
+              type="button" 
+              variant="outline" 
+              onClick={onCancel}
+              className="border-2 hover:bg-white font-semibold"
+            >
               Cancel
             </Button>
-            <Button type="submit" disabled={isSubmitting} className="bg-[#fae008] hover:bg-[#e5d007] text-slate-900">
+            <Button 
+              type="submit" 
+              disabled={isSubmitting} 
+              className="bg-[#fae008] hover:bg-[#e5d007] active:bg-[#d4c006] text-[#000000] font-bold shadow-md hover:shadow-lg transition-all"
+            >
               {isSubmitting ? 'Saving...' : job ? 'Update Job' : 'Create Job'}
             </Button>
           </CardFooter>
@@ -480,46 +500,53 @@ export default function JobForm({ job, jobTypes, technicians, onSubmit, onCancel
       </Card>
 
       <Dialog open={showNewCustomerDialog} onOpenChange={setShowNewCustomerDialog}>
-        <DialogContent>
+        <DialogContent className="rounded-2xl">
           <DialogHeader>
-            <DialogTitle>New Customer</DialogTitle>
+            <DialogTitle className="text-xl font-bold text-[#000000]">New Customer</DialogTitle>
           </DialogHeader>
           <div className="space-y-4">
             <div className="space-y-2">
-              <Label htmlFor="new_customer_name">Name *</Label>
+              <Label htmlFor="new_customer_name" className="text-sm font-semibold text-[#000000]">Name *</Label>
               <Input
                 id="new_customer_name"
                 value={newCustomerData.name}
                 onChange={(e) => setNewCustomerData({ ...newCustomerData, name: e.target.value })}
+                className="border-2 border-slate-300 focus:border-[#fae008] focus:ring-2 focus:ring-[#fae008]/20"
               />
             </div>
             <div className="space-y-2">
-              <Label htmlFor="new_customer_phone">Phone</Label>
+              <Label htmlFor="new_customer_phone" className="text-sm font-semibold text-[#000000]">Phone</Label>
               <Input
                 id="new_customer_phone"
                 type="tel"
                 value={newCustomerData.phone}
                 onChange={(e) => setNewCustomerData({ ...newCustomerData, phone: e.target.value })}
+                className="border-2 border-slate-300 focus:border-[#fae008] focus:ring-2 focus:ring-[#fae008]/20"
               />
             </div>
             <div className="space-y-2">
-              <Label htmlFor="new_customer_email">Email</Label>
+              <Label htmlFor="new_customer_email" className="text-sm font-semibold text-[#000000]">Email</Label>
               <Input
                 id="new_customer_email"
                 type="email"
                 value={newCustomerData.email}
                 onChange={(e) => setNewCustomerData({ ...newCustomerData, email: e.target.value })}
+                className="border-2 border-slate-300 focus:border-[#fae008] focus:ring-2 focus:ring-[#fae008]/20"
               />
             </div>
           </div>
           <DialogFooter>
-            <Button variant="outline" onClick={() => setShowNewCustomerDialog(false)}>
+            <Button 
+              variant="outline" 
+              onClick={() => setShowNewCustomerDialog(false)}
+              className="border-2 font-semibold"
+            >
               Cancel
             </Button>
             <Button 
               onClick={handleCreateNewCustomer}
               disabled={!newCustomerData.name}
-              className="bg-[#fae008] hover:bg-[#e5d007] text-slate-900"
+              className="bg-[#fae008] hover:bg-[#e5d007] text-[#000000] font-bold"
             >
               Create Customer
             </Button>

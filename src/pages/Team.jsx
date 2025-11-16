@@ -1,3 +1,4 @@
+
 import React from "react";
 import { base44 } from "@/api/base44Client";
 import { useQuery } from "@tanstack/react-query";
@@ -15,55 +16,56 @@ export default function Team() {
   const admins = users.filter(u => u.role === 'admin');
 
   return (
-    <div className="p-4 md:p-8 bg-slate-50 min-h-screen">
+    <div className="p-4 md:p-8 bg-gradient-to-br from-slate-50 to-slate-100 min-h-screen">
       <div className="max-w-6xl mx-auto">
         <div className="mb-8">
-          <h1 className="text-3xl font-bold text-slate-900">Team Members</h1>
-          <p className="text-slate-500 mt-1">Manage your field team and staff</p>
+          <h1 className="text-3xl font-bold text-[#000000] tracking-tight">Team Members</h1>
+          <p className="text-slate-600 mt-2">Manage your field team and staff</p>
         </div>
 
         <div className="grid lg:grid-cols-2 gap-6">
-          <Card className="border-none shadow-lg">
-            <CardHeader className="border-b border-slate-100">
-              <CardTitle className="flex items-center gap-2">
-                <Users className="w-5 h-5" />
+          <Card className="border-2 border-slate-200 shadow-lg rounded-2xl">
+            <CardHeader className="border-b-2 border-slate-200 bg-gradient-to-r from-slate-50 to-white p-6">
+              <CardTitle className="flex items-center gap-3 text-xl font-bold text-[#000000] tracking-tight">
+                <Users className="w-6 h-6 text-[#fae008]" />
                 Field Technicians ({technicians.length})
               </CardTitle>
             </CardHeader>
             <CardContent className="p-0">
               {technicians.length === 0 ? (
-                <div className="p-8 text-center text-slate-500">
-                  No field technicians yet
+                <div className="p-12 text-center text-slate-500">
+                  <Users className="w-12 h-12 mx-auto text-slate-300 mb-3" />
+                  <p className="font-medium">No field technicians yet</p>
                 </div>
               ) : (
-                <div className="divide-y divide-slate-100">
+                <div className="divide-y-2 divide-slate-200">
                   {technicians.map((tech) => (
-                    <div key={tech.id} className="p-4">
+                    <div key={tech.id} className="p-5 hover:bg-slate-50 transition-colors">
                       <div className="flex items-start justify-between mb-2">
                         <div>
-                          <h3 className="font-semibold text-slate-900">{tech.full_name}</h3>
+                          <h3 className="font-bold text-[#000000]">{tech.full_name}</h3>
                           {tech.job_title && (
-                            <p className="text-sm text-slate-500">{tech.job_title}</p>
+                            <p className="text-sm text-slate-600 mt-1">{tech.job_title}</p>
                           )}
                         </div>
                         <Badge className={tech.status === 'active' ? 
-                          "bg-green-100 text-green-700" : 
-                          "bg-slate-100 text-slate-700"
+                          "bg-green-50 text-green-900 border-green-200 border-2 font-semibold" : 
+                          "bg-slate-50 text-slate-900 border-slate-200 border-2 font-semibold"
                         }>
                           {tech.status || 'active'}
                         </Badge>
                       </div>
-                      <div className="space-y-1 text-sm text-slate-600">
+                      <div className="space-y-2 text-sm text-slate-700">
                         <div className="flex items-center gap-2">
-                          <Mail className="w-3 h-3 text-slate-400" />
-                          <a href={`mailto:${tech.email}`} className="hover:text-orange-600">
+                          <Mail className="w-4 h-4 text-slate-500" />
+                          <a href={`mailto:${tech.email}`} className="hover:text-[#fae008] font-medium transition-colors">
                             {tech.email}
                           </a>
                         </div>
                         {tech.phone && (
                           <div className="flex items-center gap-2">
-                            <Phone className="w-3 h-3 text-slate-400" />
-                            <a href={`tel:${tech.phone}`} className="hover:text-orange-600">
+                            <Phone className="w-4 h-4 text-slate-500" />
+                            <a href={`tel:${tech.phone}`} className="hover:text-[#fae008] font-medium transition-colors">
                               {tech.phone}
                             </a>
                           </div>
@@ -76,44 +78,45 @@ export default function Team() {
             </CardContent>
           </Card>
 
-          <Card className="border-none shadow-lg">
-            <CardHeader className="border-b border-slate-100">
-              <CardTitle className="flex items-center gap-2">
-                <Briefcase className="w-5 h-5" />
+          <Card className="border-2 border-slate-200 shadow-lg rounded-2xl">
+            <CardHeader className="border-b-2 border-slate-200 bg-gradient-to-r from-slate-50 to-white p-6">
+              <CardTitle className="flex items-center gap-3 text-xl font-bold text-[#000000] tracking-tight">
+                <Briefcase className="w-6 h-6 text-purple-600" />
                 Administrators ({admins.length})
               </CardTitle>
             </CardHeader>
             <CardContent className="p-0">
               {admins.length === 0 ? (
-                <div className="p-8 text-center text-slate-500">
-                  No administrators
+                <div className="p-12 text-center text-slate-500">
+                  <Briefcase className="w-12 h-12 mx-auto text-slate-300 mb-3" />
+                  <p className="font-medium">No administrators</p>
                 </div>
               ) : (
-                <div className="divide-y divide-slate-100">
+                <div className="divide-y-2 divide-slate-200">
                   {admins.map((admin) => (
-                    <div key={admin.id} className="p-4">
+                    <div key={admin.id} className="p-5 hover:bg-slate-50 transition-colors">
                       <div className="flex items-start justify-between mb-2">
                         <div>
-                          <h3 className="font-semibold text-slate-900">{admin.full_name}</h3>
+                          <h3 className="font-bold text-[#000000]">{admin.full_name}</h3>
                           {admin.job_title && (
-                            <p className="text-sm text-slate-500">{admin.job_title}</p>
+                            <p className="text-sm text-slate-600 mt-1">{admin.job_title}</p>
                           )}
                         </div>
-                        <Badge className="bg-purple-100 text-purple-700">
+                        <Badge className="bg-purple-50 text-purple-900 border-purple-200 border-2 font-semibold">
                           Admin
                         </Badge>
                       </div>
-                      <div className="space-y-1 text-sm text-slate-600">
+                      <div className="space-y-2 text-sm text-slate-700">
                         <div className="flex items-center gap-2">
-                          <Mail className="w-3 h-3 text-slate-400" />
-                          <a href={`mailto:${admin.email}`} className="hover:text-orange-600">
+                          <Mail className="w-4 h-4 text-slate-500" />
+                          <a href={`mailto:${admin.email}`} className="hover:text-[#fae008] font-medium transition-colors">
                             {admin.email}
                           </a>
                         </div>
                         {admin.phone && (
                           <div className="flex items-center gap-2">
-                            <Phone className="w-3 h-3 text-slate-400" />
-                            <a href={`tel:${admin.phone}`} className="hover:text-orange-600">
+                            <Phone className="w-4 h-4 text-slate-500" />
+                            <a href={`tel:${admin.phone}`} className="hover:text-[#fae008] font-medium transition-colors">
                               {admin.phone}
                             </a>
                           </div>
@@ -127,9 +130,9 @@ export default function Team() {
           </Card>
         </div>
 
-        <div className="mt-6 p-4 bg-blue-50 border border-blue-200 rounded-lg">
-          <p className="text-sm text-slate-700">
-            <strong>Note:</strong> To add or manage team members, use the user management section in your dashboard settings. 
+        <div className="mt-6 p-5 bg-blue-50 border-2 border-blue-200 rounded-2xl">
+          <p className="text-sm text-[#000000] leading-relaxed">
+            <strong className="font-bold">Note:</strong> To add or manage team members, use the user management section in your dashboard settings. 
             Mark users as field technicians by updating their profile.
           </p>
         </div>

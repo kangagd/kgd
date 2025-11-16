@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from "react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -59,7 +60,7 @@ export default function CalendarView({ jobs, onSelectJob, currentDate, onDateCha
 
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [view, currentDate]);
+  }, [view, currentDate, onDateChange]);
 
   const handlePrevious = () => {
     if (view === "month") {
@@ -88,7 +89,7 @@ export default function CalendarView({ jobs, onSelectJob, currentDate, onDateCha
 
   // Filter jobs
   const filteredJobs = jobs.filter(job => {
-    const matchesSearch = 
+    const matchesSearch =
       job.customer_name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
       job.address?.toLowerCase().includes(searchTerm.toLowerCase()) ||
       job.job_number?.toString().includes(searchTerm);
@@ -110,10 +111,11 @@ export default function CalendarView({ jobs, onSelectJob, currentDate, onDateCha
             size="sm"
             onClick={handlePrevious}
             title="Previous (←)"
+            className="border-2 hover:bg-slate-100 font-semibold transition-all"
           >
             <ChevronLeft className="w-4 h-4" />
           </Button>
-          <h2 className="text-lg md:text-xl font-bold text-slate-900 min-w-[140px] text-center">
+          <h2 className="text-lg md:text-xl font-bold text-[#000000] min-w-[140px] text-center tracking-tight">
             {view === "month" && format(currentDate, 'MMMM yyyy')}
             {view === "week" && `Week of ${format(currentDate, 'MMM d, yyyy')}`}
             {view === "day" && format(currentDate, 'EEEE, MMM d, yyyy')}
@@ -123,6 +125,7 @@ export default function CalendarView({ jobs, onSelectJob, currentDate, onDateCha
             size="sm"
             onClick={() => onDateChange(new Date())}
             title="Today (T)"
+            className="border-2 hover:bg-slate-100 font-semibold transition-all"
           >
             Today
           </Button>
@@ -131,6 +134,7 @@ export default function CalendarView({ jobs, onSelectJob, currentDate, onDateCha
             size="sm"
             onClick={handleNext}
             title="Next (→)"
+            className="border-2 hover:bg-slate-100 font-semibold transition-all"
           >
             <ChevronRight className="w-4 h-4" />
           </Button>
@@ -139,14 +143,14 @@ export default function CalendarView({ jobs, onSelectJob, currentDate, onDateCha
         <div className="flex items-center gap-2">
           <Tabs value={view} onValueChange={setView}>
             <TabsList>
-              <TabsTrigger value="day" title="Day view (D)">Day</TabsTrigger>
-              <TabsTrigger value="week" title="Week view (W)">Week</TabsTrigger>
-              <TabsTrigger value="month" title="Month view (M)">Month</TabsTrigger>
+              <TabsTrigger value="day" title="Day view (D)" className="font-semibold">Day</TabsTrigger>
+              <TabsTrigger value="week" title="Week view (W)" className="font-semibold">Week</TabsTrigger>
+              <TabsTrigger value="month" title="Month view (M)" className="font-semibold">Month</TabsTrigger>
             </TabsList>
           </Tabs>
           <Button
             onClick={() => handleQuickBook()}
-            className="bg-[#fae008] text-slate-950 hover:bg-[#fae008]/90"
+            className="bg-[#fae008] text-[#000000] hover:bg-[#e5d007] active:bg-[#d4c006] font-bold shadow-md hover:shadow-lg transition-all"
             size="sm"
             title="New job (N)"
           >
@@ -166,19 +170,19 @@ export default function CalendarView({ jobs, onSelectJob, currentDate, onDateCha
               placeholder="Search jobs... (press / to focus)"
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
-              className="pl-10"
+              className="pl-10 border-2 border-slate-300 focus:border-[#fae008] focus:ring-2 focus:ring-[#fae008]/20 transition-all"
             />
           </div>
           <Button
             variant="outline"
             size="sm"
             onClick={() => setShowFilters(!showFilters)}
-            className={activeFiltersCount > 0 ? "border-[#fae008] bg-[#fae008]/10" : ""}
+            className={`border-2 font-semibold transition-all ${activeFiltersCount > 0 ? "border-[#fae008] bg-[#fae008]/10" : ""}`}
           >
             <Filter className="w-4 h-4 mr-2" />
             Filters
             {activeFiltersCount > 0 && (
-              <Badge className="ml-2 bg-[#fae008] text-slate-950 px-1.5 py-0 text-xs">
+              <Badge className="ml-2 bg-[#fae008] text-[#000000] px-1.5 py-0 text-xs font-bold">
                 {activeFiltersCount}
               </Badge>
             )}
@@ -186,13 +190,13 @@ export default function CalendarView({ jobs, onSelectJob, currentDate, onDateCha
         </div>
 
         {showFilters && (
-          <Card>
+          <Card className="rounded-2xl border-2 border-slate-200">
             <CardContent className="p-4">
               <div className="flex flex-wrap gap-3 items-center">
                 <div className="flex-1 min-w-[200px]">
-                  <label className="text-xs font-medium text-slate-600 mb-1 block">Status</label>
+                  <label className="text-xs font-bold text-[#000000] mb-1 block">Status</label>
                   <Select value={statusFilter} onValueChange={setStatusFilter}>
-                    <SelectTrigger className="h-9">
+                    <SelectTrigger className="h-9 border-2 border-slate-300 focus:border-[#fae008]">
                       <SelectValue placeholder="All statuses" />
                     </SelectTrigger>
                     <SelectContent>
@@ -207,9 +211,9 @@ export default function CalendarView({ jobs, onSelectJob, currentDate, onDateCha
                 </div>
 
                 <div className="flex-1 min-w-[200px]">
-                  <label className="text-xs font-medium text-slate-600 mb-1 block">Job Type</label>
+                  <label className="text-xs font-bold text-[#000000] mb-1 block">Job Type</label>
                   <Select value={jobTypeFilter} onValueChange={setJobTypeFilter}>
-                    <SelectTrigger className="h-9">
+                    <SelectTrigger className="h-9 border-2 border-slate-300 focus:border-[#fae008]">
                       <SelectValue placeholder="All job types" />
                     </SelectTrigger>
                     <SelectContent>
@@ -229,7 +233,7 @@ export default function CalendarView({ jobs, onSelectJob, currentDate, onDateCha
                       setStatusFilter("all");
                       setJobTypeFilter("all");
                     }}
-                    className="self-end"
+                    className="self-end font-semibold"
                   >
                     <X className="w-4 h-4 mr-1" />
                     Clear
@@ -241,21 +245,21 @@ export default function CalendarView({ jobs, onSelectJob, currentDate, onDateCha
         )}
 
         {(searchTerm || statusFilter !== "all" || jobTypeFilter !== "all") && (
-          <div className="text-sm text-slate-600">
+          <div className="text-sm text-slate-700 font-medium">
             Showing {filteredJobs.length} of {jobs.length} jobs
           </div>
         )}
       </div>
 
       {view === "month" && (
-        <MonthView 
+        <MonthView
           jobs={filteredJobs}
           currentDate={currentDate}
           onJobClick={onSelectJob}
           onQuickBook={handleQuickBook}
         />
       )}
-      
+
       {view === "week" && (
         <WeekView
           jobs={filteredJobs}
@@ -281,16 +285,16 @@ export default function CalendarView({ jobs, onSelectJob, currentDate, onDateCha
       />
 
       {/* Keyboard shortcuts hint */}
-      <Card className="bg-slate-50 border-slate-200">
+      <Card className="bg-slate-50 border-2 border-slate-200 rounded-2xl">
         <CardContent className="p-3">
-          <div className="text-xs text-slate-500 flex flex-wrap gap-x-4 gap-y-1">
-            <span><kbd className="px-1.5 py-0.5 bg-white border border-slate-300 rounded text-slate-700">←</kbd> <kbd className="px-1.5 py-0.5 bg-white border border-slate-300 rounded text-slate-700">→</kbd> Navigate</span>
-            <span><kbd className="px-1.5 py-0.5 bg-white border border-slate-300 rounded text-slate-700">T</kbd> Today</span>
-            <span><kbd className="px-1.5 py-0.5 bg-white border border-slate-300 rounded text-slate-700">N</kbd> New Job</span>
-            <span><kbd className="px-1.5 py-0.5 bg-white border border-slate-300 rounded text-slate-700">D</kbd> Day</span>
-            <span><kbd className="px-1.5 py-0.5 bg-white border border-slate-300 rounded text-slate-700">W</kbd> Week</span>
-            <span><kbd className="px-1.5 py-0.5 bg-white border border-slate-300 rounded text-slate-700">M</kbd> Month</span>
-            <span><kbd className="px-1.5 py-0.5 bg-white border border-slate-300 rounded text-slate-700">/</kbd> Search</span>
+          <div className="text-xs text-slate-700 flex flex-wrap gap-x-4 gap-y-1 font-medium">
+            <span><kbd className="px-2 py-1 bg-white border-2 border-slate-300 rounded-lg text-[#000000] font-bold">←</kbd> <kbd className="px-2 py-1 bg-white border-2 border-slate-300 rounded-lg text-[#000000] font-bold">→</kbd> Navigate</span>
+            <span><kbd className="px-2 py-1 bg-white border-2 border-slate-300 rounded-lg text-[#000000] font-bold">T</kbd> Today</span>
+            <span><kbd className="px-2 py-1 bg-white border-2 border-slate-300 rounded-lg text-[#000000] font-bold">N</kbd> New Job</span>
+            <span><kbd className="px-2 py-1 bg-white border-2 border-slate-300 rounded-lg text-[#000000] font-bold">D</kbd> Day</span>
+            <span><kbd className="px-2 py-1 bg-white border-2 border-slate-300 rounded-lg text-[#000000] font-bold">W</kbd> Week</span>
+            <span><kbd className="px-2 py-1 bg-white border-2 border-slate-300 rounded-lg text-[#000000] font-bold">M</kbd> Month</span>
+            <span><kbd className="px-2 py-1 bg-white border-2 border-slate-300 rounded-lg text-[#000000] font-bold">/</kbd> Search</span>
           </div>
         </CardContent>
       </Card>
