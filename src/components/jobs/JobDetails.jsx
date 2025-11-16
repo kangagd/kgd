@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from "react";
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -424,7 +425,7 @@ export default function JobDetails({ job, onClose, onStatusChange }) {
           <div className="sticky top-0 bg-white z-10 pb-2 mb-2 border-b border-slate-200">
             <div className="bg-slate-50 rounded-lg p-2 border border-slate-200">
               <div className="space-y-2">
-                <div className="grid grid-cols-2 gap-2">
+                <div className="grid grid-cols-3 gap-2">
                   <EditableField
                     value={job.scheduled_date}
                     onSave={(val) => handleFieldSave('scheduled_date', job.scheduled_date, val)}
@@ -440,36 +441,39 @@ export default function JobDetails({ job, onClose, onStatusChange }) {
                     icon={Clock}
                     placeholder="Set time"
                   />
-                </div>
-
-                <div className="border-t border-slate-200 pt-2">
-                  <div className="flex items-center gap-1.5 mb-1.5">
-                    <User className="w-3.5 h-3.5 text-slate-500" />
-                    <span className="text-xs font-semibold text-slate-700">Technicians</span>
-                  </div>
-                  <div className="flex flex-wrap items-center gap-1.5">
-                    {(Array.isArray(job.assigned_to_name) ? job.assigned_to_name : job.assigned_to_name ? [job.assigned_to_name] : []).map((name, idx) => (
-                      <div
-                        key={idx}
-                        className={`${getAvatarColor(name)} w-7 h-7 rounded-full flex items-center justify-center text-white text-xs font-bold shadow-sm border-2 border-white`}
-                        title={name}
-                      >
-                        {getInitials(name)}
-                      </div>
-                    ))}
-                    <EditableField
-                      value={Array.isArray(job.assigned_to) ? job.assigned_to : job.assigned_to ? [job.assigned_to] : []}
-                      onSave={handleAssignedToChange}
-                      type="multi-select"
-                      icon={User}
-                      options={technicians.map((t) => ({ value: t.email, label: t.full_name }))}
-                      displayFormat={(val) => {
-                        const emailsToDisplay = Array.isArray(val) ? val : val ? [val] : [];
-                        if (emailsToDisplay.length === 0) return "Assign";
-                        return "Edit";
-                      }}
-                      placeholder="Assign"
-                    />
+                  <div className="flex flex-col gap-1">
+                    <div className="flex items-center gap-1">
+                      <User className="w-3 h-3 text-slate-500" />
+                      <span className="text-xs font-semibold text-slate-700">Techs</span>
+                    </div>
+                    <div className="flex flex-wrap items-center gap-1">
+                      {(Array.isArray(job.assigned_to_name) ? job.assigned_to_name : job.assigned_to_name ? [job.assigned_to_name] : []).slice(0, 2).map((name, idx) => (
+                        <div
+                          key={idx}
+                          className={`${getAvatarColor(name)} w-6 h-6 rounded-full flex items-center justify-center text-white text-xs font-bold shadow-sm`}
+                          title={name}
+                        >
+                          {getInitials(name)}
+                        </div>
+                      ))}
+                      {Array.isArray(job.assigned_to_name) && job.assigned_to_name.length > 2 && (
+                        <div className="bg-slate-300 w-6 h-6 rounded-full flex items-center justify-center text-slate-700 text-xs font-bold shadow-sm">
+                          +{job.assigned_to_name.length - 2}
+                        </div>
+                      )}
+                      <EditableField
+                        value={Array.isArray(job.assigned_to) ? job.assigned_to : job.assigned_to ? [job.assigned_to] : []}
+                        onSave={handleAssignedToChange}
+                        type="multi-select"
+                        icon={User}
+                        options={technicians.map((t) => ({ value: t.email, label: t.full_name }))}
+                        displayFormat={(val) => {
+                          const emailsToDisplay = Array.isArray(val) ? val : val ? [val] : [];
+                          return emailsToDisplay.length === 0 ? "Assign" : "Edit";
+                        }}
+                        placeholder="Assign"
+                      />
+                    </div>
                   </div>
                 </div>
 
@@ -514,7 +518,7 @@ export default function JobDetails({ job, onClose, onStatusChange }) {
                 <FileCheck className="w-3 h-3 md:mr-1" />
                 <span className="hidden md:inline">Form</span>
               </TabsTrigger>
-              <TabsTrigger value="files" className="text-xs">
+            <TabsTrigger value="files" className="text-xs">
                 <ImageIcon className="w-3 h-3 md:mr-1" />
                 <span className="hidden md:inline">Files</span>
               </TabsTrigger>
