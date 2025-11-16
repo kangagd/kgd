@@ -2,7 +2,7 @@ import React, { useState } from "react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { isSameDay } from "date-fns";
-import { MapPin, User } from "lucide-react";
+import { MapPin, User, UserX } from "lucide-react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { base44 } from "@/api/base44Client";
 
@@ -72,6 +72,12 @@ export default function DayView({ jobs, currentDate, onJobClick }) {
     hours.push(i);
   }
 
+  // Get unassigned jobs
+  const unassignedJobs = dayJobs.filter(job => {
+    const assignedTo = Array.isArray(job.assigned_to) ? job.assigned_to : [];
+    return assignedTo.length === 0;
+  });
+
   const getJobPosition = (job) => {
     const jobTime = parseTime(job.scheduled_time);
     if (jobTime === null) return null;
@@ -103,16 +109,18 @@ export default function DayView({ jobs, currentDate, onJobClick }) {
     const assignedTo = Array.isArray(draggedJob.assigned_to) ? draggedJob.assigned_to : [];
     const assignedToName = Array.isArray(draggedJob.assigned_to_name) ? draggedJob.assigned_to_name : [];
     
-    const technicianIndex = assignedTo.indexOf(technicianEmail);
     let newAssignedTo = [...assignedTo];
     let newAssignedToName = [...assignedToName];
 
-    if (technicianIndex === -1) {
+    if (technicianEmail) {
       const technician = technicians.find(t => t.email === technicianEmail);
       if (technician) {
         newAssignedTo = [technicianEmail];
         newAssignedToName = [technician.full_name];
       }
+    } else {
+      newAssignedTo = [];
+      newAssignedToName = [];
     }
 
     updateJobMutation.mutate({
@@ -127,15 +135,80 @@ export default function DayView({ jobs, currentDate, onJobClick }) {
     setDraggedJob(null);
   };
 
-  if (technicians.length === 0) {
+  if (dayJobs.length === 0) {
     return (
       <Card>
         <CardContent className="p-12 text-center">
-          <div className="text-slate-400 text-sm">No technicians found</div>
+          <div className="text-slate-400 text-sm">No jobs scheduled for this day</div>
         </CardContent>
       </Card>
     );
   }
+
+  const renderRow = (technician, techJobs) => {
+    const isUnassigned = !technician;
+    
+    return (
+      <div key={technician?.id || 'unassigned'} className="flex border-b border-slate-200 hover:bg-slate-50">
+        <div className="w-32 flex-shrink-0 p-3 border-r border-slate-200 flex items-center gap-2">
+          {isUnassigned ? (
+            <>
+              <UserX className="w-4 h-4 text-slate-400" />
+              <span className="text-sm font-medium text-slate-700">Unassigned</span>
+            </>
+          ) : (
+            <>
+              <User className="w-4 h-4 text-slate-400" />
+              <span className="text-sm font-medium text-slate-700 truncate">
+                {technician.full_name}
+              </span>
+            </>
+          )}
+        </div>
+        <div className="flex-1 relative h-24">
+          {hours.map(hour => (
+            <div 
+              key={hour} 
+              className="absolute top-0 bottom-0 border-r border-slate-200"
+              style={{ 
+                left: `${((hour - startHour) / (endHour - startHour + 1)) * 100}%`,
+                width: `${(1 / (endHour - startHour + 1)) * 100}%`
+              }}
+              onDragOver={handleDragOver}
+              onDrop={(e) => handleDrop(e, technician?.email || null, hour)}
+            />
+          ))}
+          
+          {techJobs.map(job => {
+            const position = getJobPosition(job);
+            if (!position) return null;
+            
+            return (
+              <div
+                key={job.id}
+                draggable
+                onDragStart={(e) => handleDragStart(e, job)}
+                className={`absolute top-2 bottom-2 rounded-lg p-2 cursor-move hover:shadow-lg transition-shadow border-l-4 ${getJobTypeColor(job.job_type_name, uniqueJobTypes)} ${statusColors[job.status] || ''}`}
+                style={{ left: position.left, width: position.width, minWidth: '120px' }}
+                onClick={() => onJobClick(job)}
+              >
+                <div className="text-xs font-semibold text-slate-700 mb-1 truncate">
+                  Job #{job.job_number}
+                </div>
+                <div className="font-semibold text-sm text-slate-900 mb-1 truncate">
+                  {job.customer_name}
+                </div>
+                <div className="flex items-start gap-1 text-xs text-slate-600 truncate">
+                  <MapPin className="w-3 h-3 mt-0.5 flex-shrink-0" />
+                  <span className="truncate">{job.address}</span>
+                </div>
+              </div>
+            );
+          })}
+        </div>
+      </div>
+    );
+  };
 
   return (
     <div className="space-y-4">
@@ -162,59 +235,11 @@ export default function DayView({ jobs, currentDate, onJobClick }) {
                 const assignedTo = Array.isArray(job.assigned_to) ? job.assigned_to : [];
                 return assignedTo.includes(technician.email);
               });
-
-              return (
-                <div key={technician.id} className="flex border-b border-slate-200 hover:bg-slate-50">
-                  <div className="w-32 flex-shrink-0 p-3 border-r border-slate-200 flex items-center gap-2">
-                    <User className="w-4 h-4 text-slate-400" />
-                    <span className="text-sm font-medium text-slate-700 truncate">
-                      {technician.full_name}
-                    </span>
-                  </div>
-                  <div className="flex-1 relative h-24">
-                    {hours.map(hour => (
-                      <div 
-                        key={hour} 
-                        className="absolute top-0 bottom-0 border-r border-slate-200"
-                        style={{ 
-                          left: `${((hour - startHour) / (endHour - startHour + 1)) * 100}%`,
-                          width: `${(1 / (endHour - startHour + 1)) * 100}%`
-                        }}
-                        onDragOver={handleDragOver}
-                        onDrop={(e) => handleDrop(e, technician.email, hour)}
-                      />
-                    ))}
-                    
-                    {techJobs.map(job => {
-                      const position = getJobPosition(job);
-                      if (!position) return null;
-                      
-                      return (
-                        <div
-                          key={job.id}
-                          draggable
-                          onDragStart={(e) => handleDragStart(e, job)}
-                          className={`absolute top-2 bottom-2 rounded-lg p-2 cursor-move hover:shadow-lg transition-shadow border-l-4 ${getJobTypeColor(job.job_type_name, uniqueJobTypes)} ${statusColors[job.status] || ''}`}
-                          style={{ left: position.left, width: position.width, minWidth: '120px' }}
-                          onClick={() => onJobClick(job)}
-                        >
-                          <div className="text-xs font-semibold text-slate-700 mb-1 truncate">
-                            Job #{job.job_number}
-                          </div>
-                          <div className="font-semibold text-sm text-slate-900 mb-1 truncate">
-                            {job.customer_name}
-                          </div>
-                          <div className="flex items-start gap-1 text-xs text-slate-600 truncate">
-                            <MapPin className="w-3 h-3 mt-0.5 flex-shrink-0" />
-                            <span className="truncate">{job.address}</span>
-                          </div>
-                        </div>
-                      );
-                    })}
-                  </div>
-                </div>
-              );
+              return renderRow(technician, techJobs);
             })}
+
+            {/* Unassigned row */}
+            {unassignedJobs.length > 0 && renderRow(null, unassignedJobs)}
           </div>
         </CardContent>
       </Card>
