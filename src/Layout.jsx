@@ -1,8 +1,7 @@
-
 import React from "react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
 import { createPageUrl } from "@/utils";
-import { Calendar, Briefcase, Users, LayoutDashboard, Wrench, UserCircle, DollarSign } from "lucide-react";
+import { Calendar, Briefcase, Users, LayoutDashboard, Wrench, UserCircle, DollarSign, Archive as ArchiveIcon } from "lucide-react";
 import {
   Sidebar,
   SidebarContent,
@@ -26,6 +25,7 @@ const adminNavigationItems = [
   { title: "Customers", url: createPageUrl("Customers"), icon: UserCircle },
   { title: "Price List", url: createPageUrl("PriceList"), icon: DollarSign },
   { title: "Team", url: createPageUrl("Team"), icon: Users },
+  { title: "Archive", url: createPageUrl("Archive"), icon: ArchiveIcon },
 ];
 
 const technicianNavigationItems = [
