@@ -23,6 +23,13 @@ const jobTypeColors = [
   "bg-pink-500", "bg-rose-500", "bg-lime-500",
 ];
 
+const jobTypeColorsBg = [
+  "bg-blue-50", "bg-green-50", "bg-orange-50", 
+  "bg-purple-50", "bg-indigo-50", "bg-amber-50",
+  "bg-red-50", "bg-cyan-50", "bg-teal-50", 
+  "bg-pink-50", "bg-rose-50", "bg-lime-50",
+];
+
 const statusColors = {
   scheduled: "bg-blue-100 text-blue-700 border-blue-200",
   in_progress: "bg-amber-100 text-amber-700 border-amber-200",
@@ -34,6 +41,12 @@ const getJobTypeColor = (jobTypeName, allJobTypes) => {
   if (!jobTypeName) return "bg-slate-500";
   const index = allJobTypes.indexOf(jobTypeName);
   return jobTypeColors[index % jobTypeColors.length];
+};
+
+const getJobTypeBgColor = (jobTypeName, allJobTypes) => {
+  if (!jobTypeName) return "bg-slate-50";
+  const index = allJobTypes.indexOf(jobTypeName);
+  return jobTypeColorsBg[index % jobTypeColorsBg.length];
 };
 
 const parseTime = (timeString) => {
@@ -245,14 +258,14 @@ export default function DayView({ jobs, currentDate, onJobClick, onQuickBook }) 
                             draggable
                             onDragStart={(e) => handleDragStart(e, job)}
                             onDragEnd={handleDragEnd}
-                            className={`absolute top-2 bottom-2 rounded-lg p-2 cursor-move hover:shadow-lg transition-all border-l-4 ${getJobTypeColor(job.job_type_name, uniqueJobTypes)} ${statusColors[job.status] || ''} ${
+                            className={`absolute top-2 bottom-2 rounded-lg p-2 cursor-move hover:shadow-lg transition-all border-l-4 ${getJobTypeBgColor(job.job_type_name, uniqueJobTypes)} ${
                               draggedJob?.id === job.id ? 'opacity-50' : ''
                             }`}
-                            style={{ left: position.left, width: position.width, minWidth: '120px' }}
+                            style={{ left: position.left, width: position.width, minWidth: '120px', borderLeftColor: statusColors[job.status]?.split(' ')[0].replace('bg-', '') || '#94a3b8' }}
                             onClick={() => onJobClick(job)}
                           >
-                            <div className="text-xs font-semibold text-slate-700 mb-1 truncate">
-                              Job #{job.job_number}
+                            <div className="text-xs font-semibold text-slate-900 mb-1 truncate">
+                              #{job.job_number}
                             </div>
                             <div className="font-semibold text-sm text-slate-900 mb-1 truncate">
                               {job.customer_name}
@@ -261,6 +274,11 @@ export default function DayView({ jobs, currentDate, onJobClick, onQuickBook }) 
                               <MapPin className="w-3 h-3 mt-0.5 flex-shrink-0" />
                               <span className="truncate">{job.address}</span>
                             </div>
+                            {job.job_type_name && (
+                              <div className="text-xs text-slate-600 font-medium mt-1 truncate">
+                                {job.job_type_name}
+                              </div>
+                            )}
                           </div>
                         );
                       })}

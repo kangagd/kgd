@@ -10,10 +10,23 @@ const jobTypeColors = [
   "bg-pink-500", "bg-rose-500", "bg-lime-500",
 ];
 
+const jobTypeColorsBg = [
+  "bg-blue-50", "bg-green-50", "bg-orange-50", 
+  "bg-purple-50", "bg-indigo-50", "bg-amber-50",
+  "bg-red-50", "bg-cyan-50", "bg-teal-50", 
+  "bg-pink-50", "bg-rose-50", "bg-lime-50",
+];
+
 const getJobTypeColor = (jobTypeName, allJobTypes) => {
   if (!jobTypeName) return "bg-slate-500";
   const index = allJobTypes.indexOf(jobTypeName);
   return jobTypeColors[index % jobTypeColors.length];
+};
+
+const getJobTypeBgColor = (jobTypeName, allJobTypes) => {
+  if (!jobTypeName) return "bg-slate-50";
+  const index = allJobTypes.indexOf(jobTypeName);
+  return jobTypeColorsBg[index % jobTypeColorsBg.length];
 };
 
 const getInitials = (name) => {
@@ -94,12 +107,13 @@ export default function MonthView({ jobs, currentDate, onJobClick, onQuickBook }
                       <div
                         key={job.id}
                         onClick={() => onJobClick(job)}
-                        className={`text-xs px-1.5 py-1 rounded cursor-pointer hover:opacity-90 transition-all ${getJobTypeColor(job.job_type_name, uniqueJobTypes)} text-white`}
+                        className={`text-xs px-1.5 py-1 rounded cursor-pointer hover:opacity-90 transition-all border-l-2 ${getJobTypeBgColor(job.job_type_name, uniqueJobTypes)}`}
+                        style={{ borderLeftColor: getJobTypeColor(job.job_type_name, uniqueJobTypes).replace('bg-', '#') }}
                         title={`${job.customer_name} - ${job.job_type_name || 'No type'} - ${job.scheduled_time || 'No time'}`}
                       >
                         <div className="flex items-center justify-between gap-1 mb-0.5">
                           {job.scheduled_time && (
-                            <span className="font-semibold text-[10px]">{job.scheduled_time.slice(0, 5)}</span>
+                            <span className="font-semibold text-[10px] text-slate-700">{job.scheduled_time.slice(0, 5)}</span>
                           )}
                           {(job.assigned_to_name && job.assigned_to_name.length > 0) && (
                             <div className="flex -space-x-1">
@@ -115,7 +129,7 @@ export default function MonthView({ jobs, currentDate, onJobClick, onQuickBook }
                             </div>
                           )}
                         </div>
-                        <div className="truncate text-[10px] md:text-xs font-medium">
+                        <div className="truncate text-[10px] md:text-xs font-medium text-slate-900">
                           {job.customer_name}
                         </div>
                       </div>
