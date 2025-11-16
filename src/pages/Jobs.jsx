@@ -121,9 +121,9 @@ export default function Jobs() {
     }
 
     const matchesSearch =
-      job.customer_name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      job.address?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      job.job_number?.toString().includes(searchTerm);
+    job.customer_name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    job.address?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    job.job_number?.toString().includes(searchTerm);
 
     const matchesStatus = statusFilter === "all" || job.status === statusFilter;
 
@@ -145,17 +145,17 @@ export default function Jobs() {
               setPreselectedCustomerId(null);
             }}
             isSubmitting={createJobMutation.isPending || updateJobMutation.isPending}
-            preselectedCustomerId={preselectedCustomerId}
-          />
+            preselectedCustomerId={preselectedCustomerId} />
+
         </div>
-      </div>
-    );
+      </div>);
+
   }
 
   if (selectedJob) {
     return (
       <div className="bg-slate-50 min-h-screen">
-        <div className={isTechnician ? "" : "p-2 md:p-8 max-w-4xl mx-auto"}>
+        <div className="bg-neutral-50 mx-auto p-2 md:p-8 max-w-4xl">
           <JobDetails
             job={selectedJob}
             onClose={() => setSelectedJob(null)}
@@ -165,37 +165,37 @@ export default function Jobs() {
                 id: selectedJob.id,
                 data: { status: newStatus }
               });
-            }}
-          />
+            }} />
+
         </div>
-      </div>
-    );
+      </div>);
+
   }
 
   return (
     <div className="p-2 md:p-8 bg-slate-50 min-h-screen">
       <div className="max-w-7xl mx-auto">
-        {!isTechnician && (
-          <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-4 md:mb-6 gap-3">
+        {!isTechnician &&
+        <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-4 md:mb-6 gap-3">
             <div>
               <h1 className="text-2xl md:text-3xl font-bold text-slate-900">Jobs</h1>
               <p className="text-slate-500 mt-1 text-sm">Manage all scheduled jobs</p>
             </div>
             <Button
-              onClick={() => setShowForm(true)}
-              className="bg-[#fae008] text-slate-950 px-4 py-2 text-sm font-medium rounded-[10px] inline-flex items-center justify-center gap-2 whitespace-nowrap transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:pointer-events-none disabled:opacity-50 [&_svg]:pointer-events-none [&_svg]:size-4 [&_svg]:shrink-0 shadow h-9 hover:bg-orange-700 w-full md:w-auto"
-            >
+            onClick={() => setShowForm(true)}
+            className="bg-[#fae008] text-slate-950 px-4 py-2 text-sm font-medium rounded-[10px] inline-flex items-center justify-center gap-2 whitespace-nowrap transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:pointer-events-none disabled:opacity-50 [&_svg]:pointer-events-none [&_svg]:size-4 [&_svg]:shrink-0 shadow h-9 hover:bg-orange-700 w-full md:w-auto">
+
               <Plus className="w-4 h-4 mr-2" />
               New Job
             </Button>
           </div>
-        )}
+        }
 
-        {isTechnician && (
-          <div className="mb-3 md:mb-4">
+        {isTechnician &&
+        <div className="mb-3 md:mb-4">
             <h1 className="text-xl md:text-2xl font-bold text-slate-900">My Jobs</h1>
           </div>
-        )}
+        }
 
         <div className="flex flex-col gap-3 md:gap-4 mb-4 md:mb-6">
           <div className="flex gap-2">
@@ -205,8 +205,8 @@ export default function Jobs() {
                 placeholder="Search jobs..."
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
-                className="pl-10"
-              />
+                className="pl-10" />
+
             </div>
             <Tabs value={viewMode} onValueChange={setViewMode}>
               <TabsList>
@@ -222,8 +222,8 @@ export default function Jobs() {
             </Tabs>
           </div>
 
-          {viewMode === "list" && (
-            <Tabs value={statusFilter} onValueChange={setStatusFilter}>
+          {viewMode === "list" &&
+          <Tabs value={statusFilter} onValueChange={setStatusFilter}>
               <TabsList className="w-full grid grid-cols-2 sm:grid-cols-5">
                 <TabsTrigger value="all">All</TabsTrigger>
                 <TabsTrigger value="scheduled">Scheduled</TabsTrigger>
@@ -232,24 +232,24 @@ export default function Jobs() {
                 <TabsTrigger value="cancelled">Cancelled</TabsTrigger>
               </TabsList>
             </Tabs>
-          )}
+          }
         </div>
 
-        {viewMode === "list" ? (
-          <JobList
-            jobs={filteredJobs}
-            isLoading={isLoading}
-            onSelectJob={setSelectedJob}
-          />
-        ) : (
-          <CalendarView
-            jobs={filteredJobs}
-            onSelectJob={setSelectedJob}
-            currentDate={calendarDate}
-            onDateChange={setCalendarDate}
-          />
-        )}
+        {viewMode === "list" ?
+        <JobList
+          jobs={filteredJobs}
+          isLoading={isLoading}
+          onSelectJob={setSelectedJob} /> :
+
+
+        <CalendarView
+          jobs={filteredJobs}
+          onSelectJob={setSelectedJob}
+          currentDate={calendarDate}
+          onDateChange={setCalendarDate} />
+
+        }
       </div>
-    </div>
-  );
+    </div>);
+
 }
