@@ -7,7 +7,7 @@ import Customers from './pages/Customers';
 import PriceList from './pages/PriceList';
 import UserProfile from './pages/UserProfile';
 import Calendar from './pages/Calendar';
-import Layout from './Layout.jsx';
+import __Layout from './Layout.jsx';
 
 
 export const PAGES = {
@@ -25,5 +25,5 @@ export const PAGES = {
 export const pagesConfig = {
     mainPage: "Dashboard",
     Pages: PAGES,
-    Layout: Layout,
+    Layout: __Layout,
 };
