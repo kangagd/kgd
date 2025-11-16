@@ -3,11 +3,10 @@ import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Badge } from "@/components/ui/badge";
 import { base44 } from "@/api/base44Client";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
-import { ArrowLeft, User, Mail, Shield, Calendar, Lock } from "lucide-react";
+import { ArrowLeft, User, Mail, Shield, Lock } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 
 export default function UserProfile() {
@@ -16,8 +15,7 @@ export default function UserProfile() {
     full_name: "",
     email: "",
     role: "",
-    is_field_technician: false,
-    leave_days: 0
+    is_field_technician: false
   });
   const [passwords, setPasswords] = useState({
     current: "",
@@ -39,8 +37,7 @@ export default function UserProfile() {
           full_name: currentUser.full_name || "",
           email: currentUser.email || "",
           role: currentUser.role || "",
-          is_field_technician: currentUser.is_field_technician || false,
-          leave_days: currentUser.leave_days || 0
+          is_field_technician: currentUser.is_field_technician || false
         });
       } catch (error) {
         console.error("Error loading user:", error);
@@ -64,8 +61,7 @@ export default function UserProfile() {
     e.preventDefault();
     updateProfileMutation.mutate({
       full_name: formData.full_name,
-      is_field_technician: formData.is_field_technician,
-      leave_days: formData.leave_days
+      is_field_technician: formData.is_field_technician
     });
   };
 
@@ -175,20 +171,6 @@ export default function UserProfile() {
                   />
                 </div>
                 <p className="text-xs text-slate-500">Enable if you work in the field</p>
-              </div>
-
-              <div className="space-y-2">
-                <Label htmlFor="leave_days">Leave Days Available</Label>
-                <div className="flex items-center gap-2">
-                  <Calendar className="w-4 h-4 text-slate-400" />
-                  <Input
-                    id="leave_days"
-                    type="number"
-                    value={formData.leave_days}
-                    onChange={(e) => setFormData({ ...formData, leave_days: parseInt(e.target.value) || 0 })}
-                    min="0"
-                  />
-                </div>
               </div>
 
               <div className="flex justify-end">
