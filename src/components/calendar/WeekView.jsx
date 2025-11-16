@@ -1,7 +1,7 @@
 import React from "react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { format, startOfWeek, addDays, isSameDay } from "date-fns";
+import { format, startOfWeek, addDays, isSameDay, getDay } from "date-fns";
 
 const jobTypeColors = [
   "bg-blue-500", "bg-green-500", "bg-orange-500", 
@@ -18,7 +18,24 @@ const getJobTypeColor = (jobTypeName, allJobTypes) => {
 
 export default function WeekView({ jobs, currentDate, onJobClick }) {
   const weekStart = startOfWeek(currentDate);
-  const weekDays = Array.from({ length: 7 }, (_, i) => addDays(weekStart, i));
+  
+  // Check if there are jobs on weekend
+  const hasWeekendJobs = jobs.some(job => {
+    if (!job.scheduled_date) return false;
+    const jobDate = new Date(job.scheduled_date);
+    const dayOfWeek = getDay(jobDate);
+    return dayOfWeek === 0 || dayOfWeek === 6; // Sunday or Saturday
+  });
+  
+  // Show Mon-Fri (1-5) unless there are weekend jobs
+  const daysToShow = hasWeekendJobs ? 7 : 5;
+  const weekDays = Array.from({ length: daysToShow }, (_, i) => {
+    if (hasWeekendJobs) {
+      return addDays(weekStart, i);
+    } else {
+      return addDays(weekStart, i + 1); // Start from Monday
+    }
+  });
   
   const uniqueJobTypes = [...new Set(jobs.map(job => job.job_type_name).filter(Boolean))].sort();
 
@@ -34,7 +51,7 @@ export default function WeekView({ jobs, currentDate, onJobClick }) {
 
   return (
     <div className="space-y-4">
-      <div className="grid grid-cols-1 md:grid-cols-7 gap-2">
+      <div className={`grid grid-cols-1 md:grid-cols-${daysToShow} gap-2`} style={{ gridTemplateColumns: `repeat(${daysToShow}, minmax(0, 1fr))` }}>
         {weekDays.map(day => {
           const dayJobs = getJobsForDay(day);
           const isToday = isSameDay(day, new Date());
@@ -67,9 +84,16 @@ export default function WeekView({ jobs, currentDate, onJobClick }) {
                         <div className="font-medium mb-1">
                           {job.scheduled_time?.slice(0, 5) || 'No time'}
                         </div>
-                        <div className="truncate">{job.customer_name}</div>
+                        <div className="text-xs opacity-75 mb-1">Job #{job.job_number}</div>
+                        <div className="truncate font-medium">{job.customer_name}</div>
+                        <div className="text-xs opacity-90 truncate mt-1">{job.address}</div>
+                        {job.product && (
+                          <div className="text-xs opacity-75 mt-1 truncate">
+                            {job.product}
+                          </div>
+                        )}
                         {job.job_type_name && (
-                          <div className="text-xs opacity-90 mt-1 truncate">
+                          <div className="text-xs opacity-75 truncate">
                             {job.job_type_name}
                           </div>
                         )}
