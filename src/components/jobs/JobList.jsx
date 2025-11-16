@@ -2,11 +2,12 @@
 import React, { useState, useEffect } from "react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
+import { Button } "@/components/ui/button";
 import { MapPin, Calendar, Clock, User, Briefcase, FileText, LogIn, Package, Phone, Mail, Navigation, ChevronDown, ChevronUp } from "lucide-react";
 import { format, parseISO } from "date-fns";
 import { base44 } from "@/api/base44Client";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { unescape } from "lodash";
 
 const statusColors = {
   in_progress: "bg-blue-100 text-blue-800 border-blue-200",
@@ -252,7 +253,6 @@ export default function JobList({ jobs, isLoading, onSelectJob }) {
                   </div>
                 )}
 
-                {/* Moved product and job_type_name badges here */}
                 <div className="flex items-center gap-2">
                   {job.product && (
                     <Badge className={`${productColors[job.product]} font-medium`}>
@@ -318,12 +318,12 @@ export default function JobList({ jobs, isLoading, onSelectJob }) {
                   </button>
                   {expandedNotes[job.id] && (
                     <div className="px-3 pb-3 text-sm text-slate-700">
-                      <div dangerouslySetInnerHTML={{ __html: job.notes }} />
+                      <div dangerouslySetInnerHTML={{ __html: unescape(job.notes) }} />
                     </div>
                   )}
                   {!expandedNotes[job.id] && (
                     <div className="px-3 pb-3 text-sm text-slate-600 line-clamp-1">
-                      <div dangerouslySetInnerHTML={{ __html: job.notes }} />
+                      <div dangerouslySetInnerHTML={{ __html: unescape(job.notes) }} />
                     </div>
                   )}
                 </div>
