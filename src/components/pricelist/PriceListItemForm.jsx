@@ -15,6 +15,8 @@ export default function PriceListItemForm({ item, onSubmit, onCancel, isSubmitti
     price: "",
     description: "",
     in_inventory: true,
+    stock_level: 0,
+    min_stock_level: 5,
     notes: ""
   });
 
@@ -22,7 +24,9 @@ export default function PriceListItemForm({ item, onSubmit, onCancel, isSubmitti
     e.preventDefault();
     onSubmit({
       ...formData,
-      price: parseFloat(formData.price) || 0
+      price: parseFloat(formData.price) || 0,
+      stock_level: parseFloat(formData.stock_level) || 0,
+      min_stock_level: parseFloat(formData.min_stock_level) || 5
     });
   };
 
@@ -78,6 +82,29 @@ export default function PriceListItemForm({ item, onSubmit, onCancel, isSubmitti
                   placeholder="0.00"
                   required
                 />
+              </div>
+
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <Label>Stock Level</Label>
+                  <Input
+                    type="number"
+                    step="1"
+                    value={formData.stock_level}
+                    onChange={(e) => setFormData({ ...formData, stock_level: e.target.value })}
+                    placeholder="0"
+                  />
+                </div>
+                <div>
+                  <Label>Min Stock Level</Label>
+                  <Input
+                    type="number"
+                    step="1"
+                    value={formData.min_stock_level}
+                    onChange={(e) => setFormData({ ...formData, min_stock_level: e.target.value })}
+                    placeholder="5"
+                  />
+                </div>
               </div>
 
               <div>

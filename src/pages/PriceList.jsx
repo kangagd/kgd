@@ -5,9 +5,10 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Search, DollarSign, Plus, Pencil, Trash2 } from "lucide-react";
+import { Search, DollarSign, Plus, Pencil, Trash2, PackagePlus, PackageMinus, AlertCircle, Package } from "lucide-react";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import PriceListItemForm from "../components/pricelist/PriceListItemForm";
+import StockAdjustmentModal from "../components/pricelist/StockAdjustmentModal";
 
 const categoryColors = {
   "Service": "bg-blue-100 text-blue-800",
@@ -18,8 +19,10 @@ const categoryColors = {
 export default function PriceList() {
   const [searchTerm, setSearchTerm] = useState("");
   const [categoryFilter, setCategoryFilter] = useState("all");
+  const [stockFilter, setStockFilter] = useState("all");
   const [showForm, setShowForm] = useState(false);
   const [editingItem, setEditingItem] = useState(null);
+  const [adjustingStock, setAdjustingStock] = useState(null);
   const [user, setUser] = useState(null);
   const queryClient = useQueryClient();
 
@@ -73,12 +76,18 @@ export default function PriceList() {
     
     const matchesCategory = categoryFilter === "all" || item.category === categoryFilter;
     
-    return matchesSearch && matchesCategory;
+    const matchesStock = 
+      stockFilter === "all" ||
+      (stockFilter === "low" && item.stock_level <= item.min_stock_level) ||
+      (stockFilter === "out" && item.stock_level === 0);
+    
+    return matchesSearch && matchesCategory && matchesStock;
   });
 
   const categories = ["Service", "Motor", "Remotes/Accessories"];
-
   const isAdmin = user?.role === 'admin';
+  const lowStockCount = priceItems.filter(item => item.stock_level <= item.min_stock_level && item.stock_level > 0).length;
+  const outOfStockCount = priceItems.filter(item => item.stock_level === 0).length;
 
   const handleSubmit = (data) => {
     if (editingItem) {
@@ -97,6 +106,10 @@ export default function PriceList() {
     if (window.confirm('Are you sure you want to delete this item?')) {
       deleteItemMutation.mutate(id);
     }
+  };
+
+  const handleStockAdjust = (item) => {
+    setAdjustingStock(item);
   };
 
   if (showForm) {
@@ -134,6 +147,31 @@ export default function PriceList() {
           </div>
           <p className="text-slate-500">Quick reference for pricing and products</p>
         </div>
+
+        {(lowStockCount > 0 || outOfStockCount > 0) && (
+          <div className="mb-6 flex gap-3">
+            {lowStockCount > 0 && (
+              <Button
+                variant="outline"
+                onClick={() => setStockFilter(stockFilter === "low" ? "all" : "low")}
+                className={`${stockFilter === "low" ? "bg-amber-50 border-amber-300" : ""}`}
+              >
+                <AlertCircle className="w-4 h-4 mr-2 text-amber-600" />
+                <span className="text-amber-900">{lowStockCount} Low Stock</span>
+              </Button>
+            )}
+            {outOfStockCount > 0 && (
+              <Button
+                variant="outline"
+                onClick={() => setStockFilter(stockFilter === "out" ? "all" : "out")}
+                className={`${stockFilter === "out" ? "bg-red-50 border-red-300" : ""}`}
+              >
+                <Package className="w-4 h-4 mr-2 text-red-600" />
+                <span className="text-red-900">{outOfStockCount} Out of Stock</span>
+              </Button>
+            )}
+          </div>
+        )}
 
         <div className="mb-6 space-y-4">
           <div className="relative">
@@ -173,61 +211,101 @@ export default function PriceList() {
           </Card>
         ) : (
           <div className="grid gap-2">
-            {filteredItems.map((item) => (
-              <Card key={item.id} className="hover:shadow-md transition-shadow">
-                <CardContent className="p-4">
-                  <div className="flex items-start justify-between gap-4">
-                    <div className="flex-1 min-w-0">
-                      <div className="flex items-center gap-2 mb-2">
-                        <Badge className={categoryColors[item.category] || "bg-slate-100 text-slate-800"}>
-                          {item.category}
-                        </Badge>
-                        {!item.in_inventory && (
-                          <Badge variant="outline" className="text-slate-500">Not in stock</Badge>
+            {filteredItems.map((item) => {
+              const isLowStock = item.stock_level <= item.min_stock_level && item.stock_level > 0;
+              const isOutOfStock = item.stock_level === 0;
+
+              return (
+                <Card key={item.id} className={`hover:shadow-md transition-shadow ${isOutOfStock ? 'border-red-300' : isLowStock ? 'border-amber-300' : ''}`}>
+                  <CardContent className="p-4">
+                    <div className="flex items-start justify-between gap-4">
+                      <div className="flex-1 min-w-0">
+                        <div className="flex items-center gap-2 mb-2 flex-wrap">
+                          <Badge className={categoryColors[item.category] || "bg-slate-100 text-slate-800"}>
+                            {item.category}
+                          </Badge>
+                          {!item.in_inventory && (
+                            <Badge variant="outline" className="text-slate-500">Not in stock</Badge>
+                          )}
+                          {isOutOfStock && (
+                            <Badge className="bg-red-100 text-red-800 border-red-200">
+                              <Package className="w-3 h-3 mr-1" />
+                              Out of Stock
+                            </Badge>
+                          )}
+                          {isLowStock && (
+                            <Badge className="bg-amber-100 text-amber-800 border-amber-200">
+                              <AlertCircle className="w-3 h-3 mr-1" />
+                              Low Stock
+                            </Badge>
+                          )}
+                        </div>
+                        <h3 className="font-semibold text-slate-900 mb-1">{item.item}</h3>
+                        {item.description && (
+                          <p className="text-sm text-slate-600 whitespace-pre-wrap">{item.description}</p>
+                        )}
+                        {item.notes && (
+                          <p className="text-xs text-slate-500 mt-2 italic">{item.notes}</p>
+                        )}
+                        <div className="flex items-center gap-4 mt-2 text-sm">
+                          <span className="text-slate-600">
+                            Stock: <span className={`font-semibold ${isOutOfStock ? 'text-red-600' : isLowStock ? 'text-amber-600' : 'text-slate-900'}`}>
+                              {item.stock_level}
+                            </span>
+                          </span>
+                          <span className="text-slate-500">Min: {item.min_stock_level}</span>
+                        </div>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <div className="text-right">
+                          <div className="text-2xl font-bold text-orange-600">
+                            ${item.price.toFixed(2)}
+                          </div>
+                        </div>
+                        {isAdmin && (
+                          <div className="flex flex-col gap-1">
+                            <Button
+                              size="icon"
+                              variant="ghost"
+                              onClick={() => handleStockAdjust(item)}
+                              className="h-8 w-8 text-green-600 hover:text-green-700 hover:bg-green-50"
+                              title="Adjust Stock"
+                            >
+                              <PackagePlus className="w-4 h-4" />
+                            </Button>
+                            <Button
+                              size="icon"
+                              variant="ghost"
+                              onClick={() => handleEdit(item)}
+                              className="h-8 w-8 text-blue-600 hover:text-blue-700 hover:bg-blue-50"
+                            >
+                              <Pencil className="w-4 h-4" />
+                            </Button>
+                            <Button
+                              size="icon"
+                              variant="ghost"
+                              onClick={() => handleDelete(item.id)}
+                              className="h-8 w-8 text-red-600 hover:text-red-700 hover:bg-red-50"
+                            >
+                              <Trash2 className="w-4 h-4" />
+                            </Button>
+                          </div>
                         )}
                       </div>
-                      <h3 className="font-semibold text-slate-900 mb-1">{item.item}</h3>
-                      {item.description && (
-                        <p className="text-sm text-slate-600 whitespace-pre-wrap">{item.description}</p>
-                      )}
-                      {item.notes && (
-                        <p className="text-xs text-slate-500 mt-2 italic">{item.notes}</p>
-                      )}
                     </div>
-                    <div className="flex items-center gap-2">
-                      <div className="text-right">
-                        <div className="text-2xl font-bold text-orange-600">
-                          ${item.price.toFixed(2)}
-                        </div>
-                      </div>
-                      {isAdmin && (
-                        <div className="flex flex-col gap-1">
-                          <Button
-                            size="icon"
-                            variant="ghost"
-                            onClick={() => handleEdit(item)}
-                            className="h-8 w-8 text-blue-600 hover:text-blue-700 hover:bg-blue-50"
-                          >
-                            <Pencil className="w-4 h-4" />
-                          </Button>
-                          <Button
-                            size="icon"
-                            variant="ghost"
-                            onClick={() => handleDelete(item.id)}
-                            className="h-8 w-8 text-red-600 hover:text-red-700 hover:bg-red-50"
-                          >
-                            <Trash2 className="w-4 h-4" />
-                          </Button>
-                        </div>
-                      )}
-                    </div>
-                  </div>
-                </CardContent>
-              </Card>
-            ))}
+                  </CardContent>
+                </Card>
+              );
+            })}
           </div>
         )}
       </div>
+
+      <StockAdjustmentModal
+        item={adjustingStock}
+        open={!!adjustingStock}
+        onClose={() => setAdjustingStock(null)}
+      />
     </div>
   );
 }
