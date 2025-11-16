@@ -5,24 +5,33 @@ import { format, startOfMonth, endOfMonth, eachDayOfInterval, isSameMonth, isSam
 import { ChevronLeft, ChevronRight } from "lucide-react";
 import { Button } from "@/components/ui/button";
 
-const jobTypeColors = {
-  "Installation": "bg-blue-500",
-  "Service": "bg-green-500",
-  "Repair": "bg-orange-500",
-  "Quote": "bg-purple-500",
-  "Measure": "bg-indigo-500",
-  "Follow Up": "bg-amber-500",
-  "Warranty": "bg-red-500",
-};
+const colorPalette = [
+  "bg-blue-500",
+  "bg-green-500",
+  "bg-orange-500",
+  "bg-purple-500",
+  "bg-indigo-500",
+  "bg-amber-500",
+  "bg-red-500",
+  "bg-cyan-500",
+  "bg-teal-500",
+  "bg-pink-500",
+  "bg-rose-500",
+  "bg-lime-500",
+  "bg-emerald-500",
+  "bg-violet-500",
+  "bg-fuchsia-500",
+  "bg-sky-500",
+  "bg-yellow-500",
+];
 
-const getJobTypeColor = (jobTypeName) => {
-  if (jobTypeColors[jobTypeName]) {
-    return jobTypeColors[jobTypeName];
-  }
-  // Generate a consistent color for unknown job types based on hash
-  const hash = jobTypeName?.split('').reduce((acc, char) => acc + char.charCodeAt(0), 0) || 0;
-  const colors = ["bg-slate-500", "bg-cyan-500", "bg-teal-500", "bg-pink-500", "bg-rose-500", "bg-lime-500"];
-  return colors[hash % colors.length];
+const getJobTypeColor = (jobTypeName, allJobTypes) => {
+  if (!jobTypeName) return "bg-slate-500";
+  
+  const index = allJobTypes.indexOf(jobTypeName);
+  if (index === -1) return "bg-slate-500";
+  
+  return colorPalette[index % colorPalette.length];
 };
 
 export default function CalendarView({ jobs, onSelectJob, currentDate, onDateChange }) {
@@ -39,8 +48,8 @@ export default function CalendarView({ jobs, onSelectJob, currentDate, onDateCha
     );
   };
 
-  // Get unique job types from all jobs
-  const uniqueJobTypes = [...new Set(jobs.map(job => job.job_type_name).filter(Boolean))];
+  // Get unique job types from all jobs (sorted for consistency)
+  const uniqueJobTypes = [...new Set(jobs.map(job => job.job_type_name).filter(Boolean))].sort();
 
   return (
     <div className="space-y-4">
@@ -107,7 +116,7 @@ export default function CalendarView({ jobs, onSelectJob, currentDate, onDateCha
                       <div
                         key={job.id}
                         onClick={() => onSelectJob(job)}
-                        className={`text-xs px-1 py-0.5 rounded cursor-pointer hover:opacity-80 transition-opacity ${getJobTypeColor(job.job_type_name)} text-white truncate`}
+                        className={`text-xs px-1 py-0.5 rounded cursor-pointer hover:opacity-80 transition-opacity ${getJobTypeColor(job.job_type_name, uniqueJobTypes)} text-white truncate`}
                         title={`${job.customer_name} - ${job.job_type_name || 'No type'} - ${job.scheduled_time || 'No time'}`}
                       >
                         {job.scheduled_time && (
@@ -129,7 +138,7 @@ export default function CalendarView({ jobs, onSelectJob, currentDate, onDateCha
         <span className="font-semibold text-slate-700">Job Types:</span>
         {uniqueJobTypes.map((jobType) => (
           <div key={jobType} className="flex items-center gap-1">
-            <div className={`w-3 h-3 rounded ${getJobTypeColor(jobType)}`} />
+            <div className={`w-3 h-3 rounded ${getJobTypeColor(jobType, uniqueJobTypes)}`} />
             <span className="text-slate-600">{jobType}</span>
           </div>
         ))}
