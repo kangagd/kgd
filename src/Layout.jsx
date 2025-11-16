@@ -1,7 +1,8 @@
+
 import React from "react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
 import { createPageUrl } from "@/utils";
-import { Calendar, Briefcase, Users, Clock, LayoutDashboard, Wrench, UserCircle, DollarSign } from "lucide-react";
+import { Calendar, Briefcase, Users, LayoutDashboard, Wrench, UserCircle, DollarSign } from "lucide-react";
 import {
   Sidebar,
   SidebarContent,
@@ -24,7 +25,6 @@ const adminNavigationItems = [
   { title: "Jobs", url: createPageUrl("Jobs"), icon: Briefcase },
   { title: "Customers", url: createPageUrl("Customers"), icon: UserCircle },
   { title: "Price List", url: createPageUrl("PriceList"), icon: DollarSign },
-  { title: "Check In/Out", url: createPageUrl("CheckIn"), icon: Clock },
   { title: "Team", url: createPageUrl("Team"), icon: Users },
 ];
 
@@ -98,8 +98,8 @@ export default function Layout({ children, currentPageName }) {
                   key={item.title}
                   to={item.url}
                   className={`flex flex-col items-center gap-0.5 px-3 py-1.5 rounded-lg transition-colors ${
-                    isActive 
-                      ? 'text-[#fae008] bg-[#fae008]/10' 
+                    isActive
+                      ? 'text-[#fae008] bg-[#fae008]/10'
                       : 'text-slate-600 hover:text-[#fae008] hover:bg-slate-50'
                   }`}
                 >
@@ -130,7 +130,7 @@ export default function Layout({ children, currentPageName }) {
               </div>
             </div>
           </SidebarHeader>
-          
+
           <SidebarContent className="p-2">
             <SidebarGroup>
               <SidebarGroupLabel className="text-xs font-medium text-slate-500 uppercase tracking-wider px-2 py-2">
@@ -140,8 +140,8 @@ export default function Layout({ children, currentPageName }) {
                 <SidebarMenu>
                   {navigationItems.map((item) => (
                     <SidebarMenuItem key={item.title}>
-                      <SidebarMenuButton 
-                        asChild 
+                      <SidebarMenuButton
+                        asChild
                         className={`hover:bg-[#fae008]/10 hover:text-[#fae008] transition-colors duration-200 rounded-lg mb-1 ${
                           location.pathname === item.url ? 'bg-[#fae008]/10 text-[#fae008]' : ''
                         }`}
