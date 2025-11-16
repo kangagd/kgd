@@ -35,7 +35,7 @@ export default function Jobs() {
   }, []);
 
   const { data: allJobs = [], isLoading } = useQuery({
-    queryKey: ['jobs'],
+    queryKey: ['allJobs'],
     queryFn: () => base44.entities.Job.list('-scheduled_date')
   });
 
@@ -54,7 +54,7 @@ export default function Jobs() {
   const createJobMutation = useMutation({
     mutationFn: (data) => base44.entities.Job.create(data),
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['jobs'] });
+      queryClient.invalidateQueries({ queryKey: ['allJobs'] });
       setShowForm(false);
       setEditingJob(null);
       setPreselectedCustomerId(null);
@@ -64,7 +64,7 @@ export default function Jobs() {
   const updateJobMutation = useMutation({
     mutationFn: ({ id, data }) => base44.entities.Job.update(id, data),
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['jobs'] });
+      queryClient.invalidateQueries({ queryKey: ['allJobs'] });
       setShowForm(false);
       setEditingJob(null);
       setSelectedJob(null);
@@ -74,7 +74,8 @@ export default function Jobs() {
   const deleteJobMutation = useMutation({
     mutationFn: (jobId) => base44.entities.Job.update(jobId, { deleted_at: new Date().toISOString() }),
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['jobs'] });
+      queryClient.invalidateQueries({ queryKey: ['allJobs'] });
+      queryClient.invalidateQueries({ queryKey: ['deletedJobs'] });
       setSelectedJob(null);
     }
   });

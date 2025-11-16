@@ -24,16 +24,16 @@ export default function Customers() {
   const queryClient = useQueryClient();
 
   const { data: allCustomers = [], isLoading } = useQuery({
-    queryKey: ['customers'],
-    queryFn: () => base44.entities.Customer.filter({ status: 'active' }),
+    queryKey: ['allCustomers'],
+    queryFn: () => base44.entities.Customer.list(),
   });
 
-  const customers = allCustomers.filter(customer => !customer.deleted_at);
+  const customers = allCustomers.filter(customer => !customer.deleted_at && customer.status === 'active');
 
   const createCustomerMutation = useMutation({
     mutationFn: (data) => base44.entities.Customer.create(data),
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['customers'] });
+      queryClient.invalidateQueries({ queryKey: ['allCustomers'] });
       setShowForm(false);
       setEditingCustomer(null);
     }
@@ -42,7 +42,7 @@ export default function Customers() {
   const updateCustomerMutation = useMutation({
     mutationFn: ({ id, data }) => base44.entities.Customer.update(id, data),
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['customers'] });
+      queryClient.invalidateQueries({ queryKey: ['allCustomers'] });
       setShowForm(false);
       setEditingCustomer(null);
       setSelectedCustomer(null);
@@ -52,7 +52,8 @@ export default function Customers() {
   const deleteCustomerMutation = useMutation({
     mutationFn: (customerId) => base44.entities.Customer.update(customerId, { deleted_at: new Date().toISOString() }),
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['customers'] });
+      queryClient.invalidateQueries({ queryKey: ['allCustomers'] });
+      queryClient.invalidateQueries({ queryKey: ['deletedCustomers'] });
       setSelectedCustomer(null);
     }
   });

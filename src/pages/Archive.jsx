@@ -22,42 +22,38 @@ export default function Archive() {
   const [confirmDelete, setConfirmDelete] = useState(null);
   const queryClient = useQueryClient();
 
-  const { data: deletedJobs = [], isLoading: jobsLoading } = useQuery({
-    queryKey: ['deletedJobs'],
-    queryFn: async () => {
-      const allJobs = await base44.entities.Job.list('-deleted_at');
-      return allJobs.filter(job => job.deleted_at);
-    }
+  const { data: allJobs = [], isLoading: jobsLoading } = useQuery({
+    queryKey: ['allJobs'],
+    queryFn: () => base44.entities.Job.list('-deleted_at')
   });
 
-  const { data: deletedCustomers = [], isLoading: customersLoading } = useQuery({
-    queryKey: ['deletedCustomers'],
-    queryFn: async () => {
-      const allCustomers = await base44.entities.Customer.list('-deleted_at');
-      return allCustomers.filter(customer => customer.deleted_at);
-    }
+  const deletedJobs = allJobs.filter(job => job.deleted_at);
+
+  const { data: allCustomers = [], isLoading: customersLoading } = useQuery({
+    queryKey: ['allCustomers'],
+    queryFn: () => base44.entities.Customer.list('-deleted_at')
   });
+
+  const deletedCustomers = allCustomers.filter(customer => customer.deleted_at);
 
   const restoreJobMutation = useMutation({
     mutationFn: (jobId) => base44.entities.Job.update(jobId, { deleted_at: null }),
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['deletedJobs'] });
-      queryClient.invalidateQueries({ queryKey: ['jobs'] });
+      queryClient.invalidateQueries({ queryKey: ['allJobs'] });
     }
   });
 
   const restoreCustomerMutation = useMutation({
     mutationFn: (customerId) => base44.entities.Customer.update(customerId, { deleted_at: null }),
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['deletedCustomers'] });
-      queryClient.invalidateQueries({ queryKey: ['customers'] });
+      queryClient.invalidateQueries({ queryKey: ['allCustomers'] });
     }
   });
 
   const permanentDeleteJobMutation = useMutation({
     mutationFn: (jobId) => base44.entities.Job.delete(jobId),
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['deletedJobs'] });
+      queryClient.invalidateQueries({ queryKey: ['allJobs'] });
       setConfirmDelete(null);
     }
   });
@@ -65,7 +61,7 @@ export default function Archive() {
   const permanentDeleteCustomerMutation = useMutation({
     mutationFn: (customerId) => base44.entities.Customer.delete(customerId),
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['deletedCustomers'] });
+      queryClient.invalidateQueries({ queryKey: ['allCustomers'] });
       setConfirmDelete(null);
     }
   });
