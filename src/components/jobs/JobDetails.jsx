@@ -19,6 +19,7 @@ import MeasurementsForm from "./MeasurementsForm";
 import ChangeHistoryModal from "./ChangeHistoryModal";
 import EditableField from "./EditableField";
 import EditableFileUpload from "./EditableFileUpload";
+import CustomerEditModal from "../customers/CustomerEditModal";
 
 const statusColors = {
   scheduled: "bg-blue-100 text-blue-800 border-blue-200",
@@ -47,6 +48,7 @@ export default function JobDetails({ job, onClose, onStatusChange }) {
   const [showPriceList, setShowPriceList] = useState(false);
   const [showAssistant, setShowAssistant] = useState(false);
   const [showHistory, setShowHistory] = useState(false);
+  const [showCustomerEdit, setShowCustomerEdit] = useState(false);
   const [user, setUser] = useState(null);
   const [measurements, setMeasurements] = useState(job.measurements || null);
   const [notes, setNotes] = useState(job.notes || "");
@@ -84,6 +86,12 @@ export default function JobDetails({ job, onClose, onStatusChange }) {
   const { data: checkIns = [] } = useQuery({
     queryKey: ['checkIns', job.id],
     queryFn: () => base44.entities.CheckInOut.filter({ job_id: job.id })
+  });
+
+  const { data: customer } = useQuery({
+    queryKey: ['customer', job.customer_id],
+    queryFn: () => base44.entities.Customer.get(job.customer_id),
+    enabled: !!job.customer_id
   });
 
   const activeCheckIn = checkIns.find((c) => !c.check_out_time && c.technician_email === user?.email);
@@ -144,6 +152,15 @@ export default function JobDetails({ job, onClose, onStatusChange }) {
     mutationFn: (data) => base44.entities.Job.update(job.id, { measurements: data }),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['jobs'] });
+    }
+  });
+
+  const updateCustomerMutation = useMutation({
+    mutationFn: ({ id, data }) => base44.entities.Customer.update(id, data),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['customer', job.customer_id] });
+      queryClient.invalidateQueries({ queryKey: ['jobs'] });
+      setShowCustomerEdit(false);
     }
   });
 
@@ -278,6 +295,10 @@ export default function JobDetails({ job, onClose, onStatusChange }) {
     updateJobMutation.mutate({ field: 'invoice_url', value: url });
   };
 
+  const handleCustomerSubmit = (data) => {
+    updateCustomerMutation.mutate({ id: job.customer_id, data });
+  };
+
   return (
     <>
       <Card className={`border-none shadow-lg ${isTechnician ? 'rounded-none' : ''}`}>
@@ -289,7 +310,12 @@ export default function JobDetails({ job, onClose, onStatusChange }) {
               </Button>
               <div className="flex-1 min-w-0">
                 <div className="flex items-center gap-2 flex-wrap">
-                  <CardTitle className="text-lg md:text-2xl font-bold">{job.customer_name}</CardTitle>
+                  <CardTitle 
+                    className="text-lg md:text-2xl font-bold cursor-pointer hover:text-[#fae008] transition-colors"
+                    onClick={() => setShowCustomerEdit(true)}
+                  >
+                    {job.customer_name}
+                  </CardTitle>
                   <Badge className={`${statusColors[job.status]} pointer-events-none`}>
                     {job.status.replace('_', ' ')}
                   </Badge>
@@ -688,6 +714,13 @@ export default function JobDetails({ job, onClose, onStatusChange }) {
         onClose={() => setShowHistory(false)}
         jobId={job.id} />
 
+      <CustomerEditModal
+        customer={customer}
+        open={showCustomerEdit}
+        onClose={() => setShowCustomerEdit(false)}
+        onSubmit={handleCustomerSubmit}
+        isSubmitting={updateCustomerMutation.isPending}
+      />
 
       {!isTechnician &&
       <TechnicianAssistant
