@@ -14,6 +14,7 @@ import TechnicianAssistant from "./TechnicianAssistant";
 import MeasurementsForm from "./MeasurementsForm";
 import ChangeHistoryModal from "./ChangeHistoryModal";
 import EditableField from "./EditableField";
+import EditableFileUpload from "./EditableFileUpload";
 
 const statusColors = {
   scheduled: "bg-blue-100 text-blue-800 border-blue-200",
@@ -184,6 +185,18 @@ export default function JobDetails({ job, onClose, onStatusChange }) {
     if (jobType) {
       updateJobMutation.mutate({ field: 'job_type_name', value: jobType.name });
     }
+  };
+
+  const handleImagesChange = (urls) => {
+    updateJobMutation.mutate({ field: 'image_urls', value: urls });
+  };
+
+  const handleQuoteChange = (url) => {
+    updateJobMutation.mutate({ field: 'quote_url', value: url });
+  };
+
+  const handleInvoiceChange = (url) => {
+    updateJobMutation.mutate({ field: 'invoice_url', value: url });
   };
 
   return (
@@ -409,54 +422,37 @@ export default function JobDetails({ job, onClose, onStatusChange }) {
             </TabsContent>
 
             <TabsContent value="files" className="mt-3 md:mt-4">
-              <div className="space-y-3 md:space-y-4">
-                <h3 className="text-sm md:text-base font-semibold text-slate-900">Photos & Attachments</h3>
-                
-                {job.image_urls && job.image_urls.length > 0 ? (
-                  <div>
-                    <h4 className="text-xs md:text-sm font-medium text-slate-500 mb-2">Photos ({job.image_urls.length})</h4>
-                    <div className="grid grid-cols-2 md:grid-cols-3 gap-2">
-                      {job.image_urls.map((url, index) => (
-                        <a key={index} href={url} target="_blank" rel="noopener noreferrer">
-                          <img 
-                            src={url} 
-                            alt={`Job ${index + 1}`} 
-                            className="w-full h-24 md:h-32 object-cover rounded border hover:opacity-80"
-                          />
-                        </a>
-                      ))}
-                    </div>
-                  </div>
-                ) : (
-                  <p className="text-xs md:text-sm text-slate-500 text-center py-8">No photos uploaded</p>
-                )}
+              <div className="space-y-4">
+                <EditableFileUpload
+                  files={job.image_urls || []}
+                  onFilesChange={handleImagesChange}
+                  accept="image/*"
+                  multiple={true}
+                  icon={ImageIcon}
+                  label="Photos"
+                  emptyText="Click to upload photos"
+                />
 
-                <div className="grid md:grid-cols-2 gap-3 md:gap-4 pt-4 border-t">
-                  {job.quote_url ? (
-                    <a href={job.quote_url} target="_blank" rel="noopener noreferrer" 
-                       className="flex items-center gap-2 p-3 bg-slate-50 rounded-lg hover:bg-slate-100 transition-colors">
-                      <FileText className="w-4 h-4 text-slate-400" />
-                      <span className="text-xs md:text-sm font-medium">View Quote</span>
-                    </a>
-                  ) : (
-                    <div className="flex items-center gap-2 p-3 bg-slate-50 rounded-lg text-slate-400">
-                      <FileText className="w-4 h-4" />
-                      <span className="text-xs md:text-sm">No quote</span>
-                    </div>
-                  )}
+                <div className="grid md:grid-cols-2 gap-4 pt-4 border-t">
+                  <EditableFileUpload
+                    files={job.quote_url}
+                    onFilesChange={handleQuoteChange}
+                    accept=".pdf,.doc,.docx"
+                    multiple={false}
+                    icon={FileText}
+                    label="Quote"
+                    emptyText="Click to upload quote"
+                  />
 
-                  {job.invoice_url ? (
-                    <a href={job.invoice_url} target="_blank" rel="noopener noreferrer"
-                       className="flex items-center gap-2 p-3 bg-slate-50 rounded-lg hover:bg-slate-100 transition-colors">
-                      <FileText className="w-4 h-4 text-slate-400" />
-                      <span className="text-xs md:text-sm font-medium">View Invoice</span>
-                    </a>
-                  ) : (
-                    <div className="flex items-center gap-2 p-3 bg-slate-50 rounded-lg text-slate-400">
-                      <FileText className="w-4 h-4" />
-                      <span className="text-xs md:text-sm">No invoice</span>
-                    </div>
-                  )}
+                  <EditableFileUpload
+                    files={job.invoice_url}
+                    onFilesChange={handleInvoiceChange}
+                    accept=".pdf,.doc,.docx"
+                    multiple={false}
+                    icon={FileText}
+                    label="Invoice"
+                    emptyText="Click to upload invoice"
+                  />
                 </div>
               </div>
             </TabsContent>
