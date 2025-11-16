@@ -29,12 +29,12 @@ export default function WeekCalendar({ jobs, currentDate, onDateChange, onJobCli
   const weekEnd = endOfWeek(currentDate, { weekStartsOn: 0 });
   const daysInWeek = eachDayOfInterval({ start: weekStart, end: weekEnd });
 
-  const uniqueJobTypes = [...new Set(jobs.map(job => job.job_type_name).filter(Boolean))].sort();
+  const uniqueJobTypes = [...new Set(jobs.filter(job => job).map(job => job.job_type_name).filter(Boolean))].sort();
 
   const getJobsForDay = (day) => {
-    return jobs.filter(job => 
-      job.scheduled_date && isSameDay(new Date(job.scheduled_date), day)
-    ).sort((a, b) => (a.scheduled_time || "").localeCompare(b.scheduled_time || ""));
+    return jobs
+      .filter(job => job && job.scheduled_date && isSameDay(new Date(job.scheduled_date), day))
+      .sort((a, b) => (a.scheduled_time || "").localeCompare(b.scheduled_time || ""));
   };
 
   const handleDragEnd = (result) => {
@@ -123,8 +123,8 @@ export default function WeekCalendar({ jobs, currentDate, onDateChange, onJobCli
                                 <div className="font-medium">
                                   {job.scheduled_time && format(new Date(`2000-01-01T${job.scheduled_time}`), 'h:mm a')}
                                 </div>
-                                <div className="truncate">{job.customer_name}</div>
-                                <div className="text-xs opacity-80 truncate">{job.job_type_name}</div>
+                                <div className="truncate">{job.customer_name || 'No customer'}</div>
+                                <div className="text-xs opacity-80 truncate">{job.job_type_name || 'No type'}</div>
                               </div>
                             )}
                           </Draggable>

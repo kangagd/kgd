@@ -25,10 +25,10 @@ const getJobTypeColor = (jobTypeName, allJobTypes) => {
 
 export default function DayCalendar({ jobs, currentDate, onDateChange, onSelectJob }) {
   const dayJobs = jobs
-    .filter(job => job.scheduled_date && isSameDay(new Date(job.scheduled_date), currentDate))
+    .filter(job => job && job.scheduled_date && isSameDay(new Date(job.scheduled_date), currentDate))
     .sort((a, b) => (a.scheduled_time || "").localeCompare(b.scheduled_time || ""));
 
-  const uniqueJobTypes = [...new Set(jobs.map(job => job.job_type_name).filter(Boolean))].sort();
+  const uniqueJobTypes = [...new Set(jobs.filter(job => job).map(job => job.job_type_name).filter(Boolean))].sort();
 
   const timeSlots = Array.from({ length: 24 }, (_, i) => i);
 
@@ -91,9 +91,9 @@ export default function DayCalendar({ jobs, currentDate, onDateChange, onSelectJ
                         </span>
                       </div>
                       <h3 className="font-semibold text-lg text-slate-900 mb-1">
-                        {job.customer_name}
+                        {job.customer_name || 'No customer'}
                       </h3>
-                      <p className="text-sm text-slate-600 mb-1">{job.address}</p>
+                      <p className="text-sm text-slate-600 mb-1">{job.address || 'No address'}</p>
                       <div className="flex flex-wrap gap-2 text-sm">
                         {job.job_type_name && (
                           <span className="text-slate-600">

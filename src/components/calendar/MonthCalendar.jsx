@@ -32,11 +32,11 @@ export default function MonthCalendar({ jobs, currentDate, onDateChange, onSelec
   const startDay = monthStart.getDay();
   const emptyDays = Array(startDay).fill(null);
 
-  const uniqueJobTypes = [...new Set(jobs.map(job => job.job_type_name).filter(Boolean))].sort();
+  const uniqueJobTypes = [...new Set(jobs.filter(job => job).map(job => job.job_type_name).filter(Boolean))].sort();
 
   const getJobsForDay = (day) => {
     return jobs.filter(job => 
-      job.scheduled_date && isSameDay(new Date(job.scheduled_date), day)
+      job && job.scheduled_date && isSameDay(new Date(job.scheduled_date), day)
     );
   };
 
@@ -130,12 +130,12 @@ export default function MonthCalendar({ jobs, currentDate, onDateChange, onSelec
                                   } text-white truncate ${
                                     snapshot.isDragging ? 'opacity-50' : 'hover:opacity-80'
                                   }`}
-                                  title={`${job.customer_name} - ${job.job_type_name || 'No type'} - ${job.scheduled_time || 'No time'}`}
+                                  title={`${job.customer_name || 'No customer'} - ${job.job_type_name || 'No type'} - ${job.scheduled_time || 'No time'}`}
                                 >
                                   {job.scheduled_time && (
                                     <span className="font-medium">{job.scheduled_time.slice(0, 5)} </span>
                                   )}
-                                  <span className="hidden md:inline">{job.customer_name}</span>
+                                  <span className="hidden md:inline">{job.customer_name || 'No customer'}</span>
                                   <span className="md:hidden">#{job.job_number}</span>
                                 </div>
                               )}
