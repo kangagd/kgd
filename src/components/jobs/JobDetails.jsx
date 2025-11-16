@@ -567,7 +567,7 @@ export default function JobDetails({ job, onClose, onStatusChange }) {
                     <Button
                       onClick={handleCheckOut}
                       disabled={checkOutMutation.isPending}
-                      className="w-full bg-orange-600 hover:bg-orange-700"
+                      className="w-full bg-[#fae008] hover:bg-[#e5d007] text-slate-900"
                       size="lg"
                     >
                       <LogOut className="w-4 h-4 mr-2" />

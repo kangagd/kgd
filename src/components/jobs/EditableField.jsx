@@ -1,3 +1,4 @@
+
 import React, { useState, useRef, useEffect } from "react";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
@@ -74,7 +75,7 @@ export default function EditableField({
 
   if (isEditing) {
     return (
-      <div className={`flex items-center gap-2 p-2 md:p-3 bg-white border-2 border-orange-400 rounded-lg ${className}`}>
+      <div className={`flex items-center gap-2 p-2 md:p-3 bg-white border-2 border-[#fae008] rounded-lg ${className}`}>
         {Icon && <Icon className="w-3 h-3 md:w-4 md:h-4 text-slate-400 flex-shrink-0" />}
         {type === "multi-select" ? (
           <Popover open={true} modal={true}>

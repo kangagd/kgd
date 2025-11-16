@@ -64,8 +64,8 @@ export default function Layout({ children, currentPageName }) {
         <header className="bg-white border-b border-slate-200 px-3 py-2 sticky top-0 z-50">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-2">
-              <div className="w-7 h-7 bg-gradient-to-br from-orange-500 to-orange-600 rounded-lg flex items-center justify-center">
-                <Wrench className="w-3.5 h-3.5 text-white" />
+              <div className="w-7 h-7 bg-[#fae008] rounded-lg flex items-center justify-center">
+                <Wrench className="w-3.5 h-3.5 text-slate-900" />
               </div>
               <div>
                 <h1 className="font-bold text-slate-900 text-sm">KGD</h1>
@@ -95,8 +95,8 @@ export default function Layout({ children, currentPageName }) {
                   to={item.url}
                   className={`flex flex-col items-center gap-0.5 px-3 py-1.5 rounded-lg transition-colors ${
                     isActive 
-                      ? 'text-orange-600 bg-orange-50' 
-                      : 'text-slate-600 hover:text-orange-600 hover:bg-slate-50'
+                      ? 'text-[#fae008] bg-[#fae008]/10' 
+                      : 'text-slate-600 hover:text-[#fae008] hover:bg-slate-50'
                   }`}
                 >
                   <item.icon className="w-5 h-5" />
@@ -117,8 +117,8 @@ export default function Layout({ children, currentPageName }) {
         <Sidebar className="border-r border-slate-200">
           <SidebarHeader className="border-b border-slate-200 p-4">
             <div className="flex items-center gap-3">
-              <div className="w-10 h-10 bg-gradient-to-br from-orange-500 to-orange-600 rounded-xl flex items-center justify-center shadow-lg">
-                <Wrench className="w-5 h-5 text-white" />
+              <div className="w-10 h-10 bg-[#fae008] rounded-xl flex items-center justify-center shadow-lg">
+                <Wrench className="w-5 h-5 text-slate-900" />
               </div>
               <div>
                 <h2 className="font-bold text-slate-900">FieldScheduler</h2>
@@ -138,8 +138,8 @@ export default function Layout({ children, currentPageName }) {
                     <SidebarMenuItem key={item.title}>
                       <SidebarMenuButton 
                         asChild 
-                        className={`hover:bg-orange-50 hover:text-orange-700 transition-colors duration-200 rounded-lg mb-1 ${
-                          location.pathname === item.url ? 'bg-orange-50 text-orange-700' : ''
+                        className={`hover:bg-[#fae008]/10 hover:text-[#fae008] transition-colors duration-200 rounded-lg mb-1 ${
+                          location.pathname === item.url ? 'bg-[#fae008]/10 text-[#fae008]' : ''
                         }`}
                       >
                         <Link to={item.url} className="flex items-center gap-3 px-3 py-2">

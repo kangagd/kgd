@@ -10,7 +10,7 @@ const statusColors = {
   in_progress: "bg-blue-100 text-blue-800 border-blue-200",
   new_quote: "bg-purple-100 text-purple-800 border-purple-200",
   update_quote: "bg-indigo-100 text-indigo-800 border-indigo-200",
-  send_invoice: "bg-orange-100 text-orange-800 border-orange-200",
+  send_invoice: "bg-[#fae008]/20 text-[#fae008] border-[#fae008]/30",
   completed: "bg-green-100 text-green-800 border-green-200",
   return_visit_required: "bg-amber-100 text-amber-800 border-amber-200",
   scheduled: "bg-slate-100 text-slate-800 border-slate-200",
@@ -97,7 +97,7 @@ export default function Dashboard() {
           </div>
           <Button
             onClick={() => window.location.href = '/Jobs?action=new'}
-            className="bg-orange-600 hover:bg-orange-700 w-full md:w-auto"
+            className="bg-[#fae008] hover:bg-[#e5d007] text-slate-900 w-full md:w-auto"
           >
             <Plus className="w-4 h-4 mr-2" />
             New Job
@@ -121,12 +121,12 @@ export default function Dashboard() {
 
           <div 
             onClick={() => handleCardClick('active')}
-            className="bg-white rounded-lg md:rounded-xl border border-slate-200 p-3 md:p-6 cursor-pointer hover:shadow-lg hover:border-orange-300 transition-all"
+            className="bg-white rounded-lg md:rounded-xl border border-slate-200 p-3 md:p-6 cursor-pointer hover:shadow-lg hover:border-[#fae008] transition-all"
           >
             <div className="flex items-center justify-between mb-1 md:mb-2">
               <h3 className="text-xs md:text-sm font-medium text-slate-500">Active Jobs</h3>
-              <div className="w-8 h-8 md:w-10 md:h-10 bg-orange-100 rounded-lg flex items-center justify-center">
-                <span className="text-orange-600 font-bold text-base md:text-lg">{activeJobs.length}</span>
+              <div className="w-8 h-8 md:w-10 md:h-10 bg-[#fae008]/20 rounded-lg flex items-center justify-center">
+                <span className="text-[#fae008] font-bold text-base md:text-lg">{activeJobs.length}</span>
               </div>
             </div>
             <p className="text-xl md:text-2xl font-bold text-slate-900">{activeJobs.length}</p>

@@ -473,7 +473,7 @@ export default function JobForm({ job, jobTypes, technicians, onSubmit, onCancel
             <Button type="button" variant="outline" onClick={onCancel}>
               Cancel
             </Button>
-            <Button type="submit" disabled={isSubmitting} className="bg-orange-600 hover:bg-orange-700">
+            <Button type="submit" disabled={isSubmitting} className="bg-[#fae008] hover:bg-[#e5d007] text-slate-900">
               {isSubmitting ? 'Saving...' : job ? 'Update Job' : 'Create Job'}
             </Button>
           </CardFooter>
@@ -520,7 +520,7 @@ export default function JobForm({ job, jobTypes, technicians, onSubmit, onCancel
             <Button 
               onClick={handleCreateNewCustomer}
               disabled={!newCustomerData.name}
-              className="bg-orange-600 hover:bg-orange-700"
+              className="bg-[#fae008] hover:bg-[#e5d007] text-slate-900"
             >
               Create Customer
             </Button>
