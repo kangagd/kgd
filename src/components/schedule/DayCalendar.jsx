@@ -1,8 +1,7 @@
 import React from "react";
 import { Card } from "@/components/ui/card";
 import { format, parseISO, isSameDay } from "date-fns";
-import { DragDropContext, Droppable, Draggable } from "@hello-pangea/dnd";
-import { Clock, Grip, User } from "lucide-react";
+import { Clock, User } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 
 const statusColors = {
@@ -17,8 +16,9 @@ const hours = Array.from({ length: 24 }, (_, i) => i);
 export default function DayCalendar({ currentDate, jobs, onJobClick, isLoading }) {
   const getJobsForDay = () => {
     return jobs.filter(job => {
+      if (!job || !job.scheduled_date) return false;
       try {
-        return job.scheduled_date && isSameDay(parseISO(job.scheduled_date), currentDate);
+        return isSameDay(parseISO(job.scheduled_date), currentDate);
       } catch {
         return false;
       }
@@ -57,8 +57,8 @@ export default function DayCalendar({ currentDate, jobs, onJobClick, isLoading }
               >
                 <div className="flex items-start justify-between">
                   <div className="flex-1">
-                    <div className="font-medium text-slate-900">{job.customer_name}</div>
-                    <div className="text-sm text-slate-600 mt-1">{job.address}</div>
+                    <div className="font-medium text-slate-900">{job.customer_name || 'Unknown Customer'}</div>
+                    <div className="text-sm text-slate-600 mt-1">{job.address || 'No address'}</div>
                     {job.job_type_name && (
                       <Badge variant="outline" className="text-xs mt-2">
                         {job.job_type_name}
@@ -106,8 +106,8 @@ export default function DayCalendar({ currentDate, jobs, onJobClick, isLoading }
                         >
                           <div className="flex items-start justify-between mb-2">
                             <div className="flex-1">
-                              <div className="font-semibold text-slate-900">{job.customer_name}</div>
-                              <div className="text-sm text-slate-600 mt-1">{job.address}</div>
+                              <div className="font-semibold text-slate-900">{job.customer_name || 'Unknown Customer'}</div>
+                              <div className="text-sm text-slate-600 mt-1">{job.address || 'No address'}</div>
                             </div>
                             <div className="flex items-center gap-1 text-sm text-slate-500 flex-shrink-0 ml-3">
                               <Clock className="w-4 h-4" />
