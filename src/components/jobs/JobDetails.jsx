@@ -43,13 +43,6 @@ const productColors = {
   "Custom Garage Door": "bg-pink-100 text-pink-700"
 };
 
-const customerTypeColors = {
-  "Owner": "bg-purple-100 text-purple-700",
-  "Builder": "bg-blue-100 text-blue-700",
-  "Real Estate - Tenant": "bg-green-100 text-green-700",
-  "Strata - Owner": "bg-amber-100 text-amber-700",
-};
-
 export default function JobDetails({ job, onClose, onStatusChange }) {
   const [showPriceList, setShowPriceList] = useState(false);
   const [showAssistant, setShowAssistant] = useState(false);
@@ -301,11 +294,6 @@ export default function JobDetails({ job, onClose, onStatusChange }) {
                     {job.status.replace('_', ' ')}
                   </Badge>
                 </div>
-                {job.customer_type && (
-                  <Badge variant="outline" className={`${customerTypeColors[job.customer_type]} mt-1`}>
-                    {job.customer_type}
-                  </Badge>
-                )}
                 <p className="text-xs md:text-sm text-slate-500 mt-1">Job #{job.job_number}</p>
                 <div className="flex items-center gap-1.5 mt-2">
                   <MapPin className="text-[#fae008] lucide lucide-map-pin w-4 h-4 flex-shrink-0" />
@@ -367,7 +355,8 @@ export default function JobDetails({ job, onClose, onStatusChange }) {
               <TabsTrigger value="files" className="text-xs md:text-sm">
                 <ImageIcon className="w-3 h-3 md:w-4 md:h-4 md:mr-2" />
                 <span className="hidden md:inline">Files</span>
-              </TabsList>
+              </TabsTrigger>
+            </TabsList>
 
             <TabsContent value="details" className="space-y-3 md:space-y-4 mt-3 md:mt-4">
               <div className="grid gap-3 md:gap-4">
