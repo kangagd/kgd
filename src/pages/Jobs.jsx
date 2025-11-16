@@ -33,17 +33,17 @@ export default function Jobs() {
 
   const { data: jobs = [], isLoading } = useQuery({
     queryKey: ['jobs'],
-    queryFn: () => base44.entities.Job.list('-scheduled_date'),
+    queryFn: () => base44.entities.Job.list('-scheduled_date')
   });
 
   const { data: jobTypes = [] } = useQuery({
     queryKey: ['jobTypes'],
-    queryFn: () => base44.entities.JobType.filter({ is_active: true }),
+    queryFn: () => base44.entities.JobType.filter({ is_active: true })
   });
 
   const { data: technicians = [] } = useQuery({
     queryKey: ['technicians'],
-    queryFn: () => base44.entities.User.filter({ is_field_technician: true }),
+    queryFn: () => base44.entities.User.filter({ is_field_technician: true })
   });
 
   const createJobMutation = useMutation({
@@ -53,7 +53,7 @@ export default function Jobs() {
       setShowForm(false);
       setEditingJob(null);
       setPreselectedCustomerId(null);
-    },
+    }
   });
 
   const updateJobMutation = useMutation({
@@ -63,7 +63,7 @@ export default function Jobs() {
       setShowForm(false);
       setEditingJob(null);
       setSelectedJob(null);
-    },
+    }
   });
 
   useEffect(() => {
@@ -73,16 +73,16 @@ export default function Jobs() {
     const customerId = params.get('customer_id');
     const status = params.get('status');
     const date = params.get('date');
-    
+
     if (action === 'new') {
       setShowForm(true);
       if (customerId) {
         setPreselectedCustomerId(customerId);
       }
     }
-    
+
     if (jobId) {
-      const job = jobs.find(j => j.id === jobId);
+      const job = jobs.find((j) => j.id === jobId);
       if (job) setSelectedJob(job);
     }
 
@@ -106,8 +106,8 @@ export default function Jobs() {
   };
 
   const isTechnician = user?.is_field_technician && user?.role !== 'admin';
-  
-  const filteredJobs = jobs.filter(job => {
+
+  const filteredJobs = jobs.filter((job) => {
     // For technicians, only show their assigned jobs
     if (isTechnician && job.assigned_to !== user?.email) {
       return false;
@@ -119,14 +119,14 @@ export default function Jobs() {
     if (dateFilter && job.scheduled_date !== dateFilter) {
       return false;
     }
-    
-    const matchesSearch = 
-      job.customer_name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      job.address?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      job.job_number?.toString().includes(searchTerm);
-    
+
+    const matchesSearch =
+    job.customer_name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    job.address?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    job.job_number?.toString().includes(searchTerm);
+
     const matchesStatus = statusFilter === "all" || job.status === statusFilter;
-    
+
     return matchesSearch && matchesStatus;
   });
 
@@ -145,11 +145,11 @@ export default function Jobs() {
               setPreselectedCustomerId(null);
             }}
             isSubmitting={createJobMutation.isPending || updateJobMutation.isPending}
-            preselectedCustomerId={preselectedCustomerId}
-          />
+            preselectedCustomerId={preselectedCustomerId} />
+
         </div>
-      </div>
-    );
+      </div>);
+
   }
 
   if (selectedJob) {
@@ -165,37 +165,37 @@ export default function Jobs() {
                 id: selectedJob.id,
                 data: { status: newStatus }
               });
-            }}
-          />
+            }} />
+
         </div>
-      </div>
-    );
+      </div>);
+
   }
 
   return (
     <div className="p-2 md:p-8 bg-slate-50 min-h-screen">
       <div className="max-w-7xl mx-auto">
-        {!isTechnician && (
-          <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-4 md:mb-6 gap-3">
+        {!isTechnician &&
+        <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-4 md:mb-6 gap-3">
             <div>
               <h1 className="text-2xl md:text-3xl font-bold text-slate-900">Jobs</h1>
               <p className="text-slate-500 mt-1 text-sm">Manage all scheduled jobs</p>
             </div>
-            <Button 
-              onClick={() => setShowForm(true)}
-              className="bg-orange-600 hover:bg-orange-700 w-full md:w-auto"
-            >
+            <Button
+            onClick={() => setShowForm(true)} className="bg-[#fae008] text-slate-950 px-4 py-2 text-sm font-medium rounded-[10px] inline-flex items-center justify-center gap-2 whitespace-nowrap transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:pointer-events-none disabled:opacity-50 [&_svg]:pointer-events-none [&_svg]:size-4 [&_svg]:shrink-0 shadow h-9 hover:bg-orange-700 w-full md:w-auto">
+
+
               <Plus className="w-4 h-4 mr-2" />
               New Job
             </Button>
           </div>
-        )}
+        }
 
-        {isTechnician && (
-          <div className="mb-3 md:mb-4">
+        {isTechnician &&
+        <div className="mb-3 md:mb-4">
             <h1 className="text-xl md:text-2xl font-bold text-slate-900">My Jobs</h1>
           </div>
-        )}
+        }
 
         <div className="flex flex-col gap-3 md:gap-4 mb-4 md:mb-6">
           <div className="relative flex-1">
@@ -204,8 +204,8 @@ export default function Jobs() {
               placeholder="Search jobs..."
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
-              className="pl-10"
-            />
+              className="pl-10" />
+
           </div>
           
           <Tabs value={statusFilter} onValueChange={setStatusFilter}>
@@ -219,12 +219,12 @@ export default function Jobs() {
           </Tabs>
         </div>
 
-        <JobList 
+        <JobList
           jobs={filteredJobs}
           isLoading={isLoading}
-          onSelectJob={setSelectedJob}
-        />
+          onSelectJob={setSelectedJob} />
+
       </div>
-    </div>
-  );
+    </div>);
+
 }
