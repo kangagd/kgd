@@ -1,70 +1,60 @@
-import React from "react";
+import React, { useState } from "react";
 import { Card, CardContent } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
-import { format, startOfMonth, endOfMonth, eachDayOfInterval, isSameMonth, isSameDay, addMonths, subMonths } from "date-fns";
-import { ChevronLeft, ChevronRight } from "lucide-react";
 import { Button } from "@/components/ui/button";
-
-const colorPalette = [
-  "bg-blue-500",
-  "bg-green-500",
-  "bg-orange-500",
-  "bg-purple-500",
-  "bg-indigo-500",
-  "bg-amber-500",
-  "bg-red-500",
-  "bg-cyan-500",
-  "bg-teal-500",
-  "bg-pink-500",
-  "bg-rose-500",
-  "bg-lime-500",
-  "bg-emerald-500",
-  "bg-violet-500",
-  "bg-fuchsia-500",
-  "bg-sky-500",
-  "bg-yellow-500",
-];
-
-const getJobTypeColor = (jobTypeName, allJobTypes) => {
-  if (!jobTypeName) return "bg-slate-500";
-  
-  const index = allJobTypes.indexOf(jobTypeName);
-  if (index === -1) return "bg-slate-500";
-  
-  return colorPalette[index % colorPalette.length];
-};
+import { ChevronLeft, ChevronRight, Plus } from "lucide-react";
+import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { addMonths, subMonths, addWeeks, subWeeks, format } from "date-fns";
+import MonthView from "../calendar/MonthView";
+import WeekView from "../calendar/WeekView";
+import DayView from "../calendar/DayView";
+import QuickBookModal from "../calendar/QuickBookModal";
 
 export default function CalendarView({ jobs, onSelectJob, currentDate, onDateChange }) {
-  const monthStart = startOfMonth(currentDate);
-  const monthEnd = endOfMonth(currentDate);
-  const daysInMonth = eachDayOfInterval({ start: monthStart, end: monthEnd });
+  const [view, setView] = useState("week");
+  const [showQuickBook, setShowQuickBook] = useState(false);
+  const [selectedDate, setSelectedDate] = useState(null);
 
-  const startDay = monthStart.getDay();
-  const emptyDays = Array(startDay).fill(null);
-
-  const getJobsForDay = (day) => {
-    return jobs.filter(job => 
-      job.scheduled_date && isSameDay(new Date(job.scheduled_date), day)
-    );
+  const handlePrevious = () => {
+    if (view === "month") {
+      onDateChange(subMonths(currentDate, 1));
+    } else if (view === "week") {
+      onDateChange(subWeeks(currentDate, 1));
+    } else {
+      onDateChange(subWeeks(currentDate, 1));
+    }
   };
 
-  // Get unique job types from all jobs (sorted for consistency)
-  const uniqueJobTypes = [...new Set(jobs.map(job => job.job_type_name).filter(Boolean))].sort();
+  const handleNext = () => {
+    if (view === "month") {
+      onDateChange(addMonths(currentDate, 1));
+    } else if (view === "week") {
+      onDateChange(addWeeks(currentDate, 1));
+    } else {
+      onDateChange(addWeeks(currentDate, 1));
+    }
+  };
+
+  const handleQuickBook = (date = null) => {
+    setSelectedDate(date || currentDate);
+    setShowQuickBook(true);
+  };
 
   return (
     <div className="space-y-4">
-      <div className="flex items-center justify-between">
-        <h2 className="text-xl md:text-2xl font-bold text-slate-900">
-          {format(currentDate, 'MMMM yyyy')}
-        </h2>
-        <div className="flex gap-2">
+      <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-3">
+        <div className="flex items-center gap-2">
           <Button
             variant="outline"
             size="sm"
-            onClick={() => onDateChange(subMonths(currentDate, 1))}
+            onClick={handlePrevious}
           >
             <ChevronLeft className="w-4 h-4" />
           </Button>
+          <h2 className="text-lg md:text-xl font-bold text-slate-900 min-w-[140px] text-center">
+            {view === "month" && format(currentDate, 'MMMM yyyy')}
+            {view === "week" && `Week of ${format(currentDate, 'MMM d, yyyy')}`}
+            {view === "day" && format(currentDate, 'EEEE, MMM d, yyyy')}
+          </h2>
           <Button
             variant="outline"
             size="sm"
@@ -75,74 +65,63 @@ export default function CalendarView({ jobs, onSelectJob, currentDate, onDateCha
           <Button
             variant="outline"
             size="sm"
-            onClick={() => onDateChange(addMonths(currentDate, 1))}
+            onClick={handleNext}
           >
             <ChevronRight className="w-4 h-4" />
           </Button>
         </div>
+
+        <div className="flex items-center gap-2">
+          <Tabs value={view} onValueChange={setView}>
+            <TabsList>
+              <TabsTrigger value="day">Day</TabsTrigger>
+              <TabsTrigger value="week">Week</TabsTrigger>
+              <TabsTrigger value="month">Month</TabsTrigger>
+            </TabsList>
+          </Tabs>
+          <Button
+            onClick={() => handleQuickBook()}
+            className="bg-[#fae008] text-slate-950 hover:bg-[#fae008]/90"
+            size="sm"
+          >
+            <Plus className="w-4 h-4 mr-2" />
+            Book Job
+          </Button>
+        </div>
       </div>
 
-      <Card>
-        <CardContent className="p-2 md:p-4">
-          <div className="grid grid-cols-7 gap-1 md:gap-2">
-            {['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'].map(day => (
-              <div key={day} className="text-center text-xs md:text-sm font-semibold text-slate-600 py-2">
-                {day}
-              </div>
-            ))}
+      {view === "month" && (
+        <MonthView 
+          jobs={jobs}
+          currentDate={currentDate}
+          onJobClick={onSelectJob}
+          onQuickBook={handleQuickBook}
+        />
+      )}
+      
+      {view === "week" && (
+        <WeekView
+          jobs={jobs}
+          currentDate={currentDate}
+          onJobClick={onSelectJob}
+          onQuickBook={handleQuickBook}
+        />
+      )}
 
-            {emptyDays.map((_, index) => (
-              <div key={`empty-${index}`} className="aspect-square" />
-            ))}
+      {view === "day" && (
+        <DayView
+          jobs={jobs}
+          currentDate={currentDate}
+          onJobClick={onSelectJob}
+          onQuickBook={handleQuickBook}
+        />
+      )}
 
-            {daysInMonth.map(day => {
-              const dayJobs = getJobsForDay(day);
-              const isToday = isSameDay(day, new Date());
-
-              return (
-                <div
-                  key={day.toISOString()}
-                  className={`aspect-square border rounded-lg p-1 md:p-2 ${
-                    isToday ? 'bg-blue-50 border-blue-300' : 'border-slate-200'
-                  } ${!isSameMonth(day, currentDate) ? 'opacity-50' : ''}`}
-                >
-                  <div className={`text-xs md:text-sm font-medium mb-1 ${
-                    isToday ? 'text-blue-600' : 'text-slate-700'
-                  }`}>
-                    {format(day, 'd')}
-                  </div>
-                  <div className="space-y-1 overflow-y-auto" style={{ maxHeight: '80px' }}>
-                    {dayJobs.map(job => (
-                      <div
-                        key={job.id}
-                        onClick={() => onSelectJob(job)}
-                        className={`text-xs px-1 py-0.5 rounded cursor-pointer hover:opacity-80 transition-opacity ${getJobTypeColor(job.job_type_name, uniqueJobTypes)} text-white truncate`}
-                        title={`${job.customer_name} - ${job.job_type_name || 'No type'} - ${job.scheduled_time || 'No time'}`}
-                      >
-                        {job.scheduled_time && (
-                          <span className="font-medium">{job.scheduled_time.slice(0, 5)} </span>
-                        )}
-                        <span className="hidden md:inline">{job.customer_name}</span>
-                        <span className="md:hidden">#{job.job_number}</span>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-              );
-            })}
-          </div>
-        </CardContent>
-      </Card>
-
-      <div className="flex flex-wrap gap-2 text-xs">
-        <span className="font-semibold text-slate-700">Job Types:</span>
-        {uniqueJobTypes.map((jobType) => (
-          <div key={jobType} className="flex items-center gap-1">
-            <div className={`w-3 h-3 rounded ${getJobTypeColor(jobType, uniqueJobTypes)}`} />
-            <span className="text-slate-600">{jobType}</span>
-          </div>
-        ))}
-      </div>
+      <QuickBookModal
+        open={showQuickBook}
+        onClose={() => setShowQuickBook(false)}
+        selectedDate={selectedDate}
+      />
     </div>
   );
 }
