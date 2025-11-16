@@ -420,47 +420,55 @@ export default function JobDetails({ job, onClose, onStatusChange }) {
           </div>
 
           <div className="bg-white rounded-lg p-2 border border-slate-200 shadow-sm">
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-2">
-              <EditableField
-                value={job.scheduled_date}
-                onSave={(val) => handleFieldSave('scheduled_date', job.scheduled_date, val)}
-                type="date"
-                icon={Calendar}
-                displayFormat={(val) => format(parseISO(val), 'MMM d')}
-                placeholder="Set date"
-              />
-              <EditableField
-                value={job.scheduled_time}
-                onSave={(val) => handleFieldSave('scheduled_time', job.scheduled_time, val)}
-                type="time"
-                icon={Clock}
-                placeholder="Set time"
-              />
-              <EditableField
-                value={job.product}
-                onSave={(val) => handleFieldSave('product', job.product, val)}
-                type="select"
-                icon={Package}
-                options={[
-                  { value: "Garage Door", label: "Garage Door" },
-                  { value: "Gate", label: "Gate" },
-                  { value: "Roller Shutter", label: "Roller Shutter" },
-                  { value: "Multiple", label: "Multiple" },
-                  { value: "Custom Garage Door", label: "Custom Garage Door" }
-                ]}
-                className={`text-xs font-semibold ${job.product ? productColors[job.product] : ""}`}
-                placeholder="Product"
-              />
-              <EditableField
-                value={job.job_type_id}
-                onSave={handleJobTypeChange}
-                type="select"
-                icon={Briefcase}
-                options={jobTypes.map((jt) => ({ value: jt.id, label: jt.name }))}
-                displayFormat={(val) => jobTypes.find((jt) => jt.id === val)?.name || val}
-                placeholder="Job type"
-                className="text-xs font-semibold bg-purple-50 text-purple-700 border-purple-200"
-              />
+            <div className="grid grid-cols-6 md:grid-cols-8 gap-2">
+              <div className="col-span-2 md:col-span-2">
+                <EditableField
+                  value={job.scheduled_date}
+                  onSave={(val) => handleFieldSave('scheduled_date', job.scheduled_date, val)}
+                  type="date"
+                  icon={Calendar}
+                  displayFormat={(val) => format(parseISO(val), 'MMM d')}
+                  placeholder="Set date"
+                />
+              </div>
+              <div className="col-span-1 md:col-span-1">
+                <EditableField
+                  value={job.scheduled_time}
+                  onSave={(val) => handleFieldSave('scheduled_time', job.scheduled_time, val)}
+                  type="time"
+                  icon={Clock}
+                  placeholder="Set time"
+                />
+              </div>
+              <div className="col-span-2 md:col-span-3">
+                <EditableField
+                  value={job.product}
+                  onSave={(val) => handleFieldSave('product', job.product, val)}
+                  type="select"
+                  icon={Package}
+                  options={[
+                    { value: "Garage Door", label: "Garage Door" },
+                    { value: "Gate", label: "Gate" },
+                    { value: "Roller Shutter", label: "Roller Shutter" },
+                    { value: "Multiple", label: "Multiple" },
+                    { value: "Custom Garage Door", label: "Custom Garage Door" }
+                  ]}
+                  className={`text-xs font-semibold ${job.product ? productColors[job.product] : ""}`}
+                  placeholder="Product"
+                />
+              </div>
+              <div className="col-span-1 md:col-span-2">
+                <EditableField
+                  value={job.job_type_id}
+                  onSave={handleJobTypeChange}
+                  type="select"
+                  icon={Briefcase}
+                  options={jobTypes.map((jt) => ({ value: jt.id, label: jt.name }))}
+                  displayFormat={(val) => jobTypes.find((jt) => jt.id === val)?.name || val}
+                  placeholder="Job type"
+                  className="text-xs font-semibold bg-purple-50 text-purple-700 border-purple-200"
+                />
+              </div>
             </div>
             
             <div className="mt-2 pt-2 border-t border-slate-100">
@@ -514,7 +522,7 @@ export default function JobDetails({ job, onClose, onStatusChange }) {
                 <FileCheck className="w-3 h-3 md:mr-1" />
                 <span className="hidden md:inline">Form</span>
               </TabsTrigger>
-              <TabsTrigger value="files" className="text-xs">
+            <TabsTrigger value="files" className="text-xs">
                 <ImageIcon className="w-3 h-3 md:mr-1" />
                 <span className="hidden md:inline">Files</span>
               </TabsTrigger>
