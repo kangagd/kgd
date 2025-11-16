@@ -344,11 +344,11 @@ export default function JobDetails({ job, onClose, onStatusChange }) {
                   )}
                 </div>
                 
-                <p className="text-xs text-slate-500 mb-2">Job #{job.job_number}</p>
+                <p className="text-xs text-slate-500 mb-1.5">Job #{job.job_number}</p>
               </div>
             </div>
             
-            <div className="flex flex-col gap-1 flex-shrink-0">
+            <div className="flex gap-1 flex-shrink-0">
               <Button
                 variant="outline"
                 size="sm"
@@ -378,10 +378,10 @@ export default function JobDetails({ job, onClose, onStatusChange }) {
             </div>
           </div>
 
-          <div className="space-y-2">
+          <div className="space-y-1.5">
             <div className="flex items-start gap-1.5">
-              <MapPin className="text-slate-400 w-3.5 h-3.5 mt-0.5 flex-shrink-0" />
-              <span className="text-xs md:text-sm font-medium text-slate-700">{job.address}</span>
+              <MapPin className="text-slate-400 w-4 h-4 mt-0.5 flex-shrink-0" />
+              <span className="text-sm md:text-base font-semibold text-slate-900">{job.address}</span>
             </div>
 
             <div className="flex flex-wrap gap-1">
