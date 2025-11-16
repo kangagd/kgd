@@ -36,6 +36,8 @@ export default function JobForm({ job, jobTypes, technicians, onSubmit, onCancel
     status: "scheduled",
     outcome: "",
     notes: "",
+    overview: "",
+    pricing_provided: "",
     additional_info: "",
     measurements: null,
     image_urls: [],
@@ -337,6 +339,27 @@ export default function JobForm({ job, jobTypes, technicians, onSubmit, onCancel
                 onChange={(e) => setFormData({ ...formData, notes: e.target.value })}
                 rows={3}
                 placeholder="Add any special instructions or notes..."
+              />
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="overview">Overview</Label>
+              <Textarea
+                id="overview"
+                value={formData.overview}
+                onChange={(e) => setFormData({ ...formData, overview: e.target.value })}
+                rows={3}
+                placeholder="Add job overview..."
+              />
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="pricing_provided">Pricing Provided</Label>
+              <Input
+                id="pricing_provided"
+                value={formData.pricing_provided}
+                onChange={(e) => setFormData({ ...formData, pricing_provided: e.target.value })}
+                placeholder="Enter pricing information..."
               />
             </div>
 
