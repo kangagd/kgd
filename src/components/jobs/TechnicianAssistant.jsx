@@ -33,19 +33,21 @@ function AssistantContent({ job, conversation, messages, isLoading, input, setIn
       <ScrollArea className="flex-1 pr-4 h-[500px]" ref={scrollRef}>
         <div className="space-y-4 pb-4">
           {messages.length === 0 ? (
-            <div className="text-center py-8">
-              <Sparkles className="w-12 h-12 mx-auto text-slate-300 mb-3" />
-              <p className="text-slate-600 mb-4">
+            <div className="text-center py-12">
+              <div className="w-16 h-16 bg-[#fae008]/20 rounded-2xl flex items-center justify-center mx-auto mb-4">
+                <Sparkles className="w-8 h-8 text-[#000000]" />
+              </div>
+              <p className="text-slate-600 font-medium mb-6">
                 I'm here to help with parts recommendations, completion notes, and technical questions.
               </p>
-              <div className="grid grid-cols-2 gap-2 max-w-md mx-auto">
+              <div className="grid grid-cols-2 gap-2.5 max-w-md mx-auto">
                 {quickPrompts.map((prompt, index) => (
                   <Button
                     key={index}
                     variant="outline"
                     size="sm"
                     onClick={() => setInput(prompt)}
-                    className="text-xs"
+                    className="text-xs font-semibold border-2 border-slate-300 hover:border-[#fae008] hover:bg-[#fae008]/10 transition-all h-auto py-3 text-left"
                   >
                     {prompt}
                   </Button>
@@ -60,27 +62,27 @@ function AssistantContent({ job, conversation, messages, isLoading, input, setIn
               ))
           )}
           {isLoading && (
-            <div className="flex items-center gap-2 text-slate-500">
+            <div className="flex items-center gap-2 text-slate-500 bg-slate-50 border-2 border-slate-200 rounded-xl p-3">
               <Loader2 className="w-4 h-4 animate-spin" />
-              <span className="text-sm">Thinking...</span>
+              <span className="text-sm font-medium">Thinking...</span>
             </div>
           )}
         </div>
       </ScrollArea>
 
-      <div className="flex gap-2 pt-4 border-t">
+      <div className="flex gap-2 pt-4 border-t-2 border-slate-200">
         <Textarea
           value={input}
           onChange={(e) => setInput(e.target.value)}
           onKeyPress={handleKeyPress}
           placeholder="Ask about parts, completion notes, or technical questions..."
-          className="resize-none"
+          className="resize-none border-2 border-slate-300 focus:border-[#fae008] focus:ring-2 focus:ring-[#fae008]/20 rounded-xl font-medium"
           rows={2}
         />
         <Button
           onClick={handleSend}
           disabled={!input.trim() || isLoading}
-          className="bg-orange-600 hover:bg-orange-700"
+          className="bg-[#fae008] hover:bg-[#e5d007] text-[#000000] font-semibold shadow-md hover:shadow-lg transition-all h-auto"
         >
           <Send className="w-4 h-4" />
         </Button>
@@ -176,17 +178,21 @@ export default function TechnicianAssistant({ open, onClose, job, embedded = fal
 
   return (
     <Dialog open={open} onOpenChange={(isOpen) => { if (!isOpen) onClose(); }}>
-      <DialogContent className="max-w-3xl max-h-[85vh] flex flex-col">
-        <DialogHeader>
+      <DialogContent className="max-w-3xl max-h-[85vh] flex flex-col border-2 border-slate-200 rounded-2xl">
+        <DialogHeader className="border-b-2 border-slate-200 pb-4">
           <div className="flex items-center gap-2">
-            <Sparkles className="w-5 h-5 text-orange-600" />
-            <DialogTitle>Technician Assistant</DialogTitle>
+            <div className="w-10 h-10 bg-[#fae008]/20 rounded-xl flex items-center justify-center">
+              <Sparkles className="w-5 h-5 text-[#000000]" />
+            </div>
+            <div>
+              <DialogTitle className="text-xl font-bold text-[#000000] tracking-tight">Technician Assistant</DialogTitle>
+              {job && (
+                <p className="text-sm text-slate-500 font-medium">
+                  Job #{job.job_number} - {job.customer_name}
+                </p>
+              )}
+            </div>
           </div>
-          {job && (
-            <p className="text-sm text-slate-500">
-              Job #{job.job_number} - {job.customer_name}
-            </p>
-          )}
         </DialogHeader>
 
         <AssistantContent
