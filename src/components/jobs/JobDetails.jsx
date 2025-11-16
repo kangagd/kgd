@@ -345,47 +345,6 @@ export default function JobDetails({ job, onClose, onStatusChange }) {
                 </div>
                 
                 <p className="text-xs text-slate-500 mb-2">Job #{job.job_number}</p>
-
-                <div className="bg-slate-50/50 rounded-md p-2 mb-2 border border-slate-100">
-                  <div className="flex items-start gap-1.5 mb-1.5">
-                    <MapPin className="text-slate-400 w-3.5 h-3.5 mt-0.5 flex-shrink-0" />
-                    <span className="text-xs md:text-sm font-medium text-slate-700">{job.address}</span>
-                  </div>
-
-                  <div className="flex flex-wrap gap-1">
-                    {job.customer_phone && (
-                      <Button
-                        size="sm"
-                        variant="ghost"
-                        onClick={() => window.location.href = `tel:${job.customer_phone}`}
-                        className="h-6 px-1.5 text-xs hover:bg-blue-100 text-slate-600 hover:text-blue-700"
-                      >
-                        <Phone className="w-3 h-3 mr-1" />
-                        Call
-                      </Button>
-                    )}
-                    <Button
-                      size="sm"
-                      variant="ghost"
-                      onClick={() => window.open(`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(job.address)}`, '_blank')}
-                      className="h-6 px-1.5 text-xs hover:bg-green-100 text-slate-600 hover:text-green-700"
-                    >
-                      <Navigation className="w-3 h-3 mr-1" />
-                      Directions
-                    </Button>
-                    {job.customer_email && (
-                      <Button
-                        size="sm"
-                        variant="ghost"
-                        onClick={() => window.location.href = `mailto:${job.customer_email}`}
-                        className="h-6 px-1.5 text-xs hover:bg-purple-100 text-slate-600 hover:text-purple-700"
-                      >
-                        <Mail className="w-3 h-3 mr-1" />
-                        Email
-                      </Button>
-                    )}
-                  </div>
-                </div>
               </div>
             </div>
             
@@ -414,6 +373,47 @@ export default function JobDetails({ job, onClose, onStatusChange }) {
                   className="h-7 px-1.5 hover:bg-slate-100">
                   <Sparkles className="w-3.5 h-3.5 md:mr-1" />
                   <span className="hidden md:inline text-xs">AI</span>
+                </Button>
+              )}
+            </div>
+          </div>
+
+          <div className="space-y-2">
+            <div className="flex items-start gap-1.5">
+              <MapPin className="text-slate-400 w-3.5 h-3.5 mt-0.5 flex-shrink-0" />
+              <span className="text-xs md:text-sm font-medium text-slate-700">{job.address}</span>
+            </div>
+
+            <div className="flex flex-wrap gap-1">
+              {job.customer_phone && (
+                <Button
+                  size="sm"
+                  variant="ghost"
+                  onClick={() => window.location.href = `tel:${job.customer_phone}`}
+                  className="h-6 px-1.5 text-xs hover:bg-blue-100 text-slate-600 hover:text-blue-700"
+                >
+                  <Phone className="w-3 h-3 mr-1" />
+                  Call
+                </Button>
+              )}
+              <Button
+                size="sm"
+                variant="ghost"
+                onClick={() => window.open(`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(job.address)}`, '_blank')}
+                className="h-6 px-1.5 text-xs hover:bg-green-100 text-slate-600 hover:text-green-700"
+              >
+                <Navigation className="w-3 h-3 mr-1" />
+                Directions
+              </Button>
+              {job.customer_email && (
+                <Button
+                  size="sm"
+                  variant="ghost"
+                  onClick={() => window.location.href = `mailto:${job.customer_email}`}
+                  className="h-6 px-1.5 text-xs hover:bg-purple-100 text-slate-600 hover:text-purple-700"
+                >
+                  <Mail className="w-3 h-3 mr-1" />
+                  Email
                 </Button>
               )}
             </div>
