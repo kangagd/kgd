@@ -3,6 +3,7 @@ import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Textarea } from "@/components/ui/textarea";
+import { Input } from "@/components/ui/input";
 import { ArrowLeft, Edit, MapPin, Phone, Calendar, Clock, User, Briefcase, FileText, Image as ImageIcon, DollarSign, Sparkles, LogIn, FileCheck, History, Package } from "lucide-react";
 import { format, parseISO } from "date-fns";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
@@ -43,6 +44,8 @@ export default function JobDetails({ job, onClose, onEdit, onStatusChange }) {
   const [user, setUser] = useState(null);
   const [measurements, setMeasurements] = useState(job.measurements || null);
   const [notes, setNotes] = useState(job.notes || "");
+  const [overview, setOverview] = useState(job.overview || "");
+  const [pricingProvided, setPricingProvided] = useState(job.pricing_provided || "");
   const [additionalInfo, setAdditionalInfo] = useState(job.additional_info || "");
   const queryClient = useQueryClient();
 
@@ -112,6 +115,20 @@ export default function JobDetails({ job, onClose, onEdit, onStatusChange }) {
     },
   });
 
+  const updateOverviewMutation = useMutation({
+    mutationFn: (data) => base44.entities.Job.update(job.id, { overview: data }),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['jobs'] });
+    },
+  });
+
+  const updatePricingProvidedMutation = useMutation({
+    mutationFn: (data) => base44.entities.Job.update(job.id, { pricing_provided: data }),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['jobs'] });
+    },
+  });
+
   const updateAdditionalInfoMutation = useMutation({
     mutationFn: (data) => base44.entities.Job.update(job.id, { additional_info: data }),
     onSuccess: () => {
@@ -134,6 +151,20 @@ export default function JobDetails({ job, onClose, onEdit, onStatusChange }) {
     if (notes !== job.notes) {
       logChange('notes', job.notes, notes);
       updateNotesMutation.mutate(notes);
+    }
+  };
+
+  const handleOverviewBlur = () => {
+    if (overview !== job.overview) {
+      logChange('overview', job.overview, overview);
+      updateOverviewMutation.mutate(overview);
+    }
+  };
+
+  const handlePricingProvidedBlur = () => {
+    if (pricingProvided !== job.pricing_provided) {
+      logChange('pricing_provided', job.pricing_provided, pricingProvided);
+      updatePricingProvidedMutation.mutate(pricingProvided);
     }
   };
 
@@ -275,6 +306,29 @@ export default function JobDetails({ job, onClose, onEdit, onStatusChange }) {
                     className="text-xs md:text-sm bg-white border-amber-300 focus:border-amber-400 focus:ring-amber-400"
                   />
                 </div>
+              </div>
+
+              <div>
+                <h3 className="text-sm md:text-base font-semibold text-slate-900 mb-2">Overview</h3>
+                <Textarea
+                  value={overview}
+                  onChange={(e) => setOverview(e.target.value)}
+                  onBlur={handleOverviewBlur}
+                  placeholder="Add job overview..."
+                  rows={3}
+                  className="text-xs md:text-sm bg-slate-50 border-slate-300"
+                />
+              </div>
+
+              <div>
+                <h3 className="text-sm md:text-base font-semibold text-slate-900 mb-2">Pricing Provided</h3>
+                <Input
+                  value={pricingProvided}
+                  onChange={(e) => setPricingProvided(e.target.value)}
+                  onBlur={handlePricingProvidedBlur}
+                  placeholder="Enter pricing information..."
+                  className="text-xs md:text-sm bg-slate-50 border-slate-300"
+                />
               </div>
 
               <div>
