@@ -1,3 +1,4 @@
+
 import React, { useState } from "react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -274,11 +275,6 @@ export default function DayView({ jobs, currentDate, onJobClick, onQuickBook }) 
                               <MapPin className="w-3 h-3 mt-0.5 flex-shrink-0" />
                               <span className="truncate">{job.address}</span>
                             </div>
-                            {job.job_type_name && (
-                              <div className="text-xs text-slate-600 font-medium mt-1 truncate">
-                                {job.job_type_name}
-                              </div>
-                            )}
                           </div>
                         );
                       })}
