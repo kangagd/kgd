@@ -2,7 +2,7 @@ import React, { useState, useEffect } from "react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { MapPin, Calendar, Clock, User, Briefcase, FileText, LogIn, Package, Phone, Mail } from "lucide-react";
+import { MapPin, Calendar, Clock, User, Briefcase, FileText, LogIn, Package, Phone, Mail, Navigation, ChevronDown, ChevronUp } from "lucide-react";
 import { format, parseISO } from "date-fns";
 import { base44 } from "@/api/base44Client";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
@@ -37,8 +37,36 @@ const productColors = {
   "Custom Garage Door": "bg-pink-100 text-pink-700 border-pink-200",
 };
 
+const getInitials = (name) => {
+  if (!name) return "?";
+  return name
+    .split(" ")
+    .map(n => n[0])
+    .join("")
+    .toUpperCase()
+    .slice(0, 2);
+};
+
+const avatarColors = [
+  "bg-blue-500",
+  "bg-purple-500",
+  "bg-green-500",
+  "bg-orange-500",
+  "bg-pink-500",
+  "bg-indigo-500",
+  "bg-red-500",
+  "bg-teal-500",
+];
+
+const getAvatarColor = (name) => {
+  if (!name) return avatarColors[0];
+  const index = name.charCodeAt(0) % avatarColors.length;
+  return avatarColors[index];
+};
+
 export default function JobList({ jobs, isLoading, onSelectJob }) {
   const [user, setUser] = useState(null);
+  const [expandedNotes, setExpandedNotes] = useState({});
   const queryClient = useQueryClient();
 
   useEffect(() => {
@@ -80,6 +108,21 @@ export default function JobList({ jobs, isLoading, onSelectJob }) {
     checkInMutation.mutate(jobId);
   };
 
+  const toggleNotes = (e, jobId) => {
+    e.stopPropagation();
+    setExpandedNotes(prev => ({ ...prev, [jobId]: !prev[jobId] }));
+  };
+
+  const handleCall = (e, phone) => {
+    e.stopPropagation();
+    window.location.href = `tel:${phone}`;
+  };
+
+  const handleDirections = (e, address) => {
+    e.stopPropagation();
+    window.open(`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(address)}`, '_blank');
+  };
+
   const hasActiveCheckIn = (jobId) => {
     return checkIns.some(c => c.job_id === jobId && !c.check_out_time && c.technician_email === user?.email);
   };
@@ -117,49 +160,61 @@ export default function JobList({ jobs, isLoading, onSelectJob }) {
       {jobs.map((job) => (
         <Card 
           key={job.id}
-          className="hover:shadow-xl transition-all duration-200 cursor-pointer border-l-4 hover:scale-[1.01]"
-          style={{ borderLeftColor: job.status === 'in_progress' ? '#3b82f6' : job.status === 'completed' ? '#10b981' : '#e2e8f0' }}
+          className="hover:shadow-xl transition-all duration-200 cursor-pointer border-l-4 hover:scale-[1.01] group"
+          style={{ borderLeftColor: job.status === 'in_progress' ? '#3b82f6' : job.status === 'completed' ? '#10b981' : '#fae008' }}
           onClick={() => onSelectJob(job)}
         >
           <CardContent className="p-5 md:p-6">
             <div className="flex items-start justify-between mb-4">
               <div className="flex-1 min-w-0">
-                <div className="flex items-center gap-2 mb-1">
-                  <h3 className="font-bold text-xl text-slate-900 truncate">{job.customer_name}</h3>
+                <div className="flex items-center gap-2 mb-2">
+                  <h3 className="font-bold text-xl text-slate-900 truncate group-hover:text-blue-600 transition-colors">{job.customer_name}</h3>
                   <Badge variant="outline" className="text-xs font-normal text-slate-500 border-slate-300">
                     #{job.job_number}
                   </Badge>
                 </div>
                 
-                <div className="flex items-start gap-2 text-slate-700 mb-2">
+                <div className="flex items-start gap-2 text-slate-700 mb-3">
                   <MapPin className="w-4 h-4 text-[#fae008] mt-0.5 flex-shrink-0" />
                   <span className="text-sm font-medium">{job.address}</span>
                 </div>
 
-                {(job.customer_phone || job.customer_email) && (
-                  <div className="flex flex-wrap gap-3 mt-2">
-                    {job.customer_phone && (
-                      <a 
-                        href={`tel:${job.customer_phone}`}
-                        onClick={(e) => e.stopPropagation()}
-                        className="flex items-center gap-1.5 text-xs text-slate-600 hover:text-blue-600 transition-colors"
-                      >
-                        <Phone className="w-3.5 h-3.5" />
-                        {job.customer_phone}
-                      </a>
-                    )}
-                    {job.customer_email && (
-                      <a 
-                        href={`mailto:${job.customer_email}`}
-                        onClick={(e) => e.stopPropagation()}
-                        className="flex items-center gap-1.5 text-xs text-slate-600 hover:text-blue-600 transition-colors"
-                      >
-                        <Mail className="w-3.5 h-3.5" />
-                        {job.customer_email}
-                      </a>
-                    )}
-                  </div>
-                )}
+                <div className="flex flex-wrap gap-2">
+                  {job.customer_phone && (
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      onClick={(e) => handleCall(e, job.customer_phone)}
+                      className="h-8 text-xs hover:bg-blue-50 hover:border-blue-300 hover:text-blue-700"
+                    >
+                      <Phone className="w-3.5 h-3.5 mr-1.5" />
+                      Call
+                    </Button>
+                  )}
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    onClick={(e) => handleDirections(e, job.address)}
+                    className="h-8 text-xs hover:bg-green-50 hover:border-green-300 hover:text-green-700"
+                  >
+                    <Navigation className="w-3.5 h-3.5 mr-1.5" />
+                    Directions
+                  </Button>
+                  {job.customer_email && (
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        window.location.href = `mailto:${job.customer_email}`;
+                      }}
+                      className="h-8 text-xs hover:bg-purple-50 hover:border-purple-300 hover:text-purple-700"
+                    >
+                      <Mail className="w-3.5 h-3.5 mr-1.5" />
+                      Email
+                    </Button>
+                  )}
+                </div>
               </div>
               
               <div className="flex flex-col gap-2 items-end ml-3">
@@ -181,7 +236,7 @@ export default function JobList({ jobs, isLoading, onSelectJob }) {
             </div>
 
             <div className="space-y-3">
-              <div className="flex flex-wrap gap-4 bg-slate-50 rounded-lg p-3">
+              <div className="flex flex-wrap items-center gap-4 bg-slate-50 rounded-lg p-3">
                 <div className="flex items-center gap-2 text-slate-700">
                   <Calendar className="w-4 h-4 text-slate-500" />
                   <span className="text-sm font-medium">
@@ -203,21 +258,27 @@ export default function JobList({ jobs, isLoading, onSelectJob }) {
                 )}
               </div>
 
-              <div className="flex flex-wrap gap-2">
+              <div className="flex flex-wrap items-center gap-2">
                 {job.assigned_to_name && job.assigned_to_name.length > 0 && (
-                  Array.isArray(job.assigned_to_name) ? (
-                    job.assigned_to_name.map((name, idx) => (
-                      <Badge key={idx} className="bg-blue-50 text-blue-700 border-blue-200 font-medium">
-                        <User className="w-3 h-3 mr-1" />
-                        {name}
-                      </Badge>
-                    ))
-                  ) : (
-                    <Badge className="bg-blue-50 text-blue-700 border-blue-200 font-medium">
-                      <User className="w-3 h-3 mr-1" />
-                      {job.assigned_to_name}
-                    </Badge>
-                  )
+                  <div className="flex items-center gap-2">
+                    <User className="w-4 h-4 text-slate-400" />
+                    <div className="flex -space-x-2">
+                      {(Array.isArray(job.assigned_to_name) ? job.assigned_to_name : [job.assigned_to_name]).slice(0, 3).map((name, idx) => (
+                        <div
+                          key={idx}
+                          className={`${getAvatarColor(name)} w-8 h-8 rounded-full flex items-center justify-center text-white text-xs font-bold border-2 border-white shadow-sm`}
+                          title={name}
+                        >
+                          {getInitials(name)}
+                        </div>
+                      ))}
+                      {Array.isArray(job.assigned_to_name) && job.assigned_to_name.length > 3 && (
+                        <div className="bg-slate-300 w-8 h-8 rounded-full flex items-center justify-center text-slate-700 text-xs font-bold border-2 border-white shadow-sm">
+                          +{job.assigned_to_name.length - 3}
+                        </div>
+                      )}
+                    </div>
+                  </div>
                 )}
                 
                 {job.product && (
@@ -236,9 +297,31 @@ export default function JobList({ jobs, isLoading, onSelectJob }) {
               </div>
 
               {job.notes && (
-                <div className="flex items-start gap-2 text-slate-600 bg-amber-50 border border-amber-200 rounded-lg p-3">
-                  <FileText className="w-4 h-4 text-amber-600 mt-0.5 flex-shrink-0" />
-                  <p className="text-sm line-clamp-2 font-medium">{job.notes}</p>
+                <div className="bg-amber-50 border border-amber-200 rounded-lg overflow-hidden">
+                  <button
+                    onClick={(e) => toggleNotes(e, job.id)}
+                    className="w-full flex items-center justify-between p-3 hover:bg-amber-100 transition-colors"
+                  >
+                    <div className="flex items-center gap-2 text-amber-800">
+                      <FileText className="w-4 h-4 flex-shrink-0" />
+                      <span className="text-sm font-medium">Notes</span>
+                    </div>
+                    {expandedNotes[job.id] ? (
+                      <ChevronUp className="w-4 h-4 text-amber-600" />
+                    ) : (
+                      <ChevronDown className="w-4 h-4 text-amber-600" />
+                    )}
+                  </button>
+                  {expandedNotes[job.id] && (
+                    <div className="px-3 pb-3 text-sm text-slate-700">
+                      <div dangerouslySetInnerHTML={{ __html: job.notes }} />
+                    </div>
+                  )}
+                  {!expandedNotes[job.id] && (
+                    <div className="px-3 pb-3 text-sm text-slate-600 line-clamp-1">
+                      <div dangerouslySetInnerHTML={{ __html: job.notes }} />
+                    </div>
+                  )}
                 </div>
               )}
             </div>
