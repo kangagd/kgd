@@ -48,57 +48,71 @@ export default function DayView({ jobs, currentDate, onJobClick }) {
   return (
     <div className="space-y-4">
       <div className="grid gap-3">
-        {dayJobs.map((job) => (
-          <Card 
-            key={job.id}
-            className={`hover:shadow-md transition-shadow cursor-pointer border-l-4 ${getJobTypeColor(job.job_type_name, uniqueJobTypes)}`}
-            onClick={() => onJobClick(job)}
-          >
-            <CardContent className="p-4">
-              <div className="flex justify-between items-start mb-3">
-                <div>
-                  <h3 className="font-semibold text-lg text-slate-900">
-                    {job.customer_name}
-                  </h3>
-                  <div className="flex items-center gap-2 mt-1 text-sm text-slate-600">
-                    <Clock className="w-4 h-4" />
-                    <span className="font-medium">{job.scheduled_time || 'No time set'}</span>
+        {dayJobs.map((job) => {
+          const estimatedHours = job.expected_duration || 1;
+          const minHeight = estimatedHours * 60;
+
+          return (
+            <Card 
+              key={job.id}
+              className={`hover:shadow-md transition-shadow cursor-pointer border-l-4 ${getJobTypeColor(job.job_type_name, uniqueJobTypes)}`}
+              onClick={() => onJobClick(job)}
+              style={{ minHeight: `${minHeight}px` }}
+            >
+              <CardContent className="p-4 h-full flex flex-col">
+                <div className="flex justify-between items-start mb-2">
+                  <div>
+                    <div className="text-xs text-slate-500 mb-1">
+                      Job #{job.job_number}
+                    </div>
+                    <h3 className="font-semibold text-lg text-slate-900">
+                      {job.customer_name}
+                    </h3>
+                    <div className="flex items-center gap-2 mt-1 text-sm text-slate-600">
+                      <Clock className="w-4 h-4" />
+                      <span className="font-medium">{job.scheduled_time || 'No time set'}</span>
+                      {job.expected_duration && (
+                        <span className="text-xs text-slate-500">
+                          ({job.expected_duration}h)
+                        </span>
+                      )}
+                    </div>
+                  </div>
+                  <Badge className={statusColors[job.status]}>
+                    {job.status?.replace('_', ' ')}
+                  </Badge>
+                </div>
+
+                <div className="flex-1 space-y-2 text-sm">
+                  <div className="flex items-start gap-2 text-slate-600">
+                    <MapPin className="w-4 h-4 mt-0.5 flex-shrink-0" />
+                    <span>{job.address}</span>
+                  </div>
+
+                  {job.assigned_to_name && job.assigned_to_name.length > 0 && (
+                    <div className="flex items-center gap-2 text-slate-600">
+                      <User className="w-4 h-4" />
+                      <span>{job.assigned_to_name.join(', ')}</span>
+                    </div>
+                  )}
+
+                  <div className="flex flex-wrap gap-2 mt-3">
+                    {job.product && (
+                      <Badge variant="outline" className="text-xs">
+                        Product: {job.product}
+                      </Badge>
+                    )}
+                    {job.job_type_name && (
+                      <Badge variant="outline" className="text-xs">
+                        Category: {job.job_type_name}
+                      </Badge>
+                    )}
                   </div>
                 </div>
-                <Badge className={statusColors[job.status]}>
-                  {job.status?.replace('_', ' ')}
-                </Badge>
-              </div>
-
-              <div className="space-y-2 text-sm">
-                <div className="flex items-start gap-2 text-slate-600">
-                  <MapPin className="w-4 h-4 mt-0.5 flex-shrink-0" />
-                  <span>{job.address}</span>
-                </div>
-
-                {job.assigned_to_name && job.assigned_to_name.length > 0 && (
-                  <div className="flex items-center gap-2 text-slate-600">
-                    <User className="w-4 h-4" />
-                    <span>{job.assigned_to_name.join(', ')}</span>
-                  </div>
-                )}
-
-                <div className="flex gap-2 mt-3">
-                  {job.job_type_name && (
-                    <Badge variant="outline" className="text-xs">
-                      {job.job_type_name}
-                    </Badge>
-                  )}
-                  {job.product && (
-                    <Badge variant="outline" className="text-xs">
-                      {job.product}
-                    </Badge>
-                  )}
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-        ))}
+              </CardContent>
+            </Card>
+          );
+        })}
       </div>
     </div>
   );
