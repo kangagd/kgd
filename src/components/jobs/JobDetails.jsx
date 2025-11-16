@@ -19,6 +19,7 @@ import MeasurementsForm from "./MeasurementsForm";
 import ChangeHistoryModal from "./ChangeHistoryModal";
 import EditableField from "./EditableField";
 import EditableFileUpload from "./EditableFileUpload";
+import FilePreviewModal from "./FilePreviewModal";
 
 const statusColors = {
   scheduled: "bg-blue-100 text-blue-800 border-blue-200",
@@ -57,6 +58,9 @@ export default function JobDetails({ job, onClose, onStatusChange }) {
   const [communicationWithClient, setCommunicationWithClient] = useState(job.communication_with_client || "");
   const [outcome, setOutcome] = useState(job.outcome || "");
   const [validationError, setValidationError] = useState("");
+  const [previewFiles, setPreviewFiles] = useState([]);
+  const [previewIndex, setPreviewIndex] = useState(0);
+  const [showPreview, setShowPreview] = useState(false);
   const queryClient = useQueryClient();
 
   const { data: jobTypes = [] } = useQuery({
@@ -258,6 +262,24 @@ export default function JobDetails({ job, onClose, onStatusChange }) {
 
   const handleInvoiceChange = (url) => {
     updateJobMutation.mutate({ field: 'invoice_url', value: url });
+  };
+
+  const handleImagePreview = (index) => {
+    setPreviewFiles(job.image_urls || []);
+    setPreviewIndex(index);
+    setShowPreview(true);
+  };
+
+  const handleQuotePreview = () => {
+    setPreviewFiles(job.quote_url ? [job.quote_url] : []);
+    setPreviewIndex(0);
+    setShowPreview(true);
+  };
+
+  const handleInvoicePreview = () => {
+    setPreviewFiles(job.invoice_url ? [job.invoice_url] : []);
+    setPreviewIndex(0);
+    setShowPreview(true);
   };
 
   return (
@@ -615,6 +637,7 @@ export default function JobDetails({ job, onClose, onStatusChange }) {
                   icon={ImageIcon}
                   label="Photos"
                   emptyText="Click to upload photos"
+                  onPreview={handleImagePreview}
                 />
 
                 <div className="grid md:grid-cols-2 gap-4 pt-4 border-t">
@@ -626,6 +649,7 @@ export default function JobDetails({ job, onClose, onStatusChange }) {
                     icon={FileText}
                     label="Quote"
                     emptyText="Click to upload quote"
+                    onPreview={handleQuotePreview}
                   />
 
                   <EditableFileUpload
@@ -636,6 +660,7 @@ export default function JobDetails({ job, onClose, onStatusChange }) {
                     icon={FileText}
                     label="Invoice"
                     emptyText="Click to upload invoice"
+                    onPreview={handleInvoicePreview}
                   />
                 </div>
               </div>
@@ -659,6 +684,14 @@ export default function JobDetails({ job, onClose, onStatusChange }) {
         open={showHistory}
         onClose={() => setShowHistory(false)}
         jobId={job.id}
+      />
+
+      <FilePreviewModal
+        open={showPreview}
+        onClose={() => setShowPreview(false)}
+        files={previewFiles}
+        currentIndex={previewIndex}
+        onNavigate={setPreviewIndex}
       />
 
       {!isTechnician && (

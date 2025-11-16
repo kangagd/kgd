@@ -1,6 +1,6 @@
-import React, { useRef } from "react";
+import React, { useRef, useState } from "react";
 import { Button } from "@/components/ui/button";
-import { Upload, X } from "lucide-react";
+import { Upload, X, Camera } from "lucide-react";
 import { base44 } from "@/api/base44Client";
 
 export default function EditableFileUpload({ 
@@ -10,13 +10,15 @@ export default function EditableFileUpload({
   multiple = true,
   icon: Icon,
   label,
-  emptyText = "No files uploaded"
+  emptyText = "No files uploaded",
+  onPreview
 }) {
   const fileInputRef = useRef(null);
-  const [uploading, setUploading] = React.useState(false);
+  const cameraInputRef = useRef(null);
+  const [uploading, setUploading] = useState(false);
+  const [isDragging, setIsDragging] = useState(false);
 
-  const handleFileSelect = async (e) => {
-    const selectedFiles = Array.from(e.target.files);
+  const uploadFiles = async (selectedFiles) => {
     if (selectedFiles.length === 0) return;
 
     setUploading(true);
@@ -36,7 +38,30 @@ export default function EditableFileUpload({
       console.error("Error uploading files:", error);
     }
     setUploading(false);
+  };
+
+  const handleFileSelect = async (e) => {
+    const selectedFiles = Array.from(e.target.files);
+    await uploadFiles(selectedFiles);
     e.target.value = '';
+  };
+
+  const handleDrop = async (e) => {
+    e.preventDefault();
+    setIsDragging(false);
+    
+    const droppedFiles = Array.from(e.dataTransfer.files);
+    await uploadFiles(droppedFiles);
+  };
+
+  const handleDragOver = (e) => {
+    e.preventDefault();
+    setIsDragging(true);
+  };
+
+  const handleDragLeave = (e) => {
+    e.preventDefault();
+    setIsDragging(false);
   };
 
   const handleRemove = (indexOrUrl) => {
@@ -48,6 +73,7 @@ export default function EditableFileUpload({
   };
 
   const displayFiles = multiple ? files : (files ? [files] : []);
+  const isImageUpload = accept.includes('image');
 
   return (
     <div className="space-y-2">
@@ -56,20 +82,35 @@ export default function EditableFileUpload({
           {Icon && <Icon className="w-4 h-4 text-slate-400" />}
           {label}
         </h4>
-        <Button
-          type="button"
-          size="sm"
-          variant="outline"
-          onClick={() => fileInputRef.current?.click()}
-          disabled={uploading}
-          className="h-7 text-xs"
-        >
-          {uploading ? (
-            <>Uploading...</>
-          ) : (
-            <><Upload className="w-3 h-3 mr-1" />{multiple ? 'Add' : 'Upload'}</>
+        <div className="flex items-center gap-2">
+          {isImageUpload && (
+            <Button
+              type="button"
+              size="sm"
+              variant="outline"
+              onClick={() => cameraInputRef.current?.click()}
+              disabled={uploading}
+              className="h-7 text-xs"
+            >
+              <Camera className="w-3 h-3 mr-1" />
+              <span className="hidden md:inline">Camera</span>
+            </Button>
           )}
-        </Button>
+          <Button
+            type="button"
+            size="sm"
+            variant="outline"
+            onClick={() => fileInputRef.current?.click()}
+            disabled={uploading}
+            className="h-7 text-xs"
+          >
+            {uploading ? (
+              <>Uploading...</>
+            ) : (
+              <><Upload className="w-3 h-3 mr-1" />{multiple ? 'Add' : 'Upload'}</>
+            )}
+          </Button>
+        </div>
         <input
           ref={fileInputRef}
           type="file"
@@ -78,20 +119,36 @@ export default function EditableFileUpload({
           className="hidden"
           onChange={handleFileSelect}
         />
+        {isImageUpload && (
+          <input
+            ref={cameraInputRef}
+            type="file"
+            accept="image/*"
+            capture="environment"
+            className="hidden"
+            onChange={handleFileSelect}
+          />
+        )}
       </div>
 
       {displayFiles.length > 0 ? (
         accept.includes('image') && multiple ? (
-          <div className="grid grid-cols-2 md:grid-cols-3 gap-2">
+          <div 
+            className={`grid grid-cols-2 md:grid-cols-3 gap-2 p-3 border-2 border-dashed rounded-lg transition-colors ${
+              isDragging ? 'border-orange-400 bg-orange-50' : 'border-slate-200'
+            }`}
+            onDrop={handleDrop}
+            onDragOver={handleDragOver}
+            onDragLeave={handleDragLeave}
+          >
             {displayFiles.map((url, index) => (
               <div key={index} className="relative group">
-                <a href={url} target="_blank" rel="noopener noreferrer">
-                  <img 
-                    src={url} 
-                    alt={`Upload ${index + 1}`} 
-                    className="w-full h-24 md:h-32 object-cover rounded border hover:opacity-80"
-                  />
-                </a>
+                <img 
+                  src={url} 
+                  alt={`Upload ${index + 1}`} 
+                  className="w-full h-24 md:h-32 object-cover rounded border hover:opacity-80 cursor-pointer"
+                  onClick={() => onPreview && onPreview(index)}
+                />
                 <button
                   type="button"
                   onClick={() => handleRemove(index)}
@@ -104,14 +161,13 @@ export default function EditableFileUpload({
           </div>
         ) : (
           <div className="flex items-center justify-between p-3 bg-slate-50 rounded-lg">
-            <a 
-              href={displayFiles[0]} 
-              target="_blank" 
-              rel="noopener noreferrer"
-              className="text-xs md:text-sm text-blue-600 hover:underline flex-1"
+            <button
+              type="button"
+              onClick={() => onPreview && onPreview(0)}
+              className="text-xs md:text-sm text-blue-600 hover:underline flex-1 text-left"
             >
               View File
-            </a>
+            </button>
             <button
               type="button"
               onClick={() => handleRemove(0)}
@@ -122,10 +178,24 @@ export default function EditableFileUpload({
           </div>
         )
       ) : (
-        <p className="text-xs md:text-sm text-slate-400 text-center py-4 border border-dashed border-slate-200 rounded-lg cursor-pointer hover:border-slate-300 transition-colors"
-           onClick={() => fileInputRef.current?.click()}>
-          {emptyText}
-        </p>
+        <div
+          className={`text-xs md:text-sm text-slate-400 text-center py-6 border-2 border-dashed rounded-lg cursor-pointer transition-colors ${
+            isDragging ? 'border-orange-400 bg-orange-50' : 'border-slate-200 hover:border-slate-300'
+          }`}
+          onClick={() => fileInputRef.current?.click()}
+          onDrop={handleDrop}
+          onDragOver={handleDragOver}
+          onDragLeave={handleDragLeave}
+        >
+          {isDragging ? (
+            <p className="text-orange-600 font-medium">Drop files here</p>
+          ) : (
+            <div>
+              <p>{emptyText}</p>
+              <p className="text-xs text-slate-400 mt-1">or drag and drop files here</p>
+            </div>
+          )}
+        </div>
       )}
     </div>
   );
