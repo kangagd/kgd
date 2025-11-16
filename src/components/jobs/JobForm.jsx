@@ -1,7 +1,8 @@
+
 import React, { useState, useEffect } from "react";
 import { Card, CardHeader, CardTitle, CardContent, CardFooter } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
-import { Textarea } from "@/components/ui/textarea";
+// Removed Textarea import as it's replaced by RichTextEditor
 import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
@@ -16,6 +17,7 @@ import {
   DialogFooter,
 } from "@/components/ui/dialog";
 import MultiTechnicianSelect from "./MultiTechnicianSelect";
+import RichTextEditor from "../common/RichTextEditor";
 
 export default function JobForm({ job, jobTypes, technicians, onSubmit, onCancel, isSubmitting, preselectedCustomerId }) {
   const [formData, setFormData] = useState(job || {
@@ -327,22 +329,18 @@ export default function JobForm({ job, jobTypes, technicians, onSubmit, onCancel
 
             <div className="space-y-2">
               <Label htmlFor="notes">Notes & Instructions</Label>
-              <Textarea
-                id="notes"
+              <RichTextEditor
                 value={formData.notes}
-                onChange={(e) => setFormData({ ...formData, notes: e.target.value })}
-                rows={3}
+                onChange={(value) => setFormData({ ...formData, notes: value })}
                 placeholder="Add any special instructions or notes..."
               />
             </div>
 
             <div className="space-y-2">
               <Label htmlFor="additional_info">Additional Info</Label>
-              <Textarea
-                id="additional_info"
+              <RichTextEditor
                 value={formData.additional_info}
-                onChange={(e) => setFormData({ ...formData, additional_info: e.target.value })}
-                rows={3}
+                onChange={(value) => setFormData({ ...formData, additional_info: value })}
                 placeholder="Add any additional information..."
               />
             </div>

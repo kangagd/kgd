@@ -1,11 +1,13 @@
+
 import React, { useState } from "react";
 import { Card, CardHeader, CardTitle, CardContent, CardFooter } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
-import { Textarea } from "@/components/ui/textarea";
+// Removed Textarea import as it's replaced by RichTextEditor for notes
 import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { ArrowLeft } from "lucide-react";
+import RichTextEditor from "../common/RichTextEditor";
 
 export default function CustomerForm({ customer, onSubmit, onCancel, isSubmitting }) {
   const [formData, setFormData] = useState(customer || {
@@ -120,11 +122,9 @@ export default function CustomerForm({ customer, onSubmit, onCancel, isSubmittin
 
           <div className="space-y-2">
             <Label htmlFor="notes">Notes</Label>
-            <Textarea
-              id="notes"
+            <RichTextEditor
               value={formData.notes}
-              onChange={(e) => setFormData({ ...formData, notes: e.target.value })}
-              rows={4}
+              onChange={(value) => setFormData({ ...formData, notes: value })}
               placeholder="Add any notes about the customer..."
             />
           </div>

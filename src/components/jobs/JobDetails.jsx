@@ -3,7 +3,6 @@ import React, { useState, useEffect } from "react";
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Textarea } from "@/components/ui/textarea";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Label } from "@/components/ui/label";
@@ -20,6 +19,7 @@ import ChangeHistoryModal from "./ChangeHistoryModal";
 import EditableField from "./EditableField";
 import EditableFileUpload from "./EditableFileUpload";
 import CustomerEditModal from "../customers/CustomerEditModal";
+import RichTextEditor from "../common/RichTextEditor"; // New import
 
 const statusColors = {
   scheduled: "bg-blue-100 text-blue-800 border-blue-200",
@@ -174,7 +174,6 @@ export default function JobDetails({ job, onClose, onStatusChange }) {
   const logChange = async (fieldName, oldValue, newValue) => {
     if (!user) return;
     try {
-      // Ensure values are stringified if they are arrays or objects for consistent logging
       const oldValString = typeof oldValue === 'object' && oldValue !== null ? JSON.stringify(oldValue) : String(oldValue);
       const newValString = typeof newValue === 'object' && newValue !== null ? JSON.stringify(newValue) : String(newValue);
 
@@ -261,24 +260,13 @@ export default function JobDetails({ job, onClose, onStatusChange }) {
   };
 
   const handleAssignedToChange = (emails) => {
-    // Ensure `emails` is an array of emails for consistency
     const newAssignedEmails = Array.isArray(emails) ? emails : emails ? [emails] : [];
-
-    // `job.assigned_to` could be a string or an array from the backend, normalize for logChange
     const currentAssignedToNormalized = Array.isArray(job.assigned_to) ? job.assigned_to : job.assigned_to ? [job.assigned_to] : [];
-
-    // Update the 'assigned_to' field in the job
     handleFieldSave('assigned_to', currentAssignedToNormalized, newAssignedEmails);
-
-    // Prepare the 'assigned_to_name' for display/storage
-    const techNames = newAssignedEmails.
-    map((email) => {
+    const techNames = newAssignedEmails.map((email) => {
       const tech = technicians.find((t) => t.email === email);
-      return tech?.full_name; // Only take full_name, filter out undefined later
-    }).
-    filter(Boolean); // Filter out any technicians not found or null names
-
-    // Update 'assigned_to_name' with a comma-separated string
+      return tech?.full_name;
+    }).filter(Boolean);
     updateJobMutation.mutate({ field: 'assigned_to_name', value: techNames.join(', ') });
   };
 
@@ -470,14 +458,12 @@ export default function JobDetails({ job, onClose, onStatusChange }) {
                   Notes & Instructions
                 </h3>
                 <div className="bg-amber-50 border border-amber-200 rounded-lg p-3 md:p-4">
-                  <Textarea
+                  <RichTextEditor
                     value={notes}
-                    onChange={(e) => setNotes(e.target.value)}
+                    onChange={setNotes}
                     onBlur={handleNotesBlur}
                     placeholder="Add notes and instructions for this job..."
-                    rows={4}
-                    className="text-xs md:text-sm bg-white border-amber-300 focus:border-amber-400 focus:ring-amber-400" />
-
+                  />
                 </div>
               </div>
 
@@ -494,14 +480,12 @@ export default function JobDetails({ job, onClose, onStatusChange }) {
 
               <div>
                 <h3 className="text-sm md:text-base font-semibold text-slate-900 mb-2">Additional Information</h3>
-                <Textarea
+                <RichTextEditor
                   value={additionalInfo}
-                  onChange={(e) => setAdditionalInfo(e.target.value)}
+                  onChange={setAdditionalInfo}
                   onBlur={handleAdditionalInfoBlur}
                   placeholder="Add any additional information..."
-                  rows={3}
-                  className="text-xs md:text-sm bg-slate-50 border-slate-300" />
-
+                />
               </div>
 
               <div className="flex flex-col gap-2 pt-2 border-t">
@@ -540,41 +524,32 @@ export default function JobDetails({ job, onClose, onStatusChange }) {
               <div className="space-y-4">
                 <div>
                   <Label htmlFor="visit-overview" className="text-sm md:text-base font-semibold text-slate-900 mb-2">Overview *</Label>
-                  <Textarea
-                    id="visit-overview"
+                  <RichTextEditor
                     value={overview}
-                    onChange={(e) => setOverview(e.target.value)}
+                    onChange={setOverview}
                     onBlur={handleOverviewBlur}
                     placeholder="Describe the site visit overview..."
-                    rows={4}
-                    className="text-xs md:text-sm bg-slate-50 border-slate-300 mt-2" />
-
+                  />
                 </div>
 
                 <div>
                   <Label htmlFor="next-steps" className="text-sm md:text-base font-semibold text-slate-900 mb-2">Next Steps *</Label>
-                  <Textarea
-                    id="next-steps"
+                  <RichTextEditor
                     value={nextSteps}
-                    onChange={(e) => setNextSteps(e.target.value)}
+                    onChange={setNextSteps}
                     onBlur={handleNextStepsBlur}
                     placeholder="What are the next steps..."
-                    rows={4}
-                    className="text-xs md:text-sm bg-slate-50 border-slate-300 mt-2" />
-
+                  />
                 </div>
 
                 <div>
                   <Label htmlFor="communication" className="text-sm md:text-base font-semibold text-slate-900 mb-2">Communication with Client *</Label>
-                  <Textarea
-                    id="communication"
+                  <RichTextEditor
                     value={communicationWithClient}
-                    onChange={(e) => setCommunicationWithClient(e.target.value)}
+                    onChange={setCommunicationWithClient}
                     onBlur={handleCommunicationBlur}
                     placeholder="Notes on communication with client..."
-                    rows={4}
-                    className="text-xs md:text-sm bg-slate-50 border-slate-300 mt-2" />
-
+                  />
                 </div>
 
                 <div>
