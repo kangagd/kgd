@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from "react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -200,8 +199,8 @@ export default function JobList({ jobs, isLoading, onSelectJob }) {
                     variant="outline"
                     onClick={(e) => handleDirections(e, job.address)}
                     className="h-8 w-8 hover:bg-green-50 hover:border-green-300 hover:text-green-700"
-                      title="Directions"
-                    >
+                    title="Directions"
+                  >
                     <Navigation className="w-4 h-4" />
                   </Button>
                   {job.customer_email && (
@@ -301,31 +300,10 @@ export default function JobList({ jobs, isLoading, onSelectJob }) {
               </div>
 
               {job.notes && (
-                <div className="bg-amber-50 border border-amber-200 rounded-lg overflow-hidden">
-                  <button
-                    onClick={(e) => toggleNotes(e, job.id)}
-                    className="w-full flex items-center justify-between p-3 hover:bg-amber-100 transition-colors"
-                  >
-                    <div className="flex items-center gap-2 text-amber-800">
-                      <FileText className="w-4 h-4 flex-shrink-0" />
-                      <span className="text-sm font-medium">Notes</span>
-                    </div>
-                    {expandedNotes[job.id] ? (
-                      <ChevronUp className="w-4 h-4 text-amber-600" />
-                    ) : (
-                      <ChevronDown className="w-4 h-4 text-amber-600" />
-                    )}
-                  </button>
-                  {expandedNotes[job.id] && (
-                    <div className="px-3 pb-3 text-sm text-slate-700">
-                      <div dangerouslySetInnerHTML={{ __html: unescape(job.notes) }} />
-                    </div>
-                  )}
-                  {!expandedNotes[job.id] && (
-                    <div className="px-3 pb-3 text-sm text-slate-600 line-clamp-1">
-                      <div dangerouslySetInnerHTML={{ __html: unescape(job.notes) }} />
-                    </div>
-                  )}
+                <div className="bg-amber-50 border border-amber-200 rounded-lg p-3">
+                  <div className="text-sm text-slate-700 line-clamp-2">
+                    <div dangerouslySetInnerHTML={{ __html: unescape(job.notes) }} />
+                  </div>
                 </div>
               )}
             </div>
