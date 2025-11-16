@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from "react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -251,6 +252,23 @@ export default function JobList({ jobs, isLoading, onSelectJob }) {
                   </div>
                 )}
 
+                {/* Moved product and job_type_name badges here */}
+                <div className="flex items-center gap-2">
+                  {job.product && (
+                    <Badge className={`${productColors[job.product]} font-medium`}>
+                      <Package className="w-3 h-3 mr-1" />
+                      {job.product}
+                    </Badge>
+                  )}
+                  
+                  {job.job_type_name && (
+                    <Badge className="bg-purple-50 text-purple-700 border-purple-200 font-medium">
+                      <Briefcase className="w-3 h-3 mr-1" />
+                      {job.job_type_name}
+                    </Badge>
+                  )}
+                </div>
+
                 {job.expected_duration && (
                   <Badge variant="outline" className="bg-white text-slate-700 border-slate-300">
                     {job.expected_duration}h duration
@@ -279,20 +297,6 @@ export default function JobList({ jobs, isLoading, onSelectJob }) {
                       )}
                     </div>
                   </div>
-                )}
-                
-                {job.product && (
-                  <Badge className={`${productColors[job.product]} font-medium`}>
-                    <Package className="w-3 h-3 mr-1" />
-                    {job.product}
-                  </Badge>
-                )}
-                
-                {job.job_type_name && (
-                  <Badge className="bg-purple-50 text-purple-700 border-purple-200 font-medium">
-                    <Briefcase className="w-3 h-3 mr-1" />
-                    {job.job_type_name}
-                  </Badge>
                 )}
               </div>
 
