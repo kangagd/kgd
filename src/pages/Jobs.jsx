@@ -3,11 +3,10 @@ import { base44 } from "@/api/base44Client";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Plus, Search, List, Calendar as CalendarIcon } from "lucide-react";
+import { Plus, Search } from "lucide-react";
 import JobForm from "../components/jobs/JobForm";
 import JobList from "../components/jobs/JobList";
 import JobDetails from "../components/jobs/JobDetails";
-import CalendarView from "../components/jobs/CalendarView";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 
 export default function Jobs() {
@@ -18,8 +17,6 @@ export default function Jobs() {
   const [editingJob, setEditingJob] = useState(null);
   const [preselectedCustomerId, setPreselectedCustomerId] = useState(null);
   const [user, setUser] = useState(null);
-  const [viewMode, setViewMode] = useState("list");
-  const [calendarDate, setCalendarDate] = useState(new Date());
   const queryClient = useQueryClient();
 
   useEffect(() => {
@@ -198,57 +195,32 @@ export default function Jobs() {
         )}
 
         <div className="flex flex-col gap-3 md:gap-4 mb-4 md:mb-6">
-          <div className="flex gap-2">
-            <div className="relative flex-1">
-              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-slate-400" />
-              <Input
-                placeholder="Search jobs..."
-                value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
-                className="pl-10"
-              />
-            </div>
-            <Tabs value={viewMode} onValueChange={setViewMode}>
-              <TabsList>
-                <TabsTrigger value="list" className="gap-2">
-                  <List className="w-4 h-4" />
-                  <span className="hidden md:inline">List</span>
-                </TabsTrigger>
-                <TabsTrigger value="calendar" className="gap-2">
-                  <CalendarIcon className="w-4 h-4" />
-                  <span className="hidden md:inline">Calendar</span>
-                </TabsTrigger>
-              </TabsList>
-            </Tabs>
+          <div className="relative flex-1">
+            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-slate-400" />
+            <Input
+              placeholder="Search jobs..."
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+              className="pl-10"
+            />
           </div>
 
-          {viewMode === "list" && (
-            <Tabs value={statusFilter} onValueChange={setStatusFilter}>
-              <TabsList className="w-full grid grid-cols-2 sm:grid-cols-5">
-                <TabsTrigger value="all">All</TabsTrigger>
-                <TabsTrigger value="scheduled">Scheduled</TabsTrigger>
-                <TabsTrigger value="in_progress">In Progress</TabsTrigger>
-                <TabsTrigger value="completed">Completed</TabsTrigger>
-                <TabsTrigger value="cancelled">Cancelled</TabsTrigger>
-              </TabsList>
-            </Tabs>
-          )}
+          <Tabs value={statusFilter} onValueChange={setStatusFilter}>
+            <TabsList className="w-full grid grid-cols-2 sm:grid-cols-5">
+              <TabsTrigger value="all">All</TabsTrigger>
+              <TabsTrigger value="scheduled">Scheduled</TabsTrigger>
+              <TabsTrigger value="in_progress">In Progress</TabsTrigger>
+              <TabsTrigger value="completed">Completed</TabsTrigger>
+              <TabsTrigger value="cancelled">Cancelled</TabsTrigger>
+            </TabsList>
+          </Tabs>
         </div>
 
-        {viewMode === "list" ? (
-          <JobList
-            jobs={filteredJobs}
-            isLoading={isLoading}
-            onSelectJob={setSelectedJob}
-          />
-        ) : (
-          <CalendarView
-            jobs={filteredJobs}
-            onSelectJob={setSelectedJob}
-            currentDate={calendarDate}
-            onDateChange={setCalendarDate}
-          />
-        )}
+        <JobList
+          jobs={filteredJobs}
+          isLoading={isLoading}
+          onSelectJob={setSelectedJob}
+        />
       </div>
     </div>
   );
