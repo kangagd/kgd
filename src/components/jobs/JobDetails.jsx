@@ -387,33 +387,33 @@ export default function JobDetails({ job, onClose, onStatusChange }) {
             <div className="flex flex-wrap gap-1">
               {job.customer_phone && (
                 <Button
-                  size="sm"
+                  size="icon"
                   variant="ghost"
                   onClick={() => window.location.href = `tel:${job.customer_phone}`}
-                  className="h-6 px-1.5 text-xs hover:bg-blue-100 text-slate-600 hover:text-blue-700"
+                  className="h-7 w-7 hover:bg-blue-100 text-slate-600 hover:text-blue-700"
+                  title="Call"
                 >
-                  <Phone className="w-3 h-3 mr-1" />
-                  Call
+                  <Phone className="w-4 h-4" />
                 </Button>
               )}
               <Button
-                size="sm"
+                size="icon"
                 variant="ghost"
                 onClick={() => window.open(`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(job.address)}`, '_blank')}
-                className="h-6 px-1.5 text-xs hover:bg-green-100 text-slate-600 hover:text-green-700"
+                className="h-7 w-7 hover:bg-green-100 text-slate-600 hover:text-green-700"
+                title="Directions"
               >
-                <Navigation className="w-3 h-3 mr-1" />
-                Directions
+                <Navigation className="w-4 h-4" />
               </Button>
               {job.customer_email && (
                 <Button
-                  size="sm"
+                  size="icon"
                   variant="ghost"
                   onClick={() => window.location.href = `mailto:${job.customer_email}`}
-                  className="h-6 px-1.5 text-xs hover:bg-purple-100 text-slate-600 hover:text-purple-700"
+                  className="h-7 w-7 hover:bg-purple-100 text-slate-600 hover:text-purple-700"
+                  title="Email"
                 >
-                  <Mail className="w-3 h-3 mr-1" />
-                  Email
+                  <Mail className="w-4 h-4" />
                 </Button>
               )}
             </div>
