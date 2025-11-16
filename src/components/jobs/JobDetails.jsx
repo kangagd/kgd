@@ -657,11 +657,11 @@ export default function JobDetails({ job, onClose, onStatusChange }) {
                 <EditableFileUpload
                   files={job.image_urls || []}
                   onFilesChange={handleImagesChange}
-                  accept="image/*"
+                  accept="image/*,video/*"
                   multiple={true}
                   icon={ImageIcon}
-                  label="Photos"
-                  emptyText="Click to upload photos" />
+                  label="Photos & Videos"
+                  emptyText="Click to upload photos or videos" />
 
 
                 <div className="grid md:grid-cols-2 gap-4 pt-4 border-t">

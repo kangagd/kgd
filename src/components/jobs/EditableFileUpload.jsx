@@ -1,12 +1,12 @@
 import React, { useRef, useState } from "react";
 import { Button } from "@/components/ui/button";
-import { Upload, X, Camera } from "lucide-react";
+import { Upload, X, Camera, Video } from "lucide-react";
 import { base44 } from "@/api/base44Client";
 
 export default function EditableFileUpload({ 
   files = [], 
   onFilesChange, 
-  accept = "image/*",
+  accept = "image/*,video/*",
   multiple = true,
   icon: Icon,
   label,
@@ -74,8 +74,16 @@ export default function EditableFileUpload({
     }
   };
 
+  const isImageFile = (url) => {
+    return url && /\.(jpg|jpeg|png|gif|webp|bmp)$/i.test(url);
+  };
+
+  const isVideoFile = (url) => {
+    return url && /\.(mp4|webm|ogg|mov|avi)$/i.test(url);
+  };
+
   const displayFiles = multiple ? files : (files ? [files] : []);
-  const isImageUpload = accept.includes('image');
+  const isMediaUpload = accept.includes('image') || accept.includes('video');
 
   return (
     <div className="space-y-2">
@@ -85,7 +93,7 @@ export default function EditableFileUpload({
           {label}
         </h4>
         <div className="flex gap-2">
-          {isImageUpload && (
+          {accept.includes('image') && (
             <Button
               type="button"
               size="sm"
@@ -121,7 +129,7 @@ export default function EditableFileUpload({
           className="hidden"
           onChange={handleFileSelect}
         />
-        {isImageUpload && (
+        {accept.includes('image') && (
           <input
             ref={cameraInputRef}
             type="file"
@@ -141,17 +149,34 @@ export default function EditableFileUpload({
         className={`transition-colors ${isDragging ? 'bg-blue-50 border-blue-300' : ''}`}
       >
         {displayFiles.length > 0 ? (
-          accept.includes('image') && multiple ? (
+          isMediaUpload && multiple ? (
             <div className="grid grid-cols-2 md:grid-cols-3 gap-2">
               {displayFiles.map((url, index) => (
                 <div key={index} className="relative group">
-                  <a href={url} target="_blank" rel="noopener noreferrer">
-                    <img 
-                      src={url} 
-                      alt={`Upload ${index + 1}`} 
-                      className="w-full h-24 md:h-32 object-cover rounded border hover:opacity-80"
-                    />
-                  </a>
+                  {isImageFile(url) ? (
+                    <a href={url} target="_blank" rel="noopener noreferrer">
+                      <img 
+                        src={url} 
+                        alt={`Upload ${index + 1}`} 
+                        className="w-full h-24 md:h-32 object-cover rounded border hover:opacity-80"
+                      />
+                    </a>
+                  ) : isVideoFile(url) ? (
+                    <div className="relative w-full h-24 md:h-32 rounded border bg-slate-900">
+                      <video 
+                        src={url}
+                        className="w-full h-full object-cover rounded"
+                        controls
+                      />
+                      <div className="absolute top-2 left-2 bg-black/70 rounded px-2 py-1">
+                        <Video className="w-3 h-3 text-white" />
+                      </div>
+                    </div>
+                  ) : (
+                    <a href={url} target="_blank" rel="noopener noreferrer" className="flex items-center justify-center w-full h-24 md:h-32 bg-slate-100 rounded border hover:bg-slate-200">
+                      <Upload className="w-6 h-6 text-slate-400" />
+                    </a>
+                  )}
                   <button
                     type="button"
                     onClick={() => handleRemove(index)}
