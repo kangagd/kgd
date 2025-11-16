@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from "react";
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -6,7 +7,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Label } from "@/components/ui/label";
-import { ArrowLeft, MapPin, Phone, Calendar, Clock, User, Briefcase, FileText, Image as ImageIcon, DollarSign, Sparkles, LogIn, FileCheck, History, Package, ClipboardCheck, LogOut, Timer } from "lucide-react";
+import { ArrowLeft, MapPin, Phone, Calendar, Clock, User, Briefcase, FileText, Image as ImageIcon, DollarSign, Sparkles, LogIn, FileCheck, History, Package, ClipboardCheck, LogOut, Timer, AlertCircle } from "lucide-react";
 import { format, parseISO } from "date-fns";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { base44 } from "@/api/base44Client";
@@ -54,6 +55,7 @@ export default function JobDetails({ job, onClose, onStatusChange }) {
   const [nextSteps, setNextSteps] = useState(job.next_steps || "");
   const [communicationWithClient, setCommunicationWithClient] = useState(job.communication_with_client || "");
   const [outcome, setOutcome] = useState(job.outcome || "");
+  const [validationError, setValidationError] = useState("");
   const queryClient = useQueryClient();
 
   const { data: jobTypes = [] } = useQuery({
@@ -106,6 +108,11 @@ export default function JobDetails({ job, onClose, onStatusChange }) {
 
   const checkOutMutation = useMutation({
     mutationFn: async () => {
+      // Validate required fields
+      if (!overview || !nextSteps || !communicationWithClient || !outcome) {
+        throw new Error("Please fill in all Site Visit fields before checking out.");
+      }
+
       const checkOutTime = new Date().toISOString();
       const checkInTime = new Date(activeCheckIn.check_in_time);
       const durationHours = (new Date(checkOutTime) - checkInTime) / (1000 * 60 * 60);
@@ -116,8 +123,12 @@ export default function JobDetails({ job, onClose, onStatusChange }) {
       });
     },
     onSuccess: () => {
+      setValidationError("");
       queryClient.invalidateQueries({ queryKey: ['checkIns', job.id] });
       queryClient.invalidateQueries({ queryKey: ['jobs'] });
+    },
+    onError: (error) => {
+      setValidationError(error.message);
     },
   });
 
@@ -158,6 +169,7 @@ export default function JobDetails({ job, onClose, onStatusChange }) {
   };
 
   const handleCheckOut = () => {
+    setValidationError("");
     checkOutMutation.mutate();
   };
 
@@ -454,7 +466,7 @@ export default function JobDetails({ job, onClose, onStatusChange }) {
             <TabsContent value="visit" className="space-y-3 md:space-y-4 mt-3 md:mt-4">
               <div className="space-y-4">
                 <div>
-                  <Label htmlFor="visit-overview" className="text-sm md:text-base font-semibold text-slate-900 mb-2">Overview</Label>
+                  <Label htmlFor="visit-overview" className="text-sm md:text-base font-semibold text-slate-900 mb-2">Overview *</Label>
                   <Textarea
                     id="visit-overview"
                     value={overview}
@@ -467,7 +479,7 @@ export default function JobDetails({ job, onClose, onStatusChange }) {
                 </div>
 
                 <div>
-                  <Label htmlFor="next-steps" className="text-sm md:text-base font-semibold text-slate-900 mb-2">Next Steps</Label>
+                  <Label htmlFor="next-steps" className="text-sm md:text-base font-semibold text-slate-900 mb-2">Next Steps *</Label>
                   <Textarea
                     id="next-steps"
                     value={nextSteps}
@@ -480,7 +492,7 @@ export default function JobDetails({ job, onClose, onStatusChange }) {
                 </div>
 
                 <div>
-                  <Label htmlFor="communication" className="text-sm md:text-base font-semibold text-slate-900 mb-2">Communication with Client</Label>
+                  <Label htmlFor="communication" className="text-sm md:text-base font-semibold text-slate-900 mb-2">Communication with Client *</Label>
                   <Textarea
                     id="communication"
                     value={communicationWithClient}
@@ -493,7 +505,7 @@ export default function JobDetails({ job, onClose, onStatusChange }) {
                 </div>
 
                 <div>
-                  <Label htmlFor="outcome" className="text-sm md:text-base font-semibold text-slate-900 mb-2">Outcome</Label>
+                  <Label htmlFor="outcome" className="text-sm md:text-base font-semibold text-slate-900 mb-2">Outcome *</Label>
                   <Select value={outcome} onValueChange={handleOutcomeChange}>
                     <SelectTrigger className="mt-2">
                       <SelectValue placeholder="Select outcome" />
@@ -507,6 +519,13 @@ export default function JobDetails({ job, onClose, onStatusChange }) {
                     </SelectContent>
                   </Select>
                 </div>
+
+                {validationError && (
+                  <div className="bg-red-50 border border-red-200 rounded-lg p-3 flex items-start gap-2">
+                    <AlertCircle className="w-4 h-4 text-red-600 mt-0.5 flex-shrink-0" />
+                    <span className="text-sm text-red-700">{validationError}</span>
+                  </div>
+                )}
 
                 {activeCheckIn && (
                   <div className="pt-4 border-t">
@@ -522,11 +541,48 @@ export default function JobDetails({ job, onClose, onStatusChange }) {
                   </div>
                 )}
 
-                {totalJobTime > 0 && (
-                  <div className="bg-slate-50 border border-slate-200 rounded-lg p-3">
-                    <div className="flex items-center justify-between">
-                      <span className="text-sm text-slate-600">Total Job Time:</span>
-                      <span className="text-sm font-semibold text-slate-900">{totalJobTime.toFixed(1)} hours</span>
+                {completedCheckIns.length > 0 && (
+                  <div className="pt-4 border-t space-y-3">
+                    <h4 className="text-sm font-semibold text-slate-900">Time Tracking</h4>
+                    
+                    {completedCheckIns.map((checkIn, index) => (
+                      <div key={checkIn.id} className="bg-slate-50 border border-slate-200 rounded-lg p-3">
+                        <div className="space-y-2">
+                          <div className="flex items-center justify-between">
+                            <span className="text-xs text-slate-500">Visit {completedCheckIns.length - index}</span>
+                            <span className="text-xs font-medium text-slate-700">{checkIn.technician_name}</span>
+                          </div>
+                          <div className="grid grid-cols-2 gap-2 text-xs">
+                            <div>
+                              <span className="text-slate-500">Check In:</span>
+                              <div className="font-medium text-slate-900">
+                                {format(new Date(checkIn.check_in_time), 'MMM d, h:mm a')}
+                              </div>
+                            </div>
+                            <div>
+                              <span className="text-slate-500">Check Out:</span>
+                              <div className="font-medium text-slate-900">
+                                {format(new Date(checkIn.check_out_time), 'MMM d, h:mm a')}
+                              </div>
+                            </div>
+                          </div>
+                          <div className="pt-2 border-t border-slate-300">
+                            <div className="flex items-center justify-between">
+                              <span className="text-xs text-slate-600">Duration:</span>
+                              <span className="text-sm font-semibold text-slate-900">
+                                {checkIn.duration_hours.toFixed(1)} hours
+                              </span>
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+                    ))}
+
+                    <div className="bg-blue-50 border border-blue-200 rounded-lg p-3">
+                      <div className="flex items-center justify-between">
+                        <span className="text-sm font-medium text-blue-900">Total Time:</span>
+                        <span className="text-lg font-bold text-blue-900">{totalJobTime.toFixed(1)} hours</span>
+                      </div>
                     </div>
                   </div>
                 )}
