@@ -2,7 +2,6 @@ import React, { useState } from "react";
 import { base44 } from "@/api/base44Client";
 import { useQuery } from "@tanstack/react-query";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Button } from "@/components/ui/button";
 import { ChevronLeft, ChevronRight } from "lucide-react";
 import { format, addDays, subDays, addWeeks, subWeeks, addMonths, subMonths } from "date-fns";
@@ -97,7 +96,7 @@ export default function Calendar() {
       <div className="max-w-7xl mx-auto space-y-4">
         <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
           <div>
-            <h1 className="text-2xl md:text-3xl font-bold text-slate-900">Calendar</h1>
+            <h1 className="text-2xl md:text-3xl font-bold text-slate-900">Schedule</h1>
             <p className="text-slate-500 text-sm mt-1">{getDateRangeText()}</p>
           </div>
 
