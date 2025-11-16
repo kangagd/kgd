@@ -5,15 +5,24 @@ import { format, startOfMonth, endOfMonth, eachDayOfInterval, isSameMonth, isSam
 import { ChevronLeft, ChevronRight } from "lucide-react";
 import { Button } from "@/components/ui/button";
 
-const statusColors = {
-  in_progress: "bg-blue-500",
-  new_quote: "bg-purple-500",
-  update_quote: "bg-indigo-500",
-  send_invoice: "bg-orange-500",
-  completed: "bg-green-500",
-  return_visit_required: "bg-amber-500",
-  scheduled: "bg-slate-400",
-  cancelled: "bg-slate-300"
+const jobTypeColors = {
+  "Installation": "bg-blue-500",
+  "Service": "bg-green-500",
+  "Repair": "bg-orange-500",
+  "Quote": "bg-purple-500",
+  "Measure": "bg-indigo-500",
+  "Follow Up": "bg-amber-500",
+  "Warranty": "bg-red-500",
+};
+
+const getJobTypeColor = (jobTypeName) => {
+  if (jobTypeColors[jobTypeName]) {
+    return jobTypeColors[jobTypeName];
+  }
+  // Generate a consistent color for unknown job types based on hash
+  const hash = jobTypeName?.split('').reduce((acc, char) => acc + char.charCodeAt(0), 0) || 0;
+  const colors = ["bg-slate-500", "bg-cyan-500", "bg-teal-500", "bg-pink-500", "bg-rose-500", "bg-lime-500"];
+  return colors[hash % colors.length];
 };
 
 export default function CalendarView({ jobs, onSelectJob, currentDate, onDateChange }) {
@@ -29,6 +38,9 @@ export default function CalendarView({ jobs, onSelectJob, currentDate, onDateCha
       job.scheduled_date && isSameDay(new Date(job.scheduled_date), day)
     );
   };
+
+  // Get unique job types from all jobs
+  const uniqueJobTypes = [...new Set(jobs.map(job => job.job_type_name).filter(Boolean))];
 
   return (
     <div className="space-y-4">
@@ -95,8 +107,8 @@ export default function CalendarView({ jobs, onSelectJob, currentDate, onDateCha
                       <div
                         key={job.id}
                         onClick={() => onSelectJob(job)}
-                        className={`text-xs px-1 py-0.5 rounded cursor-pointer hover:opacity-80 transition-opacity ${statusColors[job.status]} text-white truncate`}
-                        title={`${job.customer_name} - ${job.scheduled_time || 'No time'}`}
+                        className={`text-xs px-1 py-0.5 rounded cursor-pointer hover:opacity-80 transition-opacity ${getJobTypeColor(job.job_type_name)} text-white truncate`}
+                        title={`${job.customer_name} - ${job.job_type_name || 'No type'} - ${job.scheduled_time || 'No time'}`}
                       >
                         {job.scheduled_time && (
                           <span className="font-medium">{job.scheduled_time.slice(0, 5)} </span>
@@ -114,11 +126,11 @@ export default function CalendarView({ jobs, onSelectJob, currentDate, onDateCha
       </Card>
 
       <div className="flex flex-wrap gap-2 text-xs">
-        <span className="font-semibold text-slate-700">Legend:</span>
-        {Object.entries(statusColors).map(([status, color]) => (
-          <div key={status} className="flex items-center gap-1">
-            <div className={`w-3 h-3 rounded ${color}`} />
-            <span className="text-slate-600">{status.replace('_', ' ')}</span>
+        <span className="font-semibold text-slate-700">Job Types:</span>
+        {uniqueJobTypes.map((jobType) => (
+          <div key={jobType} className="flex items-center gap-1">
+            <div className={`w-3 h-3 rounded ${getJobTypeColor(jobType)}`} />
+            <span className="text-slate-600">{jobType}</span>
           </div>
         ))}
       </div>
