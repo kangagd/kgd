@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from "react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -183,39 +182,39 @@ export default function JobList({ jobs, isLoading, onSelectJob }) {
                   <span className="text-sm font-medium">{job.address}</span>
                 </div>
 
-                <div className="flex flex-wrap gap-2">
+                <div className="flex gap-2">
                   {job.customer_phone && (
                     <Button
-                      size="sm"
+                      size="icon"
                       variant="outline"
                       onClick={(e) => handleCall(e, job.customer_phone)}
-                      className="h-8 text-xs hover:bg-blue-50 hover:border-blue-300 hover:text-blue-700"
+                      className="h-8 w-8 hover:bg-blue-50 hover:border-blue-300 hover:text-blue-700"
+                      title="Call"
                     >
-                      <Phone className="w-3.5 h-3.5 mr-1.5" />
-                      Call
+                      <Phone className="w-4 h-4" />
                     </Button>
                   )}
                   <Button
-                    size="sm"
+                    size="icon"
                     variant="outline"
                     onClick={(e) => handleDirections(e, job.address)}
-                    className="h-8 text-xs hover:bg-green-50 hover:border-green-300 hover:text-green-700"
+                    className="h-8 w-8 hover:bg-green-50 hover:border-green-300 hover:text-green-700"
+                    title="Directions"
                   >
-                    <Navigation className="w-3.5 h-3.5 mr-1.5" />
-                    Directions
+                    <Navigation className="w-4 h-4" />
                   </Button>
                   {job.customer_email && (
                     <Button
-                      size="sm"
+                      size="icon"
                       variant="outline"
                       onClick={(e) => {
                         e.stopPropagation();
                         window.location.href = `mailto:${job.customer_email}`;
                       }}
-                      className="h-8 text-xs hover:bg-purple-50 hover:border-purple-300 hover:text-purple-700"
+                      className="h-8 w-8 hover:bg-purple-50 hover:border-purple-300 hover:text-purple-700"
+                      title="Email"
                     >
-                      <Mail className="w-3.5 h-3.5 mr-1.5" />
-                      Email
+                      <Mail className="w-4 h-4" />
                     </Button>
                   )}
                 </div>
