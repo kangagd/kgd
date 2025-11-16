@@ -4,7 +4,9 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Textarea } from "@/components/ui/textarea";
 import { Input } from "@/components/ui/input";
-import { ArrowLeft, MapPin, Phone, Calendar, Clock, User, Briefcase, FileText, Image as ImageIcon, DollarSign, Sparkles, LogIn, FileCheck, History, Package } from "lucide-react";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Label } from "@/components/ui/label";
+import { ArrowLeft, MapPin, Phone, Calendar, Clock, User, Briefcase, FileText, Image as ImageIcon, DollarSign, Sparkles, LogIn, FileCheck, History, Package, ClipboardCheck, LogOut } from "lucide-react";
 import { format, parseISO } from "date-fns";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { base44 } from "@/api/base44Client";
@@ -49,6 +51,9 @@ export default function JobDetails({ job, onClose, onStatusChange }) {
   const [overview, setOverview] = useState(job.overview || "");
   const [pricingProvided, setPricingProvided] = useState(job.pricing_provided || "");
   const [additionalInfo, setAdditionalInfo] = useState(job.additional_info || "");
+  const [nextSteps, setNextSteps] = useState(job.next_steps || "");
+  const [communicationWithClient, setCommunicationWithClient] = useState(job.communication_with_client || "");
+  const [outcome, setOutcome] = useState(job.outcome || "");
   const queryClient = useQueryClient();
 
   const { data: jobTypes = [] } = useQuery({
@@ -97,6 +102,23 @@ export default function JobDetails({ job, onClose, onStatusChange }) {
     },
   });
 
+  const checkOutMutation = useMutation({
+    mutationFn: async () => {
+      const checkOutTime = new Date().toISOString();
+      const checkInTime = new Date(activeCheckIn.check_in_time);
+      const durationHours = (new Date(checkOutTime) - checkInTime) / (1000 * 60 * 60);
+
+      await base44.entities.CheckInOut.update(activeCheckIn.id, {
+        check_out_time: checkOutTime,
+        duration_hours: Math.round(durationHours * 10) / 10,
+      });
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['checkIns', job.id] });
+      queryClient.invalidateQueries({ queryKey: ['jobs'] });
+    },
+  });
+
   const updateJobMutation = useMutation({
     mutationFn: ({ field, value }) => base44.entities.Job.update(job.id, { [field]: value }),
     onSuccess: () => {
@@ -131,6 +153,10 @@ export default function JobDetails({ job, onClose, onStatusChange }) {
 
   const handleCheckIn = () => {
     checkInMutation.mutate();
+  };
+
+  const handleCheckOut = () => {
+    checkOutMutation.mutate();
   };
 
   const handleMeasurementsChange = (data) => {
@@ -169,6 +195,26 @@ export default function JobDetails({ job, onClose, onStatusChange }) {
       logChange('additional_info', job.additional_info, additionalInfo);
       updateJobMutation.mutate({ field: 'additional_info', value: additionalInfo });
     }
+  };
+
+  const handleNextStepsBlur = () => {
+    if (nextSteps !== job.next_steps) {
+      logChange('next_steps', job.next_steps, nextSteps);
+      updateJobMutation.mutate({ field: 'next_steps', value: nextSteps });
+    }
+  };
+
+  const handleCommunicationBlur = () => {
+    if (communicationWithClient !== job.communication_with_client) {
+      logChange('communication_with_client', job.communication_with_client, communicationWithClient);
+      updateJobMutation.mutate({ field: 'communication_with_client', value: communicationWithClient });
+    }
+  };
+
+  const handleOutcomeChange = (value) => {
+    setOutcome(value);
+    logChange('outcome', job.outcome, value);
+    updateJobMutation.mutate({ field: 'outcome', value });
   };
 
   const handleAssignedToChange = (email) => {
@@ -251,8 +297,12 @@ export default function JobDetails({ job, onClose, onStatusChange }) {
         </CardHeader>
         <CardContent className="p-2 md:p-6">
           <Tabs defaultValue="details" className="w-full">
-            <TabsList className="w-full grid grid-cols-4">
+            <TabsList className="w-full grid grid-cols-5">
               <TabsTrigger value="details" className="text-xs md:text-sm">Details</TabsTrigger>
+              <TabsTrigger value="visit" className="text-xs md:text-sm">
+                <ClipboardCheck className="w-3 h-3 md:w-4 md:h-4 md:mr-2" />
+                <span className="hidden md:inline">Site Visit</span>
+              </TabsTrigger>
               <TabsTrigger value="form" className="text-xs md:text-sm">
                 <FileCheck className="w-3 h-3 md:w-4 md:h-4 md:mr-2" />
                 <span className="hidden md:inline">Form</span>
@@ -407,6 +457,79 @@ export default function JobDetails({ job, onClose, onStatusChange }) {
                   >
                     Complete Job
                   </Button>
+                )}
+              </div>
+            </TabsContent>
+
+            <TabsContent value="visit" className="space-y-3 md:space-y-4 mt-3 md:mt-4">
+              <div className="space-y-4">
+                <div>
+                  <Label htmlFor="visit-overview" className="text-sm md:text-base font-semibold text-slate-900 mb-2">Overview</Label>
+                  <Textarea
+                    id="visit-overview"
+                    value={overview}
+                    onChange={(e) => setOverview(e.target.value)}
+                    onBlur={handleOverviewBlur}
+                    placeholder="Describe the site visit overview..."
+                    rows={4}
+                    className="text-xs md:text-sm bg-slate-50 border-slate-300 mt-2"
+                  />
+                </div>
+
+                <div>
+                  <Label htmlFor="next-steps" className="text-sm md:text-base font-semibold text-slate-900 mb-2">Next Steps</Label>
+                  <Textarea
+                    id="next-steps"
+                    value={nextSteps}
+                    onChange={(e) => setNextSteps(e.target.value)}
+                    onBlur={handleNextStepsBlur}
+                    placeholder="What are the next steps..."
+                    rows={4}
+                    className="text-xs md:text-sm bg-slate-50 border-slate-300 mt-2"
+                  />
+                </div>
+
+                <div>
+                  <Label htmlFor="communication" className="text-sm md:text-base font-semibold text-slate-900 mb-2">Communication with Client</Label>
+                  <Textarea
+                    id="communication"
+                    value={communicationWithClient}
+                    onChange={(e) => setCommunicationWithClient(e.target.value)}
+                    onBlur={handleCommunicationBlur}
+                    placeholder="Notes on communication with client..."
+                    rows={4}
+                    className="text-xs md:text-sm bg-slate-50 border-slate-300 mt-2"
+                  />
+                </div>
+
+                <div>
+                  <Label htmlFor="outcome" className="text-sm md:text-base font-semibold text-slate-900 mb-2">Outcome</Label>
+                  <Select value={outcome} onValueChange={handleOutcomeChange}>
+                    <SelectTrigger className="mt-2">
+                      <SelectValue placeholder="Select outcome" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="new_quote">New Quote</SelectItem>
+                      <SelectItem value="update_quote">Update Quote</SelectItem>
+                      <SelectItem value="send_invoice">Send Invoice</SelectItem>
+                      <SelectItem value="completed">Completed</SelectItem>
+                      <SelectItem value="return_visit_required">Return Visit Required</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+
+                {activeCheckIn && (
+                  <div className="pt-4 border-t">
+                    <Button
+                      onClick={handleCheckOut}
+                      disabled={checkOutMutation.isPending}
+                      className="w-full bg-orange-600 hover:bg-orange-700"
+                      size="lg"
+                    >
+                      <LogOut className="w-4 h-4 mr-2" />
+                      {checkOutMutation.isPending ? 'Checking Out...' : 'Check Out'}
+                    </Button>
+                  </div>
                 )}
               </div>
             </TabsContent>
