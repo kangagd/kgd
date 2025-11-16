@@ -49,9 +49,9 @@ export default function DayView({ jobs, currentDate, onJobClick }) {
     <div className="space-y-4">
       <div className="grid gap-3">
         {dayJobs.map((job) => {
-          const estimatedHours = job.expected_duration || 1;
-          const minHeight = estimatedHours * 60;
-
+          const heightMultiplier = job.expected_duration || 1;
+          const minHeight = 80 * heightMultiplier;
+          
           return (
             <Card 
               key={job.id}
@@ -60,11 +60,9 @@ export default function DayView({ jobs, currentDate, onJobClick }) {
               style={{ minHeight: `${minHeight}px` }}
             >
               <CardContent className="p-4 h-full flex flex-col">
-                <div className="flex justify-between items-start mb-2">
+                <div className="flex justify-between items-start mb-3">
                   <div>
-                    <div className="text-xs text-slate-500 mb-1">
-                      Job #{job.job_number}
-                    </div>
+                    <div className="text-sm text-slate-500 mb-1">Job #{job.job_number}</div>
                     <h3 className="font-semibold text-lg text-slate-900">
                       {job.customer_name}
                     </h3>
@@ -72,9 +70,7 @@ export default function DayView({ jobs, currentDate, onJobClick }) {
                       <Clock className="w-4 h-4" />
                       <span className="font-medium">{job.scheduled_time || 'No time set'}</span>
                       {job.expected_duration && (
-                        <span className="text-xs text-slate-500">
-                          ({job.expected_duration}h)
-                        </span>
+                        <span className="text-slate-500">({job.expected_duration}h)</span>
                       )}
                     </div>
                   </div>
@@ -83,20 +79,25 @@ export default function DayView({ jobs, currentDate, onJobClick }) {
                   </Badge>
                 </div>
 
-                <div className="flex-1 space-y-2 text-sm">
+                <div className="space-y-2 text-sm flex-1">
                   <div className="flex items-start gap-2 text-slate-600">
                     <MapPin className="w-4 h-4 mt-0.5 flex-shrink-0" />
                     <span>{job.address}</span>
                   </div>
 
-                  {job.assigned_to_name && job.assigned_to_name.length > 0 && (
+                  {job.assigned_to_name && (
                     <div className="flex items-center gap-2 text-slate-600">
                       <User className="w-4 h-4" />
-                      <span>{job.assigned_to_name.join(', ')}</span>
+                      <span>
+                        {Array.isArray(job.assigned_to_name) 
+                          ? job.assigned_to_name.join(', ')
+                          : job.assigned_to_name
+                        }
+                      </span>
                     </div>
                   )}
 
-                  <div className="flex flex-wrap gap-2 mt-3">
+                  <div className="flex gap-2 mt-3 flex-wrap">
                     {job.product && (
                       <Badge variant="outline" className="text-xs">
                         Product: {job.product}
@@ -104,7 +105,7 @@ export default function DayView({ jobs, currentDate, onJobClick }) {
                     )}
                     {job.job_type_name && (
                       <Badge variant="outline" className="text-xs">
-                        Category: {job.job_type_name}
+                        Type: {job.job_type_name}
                       </Badge>
                     )}
                   </div>
