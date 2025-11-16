@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from "react";
 import { base44 } from "@/api/base44Client";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
@@ -133,7 +132,7 @@ export default function Jobs() {
 
   if (showForm) {
     return (
-      <div className="p-2 md:p-8 bg-slate-50 min-h-screen">
+      <div className="p-4 md:p-8 bg-gradient-to-br from-slate-50 to-slate-100 min-h-screen">
         <div className="max-w-4xl mx-auto">
           <JobForm
             job={editingJob}
@@ -146,17 +145,17 @@ export default function Jobs() {
               setPreselectedCustomerId(null);
             }}
             isSubmitting={createJobMutation.isPending || updateJobMutation.isPending}
-            preselectedCustomerId={preselectedCustomerId} />
-
+            preselectedCustomerId={preselectedCustomerId}
+          />
         </div>
-      </div>);
-
+      </div>
+    );
   }
 
   if (selectedJob) {
     return (
-      <div className="bg-slate-50 min-h-screen">
-        <div className="bg-neutral-50 mx-auto p-2 md:p-8 max-w-4xl">
+      <div className="bg-gradient-to-br from-slate-50 to-slate-100 min-h-screen">
+        <div className="mx-auto p-4 md:p-8 max-w-4xl">
           <JobDetails
             job={selectedJob}
             onClose={() => setSelectedJob(null)}
@@ -166,56 +165,56 @@ export default function Jobs() {
                 id: selectedJob.id,
                 data: { status: newStatus }
               });
-            }} />
-
+            }}
+          />
         </div>
-      </div>);
-
+      </div>
+    );
   }
 
   return (
-    <div className="p-2 md:p-8 bg-slate-50 min-h-screen">
+    <div className="p-4 md:p-8 bg-gradient-to-br from-slate-50 to-slate-100 min-h-screen">
       <div className="max-w-7xl mx-auto">
-        {!isTechnician &&
-        <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-4 md:mb-6 gap-3">
+        {!isTechnician && (
+          <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-6 gap-4">
             <div>
-              <h1 className="text-2xl md:text-3xl font-bold text-slate-900">Jobs</h1>
-              <p className="text-slate-500 mt-1 text-sm">Manage all scheduled jobs</p>
+              <h1 className="text-3xl font-bold text-[#000000] tracking-tight">Jobs</h1>
+              <p className="text-slate-600 mt-2">Manage all scheduled jobs</p>
             </div>
             <Button
-            onClick={() => setShowForm(true)}
-            className="bg-[#fae008] text-slate-950 px-4 py-2 text-sm font-medium rounded-[10px] inline-flex items-center justify-center gap-2 whitespace-nowrap transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:pointer-events-none disabled:opacity-50 [&_svg]:pointer-events-none [&_svg]:size-4 [&_svg]:shrink-0 shadow h-9 hover:bg-orange-700 w-full md:w-auto">
-
-              <Plus className="w-4 h-4 mr-2" />
+              onClick={() => setShowForm(true)}
+              className="bg-[#fae008] text-[#000000] hover:bg-[#e5d007] active:bg-[#d4c006] font-semibold shadow-md hover:shadow-lg transition-all w-full md:w-auto"
+            >
+              <Plus className="w-5 h-5 mr-2" />
               New Job
             </Button>
           </div>
-        }
+        )}
 
-        {isTechnician &&
-        <div className="mb-3 md:mb-4">
-            <h1 className="text-xl md:text-2xl font-bold text-slate-900">My Jobs</h1>
+        {isTechnician && (
+          <div className="mb-6">
+            <h1 className="text-2xl md:text-3xl font-bold text-[#000000] tracking-tight">My Jobs</h1>
           </div>
-        }
+        )}
 
-        <div className="flex flex-col gap-3 md:gap-4 mb-4 md:mb-6">
+        <div className="flex flex-col gap-4 mb-6">
           <div className="flex gap-2">
             <div className="relative flex-1">
-              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-slate-400" />
+              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-slate-400" />
               <Input
                 placeholder="Search jobs..."
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
-                className="pl-10" />
-
+                className="pl-11 border-2 border-slate-300 focus:border-[#fae008] focus:ring-2 focus:ring-[#fae008]/20 transition-all h-12 text-base rounded-xl"
+              />
             </div>
             <Tabs value={viewMode} onValueChange={setViewMode}>
-              <TabsList>
-                <TabsTrigger value="list" className="gap-2">
+              <TabsList className="h-12">
+                <TabsTrigger value="list" className="gap-2 font-semibold">
                   <List className="w-4 h-4" />
                   <span className="hidden md:inline">List</span>
                 </TabsTrigger>
-                <TabsTrigger value="calendar" className="gap-2">
+                <TabsTrigger value="calendar" className="gap-2 font-semibold">
                   <CalendarIcon className="w-4 h-4" />
                   <span className="hidden md:inline">Calendar</span>
                 </TabsTrigger>
@@ -223,33 +222,33 @@ export default function Jobs() {
             </Tabs>
           </div>
 
-          {viewMode === "list" &&
-          <Tabs value={statusFilter} onValueChange={setStatusFilter}>
-              <TabsList className="w-full grid grid-cols-2 sm:grid-cols-4">
-                <TabsTrigger value="all">All</TabsTrigger>
-                <TabsTrigger value="scheduled">Scheduled</TabsTrigger>
-                <TabsTrigger value="in_progress">In Progress</TabsTrigger>
-                <TabsTrigger value="completed">Completed</TabsTrigger>
+          {viewMode === "list" && (
+            <Tabs value={statusFilter} onValueChange={setStatusFilter}>
+              <TabsList className="w-full grid grid-cols-2 sm:grid-cols-4 h-11">
+                <TabsTrigger value="all" className="font-semibold">All</TabsTrigger>
+                <TabsTrigger value="scheduled" className="font-semibold">Scheduled</TabsTrigger>
+                <TabsTrigger value="in_progress" className="font-semibold">In Progress</TabsTrigger>
+                <TabsTrigger value="completed" className="font-semibold">Completed</TabsTrigger>
               </TabsList>
             </Tabs>
-          }
+          )}
         </div>
 
-        {viewMode === "list" ?
-        <JobList
-          jobs={filteredJobs}
-          isLoading={isLoading}
-          onSelectJob={setSelectedJob} /> :
-
-
-        <CalendarView
-          jobs={filteredJobs}
-          onSelectJob={setSelectedJob}
-          currentDate={calendarDate}
-          onDateChange={setCalendarDate} />
-
-        }
+        {viewMode === "list" ? (
+          <JobList
+            jobs={filteredJobs}
+            isLoading={isLoading}
+            onSelectJob={setSelectedJob}
+          />
+        ) : (
+          <CalendarView
+            jobs={filteredJobs}
+            onSelectJob={setSelectedJob}
+            currentDate={calendarDate}
+            onDateChange={setCalendarDate}
+          />
+        )}
       </div>
-    </div>);
-
+    </div>
+  );
 }
