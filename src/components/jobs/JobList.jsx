@@ -1,8 +1,7 @@
-
 import React, { useState, useEffect } from "react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Button } "@/components/ui/button";
+import { Button } from "@/components/ui/button";
 import { MapPin, Calendar, Clock, User, Briefcase, FileText, LogIn, Package, Phone, Mail, Navigation, ChevronDown, ChevronUp } from "lucide-react";
 import { format, parseISO } from "date-fns";
 import { base44 } from "@/api/base44Client";
