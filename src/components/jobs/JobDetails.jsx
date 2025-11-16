@@ -4,7 +4,9 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Textarea } from "@/components/ui/textarea";
 import { Input } from "@/components/ui/input";
-import { ArrowLeft, MapPin, Phone, Calendar, Clock, User, Briefcase, FileText, Image as ImageIcon, DollarSign, Sparkles, LogIn, FileCheck, History, Package } from "lucide-react";
+import { Label } from "@/components/ui/label";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { ArrowLeft, MapPin, Phone, Calendar, Clock, User, Briefcase, FileText, Image as ImageIcon, DollarSign, Sparkles, LogIn, FileCheck, History, Package, LogOut, ClipboardList } from "lucide-react";
 import { format, parseISO } from "date-fns";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { base44 } from "@/api/base44Client";
@@ -15,6 +17,7 @@ import MeasurementsForm from "./MeasurementsForm";
 import ChangeHistoryModal from "./ChangeHistoryModal";
 import EditableField from "./EditableField";
 import EditableFileUpload from "./EditableFileUpload";
+import MarkdownTextarea from "./MarkdownTextarea";
 
 const statusColors = {
   scheduled: "bg-blue-100 text-blue-800 border-blue-200",
@@ -46,7 +49,10 @@ export default function JobDetails({ job, onClose, onStatusChange }) {
   const [user, setUser] = useState(null);
   const [measurements, setMeasurements] = useState(job.measurements || null);
   const [notes, setNotes] = useState(job.notes || "");
-  const [overview, setOverview] = useState(job.overview || "");
+  const [siteVisitOverview, setSiteVisitOverview] = useState(job.overview || "");
+  const [nextSteps, setNextSteps] = useState(job.next_steps || "");
+  const [communicationWithClient, setCommunicationWithClient] = useState(job.communication_with_client || "");
+  const [outcome, setOutcome] = useState(job.outcome || "");
   const [pricingProvided, setPricingProvided] = useState(job.pricing_provided || "");
   const [additionalInfo, setAdditionalInfo] = useState(job.additional_info || "");
   const queryClient = useQueryClient();
@@ -97,6 +103,29 @@ export default function JobDetails({ job, onClose, onStatusChange }) {
     },
   });
 
+  const checkOutMutation = useMutation({
+    mutationFn: async (notes) => {
+      const checkOut = checkIns.find(c => !c.check_out_time && c.technician_email === user?.email);
+      if (!checkOut) return;
+
+      const checkOutTime = new Date();
+      const checkInTime = new Date(checkOut.check_in_time);
+      const durationHours = ((checkOutTime - checkInTime) / (1000 * 60 * 60)).toFixed(2);
+
+      await base44.entities.CheckInOut.update(checkOut.id, {
+        check_out_time: checkOutTime.toISOString(),
+        check_out_notes: notes,
+        duration_hours: parseFloat(durationHours),
+      });
+
+      await base44.entities.Job.update(job.id, { status: 'completed' });
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['checkIns', job.id] });
+      queryClient.invalidateQueries({ queryKey: ['jobs'] });
+    },
+  });
+
   const updateJobMutation = useMutation({
     mutationFn: ({ field, value }) => base44.entities.Job.update(job.id, { [field]: value }),
     onSuccess: () => {
@@ -133,6 +162,11 @@ export default function JobDetails({ job, onClose, onStatusChange }) {
     checkInMutation.mutate();
   };
 
+  const handleCheckOut = () => {
+    const notes = `Overview: ${siteVisitOverview || 'N/A'}\nNext Steps: ${nextSteps || 'N/A'}\nCommunication: ${communicationWithClient || 'N/A'}`;
+    checkOutMutation.mutate(notes);
+  };
+
   const handleMeasurementsChange = (data) => {
     setMeasurements(data);
     updateMeasurementsMutation.mutate(data);
@@ -150,11 +184,31 @@ export default function JobDetails({ job, onClose, onStatusChange }) {
     }
   };
 
-  const handleOverviewBlur = () => {
-    if (overview !== job.overview) {
-      logChange('overview', job.overview, overview);
-      updateJobMutation.mutate({ field: 'overview', value: overview });
+  const handleSiteVisitOverviewBlur = () => {
+    if (siteVisitOverview !== job.overview) {
+      logChange('overview', job.overview, siteVisitOverview);
+      updateJobMutation.mutate({ field: 'overview', value: siteVisitOverview });
     }
+  };
+
+  const handleNextStepsBlur = () => {
+    if (nextSteps !== job.next_steps) {
+      logChange('next_steps', job.next_steps, nextSteps);
+      updateJobMutation.mutate({ field: 'next_steps', value: nextSteps });
+    }
+  };
+
+  const handleCommunicationBlur = () => {
+    if (communicationWithClient !== job.communication_with_client) {
+      logChange('communication_with_client', job.communication_with_client, communicationWithClient);
+      updateJobMutation.mutate({ field: 'communication_with_client', value: communicationWithClient });
+    }
+  };
+
+  const handleOutcomeChange = (value) => {
+    setOutcome(value);
+    logChange('outcome', job.outcome, value);
+    updateJobMutation.mutate({ field: 'outcome', value });
   };
 
   const handlePricingProvidedBlur = () => {
@@ -251,8 +305,12 @@ export default function JobDetails({ job, onClose, onStatusChange }) {
         </CardHeader>
         <CardContent className="p-2 md:p-6">
           <Tabs defaultValue="details" className="w-full">
-            <TabsList className="w-full grid grid-cols-4">
+            <TabsList className="w-full grid grid-cols-5">
               <TabsTrigger value="details" className="text-xs md:text-sm">Details</TabsTrigger>
+              <TabsTrigger value="visit" className="text-xs md:text-sm">
+                <ClipboardList className="w-3 h-3 md:w-4 md:h-4 md:mr-2" />
+                <span className="hidden md:inline">Site Visit</span>
+              </TabsTrigger>
               <TabsTrigger value="form" className="text-xs md:text-sm">
                 <FileCheck className="w-3 h-3 md:w-4 md:h-4 md:mr-2" />
                 <span className="hidden md:inline">Form</span>
@@ -270,14 +328,6 @@ export default function JobDetails({ job, onClose, onStatusChange }) {
             </TabsList>
 
             <TabsContent value="details" className="space-y-3 md:space-y-4 mt-3 md:mt-4">
-              {job.outcome && (
-                <div className="flex gap-2 flex-wrap">
-                  <Badge className={outcomeColors[job.outcome]}>
-                    {job.outcome.replace(/_/g, ' ')}
-                  </Badge>
-                </div>
-              )}
-
               <div className="grid gap-3 md:gap-4">
                 <div className="space-y-2 md:space-y-3">
                   <div className="grid grid-cols-3 gap-2 md:gap-3">
@@ -353,18 +403,6 @@ export default function JobDetails({ job, onClose, onStatusChange }) {
               </div>
 
               <div>
-                <h3 className="text-sm md:text-base font-semibold text-slate-900 mb-2">Overview</h3>
-                <Textarea
-                  value={overview}
-                  onChange={(e) => setOverview(e.target.value)}
-                  onBlur={handleOverviewBlur}
-                  placeholder="Add job overview..."
-                  rows={3}
-                  className="text-xs md:text-sm bg-slate-50 border-slate-300"
-                />
-              </div>
-
-              <div>
                 <h3 className="text-sm md:text-base font-semibold text-slate-900 mb-2">Pricing Provided</h3>
                 <Input
                   value={pricingProvided}
@@ -399,16 +437,72 @@ export default function JobDetails({ job, onClose, onStatusChange }) {
                     {checkInMutation.isPending ? 'Checking In...' : 'Check In'}
                   </Button>
                 )}
-                {job.status === 'in_progress' && (
+              </div>
+            </TabsContent>
+
+            <TabsContent value="visit" className="space-y-4 mt-3 md:mt-4">
+              <div>
+                <Label className="text-sm md:text-base font-semibold text-slate-900 mb-2">Overview</Label>
+                <MarkdownTextarea
+                  value={siteVisitOverview}
+                  onChange={(e) => setSiteVisitOverview(e.target.value)}
+                  onBlur={handleSiteVisitOverviewBlur}
+                  placeholder="Add site visit overview... (Markdown supported)"
+                  rows={4}
+                />
+              </div>
+
+              <div>
+                <Label className="text-sm md:text-base font-semibold text-slate-900 mb-2">Next Steps</Label>
+                <MarkdownTextarea
+                  value={nextSteps}
+                  onChange={(e) => setNextSteps(e.target.value)}
+                  onBlur={handleNextStepsBlur}
+                  placeholder="Add next steps... (Markdown supported)"
+                  rows={4}
+                />
+              </div>
+
+              <div>
+                <Label className="text-sm md:text-base font-semibold text-slate-900 mb-2">Communication with Client</Label>
+                <MarkdownTextarea
+                  value={communicationWithClient}
+                  onChange={(e) => setCommunicationWithClient(e.target.value)}
+                  onBlur={handleCommunicationBlur}
+                  placeholder="Add communication notes... (Markdown supported)"
+                  rows={4}
+                />
+              </div>
+
+              <div>
+                <Label className="text-sm md:text-base font-semibold text-slate-900 mb-2">Outcome</Label>
+                <Select value={outcome} onValueChange={handleOutcomeChange}>
+                  <SelectTrigger>
+                    <SelectValue placeholder="Select outcome" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="new_quote">New Quote</SelectItem>
+                    <SelectItem value="update_quote">Update Quote</SelectItem>
+                    <SelectItem value="send_invoice">Send Invoice</SelectItem>
+                    <SelectItem value="completed">Completed</SelectItem>
+                    <SelectItem value="return_visit_required">Return Visit Required</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+
+              {activeCheckIn && (
+                <div className="pt-4 border-t">
                   <Button
-                    onClick={() => onStatusChange('completed')}
+                    onClick={handleCheckOut}
+                    disabled={checkOutMutation.isPending}
                     className="w-full bg-green-600 hover:bg-green-700"
                     size="lg"
                   >
-                    Complete Job
+                    <LogOut className="w-4 h-4 mr-2" />
+                    {checkOutMutation.isPending ? 'Checking Out...' : 'Check Out'}
                   </Button>
-                )}
-              </div>
+                </div>
+              )}
             </TabsContent>
 
             <TabsContent value="form" className="mt-3 md:mt-4">
