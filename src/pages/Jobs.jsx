@@ -34,10 +34,12 @@ export default function Jobs() {
     loadUser();
   }, []);
 
-  const { data: jobs = [], isLoading } = useQuery({
+  const { data: allJobs = [], isLoading } = useQuery({
     queryKey: ['jobs'],
     queryFn: () => base44.entities.Job.list('-scheduled_date')
   });
+
+  const jobs = allJobs.filter(job => !job.deleted_at);
 
   const { data: jobTypes = [] } = useQuery({
     queryKey: ['jobTypes'],
@@ -65,6 +67,14 @@ export default function Jobs() {
       queryClient.invalidateQueries({ queryKey: ['jobs'] });
       setShowForm(false);
       setEditingJob(null);
+      setSelectedJob(null);
+    }
+  });
+
+  const deleteJobMutation = useMutation({
+    mutationFn: (jobId) => base44.entities.Job.update(jobId, { deleted_at: new Date().toISOString() }),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['jobs'] });
       setSelectedJob(null);
     }
   });
@@ -105,6 +115,10 @@ export default function Jobs() {
     setEditingJob(job);
     setShowForm(true);
     setSelectedJob(null);
+  };
+
+  const handleDelete = (jobId) => {
+    deleteJobMutation.mutate(jobId);
   };
 
   const isTechnician = user?.is_field_technician && user?.role !== 'admin';
@@ -160,6 +174,7 @@ export default function Jobs() {
             job={selectedJob}
             onClose={() => setSelectedJob(null)}
             onEdit={handleEdit}
+            onDelete={handleDelete}
             onStatusChange={(newStatus) => {
               updateJobMutation.mutate({
                 id: selectedJob.id,
