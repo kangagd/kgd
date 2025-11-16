@@ -7,6 +7,7 @@ import Customers from './pages/Customers';
 import PriceList from './pages/PriceList';
 import UserProfile from './pages/UserProfile';
 import Calendar from './pages/Calendar';
+import Archive from './pages/Archive';
 import __Layout from './Layout.jsx';
 
 
@@ -20,6 +21,7 @@ export const PAGES = {
     "PriceList": PriceList,
     "UserProfile": UserProfile,
     "Calendar": Calendar,
+    "Archive": Archive,
 }
 
 export const pagesConfig = {
