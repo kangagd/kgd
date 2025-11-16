@@ -136,22 +136,20 @@ export default function EditableField({
 
           }
         </div>
-        <div className="flex gap-2 justify-end">
+        <div className="flex gap-2 justify-center">
           <Button
-            size="sm"
+            size="icon"
             variant="ghost"
             onClick={handleCancel}
-            className="h-7 px-3 text-red-600 hover:text-red-700 hover:bg-red-50">
-            <X className="w-3 h-3 mr-1" />
-            Cancel
+            className="h-7 w-7 text-red-600 hover:text-red-700 hover:bg-red-50">
+            <X className="w-4 h-4" />
           </Button>
           <Button
-            size="sm"
+            size="icon"
             variant="ghost"
             onClick={handleSave}
-            className="h-7 px-3 text-green-600 hover:text-green-700 hover:bg-green-50">
-            <Check className="w-3 h-3 mr-1" />
-            Save
+            className="h-7 w-7 text-green-600 hover:text-green-700 hover:bg-green-50">
+            <Check className="w-4 h-4" />
           </Button>
         </div>
       </div>);
