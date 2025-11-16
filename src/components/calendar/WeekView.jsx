@@ -2,9 +2,9 @@ import React, { useState } from "react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { format, startOfWeek, addDays, isSameDay, getDay } from "date-fns";
-import { Clock, MapPin, User, FileText, Plus, CheckCircle2, AlertCircle } from "lucide-react";
+import { User, AlertCircle } from "lucide-react";
 import { base44 } from "@/api/base44Client";
-import { useMutation, useQueryClient } from "@tanstack/react-query";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -15,6 +15,7 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
+import JobHoverCard from "./JobHoverCard";
 
 const jobTypeColors = [
   "bg-blue-500", "bg-green-500", "bg-orange-500", 
@@ -23,44 +24,18 @@ const jobTypeColors = [
   "bg-pink-500", "bg-rose-500", "bg-lime-500",
 ];
 
-const statusColors = {
-  open: "bg-slate-400",
-  scheduled: "bg-blue-500",
-  in_progress: "bg-orange-500",
-  completed: "bg-green-500",
-};
-
 const getJobTypeColor = (jobTypeName, allJobTypes) => {
   if (!jobTypeName) return "bg-slate-500";
   const index = allJobTypes.indexOf(jobTypeName);
   return jobTypeColors[index % jobTypeColors.length];
 };
 
-const getInitials = (name) => {
-  if (!name) return "?";
-  return name
-    .split(" ")
-    .map(n => n[0])
-    .join("")
-    .toUpperCase()
-    .slice(0, 2);
-};
-
-const avatarColors = [
-  "bg-blue-600", "bg-purple-600", "bg-green-600", "bg-orange-600",
-  "bg-pink-600", "bg-indigo-600", "bg-red-600", "bg-teal-600",
-];
-
-const getAvatarColor = (name) => {
-  if (!name) return avatarColors[0];
-  const index = name.charCodeAt(0) % avatarColors.length;
-  return avatarColors[index];
-};
-
 export default function WeekView({ jobs, currentDate, onJobClick, onQuickBook }) {
   const [draggedJob, setDraggedJob] = useState(null);
-  const [dragOverDay, setDragOverDay] = useState(null);
+  const [dragOverZone, setDragOverZone] = useState(null);
   const [pendingUpdate, setPendingUpdate] = useState(null);
+  const [hoveredJob, setHoveredJob] = useState(null);
+  const [hoverPosition, setHoverPosition] = useState({ x: 0, y: 0 });
   const queryClient = useQueryClient();
 
   const weekStart = startOfWeek(currentDate);
@@ -83,6 +58,11 @@ export default function WeekView({ jobs, currentDate, onJobClick, onQuickBook })
   
   const uniqueJobTypes = [...new Set(jobs.map(job => job.job_type_name).filter(Boolean))].sort();
 
+  const { data: technicians = [] } = useQuery({
+    queryKey: ['technicians'],
+    queryFn: () => base44.entities.User.filter({ is_field_technician: true })
+  });
+
   const updateJobMutation = useMutation({
     mutationFn: ({ id, data }) => base44.entities.Job.update(id, data),
     onSuccess: () => {
@@ -91,10 +71,13 @@ export default function WeekView({ jobs, currentDate, onJobClick, onQuickBook })
     }
   });
 
-  const getJobsForDay = (day) => {
-    return jobs.filter(job => 
-      job.scheduled_date && isSameDay(new Date(job.scheduled_date), day)
-    ).sort((a, b) => {
+  const getJobsForTechAndDay = (technicianEmail, day) => {
+    return jobs.filter(job => {
+      const assignedTo = Array.isArray(job.assigned_to) ? job.assigned_to : [];
+      return job.scheduled_date && 
+             isSameDay(new Date(job.scheduled_date), day) &&
+             assignedTo.includes(technicianEmail);
+    }).sort((a, b) => {
       if (!a.scheduled_time) return 1;
       if (!b.scheduled_time) return -1;
       return a.scheduled_time.localeCompare(b.scheduled_time);
@@ -110,36 +93,60 @@ export default function WeekView({ jobs, currentDate, onJobClick, onQuickBook })
   const handleDragEnd = (e) => {
     e.currentTarget.style.opacity = '1';
     setDraggedJob(null);
-    setDragOverDay(null);
+    setDragOverZone(null);
   };
 
-  const handleDragOver = (e, day) => {
+  const handleDragOver = (e, technicianEmail, day) => {
     e.preventDefault();
     e.dataTransfer.dropEffect = 'move';
-    setDragOverDay(day.toISOString());
+    setDragOverZone(`${technicianEmail}-${day.toISOString()}`);
   };
 
   const handleDragLeave = () => {
-    setDragOverDay(null);
+    setDragOverZone(null);
   };
 
-  const handleDrop = (e, day) => {
+  const handleDrop = (e, technicianEmail, day) => {
     e.preventDefault();
-    setDragOverDay(null);
+    setDragOverZone(null);
     if (!draggedJob) return;
 
     const newDate = format(day, 'yyyy-MM-dd');
     const oldDate = draggedJob.scheduled_date;
+    const assignedTo = Array.isArray(draggedJob.assigned_to) ? draggedJob.assigned_to : [];
+    const assignedToName = Array.isArray(draggedJob.assigned_to_name) ? draggedJob.assigned_to_name : [];
+    
+    const technician = technicians.find(t => t.email === technicianEmail);
+    const techChanged = !assignedTo.includes(technicianEmail);
+    
+    let newAssignedTo = assignedTo;
+    let newAssignedToName = assignedToName;
+    
+    if (techChanged && technician) {
+      newAssignedTo = [technicianEmail];
+      newAssignedToName = [technician.full_name];
+    }
 
-    if (newDate === oldDate) {
+    const dateChanged = newDate !== oldDate;
+
+    if (!dateChanged && !techChanged) {
       setDraggedJob(null);
       return;
     }
 
+    const oldTech = assignedToName.length > 0 ? assignedToName[0] : 'Unassigned';
+    const newTech = newAssignedToName.length > 0 ? newAssignedToName[0] : 'Unassigned';
+
     setPendingUpdate({
       job: draggedJob,
       newDate,
-      oldDate
+      oldDate,
+      newAssignedTo,
+      newAssignedToName,
+      oldTech,
+      newTech,
+      dateChanged,
+      techChanged
     });
 
     setDraggedJob(null);
@@ -148,164 +155,124 @@ export default function WeekView({ jobs, currentDate, onJobClick, onQuickBook })
   const confirmUpdate = () => {
     if (!pendingUpdate) return;
 
+    const updateData = {
+      scheduled_date: pendingUpdate.newDate
+    };
+
+    if (pendingUpdate.techChanged) {
+      updateData.assigned_to = pendingUpdate.newAssignedTo;
+      updateData.assigned_to_name = pendingUpdate.newAssignedToName;
+    }
+
     updateJobMutation.mutate({
       id: pendingUpdate.job.id,
-      data: {
-        scheduled_date: pendingUpdate.newDate
-      }
+      data: updateData
     });
+  };
+
+  const handleMouseEnter = (e, job) => {
+    const rect = e.currentTarget.getBoundingClientRect();
+    setHoverPosition({ x: rect.right + 10, y: rect.top });
+    setHoveredJob(job);
+  };
+
+  const handleMouseLeave = () => {
+    setHoveredJob(null);
   };
 
   return (
     <>
       <div className="space-y-4">
-        <div className={`grid grid-cols-1 md:grid-cols-${daysToShow} gap-3`} style={{ gridTemplateColumns: `repeat(${daysToShow}, minmax(0, 1fr))` }}>
-          {weekDays.map(day => {
-            const dayJobs = getJobsForDay(day);
-            const isToday = isSameDay(day, new Date());
-            const isDragOver = dragOverDay === day.toISOString();
-
-            return (
-              <Card 
-                key={day.toISOString()}
-                className={`${isToday ? 'bg-blue-50 border-blue-300 border-2' : ''} ${
-                  isDragOver ? 'bg-green-50 border-green-400 border-2' : ''
-                } transition-all`}
-                onDragOver={(e) => handleDragOver(e, day)}
-                onDragLeave={handleDragLeave}
-                onDrop={(e) => handleDrop(e, day)}
-              >
-                <CardContent className="p-3">
-                  <div className={`flex items-center justify-between mb-3 pb-2 border-b ${isToday ? 'border-blue-200' : 'border-slate-200'}`}>
-                    <div>
+        <Card>
+          <CardContent className="p-0 overflow-x-auto">
+            <div className="min-w-[900px]">
+              {/* Header with days */}
+              <div className="flex border-b border-slate-200 bg-slate-50 sticky top-0 z-10">
+                <div className="w-40 flex-shrink-0 p-3 border-r border-slate-200 font-semibold text-sm text-slate-700">
+                  Technician
+                </div>
+                {weekDays.map(day => {
+                  const isToday = isSameDay(day, new Date());
+                  return (
+                    <div 
+                      key={day.toISOString()} 
+                      className={`flex-1 text-center p-3 border-r border-slate-200 ${
+                        isToday ? 'bg-blue-50' : ''
+                      }`}
+                    >
                       <div className={`text-xs font-medium ${isToday ? 'text-blue-600' : 'text-slate-500'}`}>
                         {format(day, 'EEE')}
                       </div>
-                      <div className={`text-2xl font-bold ${isToday ? 'text-blue-600' : 'text-slate-900'}`}>
+                      <div className={`text-lg font-bold ${isToday ? 'text-blue-600' : 'text-slate-900'}`}>
                         {format(day, 'd')}
                       </div>
                     </div>
-                    <button
-                      onClick={() => onQuickBook(day)}
-                      className="p-1.5 hover:bg-slate-100 rounded-lg transition-colors"
-                      title="Book job"
-                    >
-                      <Plus className="w-4 h-4 text-slate-400" />
-                    </button>
+                  );
+                })}
+              </div>
+
+              {/* Technician swimlanes */}
+              {technicians.map(technician => (
+                <div key={technician.id} className="flex border-b border-slate-200 hover:bg-slate-50/50">
+                  <div className="w-40 flex-shrink-0 p-3 border-r border-slate-200 flex items-center gap-2">
+                    <User className="w-4 h-4 text-slate-400 flex-shrink-0" />
+                    <span className="text-sm font-medium text-slate-700 truncate">
+                      {technician.full_name}
+                    </span>
                   </div>
+                  {weekDays.map(day => {
+                    const dayJobs = getJobsForTechAndDay(technician.email, day);
+                    const isToday = isSameDay(day, new Date());
+                    const isDragOver = dragOverZone === `${technician.email}-${day.toISOString()}`;
 
-                  <div className="space-y-2 max-h-[600px] overflow-y-auto">
-                    {dayJobs.length === 0 ? (
-                      <div className="text-xs text-slate-400 text-center py-8">No jobs scheduled</div>
-                    ) : (
-                      dayJobs.map(job => (
-                        <div
-                          key={job.id}
-                          draggable
-                          onDragStart={(e) => handleDragStart(e, job)}
-                          onDragEnd={handleDragEnd}
-                          onClick={() => onJobClick(job)}
-                          className={`p-2.5 rounded-lg cursor-move hover:shadow-md transition-all border-l-4 bg-white ${
-                            draggedJob?.id === job.id ? 'opacity-50' : ''
-                          }`}
-                          style={{ borderLeftColor: statusColors[job.status] || '#94a3b8' }}
-                        >
-                          <div className="flex items-start justify-between gap-2 mb-2">
-                            <div className="flex items-center gap-1.5">
-                              <Clock className="w-3 h-3 text-slate-500 flex-shrink-0" />
-                              <span className="text-xs font-semibold text-slate-900">
-                                {job.scheduled_time?.slice(0, 5) || 'No time'}
-                              </span>
-                              {job.expected_duration && (
-                                <span className="text-xs text-slate-500">({job.expected_duration}h)</span>
-                              )}
-                            </div>
-                            {job.status === 'completed' && (
-                              <CheckCircle2 className="w-3.5 h-3.5 text-green-600 flex-shrink-0" />
-                            )}
-                          </div>
-
-                          <div className="font-semibold text-sm text-slate-900 mb-1 truncate">
-                            {job.customer_name}
-                          </div>
-
-                          <div className="flex items-start gap-1 text-xs text-slate-600 mb-2">
-                            <MapPin className="w-3 h-3 text-slate-400 mt-0.5 flex-shrink-0" />
-                            <span className="line-clamp-1">{job.address}</span>
-                          </div>
-
-                          <div className="flex flex-wrap gap-1 mb-2">
-                            {job.product && (
-                              <Badge variant="outline" className="text-xs bg-slate-50 text-slate-700 border-slate-300">
-                                {job.product}
-                              </Badge>
-                            )}
-                            {job.job_type_name && (
-                              <Badge className={`text-xs text-white ${getJobTypeColor(job.job_type_name, uniqueJobTypes)}`}>
-                                {job.job_type_name}
-                              </Badge>
-                            )}
-                          </div>
-
-                          {(job.assigned_to_name && job.assigned_to_name.length > 0) && (
-                            <div className="flex items-center gap-1.5 pt-2 border-t border-slate-100">
-                              <User className="w-3 h-3 text-slate-400" />
-                              <div className="flex -space-x-1.5">
-                                {(Array.isArray(job.assigned_to_name) ? job.assigned_to_name : [job.assigned_to_name]).slice(0, 2).map((name, idx) => (
-                                  <div
-                                    key={idx}
-                                    className={`${getAvatarColor(name)} w-5 h-5 rounded-full flex items-center justify-center text-white text-[9px] font-bold border-2 border-white shadow-sm`}
-                                    title={name}
-                                  >
-                                    {getInitials(name)}
-                                  </div>
-                                ))}
-                                {Array.isArray(job.assigned_to_name) && job.assigned_to_name.length > 2 && (
-                                  <div className="bg-slate-300 w-5 h-5 rounded-full flex items-center justify-center text-slate-700 text-[9px] font-bold border-2 border-white shadow-sm">
-                                    +{job.assigned_to_name.length - 2}
-                                  </div>
-                                )}
+                    return (
+                      <div
+                        key={day.toISOString()}
+                        className={`flex-1 p-2 border-r border-slate-200 min-h-[120px] transition-colors ${
+                          isToday ? 'bg-blue-50/30' : ''
+                        } ${isDragOver ? 'bg-green-100' : ''}`}
+                        onDragOver={(e) => handleDragOver(e, technician.email, day)}
+                        onDragLeave={handleDragLeave}
+                        onDrop={(e) => handleDrop(e, technician.email, day)}
+                      >
+                        <div className="space-y-1.5">
+                          {dayJobs.map(job => (
+                            <div
+                              key={job.id}
+                              draggable
+                              onDragStart={(e) => handleDragStart(e, job)}
+                              onDragEnd={handleDragEnd}
+                              onMouseEnter={(e) => handleMouseEnter(e, job)}
+                              onMouseLeave={handleMouseLeave}
+                              onClick={() => onJobClick(job)}
+                              className={`p-2 rounded-md cursor-move hover:shadow-md transition-all border-l-3 bg-white shadow-sm ${
+                                draggedJob?.id === job.id ? 'opacity-50' : ''
+                              }`}
+                              style={{ borderLeftWidth: '3px', borderLeftColor: getJobTypeColor(job.job_type_name, uniqueJobTypes).replace('bg-', '#') }}
+                            >
+                              <div className="text-xs font-semibold text-slate-900 mb-0.5">
+                                #{job.job_number}
                               </div>
-                              <span className="text-xs text-slate-500 truncate flex-1">
-                                {Array.isArray(job.assigned_to_name) ? job.assigned_to_name[0] : job.assigned_to_name}
-                              </span>
-                            </div>
-                          )}
-
-                          {job.outcome && (
-                            <div className="flex items-center gap-1 mt-2 pt-2 border-t border-slate-100">
-                              <FileText className="w-3 h-3 text-emerald-500" />
-                              <span className="text-xs font-medium text-emerald-700">
-                                {job.outcome.replace(/_/g, ' ')}
-                              </span>
-                            </div>
-                          )}
-
-                          {job.notes && (
-                            <div className="mt-2 pt-2 border-t border-slate-100">
-                              <div className="flex items-start gap-1">
-                                <FileText className="w-3 h-3 text-amber-500 mt-0.5 flex-shrink-0" />
-                                <p className="text-xs text-slate-600 line-clamp-2">{job.notes.replace(/<[^>]*>/g, '')}</p>
+                              <div className="text-xs text-slate-600 line-clamp-1 mb-1">
+                                {job.address}
                               </div>
+                              <Badge 
+                                variant="outline" 
+                                className={`text-[10px] py-0 px-1 h-4 ${getJobTypeColor(job.job_type_name, uniqueJobTypes)} text-white border-0`}
+                              >
+                                {job.product || job.job_type_name || 'N/A'}
+                              </Badge>
                             </div>
-                          )}
+                          ))}
                         </div>
-                      ))
-                    )}
-                  </div>
-
-                  {dayJobs.length > 0 && (
-                    <div className="mt-2 pt-2 border-t border-slate-200 text-center">
-                      <span className="text-xs font-medium text-slate-600">
-                        {dayJobs.length} job{dayJobs.length !== 1 ? 's' : ''}
-                      </span>
-                    </div>
-                  )}
-                </CardContent>
-              </Card>
-            );
-          })}
-        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              ))}
+            </div>
+          </CardContent>
+        </Card>
 
         <div className="flex flex-wrap gap-2 text-xs bg-white p-3 rounded-lg border border-slate-200">
           <span className="font-semibold text-slate-700">Job Types:</span>
@@ -318,6 +285,13 @@ export default function WeekView({ jobs, currentDate, onJobClick, onQuickBook })
         </div>
       </div>
 
+      {hoveredJob && (
+        <JobHoverCard 
+          job={hoveredJob} 
+          position={hoverPosition}
+        />
+      )}
+
       <AlertDialog open={!!pendingUpdate} onOpenChange={() => setPendingUpdate(null)}>
         <AlertDialogContent>
           <AlertDialogHeader>
@@ -329,16 +303,26 @@ export default function WeekView({ jobs, currentDate, onJobClick, onQuickBook })
               <p className="font-medium text-slate-900">
                 Job #{pendingUpdate?.job.job_number} - {pendingUpdate?.job.customer_name}
               </p>
-              <p>
-                <span className="text-slate-600">Date:</span>{' '}
-                <span className="line-through text-slate-400">
-                  {pendingUpdate?.oldDate && format(new Date(pendingUpdate.oldDate), 'MMM d, yyyy')}
-                </span>
-                {' → '}
-                <span className="font-medium text-blue-600">
-                  {pendingUpdate?.newDate && format(new Date(pendingUpdate.newDate), 'MMM d, yyyy')}
-                </span>
-              </p>
+              {pendingUpdate?.dateChanged && (
+                <p>
+                  <span className="text-slate-600">Date:</span>{' '}
+                  <span className="line-through text-slate-400">
+                    {pendingUpdate?.oldDate && format(new Date(pendingUpdate.oldDate), 'MMM d, yyyy')}
+                  </span>
+                  {' → '}
+                  <span className="font-medium text-blue-600">
+                    {pendingUpdate?.newDate && format(new Date(pendingUpdate.newDate), 'MMM d, yyyy')}
+                  </span>
+                </p>
+              )}
+              {pendingUpdate?.techChanged && (
+                <p>
+                  <span className="text-slate-600">Technician:</span>{' '}
+                  <span className="line-through text-slate-400">{pendingUpdate?.oldTech}</span>
+                  {' → '}
+                  <span className="font-medium text-blue-600">{pendingUpdate?.newTech}</span>
+                </p>
+              )}
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
