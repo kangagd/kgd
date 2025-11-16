@@ -150,15 +150,11 @@ export default function JobDetails({ job, onClose, onStatusChange }) {
   const logChange = async (fieldName, oldValue, newValue) => {
     if (!user) return;
     try {
-      // Ensure values are stringified if they are arrays or objects for consistent logging
-      const oldValString = typeof oldValue === 'object' && oldValue !== null ? JSON.stringify(oldValue) : String(oldValue);
-      const newValString = typeof newValue === 'object' && newValue !== null ? JSON.stringify(newValue) : String(newValue);
-
       await base44.entities.ChangeHistory.create({
         job_id: job.id,
         field_name: fieldName,
-        old_value: oldValString,
-        new_value: newValString,
+        old_value: oldValue || "",
+        new_value: newValue || "",
         changed_by: user.email,
         changed_by_name: user.full_name,
       });
@@ -236,26 +232,12 @@ export default function JobDetails({ job, onClose, onStatusChange }) {
     updateJobMutation.mutate({ field: 'outcome', value });
   };
 
-  const handleAssignedToChange = (emails) => {
-    // Ensure `emails` is an array of emails for consistency
-    const newAssignedEmails = Array.isArray(emails) ? emails : (emails ? [emails] : []);
-
-    // `job.assigned_to` could be a string or an array from the backend, normalize for logChange
-    const currentAssignedToNormalized = Array.isArray(job.assigned_to) ? job.assigned_to : (job.assigned_to ? [job.assigned_to] : []);
-
-    // Update the 'assigned_to' field in the job
-    handleFieldSave('assigned_to', currentAssignedToNormalized, newAssignedEmails);
-
-    // Prepare the 'assigned_to_name' for display/storage
-    const techNames = newAssignedEmails
-      .map(email => {
-        const tech = technicians.find(t => t.email === email);
-        return tech?.full_name; // Only take full_name, filter out undefined later
-      })
-      .filter(Boolean); // Filter out any technicians not found or null names
-
-    // Update 'assigned_to_name' with a comma-separated string
-    updateJobMutation.mutate({ field: 'assigned_to_name', value: techNames.join(', ') });
+  const handleAssignedToChange = (email) => {
+    const tech = technicians.find(t => t.email === email);
+    handleFieldSave('assigned_to', job.assigned_to, email);
+    if (tech) {
+      updateJobMutation.mutate({ field: 'assigned_to_name', value: tech.full_name });
+    }
   };
 
   const handleJobTypeChange = (jobTypeId) => {
@@ -319,30 +301,18 @@ export default function JobDetails({ job, onClose, onStatusChange }) {
               </Button>
               <Button 
                 variant="outline"
-                size="sm"
                 onClick={() => setShowPriceList(true)}
                 className="h-8 px-2"
               >
                 <DollarSign className="w-4 h-4 md:mr-1" />
                 <span className="hidden md:inline text-xs">Price List</span>
               </Button>
-              {!isTechnician && (
-                <Button 
-                  variant="outline"
-                  size="sm"
-                  onClick={() => setShowAssistant(true)}
-                  className="h-8 px-2"
-                >
-                  <Sparkles className="w-4 h-4 md:mr-1" />
-                  <span className="hidden md:inline text-xs">AI</span>
-                </Button>
-              )}
             </div>
           </div>
         </CardHeader>
         <CardContent className="p-2 md:p-6">
           <Tabs defaultValue="details" className="w-full">
-            <TabsList className="w-full grid grid-cols-4">
+            <TabsList className="w-full grid grid-cols-5">
               <TabsTrigger value="details" className="text-xs md:text-sm">Details</TabsTrigger>
               <TabsTrigger value="visit" className="text-xs md:text-sm">
                 <ClipboardCheck className="w-3 h-3 md:w-4 md:h-4 md:mr-2" />
@@ -356,6 +326,12 @@ export default function JobDetails({ job, onClose, onStatusChange }) {
                 <ImageIcon className="w-3 h-3 md:w-4 md:h-4 md:mr-2" />
                 <span className="hidden md:inline">Files</span>
               </TabsTrigger>
+              {!isTechnician && (
+                <TabsTrigger value="assistant" className="text-xs md:text-sm">
+                  <Sparkles className="w-3 h-3 md:w-4 md:h-4 md:mr-2" />
+                  <span className="hidden md:inline">AI</span>
+                </TabsTrigger>
+              )}
             </TabsList>
 
             <TabsContent value="details" className="space-y-3 md:space-y-4 mt-3 md:mt-4">
@@ -377,25 +353,15 @@ export default function JobDetails({ job, onClose, onStatusChange }) {
                       icon={Clock}
                       placeholder="Set time"
                     />
-                    <div className="col-span-3"> {/* This wrapper ensures it takes full width below other fields */}
-                      <EditableField
-                        value={Array.isArray(job.assigned_to) ? job.assigned_to : (job.assigned_to ? [job.assigned_to] : [])}
-                        onSave={handleAssignedToChange}
-                        type="multi-select"
-                        icon={User}
-                        options={technicians.map(t => ({ value: t.email, label: t.full_name }))}
-                        displayFormat={(val) => {
-                          const emailsToDisplay = Array.isArray(val) ? val : (val ? [val] : []);
-                          if (emailsToDisplay.length === 0) return "Unassigned";
-                          const names = emailsToDisplay.map(email => {
-                            const tech = technicians.find(t => t.email === email);
-                            return tech?.full_name || email;
-                          });
-                          return names.join(", ");
-                        }}
-                        placeholder="Assign technicians"
-                      />
-                    </div>
+                    <EditableField
+                      value={job.assigned_to}
+                      onSave={handleAssignedToChange}
+                      type="select"
+                      icon={User}
+                      options={technicians.map(t => ({ value: t.email, label: t.full_name }))}
+                      displayFormat={(val) => technicians.find(t => t.email === val)?.full_name || val}
+                      placeholder="Assign"
+                    />
                   </div>
                   <div className="grid grid-cols-2 gap-2 md:gap-3">
                     <EditableField
@@ -674,6 +640,12 @@ export default function JobDetails({ job, onClose, onStatusChange }) {
                 </div>
               </div>
             </TabsContent>
+
+            {!isTechnician && (
+              <TabsContent value="assistant" className="mt-3 md:mt-4">
+                <TechnicianAssistant job={job} embedded={true} />
+              </TabsContent>
+            )}
           </Tabs>
         </CardContent>
       </Card>
