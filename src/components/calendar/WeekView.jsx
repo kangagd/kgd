@@ -1,3 +1,4 @@
+
 import React, { useState } from "react";
 import { Card, CardContent } from "@/components/ui/card";
 import { format, startOfWeek, addDays, isSameDay } from "date-fns";
@@ -77,7 +78,19 @@ export default function WeekView({ jobs, currentDate, onJobClick, onQuickBook })
   });
 
   const weekStart = startOfWeek(currentDate);
-  const weekDays = Array.from({ length: 7 }, (_, i) => addDays(weekStart, i));
+  const allWeekDays = Array.from({ length: 7 }, (_, i) => addDays(weekStart, i));
+  
+  // Check if there are jobs on Saturday (day 6) or Sunday (day 0)
+  const hasWeekendJobs = jobs.some(job => {
+    if (!job.scheduled_date) return false;
+    const jobDate = new Date(job.scheduled_date);
+    const dayOfWeek = jobDate.getDay();
+    return (dayOfWeek === 0 || dayOfWeek === 6) && 
+           allWeekDays.some(d => isSameDay(d, jobDate));
+  });
+  
+  // Show Mon-Fri (indices 1-5) unless there are weekend jobs
+  const weekDays = hasWeekendJobs ? allWeekDays : allWeekDays.slice(1, 6);
   
   const assignedTechnicianEmails = [...new Set(jobs.flatMap(job => job.assigned_to || []))];
   const visibleTechnicians = technicians.filter(tech => assignedTechnicianEmails.includes(tech.email));
@@ -179,7 +192,7 @@ export default function WeekView({ jobs, currentDate, onJobClick, onQuickBook })
         <Card>
           <CardContent className="p-0 overflow-x-auto">
             <div className="min-w-[1200px]">
-              <div className="grid border-b border-slate-200 bg-slate-50" style={{ gridTemplateColumns: '200px repeat(7, 1fr)' }}>
+              <div className="grid border-b border-slate-200 bg-slate-50" style={{ gridTemplateColumns: `200px repeat(${weekDays.length}, 1fr)` }}>
                 <div className="p-3 border-r border-slate-200 font-medium text-sm text-slate-700">
                   Technician
                 </div>
@@ -201,7 +214,7 @@ export default function WeekView({ jobs, currentDate, onJobClick, onQuickBook })
                 </div>
               ) : (
                 visibleTechnicians.map(technician => (
-                  <div key={technician.id} className="grid border-b border-slate-200 hover:bg-slate-50" style={{ gridTemplateColumns: '200px repeat(7, 1fr)', height: '150px' }}>
+                  <div key={technician.id} className="grid border-b border-slate-200 hover:bg-slate-50" style={{ gridTemplateColumns: `200px repeat(${weekDays.length}, 1fr)`, height: '150px' }}>
                     <div className="p-3 border-r border-slate-200 flex items-center gap-2 sticky left-0 bg-white z-10">
                       <div className={`${getAvatarColor(technician.full_name)} w-8 h-8 rounded-full flex items-center justify-center text-white font-bold text-xs`}>
                         {getInitials(technician.full_name)}
