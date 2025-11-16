@@ -1,3 +1,4 @@
+
 import React from "react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
 import { createPageUrl } from "@/utils";
@@ -20,7 +21,7 @@ import { base44 } from "@/api/base44Client";
 
 const adminNavigationItems = [
   { title: "Dashboard", url: createPageUrl("Dashboard"), icon: LayoutDashboard },
-  { title: "Calendar", url: createPageUrl("Calendar"), icon: Calendar },
+  { title: "Schedule", url: createPageUrl("Schedule"), icon: Calendar },
   { title: "Jobs", url: createPageUrl("Jobs"), icon: Briefcase },
   { title: "Customers", url: createPageUrl("Customers"), icon: UserCircle },
   { title: "Price List", url: createPageUrl("PriceList"), icon: DollarSign },
@@ -28,7 +29,7 @@ const adminNavigationItems = [
 ];
 
 const technicianNavigationItems = [
-  { title: "Calendar", url: createPageUrl("Calendar"), icon: Calendar },
+  { title: "Schedule", url: createPageUrl("Schedule"), icon: Calendar },
   { title: "Jobs", url: createPageUrl("Jobs"), icon: Briefcase },
   { title: "Price List", url: createPageUrl("PriceList"), icon: DollarSign },
 ];
