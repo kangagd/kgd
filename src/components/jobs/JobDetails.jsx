@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from "react";
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -7,7 +6,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Label } from "@/components/ui/label";
-import { ArrowLeft, MapPin, Phone, Calendar, Clock, User, Briefcase, FileText, Image as ImageIcon, DollarSign, Sparkles, LogIn, FileCheck, History, Package, ClipboardCheck, LogOut } from "lucide-react";
+import { ArrowLeft, MapPin, Phone, Calendar, Clock, User, Briefcase, FileText, Image as ImageIcon, DollarSign, Sparkles, LogIn, FileCheck, History, Package, ClipboardCheck, LogOut, Timer } from "lucide-react";
 import { format, parseISO } from "date-fns";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { base44 } from "@/api/base44Client";
@@ -85,6 +84,8 @@ export default function JobDetails({ job, onClose, onStatusChange }) {
   });
 
   const activeCheckIn = checkIns.find(c => !c.check_out_time && c.technician_email === user?.email);
+  const completedCheckIns = checkIns.filter(c => c.check_out_time);
+  const totalJobTime = completedCheckIns.reduce((sum, c) => sum + (c.duration_hours || 0), 0);
 
   const checkInMutation = useMutation({
     mutationFn: async () => {
@@ -396,18 +397,6 @@ export default function JobDetails({ job, onClose, onStatusChange }) {
               </div>
 
               <div>
-                <h3 className="text-sm md:text-base font-semibold text-slate-900 mb-2">Overview</h3>
-                <Textarea
-                  value={overview}
-                  onChange={(e) => setOverview(e.target.value)}
-                  onBlur={handleOverviewBlur}
-                  placeholder="Add job overview..."
-                  rows={3}
-                  className="text-xs md:text-sm bg-slate-50 border-slate-300"
-                />
-              </div>
-
-              <div>
                 <h3 className="text-sm md:text-base font-semibold text-slate-900 mb-2">Pricing Provided</h3>
                 <Input
                   value={pricingProvided}
@@ -430,8 +419,8 @@ export default function JobDetails({ job, onClose, onStatusChange }) {
                 />
               </div>
 
-              <div className="flex flex-col gap-2 pt-2">
-                {!activeCheckIn && job.status === 'scheduled' && (
+              <div className="flex flex-col gap-2 pt-2 border-t">
+                {!activeCheckIn ? (
                   <Button
                     onClick={handleCheckIn}
                     disabled={checkInMutation.isPending}
@@ -441,15 +430,23 @@ export default function JobDetails({ job, onClose, onStatusChange }) {
                     <LogIn className="w-4 h-4 mr-2" />
                     {checkInMutation.isPending ? 'Checking In...' : 'Check In'}
                   </Button>
+                ) : (
+                  <div className="bg-blue-50 border border-blue-200 rounded-lg p-3">
+                    <div className="flex items-center gap-2 text-blue-700">
+                      <Timer className="w-4 h-4" />
+                      <span className="text-sm font-medium">
+                        Checked in at {format(new Date(activeCheckIn.check_in_time), 'h:mm a')}
+                      </span>
+                    </div>
+                  </div>
                 )}
-                {job.status === 'in_progress' && (
-                  <Button
-                    onClick={() => onStatusChange('completed')}
-                    className="w-full bg-green-600 hover:bg-green-700"
-                    size="lg"
-                  >
-                    Complete Job
-                  </Button>
+                {totalJobTime > 0 && (
+                  <div className="bg-slate-50 border border-slate-200 rounded-lg p-3">
+                    <div className="flex items-center justify-between">
+                      <span className="text-sm text-slate-600">Total Job Time:</span>
+                      <span className="text-sm font-semibold text-slate-900">{totalJobTime.toFixed(1)} hours</span>
+                    </div>
+                  </div>
                 )}
               </div>
             </TabsContent>
@@ -522,6 +519,15 @@ export default function JobDetails({ job, onClose, onStatusChange }) {
                       <LogOut className="w-4 h-4 mr-2" />
                       {checkOutMutation.isPending ? 'Checking Out...' : 'Check Out'}
                     </Button>
+                  </div>
+                )}
+
+                {totalJobTime > 0 && (
+                  <div className="bg-slate-50 border border-slate-200 rounded-lg p-3">
+                    <div className="flex items-center justify-between">
+                      <span className="text-sm text-slate-600">Total Job Time:</span>
+                      <span className="text-sm font-semibold text-slate-900">{totalJobTime.toFixed(1)} hours</span>
+                    </div>
                   </div>
                 )}
               </div>
