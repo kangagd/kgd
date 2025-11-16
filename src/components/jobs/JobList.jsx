@@ -3,7 +3,7 @@ import React, { useState, useEffect } from "react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { MapPin, Calendar, Clock, User, Briefcase, FileText, Tag, LogIn, Package } from "lucide-react";
+import { MapPin, Calendar, Clock, User, Briefcase, FileText, Package, LogIn } from "lucide-react";
 import { format, parseISO } from "date-fns";
 import { base44 } from "@/api/base44Client";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
@@ -28,13 +28,6 @@ const statusLabels = {
   return_visit_required: "Return Visit Required",
   scheduled: "Scheduled",
   cancelled: "Cancelled"
-};
-
-const customerTypeColors = {
-  "Owner": "bg-purple-100 text-purple-700",
-  "Builder": "bg-blue-100 text-blue-700",
-  "Real Estate - Tenant": "bg-green-100 text-green-700",
-  "Strata - Owner": "bg-amber-100 text-amber-700",
 };
 
 const productColors = {
@@ -174,13 +167,6 @@ export default function JobList({ jobs, isLoading, onSelectJob }) {
               </div>
 
               <div className="flex flex-wrap gap-2 pt-2">
-                {job.customer_type && (
-                  <Badge variant="outline" className={customerTypeColors[job.customer_type]}>
-                    <Tag className="w-3 h-3 mr-1" />
-                    {job.customer_type}
-                  </Badge>
-                )}
-                
                 {job.assigned_to_name && job.assigned_to_name.length > 0 && (
                   Array.isArray(job.assigned_to_name) ? (
                     job.assigned_to_name.map((name, idx) => (
