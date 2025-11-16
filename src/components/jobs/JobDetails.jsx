@@ -22,34 +22,34 @@ import CustomerEditModal from "../customers/CustomerEditModal";
 import RichTextEditor from "../common/RichTextEditor";
 
 const statusColors = {
-  open: "bg-slate-100 text-slate-800 border-slate-200",
-  scheduled: "bg-blue-100 text-blue-800 border-blue-200",
-  in_progress: "bg-orange-100 text-orange-800 border-orange-200",
-  completed: "bg-green-100 text-green-800 border-green-200",
-  cancelled: "bg-slate-100 text-slate-800 border-slate-200"
+  open: "bg-slate-50 text-slate-900 border-slate-200 border-2",
+  scheduled: "bg-blue-50 text-blue-900 border-blue-200 border-2",
+  in_progress: "bg-orange-50 text-orange-900 border-orange-200 border-2",
+  completed: "bg-green-50 text-green-900 border-green-200 border-2",
+  cancelled: "bg-slate-50 text-slate-900 border-slate-200 border-2"
 };
 
 const outcomeColors = {
-  new_quote: "bg-purple-100 text-purple-800 border-purple-200",
-  update_quote: "bg-indigo-100 text-indigo-800 border-indigo-200",
-  send_invoice: "bg-blue-100 text-blue-800 border-blue-200",
-  completed: "bg-green-100 text-green-800 border-green-200",
-  return_visit_required: "bg-amber-100 text-amber-800 border-amber-200"
+  new_quote: "bg-purple-50 text-purple-900 border-purple-200 border-2",
+  update_quote: "bg-indigo-50 text-indigo-900 border-indigo-200 border-2",
+  send_invoice: "bg-[#fae008]/20 text-[#000000] border-[#fae008]/40 border-2",
+  completed: "bg-green-50 text-green-900 border-green-200 border-2",
+  return_visit_required: "bg-amber-50 text-amber-900 border-amber-200 border-2"
 };
 
 const productColors = {
-  "Garage Door": "bg-blue-100 text-blue-700",
-  "Gate": "bg-green-100 text-green-700",
-  "Roller Shutter": "bg-purple-100 text-purple-700",
-  "Multiple": "bg-orange-100 text-orange-700",
-  "Custom Garage Door": "bg-pink-100 text-pink-700"
+  "Garage Door": "bg-blue-50 text-blue-900 border-blue-200 border-2",
+  "Gate": "bg-green-50 text-green-900 border-green-200 border-2",
+  "Roller Shutter": "bg-purple-50 text-purple-900 border-purple-200 border-2",
+  "Multiple": "bg-orange-50 text-orange-900 border-orange-200 border-2",
+  "Custom Garage Door": "bg-pink-50 text-pink-900 border-pink-200 border-2"
 };
 
 const customerTypeColors = {
-  "Owner": "bg-purple-100 text-purple-700",
-  "Builder": "bg-blue-100 text-blue-700",
-  "Real Estate - Tenant": "bg-green-100 text-green-700",
-  "Strata - Owner": "bg-amber-100 text-amber-700",
+  "Owner": "bg-purple-50 text-purple-900 border-purple-200 border-2",
+  "Builder": "bg-blue-50 text-blue-900 border-blue-200 border-2",
+  "Real Estate - Tenant": "bg-green-50 text-green-900 border-green-200 border-2",
+  "Strata - Owner": "bg-amber-50 text-amber-900 border-amber-200 border-2",
 };
 
 const getInitials = (name) => {
@@ -328,105 +328,108 @@ export default function JobDetails({ job, onClose, onStatusChange }) {
 
   return (
     <>
-      <Card className={`border-none shadow-lg ${isTechnician ? 'rounded-none' : ''}`}>
-        <CardHeader className="border-b border-slate-100 bg-gradient-to-r from-slate-50 to-white p-3 space-y-2">
-          <div className="flex items-start justify-between gap-2">
-            <div className="flex items-start gap-2 flex-1 min-w-0">
-              <Button variant="ghost" size="icon" onClick={onClose} className="h-7 w-7 flex-shrink-0 hover:bg-slate-200">
-                <ArrowLeft className="w-4 h-4" />
+      <Card className={`border-2 border-slate-200 shadow-lg rounded-2xl ${isTechnician ? '' : ''}`}>
+        <CardHeader className="border-b-2 border-slate-200 bg-gradient-to-r from-slate-50 to-white p-4 md:p-5 space-y-3">
+          <div className="flex items-start justify-between gap-3">
+            <div className="flex items-start gap-3 flex-1 min-w-0">
+              <Button variant="ghost" size="icon" onClick={onClose} className="h-9 w-9 flex-shrink-0 hover:bg-slate-100 rounded-xl transition-all">
+                <ArrowLeft className="w-5 h-5" />
               </Button>
               <div className="flex-1 min-w-0">
-                <div className="flex items-center gap-1.5 flex-wrap mb-0.5">
+                <div className="flex items-center gap-2 flex-wrap mb-1">
                   <CardTitle
-                    className="text-lg md:text-xl font-bold cursor-pointer hover:text-blue-600 transition-colors"
+                    className="text-xl md:text-2xl font-bold text-[#000000] cursor-pointer hover:text-blue-600 transition-colors tracking-tight"
                     onClick={() => setShowCustomerEdit(true)}
                   >
                     {job.customer_name}
                   </CardTitle>
                   {job.customer_type && (
-                    <Badge variant="outline" className={`${customerTypeColors[job.customer_type]} text-xs font-medium`}>
+                    <Badge variant="outline" className={`${customerTypeColors[job.customer_type]} text-xs font-semibold`}>
                       {job.customer_type}
                     </Badge>
                   )}
                 </div>
                 
-                <p className="text-xs text-slate-500 mb-1.5">Job #{job.job_number}</p>
+                <p className="text-sm text-slate-600 font-medium">Job #{job.job_number}</p>
               </div>
             </div>
             
-            <div className="flex gap-1 flex-shrink-0">
+            <div className="flex gap-2 flex-shrink-0">
               <Button
                 variant="outline"
                 size="sm"
                 onClick={() => setShowHistory(true)}
-                className="h-7 px-1.5 hover:bg-slate-100">
-                <History className="w-3.5 h-3.5 md:mr-1" />
-                <span className="hidden md:inline text-xs">History</span>
+                className="h-9 px-3 hover:bg-slate-100 border-2 font-semibold transition-all rounded-xl">
+                <History className="w-4 h-4 md:mr-2" />
+                <span className="hidden md:inline">History</span>
               </Button>
               <Button
                 variant="outline"
                 size="sm"
                 onClick={() => setShowPriceList(true)}
-                className="h-7 px-1.5 hover:bg-slate-100">
-                <DollarSign className="w-3.5 h-3.5 md:mr-1" />
-                <span className="hidden md:inline text-xs">Price</span>
+                className="h-9 px-3 hover:bg-slate-100 border-2 font-semibold transition-all rounded-xl">
+                <DollarSign className="w-4 h-4 md:mr-2" />
+                <span className="hidden md:inline">Price</span>
               </Button>
               {!isTechnician && (
                 <Button
                   variant="outline"
                   size="sm"
                   onClick={() => setShowAssistant(true)}
-                  className="h-7 px-1.5 hover:bg-slate-100">
-                  <Sparkles className="w-3.5 h-3.5 md:mr-1" />
-                  <span className="hidden md:inline text-xs">AI</span>
+                  className="h-9 px-3 hover:bg-slate-100 border-2 font-semibold transition-all rounded-xl">
+                  <Sparkles className="w-4 h-4 md:mr-2" />
+                  <span className="hidden md:inline">AI</span>
                 </Button>
               )}
             </div>
           </div>
 
-          <div className="space-y-1.5">
-            <div className="flex items-start gap-1.5">
-              <MapPin className="text-slate-400 w-4 h-4 mt-0.5 flex-shrink-0" />
-              <span className="text-sm md:text-base font-semibold text-slate-900">{job.address}</span>
+          <div className="space-y-3">
+            <div className="flex items-start gap-2">
+              <MapPin className="text-slate-500 w-5 h-5 mt-0.5 flex-shrink-0" />
+              <span className="text-base md:text-lg font-bold text-[#000000] tracking-tight">{job.address}</span>
             </div>
 
-            <div className="flex flex-wrap gap-1">
+            <div className="flex flex-wrap gap-2">
               {job.customer_phone && (
                 <Button
-                  size="icon"
-                  variant="ghost"
+                  size="sm"
+                  variant="outline"
                   onClick={() => window.location.href = `tel:${job.customer_phone}`}
-                  className="h-7 w-7 hover:bg-blue-100 text-slate-600 hover:text-blue-700"
+                  className="h-9 px-3 hover:bg-blue-50 hover:border-blue-300 text-slate-700 hover:text-blue-700 border-2 font-semibold transition-all rounded-xl"
                   title="Call"
                 >
-                  <Phone className="w-4 h-4" />
+                  <Phone className="w-4 h-4 mr-2" />
+                  Call
                 </Button>
               )}
               <Button
-                size="icon"
-                variant="ghost"
+                size="sm"
+                variant="outline"
                 onClick={() => window.open(`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(job.address)}`, '_blank')}
-                className="h-7 w-7 hover:bg-green-100 text-slate-600 hover:text-green-700"
+                className="h-9 px-3 hover:bg-green-50 hover:border-green-300 text-slate-700 hover:text-green-700 border-2 font-semibold transition-all rounded-xl"
                 title="Directions"
               >
-                <Navigation className="w-4 h-4" />
+                <Navigation className="w-4 h-4 mr-2" />
+                Directions
               </Button>
               {job.customer_email && (
                 <Button
-                  size="icon"
-                  variant="ghost"
+                  size="sm"
+                  variant="outline"
                   onClick={() => window.location.href = `mailto:${job.customer_email}`}
-                  className="h-7 w-7 hover:bg-purple-100 text-slate-600 hover:text-purple-700"
+                  className="h-9 px-3 hover:bg-purple-50 hover:border-purple-300 text-slate-700 hover:text-purple-700 border-2 font-semibold transition-all rounded-xl"
                   title="Email"
                 >
-                  <Mail className="w-4 h-4" />
+                  <Mail className="w-4 h-4 mr-2" />
+                  Email
                 </Button>
               )}
             </div>
           </div>
 
-          <div className="bg-white rounded-lg p-2 border border-slate-200 shadow-sm">
-            <div className="grid grid-cols-6 md:grid-cols-8 gap-2">
+          <div className="bg-white rounded-xl p-4 border-2 border-slate-200 shadow-sm">
+            <div className="grid grid-cols-6 md:grid-cols-8 gap-3">
               <div className="col-span-2 md:col-span-2">
                 <EditableField
                   value={job.scheduled_date}
@@ -459,7 +462,7 @@ export default function JobDetails({ job, onClose, onStatusChange }) {
                     { value: "Multiple", label: "Multiple" },
                     { value: "Custom Garage Door", label: "Custom Garage Door" }
                   ]}
-                  className={`text-xs font-semibold ${job.product ? productColors[job.product] : ""}`}
+                  className={`text-sm font-bold ${job.product ? productColors[job.product] : ""}`}
                   placeholder="Product"
                 />
               </div>
@@ -472,29 +475,29 @@ export default function JobDetails({ job, onClose, onStatusChange }) {
                   options={jobTypes.map((jt) => ({ value: jt.id, label: jt.name }))}
                   displayFormat={(val) => jobTypes.find((jt) => jt.id === val)?.name || val}
                   placeholder="Job type"
-                  className="text-xs font-semibold bg-purple-50 text-purple-700 border-purple-200"
+                  className="text-sm font-bold bg-purple-50 text-purple-900 border-purple-200 border-2"
                 />
               </div>
             </div>
             
-            <div className="mt-2 pt-2 border-t border-slate-100">
+            <div className="mt-3 pt-3 border-t-2 border-slate-200">
               <div className="flex items-center justify-between">
-                <div className="flex items-center gap-1">
-                  <User className="w-3 h-3 text-slate-400" />
-                  <span className="text-xs font-semibold text-slate-600">Technicians</span>
+                <div className="flex items-center gap-2">
+                  <User className="w-4 h-4 text-slate-500" />
+                  <span className="text-sm font-bold text-[#000000]">Technicians</span>
                 </div>
-                <div className="flex items-center gap-1">
+                <div className="flex items-center gap-2">
                   {(Array.isArray(job.assigned_to_name) ? job.assigned_to_name : job.assigned_to_name ? [job.assigned_to_name] : []).slice(0, 3).map((name, idx) => (
                     <div
                       key={idx}
-                      className={`${getAvatarColor(name)} w-6 h-6 rounded-full flex items-center justify-center text-white text-xs font-bold shadow-sm`}
+                      className={`${getAvatarColor(name)} w-8 h-8 rounded-full flex items-center justify-center text-white text-xs font-bold shadow-md`}
                       title={name}
                     >
                       {getInitials(name)}
                     </div>
                   ))}
                   {Array.isArray(job.assigned_to_name) && job.assigned_to_name.length > 3 && (
-                    <div className="bg-slate-300 w-6 h-6 rounded-full flex items-center justify-center text-slate-700 text-xs font-bold shadow-sm">
+                    <div className="bg-slate-300 w-8 h-8 rounded-full flex items-center justify-center text-slate-900 text-xs font-bold shadow-md">
                       +{job.assigned_to_name.length - 3}
                     </div>
                   )}
@@ -516,31 +519,31 @@ export default function JobDetails({ job, onClose, onStatusChange }) {
           </div>
         </CardHeader>
         
-        <CardContent className="p-2">
+        <CardContent className="p-4">
           <Tabs defaultValue="details" className="w-full">
-            <TabsList className="w-full grid grid-cols-4 mb-2 h-9">
-              <TabsTrigger value="details" className="text-xs">Details</TabsTrigger>
-              <TabsTrigger value="visit" className="text-xs">
-                <ClipboardCheck className="w-3 h-3 md:mr-1" />
+            <TabsList className="w-full grid grid-cols-4 mb-4 h-11">
+              <TabsTrigger value="details" className="font-semibold text-sm">Details</TabsTrigger>
+              <TabsTrigger value="visit" className="font-semibold text-sm">
+                <ClipboardCheck className="w-4 h-4 md:mr-2" />
                 <span className="hidden md:inline">Visit</span>
               </TabsTrigger>
-              <TabsTrigger value="form" className="text-xs">
-                <FileCheck className="w-3 h-3 md:mr-1" />
+              <TabsTrigger value="form" className="font-semibold text-sm">
+                <FileCheck className="w-4 h-4 md:mr-2" />
                 <span className="hidden md:inline">Form</span>
               </TabsTrigger>
-            <TabsTrigger value="files" className="text-xs">
-                <ImageIcon className="w-3 h-3 md:mr-1" />
+            <TabsTrigger value="files" className="font-semibold text-sm">
+                <ImageIcon className="w-4 h-4 md:mr-2" />
                 <span className="hidden md:inline">Files</span>
               </TabsTrigger>
             </TabsList>
 
-            <TabsContent value="details" className="space-y-3 mt-2">
-              <div className="border-t pt-2">
-                <h3 className="text-xs font-semibold text-slate-900 mb-1.5 flex items-center gap-1.5">
-                  <FileText className="w-3.5 h-3.5 text-slate-600" />
+            <TabsContent value="details" className="space-y-4 mt-4">
+              <div className="border-t-2 border-slate-200 pt-4">
+                <h3 className="text-sm font-bold text-[#000000] mb-3 flex items-center gap-2 tracking-tight">
+                  <FileText className="w-4 h-4 text-slate-600" />
                   Notes
                 </h3>
-                <div className="bg-amber-50 border border-amber-200 rounded-lg p-2">
+                <div className="bg-[#fae008]/10 border-2 border-[#fae008]/30 rounded-xl p-3">
                   <RichTextEditor
                     value={notes}
                     onChange={setNotes}
@@ -551,18 +554,18 @@ export default function JobDetails({ job, onClose, onStatusChange }) {
               </div>
 
               <div>
-                <h3 className="text-xs font-semibold text-slate-900 mb-1.5">Pricing</h3>
+                <h3 className="text-sm font-bold text-[#000000] mb-2 tracking-tight">Pricing</h3>
                 <Input
                   value={pricingProvided}
                   onChange={(e) => setPricingProvided(e.target.value)}
                   onBlur={handlePricingProvidedBlur}
                   placeholder="Enter pricing..."
-                  className="text-xs h-8 bg-slate-50"
+                  className="h-11 bg-slate-50 border-2 border-slate-300 focus:border-[#fae008] focus:ring-2 focus:ring-[#fae008]/20 transition-all rounded-xl"
                 />
               </div>
 
               <div>
-                <h3 className="text-xs font-semibold text-slate-900 mb-1.5">Additional Info</h3>
+                <h3 className="text-sm font-bold text-[#000000] mb-2 tracking-tight">Additional Info</h3>
                 <RichTextEditor
                   value={additionalInfo}
                   onChange={setAdditionalInfo}
@@ -571,31 +574,31 @@ export default function JobDetails({ job, onClose, onStatusChange }) {
                 />
               </div>
 
-              <div className="flex flex-col gap-2 pt-2 border-t">
+              <div className="flex flex-col gap-3 pt-4 border-t-2 border-slate-200">
                 {!activeCheckIn ? (
                   <Button
                     onClick={handleCheckIn}
                     disabled={checkInMutation.isPending}
-                    className="w-full bg-blue-600 hover:bg-blue-700 h-9"
+                    className="w-full bg-blue-600 hover:bg-blue-700 h-12 font-semibold shadow-md hover:shadow-lg transition-all rounded-xl"
                   >
-                    <LogIn className="w-3.5 h-3.5 mr-1.5" />
+                    <LogIn className="w-5 h-5 mr-2" />
                     {checkInMutation.isPending ? 'Checking In...' : 'Check In'}
                   </Button>
                 ) : (
-                  <div className="bg-blue-50 border border-blue-300 rounded-lg p-2">
-                    <div className="flex items-center gap-1.5 text-blue-700">
-                      <Timer className="w-4 h-4" />
-                      <span className="text-xs font-semibold">
+                  <div className="bg-blue-50 border-2 border-blue-300 rounded-xl p-3">
+                    <div className="flex items-center gap-2 text-blue-900">
+                      <Timer className="w-5 h-5" />
+                      <span className="text-sm font-bold">
                         Checked in at {format(new Date(activeCheckIn.check_in_time), 'h:mm a')}
                       </span>
                     </div>
                   </div>
                 )}
                 {totalJobTime > 0 && (
-                  <div className="bg-slate-50 border border-slate-200 rounded-lg p-2">
+                  <div className="bg-slate-50 border-2 border-slate-200 rounded-xl p-3">
                     <div className="flex items-center justify-between">
-                      <span className="text-xs text-slate-600">Total Time:</span>
-                      <span className="text-xs font-semibold text-slate-900">{totalJobTime.toFixed(1)}h</span>
+                      <span className="text-sm text-slate-700 font-semibold">Total Time:</span>
+                      <span className="text-sm font-bold text-[#000000]">{totalJobTime.toFixed(1)}h</span>
                     </div>
                   </div>
                 )}
