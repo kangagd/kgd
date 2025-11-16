@@ -116,7 +116,7 @@ export default function JobList({ jobs, isLoading, onSelectJob }) {
   return (
     <div className="grid gap-4">
       {jobs.map((job) => (
-        <Card 
+        <Card
           key={job.id}
           className="hover:shadow-lg transition-shadow cursor-pointer"
           onClick={() => onSelectJob(job)}
@@ -150,23 +150,21 @@ export default function JobList({ jobs, isLoading, onSelectJob }) {
             </div>
 
             <div className="space-y-2">
-              <div className="flex flex-wrap gap-4">
+              <div className="flex flex-wrap gap-2 items-center">
                 <div className="flex items-center gap-2 text-slate-700">
                   <Calendar className="w-4 h-4 text-slate-400" />
                   <span className="text-sm">
                     {job.scheduled_date && format(parseISO(job.scheduled_date), 'MMM d, yyyy')}
                   </span>
                 </div>
-                
+
                 {job.scheduled_time && (
                   <div className="flex items-center gap-2 text-slate-700">
                     <Clock className="w-4 h-4 text-slate-400" />
                     <span className="text-sm">{job.scheduled_time}</span>
                   </div>
                 )}
-              </div>
 
-              <div className="flex flex-wrap gap-2 pt-2">
                 {job.assigned_to_name && job.assigned_to_name.length > 0 && (
                   Array.isArray(job.assigned_to_name) ? (
                     job.assigned_to_name.map((name, idx) => (
@@ -182,14 +180,16 @@ export default function JobList({ jobs, isLoading, onSelectJob }) {
                     </Badge>
                   )
                 )}
-                
+              </div>
+
+              <div className="flex flex-wrap gap-2">
                 {job.product && (
                   <Badge variant="outline" className={productColors[job.product]}>
                     <Package className="w-3 h-3 mr-1" />
                     {job.product}
                   </Badge>
                 )}
-                
+
                 {job.job_type_name && (
                   <Badge variant="outline" className="text-slate-700">
                     <Briefcase className="w-3 h-3 mr-1" />
