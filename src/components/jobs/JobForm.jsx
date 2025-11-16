@@ -15,7 +15,6 @@ import {
   DialogTitle,
   DialogFooter,
 } from "@/components/ui/dialog";
-import MeasurementsForm from "./MeasurementsForm";
 import MultiTechnicianSelect from "./MultiTechnicianSelect";
 
 export default function JobForm({ job, jobTypes, technicians, onSubmit, onCancel, isSubmitting, preselectedCustomerId }) {
@@ -293,22 +292,6 @@ export default function JobForm({ job, jobTypes, technicians, onSubmit, onCancel
               </div>
 
               <div className="space-y-2">
-                <Label htmlFor="outcome">Outcome</Label>
-                <Select value={formData.outcome} onValueChange={(val) => setFormData({ ...formData, outcome: val })}>
-                  <SelectTrigger>
-                    <SelectValue placeholder="Select outcome" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="new_quote">New Quote</SelectItem>
-                    <SelectItem value="update_quote">Update Quote</SelectItem>
-                    <SelectItem value="send_invoice">Send Invoice</SelectItem>
-                    <SelectItem value="completed">Completed</SelectItem>
-                    <SelectItem value="return_visit_required">Return Visit Required</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-
-              <div className="space-y-2">
                 <Label htmlFor="scheduled_date">Scheduled Date *</Label>
                 <Input
                   id="scheduled_date"
@@ -361,14 +344,6 @@ export default function JobForm({ job, jobTypes, technicians, onSubmit, onCancel
                 onChange={(e) => setFormData({ ...formData, additional_info: e.target.value })}
                 rows={3}
                 placeholder="Add any additional information..."
-              />
-            </div>
-
-            <div className="pt-4 border-t border-slate-200">
-              <h3 className="font-semibold text-slate-900 mb-4">Measurements</h3>
-              <MeasurementsForm
-                measurements={formData.measurements}
-                onChange={(measurements) => setFormData({ ...formData, measurements })}
               />
             </div>
 
