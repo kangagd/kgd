@@ -4,7 +4,7 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Textarea } from "@/components/ui/textarea";
 import { Input } from "@/components/ui/input";
-import { ArrowLeft, Edit, MapPin, Phone, Calendar, Clock, User, Briefcase, FileText, Image as ImageIcon, DollarSign, Sparkles, LogIn, FileCheck, History, Package } from "lucide-react";
+import { ArrowLeft, MapPin, Phone, Calendar, Clock, User, Briefcase, FileText, Image as ImageIcon, DollarSign, Sparkles, LogIn, FileCheck, History, Package } from "lucide-react";
 import { format, parseISO } from "date-fns";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { base44 } from "@/api/base44Client";
@@ -13,6 +13,7 @@ import PriceListModal from "./PriceListModal";
 import TechnicianAssistant from "./TechnicianAssistant";
 import MeasurementsForm from "./MeasurementsForm";
 import ChangeHistoryModal from "./ChangeHistoryModal";
+import EditableField from "./EditableField";
 
 const statusColors = {
   scheduled: "bg-blue-100 text-blue-800 border-blue-200",
@@ -37,7 +38,7 @@ const productColors = {
   "Custom Garage Door": "bg-pink-100 text-pink-700",
 };
 
-export default function JobDetails({ job, onClose, onEdit, onStatusChange }) {
+export default function JobDetails({ job, onClose, onStatusChange }) {
   const [showPriceList, setShowPriceList] = useState(false);
   const [showAssistant, setShowAssistant] = useState(false);
   const [showHistory, setShowHistory] = useState(false);
@@ -48,6 +49,16 @@ export default function JobDetails({ job, onClose, onEdit, onStatusChange }) {
   const [pricingProvided, setPricingProvided] = useState(job.pricing_provided || "");
   const [additionalInfo, setAdditionalInfo] = useState(job.additional_info || "");
   const queryClient = useQueryClient();
+
+  const { data: jobTypes = [] } = useQuery({
+    queryKey: ['jobTypes'],
+    queryFn: () => base44.entities.JobType.filter({ is_active: true }),
+  });
+
+  const { data: technicians = [] } = useQuery({
+    queryKey: ['technicians'],
+    queryFn: () => base44.entities.User.filter({ is_field_technician: true }),
+  });
 
   useEffect(() => {
     const loadUser = async () => {
@@ -85,6 +96,13 @@ export default function JobDetails({ job, onClose, onEdit, onStatusChange }) {
     },
   });
 
+  const updateJobMutation = useMutation({
+    mutationFn: ({ field, value }) => base44.entities.Job.update(job.id, { [field]: value }),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['jobs'] });
+    },
+  });
+
   const updateMeasurementsMutation = useMutation({
     mutationFn: (data) => base44.entities.Job.update(job.id, { measurements: data }),
     onSuccess: () => {
@@ -108,34 +126,6 @@ export default function JobDetails({ job, onClose, onEdit, onStatusChange }) {
     }
   };
 
-  const updateNotesMutation = useMutation({
-    mutationFn: (data) => base44.entities.Job.update(job.id, { notes: data }),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['jobs'] });
-    },
-  });
-
-  const updateOverviewMutation = useMutation({
-    mutationFn: (data) => base44.entities.Job.update(job.id, { overview: data }),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['jobs'] });
-    },
-  });
-
-  const updatePricingProvidedMutation = useMutation({
-    mutationFn: (data) => base44.entities.Job.update(job.id, { pricing_provided: data }),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['jobs'] });
-    },
-  });
-
-  const updateAdditionalInfoMutation = useMutation({
-    mutationFn: (data) => base44.entities.Job.update(job.id, { additional_info: data }),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['jobs'] });
-    },
-  });
-
   const isTechnician = user?.is_field_technician && user?.role !== 'admin';
 
   const handleCheckIn = () => {
@@ -147,31 +137,52 @@ export default function JobDetails({ job, onClose, onEdit, onStatusChange }) {
     updateMeasurementsMutation.mutate(data);
   };
 
+  const handleFieldSave = (fieldName, oldValue, newValue) => {
+    logChange(fieldName, oldValue, newValue);
+    updateJobMutation.mutate({ field: fieldName, value: newValue });
+  };
+
   const handleNotesBlur = () => {
     if (notes !== job.notes) {
       logChange('notes', job.notes, notes);
-      updateNotesMutation.mutate(notes);
+      updateJobMutation.mutate({ field: 'notes', value: notes });
     }
   };
 
   const handleOverviewBlur = () => {
     if (overview !== job.overview) {
       logChange('overview', job.overview, overview);
-      updateOverviewMutation.mutate(overview);
+      updateJobMutation.mutate({ field: 'overview', value: overview });
     }
   };
 
   const handlePricingProvidedBlur = () => {
     if (pricingProvided !== job.pricing_provided) {
       logChange('pricing_provided', job.pricing_provided, pricingProvided);
-      updatePricingProvidedMutation.mutate(pricingProvided);
+      updateJobMutation.mutate({ field: 'pricing_provided', value: pricingProvided });
     }
   };
 
   const handleAdditionalInfoBlur = () => {
     if (additionalInfo !== job.additional_info) {
       logChange('additional_info', job.additional_info, additionalInfo);
-      updateAdditionalInfoMutation.mutate(additionalInfo);
+      updateJobMutation.mutate({ field: 'additional_info', value: additionalInfo });
+    }
+  };
+
+  const handleAssignedToChange = (email) => {
+    const tech = technicians.find(t => t.email === email);
+    handleFieldSave('assigned_to', job.assigned_to, email);
+    if (tech) {
+      updateJobMutation.mutate({ field: 'assigned_to_name', value: tech.full_name });
+    }
+  };
+
+  const handleJobTypeChange = (jobTypeId) => {
+    const jobType = jobTypes.find(jt => jt.id === jobTypeId);
+    handleFieldSave('job_type_id', job.job_type_id, jobTypeId);
+    if (jobType) {
+      updateJobMutation.mutate({ field: 'job_type_name', value: jobType.name });
     }
   };
 
@@ -205,12 +216,6 @@ export default function JobDetails({ job, onClose, onEdit, onStatusChange }) {
               </div>
             </div>
             <div className="flex flex-col gap-2 flex-shrink-0">
-              {!isTechnician && (
-                <Button onClick={() => onEdit(job)} className="h-8 px-2 bg-orange-600 hover:bg-orange-700">
-                  <Edit className="w-4 h-4 md:mr-1" />
-                  <span className="hidden md:inline text-xs">Edit</span>
-                </Button>
-              )}
               <Button 
                 variant="outline"
                 size="sm"
@@ -263,38 +268,56 @@ export default function JobDetails({ job, onClose, onEdit, onStatusChange }) {
               <div className="grid gap-3 md:gap-4">
                 <div className="space-y-2 md:space-y-3">
                   <div className="grid grid-cols-3 gap-2 md:gap-3">
-                    <div className="flex items-center gap-2 p-2 md:p-3 bg-slate-50 rounded-lg">
-                      <Calendar className="w-3 h-3 md:w-4 md:h-4 text-slate-400" />
-                      <span className="text-xs md:text-sm">
-                        {job.scheduled_date && format(parseISO(job.scheduled_date), 'MMM d, yyyy')}
-                      </span>
-                    </div>
-                    {job.scheduled_time && (
-                      <div className="flex items-center gap-2 p-2 md:p-3 bg-slate-50 rounded-lg">
-                        <Clock className="w-3 h-3 md:w-4 md:h-4 text-slate-400" />
-                        <span className="text-xs md:text-sm">{job.scheduled_time}</span>
-                      </div>
-                    )}
-                    {job.assigned_to_name && (
-                      <div className="flex items-center gap-2 p-2 md:p-3 bg-slate-50 rounded-lg">
-                        <User className="w-3 h-3 md:w-4 md:h-4 text-slate-400" />
-                        <span className="text-xs md:text-sm">{job.assigned_to_name}</span>
-                      </div>
-                    )}
+                    <EditableField
+                      value={job.scheduled_date}
+                      onSave={(val) => handleFieldSave('scheduled_date', job.scheduled_date, val)}
+                      type="date"
+                      icon={Calendar}
+                      displayFormat={(val) => format(parseISO(val), 'MMM d, yyyy')}
+                      placeholder="Set date"
+                    />
+                    <EditableField
+                      value={job.scheduled_time}
+                      onSave={(val) => handleFieldSave('scheduled_time', job.scheduled_time, val)}
+                      type="time"
+                      icon={Clock}
+                      placeholder="Set time"
+                    />
+                    <EditableField
+                      value={job.assigned_to}
+                      onSave={handleAssignedToChange}
+                      type="select"
+                      icon={User}
+                      options={technicians.map(t => ({ value: t.email, label: t.full_name }))}
+                      displayFormat={(val) => technicians.find(t => t.email === val)?.full_name || val}
+                      placeholder="Assign"
+                    />
                   </div>
                   <div className="grid grid-cols-2 gap-2 md:gap-3">
-                    {job.product && (
-                      <div className={`flex items-center gap-2 p-2 md:p-3 rounded-lg ${productColors[job.product]}`}>
-                        <Package className="w-3 h-3 md:w-4 md:h-4" />
-                        <span className="text-xs md:text-sm font-medium">{job.product}</span>
-                      </div>
-                    )}
-                    {job.job_type_name && (
-                      <div className="flex items-center gap-2 p-2 md:p-3 bg-slate-50 rounded-lg">
-                        <Briefcase className="w-3 h-3 md:w-4 md:h-4 text-slate-400" />
-                        <span className="text-xs md:text-sm">{job.job_type_name}</span>
-                      </div>
-                    )}
+                    <EditableField
+                      value={job.product}
+                      onSave={(val) => handleFieldSave('product', job.product, val)}
+                      type="select"
+                      icon={Package}
+                      options={[
+                        { value: "Garage Door", label: "Garage Door" },
+                        { value: "Gate", label: "Gate" },
+                        { value: "Roller Shutter", label: "Roller Shutter" },
+                        { value: "Multiple", label: "Multiple" },
+                        { value: "Custom Garage Door", label: "Custom Garage Door" }
+                      ]}
+                      className={job.product ? productColors[job.product] : ""}
+                      placeholder="Select product"
+                    />
+                    <EditableField
+                      value={job.job_type_id}
+                      onSave={handleJobTypeChange}
+                      type="select"
+                      icon={Briefcase}
+                      options={jobTypes.map(jt => ({ value: jt.id, label: jt.name }))}
+                      displayFormat={(val) => jobTypes.find(jt => jt.id === val)?.name || val}
+                      placeholder="Select job type"
+                    />
                   </div>
                 </div>
               </div>
