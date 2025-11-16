@@ -23,6 +23,13 @@ const jobTypeColors = [
   "bg-pink-500", "bg-rose-500", "bg-lime-500",
 ];
 
+const jobTypeColorsBg = [
+  "bg-blue-50", "bg-green-50", "bg-orange-50", 
+  "bg-purple-50", "bg-indigo-50", "bg-amber-50",
+  "bg-red-50", "bg-cyan-50", "bg-teal-50", 
+  "bg-pink-50", "bg-rose-50", "bg-lime-50",
+];
+
 const statusColors = {
   open: "bg-slate-400",
   scheduled: "bg-blue-500",
@@ -34,6 +41,12 @@ const getJobTypeColor = (jobTypeName, allJobTypes) => {
   if (!jobTypeName) return "bg-slate-500";
   const index = allJobTypes.indexOf(jobTypeName);
   return jobTypeColors[index % jobTypeColors.length];
+};
+
+const getJobTypeBgColor = (jobTypeName, allJobTypes) => {
+  if (!jobTypeName) return "bg-slate-50";
+  const index = allJobTypes.indexOf(jobTypeName);
+  return jobTypeColorsBg[index % jobTypeColorsBg.length];
 };
 
 const getInitials = (name) => {
@@ -219,7 +232,7 @@ export default function WeekView({ jobs, currentDate, onJobClick, onQuickBook })
                                   draggable
                                   onDragStart={(e) => handleDragStart(e, job)}
                                   onDragEnd={handleDragEnd}
-                                  className={`p-2 rounded-lg cursor-move hover:shadow-md transition-all border-l-4 bg-white ${
+                                  className={`p-2 rounded-lg cursor-move hover:shadow-md transition-all border-l-4 ${getJobTypeBgColor(job.job_type_name, uniqueJobTypes)} ${
                                     draggedJob?.id === job.id ? 'opacity-50' : ''
                                   }`}
                                   style={{ borderLeftColor: statusColors[job.status] || '#94a3b8' }}
@@ -234,9 +247,9 @@ export default function WeekView({ jobs, currentDate, onJobClick, onQuickBook })
                                     <MapPin className="w-3 h-3 mt-0.5 flex-shrink-0" />
                                     <span className="truncate">{job.address}</span>
                                   </div>
-                                  {job.product && (
-                                    <div className="text-xs text-slate-500 mt-1 truncate">
-                                      {job.product}
+                                  {job.job_type_name && (
+                                    <div className="text-xs text-slate-600 font-medium mt-1 truncate">
+                                      {job.job_type_name}
                                     </div>
                                   )}
                                 </div>
