@@ -7,9 +7,10 @@ import { Textarea } from "@/components/ui/textarea";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Label } from "@/components/ui/label";
-import { ArrowLeft, MapPin, Phone, Calendar, Clock, User, Briefcase, FileText, Image as ImageIcon, DollarSign, Sparkles, LogIn, FileCheck, History, Package, ClipboardCheck, LogOut, Timer, AlertCircle } from "lucide-react";
+import { ArrowLeft, MapPin, Phone, Calendar, Clock, User, Briefcase, FileText, Image as ImageIcon, DollarSign, Sparkles, LogIn, FileCheck, History, Package, ClipboardCheck, LogOut, Timer, AlertCircle, ChevronDown } from "lucide-react";
 import { format, parseISO } from "date-fns";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 import { base44 } from "@/api/base44Client";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import PriceListModal from "./PriceListModal";
@@ -542,49 +543,54 @@ export default function JobDetails({ job, onClose, onStatusChange }) {
                 )}
 
                 {completedCheckIns.length > 0 && (
-                  <div className="pt-4 border-t space-y-3">
-                    <h4 className="text-sm font-semibold text-slate-900">Time Tracking</h4>
+                  <Collapsible defaultOpen={false} className="pt-4 border-t">
+                    <CollapsibleTrigger className="flex items-center justify-between w-full group">
+                      <h4 className="text-sm font-semibold text-slate-900">Time Tracking ({completedCheckIns.length} {completedCheckIns.length === 1 ? 'visit' : 'visits'})</h4>
+                      <ChevronDown className="w-4 h-4 text-slate-500 transition-transform group-data-[state=open]:rotate-180" />
+                    </CollapsibleTrigger>
                     
-                    {completedCheckIns.map((checkIn, index) => (
-                      <div key={checkIn.id} className="bg-slate-50 border border-slate-200 rounded-lg p-3">
-                        <div className="space-y-2">
-                          <div className="flex items-center justify-between">
-                            <span className="text-xs text-slate-500">Visit {completedCheckIns.length - index}</span>
-                            <span className="text-xs font-medium text-slate-700">{checkIn.technician_name}</span>
-                          </div>
-                          <div className="grid grid-cols-2 gap-2 text-xs">
-                            <div>
-                              <span className="text-slate-500">Check In:</span>
-                              <div className="font-medium text-slate-900">
-                                {format(new Date(checkIn.check_in_time), 'MMM d, h:mm a')}
-                              </div>
-                            </div>
-                            <div>
-                              <span className="text-slate-500">Check Out:</span>
-                              <div className="font-medium text-slate-900">
-                                {format(new Date(checkIn.check_out_time), 'MMM d, h:mm a')}
-                              </div>
-                            </div>
-                          </div>
-                          <div className="pt-2 border-t border-slate-300">
+                    <CollapsibleContent className="pt-3 space-y-3">
+                      {completedCheckIns.map((checkIn, index) => (
+                        <div key={checkIn.id} className="bg-slate-50 border border-slate-200 rounded-lg p-3">
+                          <div className="space-y-2">
                             <div className="flex items-center justify-between">
-                              <span className="text-xs text-slate-600">Duration:</span>
-                              <span className="text-sm font-semibold text-slate-900">
-                                {checkIn.duration_hours.toFixed(1)} hours
-                              </span>
+                              <span className="text-xs text-slate-500">Visit {completedCheckIns.length - index}</span>
+                              <span className="text-xs font-medium text-slate-700">{checkIn.technician_name}</span>
+                            </div>
+                            <div className="grid grid-cols-2 gap-2 text-xs">
+                              <div>
+                                <span className="text-slate-500">Check In:</span>
+                                <div className="font-medium text-slate-900">
+                                  {format(new Date(checkIn.check_in_time), 'MMM d, h:mm a')}
+                                </div>
+                              </div>
+                              <div>
+                                <span className="text-slate-500">Check Out:</span>
+                                <div className="font-medium text-slate-900">
+                                  {format(new Date(checkIn.check_out_time), 'MMM d, h:mm a')}
+                                </div>
+                              </div>
+                            </div>
+                            <div className="pt-2 border-t border-slate-300">
+                              <div className="flex items-center justify-between">
+                                <span className="text-xs text-slate-600">Duration:</span>
+                                <span className="text-sm font-semibold text-slate-900">
+                                  {checkIn.duration_hours.toFixed(1)} hours
+                                </span>
+                              </div>
                             </div>
                           </div>
                         </div>
-                      </div>
-                    ))}
+                      ))}
 
-                    <div className="bg-blue-50 border border-blue-200 rounded-lg p-3">
-                      <div className="flex items-center justify-between">
-                        <span className="text-sm font-medium text-blue-900">Total Time:</span>
-                        <span className="text-lg font-bold text-blue-900">{totalJobTime.toFixed(1)} hours</span>
+                      <div className="bg-blue-50 border border-blue-200 rounded-lg p-3">
+                        <div className="flex items-center justify-between">
+                          <span className="text-sm font-medium text-blue-900">Total Time:</span>
+                          <span className="text-lg font-bold text-blue-900">{totalJobTime.toFixed(1)} hours</span>
+                        </div>
                       </div>
-                    </div>
-                  </div>
+                    </CollapsibleContent>
+                  </Collapsible>
                 )}
               </div>
             </TabsContent>
