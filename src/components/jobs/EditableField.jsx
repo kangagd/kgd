@@ -80,60 +80,62 @@ export default function EditableField({
 
   if (isEditing) {
     return (
-      <div className={`flex items-center gap-2 p-2 md:p-3 bg-white border-2 border-[#fae008] rounded-lg ${className}`}>
-        {Icon && <Icon className="w-3 h-3 md:w-4 md:h-4 text-slate-400 flex-shrink-0" />}
-        {type === "multi-select" ?
-        <Popover open={popoverOpen} onOpenChange={setPopoverOpen}>
-            <PopoverTrigger asChild>
-              <Button variant="outline" className="flex-1 justify-start h-7 text-xs md:text-sm">
-                {multiSelectValue.length === 0 ?
-              "Select..." :
-              `${multiSelectValue.length} selected`}
-              </Button>
-            </PopoverTrigger>
-            <PopoverContent className="w-64" align="start">
-              <div className="space-y-2 max-h-64 overflow-y-auto">
+      <div className={`flex flex-wrap items-center gap-2 p-2 md:p-3 bg-white border-2 border-[#fae008] rounded-lg ${className}`}>
+        <div className="flex items-center gap-2 flex-1 min-w-0">
+          {Icon && <Icon className="w-3 h-3 md:w-4 md:h-4 text-slate-400 flex-shrink-0" />}
+          {type === "multi-select" ?
+          <Popover open={popoverOpen} onOpenChange={setPopoverOpen}>
+              <PopoverTrigger asChild>
+                <Button variant="outline" className="flex-1 justify-start h-7 text-xs md:text-sm">
+                  {multiSelectValue.length === 0 ?
+                "Select..." :
+                `${multiSelectValue.length} selected`}
+                </Button>
+              </PopoverTrigger>
+              <PopoverContent className="w-64" align="start">
+                <div className="space-y-2 max-h-64 overflow-y-auto">
+                  {options.map((opt) =>
+                <div key={opt.value} className="flex items-center space-x-2">
+                      <Checkbox
+                    id={`edit-${opt.value}`}
+                    checked={multiSelectValue.includes(opt.value)}
+                    onCheckedChange={() => toggleMultiSelect(opt.value)} />
+
+                      <label
+                    htmlFor={`edit-${opt.value}`}
+                    className="text-sm flex-1 cursor-pointer">
+
+                        {opt.label}
+                      </label>
+                    </div>
+                )}
+                </div>
+              </PopoverContent>
+            </Popover> :
+          type === "select" ?
+          <Select value={editValue} onValueChange={(val) => setEditValue(val)}>
+              <SelectTrigger className="h-7 text-xs md:text-sm border-0 focus:ring-0">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
                 {options.map((opt) =>
-              <div key={opt.value} className="flex items-center space-x-2">
-                    <Checkbox
-                  id={`edit-${opt.value}`}
-                  checked={multiSelectValue.includes(opt.value)}
-                  onCheckedChange={() => toggleMultiSelect(opt.value)} />
-
-                    <label
-                  htmlFor={`edit-${opt.value}`}
-                  className="text-sm flex-1 cursor-pointer">
-
-                      {opt.label}
-                    </label>
-                  </div>
+              <SelectItem key={opt.value} value={opt.value}>
+                    {opt.label}
+                  </SelectItem>
               )}
-              </div>
-            </PopoverContent>
-          </Popover> :
-        type === "select" ?
-        <Select value={editValue} onValueChange={(val) => setEditValue(val)}>
-            <SelectTrigger className="h-7 text-xs md:text-sm border-0 focus:ring-0">
-              <SelectValue />
-            </SelectTrigger>
-            <SelectContent>
-              {options.map((opt) =>
-            <SelectItem key={opt.value} value={opt.value}>
-                  {opt.label}
-                </SelectItem>
-            )}
-            </SelectContent>
-          </Select> :
+              </SelectContent>
+            </Select> :
 
-        <Input
-          ref={inputRef}
-          type={type}
-          value={editValue}
-          onChange={(e) => setEditValue(e.target.value)}
-          onKeyDown={handleKeyDown}
-          className="h-7 text-xs md:text-sm border-0 focus:ring-0 p-0" />
+          <Input
+            ref={inputRef}
+            type={type}
+            value={editValue}
+            onChange={(e) => setEditValue(e.target.value)}
+            onKeyDown={handleKeyDown}
+            className="h-7 text-xs md:text-sm border-0 focus:ring-0 p-0" />
 
-        }
+          }
+        </div>
         <div className="flex gap-1 flex-shrink-0">
           <Button
             size="icon"
