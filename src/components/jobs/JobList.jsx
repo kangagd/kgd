@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from "react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -9,6 +10,7 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { unescape } from "lodash";
 
 const statusColors = {
+  open: "bg-slate-100 text-slate-800 border-slate-200",
   in_progress: "bg-blue-100 text-blue-800 border-blue-200",
   new_quote: "bg-purple-100 text-purple-800 border-purple-200",
   update_quote: "bg-indigo-100 text-indigo-800 border-indigo-200",
@@ -20,6 +22,7 @@ const statusColors = {
 };
 
 const statusLabels = {
+  open: "Open",
   in_progress: "In Progress",
   new_quote: "New Quote",
   update_quote: "Update Quote",

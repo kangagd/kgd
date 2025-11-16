@@ -22,6 +22,7 @@ import CustomerEditModal from "../customers/CustomerEditModal";
 import RichTextEditor from "../common/RichTextEditor";
 
 const statusColors = {
+  open: "bg-slate-100 text-slate-800 border-slate-200",
   scheduled: "bg-blue-100 text-blue-800 border-blue-200",
   in_progress: "bg-orange-100 text-orange-800 border-orange-200",
   completed: "bg-green-100 text-green-800 border-green-200",
@@ -283,6 +284,11 @@ export default function JobDetails({ job, onClose, onStatusChange }) {
     setOutcome(value);
     logChange('outcome', job.outcome, value);
     updateJobMutation.mutate({ field: 'outcome', value });
+    
+    // Auto-set status to completed if outcome is completed or send_invoice
+    if (value === 'completed' || value === 'send_invoice') {
+      updateJobMutation.mutate({ field: 'status', value: 'completed' });
+    }
   };
 
   const handleAssignedToChange = (emails) => {

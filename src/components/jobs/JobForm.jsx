@@ -2,7 +2,6 @@
 import React, { useState, useEffect } from "react";
 import { Card, CardHeader, CardTitle, CardContent, CardFooter } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
-// Removed Textarea import as it's replaced by RichTextEditor
 import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
@@ -36,7 +35,7 @@ export default function JobForm({ job, jobTypes, technicians, onSubmit, onCancel
     scheduled_date: "",
     scheduled_time: "",
     expected_duration: null,
-    status: "scheduled",
+    status: "open", // Changed from "scheduled" to "open"
     outcome: "",
     notes: "",
     additional_info: "",
@@ -70,6 +69,17 @@ export default function JobForm({ job, jobTypes, technicians, onSubmit, onCancel
       const allJobs = await base44.entities.Job.list('-job_number', 1);
       const lastJobNumber = allJobs && allJobs[0]?.job_number ? allJobs[0].job_number : 4999;
       formData.job_number = lastJobNumber + 1;
+    }
+    
+    // Auto-set status to scheduled if date is in the future
+    if (formData.scheduled_date) {
+      const scheduledDate = new Date(formData.scheduled_date);
+      const today = new Date();
+      today.setHours(0, 0, 0, 0); // Normalize today's date to start of day
+      
+      if (scheduledDate >= today && formData.status === 'open') {
+        formData.status = 'scheduled';
+      }
     }
     
     onSubmit(formData);
@@ -285,6 +295,7 @@ export default function JobForm({ job, jobTypes, technicians, onSubmit, onCancel
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent>
+                    <SelectItem value="open">Open</SelectItem>
                     <SelectItem value="scheduled">Scheduled</SelectItem>
                     <SelectItem value="in_progress">In Progress</SelectItem>
                     <SelectItem value="completed">Completed</SelectItem>
