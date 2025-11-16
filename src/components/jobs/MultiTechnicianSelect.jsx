@@ -53,7 +53,7 @@ export default function MultiTechnicianSelect({ selectedEmails = [], technicians
         )}
       </div>
 
-      <Popover open={open} onOpenChange={setOpen}>
+      <Popover open={open} onOpenChange={setOpen} modal={false}>
         <PopoverTrigger asChild>
           <Button type="button" variant="outline" size="sm" className="w-full">
             <UserPlus className="w-4 h-4 mr-2" />
