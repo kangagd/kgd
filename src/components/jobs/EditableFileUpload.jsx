@@ -86,10 +86,10 @@ export default function EditableFileUpload({
   const isMediaUpload = accept.includes('image') || accept.includes('video');
 
   return (
-    <div className="space-y-3">
+    <div className="space-y-2">
       <div className="flex items-center justify-between">
-        <h4 className="text-sm font-bold text-[#000000] flex items-center gap-2">
-          {Icon && <Icon className="w-5 h-5 text-slate-500" />}
+        <h4 className="text-xs md:text-sm font-medium text-slate-700 flex items-center gap-2">
+          {Icon && <Icon className="w-4 h-4 text-slate-400" />}
           {label}
         </h4>
         <div className="flex gap-2">
@@ -100,9 +100,9 @@ export default function EditableFileUpload({
               variant="outline"
               onClick={() => cameraInputRef.current?.click()}
               disabled={uploading}
-              className="h-9 text-xs font-semibold border-2"
+              className="h-7 text-xs"
             >
-              <Camera className="w-4 h-4 mr-1.5" />
+              <Camera className="w-3 h-3 mr-1" />
               <span className="hidden md:inline">Camera</span>
             </Button>
           )}
@@ -112,12 +112,12 @@ export default function EditableFileUpload({
             variant="outline"
             onClick={() => fileInputRef.current?.click()}
             disabled={uploading}
-            className="h-9 text-xs font-semibold border-2"
+            className="h-7 text-xs"
           >
             {uploading ? (
               <>Uploading...</>
             ) : (
-              <><Upload className="w-4 h-4 mr-1.5" />{multiple ? 'Add' : 'Upload'}</>
+              <><Upload className="w-3 h-3 mr-1" />{multiple ? 'Add' : 'Upload'}</>
             )}
           </Button>
         </div>
@@ -146,11 +146,11 @@ export default function EditableFileUpload({
         onDragOver={handleDragOver}
         onDragLeave={handleDragLeave}
         onDrop={handleDrop}
-        className={`transition-all rounded-xl ${isDragging ? 'bg-blue-50 border-blue-400' : ''}`}
+        className={`transition-colors ${isDragging ? 'bg-blue-50 border-blue-300' : ''}`}
       >
         {displayFiles.length > 0 ? (
           isMediaUpload && multiple ? (
-            <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
+            <div className="grid grid-cols-2 md:grid-cols-3 gap-2">
               {displayFiles.map((url, index) => (
                 <div key={index} className="relative group">
                   {isImageFile(url) ? (
@@ -158,66 +158,66 @@ export default function EditableFileUpload({
                       <img 
                         src={url} 
                         alt={`Upload ${index + 1}`} 
-                        className="w-full h-32 object-cover rounded-xl border-2 border-slate-200 hover:border-slate-300 hover:opacity-90 transition-all shadow-sm"
+                        className="w-full h-24 md:h-32 object-cover rounded border hover:opacity-80"
                       />
                     </a>
                   ) : isVideoFile(url) ? (
-                    <div className="relative w-full h-32 rounded-xl border-2 border-slate-200 bg-slate-900 overflow-hidden">
+                    <div className="relative w-full h-24 md:h-32 rounded border bg-slate-900">
                       <video 
                         src={url}
-                        className="w-full h-full object-cover"
+                        className="w-full h-full object-cover rounded"
                         controls
                       />
-                      <div className="absolute top-2 left-2 bg-black/70 rounded-lg px-2 py-1">
-                        <Video className="w-4 h-4 text-white" />
+                      <div className="absolute top-2 left-2 bg-black/70 rounded px-2 py-1">
+                        <Video className="w-3 h-3 text-white" />
                       </div>
                     </div>
                   ) : (
-                    <a href={url} target="_blank" rel="noopener noreferrer" className="flex items-center justify-center w-full h-32 bg-slate-100 rounded-xl border-2 border-slate-200 hover:bg-slate-200 hover:border-slate-300 transition-all">
-                      <Upload className="w-8 h-8 text-slate-400" />
+                    <a href={url} target="_blank" rel="noopener noreferrer" className="flex items-center justify-center w-full h-24 md:h-32 bg-slate-100 rounded border hover:bg-slate-200">
+                      <Upload className="w-6 h-6 text-slate-400" />
                     </a>
                   )}
                   <button
                     type="button"
                     onClick={() => handleRemove(index)}
-                    className="absolute -top-2 -right-2 bg-red-500 text-white rounded-full p-2 opacity-0 group-hover:opacity-100 transition-all shadow-lg hover:bg-red-600"
+                    className="absolute top-1 right-1 bg-red-500 text-white rounded-full p-1 opacity-0 group-hover:opacity-100 transition-opacity"
                   >
-                    <X className="w-4 h-4" />
+                    <X className="w-3 h-3" />
                   </button>
                 </div>
               ))}
             </div>
           ) : (
-            <div className="flex items-center justify-between p-4 bg-slate-50 rounded-xl border-2 border-slate-200">
+            <div className="flex items-center justify-between p-3 bg-slate-50 rounded-lg">
               <a 
                 href={displayFiles[0]} 
                 target="_blank" 
                 rel="noopener noreferrer"
-                className="text-sm text-blue-600 hover:text-blue-700 hover:underline flex-1 font-semibold"
+                className="text-xs md:text-sm text-blue-600 hover:underline flex-1"
               >
                 View File
               </a>
               <button
                 type="button"
                 onClick={() => handleRemove(0)}
-                className="text-red-500 hover:text-red-700 transition-colors p-1"
+                className="text-red-500 hover:text-red-700"
               >
-                <X className="w-5 h-5" />
+                <X className="w-4 h-4" />
               </button>
             </div>
           )
         ) : (
           <div 
-            className={`text-sm text-center py-12 border-2 border-dashed rounded-xl cursor-pointer transition-all ${
+            className={`text-xs md:text-sm text-slate-400 text-center py-8 border-2 border-dashed rounded-lg cursor-pointer transition-colors ${
               isDragging 
-                ? 'border-blue-400 bg-blue-50 shadow-md' 
-                : 'border-slate-300 hover:border-slate-400 bg-slate-50 hover:bg-slate-100'
+                ? 'border-blue-400 bg-blue-50' 
+                : 'border-slate-200 hover:border-slate-300'
             }`}
             onClick={() => fileInputRef.current?.click()}
           >
-            <Upload className="w-12 h-12 mx-auto mb-3 text-slate-400" />
-            <p className="font-bold text-[#000000]">{isDragging ? 'Drop files here' : emptyText}</p>
-            <p className="text-sm text-slate-500 mt-2">or drag and drop</p>
+            <Upload className="w-8 h-8 mx-auto mb-2 text-slate-300" />
+            <p className="font-medium">{isDragging ? 'Drop files here' : emptyText}</p>
+            <p className="text-xs text-slate-400 mt-1">or drag and drop</p>
           </div>
         )}
       </div>

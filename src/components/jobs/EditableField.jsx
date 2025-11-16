@@ -8,8 +8,8 @@ import { Checkbox } from "@/components/ui/checkbox";
 import {
   Popover,
   PopoverContent,
-  PopoverTrigger,
-} from "@/components/ui/popover";
+  PopoverTrigger } from
+"@/components/ui/popover";
 
 export default function EditableField({
   value,
@@ -72,99 +72,99 @@ export default function EditableField({
 
   const toggleMultiSelect = (optionValue) => {
     setMultiSelectValue((prev) =>
-      prev.includes(optionValue) ?
-        prev.filter((v) => v !== optionValue) :
-        [...prev, optionValue]
+    prev.includes(optionValue) ?
+    prev.filter((v) => v !== optionValue) :
+    [...prev, optionValue]
     );
   };
 
   if (isEditing) {
     return (
-      <div className={`space-y-3 p-4 bg-white border-2 border-[#fae008] rounded-xl shadow-md ${className}`}>
-        <div className="flex items-center gap-3">
-          {Icon && <Icon className="w-5 h-5 text-slate-500 flex-shrink-0" />}
-          {type === "multi-select" ? (
-            <Popover open={popoverOpen} onOpenChange={setPopoverOpen}>
+      <div className={`space-y-2 p-2 md:p-3 bg-white border-2 border-[#fae008] rounded-lg ${className}`}>
+        <div className="flex items-center gap-2">
+          {Icon && <Icon className="w-3 h-3 md:w-4 md:h-4 text-slate-400 flex-shrink-0" />}
+          {type === "multi-select" ?
+          <Popover open={popoverOpen} onOpenChange={setPopoverOpen}>
               <PopoverTrigger asChild>
-                <Button variant="outline" className="flex-1 justify-start h-10 text-sm font-semibold border-2">
-                  {multiSelectValue.length === 0 ? "Select..." : `${multiSelectValue.length} selected`}
+                <Button variant="outline" className="flex-1 justify-start h-7 text-xs md:text-sm">
+                  {multiSelectValue.length === 0 ?
+                "Select..." :
+                `${multiSelectValue.length} selected`}
                 </Button>
               </PopoverTrigger>
-              <PopoverContent className="w-72 border-2 border-slate-300 shadow-lg" align="start">
-                <div className="space-y-3 max-h-72 overflow-y-auto">
-                  {options.map((opt) => (
-                    <div key={opt.value} className="flex items-center space-x-3 p-2 hover:bg-slate-50 rounded-lg transition-colors">
+              <PopoverContent className="w-64" align="start">
+                <div className="space-y-2 max-h-64 overflow-y-auto">
+                  {options.map((opt) =>
+                <div key={opt.value} className="flex items-center space-x-2">
                       <Checkbox
-                        id={`edit-${opt.value}`}
-                        checked={multiSelectValue.includes(opt.value)}
-                        onCheckedChange={() => toggleMultiSelect(opt.value)}
-                      />
+                    id={`edit-${opt.value}`}
+                    checked={multiSelectValue.includes(opt.value)}
+                    onCheckedChange={() => toggleMultiSelect(opt.value)} />
+
                       <label
-                        htmlFor={`edit-${opt.value}`}
-                        className="text-sm font-medium flex-1 cursor-pointer"
-                      >
+                    htmlFor={`edit-${opt.value}`}
+                    className="text-sm flex-1 cursor-pointer">
+
                         {opt.label}
                       </label>
                     </div>
-                  ))}
+                )}
                 </div>
               </PopoverContent>
-            </Popover>
-          ) : type === "select" ? (
-            <Select value={editValue} onValueChange={(val) => setEditValue(val)}>
-              <SelectTrigger className="h-10 text-sm font-semibold border-2">
+            </Popover> :
+          type === "select" ?
+          <Select value={editValue} onValueChange={(val) => setEditValue(val)}>
+              <SelectTrigger className="h-7 text-xs md:text-sm border-0 focus:ring-0">
                 <SelectValue />
               </SelectTrigger>
               <SelectContent>
-                {options.map((opt) => (
-                  <SelectItem key={opt.value} value={opt.value} className="font-medium">
+                {options.map((opt) =>
+              <SelectItem key={opt.value} value={opt.value}>
                     {opt.label}
                   </SelectItem>
-                ))}
+              )}
               </SelectContent>
-            </Select>
-          ) : (
-            <Input
-              ref={inputRef}
-              type={type}
-              value={editValue}
-              onChange={(e) => setEditValue(e.target.value)}
-              onKeyDown={handleKeyDown}
-              className="h-10 text-sm font-semibold border-2 border-slate-300 focus:border-[#fae008] focus:ring-2 focus:ring-[#fae008]/20 transition-all"
-            />
-          )}
+            </Select> :
+
+          <Input
+            ref={inputRef}
+            type={type}
+            value={editValue}
+            onChange={(e) => setEditValue(e.target.value)}
+            onKeyDown={handleKeyDown}
+            className="h-7 text-xs md:text-sm border-0 focus:ring-0 p-0" />
+
+          }
         </div>
-        <div className="flex gap-3 justify-center">
+        <div className="flex gap-2 justify-center">
           <Button
             size="icon"
             variant="ghost"
             onClick={handleCancel}
-            className="h-10 w-10 text-red-600 hover:text-red-700 hover:bg-red-50 border-2 border-transparent hover:border-red-200 transition-all rounded-lg"
-          >
-            <X className="w-5 h-5" />
+            className="h-7 w-7 text-red-600 hover:text-red-700 hover:bg-red-50">
+            <X className="w-4 h-4" />
           </Button>
           <Button
             size="icon"
             variant="ghost"
             onClick={handleSave}
-            className="h-10 w-10 text-green-600 hover:text-green-700 hover:bg-green-50 border-2 border-transparent hover:border-green-200 transition-all rounded-lg"
-          >
-            <Check className="w-5 h-5" />
+            className="h-7 w-7 text-green-600 hover:text-green-700 hover:bg-green-50">
+            <Check className="w-4 h-4" />
           </Button>
         </div>
-      </div>
-    );
+      </div>);
+
   }
 
   return (
     <div
-      onClick={() => setIsEditing(true)}
-      className="bg-white text-[#000000] p-4 text-sm font-bold rounded-xl flex items-center gap-3 cursor-pointer hover:bg-slate-50 hover:shadow-md border-2 border-slate-200 hover:border-slate-300 transition-all"
-    >
-      {Icon && <Icon className="w-5 h-5 text-slate-500 flex-shrink-0" />}
-      <span className="text-sm font-semibold">
+      onClick={() => setIsEditing(true)} className="bg-[#ffffff] text-slate-950 p-2 text-sm font-bold rounded-lg flex items-center gap-2 md:p-3 cursor-pointer hover:bg-slate-100 transition-colors">
+
+
+      {Icon && <Icon className="w-3 h-3 md:w-4 md:h-4 text-slate-400 flex-shrink-0" />}
+      <span className="text-xs md:text-sm">
         {value ? displayFormat ? displayFormat(value) : value : <span className="text-slate-400">{placeholder}</span>}
       </span>
-    </div>
-  );
+    </div>);
+
 }

@@ -1,6 +1,8 @@
+
 import React, { useState } from "react";
 import { Card, CardHeader, CardTitle, CardContent, CardFooter } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
+// Removed Textarea import as it's replaced by RichTextEditor for notes
 import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
@@ -25,13 +27,13 @@ export default function CustomerForm({ customer, onSubmit, onCancel, isSubmittin
   };
 
   return (
-    <Card className="border-2 border-slate-200 shadow-lg rounded-2xl">
-      <CardHeader className="border-b-2 border-slate-200 bg-gradient-to-r from-slate-50 to-white p-5">
+    <Card className="border-none shadow-lg">
+      <CardHeader className="border-b border-slate-100">
         <div className="flex items-center gap-4">
-          <Button variant="ghost" size="icon" onClick={onCancel} className="hover:bg-slate-100 rounded-xl transition-all">
-            <ArrowLeft className="w-5 h-5" />
+          <Button variant="ghost" size="icon" onClick={onCancel}>
+            <ArrowLeft className="w-4 h-4" />
           </Button>
-          <CardTitle className="text-2xl font-bold text-[#000000] tracking-tight">
+          <CardTitle className="text-2xl font-bold">
             {customer ? 'Edit Customer' : 'New Customer'}
           </CardTitle>
         </div>
@@ -39,20 +41,19 @@ export default function CustomerForm({ customer, onSubmit, onCancel, isSubmittin
       <form onSubmit={handleSubmit}>
         <CardContent className="p-6 space-y-6">
           <div className="space-y-2">
-            <Label htmlFor="name" className="text-sm font-bold text-[#000000]">Customer Name *</Label>
+            <Label htmlFor="name">Customer Name *</Label>
             <Input
               id="name"
               value={formData.name}
               onChange={(e) => setFormData({ ...formData, name: e.target.value })}
               required
-              className="h-11 border-2 border-slate-300 focus:border-[#fae008] focus:ring-2 focus:ring-[#fae008]/20 transition-all rounded-xl"
             />
           </div>
 
           <div className="space-y-2">
-            <Label htmlFor="customer_type" className="text-sm font-bold text-[#000000]">Customer Type</Label>
+            <Label htmlFor="customer_type">Customer Type</Label>
             <Select value={formData.customer_type} onValueChange={(val) => setFormData({ ...formData, customer_type: val })}>
-              <SelectTrigger className="h-11 border-2 border-slate-300 focus:border-[#fae008] rounded-xl">
+              <SelectTrigger>
                 <SelectValue placeholder="Select customer type" />
               </SelectTrigger>
               <SelectContent>
@@ -66,54 +67,50 @@ export default function CustomerForm({ customer, onSubmit, onCancel, isSubmittin
 
           <div className="grid md:grid-cols-2 gap-6">
             <div className="space-y-2">
-              <Label htmlFor="phone" className="text-sm font-bold text-[#000000]">Primary Phone</Label>
+              <Label htmlFor="phone">Primary Phone</Label>
               <Input
                 id="phone"
                 type="tel"
                 value={formData.phone}
                 onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
-                className="h-11 border-2 border-slate-300 focus:border-[#fae008] focus:ring-2 focus:ring-[#fae008]/20 transition-all rounded-xl"
               />
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="secondary_phone" className="text-sm font-bold text-[#000000]">Secondary Phone</Label>
+              <Label htmlFor="secondary_phone">Secondary Phone</Label>
               <Input
                 id="secondary_phone"
                 type="tel"
                 value={formData.secondary_phone}
                 onChange={(e) => setFormData({ ...formData, secondary_phone: e.target.value })}
-                className="h-11 border-2 border-slate-300 focus:border-[#fae008] focus:ring-2 focus:ring-[#fae008]/20 transition-all rounded-xl"
               />
             </div>
           </div>
 
           <div className="space-y-2">
-            <Label htmlFor="email" className="text-sm font-bold text-[#000000]">Email</Label>
+            <Label htmlFor="email">Email</Label>
             <Input
               id="email"
               type="email"
               value={formData.email}
               onChange={(e) => setFormData({ ...formData, email: e.target.value })}
-              className="h-11 border-2 border-slate-300 focus:border-[#fae008] focus:ring-2 focus:ring-[#fae008]/20 transition-all rounded-xl"
             />
           </div>
 
           <div className="space-y-2">
-            <Label htmlFor="address" className="text-sm font-bold text-[#000000]">Address</Label>
+            <Label htmlFor="address">Address</Label>
             <Input
               id="address"
               value={formData.address}
               onChange={(e) => setFormData({ ...formData, address: e.target.value })}
               placeholder="Default address for this customer"
-              className="h-11 border-2 border-slate-300 focus:border-[#fae008] focus:ring-2 focus:ring-[#fae008]/20 transition-all rounded-xl"
             />
           </div>
 
           <div className="space-y-2">
-            <Label htmlFor="status" className="text-sm font-bold text-[#000000]">Status</Label>
+            <Label htmlFor="status">Status</Label>
             <Select value={formData.status} onValueChange={(val) => setFormData({ ...formData, status: val })}>
-              <SelectTrigger className="h-11 border-2 border-slate-300 focus:border-[#fae008] rounded-xl">
+              <SelectTrigger>
                 <SelectValue />
               </SelectTrigger>
               <SelectContent>
@@ -124,7 +121,7 @@ export default function CustomerForm({ customer, onSubmit, onCancel, isSubmittin
           </div>
 
           <div className="space-y-2">
-            <Label htmlFor="notes" className="text-sm font-bold text-[#000000]">Notes</Label>
+            <Label htmlFor="notes">Notes</Label>
             <RichTextEditor
               value={formData.notes}
               onChange={(value) => setFormData({ ...formData, notes: value })}
@@ -132,11 +129,11 @@ export default function CustomerForm({ customer, onSubmit, onCancel, isSubmittin
             />
           </div>
         </CardContent>
-        <CardFooter className="border-t-2 border-slate-200 flex justify-end gap-3 p-5">
-          <Button type="button" variant="outline" onClick={onCancel} className="border-2 font-semibold hover:bg-slate-100 transition-all rounded-xl">
+        <CardFooter className="border-t border-slate-100 flex justify-end gap-3">
+          <Button type="button" variant="outline" onClick={onCancel}>
             Cancel
           </Button>
-          <Button type="submit" disabled={isSubmitting} className="bg-[#fae008] text-[#000000] hover:bg-[#e5d007] font-semibold shadow-md hover:shadow-lg transition-all rounded-xl">
+          <Button type="submit" disabled={isSubmitting} className="bg-orange-600 hover:bg-orange-700">
             {isSubmitting ? 'Saving...' : customer ? 'Update Customer' : 'Create Customer'}
           </Button>
         </CardFooter>
