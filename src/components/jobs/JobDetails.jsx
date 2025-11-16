@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from "react";
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -320,14 +321,6 @@ export default function JobDetails({ job, onClose, onStatusChange }) {
             </TabsList>
 
             <TabsContent value="details" className="space-y-3 md:space-y-4 mt-3 md:mt-4">
-              {job.outcome && (
-                <div className="flex gap-2 flex-wrap">
-                  <Badge className={outcomeColors[job.outcome]}>
-                    {job.outcome.replace(/_/g, ' ')}
-                  </Badge>
-                </div>
-              )}
-
               <div className="grid gap-3 md:gap-4">
                 <div className="space-y-2 md:space-y-3">
                   <div className="grid grid-cols-3 gap-2 md:gap-3">
