@@ -326,22 +326,22 @@ export default function JobDetails({ job, onClose, onStatusChange }) {
 
   return (
     <>
-      <Card className={`border-2 border-slate-200 shadow-lg rounded-2xl ${isTechnician ? 'rounded-none' : ''}`}>
-        <CardHeader className="border-b-2 border-slate-200 bg-gradient-to-r from-slate-50 to-white p-4 md:p-6 space-y-3">
-          <div className="flex items-start justify-between gap-3">
-            <div className="flex items-start gap-3 flex-1 min-w-0">
+      <Card className={`border-2 border-slate-200 shadow-lg ${isTechnician ? 'rounded-none' : 'rounded-2xl'}`}>
+        <CardHeader className="border-b-2 border-slate-200 bg-gradient-to-r from-slate-50 to-white p-3 md:p-4 space-y-2 md:space-y-3">
+          <div className="flex items-start justify-between gap-2">
+            <div className="flex items-start gap-2 flex-1 min-w-0">
               <Button 
                 variant="ghost" 
                 size="icon" 
                 onClick={onClose} 
-                className="h-9 w-9 flex-shrink-0 hover:bg-slate-200 rounded-xl transition-colors"
+                className="h-8 w-8 md:h-9 md:w-9 flex-shrink-0 hover:bg-slate-200 rounded-xl transition-colors"
               >
-                <ArrowLeft className="w-5 h-5" />
+                <ArrowLeft className="w-4 h-4 md:w-5 md:h-5" />
               </Button>
               <div className="flex-1 min-w-0">
-                <div className="flex items-center gap-2 flex-wrap mb-1">
+                <div className="flex items-center gap-1.5 flex-wrap mb-0.5">
                   <CardTitle
-                    className="text-xl md:text-2xl font-bold text-[#000000] cursor-pointer hover:text-[#fae008] transition-colors tracking-tight"
+                    className="text-lg md:text-xl font-bold text-[#000000] cursor-pointer hover:text-[#fae008] transition-colors tracking-tight"
                     onClick={() => setShowCustomerEdit(true)}
                   >
                     {job.customer_name}
@@ -353,50 +353,50 @@ export default function JobDetails({ job, onClose, onStatusChange }) {
                   )}
                 </div>
                 
-                <p className="text-sm text-slate-500 font-medium">Job #{job.job_number}</p>
+                <p className="text-xs md:text-sm text-slate-500 font-medium">Job #{job.job_number}</p>
               </div>
             </div>
             
-            <div className="flex gap-2 flex-shrink-0">
+            <div className="flex gap-1 flex-shrink-0">
               <Button
                 variant="outline"
                 size="sm"
                 onClick={() => setShowHistory(true)}
-                className="h-9 px-3 hover:bg-slate-100 border-2 font-semibold transition-all"
+                className="h-8 md:h-9 px-2 md:px-3 hover:bg-slate-100 border-2 font-semibold transition-all"
               >
-                <History className="w-4 h-4 md:mr-2" />
-                <span className="hidden md:inline">History</span>
+                <History className="w-4 h-4" />
+                <span className="hidden md:inline ml-1">History</span>
               </Button>
               <Button
                 variant="outline"
                 size="sm"
                 onClick={() => setShowPriceList(true)}
-                className="h-9 px-3 hover:bg-slate-100 border-2 font-semibold transition-all"
+                className="h-8 md:h-9 px-2 md:px-3 hover:bg-slate-100 border-2 font-semibold transition-all"
               >
-                <DollarSign className="w-4 h-4 md:mr-2" />
-                <span className="hidden md:inline">Price</span>
+                <DollarSign className="w-4 h-4" />
+                <span className="hidden md:inline ml-1">Price</span>
               </Button>
               {!isTechnician && (
                 <Button
                   variant="outline"
                   size="sm"
                   onClick={() => setShowAssistant(true)}
-                  className="h-9 px-3 hover:bg-slate-100 border-2 font-semibold transition-all"
+                  className="h-8 md:h-9 px-2 md:px-3 hover:bg-slate-100 border-2 font-semibold transition-all"
                 >
-                  <Sparkles className="w-4 h-4 md:mr-2" />
-                  <span className="hidden md:inline">AI</span>
+                  <Sparkles className="w-4 h-4" />
+                  <span className="hidden md:inline ml-1">AI</span>
                 </Button>
               )}
             </div>
           </div>
 
-          <div className="space-y-3">
-            <div className="flex items-start gap-2">
-              <MapPin className="text-slate-400 w-5 h-5 mt-0.5 flex-shrink-0" />
-              <span className="text-base md:text-lg font-bold text-[#000000]">{job.address}</span>
+          <div className="space-y-2">
+            <div className="flex items-start gap-1.5">
+              <MapPin className="text-slate-400 w-4 h-4 md:w-5 md:h-5 mt-0.5 flex-shrink-0" />
+              <span className="text-sm md:text-base font-bold text-[#000000]">{job.address}</span>
             </div>
 
-            <div className="flex flex-wrap gap-2">
+            <div className="flex flex-wrap gap-1.5">
               {job.customer_phone && (
                 <Button
                   size="icon"
@@ -431,8 +431,8 @@ export default function JobDetails({ job, onClose, onStatusChange }) {
             </div>
           </div>
 
-          <div className="bg-white rounded-xl p-3 md:p-4 border-2 border-slate-200 shadow-sm">
-            <div className="grid grid-cols-6 md:grid-cols-8 gap-2 md:gap-3">
+          <div className="bg-white rounded-xl p-2.5 md:p-3 border-2 border-slate-200 shadow-sm">
+            <div className="grid grid-cols-6 md:grid-cols-8 gap-2">
               <div className="col-span-2">
                 <EditableField
                   value={job.scheduled_date}
@@ -449,7 +449,7 @@ export default function JobDetails({ job, onClose, onStatusChange }) {
                   onSave={(val) => handleFieldSave('scheduled_time', job.scheduled_time, val)}
                   type="time"
                   icon={Clock}
-                  placeholder="Set time"
+                  placeholder="Time"
                 />
               </div>
               <div className="col-span-1 md:col-span-2">
@@ -483,13 +483,13 @@ export default function JobDetails({ job, onClose, onStatusChange }) {
               </div>
             </div>
             
-            <div className="mt-3 pt-3 border-t-2 border-slate-200">
+            <div className="mt-2 pt-2 border-t-2 border-slate-200">
               <div className="flex items-center justify-between">
-                <div className="flex items-center gap-2">
-                  <User className="w-4 h-4 text-slate-400" />
-                  <span className="text-sm font-bold text-[#000000]">Technicians</span>
+                <div className="flex items-center gap-1.5">
+                  <User className="w-3.5 h-3.5 md:w-4 md:h-4 text-slate-400" />
+                  <span className="text-xs md:text-sm font-bold text-[#000000]">Technicians</span>
                 </div>
-                <div className="flex items-center gap-2">
+                <div className="flex items-center gap-1.5">
                   {(Array.isArray(job.assigned_to_name) ? job.assigned_to_name : job.assigned_to_name ? [job.assigned_to_name] : []).slice(0, 3).map((name, idx) => (
                     <div
                       key={idx}
@@ -522,31 +522,31 @@ export default function JobDetails({ job, onClose, onStatusChange }) {
           </div>
         </CardHeader>
         
-        <CardContent className="p-4 md:p-6">
+        <CardContent className="p-3 md:p-4">
           <Tabs defaultValue="details" className="w-full">
-            <TabsList className="w-full grid grid-cols-4 mb-4 h-11 bg-slate-100 p-1">
-              <TabsTrigger value="details" className="text-sm font-semibold">Details</TabsTrigger>
-              <TabsTrigger value="visit" className="text-sm font-semibold">
-                <ClipboardCheck className="w-4 h-4 md:mr-2" />
+            <TabsList className="w-full grid grid-cols-4 mb-3 h-10 md:h-11 bg-slate-100 p-1">
+              <TabsTrigger value="details" className="text-xs md:text-sm font-semibold">Details</TabsTrigger>
+              <TabsTrigger value="visit" className="text-xs md:text-sm font-semibold">
+                <ClipboardCheck className="w-3.5 h-3.5 md:w-4 md:h-4 md:mr-1.5" />
                 <span className="hidden md:inline">Visit</span>
               </TabsTrigger>
-              <TabsTrigger value="form" className="text-sm font-semibold">
-                <FileCheck className="w-4 h-4 md:mr-2" />
+              <TabsTrigger value="form" className="text-xs md:text-sm font-semibold">
+                <FileCheck className="w-3.5 h-3.5 md:w-4 md:h-4 md:mr-1.5" />
                 <span className="hidden md:inline">Form</span>
               </TabsTrigger>
-              <TabsTrigger value="files" className="text-sm font-semibold">
-                <ImageIcon className="w-4 h-4 md:mr-2" />
+              <TabsTrigger value="files" className="text-xs md:text-sm font-semibold">
+                <ImageIcon className="w-3.5 h-3.5 md:w-4 md:h-4 md:mr-1.5" />
                 <span className="hidden md:inline">Files</span>
               </TabsTrigger>
             </TabsList>
 
-            <TabsContent value="details" className="space-y-4 mt-4">
-              <div className="border-t-2 pt-4">
-                <h3 className="text-sm font-bold text-[#000000] mb-3 flex items-center gap-2">
+            <TabsContent value="details" className="space-y-3 mt-2">
+              <div className="border-t-2 pt-3">
+                <h3 className="text-sm font-bold text-[#000000] mb-2 flex items-center gap-1.5">
                   <FileText className="w-4 h-4 text-slate-600" />
                   Notes
                 </h3>
-                <div className="bg-[#fae008]/10 border-2 border-[#fae008]/30 rounded-xl p-3">
+                <div className="bg-[#fae008]/10 border-2 border-[#fae008]/30 rounded-xl p-2.5">
                   <RichTextEditor
                     value={notes}
                     onChange={setNotes}
@@ -563,21 +563,23 @@ export default function JobDetails({ job, onClose, onStatusChange }) {
                   onChange={(e) => setPricingProvided(e.target.value)}
                   onBlur={handlePricingProvidedBlur}
                   placeholder="Enter pricing..."
-                  className="text-sm h-11 border-2 border-slate-300 focus:border-[#fae008] focus:ring-2 focus:ring-[#fae008]/20 rounded-xl font-medium"
+                  className="text-sm h-10 md:h-11 border-2 border-slate-300 focus:border-[#fae008] focus:ring-2 focus:ring-[#fae008]/20 rounded-xl font-medium"
                 />
               </div>
 
               <div>
                 <h3 className="text-sm font-bold text-[#000000] mb-2">Additional Info</h3>
-                <RichTextEditor
-                  value={additionalInfo}
-                  onChange={setAdditionalInfo}
-                  onBlur={handleAdditionalInfoBlur}
-                  placeholder="Add info..."
-                />
+                <div className="border-2 border-slate-300 rounded-xl p-2.5 focus-within:border-[#fae008] focus-within:ring-2 focus-within:ring-[#fae008]/20 transition-all">
+                  <RichTextEditor
+                    value={additionalInfo}
+                    onChange={setAdditionalInfo}
+                    onBlur={handleAdditionalInfoBlur}
+                    placeholder="Add info..."
+                  />
+                </div>
               </div>
 
-              <div className="flex flex-col gap-3 pt-4 border-t-2">
+              <div className="flex flex-col gap-2.5 pt-3 border-t-2">
                 {!activeCheckIn ? (
                   <Button
                     onClick={handleCheckIn}
@@ -588,9 +590,9 @@ export default function JobDetails({ job, onClose, onStatusChange }) {
                     {checkInMutation.isPending ? 'Checking In...' : 'Check In'}
                   </Button>
                 ) : (
-                  <div className="bg-blue-50 border-2 border-blue-300 rounded-xl p-3">
+                  <div className="bg-blue-50 border-2 border-blue-300 rounded-xl p-2.5">
                     <div className="flex items-center gap-2 text-blue-700">
-                      <Timer className="w-5 h-5" />
+                      <Timer className="w-4 h-4" />
                       <span className="text-sm font-bold">
                         Checked in at {format(new Date(activeCheckIn.check_in_time), 'h:mm a')}
                       </span>
@@ -598,7 +600,7 @@ export default function JobDetails({ job, onClose, onStatusChange }) {
                   </div>
                 )}
                 {totalJobTime > 0 && (
-                  <div className="bg-slate-50 border-2 border-slate-200 rounded-xl p-3">
+                  <div className="bg-slate-50 border-2 border-slate-200 rounded-xl p-2.5">
                     <div className="flex items-center justify-between">
                       <span className="text-sm text-slate-600 font-semibold">Total Time:</span>
                       <span className="text-sm font-bold text-[#000000]">{totalJobTime.toFixed(1)}h</span>
@@ -608,40 +610,46 @@ export default function JobDetails({ job, onClose, onStatusChange }) {
               </div>
             </TabsContent>
 
-            <TabsContent value="visit" className="space-y-4 mt-4">
-              <div className="space-y-4">
+            <TabsContent value="visit" className="space-y-3 mt-2">
+              <div className="space-y-3">
                 <div>
-                  <Label className="text-sm font-bold text-[#000000] mb-2 block">Overview *</Label>
-                  <RichTextEditor
-                    value={overview}
-                    onChange={setOverview}
-                    onBlur={handleOverviewBlur}
-                    placeholder="Overview..."
-                  />
+                  <Label className="text-sm font-bold text-[#000000] mb-1.5 block">Overview *</Label>
+                  <div className="border-2 border-slate-300 rounded-xl p-2.5 focus-within:border-[#fae008] focus-within:ring-2 focus-within:ring-[#fae008]/20 transition-all">
+                    <RichTextEditor
+                      value={overview}
+                      onChange={setOverview}
+                      onBlur={handleOverviewBlur}
+                      placeholder="Overview..."
+                    />
+                  </div>
                 </div>
 
                 <div>
-                  <Label className="text-sm font-bold text-[#000000] mb-2 block">Next Steps *</Label>
-                  <RichTextEditor
-                    value={nextSteps}
-                    onChange={setNextSteps}
-                    onBlur={handleNextStepsBlur}
-                    placeholder="Next steps..."
-                  />
+                  <Label className="text-sm font-bold text-[#000000] mb-1.5 block">Next Steps *</Label>
+                  <div className="border-2 border-slate-300 rounded-xl p-2.5 focus-within:border-[#fae008] focus-within:ring-2 focus-within:ring-[#fae008]/20 transition-all">
+                    <RichTextEditor
+                      value={nextSteps}
+                      onChange={setNextSteps}
+                      onBlur={handleNextStepsBlur}
+                      placeholder="Next steps..."
+                    />
+                  </div>
                 </div>
 
                 <div>
-                  <Label className="text-sm font-bold text-[#000000] mb-2 block">Communication *</Label>
-                  <RichTextEditor
-                    value={communicationWithClient}
-                    onChange={setCommunicationWithClient}
-                    onBlur={handleCommunicationBlur}
-                    placeholder="Communication notes..."
-                  />
+                  <Label className="text-sm font-bold text-[#000000] mb-1.5 block">Communication *</Label>
+                  <div className="border-2 border-slate-300 rounded-xl p-2.5 focus-within:border-[#fae008] focus-within:ring-2 focus-within:ring-[#fae008]/20 transition-all">
+                    <RichTextEditor
+                      value={communicationWithClient}
+                      onChange={setCommunicationWithClient}
+                      onBlur={handleCommunicationBlur}
+                      placeholder="Communication notes..."
+                    />
+                  </div>
                 </div>
 
                 <div>
-                  <Label className="text-sm font-bold text-[#000000] mb-2 block">Outcome *</Label>
+                  <Label className="text-sm font-bold text-[#000000] mb-1.5 block">Outcome *</Label>
                   <Select value={outcome} onValueChange={handleOutcomeChange}>
                     <SelectTrigger className="h-11 text-sm border-2 border-slate-300 focus:border-[#fae008] focus:ring-2 focus:ring-[#fae008]/20 rounded-xl font-medium">
                       <SelectValue placeholder="Select outcome" />
@@ -657,14 +665,14 @@ export default function JobDetails({ job, onClose, onStatusChange }) {
                 </div>
 
                 {validationError && (
-                  <div className="bg-red-50 border-2 border-red-200 rounded-xl p-3 flex items-start gap-2">
-                    <AlertCircle className="w-5 h-5 text-red-600 mt-0.5 flex-shrink-0" />
+                  <div className="bg-red-50 border-2 border-red-200 rounded-xl p-2.5 flex items-start gap-2">
+                    <AlertCircle className="w-4 h-4 text-red-600 mt-0.5 flex-shrink-0" />
                     <span className="text-sm text-red-700 font-medium">{validationError}</span>
                   </div>
                 )}
 
                 {activeCheckIn && (
-                  <div className="pt-4 border-t-2">
+                  <div className="pt-3 border-t-2">
                     <Button
                       onClick={handleCheckOut}
                       disabled={checkOutMutation.isPending}
@@ -677,21 +685,21 @@ export default function JobDetails({ job, onClose, onStatusChange }) {
                 )}
 
                 {completedCheckIns.length > 0 && (
-                  <Collapsible defaultOpen={false} className="pt-4 border-t-2">
+                  <Collapsible defaultOpen={false} className="pt-3 border-t-2">
                     <CollapsibleTrigger className="flex items-center justify-between w-full group">
                       <h4 className="text-sm font-bold text-[#000000]">Time Tracking ({completedCheckIns.length})</h4>
-                      <ChevronDown className="w-5 h-5 text-slate-500 transition-transform group-data-[state=open]:rotate-180" />
+                      <ChevronDown className="w-4 h-4 text-slate-500 transition-transform group-data-[state=open]:rotate-180" />
                     </CollapsibleTrigger>
                     
-                    <CollapsibleContent className="pt-3 space-y-3">
+                    <CollapsibleContent className="pt-2.5 space-y-2.5">
                       {completedCheckIns.map((checkIn, index) => (
-                        <div key={checkIn.id} className="bg-slate-50 border-2 border-slate-200 rounded-xl p-3">
+                        <div key={checkIn.id} className="bg-slate-50 border-2 border-slate-200 rounded-xl p-2.5">
                           <div className="space-y-2">
                             <div className="flex items-center justify-between text-sm">
                               <span className="text-slate-500 font-medium">Visit {completedCheckIns.length - index}</span>
                               <span className="font-bold text-[#000000]">{checkIn.technician_name}</span>
                             </div>
-                            <div className="grid grid-cols-2 gap-2 text-sm">
+                            <div className="grid grid-cols-2 gap-2 text-xs md:text-sm">
                               <div>
                                 <span className="text-slate-500 font-medium">In:</span>
                                 <div className="font-bold text-[#000000]">
@@ -717,7 +725,7 @@ export default function JobDetails({ job, onClose, onStatusChange }) {
                         </div>
                       ))}
 
-                      <div className="bg-blue-50 border-2 border-blue-200 rounded-xl p-3">
+                      <div className="bg-blue-50 border-2 border-blue-200 rounded-xl p-2.5">
                         <div className="flex items-center justify-between">
                           <span className="text-sm font-bold text-blue-900">Total:</span>
                           <span className="text-base font-bold text-blue-900">{totalJobTime.toFixed(1)}h</span>
@@ -729,8 +737,8 @@ export default function JobDetails({ job, onClose, onStatusChange }) {
               </div>
             </TabsContent>
 
-            <TabsContent value="form" className="mt-4">
-              <div className="space-y-3">
+            <TabsContent value="form" className="mt-2">
+              <div className="space-y-2.5">
                 <h3 className="text-sm font-bold text-[#000000]">Measurements</h3>
                 <MeasurementsForm
                   measurements={measurements}
@@ -739,8 +747,8 @@ export default function JobDetails({ job, onClose, onStatusChange }) {
               </div>
             </TabsContent>
 
-            <TabsContent value="files" className="mt-4">
-              <div className="space-y-4">
+            <TabsContent value="files" className="mt-2">
+              <div className="space-y-3">
                 <EditableFileUpload
                   files={job.image_urls || []}
                   onFilesChange={handleImagesChange}
@@ -751,7 +759,7 @@ export default function JobDetails({ job, onClose, onStatusChange }) {
                   emptyText="Upload media"
                 />
 
-                <div className="grid md:grid-cols-2 gap-3 pt-4 border-t-2">
+                <div className="grid md:grid-cols-2 gap-2.5 pt-3 border-t-2">
                   <EditableFileUpload
                     files={job.quote_url}
                     onFilesChange={handleQuoteChange}
