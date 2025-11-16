@@ -60,63 +60,20 @@ export default function Layout({ children, currentPageName }) {
   // Mobile-first layout for technicians
   if (isTechnician) {
     return (
-      <div className="min-h-screen flex flex-col bg-white">
-        <style>{`
-          :root {
-            --primary: 45 100% 51%;
-            --primary-foreground: 0 0% 0%;
-            --accent: 45 100% 51%;
-            --accent-foreground: 0 0% 0%;
-            --border: 45 100% 51%;
-            --input: 45 100% 51%;
-            --ring: 45 100% 51%;
-          }
-          
-          input:not([type="checkbox"]):not([type="radio"]),
-          textarea,
-          select,
-          .border-slate-200,
-          .border-slate-300,
-          .border-slate-100,
-          .border-amber-200,
-          .border-amber-300 {
-            border-color: #FAE008 !important;
-          }
-          
-          button:not(.text-red-500):not(.text-red-600):not(.hover\\:text-red-700):not([class*="bg-red"]):not([class*="bg-green"]):not([class*="bg-blue"]):not([class*="bg-slate"]):not([class*="bg-purple"]):not([class*="bg-indigo"]):not([class*="bg-amber"]):not([class*="bg-pink"]):not([class*="bg-orange"]):not([class*="text-slate"]):not(.ghost) {
-            background-color: #FAE008 !important;
-            color: #000 !important;
-          }
-          
-          button:not(.text-red-500):not(.text-red-600):not(.hover\\:text-red-700):not([class*="bg-red"]):not([class*="bg-green"]):not([class*="bg-blue"]):not([class*="bg-slate"]):not([class*="bg-purple"]):not([class*="bg-indigo"]):not([class*="bg-amber"]):not([class*="bg-pink"]):not([class*="bg-orange"]):not([class*="text-slate"]):not(.ghost):hover {
-            background-color: #e6cd07 !important;
-          }
-          
-          .bg-orange-50,
-          .hover\\:bg-orange-50:hover {
-            background-color: #fffacc !important;
-          }
-          
-          .text-orange-600,
-          .text-orange-700,
-          .hover\\:text-orange-600:hover,
-          .hover\\:text-orange-700:hover {
-            color: #000 !important;
-          }
-        `}</style>
-        <header className="bg-white border-b px-3 py-2 sticky top-0 z-50" style={{ borderColor: '#FAE008' }}>
+      <div className="min-h-screen flex flex-col bg-slate-50">
+        <header className="bg-white border-b border-slate-200 px-3 py-2 sticky top-0 z-50">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-2">
-              <div className="w-7 h-7 rounded-lg flex items-center justify-center" style={{ backgroundColor: '#FAE008' }}>
-                <Wrench className="w-3.5 h-3.5 text-black" />
+              <div className="w-7 h-7 bg-gradient-to-br from-orange-500 to-orange-600 rounded-lg flex items-center justify-center">
+                <Wrench className="w-3.5 h-3.5 text-white" />
               </div>
               <div>
-                <h1 className="font-bold text-black text-sm">KGD</h1>
+                <h1 className="font-bold text-slate-900 text-sm">KGD</h1>
               </div>
             </div>
             <div className="flex items-center gap-2">
-              <div className="w-7 h-7 rounded-full flex items-center justify-center" style={{ backgroundColor: '#FAE008' }}>
-                <span className="text-black font-medium text-xs">
+              <div className="w-7 h-7 bg-slate-200 rounded-full flex items-center justify-center">
+                <span className="text-slate-700 font-medium text-xs">
                   {user?.full_name?.charAt(0)?.toUpperCase() || 'U'}
                 </span>
               </div>
@@ -124,11 +81,11 @@ export default function Layout({ children, currentPageName }) {
           </div>
         </header>
 
-        <main className="flex-1 overflow-auto pb-16 bg-white">
+        <main className="flex-1 overflow-auto pb-16">
           {children}
         </main>
 
-        <nav className="fixed bottom-0 left-0 right-0 bg-white px-1 py-1.5" style={{ borderTop: '1px solid #FAE008' }}>
+        <nav className="fixed bottom-0 left-0 right-0 bg-white border-t border-slate-200 px-1 py-1.5">
           <div className="flex justify-around items-center max-w-screen-sm mx-auto">
             {navigationItems.map((item) => {
               const isActive = location.pathname === item.url;
@@ -138,10 +95,9 @@ export default function Layout({ children, currentPageName }) {
                   to={item.url}
                   className={`flex flex-col items-center gap-0.5 px-3 py-1.5 rounded-lg transition-colors ${
                     isActive 
-                      ? 'text-black' 
-                      : 'text-black hover:text-black'
+                      ? 'text-orange-600 bg-orange-50' 
+                      : 'text-slate-600 hover:text-orange-600 hover:bg-slate-50'
                   }`}
-                  style={isActive ? { backgroundColor: '#fffacc' } : {}}
                 >
                   <item.icon className="w-5 h-5" />
                   <span className="text-xs font-medium">{item.title}</span>
@@ -157,66 +113,23 @@ export default function Layout({ children, currentPageName }) {
   // Desktop layout for admins
   return (
     <SidebarProvider>
-      <style>{`
-        :root {
-          --primary: 45 100% 51%;
-          --primary-foreground: 0 0% 0%;
-          --accent: 45 100% 51%;
-          --accent-foreground: 0 0% 0%;
-          --border: 45 100% 51%;
-          --input: 45 100% 51%;
-          --ring: 45 100% 51%;
-        }
-        
-        input:not([type="checkbox"]):not([type="radio"]),
-        textarea,
-        select,
-        .border-slate-200,
-        .border-slate-300,
-        .border-slate-100,
-        .border-amber-200,
-        .border-amber-300 {
-          border-color: #FAE008 !important;
-        }
-        
-        button:not(.text-red-500):not(.text-red-600):not(.hover\\:text-red-700):not([class*="bg-red"]):not([class*="bg-green"]):not([class*="bg-blue"]):not([class*="bg-slate"]):not([class*="bg-purple"]):not([class*="bg-indigo"]):not([class*="bg-amber"]):not([class*="bg-pink"]):not([class*="bg-orange"]):not([class*="text-slate"]):not(.ghost) {
-          background-color: #FAE008 !important;
-          color: #000 !important;
-        }
-        
-        button:not(.text-red-500):not(.text-red-600):not(.hover\\:text-red-700):not([class*="bg-red"]):not([class*="bg-green"]):not([class*="bg-blue"]):not([class*="bg-slate"]):not([class*="bg-purple"]):not([class*="bg-indigo"]):not([class*="bg-amber"]):not([class*="bg-pink"]):not([class*="bg-orange"]):not([class*="text-slate"]):not(.ghost):hover {
-          background-color: #e6cd07 !important;
-        }
-        
-        .bg-orange-50,
-        .hover\\:bg-orange-50:hover {
-          background-color: #fffacc !important;
-        }
-        
-        .text-orange-600,
-        .text-orange-700,
-        .hover\\:text-orange-600:hover,
-        .hover\\:text-orange-700:hover {
-          color: #000 !important;
-        }
-      `}</style>
-      <div className="min-h-screen flex w-full bg-white">
-        <Sidebar style={{ borderRight: '1px solid #FAE008' }}>
-          <SidebarHeader className="p-4" style={{ borderBottom: '1px solid #FAE008' }}>
+      <div className="min-h-screen flex w-full bg-slate-50">
+        <Sidebar className="border-r border-slate-200">
+          <SidebarHeader className="border-b border-slate-200 p-4">
             <div className="flex items-center gap-3">
-              <div className="w-10 h-10 rounded-xl flex items-center justify-center shadow-lg" style={{ backgroundColor: '#FAE008' }}>
-                <Wrench className="w-5 h-5 text-black" />
+              <div className="w-10 h-10 bg-gradient-to-br from-orange-500 to-orange-600 rounded-xl flex items-center justify-center shadow-lg">
+                <Wrench className="w-5 h-5 text-white" />
               </div>
               <div>
-                <h2 className="font-bold text-black">FieldScheduler</h2>
-                <p className="text-xs text-black">Garage Door Services</p>
+                <h2 className="font-bold text-slate-900">FieldScheduler</h2>
+                <p className="text-xs text-slate-500">Garage Door Services</p>
               </div>
             </div>
           </SidebarHeader>
           
           <SidebarContent className="p-2">
             <SidebarGroup>
-              <SidebarGroupLabel className="text-xs font-medium text-black uppercase tracking-wider px-2 py-2">
+              <SidebarGroupLabel className="text-xs font-medium text-slate-500 uppercase tracking-wider px-2 py-2">
                 Navigation
               </SidebarGroupLabel>
               <SidebarGroupContent>
@@ -225,12 +138,11 @@ export default function Layout({ children, currentPageName }) {
                     <SidebarMenuItem key={item.title}>
                       <SidebarMenuButton 
                         asChild 
-                        className={`transition-colors duration-200 rounded-lg mb-1 ${
-                          location.pathname === item.url ? 'text-black' : ''
+                        className={`hover:bg-orange-50 hover:text-orange-700 transition-colors duration-200 rounded-lg mb-1 ${
+                          location.pathname === item.url ? 'bg-orange-50 text-orange-700' : ''
                         }`}
-                        style={location.pathname === item.url ? { backgroundColor: '#fffacc' } : {}}
                       >
-                        <Link to={item.url} className="flex items-center gap-3 px-3 py-2 text-black hover:text-black">
+                        <Link to={item.url} className="flex items-center gap-3 px-3 py-2">
                           <item.icon className="w-4 h-4" />
                           <span className="font-medium">{item.title}</span>
                         </Link>
@@ -242,22 +154,22 @@ export default function Layout({ children, currentPageName }) {
             </SidebarGroup>
           </SidebarContent>
 
-          <SidebarFooter className="p-4" style={{ borderTop: '1px solid #FAE008' }}>
+          <SidebarFooter className="border-t border-slate-200 p-4">
             <div className="flex items-center gap-3">
-              <div className="w-9 h-9 rounded-full flex items-center justify-center" style={{ backgroundColor: '#FAE008' }}>
-                <span className="text-black font-medium text-sm">
+              <div className="w-9 h-9 bg-slate-200 rounded-full flex items-center justify-center">
+                <span className="text-slate-700 font-medium text-sm">
                   {user?.full_name?.charAt(0)?.toUpperCase() || 'U'}
                 </span>
               </div>
               <div className="flex-1 min-w-0">
-                <p className="font-medium text-black text-sm truncate">
+                <p className="font-medium text-slate-900 text-sm truncate">
                   {user?.full_name || 'User'}
                 </p>
-                <p className="text-xs text-black truncate">{user?.email}</p>
+                <p className="text-xs text-slate-500 truncate">{user?.email}</p>
               </div>
               <button
                 onClick={handleLogout}
-                className="text-xs text-black hover:text-black"
+                className="text-xs text-slate-500 hover:text-slate-700"
               >
                 Logout
               </button>
@@ -265,15 +177,15 @@ export default function Layout({ children, currentPageName }) {
           </SidebarFooter>
         </Sidebar>
 
-        <main className="flex-1 flex flex-col bg-white">
-          <header className="bg-white px-6 py-4 lg:hidden" style={{ borderBottom: '1px solid #FAE008' }}>
+        <main className="flex-1 flex flex-col">
+          <header className="bg-white border-b border-slate-200 px-6 py-4 lg:hidden">
             <div className="flex items-center gap-4">
-              <SidebarTrigger className="p-2 rounded-lg transition-colors duration-200" />
-              <h1 className="text-xl font-semibold text-black">FieldScheduler</h1>
+              <SidebarTrigger className="hover:bg-slate-100 p-2 rounded-lg transition-colors duration-200" />
+              <h1 className="text-xl font-semibold">FieldScheduler</h1>
             </div>
           </header>
 
-          <div className="flex-1 overflow-auto bg-white">
+          <div className="flex-1 overflow-auto">
             {children}
           </div>
         </main>
