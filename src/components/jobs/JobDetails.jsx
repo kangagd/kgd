@@ -44,6 +44,13 @@ const productColors = {
   "Custom Garage Door": "bg-pink-100 text-pink-700"
 };
 
+const customerTypeColors = {
+  "Owner": "bg-purple-100 text-purple-700",
+  "Builder": "bg-blue-100 text-blue-700",
+  "Real Estate - Tenant": "bg-green-100 text-green-700",
+  "Strata - Owner": "bg-amber-100 text-amber-700",
+};
+
 export default function JobDetails({ job, onClose, onStatusChange }) {
   const [showPriceList, setShowPriceList] = useState(false);
   const [showAssistant, setShowAssistant] = useState(false);
@@ -310,7 +317,7 @@ export default function JobDetails({ job, onClose, onStatusChange }) {
               </Button>
               <div className="flex-1 min-w-0">
                 <div className="flex items-center gap-2 flex-wrap">
-                  <CardTitle 
+                  <CardTitle
                     className="text-lg md:text-2xl font-bold cursor-pointer hover:text-[#fae008] transition-colors"
                     onClick={() => setShowCustomerEdit(true)}
                   >
@@ -319,6 +326,11 @@ export default function JobDetails({ job, onClose, onStatusChange }) {
                   <Badge className={`${statusColors[job.status]} pointer-events-none`}>
                     {job.status.replace('_', ' ')}
                   </Badge>
+                  {job.customer_type && (
+                    <Badge variant="outline" className={customerTypeColors[job.customer_type]}>
+                      {job.customer_type}
+                    </Badge>
+                  )}
                 </div>
                 <p className="text-xs md:text-sm text-slate-500 mt-1">Job #{job.job_number}</p>
                 <div className="flex items-center gap-1.5 mt-2">
