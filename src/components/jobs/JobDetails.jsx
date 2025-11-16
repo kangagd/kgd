@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from "react";
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -323,46 +322,46 @@ export default function JobDetails({ job, onClose, onStatusChange }) {
   return (
     <>
       <Card className={`border-none shadow-lg ${isTechnician ? 'rounded-none' : ''}`}>
-        <CardHeader className="border-b border-slate-100 bg-gradient-to-r from-slate-50 to-white p-4 md:p-6">
-          <div className="flex items-start justify-between gap-4">
-            <div className="flex items-start gap-3 md:gap-4 flex-1 min-w-0">
-              <Button variant="ghost" size="icon" onClick={onClose} className="h-9 w-9 md:h-10 md:w-10 flex-shrink-0 hover:bg-slate-200">
-                <ArrowLeft className="w-4 h-4 md:w-5 md:h-5" />
+        <CardHeader className="border-b border-slate-100 bg-gradient-to-r from-slate-50 to-white p-2 md:p-4">
+          <div className="flex items-start justify-between gap-2">
+            <div className="flex items-start gap-2 flex-1 min-w-0">
+              <Button variant="ghost" size="icon" onClick={onClose} className="h-8 w-8 flex-shrink-0 hover:bg-slate-200">
+                <ArrowLeft className="w-4 h-4" />
               </Button>
               <div className="flex-1 min-w-0">
-                <div className="flex items-center gap-2 flex-wrap mb-2">
+                <div className="flex items-center gap-1.5 flex-wrap mb-1">
                   <CardTitle
-                    className="text-xl md:text-2xl font-bold cursor-pointer hover:text-blue-600 transition-colors"
+                    className="text-base md:text-xl font-bold cursor-pointer hover:text-blue-600 transition-colors"
                     onClick={() => setShowCustomerEdit(true)}
                   >
                     {job.customer_name}
                   </CardTitle>
-                  <Badge className={`${statusColors[job.status]} font-medium shadow-sm`}>
+                  <Badge className={`${statusColors[job.status]} text-xs font-medium`}>
                     {job.status.replace('_', ' ')}
                   </Badge>
                   {job.customer_type && (
-                    <Badge variant="outline" className={`${customerTypeColors[job.customer_type]} font-medium`}>
+                    <Badge variant="outline" className={`${customerTypeColors[job.customer_type]} text-xs font-medium`}>
                       {job.customer_type}
                     </Badge>
                   )}
                 </div>
                 
-                <p className="text-xs md:text-sm text-slate-500 mb-3">Job #{job.job_number}</p>
+                <p className="text-xs text-slate-500 mb-2">Job #{job.job_number}</p>
                 
-                <div className="flex items-center gap-2 mb-3 bg-amber-50 border border-amber-200 rounded-lg p-2">
-                  <MapPin className="text-[#fae008] w-4 h-4 flex-shrink-0" />
-                  <span className="text-sm md:text-base font-semibold text-slate-900">{job.address}</span>
+                <div className="flex items-center gap-1.5 mb-2 bg-amber-50 border border-amber-200 rounded-md p-1.5">
+                  <MapPin className="text-[#fae008] w-3.5 h-3.5 flex-shrink-0" />
+                  <span className="text-xs md:text-sm font-semibold text-slate-900 truncate">{job.address}</span>
                 </div>
 
-                <div className="flex flex-wrap gap-2">
+                <div className="flex flex-wrap gap-1.5">
                   {job.customer_phone && (
                     <Button
                       size="sm"
                       variant="outline"
                       onClick={() => window.location.href = `tel:${job.customer_phone}`}
-                      className="h-8 text-xs hover:bg-blue-50 hover:border-blue-300 hover:text-blue-700"
+                      className="h-7 px-2 text-xs hover:bg-blue-50 hover:border-blue-300 hover:text-blue-700"
                     >
-                      <Phone className="w-3.5 h-3.5 mr-1.5" />
+                      <Phone className="w-3 h-3 mr-1" />
                       Call
                     </Button>
                   )}
@@ -370,9 +369,9 @@ export default function JobDetails({ job, onClose, onStatusChange }) {
                     size="sm"
                     variant="outline"
                     onClick={() => window.open(`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(job.address)}`, '_blank')}
-                    className="h-8 text-xs hover:bg-green-50 hover:border-green-300 hover:text-green-700"
+                    className="h-7 px-2 text-xs hover:bg-green-50 hover:border-green-300 hover:text-green-700"
                   >
-                    <Navigation className="w-3.5 h-3.5 mr-1.5" />
+                    <Navigation className="w-3 h-3 mr-1" />
                     Directions
                   </Button>
                   {job.customer_email && (
@@ -380,9 +379,9 @@ export default function JobDetails({ job, onClose, onStatusChange }) {
                       size="sm"
                       variant="outline"
                       onClick={() => window.location.href = `mailto:${job.customer_email}`}
-                      className="h-8 text-xs hover:bg-purple-50 hover:border-purple-300 hover:text-purple-700"
+                      className="h-7 px-2 text-xs hover:bg-purple-50 hover:border-purple-300 hover:text-purple-700"
                     >
-                      <Mail className="w-3.5 h-3.5 mr-1.5" />
+                      <Mail className="w-3 h-3 mr-1" />
                       Email
                     </Button>
                   )}
@@ -390,30 +389,30 @@ export default function JobDetails({ job, onClose, onStatusChange }) {
               </div>
             </div>
             
-            <div className="flex flex-col gap-2 flex-shrink-0">
+            <div className="flex flex-col gap-1.5 flex-shrink-0">
               <Button
                 variant="outline"
                 size="sm"
                 onClick={() => setShowHistory(true)}
-                className="h-8 px-2 hover:bg-slate-100">
-                <History className="w-4 h-4 md:mr-1" />
+                className="h-7 px-1.5 hover:bg-slate-100">
+                <History className="w-3.5 h-3.5 md:mr-1" />
                 <span className="hidden md:inline text-xs">History</span>
               </Button>
               <Button
                 variant="outline"
                 size="sm"
                 onClick={() => setShowPriceList(true)}
-                className="h-8 px-2 hover:bg-slate-100">
-                <DollarSign className="w-4 h-4 md:mr-1" />
-                <span className="hidden md:inline text-xs">Price List</span>
+                className="h-7 px-1.5 hover:bg-slate-100">
+                <DollarSign className="w-3.5 h-3.5 md:mr-1" />
+                <span className="hidden md:inline text-xs">Price</span>
               </Button>
               {!isTechnician && (
                 <Button
                   variant="outline"
                   size="sm"
                   onClick={() => setShowAssistant(true)}
-                  className="h-8 px-2 hover:bg-slate-100">
-                  <Sparkles className="w-4 h-4 md:mr-1" />
+                  className="h-7 px-1.5 hover:bg-slate-100">
+                  <Sparkles className="w-3.5 h-3.5 md:mr-1" />
                   <span className="hidden md:inline text-xs">AI</span>
                 </Button>
               )}
@@ -421,18 +420,17 @@ export default function JobDetails({ job, onClose, onStatusChange }) {
           </div>
         </CardHeader>
         
-        <CardContent className="p-2 md:p-6">
-          {/* Sticky details section - visible across all tabs */}
-          <div className="sticky top-0 bg-white z-10 pb-4 mb-4 border-b border-slate-200">
-            <div className="bg-slate-50 rounded-xl p-4 border border-slate-200">
-              <div className="space-y-3">
-                <div className="grid grid-cols-3 gap-3">
+        <CardContent className="p-2">
+          <div className="sticky top-0 bg-white z-10 pb-2 mb-2 border-b border-slate-200">
+            <div className="bg-slate-50 rounded-lg p-2 border border-slate-200">
+              <div className="space-y-2">
+                <div className="grid grid-cols-2 gap-2">
                   <EditableField
                     value={job.scheduled_date}
                     onSave={(val) => handleFieldSave('scheduled_date', job.scheduled_date, val)}
                     type="date"
                     icon={Calendar}
-                    displayFormat={(val) => format(parseISO(val), 'MMM d, yyyy')}
+                    displayFormat={(val) => format(parseISO(val), 'MMM d')}
                     placeholder="Set date"
                   />
                   <EditableField
@@ -442,20 +440,18 @@ export default function JobDetails({ job, onClose, onStatusChange }) {
                     icon={Clock}
                     placeholder="Set time"
                   />
-                  {/* Third column in grid, currently empty but required by grid-cols-3 */}
-                  <div></div> 
                 </div>
 
-                <div className="border-t border-slate-200 pt-3">
-                  <div className="flex items-center gap-2 mb-3">
-                    <User className="w-4 h-4 text-slate-500" />
-                    <span className="text-sm font-semibold text-slate-700">Assigned Technicians</span>
+                <div className="border-t border-slate-200 pt-2">
+                  <div className="flex items-center gap-1.5 mb-1.5">
+                    <User className="w-3.5 h-3.5 text-slate-500" />
+                    <span className="text-xs font-semibold text-slate-700">Technicians</span>
                   </div>
-                  <div className="flex flex-wrap items-center gap-2">
+                  <div className="flex flex-wrap items-center gap-1.5">
                     {(Array.isArray(job.assigned_to_name) ? job.assigned_to_name : job.assigned_to_name ? [job.assigned_to_name] : []).map((name, idx) => (
                       <div
                         key={idx}
-                        className={`${getAvatarColor(name)} w-10 h-10 rounded-full flex items-center justify-center text-white text-sm font-bold shadow-md border-2 border-white`}
+                        className={`${getAvatarColor(name)} w-7 h-7 rounded-full flex items-center justify-center text-white text-xs font-bold shadow-sm border-2 border-white`}
                         title={name}
                       >
                         {getInitials(name)}
@@ -477,7 +473,7 @@ export default function JobDetails({ job, onClose, onStatusChange }) {
                   </div>
                 </div>
 
-                <div className="grid grid-cols-2 gap-3 border-t border-slate-200 pt-3">
+                <div className="grid grid-cols-2 gap-2 border-t border-slate-200 pt-2">
                   <EditableField
                     value={job.product}
                     onSave={(val) => handleFieldSave('product', job.product, val)}
@@ -508,56 +504,56 @@ export default function JobDetails({ job, onClose, onStatusChange }) {
           </div>
 
           <Tabs defaultValue="details" className="w-full">
-            <TabsList className="w-full grid grid-cols-4 mb-4">
-              <TabsTrigger value="details" className="text-xs md:text-sm">Details</TabsTrigger>
-              <TabsTrigger value="visit" className="text-xs md:text-sm">
-                <ClipboardCheck className="w-3 h-3 md:w-4 md:h-4 md:mr-2" />
-                <span className="hidden md:inline">Site Visit</span>
+            <TabsList className="w-full grid grid-cols-4 mb-2 h-9">
+              <TabsTrigger value="details" className="text-xs">Details</TabsTrigger>
+              <TabsTrigger value="visit" className="text-xs">
+                <ClipboardCheck className="w-3 h-3 md:mr-1" />
+                <span className="hidden md:inline">Visit</span>
               </TabsTrigger>
-              <TabsTrigger value="form" className="text-xs md:text-sm">
-                <FileCheck className="w-3 h-3 md:w-4 md:h-4 md:mr-2" />
+              <TabsTrigger value="form" className="text-xs">
+                <FileCheck className="w-3 h-3 md:mr-1" />
                 <span className="hidden md:inline">Form</span>
               </TabsTrigger>
-              <TabsTrigger value="files" className="text-xs md:text-sm">
-                <ImageIcon className="w-3 h-3 md:w-4 md:h-4 md:mr-2" />
+              <TabsTrigger value="files" className="text-xs">
+                <ImageIcon className="w-3 h-3 md:mr-1" />
                 <span className="hidden md:inline">Files</span>
               </TabsTrigger>
             </TabsList>
 
-            <TabsContent value="details" className="space-y-4 md:space-y-5 mt-4">
-              <div className="border-t pt-4">
-                <h3 className="text-sm md:text-base font-semibold text-slate-900 mb-2 flex items-center gap-2">
-                  <FileText className="w-4 h-4 text-slate-600" />
-                  Notes & Instructions
+            <TabsContent value="details" className="space-y-3 mt-2">
+              <div className="border-t pt-2">
+                <h3 className="text-xs font-semibold text-slate-900 mb-1.5 flex items-center gap-1.5">
+                  <FileText className="w-3.5 h-3.5 text-slate-600" />
+                  Notes
                 </h3>
-                <div className="bg-amber-50 border border-amber-200 rounded-lg p-3 md:p-4">
+                <div className="bg-amber-50 border border-amber-200 rounded-lg p-2">
                   <RichTextEditor
                     value={notes}
                     onChange={setNotes}
                     onBlur={handleNotesBlur}
-                    placeholder="Add notes and instructions for this job..."
+                    placeholder="Add notes..."
                   />
                 </div>
               </div>
 
               <div>
-                <h3 className="text-sm md:text-base font-semibold text-slate-900 mb-2">Pricing Provided</h3>
+                <h3 className="text-xs font-semibold text-slate-900 mb-1.5">Pricing</h3>
                 <Input
                   value={pricingProvided}
                   onChange={(e) => setPricingProvided(e.target.value)}
                   onBlur={handlePricingProvidedBlur}
-                  placeholder="Enter pricing information..."
-                  className="text-xs md:text-sm bg-slate-50 border-slate-300"
+                  placeholder="Enter pricing..."
+                  className="text-xs h-8 bg-slate-50"
                 />
               </div>
 
               <div>
-                <h3 className="text-sm md:text-base font-semibold text-slate-900 mb-2">Additional Information</h3>
+                <h3 className="text-xs font-semibold text-slate-900 mb-1.5">Additional Info</h3>
                 <RichTextEditor
                   value={additionalInfo}
                   onChange={setAdditionalInfo}
                   onBlur={handleAdditionalInfoBlur}
-                  placeholder="Add any additional information..."
+                  placeholder="Add info..."
                 />
               </div>
 
@@ -566,69 +562,68 @@ export default function JobDetails({ job, onClose, onStatusChange }) {
                   <Button
                     onClick={handleCheckIn}
                     disabled={checkInMutation.isPending}
-                    className="w-full bg-blue-600 hover:bg-blue-700 shadow-md"
-                    size="lg"
+                    className="w-full bg-blue-600 hover:bg-blue-700 h-9"
                   >
-                    <LogIn className="w-4 h-4 mr-2" />
+                    <LogIn className="w-3.5 h-3.5 mr-1.5" />
                     {checkInMutation.isPending ? 'Checking In...' : 'Check In'}
                   </Button>
                 ) : (
-                  <div className="bg-blue-50 border-2 border-blue-300 rounded-lg p-4 shadow-sm">
-                    <div className="flex items-center gap-2 text-blue-700">
-                      <Timer className="w-5 h-5" />
-                      <span className="text-sm font-semibold">
+                  <div className="bg-blue-50 border border-blue-300 rounded-lg p-2">
+                    <div className="flex items-center gap-1.5 text-blue-700">
+                      <Timer className="w-4 h-4" />
+                      <span className="text-xs font-semibold">
                         Checked in at {format(new Date(activeCheckIn.check_in_time), 'h:mm a')}
                       </span>
                     </div>
                   </div>
                 )}
                 {totalJobTime > 0 && (
-                  <div className="bg-slate-50 border border-slate-200 rounded-lg p-3">
+                  <div className="bg-slate-50 border border-slate-200 rounded-lg p-2">
                     <div className="flex items-center justify-between">
-                      <span className="text-sm text-slate-600">Total Job Time:</span>
-                      <span className="text-sm font-semibold text-slate-900">{totalJobTime.toFixed(1)} hours</span>
+                      <span className="text-xs text-slate-600">Total Time:</span>
+                      <span className="text-xs font-semibold text-slate-900">{totalJobTime.toFixed(1)}h</span>
                     </div>
                   </div>
                 )}
               </div>
             </TabsContent>
 
-            <TabsContent value="visit" className="space-y-3 md:space-y-4 mt-3 md:mt-4">
-              <div className="space-y-4">
+            <TabsContent value="visit" className="space-y-3 mt-2">
+              <div className="space-y-3">
                 <div>
-                  <Label htmlFor="visit-overview" className="text-sm md:text-base font-semibold text-slate-900 mb-2">Overview *</Label>
+                  <Label className="text-xs font-semibold mb-1">Overview *</Label>
                   <RichTextEditor
                     value={overview}
                     onChange={setOverview}
                     onBlur={handleOverviewBlur}
-                    placeholder="Describe the site visit overview..."
+                    placeholder="Overview..."
                   />
                 </div>
 
                 <div>
-                  <Label htmlFor="next-steps" className="text-sm md:text-base font-semibold text-slate-900 mb-2">Next Steps *</Label>
+                  <Label className="text-xs font-semibold mb-1">Next Steps *</Label>
                   <RichTextEditor
                     value={nextSteps}
                     onChange={setNextSteps}
                     onBlur={handleNextStepsBlur}
-                    placeholder="What are the next steps..."
+                    placeholder="Next steps..."
                   />
                 </div>
 
                 <div>
-                  <Label htmlFor="communication" className="text-sm md:text-base font-semibold text-slate-900 mb-2">Communication with Client *</Label>
+                  <Label className="text-xs font-semibold mb-1">Communication *</Label>
                   <RichTextEditor
                     value={communicationWithClient}
                     onChange={setCommunicationWithClient}
                     onBlur={handleCommunicationBlur}
-                    placeholder="Notes on communication with client..."
+                    placeholder="Communication notes..."
                   />
                 </div>
 
                 <div>
-                  <Label htmlFor="outcome" className="text-sm md:text-base font-semibold text-slate-900 mb-2">Outcome *</Label>
+                  <Label className="text-xs font-semibold mb-1">Outcome *</Label>
                   <Select value={outcome} onValueChange={handleOutcomeChange}>
-                    <SelectTrigger className="mt-2">
+                    <SelectTrigger className="h-9 text-xs">
                       <SelectValue placeholder="Select outcome" />
                     </SelectTrigger>
                     <SelectContent>
@@ -642,60 +637,59 @@ export default function JobDetails({ job, onClose, onStatusChange }) {
                 </div>
 
                 {validationError && (
-                  <div className="bg-red-50 border border-red-200 rounded-lg p-3 flex items-start gap-2">
-                    <AlertCircle className="w-4 h-4 text-red-600 mt-0.5 flex-shrink-0" />
-                    <span className="text-sm text-red-700">{validationError}</span>
+                  <div className="bg-red-50 border border-red-200 rounded-lg p-2 flex items-start gap-1.5">
+                    <AlertCircle className="w-3.5 h-3.5 text-red-600 mt-0.5 flex-shrink-0" />
+                    <span className="text-xs text-red-700">{validationError}</span>
                   </div>
                 )}
 
                 {activeCheckIn && (
-                  <div className="pt-4 border-t">
+                  <div className="pt-2 border-t">
                     <Button
                       onClick={handleCheckOut}
                       disabled={checkOutMutation.isPending}
-                      className="w-full bg-orange-600 hover:bg-orange-700"
-                      size="lg"
+                      className="w-full bg-orange-600 hover:bg-orange-700 h-9"
                     >
-                      <LogOut className="w-4 h-4 mr-2" />
+                      <LogOut className="w-3.5 h-3.5 mr-1.5" />
                       {checkOutMutation.isPending ? 'Checking Out...' : 'Check Out'}
                     </Button>
                   </div>
                 )}
 
                 {completedCheckIns.length > 0 && (
-                  <Collapsible defaultOpen={false} className="pt-4 border-t">
+                  <Collapsible defaultOpen={false} className="pt-2 border-t">
                     <CollapsibleTrigger className="flex items-center justify-between w-full group">
-                      <h4 className="text-sm font-semibold text-slate-900">Time Tracking ({completedCheckIns.length} {completedCheckIns.length === 1 ? 'visit' : 'visits'})</h4>
-                      <ChevronDown className="w-4 h-4 text-slate-500 transition-transform group-data-[state=open]:rotate-180" />
+                      <h4 className="text-xs font-semibold text-slate-900">Time Tracking ({completedCheckIns.length})</h4>
+                      <ChevronDown className="w-3.5 h-3.5 text-slate-500 transition-transform group-data-[state=open]:rotate-180" />
                     </CollapsibleTrigger>
                     
-                    <CollapsibleContent className="pt-3 space-y-3">
+                    <CollapsibleContent className="pt-2 space-y-2">
                       {completedCheckIns.map((checkIn, index) => (
-                        <div key={checkIn.id} className="bg-slate-50 border border-slate-200 rounded-lg p-3">
-                          <div className="space-y-2">
-                            <div className="flex items-center justify-between">
-                              <span className="text-xs text-slate-500">Visit {completedCheckIns.length - index}</span>
-                              <span className="text-xs font-medium text-slate-700">{checkIn.technician_name}</span>
+                        <div key={checkIn.id} className="bg-slate-50 border border-slate-200 rounded-lg p-2">
+                          <div className="space-y-1.5">
+                            <div className="flex items-center justify-between text-xs">
+                              <span className="text-slate-500">Visit {completedCheckIns.length - index}</span>
+                              <span className="font-medium text-slate-700">{checkIn.technician_name}</span>
                             </div>
-                            <div className="grid grid-cols-2 gap-2 text-xs">
+                            <div className="grid grid-cols-2 gap-1.5 text-xs">
                               <div>
-                                <span className="text-slate-500">Check In:</span>
+                                <span className="text-slate-500">In:</span>
                                 <div className="font-medium text-slate-900">
                                   {format(new Date(checkIn.check_in_time), 'MMM d, h:mm a')}
                                 </div>
                               </div>
                               <div>
-                                <span className="text-slate-500">Check Out:</span>
+                                <span className="text-slate-500">Out:</span>
                                 <div className="font-medium text-slate-900">
                                   {format(new Date(checkIn.check_out_time), 'MMM d, h:mm a')}
                                 </div>
                               </div>
                             </div>
-                            <div className="pt-2 border-t border-slate-300">
-                              <div className="flex items-center justify-between">
-                                <span className="text-xs text-slate-600">Duration:</span>
-                                <span className="text-sm font-semibold text-slate-900">
-                                  {checkIn.duration_hours.toFixed(1)} hours
+                            <div className="pt-1.5 border-t border-slate-300">
+                              <div className="flex items-center justify-between text-xs">
+                                <span className="text-slate-600">Duration:</span>
+                                <span className="font-semibold text-slate-900">
+                                  {checkIn.duration_hours.toFixed(1)}h
                                 </span>
                               </div>
                             </div>
@@ -703,10 +697,10 @@ export default function JobDetails({ job, onClose, onStatusChange }) {
                         </div>
                       ))}
 
-                      <div className="bg-blue-50 border border-blue-200 rounded-lg p-3">
+                      <div className="bg-blue-50 border border-blue-200 rounded-lg p-2">
                         <div className="flex items-center justify-between">
-                          <span className="text-sm font-medium text-blue-900">Total Time:</span>
-                          <span className="text-lg font-bold text-blue-900">{totalJobTime.toFixed(1)} hours</span>
+                          <span className="text-xs font-medium text-blue-900">Total:</span>
+                          <span className="text-sm font-bold text-blue-900">{totalJobTime.toFixed(1)}h</span>
                         </div>
                       </div>
                     </CollapsibleContent>
@@ -715,9 +709,9 @@ export default function JobDetails({ job, onClose, onStatusChange }) {
               </div>
             </TabsContent>
 
-            <TabsContent value="form" className="mt-3 md:mt-4">
-              <div className="space-y-3 md:space-y-4">
-                <h3 className="text-sm md:text-base font-semibold text-slate-900">Measurements & Form</h3>
+            <TabsContent value="form" className="mt-2">
+              <div className="space-y-2">
+                <h3 className="text-xs font-semibold text-slate-900">Measurements</h3>
                 <MeasurementsForm
                   measurements={measurements}
                   onChange={handleMeasurementsChange}
@@ -725,8 +719,8 @@ export default function JobDetails({ job, onClose, onStatusChange }) {
               </div>
             </TabsContent>
 
-            <TabsContent value="files" className="mt-3 md:mt-4">
-              <div className="space-y-4">
+            <TabsContent value="files" className="mt-2">
+              <div className="space-y-3">
                 <EditableFileUpload
                   files={job.image_urls || []}
                   onFilesChange={handleImagesChange}
@@ -734,10 +728,10 @@ export default function JobDetails({ job, onClose, onStatusChange }) {
                   multiple={true}
                   icon={ImageIcon}
                   label="Photos & Videos"
-                  emptyText="Click to upload photos or videos"
+                  emptyText="Upload media"
                 />
 
-                <div className="grid md:grid-cols-2 gap-4 pt-4 border-t">
+                <div className="grid md:grid-cols-2 gap-2 pt-2 border-t">
                   <EditableFileUpload
                     files={job.quote_url}
                     onFilesChange={handleQuoteChange}
@@ -745,7 +739,7 @@ export default function JobDetails({ job, onClose, onStatusChange }) {
                     multiple={false}
                     icon={FileText}
                     label="Quote"
-                    emptyText="Click to upload quote"
+                    emptyText="Upload quote"
                   />
 
                   <EditableFileUpload
@@ -755,7 +749,7 @@ export default function JobDetails({ job, onClose, onStatusChange }) {
                     multiple={false}
                     icon={FileText}
                     label="Invoice"
-                    emptyText="Click to upload invoice"
+                    emptyText="Upload invoice"
                   />
                 </div>
               </div>
