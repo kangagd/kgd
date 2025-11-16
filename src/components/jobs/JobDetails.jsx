@@ -262,7 +262,7 @@ export default function JobDetails({ job, onClose, onEdit, onStatusChange }) {
 
               <div className="grid gap-3 md:gap-4">
                 <div className="space-y-2 md:space-y-3">
-                  <div className="grid grid-cols-2 gap-2 md:gap-3">
+                  <div className="grid grid-cols-3 gap-2 md:gap-3">
                     <div className="flex items-center gap-2 p-2 md:p-3 bg-slate-50 rounded-lg">
                       <Calendar className="w-3 h-3 md:w-4 md:h-4 text-slate-400" />
                       <span className="text-xs md:text-sm">
@@ -275,13 +275,13 @@ export default function JobDetails({ job, onClose, onEdit, onStatusChange }) {
                         <span className="text-xs md:text-sm">{job.scheduled_time}</span>
                       </div>
                     )}
+                    {job.assigned_to_name && (
+                      <div className="flex items-center gap-2 p-2 md:p-3 bg-slate-50 rounded-lg">
+                        <User className="w-3 h-3 md:w-4 md:h-4 text-slate-400" />
+                        <span className="text-xs md:text-sm">{job.assigned_to_name}</span>
+                      </div>
+                    )}
                   </div>
-                  {job.assigned_to_name && (
-                    <div className="flex items-center gap-2 p-2 md:p-3 bg-slate-50 rounded-lg">
-                      <User className="w-3 h-3 md:w-4 md:h-4 text-slate-400" />
-                      <span className="text-xs md:text-sm">{job.assigned_to_name}</span>
-                    </div>
-                  )}
                   <div className="grid grid-cols-2 gap-2 md:gap-3">
                     {job.product && (
                       <div className={`flex items-center gap-2 p-2 md:p-3 rounded-lg ${productColors[job.product]}`}>
