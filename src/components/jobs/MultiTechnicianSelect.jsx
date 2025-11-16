@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useState } from "react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { X, UserPlus } from "lucide-react";
@@ -10,6 +10,8 @@ import {
 import { Checkbox } from "@/components/ui/checkbox";
 
 export default function MultiTechnicianSelect({ selectedEmails = [], technicians = [], onChange }) {
+  const [open, setOpen] = useState(false);
+
   const selectedTechs = selectedEmails
     .map(email => technicians.find(t => t.email === email))
     .filter(Boolean);
@@ -35,7 +37,11 @@ export default function MultiTechnicianSelect({ selectedEmails = [], technicians
               {tech.full_name}
               <button
                 type="button"
-                onClick={() => removeTechnician(tech.email)}
+                onClick={(e) => {
+                  e.preventDefault();
+                  e.stopPropagation();
+                  removeTechnician(tech.email);
+                }}
                 className="ml-1 hover:bg-slate-300 rounded-full p-0.5"
               >
                 <X className="w-3 h-3" />
@@ -47,7 +53,7 @@ export default function MultiTechnicianSelect({ selectedEmails = [], technicians
         )}
       </div>
 
-      <Popover>
+      <Popover open={open} onOpenChange={setOpen}>
         <PopoverTrigger asChild>
           <Button type="button" variant="outline" size="sm" className="w-full">
             <UserPlus className="w-4 h-4 mr-2" />
@@ -55,7 +61,7 @@ export default function MultiTechnicianSelect({ selectedEmails = [], technicians
           </Button>
         </PopoverTrigger>
         <PopoverContent className="w-64" align="start">
-          <div className="space-y-2">
+          <div className="space-y-3">
             <h4 className="font-medium text-sm">Select Technicians</h4>
             <div className="space-y-2 max-h-64 overflow-y-auto">
               {technicians.map((tech) => (
@@ -68,12 +74,25 @@ export default function MultiTechnicianSelect({ selectedEmails = [], technicians
                   <label
                     htmlFor={tech.email}
                     className="text-sm flex-1 cursor-pointer"
+                    onClick={(e) => {
+                      e.preventDefault();
+                      toggleTechnician(tech.email);
+                    }}
                   >
                     {tech.full_name}
                   </label>
                 </div>
               ))}
             </div>
+            <Button 
+              type="button"
+              variant="outline" 
+              size="sm" 
+              className="w-full"
+              onClick={() => setOpen(false)}
+            >
+              Done
+            </Button>
           </div>
         </PopoverContent>
       </Popover>
