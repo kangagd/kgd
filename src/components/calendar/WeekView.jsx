@@ -188,7 +188,7 @@ export default function WeekView({ jobs, currentDate, onJobClick, onQuickBook })
                 </div>
               ) : (
                 visibleTechnicians.map(technician => (
-                  <div key={technician.id} className="grid border-b border-slate-200 hover:bg-slate-50" style={{ gridTemplateColumns: '200px repeat(7, 1fr)' }}>
+                  <div key={technician.id} className="grid border-b border-slate-200 hover:bg-slate-50" style={{ gridTemplateColumns: '200px repeat(7, 1fr)', height: '150px' }}>
                     <div className="p-3 border-r border-slate-200 flex items-center gap-2 sticky left-0 bg-white z-10">
                       <div className={`${getAvatarColor(technician.full_name)} w-8 h-8 rounded-full flex items-center justify-center text-white font-bold text-xs`}>
                         {getInitials(technician.full_name)}
@@ -205,7 +205,7 @@ export default function WeekView({ jobs, currentDate, onJobClick, onQuickBook })
                       return (
                         <div
                           key={day.toISOString()}
-                          className={`p-2 border-r border-slate-200 transition-colors min-h-[100px] ${
+                          className={`p-2 border-r border-slate-200 transition-colors overflow-y-auto ${
                             isDragOver ? 'bg-green-50 border-green-400' : ''
                           }`}
                           onDragOver={(e) => handleDragOver(e, day, technician.email)}
