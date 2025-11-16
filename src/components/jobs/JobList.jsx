@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from "react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -182,7 +183,7 @@ export default function JobList({ jobs, isLoading, onSelectJob }) {
                   <span className="text-sm font-medium">{job.address}</span>
                 </div>
 
-                <div className="flex gap-2">
+                <div className="flex items-center gap-2">
                   {job.customer_phone && (
                     <Button
                       size="icon"
@@ -199,8 +200,8 @@ export default function JobList({ jobs, isLoading, onSelectJob }) {
                     variant="outline"
                     onClick={(e) => handleDirections(e, job.address)}
                     className="h-8 w-8 hover:bg-green-50 hover:border-green-300 hover:text-green-700"
-                    title="Directions"
-                  >
+                      title="Directions"
+                    >
                     <Navigation className="w-4 h-4" />
                   </Button>
                   {job.customer_email && (
@@ -216,6 +217,28 @@ export default function JobList({ jobs, isLoading, onSelectJob }) {
                     >
                       <Mail className="w-4 h-4" />
                     </Button>
+                  )}
+                  
+                  {job.assigned_to_name && job.assigned_to_name.length > 0 && (
+                    <>
+                      <div className="w-px h-6 bg-slate-300 mx-1"></div>
+                      <div className="flex -space-x-2">
+                        {(Array.isArray(job.assigned_to_name) ? job.assigned_to_name : [job.assigned_to_name]).slice(0, 3).map((name, idx) => (
+                          <div
+                            key={idx}
+                            className={`${getAvatarColor(name)} w-7 h-7 rounded-full flex items-center justify-center text-white text-xs font-bold border-2 border-white shadow-sm`}
+                            title={name}
+                          >
+                            {getInitials(name)}
+                          </div>
+                        ))}
+                        {Array.isArray(job.assigned_to_name) && job.assigned_to_name.length > 3 && (
+                          <div className="bg-slate-300 w-7 h-7 rounded-full flex items-center justify-center text-slate-700 text-xs font-bold border-2 border-white shadow-sm">
+                            +{job.assigned_to_name.length - 3}
+                          </div>
+                        )}
+                      </div>
+                    </>
                   )}
                 </div>
               </div>
@@ -274,30 +297,6 @@ export default function JobList({ jobs, isLoading, onSelectJob }) {
                   <Badge variant="outline" className="bg-white text-slate-700 border-slate-300">
                     {job.expected_duration}h duration
                   </Badge>
-                )}
-              </div>
-
-              <div className="flex flex-wrap items-center gap-2">
-                {job.assigned_to_name && job.assigned_to_name.length > 0 && (
-                  <div className="flex items-center gap-2">
-                    <User className="w-4 h-4 text-slate-400" />
-                    <div className="flex -space-x-2">
-                      {(Array.isArray(job.assigned_to_name) ? job.assigned_to_name : [job.assigned_to_name]).slice(0, 3).map((name, idx) => (
-                        <div
-                          key={idx}
-                          className={`${getAvatarColor(name)} w-8 h-8 rounded-full flex items-center justify-center text-white text-xs font-bold border-2 border-white shadow-sm`}
-                          title={name}
-                        >
-                          {getInitials(name)}
-                        </div>
-                      ))}
-                      {Array.isArray(job.assigned_to_name) && job.assigned_to_name.length > 3 && (
-                        <div className="bg-slate-300 w-8 h-8 rounded-full flex items-center justify-center text-slate-700 text-xs font-bold border-2 border-white shadow-sm">
-                          +{job.assigned_to_name.length - 3}
-                        </div>
-                      )}
-                    </div>
-                  </div>
                 )}
               </div>
 
