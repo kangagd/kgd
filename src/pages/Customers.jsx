@@ -1,4 +1,3 @@
-
 import React, { useState } from "react";
 import { base44 } from "@/api/base44Client";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
@@ -6,7 +5,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
-import { Plus, Search, Phone, Mail, Tag, ExternalLink, MapPin } from "lucide-react";
+import { Plus, Search, Phone, Mail, Tag, MapPin } from "lucide-react";
 import CustomerForm from "../components/customers/CustomerForm";
 import CustomerDetails from "../components/customers/CustomerDetails";
 
@@ -109,22 +108,13 @@ export default function Customers() {
             <h1 className="text-3xl font-bold text-slate-900">Customers</h1>
             <p className="text-slate-500 mt-1">Manage your customer database</p>
           </div>
-          <div className="flex gap-2">
-            <Button
-              variant="outline"
-              onClick={() => window.open('https://app.pipedrive.com/persons', '_blank')}
-            >
-              <ExternalLink className="w-4 h-4 mr-2" />
-              Pipedrive
-            </Button>
-            <Button 
-              onClick={() => setShowForm(true)}
-              className="bg-orange-600 hover:bg-orange-700"
-            >
-              <Plus className="w-4 h-4 mr-2" />
-              New Customer
-            </Button>
-          </div>
+          <Button 
+            onClick={() => setShowForm(true)}
+            className="bg-orange-600 hover:bg-orange-700"
+          >
+            <Plus className="w-4 h-4 mr-2" />
+            New Customer
+          </Button>
         </div>
 
         <div className="mb-6">
