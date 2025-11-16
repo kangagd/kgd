@@ -24,7 +24,7 @@ const statusColors = {
   scheduled: "bg-blue-100 text-blue-800 border-blue-200",
   in_progress: "bg-orange-100 text-orange-800 border-orange-200",
   completed: "bg-green-100 text-green-800 border-green-200",
-  cancelled: "bg-slate-100 text-slate-800 border-slate-200",
+  cancelled: "bg-slate-100 text-slate-800 border-slate-200"
 };
 
 const outcomeColors = {
@@ -32,7 +32,7 @@ const outcomeColors = {
   update_quote: "bg-indigo-100 text-indigo-800 border-indigo-200",
   send_invoice: "bg-blue-100 text-blue-800 border-blue-200",
   completed: "bg-green-100 text-green-800 border-green-200",
-  return_visit_required: "bg-amber-100 text-amber-800 border-amber-200",
+  return_visit_required: "bg-amber-100 text-amber-800 border-amber-200"
 };
 
 const productColors = {
@@ -40,7 +40,7 @@ const productColors = {
   "Gate": "bg-green-100 text-green-700",
   "Roller Shutter": "bg-purple-100 text-purple-700",
   "Multiple": "bg-orange-100 text-orange-700",
-  "Custom Garage Door": "bg-pink-100 text-pink-700",
+  "Custom Garage Door": "bg-pink-100 text-pink-700"
 };
 
 export default function JobDetails({ job, onClose, onStatusChange }) {
@@ -61,12 +61,12 @@ export default function JobDetails({ job, onClose, onStatusChange }) {
 
   const { data: jobTypes = [] } = useQuery({
     queryKey: ['jobTypes'],
-    queryFn: () => base44.entities.JobType.filter({ is_active: true }),
+    queryFn: () => base44.entities.JobType.filter({ is_active: true })
   });
 
   const { data: technicians = [] } = useQuery({
     queryKey: ['technicians'],
-    queryFn: () => base44.entities.User.filter({ is_field_technician: true }),
+    queryFn: () => base44.entities.User.filter({ is_field_technician: true })
   });
 
   useEffect(() => {
@@ -83,11 +83,11 @@ export default function JobDetails({ job, onClose, onStatusChange }) {
 
   const { data: checkIns = [] } = useQuery({
     queryKey: ['checkIns', job.id],
-    queryFn: () => base44.entities.CheckInOut.filter({ job_id: job.id }),
+    queryFn: () => base44.entities.CheckInOut.filter({ job_id: job.id })
   });
 
-  const activeCheckIn = checkIns.find(c => !c.check_out_time && c.technician_email === user?.email);
-  const completedCheckIns = checkIns.filter(c => c.check_out_time);
+  const activeCheckIn = checkIns.find((c) => !c.check_out_time && c.technician_email === user?.email);
+  const completedCheckIns = checkIns.filter((c) => c.check_out_time);
   const totalJobTime = completedCheckIns.reduce((sum, c) => sum + (c.duration_hours || 0), 0);
 
   const checkInMutation = useMutation({
@@ -96,7 +96,7 @@ export default function JobDetails({ job, onClose, onStatusChange }) {
         job_id: job.id,
         technician_email: user.email,
         technician_name: user.full_name,
-        check_in_time: new Date().toISOString(),
+        check_in_time: new Date().toISOString()
       });
       await base44.entities.Job.update(job.id, { status: 'in_progress' });
       return checkIn;
@@ -104,7 +104,7 @@ export default function JobDetails({ job, onClose, onStatusChange }) {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['checkIns', job.id] });
       queryClient.invalidateQueries({ queryKey: ['jobs'] });
-    },
+    }
   });
 
   const checkOutMutation = useMutation({
@@ -120,7 +120,7 @@ export default function JobDetails({ job, onClose, onStatusChange }) {
 
       await base44.entities.CheckInOut.update(activeCheckIn.id, {
         check_out_time: checkOutTime,
-        duration_hours: Math.round(durationHours * 10) / 10,
+        duration_hours: Math.round(durationHours * 10) / 10
       });
     },
     onSuccess: () => {
@@ -130,21 +130,21 @@ export default function JobDetails({ job, onClose, onStatusChange }) {
     },
     onError: (error) => {
       setValidationError(error.message);
-    },
+    }
   });
 
   const updateJobMutation = useMutation({
     mutationFn: ({ field, value }) => base44.entities.Job.update(job.id, { [field]: value }),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['jobs'] });
-    },
+    }
   });
 
   const updateMeasurementsMutation = useMutation({
     mutationFn: (data) => base44.entities.Job.update(job.id, { measurements: data }),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['jobs'] });
-    },
+    }
   });
 
   const logChange = async (fieldName, oldValue, newValue) => {
@@ -160,7 +160,7 @@ export default function JobDetails({ job, onClose, onStatusChange }) {
         old_value: oldValString,
         new_value: newValString,
         changed_by: user.email,
-        changed_by_name: user.full_name,
+        changed_by_name: user.full_name
       });
     } catch (error) {
       console.error("Error logging change:", error);
@@ -238,28 +238,28 @@ export default function JobDetails({ job, onClose, onStatusChange }) {
 
   const handleAssignedToChange = (emails) => {
     // Ensure `emails` is an array of emails for consistency
-    const newAssignedEmails = Array.isArray(emails) ? emails : (emails ? [emails] : []);
+    const newAssignedEmails = Array.isArray(emails) ? emails : emails ? [emails] : [];
 
     // `job.assigned_to` could be a string or an array from the backend, normalize for logChange
-    const currentAssignedToNormalized = Array.isArray(job.assigned_to) ? job.assigned_to : (job.assigned_to ? [job.assigned_to] : []);
+    const currentAssignedToNormalized = Array.isArray(job.assigned_to) ? job.assigned_to : job.assigned_to ? [job.assigned_to] : [];
 
     // Update the 'assigned_to' field in the job
     handleFieldSave('assigned_to', currentAssignedToNormalized, newAssignedEmails);
 
     // Prepare the 'assigned_to_name' for display/storage
-    const techNames = newAssignedEmails
-      .map(email => {
-        const tech = technicians.find(t => t.email === email);
-        return tech?.full_name; // Only take full_name, filter out undefined later
-      })
-      .filter(Boolean); // Filter out any technicians not found or null names
+    const techNames = newAssignedEmails.
+    map((email) => {
+      const tech = technicians.find((t) => t.email === email);
+      return tech?.full_name; // Only take full_name, filter out undefined later
+    }).
+    filter(Boolean); // Filter out any technicians not found or null names
 
     // Update 'assigned_to_name' with a comma-separated string
     updateJobMutation.mutate({ field: 'assigned_to_name', value: techNames.join(', ') });
   };
 
   const handleJobTypeChange = (jobTypeId) => {
-    const jobType = jobTypes.find(jt => jt.id === jobTypeId);
+    const jobType = jobTypes.find((jt) => jt.id === jobTypeId);
     handleFieldSave('job_type_id', job.job_type_id, jobTypeId);
     if (jobType) {
       updateJobMutation.mutate({ field: 'job_type_name', value: jobType.name });
@@ -296,47 +296,47 @@ export default function JobDetails({ job, onClose, onStatusChange }) {
                 </div>
                 <p className="text-xs md:text-sm text-slate-500 mt-1">Job #{job.job_number}</p>
                 <div className="flex items-center gap-1.5 mt-2">
-                  <MapPin className="w-4 h-4 text-orange-600 flex-shrink-0" />
+                  <MapPin className="text-yellow-300 lucide lucide-map-pin w-4 h-4 flex-shrink-0" />
                   <span className="text-sm md:text-base font-bold text-slate-900">{job.address}</span>
                 </div>
-                {job.customer_phone && (
-                  <a href={`tel:${job.customer_phone}`} className="flex items-center gap-2 mt-2 text-slate-700 hover:text-orange-600 transition-colors">
+                {job.customer_phone &&
+                <a href={`tel:${job.customer_phone}`} className="flex items-center gap-2 mt-2 text-slate-700 hover:text-orange-600 transition-colors">
                     <Phone className="w-4 h-4 text-orange-600" />
                     <span className="text-sm md:text-base font-medium">{job.customer_phone}</span>
                   </a>
-                )}
+                }
               </div>
             </div>
             <div className="flex flex-col gap-2 flex-shrink-0">
-              <Button 
+              <Button
                 variant="outline"
                 size="sm"
                 onClick={() => setShowHistory(true)}
-                className="h-8 px-2"
-              >
+                className="h-8 px-2">
+
                 <History className="w-4 h-4 md:mr-1" />
                 <span className="hidden md:inline text-xs">History</span>
               </Button>
-              <Button 
+              <Button
                 variant="outline"
                 size="sm"
                 onClick={() => setShowPriceList(true)}
-                className="h-8 px-2"
-              >
+                className="h-8 px-2">
+
                 <DollarSign className="w-4 h-4 md:mr-1" />
                 <span className="hidden md:inline text-xs">Price List</span>
               </Button>
-              {!isTechnician && (
-                <Button 
-                  variant="outline"
-                  size="sm"
-                  onClick={() => setShowAssistant(true)}
-                  className="h-8 px-2"
-                >
+              {!isTechnician &&
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => setShowAssistant(true)}
+                className="h-8 px-2">
+
                   <Sparkles className="w-4 h-4 md:mr-1" />
                   <span className="hidden md:inline text-xs">AI</span>
                 </Button>
-              )}
+              }
             </div>
           </div>
         </CardHeader>
@@ -368,33 +368,33 @@ export default function JobDetails({ job, onClose, onStatusChange }) {
                       type="date"
                       icon={Calendar}
                       displayFormat={(val) => format(parseISO(val), 'MMM d, yyyy')}
-                      placeholder="Set date"
-                    />
+                      placeholder="Set date" />
+
                     <EditableField
                       value={job.scheduled_time}
                       onSave={(val) => handleFieldSave('scheduled_time', job.scheduled_time, val)}
                       type="time"
                       icon={Clock}
-                      placeholder="Set time"
-                    />
+                      placeholder="Set time" />
+
                     <div className="col-span-3"> {/* This wrapper ensures it takes full width below other fields */}
                       <EditableField
-                        value={Array.isArray(job.assigned_to) ? job.assigned_to : (job.assigned_to ? [job.assigned_to] : [])}
+                        value={Array.isArray(job.assigned_to) ? job.assigned_to : job.assigned_to ? [job.assigned_to] : []}
                         onSave={handleAssignedToChange}
                         type="multi-select"
                         icon={User}
-                        options={technicians.map(t => ({ value: t.email, label: t.full_name }))}
+                        options={technicians.map((t) => ({ value: t.email, label: t.full_name }))}
                         displayFormat={(val) => {
-                          const emailsToDisplay = Array.isArray(val) ? val : (val ? [val] : []);
+                          const emailsToDisplay = Array.isArray(val) ? val : val ? [val] : [];
                           if (emailsToDisplay.length === 0) return "Unassigned";
-                          const names = emailsToDisplay.map(email => {
-                            const tech = technicians.find(t => t.email === email);
+                          const names = emailsToDisplay.map((email) => {
+                            const tech = technicians.find((t) => t.email === email);
                             return tech?.full_name || email;
                           });
                           return names.join(", ");
                         }}
-                        placeholder="Assign technicians"
-                      />
+                        placeholder="Assign technicians" />
+
                     </div>
                   </div>
                   <div className="grid grid-cols-2 gap-2 md:gap-3">
@@ -404,24 +404,24 @@ export default function JobDetails({ job, onClose, onStatusChange }) {
                       type="select"
                       icon={Package}
                       options={[
-                        { value: "Garage Door", label: "Garage Door" },
-                        { value: "Gate", label: "Gate" },
-                        { value: "Roller Shutter", label: "Roller Shutter" },
-                        { value: "Multiple", label: "Multiple" },
-                        { value: "Custom Garage Door", label: "Custom Garage Door" }
-                      ]}
+                      { value: "Garage Door", label: "Garage Door" },
+                      { value: "Gate", label: "Gate" },
+                      { value: "Roller Shutter", label: "Roller Shutter" },
+                      { value: "Multiple", label: "Multiple" },
+                      { value: "Custom Garage Door", label: "Custom Garage Door" }]
+                      }
                       className={job.product ? productColors[job.product] : ""}
-                      placeholder="Select product"
-                    />
+                      placeholder="Select product" />
+
                     <EditableField
                       value={job.job_type_id}
                       onSave={handleJobTypeChange}
                       type="select"
                       icon={Briefcase}
-                      options={jobTypes.map(jt => ({ value: jt.id, label: jt.name }))}
-                      displayFormat={(val) => jobTypes.find(jt => jt.id === val)?.name || val}
-                      placeholder="Select job type"
-                    />
+                      options={jobTypes.map((jt) => ({ value: jt.id, label: jt.name }))}
+                      displayFormat={(val) => jobTypes.find((jt) => jt.id === val)?.name || val}
+                      placeholder="Select job type" />
+
                   </div>
                 </div>
               </div>
@@ -438,8 +438,8 @@ export default function JobDetails({ job, onClose, onStatusChange }) {
                     onBlur={handleNotesBlur}
                     placeholder="Add notes and instructions for this job..."
                     rows={4}
-                    className="text-xs md:text-sm bg-white border-amber-300 focus:border-amber-400 focus:ring-amber-400"
-                  />
+                    className="text-xs md:text-sm bg-white border-amber-300 focus:border-amber-400 focus:ring-amber-400" />
+
                 </div>
               </div>
 
@@ -450,8 +450,8 @@ export default function JobDetails({ job, onClose, onStatusChange }) {
                   onChange={(e) => setPricingProvided(e.target.value)}
                   onBlur={handlePricingProvidedBlur}
                   placeholder="Enter pricing information..."
-                  className="text-xs md:text-sm bg-slate-50 border-slate-300"
-                />
+                  className="text-xs md:text-sm bg-slate-50 border-slate-300" />
+
               </div>
 
               <div>
@@ -462,23 +462,23 @@ export default function JobDetails({ job, onClose, onStatusChange }) {
                   onBlur={handleAdditionalInfoBlur}
                   placeholder="Add any additional information..."
                   rows={3}
-                  className="text-xs md:text-sm bg-slate-50 border-slate-300"
-                />
+                  className="text-xs md:text-sm bg-slate-50 border-slate-300" />
+
               </div>
 
               <div className="flex flex-col gap-2 pt-2 border-t">
-                {!activeCheckIn ? (
-                  <Button
-                    onClick={handleCheckIn}
-                    disabled={checkInMutation.isPending}
-                    className="w-full bg-blue-600 hover:bg-blue-700"
-                    size="lg"
-                  >
+                {!activeCheckIn ?
+                <Button
+                  onClick={handleCheckIn}
+                  disabled={checkInMutation.isPending}
+                  className="w-full bg-blue-600 hover:bg-blue-700"
+                  size="lg">
+
                     <LogIn className="w-4 h-4 mr-2" />
                     {checkInMutation.isPending ? 'Checking In...' : 'Check In'}
-                  </Button>
-                ) : (
-                  <div className="bg-blue-50 border border-blue-200 rounded-lg p-3">
+                  </Button> :
+
+                <div className="bg-blue-50 border border-blue-200 rounded-lg p-3">
                     <div className="flex items-center gap-2 text-blue-700">
                       <Timer className="w-4 h-4" />
                       <span className="text-sm font-medium">
@@ -486,15 +486,15 @@ export default function JobDetails({ job, onClose, onStatusChange }) {
                       </span>
                     </div>
                   </div>
-                )}
-                {totalJobTime > 0 && (
-                  <div className="bg-slate-50 border border-slate-200 rounded-lg p-3">
+                }
+                {totalJobTime > 0 &&
+                <div className="bg-slate-50 border border-slate-200 rounded-lg p-3">
                     <div className="flex items-center justify-between">
                       <span className="text-sm text-slate-600">Total Job Time:</span>
                       <span className="text-sm font-semibold text-slate-900">{totalJobTime.toFixed(1)} hours</span>
                     </div>
                   </div>
-                )}
+                }
               </div>
             </TabsContent>
 
@@ -509,8 +509,8 @@ export default function JobDetails({ job, onClose, onStatusChange }) {
                     onBlur={handleOverviewBlur}
                     placeholder="Describe the site visit overview..."
                     rows={4}
-                    className="text-xs md:text-sm bg-slate-50 border-slate-300 mt-2"
-                  />
+                    className="text-xs md:text-sm bg-slate-50 border-slate-300 mt-2" />
+
                 </div>
 
                 <div>
@@ -522,8 +522,8 @@ export default function JobDetails({ job, onClose, onStatusChange }) {
                     onBlur={handleNextStepsBlur}
                     placeholder="What are the next steps..."
                     rows={4}
-                    className="text-xs md:text-sm bg-slate-50 border-slate-300 mt-2"
-                  />
+                    className="text-xs md:text-sm bg-slate-50 border-slate-300 mt-2" />
+
                 </div>
 
                 <div>
@@ -535,8 +535,8 @@ export default function JobDetails({ job, onClose, onStatusChange }) {
                     onBlur={handleCommunicationBlur}
                     placeholder="Notes on communication with client..."
                     rows={4}
-                    className="text-xs md:text-sm bg-slate-50 border-slate-300 mt-2"
-                  />
+                    className="text-xs md:text-sm bg-slate-50 border-slate-300 mt-2" />
+
                 </div>
 
                 <div>
@@ -555,37 +555,37 @@ export default function JobDetails({ job, onClose, onStatusChange }) {
                   </Select>
                 </div>
 
-                {validationError && (
-                  <div className="bg-red-50 border border-red-200 rounded-lg p-3 flex items-start gap-2">
+                {validationError &&
+                <div className="bg-red-50 border border-red-200 rounded-lg p-3 flex items-start gap-2">
                     <AlertCircle className="w-4 h-4 text-red-600 mt-0.5 flex-shrink-0" />
                     <span className="text-sm text-red-700">{validationError}</span>
                   </div>
-                )}
+                }
 
-                {activeCheckIn && (
-                  <div className="pt-4 border-t">
+                {activeCheckIn &&
+                <div className="pt-4 border-t">
                     <Button
-                      onClick={handleCheckOut}
-                      disabled={checkOutMutation.isPending}
-                      className="w-full bg-[#fae008] hover:bg-[#e5d007] text-slate-900"
-                      size="lg"
-                    >
+                    onClick={handleCheckOut}
+                    disabled={checkOutMutation.isPending}
+                    className="w-full bg-orange-600 hover:bg-orange-700"
+                    size="lg">
+
                       <LogOut className="w-4 h-4 mr-2" />
                       {checkOutMutation.isPending ? 'Checking Out...' : 'Check Out'}
                     </Button>
                   </div>
-                )}
+                }
 
-                {completedCheckIns.length > 0 && (
-                  <Collapsible defaultOpen={false} className="pt-4 border-t">
+                {completedCheckIns.length > 0 &&
+                <Collapsible defaultOpen={false} className="pt-4 border-t">
                     <CollapsibleTrigger className="flex items-center justify-between w-full group">
                       <h4 className="text-sm font-semibold text-slate-900">Time Tracking ({completedCheckIns.length} {completedCheckIns.length === 1 ? 'visit' : 'visits'})</h4>
                       <ChevronDown className="w-4 h-4 text-slate-500 transition-transform group-data-[state=open]:rotate-180" />
                     </CollapsibleTrigger>
                     
                     <CollapsibleContent className="pt-3 space-y-3">
-                      {completedCheckIns.map((checkIn, index) => (
-                        <div key={checkIn.id} className="bg-slate-50 border border-slate-200 rounded-lg p-3">
+                      {completedCheckIns.map((checkIn, index) =>
+                    <div key={checkIn.id} className="bg-slate-50 border border-slate-200 rounded-lg p-3">
                           <div className="space-y-2">
                             <div className="flex items-center justify-between">
                               <span className="text-xs text-slate-500">Visit {completedCheckIns.length - index}</span>
@@ -615,7 +615,7 @@ export default function JobDetails({ job, onClose, onStatusChange }) {
                             </div>
                           </div>
                         </div>
-                      ))}
+                    )}
 
                       <div className="bg-blue-50 border border-blue-200 rounded-lg p-3">
                         <div className="flex items-center justify-between">
@@ -625,7 +625,7 @@ export default function JobDetails({ job, onClose, onStatusChange }) {
                       </div>
                     </CollapsibleContent>
                   </Collapsible>
-                )}
+                }
               </div>
             </TabsContent>
 
@@ -634,8 +634,8 @@ export default function JobDetails({ job, onClose, onStatusChange }) {
                 <h3 className="text-sm md:text-base font-semibold text-slate-900">Measurements & Form</h3>
                 <MeasurementsForm
                   measurements={measurements}
-                  onChange={handleMeasurementsChange}
-                />
+                  onChange={handleMeasurementsChange} />
+
               </div>
             </TabsContent>
 
@@ -648,8 +648,8 @@ export default function JobDetails({ job, onClose, onStatusChange }) {
                   multiple={true}
                   icon={ImageIcon}
                   label="Photos"
-                  emptyText="Click to upload photos"
-                />
+                  emptyText="Click to upload photos" />
+
 
                 <div className="grid md:grid-cols-2 gap-4 pt-4 border-t">
                   <EditableFileUpload
@@ -659,8 +659,8 @@ export default function JobDetails({ job, onClose, onStatusChange }) {
                     multiple={false}
                     icon={FileText}
                     label="Quote"
-                    emptyText="Click to upload quote"
-                  />
+                    emptyText="Click to upload quote" />
+
 
                   <EditableFileUpload
                     files={job.invoice_url}
@@ -669,8 +669,8 @@ export default function JobDetails({ job, onClose, onStatusChange }) {
                     multiple={false}
                     icon={FileText}
                     label="Invoice"
-                    emptyText="Click to upload invoice"
-                  />
+                    emptyText="Click to upload invoice" />
+
                 </div>
               </div>
             </TabsContent>
@@ -678,24 +678,24 @@ export default function JobDetails({ job, onClose, onStatusChange }) {
         </CardContent>
       </Card>
 
-      <PriceListModal 
-        open={showPriceList} 
-        onClose={() => setShowPriceList(false)} 
-      />
+      <PriceListModal
+        open={showPriceList}
+        onClose={() => setShowPriceList(false)} />
+
 
       <ChangeHistoryModal
         open={showHistory}
         onClose={() => setShowHistory(false)}
-        jobId={job.id}
-      />
+        jobId={job.id} />
 
-      {!isTechnician && (
-        <TechnicianAssistant
-          open={showAssistant}
-          onClose={() => setShowAssistant(false)}
-          job={job}
-        />
-      )}
-    </>
-  );
+
+      {!isTechnician &&
+      <TechnicianAssistant
+        open={showAssistant}
+        onClose={() => setShowAssistant(false)}
+        job={job} />
+
+      }
+    </>);
+
 }
