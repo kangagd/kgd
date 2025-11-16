@@ -1,0 +1,142 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    --background: 0 0% 100%;
+    --foreground: 0 0% 0%;
+    --card: 0 0% 100%;
+    --card-foreground: 0 0% 0%;
+    --popover: 0 0% 100%;
+    --popover-foreground: 0 0% 0%;
+    --primary: 53 98% 51%;
+    --primary-foreground: 0 0% 0%;
+    --secondary: 0 0% 96%;
+    --secondary-foreground: 0 0% 0%;
+    --muted: 0 0% 96%;
+    --muted-foreground: 0 0% 40%;
+    --accent: 53 98% 51%;
+    --accent-foreground: 0 0% 0%;
+    --destructive: 0 84% 60%;
+    --destructive-foreground: 0 0% 100%;
+    --border: 0 0% 90%;
+    --input: 0 0% 90%;
+    --ring: 53 98% 51%;
+    --radius: 0.5rem;
+  }
+
+  * {
+    @apply border-border;
+  }
+
+  body {
+    @apply bg-slate-50 text-foreground;
+    font-feature-settings: "rlig" 1, "calt" 1;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+  }
+
+  h1, h2, h3, h4, h5, h6 {
+    @apply text-black font-semibold tracking-tight;
+  }
+
+  h1 {
+    @apply text-3xl leading-tight;
+  }
+
+  h2 {
+    @apply text-2xl leading-tight;
+  }
+
+  h3 {
+    @apply text-xl leading-tight;
+  }
+}
+
+@layer components {
+  /* Modern Card Styling */
+  .card {
+    @apply bg-white border-slate-200 shadow-sm hover:shadow-md transition-shadow duration-200;
+  }
+
+  /* Modern Button Enhancements */
+  .btn-primary {
+    @apply bg-[#fae008] text-black font-medium hover:bg-[#e5d007] focus:ring-2 focus:ring-[#fae008] focus:ring-offset-2 transition-all duration-150;
+  }
+
+  .btn-secondary {
+    @apply bg-white text-black border border-slate-300 font-medium hover:bg-slate-50 hover:border-slate-400 focus:ring-2 focus:ring-slate-300 focus:ring-offset-2 transition-all duration-150;
+  }
+
+  /* Modern Input Styling */
+  .input-modern {
+    @apply border-slate-300 focus:border-[#fae008] focus:ring-2 focus:ring-[#fae008] focus:ring-opacity-20 transition-all duration-150;
+  }
+
+  /* Consistent Card Padding */
+  .card-content-modern {
+    @apply p-6;
+  }
+
+  /* Badge Enhancements */
+  .badge-modern {
+    @apply px-3 py-1 text-xs font-medium rounded-full;
+  }
+
+  /* Enhanced Focus States */
+  .focus-modern:focus {
+    @apply outline-none ring-2 ring-[#fae008] ring-offset-2;
+  }
+
+  /* Status Colors */
+  .status-scheduled {
+    @apply bg-blue-50 text-blue-700 border-blue-200;
+  }
+
+  .status-in-progress {
+    @apply bg-amber-50 text-amber-700 border-amber-200;
+  }
+
+  .status-completed {
+    @apply bg-green-50 text-green-700 border-green-200;
+  }
+
+  .status-open {
+    @apply bg-slate-50 text-slate-700 border-slate-200;
+  }
+
+  /* Smooth Transitions */
+  .transition-modern {
+    @apply transition-all duration-200 ease-in-out;
+  }
+}
+
+@layer utilities {
+  /* Text Utilities */
+  .text-primary {
+    @apply text-black;
+  }
+
+  .text-secondary {
+    @apply text-slate-600;
+  }
+
+  .text-muted {
+    @apply text-slate-500;
+  }
+
+  /* Background Utilities */
+  .bg-accent {
+    @apply bg-[#fae008];
+  }
+
+  .bg-subtle {
+    @apply bg-slate-50;
+  }
+
+  /* Spacing Scale */
+  .spacing-modern {
+    @apply space-y-4;
+  }
+}
