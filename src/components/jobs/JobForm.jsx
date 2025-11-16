@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from "react";
 import { Card, CardHeader, CardTitle, CardContent, CardFooter } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -31,10 +30,11 @@ export default function JobForm({ job, jobTypes, technicians, onSubmit, onCancel
     product: "",
     job_type_id: "",
     job_type_name: "",
-    assigned_to: [], // Changed to array
-    assigned_to_name: [], // Changed to array
+    assigned_to: [],
+    assigned_to_name: [],
     scheduled_date: "",
     scheduled_time: "",
+    expected_duration: null,
     status: "scheduled",
     outcome: "",
     notes: "",
@@ -84,7 +84,7 @@ export default function JobForm({ job, jobTypes, technicians, onSubmit, onCancel
         customer_phone: customer.phone || "",
         customer_email: customer.email || "",
         customer_type: customer.customer_type || "",
-        address: customer.address || formData.address, // Added customer.address
+        address: customer.address || formData.address,
       });
     }
   };
@@ -99,7 +99,7 @@ export default function JobForm({ job, jobTypes, technicians, onSubmit, onCancel
         customer_phone: newCustomer.phone || "",
         customer_email: newCustomer.email || "",
         customer_type: newCustomer.customer_type || "",
-        address: newCustomer.address || "", // Added newCustomer.address
+        address: newCustomer.address || "",
       });
       setShowNewCustomerDialog(false);
       setNewCustomerData({ name: "", phone: "", email: "" });
@@ -113,11 +113,12 @@ export default function JobForm({ job, jobTypes, technicians, onSubmit, onCancel
     setFormData({
       ...formData,
       job_type_id: jobTypeId,
-      job_type_name: jobType?.name || ""
+      job_type_name: jobType?.name || "",
+      expected_duration: jobType?.estimated_duration || null
     });
   };
 
-  const handleTechnicianChange = (techEmails) => { // Changed to accept array
+  const handleTechnicianChange = (techEmails) => {
     const techNames = techEmails.map(email => {
       const tech = technicians.find(t => t.email === email);
       return tech?.full_name || "";
@@ -325,6 +326,18 @@ export default function JobForm({ job, jobTypes, technicians, onSubmit, onCancel
                   type="time"
                   value={formData.scheduled_time}
                   onChange={(e) => setFormData({ ...formData, scheduled_time: e.target.value })}
+                />
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="expected_duration">Expected Duration (hours)</Label>
+                <Input
+                  id="expected_duration"
+                  type="number"
+                  step="0.5"
+                  value={formData.expected_duration || ""}
+                  onChange={(e) => setFormData({ ...formData, expected_duration: e.target.value ? parseFloat(e.target.value) : null })}
+                  placeholder="Auto-populated from job type"
                 />
               </div>
             </div>
