@@ -80,8 +80,8 @@ export default function EditableField({
 
   if (isEditing) {
     return (
-      <div className={`flex flex-wrap items-center gap-2 p-2 md:p-3 bg-white border-2 border-[#fae008] rounded-lg ${className}`}>
-        <div className="flex items-center gap-2 flex-1 min-w-0">
+      <div className={`space-y-2 p-2 md:p-3 bg-white border-2 border-[#fae008] rounded-lg ${className}`}>
+        <div className="flex items-center gap-2">
           {Icon && <Icon className="w-3 h-3 md:w-4 md:h-4 text-slate-400 flex-shrink-0" />}
           {type === "multi-select" ?
           <Popover open={popoverOpen} onOpenChange={setPopoverOpen}>
@@ -136,22 +136,22 @@ export default function EditableField({
 
           }
         </div>
-        <div className="flex gap-1 flex-shrink-0">
+        <div className="flex gap-2 justify-end">
           <Button
-            size="icon"
-            variant="ghost"
-            onClick={handleSave}
-            className="h-6 w-6 text-green-600 hover:text-green-700 hover:bg-green-50">
-
-            <Check className="w-3 h-3" />
-          </Button>
-          <Button
-            size="icon"
+            size="sm"
             variant="ghost"
             onClick={handleCancel}
-            className="h-6 w-6 text-red-600 hover:text-red-700 hover:bg-red-50">
-
-            <X className="w-3 h-3" />
+            className="h-7 px-3 text-red-600 hover:text-red-700 hover:bg-red-50">
+            <X className="w-3 h-3 mr-1" />
+            Cancel
+          </Button>
+          <Button
+            size="sm"
+            variant="ghost"
+            onClick={handleSave}
+            className="h-7 px-3 text-green-600 hover:text-green-700 hover:bg-green-50">
+            <Check className="w-3 h-3 mr-1" />
+            Save
           </Button>
         </div>
       </div>);
