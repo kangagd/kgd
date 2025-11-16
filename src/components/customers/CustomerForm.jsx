@@ -14,6 +14,7 @@ export default function CustomerForm({ customer, onSubmit, onCancel, isSubmittin
     phone: "",
     email: "",
     secondary_phone: "",
+    address: "",
     notes: "",
     status: "active",
   });
@@ -91,6 +92,16 @@ export default function CustomerForm({ customer, onSubmit, onCancel, isSubmittin
               type="email"
               value={formData.email}
               onChange={(e) => setFormData({ ...formData, email: e.target.value })}
+            />
+          </div>
+
+          <div className="space-y-2">
+            <Label htmlFor="address">Address</Label>
+            <Input
+              id="address"
+              value={formData.address}
+              onChange={(e) => setFormData({ ...formData, address: e.target.value })}
+              placeholder="Default address for this customer"
             />
           </div>
 
