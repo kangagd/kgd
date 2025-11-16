@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from "react";
 import { Card, CardHeader, CardTitle, CardContent, CardFooter } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -16,6 +17,7 @@ import {
   DialogFooter,
 } from "@/components/ui/dialog";
 import MeasurementsForm from "./MeasurementsForm";
+import MultiTechnicianSelect from "./MultiTechnicianSelect";
 
 export default function JobForm({ job, jobTypes, technicians, onSubmit, onCancel, isSubmitting, preselectedCustomerId }) {
   const [formData, setFormData] = useState(job || {
@@ -29,15 +31,13 @@ export default function JobForm({ job, jobTypes, technicians, onSubmit, onCancel
     product: "",
     job_type_id: "",
     job_type_name: "",
-    assigned_to: "",
-    assigned_to_name: "",
+    assigned_to: [], // Changed to array
+    assigned_to_name: [], // Changed to array
     scheduled_date: "",
     scheduled_time: "",
     status: "scheduled",
     outcome: "",
     notes: "",
-    overview: "",
-    pricing_provided: "",
     additional_info: "",
     measurements: null,
     image_urls: [],
@@ -115,12 +115,15 @@ export default function JobForm({ job, jobTypes, technicians, onSubmit, onCancel
     });
   };
 
-  const handleTechnicianChange = (techEmail) => {
-    const tech = technicians.find(t => t.email === techEmail);
+  const handleTechnicianChange = (techEmails) => { // Changed to accept array
+    const techNames = techEmails.map(email => {
+      const tech = technicians.find(t => t.email === email);
+      return tech?.full_name || "";
+    });
     setFormData({
       ...formData,
-      assigned_to: techEmail,
-      assigned_to_name: tech?.full_name || ""
+      assigned_to: techEmails,
+      assigned_to_name: techNames
     });
   };
 
@@ -263,19 +266,12 @@ export default function JobForm({ job, jobTypes, technicians, onSubmit, onCancel
               </div>
 
               <div className="space-y-2">
-                <Label htmlFor="assigned_to">Assign To</Label>
-                <Select value={formData.assigned_to} onValueChange={handleTechnicianChange}>
-                  <SelectTrigger>
-                    <SelectValue placeholder="Select technician" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {technicians.map((tech) => (
-                      <SelectItem key={tech.id} value={tech.email}>
-                        {tech.full_name}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
+                <Label htmlFor="assigned_to">Assign Technicians</Label>
+                <MultiTechnicianSelect
+                  selectedEmails={formData.assigned_to}
+                  technicians={technicians}
+                  onChange={handleTechnicianChange}
+                />
               </div>
 
               <div className="space-y-2">
@@ -339,27 +335,6 @@ export default function JobForm({ job, jobTypes, technicians, onSubmit, onCancel
                 onChange={(e) => setFormData({ ...formData, notes: e.target.value })}
                 rows={3}
                 placeholder="Add any special instructions or notes..."
-              />
-            </div>
-
-            <div className="space-y-2">
-              <Label htmlFor="overview">Overview</Label>
-              <Textarea
-                id="overview"
-                value={formData.overview}
-                onChange={(e) => setFormData({ ...formData, overview: e.target.value })}
-                rows={3}
-                placeholder="Add job overview..."
-              />
-            </div>
-
-            <div className="space-y-2">
-              <Label htmlFor="pricing_provided">Pricing Provided</Label>
-              <Input
-                id="pricing_provided"
-                value={formData.pricing_provided}
-                onChange={(e) => setFormData({ ...formData, pricing_provided: e.target.value })}
-                placeholder="Enter pricing information..."
               />
             </div>
 

@@ -3,6 +3,13 @@ import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Check, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
+import { Checkbox } from "@/components/ui/checkbox";
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from "@/components/ui/popover";
 
 export default function EditableField({ 
   value, 
@@ -16,6 +23,7 @@ export default function EditableField({
 }) {
   const [isEditing, setIsEditing] = useState(false);
   const [editValue, setEditValue] = useState(value || "");
+  const [multiSelectValue, setMultiSelectValue] = useState(Array.isArray(value) ? value : []);
   const inputRef = useRef(null);
 
   useEffect(() => {
@@ -24,31 +32,80 @@ export default function EditableField({
     }
   }, [isEditing]);
 
+  useEffect(() => {
+    setEditValue(value || "");
+    setMultiSelectValue(Array.isArray(value) ? value : []);
+  }, [value]);
+
   const handleSave = () => {
-    if (editValue !== value) {
-      onSave(editValue);
+    if (type === "multi-select") {
+      if (JSON.stringify(multiSelectValue) !== JSON.stringify(value)) {
+        onSave(multiSelectValue);
+      }
+    } else {
+      if (editValue !== value) {
+        onSave(editValue);
+      }
     }
     setIsEditing(false);
   };
 
   const handleCancel = () => {
     setEditValue(value || "");
+    setMultiSelectValue(Array.isArray(value) ? value : []);
     setIsEditing(false);
   };
 
   const handleKeyDown = (e) => {
-    if (e.key === 'Enter') {
+    if (e.key === 'Enter' && type !== "multi-select") {
       handleSave();
     } else if (e.key === 'Escape') {
       handleCancel();
     }
   };
 
+  const toggleMultiSelect = (optionValue) => {
+    setMultiSelectValue(prev => 
+      prev.includes(optionValue)
+        ? prev.filter(v => v !== optionValue)
+        : [...prev, optionValue]
+    );
+  };
+
   if (isEditing) {
     return (
       <div className={`flex items-center gap-2 p-2 md:p-3 bg-white border-2 border-orange-400 rounded-lg ${className}`}>
         {Icon && <Icon className="w-3 h-3 md:w-4 md:h-4 text-slate-400 flex-shrink-0" />}
-        {type === "select" ? (
+        {type === "multi-select" ? (
+          <Popover open={true} modal={true}>
+            <PopoverTrigger asChild>
+              <Button variant="outline" className="flex-1 justify-start h-7 text-xs md:text-sm">
+                {multiSelectValue.length === 0 
+                  ? "Select..." 
+                  : `${multiSelectValue.length} selected`}
+              </Button>
+            </PopoverTrigger>
+            <PopoverContent className="w-64" align="start">
+              <div className="space-y-2 max-h-64 overflow-y-auto">
+                {options.map((opt) => (
+                  <div key={opt.value} className="flex items-center space-x-2">
+                    <Checkbox
+                      id={`edit-${opt.value}`}
+                      checked={multiSelectValue.includes(opt.value)}
+                      onCheckedChange={() => toggleMultiSelect(opt.value)}
+                    />
+                    <label
+                      htmlFor={`edit-${opt.value}`}
+                      className="text-sm flex-1 cursor-pointer"
+                    >
+                      {opt.label}
+                    </label>
+                  </div>
+                ))}
+              </div>
+            </PopoverContent>
+          </Popover>
+        ) : type === "select" ? (
           <Select value={editValue} onValueChange={(val) => setEditValue(val)}>
             <SelectTrigger className="h-7 text-xs md:text-sm border-0 focus:ring-0">
               <SelectValue />

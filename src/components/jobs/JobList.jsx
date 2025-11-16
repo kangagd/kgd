@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from "react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -141,7 +142,7 @@ export default function JobList({ jobs, isLoading, onSelectJob }) {
                 <Badge className={statusColors[job.status]}>
                   {statusLabels[job.status] || job.status}
                 </Badge>
-                {isTechnician && job.status === 'scheduled' && job.assigned_to === user?.email && !hasActiveCheckIn(job.id) && (
+                {isTechnician && job.status === 'scheduled' && job.assigned_to?.includes(user?.email) && !hasActiveCheckIn(job.id) && (
                   <Button
                     size="sm"
                     onClick={(e) => handleCheckIn(e, job.id)}
@@ -180,11 +181,20 @@ export default function JobList({ jobs, isLoading, onSelectJob }) {
                   </Badge>
                 )}
                 
-                {job.assigned_to_name && (
-                  <Badge variant="outline" className="text-slate-700">
-                    <User className="w-3 h-3 mr-1" />
-                    {job.assigned_to_name}
-                  </Badge>
+                {job.assigned_to_name && job.assigned_to_name.length > 0 && (
+                  Array.isArray(job.assigned_to_name) ? (
+                    job.assigned_to_name.map((name, idx) => (
+                      <Badge key={idx} variant="outline" className="text-slate-700">
+                        <User className="w-3 h-3 mr-1" />
+                        {name}
+                      </Badge>
+                    ))
+                  ) : (
+                    <Badge variant="outline" className="text-slate-700">
+                      <User className="w-3 h-3 mr-1" />
+                      {job.assigned_to_name}
+                    </Badge>
+                  )
                 )}
                 
                 {job.product && (
