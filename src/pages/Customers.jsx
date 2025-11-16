@@ -1,3 +1,4 @@
+
 import React, { useState } from "react";
 import { base44 } from "@/api/base44Client";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
@@ -5,7 +6,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
-import { Plus, Search, Phone, Mail, Tag, ExternalLink } from "lucide-react";
+import { Plus, Search, Phone, Mail, Tag, ExternalLink, MapPin } from "lucide-react";
 import CustomerForm from "../components/customers/CustomerForm";
 import CustomerDetails from "../components/customers/CustomerDetails";
 
@@ -64,7 +65,8 @@ export default function Customers() {
   const filteredCustomers = customers.filter(customer => 
     customer.name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
     customer.phone?.includes(searchTerm) ||
-    customer.email?.toLowerCase().includes(searchTerm.toLowerCase())
+    customer.email?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    customer.address?.toLowerCase().includes(searchTerm.toLowerCase())
   );
 
   if (showForm) {
@@ -183,6 +185,12 @@ export default function Customers() {
                     </div>
                   </div>
                   <div className="space-y-2">
+                    {customer.address && (
+                      <div className="flex items-center gap-2 text-slate-600">
+                        <MapPin className="w-4 h-4 text-slate-400" />
+                        <span className="text-sm">{customer.address}</span>
+                      </div>
+                    )}
                     {customer.phone && (
                       <div className="flex items-center gap-2 text-slate-600">
                         <Phone className="w-4 h-4 text-slate-400" />
