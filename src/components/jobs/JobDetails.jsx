@@ -296,12 +296,12 @@ export default function JobDetails({ job, onClose, onStatusChange }) {
                 </div>
                 <p className="text-xs md:text-sm text-slate-500 mt-1">Job #{job.job_number}</p>
                 <div className="flex items-center gap-1.5 mt-2">
-                  <MapPin className="text-yellow-300 lucide lucide-map-pin w-4 h-4 flex-shrink-0" />
+                  <MapPin className="text-[#fae008] lucide lucide-map-pin w-4 h-4 flex-shrink-0" />
                   <span className="text-sm md:text-base font-bold text-slate-900">{job.address}</span>
                 </div>
                 {job.customer_phone &&
                 <a href={`tel:${job.customer_phone}`} className="flex items-center gap-2 mt-2 text-slate-700 hover:text-orange-600 transition-colors">
-                    <Phone className="w-4 h-4 text-orange-600" />
+                    <Phone className="text-[#fae008] lucide lucide-phone w-4 h-4" />
                     <span className="text-sm md:text-base font-medium">{job.customer_phone}</span>
                   </a>
                 }
