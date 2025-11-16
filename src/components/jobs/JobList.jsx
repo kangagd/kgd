@@ -2,7 +2,7 @@ import React, { useState, useEffect } from "react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { MapPin, Calendar, Clock, User, Briefcase, FileText, LogIn, Package } from "lucide-react";
+import { MapPin, Calendar, Clock, User, Briefcase, FileText, LogIn, Package, Phone, Mail } from "lucide-react";
 import { format, parseISO } from "date-fns";
 import { base44 } from "@/api/base44Client";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
@@ -30,11 +30,11 @@ const statusLabels = {
 };
 
 const productColors = {
-  "Garage Door": "bg-blue-100 text-blue-700",
-  "Gate": "bg-green-100 text-green-700",
-  "Roller Shutter": "bg-purple-100 text-purple-700",
-  "Multiple": "bg-orange-100 text-orange-700",
-  "Custom Garage Door": "bg-pink-100 text-pink-700",
+  "Garage Door": "bg-blue-100 text-blue-700 border-blue-200",
+  "Gate": "bg-green-100 text-green-700 border-green-200",
+  "Roller Shutter": "bg-purple-100 text-purple-700 border-purple-200",
+  "Multiple": "bg-orange-100 text-orange-700 border-orange-200",
+  "Custom Garage Door": "bg-pink-100 text-pink-700 border-pink-200",
 };
 
 export default function JobList({ jobs, isLoading, onSelectJob }) {
@@ -117,21 +117,53 @@ export default function JobList({ jobs, isLoading, onSelectJob }) {
       {jobs.map((job) => (
         <Card 
           key={job.id}
-          className="hover:shadow-lg transition-shadow cursor-pointer"
+          className="hover:shadow-xl transition-all duration-200 cursor-pointer border-l-4 hover:scale-[1.01]"
+          style={{ borderLeftColor: job.status === 'in_progress' ? '#3b82f6' : job.status === 'completed' ? '#10b981' : '#e2e8f0' }}
           onClick={() => onSelectJob(job)}
         >
-          <CardContent className="p-4 md:p-6">
-            <div className="flex items-start justify-between mb-3">
-              <div className="flex-1">
-                <h3 className="font-semibold text-lg text-slate-900">{job.customer_name}</h3>
-                <p className="text-sm text-slate-500 mb-1">Job #{job.job_number}</p>
-                <div className="flex items-start gap-2 text-slate-700">
-                  <MapPin className="w-4 h-4 text-orange-600 mt-0.5 flex-shrink-0" />
-                  <span className="text-sm">{job.address}</span>
+          <CardContent className="p-5 md:p-6">
+            <div className="flex items-start justify-between mb-4">
+              <div className="flex-1 min-w-0">
+                <div className="flex items-center gap-2 mb-1">
+                  <h3 className="font-bold text-xl text-slate-900 truncate">{job.customer_name}</h3>
+                  <Badge variant="outline" className="text-xs font-normal text-slate-500 border-slate-300">
+                    #{job.job_number}
+                  </Badge>
                 </div>
+                
+                <div className="flex items-start gap-2 text-slate-700 mb-2">
+                  <MapPin className="w-4 h-4 text-[#fae008] mt-0.5 flex-shrink-0" />
+                  <span className="text-sm font-medium">{job.address}</span>
+                </div>
+
+                {(job.customer_phone || job.customer_email) && (
+                  <div className="flex flex-wrap gap-3 mt-2">
+                    {job.customer_phone && (
+                      <a 
+                        href={`tel:${job.customer_phone}`}
+                        onClick={(e) => e.stopPropagation()}
+                        className="flex items-center gap-1.5 text-xs text-slate-600 hover:text-blue-600 transition-colors"
+                      >
+                        <Phone className="w-3.5 h-3.5" />
+                        {job.customer_phone}
+                      </a>
+                    )}
+                    {job.customer_email && (
+                      <a 
+                        href={`mailto:${job.customer_email}`}
+                        onClick={(e) => e.stopPropagation()}
+                        className="flex items-center gap-1.5 text-xs text-slate-600 hover:text-blue-600 transition-colors"
+                      >
+                        <Mail className="w-3.5 h-3.5" />
+                        {job.customer_email}
+                      </a>
+                    )}
+                  </div>
+                )}
               </div>
-              <div className="flex flex-wrap gap-2 justify-end items-start">
-                <Badge className={statusColors[job.status]}>
+              
+              <div className="flex flex-col gap-2 items-end ml-3">
+                <Badge className={`${statusColors[job.status]} font-medium shadow-sm`}>
                   {statusLabels[job.status] || job.status}
                 </Badge>
                 {isTechnician && job.status === 'scheduled' && job.assigned_to?.includes(user?.email) && !hasActiveCheckIn(job.id) && (
@@ -139,43 +171,49 @@ export default function JobList({ jobs, isLoading, onSelectJob }) {
                     size="sm"
                     onClick={(e) => handleCheckIn(e, job.id)}
                     disabled={checkInMutation.isPending}
-                    className="bg-blue-600 hover:bg-blue-700 h-7 text-xs"
+                    className="bg-blue-600 hover:bg-blue-700 h-8 text-xs font-medium shadow-sm"
                   >
-                    <LogIn className="w-3 h-3 mr-1" />
+                    <LogIn className="w-3.5 h-3.5 mr-1.5" />
                     Check In
                   </Button>
                 )}
               </div>
             </div>
 
-            <div className="space-y-2">
-              <div className="flex flex-wrap gap-4">
+            <div className="space-y-3">
+              <div className="flex flex-wrap gap-4 bg-slate-50 rounded-lg p-3">
                 <div className="flex items-center gap-2 text-slate-700">
-                  <Calendar className="w-4 h-4 text-slate-400" />
-                  <span className="text-sm">
+                  <Calendar className="w-4 h-4 text-slate-500" />
+                  <span className="text-sm font-medium">
                     {job.scheduled_date && format(parseISO(job.scheduled_date), 'MMM d, yyyy')}
                   </span>
                 </div>
                 
                 {job.scheduled_time && (
                   <div className="flex items-center gap-2 text-slate-700">
-                    <Clock className="w-4 h-4 text-slate-400" />
-                    <span className="text-sm">{job.scheduled_time}</span>
+                    <Clock className="w-4 h-4 text-slate-500" />
+                    <span className="text-sm font-medium">{job.scheduled_time}</span>
                   </div>
+                )}
+
+                {job.expected_duration && (
+                  <Badge variant="outline" className="bg-white text-slate-700 border-slate-300">
+                    {job.expected_duration}h duration
+                  </Badge>
                 )}
               </div>
 
-              <div className="flex flex-wrap gap-2 pt-2">
+              <div className="flex flex-wrap gap-2">
                 {job.assigned_to_name && job.assigned_to_name.length > 0 && (
                   Array.isArray(job.assigned_to_name) ? (
                     job.assigned_to_name.map((name, idx) => (
-                      <Badge key={idx} variant="outline" className="text-slate-700">
+                      <Badge key={idx} className="bg-blue-50 text-blue-700 border-blue-200 font-medium">
                         <User className="w-3 h-3 mr-1" />
                         {name}
                       </Badge>
                     ))
                   ) : (
-                    <Badge variant="outline" className="text-slate-700">
+                    <Badge className="bg-blue-50 text-blue-700 border-blue-200 font-medium">
                       <User className="w-3 h-3 mr-1" />
                       {job.assigned_to_name}
                     </Badge>
@@ -183,14 +221,14 @@ export default function JobList({ jobs, isLoading, onSelectJob }) {
                 )}
                 
                 {job.product && (
-                  <Badge variant="outline" className={productColors[job.product]}>
+                  <Badge className={`${productColors[job.product]} font-medium`}>
                     <Package className="w-3 h-3 mr-1" />
                     {job.product}
                   </Badge>
                 )}
                 
                 {job.job_type_name && (
-                  <Badge variant="outline" className="text-slate-700">
+                  <Badge className="bg-purple-50 text-purple-700 border-purple-200 font-medium">
                     <Briefcase className="w-3 h-3 mr-1" />
                     {job.job_type_name}
                   </Badge>
@@ -198,9 +236,9 @@ export default function JobList({ jobs, isLoading, onSelectJob }) {
               </div>
 
               {job.notes && (
-                <div className="flex items-start gap-2 text-slate-600 pt-2">
-                  <FileText className="w-4 h-4 text-slate-400 mt-0.5 flex-shrink-0" />
-                  <p className="text-sm line-clamp-2">{job.notes}</p>
+                <div className="flex items-start gap-2 text-slate-600 bg-amber-50 border border-amber-200 rounded-lg p-3">
+                  <FileText className="w-4 h-4 text-amber-600 mt-0.5 flex-shrink-0" />
+                  <p className="text-sm line-clamp-2 font-medium">{job.notes}</p>
                 </div>
               )}
             </div>
