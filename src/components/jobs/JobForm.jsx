@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from "react";
 import { Card, CardHeader, CardTitle, CardContent, CardFooter } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -68,15 +67,19 @@ export default function JobForm({ job, technicians, onSubmit, onCancel, isSubmit
 
   const queryClient = useQueryClient();
 
-  const { data: customers = [] } = useQuery({
+  const { data: allCustomers = [] } = useQuery({
     queryKey: ['customers'],
-    queryFn: () => base44.entities.Customer.filter({ status: 'active' }),
+    queryFn: () => base44.entities.Customer.list(),
   });
 
-  const { data: projects = [] } = useQuery({
+  const customers = allCustomers.filter(c => c.status === 'active' && !c.deleted_at);
+
+  const { data: allProjects = [] } = useQuery({
     queryKey: ['projects'],
-    queryFn: () => base44.entities.Project.filter({ deleted_at: { $exists: false } })
+    queryFn: () => base44.entities.Project.list()
   });
+
+  const projects = allProjects.filter(p => !p.deleted_at);
 
   useEffect(() => {
     if (preselectedCustomerId && customers.length > 0) {
@@ -124,13 +127,11 @@ export default function JobForm({ job, technicians, onSubmit, onCancel, isSubmit
   };
 
   const handleProjectChange = (projectId) => {
-    if (!projectId) { // If project is unselected
+    if (!projectId || projectId === 'null') {
       setFormData({
         ...formData,
         project_id: "",
         project_name: "",
-        // Optionally reset customer details if they were pulled from the project
-        // For now, will keep existing customer details unless user explicitly changes
       });
     } else {
       const project = projects.find(p => p.id === projectId);
@@ -143,7 +144,7 @@ export default function JobForm({ job, technicians, onSubmit, onCancel, isSubmit
           customer_name: project.customer_name,
           customer_phone: project.customer_phone || "",
           customer_email: project.customer_email || "",
-          address: project.address || formData.address // Use project address if available, otherwise keep current form address
+          address: project.address || formData.address
         });
       }
     }
@@ -168,7 +169,7 @@ export default function JobForm({ job, technicians, onSubmit, onCancel, isSubmit
       const nameLower = customer.name.toLowerCase();
       const newNameLower = name.toLowerCase();
       return nameLower.includes(newNameLower) || newNameLower.includes(nameLower);
-    }).slice(0, 5); // Limit to 5 suggestions
+    }).slice(0, 5);
     
     setLiveDuplicates(duplicates);
   };
@@ -338,8 +339,8 @@ export default function JobForm({ job, technicians, onSubmit, onCancel, isSubmit
               <div className="space-y-2">
                 <Label htmlFor="project_id" className="text-sm font-semibold text-[#000000]">Project (Optional)</Label>
                 <Select 
-                  value={formData.project_id} 
-                  onValueChange={(value) => handleProjectChange(value === 'null' ? null : value)}
+                  value={formData.project_id || 'null'} 
+                  onValueChange={handleProjectChange}
                 >
                   <SelectTrigger className="border-2 border-slate-300 focus:border-[#fae008] focus:ring-2 focus:ring-[#fae008]/20 transition-all">
                     <SelectValue placeholder="Standalone job or select project" />
