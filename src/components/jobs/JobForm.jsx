@@ -447,7 +447,7 @@ export default function JobForm({ job, technicians, onSubmit, onCancel, isSubmit
                     <SelectItem value="invoiced">Invoiced</SelectItem>
                     <SelectItem value="paid">Paid</SelectItem>
                     <SelectItem value="completed">Completed</SelectItem>
-                    <SelectItem value="cancelled">Cancelled</SelectItem> {/* Added "cancelled" */}
+                    <SelectItem value="cancelled">Cancelled</SelectItem>
                   </SelectContent>
                 </Select>
               </div>
@@ -483,7 +483,7 @@ export default function JobForm({ job, technicians, onSubmit, onCancel, isSubmit
                   step="0.5"
                   value={formData.expected_duration || ""}
                   onChange={(e) => setFormData({ ...formData, expected_duration: e.target.value ? parseFloat(e.target.value) : null })}
-                  placeholder="Duration" {/* Updated placeholder */}
+                  placeholder="Duration"
                   className="border-2 border-slate-300 focus:border-[#fae008] focus:ring-2 focus:ring-[#fae008]/20 transition-all"
                 />
               </div>
