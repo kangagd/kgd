@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from "react";
 import { base44 } from "@/api/base44Client";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
@@ -76,15 +77,21 @@ export default function Jobs() {
   });
 
   const deleteJobMutation = useMutation({
-    mutationFn: (jobId) => base44.entities.Job.update(jobId, { deleted_at: new Date().toISOString() }),
+    mutationFn: async (jobId) => {
+      console.log('Attempting to delete job:', jobId);
+      const result = await base44.entities.Job.update(jobId, { deleted_at: new Date().toISOString() });
+      console.log('Delete result:', result);
+      return result;
+    },
     onSuccess: () => {
+      console.log('Delete successful, refetching...');
       queryClient.invalidateQueries({ queryKey: ['allJobs'] });
       refetch();
       setSelectedJob(null);
     },
     onError: (error) => {
       console.error("Error deleting job:", error);
-      alert("Failed to delete job. Please try again.");
+      alert(`Failed to delete job: ${error.message || 'Unknown error'}`);
     }
   });
 

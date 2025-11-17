@@ -377,6 +377,7 @@ export default function JobDetails({ job, onClose, onStatusChange, onDelete }) {
   };
 
   const handleDeleteClick = () => {
+    console.log('Delete clicked for job:', job.id, job.job_number);
     onDelete(job.id);
     setShowDeleteConfirm(false);
   };
@@ -604,8 +605,7 @@ export default function JobDetails({ job, onClose, onStatusChange, onDelete }) {
               <TabsTrigger value="files" className="text-xs md:text-sm font-semibold">
                 <ImageIcon className="w-3.5 h-3.5 md:w-4 md:h-4 md:mr-1.5" />
                 <span className="hidden md:inline">Files</span>
-              </TabsTrigger>
-            </TabsList>
+              </TabsList>
 
             <TabsContent value="details" className="space-y-3 mt-2">
               <div className="border-t-2 pt-3">
