@@ -62,7 +62,7 @@ export default function Layout({ children, currentPageName }) {
 
   if (isTechnician) {
     return (
-      <div className="min-h-screen flex flex-col bg-[#F7F8FA]">
+      <div className="min-h-screen flex flex-col bg-[#f5f3e4]">
         <header className="bg-white border-b border-slate-200 px-3 py-2 sticky top-0 z-50 shadow-sm">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-2">
@@ -117,7 +117,7 @@ export default function Layout({ children, currentPageName }) {
 
   return (
     <SidebarProvider>
-      <div className="min-h-screen flex w-full bg-[#F7F8FA]">
+      <div className="min-h-screen flex w-full bg-[#f5f3e4]">
         <Sidebar className="border-r border-slate-200 bg-white">
           <SidebarHeader className="border-b border-slate-200 p-4">
             <div className="flex items-center gap-3">

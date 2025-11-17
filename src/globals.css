@@ -32,7 +32,7 @@
     @apply border-border;
   }
   body {
-    @apply bg-[#F7F8FA] text-foreground;
+    @apply bg-[#f5f3e4] text-foreground;
     font-feature-settings: "rlig" 1, "calt" 1;
     font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen', 'Ubuntu', 'Cantarell', 'Fira Sans', 'Droid Sans', 'Helvetica Neue', sans-serif;
     -webkit-font-smoothing: antialiased;
