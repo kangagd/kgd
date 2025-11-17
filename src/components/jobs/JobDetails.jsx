@@ -21,6 +21,8 @@ import EditableFileUpload from "./EditableFileUpload";
 import CustomerEditModal from "../customers/CustomerEditModal";
 import RichTextEditor from "../common/RichTextEditor";
 import { determineJobStatus } from "./jobStatusHelper";
+import { Link } from "react-router-dom";
+import { createPageUrl } from "@/utils";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -440,10 +442,13 @@ export default function JobDetails({ job, onClose, onStatusChange, onDelete }) {
                 
                 <p className="text-xs md:text-sm text-slate-500 font-medium">Job #{job.job_number}</p>
                 {job.project_name && (
-                  <div className="flex items-center gap-1 mt-1">
+                  <Link 
+                    to={createPageUrl("Projects")}
+                    className="flex items-center gap-1 mt-1 hover:text-[#fae008] transition-colors w-fit"
+                  >
                     <FolderKanban className="w-3 h-3 text-slate-400" />
-                    <p className="text-xs text-slate-500 font-medium">{job.project_name}</p>
-                  </div>
+                    <p className="text-xs text-slate-500 font-medium hover:text-[#fae008]">{job.project_name}</p>
+                  </Link>
                 )}
               </div>
             </div>
