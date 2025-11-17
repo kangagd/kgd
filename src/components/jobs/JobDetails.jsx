@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from "react";
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -742,7 +743,7 @@ export default function JobDetails({ job, onClose, onStatusChange, onDelete }) {
 
               {completedCheckIns.length > 0 && (
                 <Collapsible defaultOpen={false} className="pt-3 border-t-2">
-                  <CollapsibleTrigger className="flex items-center justify-between w-full group">
+                  <CollapsibleTrigger className="flex items-center justify-between w-full group bg-slate-50 border-2 border-slate-200 rounded-xl p-3 hover:bg-slate-100 transition-colors">
                     <h4 className="text-sm font-bold text-[#000000]">Time Tracking ({completedCheckIns.length})</h4>
                     <ChevronDown className="w-4 h-4 text-slate-500 transition-transform group-data-[state=open]:rotate-180" />
                   </CollapsibleTrigger>
