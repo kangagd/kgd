@@ -159,7 +159,10 @@ export default function JobDetails({ job, onClose, onStatusChange, onDelete }) {
         check_in_time: new Date().toISOString()
       });
       
-      // Don't update status here - let the date rule determine it
+      // Update status based on date and check-in
+      const newStatus = determineJobStatus(job.scheduled_date, job.outcome, true, job.status);
+      await base44.entities.Job.update(job.id, { status: newStatus });
+      
       return checkIn;
     },
     onSuccess: () => {
@@ -201,6 +204,10 @@ export default function JobDetails({ job, onClose, onStatusChange, onDelete }) {
         communication_with_client: "",
         outcome: ""
       });
+      
+      // Update status after checkout - no longer has active check-in
+      const newStatus = determineJobStatus(job.scheduled_date, outcome, false, job.status);
+      await base44.entities.Job.update(job.id, { status: newStatus });
     },
     onSuccess: () => {
       setValidationError("");
@@ -327,8 +334,8 @@ export default function JobDetails({ job, onClose, onStatusChange, onDelete }) {
     logChange('outcome', job.outcome, value);
     updateJobMutation.mutate({ field: 'outcome', value });
     
-    // Update status based on centralized logic
-    const newStatus = determineJobStatus(job.scheduled_date, value, job.status);
+    // Update status based on centralized logic - check if there's an active check-in
+    const newStatus = determineJobStatus(job.scheduled_date, value, !!activeCheckIn, job.status);
     if (newStatus !== job.status) {
       updateJobMutation.mutate({ field: 'status', value: newStatus });
     }
@@ -379,7 +386,7 @@ export default function JobDetails({ job, onClose, onStatusChange, onDelete }) {
       <Card className={`border-2 border-slate-200 shadow-lg ${isTechnician ? 'rounded-none' : 'rounded-2xl'}`}>
         <CardHeader className="border-b-2 border-slate-200 bg-gradient-to-r from-slate-50 to-white p-3 md:p-4 space-y-2 md:space-y-3">
           <div className="flex items-start justify-between gap-2">
-            <div className="flex items-start gap-2 flex-1 min-w-0">
+            <div className="flex items-start gap-1.5 flex-1 min-w-0">
               <Button 
                 variant="ghost" 
                 size="icon" 
@@ -597,8 +604,7 @@ export default function JobDetails({ job, onClose, onStatusChange, onDelete }) {
               <TabsTrigger value="files" className="text-xs md:text-sm font-semibold">
                 <ImageIcon className="w-3.5 h-3.5 md:w-4 md:h-4 md:mr-1.5" />
                 <span className="hidden md:inline">Files</span>
-              </TabsTrigger>
-            </TabsList>
+              </TabsList>
 
             <TabsContent value="details" className="space-y-3 mt-2">
               <div className="border-t-2 pt-3">
