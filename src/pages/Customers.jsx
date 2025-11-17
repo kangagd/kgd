@@ -78,12 +78,8 @@ export default function Customers() {
     setSelectedCustomer(null);
   };
 
-  const handleDelete = async (customerId) => {
-    try {
-      await deleteCustomerMutation.mutateAsync(customerId);
-    } catch (error) {
-      console.error("Delete error:", error);
-    }
+  const handleDelete = (customerId) => {
+    deleteCustomerMutation.mutate(customerId);
   };
 
   const filteredCustomers = customers.filter((customer) => {

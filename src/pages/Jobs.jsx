@@ -130,12 +130,8 @@ export default function Jobs() {
     setSelectedJob(null);
   };
 
-  const handleDelete = async (jobId) => {
-    try {
-      await deleteJobMutation.mutateAsync(jobId);
-    } catch (error) {
-      console.error("Delete error:", error);
-    }
+  const handleDelete = (jobId) => {
+    deleteJobMutation.mutate(jobId);
   };
 
   const isTechnician = user?.is_field_technician && user?.role !== 'admin';
