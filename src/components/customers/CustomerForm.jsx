@@ -32,7 +32,7 @@ export default function CustomerForm({ customer, onSubmit, onCancel, isSubmittin
   });
 
   const [showNewOrgDialog, setShowNewOrgDialog] = useState(false);
-  const [newOrgData, setNewOrgData] = useState({ name: "", organisation_type: "", address: "" });
+  const [newOrgData, setNewOrgData] = useState({ name: "", organisation_type: undefined, address: "" });
   const [isCreatingOrg, setIsCreatingOrg] = useState(false);
   const queryClient = useQueryClient();
 
@@ -58,7 +58,13 @@ export default function CustomerForm({ customer, onSubmit, onCancel, isSubmittin
   const handleCreateNewOrg = async () => {
     setIsCreatingOrg(true);
     try {
-      const newOrg = await base44.entities.Organisation.create(newOrgData);
+      // Filter out empty/undefined organisation_type
+      const submitData = { ...newOrgData };
+      if (!submitData.organisation_type) {
+        delete submitData.organisation_type;
+      }
+      
+      const newOrg = await base44.entities.Organisation.create(submitData);
       
       // Refetch organisations to include the new one
       await queryClient.refetchQueries({ queryKey: ['organisations'] });
@@ -71,7 +77,7 @@ export default function CustomerForm({ customer, onSubmit, onCancel, isSubmittin
       });
       
       setShowNewOrgDialog(false);
-      setNewOrgData({ name: "", organisation_type: "", address: "" });
+      setNewOrgData({ name: "", organisation_type: undefined, address: "" });
     } catch (error) {
       console.error("Error creating organisation:", error);
     } finally {
@@ -237,7 +243,7 @@ export default function CustomerForm({ customer, onSubmit, onCancel, isSubmittin
             </div>
             <div className="space-y-2">
               <Label htmlFor="new_org_type">Type</Label>
-              <Select value={newOrgData.organisation_type} onValueChange={(val) => setNewOrgData({ ...newOrgData, organisation_type: val })}>
+              <Select value={newOrgData.organisation_type || ""} onValueChange={(val) => setNewOrgData({ ...newOrgData, organisation_type: val || undefined })}>
                 <SelectTrigger className="border-2 border-slate-300">
                   <SelectValue placeholder="Select type" />
                 </SelectTrigger>

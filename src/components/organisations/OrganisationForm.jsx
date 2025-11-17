@@ -10,7 +10,7 @@ import RichTextEditor from "../common/RichTextEditor";
 export default function OrganisationForm({ organisation, onSubmit, onCancel, isSubmitting }) {
   const [formData, setFormData] = useState(organisation || {
     name: "",
-    organisation_type: "",
+    organisation_type: undefined,
     address: "",
     phone: "",
     email: "",
@@ -20,7 +20,12 @@ export default function OrganisationForm({ organisation, onSubmit, onCancel, isS
 
   const handleSubmit = (e) => {
     e.preventDefault();
-    onSubmit(formData);
+    // Filter out empty strings and undefined values for optional enum fields
+    const submitData = { ...formData };
+    if (!submitData.organisation_type) {
+      delete submitData.organisation_type;
+    }
+    onSubmit(submitData);
   };
 
   return (
@@ -56,7 +61,7 @@ export default function OrganisationForm({ organisation, onSubmit, onCancel, isS
           <div className="grid md:grid-cols-2 gap-6">
             <div className="space-y-2">
               <Label htmlFor="organisation_type" className="text-sm font-semibold text-[#000000]">Type</Label>
-              <Select value={formData.organisation_type} onValueChange={(val) => setFormData({ ...formData, organisation_type: val })}>
+              <Select value={formData.organisation_type || ""} onValueChange={(val) => setFormData({ ...formData, organisation_type: val || undefined })}>
                 <SelectTrigger className="border-2 border-slate-300 focus:border-[#fae008] focus:ring-2 focus:ring-[#fae008]/20">
                   <SelectValue placeholder="Select type" />
                 </SelectTrigger>
