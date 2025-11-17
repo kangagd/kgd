@@ -4,24 +4,24 @@
 
 @layer base {
   :root {
-    --background: 0 0% 100%;
-    --foreground: 0 0% 0%;
+    --background: 32 20% 98%;
+    --foreground: 25 10% 12%;
     --card: 0 0% 100%;
-    --card-foreground: 0 0% 0%;
+    --card-foreground: 25 10% 12%;
     --popover: 0 0% 100%;
-    --popover-foreground: 0 0% 0%;
+    --popover-foreground: 25 10% 12%;
     --primary: 51 98% 51%;
-    --primary-foreground: 0 0% 0%;
-    --secondary: 210 40% 96.1%;
-    --secondary-foreground: 222.2 47.4% 11.2%;
-    --muted: 210 40% 96.1%;
-    --muted-foreground: 215.4 16.3% 46.9%;
+    --primary-foreground: 25 10% 12%;
+    --secondary: 32 25% 94%;
+    --secondary-foreground: 25 10% 12%;
+    --muted: 32 20% 95%;
+    --muted-foreground: 25 8% 45%;
     --accent: 51 98% 51%;
-    --accent-foreground: 0 0% 0%;
+    --accent-foreground: 25 10% 12%;
     --destructive: 0 84.2% 60.2%;
     --destructive-foreground: 0 0% 98%;
-    --border: 214.3 31.8% 91.4%;
-    --input: 214.3 31.8% 91.4%;
+    --border: 32 15% 88%;
+    --input: 32 15% 88%;
     --ring: 51 98% 51%;
     --radius: 0.5rem;
   }
@@ -41,7 +41,7 @@
   
   h1, h2, h3, h4, h5, h6 {
     @apply font-bold tracking-tight;
-    color: #000000;
+    color: hsl(25, 10%, 12%);
   }
   
   p, span, div {
@@ -52,11 +52,11 @@
 @layer components {
   /* Enhanced card styles */
   .card-enhanced {
-    @apply bg-white rounded-xl border border-slate-200 shadow-sm transition-all duration-200;
+    @apply bg-white rounded-xl border border-[hsl(32,15%,88%)] shadow-sm transition-all duration-200;
   }
   
   .card-enhanced:hover {
-    @apply shadow-md border-slate-300;
+    @apply shadow-md border-[hsl(32,15%,80%)];
   }
   
   /* Interactive card states */
@@ -74,23 +74,23 @@
   
   /* Button enhancements */
   .btn-primary {
-    @apply bg-[#fae008] text-[#000000] font-semibold hover:bg-[#e5d007] active:bg-[#d4c006] transition-all duration-150;
+    @apply bg-[#fae008] text-[hsl(25,10%,12%)] font-semibold hover:bg-[#e5d007] active:bg-[#d4c006] transition-all duration-150;
     @apply shadow-sm hover:shadow-md active:shadow-sm;
   }
   
   .btn-secondary {
-    @apply bg-white text-[#000000] border border-slate-300 font-medium hover:bg-slate-50 hover:border-slate-400;
-    @apply transition-all duration-150 active:bg-slate-100;
+    @apply bg-white text-[hsl(25,10%,12%)] border border-[hsl(32,15%,88%)] font-medium hover:bg-[hsl(32,25%,94%)] hover:border-[hsl(32,15%,80%)];
+    @apply transition-all duration-150 active:bg-[hsl(32,20%,92%)];
   }
   
   /* Form input enhancements */
   .input-enhanced {
-    @apply border-slate-300 focus:border-[#fae008] focus:ring-2 focus:ring-[#fae008]/20;
+    @apply border-[hsl(32,15%,88%)] focus:border-[#fae008] focus:ring-2 focus:ring-[#fae008]/20;
     @apply transition-all duration-150;
   }
   
   /* Badge enhancements */
   .badge-yellow {
-    @apply bg-[#fae008]/20 text-[#000000] border border-[#fae008]/30 font-medium;
+    @apply bg-[#fae008]/20 text-[hsl(25,10%,12%)] border border-[#fae008]/30 font-medium;
   }
 }
