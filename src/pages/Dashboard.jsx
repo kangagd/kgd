@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from "react";
 import { base44 } from "@/api/base44Client";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
@@ -7,24 +8,22 @@ import { useNavigate } from "react-router-dom";
 import { createPageUrl } from "@/utils";
 
 const statusColors = {
-  in_progress: "bg-blue-50 text-blue-900 border-blue-200",
-  new_quote: "bg-purple-50 text-purple-900 border-purple-200",
-  update_quote: "bg-indigo-50 text-indigo-900 border-indigo-200",
-  send_invoice: "bg-[#fae008]/20 text-[#000000] border-[#fae008]/40",
-  completed: "bg-green-50 text-green-900 border-green-200",
-  return_visit_required: "bg-amber-50 text-amber-900 border-amber-200",
-  scheduled: "bg-slate-50 text-slate-900 border-slate-200",
-  cancelled: "bg-slate-50 text-slate-900 border-slate-200"
+  open: "bg-slate-100 text-slate-700 border-slate-300",
+  scheduled: "bg-blue-100 text-blue-700 border-blue-300",
+  quoted: "bg-purple-100 text-purple-700 border-purple-300",
+  invoiced: "bg-indigo-100 text-indigo-700 border-indigo-300",
+  paid: "bg-green-100 text-green-700 border-green-300",
+  completed: "bg-emerald-100 text-emerald-700 border-emerald-300",
+  cancelled: "bg-slate-100 text-slate-700 border-slate-300"
 };
 
 const statusLabels = {
-  in_progress: "In Progress",
-  new_quote: "New Quote",
-  update_quote: "Update Quote",
-  send_invoice: "Send Invoice",
-  completed: "Completed",
-  return_visit_required: "Return Visit Required",
+  open: "Open",
   scheduled: "Scheduled",
+  quoted: "Quoted",
+  invoiced: "Invoiced",
+  paid: "Paid",
+  completed: "Completed",
   cancelled: "Cancelled"
 };
 

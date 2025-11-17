@@ -35,8 +35,27 @@ import {
 const statusColors = {
   open: "bg-slate-100 text-slate-800 border-slate-200",
   scheduled: "bg-blue-100 text-blue-800 border-blue-200",
-  in_progress: "bg-orange-100 text-orange-800 border-orange-200",
-  completed: "bg-green-100 text-green-800 border-green-200",
+  quoted: "bg-purple-100 text-purple-800 border-purple-200",
+  invoiced: "bg-indigo-100 text-indigo-800 border-indigo-200",
+  paid: "bg-green-100 text-green-800 border-green-200",
+  completed: "bg-emerald-100 text-emerald-800 border-emerald-200",
+  cancelled: "bg-slate-100 text-slate-800 border-slate-200"
+};
+
+const stageColors = {
+  lead: "bg-slate-100 text-slate-800 border-slate-200",
+  assessment_measure: "bg-yellow-100 text-yellow-800 border-yellow-200",
+  quote_preparing: "bg-orange-100 text-orange-800 border-orange-200",
+  quote_sent: "bg-purple-100 text-purple-800 border-purple-200",
+  quote_approved: "bg-indigo-100 text-indigo-800 border-indigo-200",
+  parts_ordered: "bg-blue-100 text-blue-800 border-blue-200",
+  scheduled: "bg-cyan-100 text-cyan-800 border-cyan-200",
+  technician_on_site: "bg-orange-100 text-orange-800 border-orange-200",
+  return_visit_needed: "bg-amber-100 text-amber-800 border-amber-200",
+  work_completed: "bg-lime-100 text-lime-800 border-lime-200",
+  invoiced: "bg-indigo-100 text-indigo-800 border-indigo-200",
+  paid: "bg-green-100 text-green-800 border-green-200",
+  closed: "bg-emerald-100 text-emerald-800 border-emerald-200",
   cancelled: "bg-slate-100 text-slate-800 border-slate-200"
 };
 
@@ -605,8 +624,7 @@ export default function JobDetails({ job, onClose, onStatusChange, onDelete }) {
               <TabsTrigger value="files" className="text-xs md:text-sm font-semibold">
                 <ImageIcon className="w-3.5 h-3.5 md:w-4 md:h-4 md:mr-1.5" />
                 <span className="hidden md:inline">Files</span>
-              </TabsTrigger>
-            </TabsList>
+              </TabsList>
 
             <TabsContent value="details" className="space-y-3 mt-2">
               <div className="border-t-2 pt-3">
