@@ -72,11 +72,16 @@ export default function Jobs() {
   });
 
   const deleteJobMutation = useMutation({
-    mutationFn: (jobId) => base44.entities.Job.update(jobId, { deleted_at: new Date().toISOString() }),
+    mutationFn: async (jobId) => {
+      await base44.entities.Job.update(jobId, { deleted_at: new Date().toISOString() });
+    },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['allJobs'] });
-      queryClient.invalidateQueries({ queryKey: ['deletedJobs'] });
       setSelectedJob(null);
+    },
+    onError: (error) => {
+      console.error("Error deleting job:", error);
+      alert("Failed to delete job. Please try again.");
     }
   });
 
@@ -118,8 +123,12 @@ export default function Jobs() {
     setSelectedJob(null);
   };
 
-  const handleDelete = (jobId) => {
-    deleteJobMutation.mutate(jobId);
+  const handleDelete = async (jobId) => {
+    try {
+      await deleteJobMutation.mutateAsync(jobId);
+    } catch (error) {
+      console.error("Delete error:", error);
+    }
   };
 
   const isTechnician = user?.is_field_technician && user?.role !== 'admin';

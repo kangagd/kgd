@@ -50,11 +50,16 @@ export default function Customers() {
   });
 
   const deleteCustomerMutation = useMutation({
-    mutationFn: (customerId) => base44.entities.Customer.update(customerId, { deleted_at: new Date().toISOString() }),
+    mutationFn: async (customerId) => {
+      await base44.entities.Customer.update(customerId, { deleted_at: new Date().toISOString() });
+    },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['allCustomers'] });
-      queryClient.invalidateQueries({ queryKey: ['deletedCustomers'] });
       setSelectedCustomer(null);
+    },
+    onError: (error) => {
+      console.error("Error deleting customer:", error);
+      alert("Failed to delete customer. Please try again.");
     }
   });
 
@@ -72,8 +77,12 @@ export default function Customers() {
     setSelectedCustomer(null);
   };
 
-  const handleDelete = (customerId) => {
-    deleteCustomerMutation.mutate(customerId);
+  const handleDelete = async (customerId) => {
+    try {
+      await deleteCustomerMutation.mutateAsync(customerId);
+    } catch (error) {
+      console.error("Delete error:", error);
+    }
   };
 
   const filteredCustomers = customers.filter((customer) => {
