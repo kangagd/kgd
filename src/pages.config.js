@@ -9,7 +9,6 @@ import UserProfile from './pages/UserProfile';
 import Calendar from './pages/Calendar';
 import Archive from './pages/Archive';
 import Organisations from './pages/Organisations';
-import Projects from './pages/Projects';
 import __Layout from './Layout.jsx';
 
 
@@ -25,7 +24,6 @@ export const PAGES = {
     "Calendar": Calendar,
     "Archive": Archive,
     "Organisations": Organisations,
-    "Projects": Projects,
 }
 
 export const pagesConfig = {

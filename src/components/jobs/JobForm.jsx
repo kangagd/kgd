@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from "react";
 import { Card, CardHeader, CardTitle, CardContent, CardFooter } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -19,11 +18,9 @@ import MultiTechnicianSelect from "./MultiTechnicianSelect";
 import RichTextEditor from "../common/RichTextEditor";
 import { determineJobStatus } from "./jobStatusHelper";
 
-export default function JobForm({ job, jobTypes, technicians, onSubmit, onCancel, isSubmitting, preselectedCustomerId, preselectedProjectId }) {
+export default function JobForm({ job, jobTypes, technicians, onSubmit, onCancel, isSubmitting, preselectedCustomerId }) {
   const [formData, setFormData] = useState(job || {
     job_number: null,
-    project_id: preselectedProjectId || "",
-    project_name: "",
     customer_id: preselectedCustomerId || "",
     customer_name: "",
     customer_phone: "",
@@ -64,22 +61,11 @@ export default function JobForm({ job, jobTypes, technicians, onSubmit, onCancel
     queryFn: () => base44.entities.Customer.filter({ status: 'active' }),
   });
 
-  const { data: projects = [] } = useQuery({
-    queryKey: ['projects'],
-    queryFn: () => base44.entities.Project.filter({ deleted_at: { $exists: false } })
-  });
-
   useEffect(() => {
     if (preselectedCustomerId && customers.length > 0) {
       handleCustomerChange(preselectedCustomerId);
     }
   }, [preselectedCustomerId, customers]);
-
-  useEffect(() => {
-    if (preselectedProjectId && projects.length > 0) {
-      handleProjectChange(preselectedProjectId);
-    }
-  }, [preselectedProjectId, projects]);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -116,36 +102,6 @@ export default function JobForm({ job, jobTypes, technicians, onSubmit, onCancel
         customer_type: customer.customer_type || "",
         address: customer.address || formData.address,
       });
-    }
-  };
-
-  const handleProjectChange = (projectId) => {
-    if (!projectId) { // "No Project" selected
-      setFormData({
-        ...formData,
-        project_id: "",
-        project_name: "",
-        customer_id: preselectedCustomerId || "", // Revert to preselected or empty
-        customer_name: "",
-        customer_phone: "",
-        customer_email: "",
-        customer_type: "",
-        address: "", // Clear address if it was project-driven
-      });
-    } else {
-      const project = projects.find(p => p.id === projectId);
-      if (project) {
-        setFormData({
-          ...formData,
-          project_id: projectId,
-          project_name: project.name,
-          customer_id: project.customer_id,
-          customer_name: project.customer_name,
-          customer_phone: project.customer_phone || "",
-          customer_email: project.customer_email || "",
-          address: project.address || formData.address // Use project address, keep current if project has none
-        });
-      }
     }
   };
 
@@ -329,31 +285,12 @@ export default function JobForm({ job, jobTypes, technicians, onSubmit, onCancel
               <ArrowLeft className="w-5 h-5" />
             </Button>
             <CardTitle className="text-2xl font-bold text-[#000000] tracking-tight">
-              {job ? `Edit Job #${job.job_number}` : formData.project_name ? `New Visit - ${formData.project_name}` : 'Create New Job'}
+              {job ? `Edit Job #${job.job_number}` : 'Create New Job'}
             </CardTitle>
           </div>
         </CardHeader>
         <form onSubmit={handleSubmit}>
           <CardContent className="p-6 space-y-6">
-            {!preselectedProjectId && (
-              <div className="space-y-2">
-                <Label htmlFor="project_id" className="text-sm font-semibold text-[#000000]">Project (Optional)</Label>
-                <Select value={formData.project_id} onValueChange={handleProjectChange}>
-                  <SelectTrigger className="border-2 border-slate-300 focus:border-[#fae008] focus:ring-2 focus:ring-[#fae008]/20 transition-all">
-                    <SelectValue placeholder="Select project (or leave empty for standalone job)" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value={null}>No Project (Standalone Job)</SelectItem>
-                    {projects.map((project) => (
-                      <SelectItem key={project.id} value={project.id}>
-                        {project.name}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-            )}
-
             <div className="space-y-2">
               <Label htmlFor="customer_id" className="text-sm font-semibold text-[#000000]">Customer *</Label>
               <div className="flex gap-2">
@@ -361,7 +298,6 @@ export default function JobForm({ job, jobTypes, technicians, onSubmit, onCancel
                   value={formData.customer_id} 
                   onValueChange={handleCustomerChange} 
                   required
-                  disabled={!!formData.project_id}
                 >
                   <SelectTrigger className="flex-1 border-2 border-slate-300 focus:border-[#fae008] focus:ring-2 focus:ring-[#fae008]/20 transition-all">
                     <SelectValue placeholder="Select customer" />
@@ -374,20 +310,15 @@ export default function JobForm({ job, jobTypes, technicians, onSubmit, onCancel
                     ))}
                   </SelectContent>
                 </Select>
-                {!formData.project_id && (
-                  <Button
-                    type="button"
-                    variant="outline"
-                    onClick={() => setShowNewCustomerDialog(true)}
-                    className="border-2 hover:bg-slate-100"
-                  >
-                    <Plus className="w-4 h-4" />
-                  </Button>
-                )}
+                <Button
+                  type="button"
+                  variant="outline"
+                  onClick={() => setShowNewCustomerDialog(true)}
+                  className="border-2 hover:bg-slate-100"
+                >
+                  <Plus className="w-4 h-4" />
+                </Button>
               </div>
-              {formData.project_id && (
-                <p className="text-xs text-slate-500">Customer auto-filled from project</p>
-              )}
             </div>
 
             <div className="space-y-2">
@@ -452,9 +383,11 @@ export default function JobForm({ job, jobTypes, technicians, onSubmit, onCancel
                   <SelectContent>
                     <SelectItem value="open">Open</SelectItem>
                     <SelectItem value="scheduled">Scheduled</SelectItem>
-                    <SelectItem value="in_progress">In Progress</SelectItem>
+                    <SelectItem value="quoted">Quoted</SelectItem>
+                    <SelectItem value="invoiced">Invoiced</SelectItem>
+                    <SelectItem value="paid">Paid</SelectItem>
                     <SelectItem value="completed">Completed</SelectItem>
-                    <SelectItem value="cancelled">Cancelled</SelectItem>
+                    <SelectItem value="lost">Lost</SelectItem>
                   </SelectContent>
                 </Select>
               </div>
@@ -643,7 +576,7 @@ export default function JobForm({ job, jobTypes, technicians, onSubmit, onCancel
               disabled={isSubmitting} 
               className="bg-[#fae008] hover:bg-[#e5d007] active:bg-[#d4c006] text-[#000000] font-bold shadow-md hover:shadow-lg transition-all"
             >
-              {isSubmitting ? 'Saving...' : job ? 'Update Job' : formData.project_name ? 'Create Visit' : 'Create Job'}
+              {isSubmitting ? 'Saving...' : job ? 'Update Job' : 'Create Job'}
             </Button>
           </CardFooter>
         </form>

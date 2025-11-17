@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from "react";
 import { base44 } from "@/api/base44Client";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
@@ -18,7 +17,6 @@ export default function Jobs() {
   const [selectedJob, setSelectedJob] = useState(null);
   const [editingJob, setEditingJob] = useState(null);
   const [preselectedCustomerId, setPreselectedCustomerId] = useState(null);
-  const [preselectedProjectId, setPreselectedProjectId] = useState(null);
   const [user, setUser] = useState(null);
   const [viewMode, setViewMode] = useState("list");
   const [calendarDate, setCalendarDate] = useState(new Date());
@@ -57,7 +55,6 @@ export default function Jobs() {
     mutationFn: (data) => base44.entities.Job.create(data),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['allJobs'] });
-      queryClient.invalidateQueries({ queryKey: ['projects'] });
       refetch();
       setShowForm(false);
       setEditingJob(null);
@@ -100,16 +97,12 @@ export default function Jobs() {
     const action = params.get('action');
     const jobId = params.get('jobId');
     const customerId = params.get('customerId');
-    const projectId = params.get('projectId');
     const status = params.get('status');
 
-    if (action === 'new' || projectId || customerId) {
+    if (action === 'new' || customerId) {
       setShowForm(true);
       if (customerId) {
         setPreselectedCustomerId(customerId);
-      }
-      if (projectId) {
-        setPreselectedProjectId(projectId);
       }
     }
 
@@ -177,11 +170,9 @@ export default function Jobs() {
               setShowForm(false);
               setEditingJob(null);
               setPreselectedCustomerId(null);
-              setPreselectedProjectId(null);
             }}
             isSubmitting={createJobMutation.isPending || updateJobMutation.isPending}
             preselectedCustomerId={preselectedCustomerId}
-            preselectedProjectId={preselectedProjectId}
           />
         </div>
       </div>
