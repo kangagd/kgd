@@ -21,10 +21,25 @@ export default function OrganisationForm({ organisation, onSubmit, onCancel, isS
 
   const handleSubmit = (e) => {
     e.preventDefault();
-    // Filter out empty strings and undefined values for optional enum fields
+    // Filter out empty strings and undefined values for optional fields
     const submitData = { ...formData };
     if (!submitData.organisation_type) {
       delete submitData.organisation_type;
+    }
+    if (!submitData.sp_number) {
+      delete submitData.sp_number;
+    }
+    if (!submitData.address) {
+      delete submitData.address;
+    }
+    if (!submitData.phone) {
+      delete submitData.phone;
+    }
+    if (!submitData.email) {
+      delete submitData.email;
+    }
+    if (!submitData.notes) {
+      delete submitData.notes;
     }
     onSubmit(submitData);
   };
