@@ -1,3 +1,4 @@
+
 import React, { useState } from "react";
 import { Card, CardHeader, CardTitle, CardContent, CardFooter } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -56,8 +57,8 @@ export default function ProjectForm({ project, onSubmit, onCancel, isSubmitting 
 
   const createCustomerMutation = useMutation({
     mutationFn: (data) => base44.entities.Customer.create(data),
-    onSuccess: (newCustomer) => {
-      queryClient.invalidateQueries({ queryKey: ['customers'] });
+    onSuccess: async (newCustomer) => {
+      await queryClient.refetchQueries({ queryKey: ['customers'] });
       setFormData({
         ...formData,
         customer_id: newCustomer.id,
