@@ -1,9 +1,8 @@
-
 import React from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { ArrowLeft, Plus, Edit, Trash2, MapPin, Phone, Mail } from "lucide-react";
+import { ArrowLeft, Plus, Edit, Trash2, MapPin, Phone, Mail, FileText, Image as ImageIcon } from "lucide-react";
 import { base44 } from "@/api/base44Client";
 import { useQuery } from "@tanstack/react-query";
 import { useNavigate } from "react-router-dom";
@@ -77,6 +76,8 @@ export default function ProjectDetails({ project, onClose, onEdit, onDelete }) {
       navigate(createPageUrl("Customers") + `?customerId=${customer.id}`);
     }
   };
+
+  const isInstallType = project.project_type && project.project_type.includes("Install");
 
   return (
     <Card className="border-2 border-slate-200 shadow-lg rounded-2xl">
@@ -210,6 +211,111 @@ export default function ProjectDetails({ project, onClose, onEdit, onDelete }) {
               className="text-slate-700 prose prose-sm max-w-none"
               dangerouslySetInnerHTML={{ __html: project.description }}
             />
+          </div>
+        )}
+
+        {isInstallType && project.doors && project.doors.length > 0 && (
+          <div className="bg-blue-50 rounded-xl p-4 border-2 border-blue-200">
+            <h3 className="font-bold text-[#000000] mb-3">Installation Details</h3>
+            <div className="space-y-3">
+              {project.doors.map((door, idx) => (
+                <div key={idx} className="bg-white rounded-lg p-3 border border-blue-200">
+                  <div className="font-semibold text-sm text-blue-900 mb-2">Door {idx + 1}</div>
+                  <div className="grid grid-cols-2 gap-2 text-sm">
+                    {door.height && (
+                      <div>
+                        <span className="text-slate-600">Height:</span>
+                        <span className="ml-1 font-medium text-[#000000]">{door.height}</span>
+                      </div>
+                    )}
+                    {door.width && (
+                      <div>
+                        <span className="text-slate-600">Width:</span>
+                        <span className="ml-1 font-medium text-[#000000]">{door.width}</span>
+                      </div>
+                    )}
+                    {door.type && (
+                      <div>
+                        <span className="text-slate-600">Type:</span>
+                        <span className="ml-1 font-medium text-[#000000]">{door.type}</span>
+                      </div>
+                    )}
+                    {door.style && (
+                      <div>
+                        <span className="text-slate-600">Style:</span>
+                        <span className="ml-1 font-medium text-[#000000]">{door.style}</span>
+                      </div>
+                    )}
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+
+        {((project.image_urls && project.image_urls.length > 0) || project.quote_url || project.invoice_url) && (
+          <div>
+            <h3 className="font-bold text-[#000000] mb-3">Attachments</h3>
+            <div className="space-y-4">
+              {project.image_urls && project.image_urls.length > 0 && (
+                <div>
+                  <div className="flex items-center gap-2 mb-2">
+                    <ImageIcon className="w-4 h-4 text-slate-600" />
+                    <span className="text-sm font-semibold text-slate-700">Images</span>
+                  </div>
+                  <div className="grid grid-cols-3 gap-2">
+                    {project.image_urls.map((url, index) => (
+                      <a 
+                        key={index} 
+                        href={url} 
+                        target="_blank" 
+                        rel="noopener noreferrer"
+                        className="block"
+                      >
+                        <img 
+                          src={url} 
+                          alt={`Project image ${index + 1}`} 
+                          className="w-full h-24 object-cover rounded-lg border-2 border-slate-200 hover:border-[#fae008] transition-all"
+                        />
+                      </a>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {(project.quote_url || project.invoice_url) && (
+                <div>
+                  <div className="flex items-center gap-2 mb-2">
+                    <FileText className="w-4 h-4 text-slate-600" />
+                    <span className="text-sm font-semibold text-slate-700">Files</span>
+                  </div>
+                  <div className="space-y-2">
+                    {project.quote_url && (
+                      <a 
+                        href={project.quote_url} 
+                        target="_blank" 
+                        rel="noopener noreferrer"
+                        className="flex items-center gap-2 px-3 py-2 bg-white border-2 border-slate-200 rounded-lg hover:border-[#fae008] transition-all"
+                      >
+                        <FileText className="w-4 h-4 text-blue-600" />
+                        <span className="text-sm font-medium text-slate-700">Quote Document</span>
+                      </a>
+                    )}
+                    {project.invoice_url && (
+                      <a 
+                        href={project.invoice_url} 
+                        target="_blank" 
+                        rel="noopener noreferrer"
+                        className="flex items-center gap-2 px-3 py-2 bg-white border-2 border-slate-200 rounded-lg hover:border-[#fae008] transition-all"
+                      >
+                        <FileText className="w-4 h-4 text-green-600" />
+                        <span className="text-sm font-medium text-slate-700">Invoice Document</span>
+                      </a>
+                    )}
+                  </div>
+                </div>
+              )}
+            </div>
           </div>
         )}
 
