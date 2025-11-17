@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from "react";
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -39,7 +38,7 @@ const statusColors = {
   invoiced: "bg-indigo-100 text-indigo-800 border-indigo-200",
   paid: "bg-green-100 text-green-800 border-green-200",
   completed: "bg-emerald-100 text-emerald-800 border-emerald-200",
-  cancelled: "bg-slate-100 text-slate-800 border-slate-200"
+  lost: "bg-red-100 text-red-800 border-red-200"
 };
 
 const stageColors = {
@@ -55,8 +54,8 @@ const stageColors = {
   work_completed: "bg-lime-100 text-lime-800 border-lime-200",
   invoiced: "bg-indigo-100 text-indigo-800 border-indigo-200",
   paid: "bg-green-100 text-green-800 border-green-200",
-  closed: "bg-emerald-100 text-emerald-800 border-emerald-200",
-  cancelled: "bg-slate-100 text-slate-800 border-slate-200"
+  completed: "bg-emerald-100 text-emerald-800 border-emerald-200",
+  lost: "bg-red-100 text-red-800 border-red-200"
 };
 
 const outcomeColors = {

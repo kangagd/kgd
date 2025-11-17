@@ -3,20 +3,20 @@ import React, { useState, useEffect } from "react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { MapPin, Calendar, Clock, User, Briefcase, FileText, LogIn, Package, Phone, Mail, Navigation, ChevronDown, ChevronUp } from "lucide-react";
+import { MapPin, Calendar, Clock, LogIn, Phone, Mail, Navigation, ChevronRight, Timer } from "lucide-react";
 import { format, parseISO } from "date-fns";
 import { base44 } from "@/api/base44Client";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { unescape } from "lodash";
 
 const statusColors = {
-  open: "bg-slate-100 text-slate-700 border-slate-300",
-  scheduled: "bg-blue-100 text-blue-700 border-blue-300",
-  quoted: "bg-purple-100 text-purple-700 border-purple-300",
-  invoiced: "bg-indigo-100 text-indigo-700 border-indigo-300",
-  paid: "bg-green-100 text-green-700 border-green-300",
-  completed: "bg-emerald-100 text-emerald-700 border-emerald-300",
-  cancelled: "bg-slate-100 text-slate-700 border-slate-300"
+  open: "bg-slate-100 text-slate-800 border-slate-200",
+  scheduled: "bg-blue-100 text-blue-800 border-blue-200",
+  quoted: "bg-purple-100 text-purple-800 border-purple-200",
+  invoiced: "bg-indigo-100 text-indigo-800 border-indigo-200",
+  paid: "bg-green-100 text-green-800 border-green-200",
+  completed: "bg-emerald-100 text-emerald-800 border-emerald-200",
+  lost: "bg-red-100 text-red-800 border-red-200"
 };
 
 const statusLabels = {
@@ -26,15 +26,15 @@ const statusLabels = {
   invoiced: "Invoiced",
   paid: "Paid",
   completed: "Completed",
-  cancelled: "Cancelled"
+  lost: "Lost"
 };
 
 const productColors = {
-  "Garage Door": "bg-blue-100 text-blue-700 border-blue-200",
-  "Gate": "bg-green-100 text-green-700 border-green-200",
-  "Roller Shutter": "bg-purple-100 text-purple-700 border-purple-200",
-  "Multiple": "bg-orange-100 text-orange-700 border-orange-200",
-  "Custom Garage Door": "bg-pink-100 text-pink-700 border-pink-200",
+  "Garage Door": "bg-blue-100 text-blue-700",
+  "Gate": "bg-green-100 text-green-700",
+  "Roller Shutter": "bg-purple-100 text-purple-700",
+  "Multiple": "bg-orange-100 text-orange-700",
+  "Custom Garage Door": "bg-pink-100 text-pink-700"
 };
 
 const getInitials = (name) => {
@@ -66,7 +66,7 @@ const getAvatarColor = (name) => {
 
 export default function JobList({ jobs, isLoading, onSelectJob }) {
   const [user, setUser] = useState(null);
-  const [expandedNotes, setExpandedNotes] = useState({});
+  // expandedNotes state and toggleNotes function are removed as per changes outline regarding notes section functionality
   const queryClient = useQueryClient();
 
   useEffect(() => {
@@ -109,11 +109,6 @@ export default function JobList({ jobs, isLoading, onSelectJob }) {
     checkInMutation.mutate(job);
   };
 
-  const toggleNotes = (e, jobId) => {
-    e.stopPropagation();
-    setExpandedNotes(prev => ({ ...prev, [jobId]: !prev[jobId] }));
-  };
-
   const handleCall = (e, phone) => {
     e.stopPropagation();
     window.location.href = `tel:${phone}`;
@@ -149,7 +144,7 @@ export default function JobList({ jobs, isLoading, onSelectJob }) {
   if (jobs.length === 0) {
     return (
       <Card className="p-12 text-center rounded-2xl border-2 border-slate-200">
-        <Briefcase className="w-16 h-16 mx-auto text-slate-300 mb-4" />
+        <Timer className="w-16 h-16 mx-auto text-slate-300 mb-4" /> {/* Replaced Briefcase with Timer */}
         <h3 className="text-lg font-bold text-[#000000] mb-2">No jobs found</h3>
         <p className="text-slate-600">Try adjusting your filters</p>
       </Card>
@@ -277,14 +272,14 @@ export default function JobList({ jobs, isLoading, onSelectJob }) {
                 <div className="flex items-center gap-2">
                   {job.product && (
                     <Badge className={`${productColors[job.product]} font-semibold border`}>
-                      <Package className="w-3 h-3 mr-1" />
+                      <Timer className="w-3 h-3 mr-1" /> {/* Replaced Package with Timer */}
                       {job.product}
                     </Badge>
                   )}
                   
                   {job.job_type_name && (
                     <Badge className="bg-purple-50 text-purple-900 border-purple-200 border font-semibold">
-                      <Briefcase className="w-3 h-3 mr-1" />
+                      <Timer className="w-3 h-3 mr-1" /> {/* Replaced Briefcase with Timer */}
                       {job.job_type_name}
                     </Badge>
                   )}

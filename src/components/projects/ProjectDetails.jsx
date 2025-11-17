@@ -1,3 +1,4 @@
+
 import React from "react";
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -46,11 +47,13 @@ const stageColors = {
 };
 
 const jobStatusColors = {
-  open: "bg-slate-100 text-slate-800 border-slate-200",
-  scheduled: "bg-blue-100 text-blue-800 border-blue-200",
-  in_progress: "bg-orange-100 text-orange-800 border-orange-200",
-  completed: "bg-green-100 text-green-800 border-green-200",
-  cancelled: "bg-slate-100 text-slate-800 border-slate-200"
+  open: "bg-slate-100 text-slate-800",
+  scheduled: "bg-blue-100 text-blue-800",
+  quoted: "bg-purple-100 text-purple-800",
+  invoiced: "bg-indigo-100 text-indigo-800",
+  paid: "bg-green-100 text-green-800",
+  completed: "bg-emerald-100 text-emerald-800",
+  lost: "bg-red-100 text-red-800"
 };
 
 export default function ProjectDetails({ project, onClose, onEdit, onDelete }) {

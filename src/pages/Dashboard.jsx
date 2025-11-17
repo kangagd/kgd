@@ -1,20 +1,23 @@
 
 import React, { useState, useEffect } from "react";
 import { base44 } from "@/api/base44Client";
-import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { useQuery } from "@tanstack/react-query";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Plus, TrendingUp, Clock, CheckCircle2, Briefcase } from "lucide-react";
+import { Badge } from "@/components/ui/badge";
+import { Plus, TrendingUp, Clock, Briefcase, Calendar, CheckCircle, MapPin } from "lucide-react";
+import { format, parseISO, isToday, isTomorrow } from "date-fns";
 import { useNavigate } from "react-router-dom";
 import { createPageUrl } from "@/utils";
 
 const statusColors = {
-  open: "bg-slate-100 text-slate-700 border-slate-300",
-  scheduled: "bg-blue-100 text-blue-700 border-blue-300",
-  quoted: "bg-purple-100 text-purple-700 border-purple-300",
-  invoiced: "bg-indigo-100 text-indigo-700 border-indigo-300",
-  paid: "bg-green-100 text-green-700 border-green-300",
-  completed: "bg-emerald-100 text-emerald-700 border-emerald-300",
-  cancelled: "bg-slate-100 text-slate-700 border-slate-300"
+  open: "bg-slate-100 text-slate-800 border-slate-200",
+  scheduled: "bg-blue-100 text-blue-800 border-blue-200",
+  quoted: "bg-purple-100 text-purple-800 border-purple-200",
+  invoiced: "bg-indigo-100 text-indigo-800 border-indigo-200",
+  paid: "bg-green-100 text-green-800 border-green-200",
+  completed: "bg-emerald-100 text-emerald-800 border-emerald-200",
+  lost: "bg-red-100 text-red-800 border-red-200"
 };
 
 const statusLabels = {
@@ -24,7 +27,7 @@ const statusLabels = {
   invoiced: "Invoiced",
   paid: "Paid",
   completed: "Completed",
-  cancelled: "Cancelled"
+  lost: "Lost"
 };
 
 export default function Dashboard() {
@@ -59,16 +62,16 @@ export default function Dashboard() {
   const todayJobs = jobs.filter(j => j.scheduled_date === today);
   const tomorrowJobs = jobs.filter(j => j.scheduled_date === tomorrow);
   const activeJobs = jobs.filter(j => j.status === 'in_progress');
-  const completedToday = jobs.filter(j => 
-    j.status === 'completed' && 
+  const completedToday = jobs.filter(j =>
+    j.status === 'completed' &&
     j.updated_date?.split('T')[0] === today
   );
 
-  const todayCheckIns = checkIns.filter(c => 
+  const todayCheckIns = checkIns.filter(c =>
     c.created_date?.split('T')[0] === today
   );
 
-  const totalHoursToday = todayCheckIns.reduce((sum, c) => 
+  const totalHoursToday = todayCheckIns.reduce((sum, c) =>
     sum + (c.duration_hours || 0), 0
   );
 
@@ -104,7 +107,7 @@ export default function Dashboard() {
         </div>
 
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 md:gap-5 mb-6 md:mb-8">
-          <div 
+          <div
             onClick={() => handleCardClick('today')}
             className="bg-white rounded-2xl border-2 border-slate-200 p-6 cursor-pointer hover:shadow-xl hover:border-blue-400 hover:scale-[1.02] active:scale-[0.98] transition-all duration-200 group"
           >
@@ -120,7 +123,7 @@ export default function Dashboard() {
             <p className="text-xs text-slate-500 group-hover:text-slate-700 transition-colors">Click to view details →</p>
           </div>
 
-          <div 
+          <div
             onClick={() => handleCardClick('active')}
             className="bg-white rounded-2xl border-2 border-slate-200 p-6 cursor-pointer hover:shadow-xl hover:border-[#fae008] hover:scale-[1.02] active:scale-[0.98] transition-all duration-200 group"
           >
@@ -136,13 +139,13 @@ export default function Dashboard() {
             <p className="text-xs text-slate-500 group-hover:text-slate-700 transition-colors">Click to view details →</p>
           </div>
 
-          <div 
+          <div
             onClick={() => handleCardClick('completed')}
             className="bg-white rounded-2xl border-2 border-slate-200 p-6 cursor-pointer hover:shadow-xl hover:border-green-400 hover:scale-[1.02] active:scale-[0.98] transition-all duration-200 group"
           >
             <div className="flex items-start justify-between mb-4">
               <div className="w-12 h-12 bg-green-100 rounded-xl flex items-center justify-center group-hover:bg-green-200 transition-colors">
-                <CheckCircle2 className="w-6 h-6 text-green-600" />
+                <CheckCircle className="w-6 h-6 text-green-600" />
               </div>
               <div className="text-right">
                 <p className="text-3xl font-bold text-[#000000]">{completedToday.length}</p>
@@ -152,7 +155,7 @@ export default function Dashboard() {
             <p className="text-xs text-slate-500 group-hover:text-slate-700 transition-colors">Click to view details →</p>
           </div>
 
-          <div 
+          <div
             onClick={() => navigate(createPageUrl("Jobs"))}
             className="bg-white rounded-2xl border-2 border-slate-200 p-6 cursor-pointer hover:shadow-xl hover:border-purple-400 hover:scale-[1.02] active:scale-[0.98] transition-all duration-200 group"
           >
@@ -180,8 +183,8 @@ export default function Dashboard() {
             ) : (
               <div className="space-y-3">
                 {todayJobs.map(job => (
-                  <div 
-                    key={job.id} 
+                  <div
+                    key={job.id}
                     className="flex items-center justify-between p-4 rounded-xl border-2 border-slate-200 hover:bg-slate-50 hover:border-slate-300 cursor-pointer transition-all duration-150"
                     onClick={() => window.location.href = `/Jobs?id=${job.id}`}
                   >
@@ -205,7 +208,7 @@ export default function Dashboard() {
             <h2 className="text-xl font-bold text-[#000000] mb-5 tracking-tight">Recent Check-ins</h2>
             {todayCheckIns.length === 0 ? (
               <div className="text-center py-12">
-                <CheckCircle2 className="w-12 h-12 mx-auto text-slate-300 mb-3" />
+                <CheckCircle className="w-12 h-12 mx-auto text-slate-300 mb-3" />
                 <p className="text-slate-500 text-sm">No check-ins today</p>
               </div>
             ) : (
