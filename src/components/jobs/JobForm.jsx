@@ -50,7 +50,9 @@ export default function JobForm({ job, jobTypes, technicians, onSubmit, onCancel
   const [uploadingQuote, setUploadingQuote] = useState(false);
   const [uploadingInvoice, setUploadingInvoice] = useState(false);
   const [showNewCustomerDialog, setShowNewCustomerDialog] = useState(false);
+  const [showDuplicateDialog, setShowDuplicateDialog] = useState(false);
   const [newCustomerData, setNewCustomerData] = useState({ name: "", phone: "", email: "" });
+  const [potentialDuplicates, setPotentialDuplicates] = useState([]);
 
   const { data: customers = [] } = useQuery({
     queryKey: ['customers'],
@@ -101,7 +103,35 @@ export default function JobForm({ job, jobTypes, technicians, onSubmit, onCancel
     }
   };
 
-  const handleCreateNewCustomer = async () => {
+  const checkForDuplicates = async () => {
+    if (!newCustomerData.name) return;
+    
+    const duplicates = customers.filter(customer => {
+      const nameLower = customer.name.toLowerCase();
+      const newNameLower = newCustomerData.name.toLowerCase();
+      const nameMatch = nameLower === newNameLower || 
+                       nameLower.includes(newNameLower) || 
+                       newNameLower.includes(nameLower);
+      
+      const phoneMatch = newCustomerData.phone && customer.phone && 
+                        customer.phone.replace(/\D/g, '') === newCustomerData.phone.replace(/\D/g, '');
+      
+      const emailMatch = newCustomerData.email && customer.email && 
+                        customer.email.toLowerCase() === newCustomerData.email.toLowerCase();
+      
+      return nameMatch || phoneMatch || emailMatch;
+    });
+    
+    if (duplicates.length > 0) {
+      setPotentialDuplicates(duplicates);
+      setShowNewCustomerDialog(false);
+      setShowDuplicateDialog(true);
+    } else {
+      await createNewCustomer();
+    }
+  };
+
+  const createNewCustomer = async () => {
     try {
       const newCustomer = await base44.entities.Customer.create(newCustomerData);
       setFormData({
@@ -114,10 +144,28 @@ export default function JobForm({ job, jobTypes, technicians, onSubmit, onCancel
         address: newCustomer.address || "",
       });
       setShowNewCustomerDialog(false);
+      setShowDuplicateDialog(false);
       setNewCustomerData({ name: "", phone: "", email: "" });
+      setPotentialDuplicates([]);
     } catch (error) {
       console.error("Error creating customer:", error);
     }
+  };
+
+  const handleCreateNewCustomer = async () => {
+    await checkForDuplicates();
+  };
+
+  const handleUseExistingCustomer = (customer) => {
+    handleCustomerChange(customer.id);
+    setShowDuplicateDialog(false);
+    setShowNewCustomerDialog(false);
+    setNewCustomerData({ name: "", phone: "", email: "" });
+    setPotentialDuplicates([]);
+  };
+
+  const handleForceCreateNew = async () => {
+    await createNewCustomer();
   };
 
   const handleJobTypeChange = (jobTypeId) => {
@@ -553,6 +601,83 @@ export default function JobForm({ job, jobTypes, technicians, onSubmit, onCancel
               className="bg-[#fae008] hover:bg-[#e5d007] text-[#000000] font-bold"
             >
               Create Customer
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      <Dialog open={showDuplicateDialog} onOpenChange={setShowDuplicateDialog}>
+        <DialogContent className="rounded-2xl max-w-2xl">
+          <DialogHeader>
+            <DialogTitle className="text-xl font-bold text-[#000000]">Potential Duplicate Customers Found</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4">
+            <p className="text-sm text-slate-600">
+              We found {potentialDuplicates.length} existing customer{potentialDuplicates.length > 1 ? 's' : ''} that might match. 
+              Would you like to use one of these instead?
+            </p>
+            
+            <div className="space-y-2 max-h-60 overflow-y-auto">
+              {potentialDuplicates.map((customer) => (
+                <div 
+                  key={customer.id}
+                  className="p-3 border-2 border-slate-200 rounded-xl hover:border-[#fae008] hover:bg-slate-50 cursor-pointer transition-all"
+                  onClick={() => handleUseExistingCustomer(customer)}
+                >
+                  <div className="flex items-start justify-between">
+                    <div className="flex-1">
+                      <h4 className="font-bold text-[#000000]">{customer.name}</h4>
+                      <div className="text-sm text-slate-600 space-y-0.5 mt-1">
+                        {customer.phone && <p>Phone: {customer.phone}</p>}
+                        {customer.email && <p>Email: {customer.email}</p>}
+                        {customer.customer_type && (
+                          <p className="text-xs text-slate-500">Type: {customer.customer_type}</p>
+                        )}
+                      </div>
+                    </div>
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        handleUseExistingCustomer(customer);
+                      }}
+                      className="border-2 font-semibold"
+                    >
+                      Use This
+                    </Button>
+                  </div>
+                </div>
+              ))}
+            </div>
+
+            <div className="pt-3 border-t-2 border-slate-200">
+              <p className="text-xs text-slate-500 mb-3">
+                New customer you're trying to create:
+              </p>
+              <div className="p-2 bg-slate-50 rounded-lg text-sm">
+                <p className="font-semibold text-[#000000]">{newCustomerData.name}</p>
+                {newCustomerData.phone && <p className="text-slate-600">Phone: {newCustomerData.phone}</p>}
+                {newCustomerData.email && <p className="text-slate-600">Email: {newCustomerData.email}</p>}
+              </div>
+            </div>
+          </div>
+          <DialogFooter>
+            <Button 
+              variant="outline" 
+              onClick={() => {
+                setShowDuplicateDialog(false);
+                setShowNewCustomerDialog(true);
+              }}
+              className="border-2 font-semibold"
+            >
+              Go Back
+            </Button>
+            <Button 
+              onClick={handleForceCreateNew}
+              className="bg-[#fae008] hover:bg-[#e5d007] text-[#000000] font-bold"
+            >
+              Create New Anyway
             </Button>
           </DialogFooter>
         </DialogContent>
