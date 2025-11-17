@@ -213,9 +213,19 @@ export default function Projects() {
                     <p className="text-sm text-slate-600 mb-2">{project.customer_name}</p>
                     {project.description && (
                       <div
-                        className="text-sm text-slate-500 line-clamp-2 prose prose-sm max-w-none"
+                        className="text-sm text-slate-500 line-clamp-2 prose prose-sm max-w-none mb-2"
                         dangerouslySetInnerHTML={{ __html: project.description }}
                       />
+                    )}
+                    {project.doors && project.doors.length > 0 && (
+                      <div className="mt-2 flex flex-wrap gap-2">
+                        {project.doors.map((door, idx) => (
+                          <Badge key={idx} variant="outline" className="bg-blue-50 border-blue-200 text-blue-700">
+                            Door {idx + 1}: {door.height && door.width ? `${door.height} × ${door.width}` : 'Pending specs'}
+                            {door.type && ` • ${door.type}`}
+                          </Badge>
+                        ))}
+                      </div>
                     )}
                   </div>
                   <div className="text-right text-sm text-slate-500">
