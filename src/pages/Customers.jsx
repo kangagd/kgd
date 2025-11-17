@@ -1,3 +1,4 @@
+
 import React, { useState } from "react";
 import { base44 } from "@/api/base44Client";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
@@ -53,8 +54,8 @@ export default function Customers() {
     mutationFn: async (customerId) => {
       await base44.entities.Customer.update(customerId, { deleted_at: new Date().toISOString() });
     },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['allCustomers'] });
+    onSuccess: async () => {
+      await queryClient.refetchQueries({ queryKey: ['allCustomers'] });
       setSelectedCustomer(null);
     },
     onError: (error) => {

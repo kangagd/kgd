@@ -78,8 +78,8 @@ export default function Jobs() {
     mutationFn: async (jobId) => {
       await base44.entities.Job.update(jobId, { deleted_at: new Date().toISOString() });
     },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['allJobs'] });
+    onSuccess: async () => {
+      await queryClient.refetchQueries({ queryKey: ['allJobs'] });
       setSelectedJob(null);
     },
     onError: (error) => {
