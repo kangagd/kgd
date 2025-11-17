@@ -199,7 +199,10 @@ export default function ProjectDetails({ project, onClose, onEdit, onDelete }) {
         {project.description && (
           <div>
             <h3 className="font-bold text-[#000000] mb-2">Description</h3>
-            <p className="text-slate-700">{project.description}</p>
+            <div 
+              className="text-slate-700 prose prose-sm max-w-none"
+              dangerouslySetInnerHTML={{ __html: project.description }}
+            />
           </div>
         )}
 
