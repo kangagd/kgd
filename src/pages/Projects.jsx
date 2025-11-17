@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from "react";
 import { base44 } from "@/api/base44Client";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
@@ -213,7 +212,10 @@ export default function Projects() {
                     </div>
                     <p className="text-sm text-slate-600 mb-2">{project.customer_name}</p>
                     {project.description && (
-                      <p className="text-sm text-slate-500 line-clamp-2">{project.description}</p>
+                      <div
+                        className="text-sm text-slate-500 line-clamp-2 prose prose-sm max-w-none"
+                        dangerouslySetInnerHTML={{ __html: project.description }}
+                      />
                     )}
                   </div>
                   <div className="text-right text-sm text-slate-500">
