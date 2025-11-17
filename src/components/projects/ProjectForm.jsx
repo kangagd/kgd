@@ -1,3 +1,4 @@
+
 import React, { useState } from "react";
 import { Card, CardHeader, CardTitle, CardContent, CardFooter } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -358,12 +359,9 @@ export default function ProjectForm({ project, onSubmit, onCancel, isSubmitting 
 
             <div className="space-y-2">
               <Label htmlFor="description">Description</Label>
-              <textarea
-                id="description"
+              <RichTextEditor
                 value={formData.description}
-                onChange={(e) => setFormData({ ...formData, description: e.target.value })}
-                rows={3}
-                className="w-full border-2 border-slate-300 rounded-xl p-3 focus:border-[#fae008] focus:ring-2 focus:ring-[#fae008]/20"
+                onChange={(value) => setFormData({ ...formData, description: value })}
                 placeholder="Describe the project scope..."
               />
             </div>
