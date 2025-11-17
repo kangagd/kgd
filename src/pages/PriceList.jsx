@@ -121,139 +121,139 @@ export default function PriceList() {
           setShowForm(false);
           setEditingItem(null);
         }}
-        isSubmitting={createItemMutation.isPending || updateItemMutation.isPending} />);
-
-
+        isSubmitting={createItemMutation.isPending || updateItemMutation.isPending}
+      />
+    );
   }
 
   return (
-    <div className="p-4 md:p-8 bg-slate-50 min-h-screen">
+    <div className="p-4 md:p-8 bg-gradient-to-br from-[hsl(32,20%,98%)] to-[hsl(32,25%,94%)] min-h-screen">
       <div className="max-w-7xl mx-auto">
         <div className="mb-6">
           <div className="flex items-center justify-between mb-2">
             <div className="flex items-center gap-3">
-              <DollarSign className="text-[#fae008] lucide lucide-dollar-sign w-8 h-8" />
-              <h1 className="text-3xl font-bold text-slate-900">Price List</h1>
+              <DollarSign className="text-[#fae008] w-8 h-8" />
+              <h1 className="text-3xl font-bold text-[hsl(25,10%,12%)]">Price List</h1>
             </div>
-            {isAdmin &&
-            <Button
-              onClick={() => setShowForm(true)} className="bg-[#fae008] text-slate-950 px-4 py-2 text-sm font-medium rounded-md inline-flex items-center justify-center gap-2 whitespace-nowrap transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:pointer-events-none disabled:opacity-50 [&_svg]:pointer-events-none [&_svg]:size-4 [&_svg]:shrink-0 shadow h-9 hover:bg-orange-700">
-
-
+            {isAdmin && (
+              <Button
+                onClick={() => setShowForm(true)}
+                className="bg-[#fae008] hover:bg-[#e5d007] text-[hsl(25,10%,12%)] font-semibold shadow-md hover:shadow-lg transition-all"
+              >
                 <Plus className="w-4 h-4 mr-2" />
                 Add Item
               </Button>
-            }
+            )}
           </div>
-          <p className="text-slate-500">Quick reference for pricing and products</p>
+          <p className="text-[hsl(25,8%,45%)]">Quick reference for pricing and products</p>
         </div>
 
-        {(lowStockCount > 0 || outOfStockCount > 0) &&
-        <div className="mb-6 flex gap-3">
-            {lowStockCount > 0 &&
-          <Button
-            variant="outline"
-            onClick={() => setStockFilter(stockFilter === "low" ? "all" : "low")}
-            className={`${stockFilter === "low" ? "bg-amber-50 border-amber-300" : ""}`}>
-
+        {(lowStockCount > 0 || outOfStockCount > 0) && (
+          <div className="mb-6 flex gap-3">
+            {lowStockCount > 0 && (
+              <Button
+                variant="outline"
+                onClick={() => setStockFilter(stockFilter === "low" ? "all" : "low")}
+                className={`${stockFilter === "low" ? "bg-amber-50 border-amber-300" : ""}`}
+              >
                 <AlertCircle className="w-4 h-4 mr-2 text-amber-600" />
                 <span className="text-amber-900">{lowStockCount} Low Stock</span>
               </Button>
-          }
-            {outOfStockCount > 0 &&
-          <Button
-            variant="outline"
-            onClick={() => setStockFilter(stockFilter === "out" ? "all" : "out")}
-            className={`${stockFilter === "out" ? "bg-red-50 border-red-300" : ""}`}>
-
+            )}
+            {outOfStockCount > 0 && (
+              <Button
+                variant="outline"
+                onClick={() => setStockFilter(stockFilter === "out" ? "all" : "out")}
+                className={`${stockFilter === "out" ? "bg-red-50 border-red-300" : ""}`}
+              >
                 <Package className="w-4 h-4 mr-2 text-red-600" />
                 <span className="text-red-900">{outOfStockCount} Out of Stock</span>
               </Button>
-          }
+            )}
           </div>
-        }
+        )}
 
         <div className="mb-6 space-y-4">
           <div className="relative">
-            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-slate-400" />
+            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-[hsl(25,8%,55%)]" />
             <Input
               placeholder="Search items, descriptions, categories..."
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
-              className="pl-10" />
-
+              className="pl-10 border-2 border-[hsl(32,15%,88%)] focus:border-[#fae008] focus:ring-2 focus:ring-[#fae008]/20"
+            />
           </div>
           
           <Tabs value={categoryFilter} onValueChange={setCategoryFilter}>
             <TabsList>
               <TabsTrigger value="all">All</TabsTrigger>
-              {categories.map((cat) =>
-              <TabsTrigger key={cat} value={cat}>{cat}</TabsTrigger>
-              )}
+              {categories.map((cat) => (
+                <TabsTrigger key={cat} value={cat}>{cat}</TabsTrigger>
+              ))}
             </TabsList>
           </Tabs>
         </div>
 
-        {isLoading ?
-        <div className="grid gap-3">
-            {[1, 2, 3, 4, 5].map((i) =>
-          <Card key={i} className="p-4 animate-pulse">
-                <div className="h-6 bg-slate-200 rounded w-1/3 mb-2"></div>
-                <div className="h-4 bg-slate-200 rounded w-2/3"></div>
+        {isLoading ? (
+          <div className="grid gap-3">
+            {[1, 2, 3, 4, 5].map((i) => (
+              <Card key={i} className="p-4 animate-pulse">
+                <div className="h-6 bg-[hsl(32,15%,88%)] rounded w-1/3 mb-2"></div>
+                <div className="h-4 bg-[hsl(32,15%,88%)] rounded w-2/3"></div>
               </Card>
-          )}
-          </div> :
-        filteredItems.length === 0 ?
-        <Card className="p-12 text-center">
-            <Search className="w-16 h-16 mx-auto text-slate-300 mb-4" />
-            <h3 className="text-lg font-semibold text-slate-700 mb-2">No items found</h3>
-            <p className="text-slate-500">Try adjusting your search</p>
-          </Card> :
-
-        <div className="grid gap-2">
+            ))}
+          </div>
+        ) : filteredItems.length === 0 ? (
+          <Card className="p-12 text-center rounded-2xl border-2 border-[hsl(32,15%,88%)]">
+            <Search className="w-16 h-16 mx-auto text-[hsl(32,15%,88%)] mb-4" />
+            <h3 className="text-lg font-semibold text-[hsl(25,10%,25%)] mb-2">No items found</h3>
+            <p className="text-[hsl(25,8%,45%)]">Try adjusting your search</p>
+          </Card>
+        ) : (
+          <div className="grid gap-2">
             {filteredItems.map((item) => {
-            const isLowStock = item.stock_level <= item.min_stock_level && item.stock_level > 0;
-            const isOutOfStock = item.stock_level === 0;
+              const isLowStock = item.stock_level <= item.min_stock_level && item.stock_level > 0;
+              const isOutOfStock = item.stock_level === 0;
 
-            return (
-              <Card key={item.id} className={`hover:shadow-md transition-shadow ${isOutOfStock ? 'border-red-300' : isLowStock ? 'border-amber-300' : ''}`}>
+              return (
+                <Card key={item.id} className={`hover:shadow-md transition-shadow rounded-2xl border-2 ${isOutOfStock ? 'border-red-300' : isLowStock ? 'border-amber-300' : 'border-[hsl(32,15%,88%)]'}`}>
                   <CardContent className="p-4">
                     <div className="flex items-start justify-between gap-4">
                       <div className="flex-1 min-w-0">
                         <div className="flex items-center gap-2 mb-2 flex-wrap">
-                          <Badge className={categoryColors[item.category] || "bg-slate-100 text-slate-800"}>
+                          <Badge className={categoryColors[item.category] || "bg-[hsl(32,25%,94%)] text-[hsl(25,10%,12%)]"}>
                             {item.category}
                           </Badge>
-                          {!item.in_inventory &&
-                        <Badge variant="outline" className="text-slate-500">Not in stock</Badge>
-                        }
-                          {isOutOfStock &&
-                        <Badge className="bg-red-100 text-red-800 border-red-200">
+                          {!item.in_inventory && (
+                            <Badge variant="outline" className="text-[hsl(25,8%,45%)]">Not in stock</Badge>
+                          )}
+                          {isOutOfStock && (
+                            <Badge className="bg-red-100 text-red-800 border-red-200">
                               <Package className="w-3 h-3 mr-1" />
                               Out of Stock
                             </Badge>
-                        }
-                          {isLowStock &&
-                        <Badge className="bg-amber-100 text-amber-800 border-amber-200">
+                          )}
+                          {isLowStock && (
+                            <Badge className="bg-amber-100 text-amber-800 border-amber-200">
                               <AlertCircle className="w-3 h-3 mr-1" />
                               Low Stock
                             </Badge>
-                        }
+                          )}
                         </div>
-                        <h3 className="font-semibold text-slate-900 mb-1">{item.item}</h3>
-                        {item.description &&
-                      <p className="text-sm text-slate-600 whitespace-pre-wrap">{item.description}</p>
-                      }
-                        {item.notes &&
-                      <p className="text-xs text-slate-500 mt-2 italic">{item.notes}</p>
-                      }
+                        <h3 className="font-semibold text-[hsl(25,10%,12%)] mb-1">{item.item}</h3>
+                        {item.description && (
+                          <p className="text-sm text-[hsl(25,8%,45%)] whitespace-pre-wrap">{item.description}</p>
+                        )}
+                        {item.notes && (
+                          <p className="text-xs text-[hsl(25,8%,55%)] mt-2 italic">{item.notes}</p>
+                        )}
                         <div className="flex items-center gap-4 mt-2 text-sm">
-                          <span className="text-slate-600">
-                            Stock: <span className={`font-semibold ${isOutOfStock ? 'text-red-600' : isLowStock ? 'text-amber-600' : 'text-slate-900'}`}>
+                          <span className="text-[hsl(25,8%,45%)]">
+                            Stock: <span className={`font-semibold ${isOutOfStock ? 'text-red-600' : isLowStock ? 'text-amber-600' : 'text-[hsl(25,10%,12%)]'}`}>
                               {item.stock_level}
                             </span>
                           </span>
-                          <span className="text-slate-500">Min: {item.min_stock_level}</span>
+                          <span className="text-[hsl(25,8%,55%)]">Min: {item.min_stock_level}</span>
                         </div>
                       </div>
                       <div className="flex items-center gap-2">
@@ -262,50 +262,50 @@ export default function PriceList() {
                             ${item.price.toFixed(2)}
                           </div>
                         </div>
-                        {isAdmin &&
-                      <div className="flex flex-col gap-1">
+                        {isAdmin && (
+                          <div className="flex flex-col gap-1">
                             <Button
-                          size="icon"
-                          variant="ghost"
-                          onClick={() => handleStockAdjust(item)}
-                          className="h-8 w-8 text-green-600 hover:text-green-700 hover:bg-green-50"
-                          title="Adjust Stock">
-
+                              size="icon"
+                              variant="ghost"
+                              onClick={() => handleStockAdjust(item)}
+                              className="h-8 w-8 text-green-600 hover:text-green-700 hover:bg-green-50"
+                              title="Adjust Stock"
+                            >
                               <PackagePlus className="w-4 h-4" />
                             </Button>
                             <Button
-                          size="icon"
-                          variant="ghost"
-                          onClick={() => handleEdit(item)}
-                          className="h-8 w-8 text-blue-600 hover:text-blue-700 hover:bg-blue-50">
-
+                              size="icon"
+                              variant="ghost"
+                              onClick={() => handleEdit(item)}
+                              className="h-8 w-8 text-blue-600 hover:text-blue-700 hover:bg-blue-50"
+                            >
                               <Pencil className="w-4 h-4" />
                             </Button>
                             <Button
-                          size="icon"
-                          variant="ghost"
-                          onClick={() => handleDelete(item.id)}
-                          className="h-8 w-8 text-red-600 hover:text-red-700 hover:bg-red-50">
-
+                              size="icon"
+                              variant="ghost"
+                              onClick={() => handleDelete(item.id)}
+                              className="h-8 w-8 text-red-600 hover:text-red-700 hover:bg-red-50"
+                            >
                               <Trash2 className="w-4 h-4" />
                             </Button>
                           </div>
-                      }
+                        )}
                       </div>
                     </div>
                   </CardContent>
-                </Card>);
-
-          })}
+                </Card>
+              );
+            })}
           </div>
-        }
+        )}
       </div>
 
       <StockAdjustmentModal
         item={adjustingStock}
         open={!!adjustingStock}
-        onClose={() => setAdjustingStock(null)} />
-
-    </div>);
-
+        onClose={() => setAdjustingStock(null)}
+      />
+    </div>
+  );
 }
