@@ -53,6 +53,7 @@ export default function JobForm({ job, jobTypes, technicians, onSubmit, onCancel
   const [showDuplicateDialog, setShowDuplicateDialog] = useState(false);
   const [newCustomerData, setNewCustomerData] = useState({ name: "", phone: "", email: "" });
   const [potentialDuplicates, setPotentialDuplicates] = useState([]);
+  const [liveDuplicates, setLiveDuplicates] = useState([]);
 
   const { data: customers = [] } = useQuery({
     queryKey: ['customers'],
@@ -103,6 +104,21 @@ export default function JobForm({ job, jobTypes, technicians, onSubmit, onCancel
     }
   };
 
+  const checkForDuplicatesLive = (name) => {
+    if (!name || name.length < 2) {
+      setLiveDuplicates([]);
+      return;
+    }
+    
+    const duplicates = customers.filter(customer => {
+      const nameLower = customer.name.toLowerCase();
+      const newNameLower = name.toLowerCase();
+      return nameLower.includes(newNameLower) || newNameLower.includes(nameLower);
+    }).slice(0, 5); // Limit to 5 suggestions
+    
+    setLiveDuplicates(duplicates);
+  };
+
   const checkForDuplicates = async () => {
     if (!newCustomerData.name) return;
     
@@ -147,6 +163,7 @@ export default function JobForm({ job, jobTypes, technicians, onSubmit, onCancel
       setShowDuplicateDialog(false);
       setNewCustomerData({ name: "", phone: "", email: "" });
       setPotentialDuplicates([]);
+      setLiveDuplicates([]);
     } catch (error) {
       console.error("Error creating customer:", error);
     }
@@ -162,10 +179,16 @@ export default function JobForm({ job, jobTypes, technicians, onSubmit, onCancel
     setShowNewCustomerDialog(false);
     setNewCustomerData({ name: "", phone: "", email: "" });
     setPotentialDuplicates([]);
+    setLiveDuplicates([]);
   };
 
   const handleForceCreateNew = async () => {
     await createNewCustomer();
+  };
+
+  const handleNewCustomerNameChange = (value) => {
+    setNewCustomerData({ ...newCustomerData, name: value });
+    checkForDuplicatesLive(value);
   };
 
   const handleJobTypeChange = (jobTypeId) => {
@@ -551,8 +574,13 @@ export default function JobForm({ job, jobTypes, technicians, onSubmit, onCancel
         </form>
       </Card>
 
-      <Dialog open={showNewCustomerDialog} onOpenChange={setShowNewCustomerDialog}>
-        <DialogContent className="rounded-2xl">
+      <Dialog open={showNewCustomerDialog} onOpenChange={(open) => {
+        setShowNewCustomerDialog(open);
+        if (!open) {
+          setLiveDuplicates([]);
+        }
+      }}>
+        <DialogContent className="rounded-2xl max-w-lg">
           <DialogHeader>
             <DialogTitle className="text-xl font-bold text-[#000000]">New Customer</DialogTitle>
           </DialogHeader>
@@ -562,9 +590,31 @@ export default function JobForm({ job, jobTypes, technicians, onSubmit, onCancel
               <Input
                 id="new_customer_name"
                 value={newCustomerData.name}
-                onChange={(e) => setNewCustomerData({ ...newCustomerData, name: e.target.value })}
+                onChange={(e) => handleNewCustomerNameChange(e.target.value)}
                 className="border-2 border-slate-300 focus:border-[#fae008] focus:ring-2 focus:ring-[#fae008]/20"
               />
+              {liveDuplicates.length > 0 && (
+                <div className="mt-2 p-2 bg-amber-50 border-2 border-amber-200 rounded-xl">
+                  <p className="text-xs font-semibold text-amber-900 mb-2">Existing customers found:</p>
+                  <div className="space-y-1 max-h-40 overflow-y-auto">
+                    {liveDuplicates.map((customer) => (
+                      <button
+                        key={customer.id}
+                        type="button"
+                        onClick={() => handleUseExistingCustomer(customer)}
+                        className="w-full text-left p-2 bg-white border border-amber-200 rounded-lg hover:border-[#fae008] hover:bg-slate-50 transition-all"
+                      >
+                        <div className="font-semibold text-sm text-[#000000]">{customer.name}</div>
+                        <div className="text-xs text-slate-600">
+                          {customer.phone && <span>{customer.phone}</span>}
+                          {customer.phone && customer.email && <span> • </span>}
+                          {customer.email && <span>{customer.email}</span>}
+                        </div>
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              )}
             </div>
             <div className="space-y-2">
               <Label htmlFor="new_customer_phone" className="text-sm font-semibold text-[#000000]">Phone</Label>
@@ -590,7 +640,10 @@ export default function JobForm({ job, jobTypes, technicians, onSubmit, onCancel
           <DialogFooter>
             <Button 
               variant="outline" 
-              onClick={() => setShowNewCustomerDialog(false)}
+              onClick={() => {
+                setShowNewCustomerDialog(false);
+                setLiveDuplicates([]);
+              }}
               className="border-2 font-semibold"
             >
               Cancel
