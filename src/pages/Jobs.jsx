@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from "react";
 import { base44 } from "@/api/base44Client";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
@@ -18,7 +17,7 @@ export default function Jobs() {
   const [selectedJob, setSelectedJob] = useState(null);
   const [editingJob, setEditingJob] = useState(null);
   const [preselectedCustomerId, setPreselectedCustomerId] = useState(null);
-  const [preselectedProjectId, setPreselectedProjectId] = useState(null); // Added
+  const [preselectedProjectId, setPreselectedProjectId] = useState(null);
   const [user, setUser] = useState(null);
   const [viewMode, setViewMode] = useState("list");
   const [calendarDate, setCalendarDate] = useState(new Date());
@@ -36,7 +35,7 @@ export default function Jobs() {
     loadUser();
   }, []);
 
-  const { data: allJobs = [], isLoading } = useQuery({
+  const { data: allJobs = [], isLoading, refetch } = useQuery({
     queryKey: ['allJobs'],
     queryFn: () => base44.entities.Job.list('-scheduled_date')
   });
@@ -57,7 +56,8 @@ export default function Jobs() {
     mutationFn: (data) => base44.entities.Job.create(data),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['allJobs'] });
-      queryClient.invalidateQueries({ queryKey: ['projects'] }); // Added
+      queryClient.invalidateQueries({ queryKey: ['projects'] });
+      refetch();
       setShowForm(false);
       setEditingJob(null);
       setPreselectedCustomerId(null);
@@ -68,6 +68,7 @@ export default function Jobs() {
     mutationFn: ({ id, data }) => base44.entities.Job.update(id, data),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['allJobs'] });
+      refetch();
       setShowForm(false);
       setEditingJob(null);
       setSelectedJob(null);
@@ -75,11 +76,10 @@ export default function Jobs() {
   });
 
   const deleteJobMutation = useMutation({
-    mutationFn: async (jobId) => {
-      await base44.entities.Job.update(jobId, { deleted_at: new Date().toISOString() });
-    },
-    onSuccess: async () => {
-      await queryClient.refetchQueries({ queryKey: ['allJobs'] });
+    mutationFn: (jobId) => base44.entities.Job.update(jobId, { deleted_at: new Date().toISOString() }),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['allJobs'] });
+      refetch();
       setSelectedJob(null);
     },
     onError: (error) => {
@@ -91,18 +91,18 @@ export default function Jobs() {
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
     const action = params.get('action');
-    const jobId = params.get('jobId'); // Changed from 'id'
-    const customerId = params.get('customerId'); // Changed from 'customer_id'
-    const projectId = params.get('projectId'); // Added
+    const jobId = params.get('jobId');
+    const customerId = params.get('customerId');
+    const projectId = params.get('projectId');
     const status = params.get('status');
 
-    if (action === 'new' || projectId || customerId) { // Condition changed
+    if (action === 'new' || projectId || customerId) {
       setShowForm(true);
       if (customerId) {
         setPreselectedCustomerId(customerId);
       }
-      if (projectId) { // Added
-        setPreselectedProjectId(projectId); // Added
+      if (projectId) {
+        setPreselectedProjectId(projectId);
       }
     }
 
@@ -170,11 +170,11 @@ export default function Jobs() {
               setShowForm(false);
               setEditingJob(null);
               setPreselectedCustomerId(null);
-              setPreselectedProjectId(null); // Added
+              setPreselectedProjectId(null);
             }}
             isSubmitting={createJobMutation.isPending || updateJobMutation.isPending}
             preselectedCustomerId={preselectedCustomerId}
-            preselectedProjectId={preselectedProjectId} // Added
+            preselectedProjectId={preselectedProjectId}
           />
         </div>
       </div>

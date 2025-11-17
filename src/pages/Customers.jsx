@@ -1,4 +1,3 @@
-
 import React, { useState } from "react";
 import { base44 } from "@/api/base44Client";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
@@ -24,7 +23,7 @@ export default function Customers() {
   const [editingCustomer, setEditingCustomer] = useState(null);
   const queryClient = useQueryClient();
 
-  const { data: allCustomers = [], isLoading } = useQuery({
+  const { data: allCustomers = [], isLoading, refetch } = useQuery({
     queryKey: ['allCustomers'],
     queryFn: () => base44.entities.Customer.list(),
   });
@@ -35,6 +34,7 @@ export default function Customers() {
     mutationFn: (data) => base44.entities.Customer.create(data),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['allCustomers'] });
+      refetch();
       setShowForm(false);
       setEditingCustomer(null);
     }
@@ -44,6 +44,7 @@ export default function Customers() {
     mutationFn: ({ id, data }) => base44.entities.Customer.update(id, data),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['allCustomers'] });
+      refetch();
       setShowForm(false);
       setEditingCustomer(null);
       setSelectedCustomer(null);
@@ -51,11 +52,10 @@ export default function Customers() {
   });
 
   const deleteCustomerMutation = useMutation({
-    mutationFn: async (customerId) => {
-      await base44.entities.Customer.update(customerId, { deleted_at: new Date().toISOString() });
-    },
-    onSuccess: async () => {
-      await queryClient.refetchQueries({ queryKey: ['allCustomers'] });
+    mutationFn: (customerId) => base44.entities.Customer.update(customerId, { deleted_at: new Date().toISOString() }),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['allCustomers'] });
+      refetch();
       setSelectedCustomer(null);
     },
     onError: (error) => {
