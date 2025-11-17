@@ -17,6 +17,7 @@ export default function Jobs() {
   const [selectedJob, setSelectedJob] = useState(null);
   const [editingJob, setEditingJob] = useState(null);
   const [preselectedCustomerId, setPreselectedCustomerId] = useState(null);
+  const [preselectedProjectId, setPreselectedProjectId] = useState(null);
   const [user, setUser] = useState(null);
   const [viewMode, setViewMode] = useState("list");
   const [calendarDate, setCalendarDate] = useState(new Date());
@@ -41,11 +42,6 @@ export default function Jobs() {
 
   const jobs = allJobs.filter(job => !job.deleted_at);
 
-  const { data: jobTypes = [] } = useQuery({
-    queryKey: ['jobTypes'],
-    queryFn: () => base44.entities.JobType.filter({ is_active: true })
-  });
-
   const { data: technicians = [] } = useQuery({
     queryKey: ['technicians'],
     queryFn: () => base44.entities.User.filter({ is_field_technician: true })
@@ -55,10 +51,12 @@ export default function Jobs() {
     mutationFn: (data) => base44.entities.Job.create(data),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['allJobs'] });
+      queryClient.invalidateQueries({ queryKey: ['projects'] });
       refetch();
       setShowForm(false);
       setEditingJob(null);
       setPreselectedCustomerId(null);
+      setPreselectedProjectId(null);
     }
   });
 
@@ -75,13 +73,10 @@ export default function Jobs() {
 
   const deleteJobMutation = useMutation({
     mutationFn: async (jobId) => {
-      console.log('Attempting to delete job:', jobId);
       const result = await base44.entities.Job.update(jobId, { deleted_at: new Date().toISOString() });
-      console.log('Delete result:', result);
       return result;
     },
     onSuccess: () => {
-      console.log('Delete successful, refetching...');
       queryClient.invalidateQueries({ queryKey: ['allJobs'] });
       refetch();
       setSelectedJob(null);
@@ -97,13 +92,13 @@ export default function Jobs() {
     const action = params.get('action');
     const jobId = params.get('jobId');
     const customerId = params.get('customerId');
+    const projectId = params.get('projectId');
     const status = params.get('status');
 
-    if (action === 'new' || customerId) {
+    if (action === 'new' || customerId || projectId) {
       setShowForm(true);
-      if (customerId) {
-        setPreselectedCustomerId(customerId);
-      }
+      if (customerId) setPreselectedCustomerId(customerId);
+      if (projectId) setPreselectedProjectId(projectId);
     }
 
     if (jobId) {
@@ -163,16 +158,17 @@ export default function Jobs() {
         <div className="max-w-4xl mx-auto">
           <JobForm
             job={editingJob}
-            jobTypes={jobTypes}
             technicians={technicians}
             onSubmit={handleSubmit}
             onCancel={() => {
               setShowForm(false);
               setEditingJob(null);
               setPreselectedCustomerId(null);
+              setPreselectedProjectId(null);
             }}
             isSubmitting={createJobMutation.isPending || updateJobMutation.isPending}
             preselectedCustomerId={preselectedCustomerId}
+            preselectedProjectId={preselectedProjectId}
           />
         </div>
       </div>

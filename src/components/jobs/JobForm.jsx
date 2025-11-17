@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from "react";
 import { Card, CardHeader, CardTitle, CardContent, CardFooter } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -16,11 +17,12 @@ import {
 } from "@/components/ui/dialog";
 import MultiTechnicianSelect from "./MultiTechnicianSelect";
 import RichTextEditor from "../common/RichTextEditor";
-import { determineJobStatus } from "./jobStatusHelper";
 
-export default function JobForm({ job, jobTypes, technicians, onSubmit, onCancel, isSubmitting, preselectedCustomerId }) {
+export default function JobForm({ job, technicians, onSubmit, onCancel, isSubmitting, preselectedCustomerId, preselectedProjectId }) {
   const [formData, setFormData] = useState(job || {
     job_number: null,
+    project_id: preselectedProjectId || "",
+    project_name: "",
     customer_id: preselectedCustomerId || "",
     customer_name: "",
     customer_phone: "",
@@ -28,8 +30,7 @@ export default function JobForm({ job, jobTypes, technicians, onSubmit, onCancel
     customer_type: "",
     address: "",
     product: "",
-    job_type_id: "",
-    job_type_name: "",
+    job_type: "", // Changed from job_type_id and job_type_name to single string job_type
     assigned_to: [],
     assigned_to_name: [],
     scheduled_date: "",
@@ -61,11 +62,22 @@ export default function JobForm({ job, jobTypes, technicians, onSubmit, onCancel
     queryFn: () => base44.entities.Customer.filter({ status: 'active' }),
   });
 
+  const { data: projects = [] } = useQuery({
+    queryKey: ['projects'],
+    queryFn: () => base44.entities.Project.filter({ deleted_at: { $exists: false } })
+  });
+
   useEffect(() => {
     if (preselectedCustomerId && customers.length > 0) {
       handleCustomerChange(preselectedCustomerId);
     }
   }, [preselectedCustomerId, customers]);
+
+  useEffect(() => {
+    if (preselectedProjectId && projects.length > 0) {
+      handleProjectChange(preselectedProjectId);
+    }
+  }, [preselectedProjectId, projects]);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -76,10 +88,8 @@ export default function JobForm({ job, jobTypes, technicians, onSubmit, onCancel
       formData.job_number = lastJobNumber + 1;
     }
     
-    // Set status based on centralized logic
-    if (formData.scheduled_date) {
-      formData.status = determineJobStatus(formData.scheduled_date, formData.outcome, formData.status);
-    }
+    // Status is no longer automatically determined based on schedule, it's explicitly set or retained.
+    // The previous logic for determineJobStatus has been removed.
     
     const submitData = {
       ...formData,
@@ -102,6 +112,32 @@ export default function JobForm({ job, jobTypes, technicians, onSubmit, onCancel
         customer_type: customer.customer_type || "",
         address: customer.address || formData.address,
       });
+    }
+  };
+
+  const handleProjectChange = (projectId) => {
+    if (!projectId) { // If project is unselected
+      setFormData({
+        ...formData,
+        project_id: "",
+        project_name: "",
+        // Optionally reset customer details if they were pulled from the project
+        // For now, will keep existing customer details unless user explicitly changes
+      });
+    } else {
+      const project = projects.find(p => p.id === projectId);
+      if (project) {
+        setFormData({
+          ...formData,
+          project_id: projectId,
+          project_name: project.title,
+          customer_id: project.customer_id,
+          customer_name: project.customer_name,
+          customer_phone: project.customer_phone || "",
+          customer_email: project.customer_email || "",
+          address: project.address || formData.address // Use project address if available, otherwise keep current form address
+        });
+      }
     }
   };
 
@@ -193,15 +229,7 @@ export default function JobForm({ job, jobTypes, technicians, onSubmit, onCancel
     checkForDuplicatesLive(value);
   };
 
-  const handleJobTypeChange = (jobTypeId) => {
-    const jobType = jobTypes.find(jt => jt.id === jobTypeId);
-    setFormData({
-      ...formData,
-      job_type_id: jobTypeId,
-      job_type_name: jobType?.name || "",
-      expected_duration: jobType?.estimated_duration || null
-    });
-  };
+  // handleJobTypeChange has been removed as job_type is now a simple string select
 
   const handleTechnicianChange = (techEmails) => {
     const emailsArray = Array.isArray(techEmails) ? techEmails : [];
@@ -285,12 +313,34 @@ export default function JobForm({ job, jobTypes, technicians, onSubmit, onCancel
               <ArrowLeft className="w-5 h-5" />
             </Button>
             <CardTitle className="text-2xl font-bold text-[#000000] tracking-tight">
-              {job ? `Edit Job #${job.job_number}` : 'Create New Job'}
+              {job ? `Edit Job #${job.job_number}` : formData.project_name ? `New Job - ${formData.project_name}` : 'Create New Job'}
             </CardTitle>
           </div>
         </CardHeader>
         <form onSubmit={handleSubmit}>
           <CardContent className="p-6 space-y-6">
+            {!preselectedProjectId && (
+              <div className="space-y-2">
+                <Label htmlFor="project_id" className="text-sm font-semibold text-[#000000]">Project (Optional)</Label>
+                <Select 
+                  value={formData.project_id} 
+                  onValueChange={(value) => handleProjectChange(value === 'null' ? null : value)}
+                >
+                  <SelectTrigger className="border-2 border-slate-300 focus:border-[#fae008] focus:ring-2 focus:ring-[#fae008]/20 transition-all">
+                    <SelectValue placeholder="Standalone job or select project" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="null">No Project (Standalone)</SelectItem>
+                    {projects.map((project) => (
+                      <SelectItem key={project.id} value={project.id}>
+                        {project.title}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+            )}
+
             <div className="space-y-2">
               <Label htmlFor="customer_id" className="text-sm font-semibold text-[#000000]">Customer *</Label>
               <div className="flex gap-2">
@@ -298,6 +348,7 @@ export default function JobForm({ job, jobTypes, technicians, onSubmit, onCancel
                   value={formData.customer_id} 
                   onValueChange={handleCustomerChange} 
                   required
+                  disabled={!!formData.project_id}
                 >
                   <SelectTrigger className="flex-1 border-2 border-slate-300 focus:border-[#fae008] focus:ring-2 focus:ring-[#fae008]/20 transition-all">
                     <SelectValue placeholder="Select customer" />
@@ -310,15 +361,20 @@ export default function JobForm({ job, jobTypes, technicians, onSubmit, onCancel
                     ))}
                   </SelectContent>
                 </Select>
-                <Button
-                  type="button"
-                  variant="outline"
-                  onClick={() => setShowNewCustomerDialog(true)}
-                  className="border-2 hover:bg-slate-100"
-                >
-                  <Plus className="w-4 h-4" />
-                </Button>
+                {!formData.project_id && (
+                  <Button
+                    type="button"
+                    variant="outline"
+                    onClick={() => setShowNewCustomerDialog(true)}
+                    className="border-2 hover:bg-slate-100"
+                  >
+                    <Plus className="w-4 h-4" />
+                  </Button>
+                )}
               </div>
+              {formData.project_id && (
+                <p className="text-xs text-slate-500">Customer from project</p>
+              )}
             </div>
 
             <div className="space-y-2">
@@ -351,16 +407,20 @@ export default function JobForm({ job, jobTypes, technicians, onSubmit, onCancel
 
               <div className="space-y-2">
                 <Label htmlFor="job_type" className="text-sm font-semibold text-[#000000]">Job Type</Label>
-                <Select value={formData.job_type_id} onValueChange={handleJobTypeChange}>
+                <Select value={formData.job_type} onValueChange={(val) => setFormData({ ...formData, job_type: val })}>
                   <SelectTrigger className="border-2 border-slate-300 focus:border-[#fae008] focus:ring-2 focus:ring-[#fae008]/20">
                     <SelectValue placeholder="Select job type" />
                   </SelectTrigger>
                   <SelectContent>
-                    {jobTypes.map((type) => (
-                      <SelectItem key={type.id} value={type.id}>
-                        {type.name}
-                      </SelectItem>
-                    ))}
+                    <SelectItem value="Measure">Measure</SelectItem>
+                    <SelectItem value="Repair On-site">Repair On-site</SelectItem>
+                    <SelectItem value="Final Install">Final Install</SelectItem>
+                    <SelectItem value="Quote Visit">Quote Visit</SelectItem>
+                    <SelectItem value="Maintenance">Maintenance</SelectItem>
+                    <SelectItem value="Emergency">Emergency</SelectItem>
+                    <SelectItem value="Diagnose">Diagnose</SelectItem>
+                    <SelectItem value="Return Visit">Return Visit</SelectItem>
+                    <SelectItem value="Service Call">Service Call</SelectItem>
                   </SelectContent>
                 </Select>
               </div>
@@ -387,7 +447,7 @@ export default function JobForm({ job, jobTypes, technicians, onSubmit, onCancel
                     <SelectItem value="invoiced">Invoiced</SelectItem>
                     <SelectItem value="paid">Paid</SelectItem>
                     <SelectItem value="completed">Completed</SelectItem>
-                    <SelectItem value="lost">Lost</SelectItem>
+                    <SelectItem value="cancelled">Cancelled</SelectItem> {/* Added "cancelled" */}
                   </SelectContent>
                 </Select>
               </div>
@@ -423,7 +483,7 @@ export default function JobForm({ job, jobTypes, technicians, onSubmit, onCancel
                   step="0.5"
                   value={formData.expected_duration || ""}
                   onChange={(e) => setFormData({ ...formData, expected_duration: e.target.value ? parseFloat(e.target.value) : null })}
-                  placeholder="Auto-populated from job type"
+                  placeholder="Duration" {/* Updated placeholder */}
                   className="border-2 border-slate-300 focus:border-[#fae008] focus:ring-2 focus:ring-[#fae008]/20 transition-all"
                 />
               </div>
