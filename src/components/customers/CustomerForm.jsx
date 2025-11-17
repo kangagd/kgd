@@ -202,7 +202,7 @@ export default function CustomerForm({ customer, onSubmit, onCancel, isSubmittin
             <Button type="button" variant="outline" onClick={onCancel}>
               Cancel
             </Button>
-            <Button type="submit" disabled={isSubmitting} className="bg-orange-600 hover:bg-orange-700">
+            <Button type="submit" disabled={isSubmitting} className="bg-[#fae008] hover:bg-[#e5d007] active:bg-[#d4c006] text-[#000000] font-bold shadow-md hover:shadow-lg transition-all">
               {isSubmitting ? 'Saving...' : customer ? 'Update Customer' : 'Create Customer'}
             </Button>
           </CardFooter>
