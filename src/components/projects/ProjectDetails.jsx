@@ -157,11 +157,18 @@ export default function ProjectDetails({ project, onClose, onEdit, onDelete }) {
             Customer Information
           </h3>
           <div className="space-y-2">
-            <div 
-              className="font-bold text-lg text-[#000000] cursor-pointer hover:text-[#fae008] transition-colors"
-              onClick={handleCustomerClick}
-            >
-              {project.customer_name}
+            <div className="flex items-center gap-2 flex-wrap">
+              <div 
+                className="font-bold text-lg text-[#000000] cursor-pointer hover:text-[#fae008] transition-colors"
+                onClick={handleCustomerClick}
+              >
+                {project.customer_name}
+              </div>
+              {customer?.customer_type && (
+                <Badge variant="outline" className="font-semibold border-2">
+                  {customer.customer_type}
+                </Badge>
+              )}
             </div>
             {project.address && (
               <div className="flex items-start gap-2 text-sm text-slate-600">
