@@ -32,15 +32,15 @@
     @apply border-border;
   }
   body {
-    @apply bg-background text-foreground;
+    @apply bg-[#F7F8FA] text-foreground;
     font-feature-settings: "rlig" 1, "calt" 1;
-    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen', 'Ubuntu', 'Cantarell', 'Fira Sans', 'Droid Sans', 'Helvetica Neue', sans-serif;
+    font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen', 'Ubuntu', 'Cantarell', 'Fira Sans', 'Droid Sans', 'Helvetica Neue', sans-serif;
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
   }
   
   h1, h2, h3, h4, h5, h6 {
-    @apply font-bold tracking-tight;
+    @apply font-semibold tracking-tight;
     color: hsl(25, 10%, 12%);
   }
   
@@ -50,13 +50,13 @@
 }
 
 @layer components {
-  /* Enhanced card styles */
+  /* Enhanced card styles with elevation */
   .card-enhanced {
-    @apply bg-white rounded-xl border border-[hsl(32,15%,88%)] shadow-sm transition-all duration-200;
+    @apply bg-white rounded-xl border border-slate-200 shadow-sm transition-all duration-200;
   }
   
   .card-enhanced:hover {
-    @apply shadow-md border-[hsl(32,15%,80%)];
+    @apply shadow-md;
   }
   
   /* Interactive card states */
@@ -65,32 +65,62 @@
   }
   
   .card-interactive:hover {
-    @apply shadow-lg border-[#fae008]/50 scale-[1.01];
+    @apply shadow-lg border-[#fae008]/30 scale-[1.01];
   }
   
   .card-interactive:active {
     @apply scale-[0.99];
   }
   
+  /* Section headers */
+  .section-header {
+    @apply text-sm font-semibold text-slate-700 uppercase tracking-wider mb-3;
+  }
+  
   /* Button enhancements */
   .btn-primary {
     @apply bg-[#fae008] text-[hsl(25,10%,12%)] font-semibold hover:bg-[#e5d007] active:bg-[#d4c006] transition-all duration-150;
-    @apply shadow-sm hover:shadow-md active:shadow-sm;
+    @apply shadow-sm hover:shadow-md active:shadow-sm hover:scale-[1.02] active:scale-[0.98];
   }
   
   .btn-secondary {
-    @apply bg-white text-[hsl(25,10%,12%)] border border-[hsl(32,15%,88%)] font-medium hover:bg-[hsl(32,25%,94%)] hover:border-[hsl(32,15%,80%)];
-    @apply transition-all duration-150 active:bg-[hsl(32,20%,92%)];
+    @apply bg-white text-[hsl(25,10%,12%)] border border-slate-200 font-medium hover:bg-slate-50 hover:border-slate-300;
+    @apply transition-all duration-150 active:bg-slate-100;
   }
   
   /* Form input enhancements */
   .input-enhanced {
-    @apply border-[hsl(32,15%,88%)] focus:border-[#fae008] focus:ring-2 focus:ring-[#fae008]/20;
+    @apply border-slate-200 focus:border-[#fae008] focus:ring-2 focus:ring-[#fae008]/20;
     @apply transition-all duration-150;
   }
   
-  /* Badge enhancements */
+  /* Status badges with modern pill design */
+  .badge-pill {
+    @apply px-3 py-1 rounded-full text-xs font-medium border;
+  }
+  
   .badge-yellow {
-    @apply bg-[#fae008]/20 text-[hsl(25,10%,12%)] border border-[#fae008]/30 font-medium;
+    @apply bg-[#fae008]/20 text-[hsl(25,10%,12%)] border-[#fae008]/30 font-medium;
+  }
+  
+  /* Micro-interactions */
+  .fade-in {
+    animation: fadeIn 0.2s ease-in;
+  }
+  
+  @keyframes fadeIn {
+    from {
+      opacity: 0;
+      transform: translateY(4px);
+    }
+    to {
+      opacity: 1;
+      transform: translateY(0);
+    }
+  }
+  
+  /* Section separators */
+  .section-divider {
+    @apply border-t border-slate-200 my-6;
   }
 }
