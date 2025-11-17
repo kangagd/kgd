@@ -104,7 +104,7 @@ export default function CustomerForm({ customer, onSubmit, onCancel, isSubmittin
                     <SelectItem value={null}>None</SelectItem>
                     {organisations.map((org) => (
                       <SelectItem key={org.id} value={org.id}>
-                        {org.name} ({org.organisation_type})
+                        {org.name}{org.organisation_type ? ` (${org.organisation_type})` : ''}
                       </SelectItem>
                     ))}
                   </SelectContent>
@@ -225,7 +225,7 @@ export default function CustomerForm({ customer, onSubmit, onCancel, isSubmittin
               />
             </div>
             <div className="space-y-2">
-              <Label htmlFor="new_org_type">Type *</Label>
+              <Label htmlFor="new_org_type">Type</Label>
               <Select value={newOrgData.organisation_type} onValueChange={(val) => setNewOrgData({ ...newOrgData, organisation_type: val })}>
                 <SelectTrigger className="border-2 border-slate-300">
                   <SelectValue placeholder="Select type" />
@@ -258,7 +258,7 @@ export default function CustomerForm({ customer, onSubmit, onCancel, isSubmittin
             </Button>
             <Button 
               onClick={handleCreateNewOrg}
-              disabled={!newOrgData.name || !newOrgData.organisation_type}
+              disabled={!newOrgData.name}
               className="bg-[#fae008] hover:bg-[#e5d007] text-[#000000] font-bold"
             >
               Create Organisation

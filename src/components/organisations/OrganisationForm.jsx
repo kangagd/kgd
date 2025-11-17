@@ -55,8 +55,8 @@ export default function OrganisationForm({ organisation, onSubmit, onCancel, isS
 
           <div className="grid md:grid-cols-2 gap-6">
             <div className="space-y-2">
-              <Label htmlFor="organisation_type" className="text-sm font-semibold text-[#000000]">Type *</Label>
-              <Select value={formData.organisation_type} onValueChange={(val) => setFormData({ ...formData, organisation_type: val })} required>
+              <Label htmlFor="organisation_type" className="text-sm font-semibold text-[#000000]">Type</Label>
+              <Select value={formData.organisation_type} onValueChange={(val) => setFormData({ ...formData, organisation_type: val })}>
                 <SelectTrigger className="border-2 border-slate-300 focus:border-[#fae008] focus:ring-2 focus:ring-[#fae008]/20">
                   <SelectValue placeholder="Select type" />
                 </SelectTrigger>
