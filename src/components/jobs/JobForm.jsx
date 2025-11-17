@@ -80,7 +80,13 @@ export default function JobForm({ job, jobTypes, technicians, onSubmit, onCancel
       }
     }
     
-    onSubmit(formData);
+    const submitData = {
+      ...formData,
+      assigned_to: Array.isArray(formData.assigned_to) ? formData.assigned_to : [],
+      assigned_to_name: Array.isArray(formData.assigned_to_name) ? formData.assigned_to_name : []
+    };
+    
+    onSubmit(submitData);
   };
 
   const handleCustomerChange = (customerId) => {
@@ -128,13 +134,14 @@ export default function JobForm({ job, jobTypes, technicians, onSubmit, onCancel
   };
 
   const handleTechnicianChange = (techEmails) => {
-    const techNames = techEmails.map(email => {
+    const emailsArray = Array.isArray(techEmails) ? techEmails : [];
+    const techNames = emailsArray.map(email => {
       const tech = technicians.find(t => t.email === email);
       return tech?.full_name || "";
-    });
+    }).filter(Boolean);
     setFormData({
       ...formData,
-      assigned_to: techEmails,
+      assigned_to: emailsArray,
       assigned_to_name: techNames
     });
   };
