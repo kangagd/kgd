@@ -1,4 +1,3 @@
-
 import React, { useState } from "react";
 import { base44 } from "@/api/base44Client";
 import { useQuery } from "@tanstack/react-query";
@@ -19,7 +18,7 @@ export default function Schedule() {
 
   if (selectedJob) {
     return (
-      <div className="bg-slate-50 min-h-screen">
+      <div className="bg-gradient-to-br from-[hsl(32,20%,98%)] to-[hsl(32,25%,94%)] min-h-screen">
         <div className="p-2 md:p-8 max-w-4xl mx-auto">
           <JobDetails
             job={selectedJob}
@@ -33,13 +32,13 @@ export default function Schedule() {
   }
 
   return (
-    <div className="p-4 md:p-8 bg-slate-50 min-h-screen">
+    <div className="p-4 md:p-8 bg-gradient-to-br from-[hsl(32,20%,98%)] to-[hsl(32,25%,94%)] min-h-screen">
       <div className="max-w-7xl mx-auto">
         <div className="flex items-center gap-4 mb-6">
           <CalendarIcon className="w-8 h-8 text-[#fae008]" />
           <div>
-            <h1 className="text-3xl font-bold text-slate-900">Schedule</h1>
-            <p className="text-slate-500">View and manage your schedule</p>
+            <h1 className="text-3xl font-bold text-[hsl(25,10%,12%)]">Schedule</h1>
+            <p className="text-[hsl(25,8%,45%)]">View and manage your schedule</p>
           </div>
         </div>
 

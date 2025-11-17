@@ -10,8 +10,8 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { unescape } from "lodash";
 
 const statusColors = {
-  open: "bg-slate-100 text-slate-800 border-slate-200",
-  scheduled: "bg-blue-100 text-blue-800 border-blue-200",
+  open: "bg-[hsl(32,25%,94%)] text-[hsl(25,10%,12%)] border-[hsl(32,15%,88%)]",
+  scheduled: "bg-[#fae008]/20 text-[hsl(25,10%,12%)] border-[#fae008]/30",
   quoted: "bg-purple-100 text-purple-800 border-purple-200",
   invoiced: "bg-indigo-100 text-indigo-800 border-indigo-200",
   paid: "bg-green-100 text-green-800 border-green-200",
@@ -66,7 +66,6 @@ const getAvatarColor = (name) => {
 
 export default function JobList({ jobs, isLoading, onSelectJob }) {
   const [user, setUser] = useState(null);
-  // expandedNotes state and toggleNotes function are removed as per changes outline regarding notes section functionality
   const queryClient = useQueryClient();
 
   useEffect(() => {
@@ -131,9 +130,9 @@ export default function JobList({ jobs, isLoading, onSelectJob }) {
         {[1, 2, 3, 4, 5].map((i) => (
           <Card key={i} className="animate-pulse rounded-2xl">
             <CardContent className="p-6">
-              <div className="h-6 bg-slate-200 rounded-lg w-1/3 mb-4"></div>
-              <div className="h-4 bg-slate-200 rounded-lg w-2/3 mb-2"></div>
-              <div className="h-4 bg-slate-200 rounded-lg w-1/2"></div>
+              <div className="h-6 bg-[hsl(32,15%,88%)] rounded-lg w-1/3 mb-4"></div>
+              <div className="h-4 bg-[hsl(32,15%,88%)] rounded-lg w-2/3 mb-2"></div>
+              <div className="h-4 bg-[hsl(32,15%,88%)] rounded-lg w-1/2"></div>
             </CardContent>
           </Card>
         ))}
@@ -143,10 +142,10 @@ export default function JobList({ jobs, isLoading, onSelectJob }) {
 
   if (jobs.length === 0) {
     return (
-      <Card className="p-12 text-center rounded-2xl border-2 border-slate-200">
-        <Timer className="w-16 h-16 mx-auto text-slate-300 mb-4" /> {/* Replaced Briefcase with Timer */}
-        <h3 className="text-lg font-bold text-[#000000] mb-2">No jobs found</h3>
-        <p className="text-slate-600">Try adjusting your filters</p>
+      <Card className="p-12 text-center rounded-2xl border-2 border-[hsl(32,15%,88%)]">
+        <Timer className="w-16 h-16 mx-auto text-[hsl(32,15%,88%)] mb-4" />
+        <h3 className="text-lg font-bold text-[hsl(25,10%,12%)] mb-2">No jobs found</h3>
+        <p className="text-[hsl(25,8%,45%)]">Try adjusting your filters</p>
       </Card>
     );
   }
@@ -156,7 +155,7 @@ export default function JobList({ jobs, isLoading, onSelectJob }) {
       {jobs.map((job) => (
         <Card 
           key={job.id}
-          className="hover:shadow-xl transition-all duration-200 cursor-pointer border-l-4 hover:scale-[1.01] active:scale-[0.99] group rounded-2xl border-2 border-slate-200"
+          className="hover:shadow-xl transition-all duration-200 cursor-pointer border-l-4 hover:scale-[1.01] active:scale-[0.99] group rounded-2xl border-2 border-[hsl(32,15%,88%)]"
           style={{ borderLeftColor: job.status === 'in_progress' ? '#3b82f6' : job.status === 'completed' ? '#10b981' : '#fae008', borderLeftWidth: '6px' }}
           onClick={() => onSelectJob(job)}
         >
@@ -164,13 +163,13 @@ export default function JobList({ jobs, isLoading, onSelectJob }) {
             <div className="flex items-start justify-between mb-4">
               <div className="flex-1 min-w-0">
                 <div className="flex items-center gap-2 mb-2">
-                  <h3 className="font-bold text-xl text-[#000000] truncate group-hover:text-blue-600 transition-colors tracking-tight">{job.customer_name}</h3>
-                  <Badge variant="outline" className="text-xs font-medium text-slate-600 border-slate-300">
+                  <h3 className="font-bold text-xl text-[hsl(25,10%,12%)] truncate group-hover:text-[#fae008] transition-colors tracking-tight">{job.customer_name}</h3>
+                  <Badge variant="outline" className="text-xs font-medium text-[hsl(25,8%,45%)] border-[hsl(32,15%,88%)]">
                     #{job.job_number}
                   </Badge>
                 </div>
                 
-                <div className="flex items-start gap-2 text-slate-700 mb-3">
+                <div className="flex items-start gap-2 text-[hsl(25,10%,25%)] mb-3">
                   <MapPin className="w-4 h-4 text-[#fae008] mt-0.5 flex-shrink-0" />
                   <span className="text-sm font-medium">{job.address}</span>
                 </div>
@@ -213,7 +212,7 @@ export default function JobList({ jobs, isLoading, onSelectJob }) {
                   
                   {job.assigned_to_name && job.assigned_to_name.length > 0 && (
                     <>
-                      <div className="w-px h-6 bg-slate-300 mx-1"></div>
+                      <div className="w-px h-6 bg-[hsl(32,15%,88%)] mx-1"></div>
                       <div className="flex -space-x-2">
                         {(Array.isArray(job.assigned_to_name) ? job.assigned_to_name : [job.assigned_to_name]).slice(0, 3).map((name, idx) => (
                           <div
@@ -225,7 +224,7 @@ export default function JobList({ jobs, isLoading, onSelectJob }) {
                           </div>
                         ))}
                         {Array.isArray(job.assigned_to_name) && job.assigned_to_name.length > 3 && (
-                          <div className="bg-slate-300 w-7 h-7 rounded-full flex items-center justify-center text-[#000000] text-xs font-bold border-2 border-white shadow-sm">
+                          <div className="bg-[hsl(32,15%,88%)] w-7 h-7 rounded-full flex items-center justify-center text-[hsl(25,10%,12%)] text-xs font-bold border-2 border-white shadow-sm">
                             +{job.assigned_to_name.length - 3}
                           </div>
                         )}
@@ -254,17 +253,17 @@ export default function JobList({ jobs, isLoading, onSelectJob }) {
             </div>
 
             <div className="space-y-3">
-              <div className="flex flex-wrap items-center gap-4 bg-slate-50 rounded-xl p-4 border border-slate-200">
-                <div className="flex items-center gap-2 text-[#000000]">
-                  <Calendar className="w-4 h-4 text-slate-500" />
+              <div className="flex flex-wrap items-center gap-4 bg-[hsl(32,25%,96%)] rounded-xl p-4 border border-[hsl(32,15%,88%)]">
+                <div className="flex items-center gap-2 text-[hsl(25,10%,12%)]">
+                  <Calendar className="w-4 h-4 text-[hsl(25,8%,55%)]" />
                   <span className="text-sm font-semibold">
                     {job.scheduled_date && format(parseISO(job.scheduled_date), 'MMM d, yyyy')}
                   </span>
                 </div>
                 
                 {job.scheduled_time && (
-                  <div className="flex items-center gap-2 text-[#000000]">
-                    <Clock className="w-4 h-4 text-slate-500" />
+                  <div className="flex items-center gap-2 text-[hsl(25,10%,12%)]">
+                    <Clock className="w-4 h-4 text-[hsl(25,8%,55%)]" />
                     <span className="text-sm font-semibold">{job.scheduled_time}</span>
                   </div>
                 )}
@@ -272,21 +271,21 @@ export default function JobList({ jobs, isLoading, onSelectJob }) {
                 <div className="flex items-center gap-2">
                   {job.product && (
                     <Badge className={`${productColors[job.product]} font-semibold border`}>
-                      <Timer className="w-3 h-3 mr-1" /> {/* Replaced Package with Timer */}
+                      <Timer className="w-3 h-3 mr-1" />
                       {job.product}
                     </Badge>
                   )}
                   
                   {job.job_type_name && (
                     <Badge className="bg-purple-50 text-purple-900 border-purple-200 border font-semibold">
-                      <Timer className="w-3 h-3 mr-1" /> {/* Replaced Briefcase with Timer */}
+                      <Timer className="w-3 h-3 mr-1" />
                       {job.job_type_name}
                     </Badge>
                   )}
                 </div>
 
                 {job.expected_duration && (
-                  <Badge variant="outline" className="bg-white text-[#000000] border-slate-300 font-medium">
+                  <Badge variant="outline" className="bg-white text-[hsl(25,10%,12%)] border-[hsl(32,15%,88%)] font-medium">
                     {job.expected_duration}h duration
                   </Badge>
                 )}
@@ -294,7 +293,7 @@ export default function JobList({ jobs, isLoading, onSelectJob }) {
 
               {job.notes && (
                 <div className="bg-amber-50 border-2 border-amber-200 rounded-xl p-3">
-                  <div className="text-sm text-[#000000] line-clamp-2">
+                  <div className="text-sm text-[hsl(25,10%,12%)] line-clamp-2">
                     <div dangerouslySetInnerHTML={{ __html: unescape(job.notes) }} />
                   </div>
                 </div>

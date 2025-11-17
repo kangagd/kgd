@@ -1,4 +1,3 @@
-
 import React, { useState } from "react";
 import { base44 } from "@/api/base44Client";
 import { useQuery } from "@tanstack/react-query";
@@ -81,7 +80,7 @@ export default function Calendar() {
 
   if (selectedJob) {
     return (
-      <div className="bg-slate-50 min-h-screen">
+      <div className="bg-gradient-to-br from-[hsl(32,20%,98%)] to-[hsl(32,25%,94%)] min-h-screen">
         <div className="p-2 md:p-8 max-w-4xl mx-auto">
           <JobDetails
             job={selectedJob}
@@ -95,12 +94,12 @@ export default function Calendar() {
   }
 
   return (
-    <div className="p-4 md:p-8 bg-slate-50 min-h-screen">
+    <div className="p-4 md:p-8 bg-gradient-to-br from-[hsl(32,20%,98%)] to-[hsl(32,25%,94%)] min-h-screen">
       <div className="max-w-7xl mx-auto space-y-4">
         <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
           <div>
-            <h1 className="text-2xl md:text-3xl font-bold text-slate-900">Schedule</h1>
-            <p className="text-slate-500 text-sm mt-1">{getDateRangeText()}</p>
+            <h1 className="text-2xl md:text-3xl font-bold text-[hsl(25,10%,12%)]">Schedule</h1>
+            <p className="text-[hsl(25,8%,45%)] text-sm mt-1">{getDateRangeText()}</p>
           </div>
 
           <div className="flex gap-2">
@@ -126,14 +125,14 @@ export default function Calendar() {
           </Tabs>
 
           <div className="flex flex-wrap gap-2">
-            <span className="text-sm text-slate-600 self-center">Filter by technician:</span>
+            <span className="text-sm text-[hsl(25,8%,45%)] self-center">Filter by technician:</span>
             {technicians.map(tech => (
               <Button
                 key={tech.email}
                 variant={selectedTechnicians.includes(tech.email) ? "default" : "outline"}
                 size="sm"
                 onClick={() => toggleTechnician(tech.email)}
-                className={selectedTechnicians.includes(tech.email) ? "bg-[#fae008] text-slate-900 hover:bg-[#e5d007]" : ""}
+                className={selectedTechnicians.includes(tech.email) ? "bg-[#fae008] text-[hsl(25,10%,12%)] hover:bg-[#e5d007]" : ""}
               >
                 {tech.full_name}
               </Button>
@@ -143,7 +142,7 @@ export default function Calendar() {
                 variant="ghost"
                 size="sm"
                 onClick={() => setSelectedTechnicians([])}
-                className="text-slate-500"
+                className="text-[hsl(25,8%,45%)]"
               >
                 Clear
               </Button>

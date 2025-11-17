@@ -32,10 +32,10 @@ const jobTypeColorsBg = [
 ];
 
 const statusColors = {
-  scheduled: "bg-blue-100 text-blue-700 border-blue-200",
+  scheduled: "bg-[#fae008]/20 text-[hsl(25,10%,12%)] border-[#fae008]/30",
   in_progress: "bg-amber-100 text-amber-700 border-amber-200",
   completed: "bg-green-100 text-green-700 border-green-200",
-  cancelled: "bg-slate-100 text-slate-700 border-slate-200",
+  cancelled: "bg-[hsl(32,25%,94%)] text-[hsl(25,8%,45%)] border-[hsl(32,15%,88%)]",
 };
 
 const getJobTypeColor = (jobTypeName, allJobTypes) => {
@@ -191,7 +191,7 @@ export default function DayView({ jobs, currentDate, onJobClick, onQuickBook }) 
     return (
       <Card>
         <CardContent className="p-12 text-center">
-          <div className="text-slate-400 text-sm">No technicians found</div>
+          <div className="text-[hsl(25,8%,55%)] text-sm">No technicians found</div>
         </CardContent>
       </Card>
     );
@@ -204,13 +204,13 @@ export default function DayView({ jobs, currentDate, onJobClick, onQuickBook }) 
           <CardContent className="p-0 overflow-x-auto">
             <div className="min-w-[800px]">
               {/* Header with hours */}
-              <div className="flex border-b border-slate-200 bg-slate-50">
-                <div className="w-32 flex-shrink-0 p-2 border-r border-slate-200 font-medium text-sm text-slate-700">
+              <div className="flex border-b border-[hsl(32,15%,88%)] bg-[hsl(32,25%,96%)]">
+                <div className="w-32 flex-shrink-0 p-2 border-r border-[hsl(32,15%,88%)] font-medium text-sm text-[hsl(25,10%,25%)]">
                   Technician
                 </div>
                 <div className="flex-1 flex">
                   {hours.map(hour => (
-                    <div key={hour} className="flex-1 text-center p-2 border-r border-slate-200 text-xs text-slate-600">
+                    <div key={hour} className="flex-1 text-center p-2 border-r border-[hsl(32,15%,88%)] text-xs text-[hsl(25,8%,45%)]">
                       {hour === 12 ? '12 PM' : hour > 12 ? `${hour - 12} PM` : `${hour} AM`}
                     </div>
                   ))}
@@ -225,10 +225,10 @@ export default function DayView({ jobs, currentDate, onJobClick, onQuickBook }) 
                 });
 
                 return (
-                  <div key={technician.id} className="flex border-b border-slate-200 hover:bg-slate-50">
-                    <div className="w-32 flex-shrink-0 p-3 border-r border-slate-200 flex items-center gap-2">
-                      <User className="w-4 h-4 text-slate-400" />
-                      <span className="text-sm font-medium text-slate-700 truncate">
+                  <div key={technician.id} className="flex border-b border-[hsl(32,15%,88%)] hover:bg-[hsl(32,25%,96%)]">
+                    <div className="w-32 flex-shrink-0 p-3 border-r border-[hsl(32,15%,88%)] flex items-center gap-2">
+                      <User className="w-4 h-4 text-[hsl(25,8%,55%)]" />
+                      <span className="text-sm font-medium text-[hsl(25,10%,25%)] truncate">
                         {technician.full_name}
                       </span>
                     </div>
@@ -236,8 +236,8 @@ export default function DayView({ jobs, currentDate, onJobClick, onQuickBook }) 
                       {hours.map(hour => (
                         <div 
                           key={hour} 
-                          className={`absolute top-0 bottom-0 border-r border-slate-200 transition-colors ${
-                            dragOverZone === `${technician.email}-${hour}` ? 'bg-blue-100' : ''
+                          className={`absolute top-0 bottom-0 border-r border-[hsl(32,15%,88%)] transition-colors ${
+                            dragOverZone === `${technician.email}-${hour}` ? 'bg-[#fae008]/20' : ''
                           }`}
                           style={{ 
                             left: `${((hour - startHour) / (endHour - startHour + 1)) * 100}%`,
@@ -262,16 +262,16 @@ export default function DayView({ jobs, currentDate, onJobClick, onQuickBook }) 
                             className={`absolute top-2 bottom-2 rounded-lg p-2 cursor-move hover:shadow-lg transition-all border-l-4 ${getJobTypeBgColor(job.job_type_name, uniqueJobTypes)} ${
                               draggedJob?.id === job.id ? 'opacity-50' : ''
                             }`}
-                            style={{ left: position.left, width: position.width, minWidth: '120px', borderLeftColor: statusColors[job.status]?.split(' ')[0].replace('bg-', '') || '#94a3b8' }}
+                            style={{ left: position.left, width: position.width, minWidth: '120px', borderLeftColor: '#fae008' }}
                             onClick={() => onJobClick(job)}
                           >
-                            <div className="text-xs font-semibold text-slate-900 mb-1 truncate">
+                            <div className="text-xs font-semibold text-[hsl(25,10%,12%)] mb-1 truncate">
                               #{job.job_number}
                             </div>
-                            <div className="font-semibold text-sm text-slate-900 mb-1 truncate">
+                            <div className="font-semibold text-sm text-[hsl(25,10%,12%)] mb-1 truncate">
                               {job.customer_name}
                             </div>
-                            <div className="flex items-start gap-1 text-xs text-slate-600 truncate">
+                            <div className="flex items-start gap-1 text-xs text-[hsl(25,8%,45%)] truncate">
                               <MapPin className="w-3 h-3 mt-0.5 flex-shrink-0" />
                               <span className="truncate">{job.address}</span>
                             </div>
@@ -286,12 +286,12 @@ export default function DayView({ jobs, currentDate, onJobClick, onQuickBook }) 
           </CardContent>
         </Card>
 
-        <div className="flex flex-wrap gap-2 text-xs bg-white p-3 rounded-lg border border-slate-200">
-          <span className="font-semibold text-slate-700">Job Types:</span>
+        <div className="flex flex-wrap gap-2 text-xs bg-white p-3 rounded-lg border border-[hsl(32,15%,88%)]">
+          <span className="font-semibold text-[hsl(25,10%,25%)]">Job Types:</span>
           {uniqueJobTypes.map((jobType) => (
             <div key={jobType} className="flex items-center gap-1.5">
               <div className={`w-3 h-3 rounded ${getJobTypeColor(jobType, uniqueJobTypes)}`} />
-              <span className="text-slate-600">{jobType}</span>
+              <span className="text-[hsl(25,8%,45%)]">{jobType}</span>
             </div>
           ))}
         </div>
@@ -305,23 +305,23 @@ export default function DayView({ jobs, currentDate, onJobClick, onQuickBook }) 
               Confirm Job Reschedule
             </AlertDialogTitle>
             <AlertDialogDescription className="space-y-2">
-              <p className="font-medium text-slate-900">
+              <p className="font-medium text-[hsl(25,10%,12%)]">
                 Job #{pendingUpdate?.job.job_number} - {pendingUpdate?.job.customer_name}
               </p>
               {pendingUpdate?.timeChanged && (
                 <p>
-                  <span className="text-slate-600">Time:</span>{' '}
-                  <span className="line-through text-slate-400">{pendingUpdate?.job.scheduled_time?.slice(0, 5)}</span>
+                  <span className="text-[hsl(25,8%,45%)]">Time:</span>{' '}
+                  <span className="line-through text-[hsl(25,8%,55%)]">{pendingUpdate?.job.scheduled_time?.slice(0, 5)}</span>
                   {' → '}
-                  <span className="font-medium text-blue-600">{pendingUpdate?.newTime?.slice(0, 5)}</span>
+                  <span className="font-medium text-[#fae008]">{pendingUpdate?.newTime?.slice(0, 5)}</span>
                 </p>
               )}
               {pendingUpdate?.techChanged && (
                 <p>
-                  <span className="text-slate-600">Technician:</span>{' '}
-                  <span className="line-through text-slate-400">{pendingUpdate?.oldTech}</span>
+                  <span className="text-[hsl(25,8%,45%)]">Technician:</span>{' '}
+                  <span className="line-through text-[hsl(25,8%,55%)]">{pendingUpdate?.oldTech}</span>
                   {' → '}
-                  <span className="font-medium text-blue-600">{pendingUpdate?.newTech}</span>
+                  <span className="font-medium text-[#fae008]">{pendingUpdate?.newTech}</span>
                 </p>
               )}
             </AlertDialogDescription>
@@ -330,7 +330,7 @@ export default function DayView({ jobs, currentDate, onJobClick, onQuickBook }) 
             <AlertDialogCancel>Cancel</AlertDialogCancel>
             <AlertDialogAction
               onClick={confirmUpdate}
-              className="bg-[#fae008] text-slate-950 hover:bg-[#fae008]/90"
+              className="bg-[#fae008] text-[hsl(25,10%,12%)] hover:bg-[#e5d007]"
             >
               Confirm Changes
             </AlertDialogAction>
