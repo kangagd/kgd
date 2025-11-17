@@ -10,13 +10,13 @@ import ProjectForm from "../components/projects/ProjectForm";
 import ProjectDetails from "../components/projects/ProjectDetails";
 
 const statusColors = {
-  open: "bg-slate-100 text-slate-800",
-  scheduled: "bg-blue-100 text-blue-800",
-  quoted: "bg-purple-100 text-purple-800",
-  invoiced: "bg-indigo-100 text-indigo-800",
-  paid: "bg-green-100 text-green-800",
-  completed: "bg-emerald-100 text-emerald-800",
-  cancelled: "bg-slate-100 text-slate-800"
+  open: "bg-[hsl(32,25%,94%)] text-[hsl(25,10%,12%)] border-[hsl(32,15%,88%)]",
+  scheduled: "bg-[#fae008]/20 text-[hsl(25,10%,12%)] border-[#fae008]/30",
+  quoted: "bg-purple-100 text-purple-800 border-purple-200",
+  invoiced: "bg-indigo-100 text-indigo-800 border-indigo-200",
+  paid: "bg-green-100 text-green-800 border-green-200",
+  completed: "bg-emerald-100 text-emerald-800 border-emerald-200",
+  cancelled: "bg-[hsl(32,25%,94%)] text-[hsl(25,10%,12%)] border-[hsl(32,15%,88%)]"
 };
 
 const projectTypeColors = {
@@ -114,7 +114,7 @@ export default function Projects() {
 
   if (showForm) {
     return (
-      <div className="p-4 md:p-8 bg-gradient-to-br from-slate-50 to-slate-100 min-h-screen">
+      <div className="p-4 md:p-8 bg-gradient-to-br from-[hsl(32,20%,98%)] to-[hsl(32,25%,94%)] min-h-screen">
         <div className="max-w-4xl mx-auto">
           <ProjectForm
             project={editingProject}
@@ -132,7 +132,7 @@ export default function Projects() {
 
   if (selectedProject) {
     return (
-      <div className="bg-gradient-to-br from-slate-50 to-slate-100 min-h-screen">
+      <div className="bg-gradient-to-br from-[hsl(32,20%,98%)] to-[hsl(32,25%,94%)] min-h-screen">
         <div className="mx-auto p-4 md:p-8 max-w-6xl">
           <ProjectDetails
             project={selectedProject}
@@ -146,16 +146,16 @@ export default function Projects() {
   }
 
   return (
-    <div className="p-4 md:p-8 bg-gradient-to-br from-slate-50 to-slate-100 min-h-screen">
+    <div className="p-4 md:p-8 bg-gradient-to-br from-[hsl(32,20%,98%)] to-[hsl(32,25%,94%)] min-h-screen">
       <div className="max-w-7xl mx-auto">
         <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-6 gap-4">
           <div>
-            <h1 className="text-3xl font-bold text-[#000000] tracking-tight">Projects</h1>
-            <p className="text-slate-600 mt-2">Manage multi-step workflows</p>
+            <h1 className="text-3xl font-bold text-[hsl(25,10%,12%)] tracking-tight">Projects</h1>
+            <p className="text-[hsl(25,8%,45%)] mt-2">Manage multi-step workflows</p>
           </div>
           <Button
             onClick={() => setShowForm(true)}
-            className="bg-[#fae008] text-[#000000] hover:bg-[#e5d007] active:bg-[#d4c006] font-semibold shadow-md hover:shadow-lg transition-all w-full md:w-auto"
+            className="bg-[#fae008] text-[hsl(25,10%,12%)] hover:bg-[#e5d007] active:bg-[#d4c006] font-semibold shadow-md hover:shadow-lg transition-all w-full md:w-auto"
           >
             <Plus className="w-5 h-5 mr-2" />
             New Project
@@ -164,26 +164,26 @@ export default function Projects() {
 
         <div className="mb-6">
           <div className="relative">
-            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-slate-400" />
+            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-[hsl(25,8%,55%)]" />
             <Input
               placeholder="Search projects..."
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
-              className="pl-11 border-2 border-slate-300 focus:border-[#fae008] focus:ring-2 focus:ring-[#fae008]/20 transition-all h-12 text-base rounded-xl"
+              className="pl-11 border-2 border-[hsl(32,15%,88%)] focus:border-[#fae008] focus:ring-2 focus:ring-[#fae008]/20 transition-all h-12 text-base rounded-xl"
             />
           </div>
         </div>
 
         {isLoading && (
           <div className="text-center py-12">
-            <p className="text-slate-500">Loading projects...</p>
+            <p className="text-[hsl(25,8%,45%)]">Loading projects...</p>
           </div>
         )}
 
         {!isLoading && filteredProjects.length === 0 && (
-          <div className="text-center py-12 bg-white rounded-2xl border-2 border-slate-200">
-            <p className="text-slate-500 mb-4">No projects found</p>
-            <Button onClick={() => setShowForm(true)} className="bg-[#fae008] text-[#000000] font-semibold">
+          <div className="text-center py-12 bg-white rounded-2xl border-2 border-[hsl(32,15%,88%)]">
+            <p className="text-[hsl(25,8%,45%)] mb-4">No projects found</p>
+            <Button onClick={() => setShowForm(true)} className="bg-[#fae008] text-[hsl(25,10%,12%)] font-semibold">
               Create First Project
             </Button>
           </div>
@@ -193,14 +193,14 @@ export default function Projects() {
           {filteredProjects.map((project) => (
             <Card
               key={project.id}
-              className="border-2 border-slate-200 hover:border-[#fae008] hover:shadow-lg transition-all cursor-pointer rounded-2xl"
+              className="border-2 border-[hsl(32,15%,88%)] hover:border-[#fae008] hover:shadow-lg transition-all cursor-pointer rounded-2xl"
               onClick={() => setSelectedProject(project)}
             >
               <CardContent className="p-4 md:p-6">
                 <div className="flex items-start justify-between gap-4">
                   <div className="flex-1">
                     <div className="flex items-center gap-2 flex-wrap mb-2">
-                      <h3 className="text-lg font-bold text-[#000000]">{project.title}</h3>
+                      <h3 className="text-lg font-bold text-[hsl(25,10%,12%)]">{project.title}</h3>
                       {project.project_type && (
                         <Badge className={`${projectTypeColors[project.project_type]} font-semibold border-2`}>
                           {project.project_type}
@@ -210,10 +210,10 @@ export default function Projects() {
                         {project.status}
                       </Badge>
                     </div>
-                    <p className="text-sm text-slate-600 mb-2">{project.customer_name}</p>
+                    <p className="text-sm text-[hsl(25,8%,45%)] mb-2">{project.customer_name}</p>
                     {project.description && (
                       <div
-                        className="text-sm text-slate-500 line-clamp-2 prose prose-sm max-w-none mb-2"
+                        className="text-sm text-[hsl(25,8%,45%)] line-clamp-2 prose prose-sm max-w-none mb-2"
                         dangerouslySetInnerHTML={{ __html: project.description }}
                       />
                     )}
@@ -228,8 +228,8 @@ export default function Projects() {
                       </div>
                     )}
                   </div>
-                  <div className="text-right text-sm text-slate-500">
-                    <div className="font-bold text-[#000000]">{getJobCount(project.id)} jobs</div>
+                  <div className="text-right text-sm text-[hsl(25,8%,45%)]">
+                    <div className="font-bold text-[hsl(25,10%,12%)]">{getJobCount(project.id)} jobs</div>
                     {project.created_date && (
                       <div className="text-xs">Created {new Date(project.created_date).toLocaleDateString()}</div>
                     )}

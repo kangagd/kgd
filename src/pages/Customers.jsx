@@ -93,7 +93,7 @@ export default function Customers() {
 
   if (showForm) {
     return (
-      <div className="p-4 md:p-8 bg-gradient-to-br from-slate-50 to-slate-100 min-h-screen">
+      <div className="p-4 md:p-8 bg-gradient-to-br from-[hsl(32,20%,98%)] to-[hsl(32,25%,94%)] min-h-screen">
         <div className="max-w-4xl mx-auto">
           <CustomerForm
             customer={editingCustomer}
@@ -111,7 +111,7 @@ export default function Customers() {
 
   if (selectedCustomer) {
     return (
-      <div className="p-4 md:p-8 bg-gradient-to-br from-slate-50 to-slate-100 min-h-screen">
+      <div className="p-4 md:p-8 bg-gradient-to-br from-[hsl(32,20%,98%)] to-[hsl(32,25%,94%)] min-h-screen">
         <div className="max-w-4xl mx-auto">
           <CustomerDetails
             customer={selectedCustomer}
@@ -125,16 +125,16 @@ export default function Customers() {
   }
 
   return (
-    <div className="p-4 md:p-8 bg-gradient-to-br from-slate-50 to-slate-100 min-h-screen">
+    <div className="p-4 md:p-8 bg-gradient-to-br from-[hsl(32,20%,98%)] to-[hsl(32,25%,94%)] min-h-screen">
       <div className="max-w-7xl mx-auto">
         <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-6 gap-4">
           <div>
-            <h1 className="text-3xl font-bold text-[#000000] tracking-tight">Customers</h1>
-            <p className="text-slate-600 mt-2">Manage customer information</p>
+            <h1 className="text-3xl font-bold text-[hsl(25,10%,12%)] tracking-tight">Customers</h1>
+            <p className="text-[hsl(25,8%,45%)] mt-2">Manage customer information</p>
           </div>
           <Button
             onClick={() => setShowForm(true)}
-            className="bg-[#fae008] text-[#000000] hover:bg-[#e5d007] active:bg-[#d4c006] font-semibold shadow-md hover:shadow-lg transition-all w-full md:w-auto"
+            className="bg-[#fae008] text-[hsl(25,10%,12%)] hover:bg-[#e5d007] active:bg-[#d4c006] font-semibold shadow-md hover:shadow-lg transition-all w-full md:w-auto"
           >
             <Plus className="w-5 h-5 mr-2" />
             New Customer
@@ -143,12 +143,12 @@ export default function Customers() {
 
         <div className="mb-6">
           <div className="relative">
-            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-slate-400" />
+            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-[hsl(25,8%,55%)]" />
             <Input
               placeholder="Search customers..."
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
-              className="pl-11 border-2 border-slate-300 focus:border-[#fae008] focus:ring-2 focus:ring-[#fae008]/20 transition-all h-12 text-base rounded-xl"
+              className="pl-11 border-2 border-[hsl(32,15%,88%)] focus:border-[#fae008] focus:ring-2 focus:ring-[#fae008]/20 transition-all h-12 text-base rounded-xl"
             />
           </div>
         </div>
@@ -158,25 +158,25 @@ export default function Customers() {
             {[1, 2, 3, 4, 5].map((i) => (
               <Card key={i} className="animate-pulse rounded-2xl">
                 <CardContent className="p-6">
-                  <div className="h-6 bg-slate-200 rounded-lg w-1/3 mb-4"></div>
-                  <div className="h-4 bg-slate-200 rounded-lg w-2/3 mb-2"></div>
-                  <div className="h-4 bg-slate-200 rounded-lg w-1/2"></div>
+                  <div className="h-6 bg-[hsl(32,15%,88%)] rounded-lg w-1/3 mb-4"></div>
+                  <div className="h-4 bg-[hsl(32,15%,88%)] rounded-lg w-2/3 mb-2"></div>
+                  <div className="h-4 bg-[hsl(32,15%,88%)] rounded-lg w-1/2"></div>
                 </CardContent>
               </Card>
             ))}
           </div>
         ) : filteredCustomers.length === 0 ? (
-          <Card className="p-12 text-center rounded-2xl border-2 border-slate-200">
-            <User className="w-16 h-16 mx-auto text-slate-300 mb-4" />
-            <h3 className="text-lg font-bold text-[#000000] mb-2">No customers found</h3>
-            <p className="text-slate-600">Try adjusting your search or add a new customer</p>
+          <Card className="p-12 text-center rounded-2xl border-2 border-[hsl(32,15%,88%)]">
+            <User className="w-16 h-16 mx-auto text-[hsl(32,15%,88%)] mb-4" />
+            <h3 className="text-lg font-bold text-[hsl(25,10%,12%)] mb-2">No customers found</h3>
+            <p className="text-[hsl(25,8%,45%)]">Try adjusting your search or add a new customer</p>
           </Card>
         ) : (
           <div className="grid gap-4">
             {filteredCustomers.map((customer) => (
               <Card
                 key={customer.id}
-                className="hover:shadow-xl transition-all duration-200 cursor-pointer border-l-4 hover:scale-[1.01] active:scale-[0.99] group rounded-2xl border-2 border-slate-200"
+                className="hover:shadow-xl transition-all duration-200 cursor-pointer border-l-4 hover:scale-[1.01] active:scale-[0.99] group rounded-2xl border-2 border-[hsl(32,15%,88%)]"
                 style={{ borderLeftColor: '#fae008', borderLeftWidth: '6px' }}
                 onClick={() => setSelectedCustomer(customer)}
               >
@@ -184,11 +184,11 @@ export default function Customers() {
                   <div className="flex items-start justify-between mb-4">
                     <div className="flex-1 min-w-0">
                       <div className="flex items-center gap-2 mb-2 flex-wrap">
-                        <h3 className="font-bold text-xl text-[#000000] group-hover:text-blue-600 transition-colors tracking-tight">
+                        <h3 className="font-bold text-xl text-[hsl(25,10%,12%)] group-hover:text-[#fae008] transition-colors tracking-tight">
                           {customer.name}
                         </h3>
                         {customer.status && (
-                          <Badge variant="outline" className="text-xs font-medium border-slate-300">
+                          <Badge variant="outline" className="text-xs font-medium border-[hsl(32,15%,88%)]">
                             {customer.status}
                           </Badge>
                         )}
@@ -201,20 +201,20 @@ export default function Customers() {
 
                       <div className="space-y-2">
                         {customer.phone && (
-                          <div className="flex items-center gap-2 text-slate-700">
-                            <Phone className="w-4 h-4 text-slate-400" />
+                          <div className="flex items-center gap-2 text-[hsl(25,10%,25%)]">
+                            <Phone className="w-4 h-4 text-[hsl(25,8%,55%)]" />
                             <span className="text-sm font-medium">{customer.phone}</span>
                           </div>
                         )}
                         {customer.email && (
-                          <div className="flex items-center gap-2 text-slate-700">
-                            <Mail className="w-4 h-4 text-slate-400" />
+                          <div className="flex items-center gap-2 text-[hsl(25,10%,25%)]">
+                            <Mail className="w-4 h-4 text-[hsl(25,8%,55%)]" />
                             <span className="text-sm font-medium truncate">{customer.email}</span>
                           </div>
                         )}
                         {customer.address && (
-                          <div className="flex items-start gap-2 text-slate-700">
-                            <MapPin className="w-4 h-4 text-slate-400 mt-0.5" />
+                          <div className="flex items-start gap-2 text-[hsl(25,10%,25%)]">
+                            <MapPin className="w-4 h-4 text-[hsl(25,8%,55%)] mt-0.5" />
                             <span className="text-sm font-medium">{customer.address}</span>
                           </div>
                         )}
