@@ -2,10 +2,10 @@ import React, { useState } from "react";
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { ArrowLeft, Edit, Phone, Mail, Briefcase, Plus, Tag, Trash2 } from "lucide-react";
+import { ArrowLeft, Edit, Phone, Mail, Briefcase, Plus, Tag, Trash2, Building2 } from "lucide-react";
 import { useQuery } from "@tanstack/react-query";
 import { base44 } from "@/api/base44Client";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import { createPageUrl } from "@/utils";
 import { format, parseISO } from "date-fns";
 import {
@@ -28,10 +28,17 @@ const customerTypeColors = {
 
 export default function CustomerDetails({ customer, onClose, onEdit, onDelete }) {
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
+  const navigate = useNavigate();
 
   const { data: allJobs = [] } = useQuery({
     queryKey: ['customerJobs', customer.id],
     queryFn: () => base44.entities.Job.filter({ customer_id: customer.id }, '-scheduled_date'),
+  });
+
+  const { data: organisation } = useQuery({
+    queryKey: ['organisation', customer.organisation_id],
+    queryFn: () => base44.entities.Organisation.get(customer.organisation_id),
+    enabled: !!customer.organisation_id
   });
 
   const jobs = allJobs.filter(job => !job.deleted_at);
@@ -88,6 +95,34 @@ export default function CustomerDetails({ customer, onClose, onEdit, onDelete })
           </div>
         </CardHeader>
         <CardContent className="p-4 md:p-6 space-y-6">
+          {organisation && (
+            <div className="bg-blue-50 border-2 border-blue-200 rounded-xl p-4">
+              <div className="flex items-start justify-between">
+                <div className="flex-1">
+                  <div className="flex items-center gap-2 text-blue-900 mb-2">
+                    <Building2 className="w-4 h-4" />
+                    <span className="text-sm font-bold">Organisation</span>
+                  </div>
+                  <h4 className="font-bold text-[#000000] text-lg mb-1">{organisation.name}</h4>
+                  <Badge className="bg-blue-100 text-blue-700 border-blue-200 border font-semibold text-xs">
+                    {organisation.organisation_type}
+                  </Badge>
+                  {organisation.address && (
+                    <p className="text-sm text-slate-700 mt-2">{organisation.address}</p>
+                  )}
+                </div>
+                <Button
+                  size="sm"
+                  variant="outline"
+                  onClick={() => navigate(createPageUrl('Organisations'))}
+                  className="border-2 font-semibold"
+                >
+                  View
+                </Button>
+              </div>
+            </div>
+          )}
+
           <div>
             <h3 className="text-sm font-bold text-[#000000] mb-3">Contact Information</h3>
             <div className="space-y-3">
