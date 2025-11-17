@@ -3,7 +3,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
-import { Building2, Search, Plus, Phone, Mail, MapPin, Users } from "lucide-react";
+import { Building2, Search, Plus, Phone, Mail, MapPin, Users, Hash } from "lucide-react";
 import { base44 } from "@/api/base44Client";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import OrganisationForm from "../components/organisations/OrganisationForm";
@@ -23,7 +23,7 @@ export default function Organisations() {
   const [editingOrganisation, setEditingOrganisation] = useState(null);
   const queryClient = useQueryClient();
 
-  const { data: organisations = [], isLoading } = useQuery({
+  const { data: organisations = [], isLoading, refetch } = useQuery({
     queryKey: ['organisations'],
     queryFn: () => base44.entities.Organisation.filter({ deleted_at: { $exists: false } })
   });
@@ -37,6 +37,7 @@ export default function Organisations() {
     mutationFn: (data) => base44.entities.Organisation.create(data),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['organisations'] });
+      refetch();
       setShowForm(false);
       setEditingOrganisation(null);
     }
@@ -46,6 +47,7 @@ export default function Organisations() {
     mutationFn: ({ id, data }) => base44.entities.Organisation.update(id, data),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['organisations'] });
+      refetch();
       setShowForm(false);
       setEditingOrganisation(null);
     }
@@ -55,6 +57,7 @@ export default function Organisations() {
     mutationFn: (id) => base44.entities.Organisation.update(id, { deleted_at: new Date().toISOString() }),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['organisations'] });
+      refetch();
       setSelectedOrganisation(null);
     }
   });
@@ -79,7 +82,8 @@ export default function Organisations() {
 
   const filteredOrganisations = organisations.filter(org =>
     org.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    org.organisation_type?.toLowerCase().includes(searchTerm.toLowerCase())
+    org.organisation_type?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    org.sp_number?.toLowerCase().includes(searchTerm.toLowerCase())
   );
 
   const getCustomerCount = (orgId) => {
@@ -184,9 +188,11 @@ export default function Organisations() {
                       <h3 className="text-xl font-bold text-[#000000] group-hover:text-blue-600 transition-colors tracking-tight">
                         {org.name}
                       </h3>
-                      <Badge className={`${organisationTypeColors[org.organisation_type]} font-semibold border-2`}>
-                        {org.organisation_type}
-                      </Badge>
+                      {org.organisation_type && (
+                        <Badge className={`${organisationTypeColors[org.organisation_type]} font-semibold border-2`}>
+                          {org.organisation_type}
+                        </Badge>
+                      )}
                       {org.status === 'inactive' && (
                         <Badge variant="outline" className="bg-slate-100 text-slate-600 border-slate-300">
                           Inactive
@@ -195,6 +201,12 @@ export default function Organisations() {
                     </div>
 
                     <div className="space-y-2 text-sm">
+                      {org.organisation_type === "Strata" && org.sp_number && (
+                        <div className="flex items-start gap-2 text-slate-600">
+                          <Hash className="w-4 h-4 text-slate-400 mt-0.5 flex-shrink-0" />
+                          <span>SP: {org.sp_number}</span>
+                        </div>
+                      )}
                       {org.address && (
                         <div className="flex items-start gap-2 text-slate-600">
                           <MapPin className="w-4 h-4 text-slate-400 mt-0.5 flex-shrink-0" />
