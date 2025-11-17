@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from "react";
 import { base44 } from "@/api/base44Client";
 import { useQuery } from "@tanstack/react-query";
@@ -11,13 +10,13 @@ import { useNavigate } from "react-router-dom";
 import { createPageUrl } from "@/utils";
 
 const statusColors = {
-  open: "bg-slate-100 text-slate-800 border-slate-200",
-  scheduled: "bg-blue-100 text-blue-800 border-blue-200",
-  quoted: "bg-purple-100 text-purple-800 border-purple-200",
-  invoiced: "bg-indigo-100 text-indigo-800 border-indigo-200",
-  paid: "bg-green-100 text-green-800 border-green-200",
-  completed: "bg-emerald-100 text-emerald-800 border-emerald-200",
-  lost: "bg-red-100 text-red-800 border-red-200"
+  open: "bg-[hsl(32,25%,94%)] text-[hsl(25,10%,12%)] border-[hsl(32,15%,88%)]",
+  scheduled: "bg-[#fae008]/20 text-[hsl(25,10%,12%)] border-[#fae008]/30",
+  quoted: "bg-purple-50 text-purple-900 border-purple-200",
+  invoiced: "bg-amber-50 text-amber-900 border-amber-200",
+  paid: "bg-green-50 text-green-900 border-green-200",
+  completed: "bg-emerald-50 text-emerald-900 border-emerald-200",
+  lost: "bg-red-50 text-red-900 border-red-200"
 };
 
 const statusLabels = {
@@ -88,18 +87,18 @@ export default function Dashboard() {
   };
 
   return (
-    <div className="p-4 md:p-8 bg-gradient-to-br from-slate-50 to-slate-100 min-h-screen">
+    <div className="p-4 md:p-8 bg-gradient-to-br from-[hsl(32,20%,98%)] to-[hsl(32,25%,94%)] min-h-screen">
       <div className="max-w-7xl mx-auto">
         <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-6 md:mb-8 gap-4">
           <div>
-            <h1 className="text-3xl md:text-4xl font-bold text-[#000000] tracking-tight">
+            <h1 className="text-3xl md:text-4xl font-bold text-[hsl(25,10%,12%)] tracking-tight">
               Good {new Date().getHours() < 12 ? 'Morning' : new Date().getHours() < 18 ? 'Afternoon' : 'Evening'}, {user?.full_name?.split(' ')[0] || 'there'}!
             </h1>
-            <p className="text-slate-600 mt-2 text-base">Here's what's happening today</p>
+            <p className="text-[hsl(25,8%,45%)] mt-2 text-base">Here's what's happening today</p>
           </div>
           <Button
             onClick={() => window.location.href = '/Jobs?action=new'}
-            className="bg-[#fae008] hover:bg-[#e5d007] active:bg-[#d4c006] text-[#000000] font-semibold shadow-md hover:shadow-lg transition-all duration-150 w-full md:w-auto"
+            className="bg-[#fae008] hover:bg-[#e5d007] active:bg-[#d4c006] text-[hsl(25,10%,12%)] font-semibold shadow-md hover:shadow-lg transition-all duration-150 w-full md:w-auto"
           >
             <Plus className="w-5 h-5 mr-2" />
             New Job
@@ -109,94 +108,94 @@ export default function Dashboard() {
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 md:gap-5 mb-6 md:mb-8">
           <div
             onClick={() => handleCardClick('today')}
-            className="bg-white rounded-2xl border-2 border-slate-200 p-6 cursor-pointer hover:shadow-xl hover:border-blue-400 hover:scale-[1.02] active:scale-[0.98] transition-all duration-200 group"
+            className="bg-white rounded-2xl border-2 border-[hsl(32,15%,88%)] p-6 cursor-pointer hover:shadow-xl hover:border-[#fae008] hover:scale-[1.02] active:scale-[0.98] transition-all duration-200 group"
           >
             <div className="flex items-start justify-between mb-4">
-              <div className="w-12 h-12 bg-blue-100 rounded-xl flex items-center justify-center group-hover:bg-blue-200 transition-colors">
-                <Clock className="w-6 h-6 text-blue-600" />
+              <div className="w-12 h-12 bg-amber-50 rounded-xl flex items-center justify-center group-hover:bg-amber-100 transition-colors">
+                <Clock className="w-6 h-6 text-amber-600" />
               </div>
               <div className="text-right">
-                <p className="text-3xl font-bold text-[#000000]">{todayJobs.length}</p>
+                <p className="text-3xl font-bold text-[hsl(25,10%,12%)]">{todayJobs.length}</p>
               </div>
             </div>
-            <h3 className="text-sm font-semibold text-slate-600 uppercase tracking-wide mb-1">Today's Jobs</h3>
-            <p className="text-xs text-slate-500 group-hover:text-slate-700 transition-colors">Click to view details →</p>
+            <h3 className="text-sm font-semibold text-[hsl(25,8%,45%)] uppercase tracking-wide mb-1">Today's Jobs</h3>
+            <p className="text-xs text-[hsl(25,8%,55%)] group-hover:text-[hsl(25,8%,35%)] transition-colors">Click to view details →</p>
           </div>
 
           <div
             onClick={() => handleCardClick('active')}
-            className="bg-white rounded-2xl border-2 border-slate-200 p-6 cursor-pointer hover:shadow-xl hover:border-[#fae008] hover:scale-[1.02] active:scale-[0.98] transition-all duration-200 group"
+            className="bg-white rounded-2xl border-2 border-[hsl(32,15%,88%)] p-6 cursor-pointer hover:shadow-xl hover:border-[#fae008] hover:scale-[1.02] active:scale-[0.98] transition-all duration-200 group"
           >
             <div className="flex items-start justify-between mb-4">
               <div className="w-12 h-12 bg-[#fae008]/20 rounded-xl flex items-center justify-center group-hover:bg-[#fae008]/30 transition-colors">
-                <TrendingUp className="w-6 h-6 text-[#000000]" />
+                <TrendingUp className="w-6 h-6 text-[hsl(25,10%,12%)]" />
               </div>
               <div className="text-right">
-                <p className="text-3xl font-bold text-[#000000]">{activeJobs.length}</p>
+                <p className="text-3xl font-bold text-[hsl(25,10%,12%)]">{activeJobs.length}</p>
               </div>
             </div>
-            <h3 className="text-sm font-semibold text-slate-600 uppercase tracking-wide mb-1">Active Jobs</h3>
-            <p className="text-xs text-slate-500 group-hover:text-slate-700 transition-colors">Click to view details →</p>
+            <h3 className="text-sm font-semibold text-[hsl(25,8%,45%)] uppercase tracking-wide mb-1">Active Jobs</h3>
+            <p className="text-xs text-[hsl(25,8%,55%)] group-hover:text-[hsl(25,8%,35%)] transition-colors">Click to view details →</p>
           </div>
 
           <div
             onClick={() => handleCardClick('completed')}
-            className="bg-white rounded-2xl border-2 border-slate-200 p-6 cursor-pointer hover:shadow-xl hover:border-green-400 hover:scale-[1.02] active:scale-[0.98] transition-all duration-200 group"
+            className="bg-white rounded-2xl border-2 border-[hsl(32,15%,88%)] p-6 cursor-pointer hover:shadow-xl hover:border-green-300 hover:scale-[1.02] active:scale-[0.98] transition-all duration-200 group"
           >
             <div className="flex items-start justify-between mb-4">
-              <div className="w-12 h-12 bg-green-100 rounded-xl flex items-center justify-center group-hover:bg-green-200 transition-colors">
+              <div className="w-12 h-12 bg-green-50 rounded-xl flex items-center justify-center group-hover:bg-green-100 transition-colors">
                 <CheckCircle className="w-6 h-6 text-green-600" />
               </div>
               <div className="text-right">
-                <p className="text-3xl font-bold text-[#000000]">{completedToday.length}</p>
+                <p className="text-3xl font-bold text-[hsl(25,10%,12%)]">{completedToday.length}</p>
               </div>
             </div>
-            <h3 className="text-sm font-semibold text-slate-600 uppercase tracking-wide mb-1">Completed Today</h3>
-            <p className="text-xs text-slate-500 group-hover:text-slate-700 transition-colors">Click to view details →</p>
+            <h3 className="text-sm font-semibold text-[hsl(25,8%,45%)] uppercase tracking-wide mb-1">Completed Today</h3>
+            <p className="text-xs text-[hsl(25,8%,55%)] group-hover:text-[hsl(25,8%,35%)] transition-colors">Click to view details →</p>
           </div>
 
           <div
             onClick={() => navigate(createPageUrl("Jobs"))}
-            className="bg-white rounded-2xl border-2 border-slate-200 p-6 cursor-pointer hover:shadow-xl hover:border-purple-400 hover:scale-[1.02] active:scale-[0.98] transition-all duration-200 group"
+            className="bg-white rounded-2xl border-2 border-[hsl(32,15%,88%)] p-6 cursor-pointer hover:shadow-xl hover:border-purple-300 hover:scale-[1.02] active:scale-[0.98] transition-all duration-200 group"
           >
             <div className="flex items-start justify-between mb-4">
-              <div className="w-12 h-12 bg-purple-100 rounded-xl flex items-center justify-center group-hover:bg-purple-200 transition-colors">
+              <div className="w-12 h-12 bg-purple-50 rounded-xl flex items-center justify-center group-hover:bg-purple-100 transition-colors">
                 <Briefcase className="w-6 h-6 text-purple-600" />
               </div>
               <div className="text-right">
-                <p className="text-3xl font-bold text-[#000000]">{jobs.length}</p>
+                <p className="text-3xl font-bold text-[hsl(25,10%,12%)]">{jobs.length}</p>
               </div>
             </div>
-            <h3 className="text-sm font-semibold text-slate-600 uppercase tracking-wide mb-1">Total Jobs</h3>
-            <p className="text-xs text-slate-500 group-hover:text-slate-700 transition-colors">Click to view all →</p>
+            <h3 className="text-sm font-semibold text-[hsl(25,8%,45%)] uppercase tracking-wide mb-1">Total Jobs</h3>
+            <p className="text-xs text-[hsl(25,8%,55%)] group-hover:text-[hsl(25,8%,35%)] transition-colors">Click to view all →</p>
           </div>
         </div>
 
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-5 md:gap-6">
-          <div className="bg-white rounded-2xl border-2 border-slate-200 p-6 shadow-sm">
-            <h2 className="text-xl font-bold text-[#000000] mb-5 tracking-tight">Today's Schedule</h2>
+          <div className="bg-white rounded-2xl border-2 border-[hsl(32,15%,88%)] p-6 shadow-sm">
+            <h2 className="text-xl font-bold text-[hsl(25,10%,12%)] mb-5 tracking-tight">Today's Schedule</h2>
             {todayJobs.length === 0 ? (
               <div className="text-center py-12">
-                <Clock className="w-12 h-12 mx-auto text-slate-300 mb-3" />
-                <p className="text-slate-500 text-sm">No jobs scheduled for today</p>
+                <Clock className="w-12 h-12 mx-auto text-[hsl(32,15%,88%)] mb-3" />
+                <p className="text-[hsl(25,8%,45%)] text-sm">No jobs scheduled for today</p>
               </div>
             ) : (
               <div className="space-y-3">
                 {todayJobs.map(job => (
                   <div
                     key={job.id}
-                    className="flex items-center justify-between p-4 rounded-xl border-2 border-slate-200 hover:bg-slate-50 hover:border-slate-300 cursor-pointer transition-all duration-150"
+                    className="flex items-center justify-between p-4 rounded-xl border-2 border-[hsl(32,15%,88%)] hover:bg-[hsl(32,25%,96%)] hover:border-[hsl(32,15%,80%)] cursor-pointer transition-all duration-150"
                     onClick={() => window.location.href = `/Jobs?id=${job.id}`}
                   >
                     <div className="flex-1">
                       <div className="flex items-center gap-2 mb-2">
-                        <span className="font-bold text-[#000000] text-sm">#{job.job_number}</span>
+                        <span className="font-bold text-[hsl(25,10%,12%)] text-sm">#{job.job_number}</span>
                         <span className={`text-xs px-2.5 py-1 rounded-full border font-medium ${statusColors[job.status]}`}>
                           {statusLabels[job.status] || job.status}
                         </span>
                       </div>
-                      <p className="text-sm font-medium text-[#000000]">{job.customer_name}</p>
-                      <p className="text-xs text-slate-600 mt-1">{job.scheduled_time || 'No time set'}</p>
+                      <p className="text-sm font-medium text-[hsl(25,10%,12%)]">{job.customer_name}</p>
+                      <p className="text-xs text-[hsl(25,8%,45%)] mt-1">{job.scheduled_time || 'No time set'}</p>
                     </div>
                   </div>
                 ))}
@@ -204,26 +203,26 @@ export default function Dashboard() {
             )}
           </div>
 
-          <div className="bg-white rounded-2xl border-2 border-slate-200 p-6 shadow-sm">
-            <h2 className="text-xl font-bold text-[#000000] mb-5 tracking-tight">Recent Check-ins</h2>
+          <div className="bg-white rounded-2xl border-2 border-[hsl(32,15%,88%)] p-6 shadow-sm">
+            <h2 className="text-xl font-bold text-[hsl(25,10%,12%)] mb-5 tracking-tight">Recent Check-ins</h2>
             {todayCheckIns.length === 0 ? (
               <div className="text-center py-12">
-                <CheckCircle className="w-12 h-12 mx-auto text-slate-300 mb-3" />
-                <p className="text-slate-500 text-sm">No check-ins today</p>
+                <CheckCircle className="w-12 h-12 mx-auto text-[hsl(32,15%,88%)] mb-3" />
+                <p className="text-[hsl(25,8%,45%)] text-sm">No check-ins today</p>
               </div>
             ) : (
               <div className="space-y-3">
                 {todayCheckIns.slice(0, 5).map(checkIn => (
-                  <div key={checkIn.id} className="p-4 rounded-xl border-2 border-slate-200 hover:bg-slate-50 transition-colors">
+                  <div key={checkIn.id} className="p-4 rounded-xl border-2 border-[hsl(32,15%,88%)] hover:bg-[hsl(32,25%,96%)] transition-colors">
                     <div className="flex items-center justify-between mb-2">
-                      <span className="font-semibold text-[#000000] text-sm">{checkIn.technician_name}</span>
+                      <span className="font-semibold text-[hsl(25,10%,12%)] text-sm">{checkIn.technician_name}</span>
                       {checkIn.duration_hours && (
-                        <span className="text-sm font-bold text-slate-700 bg-slate-100 px-2.5 py-1 rounded-lg">
+                        <span className="text-sm font-bold text-[hsl(25,10%,12%)] bg-[hsl(32,25%,94%)] px-2.5 py-1 rounded-lg">
                           {checkIn.duration_hours.toFixed(1)}h
                         </span>
                       )}
                     </div>
-                    <div className="text-xs text-slate-600 space-y-1">
+                    <div className="text-xs text-[hsl(25,8%,45%)] space-y-1">
                       <div className="flex items-center gap-2">
                         <span className="font-medium">Check-in:</span>
                         <span>{new Date(checkIn.check_in_time).toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' })}</span>
