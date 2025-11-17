@@ -36,7 +36,7 @@ import {
 
 const statusColors = {
   open: "bg-slate-100 text-slate-800 border-slate-200",
-  scheduled: "bg-blue-100 text-blue-800 border-blue-200",
+  scheduled: "bg-[#f0efe6] text-slate-800 border-slate-200",
   quoted: "bg-purple-100 text-purple-800 border-purple-200",
   invoiced: "bg-indigo-100 text-indigo-800 border-indigo-200",
   paid: "bg-green-100 text-green-800 border-green-200",
@@ -50,7 +50,7 @@ const stageColors = {
   quote_preparing: "bg-orange-100 text-orange-800 border-orange-200",
   quote_sent: "bg-purple-100 text-purple-800 border-purple-200",
   quote_approved: "bg-indigo-100 text-indigo-800 border-indigo-200",
-  parts_ordered: "bg-blue-100 text-blue-800 border-blue-200",
+  parts_ordered: "bg-[#f0efe6] text-slate-800 border-slate-200",
   scheduled: "bg-cyan-100 text-cyan-800 border-cyan-200",
   technician_on_site: "bg-orange-100 text-orange-800 border-orange-200",
   return_visit_needed: "bg-amber-100 text-amber-800 border-amber-200",
@@ -64,13 +64,13 @@ const stageColors = {
 const outcomeColors = {
   new_quote: "bg-purple-100 text-purple-800 border-purple-200",
   update_quote: "bg-indigo-100 text-indigo-800 border-indigo-200",
-  send_invoice: "bg-blue-100 text-blue-800 border-blue-200",
+  send_invoice: "bg-[#f0efe6] text-slate-800 border-slate-200",
   completed: "bg-green-100 text-green-800 border-green-200",
   return_visit_required: "bg-amber-100 text-amber-800 border-amber-200"
 };
 
 const productColors = {
-  "Garage Door": "bg-blue-100 text-blue-700",
+  "Garage Door": "bg-[#f0efe6] text-slate-700",
   "Gate": "bg-green-100 text-green-700",
   "Roller Shutter": "bg-purple-100 text-purple-700",
   "Multiple": "bg-orange-100 text-orange-700",
@@ -79,7 +79,7 @@ const productColors = {
 
 const customerTypeColors = {
   "Owner": "bg-purple-100 text-purple-700",
-  "Builder": "bg-blue-100 text-blue-700",
+  "Builder": "bg-[#f0efe6] text-slate-700",
   "Real Estate - Tenant": "bg-green-100 text-green-700",
   "Strata - Owner": "bg-amber-100 text-amber-700",
 };
@@ -95,7 +95,7 @@ const getInitials = (name) => {
 };
 
 const avatarColors = [
-  "bg-blue-500",
+  "bg-[#f0efe6]",
   "bg-purple-500",
   "bg-green-500",
   "bg-orange-500",
@@ -414,7 +414,7 @@ export default function JobDetails({ job, onClose, onStatusChange, onDelete }) {
   return (
     <>
       <Card className={`border-2 border-slate-200 shadow-lg ${isTechnician ? 'rounded-none' : 'rounded-2xl'}`}>
-        <CardHeader className="border-b-2 border-slate-200 bg-gradient-to-r from-slate-50 to-white p-3 md:p-4 space-y-2 md:space-y-3">
+        <CardHeader className="border-b-2 border-slate-200 bg-gradient-to-r from-[#f0efe6] to-white p-3 md:p-4 space-y-2 md:space-y-3">
           <div className="flex items-start justify-between gap-2">
             <div className="flex items-start gap-1.5 flex-1 min-w-0">
               <Button 
@@ -508,7 +508,7 @@ export default function JobDetails({ job, onClose, onStatusChange, onDelete }) {
                   size="icon"
                   variant="ghost"
                   onClick={() => window.location.href = `tel:${job.customer_phone}`}
-                  className="h-9 w-9 hover:bg-blue-100 text-slate-600 hover:text-blue-700 rounded-xl transition-all"
+                  className="h-9 w-9 hover:bg-[#f0efe6] text-slate-600 hover:text-slate-700 rounded-xl transition-all"
                   title="Call"
                 >
                   <Phone className="w-4 h-4" />
@@ -648,14 +648,14 @@ export default function JobDetails({ job, onClose, onStatusChange, onDelete }) {
 
             <TabsContent value="details" className="space-y-3 mt-2">
               {job.project_id && projectJobs.length > 0 && (
-                <div className="bg-blue-50 border-2 border-blue-200 rounded-xl p-3">
-                  <h3 className="text-sm font-bold text-blue-900 mb-2 flex items-center gap-1.5">
+                <div className="bg-[#f0efe6] border-2 border-slate-200 rounded-xl p-3">
+                  <h3 className="text-sm font-bold text-slate-900 mb-2 flex items-center gap-1.5">
                     <FolderKanban className="w-4 h-4" />
                     Project Job History ({projectJobs.length})
                   </h3>
                   <div className="space-y-2">
                     {projectJobs.map((pJob) => (
-                      <div key={pJob.id} className="bg-white border border-blue-200 rounded-lg p-2.5 text-sm">
+                      <div key={pJob.id} className="bg-white border border-slate-200 rounded-lg p-2.5 text-sm">
                         <div className="flex items-start justify-between gap-2 mb-1.5">
                           <div className="flex-1">
                             <div className="font-bold text-slate-900">
@@ -675,7 +675,7 @@ export default function JobDetails({ job, onClose, onStatusChange, onDelete }) {
                           )}
                         </div>
                         {pJob.notes && pJob.notes !== "<p><br></p>" && ( // Check for empty RichTextEditor content
-                          <div className="text-xs text-slate-600 mt-2 pt-2 border-t border-blue-100">
+                          <div className="text-xs text-slate-600 mt-2 pt-2 border-t border-slate-100">
                             <div className="font-semibold mb-0.5">Notes:</div>
                             <div className="line-clamp-2" dangerouslySetInnerHTML={{ __html: pJob.notes }} />
                           </div>
@@ -734,14 +734,14 @@ export default function JobDetails({ job, onClose, onStatusChange, onDelete }) {
                   <Button
                     onClick={handleCheckIn}
                     disabled={checkInMutation.isPending}
-                    className="w-full bg-blue-600 hover:bg-blue-700 h-11 font-semibold text-base rounded-xl shadow-md hover:shadow-lg transition-all"
+                    className="w-full bg-[#f0efe6] hover:bg-slate-200 text-slate-900 h-11 font-semibold text-base rounded-xl shadow-md hover:shadow-lg transition-all"
                   >
                     <LogIn className="w-4 h-4 mr-2" />
                     {checkInMutation.isPending ? 'Checking In...' : 'Check In'}
                   </Button>
                 ) : (
-                  <div className="bg-blue-50 border-2 border-blue-300 rounded-xl p-2.5">
-                    <div className="flex items-center gap-2 text-blue-700">
+                  <div className="bg-[#f0efe6] border-2 border-slate-300 rounded-xl p-2.5">
+                    <div className="flex items-center gap-2 text-slate-700">
                       <Timer className="w-4 h-4" />
                       <span className="text-sm font-bold">
                         Checked in at {format(new Date(activeCheckIn.check_in_time), 'h:mm a')}
@@ -826,7 +826,7 @@ export default function JobDetails({ job, onClose, onStatusChange, onDelete }) {
                     <Button
                       onClick={handleCheckOut}
                       disabled={checkOutMutation.isPending}
-                      className="w-full bg-blue-600 hover:bg-blue-700 h-11 font-semibold text-base rounded-xl shadow-md hover:shadow-lg transition-all"
+                      className="w-full bg-[#f0efe6] hover:bg-slate-200 text-slate-900 h-11 font-semibold text-base rounded-xl shadow-md hover:shadow-lg transition-all"
                     >
                       <LogOut className="w-4 h-4 mr-2" />
                       {checkOutMutation.isPending ? 'Checking Out...' : 'Check Out'}
@@ -876,10 +876,10 @@ export default function JobDetails({ job, onClose, onStatusChange, onDelete }) {
                       </div>
                     ))}
 
-                    <div className="bg-blue-50 border-2 border-blue-200 rounded-xl p-2.5">
+                    <div className="bg-[#f0efe6] border-2 border-slate-200 rounded-xl p-2.5">
                       <div className="flex items-center justify-between">
-                        <span className="text-sm font-bold text-blue-900">Total:</span>
-                        <span className="text-base font-bold text-blue-900">{totalJobTime.toFixed(1)}h</span>
+                        <span className="text-sm font-bold text-slate-900">Total:</span>
+                        <span className="text-base font-bold text-slate-900">{totalJobTime.toFixed(1)}h</span>
                       </div>
                     </div>
                   </CollapsibleContent>
