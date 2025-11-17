@@ -500,8 +500,8 @@ export default function JobDetails({ job, onClose, onStatusChange, onDelete }) {
                 variant="ghost"
                 onClick={() => window.open(`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(job.address)}`, '_blank')}
                 className="h-9 w-9 hover:bg-green-100 text-slate-600 hover:text-green-700 rounded-xl transition-all"
-                title="Directions"
-              >
+                  title="Directions"
+                >
                 <Navigation className="w-4 h-4" />
               </Button>
               {job.customer_email && (
@@ -624,7 +624,8 @@ export default function JobDetails({ job, onClose, onStatusChange, onDelete }) {
               <TabsTrigger value="files" className="text-xs md:text-sm font-semibold">
                 <ImageIcon className="w-3.5 h-3.5 md:w-4 md:h-4 md:mr-1.5" />
                 <span className="hidden md:inline">Files</span>
-              </TabsList>
+              </TabsTrigger>
+            </TabsList>
 
             <TabsContent value="details" className="space-y-3 mt-2">
               <div className="border-t-2 pt-3">
