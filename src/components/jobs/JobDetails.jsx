@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from "react";
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -5,7 +6,7 @@ import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Label } from "@/components/ui/label";
-import { ArrowLeft, MapPin, Phone, Calendar, Clock, User, Briefcase, FileText, Image as ImageIcon, DollarSign, Sparkles, LogIn, FileCheck, History, Package, ClipboardCheck, LogOut, Timer, AlertCircle, ChevronDown, Mail, Navigation, Trash2 } from "lucide-react";
+import { ArrowLeft, MapPin, Phone, Calendar, Clock, User, Briefcase, FileText, Image as ImageIcon, DollarSign, Sparkles, LogIn, FileCheck, History, Package, ClipboardCheck, LogOut, Timer, AlertCircle, ChevronDown, Mail, Navigation, Trash2, FolderKanban } from "lucide-react";
 import { format, parseISO } from "date-fns";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
@@ -140,6 +141,14 @@ export default function JobDetails({ job, onClose, onStatusChange, onDelete }) {
     queryKey: ['jobSummaries', job.id],
     queryFn: () => base44.entities.JobSummary.filter({ job_id: job.id }, '-checkout_time')
   });
+
+  const { data: allProjectJobs = [] } = useQuery({
+    queryKey: ['projectJobs', job.project_id],
+    queryFn: () => base44.entities.Job.filter({ project_id: job.project_id }),
+    enabled: !!job.project_id
+  });
+
+  const projectJobs = allProjectJobs.filter(j => j.id !== job.id && !j.deleted_at);
 
   useEffect(() => {
     const loadUser = async () => {
@@ -430,6 +439,12 @@ export default function JobDetails({ job, onClose, onStatusChange, onDelete }) {
                 </div>
                 
                 <p className="text-xs md:text-sm text-slate-500 font-medium">Job #{job.job_number}</p>
+                {job.project_name && (
+                  <div className="flex items-center gap-1 mt-1">
+                    <FolderKanban className="w-3 h-3 text-slate-400" />
+                    <p className="text-xs text-slate-500 font-medium">{job.project_name}</p>
+                  </div>
+                )}
               </div>
             </div>
             
@@ -627,6 +642,50 @@ export default function JobDetails({ job, onClose, onStatusChange, onDelete }) {
             </TabsList>
 
             <TabsContent value="details" className="space-y-3 mt-2">
+              {job.project_id && projectJobs.length > 0 && (
+                <div className="bg-blue-50 border-2 border-blue-200 rounded-xl p-3">
+                  <h3 className="text-sm font-bold text-blue-900 mb-2 flex items-center gap-1.5">
+                    <FolderKanban className="w-4 h-4" />
+                    Project Job History ({projectJobs.length})
+                  </h3>
+                  <div className="space-y-2">
+                    {projectJobs.map((pJob) => (
+                      <div key={pJob.id} className="bg-white border border-blue-200 rounded-lg p-2.5 text-sm">
+                        <div className="flex items-start justify-between gap-2 mb-1.5">
+                          <div className="flex-1">
+                            <div className="font-bold text-slate-900">
+                              {pJob.job_type_name || 'Job'} #{pJob.job_number}
+                            </div>
+                            {pJob.scheduled_date && (
+                              <div className="text-xs text-slate-600 flex items-center gap-1 mt-0.5">
+                                <Calendar className="w-3 h-3" />
+                                {format(parseISO(pJob.scheduled_date), 'MMM d, yyyy')}
+                              </div>
+                            )}
+                          </div>
+                          {pJob.status && (
+                            <Badge className={`${statusColors[pJob.status]} text-xs font-semibold border`}>
+                              {pJob.status.replace(/_/g, ' ')}
+                            </Badge>
+                          )}
+                        </div>
+                        {pJob.notes && pJob.notes !== "<p><br></p>" && ( // Check for empty RichTextEditor content
+                          <div className="text-xs text-slate-600 mt-2 pt-2 border-t border-blue-100">
+                            <div className="font-semibold mb-0.5">Notes:</div>
+                            <div className="line-clamp-2" dangerouslySetInnerHTML={{ __html: pJob.notes }} />
+                          </div>
+                        )}
+                        {pJob.outcome && (
+                          <Badge className={`${outcomeColors[pJob.outcome]} text-xs font-semibold border mt-1.5`}>
+                            Outcome: {pJob.outcome.replace(/_/g, ' ')}
+                          </Badge>
+                        )}
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+
               <div className="border-t-2 pt-3">
                 <h3 className="text-sm font-bold text-[#000000] mb-2 flex items-center gap-1.5">
                   <FileText className="w-4 h-4 text-slate-600" />
