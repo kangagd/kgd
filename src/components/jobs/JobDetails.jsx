@@ -790,7 +790,7 @@ export default function JobDetails({ job, onClose, onStatusChange, onDelete }) {
                     </Button>
                   </div>
                 )}
-
+                
                 {completedCheckIns.length > 0 && (
                   <Collapsible defaultOpen={false} className="pt-3 border-t-2">
                     <CollapsibleTrigger className="flex items-center justify-between w-full group">
