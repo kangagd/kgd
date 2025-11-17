@@ -107,6 +107,11 @@ export default function JobForm({ job, technicians, onSubmit, onCancel, isSubmit
       assigned_to: Array.isArray(formData.assigned_to) ? formData.assigned_to : [],
       assigned_to_name: Array.isArray(formData.assigned_to_name) ? formData.assigned_to_name : []
     };
+
+    // Remove empty string values for enum fields
+    if (!submitData.job_type) delete submitData.job_type;
+    if (!submitData.product) delete submitData.product;
+    if (!submitData.outcome) delete submitData.outcome;
     
     onSubmit(submitData);
   };
