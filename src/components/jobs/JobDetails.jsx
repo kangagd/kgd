@@ -376,7 +376,7 @@ export default function JobDetails({ job, onClose, onStatusChange, onDelete }) {
     updateCustomerMutation.mutate({ id: job.customer_id, data });
   };
 
-  const handleDelete = () => {
+  const handleDeleteClick = () => {
     onDelete(job.id);
     setShowDeleteConfirm(false);
   };
@@ -942,7 +942,7 @@ export default function JobDetails({ job, onClose, onStatusChange, onDelete }) {
           <AlertDialogFooter>
             <AlertDialogCancel className="rounded-xl font-semibold border-2">Cancel</AlertDialogCancel>
             <AlertDialogAction
-              onClick={handleDelete}
+              onClick={handleDeleteClick}
               className="bg-red-600 hover:bg-red-700 rounded-xl font-semibold"
             >
               Delete
