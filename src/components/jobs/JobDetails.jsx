@@ -117,6 +117,11 @@ export default function JobDetails({ job, onClose, onStatusChange, onDelete }) {
     queryFn: () => base44.entities.User.filter({ is_field_technician: true })
   });
 
+  const { data: jobSummaries = [] } = useQuery({
+    queryKey: ['jobSummaries', job.id],
+    queryFn: () => base44.entities.JobSummary.filter({ job_id: job.id }, '-checkout_time')
+  });
+
   useEffect(() => {
     const loadUser = async () => {
       try {
@@ -171,14 +176,38 @@ export default function JobDetails({ job, onClose, onStatusChange, onDelete }) {
       const checkInTime = new Date(activeCheckIn.check_in_time);
       const durationHours = (new Date(checkOutTime) - checkInTime) / (1000 * 60 * 60);
 
+      await base44.entities.JobSummary.create({
+        job_id: job.id,
+        job_number: job.job_number,
+        technician_email: user.email,
+        technician_name: user.full_name,
+        checkout_time: checkOutTime,
+        overview,
+        next_steps: nextSteps,
+        communication_with_client: communicationWithClient,
+        outcome
+      });
+
       await base44.entities.CheckInOut.update(activeCheckIn.id, {
         check_out_time: checkOutTime,
         duration_hours: Math.round(durationHours * 10) / 10
       });
+
+      await base44.entities.Job.update(job.id, {
+        overview: "",
+        next_steps: "",
+        communication_with_client: "",
+        outcome: ""
+      });
     },
     onSuccess: () => {
       setValidationError("");
+      setOverview("");
+      setNextSteps("");
+      setCommunicationWithClient("");
+      setOutcome("");
       queryClient.invalidateQueries({ queryKey: ['checkIns', job.id] });
+      queryClient.invalidateQueries({ queryKey: ['jobSummaries', job.id] });
       queryClient.invalidateQueries({ queryKey: ['jobs'] });
     },
     onError: (error) => {
@@ -638,6 +667,57 @@ export default function JobDetails({ job, onClose, onStatusChange, onDelete }) {
             </TabsContent>
 
             <TabsContent value="visit" className="space-y-3 mt-2">
+              {jobSummaries.length > 0 && (
+                <Collapsible defaultOpen={true} className="mb-4">
+                  <CollapsibleTrigger className="flex items-center justify-between w-full group bg-slate-50 border-2 border-slate-200 rounded-xl p-3 hover:bg-slate-100 transition-colors">
+                    <h4 className="text-sm font-bold text-[#000000]">Previous Visit Summaries ({jobSummaries.length})</h4>
+                    <ChevronDown className="w-4 h-4 text-slate-500 transition-transform group-data-[state=open]:rotate-180" />
+                  </CollapsibleTrigger>
+                  
+                  <CollapsibleContent className="pt-3 space-y-3">
+                    {jobSummaries.map((summary) => (
+                      <div key={summary.id} className="bg-white border-2 border-slate-200 rounded-xl p-3">
+                        <div className="flex items-center justify-between mb-3">
+                          <span className="font-bold text-[#000000]">{summary.technician_name}</span>
+                          <span className="text-xs text-slate-500 font-medium">
+                            {format(new Date(summary.checkout_time), 'MMM d, yyyy h:mm a')}
+                          </span>
+                        </div>
+                        
+                        {summary.outcome && (
+                          <Badge className={`${outcomeColors[summary.outcome]} mb-3 font-semibold border-2`}>
+                            {summary.outcome.replace(/_/g, ' ')}
+                          </Badge>
+                        )}
+
+                        <div className="space-y-2">
+                          {summary.overview && (
+                            <div>
+                              <div className="text-xs font-bold text-slate-500 mb-1">Overview:</div>
+                              <div className="text-sm text-slate-700" dangerouslySetInnerHTML={{ __html: summary.overview }} />
+                            </div>
+                          )}
+                          
+                          {summary.next_steps && (
+                            <div>
+                              <div className="text-xs font-bold text-slate-500 mb-1">Next Steps:</div>
+                              <div className="text-sm text-slate-700" dangerouslySetInnerHTML={{ __html: summary.next_steps }} />
+                            </div>
+                          )}
+                          
+                          {summary.communication_with_client && (
+                            <div>
+                              <div className="text-xs font-bold text-slate-500 mb-1">Communication:</div>
+                              <div className="text-sm text-slate-700" dangerouslySetInnerHTML={{ __html: summary.communication_with_client }} />
+                            </div>
+                          )}
+                        </div>
+                      </div>
+                    ))}
+                  </CollapsibleContent>
+                </Collapsible>
+              )}
+
               <div className="space-y-3">
                 <div>
                   <Label className="text-sm font-bold text-[#000000] mb-1.5 block">Overview *</Label>
