@@ -36,7 +36,11 @@ export default function ProjectForm({ project, onSubmit, onCancel, isSubmitting 
     notes: "",
     image_urls: [],
     quote_url: "",
-    invoice_url: ""
+    invoice_url: "",
+    install_height: "",
+    install_width: "",
+    install_type: "",
+    install_style: ""
   });
 
   const [showNewCustomerDialog, setShowNewCustomerDialog] = useState(false);
@@ -156,6 +160,8 @@ export default function ProjectForm({ project, onSubmit, onCancel, isSubmitting 
     });
   };
 
+  const isInstallType = formData.project_type && formData.project_type.includes("Install");
+
   return (
     <>
       <Card className="border-2 border-slate-200 shadow-lg rounded-2xl">
@@ -259,6 +265,57 @@ export default function ProjectForm({ project, onSubmit, onCancel, isSubmitting 
                 </Select>
               </div>
             </div>
+
+            {isInstallType && (
+              <div className="bg-blue-50 border-2 border-blue-200 rounded-xl p-4 space-y-4">
+                <h3 className="font-bold text-[#000000]">Installation Details</h3>
+                <div className="grid md:grid-cols-2 gap-4">
+                  <div className="space-y-2">
+                    <Label htmlFor="install_height">Height</Label>
+                    <Input
+                      id="install_height"
+                      value={formData.install_height}
+                      onChange={(e) => setFormData({ ...formData, install_height: e.target.value })}
+                      placeholder="e.g., 2.4m"
+                      className="border-2 border-slate-300 focus:border-[#fae008]"
+                    />
+                  </div>
+
+                  <div className="space-y-2">
+                    <Label htmlFor="install_width">Width</Label>
+                    <Input
+                      id="install_width"
+                      value={formData.install_width}
+                      onChange={(e) => setFormData({ ...formData, install_width: e.target.value })}
+                      placeholder="e.g., 5.0m"
+                      className="border-2 border-slate-300 focus:border-[#fae008]"
+                    />
+                  </div>
+
+                  <div className="space-y-2">
+                    <Label htmlFor="install_type">Type</Label>
+                    <Input
+                      id="install_type"
+                      value={formData.install_type}
+                      onChange={(e) => setFormData({ ...formData, install_type: e.target.value })}
+                      placeholder="e.g., Sectional, Roller"
+                      className="border-2 border-slate-300 focus:border-[#fae008]"
+                    />
+                  </div>
+
+                  <div className="space-y-2">
+                    <Label htmlFor="install_style">Style</Label>
+                    <Input
+                      id="install_style"
+                      value={formData.install_style}
+                      onChange={(e) => setFormData({ ...formData, install_style: e.target.value })}
+                      placeholder="e.g., Modern, Classic"
+                      className="border-2 border-slate-300 focus:border-[#fae008]"
+                    />
+                  </div>
+                </div>
+              </div>
+            )}
 
             <div className="space-y-2">
               <Label htmlFor="stage">Current Stage</Label>
