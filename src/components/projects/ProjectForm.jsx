@@ -1,3 +1,4 @@
+
 import React, { useState } from "react";
 import { Card, CardHeader, CardTitle, CardContent, CardFooter } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -186,12 +187,11 @@ export default function ProjectForm({ project, onSubmit, onCancel, isSubmitting 
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="Install">Install</SelectItem>
-                    <SelectItem value="Repair Cycle">Repair Cycle</SelectItem>
-                    <SelectItem value="Maintenance Cycle">Maintenance Cycle</SelectItem>
-                    <SelectItem value="Gate Automation Upgrade">Gate Automation Upgrade</SelectItem>
-                    <SelectItem value="Emergency Repair">Emergency Repair</SelectItem>
-                    <SelectItem value="Service Contract">Service Contract</SelectItem>
+                    <SelectItem value="Garage Door Install">Garage Door Install</SelectItem>
+                    <SelectItem value="Gate Install">Gate Install</SelectItem>
+                    <SelectItem value="Roller Shutter Install">Roller Shutter Install</SelectItem>
+                    <SelectItem value="Repair">Repair</SelectItem>
+                    <SelectItem value="Maintenance">Maintenance</SelectItem>
                   </SelectContent>
                 </Select>
               </div>

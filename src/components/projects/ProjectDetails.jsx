@@ -1,3 +1,4 @@
+
 import React from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -30,12 +31,11 @@ const statusColors = {
 };
 
 const projectTypeColors = {
-  "Install": "bg-blue-100 text-blue-700",
-  "Repair Cycle": "bg-orange-100 text-orange-700",
-  "Maintenance Cycle": "bg-green-100 text-green-700",
-  "Gate Automation Upgrade": "bg-purple-100 text-purple-700",
-  "Emergency Repair": "bg-red-100 text-red-700",
-  "Service Contract": "bg-indigo-100 text-indigo-700"
+  "Garage Door Install": "bg-blue-100 text-blue-700",
+  "Gate Install": "bg-green-100 text-green-700",
+  "Roller Shutter Install": "bg-purple-100 text-purple-700",
+  "Repair": "bg-orange-100 text-orange-700",
+  "Maintenance": "bg-indigo-100 text-indigo-700"
 };
 
 const jobStatusColors = {
