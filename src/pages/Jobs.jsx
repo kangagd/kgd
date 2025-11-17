@@ -57,6 +57,7 @@ export default function Jobs() {
       setEditingJob(null);
       setPreselectedCustomerId(null);
       setPreselectedProjectId(null);
+      window.history.replaceState({}, '', window.location.pathname);
     }
   });
 
@@ -109,7 +110,7 @@ export default function Jobs() {
     if (status) {
       setStatusFilter(status);
     }
-  }, [jobs]);
+  }, []);
 
   const handleSubmit = (data) => {
     if (editingJob) {
@@ -127,6 +128,14 @@ export default function Jobs() {
 
   const handleDelete = (jobId) => {
     deleteJobMutation.mutate(jobId);
+  };
+
+  const handleCancelForm = () => {
+    setShowForm(false);
+    setEditingJob(null);
+    setPreselectedCustomerId(null);
+    setPreselectedProjectId(null);
+    window.history.replaceState({}, '', window.location.pathname);
   };
 
   const isTechnician = user?.is_field_technician && user?.role !== 'admin';
@@ -160,12 +169,7 @@ export default function Jobs() {
             job={editingJob}
             technicians={technicians}
             onSubmit={handleSubmit}
-            onCancel={() => {
-              setShowForm(false);
-              setEditingJob(null);
-              setPreselectedCustomerId(null);
-              setPreselectedProjectId(null);
-            }}
+            onCancel={handleCancelForm}
             isSubmitting={createJobMutation.isPending || updateJobMutation.isPending}
             preselectedCustomerId={preselectedCustomerId}
             preselectedProjectId={preselectedProjectId}
