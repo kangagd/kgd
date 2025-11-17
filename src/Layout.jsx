@@ -1,7 +1,7 @@
 import React from "react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
 import { createPageUrl } from "@/utils";
-import { Calendar, Briefcase, Users, LayoutDashboard, Wrench, UserCircle, DollarSign, Archive as ArchiveIcon, Building2 } from "lucide-react";
+import { Calendar, Briefcase, Users, LayoutDashboard, Wrench, UserCircle, DollarSign, Archive as ArchiveIcon, Building2, FolderKanban } from "lucide-react";
 import {
   Sidebar,
   SidebarContent,
@@ -22,6 +22,7 @@ const adminNavigationItems = [
   { title: "Dashboard", url: createPageUrl("Dashboard"), icon: LayoutDashboard },
   { title: "Schedule", url: createPageUrl("Calendar"), icon: Calendar },
   { title: "Jobs", url: createPageUrl("Jobs"), icon: Briefcase },
+  { title: "Projects", url: createPageUrl("Projects"), icon: FolderKanban },
   { title: "Customers", url: createPageUrl("Customers"), icon: UserCircle },
   { title: "Organisations", url: createPageUrl("Organisations"), icon: Building2 },
   { title: "Price List", url: createPageUrl("PriceList"), icon: DollarSign },
@@ -59,7 +60,6 @@ export default function Layout({ children, currentPageName }) {
   const isTechnician = user?.is_field_technician && user?.role !== 'admin';
   const navigationItems = isTechnician ? technicianNavigationItems : adminNavigationItems;
 
-  // Mobile-first layout for technicians
   if (isTechnician) {
     return (
       <div className="min-h-screen flex flex-col bg-slate-50">
@@ -115,7 +115,6 @@ export default function Layout({ children, currentPageName }) {
     );
   }
 
-  // Desktop layout for admins
   return (
     <SidebarProvider>
       <div className="min-h-screen flex w-full bg-slate-50">
