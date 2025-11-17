@@ -7,7 +7,7 @@ import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { ArrowLeft, Upload, X, FileText, Image as ImageIcon, Loader2, Plus } from "lucide-react";
 import { base44 } from "@/api/base44Client";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import {
   Dialog,
   DialogContent,
@@ -56,6 +56,8 @@ export default function JobForm({ job, jobTypes, technicians, onSubmit, onCancel
   const [newCustomerData, setNewCustomerData] = useState({ name: "", phone: "", email: "" });
   const [potentialDuplicates, setPotentialDuplicates] = useState([]);
   const [liveDuplicates, setLiveDuplicates] = useState([]);
+
+  const queryClient = useQueryClient();
 
   const { data: customers = [] } = useQuery({
     queryKey: ['customers'],
@@ -193,6 +195,7 @@ export default function JobForm({ job, jobTypes, technicians, onSubmit, onCancel
   const createNewCustomer = async () => {
     try {
       const newCustomer = await base44.entities.Customer.create(newCustomerData);
+      await queryClient.refetchQueries({ queryKey: ['customers'] });
       setFormData({
         ...formData,
         customer_id: newCustomer.id,
