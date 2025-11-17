@@ -2,7 +2,7 @@ import React from "react";
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { ArrowLeft, Edit2, Trash2, MapPin, Phone, Mail, User } from "lucide-react";
+import { ArrowLeft, Edit2, Trash2, MapPin, Phone, Mail, User, Hash } from "lucide-react";
 import { base44 } from "@/api/base44Client";
 import { useQuery } from "@tanstack/react-query";
 import { useNavigate } from "react-router-dom";
@@ -109,6 +109,16 @@ export default function OrganisationDetails({ organisation, onClose, onEdit, onD
 
         <CardContent className="p-6 space-y-6">
           <div className="grid md:grid-cols-2 gap-6">
+            {organisation.organisation_type === "Strata" && organisation.sp_number && (
+              <div className="space-y-2">
+                <div className="flex items-center gap-2 text-slate-500 text-sm font-semibold">
+                  <Hash className="w-4 h-4" />
+                  <span>SP Number</span>
+                </div>
+                <p className="text-[#000000] font-medium">{organisation.sp_number}</p>
+              </div>
+            )}
+
             {organisation.address && (
               <div className="space-y-2">
                 <div className="flex items-center gap-2 text-slate-500 text-sm font-semibold">
