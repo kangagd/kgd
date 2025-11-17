@@ -1,7 +1,7 @@
 import React from "react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
 import { createPageUrl } from "@/utils";
-import { Calendar, Briefcase, Users, LayoutDashboard, Wrench, UserCircle, DollarSign, Archive as ArchiveIcon, Building2 } from "lucide-react";
+import { Calendar, Briefcase, Users, LayoutDashboard, Wrench, UserCircle, DollarSign, Archive as ArchiveIcon, Building2, FolderKanban } from "lucide-react";
 import {
   Sidebar,
   SidebarContent,
@@ -22,6 +22,7 @@ const adminNavigationItems = [
   { title: "Dashboard", url: createPageUrl("Dashboard"), icon: LayoutDashboard },
   { title: "Schedule", url: createPageUrl("Calendar"), icon: Calendar },
   { title: "Jobs", url: createPageUrl("Jobs"), icon: Briefcase },
+  { title: "Projects", url: createPageUrl("Projects"), icon: FolderKanban },
   { title: "Customers", url: createPageUrl("Customers"), icon: UserCircle },
   { title: "Organisations", url: createPageUrl("Organisations"), icon: Building2 },
   { title: "Price List", url: createPageUrl("PriceList"), icon: DollarSign },
