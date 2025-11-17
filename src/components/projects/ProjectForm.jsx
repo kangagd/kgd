@@ -4,7 +4,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { ArrowLeft, Plus, Loader2, FileText, X } from "lucide-react";
+import { ArrowLeft, Plus, Loader2, FileText, X, Image as ImageIcon, Upload } from "lucide-react";
 import { base44 } from "@/api/base44Client";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import {
@@ -34,14 +34,15 @@ export default function ProjectForm({ project, onSubmit, onCancel, isSubmitting 
     assigned_technicians: [],
     assigned_technicians_names: [],
     notes: "",
+    image_urls: [],
     quote_url: "",
     invoice_url: ""
   });
 
   const [showNewCustomerDialog, setShowNewCustomerDialog] = useState(false);
   const [newCustomerData, setNewCustomerData] = useState({ name: "", phone: "", email: "" });
-  const [uploadingQuote, setUploadingQuote] = useState(false);
-  const [uploadingInvoice, setUploadingInvoice] = useState(false);
+  const [uploadingImages, setUploadingImages] = useState(false);
+  const [uploadingFiles, setUploadingFiles] = useState(false);
 
   const queryClient = useQueryClient();
 
@@ -114,32 +115,45 @@ export default function ProjectForm({ project, onSubmit, onCancel, isSubmitting 
     createCustomerMutation.mutate({ ...newCustomerData, status: "active" });
   };
 
-  const handleQuoteUpload = async (e) => {
+  const handleImageUpload = async (e) => {
+    const files = Array.from(e.target.files);
+    if (files.length === 0) return;
+
+    setUploadingImages(true);
+    try {
+      const uploadPromises = files.map(file => base44.integrations.Core.UploadFile({ file }));
+      const results = await Promise.all(uploadPromises);
+      const newImageUrls = results.map(result => result.file_url);
+      
+      setFormData({
+        ...formData,
+        image_urls: [...(formData.image_urls || []), ...newImageUrls]
+      });
+    } catch (error) {
+      console.error("Error uploading images:", error);
+    }
+    setUploadingImages(false);
+  };
+
+  const handleFileUpload = async (e) => {
     const file = e.target.files[0];
     if (!file) return;
 
-    setUploadingQuote(true);
+    setUploadingFiles(true);
     try {
       const { file_url } = await base44.integrations.Core.UploadFile({ file });
       setFormData({ ...formData, quote_url: file_url });
     } catch (error) {
-      console.error("Error uploading quote:", error);
+      console.error("Error uploading file:", error);
     }
-    setUploadingQuote(false);
+    setUploadingFiles(false);
   };
 
-  const handleInvoiceUpload = async (e) => {
-    const file = e.target.files[0];
-    if (!file) return;
-
-    setUploadingInvoice(true);
-    try {
-      const { file_url } = await base44.integrations.Core.UploadFile({ file });
-      setFormData({ ...formData, invoice_url: file_url });
-    } catch (error) {
-      console.error("Error uploading invoice:", error);
-    }
-    setUploadingInvoice(false);
+  const removeImage = (indexToRemove) => {
+    setFormData({
+      ...formData,
+      image_urls: formData.image_urls.filter((_, index) => index !== indexToRemove)
+    });
   };
 
   return (
@@ -285,47 +299,6 @@ export default function ProjectForm({ project, onSubmit, onCancel, isSubmitting 
               </div>
             </div>
 
-            <div className="grid md:grid-cols-3 gap-6">
-              <div className="space-y-2">
-                <Label htmlFor="quote_value">Quote Value</Label>
-                <Input
-                  id="quote_value"
-                  type="number"
-                  step="0.01"
-                  value={formData.quote_value || ""}
-                  onChange={(e) => setFormData({ ...formData, quote_value: e.target.value ? parseFloat(e.target.value) : null })}
-                  placeholder="$"
-                  className="border-2 border-slate-300 focus:border-[#fae008]"
-                />
-              </div>
-
-              <div className="space-y-2">
-                <Label htmlFor="invoice_value">Invoice Value</Label>
-                <Input
-                  id="invoice_value"
-                  type="number"
-                  step="0.01"
-                  value={formData.invoice_value || ""}
-                  onChange={(e) => setFormData({ ...formData, invoice_value: e.target.value ? parseFloat(e.target.value) : null })}
-                  placeholder="$"
-                  className="border-2 border-slate-300 focus:border-[#fae008]"
-                />
-              </div>
-
-              <div className="space-y-2">
-                <Label htmlFor="payment_received">Payment Received</Label>
-                <Input
-                  id="payment_received"
-                  type="number"
-                  step="0.01"
-                  value={formData.payment_received || ""}
-                  onChange={(e) => setFormData({ ...formData, payment_received: e.target.value ? parseFloat(e.target.value) : null })}
-                  placeholder="$"
-                  className="border-2 border-slate-300 focus:border-[#fae008]"
-                />
-              </div>
-            </div>
-
             <div className="space-y-2">
               <Label htmlFor="description">Description</Label>
               <textarea
@@ -348,96 +321,93 @@ export default function ProjectForm({ project, onSubmit, onCancel, isSubmitting 
             </div>
 
             <div className="space-y-4 pt-4 border-t-2 border-slate-200">
-              <h3 className="font-bold text-[#000000] tracking-tight">File Attachments</h3>
+              <h3 className="font-bold text-[#000000] tracking-tight">Attachments</h3>
               
-              <div className="grid md:grid-cols-2 gap-4">
-                <div className="space-y-2">
-                  <Label className="text-sm font-semibold text-[#000000]">Quote</Label>
-                  <div className="flex items-center gap-2">
-                    <Button
-                      type="button"
-                      variant="outline"
-                      onClick={() => document.getElementById('quote-upload').click()}
-                      disabled={uploadingQuote}
-                      className="border-2 hover:bg-slate-100"
-                    >
-                      {uploadingQuote ? (
-                        <><Loader2 className="w-4 h-4 mr-2 animate-spin" />Uploading...</>
-                      ) : (
-                        <><FileText className="w-4 h-4 mr-2" />Upload Quote</>
-                      )}
-                    </Button>
-                    <input
-                      id="quote-upload"
-                      type="file"
-                      accept=".pdf,.doc,.docx"
-                      className="hidden"
-                      onChange={handleQuoteUpload}
-                    />
-                    {formData.quote_url && (
-                      <Button
-                        type="button"
-                        variant="ghost"
-                        size="icon"
-                        onClick={() => setFormData({ ...formData, quote_url: "" })}
-                        className="h-8 w-8"
-                      >
-                        <X className="w-4 h-4" />
-                      </Button>
+              <div className="space-y-2">
+                <Label className="text-sm font-semibold text-[#000000]">Images</Label>
+                <div className="flex items-center gap-2">
+                  <Button
+                    type="button"
+                    variant="outline"
+                    onClick={() => document.getElementById('image-upload').click()}
+                    disabled={uploadingImages}
+                    className="border-2 hover:bg-slate-100"
+                  >
+                    {uploadingImages ? (
+                      <><Loader2 className="w-4 h-4 mr-2 animate-spin" />Uploading...</>
+                    ) : (
+                      <><ImageIcon className="w-4 h-4 mr-2" />Upload Images</>
                     )}
-                  </div>
-                  {formData.quote_url && (
-                    <a href={formData.quote_url} target="_blank" rel="noopener noreferrer" 
-                       className="text-sm text-blue-600 hover:underline flex items-center gap-1">
-                      <FileText className="w-3 h-3" />
-                      View Quote
-                    </a>
-                  )}
+                  </Button>
+                  <input
+                    id="image-upload"
+                    type="file"
+                    multiple
+                    accept="image/*"
+                    className="hidden"
+                    onChange={handleImageUpload}
+                  />
                 </div>
+                {formData.image_urls && formData.image_urls.length > 0 && (
+                  <div className="grid grid-cols-3 gap-2 mt-2">
+                    {formData.image_urls.map((url, index) => (
+                      <div key={index} className="relative group">
+                        <img src={url} alt={`Upload ${index + 1}`} className="w-full h-24 object-cover rounded-lg border-2 border-slate-200" />
+                        <button
+                          type="button"
+                          onClick={() => removeImage(index)}
+                          className="absolute top-1 right-1 bg-red-500 text-white rounded-full p-1 opacity-0 group-hover:opacity-100 transition-opacity"
+                        >
+                          <X className="w-3 h-3" />
+                        </button>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
 
-                <div className="space-y-2">
-                  <Label className="text-sm font-semibold text-[#000000]">Invoice</Label>
-                  <div className="flex items-center gap-2">
+              <div className="space-y-2">
+                <Label className="text-sm font-semibold text-[#000000]">Files</Label>
+                <div className="flex items-center gap-2">
+                  <Button
+                    type="button"
+                    variant="outline"
+                    onClick={() => document.getElementById('file-upload').click()}
+                    disabled={uploadingFiles}
+                    className="border-2 hover:bg-slate-100"
+                  >
+                    {uploadingFiles ? (
+                      <><Loader2 className="w-4 h-4 mr-2 animate-spin" />Uploading...</>
+                    ) : (
+                      <><Upload className="w-4 h-4 mr-2" />Upload Files</>
+                    )}
+                  </Button>
+                  <input
+                    id="file-upload"
+                    type="file"
+                    accept=".pdf,.doc,.docx"
+                    className="hidden"
+                    onChange={handleFileUpload}
+                  />
+                  {formData.quote_url && (
                     <Button
                       type="button"
-                      variant="outline"
-                      onClick={() => document.getElementById('invoice-upload').click()}
-                      disabled={uploadingInvoice}
-                      className="border-2 hover:bg-slate-100"
+                      variant="ghost"
+                      size="icon"
+                      onClick={() => setFormData({ ...formData, quote_url: "" })}
+                      className="h-8 w-8"
                     >
-                      {uploadingInvoice ? (
-                        <><Loader2 className="w-4 h-4 mr-2 animate-spin" />Uploading...</>
-                      ) : (
-                        <><FileText className="w-4 h-4 mr-2" />Upload Invoice</>
-                      )}
+                      <X className="w-4 h-4" />
                     </Button>
-                    <input
-                      id="invoice-upload"
-                      type="file"
-                      accept=".pdf,.doc,.docx"
-                      className="hidden"
-                      onChange={handleInvoiceUpload}
-                    />
-                    {formData.invoice_url && (
-                      <Button
-                        type="button"
-                        variant="ghost"
-                        size="icon"
-                        onClick={() => setFormData({ ...formData, invoice_url: "" })}
-                        className="h-8 w-8"
-                      >
-                        <X className="w-4 h-4" />
-                      </Button>
-                    )}
-                  </div>
-                  {formData.invoice_url && (
-                    <a href={formData.invoice_url} target="_blank" rel="noopener noreferrer"
-                       className="text-sm text-blue-600 hover:underline flex items-center gap-1">
-                      <FileText className="w-3 h-3" />
-                      View Invoice
-                    </a>
                   )}
                 </div>
+                {formData.quote_url && (
+                  <a href={formData.quote_url} target="_blank" rel="noopener noreferrer" 
+                     className="text-sm text-blue-600 hover:underline flex items-center gap-1">
+                    <FileText className="w-3 h-3" />
+                    View File
+                  </a>
+                )}
               </div>
             </div>
           </CardContent>
