@@ -45,10 +45,12 @@ export default function ProjectForm({ project, onSubmit, onCancel, isSubmitting 
 
   const queryClient = useQueryClient();
 
-  const { data: customers = [] } = useQuery({
+  const { data: allCustomers = [] } = useQuery({
     queryKey: ['customers'],
-    queryFn: () => base44.entities.Customer.filter({ status: 'active', deleted_at: { $exists: false } })
+    queryFn: () => base44.entities.Customer.list()
   });
+
+  const customers = allCustomers.filter(c => c.status === 'active' && !c.deleted_at);
 
   const { data: technicians = [] } = useQuery({
     queryKey: ['technicians'],
