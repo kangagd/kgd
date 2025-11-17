@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from "react";
 import { Card, CardHeader, CardTitle, CardContent, CardFooter } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -16,6 +17,7 @@ import {
 } from "@/components/ui/dialog";
 import MultiTechnicianSelect from "./MultiTechnicianSelect";
 import RichTextEditor from "../common/RichTextEditor";
+import { determineJobStatus } from "./jobStatusHelper";
 
 export default function JobForm({ job, jobTypes, technicians, onSubmit, onCancel, isSubmitting, preselectedCustomerId }) {
   const [formData, setFormData] = useState(job || {
@@ -70,14 +72,9 @@ export default function JobForm({ job, jobTypes, technicians, onSubmit, onCancel
       formData.job_number = lastJobNumber + 1;
     }
     
+    // Set status based on centralized logic
     if (formData.scheduled_date) {
-      const scheduledDate = new Date(formData.scheduled_date);
-      const today = new Date();
-      today.setHours(0, 0, 0, 0);
-      
-      if (scheduledDate >= today && formData.status === 'open') {
-        formData.status = 'scheduled';
-      }
+      formData.status = determineJobStatus(formData.scheduled_date, formData.outcome, formData.status);
     }
     
     const submitData = {

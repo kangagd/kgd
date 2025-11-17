@@ -91,14 +91,15 @@ export default function JobList({ jobs, isLoading, onSelectJob }) {
   });
 
   const checkInMutation = useMutation({
-    mutationFn: async (jobId) => {
+    mutationFn: async (job) => {
       const checkIn = await base44.entities.CheckInOut.create({
-        job_id: jobId,
+        job_id: job.id,
         technician_email: user.email,
         technician_name: user.full_name,
         check_in_time: new Date().toISOString(),
       });
-      await base44.entities.Job.update(jobId, { status: 'in_progress' });
+      
+      // Don't change status - let the date rule determine it
       return checkIn;
     },
     onSuccess: () => {
@@ -107,9 +108,9 @@ export default function JobList({ jobs, isLoading, onSelectJob }) {
     },
   });
 
-  const handleCheckIn = (e, jobId) => {
+  const handleCheckIn = (e, job) => {
     e.stopPropagation();
-    checkInMutation.mutate(jobId);
+    checkInMutation.mutate(job);
   };
 
   const toggleNotes = (e, jobId) => {
@@ -250,7 +251,7 @@ export default function JobList({ jobs, isLoading, onSelectJob }) {
                 {isTechnician && job.status === 'scheduled' && job.assigned_to?.includes(user?.email) && !hasActiveCheckIn(job.id) && (
                   <Button
                     size="sm"
-                    onClick={(e) => handleCheckIn(e, job.id)}
+                    onClick={(e) => handleCheckIn(e, job)}
                     disabled={checkInMutation.isPending}
                     className="bg-blue-600 hover:bg-blue-700 active:bg-blue-800 h-8 text-xs font-semibold shadow-sm transition-all"
                   >

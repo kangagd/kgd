@@ -20,6 +20,7 @@ import EditableField from "./EditableField";
 import EditableFileUpload from "./EditableFileUpload";
 import CustomerEditModal from "../customers/CustomerEditModal";
 import RichTextEditor from "../common/RichTextEditor";
+import { determineJobStatus } from "./jobStatusHelper";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -151,11 +152,6 @@ export default function JobDetails({ job, onClose, onStatusChange, onDelete }) {
 
   const checkInMutation = useMutation({
     mutationFn: async () => {
-      const scheduledDate = new Date(job.scheduled_date);
-      const today = new Date();
-      today.setHours(0, 0, 0, 0);
-      scheduledDate.setHours(0, 0, 0, 0);
-      
       const checkIn = await base44.entities.CheckInOut.create({
         job_id: job.id,
         technician_email: user.email,
@@ -163,8 +159,7 @@ export default function JobDetails({ job, onClose, onStatusChange, onDelete }) {
         check_in_time: new Date().toISOString()
       });
       
-      const newStatus = scheduledDate > today ? 'scheduled' : 'in_progress';
-      await base44.entities.Job.update(job.id, { status: newStatus });
+      // Don't update status here - let the date rule determine it
       return checkIn;
     },
     onSuccess: () => {
@@ -332,17 +327,10 @@ export default function JobDetails({ job, onClose, onStatusChange, onDelete }) {
     logChange('outcome', job.outcome, value);
     updateJobMutation.mutate({ field: 'outcome', value });
     
-    const scheduledDate = new Date(job.scheduled_date);
-    const today = new Date();
-    today.setHours(0, 0, 0, 0);
-    scheduledDate.setHours(0, 0, 0, 0);
-    
-    if (scheduledDate > today) {
-      updateJobMutation.mutate({ field: 'status', value: 'scheduled' });
-    } else if (value === 'completed' || value === 'send_invoice') {
-      updateJobMutation.mutate({ field: 'status', value: 'completed' });
-    } else if (value === 'new_quote' || value === 'update_quote' || value === 'return_visit_required') {
-      updateJobMutation.mutate({ field: 'status', value: 'open' });
+    // Update status based on centralized logic
+    const newStatus = determineJobStatus(job.scheduled_date, value, job.status);
+    if (newStatus !== job.status) {
+      updateJobMutation.mutate({ field: 'status', value: newStatus });
     }
   };
 
