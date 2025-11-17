@@ -21,7 +21,7 @@ const statusColors = {
 };
 
 const projectTypeColors = {
-  "Garage Door Install": "bg-[#f0efe6] text-slate-700",
+  "Garage Door Install": "bg-[#fff9ed] text-slate-700", // Changed from bg-[#f0efe6]
   "Gate Install": "bg-green-100 text-green-700",
   "Roller Shutter Install": "bg-purple-100 text-purple-700",
   "Repair": "bg-orange-100 text-orange-700",
@@ -221,7 +221,7 @@ export default function Projects() {
                     {project.doors && project.doors.length > 0 && (
                       <div className="mt-2 flex flex-wrap gap-2">
                         {project.doors.map((door, idx) => (
-                          <Badge key={idx} variant="outline" className="bg-[#f0efe6] border-slate-200 text-slate-700">
+                          <Badge key={idx} variant="outline" className="bg-[#fff9ed] border-slate-200 text-slate-700"> {/* Changed from bg-[#f0efe6] */}
                             Door {idx + 1}: {door.height && door.width ? `${door.height} × ${door.width}` : 'Pending specs'}
                             {door.type && ` • ${door.type}`}
                           </Badge>
