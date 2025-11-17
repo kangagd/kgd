@@ -1,11 +1,10 @@
-
 import React, { useState } from "react";
 import { Card, CardHeader, CardTitle, CardContent, CardFooter } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { ArrowLeft, Plus } from "lucide-react";
+import { ArrowLeft, Plus, Loader2, FileText, X } from "lucide-react";
 import { base44 } from "@/api/base44Client";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import {
@@ -25,7 +24,7 @@ export default function ProjectForm({ project, onSubmit, onCancel, isSubmitting 
     customer_email: "",
     title: "",
     description: "",
-    project_type: "Install",
+    project_type: "Garage Door Install",
     status: "open",
     stage: "lead_in",
     address: "",
@@ -34,11 +33,15 @@ export default function ProjectForm({ project, onSubmit, onCancel, isSubmitting 
     payment_received: null,
     assigned_technicians: [],
     assigned_technicians_names: [],
-    notes: ""
+    notes: "",
+    quote_url: "",
+    invoice_url: ""
   });
 
   const [showNewCustomerDialog, setShowNewCustomerDialog] = useState(false);
   const [newCustomerData, setNewCustomerData] = useState({ name: "", phone: "", email: "" });
+  const [uploadingQuote, setUploadingQuote] = useState(false);
+  const [uploadingInvoice, setUploadingInvoice] = useState(false);
 
   const queryClient = useQueryClient();
 
@@ -109,6 +112,34 @@ export default function ProjectForm({ project, onSubmit, onCancel, isSubmitting 
 
   const handleCreateCustomer = () => {
     createCustomerMutation.mutate({ ...newCustomerData, status: "active" });
+  };
+
+  const handleQuoteUpload = async (e) => {
+    const file = e.target.files[0];
+    if (!file) return;
+
+    setUploadingQuote(true);
+    try {
+      const { file_url } = await base44.integrations.Core.UploadFile({ file });
+      setFormData({ ...formData, quote_url: file_url });
+    } catch (error) {
+      console.error("Error uploading quote:", error);
+    }
+    setUploadingQuote(false);
+  };
+
+  const handleInvoiceUpload = async (e) => {
+    const file = e.target.files[0];
+    if (!file) return;
+
+    setUploadingInvoice(true);
+    try {
+      const { file_url } = await base44.integrations.Core.UploadFile({ file });
+      setFormData({ ...formData, invoice_url: file_url });
+    } catch (error) {
+      console.error("Error uploading invoice:", error);
+    }
+    setUploadingInvoice(false);
   };
 
   return (
@@ -314,6 +345,100 @@ export default function ProjectForm({ project, onSubmit, onCancel, isSubmitting 
                 onChange={(value) => setFormData({ ...formData, notes: value })}
                 placeholder="Additional notes..."
               />
+            </div>
+
+            <div className="space-y-4 pt-4 border-t-2 border-slate-200">
+              <h3 className="font-bold text-[#000000] tracking-tight">File Attachments</h3>
+              
+              <div className="grid md:grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <Label className="text-sm font-semibold text-[#000000]">Quote</Label>
+                  <div className="flex items-center gap-2">
+                    <Button
+                      type="button"
+                      variant="outline"
+                      onClick={() => document.getElementById('quote-upload').click()}
+                      disabled={uploadingQuote}
+                      className="border-2 hover:bg-slate-100"
+                    >
+                      {uploadingQuote ? (
+                        <><Loader2 className="w-4 h-4 mr-2 animate-spin" />Uploading...</>
+                      ) : (
+                        <><FileText className="w-4 h-4 mr-2" />Upload Quote</>
+                      )}
+                    </Button>
+                    <input
+                      id="quote-upload"
+                      type="file"
+                      accept=".pdf,.doc,.docx"
+                      className="hidden"
+                      onChange={handleQuoteUpload}
+                    />
+                    {formData.quote_url && (
+                      <Button
+                        type="button"
+                        variant="ghost"
+                        size="icon"
+                        onClick={() => setFormData({ ...formData, quote_url: "" })}
+                        className="h-8 w-8"
+                      >
+                        <X className="w-4 h-4" />
+                      </Button>
+                    )}
+                  </div>
+                  {formData.quote_url && (
+                    <a href={formData.quote_url} target="_blank" rel="noopener noreferrer" 
+                       className="text-sm text-blue-600 hover:underline flex items-center gap-1">
+                      <FileText className="w-3 h-3" />
+                      View Quote
+                    </a>
+                  )}
+                </div>
+
+                <div className="space-y-2">
+                  <Label className="text-sm font-semibold text-[#000000]">Invoice</Label>
+                  <div className="flex items-center gap-2">
+                    <Button
+                      type="button"
+                      variant="outline"
+                      onClick={() => document.getElementById('invoice-upload').click()}
+                      disabled={uploadingInvoice}
+                      className="border-2 hover:bg-slate-100"
+                    >
+                      {uploadingInvoice ? (
+                        <><Loader2 className="w-4 h-4 mr-2 animate-spin" />Uploading...</>
+                      ) : (
+                        <><FileText className="w-4 h-4 mr-2" />Upload Invoice</>
+                      )}
+                    </Button>
+                    <input
+                      id="invoice-upload"
+                      type="file"
+                      accept=".pdf,.doc,.docx"
+                      className="hidden"
+                      onChange={handleInvoiceUpload}
+                    />
+                    {formData.invoice_url && (
+                      <Button
+                        type="button"
+                        variant="ghost"
+                        size="icon"
+                        onClick={() => setFormData({ ...formData, invoice_url: "" })}
+                        className="h-8 w-8"
+                      >
+                        <X className="w-4 h-4" />
+                      </Button>
+                    )}
+                  </div>
+                  {formData.invoice_url && (
+                    <a href={formData.invoice_url} target="_blank" rel="noopener noreferrer"
+                       className="text-sm text-blue-600 hover:underline flex items-center gap-1">
+                      <FileText className="w-3 h-3" />
+                      View Invoice
+                    </a>
+                  )}
+                </div>
+              </div>
             </div>
           </CardContent>
           <CardFooter className="border-t-2 border-slate-200 flex justify-end gap-3 p-6 bg-slate-50">
