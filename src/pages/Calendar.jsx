@@ -1,3 +1,4 @@
+
 import React, { useState } from "react";
 import { base44 } from "@/api/base44Client";
 import { useQuery } from "@tanstack/react-query";
@@ -16,10 +17,12 @@ export default function Calendar() {
   const [selectedTechnicians, setSelectedTechnicians] = useState([]);
   const [selectedJob, setSelectedJob] = useState(null);
 
-  const { data: jobs = [] } = useQuery({
+  const { data: allJobs = [] } = useQuery({
     queryKey: ['jobs'],
     queryFn: () => base44.entities.Job.list('-scheduled_date')
   });
+
+  const jobs = allJobs.filter(job => !job.deleted_at);
 
   const { data: technicians = [] } = useQuery({
     queryKey: ['technicians'],
