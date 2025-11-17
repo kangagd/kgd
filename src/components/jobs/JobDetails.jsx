@@ -633,8 +633,8 @@ export default function JobDetails({ job, onClose, onStatusChange, onDelete }) {
             <TabsList className="w-full grid grid-cols-4 mb-3 h-10 md:h-11 bg-slate-100 p-1">
               <TabsTrigger value="details" className="text-xs md:text-sm font-semibold">Details</TabsTrigger>
               <TabsTrigger value="visit" className="text-xs md:text-sm font-semibold">
-                <ClipboardCheck className="w-3.5 h-3.5 md:w-4 md:h-4 md:mr-1.5" />
-                <span className="hidden md:inline">Visit</span>
+                <ClipboardCheck className="w-3.5 h-3.5 md:w-4 md:h-4" />
+                <span>Visit</span>
               </TabsTrigger>
               <TabsTrigger value="form" className="text-xs md:text-sm font-semibold">
                 <FileCheck className="w-3.5 h-3.5 md:w-4 md:h-4 md:mr-1.5" />
@@ -643,7 +643,8 @@ export default function JobDetails({ job, onClose, onStatusChange, onDelete }) {
               <TabsTrigger value="files" className="text-xs md:text-sm font-semibold">
                 <ImageIcon className="w-3.5 h-3.5 md:w-4 md:h-4 md:mr-1.5" />
                 <span className="hidden md:inline">Files</span>
-              </TabsList>
+              </TabsTrigger>
+            </TabsList>
 
             <TabsContent value="details" className="space-y-3 mt-2">
               {job.project_id && projectJobs.length > 0 && (

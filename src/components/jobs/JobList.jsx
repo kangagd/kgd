@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from "react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -30,7 +29,7 @@ const statusLabels = {
 };
 
 const productColors = {
-  "Garage Door": "bg-[#fff9ed] text-slate-700", // Changed from #f0efe6 to #fff9ed
+  "Garage Door": "bg-[#fff9ed] text-slate-700",
   "Gate": "bg-green-100 text-green-700",
   "Roller Shutter": "bg-purple-100 text-purple-700",
   "Multiple": "bg-orange-100 text-orange-700",
@@ -48,7 +47,7 @@ const getInitials = (name) => {
 };
 
 const avatarColors = [
-  "bg-[#fff9ed]", // Changed from #f0efe6 to #fff9ed
+  "bg-[#fff9ed]",
   "bg-purple-500",
   "bg-green-500",
   "bg-orange-500",
@@ -94,7 +93,6 @@ export default function JobList({ jobs, isLoading, onSelectJob }) {
         check_in_time: new Date().toISOString(),
       });
       
-      // Don't change status - let the date rule determine it
       return checkIn;
     },
     onSuccess: () => {
@@ -156,7 +154,7 @@ export default function JobList({ jobs, isLoading, onSelectJob }) {
         <Card 
           key={job.id}
           className="hover:shadow-xl transition-all duration-200 cursor-pointer border-l-4 hover:scale-[1.01] active:scale-[0.99] group rounded-2xl border-2 border-[hsl(32,15%,88%)]"
-          style={{ borderLeftColor: job.status === 'in_progress' ? '#fff9ed' : job.status === 'completed' ? '#10b981' : '#fae008', borderLeftWidth: '6px' }} {/* Changed #f0efe6 to #fff9ed */}
+          style={{ borderLeftColor: job.status === 'in_progress' ? '#fff9ed' : job.status === 'completed' ? '#10b981' : '#fae008', borderLeftWidth: '6px' }}
           onClick={() => onSelectJob(job)}
         >
           <CardContent className="p-6">
@@ -180,7 +178,7 @@ export default function JobList({ jobs, isLoading, onSelectJob }) {
                       size="icon"
                       variant="outline"
                       onClick={(e) => handleCall(e, job.customer_phone)}
-                      className="h-8 w-8 border-2 hover:bg-[#fff9ed] hover:border-slate-400 hover:text-slate-700 transition-all" // Changed #f0efe6 to #fff9ed
+                      className="h-8 w-8 border-2 hover:bg-[#fff9ed] hover:border-slate-400 hover:text-slate-700 transition-all"
                       title="Call"
                     >
                       <Phone className="w-4 h-4" />
@@ -191,7 +189,7 @@ export default function JobList({ jobs, isLoading, onSelectJob }) {
                     variant="outline"
                     onClick={(e) => handleDirections(e, job.address)}
                     className="h-8 w-8 border-2 hover:bg-green-50 hover:border-green-400 hover:text-green-700 transition-all"
-                      title="Directions"
+                    title="Directions"
                   >
                     <Navigation className="w-4 h-4" />
                   </Button>
@@ -243,7 +241,7 @@ export default function JobList({ jobs, isLoading, onSelectJob }) {
                     size="sm"
                     onClick={(e) => handleCheckIn(e, job)}
                     disabled={checkInMutation.isPending}
-                    className="bg-[#fff9ed] hover:bg-slate-200 text-slate-900 active:bg-slate-300 h-8 text-xs font-semibold shadow-sm transition-all" // Changed #f0efe6 to #fff9ed
+                    className="bg-[#fff9ed] hover:bg-slate-200 text-slate-900 active:bg-slate-300 h-8 text-xs font-semibold shadow-sm transition-all"
                   >
                     <LogIn className="w-3.5 h-3.5 mr-1.5" />
                     Check In
