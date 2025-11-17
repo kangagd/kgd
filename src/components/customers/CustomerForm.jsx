@@ -8,7 +8,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { ArrowLeft, Plus } from "lucide-react";
 import RichTextEditor from "../common/RichTextEditor";
 import { base44 } from "@/api/base44Client";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import {
   Dialog,
   DialogContent,
@@ -33,6 +33,7 @@ export default function CustomerForm({ customer, onSubmit, onCancel, isSubmittin
 
   const [showNewOrgDialog, setShowNewOrgDialog] = useState(false);
   const [newOrgData, setNewOrgData] = useState({ name: "", organisation_type: "", address: "" });
+  const queryClient = useQueryClient();
 
   const { data: organisations = [] } = useQuery({
     queryKey: ['organisations'],
@@ -56,6 +57,7 @@ export default function CustomerForm({ customer, onSubmit, onCancel, isSubmittin
   const handleCreateNewOrg = async () => {
     try {
       const newOrg = await base44.entities.Organisation.create(newOrgData);
+      await queryClient.invalidateQueries({ queryKey: ['organisations'] });
       setFormData({
         ...formData,
         organisation_id: newOrg.id,
