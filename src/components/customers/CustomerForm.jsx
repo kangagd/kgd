@@ -32,7 +32,7 @@ export default function CustomerForm({ customer, onSubmit, onCancel, isSubmittin
   });
 
   const [showNewOrgDialog, setShowNewOrgDialog] = useState(false);
-  const [newOrgData, setNewOrgData] = useState({ name: "", organisation_type: undefined, address: "" });
+  const [newOrgData, setNewOrgData] = useState({ name: "", organisation_type: undefined, sp_number: "", address: "" });
   const [isCreatingOrg, setIsCreatingOrg] = useState(false);
   const queryClient = useQueryClient();
 
@@ -58,16 +58,22 @@ export default function CustomerForm({ customer, onSubmit, onCancel, isSubmittin
   const handleCreateNewOrg = async () => {
     setIsCreatingOrg(true);
     try {
-      // Filter out empty/undefined organisation_type
+      // Filter out empty/undefined fields
       const submitData = { ...newOrgData };
       if (!submitData.organisation_type) {
         delete submitData.organisation_type;
       }
+      if (!submitData.sp_number) {
+        delete submitData.sp_number;
+      }
+      if (!submitData.address) {
+        delete submitData.address;
+      }
       
       const newOrg = await base44.entities.Organisation.create(submitData);
       
-      // Refetch organisations to include the new one
-      await queryClient.refetchQueries({ queryKey: ['organisations'] });
+      // Invalidate queries to refresh the list
+      await queryClient.invalidateQueries({ queryKey: ['organisations'] });
       
       // Update form data with new organisation
       setFormData({
@@ -77,7 +83,7 @@ export default function CustomerForm({ customer, onSubmit, onCancel, isSubmittin
       });
       
       setShowNewOrgDialog(false);
-      setNewOrgData({ name: "", organisation_type: undefined, address: "" });
+      setNewOrgData({ name: "", organisation_type: undefined, sp_number: "", address: "" });
     } catch (error) {
       console.error("Error creating organisation:", error);
     } finally {
@@ -255,6 +261,18 @@ export default function CustomerForm({ customer, onSubmit, onCancel, isSubmittin
                 </SelectContent>
               </Select>
             </div>
+            {newOrgData.organisation_type === "Strata" && (
+              <div className="space-y-2">
+                <Label htmlFor="new_org_sp">SP Number</Label>
+                <Input
+                  id="new_org_sp"
+                  value={newOrgData.sp_number}
+                  onChange={(e) => setNewOrgData({ ...newOrgData, sp_number: e.target.value })}
+                  placeholder="Strata Plan number"
+                  className="border-2 border-slate-300"
+                />
+              </div>
+            )}
             <div className="space-y-2">
               <Label htmlFor="new_org_address">Address</Label>
               <Input
