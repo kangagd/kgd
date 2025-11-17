@@ -18,6 +18,17 @@ import {
 import MultiTechnicianSelect from "./MultiTechnicianSelect";
 import RichTextEditor from "../common/RichTextEditor";
 
+const JOB_TYPE_DURATIONS = {
+  "Initial Site Visit": 2,
+  "Final Measure": 2,
+  "Installation": 3,
+  "On site Repair": 2,
+  "Investigation": 1,
+  "Maintenance": 1,
+  "Call Back": 1,
+  "Emergency Repair": 1
+};
+
 export default function JobForm({ job, technicians, onSubmit, onCancel, isSubmitting, preselectedCustomerId, preselectedProjectId }) {
   const [formData, setFormData] = useState(job || {
     job_number: null,
@@ -30,7 +41,7 @@ export default function JobForm({ job, technicians, onSubmit, onCancel, isSubmit
     customer_type: "",
     address: "",
     product: "",
-    job_type: "", // Changed from job_type_id and job_type_name to single string job_type
+    job_type: "",
     assigned_to: [],
     assigned_to_name: [],
     scheduled_date: "",
@@ -88,9 +99,6 @@ export default function JobForm({ job, technicians, onSubmit, onCancel, isSubmit
       formData.job_number = lastJobNumber + 1;
     }
     
-    // Status is no longer automatically determined based on schedule, it's explicitly set or retained.
-    // The previous logic for determineJobStatus has been removed.
-    
     const submitData = {
       ...formData,
       assigned_to: Array.isArray(formData.assigned_to) ? formData.assigned_to : [],
@@ -139,6 +147,15 @@ export default function JobForm({ job, technicians, onSubmit, onCancel, isSubmit
         });
       }
     }
+  };
+
+  const handleJobTypeChange = (jobType) => {
+    const duration = JOB_TYPE_DURATIONS[jobType];
+    setFormData({
+      ...formData,
+      job_type: jobType,
+      expected_duration: duration || formData.expected_duration
+    });
   };
 
   const checkForDuplicatesLive = (name) => {
@@ -228,8 +245,6 @@ export default function JobForm({ job, technicians, onSubmit, onCancel, isSubmit
     setNewCustomerData({ ...newCustomerData, name: value });
     checkForDuplicatesLive(value);
   };
-
-  // handleJobTypeChange has been removed as job_type is now a simple string select
 
   const handleTechnicianChange = (techEmails) => {
     const emailsArray = Array.isArray(techEmails) ? techEmails : [];
@@ -407,20 +422,19 @@ export default function JobForm({ job, technicians, onSubmit, onCancel, isSubmit
 
               <div className="space-y-2">
                 <Label htmlFor="job_type" className="text-sm font-semibold text-[#000000]">Job Type</Label>
-                <Select value={formData.job_type} onValueChange={(val) => setFormData({ ...formData, job_type: val })}>
+                <Select value={formData.job_type} onValueChange={handleJobTypeChange}>
                   <SelectTrigger className="border-2 border-slate-300 focus:border-[#fae008] focus:ring-2 focus:ring-[#fae008]/20">
                     <SelectValue placeholder="Select job type" />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="Measure">Measure</SelectItem>
-                    <SelectItem value="Repair On-site">Repair On-site</SelectItem>
-                    <SelectItem value="Final Install">Final Install</SelectItem>
-                    <SelectItem value="Quote Visit">Quote Visit</SelectItem>
+                    <SelectItem value="Initial Site Visit">Initial Site Visit</SelectItem>
+                    <SelectItem value="Final Measure">Final Measure</SelectItem>
+                    <SelectItem value="Installation">Installation</SelectItem>
+                    <SelectItem value="On site Repair">On site Repair</SelectItem>
+                    <SelectItem value="Investigation">Investigation</SelectItem>
                     <SelectItem value="Maintenance">Maintenance</SelectItem>
-                    <SelectItem value="Emergency">Emergency</SelectItem>
-                    <SelectItem value="Diagnose">Diagnose</SelectItem>
-                    <SelectItem value="Return Visit">Return Visit</SelectItem>
-                    <SelectItem value="Service Call">Service Call</SelectItem>
+                    <SelectItem value="Call Back">Call Back</SelectItem>
+                    <SelectItem value="Emergency Repair">Emergency Repair</SelectItem>
                   </SelectContent>
                 </Select>
               </div>
@@ -443,9 +457,6 @@ export default function JobForm({ job, technicians, onSubmit, onCancel, isSubmit
                   <SelectContent>
                     <SelectItem value="open">Open</SelectItem>
                     <SelectItem value="scheduled">Scheduled</SelectItem>
-                    <SelectItem value="quoted">Quoted</SelectItem>
-                    <SelectItem value="invoiced">Invoiced</SelectItem>
-                    <SelectItem value="paid">Paid</SelectItem>
                     <SelectItem value="completed">Completed</SelectItem>
                     <SelectItem value="cancelled">Cancelled</SelectItem>
                   </SelectContent>
