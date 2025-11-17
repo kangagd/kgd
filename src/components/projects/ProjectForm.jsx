@@ -1,11 +1,10 @@
-
 import React, { useState } from "react";
 import { Card, CardHeader, CardTitle, CardContent, CardFooter } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { ArrowLeft, Plus, Loader2, FileText, X, Image as ImageIcon, Upload } from "lucide-react";
+import { ArrowLeft, Plus, Loader2, FileText, X, Image as ImageIcon, Upload, Trash2 } from "lucide-react";
 import { base44 } from "@/api/base44Client";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import {
@@ -38,10 +37,7 @@ export default function ProjectForm({ project, onSubmit, onCancel, isSubmitting 
     image_urls: [],
     quote_url: "",
     invoice_url: "",
-    install_height: "",
-    install_width: "",
-    install_type: "",
-    install_style: ""
+    doors: []
   });
 
   const [showNewCustomerDialog, setShowNewCustomerDialog] = useState(false);
@@ -161,6 +157,26 @@ export default function ProjectForm({ project, onSubmit, onCancel, isSubmitting 
     });
   };
 
+  const addDoor = () => {
+    setFormData({
+      ...formData,
+      doors: [...(formData.doors || []), { height: "", width: "", type: "", style: "" }]
+    });
+  };
+
+  const removeDoor = (indexToRemove) => {
+    setFormData({
+      ...formData,
+      doors: formData.doors.filter((_, index) => index !== indexToRemove)
+    });
+  };
+
+  const updateDoor = (index, field, value) => {
+    const updatedDoors = [...formData.doors];
+    updatedDoors[index] = { ...updatedDoors[index], [field]: value };
+    setFormData({ ...formData, doors: updatedDoors });
+  };
+
   const isInstallType = formData.project_type && formData.project_type.includes("Install");
 
   return (
@@ -269,52 +285,91 @@ export default function ProjectForm({ project, onSubmit, onCancel, isSubmitting 
 
             {isInstallType && (
               <div className="bg-blue-50 border-2 border-blue-200 rounded-xl p-4 space-y-4">
-                <h3 className="font-bold text-[#000000]">Installation Details</h3>
-                <div className="grid md:grid-cols-2 gap-4">
-                  <div className="space-y-2">
-                    <Label htmlFor="install_height">Height</Label>
-                    <Input
-                      id="install_height"
-                      value={formData.install_height}
-                      onChange={(e) => setFormData({ ...formData, install_height: e.target.value })}
-                      placeholder="e.g., 2.4m"
-                      className="border-2 border-slate-300 focus:border-[#fae008]"
-                    />
-                  </div>
-
-                  <div className="space-y-2">
-                    <Label htmlFor="install_width">Width</Label>
-                    <Input
-                      id="install_width"
-                      value={formData.install_width}
-                      onChange={(e) => setFormData({ ...formData, install_width: e.target.value })}
-                      placeholder="e.g., 5.0m"
-                      className="border-2 border-slate-300 focus:border-[#fae008]"
-                    />
-                  </div>
-
-                  <div className="space-y-2">
-                    <Label htmlFor="install_type">Type</Label>
-                    <Input
-                      id="install_type"
-                      value={formData.install_type}
-                      onChange={(e) => setFormData({ ...formData, install_type: e.target.value })}
-                      placeholder="e.g., Sectional, Roller"
-                      className="border-2 border-slate-300 focus:border-[#fae008]"
-                    />
-                  </div>
-
-                  <div className="space-y-2">
-                    <Label htmlFor="install_style">Style</Label>
-                    <Input
-                      id="install_style"
-                      value={formData.install_style}
-                      onChange={(e) => setFormData({ ...formData, install_style: e.target.value })}
-                      placeholder="e.g., Modern, Classic"
-                      className="border-2 border-slate-300 focus:border-[#fae008]"
-                    />
-                  </div>
+                <div className="flex items-center justify-between">
+                  <h3 className="font-bold text-[#000000]">Doors</h3>
+                  <Button
+                    type="button"
+                    onClick={addDoor}
+                    size="sm"
+                    className="bg-[#fae008] hover:bg-[#e5d007] text-[#000000] font-semibold"
+                  >
+                    <Plus className="w-4 h-4 mr-2" />
+                    Add Door
+                  </Button>
                 </div>
+
+                {formData.doors && formData.doors.length > 0 ? (
+                  <div className="space-y-4">
+                    {formData.doors.map((door, index) => (
+                      <div key={index} className="bg-white border-2 border-slate-200 rounded-lg p-4 space-y-3">
+                        <div className="flex items-center justify-between mb-2">
+                          <span className="font-semibold text-sm text-slate-700">Door {index + 1}</span>
+                          <Button
+                            type="button"
+                            variant="ghost"
+                            size="icon"
+                            onClick={() => removeDoor(index)}
+                            className="h-8 w-8 hover:bg-red-100 hover:text-red-600"
+                          >
+                            <Trash2 className="w-4 h-4" />
+                          </Button>
+                        </div>
+                        <div className="grid md:grid-cols-2 gap-3">
+                          <div className="space-y-1">
+                            <Label className="text-xs">Height</Label>
+                            <Input
+                              value={door.height}
+                              onChange={(e) => updateDoor(index, 'height', e.target.value)}
+                              placeholder="e.g., 2.4m"
+                              className="border-2 border-slate-300 focus:border-[#fae008] h-9"
+                            />
+                          </div>
+                          <div className="space-y-1">
+                            <Label className="text-xs">Width</Label>
+                            <Input
+                              value={door.width}
+                              onChange={(e) => updateDoor(index, 'width', e.target.value)}
+                              placeholder="e.g., 5.0m"
+                              className="border-2 border-slate-300 focus:border-[#fae008] h-9"
+                            />
+                          </div>
+                          <div className="space-y-1">
+                            <Label className="text-xs">Type</Label>
+                            <Input
+                              value={door.type}
+                              onChange={(e) => updateDoor(index, 'type', e.target.value)}
+                              placeholder="e.g., Sectional, Roller"
+                              className="border-2 border-slate-300 focus:border-[#fae008] h-9"
+                            />
+                          </div>
+                          <div className="space-y-1">
+                            <Label className="text-xs">Style</Label>
+                            <Input
+                              value={door.style}
+                              onChange={(e) => updateDoor(index, 'style', e.target.value)}
+                              placeholder="e.g., Modern, Classic"
+                              className="border-2 border-slate-300 focus:border-[#fae008] h-9"
+                            />
+                          </div>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                ) : (
+                  <div className="text-center py-6 text-slate-500">
+                    <p className="text-sm mb-2">No doors added yet</p>
+                    <Button
+                      type="button"
+                      onClick={addDoor}
+                      size="sm"
+                      variant="outline"
+                      className="border-2"
+                    >
+                      <Plus className="w-4 h-4 mr-2" />
+                      Add First Door
+                    </Button>
+                  </div>
+                )}
               </div>
             )}
 
