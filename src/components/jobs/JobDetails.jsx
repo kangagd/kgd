@@ -151,13 +151,20 @@ export default function JobDetails({ job, onClose, onStatusChange, onDelete }) {
 
   const checkInMutation = useMutation({
     mutationFn: async () => {
+      const scheduledDate = new Date(job.scheduled_date);
+      const today = new Date();
+      today.setHours(0, 0, 0, 0);
+      scheduledDate.setHours(0, 0, 0, 0);
+      
       const checkIn = await base44.entities.CheckInOut.create({
         job_id: job.id,
         technician_email: user.email,
         technician_name: user.full_name,
         check_in_time: new Date().toISOString()
       });
-      await base44.entities.Job.update(job.id, { status: 'in_progress' });
+      
+      const newStatus = scheduledDate > today ? 'scheduled' : 'in_progress';
+      await base44.entities.Job.update(job.id, { status: newStatus });
       return checkIn;
     },
     onSuccess: () => {
@@ -325,7 +332,14 @@ export default function JobDetails({ job, onClose, onStatusChange, onDelete }) {
     logChange('outcome', job.outcome, value);
     updateJobMutation.mutate({ field: 'outcome', value });
     
-    if (value === 'completed' || value === 'send_invoice') {
+    const scheduledDate = new Date(job.scheduled_date);
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    scheduledDate.setHours(0, 0, 0, 0);
+    
+    if (scheduledDate > today) {
+      updateJobMutation.mutate({ field: 'status', value: 'scheduled' });
+    } else if (value === 'completed' || value === 'send_invoice') {
       updateJobMutation.mutate({ field: 'status', value: 'completed' });
     } else if (value === 'new_quote' || value === 'update_quote' || value === 'return_visit_required') {
       updateJobMutation.mutate({ field: 'status', value: 'open' });
