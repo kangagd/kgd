@@ -327,6 +327,8 @@ export default function JobDetails({ job, onClose, onStatusChange, onDelete }) {
     
     if (value === 'completed' || value === 'send_invoice') {
       updateJobMutation.mutate({ field: 'status', value: 'completed' });
+    } else if (value === 'new_quote' || value === 'update_quote' || value === 'return_visit_required') {
+      updateJobMutation.mutate({ field: 'status', value: 'open' });
     }
   };
 
