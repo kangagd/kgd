@@ -33,6 +33,7 @@ export default function CustomerForm({ customer, onSubmit, onCancel, isSubmittin
 
   const [showNewOrgDialog, setShowNewOrgDialog] = useState(false);
   const [newOrgData, setNewOrgData] = useState({ name: "", organisation_type: "", address: "" });
+  const [isCreatingOrg, setIsCreatingOrg] = useState(false);
   const queryClient = useQueryClient();
 
   const { data: organisations = [] } = useQuery({
@@ -55,18 +56,26 @@ export default function CustomerForm({ customer, onSubmit, onCancel, isSubmittin
   };
 
   const handleCreateNewOrg = async () => {
+    setIsCreatingOrg(true);
     try {
       const newOrg = await base44.entities.Organisation.create(newOrgData);
-      await queryClient.invalidateQueries({ queryKey: ['organisations'] });
+      
+      // Refetch organisations to include the new one
+      await queryClient.refetchQueries({ queryKey: ['organisations'] });
+      
+      // Update form data with new organisation
       setFormData({
         ...formData,
         organisation_id: newOrg.id,
         organisation_name: newOrg.name
       });
+      
       setShowNewOrgDialog(false);
       setNewOrgData({ name: "", organisation_type: "", address: "" });
     } catch (error) {
       console.error("Error creating organisation:", error);
+    } finally {
+      setIsCreatingOrg(false);
     }
   };
 
@@ -255,15 +264,16 @@ export default function CustomerForm({ customer, onSubmit, onCancel, isSubmittin
               variant="outline" 
               onClick={() => setShowNewOrgDialog(false)}
               className="border-2 font-semibold"
+              disabled={isCreatingOrg}
             >
               Cancel
             </Button>
             <Button 
               onClick={handleCreateNewOrg}
-              disabled={!newOrgData.name}
+              disabled={!newOrgData.name || isCreatingOrg}
               className="bg-[#fae008] hover:bg-[#e5d007] text-[#000000] font-bold"
             >
-              Create Organisation
+              {isCreatingOrg ? 'Creating...' : 'Create Organisation'}
             </Button>
           </DialogFooter>
         </DialogContent>
