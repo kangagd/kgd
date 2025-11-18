@@ -1,3 +1,4 @@
+css
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
@@ -124,9 +125,37 @@
   button:not(.btn-secondary):not([class*="ghost"]):not([class*="outline"]):not([class*="destructive"]):not([class*="link"]):active {
     background-color: #d4c006 !important;
   }
+
+  /* Improve touch targets on mobile */
+  @media (max-width: 768px) {
+    button, a, [role="button"] {
+      min-height: 44px;
+      min-width: 44px;
+    }
+  }
+
+  /* Hide scrollbar but allow scrolling */
+  .no-scrollbar::-webkit-scrollbar {
+    display: none;
+  }
+  .no-scrollbar {
+    -ms-overflow-style: none;
+    scrollbar-width: none;
+  }
 }
 
 @layer components {
+  /* Mobile-optimized spacing */
+  @media (max-width: 768px) {
+    .card-enhanced {
+      padding: 12px;
+    }
+    
+    .section-header {
+      font-size: 11px;
+    }
+  }
+
   /* Status Badges with 15% opacity backgrounds */
   .status-badge {
     @apply rounded-full px-3 py-1.5 font-bold border-0;
