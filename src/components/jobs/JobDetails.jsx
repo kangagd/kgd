@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from "react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -669,6 +668,21 @@ export default function JobDetails({ job, onClose, onStatusChange, onDelete }) {
                 </CardContent>
               </Card>
 
+              {/* Information */}
+              <Card className="card-enhanced">
+                <CardContent className="p-4">
+                  <h3 className="text-[13px] font-semibold text-[#4F4F4F] uppercase tracking-wide mb-3">Information</h3>
+                  <div className="border-2 border-[#E2E3E5] rounded-xl p-3 focus-within:border-[#FAE008] transition-all">
+                    <RichTextEditor
+                      value={additionalInfo}
+                      onChange={setAdditionalInfo}
+                      onBlur={handleAdditionalInfoBlur}
+                      placeholder="Add additional information..."
+                    />
+                  </div>
+                </CardContent>
+              </Card>
+
               {/* Pricing */}
               <Card className="card-enhanced">
                 <CardContent className="p-4">
@@ -1015,7 +1029,7 @@ export default function JobDetails({ job, onClose, onStatusChange, onDelete }) {
             <Button
               onClick={handleCheckIn}
               disabled={checkInMutation.isPending}
-              className="btn-primary w-full h-14 w-14 rounded-full shadow-lg hover:shadow-xl p-0"
+              className="btn-primary h-14 w-14 rounded-full shadow-lg hover:shadow-xl p-0"
             >
               {checkInMutation.isPending ? (
                 <Timer className="w-6 h-6 animate-spin" />
