@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from "react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -5,7 +6,7 @@ import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Label } from "@/components/ui/label";
-import { ArrowLeft, MapPin, Phone, Calendar, Clock, User, Briefcase, FileText, Image as ImageIcon, DollarSign, Sparkles, LogIn, FileCheck, History, Package, ClipboardCheck, LogOut, Timer, AlertCircle, ChevronDown, Mail, Navigation, Trash2, FolderKanban, CheckSquare, MoreVertical, Paperclip } from "lucide-react";
+import { ArrowLeft, MapPin, Phone, Calendar, Clock, User, Briefcase, FileText, Image as ImageIcon, DollarSign, Sparkles, LogIn, FileCheck, History, Package, ClipboardCheck, LogOut, Timer, AlertCircle, ChevronDown, Mail, Navigation, Trash2, FolderKanban, CheckSquare, MoreVertical, Paperclip, Ruler } from "lucide-react";
 import { format, parseISO } from "date-fns";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
@@ -403,6 +404,7 @@ export default function JobDetails({ job, onClose, onStatusChange, onDelete }) {
     { id: "summary", label: "Summary", icon: ClipboardCheck },
     { id: "sitevisit", label: "Site Visit", icon: CheckSquare },
     { id: "photos", label: "Photos", icon: ImageIcon },
+    { id: "measurements", label: "Measurements", icon: Ruler },
     { id: "attachments", label: "Attachments", icon: Paperclip },
     { id: "audit", label: "Audit", icon: History },
   ];
@@ -873,18 +875,22 @@ export default function JobDetails({ job, onClose, onStatusChange, onDelete }) {
             </Card>
           )}
 
+          {activeTab === "measurements" && (
+            <Card className="card-enhanced">
+              <CardContent className="p-4">
+                <h3 className="text-[13px] font-semibold text-[#4F4F4F] uppercase tracking-wide mb-3">Measurements</h3>
+                <MeasurementsForm
+                  measurements={measurements}
+                  onChange={handleMeasurementsChange}
+                />
+              </CardContent>
+            </Card>
+          )}
+
           {activeTab === "attachments" && (
             <Card className="card-enhanced">
               <CardContent className="p-4 space-y-4">
-                <div>
-                  <h3 className="text-[13px] font-semibold text-[#4F4F4F] uppercase tracking-wide mb-3">Measurements</h3>
-                  <MeasurementsForm
-                    measurements={measurements}
-                    onChange={handleMeasurementsChange}
-                  />
-                </div>
-
-                <div className="grid grid-cols-2 gap-3 pt-3 border-t border-[#E2E3E5]">
+                <div className="grid grid-cols-2 gap-3">
                   <EditableFileUpload
                     files={job.quote_url}
                     onFilesChange={handleQuoteChange}
@@ -1009,7 +1015,7 @@ export default function JobDetails({ job, onClose, onStatusChange, onDelete }) {
             <Button
               onClick={handleCheckIn}
               disabled={checkInMutation.isPending}
-              className="btn-primary h-14 w-14 rounded-full shadow-lg hover:shadow-xl p-0"
+              className="btn-primary w-full h-14 w-14 rounded-full shadow-lg hover:shadow-xl p-0"
             >
               {checkInMutation.isPending ? (
                 <Timer className="w-6 h-6 animate-spin" />
