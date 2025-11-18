@@ -226,7 +226,7 @@ export default function CustomerDetails({ customer, onClose, onEdit, onDelete })
                         <span className="text-sm font-semibold text-slate-900">#{job.job_number}</span>
                         <p className="text-xs text-slate-600 mt-0.5">{job.address}</p>
                       </div>
-                      <Badge className={
+                      <Badge className={`${
                         job.status === 'completed' ? 'bg-green-500/10 text-green-700 border-green-500/20' :
                         job.status === 'scheduled' ? 'bg-yellow-500/10 text-yellow-700 border-yellow-500/20' :
                         job.status === 'cancelled' ? 'bg-gray-500/10 text-gray-700 border-gray-500/20' :
