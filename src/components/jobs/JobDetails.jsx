@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from "react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -6,8 +5,9 @@ import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Label } from "@/components/ui/label";
-import { ArrowLeft, MapPin, Phone, Calendar, Clock, User, Briefcase, FileText, Image as ImageIcon, DollarSign, Sparkles, LogIn, FileCheck, History, Package, ClipboardCheck, LogOut, Timer, AlertCircle, ChevronDown, Mail, Navigation, Trash2, FolderKanban, CheckSquare, MoreVertical } from "lucide-react";
+import { ArrowLeft, MapPin, Phone, Calendar, Clock, User, Briefcase, FileText, Image as ImageIcon, DollarSign, Sparkles, LogIn, FileCheck, History, Package, ClipboardCheck, LogOut, Timer, AlertCircle, ChevronDown, Mail, Navigation, Trash2, FolderKanban, CheckSquare, MoreVertical, Paperclip } from "lucide-react";
 import { format, parseISO } from "date-fns";
+import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 import { base44 } from "@/api/base44Client";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
@@ -49,20 +49,20 @@ const statusColors = {
   lost: "bg-red-50 text-red-700 border-red-200"
 };
 
-const outcomeColors = {
-  new_quote: "bg-purple-100 text-purple-800 border-purple-200",
-  update_quote: "bg-indigo-100 text-indigo-800 border-indigo-200",
-  send_invoice: "bg-[#FEF8C8] text-slate-800 border-slate-200",
-  completed: "bg-green-100 text-green-800 border-green-200",
-  return_visit_required: "bg-amber-100 text-amber-800 border-amber-200"
-};
-
 const productColors = {
   "Garage Door": "bg-[#FEF8C8] text-slate-700",
   "Gate": "bg-green-100 text-green-700",
   "Roller Shutter": "bg-purple-100 text-purple-700",
   "Multiple": "bg-orange-100 text-orange-700",
   "Custom Garage Door": "bg-pink-100 text-pink-700"
+};
+
+const outcomeColors = {
+  new_quote: "bg-purple-100 text-purple-800 border-purple-200",
+  update_quote: "bg-indigo-100 text-indigo-800 border-indigo-200",
+  send_invoice: "bg-[#FEF8C8] text-slate-800 border-slate-200",
+  completed: "bg-green-100 text-green-800 border-green-200",
+  return_visit_required: "bg-amber-100 text-amber-800 border-amber-200"
 };
 
 const getInitials = (name) => {
@@ -171,9 +171,7 @@ export default function JobDetails({ job, onClose, onStatusChange, onDelete }) {
         check_in_time: new Date().toISOString()
       });
       
-      // Store initial image count when checking in
       setInitialImageCount((job.image_urls || []).length);
-      
       const newStatus = determineJobStatus(job.scheduled_date, job.outcome, true, job.status);
       await base44.entities.Job.update(job.id, { status: newStatus });
       
@@ -191,7 +189,6 @@ export default function JobDetails({ job, onClose, onStatusChange, onDelete }) {
         throw new Error("Please fill in all Site Visit fields before checking out.");
       }
 
-      // Validate that at least one photo was added during the visit
       const currentImageCount = (job.image_urls || []).length;
       if (currentImageCount === initialImageCount) {
         throw new Error("Please add at least one photo before checking out.");
@@ -404,10 +401,9 @@ export default function JobDetails({ job, onClose, onStatusChange, onDelete }) {
 
   const tabs = [
     { id: "summary", label: "Summary", icon: ClipboardCheck },
-    { id: "checklist", label: "Checklist", icon: CheckSquare },
+    { id: "sitevisit", label: "Site Visit", icon: CheckSquare },
     { id: "photos", label: "Photos", icon: ImageIcon },
-    { id: "notes", label: "Notes", icon: FileText },
-    { id: "materials", label: "Materials", icon: Package },
+    { id: "attachments", label: "Attachments", icon: Paperclip },
     { id: "audit", label: "Audit", icon: History },
   ];
 
@@ -438,8 +434,8 @@ export default function JobDetails({ job, onClose, onStatusChange, onDelete }) {
                 </div>
               </div>
               <div className="flex items-center gap-2 flex-shrink-0">
-                <Badge className={`status-badge ${statusColors[job.status]} text-xs font-semibold border-2`}>
-                  {job.status.replace(/_/g, ' ')}
+                <Badge className="status-badge status-{job.status}">
+                  {job.status}
                 </Badge>
                 <DropdownMenu>
                   <DropdownMenuTrigger asChild>
@@ -521,7 +517,7 @@ export default function JobDetails({ job, onClose, onStatusChange, onDelete }) {
           {activeTab === "summary" && (
             <>
               {/* Job Metadata */}
-              <Card className="card-enhanced border-2 border-[#E2E3E5] rounded-xl bg-white shadow-sm">
+              <Card className="card-enhanced">
                 <CardContent className="p-4 space-y-4">
                   <h3 className="text-[13px] font-semibold text-[#4F4F4F] uppercase tracking-wide">Job Details</h3>
                   
@@ -552,7 +548,7 @@ export default function JobDetails({ job, onClose, onStatusChange, onDelete }) {
                           size="sm"
                           variant="outline"
                           onClick={() => window.location.href = `tel:${job.customer_phone}`}
-                          className="flex-1 h-12 border-2 border-slate-200 hover:bg-slate-50 text-slate-700 font-semibold"
+                          className="flex-1 h-12"
                         >
                           <Phone className="w-4 h-4 mr-2" />
                           Call
@@ -562,7 +558,7 @@ export default function JobDetails({ job, onClose, onStatusChange, onDelete }) {
                         size="sm"
                         variant="outline"
                         onClick={() => window.open(`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(job.address)}`, '_blank')}
-                        className="flex-1 h-12 border-2 border-slate-200 hover:bg-slate-50 text-slate-700 font-semibold"
+                        className="flex-1 h-12"
                       >
                         <Navigation className="w-4 h-4 mr-2" />
                         Directions
@@ -656,8 +652,37 @@ export default function JobDetails({ job, onClose, onStatusChange, onDelete }) {
                 </CardContent>
               </Card>
 
+              {/* Notes */}
+              <Card className="card-enhanced">
+                <CardContent className="p-4">
+                  <h3 className="text-[13px] font-semibold text-[#4F4F4F] uppercase tracking-wide mb-3">Notes</h3>
+                  <div className="border-2 border-[#E2E3E5] rounded-xl p-3 focus-within:border-[#FAE008] transition-all">
+                    <RichTextEditor
+                      value={notes}
+                      onChange={setNotes}
+                      onBlur={handleNotesBlur}
+                      placeholder="Add notes..."
+                    />
+                  </div>
+                </CardContent>
+              </Card>
+
+              {/* Pricing */}
+              <Card className="card-enhanced">
+                <CardContent className="p-4">
+                  <h3 className="text-[13px] font-semibold text-[#4F4F4F] uppercase tracking-wide mb-3">Pricing Provided</h3>
+                  <Input
+                    value={pricingProvided}
+                    onChange={(e) => setPricingProvided(e.target.value)}
+                    onBlur={handlePricingProvidedBlur}
+                    placeholder="Enter pricing..."
+                    className="h-12 border-2 border-[#E2E3E5] focus:border-[#FAE008] rounded-xl"
+                  />
+                </CardContent>
+              </Card>
+
               {/* Status Timeline */}
-              <Card className="card-enhanced border-2 border-[#E2E3E5] rounded-xl bg-white shadow-sm">
+              <Card className="card-enhanced">
                 <CardContent className="p-4">
                   <h3 className="text-[13px] font-semibold text-[#4F4F4F] uppercase tracking-wide mb-4">Status Timeline</h3>
                   <div className="space-y-3">
@@ -718,7 +743,7 @@ export default function JobDetails({ job, onClose, onStatusChange, onDelete }) {
 
               {/* Project Jobs */}
               {job.project_id && projectJobs.length > 0 && (
-                <Card className="card-enhanced border-2 border-[#E2E3E5] rounded-xl bg-white shadow-sm">
+                <Card className="card-enhanced">
                   <CardContent className="p-4">
                     <h3 className="text-[13px] font-semibold text-[#4F4F4F] uppercase tracking-wide mb-3 flex items-center gap-2">
                       <FolderKanban className="w-4 h-4" />
@@ -726,7 +751,7 @@ export default function JobDetails({ job, onClose, onStatusChange, onDelete }) {
                     </h3>
                     <div className="space-y-2">
                       {projectJobs.map((pJob) => (
-                        <Card key={pJob.id} className="card-interactive border border-[#E2E3E5] rounded-lg">
+                        <Card key={pJob.id} className="card-interactive">
                           <CardContent className="p-3">
                             <div className="flex items-start justify-between gap-2 mb-1">
                               <div className="flex-1">
@@ -741,8 +766,8 @@ export default function JobDetails({ job, onClose, onStatusChange, onDelete }) {
                                 )}
                               </div>
                               {pJob.status && (
-                                <Badge className={`${statusColors[pJob.status]} text-xs font-semibold border`}>
-                                  {pJob.status.replace(/_/g, ' ')}
+                                <Badge className={`status-badge status-${pJob.status}`}>
+                                  {pJob.status}
                                 </Badge>
                               )}
                             </div>
@@ -756,8 +781,8 @@ export default function JobDetails({ job, onClose, onStatusChange, onDelete }) {
             </>
           )}
 
-          {activeTab === "checklist" && (
-            <Card className="card-enhanced border-2 border-[#E2E3E5] rounded-xl bg-white shadow-sm">
+          {activeTab === "sitevisit" && (
+            <Card className="card-enhanced">
               <CardContent className="p-4 space-y-4">
                 <div>
                   <Label className="text-[13px] font-semibold text-[#111111] mb-2 block">Overview *</Label>
@@ -822,7 +847,7 @@ export default function JobDetails({ job, onClose, onStatusChange, onDelete }) {
                   <Button
                     onClick={handleCheckOut}
                     disabled={checkOutMutation.isPending}
-                    className="w-full bg-[#fae008] hover:bg-[#e5d007] text-black h-12 font-semibold text-base rounded-xl shadow-md hover:shadow-lg transition-all"
+                    className="btn-primary w-full h-12 mt-4"
                   >
                     <LogOut className="w-4 h-4 mr-2" />
                     {checkOutMutation.isPending ? 'Checking Out...' : 'Check Out'}
@@ -833,7 +858,7 @@ export default function JobDetails({ job, onClose, onStatusChange, onDelete }) {
           )}
 
           {activeTab === "photos" && (
-            <Card className="card-enhanced border-2 border-[#E2E3E5] rounded-xl bg-white shadow-sm">
+            <Card className="card-enhanced">
               <CardContent className="p-4">
                 <EditableFileUpload
                   files={job.image_urls || []}
@@ -848,40 +873,14 @@ export default function JobDetails({ job, onClose, onStatusChange, onDelete }) {
             </Card>
           )}
 
-          {activeTab === "notes" && (
-            <Card className="card-enhanced border-2 border-[#E2E3E5] rounded-xl bg-white shadow-sm">
-              <CardContent className="p-4">
-                <div className="border-2 border-[#E2E3E5] rounded-xl p-3 focus-within:border-[#FAE008] transition-all">
-                  <RichTextEditor
-                    value={notes}
-                    onChange={setNotes}
-                    onBlur={handleNotesBlur}
-                    placeholder="Add notes..."
-                  />
-                </div>
-
-                <div className="mt-4">
-                  <h3 className="text-[13px] font-semibold text-[#111111] mb-2">Measurements</h3>
+          {activeTab === "attachments" && (
+            <Card className="card-enhanced">
+              <CardContent className="p-4 space-y-4">
+                <div>
+                  <h3 className="text-[13px] font-semibold text-[#4F4F4F] uppercase tracking-wide mb-3">Measurements</h3>
                   <MeasurementsForm
                     measurements={measurements}
                     onChange={handleMeasurementsChange}
-                  />
-                </div>
-              </CardContent>
-            </Card>
-          )}
-
-          {activeTab === "materials" && (
-            <Card className="card-enhanced border-2 border-[#E2E3E5] rounded-xl bg-white shadow-sm">
-              <CardContent className="p-4 space-y-4">
-                <div>
-                  <Label className="text-[13px] font-semibold text-[#111111] mb-2 block">Pricing Provided</Label>
-                  <Input
-                    value={pricingProvided}
-                    onChange={(e) => setPricingProvided(e.target.value)}
-                    onBlur={handlePricingProvidedBlur}
-                    placeholder="Enter pricing..."
-                    className="h-12 border-2 border-[#E2E3E5] focus:border-[#FAE008] rounded-xl"
                   />
                 </div>
 
@@ -911,13 +910,13 @@ export default function JobDetails({ job, onClose, onStatusChange, onDelete }) {
           )}
 
           {activeTab === "audit" && (
-            <Card className="card-enhanced border-2 border-[#E2E3E5] rounded-xl bg-white shadow-sm">
+            <Card className="card-enhanced">
               <CardContent className="p-4">
                 {completedCheckIns.length > 0 && (
                   <div className="space-y-3 mb-4">
                     <h3 className="text-[13px] font-semibold text-[#4F4F4F] uppercase tracking-wide">Time Tracking</h3>
                     {completedCheckIns.map((checkIn, index) => (
-                      <Card key={checkIn.id} className="card-interactive border border-[#E2E3E5] rounded-lg">
+                      <Card key={checkIn.id} className="card-interactive">
                         <CardContent className="p-3">
                           <div className="flex items-center justify-between mb-2">
                             <span className="text-[13px] text-[#4F4F4F]">Visit {completedCheckIns.length - index}</span>
@@ -964,7 +963,7 @@ export default function JobDetails({ job, onClose, onStatusChange, onDelete }) {
                   <div className="space-y-3 pt-4 border-t border-[#E2E3E5]">
                     <h3 className="text-[13px] font-semibold text-[#4F4F4F] uppercase tracking-wide">Visit Summaries</h3>
                     {jobSummaries.map((summary) => (
-                      <Card key={summary.id} className="card-interactive border border-[#E2E3E5] rounded-lg">
+                      <Card key={summary.id} className="card-interactive">
                         <CardContent className="p-3">
                           <div className="flex items-center justify-between mb-2">
                             <span className="text-[14px] font-semibold text-[#111111]">{summary.technician_name}</span>
@@ -974,7 +973,7 @@ export default function JobDetails({ job, onClose, onStatusChange, onDelete }) {
                           </div>
                           
                           {summary.outcome && (
-                            <Badge className={`${outcomeColors[summary.outcome]} text-xs font-semibold border mb-2`}>
+                            <Badge className={`${outcomeColors[summary.outcome]} mb-2`}>
                               {summary.outcome.replace(/_/g, ' ')}
                             </Badge>
                           )}
@@ -1010,7 +1009,7 @@ export default function JobDetails({ job, onClose, onStatusChange, onDelete }) {
             <Button
               onClick={handleCheckIn}
               disabled={checkInMutation.isPending}
-              className="bg-[#fae008] hover:bg-[#e5d007] text-black h-14 w-14 rounded-full shadow-lg hover:shadow-xl p-0 transition-all"
+              className="btn-primary h-14 w-14 rounded-full shadow-lg hover:shadow-xl p-0"
             >
               {checkInMutation.isPending ? (
                 <Timer className="w-6 h-6 animate-spin" />
@@ -1058,10 +1057,10 @@ export default function JobDetails({ job, onClose, onStatusChange, onDelete }) {
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
-            <AlertDialogCancel className="h-12 border-2 border-slate-200 hover:bg-slate-50 text-slate-700 font-semibold rounded-xl">Cancel</AlertDialogCancel>
+            <AlertDialogCancel className="h-12">Cancel</AlertDialogCancel>
             <AlertDialogAction
               onClick={handleDeleteClick}
-              className="bg-[#DC2626] hover:bg-[#B91C1C] h-12 text-white font-semibold rounded-xl"
+              className="bg-[#DC2626] hover:bg-[#B91C1C] h-12"
             >
               Delete
             </AlertDialogAction>
