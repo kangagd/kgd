@@ -41,6 +41,24 @@
     --input: 0 0% 89%;
     --ring: 48 100% 50%;
     --radius: 0.5rem;
+    
+    /* Mobile-first spacing - 8px base grid */
+    --spacing-xs: 8px;
+    --spacing-sm: 16px;
+    --spacing-md: 24px;
+    --spacing-lg: 32px;
+    --spacing-xl: 40px;
+    
+    /* Card padding - 16-20px */
+    --card-padding: 16px;
+    --card-padding-lg: 20px;
+    
+    /* Button height - 48-52px for easy tapping */
+    --button-height: 48px;
+    --button-height-lg: 52px;
+    
+    /* Soft shadow for outdoors readability */
+    --shadow-soft: 0 2px 6px rgba(0, 0, 0, 0.06);
   }
 }
 
@@ -54,22 +72,61 @@
     font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen', 'Ubuntu', 'Cantarell', 'Fira Sans', 'Droid Sans', 'Helvetica Neue', sans-serif;
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
+    font-size: 14px;
+    line-height: 1.5;
   }
   
-  h1, h2, h3, h4, h5, h6 {
+  /* Typography scale - optimized for field use */
+  h1 {
+    @apply font-bold tracking-tight;
+    color: #111111;
+    font-size: 22px;
+    line-height: 1.3;
+  }
+  
+  h2 {
     @apply font-semibold tracking-tight;
     color: #111111;
+    font-size: 18px;
+    line-height: 1.4;
   }
   
-  p, span, div {
-    @apply tracking-normal;
+  h3 {
+    @apply font-semibold tracking-tight;
+    color: #111111;
+    font-size: 16px;
+    line-height: 1.4;
+  }
+  
+  h4, h5, h6 {
+    @apply font-semibold tracking-tight;
+    color: #111111;
+    font-size: 14px;
+    line-height: 1.4;
+  }
+  
+  p {
+    font-size: 14px;
+    line-height: 1.5;
+  }
+  
+  /* High contrast labels for outdoor visibility */
+  label {
+    @apply font-medium;
+    color: #111111;
+    font-size: 13px;
   }
 }
 
 @layer components {
-  /* Status Badges - Rounded chips with 15% opacity backgrounds */
+  /* Status Badges - High contrast with 15% opacity backgrounds */
   .status-badge {
-    @apply rounded-full px-3 py-1 text-xs font-bold border-0;
+    @apply rounded-full px-3 py-1.5 font-bold border-0;
+    font-size: 12px;
+    min-height: 28px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
   }
   
   .status-open {
@@ -107,51 +164,104 @@
     color: #DC2626;
   }
   
-  /* Card styles */
+  /* Mobile-optimized cards */
   .card-enhanced {
-    @apply bg-white rounded-xl border border-[#E2E3E5] shadow-sm transition-all duration-200;
+    @apply bg-white rounded-xl border border-[#E2E3E5];
+    padding: var(--card-padding);
+    box-shadow: var(--shadow-soft);
   }
   
   .card-enhanced:hover {
-    @apply shadow-md;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
   }
   
-  /* Interactive card states */
+  /* Large tappable areas for field use */
   .card-interactive {
     @apply cursor-pointer;
+    min-height: 72px;
   }
   
   .card-interactive:hover {
-    @apply shadow-lg border-[#FAE008]/30 scale-[1.01];
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+    border-color: rgba(250, 224, 8, 0.3);
+    transform: scale(1.01);
   }
   
   .card-interactive:active {
-    @apply scale-[0.99];
+    transform: scale(0.99);
   }
   
-  /* Section headers */
+  /* Section headers - high contrast for scanning */
   .section-header {
-    @apply text-xs font-semibold text-[#4F4F4F] uppercase tracking-wider mb-3;
+    @apply font-semibold uppercase tracking-wider;
+    font-size: 12px;
+    color: #4F4F4F;
+    margin-bottom: var(--spacing-xs);
   }
   
-  /* Button enhancements */
+  /* Primary action buttons - large tappable area */
   .btn-primary {
-    @apply bg-[#FAE008] text-[#111111] font-semibold hover:bg-[#e5d007] active:bg-[#d4c006] transition-all duration-150;
-    @apply shadow-sm hover:shadow-md active:shadow-sm hover:scale-[1.02] active:scale-[0.98];
+    @apply bg-[#FAE008] text-[#111111] font-semibold rounded-xl;
+    min-height: var(--button-height);
+    padding: 0 24px;
+    font-size: 15px;
+    box-shadow: var(--shadow-soft);
+    transition: all 150ms ease;
   }
   
+  .btn-primary:hover {
+    background-color: #e5d007;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+    transform: scale(1.02);
+  }
+  
+  .btn-primary:active {
+    background-color: #d4c006;
+    transform: scale(0.98);
+  }
+  
+  /* Secondary buttons */
   .btn-secondary {
-    @apply bg-white text-[#111111] border border-[#E2E3E5] font-medium hover:bg-[#F7F7F7] hover:border-[#BDBDBD];
-    @apply transition-all duration-150 active:bg-[#F7F7F7];
+    @apply bg-white text-[#111111] border-2 border-[#E2E3E5] font-medium rounded-xl;
+    min-height: var(--button-height);
+    padding: 0 24px;
+    font-size: 15px;
+    transition: all 150ms ease;
   }
   
-  /* Form input enhancements */
+  .btn-secondary:hover {
+    background-color: #F7F7F7;
+    border-color: #BDBDBD;
+  }
+  
+  .btn-secondary:active {
+    background-color: #F7F7F7;
+  }
+  
+  /* Form inputs - larger touch targets */
   .input-enhanced {
-    @apply border-[#E2E3E5] focus:border-[#FAE008] focus:ring-2 focus:ring-[#FAE008]/20;
-    @apply transition-all duration-150;
+    @apply border-[#E2E3E5] rounded-xl;
+    min-height: var(--button-height);
+    padding: 0 16px;
+    font-size: 15px;
+    box-shadow: var(--shadow-soft);
   }
   
-  /* Micro-interactions */
+  .input-enhanced:focus {
+    @apply border-[#FAE008] ring-2 ring-[#FAE008]/20;
+  }
+  
+  /* Spacing utilities following 8px grid */
+  .spacing-xs { margin: var(--spacing-xs); }
+  .spacing-sm { margin: var(--spacing-sm); }
+  .spacing-md { margin: var(--spacing-md); }
+  .spacing-lg { margin: var(--spacing-lg); }
+  .spacing-xl { margin: var(--spacing-xl); }
+  
+  .p-card { padding: var(--card-padding); }
+  .p-card-lg { padding: var(--card-padding-lg); }
+  
+  /* Animations */
   .fade-in {
     animation: fadeIn 0.2s ease-in;
   }
@@ -167,8 +277,24 @@
     }
   }
   
-  /* Section separators */
+  /* Dividers */
   .section-divider {
-    @apply border-t border-[#E2E3E5] my-6;
+    @apply border-t border-[#E2E3E5];
+    margin-top: var(--spacing-md);
+    margin-bottom: var(--spacing-md);
+  }
+  
+  /* High contrast text for outdoor readability */
+  .text-high-contrast {
+    color: #111111;
+    font-weight: 600;
+  }
+  
+  .text-secondary {
+    color: #4F4F4F;
+  }
+  
+  .text-disabled {
+    color: #BDBDBD;
   }
 }
