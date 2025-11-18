@@ -1,3 +1,4 @@
+
 import React from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -20,31 +21,31 @@ import {
 } from "@/components/ui/alert-dialog";
 
 const statusColors = {
-  open: "bg-slate-100 text-slate-800",
-  scheduled: "bg-blue-100 text-blue-800",
-  quoted: "bg-purple-100 text-purple-800",
-  invoiced: "bg-indigo-100 text-indigo-800",
-  paid: "bg-green-100 text-green-800",
-  completed: "bg-emerald-100 text-emerald-800",
-  cancelled: "bg-slate-100 text-slate-800"
+  open: "bg-blue-50 text-blue-700 border-blue-200",
+  scheduled: "bg-teal-50 text-teal-700 border-teal-200",
+  quoted: "bg-purple-50 text-purple-700 border-purple-200",
+  invoiced: "bg-amber-50 text-amber-700 border-amber-200",
+  paid: "bg-emerald-50 text-emerald-700 border-emerald-200",
+  completed: "bg-green-50 text-green-700 border-green-200",
+  cancelled: "bg-red-50 text-red-700 border-red-200"
 };
 
 const projectTypeColors = {
-  "Garage Door Install": "bg-blue-100 text-blue-700",
-  "Gate Install": "bg-green-100 text-green-700",
-  "Roller Shutter Install": "bg-purple-100 text-purple-700",
-  "Repair": "bg-orange-100 text-orange-700",
-  "Maintenance": "bg-indigo-100 text-indigo-700"
+  "Garage Door Install": "bg-[#FEF8C8] text-slate-700 border-slate-200",
+  "Gate Install": "bg-green-100 text-green-700 border-green-200",
+  "Roller Shutter Install": "bg-purple-100 text-purple-700 border-purple-200",
+  "Repair": "bg-orange-100 text-orange-700 border-orange-200",
+  "Maintenance": "bg-indigo-100 text-indigo-700 border-indigo-200"
 };
 
 const jobStatusColors = {
-  open: "bg-slate-100 text-slate-800",
-  scheduled: "bg-blue-100 text-blue-800",
-  quoted: "bg-purple-100 text-purple-800",
-  invoiced: "bg-indigo-100 text-indigo-800",
-  paid: "bg-green-100 text-green-800",
-  completed: "bg-emerald-100 text-emerald-800",
-  cancelled: "bg-slate-100 text-slate-800"
+  open: "bg-blue-50 text-blue-700 border-blue-200",
+  scheduled: "bg-teal-50 text-teal-700 border-teal-200",
+  quoted: "bg-purple-100 text-purple-800", // Keep existing for 'quoted' if not specified in update, otherwise update
+  invoiced: "bg-indigo-100 text-indigo-800", // Keep existing for 'invoiced' if not specified in update, otherwise update
+  paid: "bg-green-100 text-green-800", // Keep existing for 'paid' if not specified in update, otherwise update
+  completed: "bg-green-50 text-green-700 border-green-200",
+  cancelled: "bg-red-50 text-red-700 border-red-200"
 };
 
 export default function ProjectDetails({ project, onClose, onEdit, onDelete }) {

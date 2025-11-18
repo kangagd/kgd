@@ -36,6 +36,14 @@ export default function Jobs() {
     loadUser();
   }, []);
 
+  const statusFilters = [
+    { value: "all", label: "All Jobs", color: "bg-slate-100 text-slate-700" },
+    { value: "open", label: "Open", color: "bg-blue-50 text-blue-700 border-blue-200" },
+    { value: "scheduled", label: "Scheduled", color: "bg-teal-50 text-teal-700 border-teal-200" },
+    { value: "completed", label: "Completed", color: "bg-green-50 text-green-700 border-green-200" },
+    { value: "cancelled", label: "Cancelled", color: "bg-red-50 text-red-700 border-red-200" }
+  ];
+
   const { data: allJobs = [], isLoading, refetch } = useQuery({
     queryKey: ['allJobs'],
     queryFn: () => base44.entities.Job.list('-scheduled_date')
@@ -254,11 +262,11 @@ export default function Jobs() {
           {viewMode === "list" && (
             <Tabs value={statusFilter} onValueChange={setStatusFilter}>
               <TabsList className="w-full grid grid-cols-5 h-11">
-                <TabsTrigger value="all" className="font-semibold">All</TabsTrigger>
-                <TabsTrigger value="open" className="font-semibold">Open</TabsTrigger>
-                <TabsTrigger value="scheduled" className="font-semibold">Scheduled</TabsTrigger>
-                <TabsTrigger value="completed" className="font-semibold">Completed</TabsTrigger>
-                <TabsTrigger value="cancelled" className="font-semibold">Cancelled</TabsTrigger>
+                {statusFilters.map((filter) => (
+                  <TabsTrigger key={filter.value} value={filter.value} className="font-semibold">
+                    {filter.label}
+                  </TabsTrigger>
+                ))}
               </TabsList>
             </Tabs>
           )}

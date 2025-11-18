@@ -10,13 +10,13 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { unescape } from "lodash";
 
 const statusColors = {
-  open: "bg-[hsl(32,25%,94%)] text-[hsl(25,10%,12%)] border-[hsl(32,15%,88%)]",
-  scheduled: "bg-[#fae008]/20 text-[hsl(25,10%,12%)] border-[#fae008]/30",
-  quoted: "bg-purple-100 text-purple-800 border-purple-200",
-  invoiced: "bg-indigo-100 text-indigo-800 border-indigo-200",
-  paid: "bg-green-100 text-green-800 border-green-200",
-  completed: "bg-emerald-100 text-emerald-800 border-emerald-200",
-  lost: "bg-red-100 text-red-800 border-red-200"
+  open: "bg-blue-50 text-blue-700 border-blue-200",
+  scheduled: "bg-teal-50 text-teal-700 border-teal-200",
+  quoted: "bg-purple-50 text-purple-700 border-purple-200",
+  invoiced: "bg-amber-50 text-amber-700 border-amber-200",
+  paid: "bg-emerald-50 text-emerald-700 border-emerald-200",
+  completed: "bg-green-50 text-green-700 border-green-200",
+  lost: "bg-red-50 text-red-700 border-red-200"
 };
 
 const statusLabels = {
