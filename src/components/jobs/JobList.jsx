@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from "react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -29,7 +30,7 @@ const statusLabels = {
 };
 
 const productColors = {
-  "Garage Door": "bg-[#fff9ed] text-slate-700",
+  "Garage Door": "bg-[#FEF8C8] text-slate-700",
   "Gate": "bg-green-100 text-green-700",
   "Roller Shutter": "bg-purple-100 text-purple-700",
   "Multiple": "bg-orange-100 text-orange-700",
@@ -47,7 +48,7 @@ const getInitials = (name) => {
 };
 
 const avatarColors = [
-  "bg-[#fff9ed]",
+  "bg-[#FCEE7B]",
   "bg-purple-500",
   "bg-green-500",
   "bg-orange-500",
@@ -154,7 +155,7 @@ export default function JobList({ jobs, isLoading, onSelectJob }) {
         <Card 
           key={job.id}
           className="hover:shadow-xl transition-all duration-200 cursor-pointer border-l-4 hover:scale-[1.01] active:scale-[0.99] group rounded-2xl border-2 border-[hsl(32,15%,88%)]"
-          style={{ borderLeftColor: job.status === 'in_progress' ? '#fff9ed' : job.status === 'completed' ? '#10b981' : '#fae008', borderLeftWidth: '6px' }}
+          style={{ borderLeftColor: job.status === 'in_progress' ? '#FCEE7B' : job.status === 'completed' ? '#10b981' : '#fae008', borderLeftWidth: '6px' }}
           onClick={() => onSelectJob(job)}
         >
           <CardContent className="p-6">
@@ -178,7 +179,7 @@ export default function JobList({ jobs, isLoading, onSelectJob }) {
                       size="icon"
                       variant="outline"
                       onClick={(e) => handleCall(e, job.customer_phone)}
-                      className="h-8 w-8 border-2 hover:bg-[#fff9ed] hover:border-slate-400 hover:text-slate-700 transition-all"
+                      className="h-8 w-8 border-2 hover:bg-[#FEF8C8] hover:border-slate-400 hover:text-slate-700 transition-all"
                       title="Call"
                     >
                       <Phone className="w-4 h-4" />
@@ -241,7 +242,7 @@ export default function JobList({ jobs, isLoading, onSelectJob }) {
                     size="sm"
                     onClick={(e) => handleCheckIn(e, job)}
                     disabled={checkInMutation.isPending}
-                    className="bg-[#fff9ed] hover:bg-slate-200 text-slate-900 active:bg-slate-300 h-8 text-xs font-semibold shadow-sm transition-all"
+                    className="bg-[#fae008] hover:bg-[#e5d007] text-black active:bg-[#d4c006] h-8 text-xs font-semibold shadow-sm transition-all"
                   >
                     <LogIn className="w-3.5 h-3.5 mr-1.5" />
                     Check In

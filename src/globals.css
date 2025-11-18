@@ -32,7 +32,7 @@
     @apply border-border;
   }
   body {
-    @apply bg-[#f5f3e4] text-foreground;
+    @apply bg-[#FFFDEF] text-foreground;
     font-feature-settings: "rlig" 1, "calt" 1;
     font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen', 'Ubuntu', 'Cantarell', 'Fira Sans', 'Droid Sans', 'Helvetica Neue', sans-serif;
     -webkit-font-smoothing: antialiased;
@@ -79,12 +79,12 @@
   
   /* Button enhancements */
   .btn-primary {
-    @apply bg-[#fae008] text-[hsl(25,10%,12%)] font-semibold hover:bg-[#e5d007] active:bg-[#d4c006] transition-all duration-150;
+    @apply bg-[#fae008] text-black font-semibold hover:bg-[#e5d007] active:bg-[#d4c006] transition-all duration-150;
     @apply shadow-sm hover:shadow-md active:shadow-sm hover:scale-[1.02] active:scale-[0.98];
   }
   
   .btn-secondary {
-    @apply bg-white text-[hsl(25,10%,12%)] border border-slate-200 font-medium hover:bg-slate-50 hover:border-slate-300;
+    @apply bg-white text-black border border-slate-200 font-medium hover:bg-slate-50 hover:border-slate-300;
     @apply transition-all duration-150 active:bg-slate-100;
   }
   
@@ -100,7 +100,7 @@
   }
   
   .badge-yellow {
-    @apply bg-[#fae008]/20 text-[hsl(25,10%,12%)] border-[#fae008]/30 font-medium;
+    @apply bg-[#fae008]/20 text-black border-[#fae008]/30 font-medium;
   }
   
   /* Micro-interactions */

@@ -62,12 +62,12 @@ export default function Layout({ children, currentPageName }) {
 
   if (isTechnician) {
     return (
-      <div className="min-h-screen flex flex-col bg-[#f5f3e4]">
+      <div className="min-h-screen flex flex-col bg-[#FFFDEF]">
         <header className="bg-white border-b border-slate-200 px-3 py-2 sticky top-0 z-50 shadow-sm">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-2">
               <div className="w-8 h-8 bg-[#fae008] rounded-lg flex items-center justify-center shadow-md">
-                <Wrench className="w-4 h-4 text-slate-900" />
+                <Wrench className="w-4 h-4 text-black" />
               </div>
               <div>
                 <h1 className="font-bold text-slate-900 text-sm">KGD</h1>
@@ -117,12 +117,12 @@ export default function Layout({ children, currentPageName }) {
 
   return (
     <SidebarProvider>
-      <div className="min-h-screen flex w-full bg-[#f5f3e4]">
+      <div className="min-h-screen flex w-full bg-[#FFFDEF]">
         <Sidebar className="border-r border-slate-200 bg-white">
           <SidebarHeader className="border-b border-slate-200 p-4">
             <div className="flex items-center gap-3">
               <div className="w-11 h-11 bg-[#fae008] rounded-xl flex items-center justify-center shadow-md">
-                <Wrench className="w-6 h-6 text-slate-900" />
+                <Wrench className="w-6 h-6 text-black" />
               </div>
               <div>
                 <h2 className="font-bold text-slate-900 text-base">FieldScheduler</h2>

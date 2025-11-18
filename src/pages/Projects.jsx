@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from "react";
 import { base44 } from "@/api/base44Client";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
@@ -12,7 +11,7 @@ import ProjectDetails from "../components/projects/ProjectDetails";
 
 const statusColors = {
   open: "bg-[hsl(32,25%,94%)] text-[hsl(25,10%,12%)] border-[hsl(32,15%,88%)]",
-  scheduled: "bg-[#fae008]/20 text-[hsl(25,10%,12%)] border-[#fae008]/30",
+  scheduled: "bg-[#fae008]/20 text-black border-[#fae008]/30",
   quoted: "bg-purple-100 text-purple-800 border-purple-200",
   invoiced: "bg-indigo-100 text-indigo-800 border-indigo-200",
   paid: "bg-green-100 text-green-800 border-green-200",
@@ -21,7 +20,7 @@ const statusColors = {
 };
 
 const projectTypeColors = {
-  "Garage Door Install": "bg-[#fff9ed] text-slate-700", // Changed from bg-[#f0efe6]
+  "Garage Door Install": "bg-[#FEF8C8] text-slate-700",
   "Gate Install": "bg-green-100 text-green-700",
   "Roller Shutter Install": "bg-purple-100 text-purple-700",
   "Repair": "bg-orange-100 text-orange-700",
@@ -115,7 +114,7 @@ export default function Projects() {
 
   if (showForm) {
     return (
-      <div className="p-4 md:p-8 bg-gradient-to-br from-[hsl(32,20%,98%)] to-[hsl(32,25%,94%)] min-h-screen">
+      <div className="p-4 md:p-8 bg-[#FFFDEF] min-h-screen">
         <div className="max-w-4xl mx-auto">
           <ProjectForm
             project={editingProject}
@@ -133,7 +132,7 @@ export default function Projects() {
 
   if (selectedProject) {
     return (
-      <div className="bg-gradient-to-br from-[hsl(32,20%,98%)] to-[hsl(32,25%,94%)] min-h-screen">
+      <div className="bg-[#FFFDEF] min-h-screen">
         <div className="mx-auto p-4 md:p-8 max-w-6xl">
           <ProjectDetails
             project={selectedProject}
@@ -147,7 +146,7 @@ export default function Projects() {
   }
 
   return (
-    <div className="p-4 md:p-8 bg-gradient-to-br from-[hsl(32,20%,98%)] to-[hsl(32,25%,94%)] min-h-screen">
+    <div className="p-4 md:p-8 bg-[#FFFDEF] min-h-screen">
       <div className="max-w-7xl mx-auto">
         <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-6 gap-4">
           <div>
@@ -156,7 +155,7 @@ export default function Projects() {
           </div>
           <Button
             onClick={() => setShowForm(true)}
-            className="bg-[#fae008] text-[hsl(25,10%,12%)] hover:bg-[#e5d007] active:bg-[#d4c006] font-semibold shadow-md hover:shadow-lg transition-all w-full md:w-auto"
+            className="bg-[#fae008] text-black hover:bg-[#e5d007] active:bg-[#d4c006] font-semibold shadow-md hover:shadow-lg transition-all w-full md:w-auto"
           >
             <Plus className="w-5 h-5 mr-2" />
             New Project
@@ -184,7 +183,7 @@ export default function Projects() {
         {!isLoading && filteredProjects.length === 0 && (
           <div className="text-center py-12 bg-white rounded-2xl border-2 border-[hsl(32,15%,88%)]">
             <p className="text-[hsl(25,8%,45%)] mb-4">No projects found</p>
-            <Button onClick={() => setShowForm(true)} className="bg-[#fae008] text-[hsl(25,10%,12%)] font-semibold">
+            <Button onClick={() => setShowForm(true)} className="bg-[#fae008] text-black font-semibold">
               Create First Project
             </Button>
           </div>
@@ -221,7 +220,7 @@ export default function Projects() {
                     {project.doors && project.doors.length > 0 && (
                       <div className="mt-2 flex flex-wrap gap-2">
                         {project.doors.map((door, idx) => (
-                          <Badge key={idx} variant="outline" className="bg-[#fff9ed] border-slate-200 text-slate-700"> {/* Changed from bg-[#f0efe6] */}
+                          <Badge key={idx} variant="outline" className="bg-[#FEF8C8] border-slate-200 text-slate-700">
                             Door {idx + 1}: {door.height && door.width ? `${door.height} × ${door.width}` : 'Pending specs'}
                             {door.type && ` • ${door.type}`}
                           </Badge>
