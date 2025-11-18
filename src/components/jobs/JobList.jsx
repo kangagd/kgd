@@ -30,11 +30,11 @@ const statusTextColors = {
 };
 
 const productColors = {
-  "Garage Door": "bg-[#FEF8C8] text-slate-700",
-  "Gate": "bg-green-100 text-green-700",
-  "Roller Shutter": "bg-purple-100 text-purple-700",
-  "Multiple": "bg-orange-100 text-orange-700",
-  "Custom Garage Door": "bg-pink-100 text-pink-700"
+  "Garage Door": "bg-[#FEF8C8] text-slate-700 border-slate-200",
+  "Gate": "bg-green-100 text-green-700 border-green-200",
+  "Roller Shutter": "bg-purple-100 text-purple-700 border-purple-200",
+  "Multiple": "bg-orange-100 text-orange-700 border-orange-200",
+  "Custom Garage Door": "bg-pink-100 text-pink-700 border-pink-200"
 };
 
 const getInitials = (name) => {
@@ -142,12 +142,12 @@ export default function JobList({ jobs, isLoading, onSelectJob }) {
                   <h3 className="text-base md:text-lg font-bold text-[#111111]">{job.customer_name}</h3>
                   <span className="text-xs md:text-sm text-[#4F4F4F]">#{job.job_number}</span>
                   {job.product &&
-                <Badge className={`${productColors[job.product]} font-semibold border-2 text-xs`}>
+                <Badge className={`${productColors[job.product]} font-semibold border-2 text-xs rounded-full py-1 px-2 md:px-3`}>
                       {job.product}
                     </Badge>
                 }
                   {job.job_type_name &&
-                <Badge className="bg-purple-100 text-purple-700 border-purple-200 font-semibold border-2 text-xs">
+                <Badge className="bg-purple-100 text-purple-700 border-purple-200 font-semibold border-2 text-xs rounded-full py-1 px-2 md:px-3">
                       {job.job_type_name}
                     </Badge>
                 }
@@ -156,7 +156,7 @@ export default function JobList({ jobs, isLoading, onSelectJob }) {
                       backgroundColor: statusColors[job.status] || "rgba(0, 0, 0, 0.1)", 
                       color: statusTextColors[job.status] || "#000" 
                     }} 
-                    className={`capitalize font-semibold text-xs py-1 px-2 md:px-3 rounded-full border border-current`}
+                    className="capitalize font-semibold text-xs rounded-full border border-current py-1 px-2 md:px-3"
                   >
                     {job.status.replace(/_/g, ' ')}
                   </Badge>
