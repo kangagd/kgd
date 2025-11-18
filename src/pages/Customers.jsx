@@ -5,13 +5,13 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
-import { Plus, Search, User, Phone, Mail, MapPin } from "lucide-react";
+import { Plus, Search, User, Phone, Mail, MapPin, Building2 } from "lucide-react";
 import CustomerForm from "../components/customers/CustomerForm";
 import CustomerDetails from "../components/customers/CustomerDetails";
 
 const customerTypeColors = {
   "Owner": "bg-purple-100 text-purple-700 border-purple-200",
-  "Builder": "bg-[#FCEE7B] text-slate-700 border-slate-200",
+  "Builder": "bg-[#FEF8C8] text-slate-700 border-slate-200",
   "Real Estate - Tenant": "bg-green-100 text-green-700 border-green-200",
   "Strata - Owner": "bg-amber-100 text-amber-700 border-amber-200",
 };
@@ -156,8 +156,8 @@ export default function Customers() {
         {isLoading ? (
           <div className="grid gap-4">
             {[1, 2, 3, 4, 5].map((i) => (
-              <Card key={i} className="animate-pulse rounded-2xl">
-                <CardContent className="p-6">
+              <Card key={i} className="animate-pulse border-2 border-[hsl(32,15%,88%)] rounded-2xl">
+                <CardContent className="p-4 md:p-6">
                   <div className="h-6 bg-[hsl(32,15%,88%)] rounded-lg w-1/3 mb-4"></div>
                   <div className="h-4 bg-[hsl(32,15%,88%)] rounded-lg w-2/3 mb-2"></div>
                   <div className="h-4 bg-[hsl(32,15%,88%)] rounded-lg w-1/2"></div>
@@ -166,7 +166,7 @@ export default function Customers() {
             ))}
           </div>
         ) : filteredCustomers.length === 0 ? (
-          <Card className="p-12 text-center rounded-2xl border-2 border-[hsl(32,15%,88%)]">
+          <Card className="p-12 text-center border-2 border-[hsl(32,15%,88%)] rounded-2xl">
             <User className="w-16 h-16 mx-auto text-[hsl(32,15%,88%)] mb-4" />
             <h3 className="text-lg font-bold text-[hsl(25,10%,12%)] mb-2">No customers found</h3>
             <p className="text-[hsl(25,8%,45%)]">Try adjusting your search or add a new customer</p>
@@ -176,49 +176,55 @@ export default function Customers() {
             {filteredCustomers.map((customer) => (
               <Card
                 key={customer.id}
-                className="hover:shadow-xl transition-all duration-200 cursor-pointer border-l-4 hover:scale-[1.01] active:scale-[0.99] group rounded-2xl border-2 border-[hsl(32,15%,88%)]"
-                style={{ borderLeftColor: '#fae008', borderLeftWidth: '6px' }}
+                className="border-2 border-[hsl(32,15%,88%)] hover:border-[#fae008] hover:shadow-lg transition-all cursor-pointer rounded-2xl"
                 onClick={() => setSelectedCustomer(customer)}
               >
-                <CardContent className="p-6">
-                  <div className="flex items-start justify-between mb-4">
-                    <div className="flex-1 min-w-0">
-                      <div className="flex items-center gap-2 mb-2 flex-wrap">
-                        <h3 className="font-bold text-xl text-[hsl(25,10%,12%)] group-hover:text-[#fae008] transition-colors tracking-tight">
-                          {customer.name}
-                        </h3>
-                        {customer.status && (
-                          <Badge variant="outline" className="text-xs font-medium border-[hsl(32,15%,88%)]">
-                            {customer.status}
-                          </Badge>
-                        )}
+                <CardContent className="p-4 md:p-6">
+                  <div className="flex items-start justify-between gap-4">
+                    <div className="flex-1">
+                      <div className="flex items-center gap-2 flex-wrap mb-2">
+                        <h3 className="text-lg font-bold text-[hsl(25,10%,12%)]">{customer.name}</h3>
                         {customer.customer_type && (
-                          <Badge className={`${customerTypeColors[customer.customer_type]} text-xs font-semibold border-2`}>
+                          <Badge className={`${customerTypeColors[customer.customer_type]} font-semibold border-2`}>
                             {customer.customer_type}
                           </Badge>
                         )}
                       </div>
 
-                      <div className="space-y-2">
+                      {customer.organisation_name && (
+                        <div className="flex items-center gap-2 text-sm text-[hsl(25,8%,45%)] mb-2">
+                          <Building2 className="w-4 h-4" />
+                          <span>{customer.organisation_name}</span>
+                        </div>
+                      )}
+
+                      {customer.address && (
+                        <div className="flex items-start gap-2 text-sm text-[hsl(25,8%,45%)] mb-2">
+                          <MapPin className="w-4 h-4 mt-0.5 flex-shrink-0" />
+                          <span>{customer.address}</span>
+                        </div>
+                      )}
+
+                      <div className="flex flex-wrap gap-3 text-sm text-[hsl(25,8%,45%)]">
                         {customer.phone && (
-                          <div className="flex items-center gap-2 text-[hsl(25,10%,25%)]">
-                            <Phone className="w-4 h-4 text-[hsl(25,8%,55%)]" />
-                            <span className="text-sm font-medium">{customer.phone}</span>
+                          <div className="flex items-center gap-2">
+                            <Phone className="w-4 h-4" />
+                            <span>{customer.phone}</span>
                           </div>
                         )}
                         {customer.email && (
-                          <div className="flex items-center gap-2 text-[hsl(25,10%,25%)]">
-                            <Mail className="w-4 h-4 text-[hsl(25,8%,55%)]" />
-                            <span className="text-sm font-medium truncate">{customer.email}</span>
-                          </div>
-                        )}
-                        {customer.address && (
-                          <div className="flex items-start gap-2 text-[hsl(25,10%,25%)]">
-                            <MapPin className="w-4 h-4 text-[hsl(25,8%,55%)] mt-0.5" />
-                            <span className="text-sm font-medium">{customer.address}</span>
+                          <div className="flex items-center gap-2">
+                            <Mail className="w-4 h-4" />
+                            <span>{customer.email}</span>
                           </div>
                         )}
                       </div>
+                    </div>
+                    
+                    <div className="text-right text-sm text-[hsl(25,8%,45%)]">
+                      {customer.created_date && (
+                        <div className="text-xs">Created {new Date(customer.created_date).toLocaleDateString()}</div>
+                      )}
                     </div>
                   </div>
                 </CardContent>
