@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from "react";
 import { base44 } from "@/api/base44Client";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
@@ -209,8 +208,8 @@ export default function Jobs() {
   }
 
   return (
-    <div className="bg-[#ffffff] p-2 md:p-8 min-h-screen">
-      <div className="max-w-7xl mx-auto">
+    <div className="bg-[#ffffff] p-2 md:p-8 min-h-screen overflow-x-hidden">
+      <div className="max-w-7xl mx-auto w-full">
         {!isTechnician &&
         <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-4 md:mb-6 gap-3 md:gap-4">
             <div>
@@ -234,18 +233,18 @@ export default function Jobs() {
         }
 
         <div className="flex flex-col gap-3 md:gap-4 mb-4 md:mb-6">
-          <div className="flex gap-2">
+          <div className="flex gap-2 w-full">
             <div className="relative flex-1 min-w-0">
               <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 md:w-5 md:h-5 text-[hsl(25,8%,55%)]" />
               <Input
                 placeholder="Search jobs..."
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
-                className="pl-9 md:pl-11 border-2 border-[hsl(32,15%,88%)] focus:border-[#fae008] focus:ring-2 focus:ring-[#fae008]/20 transition-all h-10 md:h-12 text-sm md:text-base rounded-xl" />
+                className="pl-9 md:pl-11 border-2 border-[hsl(32,15%,88%)] focus:border-[#fae008] focus:ring-2 focus:ring-[#fae008]/20 transition-all h-10 md:h-12 text-sm md:text-base rounded-xl w-full" />
 
             </div>
-            <Tabs value={viewMode} onValueChange={setViewMode}>
-              <TabsList className="h-10 md:h-12 flex-shrink-0">
+            <Tabs value={viewMode} onValueChange={setViewMode} className="flex-shrink-0">
+              <TabsList className="h-10 md:h-12">
                 <TabsTrigger value="list" className="gap-1 md:gap-2 font-semibold text-xs md:text-sm px-2 md:px-3">
                   <List className="w-4 h-4" />
                   <span className="hidden sm:inline">List</span>
@@ -259,10 +258,10 @@ export default function Jobs() {
           </div>
 
           {viewMode === "list" &&
-          <Tabs value={statusFilter} onValueChange={setStatusFilter}>
-              <TabsList className="w-full grid grid-cols-2 sm:grid-cols-4 h-auto">
+          <Tabs value={statusFilter} onValueChange={setStatusFilter} className="w-full overflow-x-hidden">
+              <TabsList className="w-full grid grid-cols-2 sm:grid-cols-4 h-auto gap-1">
                 {statusFilters.map((filter) =>
-              <TabsTrigger key={filter.value} value={filter.value} className="font-semibold text-xs md:text-sm py-1.5 md:py-2 px-1.5 md:px-2">
+              <TabsTrigger key={filter.value} value={filter.value} className="font-semibold text-xs md:text-sm py-1.5 md:py-2 px-1 md:px-2 whitespace-nowrap">
                     {filter.label}
                   </TabsTrigger>
               )}
