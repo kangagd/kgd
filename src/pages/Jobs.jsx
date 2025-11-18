@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from "react";
 import { base44 } from "@/api/base44Client";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
@@ -208,13 +209,13 @@ export default function Jobs() {
   }
 
   return (
-    <div className="bg-[#ffffff] p-4 md:p-8 min-h-screen">
+    <div className="bg-[#ffffff] p-2 md:p-8 min-h-screen">
       <div className="max-w-7xl mx-auto">
         {!isTechnician &&
-        <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-6 gap-4">
+        <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-4 md:mb-6 gap-3 md:gap-4">
             <div>
-              <h1 className="text-2xl md:text-3xl font-bold text-[hsl(25,10%,12%)] tracking-tight">Jobs</h1>
-              <p className="text-[hsl(25,8%,45%)] mt-2">Manage all scheduled jobs</p>
+              <h1 className="text-xl md:text-3xl font-bold text-[hsl(25,10%,12%)] tracking-tight">Jobs</h1>
+              <p className="text-[hsl(25,8%,45%)] mt-1 md:mt-2 text-sm md:text-base">Manage all scheduled jobs</p>
             </div>
             <Button
             onClick={() => setShowForm(true)}
@@ -227,12 +228,12 @@ export default function Jobs() {
         }
 
         {isTechnician &&
-        <div className="mb-6">
-            <h1 className="text-xl md:text-2xl lg:text-3xl font-bold text-[hsl(25,10%,12%)] tracking-tight">My Jobs</h1>
+        <div className="mb-4 md:mb-6">
+            <h1 className="text-lg md:text-2xl lg:text-3xl font-bold text-[hsl(25,10%,12%)] tracking-tight">My Jobs</h1>
           </div>
         }
 
-        <div className="flex flex-col gap-4 mb-6">
+        <div className="flex flex-col gap-3 md:gap-4 mb-4 md:mb-6">
           <div className="flex gap-2">
             <div className="relative flex-1 min-w-0">
               <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 md:w-5 md:h-5 text-[hsl(25,8%,55%)]" />
@@ -261,7 +262,7 @@ export default function Jobs() {
           <Tabs value={statusFilter} onValueChange={setStatusFilter}>
               <TabsList className="w-full grid grid-cols-2 sm:grid-cols-4 h-auto">
                 {statusFilters.map((filter) =>
-              <TabsTrigger key={filter.value} value={filter.value} className="font-semibold text-xs md:text-sm py-2 px-2">
+              <TabsTrigger key={filter.value} value={filter.value} className="font-semibold text-xs md:text-sm py-1.5 md:py-2 px-1.5 md:px-2">
                     {filter.label}
                   </TabsTrigger>
               )}
