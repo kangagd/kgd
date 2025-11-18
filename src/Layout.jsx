@@ -14,27 +14,27 @@ import {
   SidebarHeader,
   SidebarFooter,
   SidebarProvider,
-  SidebarTrigger,
-} from "@/components/ui/sidebar";
+  SidebarTrigger } from
+"@/components/ui/sidebar";
 import { base44 } from "@/api/base44Client";
 
 const adminNavigationItems = [
-  { title: "Dashboard", url: createPageUrl("Dashboard"), icon: LayoutDashboard },
-  { title: "Schedule", url: createPageUrl("Calendar"), icon: Calendar },
-  { title: "Jobs", url: createPageUrl("Jobs"), icon: Briefcase },
-  { title: "Projects", url: createPageUrl("Projects"), icon: FolderKanban },
-  { title: "Customers", url: createPageUrl("Customers"), icon: UserCircle },
-  { title: "Organisations", url: createPageUrl("Organisations"), icon: Building2 },
-  { title: "Price List", url: createPageUrl("PriceList"), icon: DollarSign },
-  { title: "Team", url: createPageUrl("Team"), icon: Users },
-  { title: "Archive", url: createPageUrl("Archive"), icon: ArchiveIcon },
-];
+{ title: "Dashboard", url: createPageUrl("Dashboard"), icon: LayoutDashboard },
+{ title: "Schedule", url: createPageUrl("Calendar"), icon: Calendar },
+{ title: "Jobs", url: createPageUrl("Jobs"), icon: Briefcase },
+{ title: "Projects", url: createPageUrl("Projects"), icon: FolderKanban },
+{ title: "Customers", url: createPageUrl("Customers"), icon: UserCircle },
+{ title: "Organisations", url: createPageUrl("Organisations"), icon: Building2 },
+{ title: "Price List", url: createPageUrl("PriceList"), icon: DollarSign },
+{ title: "Team", url: createPageUrl("Team"), icon: Users },
+{ title: "Archive", url: createPageUrl("Archive"), icon: ArchiveIcon }];
+
 
 const technicianNavigationItems = [
-  { title: "Schedule", url: createPageUrl("Schedule"), icon: Calendar },
-  { title: "Jobs", url: createPageUrl("Jobs"), icon: Briefcase },
-  { title: "Price List", url: createPageUrl("PriceList"), icon: DollarSign },
-];
+{ title: "Schedule", url: createPageUrl("Schedule"), icon: Calendar },
+{ title: "Jobs", url: createPageUrl("Jobs"), icon: Briefcase },
+{ title: "Price List", url: createPageUrl("PriceList"), icon: DollarSign }];
+
 
 export default function Layout({ children, currentPageName }) {
   const location = useLocation();
@@ -75,8 +75,8 @@ export default function Layout({ children, currentPageName }) {
             </div>
             <button
               onClick={() => navigate(createPageUrl("UserProfile"))}
-              className="flex items-center gap-2 hover:bg-slate-100 rounded-lg p-1.5 transition-all duration-200"
-            >
+              className="flex items-center gap-2 hover:bg-slate-100 rounded-lg p-1.5 transition-all duration-200">
+
               <div className="w-8 h-8 bg-slate-200 rounded-full flex items-center justify-center">
                 <span className="text-slate-700 font-medium text-xs">
                   {user?.full_name?.charAt(0)?.toUpperCase() || 'U'}
@@ -99,20 +99,20 @@ export default function Layout({ children, currentPageName }) {
                   key={item.title}
                   to={item.url}
                   className={`flex flex-col items-center gap-1 px-3 py-1.5 rounded-lg transition-all duration-200 ${
-                    isActive
-                      ? 'text-[#fae008] bg-[#fae008]/10'
-                      : 'text-slate-600 hover:text-[#fae008] hover:bg-slate-50'
-                  }`}
-                >
+                  isActive ?
+                  'text-[#fae008] bg-[#fae008]/10' :
+                  'text-slate-600 hover:text-[#fae008] hover:bg-slate-50'}`
+                  }>
+
                   <item.icon className="w-5 h-5" />
                   <span className="text-xs font-medium">{item.title}</span>
-                </Link>
-              );
+                </Link>);
+
             })}
           </div>
         </nav>
-      </div>
-    );
+      </div>);
+
   }
 
   return (
@@ -131,7 +131,7 @@ export default function Layout({ children, currentPageName }) {
             </div>
           </SidebarHeader>
 
-          <SidebarContent className="p-2">
+          <SidebarContent className="bg-[#ffffff] p-2 flex min-h-0 flex-1 flex-col gap-2 overflow-auto group-data-[collapsible=icon]:overflow-hidden">
             <SidebarGroup>
               <SidebarGroupLabel className="text-xs font-semibold text-slate-500 uppercase tracking-wider px-3 py-2">
                 Navigation
@@ -145,19 +145,19 @@ export default function Layout({ children, currentPageName }) {
                         <SidebarMenuButton
                           asChild
                           className={`hover:bg-[#fae008]/10 hover:text-[#fae008] transition-all duration-200 rounded-lg mb-1 relative ${
-                            isActive ? 'bg-[#fae008]/10 text-[#fae008]' : ''
-                          }`}
-                        >
+                          isActive ? 'bg-[#fae008]/10 text-[#fae008]' : ''}`
+                          }>
+
                           <Link to={item.url} className="flex items-center gap-3 px-3 py-2.5">
-                            {isActive && (
-                              <div className="absolute left-0 top-0 bottom-0 w-1 bg-[#fae008] rounded-r-full"></div>
-                            )}
+                            {isActive &&
+                            <div className="absolute left-0 top-0 bottom-0 w-1 bg-[#fae008] rounded-r-full"></div>
+                            }
                             <item.icon className="w-5 h-5" />
                             <span className="font-medium">{item.title}</span>
                           </Link>
                         </SidebarMenuButton>
-                      </SidebarMenuItem>
-                    );
+                      </SidebarMenuItem>);
+
                   })}
                 </SidebarMenu>
               </SidebarGroupContent>
@@ -168,8 +168,8 @@ export default function Layout({ children, currentPageName }) {
             <div className="flex items-center gap-3">
               <button
                 onClick={() => navigate(createPageUrl("UserProfile"))}
-                className="flex items-center gap-3 flex-1 min-w-0 hover:bg-slate-50 rounded-lg p-2 transition-all duration-200"
-              >
+                className="flex items-center gap-3 flex-1 min-w-0 hover:bg-slate-50 rounded-lg p-2 transition-all duration-200">
+
                 <div className="w-10 h-10 bg-slate-200 rounded-full flex items-center justify-center flex-shrink-0">
                   <span className="text-slate-700 font-semibold text-sm">
                     {user?.full_name?.charAt(0)?.toUpperCase() || 'U'}
@@ -184,8 +184,8 @@ export default function Layout({ children, currentPageName }) {
               </button>
               <button
                 onClick={handleLogout}
-                className="text-xs text-slate-500 hover:text-slate-700 px-2 font-medium transition-colors duration-200"
-              >
+                className="text-xs text-slate-500 hover:text-slate-700 px-2 font-medium transition-colors duration-200">
+
                 Logout
               </button>
             </div>
@@ -205,6 +205,6 @@ export default function Layout({ children, currentPageName }) {
           </div>
         </main>
       </div>
-    </SidebarProvider>
-  );
+    </SidebarProvider>);
+
 }
