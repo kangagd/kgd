@@ -70,6 +70,7 @@ export default function WeekView({ jobs, currentDate, onJobClick, onQuickBook })
   const [draggedJob, setDraggedJob] = useState(null);
   const [dragOverCell, setDragOverCell] = useState(null);
   const [pendingUpdate, setPendingUpdate] = useState(null);
+  const [clickTimer, setClickTimer] = useState(null);
   const queryClient = useQueryClient();
 
   const { data: technicians = [] } = useQuery({
@@ -117,7 +118,27 @@ export default function WeekView({ jobs, currentDate, onJobClick, onQuickBook })
     });
   };
 
+  const handleJobClick = (e, job) => {
+    if (clickTimer) {
+      // Double click detected
+      clearTimeout(clickTimer);
+      setClickTimer(null);
+      onJobClick(job); // Open full details
+    } else {
+      // Single click - wait to see if double click follows
+      const timer = setTimeout(() => {
+        setClickTimer(null);
+        // Single click - let hover card handle it
+      }, 250);
+      setClickTimer(timer);
+    }
+  };
+
   const handleDragStart = (e, job) => {
+    if (clickTimer) {
+      clearTimeout(clickTimer);
+      setClickTimer(null);
+    }
     setDraggedJob(job);
     e.dataTransfer.effectAllowed = 'move';
     e.currentTarget.style.opacity = '0.5';
@@ -243,6 +264,7 @@ export default function WeekView({ jobs, currentDate, onJobClick, onQuickBook })
                               <JobHoverCard key={job.id} job={job} onJobClick={onJobClick}>
                                 <div
                                   draggable
+                                  onClick={(e) => handleJobClick(e, job)}
                                   onDragStart={(e) => handleDragStart(e, job)}
                                   onDragEnd={handleDragEnd}
                                   className={`p-2 rounded-lg cursor-move hover:shadow-md transition-all border-l-4 ${getJobTypeBgColor(job.job_type_name, uniqueJobTypes)} ${
