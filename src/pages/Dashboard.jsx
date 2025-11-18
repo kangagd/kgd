@@ -1,10 +1,10 @@
 import React, { useState, useEffect } from "react";
 import { base44 } from "@/api/base44Client";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Plus, TrendingUp, Clock, Briefcase, Calendar, CheckCircle, MapPin, AlertCircle, FileText } from "lucide-react";
+import { Plus, TrendingUp, Clock, Briefcase, Calendar, CheckCircle, MapPin, AlertCircle, FileText, Navigation, Target } from "lucide-react";
 import { format, parseISO } from "date-fns";
 import { useNavigate } from "react-router-dom";
 import { createPageUrl } from "@/utils";
@@ -45,6 +45,7 @@ const statusLabels = {
 export default function Dashboard() {
   const [user, setUser] = useState(null);
   const navigate = useNavigate();
+  const queryClient = useQueryClient();
 
   useEffect(() => {
     const loadUser = async () => {
@@ -71,12 +72,29 @@ export default function Dashboard() {
   const today = new Date().toISOString().split('T')[0];
   const tomorrow = new Date(Date.now() + 86400000).toISOString().split('T')[0];
 
+  const isTechnician = user?.is_field_technician && user?.role !== 'admin';
+
   const todayJobs = jobs.filter(j => j.scheduled_date === today && !j.deleted_at).sort((a, b) => {
     if (!a.scheduled_time) return 1;
     if (!b.scheduled_time) return -1;
     return a.scheduled_time.localeCompare(b.scheduled_time);
   });
   
+  // Filter jobs for current technician if they are a technician
+  const myTodayJobs = isTechnician 
+    ? todayJobs.filter(j => {
+        const assignedEmails = Array.isArray(j.assigned_to) ? j.assigned_to : j.assigned_to ? [j.assigned_to] : [];
+        return assignedEmails.includes(user?.email);
+      })
+    : todayJobs;
+
+  // Find next job (first job that hasn't been checked in yet)
+  const activeCheckIn = checkIns.find((c) => !c.check_out_time && c.technician_email === user?.email);
+  const nextJob = myTodayJobs.find(j => {
+    const hasCheckIn = checkIns.some(c => c.job_id === j.id && c.technician_email === user?.email);
+    return !hasCheckIn;
+  });
+
   const tomorrowJobs = jobs.filter(j => j.scheduled_date === tomorrow && !j.deleted_at);
   const activeJobs = jobs.filter(j => j.status === 'in_progress');
   const completedToday = jobs.filter(j =>
@@ -91,6 +109,21 @@ export default function Dashboard() {
   const totalHoursToday = todayCheckIns.reduce((sum, c) =>
     sum + (c.duration_hours || 0), 0
   );
+
+  const checkInMutation = useMutation({
+    mutationFn: async (job) => {
+      return await base44.entities.CheckInOut.create({
+        job_id: job.id,
+        technician_email: user.email,
+        technician_name: user.full_name,
+        check_in_time: new Date().toISOString()
+      });
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['checkIns'] });
+      queryClient.invalidateQueries({ queryKey: ['jobs'] });
+    }
+  });
 
   const handleCardClick = (filterType) => {
     let url = createPageUrl("Jobs");
@@ -108,6 +141,19 @@ export default function Dashboard() {
     navigate(createPageUrl("Jobs") + `?jobId=${jobId}`);
   };
 
+  const handleStartNavigation = (address) => {
+    const encodedAddress = encodeURIComponent(address);
+    const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent);
+    const url = isIOS 
+      ? `maps://maps.apple.com/?q=${encodedAddress}`
+      : `https://www.google.com/maps/search/?api=1&query=${encodedAddress}`;
+    window.open(url, '_blank');
+  };
+
+  const handleMarkAsArrived = (job) => {
+    checkInMutation.mutate(job);
+  };
+
   return (
     <div className="p-2 md:p-8 bg-white min-h-screen">
       <div className="max-w-7xl mx-auto">
@@ -118,30 +164,118 @@ export default function Dashboard() {
             </h1>
             <p className="text-[#4F4F4F] mt-1 md:mt-2 text-sm md:text-base">Here's what's happening today</p>
           </div>
-          <Button
-            onClick={() => window.location.href = '/Jobs?action=new'}
-            className="bg-[#FAE008] hover:bg-[#e5d007] active:bg-[#d4c006] text-black font-semibold shadow-md hover:shadow-lg transition-all duration-150 w-full md:w-auto"
-          >
-            <Plus className="w-5 h-5 mr-2" />
-            New Job
-          </Button>
+          {!isTechnician && (
+            <Button
+              onClick={() => window.location.href = '/Jobs?action=new'}
+              className="bg-[#FAE008] hover:bg-[#e5d007] active:bg-[#d4c006] text-black font-semibold shadow-md hover:shadow-lg transition-all duration-150 w-full md:w-auto"
+            >
+              <Plus className="w-5 h-5 mr-2" />
+              New Job
+            </Button>
+          )}
         </div>
 
+        {/* Next Job Section for Technicians */}
+        {isTechnician && nextJob && !activeCheckIn && (
+          <Card className="border-2 border-[#FAE008] rounded-2xl mb-4 md:mb-6 overflow-hidden bg-gradient-to-br from-[#FEF8C8] to-white shadow-lg">
+            <CardHeader className="bg-[#FAE008] border-b-2 border-black p-3 md:p-6">
+              <CardTitle className="flex items-center gap-2 md:gap-3 text-lg md:text-xl font-bold text-black tracking-tight">
+                <Target className="w-5 h-5 md:w-6 md:h-6" />
+                Next Job
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="p-4 md:p-6">
+              <div className="space-y-3 md:space-y-4">
+                <div>
+                  <div className="flex items-center gap-2 flex-wrap mb-2">
+                    <span className="text-xl md:text-2xl font-bold text-[#111111]">#{nextJob.job_number}</span>
+                    <Badge style={{ backgroundColor: statusColors[nextJob.status], color: statusTextColors[nextJob.status] }} className="capitalize font-semibold text-xs py-1 px-2 md:px-3 rounded-full border border-current">
+                      {nextJob.status.replace(/_/g, ' ')}
+                    </Badge>
+                  </div>
+                  <p className="text-base md:text-lg font-semibold text-[#111111] mb-1">{nextJob.customer_name}</p>
+                  {nextJob.job_type_name && (
+                    <Badge className="bg-purple-100 text-purple-700 border-purple-200 font-semibold border-2 text-xs mb-2">
+                      {nextJob.job_type_name}
+                    </Badge>
+                  )}
+                </div>
+
+                <div className="space-y-2">
+                  {nextJob.scheduled_time && (
+                    <div className="flex items-center gap-2 text-[#4F4F4F]">
+                      <Clock className="w-4 h-4 md:w-5 md:h-5" />
+                      <span className="font-semibold text-sm md:text-base">{nextJob.scheduled_time}</span>
+                    </div>
+                  )}
+                  {nextJob.address && (
+                    <div className="flex items-start gap-2 text-[#4F4F4F]">
+                      <MapPin className="w-4 h-4 md:w-5 md:h-5 mt-0.5 flex-shrink-0" />
+                      <span className="text-sm md:text-base">{nextJob.address}</span>
+                    </div>
+                  )}
+                </div>
+
+                {nextJob.notes && nextJob.notes !== "<p><br></p>" && (
+                  <div className="bg-amber-50 border-l-4 border-amber-400 rounded-lg p-3">
+                    <div className="flex items-start gap-2">
+                      <AlertCircle className="w-4 h-4 text-amber-600 mt-0.5 flex-shrink-0" />
+                      <div>
+                        <div className="text-xs font-semibold text-amber-900 uppercase tracking-wide mb-1">Important Notes</div>
+                        <div 
+                          className="text-sm text-amber-800 line-clamp-3 prose prose-sm max-w-none"
+                          dangerouslySetInnerHTML={{ __html: nextJob.notes }}
+                        />
+                      </div>
+                    </div>
+                  </div>
+                )}
+
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-2 pt-2">
+                  <Button
+                    onClick={() => handleStartNavigation(nextJob.address)}
+                    className="bg-blue-600 hover:bg-blue-700 text-white font-semibold w-full h-12 md:h-14"
+                  >
+                    <Navigation className="w-4 h-4 md:w-5 md:h-5 mr-2" />
+                    Start Navigation
+                  </Button>
+                  <Button
+                    onClick={() => handleMarkAsArrived(nextJob)}
+                    disabled={checkInMutation.isPending}
+                    className="bg-green-600 hover:bg-green-700 text-white font-semibold w-full h-12 md:h-14"
+                  >
+                    <CheckCircle className="w-4 h-4 md:w-5 md:h-5 mr-2" />
+                    {checkInMutation.isPending ? 'Checking In...' : 'Mark as Arrived'}
+                  </Button>
+                </div>
+
+                <Button
+                  variant="outline"
+                  onClick={() => handleJobClick(nextJob.id)}
+                  className="w-full h-10 md:h-12 border-2"
+                >
+                  View Full Details
+                </Button>
+              </div>
+            </CardContent>
+          </Card>
+        )}
+
         {/* Daily Overview */}
-        {todayJobs.length > 0 && (
+        {(isTechnician ? myTodayJobs : todayJobs).length > 0 && (
           <Card className="border-2 border-[#E2E3E5] rounded-2xl mb-4 md:mb-6 overflow-hidden">
             <CardHeader className="bg-[#FEF8C8] border-b-2 border-[#E2E3E5] p-3 md:p-6">
               <CardTitle className="flex items-center gap-2 md:gap-3 text-lg md:text-xl font-bold text-[#111111] tracking-tight">
                 <Calendar className="w-5 h-5 md:w-6 md:h-6 text-[#111111]" />
                 Today's Overview
                 <Badge className="bg-[#FAE008] text-black font-semibold border-2 border-black text-xs">
-                  {todayJobs.length} {todayJobs.length === 1 ? 'Job' : 'Jobs'}
+                  {(isTechnician ? myTodayJobs : todayJobs).length} {(isTechnician ? myTodayJobs : todayJobs).length === 1 ? 'Job' : 'Jobs'}
                 </Badge>
               </CardTitle>
             </CardHeader>
             <CardContent className="p-3 md:p-6">
               <div className="space-y-2 md:space-y-3">
-                {todayJobs.map((job) => (
+                {(isTechnician ? myTodayJobs : todayJobs).map((job) => (
                   <Card
                     key={job.id}
                     className="border-2 border-[#E2E3E5] hover:border-[#FAE008] hover:shadow-lg transition-all cursor-pointer rounded-xl"
@@ -227,7 +361,7 @@ export default function Dashboard() {
                 <Clock className="w-5 h-5 md:w-6 md:h-6 text-amber-600" />
               </div>
               <div className="text-right">
-                <p className="text-2xl md:text-3xl font-bold text-[hsl(25,10%,12%)]">{todayJobs.length}</p>
+                <p className="text-2xl md:text-3xl font-bold text-[hsl(25,10%,12%)]">{isTechnician ? myTodayJobs.length : todayJobs.length}</p>
               </div>
             </div>
             <h3 className="text-xs md:text-sm font-semibold text-[hsl(25,8%,45%)] uppercase tracking-wide mb-0.5 md:mb-1">Today's Jobs</h3>
@@ -289,14 +423,14 @@ export default function Dashboard() {
               <CardTitle className="text-lg md:text-xl font-bold text-[hsl(25,10%,12%)] tracking-tight">Today's Schedule</CardTitle>
             </CardHeader>
             <CardContent className="p-3 md:p-6">
-              {todayJobs.length === 0 ? (
+              {(isTechnician ? myTodayJobs : todayJobs).length === 0 ? (
                 <div className="text-center py-8 md:py-12">
                   <Clock className="w-10 h-10 md:w-12 md:h-12 mx-auto text-[hsl(32,15%,88%)] mb-2 md:mb-3" />
                   <p className="text-[hsl(25,8%,45%)] text-xs md:text-sm">No jobs scheduled for today</p>
                 </div>
               ) : (
                 <div className="space-y-2 md:space-y-3">
-                  {todayJobs.map(job => (
+                  {(isTechnician ? myTodayJobs : todayJobs).map(job => (
                     <div
                       key={job.id}
                       className="p-3 md:p-4 rounded-xl border-2 border-[hsl(32,15%,88%)] hover:bg-[#FEF8C8] hover:border-[#fae008] cursor-pointer transition-all duration-150"
