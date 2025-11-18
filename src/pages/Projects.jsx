@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from "react";
 import { base44 } from "@/api/base44Client";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
@@ -11,13 +10,25 @@ import ProjectForm from "../components/projects/ProjectForm";
 import ProjectDetails from "../components/projects/ProjectDetails";
 
 const statusColors = {
-  open: "bg-blue-50 text-blue-700 border-blue-200",
-  scheduled: "bg-teal-50 text-teal-700 border-teal-200",
-  quoted: "bg-purple-50 text-purple-700 border-purple-200",
-  invoiced: "bg-amber-50 text-amber-700 border-amber-200",
-  paid: "bg-emerald-50 text-emerald-700 border-emerald-200",
-  completed: "bg-green-50 text-green-700 border-green-200",
-  cancelled: "bg-red-50 text-red-700 border-red-200"
+  open: "rgba(37, 99, 235, 0.15)",
+  scheduled: "rgba(14, 165, 233, 0.15)",
+  in_progress: "rgba(14, 165, 233, 0.15)",
+  quoted: "rgba(124, 58, 237, 0.15)",
+  invoiced: "rgba(249, 115, 22, 0.15)",
+  paid: "rgba(22, 163, 74, 0.15)",
+  completed: "rgba(21, 128, 61, 0.15)",
+  cancelled: "rgba(220, 38, 38, 0.15)"
+};
+
+const statusTextColors = {
+  open: "#2563EB",
+  scheduled: "#0EA5E9",
+  in_progress: "#0EA5E9",
+  quoted: "#7C3AED",
+  invoiced: "#F97316",
+  paid: "#16A34A",
+  completed: "#15803D",
+  cancelled: "#DC2626"
 };
 
 const projectTypeColors = {
@@ -147,16 +158,16 @@ export default function Projects() {
   }
 
   return (
-    <div className="p-4 md:p-8 bg-white min-h-screen">
+    <div className="p-4 md:p-8 bg-[#F8F9FA] min-h-screen">
       <div className="max-w-7xl mx-auto">
         <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-6 gap-4">
           <div>
-            <h1 className="text-3xl font-bold text-[hsl(25,10%,12%)] tracking-tight">Projects</h1>
-            <p className="text-[hsl(25,8%,45%)] mt-2">Manage multi-step workflows</p>
+            <h1 className="text-3xl font-bold text-[#111827] tracking-tight">Projects</h1>
+            <p className="text-[#4B5563] mt-2">Manage multi-step workflows</p>
           </div>
           <Button
             onClick={() => setShowForm(true)}
-            className="bg-[#fae008] text-black hover:bg-[#e5d007] active:bg-[#d4c006] font-semibold shadow-md hover:shadow-lg transition-all w-full md:w-auto"
+            className="btn-primary w-full md:w-auto"
           >
             <Plus className="w-5 h-5 mr-2" />
             New Project
@@ -164,27 +175,27 @@ export default function Projects() {
         </div>
 
         <div className="mb-6">
-          <div className="relative">
-            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-[hsl(25,8%,55%)]" />
+          <div className="relative w-full">
+            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-[#4B5563]" />
             <Input
               placeholder="Search projects..."
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
-              className="pl-11 border-2 border-[hsl(32,15%,88%)] focus:border-[#fae008] focus:ring-2 focus:ring-[#fae008]/20 transition-all h-12 text-base rounded-xl"
+              className="input-enhanced pl-11 w-full"
             />
           </div>
         </div>
 
         {isLoading && (
           <div className="text-center py-12">
-            <p className="text-[hsl(25,8%,45%)]">Loading projects...</p>
+            <p className="text-[#4B5563]">Loading projects...</p>
           </div>
         )}
 
         {!isLoading && filteredProjects.length === 0 && (
-          <div className="text-center py-12 bg-white rounded-2xl border-2 border-[hsl(32,15%,88%)]">
-            <p className="text-[hsl(25,8%,45%)] mb-4">No projects found</p>
-            <Button onClick={() => setShowForm(true)} className="bg-[#fae008] text-black font-semibold">
+          <div className="text-center py-12 card-enhanced">
+            <p className="text-[#4B5563] mb-4">No projects found</p>
+            <Button onClick={() => setShowForm(true)} className="btn-primary">
               Create First Project
             </Button>
           </div>
@@ -194,34 +205,36 @@ export default function Projects() {
           {filteredProjects.map((project) => (
             <Card
               key={project.id}
-              className="border-2 border-[hsl(32,15%,88%)] hover:border-[#fae008] hover:shadow-lg transition-all cursor-pointer rounded-2xl"
+              className="card-enhanced card-interactive"
               onClick={() => setSelectedProject(project)}
             >
               <CardContent className="p-4 md:p-6">
                 <div className="flex items-start justify-between gap-4">
-                  <div className="flex-1">
+                  <div className="flex-1 min-w-0">
+                    <h3 className="text-lg font-bold text-[#111827] mb-2">{project.title}</h3>
                     <div className="flex items-center gap-2 flex-wrap mb-2">
-                      <h3 className="text-lg font-bold text-[hsl(25,10%,12%)]">{project.title}</h3>
                       {project.project_type && (
-                        <Badge className={`${projectTypeColors[project.project_type]} font-semibold border-2`}>
+                        <Badge className={`${projectTypeColors[project.project_type]} font-semibold border-2 text-xs`}>
                           {project.project_type}
                         </Badge>
                       )}
-                      <Badge className={`${statusColors[project.status]} font-semibold border-2`}>
+                      <Badge 
+                        className="status-chip text-xs"
+                      >
                         {project.status}
                       </Badge>
                     </div>
-                    <p className="text-sm text-[hsl(25,8%,45%)] mb-2">{project.customer_name}</p>
+                    <p className="text-sm text-[#4B5563] mb-2 font-medium">{project.customer_name}</p>
                     {project.description && (
                       <div
-                        className="text-sm text-[hsl(25,8%,45%)] line-clamp-2 prose prose-sm max-w-none mb-2"
+                        className="text-sm text-[#4B5563] line-clamp-2 prose prose-sm max-w-none mb-2"
                         dangerouslySetInnerHTML={{ __html: project.description }}
                       />
                     )}
                     {project.doors && project.doors.length > 0 && (
                       <div className="mt-2 flex flex-wrap gap-2">
                         {project.doors.map((door, idx) => (
-                          <Badge key={idx} variant="outline" className="bg-[#FEF8C8] border-slate-200 text-slate-700">
+                          <Badge key={idx} variant="outline" className="bg-white border-[#E5E7EB] text-[#4B5563] text-xs">
                             Door {idx + 1}: {door.height && door.width ? `${door.height} × ${door.width}` : 'Pending specs'}
                             {door.type && ` • ${door.type}`}
                           </Badge>
@@ -229,11 +242,9 @@ export default function Projects() {
                       </div>
                     )}
                   </div>
-                  <div className="text-right text-sm text-[hsl(25,8%,45%)]">
-                    <div className="font-bold text-[hsl(25,10%,12%)]">{getJobCount(project.id)} jobs</div>
-                    {project.created_date && (
-                      <div className="text-xs">Created {new Date(project.created_date).toLocaleDateString()}</div>
-                    )}
+                  <div className="text-right text-sm text-[#4B5563] flex-shrink-0">
+                    <div className="font-bold text-[#111827] text-lg">{getJobCount(project.id)}</div>
+                    <div className="text-xs">jobs</div>
                   </div>
                 </div>
               </CardContent>
