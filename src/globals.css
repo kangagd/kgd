@@ -22,19 +22,19 @@
     --status-cancelled: #DC2626;
     
     --background: 0 0% 100%;
-    --foreground: 0 0% 7%;
+    --foreground: 0 0% 0%;
     --card: 0 0% 100%;
     --card-foreground: 0 0% 7%;
     --popover: 0 0% 100%;
     --popover-foreground: 0 0% 7%;
     --primary: 48 100% 50%;
-    --primary-foreground: 0 0% 7%;
+    --primary-foreground: 0 0% 0%;
     --secondary: 0 0% 97%;
     --secondary-foreground: 0 0% 7%;
     --muted: 0 0% 97%;
     --muted-foreground: 0 0% 31%;
     --accent: 48 100% 50%;
-    --accent-foreground: 0 0% 7%;
+    --accent-foreground: 0 0% 0%;
     --destructive: 0 84.2% 60.2%;
     --destructive-foreground: 0 0% 98%;
     --border: 0 0% 89%;
@@ -42,22 +42,18 @@
     --ring: 48 100% 50%;
     --radius: 0.5rem;
     
-    /* Mobile-first spacing - 8px base grid */
     --spacing-xs: 8px;
     --spacing-sm: 16px;
     --spacing-md: 24px;
     --spacing-lg: 32px;
     --spacing-xl: 40px;
     
-    /* Card padding - 16-20px */
     --card-padding: 16px;
     --card-padding-lg: 20px;
     
-    /* Button height - 48-52px for easy tapping */
     --button-height: 48px;
     --button-height-lg: 52px;
     
-    /* Soft shadow for outdoors readability */
     --shadow-soft: 0 2px 6px rgba(0, 0, 0, 0.06);
   }
 }
@@ -76,7 +72,6 @@
     line-height: 1.5;
   }
   
-  /* Typography scale - optimized for field use */
   h1 {
     @apply font-bold tracking-tight;
     color: #111111;
@@ -110,16 +105,29 @@
     line-height: 1.5;
   }
   
-  /* High contrast labels for outdoor visibility */
   label {
     @apply font-medium;
     color: #111111;
     font-size: 13px;
   }
+  
+  /* Default button styles */
+  button:not(.btn-secondary):not([class*="ghost"]):not([class*="outline"]):not([class*="destructive"]):not([class*="link"]) {
+    background-color: #FAE008 !important;
+    color: #000000 !important;
+  }
+  
+  button:not(.btn-secondary):not([class*="ghost"]):not([class*="outline"]):not([class*="destructive"]):not([class*="link"]):hover {
+    background-color: #e5d007 !important;
+  }
+  
+  button:not(.btn-secondary):not([class*="ghost"]):not([class*="outline"]):not([class*="destructive"]):not([class*="link"]):active {
+    background-color: #d4c006 !important;
+  }
 }
 
 @layer components {
-  /* Status Badges - High contrast with 15% opacity backgrounds */
+  /* Status Badges with 15% opacity backgrounds */
   .status-badge {
     @apply rounded-full px-3 py-1.5 font-bold border-0;
     font-size: 12px;
@@ -135,6 +143,11 @@
   }
   
   .status-scheduled {
+    background-color: rgba(14, 165, 233, 0.15);
+    color: #0EA5E9;
+  }
+  
+  .status-in_progress {
     background-color: rgba(14, 165, 233, 0.15);
     color: #0EA5E9;
   }
@@ -175,7 +188,6 @@
     box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
   }
   
-  /* Large tappable areas for field use */
   .card-interactive {
     @apply cursor-pointer;
     min-height: 72px;
@@ -191,7 +203,6 @@
     transform: scale(0.99);
   }
   
-  /* Section headers - high contrast for scanning */
   .section-header {
     @apply font-semibold uppercase tracking-wider;
     font-size: 12px;
@@ -199,9 +210,9 @@
     margin-bottom: var(--spacing-xs);
   }
   
-  /* Primary action buttons - large tappable area */
+  /* Primary action buttons */
   .btn-primary {
-    @apply bg-[#FAE008] text-[#111111] font-semibold rounded-xl;
+    @apply bg-[#FAE008] text-[#000000] font-semibold rounded-xl;
     min-height: var(--button-height);
     padding: 0 24px;
     font-size: 15px;
@@ -238,7 +249,7 @@
     background-color: #F7F7F7;
   }
   
-  /* Form inputs - larger touch targets */
+  /* Form inputs */
   .input-enhanced {
     @apply border-[#E2E3E5] rounded-xl;
     min-height: var(--button-height);
@@ -251,7 +262,6 @@
     @apply border-[#FAE008] ring-2 ring-[#FAE008]/20;
   }
   
-  /* Spacing utilities following 8px grid */
   .spacing-xs { margin: var(--spacing-xs); }
   .spacing-sm { margin: var(--spacing-sm); }
   .spacing-md { margin: var(--spacing-md); }
@@ -261,7 +271,6 @@
   .p-card { padding: var(--card-padding); }
   .p-card-lg { padding: var(--card-padding-lg); }
   
-  /* Animations */
   .fade-in {
     animation: fadeIn 0.2s ease-in;
   }
@@ -277,14 +286,12 @@
     }
   }
   
-  /* Dividers */
   .section-divider {
     @apply border-t border-[#E2E3E5];
     margin-top: var(--spacing-md);
     margin-bottom: var(--spacing-md);
   }
   
-  /* High contrast text for outdoor readability */
   .text-high-contrast {
     color: #111111;
     font-weight: 600;
