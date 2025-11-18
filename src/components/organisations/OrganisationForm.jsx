@@ -1,4 +1,3 @@
-
 import React, { useState } from "react";
 import { Card, CardHeader, CardTitle, CardContent, CardFooter } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -20,8 +19,61 @@ export default function OrganisationForm({ organisation, onSubmit, onCancel, isS
     status: "active"
   });
 
+  const [errors, setErrors] = useState({});
+
+  const validateEmail = (email) => {
+    if (!email) return true;
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    return emailRegex.test(email);
+  };
+
+  const validatePhone = (phone) => {
+    if (!phone) return true;
+    const phoneRegex = /^[\d\s\+\-\(\)]+$/;
+    return phoneRegex.test(phone) && phone.replace(/\D/g, '').length >= 8;
+  };
+
+  const handleEmailChange = (e) => {
+    const email = e.target.value;
+    setFormData({ ...formData, email });
+    
+    if (email && !validateEmail(email)) {
+      setErrors({ ...errors, email: 'Please enter a valid email address' });
+    } else {
+      const newErrors = { ...errors };
+      delete newErrors.email;
+      setErrors(newErrors);
+    }
+  };
+
+  const handlePhoneChange = (value) => {
+    setFormData({ ...formData, phone: value });
+    
+    if (value && !validatePhone(value)) {
+      setErrors({ ...errors, phone: 'Please enter a valid phone number' });
+    } else {
+      const newErrors = { ...errors };
+      delete newErrors.phone;
+      setErrors(newErrors);
+    }
+  };
+
   const handleSubmit = (e) => {
     e.preventDefault();
+    
+    const validationErrors = {};
+    if (formData.email && !validateEmail(formData.email)) {
+      validationErrors.email = 'Please enter a valid email address';
+    }
+    if (formData.phone && !validatePhone(formData.phone)) {
+      validationErrors.phone = 'Please enter a valid phone number';
+    }
+    
+    if (Object.keys(validationErrors).length > 0) {
+      setErrors(validationErrors);
+      return;
+    }
+    
     // Filter out empty strings and undefined values for optional fields
     const submitData = { ...formData };
     if (!submitData.organisation_type) {
@@ -135,9 +187,10 @@ export default function OrganisationForm({ organisation, onSubmit, onCancel, isS
                 id="phone"
                 type="tel"
                 value={formData.phone}
-                onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
-                className="border-2 border-slate-300 focus:border-[#fae008] focus:ring-2 focus:ring-[#fae008]/20 transition-all"
+                onChange={(e) => handlePhoneChange(e.target.value)}
+                className={`border-2 border-slate-300 focus:border-[#fae008] focus:ring-2 focus:ring-[#fae008]/20 transition-all ${errors.phone ? 'border-red-500' : ''}`}
               />
+              {errors.phone && <p className="text-xs text-red-600">{errors.phone}</p>}
             </div>
 
             <div className="space-y-2">
@@ -146,9 +199,10 @@ export default function OrganisationForm({ organisation, onSubmit, onCancel, isS
                 id="email"
                 type="email"
                 value={formData.email}
-                onChange={(e) => setFormData({ ...formData, email: e.target.value })}
-                className="border-2 border-slate-300 focus:border-[#fae008] focus:ring-2 focus:ring-[#fae008]/20 transition-all"
+                onChange={handleEmailChange}
+                className={`border-2 border-slate-300 focus:border-[#fae008] focus:ring-2 focus:ring-[#fae008]/20 transition-all ${errors.email ? 'border-red-500' : ''}`}
               />
+              {errors.email && <p className="text-xs text-red-600">{errors.email}</p>}
             </div>
           </div>
 

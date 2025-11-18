@@ -1,4 +1,3 @@
-
 import React, { useState } from "react";
 import { Card, CardHeader, CardTitle, CardContent, CardFooter } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -32,6 +31,7 @@ export default function CustomerForm({ customer, onSubmit, onCancel, isSubmittin
     organisation_name: ""
   });
 
+  const [errors, setErrors] = useState({});
   const [showNewOrgDialog, setShowNewOrgDialog] = useState(false);
   const [newOrgData, setNewOrgData] = useState({ name: "", organisation_type: undefined, sp_number: "", address: "" });
   const [isCreatingOrg, setIsCreatingOrg] = useState(false);
@@ -42,8 +42,62 @@ export default function CustomerForm({ customer, onSubmit, onCancel, isSubmittin
     queryFn: () => base44.entities.Organisation.filter({ status: 'active', deleted_at: { $exists: false } })
   });
 
+  const validateEmail = (email) => {
+    if (!email) return true;
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    return emailRegex.test(email);
+  };
+
+  const validatePhone = (phone) => {
+    if (!phone) return true;
+    const phoneRegex = /^[\d\s\+\-\(\)]+$/;
+    return phoneRegex.test(phone) && phone.replace(/\D/g, '').length >= 8;
+  };
+
+  const handleEmailChange = (e) => {
+    const email = e.target.value;
+    setFormData({ ...formData, email });
+    
+    if (email && !validateEmail(email)) {
+      setErrors({ ...errors, email: 'Please enter a valid email address' });
+    } else {
+      const newErrors = { ...errors };
+      delete newErrors.email;
+      setErrors(newErrors);
+    }
+  };
+
+  const handlePhoneChange = (field, value) => {
+    setFormData({ ...formData, [field]: value });
+    
+    if (value && !validatePhone(value)) {
+      setErrors({ ...errors, [field]: 'Please enter a valid phone number' });
+    } else {
+      const newErrors = { ...errors };
+      delete newErrors[field];
+      setErrors(newErrors);
+    }
+  };
+
   const handleSubmit = (e) => {
     e.preventDefault();
+    
+    const validationErrors = {};
+    if (formData.email && !validateEmail(formData.email)) {
+      validationErrors.email = 'Please enter a valid email address';
+    }
+    if (formData.phone && !validatePhone(formData.phone)) {
+      validationErrors.phone = 'Please enter a valid phone number';
+    }
+    if (formData.secondary_phone && !validatePhone(formData.secondary_phone)) {
+      validationErrors.secondary_phone = 'Please enter a valid phone number';
+    }
+    
+    if (Object.keys(validationErrors).length > 0) {
+      setErrors(validationErrors);
+      return;
+    }
+    
     onSubmit(formData);
   };
 
@@ -165,8 +219,10 @@ export default function CustomerForm({ customer, onSubmit, onCancel, isSubmittin
                   id="phone"
                   type="tel"
                   value={formData.phone}
-                  onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
+                  onChange={(e) => handlePhoneChange('phone', e.target.value)}
+                  className={errors.phone ? 'border-red-500' : ''}
                 />
+                {errors.phone && <p className="text-xs text-red-600">{errors.phone}</p>}
               </div>
 
               <div className="space-y-2">
@@ -175,8 +231,10 @@ export default function CustomerForm({ customer, onSubmit, onCancel, isSubmittin
                   id="secondary_phone"
                   type="tel"
                   value={formData.secondary_phone}
-                  onChange={(e) => setFormData({ ...formData, secondary_phone: e.target.value })}
+                  onChange={(e) => handlePhoneChange('secondary_phone', e.target.value)}
+                  className={errors.secondary_phone ? 'border-red-500' : ''}
                 />
+                {errors.secondary_phone && <p className="text-xs text-red-600">{errors.secondary_phone}</p>}
               </div>
             </div>
 
@@ -186,8 +244,10 @@ export default function CustomerForm({ customer, onSubmit, onCancel, isSubmittin
                 id="email"
                 type="email"
                 value={formData.email}
-                onChange={(e) => setFormData({ ...formData, email: e.target.value })}
+                onChange={handleEmailChange}
+                className={errors.email ? 'border-red-500' : ''}
               />
+              {errors.email && <p className="text-xs text-red-600">{errors.email}</p>}
             </div>
 
             <div className="space-y-2">
