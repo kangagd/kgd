@@ -1,11 +1,10 @@
-
 import React, { useState } from "react";
-import { Card, CardHeader, CardTitle, CardContent, CardFooter } from "@/components/ui/card";
+import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { ArrowLeft, Plus, Loader2, FileText, X, Image as ImageIcon, Upload, Trash2 } from "lucide-react";
+import { ArrowLeft, Plus, Loader2, FileText, X, Image as ImageIcon, Trash2 } from "lucide-react";
 import { base44 } from "@/api/base44Client";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import {
@@ -15,6 +14,8 @@ import {
   DialogTitle,
   DialogFooter,
 } from "@/components/ui/dialog";
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
+import { ChevronDown } from "lucide-react";
 import RichTextEditor from "../common/RichTextEditor";
 
 export default function ProjectForm({ project, onSubmit, onCancel, isSubmitting }) {
@@ -182,174 +183,205 @@ export default function ProjectForm({ project, onSubmit, onCancel, isSubmitting 
 
   return (
     <>
-      <Card className="border-2 border-slate-200 shadow-lg rounded-2xl">
-        <CardHeader className="border-b-2 border-slate-200 bg-gradient-to-r from-[#FEF8C8] to-white p-6">
-          <div className="flex items-center gap-4">
-            <Button 
-              variant="ghost" 
-              size="icon" 
-              onClick={onCancel}
-              className="hover:bg-slate-200 transition-colors"
-            >
-              <ArrowLeft className="w-5 h-5" />
-            </Button>
-            <CardTitle className="text-2xl font-bold text-black tracking-tight">
-              {project ? 'Edit Project' : 'Create New Project'}
-            </CardTitle>
-          </div>
-        </CardHeader>
-        <form onSubmit={handleSubmit}>
-          <CardContent className="p-6 space-y-6">
-            <div className="space-y-2">
-              <Label htmlFor="title">Project Title *</Label>
-              <Input
-                id="title"
-                value={formData.title}
-                onChange={(e) => setFormData({ ...formData, title: e.target.value })}
-                required
-                placeholder="e.g., Garage Door Replacement - Unit 6"
-                className="border-2 border-slate-300 focus:border-[#fae008] focus:ring-2 focus:ring-[#fae008]/20"
-              />
+      <div className="p-4 space-y-3">
+        <Card className="shadow-sm border border-slate-200">
+          <CardContent className="p-4">
+            <div className="flex items-start gap-3">
+              <Button 
+                variant="ghost" 
+                size="icon" 
+                onClick={onCancel}
+                className="hover:bg-slate-100 h-9 w-9 flex-shrink-0"
+              >
+                <ArrowLeft className="w-5 h-5" />
+              </Button>
+              <h1 className="text-xl font-semibold text-slate-900">
+                {project ? 'Edit Project' : 'Create New Project'}
+              </h1>
             </div>
+          </CardContent>
+        </Card>
 
-            <div className="space-y-2">
-              <Label htmlFor="customer_id">Customer *</Label>
-              <div className="flex gap-2">
-                <Select value={formData.customer_id} onValueChange={handleCustomerChange} required>
-                  <SelectTrigger className="border-2 border-slate-300 focus:border-[#fae008]">
-                    <SelectValue placeholder="Select customer" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {customers.map((customer) => (
-                      <SelectItem key={customer.id} value={customer.id}>
-                        {customer.name}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-                <Button
-                  type="button"
-                  variant="outline"
-                  onClick={() => setShowNewCustomerDialog(true)}
-                  className="border-2 border-slate-300 hover:bg-[#fae008]/10"
-                >
-                  <Plus className="w-4 h-4" />
-                </Button>
+        <form onSubmit={handleSubmit} className="space-y-3">
+          <Card className="shadow-sm border border-slate-200">
+            <CardContent className="p-4 space-y-3">
+              <span className="text-xs font-medium text-slate-500 uppercase tracking-wide">Project Information</span>
+              
+              <div className="space-y-1">
+                <Label htmlFor="title" className="text-sm font-medium text-slate-700">Project Title *</Label>
+                <Input
+                  id="title"
+                  value={formData.title}
+                  onChange={(e) => setFormData({ ...formData, title: e.target.value })}
+                  required
+                  placeholder="e.g., Garage Door Replacement - Unit 6"
+                  className="border-slate-300 h-10"
+                />
               </div>
-            </div>
 
-            <div className="space-y-2">
-              <Label htmlFor="address">Project Address</Label>
-              <Input
-                id="address"
-                value={formData.address}
-                onChange={(e) => setFormData({ ...formData, address: e.target.value })}
-                className="border-2 border-slate-300 focus:border-[#fae008] focus:ring-2 focus:ring-[#fae008]/20"
-              />
-            </div>
+              <div className="space-y-1">
+                <Label htmlFor="customer_id" className="text-sm font-medium text-slate-700">Customer *</Label>
+                <div className="flex gap-2">
+                  <Select value={formData.customer_id} onValueChange={handleCustomerChange} required>
+                    <SelectTrigger className="flex-1 border-slate-300 h-10">
+                      <SelectValue placeholder="Select customer" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {customers.map((customer) => (
+                        <SelectItem key={customer.id} value={customer.id}>
+                          {customer.name}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                  <Button
+                    type="button"
+                    variant="outline"
+                    onClick={() => setShowNewCustomerDialog(true)}
+                    className="border-slate-300 hover:bg-slate-50 h-10 w-10 p-0"
+                  >
+                    <Plus className="w-4 h-4" />
+                  </Button>
+                </div>
+              </div>
 
-            <div className="grid md:grid-cols-2 gap-6">
-              <div className="space-y-2">
-                <Label htmlFor="project_type">Type</Label>
-                <Select value={formData.project_type} onValueChange={(val) => setFormData({ ...formData, project_type: val })}>
-                  <SelectTrigger className="border-2 border-slate-300">
+              <div className="space-y-1">
+                <Label htmlFor="address" className="text-sm font-medium text-slate-700">Project Address</Label>
+                <Input
+                  id="address"
+                  value={formData.address}
+                  onChange={(e) => setFormData({ ...formData, address: e.target.value })}
+                  className="border-slate-300 h-10"
+                />
+              </div>
+
+              <div className="grid md:grid-cols-2 gap-3">
+                <div className="space-y-1">
+                  <Label htmlFor="project_type" className="text-sm font-medium text-slate-700">Type</Label>
+                  <Select value={formData.project_type} onValueChange={(val) => setFormData({ ...formData, project_type: val })}>
+                    <SelectTrigger className="border-slate-300 h-10">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="Garage Door Install">Garage Door Install</SelectItem>
+                      <SelectItem value="Gate Install">Gate Install</SelectItem>
+                      <SelectItem value="Roller Shutter Install">Roller Shutter Install</SelectItem>
+                      <SelectItem value="Repair">Repair</SelectItem>
+                      <SelectItem value="Maintenance">Maintenance</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+
+                <div className="space-y-1">
+                  <Label htmlFor="status" className="text-sm font-medium text-slate-700">Status</Label>
+                  <Select value={formData.status} onValueChange={(val) => setFormData({ ...formData, status: val })}>
+                    <SelectTrigger className="border-slate-300 h-10">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="open">Open</SelectItem>
+                      <SelectItem value="scheduled">Scheduled</SelectItem>
+                      <SelectItem value="quoted">Quoted</SelectItem>
+                      <SelectItem value="invoiced">Invoiced</SelectItem>
+                      <SelectItem value="paid">Paid</SelectItem>
+                      <SelectItem value="completed">Completed</SelectItem>
+                      <SelectItem value="cancelled">Cancelled</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+              </div>
+
+              <div className="space-y-1">
+                <Label htmlFor="stage" className="text-sm font-medium text-slate-700">Current Stage</Label>
+                <Select value={formData.stage} onValueChange={(val) => setFormData({ ...formData, stage: val })}>
+                  <SelectTrigger className="border-slate-300 h-10">
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="Garage Door Install">Garage Door Install</SelectItem>
-                    <SelectItem value="Gate Install">Gate Install</SelectItem>
-                    <SelectItem value="Roller Shutter Install">Roller Shutter Install</SelectItem>
-                    <SelectItem value="Repair">Repair</SelectItem>
-                    <SelectItem value="Maintenance">Maintenance</SelectItem>
+                    <SelectItem value="lead_in">Lead In</SelectItem>
+                    <SelectItem value="measure">Measure</SelectItem>
+                    <SelectItem value="quote_prepared">Quote Prepared</SelectItem>
+                    <SelectItem value="quote_sent">Quote Sent</SelectItem>
+                    <SelectItem value="quote_accepted">Quote Accepted</SelectItem>
+                    <SelectItem value="materials_ordered">Materials Ordered</SelectItem>
+                    <SelectItem value="installation_scheduled">Installation Scheduled</SelectItem>
+                    <SelectItem value="installation_completed">Installation Completed</SelectItem>
+                    <SelectItem value="qa_aftercare">QA / Aftercare</SelectItem>
+                    <SelectItem value="final_invoice">Final Invoice</SelectItem>
+                    <SelectItem value="project_closed">Project Closed</SelectItem>
                   </SelectContent>
                 </Select>
               </div>
+            </CardContent>
+          </Card>
 
-              <div className="space-y-2">
-                <Label htmlFor="status">Status</Label>
-                <Select value={formData.status} onValueChange={(val) => setFormData({ ...formData, status: val })}>
-                  <SelectTrigger className="border-2 border-slate-300">
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="open">Open</SelectItem>
-                    <SelectItem value="scheduled">Scheduled</SelectItem>
-                    <SelectItem value="quoted">Quoted</SelectItem>
-                    <SelectItem value="invoiced">Invoiced</SelectItem>
-                    <SelectItem value="paid">Paid</SelectItem>
-                    <SelectItem value="completed">Completed</SelectItem>
-                    <SelectItem value="cancelled">Cancelled</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-            </div>
-
-            {isInstallType && (
-              <div className="bg-[#FEF8C8] border-2 border-slate-200 rounded-xl p-4 space-y-4">
+          {isInstallType && (
+            <Card className="shadow-sm border border-slate-200">
+              <CardContent className="p-4 space-y-3">
                 <div className="flex items-center justify-between">
-                  <h3 className="font-bold text-black">Doors</h3>
+                  <span className="text-xs font-medium text-slate-500 uppercase tracking-wide">Installation Details</span>
                   <Button
                     type="button"
                     onClick={addDoor}
                     size="sm"
-                    className="bg-[#fae008] hover:bg-[#e5d007] text-black font-semibold"
+                    className="bg-[#fae008] hover:bg-[#e5d007] text-slate-900 h-8 px-3 font-medium rounded-lg"
                   >
-                    <Plus className="w-4 h-4 mr-2" />
+                    <Plus className="w-3.5 h-3.5 mr-1.5" />
                     Add Door
                   </Button>
                 </div>
 
                 {formData.doors && formData.doors.length > 0 ? (
-                  <div className="space-y-4">
+                  <div className="space-y-2">
                     {formData.doors.map((door, index) => (
-                      <div key={index} className="bg-white border-2 border-slate-200 rounded-lg p-4 space-y-3">
-                        <div className="flex items-center justify-between mb-2">
-                          <span className="font-semibold text-sm text-slate-700">Door {index + 1}</span>
+                      <div key={index} className="bg-slate-50 border border-slate-200 rounded-lg p-3 space-y-2">
+                        <div className="flex items-center justify-between">
+                          <span className="text-xs font-medium text-slate-500 uppercase tracking-wide">Door {index + 1}</span>
                           <Button
                             type="button"
                             variant="ghost"
                             size="icon"
                             onClick={() => removeDoor(index)}
-                            className="h-8 w-8 hover:bg-red-100 hover:text-red-600"
+                            className="h-7 w-7 hover:bg-red-50 hover:text-red-600"
                           >
-                            <Trash2 className="w-4 h-4" />
+                            <Trash2 className="w-3.5 h-3.5" />
                           </Button>
                         </div>
-                        <div className="grid md:grid-cols-2 gap-3">
+                        <div className="grid grid-cols-2 gap-2">
                           <div className="space-y-1">
-                            <Label className="text-xs">Height</Label>
+                            <Label className="text-xs font-medium text-slate-600">Height</Label>
                             <Input
                               value={door.height}
                               onChange={(e) => updateDoor(index, 'height', e.target.value)}
                               placeholder="e.g., 2.4m"
-                              className="border-2 border-slate-300 focus:border-[#fae008] h-9"
+                              className="border-slate-300 h-9 text-sm"
                             />
                           </div>
                           <div className="space-y-1">
-                            <Label className="text-xs">Width</Label>
+                            <Label className="text-xs font-medium text-slate-600">Width</Label>
                             <Input
                               value={door.width}
                               onChange={(e) => updateDoor(index, 'width', e.target.value)}
                               placeholder="e.g., 5.0m"
-                              className="border-2 border-slate-300 focus:border-[#fae008] h-9"
+                              className="border-slate-300 h-9 text-sm"
                             />
                           </div>
                           <div className="space-y-1">
-                            <Label className="text-xs">Type</Label>
+                            <Label className="text-xs font-medium text-slate-600">Type</Label>
                             <Input
                               value={door.type}
                               onChange={(e) => updateDoor(index, 'type', e.target.value)}
-                              placeholder="e.g., Sectional, Roller"
-                              className="border-2 border-slate-300 focus:border-[#fae008] h-9"
+                              placeholder="e.g., Sectional"
+                              className="border-slate-300 h-9 text-sm"
                             />
                           </div>
                           <div className="space-y-1">
-                            <Label className="text-xs">Style</Label>
+                            <Label className="text-xs font-medium text-slate-600">Style</Label>
                             <Input
                               value={door.style}
                               onChange={(e) => updateDoor(index, 'style', e.target.value)}
-                              placeholder="e.g., Modern, Classic"
-                              className="border-2 border-slate-300 focus:border-[#fae008] h-9"
+                              placeholder="e.g., Modern"
+                              className="border-slate-300 h-9 text-sm"
                             />
                           </div>
                         </div>
@@ -357,226 +389,231 @@ export default function ProjectForm({ project, onSubmit, onCancel, isSubmitting 
                     ))}
                   </div>
                 ) : (
-                  <div className="text-center py-6 text-slate-500">
-                    <p className="text-sm mb-2">No doors added yet</p>
+                  <div className="text-center py-6 bg-slate-50 rounded-lg border border-slate-200">
+                    <p className="text-sm text-slate-500 mb-2">No doors added yet</p>
                     <Button
                       type="button"
                       onClick={addDoor}
                       size="sm"
                       variant="outline"
-                      className="border-2"
+                      className="border-slate-300 h-8 px-3 font-medium rounded-lg"
                     >
-                      <Plus className="w-4 h-4 mr-2" />
+                      <Plus className="w-3.5 h-3.5 mr-1.5" />
                       Add First Door
                     </Button>
                   </div>
                 )}
-              </div>
-            )}
+              </CardContent>
+            </Card>
+          )}
 
-            <div className="space-y-2">
-              <Label htmlFor="stage">Current Stage</Label>
-              <Select value={formData.stage} onValueChange={(val) => setFormData({ ...formData, stage: val })}>
-                <SelectTrigger className="border-2 border-slate-300">
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="lead_in">Lead In</SelectItem>
-                  <SelectItem value="measure">Measure</SelectItem>
-                  <SelectItem value="quote_prepared">Quote Prepared</SelectItem>
-                  <SelectItem value="quote_sent">Quote Sent</SelectItem>
-                  <SelectItem value="quote_accepted">Quote Accepted</SelectItem>
-                  <SelectItem value="materials_ordered">Materials Ordered</SelectItem>
-                  <SelectItem value="installation_scheduled">Installation Scheduled</SelectItem>
-                  <SelectItem value="installation_completed">Installation Completed</SelectItem>
-                  <SelectItem value="qa_aftercare">QA / Aftercare</SelectItem>
-                  <SelectItem value="final_invoice">Final Invoice</SelectItem>
-                  <SelectItem value="project_closed">Project Closed</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-
-            <div className="space-y-2">
-              <Label>Assigned Technicians</Label>
-              <div className="grid grid-cols-2 gap-2 border-2 border-slate-300 rounded-xl p-3">
-                {technicians.map((tech) => (
-                  <label key={tech.email} className="flex items-center gap-2 cursor-pointer hover:bg-slate-50 p-2 rounded">
-                    <input
-                      type="checkbox"
-                      checked={(formData.assigned_technicians || []).includes(tech.email)}
-                      onChange={() => handleTechnicianToggle(tech.email)}
-                      className="w-4 h-4"
-                    />
-                    <span className="text-sm">{tech.full_name}</span>
-                  </label>
-                ))}
-              </div>
-            </div>
-
-            <div className="space-y-2">
-              <Label htmlFor="description">Description</Label>
-              <RichTextEditor
-                value={formData.description}
-                onChange={(value) => setFormData({ ...formData, description: value })}
-                placeholder="Describe the project scope..."
-              />
-            </div>
-
-            <div className="space-y-2">
-              <Label htmlFor="notes">Notes</Label>
-              <RichTextEditor
-                value={formData.notes}
-                onChange={(value) => setFormData({ ...formData, notes: value })}
-                placeholder="Additional notes..."
-              />
-            </div>
-
-            <div className="space-y-4 pt-4 border-t-2 border-slate-200">
-              <h3 className="font-bold text-black tracking-tight">Attachments</h3>
-              
-              <div className="space-y-2">
-                <Label className="text-sm font-semibold text-black">Images</Label>
-                <div className="flex items-center gap-2">
-                  <Button
-                    type="button"
-                    variant="outline"
-                    onClick={() => document.getElementById('image-upload').click()}
-                    disabled={uploadingImages}
-                    className="border-2 hover:bg-slate-100"
-                  >
-                    {uploadingImages ? (
-                      <><Loader2 className="w-4 h-4 mr-2 animate-spin" />Uploading...</>
-                    ) : (
-                      <><ImageIcon className="w-4 h-4 mr-2" />Upload Images</>
-                    )}
-                  </Button>
-                  <input
-                    id="image-upload"
-                    type="file"
-                    multiple
-                    accept="image/*"
-                    className="hidden"
-                    onChange={handleImageUpload}
-                  />
-                </div>
-                {formData.image_urls && formData.image_urls.length > 0 && (
-                  <div className="grid grid-cols-3 gap-2 mt-2">
-                    {formData.image_urls.map((url, index) => (
-                      <div key={index} className="relative group">
-                        <img src={url} alt={`Upload ${index + 1}`} className="w-full h-24 object-cover rounded-lg border-2 border-slate-200" />
-                        <button
-                          type="button"
-                          onClick={() => removeImage(index)}
-                          className="absolute top-1 right-1 bg-red-500 text-white rounded-full p-1 opacity-0 group-hover:opacity-100 transition-opacity"
-                        >
-                          <X className="w-3 h-3" />
-                        </button>
-                      </div>
+          <Collapsible defaultOpen={false}>
+            <Card className="shadow-sm border border-slate-200">
+              <CollapsibleTrigger className="w-full">
+                <CardContent className="p-4">
+                  <div className="flex items-center justify-between">
+                    <span className="text-xs font-medium text-slate-500 uppercase tracking-wide">Assigned Team</span>
+                    <ChevronDown className="w-4 h-4 text-slate-400 transition-transform data-[state=open]:rotate-180" />
+                  </div>
+                </CardContent>
+              </CollapsibleTrigger>
+              <CollapsibleContent>
+                <CardContent className="px-4 pb-4 pt-0">
+                  <div className="grid grid-cols-2 gap-2">
+                    {technicians.map((tech) => (
+                      <label key={tech.email} className="flex items-center gap-2 cursor-pointer hover:bg-slate-50 p-2 rounded transition-colors">
+                        <input
+                          type="checkbox"
+                          checked={(formData.assigned_technicians || []).includes(tech.email)}
+                          onChange={() => handleTechnicianToggle(tech.email)}
+                          className="w-4 h-4"
+                        />
+                        <span className="text-sm text-slate-700">{tech.full_name}</span>
+                      </label>
                     ))}
                   </div>
-                )}
-              </div>
+                </CardContent>
+              </CollapsibleContent>
+            </Card>
+          </Collapsible>
 
-              <div className="space-y-2">
-                <Label className="text-sm font-semibold text-black">Files</Label>
-                <div className="flex items-center gap-2">
-                  <Button
-                    type="button"
-                    variant="outline"
-                    onClick={() => document.getElementById('file-upload').click()}
-                    disabled={uploadingFiles}
-                    className="border-2 hover:bg-slate-100"
-                  >
-                    {uploadingFiles ? (
-                      <><Loader2 className="w-4 h-4 mr-2 animate-spin" />Uploading...</>
-                    ) : (
-                      <><Upload className="w-4 h-4 mr-2" />Upload Files</>
-                    )}
-                  </Button>
-                  <input
-                    id="file-upload"
-                    type="file"
-                    accept=".pdf,.doc,.docx"
-                    className="hidden"
-                    onChange={handleFileUpload}
-                  />
-                  {formData.quote_url && (
+          <Collapsible defaultOpen={false}>
+            <Card className="shadow-sm border border-slate-200">
+              <CollapsibleTrigger className="w-full">
+                <CardContent className="p-4">
+                  <div className="flex items-center justify-between">
+                    <span className="text-xs font-medium text-slate-500 uppercase tracking-wide">Description & Notes</span>
+                    <ChevronDown className="w-4 h-4 text-slate-400 transition-transform data-[state=open]:rotate-180" />
+                  </div>
+                </CardContent>
+              </CollapsibleTrigger>
+              <CollapsibleContent>
+                <CardContent className="px-4 pb-4 pt-0 space-y-3">
+                  <div className="space-y-1">
+                    <Label htmlFor="description" className="text-sm font-medium text-slate-700">Description</Label>
+                    <RichTextEditor
+                      value={formData.description}
+                      onChange={(value) => setFormData({ ...formData, description: value })}
+                      placeholder="Describe the project scope..."
+                    />
+                  </div>
+
+                  <div className="space-y-1">
+                    <Label htmlFor="notes" className="text-sm font-medium text-slate-700">Notes</Label>
+                    <RichTextEditor
+                      value={formData.notes}
+                      onChange={(value) => setFormData({ ...formData, notes: value })}
+                      placeholder="Additional notes..."
+                    />
+                  </div>
+                </CardContent>
+              </CollapsibleContent>
+            </Card>
+          </Collapsible>
+
+          <Collapsible defaultOpen={false}>
+            <Card className="shadow-sm border border-slate-200">
+              <CollapsibleTrigger className="w-full">
+                <CardContent className="p-4">
+                  <div className="flex items-center justify-between">
+                    <span className="text-xs font-medium text-slate-500 uppercase tracking-wide">Attachments</span>
+                    <ChevronDown className="w-4 h-4 text-slate-400 transition-transform data-[state=open]:rotate-180" />
+                  </div>
+                </CardContent>
+              </CollapsibleTrigger>
+              <CollapsibleContent>
+                <CardContent className="px-4 pb-4 pt-0 space-y-3">
+                  <div className="space-y-2">
+                    <Label className="text-sm font-medium text-slate-700">Images</Label>
                     <Button
                       type="button"
-                      variant="ghost"
-                      size="icon"
-                      onClick={() => setFormData({ ...formData, quote_url: "" })}
-                      className="h-8 w-8"
+                      variant="outline"
+                      onClick={() => document.getElementById('image-upload').click()}
+                      disabled={uploadingImages}
+                      className="border-slate-300 hover:bg-slate-50 w-full h-10"
                     >
-                      <X className="w-4 h-4" />
+                      {uploadingImages ? (
+                        <><Loader2 className="w-4 h-4 mr-2 animate-spin" />Uploading...</>
+                      ) : (
+                        <><ImageIcon className="w-4 h-4 mr-2" />Upload Images</>
+                      )}
                     </Button>
-                  )}
-                </div>
-                {formData.quote_url && (
-                  <a href={formData.quote_url} target="_blank" rel="noopener noreferrer" 
-                     className="text-sm text-blue-600 hover:underline flex items-center gap-1">
-                    <FileText className="w-3 h-3" />
-                    View File
-                  </a>
-                )}
-              </div>
-            </div>
-          </CardContent>
-          <CardFooter className="border-t-2 border-slate-200 flex justify-end gap-3 p-6 bg-slate-50">
+                    <input
+                      id="image-upload"
+                      type="file"
+                      multiple
+                      accept="image/*"
+                      className="hidden"
+                      onChange={handleImageUpload}
+                    />
+                    {formData.image_urls && formData.image_urls.length > 0 && (
+                      <div className="grid grid-cols-3 gap-2">
+                        {formData.image_urls.map((url, index) => (
+                          <div key={index} className="relative group">
+                            <img src={url} alt={`Upload ${index + 1}`} className="w-full h-20 object-cover rounded border border-slate-200" />
+                            <button
+                              type="button"
+                              onClick={() => removeImage(index)}
+                              className="absolute top-1 right-1 bg-red-500 text-white rounded-full p-1 opacity-0 group-hover:opacity-100 transition-opacity"
+                            >
+                              <X className="w-3 h-3" />
+                            </button>
+                          </div>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+
+                  <div className="space-y-2">
+                    <Label className="text-sm font-medium text-slate-700">Files</Label>
+                    <Button
+                      type="button"
+                      variant="outline"
+                      onClick={() => document.getElementById('file-upload').click()}
+                      disabled={uploadingFiles}
+                      className="border-slate-300 hover:bg-slate-50 w-full h-10"
+                    >
+                      {uploadingFiles ? (
+                        <><Loader2 className="w-4 h-4 mr-2 animate-spin" />Uploading...</>
+                      ) : (
+                        <><FileText className="w-4 h-4 mr-2" />Upload Files</>
+                      )}
+                    </Button>
+                    <input
+                      id="file-upload"
+                      type="file"
+                      accept=".pdf,.doc,.docx"
+                      className="hidden"
+                      onChange={handleFileUpload}
+                    />
+                    {formData.quote_url && (
+                      <a href={formData.quote_url} target="_blank" rel="noopener noreferrer" 
+                         className="text-xs text-blue-600 hover:underline flex items-center gap-1">
+                        <FileText className="w-3 h-3" />
+                        View File
+                      </a>
+                    )}
+                  </div>
+                </CardContent>
+              </CollapsibleContent>
+            </Card>
+          </Collapsible>
+
+          <div className="sticky bottom-0 bg-white border-t border-slate-200 p-4 flex justify-end gap-2 shadow-sm">
             <Button 
               type="button" 
               variant="outline" 
               onClick={onCancel}
-              className="border-2 hover:bg-white font-semibold"
+              className="border-slate-300 hover:bg-slate-50 h-10 px-4 font-medium rounded-lg"
             >
               Cancel
             </Button>
             <Button 
               type="submit" 
               disabled={isSubmitting} 
-              className="bg-[#fae008] hover:bg-[#e5d007] active:bg-[#d4c006] text-black font-bold shadow-md hover:shadow-lg transition-all"
+              className="bg-[#fae008] hover:bg-[#e5d007] text-slate-900 h-10 px-4 font-medium rounded-lg"
             >
               {isSubmitting ? 'Saving...' : project ? 'Update Project' : 'Create Project'}
             </Button>
-          </CardFooter>
+          </div>
         </form>
-      </Card>
+      </div>
 
       <Dialog open={showNewCustomerDialog} onOpenChange={setShowNewCustomerDialog}>
-        <DialogContent className="rounded-2xl border-2 border-slate-200">
+        <DialogContent className="rounded-lg border border-slate-200">
           <DialogHeader>
-            <DialogTitle className="text-xl font-bold text-black">Add New Customer</DialogTitle>
+            <DialogTitle className="text-lg font-semibold">Add New Customer</DialogTitle>
           </DialogHeader>
-          <div className="space-y-4 py-4">
-            <div className="space-y-2">
-              <Label htmlFor="new_customer_name">Name *</Label>
+          <div className="space-y-3">
+            <div className="space-y-1">
+              <Label htmlFor="new_customer_name" className="text-sm font-medium text-slate-700">Name *</Label>
               <Input
                 id="new_customer_name"
                 value={newCustomerData.name}
                 onChange={(e) => setNewCustomerData({ ...newCustomerData, name: e.target.value })}
                 placeholder="Customer name"
-                className="border-2 border-slate-300 focus:border-[#fae008]"
+                className="border-slate-300 h-10"
               />
             </div>
-            <div className="space-y-2">
-              <Label htmlFor="new_customer_phone">Phone</Label>
+            <div className="space-y-1">
+              <Label htmlFor="new_customer_phone" className="text-sm font-medium text-slate-700">Phone</Label>
               <Input
                 id="new_customer_phone"
                 value={newCustomerData.phone}
                 onChange={(e) => setNewCustomerData({ ...newCustomerData, phone: e.target.value })}
                 placeholder="Phone number"
-                className="border-2 border-slate-300 focus:border-[#fae008]"
+                className="border-slate-300 h-10"
               />
             </div>
-            <div className="space-y-2">
-              <Label htmlFor="new_customer_email">Email</Label>
+            <div className="space-y-1">
+              <Label htmlFor="new_customer_email" className="text-sm font-medium text-slate-700">Email</Label>
               <Input
                 id="new_customer_email"
                 type="email"
                 value={newCustomerData.email}
                 onChange={(e) => setNewCustomerData({ ...newCustomerData, email: e.target.value })}
                 placeholder="Email address"
-                className="border-2 border-slate-300 focus:border-[#fae008]"
+                className="border-slate-300 h-10"
               />
             </div>
           </div>
@@ -585,14 +622,14 @@ export default function ProjectForm({ project, onSubmit, onCancel, isSubmitting 
               type="button"
               variant="outline"
               onClick={() => setShowNewCustomerDialog(false)}
-              className="border-2 font-semibold"
+              className="border-slate-300 font-medium h-9 rounded-lg"
             >
               Cancel
             </Button>
             <Button
               onClick={handleCreateCustomer}
               disabled={!newCustomerData.name || createCustomerMutation.isPending}
-              className="bg-[#fae008] hover:bg-[#e5d007] text-black font-bold"
+              className="bg-[#fae008] hover:bg-[#e5d007] text-slate-900 font-medium h-9 rounded-lg"
             >
               {createCustomerMutation.isPending ? 'Creating...' : 'Create Customer'}
             </Button>

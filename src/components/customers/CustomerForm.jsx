@@ -1,7 +1,6 @@
 import React, { useState } from "react";
-import { Card, CardHeader, CardTitle, CardContent, CardFooter } from "@/components/ui/card";
+import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
-// Removed Textarea import as it's replaced by RichTextEditor for notes
 import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
@@ -16,6 +15,8 @@ import {
   DialogTitle,
   DialogFooter,
 } from "@/components/ui/dialog";
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
+import { ChevronDown } from "lucide-react";
 
 export default function CustomerForm({ customer, onSubmit, onCancel, isSubmitting }) {
   const [formData, setFormData] = useState(customer || {
@@ -109,7 +110,6 @@ export default function CustomerForm({ customer, onSubmit, onCancel, isSubmittin
   const handleCreateNewOrg = async () => {
     setIsCreatingOrg(true);
     try {
-      // Filter out empty/undefined fields
       const submitData = { ...newOrgData };
       if (!submitData.organisation_type) {
         delete submitData.organisation_type;
@@ -123,10 +123,8 @@ export default function CustomerForm({ customer, onSubmit, onCancel, isSubmittin
       
       const newOrg = await base44.entities.Organisation.create(submitData);
       
-      // Invalidate queries to refresh the list
       await queryClient.invalidateQueries({ queryKey: ['organisations'] });
       
-      // Update form data with new organisation
       setFormData({
         ...formData,
         organisation_id: newOrg.id,
@@ -144,173 +142,212 @@ export default function CustomerForm({ customer, onSubmit, onCancel, isSubmittin
 
   return (
     <>
-      <Card className="border-none shadow-lg">
-        <CardHeader className="border-b border-slate-100">
-          <div className="flex items-center gap-4">
-            <Button variant="ghost" size="icon" onClick={onCancel}>
-              <ArrowLeft className="w-4 h-4" />
-            </Button>
-            <CardTitle className="text-2xl font-bold">
-              {customer ? 'Edit Customer' : 'New Customer'}
-            </CardTitle>
-          </div>
-        </CardHeader>
-        <form onSubmit={handleSubmit}>
-          <CardContent className="p-6 space-y-6">
-            <div className="space-y-2">
-              <Label htmlFor="name">Customer Name *</Label>
-              <Input
-                id="name"
-                value={formData.name}
-                onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-                required
-              />
-            </div>
-
-            <div className="space-y-2">
-              <Label htmlFor="organisation_id">Organisation (Optional)</Label>
-              <div className="flex gap-2">
-                <Select value={formData.organisation_id} onValueChange={handleOrganisationChange}>
-                  <SelectTrigger className="flex-1">
-                    <SelectValue placeholder="Select organisation" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value={null}>None</SelectItem>
-                    {organisations.map((org) => (
-                      <SelectItem key={org.id} value={org.id}>
-                        {org.name}{org.organisation_type ? ` (${org.organisation_type})` : ''}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-                <Button
-                  type="button"
-                  variant="outline"
-                  onClick={() => setShowNewOrgDialog(true)}
-                >
-                  <Plus className="w-4 h-4" />
-                </Button>
-              </div>
-            </div>
-
-            <div className="space-y-2">
-              <Label htmlFor="customer_type">Customer Type</Label>
-              <Select value={formData.customer_type} onValueChange={(val) => setFormData({ ...formData, customer_type: val })}>
-                <SelectTrigger>
-                  <SelectValue placeholder="Select customer type" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="Owner">Owner</SelectItem>
-                  <SelectItem value="Builder">Builder</SelectItem>
-                  <SelectItem value="Real Estate - Tenant">Real Estate - Tenant</SelectItem>
-                  <SelectItem value="Strata - Owner">Strata - Owner</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-
-            <div className="grid md:grid-cols-2 gap-6">
-              <div className="space-y-2">
-                <Label htmlFor="phone">Primary Phone</Label>
-                <Input
-                  id="phone"
-                  type="tel"
-                  value={formData.phone}
-                  onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
-                  onBlur={() => handlePhoneBlur('phone')}
-                  className={errors.phone ? 'border-red-500' : ''}
-                />
-                {errors.phone && <p className="text-xs text-red-600">{errors.phone}</p>}
-              </div>
-
-              <div className="space-y-2">
-                <Label htmlFor="secondary_phone">Secondary Phone</Label>
-                <Input
-                  id="secondary_phone"
-                  type="tel"
-                  value={formData.secondary_phone}
-                  onChange={(e) => setFormData({ ...formData, secondary_phone: e.target.value })}
-                  onBlur={() => handlePhoneBlur('secondary_phone')}
-                  className={errors.secondary_phone ? 'border-red-500' : ''}
-                />
-                {errors.secondary_phone && <p className="text-xs text-red-600">{errors.secondary_phone}</p>}
-              </div>
-            </div>
-
-            <div className="space-y-2">
-              <Label htmlFor="email">Email</Label>
-              <Input
-                id="email"
-                type="email"
-                value={formData.email}
-                onChange={(e) => setFormData({ ...formData, email: e.target.value })}
-                onBlur={handleEmailBlur}
-                className={errors.email ? 'border-red-500' : ''}
-              />
-              {errors.email && <p className="text-xs text-red-600">{errors.email}</p>}
-            </div>
-
-            <div className="space-y-2">
-              <Label htmlFor="address">Address</Label>
-              <Input
-                id="address"
-                value={formData.address}
-                onChange={(e) => setFormData({ ...formData, address: e.target.value })}
-                placeholder="Default address for this customer"
-              />
-            </div>
-
-            <div className="space-y-2">
-              <Label htmlFor="status">Status</Label>
-              <Select value={formData.status} onValueChange={(val) => setFormData({ ...formData, status: val })}>
-                <SelectTrigger>
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="active">Active</SelectItem>
-                  <SelectItem value="inactive">Inactive</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-
-            <div className="space-y-2">
-              <Label htmlFor="notes">Notes</Label>
-              <RichTextEditor
-                value={formData.notes}
-                onChange={(value) => setFormData({ ...formData, notes: value })}
-                placeholder="Add any notes about the customer..."
-              />
+      <div className="p-4 space-y-3">
+        <Card className="shadow-sm border border-slate-200">
+          <CardContent className="p-4">
+            <div className="flex items-start gap-3">
+              <Button variant="ghost" size="icon" onClick={onCancel} className="hover:bg-slate-100 h-9 w-9 flex-shrink-0">
+                <ArrowLeft className="w-5 h-5" />
+              </Button>
+              <h1 className="text-xl font-semibold text-slate-900">
+                {customer ? 'Edit Customer' : 'New Customer'}
+              </h1>
             </div>
           </CardContent>
-          <CardFooter className="border-t border-slate-100 flex justify-end gap-3">
-            <Button type="button" variant="outline" onClick={onCancel}>
+        </Card>
+
+        <form onSubmit={handleSubmit} className="space-y-3">
+          <Card className="shadow-sm border border-slate-200">
+            <CardContent className="p-4 space-y-3">
+              <span className="text-xs font-medium text-slate-500 uppercase tracking-wide">Basic Information</span>
+              
+              <div className="space-y-1">
+                <Label htmlFor="name" className="text-sm font-medium text-slate-700">Customer Name *</Label>
+                <Input
+                  id="name"
+                  value={formData.name}
+                  onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+                  required
+                  className="border-slate-300 h-10"
+                />
+              </div>
+
+              <div className="space-y-1">
+                <Label htmlFor="customer_type" className="text-sm font-medium text-slate-700">Customer Type</Label>
+                <Select value={formData.customer_type} onValueChange={(val) => setFormData({ ...formData, customer_type: val })}>
+                  <SelectTrigger className="border-slate-300 h-10">
+                    <SelectValue placeholder="Select customer type" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="Owner">Owner</SelectItem>
+                    <SelectItem value="Builder">Builder</SelectItem>
+                    <SelectItem value="Real Estate - Tenant">Real Estate - Tenant</SelectItem>
+                    <SelectItem value="Strata - Owner">Strata - Owner</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+
+              <div className="space-y-1">
+                <Label htmlFor="organisation_id" className="text-sm font-medium text-slate-700">Organisation</Label>
+                <div className="flex gap-2">
+                  <Select value={formData.organisation_id} onValueChange={handleOrganisationChange}>
+                    <SelectTrigger className="flex-1 border-slate-300 h-10">
+                      <SelectValue placeholder="Select organisation" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value={null}>None</SelectItem>
+                      {organisations.map((org) => (
+                        <SelectItem key={org.id} value={org.id}>
+                          {org.name}{org.organisation_type ? ` (${org.organisation_type})` : ''}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                  <Button
+                    type="button"
+                    variant="outline"
+                    onClick={() => setShowNewOrgDialog(true)}
+                    className="border-slate-300 hover:bg-slate-50 h-10 w-10 p-0"
+                  >
+                    <Plus className="w-4 h-4" />
+                  </Button>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+
+          <Card className="shadow-sm border border-slate-200">
+            <CardContent className="p-4 space-y-3">
+              <span className="text-xs font-medium text-slate-500 uppercase tracking-wide">Contact Information</span>
+              
+              <div className="grid md:grid-cols-2 gap-3">
+                <div className="space-y-1">
+                  <Label htmlFor="phone" className="text-sm font-medium text-slate-700">Primary Phone</Label>
+                  <Input
+                    id="phone"
+                    type="tel"
+                    value={formData.phone}
+                    onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
+                    onBlur={() => handlePhoneBlur('phone')}
+                    className={`border-slate-300 h-10 ${errors.phone ? 'border-red-500' : ''}`}
+                  />
+                  {errors.phone && <p className="text-xs text-red-600 mt-1">{errors.phone}</p>}
+                </div>
+
+                <div className="space-y-1">
+                  <Label htmlFor="secondary_phone" className="text-sm font-medium text-slate-700">Secondary Phone</Label>
+                  <Input
+                    id="secondary_phone"
+                    type="tel"
+                    value={formData.secondary_phone}
+                    onChange={(e) => setFormData({ ...formData, secondary_phone: e.target.value })}
+                    onBlur={() => handlePhoneBlur('secondary_phone')}
+                    className={`border-slate-300 h-10 ${errors.secondary_phone ? 'border-red-500' : ''}`}
+                  />
+                  {errors.secondary_phone && <p className="text-xs text-red-600 mt-1">{errors.secondary_phone}</p>}
+                </div>
+              </div>
+
+              <div className="space-y-1">
+                <Label htmlFor="email" className="text-sm font-medium text-slate-700">Email</Label>
+                <Input
+                  id="email"
+                  type="email"
+                  value={formData.email}
+                  onChange={(e) => setFormData({ ...formData, email: e.target.value })}
+                  onBlur={handleEmailBlur}
+                  className={`border-slate-300 h-10 ${errors.email ? 'border-red-500' : ''}`}
+                />
+                {errors.email && <p className="text-xs text-red-600 mt-1">{errors.email}</p>}
+              </div>
+
+              <div className="space-y-1">
+                <Label htmlFor="address" className="text-sm font-medium text-slate-700">Address</Label>
+                <Input
+                  id="address"
+                  value={formData.address}
+                  onChange={(e) => setFormData({ ...formData, address: e.target.value })}
+                  placeholder="Default address for this customer"
+                  className="border-slate-300 h-10"
+                />
+              </div>
+
+              <div className="space-y-1">
+                <Label htmlFor="status" className="text-sm font-medium text-slate-700">Status</Label>
+                <Select value={formData.status} onValueChange={(val) => setFormData({ ...formData, status: val })}>
+                  <SelectTrigger className="border-slate-300 h-10">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="active">Active</SelectItem>
+                    <SelectItem value="inactive">Inactive</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+            </CardContent>
+          </Card>
+
+          <Collapsible defaultOpen={false}>
+            <Card className="shadow-sm border border-slate-200">
+              <CollapsibleTrigger className="w-full">
+                <CardContent className="p-4">
+                  <div className="flex items-center justify-between">
+                    <span className="text-xs font-medium text-slate-500 uppercase tracking-wide">Notes</span>
+                    <ChevronDown className="w-4 h-4 text-slate-400 transition-transform data-[state=open]:rotate-180" />
+                  </div>
+                </CardContent>
+              </CollapsibleTrigger>
+              <CollapsibleContent>
+                <CardContent className="px-4 pb-4 pt-0">
+                  <RichTextEditor
+                    value={formData.notes}
+                    onChange={(value) => setFormData({ ...formData, notes: value })}
+                    placeholder="Add any notes about the customer..."
+                  />
+                </CardContent>
+              </CollapsibleContent>
+            </Card>
+          </Collapsible>
+
+          <div className="sticky bottom-0 bg-white border-t border-slate-200 p-4 flex justify-end gap-2 shadow-sm">
+            <Button 
+              type="button" 
+              variant="outline" 
+              onClick={onCancel}
+              className="border-slate-300 hover:bg-slate-50 h-10 px-4 font-medium rounded-lg"
+            >
               Cancel
             </Button>
-            <Button type="submit" disabled={isSubmitting} className="bg-[#fae008] hover:bg-[#e5d007] active:bg-[#d4c006] text-black font-bold shadow-md hover:shadow-lg transition-all">
+            <Button 
+              type="submit" 
+              disabled={isSubmitting} 
+              className="bg-[#fae008] hover:bg-[#e5d007] text-slate-900 h-10 px-4 font-medium rounded-lg"
+            >
               {isSubmitting ? 'Saving...' : customer ? 'Update Customer' : 'Create Customer'}
             </Button>
-          </CardFooter>
+          </div>
         </form>
-      </Card>
+      </div>
 
       <Dialog open={showNewOrgDialog} onOpenChange={setShowNewOrgDialog}>
-        <DialogContent className="rounded-2xl">
+        <DialogContent className="rounded-lg border border-slate-200">
           <DialogHeader>
-            <DialogTitle className="text-xl font-bold text-black">New Organisation</DialogTitle>
+            <DialogTitle className="text-lg font-semibold">New Organisation</DialogTitle>
           </DialogHeader>
-          <div className="space-y-4">
-            <div className="space-y-2">
-              <Label htmlFor="new_org_name">Name *</Label>
+          <div className="space-y-3">
+            <div className="space-y-1">
+              <Label htmlFor="new_org_name" className="text-sm font-medium text-slate-700">Name *</Label>
               <Input
                 id="new_org_name"
                 value={newOrgData.name}
                 onChange={(e) => setNewOrgData({ ...newOrgData, name: e.target.value })}
-                className="border-2 border-slate-300"
+                className="border-slate-300 h-10"
               />
             </div>
-            <div className="space-y-2">
-              <Label htmlFor="new_org_type">Type</Label>
+            <div className="space-y-1">
+              <Label htmlFor="new_org_type" className="text-sm font-medium text-slate-700">Type</Label>
               <Select value={newOrgData.organisation_type || ""} onValueChange={(val) => setNewOrgData({ ...newOrgData, organisation_type: val || undefined })}>
-                <SelectTrigger className="border-2 border-slate-300">
+                <SelectTrigger className="border-slate-300 h-10">
                   <SelectValue placeholder="Select type" />
                 </SelectTrigger>
                 <SelectContent>
@@ -322,24 +359,24 @@ export default function CustomerForm({ customer, onSubmit, onCancel, isSubmittin
               </Select>
             </div>
             {newOrgData.organisation_type === "Strata" && (
-              <div className="space-y-2">
-                <Label htmlFor="new_org_sp">SP Number</Label>
+              <div className="space-y-1">
+                <Label htmlFor="new_org_sp" className="text-sm font-medium text-slate-700">SP Number</Label>
                 <Input
                   id="new_org_sp"
                   value={newOrgData.sp_number}
                   onChange={(e) => setNewOrgData({ ...newOrgData, sp_number: e.target.value })}
                   placeholder="Strata Plan number"
-                  className="border-2 border-slate-300"
+                  className="border-slate-300 h-10"
                 />
               </div>
             )}
-            <div className="space-y-2">
-              <Label htmlFor="new_org_address">Address</Label>
+            <div className="space-y-1">
+              <Label htmlFor="new_org_address" className="text-sm font-medium text-slate-700">Address</Label>
               <Input
                 id="new_org_address"
                 value={newOrgData.address}
                 onChange={(e) => setNewOrgData({ ...newOrgData, address: e.target.value })}
-                className="border-2 border-slate-300"
+                className="border-slate-300 h-10"
               />
             </div>
           </div>
@@ -347,7 +384,7 @@ export default function CustomerForm({ customer, onSubmit, onCancel, isSubmittin
             <Button 
               variant="outline" 
               onClick={() => setShowNewOrgDialog(false)}
-              className="border-2 font-semibold"
+              className="border-slate-300 font-medium h-9 rounded-lg"
               disabled={isCreatingOrg}
             >
               Cancel
@@ -355,7 +392,7 @@ export default function CustomerForm({ customer, onSubmit, onCancel, isSubmittin
             <Button 
               onClick={handleCreateNewOrg}
               disabled={!newOrgData.name || isCreatingOrg}
-              className="bg-[#fae008] hover:bg-[#e5d007] text-black font-bold"
+              className="bg-[#fae008] hover:bg-[#e5d007] text-slate-900 font-medium h-9 rounded-lg"
             >
               {isCreatingOrg ? 'Creating...' : 'Create Organisation'}
             </Button>
