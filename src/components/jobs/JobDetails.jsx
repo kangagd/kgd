@@ -127,6 +127,7 @@ export default function JobDetails({ job, onClose, onStatusChange, onDelete }) {
   const [communicationWithClient, setCommunicationWithClient] = useState(job.communication_with_client || "");
   const [outcome, setOutcome] = useState(job.outcome || "");
   const [validationError, setValidationError] = useState("");
+  const [initialImageCount, setInitialImageCount] = useState(0);
   const queryClient = useQueryClient();
 
   const { data: jobTypes = [] } = useQuery({
@@ -188,6 +189,9 @@ export default function JobDetails({ job, onClose, onStatusChange, onDelete }) {
         check_in_time: new Date().toISOString()
       });
       
+      // Store initial image count when checking in
+      setInitialImageCount((job.image_urls || []).length);
+      
       const newStatus = determineJobStatus(job.scheduled_date, job.outcome, true, job.status);
       await base44.entities.Job.update(job.id, { status: newStatus });
       
@@ -203,6 +207,12 @@ export default function JobDetails({ job, onClose, onStatusChange, onDelete }) {
     mutationFn: async () => {
       if (!overview || !nextSteps || !communicationWithClient || !outcome) {
         throw new Error("Please fill in all Site Visit fields before checking out.");
+      }
+
+      // Validate that at least one photo was added during the visit
+      const currentImageCount = (job.image_urls || []).length;
+      if (currentImageCount === initialImageCount) {
+        throw new Error("Please add at least one photo before checking out.");
       }
 
       const checkOutTime = new Date().toISOString();
@@ -244,6 +254,7 @@ export default function JobDetails({ job, onClose, onStatusChange, onDelete }) {
       setNextSteps("");
       setCommunicationWithClient("");
       setOutcome("");
+      setInitialImageCount(0);
       queryClient.invalidateQueries({ queryKey: ['checkIns', job.id] });
       queryClient.invalidateQueries({ queryKey: ['jobSummaries', job.id] });
       queryClient.invalidateQueries({ queryKey: ['jobs'] });
