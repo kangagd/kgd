@@ -11,18 +11,31 @@ import { useNavigate } from "react-router-dom";
 import { createPageUrl } from "@/utils";
 
 const statusColors = {
-  open: "bg-blue-50 text-blue-700 border-blue-200",
-  scheduled: "bg-teal-50 text-teal-700 border-teal-200",
-  quoted: "bg-purple-50 text-purple-700 border-purple-200",
-  invoiced: "bg-amber-50 text-amber-700 border-amber-200",
-  paid: "bg-emerald-50 text-emerald-700 border-emerald-200",
-  completed: "bg-green-50 text-green-700 border-green-200",
-  lost: "bg-red-50 text-red-700 border-red-200"
+  open: "rgba(37, 99, 235, 0.15)",
+  scheduled: "rgba(14, 165, 233, 0.15)",
+  in_progress: "rgba(14, 165, 233, 0.15)",
+  quoted: "rgba(124, 58, 237, 0.15)",
+  invoiced: "rgba(249, 115, 22, 0.15)",
+  paid: "rgba(22, 163, 74, 0.15)",
+  completed: "rgba(21, 128, 61, 0.15)",
+  cancelled: "rgba(220, 38, 38, 0.15)"
+};
+
+const statusTextColors = {
+  open: "#2563EB",
+  scheduled: "#0EA5E9",
+  in_progress: "#0EA5E9",
+  quoted: "#7C3AED",
+  invoiced: "#F97316",
+  paid: "#16A34A",
+  completed: "#15803D",
+  cancelled: "#DC2626"
 };
 
 const statusLabels = {
   open: "Open",
   scheduled: "Scheduled",
+  in_progress: "In Progress",
   quoted: "Quoted",
   invoiced: "Invoiced",
   paid: "Paid",
@@ -101,14 +114,14 @@ export default function Dashboard() {
       <div className="max-w-7xl mx-auto">
         <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-6 md:mb-8 gap-4">
           <div>
-            <h1 className="text-3xl md:text-4xl font-bold text-[hsl(25,10%,12%)] tracking-tight">
+            <h1 className="text-3xl md:text-4xl font-bold text-[#111111] tracking-tight">
               Good {new Date().getHours() < 12 ? 'Morning' : new Date().getHours() < 18 ? 'Afternoon' : 'Evening'}, {user?.full_name?.split(' ')[0] || 'there'}!
             </h1>
-            <p className="text-[hsl(25,8%,45%)] mt-2 text-base">Here's what's happening today</p>
+            <p className="text-[#4F4F4F] mt-2 text-base">Here's what's happening today</p>
           </div>
           <Button
             onClick={() => window.location.href = '/Jobs?action=new'}
-            className="bg-[#fae008] hover:bg-[#e5d007] active:bg-[#d4c006] text-black font-semibold shadow-md hover:shadow-lg transition-all duration-150 w-full md:w-auto"
+            className="bg-[#FAE008] hover:bg-[#e5d007] active:bg-[#d4c006] text-black font-semibold shadow-md hover:shadow-lg transition-all duration-150 w-full md:w-auto"
           >
             <Plus className="w-5 h-5 mr-2" />
             New Job
@@ -117,12 +130,12 @@ export default function Dashboard() {
 
         {/* Daily Overview */}
         {todayJobs.length > 0 && (
-          <Card className="border-2 border-[hsl(32,15%,88%)] rounded-2xl mb-6 overflow-hidden">
-            <CardHeader className="bg-[#FEF8C8] border-b-2 border-[hsl(32,15%,88%)] p-4 md:p-6">
-              <CardTitle className="flex items-center gap-3 text-xl font-bold text-[hsl(25,10%,12%)] tracking-tight">
+          <Card className="border-2 border-[#E2E3E5] rounded-2xl mb-6 overflow-hidden">
+            <CardHeader className="bg-[#FEF8C8] border-b-2 border-[#E2E3E5] p-4 md:p-6">
+              <CardTitle className="flex items-center gap-3 text-xl font-bold text-[#111111] tracking-tight">
                 <Calendar className="w-6 h-6 text-[#111111]" />
                 Today's Overview
-                <Badge className="bg-[#fae008] text-black font-semibold border-2 border-black">
+                <Badge className="bg-[#FAE008] text-black font-semibold border-2 border-black">
                   {todayJobs.length} {todayJobs.length === 1 ? 'Job' : 'Jobs'}
                 </Badge>
               </CardTitle>
@@ -132,22 +145,22 @@ export default function Dashboard() {
                 {todayJobs.map((job) => (
                   <Card
                     key={job.id}
-                    className="border-2 border-[hsl(32,15%,88%)] hover:border-[#fae008] hover:shadow-lg transition-all cursor-pointer rounded-xl"
+                    className="border-2 border-[#E2E3E5] hover:border-[#FAE008] hover:shadow-lg transition-all cursor-pointer rounded-xl"
                     onClick={() => handleJobClick(job.id)}
                   >
                     <CardContent className="p-4">
                       <div className="flex items-start gap-4">
                         <div className="flex-1">
                           <div className="flex items-center gap-2 flex-wrap mb-2">
-                            <span className="text-base font-bold text-[hsl(25,10%,12%)]">{job.customer_name}</span>
-                            <span className="text-sm text-[hsl(25,8%,45%)]">#{job.job_number}</span>
+                            <span className="text-base font-bold text-[#111111]">#{job.job_number}</span>
+                            <span className="text-sm text-[#4F4F4F]">{job.customer_name}</span>
                             {job.job_type_name && (
                               <Badge className="bg-purple-100 text-purple-700 border-purple-200 font-semibold border-2">
                                 {job.job_type_name}
                               </Badge>
                             )}
-                            <Badge className={`${statusColors[job.status]} font-semibold border-2`}>
-                              {job.status}
+                            <Badge style={{ backgroundColor: statusColors[job.status], color: statusTextColors[job.status] }} className={`capitalize font-semibold text-xs py-1 px-3 rounded-full border border-current`}>
+                              {job.status.replace(/_/g, ' ')}
                             </Badge>
                           </div>
 
@@ -292,7 +305,14 @@ export default function Dashboard() {
                     >
                       <div className="flex items-center gap-2 mb-2">
                         <span className="font-bold text-[hsl(25,10%,12%)] text-sm">#{job.job_number}</span>
-                        <Badge className={`${statusColors[job.status]} font-semibold border-2 text-xs`}>
+                        <Badge
+                          style={{
+                            backgroundColor: statusColors[job.status] || "rgba(200, 200, 200, 0.15)",
+                            color: statusTextColors[job.status] || "#666",
+                            borderColor: statusColors[job.status] ? `rgba(${statusColors[job.status].match(/\d+/g).slice(0,3).join(',')}, 0.5)` : "#ccc"
+                          }}
+                          className="font-semibold border-2 text-xs"
+                        >
                           {statusLabels[job.status] || job.status}
                         </Badge>
                       </div>

@@ -63,15 +63,15 @@ export default function Layout({ children, currentPageName }) {
 
   if (isTechnician) {
     return (
-      <div className="min-h-screen flex flex-col bg-[#FFFDEF]">
-        <header className="bg-white border-b border-slate-200 px-3 py-2 sticky top-0 z-50 shadow-sm">
+      <div className="min-h-screen flex flex-col bg-[#F7F7F7]">
+        <header className="bg-white border-b border-[#E2E3E5] px-3 py-2 sticky top-0 z-50 shadow-sm">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-2">
-              <div className="w-8 h-8 bg-[#fae008] rounded-lg flex items-center justify-center shadow-md">
+              <div className="w-8 h-8 bg-[#FAE008] rounded-lg flex items-center justify-center shadow-md">
                 <Wrench className="w-4 h-4 text-black" />
               </div>
               <div>
-                <h1 className="font-bold text-slate-900 text-sm">KGD</h1>
+                <h1 className="font-bold text-[#111111] text-sm">KGD</h1>
               </div>
             </div>
             <button
@@ -91,7 +91,7 @@ export default function Layout({ children, currentPageName }) {
           {children}
         </main>
 
-        <nav className="fixed bottom-0 left-0 right-0 bg-white border-t border-slate-200 px-1 py-2 shadow-lg">
+        <nav className="fixed bottom-0 left-0 right-0 bg-white border-t border-[#E2E3E5] px-1 py-2 shadow-lg">
           <div className="flex justify-around items-center max-w-screen-sm mx-auto">
             {navigationItems.map((item) => {
               const isActive = location.pathname === item.url;
@@ -101,8 +101,8 @@ export default function Layout({ children, currentPageName }) {
                   to={item.url}
                   className={`flex flex-col items-center gap-1 px-3 py-1.5 rounded-lg transition-all duration-200 ${
                     isActive
-                      ? 'text-[#fae008] bg-[#fae008]/10'
-                      : 'text-slate-600 hover:text-[#fae008] hover:bg-slate-50'
+                      ? 'text-[#000000] bg-[#FAE008]/20'
+                      : 'text-[#4F4F4F] hover:text-[#000000] hover:bg-slate-50'
                   }`}
                 >
                   <item.icon className="w-5 h-5" />
@@ -119,22 +119,22 @@ export default function Layout({ children, currentPageName }) {
   return (
     <SidebarProvider>
       <div className="min-h-screen flex w-full bg-white">
-        <Sidebar className="border-r border-slate-200 bg-white">
-          <SidebarHeader className="border-b border-slate-200 p-4">
+        <Sidebar className="border-r border-[#E2E3E5] bg-white">
+          <SidebarHeader className="border-b border-[#E2E3E5] p-4">
             <div className="flex items-center gap-3">
-              <div className="w-11 h-11 bg-[#fae008] rounded-xl flex items-center justify-center shadow-md">
+              <div className="w-11 h-11 bg-[#FAE008] rounded-xl flex items-center justify-center shadow-md">
                 <Wrench className="w-6 h-6 text-black" />
               </div>
               <div>
-                <h2 className="font-bold text-slate-900 text-base">FieldScheduler</h2>
-                <p className="text-xs text-slate-500">Garage Door Services</p>
+                <h2 className="font-bold text-[#111111] text-base">FieldScheduler</h2>
+                <p className="text-xs text-[#4F4F4F]">Garage Door Services</p>
               </div>
             </div>
           </SidebarHeader>
 
           <SidebarContent className="p-2">
             <SidebarGroup>
-              <SidebarGroupLabel className="text-xs font-semibold text-slate-500 uppercase tracking-wider px-3 py-2">
+              <SidebarGroupLabel className="text-xs font-semibold text-[#4F4F4F] uppercase tracking-wider px-3 py-2">
                 Navigation
               </SidebarGroupLabel>
               <SidebarGroupContent>
@@ -145,13 +145,13 @@ export default function Layout({ children, currentPageName }) {
                       <SidebarMenuItem key={item.title}>
                         <SidebarMenuButton
                           asChild
-                          className={`hover:bg-[#fae008]/10 hover:text-[#fae008] transition-all duration-200 rounded-lg mb-1 relative ${
-                            isActive ? 'bg-[#fae008]/10 text-[#fae008]' : ''
+                          className={`hover:bg-[#FAE008]/10 hover:text-[#000000] transition-all duration-200 rounded-lg mb-1 relative ${
+                            isActive ? 'bg-[#FAE008]/10 text-[#000000]' : ''
                           }`}
                         >
                           <Link to={item.url} className="flex items-center gap-3 px-3 py-2.5">
                             {isActive && (
-                              <div className="absolute left-0 top-0 bottom-0 w-1 bg-[#fae008] rounded-r-full"></div>
+                              <div className="absolute left-0 top-0 bottom-0 w-1 bg-[#FAE008] rounded-r-full"></div>
                             )}
                             <item.icon className="w-5 h-5" />
                             <span className="font-medium">{item.title}</span>
@@ -165,7 +165,7 @@ export default function Layout({ children, currentPageName }) {
             </SidebarGroup>
           </SidebarContent>
 
-          <SidebarFooter className="border-t border-slate-200 p-4">
+          <SidebarFooter className="border-t border-[#E2E3E5] p-4">
             <div className="flex items-center gap-3">
               <button
                 onClick={() => navigate(createPageUrl("UserProfile"))}
@@ -194,7 +194,7 @@ export default function Layout({ children, currentPageName }) {
         </Sidebar>
 
         <main className="flex-1 flex flex-col">
-          <header className="bg-white border-b border-slate-200 px-6 py-4 lg:hidden shadow-sm">
+          <header className="bg-white border-b border-[#E2E3E5] px-6 py-4 lg:hidden shadow-sm">
             <div className="flex items-center gap-4">
               <SidebarTrigger className="hover:bg-slate-100 p-2 rounded-lg transition-all duration-200" />
               <h1 className="text-xl font-semibold text-slate-900">FieldScheduler</h1>

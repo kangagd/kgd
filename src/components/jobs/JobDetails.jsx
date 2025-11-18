@@ -37,13 +37,25 @@ import {
 
 
 const statusColors = {
-  open: "bg-blue-50 text-blue-700 border-blue-200",
-  scheduled: "bg-teal-50 text-teal-700 border-teal-200",
-  quoted: "bg-purple-50 text-purple-700 border-purple-200",
-  invoiced: "bg-amber-50 text-amber-700 border-amber-200",
-  paid: "bg-emerald-50 text-emerald-700 border-emerald-200",
-  completed: "bg-green-50 text-green-700 border-green-200",
-  lost: "bg-red-50 text-red-700 border-red-200"
+  open: "rgba(37, 99, 235, 0.15)",
+  scheduled: "rgba(14, 165, 233, 0.15)",
+  in_progress: "rgba(14, 165, 233, 0.15)",
+  quoted: "rgba(124, 58, 237, 0.15)",
+  invoiced: "rgba(249, 115, 22, 0.15)",
+  paid: "rgba(22, 163, 74, 0.15)",
+  completed: "rgba(21, 128, 61, 0.15)",
+  cancelled: "rgba(220, 38, 38, 0.15)"
+};
+
+const statusTextColors = {
+  open: "#2563EB",
+  scheduled: "#0EA5E9",
+  in_progress: "#0EA5E9",
+  quoted: "#7C3AED",
+  invoiced: "#F97316",
+  paid: "#16A34A",
+  completed: "#15803D",
+  cancelled: "#DC2626"
 };
 
 const productColors = {
@@ -519,8 +531,8 @@ export default function JobDetails({ job, onClose, onDelete }) {
                 </div>
               </div>
               <div className="flex items-center gap-1 flex-shrink-0">
-                <Badge className={`status-badge status-${job.status}`}>
-                  {job.status}
+                <Badge style={{ backgroundColor: statusColors[job.status], color: statusTextColors[job.status] }} className={`capitalize font-semibold text-xs py-1 px-3 rounded-full border border-current`}>
+                  {job.status.replace(/_/g, ' ')}
                 </Badge>
                 <Button 
                   variant="ghost" 
@@ -667,7 +679,7 @@ export default function JobDetails({ job, onClose, onDelete }) {
                             onSave={(val) => handleFieldSave('scheduled_date', job.scheduled_date, val)}
                             type="date"
                             icon={Calendar}
-                            displayFormat={(val) => format(parseISO(val), 'MMM d, yyyy')}
+                            displayFormat={(val) => val ? format(parseISO(val), 'MMM d, yyyy') : 'Set date'}
                             placeholder="Set date"
                           />
                         </div>
@@ -874,8 +886,8 @@ export default function JobDetails({ job, onClose, onDelete }) {
                                 )}
                               </div>
                               {pJob.status && (
-                                <Badge className={`status-badge status-${pJob.status}`}>
-                                  {pJob.status}
+                                <Badge style={{ backgroundColor: statusColors[pJob.status], color: statusTextColors[pJob.status] }} className={`capitalize font-semibold text-xs py-1 px-3 rounded-full border border-current`}>
+                                  {pJob.status.replace(/_/g, ' ')}
                                 </Badge>
                               )}
                             </div>
@@ -1296,7 +1308,7 @@ export default function JobDetails({ job, onClose, onDelete }) {
             <Button
               onClick={handleCheckIn}
               disabled={checkInMutation.isPending}
-              className="btn-primary h-14 w-14 rounded-full shadow-lg hover:shadow-xl p-0"
+              className="bg-[#FAE008] hover:bg-[#e5d007] text-black h-14 w-14 rounded-full shadow-lg hover:shadow-xl p-0"
             >
               {checkInMutation.isPending ? (
                 <Timer className="w-6 h-6 animate-spin" />

@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from "react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -8,13 +9,25 @@ import { base44 } from "@/api/base44Client";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 
 const statusColors = {
-  open: "bg-blue-50 text-blue-700 border-blue-200",
-  scheduled: "bg-teal-50 text-teal-700 border-teal-200",
-  quoted: "bg-purple-50 text-purple-700 border-purple-200",
-  invoiced: "bg-amber-50 text-amber-700 border-amber-200",
-  paid: "bg-emerald-50 text-emerald-700 border-emerald-200",
-  completed: "bg-green-50 text-green-700 border-green-200",
-  cancelled: "bg-red-50 text-red-700 border-red-200"
+  open: "rgba(37, 99, 235, 0.15)",
+  scheduled: "rgba(14, 165, 233, 0.15)",
+  in_progress: "rgba(14, 165, 233, 0.15)",
+  quoted: "rgba(124, 58, 237, 0.15)",
+  invoiced: "rgba(249, 115, 22, 0.15)",
+  paid: "rgba(22, 163, 74, 0.15)",
+  completed: "rgba(21, 128, 61, 0.15)",
+  cancelled: "rgba(220, 38, 38, 0.15)"
+};
+
+const statusTextColors = {
+  open: "#2563EB",
+  scheduled: "#0EA5E9",
+  in_progress: "#0EA5E9",
+  quoted: "#7C3AED",
+  invoiced: "#F97316",
+  paid: "#16A34A",
+  completed: "#15803D",
+  cancelled: "#DC2626"
 };
 
 const productColors = {
@@ -120,15 +133,15 @@ export default function JobList({ jobs, isLoading, onSelectJob }) {
       {jobs.map((job) =>
       <Card
         key={job.id}
-        className="border-2 border-[hsl(32,15%,88%)] hover:border-[#fae008] hover:shadow-lg transition-all cursor-pointer rounded-2xl"
+        className="border-2 border-[#E2E3E5] hover:border-[#FAE008] hover:shadow-lg transition-all cursor-pointer rounded-2xl"
         onClick={() => onSelectJob(job)}>
 
           <CardContent className="p-4 md:p-6">
             <div className="flex items-start justify-between gap-4">
               <div className="flex-1">
                 <div className="flex items-center gap-2 flex-wrap mb-2">
-                  <h3 className="text-lg font-bold text-[hsl(25,10%,12%)]">{job.customer_name}</h3>
-                  <span className="text-sm text-[hsl(25,8%,45%)]">#{job.job_number}</span>
+                  <h3 className="text-lg font-bold text-[#111111]">{job.customer_name}</h3>
+                  <span className="text-sm text-[#4F4F4F]">#{job.job_number}</span>
                   {job.product &&
                 <Badge className={`${productColors[job.product]} font-semibold border-2`}>
                       {job.product}
@@ -139,28 +152,32 @@ export default function JobList({ jobs, isLoading, onSelectJob }) {
                       {job.job_type_name}
                     </Badge>
                 }
-                  <Badge className={`${statusColors[job.status]} font-semibold border-2`}>
-                    {job.status}
+                  <Badge 
+                    style={{ 
+                      backgroundColor: statusColors[job.status] || "rgba(0, 0, 0, 0.1)", 
+                      color: statusTextColors[job.status] || "#000" 
+                    }} 
+                    className={`capitalize font-semibold text-xs py-1 px-3 rounded-full border border-current`}
+                  >
+                    {job.status.replace(/_/g, ' ')}
                   </Badge>
                 </div>
                 
                 {job.address &&
-              <div className="flex items-start gap-2 text-[hsl(25,8%,45%)] mb-2">
+              <div className="flex items-start gap-2 text-[#4F4F4F] mb-2">
                     <MapPin className="w-4 h-4 mt-0.5 flex-shrink-0" />
                     <span className="text-sm">{job.address}</span>
                   </div>
               }
 
                 {job.notes && job.notes !== "<p><br></p>" &&
-              <div className="bg-yellow-50 text-[#121212] mr-48 mb-2 text-sm prose prose-sm line-clamp-2 max-w-none"
-
+              <div className="bg-amber-50 border-l-4 border-amber-400 rounded-lg p-2 mb-2 text-sm prose prose-sm line-clamp-2 max-w-none"
               dangerouslySetInnerHTML={{ __html: job.notes }} />
-
               }
 
                 <div className="flex items-center gap-3 mt-2 flex-wrap">
                   {job.scheduled_date &&
-                <div className="flex items-center gap-1.5 text-sm text-[hsl(25,8%,45%)]">
+                <div className="flex items-center gap-1.5 text-sm text-[#4F4F4F]">
                       <Calendar className="w-4 h-4" />
                       {format(parseISO(job.scheduled_date), 'MMM d, yyyy')}
                       {job.scheduled_time && ` at ${job.scheduled_time}`}
@@ -168,8 +185,8 @@ export default function JobList({ jobs, isLoading, onSelectJob }) {
                 }
                   {job.assigned_to_name && job.assigned_to_name.length > 0 &&
                 <div className="flex items-center gap-1.5">
-                      <User className="w-4 h-4 text-[hsl(25,8%,55%)]" />
-                      <span className="text-sm text-[hsl(25,8%,45%)]">
+                      <User className="w-4 h-4 text-[#4F4F4F]" />
+                      <span className="text-sm text-[#4F4F4F]">
                         {Array.isArray(job.assigned_to_name) ? job.assigned_to_name.join(', ') : job.assigned_to_name}
                       </span>
                     </div>
@@ -177,7 +194,7 @@ export default function JobList({ jobs, isLoading, onSelectJob }) {
                 </div>
               </div>
               
-              <div className="text-right text-sm text-[hsl(25,8%,45%)]">
+              <div className="text-right text-sm text-[#4F4F4F]">
                 {job.created_date &&
               <div className="text-xs">Created {new Date(job.created_date).toLocaleDateString()}</div>
               }
