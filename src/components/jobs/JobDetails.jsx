@@ -515,54 +515,48 @@ export default function JobDetails({ job, onClose, onDelete }) {
       <div className="min-h-screen bg-[#F7F7F7]">
         {/* Header */}
         <div className="bg-white border-b border-[#E2E3E5] sticky top-0 z-10">
-          <div className="p-4">
-            <div className="flex items-start justify-between gap-4 mb-3">
-              <div className="flex items-start gap-3 flex-1 min-w-0">
+          <div className="p-3 md:p-4">
+            <div className="flex items-start justify-between gap-2 mb-3">
+              <div className="flex items-start gap-2 flex-1 min-w-0">
                 <Button 
                   variant="ghost" 
                   size="icon" 
                   onClick={onClose}
-                  className="h-10 w-10 flex-shrink-0"
+                  className="h-9 w-9 md:h-10 md:w-10 flex-shrink-0"
                 >
                   <ArrowLeft className="w-5 h-5" />
                 </Button>
                 <div className="flex-1 min-w-0">
                   <h1 
-                    className="text-[18px] md:text-[20px] font-semibold text-[#111111] mb-1 cursor-pointer hover:text-[#FAE008] transition-colors truncate"
+                    className="text-base md:text-[20px] font-semibold text-[#111111] mb-1 cursor-pointer hover:text-[#FAE008] transition-colors truncate"
                     onClick={() => setShowCustomerEdit(true)}
                   >
                     {job.customer_name}
                   </h1>
-                  <p className="text-[13px] text-[#4F4F4F]">Job #{job.job_number}</p>
+                  <p className="text-xs md:text-[13px] text-[#4F4F4F]">Job #{job.job_number}</p>
                 </div>
               </div>
               <div className="flex items-center gap-1 flex-shrink-0">
-                <Badge style={{ backgroundColor: statusColors[job.status], color: statusTextColors[job.status] }} className={`capitalize font-semibold text-xs py-1 px-2 md:px-3 rounded-full border border-current`}>
+                <Badge style={{ backgroundColor: statusColors[job.status], color: statusTextColors[job.status] }} className="capitalize font-semibold text-[10px] md:text-xs py-1 px-2 rounded-full border border-current whitespace-nowrap">
                   {job.status.replace(/_/g, ' ')}
                 </Badge>
-                {/* Mobile: Show only essential actions */}
-                <div className="flex md:hidden">
-                  <Button 
-                    variant="ghost" 
-                    size="icon" 
-                    onClick={() => setShowHistory(true)}
-                    className="h-9 w-9"
-                    title="History"
-                  >
-                    <History className="w-4 h-4" />
-                  </Button>
-                  {!isTechnician && (
-                    <DropdownMenu>
-                      <DropdownMenuTrigger asChild>
-                        <Button variant="ghost" size="icon" className="h-9 w-9">
-                          <MoreVertical className="w-4 h-4" />
-                        </Button>
-                      </DropdownMenuTrigger>
-                      <DropdownMenuContent align="end">
-                        <DropdownMenuItem onClick={() => setShowPriceList(true)}>
-                          <DollarSign className="w-4 h-4 mr-2" />
-                          Price List
-                        </DropdownMenuItem>
+                <DropdownMenu>
+                  <DropdownMenuTrigger asChild>
+                    <Button variant="ghost" size="icon" className="h-9 w-9 flex-shrink-0">
+                      <MoreVertical className="w-4 h-4" />
+                    </Button>
+                  </DropdownMenuTrigger>
+                  <DropdownMenuContent align="end">
+                    <DropdownMenuItem onClick={() => setShowPriceList(true)}>
+                      <DollarSign className="w-4 h-4 mr-2" />
+                      Price List
+                    </DropdownMenuItem>
+                    <DropdownMenuItem onClick={() => setShowHistory(true)}>
+                      <History className="w-4 h-4 mr-2" />
+                      History
+                    </DropdownMenuItem>
+                    {!isTechnician && (
+                      <>
                         <DropdownMenuItem onClick={() => setShowAssistant(true)}>
                           <Sparkles className="w-4 h-4 mr-2" />
                           AI Assistant
@@ -571,53 +565,10 @@ export default function JobDetails({ job, onClose, onDelete }) {
                           <Trash2 className="w-4 h-4 mr-2" />
                           Delete
                         </DropdownMenuItem>
-                      </DropdownMenuContent>
-                    </DropdownMenu>
-                  )}
-                </div>
-                {/* Desktop: Show all actions */}
-                <div className="hidden md:flex items-center gap-1">
-                  <Button 
-                    variant="ghost" 
-                    size="icon" 
-                    onClick={() => setShowPriceList(true)}
-                    className="h-10 w-10"
-                    title="Price List"
-                  >
-                    <DollarSign className="w-5 h-5" />
-                  </Button>
-                  <Button 
-                    variant="ghost" 
-                    size="icon" 
-                    onClick={() => setShowHistory(true)}
-                    className="h-10 w-10"
-                    title="History"
-                  >
-                    <History className="w-5 h-5" />
-                  </Button>
-                  {!isTechnician && (
-                    <>
-                      <Button 
-                        variant="ghost" 
-                        size="icon" 
-                        onClick={() => setShowAssistant(true)}
-                        className="h-10 w-10"
-                        title="AI Assistant"
-                      >
-                        <Sparkles className="w-5 h-5" />
-                      </Button>
-                      <Button 
-                        variant="ghost" 
-                        size="icon" 
-                        onClick={() => setShowDeleteConfirm(true)}
-                        className="h-10 w-10 text-red-600"
-                        title="Delete"
-                      >
-                        <Trash2 className="w-5 h-5" />
-                      </Button>
-                    </>
-                  )}
-                </div>
+                      </>
+                    )}
+                  </DropdownMenuContent>
+                </DropdownMenu>
               </div>
             </div>
 
@@ -626,15 +577,15 @@ export default function JobDetails({ job, onClose, onDelete }) {
               {(Array.isArray(job.assigned_to_name) ? job.assigned_to_name : job.assigned_to_name ? [job.assigned_to_name] : []).slice(0, 2).map((name, idx) => (
                 <div
                   key={idx}
-                  className={`${getAvatarColor(name)} w-8 h-8 rounded-full flex items-center justify-center text-white text-xs font-bold shadow-soft`}
+                  className={`${getAvatarColor(name)} w-7 h-7 md:w-8 md:h-8 rounded-full flex items-center justify-center text-white text-xs font-bold shadow-soft`}
                   title={name}
                 >
                   {getInitials(name)}
                 </div>
               ))}
               {job.scheduled_date && (
-                <div className="flex items-center gap-1 text-[13px] text-[#4F4F4F]">
-                  <Calendar className="w-4 h-4" />
+                <div className="flex items-center gap-1 text-xs md:text-[13px] text-[#4F4F4F]">
+                  <Calendar className="w-3 h-3 md:w-4 md:h-4" />
                   {format(parseISO(job.scheduled_date), 'MMM d')}
                   {job.scheduled_time && ` · ${job.scheduled_time}`}
                 </div>
@@ -642,20 +593,20 @@ export default function JobDetails({ job, onClose, onDelete }) {
             </div>
           </div>
 
-          {/* Tab Navigation - horizontal scroll on mobile */}
-          <div className="flex overflow-x-auto px-4 gap-1 no-scrollbar">
+          {/* Tab Navigation */}
+          <div className="flex overflow-x-auto px-3 md:px-4 gap-1 no-scrollbar">
             {tabs.map((tab) => (
               <button
                 key={tab.id}
                 onClick={() => setActiveTab(tab.id)}
-                className={`flex items-center gap-2 px-3 md:px-4 py-3 text-[12px] md:text-[13px] font-medium whitespace-nowrap border-b-2 transition-colors ${
+                className={`flex items-center gap-1.5 px-2.5 md:px-4 py-2.5 md:py-3 text-xs md:text-[13px] font-medium whitespace-nowrap border-b-2 transition-colors flex-shrink-0 ${
                   activeTab === tab.id
                     ? 'border-[#FAE008] text-[#111111]'
                     : 'border-transparent text-[#4F4F4F] hover:text-[#111111]'
                 }`}
               >
-                <tab.icon className="w-4 h-4" />
-                <span className="hidden sm:inline">{tab.label}</span>
+                <tab.icon className="w-3.5 h-3.5 md:w-4 md:h-4" />
+                <span>{tab.label}</span>
               </button>
             ))}
           </div>
@@ -1281,7 +1232,7 @@ export default function JobDetails({ job, onClose, onDelete }) {
                           </div>
                           <div className="pt-2 mt-2 border-t border-[#E2E3E5]">
                             <div className="flex items-center justify-between">
-                              <span className="text-[13px] text-[#4F4F4F]">Duration:</span>
+                              <span className="text-[#4F4F4F]">Duration:</span>
                               <span className="text-[14px] font-bold text-[#111111]">
                                 {checkIn.duration_hours.toFixed(1)}h
                               </span>

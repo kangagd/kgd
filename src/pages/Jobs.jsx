@@ -236,7 +236,7 @@ export default function Jobs() {
 
         <div className="flex flex-col gap-4 mb-6">
           <div className="flex gap-2">
-            <div className="relative flex-1">
+            <div className="relative flex-1 min-w-0">
               <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 md:w-5 md:h-5 text-[hsl(25,8%,55%)]" />
               <Input
                 placeholder="Search jobs..."
@@ -246,7 +246,7 @@ export default function Jobs() {
 
             </div>
             <Tabs value={viewMode} onValueChange={setViewMode}>
-              <TabsList className="h-10 md:h-12">
+              <TabsList className="h-10 md:h-12 flex-shrink-0">
                 <TabsTrigger value="list" className="gap-1 md:gap-2 font-semibold text-xs md:text-sm px-2 md:px-3">
                   <List className="w-4 h-4" />
                   <span className="hidden sm:inline">List</span>
@@ -260,17 +260,15 @@ export default function Jobs() {
           </div>
 
           {viewMode === "list" &&
-          <div className="overflow-x-auto -mx-4 px-4">
-              <Tabs value={statusFilter} onValueChange={setStatusFilter}>
-                <TabsList className="w-full min-w-max inline-flex md:grid md:grid-cols-5 h-11">
-                  {statusFilters.map((filter) =>
-                <TabsTrigger key={filter.value} value={filter.value} className="font-semibold text-xs md:text-sm whitespace-nowrap px-3 md:px-4">
-                      {filter.label}
-                    </TabsTrigger>
-                )}
-                </TabsList>
-              </Tabs>
-            </div>
+          <Tabs value={statusFilter} onValueChange={setStatusFilter}>
+              <TabsList className="w-full grid grid-cols-2 sm:grid-cols-3 md:grid-cols-5 h-auto">
+                {statusFilters.map((filter) =>
+              <TabsTrigger key={filter.value} value={filter.value} className="font-semibold text-xs md:text-sm py-2 px-2">
+                    {filter.label}
+                  </TabsTrigger>
+              )}
+              </TabsList>
+            </Tabs>
           }
         </div>
 
