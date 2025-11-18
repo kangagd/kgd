@@ -4,7 +4,7 @@ import { Upload, X, Camera, Video } from "lucide-react";
 import { base44 } from "@/api/base44Client";
 
 export default function EditableFileUpload({ 
-  files = [], 
+  files, 
   onFilesChange, 
   accept = "image/*,video/*",
   multiple = true,
@@ -16,6 +16,10 @@ export default function EditableFileUpload({
   const cameraInputRef = useRef(null);
   const [uploading, setUploading] = useState(false);
   const [isDragging, setIsDragging] = useState(false);
+
+  const normalizedFiles = multiple 
+    ? (Array.isArray(files) ? files : (files ? [files] : [])) 
+    : files;
 
   const uploadFiles = async (selectedFiles) => {
     if (selectedFiles.length === 0) return;
@@ -29,7 +33,8 @@ export default function EditableFileUpload({
       const newUrls = results.map(result => result.file_url);
       
       if (multiple) {
-        onFilesChange([...files, ...newUrls]);
+        const currentFiles = Array.isArray(normalizedFiles) ? normalizedFiles : [];
+        onFilesChange([...currentFiles, ...newUrls]);
       } else {
         onFilesChange(newUrls[0]);
       }
@@ -68,7 +73,8 @@ export default function EditableFileUpload({
 
   const handleRemove = (indexOrUrl) => {
     if (multiple) {
-      onFilesChange(files.filter((_, index) => index !== indexOrUrl));
+      const currentFiles = Array.isArray(normalizedFiles) ? normalizedFiles : [];
+      onFilesChange(currentFiles.filter((_, index) => index !== indexOrUrl));
     } else {
       onFilesChange(null);
     }
@@ -82,7 +88,7 @@ export default function EditableFileUpload({
     return url && /\.(mp4|webm|ogg|mov|avi)$/i.test(url);
   };
 
-  const displayFiles = multiple ? files : (files ? [files] : []);
+  const displayFiles = multiple ? (Array.isArray(normalizedFiles) ? normalizedFiles : []) : (normalizedFiles ? [normalizedFiles] : []);
   const isMediaUpload = accept.includes('image') || accept.includes('video');
 
   return (
