@@ -5,10 +5,10 @@ import { DragDropContext, Droppable, Draggable } from "@hello-pangea/dnd";
 import { Grip } from "lucide-react";
 
 const statusColors = {
-  scheduled: "bg-blue-500",
-  in_progress: "bg-orange-500",
-  completed: "bg-green-500",
-  cancelled: "bg-slate-400",
+  open: "#3b82f6",
+  scheduled: "#14b8a6",
+  completed: "#22c55e",
+  cancelled: "#ef4444",
 };
 
 export default function MonthCalendar({ currentDate, jobs, onJobDrop, onJobClick, isLoading }) {
@@ -41,10 +41,10 @@ export default function MonthCalendar({ currentDate, jobs, onJobDrop, onJobClick
 
   return (
     <DragDropContext onDragEnd={handleDragEnd}>
-      <Card className="border-none shadow-sm overflow-hidden">
-        <div className="grid grid-cols-7 bg-slate-100 border-b border-slate-200">
+      <Card className="border-2 border-[hsl(32,15%,88%)] rounded-2xl overflow-hidden">
+        <div className="grid grid-cols-7 bg-[#F7F7F7] border-b-2 border-[hsl(32,15%,88%)]">
           {['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'].map((day) => (
-            <div key={day} className="p-3 text-center text-sm font-semibold text-slate-700 border-r border-slate-200 last:border-r-0">
+            <div key={day} className="p-3 text-center text-sm font-semibold text-[hsl(25,10%,12%)] border-r border-[hsl(32,15%,88%)] last:border-r-0">
               {day}
             </div>
           ))}
@@ -62,18 +62,18 @@ export default function MonthCalendar({ currentDate, jobs, onJobDrop, onJobClick
                   <div
                     ref={provided.innerRef}
                     {...provided.droppableProps}
-                    className={`min-h-[120px] p-2 border-r border-b border-slate-200 ${
-                      !isCurrentMonth ? 'bg-slate-50' : 'bg-white'
-                    } ${snapshot.isDraggingOver ? 'bg-orange-50' : ''}`}
+                    className={`min-h-[120px] p-2 border-r border-b border-[hsl(32,15%,88%)] ${
+                      !isCurrentMonth ? 'bg-[#F7F7F7]' : 'bg-white'
+                    } ${snapshot.isDraggingOver ? 'bg-[#FEF8C8]' : ''}`}
                   >
                     <div className="mb-2">
                       <div
-                        className={`w-7 h-7 flex items-center justify-center rounded-full text-sm font-medium ${
+                        className={`w-7 h-7 flex items-center justify-center rounded-full text-sm font-bold ${
                           isToday
-                            ? 'bg-orange-600 text-white'
+                            ? 'bg-[#fae008] text-[#111111]'
                             : !isCurrentMonth
-                            ? 'text-slate-400'
-                            : 'text-slate-900'
+                            ? 'text-[hsl(25,8%,55%)]'
+                            : 'text-[hsl(25,10%,12%)]'
                         }`}
                       >
                         {format(day, 'd')}
@@ -89,12 +89,12 @@ export default function MonthCalendar({ currentDate, jobs, onJobDrop, onJobClick
                               {...provided.draggableProps}
                               {...provided.dragHandleProps}
                               onClick={() => onJobClick(job)}
-                              className={`px-2 py-1 rounded text-xs font-medium cursor-pointer transition-all flex items-center gap-1 ${
-                                snapshot.isDragging ? 'shadow-lg ring-2 ring-orange-400' : 'hover:shadow-md'
+                              className={`px-2 py-1 rounded-lg text-xs font-semibold cursor-pointer transition-all flex items-center gap-1 ${
+                                snapshot.isDragging ? 'shadow-lg ring-2 ring-[#fae008]' : 'hover:shadow-md'
                               }`}
                               style={{
                                 ...provided.draggableProps.style,
-                                backgroundColor: statusColors[job.status]?.replace('bg-', '#') || '#94a3b8',
+                                backgroundColor: statusColors[job.status] || '#94a3b8',
                                 color: 'white'
                               }}
                             >
@@ -105,7 +105,7 @@ export default function MonthCalendar({ currentDate, jobs, onJobDrop, onJobClick
                         </Draggable>
                       ))}
                       {dayJobs.length > 3 && (
-                        <div className="text-xs text-slate-500 text-center py-1">
+                        <div className="text-xs text-[hsl(25,8%,55%)] text-center py-1 font-medium">
                           +{dayJobs.length - 3} more
                         </div>
                       )}
