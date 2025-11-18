@@ -37,19 +37,19 @@ export default function Jobs() {
   }, []);
 
   const statusFilters = [
-    { value: "all", label: "All Jobs", color: "bg-slate-100 text-slate-700" },
-    { value: "open", label: "Open", color: "bg-blue-50 text-blue-700 border-blue-200" },
-    { value: "scheduled", label: "Scheduled", color: "bg-teal-50 text-teal-700 border-teal-200" },
-    { value: "completed", label: "Completed", color: "bg-green-50 text-green-700 border-green-200" },
-    { value: "cancelled", label: "Cancelled", color: "bg-red-50 text-red-700 border-red-200" }
-  ];
+  { value: "all", label: "All Jobs", color: "bg-slate-100 text-slate-700" },
+  { value: "open", label: "Open", color: "bg-blue-50 text-blue-700 border-blue-200" },
+  { value: "scheduled", label: "Scheduled", color: "bg-teal-50 text-teal-700 border-teal-200" },
+  { value: "completed", label: "Completed", color: "bg-green-50 text-green-700 border-green-200" },
+  { value: "cancelled", label: "Cancelled", color: "bg-red-50 text-red-700 border-red-200" }];
+
 
   const { data: allJobs = [], isLoading, refetch } = useQuery({
     queryKey: ['allJobs'],
     queryFn: () => base44.entities.Job.list('-scheduled_date')
   });
 
-  const jobs = allJobs.filter(job => !job.deleted_at);
+  const jobs = allJobs.filter((job) => !job.deleted_at);
 
   const { data: technicians = [] } = useQuery({
     queryKey: ['technicians'],
@@ -181,11 +181,11 @@ export default function Jobs() {
             onCancel={handleCancelForm}
             isSubmitting={createJobMutation.isPending || updateJobMutation.isPending}
             preselectedCustomerId={preselectedCustomerId}
-            preselectedProjectId={preselectedProjectId}
-          />
+            preselectedProjectId={preselectedProjectId} />
+
         </div>
-      </div>
-    );
+      </div>);
+
   }
 
   if (selectedJob) {
@@ -202,37 +202,37 @@ export default function Jobs() {
                 id: selectedJob.id,
                 data: { status: newStatus }
               });
-            }}
-          />
+            }} />
+
         </div>
-      </div>
-    );
+      </div>);
+
   }
 
   return (
-    <div className="p-4 md:p-8 bg-[#FFFDEF] min-h-screen">
+    <div className="bg-[#ffffff] p-4 md:p-8 min-h-screen">
       <div className="max-w-7xl mx-auto">
-        {!isTechnician && (
-          <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-6 gap-4">
+        {!isTechnician &&
+        <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-6 gap-4">
             <div>
               <h1 className="text-3xl font-bold text-[hsl(25,10%,12%)] tracking-tight">Jobs</h1>
               <p className="text-[hsl(25,8%,45%)] mt-2">Manage all scheduled jobs</p>
             </div>
             <Button
-              onClick={() => setShowForm(true)}
-              className="bg-[#fae008] text-black hover:bg-[#e5d007] active:bg-[#d4c006] font-semibold shadow-md hover:shadow-lg transition-all w-full md:w-auto"
-            >
+            onClick={() => setShowForm(true)}
+            className="bg-[#fae008] text-black hover:bg-[#e5d007] active:bg-[#d4c006] font-semibold shadow-md hover:shadow-lg transition-all w-full md:w-auto">
+
               <Plus className="w-5 h-5 mr-2" />
               New Job
             </Button>
           </div>
-        )}
+        }
 
-        {isTechnician && (
-          <div className="mb-6">
+        {isTechnician &&
+        <div className="mb-6">
             <h1 className="text-2xl md:text-3xl font-bold text-[hsl(25,10%,12%)] tracking-tight">My Jobs</h1>
           </div>
-        )}
+        }
 
         <div className="flex flex-col gap-4 mb-6">
           <div className="flex gap-2">
@@ -242,8 +242,8 @@ export default function Jobs() {
                 placeholder="Search jobs..."
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
-                className="pl-11 border-2 border-[hsl(32,15%,88%)] focus:border-[#fae008] focus:ring-2 focus:ring-[#fae008]/20 transition-all h-12 text-base rounded-xl"
-              />
+                className="pl-11 border-2 border-[hsl(32,15%,88%)] focus:border-[#fae008] focus:ring-2 focus:ring-[#fae008]/20 transition-all h-12 text-base rounded-xl" />
+
             </div>
             <Tabs value={viewMode} onValueChange={setViewMode}>
               <TabsList className="h-12">
@@ -259,34 +259,34 @@ export default function Jobs() {
             </Tabs>
           </div>
 
-          {viewMode === "list" && (
-            <Tabs value={statusFilter} onValueChange={setStatusFilter}>
+          {viewMode === "list" &&
+          <Tabs value={statusFilter} onValueChange={setStatusFilter}>
               <TabsList className="w-full grid grid-cols-5 h-11">
-                {statusFilters.map((filter) => (
-                  <TabsTrigger key={filter.value} value={filter.value} className="font-semibold">
+                {statusFilters.map((filter) =>
+              <TabsTrigger key={filter.value} value={filter.value} className="font-semibold">
                     {filter.label}
                   </TabsTrigger>
-                ))}
+              )}
               </TabsList>
             </Tabs>
-          )}
+          }
         </div>
 
-        {viewMode === "list" ? (
-          <JobList
-            jobs={filteredJobs}
-            isLoading={isLoading}
-            onSelectJob={setSelectedJob}
-          />
-        ) : (
-          <CalendarView
-            jobs={filteredJobs}
-            onSelectJob={setSelectedJob}
-            currentDate={calendarDate}
-            onDateChange={setCalendarDate}
-          />
-        )}
+        {viewMode === "list" ?
+        <JobList
+          jobs={filteredJobs}
+          isLoading={isLoading}
+          onSelectJob={setSelectedJob} /> :
+
+
+        <CalendarView
+          jobs={filteredJobs}
+          onSelectJob={setSelectedJob}
+          currentDate={calendarDate}
+          onDateChange={setCalendarDate} />
+
+        }
       </div>
-    </div>
-  );
+    </div>);
+
 }
