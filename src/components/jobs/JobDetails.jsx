@@ -6,7 +6,7 @@ import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Label } from "@/components/ui/label";
-import { ArrowLeft, MapPin, Phone, Calendar, Clock, User, Briefcase, FileText, Image as ImageIcon, DollarSign, Sparkles, LogIn, FileCheck, History, Package, ClipboardCheck, LogOut, Timer, AlertCircle, ChevronDown, Mail, Navigation, Trash2, FolderKanban, CheckSquare, MoreVertical, Paperclip, Ruler, Upload, X, Eye, Download } from "lucide-react";
+import { ArrowLeft, MapPin, Phone, Calendar, Clock, User, Briefcase, FileText, Image as ImageIcon, DollarSign, Sparkles, LogIn, FileCheck, History, Package, ClipboardCheck, LogOut, Timer, AlertCircle, ChevronDown, Mail, Navigation, Trash2, FolderKanban, CheckSquare, Paperclip, Ruler, Upload, X, Eye, Download } from "lucide-react";
 import { format, parseISO } from "date-fns";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
@@ -33,12 +33,7 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
+
 
 const statusColors = {
   open: "bg-blue-50 text-blue-700 border-blue-200",
@@ -483,7 +478,7 @@ export default function JobDetails({ job, onClose, onDelete }) {
                   variant="ghost" 
                   size="icon" 
                   onClick={onClose}
-                  className="h-12 w-12 flex-shrink-0"
+                  className="h-10 w-10 flex-shrink-0"
                 >
                   <ArrowLeft className="w-5 h-5" />
                 </Button>
@@ -497,42 +492,50 @@ export default function JobDetails({ job, onClose, onDelete }) {
                   <p className="text-[13px] text-[#4F4F4F]">Job #{job.job_number}</p>
                 </div>
               </div>
-              <div className="flex items-center gap-2 flex-shrink-0">
-                <Badge className="status-badge status-{job.status}">
+              <div className="flex items-center gap-1 flex-shrink-0">
+                <Badge className={`status-badge status-${job.status}`}>
                   {job.status}
                 </Badge>
-                <DropdownMenu>
-                  <DropdownMenuTrigger asChild>
-                    <Button variant="ghost" size="icon" className="h-12 w-12">
-                      <MoreVertical className="w-5 h-5" />
-                    </Button>
-                  </DropdownMenuTrigger>
-                  <DropdownMenuContent align="end">
-                    <DropdownMenuItem onClick={() => setShowPriceList(true)}>
-                      <DollarSign className="w-4 h-4 mr-2" />
-                      Price List
-                    </DropdownMenuItem>
-                    <DropdownMenuItem onClick={() => setShowHistory(true)}>
-                      <History className="w-4 h-4 mr-2" />
-                      History
-                    </DropdownMenuItem>
-                    {!isTechnician && (
-                      <DropdownMenuItem onClick={() => setShowAssistant(true)}>
-                        <Sparkles className="w-4 h-4 mr-2" />
-                        AI Assistant
-                      </DropdownMenuItem>
-                    )}
-                    {!isTechnician && (
-                      <DropdownMenuItem 
-                        onClick={() => setShowDeleteConfirm(true)}
-                        className="text-red-600"
-                      >
-                        <Trash2 className="w-4 h-4 mr-2" />
-                        Delete
-                      </DropdownMenuItem>
-                    )}
-                  </DropdownMenuContent>
-                </DropdownMenu>
+                <Button 
+                  variant="ghost" 
+                  size="icon" 
+                  onClick={() => setShowPriceList(true)}
+                  className="h-10 w-10"
+                  title="Price List"
+                >
+                  <DollarSign className="w-5 h-5" />
+                </Button>
+                <Button 
+                  variant="ghost" 
+                  size="icon" 
+                  onClick={() => setShowHistory(true)}
+                  className="h-10 w-10"
+                  title="History"
+                >
+                  <History className="w-5 h-5" />
+                </Button>
+                {!isTechnician && (
+                  <Button 
+                    variant="ghost" 
+                    size="icon" 
+                    onClick={() => setShowAssistant(true)}
+                    className="h-10 w-10"
+                    title="AI Assistant"
+                  >
+                    <Sparkles className="w-5 h-5" />
+                  </Button>
+                )}
+                {!isTechnician && (
+                  <Button 
+                    variant="ghost" 
+                    size="icon" 
+                    onClick={() => setShowDeleteConfirm(true)}
+                    className="h-10 w-10 text-red-600"
+                    title="Delete"
+                  >
+                    <Trash2 className="w-5 h-5" />
+                  </Button>
+                )}
               </div>
             </div>
 
