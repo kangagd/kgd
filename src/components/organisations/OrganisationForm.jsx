@@ -33,11 +33,8 @@ export default function OrganisationForm({ organisation, onSubmit, onCancel, isS
     return phoneRegex.test(phone) && phone.replace(/\D/g, '').length >= 8;
   };
 
-  const handleEmailChange = (e) => {
-    const email = e.target.value;
-    setFormData({ ...formData, email });
-    
-    if (email && !validateEmail(email)) {
+  const handleEmailBlur = () => {
+    if (formData.email && !validateEmail(formData.email)) {
       setErrors({ ...errors, email: 'Please enter a valid email address' });
     } else {
       const newErrors = { ...errors };
@@ -46,10 +43,8 @@ export default function OrganisationForm({ organisation, onSubmit, onCancel, isS
     }
   };
 
-  const handlePhoneChange = (value) => {
-    setFormData({ ...formData, phone: value });
-    
-    if (value && !validatePhone(value)) {
+  const handlePhoneBlur = () => {
+    if (formData.phone && !validatePhone(formData.phone)) {
       setErrors({ ...errors, phone: 'Please enter a valid phone number' });
     } else {
       const newErrors = { ...errors };
@@ -187,7 +182,8 @@ export default function OrganisationForm({ organisation, onSubmit, onCancel, isS
                 id="phone"
                 type="tel"
                 value={formData.phone}
-                onChange={(e) => handlePhoneChange(e.target.value)}
+                onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
+                onBlur={handlePhoneBlur}
                 className={`border-2 border-slate-300 focus:border-[#fae008] focus:ring-2 focus:ring-[#fae008]/20 transition-all ${errors.phone ? 'border-red-500' : ''}`}
               />
               {errors.phone && <p className="text-xs text-red-600">{errors.phone}</p>}
@@ -199,7 +195,8 @@ export default function OrganisationForm({ organisation, onSubmit, onCancel, isS
                 id="email"
                 type="email"
                 value={formData.email}
-                onChange={handleEmailChange}
+                onChange={(e) => setFormData({ ...formData, email: e.target.value })}
+                onBlur={handleEmailBlur}
                 className={`border-2 border-slate-300 focus:border-[#fae008] focus:ring-2 focus:ring-[#fae008]/20 transition-all ${errors.email ? 'border-red-500' : ''}`}
               />
               {errors.email && <p className="text-xs text-red-600">{errors.email}</p>}

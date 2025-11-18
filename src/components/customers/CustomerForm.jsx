@@ -54,11 +54,8 @@ export default function CustomerForm({ customer, onSubmit, onCancel, isSubmittin
     return phoneRegex.test(phone) && phone.replace(/\D/g, '').length >= 8;
   };
 
-  const handleEmailChange = (e) => {
-    const email = e.target.value;
-    setFormData({ ...formData, email });
-    
-    if (email && !validateEmail(email)) {
+  const handleEmailBlur = () => {
+    if (formData.email && !validateEmail(formData.email)) {
       setErrors({ ...errors, email: 'Please enter a valid email address' });
     } else {
       const newErrors = { ...errors };
@@ -67,9 +64,8 @@ export default function CustomerForm({ customer, onSubmit, onCancel, isSubmittin
     }
   };
 
-  const handlePhoneChange = (field, value) => {
-    setFormData({ ...formData, [field]: value });
-    
+  const handlePhoneBlur = (field) => {
+    const value = formData[field];
     if (value && !validatePhone(value)) {
       setErrors({ ...errors, [field]: 'Please enter a valid phone number' });
     } else {
@@ -219,7 +215,8 @@ export default function CustomerForm({ customer, onSubmit, onCancel, isSubmittin
                   id="phone"
                   type="tel"
                   value={formData.phone}
-                  onChange={(e) => handlePhoneChange('phone', e.target.value)}
+                  onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
+                  onBlur={() => handlePhoneBlur('phone')}
                   className={errors.phone ? 'border-red-500' : ''}
                 />
                 {errors.phone && <p className="text-xs text-red-600">{errors.phone}</p>}
@@ -231,7 +228,8 @@ export default function CustomerForm({ customer, onSubmit, onCancel, isSubmittin
                   id="secondary_phone"
                   type="tel"
                   value={formData.secondary_phone}
-                  onChange={(e) => handlePhoneChange('secondary_phone', e.target.value)}
+                  onChange={(e) => setFormData({ ...formData, secondary_phone: e.target.value })}
+                  onBlur={() => handlePhoneBlur('secondary_phone')}
                   className={errors.secondary_phone ? 'border-red-500' : ''}
                 />
                 {errors.secondary_phone && <p className="text-xs text-red-600">{errors.secondary_phone}</p>}
@@ -244,7 +242,8 @@ export default function CustomerForm({ customer, onSubmit, onCancel, isSubmittin
                 id="email"
                 type="email"
                 value={formData.email}
-                onChange={handleEmailChange}
+                onChange={(e) => setFormData({ ...formData, email: e.target.value })}
+                onBlur={handleEmailBlur}
                 className={errors.email ? 'border-red-500' : ''}
               />
               {errors.email && <p className="text-xs text-red-600">{errors.email}</p>}
