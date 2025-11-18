@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from "react";
 import { base44 } from "@/api/base44Client";
 import { useQuery } from "@tanstack/react-query";
@@ -96,7 +97,7 @@ export default function Dashboard() {
   };
 
   return (
-    <div className="p-4 md:p-8 bg-[#FFFDEF] min-h-screen">
+    <div className="p-4 md:p-8 bg-white min-h-screen">
       <div className="max-w-7xl mx-auto">
         <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-6 md:mb-8 gap-4">
           <div>

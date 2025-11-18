@@ -1,3 +1,4 @@
+
 import React from "react";
 import { base44 } from "@/api/base44Client";
 import { useQuery } from "@tanstack/react-query";
@@ -15,7 +16,7 @@ export default function Team() {
   const admins = allUsers.filter(user => user.role === 'admin');
 
   return (
-    <div className="p-4 md:p-8 bg-[#FFFDEF] min-h-screen">
+    <div className="p-4 md:p-8 bg-white min-h-screen">
       <div className="max-w-7xl mx-auto">
         <div className="mb-6">
           <h1 className="text-3xl font-bold text-[hsl(25,10%,12%)] tracking-tight">Team</h1>

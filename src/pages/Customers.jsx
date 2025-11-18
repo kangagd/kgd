@@ -1,3 +1,4 @@
+
 import React, { useState } from "react";
 import { base44 } from "@/api/base44Client";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
@@ -93,7 +94,7 @@ export default function Customers() {
 
   if (showForm) {
     return (
-      <div className="p-4 md:p-8 bg-[#FFFDEF] min-h-screen">
+      <div className="p-4 md:p-8 bg-white min-h-screen">
         <div className="max-w-4xl mx-auto">
           <CustomerForm
             customer={editingCustomer}
@@ -111,7 +112,7 @@ export default function Customers() {
 
   if (selectedCustomer) {
     return (
-      <div className="p-4 md:p-8 bg-[#FFFDEF] min-h-screen">
+      <div className="p-4 md:p-8 bg-white min-h-screen">
         <div className="max-w-4xl mx-auto">
           <CustomerDetails
             customer={selectedCustomer}
@@ -125,7 +126,7 @@ export default function Customers() {
   }
 
   return (
-    <div className="p-4 md:p-8 bg-[#FFFDEF] min-h-screen">
+    <div className="p-4 md:p-8 bg-white min-h-screen">
       <div className="max-w-7xl mx-auto">
         <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-6 gap-4">
           <div>

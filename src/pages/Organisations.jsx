@@ -1,3 +1,4 @@
+
 import React, { useState } from "react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -92,7 +93,7 @@ export default function Organisations() {
 
   if (showForm) {
     return (
-      <div className="p-4 md:p-8 bg-[#FFFDEF] min-h-screen">
+      <div className="p-4 md:p-8 bg-white min-h-screen">
         <div className="max-w-4xl mx-auto">
           <OrganisationForm
             organisation={editingOrganisation}
@@ -110,7 +111,7 @@ export default function Organisations() {
 
   if (selectedOrganisation) {
     return (
-      <div className="p-4 md:p-8 bg-[#FFFDEF] min-h-screen">
+      <div className="p-4 md:p-8 bg-white min-h-screen">
         <div className="max-w-4xl mx-auto">
           <OrganisationDetails
             organisation={selectedOrganisation}
@@ -124,7 +125,7 @@ export default function Organisations() {
   }
 
   return (
-    <div className="p-4 md:p-8 bg-[#FFFDEF] min-h-screen">
+    <div className="p-4 md:p-8 bg-white min-h-screen">
       <div className="max-w-7xl mx-auto">
         <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-6 gap-4">
           <div>
