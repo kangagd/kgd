@@ -15,7 +15,7 @@ export default function Team() {
   const admins = users.filter(u => u.role === 'admin');
 
   return (
-    <div className="p-4 md:p-8 bg-gradient-to-br from-[hsl(32,20%,98%)] to-[hsl(32,25%,94%)] min-h-screen">
+    <div className="p-4 md:p-8 bg-[#FFFDEF] min-h-screen">
       <div className="max-w-6xl mx-auto">
         <div className="mb-8">
           <h1 className="text-3xl font-bold text-[hsl(25,10%,12%)] tracking-tight">Team Members</h1>
@@ -24,7 +24,7 @@ export default function Team() {
 
         <div className="grid lg:grid-cols-2 gap-6">
           <Card className="border-2 border-[hsl(32,15%,88%)] shadow-lg rounded-2xl">
-            <CardHeader className="border-b-2 border-[hsl(32,15%,88%)] bg-gradient-to-r from-[hsl(32,25%,96%)] to-white p-6">
+            <CardHeader className="border-b-2 border-[hsl(32,15%,88%)] bg-gradient-to-r from-[#FEF8C8] to-white p-6">
               <CardTitle className="flex items-center gap-3 text-xl font-bold text-[hsl(25,10%,12%)] tracking-tight">
                 <Users className="w-6 h-6 text-[#fae008]" />
                 Field Technicians ({technicians.length})
@@ -39,7 +39,7 @@ export default function Team() {
               ) : (
                 <div className="divide-y-2 divide-[hsl(32,15%,88%)]">
                   {technicians.map((tech) => (
-                    <div key={tech.id} className="p-5 hover:bg-[hsl(32,25%,96%)] transition-colors">
+                    <div key={tech.id} className="p-5 hover:bg-[#FEF8C8] transition-colors">
                       <div className="flex items-start justify-between mb-2">
                         <div>
                           <h3 className="font-bold text-[hsl(25,10%,12%)]">{tech.full_name}</h3>
@@ -78,7 +78,7 @@ export default function Team() {
           </Card>
 
           <Card className="border-2 border-[hsl(32,15%,88%)] shadow-lg rounded-2xl">
-            <CardHeader className="border-b-2 border-[hsl(32,15%,88%)] bg-gradient-to-r from-[hsl(32,25%,96%)] to-white p-6">
+            <CardHeader className="border-b-2 border-[hsl(32,15%,88%)] bg-gradient-to-r from-[#FEF8C8] to-white p-6">
               <CardTitle className="flex items-center gap-3 text-xl font-bold text-[hsl(25,10%,12%)] tracking-tight">
                 <Briefcase className="w-6 h-6 text-purple-600" />
                 Administrators ({admins.length})
@@ -93,7 +93,7 @@ export default function Team() {
               ) : (
                 <div className="divide-y-2 divide-[hsl(32,15%,88%)]">
                   {admins.map((admin) => (
-                    <div key={admin.id} className="p-5 hover:bg-[hsl(32,25%,96%)] transition-colors">
+                    <div key={admin.id} className="p-5 hover:bg-[#FEF8C8] transition-colors">
                       <div className="flex items-start justify-between mb-2">
                         <div>
                           <h3 className="font-bold text-[hsl(25,10%,12%)]">{admin.full_name}</h3>

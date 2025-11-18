@@ -1,3 +1,4 @@
+
 import React, { useState } from "react";
 import { Card, CardHeader, CardTitle, CardContent, CardFooter } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -46,7 +47,7 @@ export default function OrganisationForm({ organisation, onSubmit, onCancel, isS
 
   return (
     <Card className="max-w-3xl mx-auto m-6 border-2 border-slate-200 shadow-lg rounded-2xl">
-      <CardHeader className="border-b-2 border-slate-200 bg-gradient-to-r from-slate-50 to-white p-6">
+      <CardHeader className="border-b-2 border-slate-200 bg-gradient-to-r from-[#FEF8C8] to-white p-6">
         <div className="flex items-center gap-4">
           <Button 
             variant="ghost" 
@@ -56,7 +57,7 @@ export default function OrganisationForm({ organisation, onSubmit, onCancel, isS
           >
             <ArrowLeft className="w-5 h-5" />
           </Button>
-          <CardTitle className="text-2xl font-bold text-[#000000] tracking-tight">
+          <CardTitle className="text-2xl font-bold text-black tracking-tight">
             {organisation ? 'Edit Organisation' : 'Create New Organisation'}
           </CardTitle>
         </div>
@@ -172,7 +173,7 @@ export default function OrganisationForm({ organisation, onSubmit, onCancel, isS
           <Button 
             type="submit" 
             disabled={isSubmitting} 
-            className="bg-[#fae008] hover:bg-[#e5d007] active:bg-[#d4c006] text-[#000000] font-bold shadow-md hover:shadow-lg transition-all"
+            className="bg-[#fae008] hover:bg-[#e5d007] active:bg-[#d4c006] text-black font-bold shadow-md hover:shadow-lg transition-all"
           >
             {isSubmitting ? 'Saving...' : organisation ? 'Update Organisation' : 'Create Organisation'}
           </Button>

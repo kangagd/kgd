@@ -11,7 +11,7 @@ import PriceListItemForm from "../components/pricelist/PriceListItemForm";
 import StockAdjustmentModal from "../components/pricelist/StockAdjustmentModal";
 
 const categoryColors = {
-  "Service": "bg-blue-100 text-blue-800",
+  "Service": "bg-[#FCEE7B] text-slate-800",
   "Motor": "bg-purple-100 text-purple-800",
   "Remotes/Accessories": "bg-green-100 text-green-800"
 };
@@ -127,7 +127,7 @@ export default function PriceList() {
   }
 
   return (
-    <div className="p-4 md:p-8 bg-gradient-to-br from-[hsl(32,20%,98%)] to-[hsl(32,25%,94%)] min-h-screen">
+    <div className="p-4 md:p-8 bg-[#FFFDEF] min-h-screen">
       <div className="max-w-7xl mx-auto">
         <div className="mb-6">
           <div className="flex items-center justify-between mb-2">
@@ -138,7 +138,7 @@ export default function PriceList() {
             {isAdmin && (
               <Button
                 onClick={() => setShowForm(true)}
-                className="bg-[#fae008] hover:bg-[#e5d007] text-[hsl(25,10%,12%)] font-semibold shadow-md hover:shadow-lg transition-all"
+                className="bg-[#fae008] hover:bg-[#e5d007] text-black font-semibold shadow-md hover:shadow-lg transition-all"
               >
                 <Plus className="w-4 h-4 mr-2" />
                 Add Item

@@ -1,3 +1,4 @@
+
 import React, { useState } from "react";
 import { Card, CardHeader, CardTitle, CardContent, CardFooter } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -225,7 +226,7 @@ export default function CustomerForm({ customer, onSubmit, onCancel, isSubmittin
             <Button type="button" variant="outline" onClick={onCancel}>
               Cancel
             </Button>
-            <Button type="submit" disabled={isSubmitting} className="bg-[#fae008] hover:bg-[#e5d007] active:bg-[#d4c006] text-[#000000] font-bold shadow-md hover:shadow-lg transition-all">
+            <Button type="submit" disabled={isSubmitting} className="bg-[#fae008] hover:bg-[#e5d007] active:bg-[#d4c006] text-black font-bold shadow-md hover:shadow-lg transition-all">
               {isSubmitting ? 'Saving...' : customer ? 'Update Customer' : 'Create Customer'}
             </Button>
           </CardFooter>
@@ -235,7 +236,7 @@ export default function CustomerForm({ customer, onSubmit, onCancel, isSubmittin
       <Dialog open={showNewOrgDialog} onOpenChange={setShowNewOrgDialog}>
         <DialogContent className="rounded-2xl">
           <DialogHeader>
-            <DialogTitle className="text-xl font-bold text-[#000000]">New Organisation</DialogTitle>
+            <DialogTitle className="text-xl font-bold text-black">New Organisation</DialogTitle>
           </DialogHeader>
           <div className="space-y-4">
             <div className="space-y-2">
@@ -295,7 +296,7 @@ export default function CustomerForm({ customer, onSubmit, onCancel, isSubmittin
             <Button 
               onClick={handleCreateNewOrg}
               disabled={!newOrgData.name || isCreatingOrg}
-              className="bg-[#fae008] hover:bg-[#e5d007] text-[#000000] font-bold"
+              className="bg-[#fae008] hover:bg-[#e5d007] text-black font-bold"
             >
               {isCreatingOrg ? 'Creating...' : 'Create Organisation'}
             </Button>

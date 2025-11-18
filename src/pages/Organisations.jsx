@@ -11,7 +11,7 @@ import OrganisationDetails from "../components/organisations/OrganisationDetails
 
 const organisationTypeColors = {
   "Strata": "bg-purple-100 text-purple-700 border-purple-200",
-  "Builder": "bg-blue-100 text-blue-700 border-blue-200",
+  "Builder": "bg-[#FCEE7B] text-slate-700 border-slate-200",
   "Real Estate": "bg-green-100 text-green-700 border-green-200",
   "Supplier": "bg-orange-100 text-orange-700 border-orange-200",
 };
@@ -116,17 +116,17 @@ export default function Organisations() {
   }
 
   return (
-    <div className="p-6 max-w-7xl mx-auto bg-gradient-to-br from-[hsl(32,20%,98%)] to-[hsl(32,25%,94%)] min-h-screen">
+    <div className="p-6 max-w-7xl mx-auto bg-[#FFFDEF] min-h-screen">
       <div className="flex items-center justify-between mb-6">
         <div className="flex items-center gap-3">
           <div className="w-12 h-12 bg-[#fae008] rounded-xl flex items-center justify-center shadow-md">
-            <Building2 className="w-6 h-6 text-[hsl(25,10%,12%)]" />
+            <Building2 className="w-6 h-6 text-black" />
           </div>
           <h1 className="text-3xl font-bold text-[hsl(25,10%,12%)] tracking-tight">Organisations</h1>
         </div>
         <Button
           onClick={() => setShowForm(true)}
-          className="bg-[#fae008] hover:bg-[#e5d007] text-[hsl(25,10%,12%)] font-bold shadow-md hover:shadow-lg transition-all"
+          className="bg-[#fae008] hover:bg-[#e5d007] text-black font-bold shadow-md hover:shadow-lg transition-all"
         >
           <Plus className="w-5 h-5 mr-2" />
           New Organisation
@@ -166,7 +166,7 @@ export default function Organisations() {
           {!searchTerm && (
             <Button
               onClick={() => setShowForm(true)}
-              className="bg-[#fae008] hover:bg-[#e5d007] text-[hsl(25,10%,12%)] font-bold"
+              className="bg-[#fae008] hover:bg-[#e5d007] text-black font-bold"
             >
               <Plus className="w-4 h-4 mr-2" />
               Create Organisation

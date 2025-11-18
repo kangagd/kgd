@@ -11,7 +11,7 @@ import CustomerDetails from "../components/customers/CustomerDetails";
 
 const customerTypeColors = {
   "Owner": "bg-purple-100 text-purple-700 border-purple-200",
-  "Builder": "bg-blue-100 text-blue-700 border-blue-200",
+  "Builder": "bg-[#FCEE7B] text-slate-700 border-slate-200",
   "Real Estate - Tenant": "bg-green-100 text-green-700 border-green-200",
   "Strata - Owner": "bg-amber-100 text-amber-700 border-amber-200",
 };
@@ -93,7 +93,7 @@ export default function Customers() {
 
   if (showForm) {
     return (
-      <div className="p-4 md:p-8 bg-gradient-to-br from-[hsl(32,20%,98%)] to-[hsl(32,25%,94%)] min-h-screen">
+      <div className="p-4 md:p-8 bg-[#FFFDEF] min-h-screen">
         <div className="max-w-4xl mx-auto">
           <CustomerForm
             customer={editingCustomer}
@@ -111,7 +111,7 @@ export default function Customers() {
 
   if (selectedCustomer) {
     return (
-      <div className="p-4 md:p-8 bg-gradient-to-br from-[hsl(32,20%,98%)] to-[hsl(32,25%,94%)] min-h-screen">
+      <div className="p-4 md:p-8 bg-[#FFFDEF] min-h-screen">
         <div className="max-w-4xl mx-auto">
           <CustomerDetails
             customer={selectedCustomer}
@@ -125,7 +125,7 @@ export default function Customers() {
   }
 
   return (
-    <div className="p-4 md:p-8 bg-gradient-to-br from-[hsl(32,20%,98%)] to-[hsl(32,25%,94%)] min-h-screen">
+    <div className="p-4 md:p-8 bg-[#FFFDEF] min-h-screen">
       <div className="max-w-7xl mx-auto">
         <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-6 gap-4">
           <div>
@@ -134,7 +134,7 @@ export default function Customers() {
           </div>
           <Button
             onClick={() => setShowForm(true)}
-            className="bg-[#fae008] text-[hsl(25,10%,12%)] hover:bg-[#e5d007] active:bg-[#d4c006] font-semibold shadow-md hover:shadow-lg transition-all w-full md:w-auto"
+            className="bg-[#fae008] text-black hover:bg-[#e5d007] active:bg-[#d4c006] font-semibold shadow-md hover:shadow-lg transition-all w-full md:w-auto"
           >
             <Plus className="w-5 h-5 mr-2" />
             New Customer

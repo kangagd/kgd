@@ -1,3 +1,4 @@
+
 import React, { useState } from "react";
 import { Card, CardHeader, CardTitle, CardContent, CardFooter } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -182,7 +183,7 @@ export default function ProjectForm({ project, onSubmit, onCancel, isSubmitting 
   return (
     <>
       <Card className="border-2 border-slate-200 shadow-lg rounded-2xl">
-        <CardHeader className="border-b-2 border-slate-200 bg-gradient-to-r from-slate-50 to-white p-6">
+        <CardHeader className="border-b-2 border-slate-200 bg-gradient-to-r from-[#FEF8C8] to-white p-6">
           <div className="flex items-center gap-4">
             <Button 
               variant="ghost" 
@@ -192,7 +193,7 @@ export default function ProjectForm({ project, onSubmit, onCancel, isSubmitting 
             >
               <ArrowLeft className="w-5 h-5" />
             </Button>
-            <CardTitle className="text-2xl font-bold text-[#000000] tracking-tight">
+            <CardTitle className="text-2xl font-bold text-black tracking-tight">
               {project ? 'Edit Project' : 'Create New Project'}
             </CardTitle>
           </div>
@@ -284,14 +285,14 @@ export default function ProjectForm({ project, onSubmit, onCancel, isSubmitting 
             </div>
 
             {isInstallType && (
-              <div className="bg-blue-50 border-2 border-blue-200 rounded-xl p-4 space-y-4">
+              <div className="bg-[#FEF8C8] border-2 border-slate-200 rounded-xl p-4 space-y-4">
                 <div className="flex items-center justify-between">
-                  <h3 className="font-bold text-[#000000]">Doors</h3>
+                  <h3 className="font-bold text-black">Doors</h3>
                   <Button
                     type="button"
                     onClick={addDoor}
                     size="sm"
-                    className="bg-[#fae008] hover:bg-[#e5d007] text-[#000000] font-semibold"
+                    className="bg-[#fae008] hover:bg-[#e5d007] text-black font-semibold"
                   >
                     <Plus className="w-4 h-4 mr-2" />
                     Add Door
@@ -431,10 +432,10 @@ export default function ProjectForm({ project, onSubmit, onCancel, isSubmitting 
             </div>
 
             <div className="space-y-4 pt-4 border-t-2 border-slate-200">
-              <h3 className="font-bold text-[#000000] tracking-tight">Attachments</h3>
+              <h3 className="font-bold text-black tracking-tight">Attachments</h3>
               
               <div className="space-y-2">
-                <Label className="text-sm font-semibold text-[#000000]">Images</Label>
+                <Label className="text-sm font-semibold text-black">Images</Label>
                 <div className="flex items-center gap-2">
                   <Button
                     type="button"
@@ -477,7 +478,7 @@ export default function ProjectForm({ project, onSubmit, onCancel, isSubmitting 
               </div>
 
               <div className="space-y-2">
-                <Label className="text-sm font-semibold text-[#000000]">Files</Label>
+                <Label className="text-sm font-semibold text-black">Files</Label>
                 <div className="flex items-center gap-2">
                   <Button
                     type="button"
@@ -533,7 +534,7 @@ export default function ProjectForm({ project, onSubmit, onCancel, isSubmitting 
             <Button 
               type="submit" 
               disabled={isSubmitting} 
-              className="bg-[#fae008] hover:bg-[#e5d007] active:bg-[#d4c006] text-[#000000] font-bold shadow-md hover:shadow-lg transition-all"
+              className="bg-[#fae008] hover:bg-[#e5d007] active:bg-[#d4c006] text-black font-bold shadow-md hover:shadow-lg transition-all"
             >
               {isSubmitting ? 'Saving...' : project ? 'Update Project' : 'Create Project'}
             </Button>
@@ -544,7 +545,7 @@ export default function ProjectForm({ project, onSubmit, onCancel, isSubmitting 
       <Dialog open={showNewCustomerDialog} onOpenChange={setShowNewCustomerDialog}>
         <DialogContent className="rounded-2xl border-2 border-slate-200">
           <DialogHeader>
-            <DialogTitle className="text-xl font-bold text-[#000000]">Add New Customer</DialogTitle>
+            <DialogTitle className="text-xl font-bold text-black">Add New Customer</DialogTitle>
           </DialogHeader>
           <div className="space-y-4 py-4">
             <div className="space-y-2">
@@ -591,7 +592,7 @@ export default function ProjectForm({ project, onSubmit, onCancel, isSubmitting 
             <Button
               onClick={handleCreateCustomer}
               disabled={!newCustomerData.name || createCustomerMutation.isPending}
-              className="bg-[#fae008] hover:bg-[#e5d007] text-[#000000] font-bold"
+              className="bg-[#fae008] hover:bg-[#e5d007] text-black font-bold"
             >
               {createCustomerMutation.isPending ? 'Creating...' : 'Create Customer'}
             </Button>

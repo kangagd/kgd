@@ -11,7 +11,7 @@ import { createPageUrl } from "@/utils";
 
 const statusColors = {
   open: "bg-[hsl(32,25%,94%)] text-[hsl(25,10%,12%)] border-[hsl(32,15%,88%)]",
-  scheduled: "bg-[#fae008]/20 text-[hsl(25,10%,12%)] border-[#fae008]/30",
+  scheduled: "bg-[#fae008]/20 text-black border-[#fae008]/30",
   quoted: "bg-purple-50 text-purple-900 border-purple-200",
   invoiced: "bg-amber-50 text-amber-900 border-amber-200",
   paid: "bg-green-50 text-green-900 border-green-200",
@@ -87,7 +87,7 @@ export default function Dashboard() {
   };
 
   return (
-    <div className="p-4 md:p-8 bg-gradient-to-br from-[hsl(32,20%,98%)] to-[hsl(32,25%,94%)] min-h-screen">
+    <div className="p-4 md:p-8 bg-[#FFFDEF] min-h-screen">
       <div className="max-w-7xl mx-auto">
         <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-6 md:mb-8 gap-4">
           <div>
@@ -98,7 +98,7 @@ export default function Dashboard() {
           </div>
           <Button
             onClick={() => window.location.href = '/Jobs?action=new'}
-            className="bg-[#fae008] hover:bg-[#e5d007] active:bg-[#d4c006] text-[hsl(25,10%,12%)] font-semibold shadow-md hover:shadow-lg transition-all duration-150 w-full md:w-auto"
+            className="bg-[#fae008] hover:bg-[#e5d007] active:bg-[#d4c006] text-black font-semibold shadow-md hover:shadow-lg transition-all duration-150 w-full md:w-auto"
           >
             <Plus className="w-5 h-5 mr-2" />
             New Job
@@ -128,7 +128,7 @@ export default function Dashboard() {
           >
             <div className="flex items-start justify-between mb-4">
               <div className="w-12 h-12 bg-[#fae008]/20 rounded-xl flex items-center justify-center group-hover:bg-[#fae008]/30 transition-colors">
-                <TrendingUp className="w-6 h-6 text-[hsl(25,10%,12%)]" />
+                <TrendingUp className="w-6 h-6 text-black" />
               </div>
               <div className="text-right">
                 <p className="text-3xl font-bold text-[hsl(25,10%,12%)]">{activeJobs.length}</p>
@@ -184,7 +184,7 @@ export default function Dashboard() {
                 {todayJobs.map(job => (
                   <div
                     key={job.id}
-                    className="flex items-center justify-between p-4 rounded-xl border-2 border-[hsl(32,15%,88%)] hover:bg-[hsl(32,25%,96%)] hover:border-[hsl(32,15%,80%)] cursor-pointer transition-all duration-150"
+                    className="flex items-center justify-between p-4 rounded-xl border-2 border-[hsl(32,15%,88%)] hover:bg-[#FEF8C8] hover:border-[hsl(32,15%,80%)] cursor-pointer transition-all duration-150"
                     onClick={() => window.location.href = `/Jobs?id=${job.id}`}
                   >
                     <div className="flex-1">
@@ -213,11 +213,11 @@ export default function Dashboard() {
             ) : (
               <div className="space-y-3">
                 {todayCheckIns.slice(0, 5).map(checkIn => (
-                  <div key={checkIn.id} className="p-4 rounded-xl border-2 border-[hsl(32,15%,88%)] hover:bg-[hsl(32,25%,96%)] transition-colors">
+                  <div key={checkIn.id} className="p-4 rounded-xl border-2 border-[hsl(32,15%,88%)] hover:bg-[#FEF8C8] transition-colors">
                     <div className="flex items-center justify-between mb-2">
                       <span className="font-semibold text-[hsl(25,10%,12%)] text-sm">{checkIn.technician_name}</span>
                       {checkIn.duration_hours && (
-                        <span className="text-sm font-bold text-[hsl(25,10%,12%)] bg-[hsl(32,25%,94%)] px-2.5 py-1 rounded-lg">
+                        <span className="text-sm font-bold text-[hsl(25,10%,12%)] bg-[#FEF8C8] px-2.5 py-1 rounded-lg">
                           {checkIn.duration_hours.toFixed(1)}h
                         </span>
                       )}

@@ -80,7 +80,7 @@ export default function Calendar() {
 
   if (selectedJob) {
     return (
-      <div className="bg-gradient-to-br from-[hsl(32,20%,98%)] to-[hsl(32,25%,94%)] min-h-screen">
+      <div className="bg-[#FFFDEF] min-h-screen">
         <div className="p-2 md:p-8 max-w-4xl mx-auto">
           <JobDetails
             job={selectedJob}
@@ -94,7 +94,7 @@ export default function Calendar() {
   }
 
   return (
-    <div className="p-4 md:p-8 bg-gradient-to-br from-[hsl(32,20%,98%)] to-[hsl(32,25%,94%)] min-h-screen">
+    <div className="p-4 md:p-8 bg-[#FFFDEF] min-h-screen">
       <div className="max-w-7xl mx-auto space-y-4">
         <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
           <div>
@@ -132,7 +132,7 @@ export default function Calendar() {
                 variant={selectedTechnicians.includes(tech.email) ? "default" : "outline"}
                 size="sm"
                 onClick={() => toggleTechnician(tech.email)}
-                className={selectedTechnicians.includes(tech.email) ? "bg-[#fae008] text-[hsl(25,10%,12%)] hover:bg-[#e5d007]" : ""}
+                className={selectedTechnicians.includes(tech.email) ? "bg-[#fae008] text-black hover:bg-[#e5d007]" : ""}
               >
                 {tech.full_name}
               </Button>
