@@ -19,6 +19,7 @@ import {
   AlertDialogTitle,
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
+import JobVisitCard from "./JobVisitCard";
 
 const statusColors = {
   open: "bg-blue-50 text-blue-700 border-blue-200",
@@ -41,9 +42,9 @@ const projectTypeColors = {
 const jobStatusColors = {
   open: "bg-blue-50 text-blue-700 border-blue-200",
   scheduled: "bg-teal-50 text-teal-700 border-teal-200",
-  quoted: "bg-purple-100 text-purple-800", // Keep existing for 'quoted' if not specified in update, otherwise update
-  invoiced: "bg-indigo-100 text-indigo-800", // Keep existing for 'invoiced' if not specified in update, otherwise update
-  paid: "bg-green-100 text-green-800", // Keep existing for 'paid' if not specified in update, otherwise update
+  quoted: "bg-purple-100 text-purple-800",
+  invoiced: "bg-indigo-100 text-indigo-800",
+  paid: "bg-green-100 text-green-800",
   completed: "bg-green-50 text-green-700 border-green-200",
   cancelled: "bg-red-50 text-red-700 border-red-200"
 };
@@ -63,6 +64,24 @@ export default function ProjectDetails({ project, onClose, onEdit, onDelete }) {
     queryFn: () => base44.entities.Customer.get(project.customer_id),
     enabled: !!project.customer_id
   });
+
+  const { data: allJobSummaries = [] } = useQuery({
+    queryKey: ['projectJobSummaries', project.id],
+    queryFn: async () => {
+      const jobIds = jobs.map(j => j.id);
+      if (jobIds.length === 0) return [];
+      
+      const summaries = await Promise.all(
+        jobIds.map(jobId => base44.entities.JobSummary.filter({ job_id: jobId }, '-checkout_time'))
+      );
+      return summaries.flat();
+    },
+    enabled: jobs.length > 0
+  });
+
+  const getJobSummaries = (jobId) => {
+    return allJobSummaries.filter(s => s.job_id === jobId);
+  };
 
   const handleAddJob = () => {
     navigate(createPageUrl("Jobs") + `?action=new&projectId=${project.id}`);
@@ -390,35 +409,47 @@ export default function ProjectDetails({ project, onClose, onEdit, onDelete }) {
             </div>
           ) : (
             <div className="space-y-3">
-              {jobs.map((job) => (
-                <div
-                  key={job.id}
-                  onClick={() => handleJobClick(job.id)}
-                  className="bg-white border-2 border-slate-200 rounded-xl p-4 hover:border-[#fae008] hover:shadow-md transition-all cursor-pointer"
-                >
-                  <div className="flex items-start justify-between gap-4">
-                    <div className="flex-1">
-                      <div className="flex items-center gap-2 mb-2">
-                        <span className="font-bold text-[#000000]">Job #{job.job_number}</span>
-                        <Badge className={`${jobStatusColors[job.status]} font-semibold border-2`}>
-                          {job.status}
-                        </Badge>
-                        {job.job_type && (
-                          <Badge variant="outline" className="font-semibold">
-                            {job.job_type}
-                          </Badge>
-                        )}
+              {jobs.map((job) => {
+                const jobSummaries = getJobSummaries(job.id);
+                return (
+                  <div
+                    key={job.id}
+                    className="bg-white border-2 border-slate-200 rounded-xl p-4 hover:border-[#fae008] hover:shadow-md transition-all"
+                  >
+                    <div 
+                      onClick={() => handleJobClick(job.id)}
+                      className="cursor-pointer"
+                    >
+                      <div className="flex items-start justify-between gap-4">
+                        <div className="flex-1">
+                          <div className="flex items-center gap-2 mb-2">
+                            <span className="font-bold text-[#000000]">Job #{job.job_number}</span>
+                            <Badge className={`${jobStatusColors[job.status]} font-semibold border-2`}>
+                              {job.status}
+                            </Badge>
+                            {job.job_type_name && (
+                              <Badge variant="outline" className="font-semibold">
+                                {job.job_type_name}
+                              </Badge>
+                            )}
+                          </div>
+                          {job.scheduled_date && (
+                            <p className="text-sm text-slate-600">
+                              {new Date(job.scheduled_date).toLocaleDateString()}
+                              {job.scheduled_time && ` at ${job.scheduled_time}`}
+                            </p>
+                          )}
+                        </div>
                       </div>
-                      {job.scheduled_date && (
-                        <p className="text-sm text-slate-600">
-                          {new Date(job.scheduled_date).toLocaleDateString()}
-                          {job.scheduled_time && ` at ${job.scheduled_time}`}
-                        </p>
-                      )}
                     </div>
+                    
+                    <JobVisitCard 
+                      jobSummaries={jobSummaries}
+                      jobImages={job.image_urls}
+                    />
                   </div>
-                </div>
-              ))}
+                );
+              })}
             </div>
           )}
         </div>
