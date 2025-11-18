@@ -1,14 +1,13 @@
 
 import React, { useState, useEffect } from "react";
-import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
+import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Label } from "@/components/ui/label";
-import { ArrowLeft, MapPin, Phone, Calendar, Clock, User, Briefcase, FileText, Image as ImageIcon, DollarSign, Sparkles, LogIn, FileCheck, History, Package, ClipboardCheck, LogOut, Timer, AlertCircle, ChevronDown, Mail, Navigation, Trash2, FolderKanban } from "lucide-react";
+import { ArrowLeft, MapPin, Phone, Calendar, Clock, User, Briefcase, FileText, Image as ImageIcon, DollarSign, Sparkles, LogIn, FileCheck, History, Package, ClipboardCheck, LogOut, Timer, AlertCircle, ChevronDown, Mail, Navigation, Trash2, FolderKanban, CheckSquare, MoreVertical } from "lucide-react";
 import { format, parseISO } from "date-fns";
-import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 import { base44 } from "@/api/base44Client";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
@@ -33,6 +32,12 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 
 const statusColors = {
   open: "bg-blue-50 text-blue-700 border-blue-200",
@@ -42,23 +47,6 @@ const statusColors = {
   paid: "bg-emerald-50 text-emerald-700 border-emerald-200",
   completed: "bg-green-50 text-green-700 border-green-200",
   lost: "bg-red-50 text-red-700 border-red-200"
-};
-
-const stageColors = {
-  lead: "bg-slate-100 text-slate-800 border-slate-200",
-  assessment_measure: "bg-yellow-100 text-yellow-800 border-yellow-200",
-  quote_preparing: "bg-orange-100 text-orange-800 border-orange-200",
-  quote_sent: "bg-purple-100 text-purple-800 border-purple-200",
-  quote_approved: "bg-indigo-100 text-indigo-800 border-indigo-200",
-  parts_ordered: "bg-[#FEF8C8] text-slate-800 border-slate-200",
-  scheduled: "bg-cyan-100 text-cyan-800 border-cyan-200",
-  technician_on_site: "bg-orange-100 text-orange-800 border-orange-200",
-  return_visit_needed: "bg-amber-100 text-amber-800 border-amber-200",
-  work_completed: "bg-lime-100 text-lime-800 border-lime-200",
-  invoiced: "bg-indigo-100 text-indigo-800 border-indigo-200",
-  paid: "bg-green-100 text-green-800 border-green-200",
-  completed: "bg-emerald-100 text-emerald-800 border-emerald-200",
-  lost: "bg-red-100 text-red-800 border-red-200"
 };
 
 const outcomeColors = {
@@ -75,13 +63,6 @@ const productColors = {
   "Roller Shutter": "bg-purple-100 text-purple-700",
   "Multiple": "bg-orange-100 text-orange-700",
   "Custom Garage Door": "bg-pink-100 text-pink-700"
-};
-
-const customerTypeColors = {
-  "Owner": "bg-purple-100 text-purple-700",
-  "Builder": "bg-[#FEF8C8] text-slate-700",
-  "Real Estate - Tenant": "bg-green-100 text-green-700",
-  "Strata - Owner": "bg-amber-100 text-amber-700",
 };
 
 const getInitials = (name) => {
@@ -112,6 +93,7 @@ const getAvatarColor = (name) => {
 };
 
 export default function JobDetails({ job, onClose, onStatusChange, onDelete }) {
+  const [activeTab, setActiveTab] = useState("summary");
   const [showPriceList, setShowPriceList] = useState(false);
   const [showAssistant, setShowAssistant] = useState(false);
   const [showHistory, setShowHistory] = useState(false);
@@ -416,365 +398,370 @@ export default function JobDetails({ job, onClose, onStatusChange, onDelete }) {
   };
 
   const handleDeleteClick = () => {
-    console.log('Delete clicked for job:', job.id, job.job_number);
     onDelete(job.id);
     setShowDeleteConfirm(false);
   };
 
+  const tabs = [
+    { id: "summary", label: "Summary", icon: ClipboardCheck },
+    { id: "checklist", label: "Checklist", icon: CheckSquare },
+    { id: "photos", label: "Photos", icon: ImageIcon },
+    { id: "notes", label: "Notes", icon: FileText },
+    { id: "materials", label: "Materials", icon: Package },
+    { id: "audit", label: "Audit", icon: History },
+  ];
+
   return (
     <>
-      <Card className={`border-2 border-slate-200 shadow-lg ${isTechnician ? 'rounded-none' : 'rounded-2xl'}`}>
-        <CardHeader className="border-b-2 border-slate-200 bg-gradient-to-r from-[#FEF8C8] to-white p-3 md:p-4 space-y-2 md:space-y-3">
-          <div className="flex items-start justify-between gap-2">
-            <div className="flex items-start gap-1.5 flex-1 min-w-0">
-              <Button 
-                variant="ghost" 
-                size="icon" 
-                onClick={onClose} 
-                className="h-8 w-8 md:h-9 md:w-9 flex-shrink-0 hover:bg-slate-200 rounded-xl transition-colors"
-              >
-                <ArrowLeft className="w-4 h-4 md:w-5 md:h-5" />
-              </Button>
-              <div className="flex-1 min-w-0">
-                <div className="flex items-center gap-1.5 flex-wrap mb-0.5">
-                  <CardTitle
-                    className="text-lg md:text-xl font-bold text-[#000000] cursor-pointer hover:text-[#fae008] transition-colors tracking-tight"
+      <div className="min-h-screen bg-[#F7F7F7]">
+        {/* Header */}
+        <div className="bg-white border-b border-[#E2E3E5] sticky top-0 z-10">
+          <div className="p-4">
+            <div className="flex items-start justify-between gap-4 mb-3">
+              <div className="flex items-start gap-3 flex-1 min-w-0">
+                <Button 
+                  variant="ghost" 
+                  size="icon" 
+                  onClick={onClose}
+                  className="h-12 w-12 flex-shrink-0"
+                >
+                  <ArrowLeft className="w-5 h-5" />
+                </Button>
+                <div className="flex-1 min-w-0">
+                  <h1 
+                    className="text-[20px] font-semibold text-[#111111] mb-1 cursor-pointer hover:text-[#FAE008] transition-colors"
                     onClick={() => setShowCustomerEdit(true)}
                   >
                     {job.customer_name}
-                  </CardTitle>
-                  {job.customer_type && (
-                    <Badge variant="outline" className={`${customerTypeColors[job.customer_type]} text-xs font-semibold border-2`}>
-                      {job.customer_type}
-                    </Badge>
-                  )}
+                  </h1>
+                  <p className="text-[13px] text-[#4F4F4F]">Job #{job.job_number}</p>
                 </div>
-                
-                <p className="text-xs md:text-sm text-slate-500 font-medium">Job #{job.job_number}</p>
-                {job.project_name && (
-                  <Link 
-                    to={createPageUrl("Projects")}
-                    className="flex items-center gap-1 mt-1 hover:text-[#fae008] transition-colors w-fit"
-                  >
-                    <FolderKanban className="w-3 h-3 text-slate-400" />
-                    <p className="text-xs text-slate-500 font-medium hover:text-[#fae008]">{job.project_name}</p>
-                  </Link>
-                )}
+              </div>
+              <div className="flex items-center gap-2 flex-shrink-0">
+                <Badge className={`status-badge ${statusColors[job.status]} text-xs font-semibold border-2`}>
+                  {job.status.replace(/_/g, ' ')}
+                </Badge>
+                <DropdownMenu>
+                  <DropdownMenuTrigger asChild>
+                    <Button variant="ghost" size="icon" className="h-12 w-12">
+                      <MoreVertical className="w-5 h-5" />
+                    </Button>
+                  </DropdownMenuTrigger>
+                  <DropdownMenuContent align="end">
+                    <DropdownMenuItem onClick={() => setShowPriceList(true)}>
+                      <DollarSign className="w-4 h-4 mr-2" />
+                      Price List
+                    </DropdownMenuItem>
+                    <DropdownMenuItem onClick={() => setShowHistory(true)}>
+                      <History className="w-4 h-4 mr-2" />
+                      History
+                    </DropdownMenuItem>
+                    {!isTechnician && (
+                      <DropdownMenuItem onClick={() => setShowAssistant(true)}>
+                        <Sparkles className="w-4 h-4 mr-2" />
+                        AI Assistant
+                      </DropdownMenuItem>
+                    )}
+                    {!isTechnician && (
+                      <DropdownMenuItem 
+                        onClick={() => setShowDeleteConfirm(true)}
+                        className="text-red-600"
+                      >
+                        <Trash2 className="w-4 h-4 mr-2" />
+                        Delete
+                      </DropdownMenuItem>
+                    )}
+                  </DropdownMenuContent>
+                </DropdownMenu>
               </div>
             </div>
-            
-            <div className="flex gap-1 flex-shrink-0">
-              {!isTechnician && (
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  onClick={() => setShowDeleteConfirm(true)}
-                  className="h-8 md:h-9 px-2 hover:bg-red-100 hover:text-red-600 transition-all"
+
+            {/* Quick Info Bar */}
+            <div className="flex items-center gap-2 mb-3">
+              {(Array.isArray(job.assigned_to_name) ? job.assigned_to_name : job.assigned_to_name ? [job.assigned_to_name] : []).slice(0, 2).map((name, idx) => (
+                <div
+                  key={idx}
+                  className={`${getAvatarColor(name)} w-8 h-8 rounded-full flex items-center justify-center text-white text-xs font-bold shadow-soft`}
+                  title={name}
                 >
-                  <Trash2 className="w-4 h-4" />
-                </Button>
+                  {getInitials(name)}
+                </div>
+              ))}
+              {job.scheduled_date && (
+                <div className="flex items-center gap-1 text-[13px] text-[#4F4F4F]">
+                  <Calendar className="w-4 h-4" />
+                  {format(parseISO(job.scheduled_date), 'MMM d')}
+                  {job.scheduled_time && ` · ${job.scheduled_time}`}
+                </div>
               )}
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={() => setShowHistory(true)}
-                className="h-8 md:h-9 px-2 md:px-3 hover:bg-slate-100 border-2 font-semibold transition-all"
+            </div>
+          </div>
+
+          {/* Tab Navigation */}
+          <div className="flex overflow-x-auto px-4 gap-1 no-scrollbar">
+            {tabs.map((tab) => (
+              <button
+                key={tab.id}
+                onClick={() => setActiveTab(tab.id)}
+                className={`flex items-center gap-2 px-4 py-3 text-[13px] font-medium whitespace-nowrap border-b-2 transition-colors ${
+                  activeTab === tab.id
+                    ? 'border-[#FAE008] text-[#111111]'
+                    : 'border-transparent text-[#4F4F4F] hover:text-[#111111]'
+                }`}
               >
-                <History className="w-4 h-4" />
-                <span className="hidden md:inline ml-1">History</span>
-              </Button>
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={() => setShowPriceList(true)}
-                className="h-8 md:h-9 px-2 md:px-3 hover:bg-slate-100 border-2 font-semibold transition-all"
-              >
-                <DollarSign className="w-4 h-4" />
-                <span className="hidden md:inline ml-1">Price</span>
-              </Button>
-              {!isTechnician && (
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={() => setShowAssistant(true)}
-                  className="h-8 md:h-9 px-2 md:px-3 hover:bg-slate-100 border-2 font-semibold transition-all"
-                >
-                  <Sparkles className="w-4 h-4" />
-                  <span className="hidden md:inline ml-1">AI</span>
-                </Button>
-              )}
-            </div>
+                <tab.icon className="w-4 h-4" />
+                {tab.label}
+              </button>
+            ))}
           </div>
+        </div>
 
-          <div className="space-y-2">
-            <div className="flex items-start gap-1.5">
-              <MapPin className="text-slate-400 w-4 h-4 md:w-5 md:h-5 mt-0.5 flex-shrink-0" />
-              <span className="text-sm md:text-base font-bold text-[#000000]">{job.address}</span>
-            </div>
-
-            <div className="flex flex-wrap gap-1.5">
-              {job.customer_phone && (
-                <Button
-                  size="icon"
-                  variant="ghost"
-                  onClick={() => window.location.href = `tel:${job.customer_phone}`}
-                  className="h-9 w-9 hover:bg-[#FEF8C8] text-slate-600 hover:text-slate-700 rounded-xl transition-all"
-                  title="Call"
-                >
-                  <Phone className="w-4 h-4" />
-                </Button>
-              )}
-              <Button
-                size="icon"
-                variant="ghost"
-                onClick={() => window.open(`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(job.address)}`, '_blank')}
-                className="h-9 w-9 hover:bg-green-100 text-slate-600 hover:text-green-700 rounded-xl transition-all"
-                  title="Directions"
-                >
-                <Navigation className="w-4 h-4" />
-              </Button>
-              {job.customer_email && (
-                <Button
-                  size="icon"
-                  variant="ghost"
-                  onClick={() => window.location.href = `mailto:${job.customer_email}`}
-                  className="h-9 w-9 hover:bg-purple-100 text-slate-600 hover:text-purple-700 rounded-xl transition-all"
-                  title="Email"
-                >
-                  <Mail className="w-4 h-4" />
-                </Button>
-              )}
-            </div>
-          </div>
-
-          <div className="bg-white rounded-xl p-2.5 md:p-3 border-2 border-slate-200 shadow-sm">
-            <div className="grid grid-cols-6 md:grid-cols-8 gap-2">
-              <div className="col-span-2">
-                <EditableField
-                  value={job.scheduled_date}
-                  onSave={(val) => handleFieldSave('scheduled_date', job.scheduled_date, val)}
-                  type="date"
-                  icon={Calendar}
-                  displayFormat={(val) => format(parseISO(val), 'MMM d')}
-                  placeholder="Set date"
-                />
-              </div>
-              <div className="col-span-1">
-                <EditableField
-                  value={job.scheduled_time}
-                  onSave={(val) => handleFieldSave('scheduled_time', job.scheduled_time, val)}
-                  type="time"
-                  icon={Clock}
-                  placeholder="Time"
-                />
-              </div>
-              <div className="col-span-1 md:col-span-2">
-                <EditableField
-                  value={job.product}
-                  onSave={(val) => handleFieldSave('product', job.product, val)}
-                  type="select"
-                  icon={Package}
-                  options={[
-                    { value: "Garage Door", label: "Garage Door" },
-                    { value: "Gate", label: "Gate" },
-                    { value: "Roller Shutter", label: "Roller Shutter" },
-                    { value: "Multiple", label: "Multiple" },
-                    { value: "Custom Garage Door", label: "Custom Garage Door" }
-                  ]}
-                  className={`text-xs font-semibold ${job.product ? productColors[job.product] : ""}`}
-                  placeholder="Product"
-                />
-              </div>
-              <div className="col-span-2 md:col-span-3">
-                <EditableField
-                  value={job.job_type_id}
-                  onSave={handleJobTypeChange}
-                  type="select"
-                  icon={Briefcase}
-                  options={jobTypes.map((jt) => ({ value: jt.id, label: jt.name }))}
-                  displayFormat={(val) => jobTypes.find((jt) => jt.id === val)?.name || val}
-                  placeholder="Job type"
-                  className="text-xs font-semibold bg-purple-50 text-purple-700 border-purple-200"
-                />
-              </div>
-            </div>
-            
-            <div className="mt-2 pt-2 border-t-2 border-slate-200">
-              <div className="flex items-center justify-between">
-                <div className="flex items-center gap-1.5">
-                  <User className="w-3.5 h-3.5 md:w-4 md:h-4 text-slate-400" />
-                  <span className="text-xs md:text-sm font-bold text-[#000000]">Technicians</span>
-                </div>
-                <div className="flex items-center gap-1.5">
-                  {(Array.isArray(job.assigned_to_name) ? job.assigned_to_name : job.assigned_to_name ? [job.assigned_to_name] : []).slice(0, 3).map((name, idx) => (
-                    <div
-                      key={idx}
-                      className={`${getAvatarColor(name)} w-7 h-7 rounded-full flex items-center justify-center text-white text-xs font-bold shadow-md`}
-                      title={name}
-                    >
-                      {getInitials(name)}
-                    </div>
-                  ))}
-                  {Array.isArray(job.assigned_to_name) && job.assigned_to_name.length > 3 && (
-                    <div className="bg-slate-300 w-7 h-7 rounded-full flex items-center justify-center text-[#000000] text-xs font-bold shadow-md">
-                      +{job.assigned_to_name.length - 3}
-                    </div>
-                  )}
-                  <EditableField
-                    value={Array.isArray(job.assigned_to) ? job.assigned_to : job.assigned_to ? [job.assigned_to] : []}
-                    onSave={handleAssignedToChange}
-                    type="multi-select"
-                    icon={User}
-                    options={technicians.map((t) => ({ value: t.email, label: t.full_name }))}
-                    displayFormat={(val) => {
-                      const emailsToDisplay = Array.isArray(val) ? val : val ? [val] : [];
-                      return emailsToDisplay.length === 0 ? "Assign" : "Edit";
-                    }}
-                    placeholder="Assign"
-                  />
-                </div>
-              </div>
-            </div>
-          </div>
-        </CardHeader>
-        
-        <CardContent className="p-3 md:p-4">
-          <Tabs defaultValue="details" className="w-full">
-            <TabsList className="w-full grid grid-cols-4 mb-3 h-10 md:h-11 bg-slate-100 p-1">
-              <TabsTrigger value="details" className="text-xs md:text-sm font-semibold">Details</TabsTrigger>
-              <TabsTrigger value="visit" className="text-xs md:text-sm font-semibold">
-                <ClipboardCheck className="w-3.5 h-3.5 md:w-4 md:h-4 md:mr-1.5" />
-                <span className="hidden md:inline">Visit</span>
-              </TabsTrigger>
-              <TabsTrigger value="form" className="text-xs md:text-sm font-semibold">
-                <FileCheck className="w-3.5 h-3.5 md:w-4 md:h-4 md:mr-1.5" />
-                <span className="hidden md:inline">Form</span>
-              </TabsTrigger>
-              <TabsTrigger value="files" className="text-xs md:text-sm font-semibold">
-                <ImageIcon className="w-3.5 h-3.5 md:w-4 md:h-4 md:mr-1.5" />
-                <span className="hidden md:inline">Files</span>
-              </TabsTrigger>
-            </TabsList>
-
-            <TabsContent value="details" className="space-y-3 mt-2">
-              {job.project_id && projectJobs.length > 0 && (
-                <div className="bg-[#FEF8C8] border-2 border-slate-200 rounded-xl p-3">
-                  <h3 className="text-sm font-bold text-slate-900 mb-2 flex items-center gap-1.5">
-                    <FolderKanban className="w-4 h-4" />
-                    Project Job History ({projectJobs.length})
-                  </h3>
-                  <div className="space-y-2">
-                    {projectJobs.map((pJob) => (
-                      <div key={pJob.id} className="bg-white border border-slate-200 rounded-lg p-2.5 text-sm">
-                        <div className="flex items-start justify-between gap-2 mb-1.5">
-                          <div className="flex-1">
-                            <div className="font-bold text-slate-900">
-                              {pJob.job_type_name || 'Job'} #{pJob.job_number}
-                            </div>
-                            {pJob.scheduled_date && (
-                              <div className="text-xs text-slate-600 flex items-center gap-1 mt-0.5">
-                                <Calendar className="w-3 h-3" />
-                                {format(parseISO(pJob.scheduled_date), 'MMM d, yyyy')}
-                              </div>
-                            )}
-                          </div>
-                          {pJob.status && (
-                            <Badge className={`${statusColors[pJob.status]} text-xs font-semibold border`}>
-                              {pJob.status.replace(/_/g, ' ')}
-                            </Badge>
-                          )}
-                        </div>
-                        {pJob.notes && pJob.notes !== "<p><br></p>" && (
-                          <div className="text-xs text-slate-600 mt-2 pt-2 border-t border-slate-100">
-                            <div className="font-semibold mb-0.5">Notes:</div>
-                            <div className="line-clamp-2" dangerouslySetInnerHTML={{ __html: pJob.notes }} />
-                          </div>
-                        )}
-                        {pJob.outcome && (
-                          <Badge className={`${outcomeColors[pJob.outcome]} text-xs font-semibold border mt-1.5`}>
-                            Outcome: {pJob.outcome.replace(/_/g, ' ')}
-                          </Badge>
-                        )}
+        {/* Main Content */}
+        <div className="p-4 space-y-4 pb-24">
+          {activeTab === "summary" && (
+            <>
+              {/* Job Metadata */}
+              <Card className="card-enhanced border-2 border-[#E2E3E5] rounded-xl bg-white shadow-sm">
+                <CardContent className="p-4 space-y-4">
+                  <h3 className="text-[13px] font-semibold text-[#4F4F4F] uppercase tracking-wide">Job Details</h3>
+                  
+                  <div className="space-y-3">
+                    <div>
+                      <div className="text-[12px] text-[#4F4F4F] mb-1">Customer</div>
+                      <div 
+                        className="text-[15px] font-semibold text-[#111111] cursor-pointer hover:text-[#FAE008] transition-colors"
+                        onClick={() => setShowCustomerEdit(true)}
+                      >
+                        {job.customer_name}
                       </div>
-                    ))}
+                    </div>
+
+                    {job.address && (
+                      <div>
+                        <div className="text-[12px] text-[#4F4F4F] mb-1">Address</div>
+                        <div className="flex items-start gap-2">
+                          <MapPin className="w-4 h-4 text-[#4F4F4F] mt-0.5 flex-shrink-0" />
+                          <span className="text-[14px] text-[#111111]">{job.address}</span>
+                        </div>
+                      </div>
+                    )}
+
+                    <div className="flex gap-2 pt-2 border-t border-[#E2E3E5]">
+                      {job.customer_phone && (
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          onClick={() => window.location.href = `tel:${job.customer_phone}`}
+                          className="flex-1 h-12 border-2 border-slate-200 hover:bg-slate-50 text-slate-700 font-semibold"
+                        >
+                          <Phone className="w-4 h-4 mr-2" />
+                          Call
+                        </Button>
+                      )}
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        onClick={() => window.open(`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(job.address)}`, '_blank')}
+                        className="flex-1 h-12 border-2 border-slate-200 hover:bg-slate-50 text-slate-700 font-semibold"
+                      >
+                        <Navigation className="w-4 h-4 mr-2" />
+                        Directions
+                      </Button>
+                    </div>
+
+                    <div className="pt-2 border-t border-[#E2E3E5]">
+                      <div className="grid grid-cols-2 gap-3">
+                        <div>
+                          <div className="text-[12px] text-[#4F4F4F] mb-1">Date</div>
+                          <EditableField
+                            value={job.scheduled_date}
+                            onSave={(val) => handleFieldSave('scheduled_date', job.scheduled_date, val)}
+                            type="date"
+                            icon={Calendar}
+                            displayFormat={(val) => format(parseISO(val), 'MMM d, yyyy')}
+                            placeholder="Set date"
+                          />
+                        </div>
+                        <div>
+                          <div className="text-[12px] text-[#4F4F4F] mb-1">Time</div>
+                          <EditableField
+                            value={job.scheduled_time}
+                            onSave={(val) => handleFieldSave('scheduled_time', job.scheduled_time, val)}
+                            type="time"
+                            icon={Clock}
+                            placeholder="Time"
+                          />
+                        </div>
+                      </div>
+                    </div>
+
+                    <div>
+                      <div className="text-[12px] text-[#4F4F4F] mb-1">Job Type</div>
+                      <EditableField
+                        value={job.job_type_id}
+                        onSave={handleJobTypeChange}
+                        type="select"
+                        icon={Briefcase}
+                        options={jobTypes.map((jt) => ({ value: jt.id, label: jt.name }))}
+                        displayFormat={(val) => jobTypes.find((jt) => jt.id === val)?.name || val}
+                        placeholder="Select job type"
+                      />
+                    </div>
+
+                    <div>
+                      <div className="text-[12px] text-[#4F4F4F] mb-1">Product</div>
+                      <EditableField
+                        value={job.product}
+                        onSave={(val) => handleFieldSave('product', job.product, val)}
+                        type="select"
+                        icon={Package}
+                        options={[
+                          { value: "Garage Door", label: "Garage Door" },
+                          { value: "Gate", label: "Gate" },
+                          { value: "Roller Shutter", label: "Roller Shutter" },
+                          { value: "Multiple", label: "Multiple" },
+                          { value: "Custom Garage Door", label: "Custom Garage Door" }
+                        ]}
+                        placeholder="Select product"
+                      />
+                    </div>
+
+                    <div>
+                      <div className="text-[12px] text-[#4F4F4F] mb-2">Technicians</div>
+                      <div className="flex items-center gap-2 flex-wrap">
+                        {(Array.isArray(job.assigned_to_name) ? job.assigned_to_name : job.assigned_to_name ? [job.assigned_to_name] : []).map((name, idx) => (
+                          <div
+                            key={idx}
+                            className={`${getAvatarColor(name)} w-10 h-10 rounded-full flex items-center justify-center text-white text-sm font-bold shadow-soft`}
+                            title={name}
+                          >
+                            {getInitials(name)}
+                          </div>
+                        ))}
+                        <EditableField
+                          value={Array.isArray(job.assigned_to) ? job.assigned_to : job.assigned_to ? [job.assigned_to] : []}
+                          onSave={handleAssignedToChange}
+                          type="multi-select"
+                          icon={User}
+                          options={technicians.map((t) => ({ value: t.email, label: t.full_name }))}
+                          displayFormat={(val) => {
+                            const emailsToDisplay = Array.isArray(val) ? val : val ? [val] : [];
+                            return emailsToDisplay.length === 0 ? "Assign" : "Edit";
+                          }}
+                          placeholder="Assign"
+                        />
+                      </div>
+                    </div>
                   </div>
-                </div>
+                </CardContent>
+              </Card>
+
+              {/* Status Timeline */}
+              <Card className="card-enhanced border-2 border-[#E2E3E5] rounded-xl bg-white shadow-sm">
+                <CardContent className="p-4">
+                  <h3 className="text-[13px] font-semibold text-[#4F4F4F] uppercase tracking-wide mb-4">Status Timeline</h3>
+                  <div className="space-y-3">
+                    <div className="flex items-center gap-3">
+                      <div className="w-8 h-8 rounded-full bg-green-100 flex items-center justify-center flex-shrink-0">
+                        <CheckSquare className="w-4 h-4 text-green-600" />
+                      </div>
+                      <div className="flex-1">
+                        <div className="text-[14px] font-semibold text-[#111111]">Created</div>
+                        <div className="text-[12px] text-[#4F4F4F]">
+                          {job.created_date && format(new Date(job.created_date), 'MMM d, yyyy h:mm a')}
+                        </div>
+                      </div>
+                    </div>
+
+                    {job.assigned_to && job.assigned_to.length > 0 && (
+                      <div className="flex items-center gap-3">
+                        <div className="w-8 h-8 rounded-full bg-blue-100 flex items-center justify-center flex-shrink-0">
+                          <User className="w-4 h-4 text-blue-600" />
+                        </div>
+                        <div className="flex-1">
+                          <div className="text-[14px] font-semibold text-[#111111]">Assigned</div>
+                          <div className="text-[12px] text-[#4F4F4F]">
+                            {Array.isArray(job.assigned_to_name) ? job.assigned_to_name.join(', ') : job.assigned_to_name}
+                          </div>
+                        </div>
+                      </div>
+                    )}
+
+                    {activeCheckIn && (
+                      <div className="flex items-center gap-3">
+                        <div className="w-8 h-8 rounded-full bg-orange-100 flex items-center justify-center flex-shrink-0">
+                          <Timer className="w-4 h-4 text-orange-600 animate-pulse" />
+                        </div>
+                        <div className="flex-1">
+                          <div className="text-[14px] font-semibold text-[#111111]">In Progress</div>
+                          <div className="text-[12px] text-[#4F4F4F]">
+                            Since {format(new Date(activeCheckIn.check_in_time), 'h:mm a')}
+                          </div>
+                        </div>
+                      </div>
+                    )}
+
+                    {job.status === 'completed' && (
+                      <div className="flex items-center gap-3">
+                        <div className="w-8 h-8 rounded-full bg-green-100 flex items-center justify-center flex-shrink-0">
+                          <CheckSquare className="w-4 h-4 text-green-600" />
+                        </div>
+                        <div className="flex-1">
+                          <div className="text-[14px] font-semibold text-[#111111]">Completed</div>
+                          <div className="text-[12px] text-[#4F4F4F]">Job finished</div>
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                </CardContent>
+              </Card>
+
+              {/* Project Jobs */}
+              {job.project_id && projectJobs.length > 0 && (
+                <Card className="card-enhanced border-2 border-[#E2E3E5] rounded-xl bg-white shadow-sm">
+                  <CardContent className="p-4">
+                    <h3 className="text-[13px] font-semibold text-[#4F4F4F] uppercase tracking-wide mb-3 flex items-center gap-2">
+                      <FolderKanban className="w-4 h-4" />
+                      Project History ({projectJobs.length})
+                    </h3>
+                    <div className="space-y-2">
+                      {projectJobs.map((pJob) => (
+                        <Card key={pJob.id} className="card-interactive border border-[#E2E3E5] rounded-lg">
+                          <CardContent className="p-3">
+                            <div className="flex items-start justify-between gap-2 mb-1">
+                              <div className="flex-1">
+                                <div className="text-[14px] font-semibold text-[#111111]">
+                                  {pJob.job_type_name || 'Job'} #{pJob.job_number}
+                                </div>
+                                {pJob.scheduled_date && (
+                                  <div className="text-[12px] text-[#4F4F4F] flex items-center gap-1 mt-0.5">
+                                    <Calendar className="w-3 h-3" />
+                                    {format(parseISO(pJob.scheduled_date), 'MMM d, yyyy')}
+                                  </div>
+                                )}
+                              </div>
+                              {pJob.status && (
+                                <Badge className={`${statusColors[pJob.status]} text-xs font-semibold border`}>
+                                  {pJob.status.replace(/_/g, ' ')}
+                                </Badge>
+                              )}
+                            </div>
+                          </CardContent>
+                        </Card>
+                      ))}
+                    </div>
+                  </CardContent>
+                </Card>
               )}
+            </>
+          )}
 
-              <div className="border-t-2 pt-3">
-                <h3 className="text-sm font-bold text-[#000000] mb-2 flex items-center gap-1.5">
-                  <FileText className="w-4 h-4 text-slate-600" />
-                  Notes
-                </h3>
-                <div className="bg-[#fae008]/10 border-2 border-[#fae008]/30 rounded-xl p-2.5">
-                  <RichTextEditor
-                    value={notes}
-                    onChange={setNotes}
-                    onBlur={handleNotesBlur}
-                    placeholder="Add notes..."
-                  />
-                </div>
-              </div>
-
-              <div>
-                <h3 className="text-sm font-bold text-[#000000] mb-2">Pricing</h3>
-                <Input
-                  value={pricingProvided}
-                  onChange={(e) => setPricingProvided(e.target.value)}
-                  onBlur={handlePricingProvidedBlur}
-                  placeholder="Enter pricing..."
-                  className="text-sm h-10 md:h-11 border-2 border-slate-300 focus:border-[#fae008] focus:ring-2 focus:ring-[#fae008]/20 rounded-xl font-medium"
-                />
-              </div>
-
-              <div>
-                <h3 className="text-sm font-bold text-[#000000] mb-2">Additional Info</h3>
-                <div className="border-2 border-slate-300 rounded-xl p-2.5 focus-within:border-[#fae008] focus-within:ring-2 focus-within:ring-[#fae008]/20 transition-all">
-                  <RichTextEditor
-                    value={additionalInfo}
-                    onChange={setAdditionalInfo}
-                    onBlur={handleAdditionalInfoBlur}
-                    placeholder="Add info..."
-                  />
-                </div>
-              </div>
-
-              <div className="flex flex-col gap-2.5 pt-3 border-t-2">
-                {!activeCheckIn ? (
-                  <Button
-                    onClick={handleCheckIn}
-                    disabled={checkInMutation.isPending}
-                    className="w-full bg-[#fae008] hover:bg-[#e5d007] text-black h-11 font-semibold text-base rounded-xl shadow-md hover:shadow-lg transition-all"
-                  >
-                    <LogIn className="w-4 h-4 mr-2" />
-                    {checkInMutation.isPending ? 'Checking In...' : 'Check In'}
-                  </Button>
-                ) : (
-                  <div className="bg-[#FEF8C8] border-2 border-slate-300 rounded-xl p-2.5">
-                    <div className="flex items-center gap-2 text-slate-700">
-                      <Timer className="w-4 h-4" />
-                      <span className="text-sm font-bold">
-                        Checked in at {format(new Date(activeCheckIn.check_in_time), 'h:mm a')}
-                      </span>
-                    </div>
-                  </div>
-                )}
-                {totalJobTime > 0 && (
-                  <div className="bg-slate-50 border-2 border-slate-200 rounded-xl p-2.5">
-                    <div className="flex items-center justify-between">
-                      <span className="text-sm text-slate-600 font-medium">Total Time:</span>
-                      <span className="text-sm font-bold text-[#000000]">{totalJobTime.toFixed(1)}h</span>
-                    </div>
-                  </div>
-                )}
-              </div>
-            </TabsContent>
-
-            <TabsContent value="visit" className="space-y-3 mt-2">
-              <div className="space-y-3">
+          {activeTab === "checklist" && (
+            <Card className="card-enhanced border-2 border-[#E2E3E5] rounded-xl bg-white shadow-sm">
+              <CardContent className="p-4 space-y-4">
                 <div>
-                  <Label className="text-sm font-bold text-[#000000] mb-1.5 block">Overview *</Label>
-                  <div className="border-2 border-slate-300 rounded-xl p-2.5 focus-within:border-[#fae008] focus-within:ring-2 focus-within:ring-[#fae008]/20 transition-all">
+                  <Label className="text-[13px] font-semibold text-[#111111] mb-2 block">Overview *</Label>
+                  <div className="border-2 border-[#E2E3E5] rounded-xl p-3 focus-within:border-[#FAE008] transition-all">
                     <RichTextEditor
                       value={overview}
                       onChange={setOverview}
@@ -785,8 +772,8 @@ export default function JobDetails({ job, onClose, onStatusChange, onDelete }) {
                 </div>
 
                 <div>
-                  <Label className="text-sm font-bold text-[#000000] mb-1.5 block">Next Steps *</Label>
-                  <div className="border-2 border-slate-300 rounded-xl p-2.5 focus-within:border-[#fae008] focus-within:ring-2 focus-within:ring-[#fae008]/20 transition-all">
+                  <Label className="text-[13px] font-semibold text-[#111111] mb-2 block">Next Steps *</Label>
+                  <div className="border-2 border-[#E2E3E5] rounded-xl p-3 focus-within:border-[#FAE008] transition-all">
                     <RichTextEditor
                       value={nextSteps}
                       onChange={setNextSteps}
@@ -797,8 +784,8 @@ export default function JobDetails({ job, onClose, onStatusChange, onDelete }) {
                 </div>
 
                 <div>
-                  <Label className="text-sm font-bold text-[#000000] mb-1.5 block">Communication *</Label>
-                  <div className="border-2 border-slate-300 rounded-xl p-2.5 focus-within:border-[#fae008] focus-within:ring-2 focus-within:ring-[#fae008]/20 transition-all">
+                  <Label className="text-[13px] font-semibold text-[#111111] mb-2 block">Communication *</Label>
+                  <div className="border-2 border-[#E2E3E5] rounded-xl p-3 focus-within:border-[#FAE008] transition-all">
                     <RichTextEditor
                       value={communicationWithClient}
                       onChange={setCommunicationWithClient}
@@ -809,9 +796,9 @@ export default function JobDetails({ job, onClose, onStatusChange, onDelete }) {
                 </div>
 
                 <div>
-                  <Label className="text-sm font-bold text-[#000000] mb-1.5 block">Outcome *</Label>
+                  <Label className="text-[13px] font-semibold text-[#111111] mb-2 block">Outcome *</Label>
                   <Select value={outcome} onValueChange={handleOutcomeChange}>
-                    <SelectTrigger className="h-11 text-sm border-2 border-slate-300 focus:border-[#fae008] focus:ring-2 focus:ring-[#fae008]/20 rounded-xl font-medium">
+                    <SelectTrigger className="h-12 text-[14px] border-2 border-[#E2E3E5] focus:border-[#FAE008] rounded-xl">
                       <SelectValue placeholder="Select outcome" />
                     </SelectTrigger>
                     <SelectContent>
@@ -825,90 +812,29 @@ export default function JobDetails({ job, onClose, onStatusChange, onDelete }) {
                 </div>
 
                 {validationError && (
-                  <div className="bg-red-50 border-2 border-red-200 rounded-xl p-2.5 flex items-start gap-2">
+                  <div className="bg-red-50 border-2 border-red-200 rounded-xl p-3 flex items-start gap-2">
                     <AlertCircle className="w-4 h-4 text-red-600 mt-0.5 flex-shrink-0" />
-                    <span className="text-sm text-red-700 font-medium">{validationError}</span>
+                    <span className="text-[13px] text-red-700 font-medium">{validationError}</span>
                   </div>
                 )}
 
                 {activeCheckIn && (
-                  <div className="pt-3 border-t-2">
-                    <Button
-                      onClick={handleCheckOut}
-                      disabled={checkOutMutation.isPending}
-                      className="w-full bg-[#fae008] hover:bg-[#e5d007] text-black h-11 font-semibold text-base rounded-xl shadow-md hover:shadow-lg transition-all"
-                    >
-                      <LogOut className="w-4 h-4 mr-2" />
-                      {checkOutMutation.isPending ? 'Checking Out...' : 'Check Out'}
-                    </Button>
-                  </div>
+                  <Button
+                    onClick={handleCheckOut}
+                    disabled={checkOutMutation.isPending}
+                    className="w-full bg-[#fae008] hover:bg-[#e5d007] text-black h-12 font-semibold text-base rounded-xl shadow-md hover:shadow-lg transition-all"
+                  >
+                    <LogOut className="w-4 h-4 mr-2" />
+                    {checkOutMutation.isPending ? 'Checking Out...' : 'Check Out'}
+                  </Button>
                 )}
-              </div>
+              </CardContent>
+            </Card>
+          )}
 
-              {completedCheckIns.length > 0 && (
-                <Collapsible defaultOpen={false} className="pt-3 border-t-2">
-                  <CollapsibleTrigger className="flex items-center justify-between w-full group bg-slate-50 border-2 border-slate-200 rounded-xl p-3 hover:bg-slate-100 transition-colors">
-                    <h4 className="text-sm font-bold text-[#000000]">Time Tracking ({completedCheckIns.length})</h4>
-                    <ChevronDown className="w-4 h-4 text-slate-500 transition-transform group-data-[state=open]:rotate-180" />
-                  </CollapsibleTrigger>
-                  
-                  <CollapsibleContent className="pt-2.5 space-y-2.5">
-                    {completedCheckIns.map((checkIn, index) => (
-                      <div key={checkIn.id} className="bg-slate-50 border-2 border-slate-200 rounded-xl p-2.5">
-                        <div className="space-y-2">
-                          <div className="flex items-center justify-between text-sm">
-                            <span className="text-slate-500 font-medium">Visit {completedCheckIns.length - index}</span>
-                            <span className="font-bold text-[#000000]">{checkIn.technician_name}</span>
-                          </div>
-                          <div className="grid grid-cols-2 gap-2 text-xs md:text-sm">
-                            <div>
-                              <span className="text-slate-500 font-medium">In:</span>
-                              <div className="font-bold text-[#000000]">
-                                {format(new Date(checkIn.check_in_time), 'MMM d, h:mm a')}
-                              </div>
-                            </div>
-                            <div>
-                              <span className="text-slate-500 font-medium">Out:</span>
-                              <div className="font-bold text-[#000000]">
-                                {format(new Date(checkIn.check_out_time), 'MMM d, h:mm a')}
-                              </div>
-                            </div>
-                          </div>
-                          <div className="pt-2 border-t-2 border-slate-300">
-                            <div className="flex items-center justify-between text-sm">
-                              <span className="text-slate-600 font-semibold">Duration:</span>
-                              <span className="font-bold text-[#000000]">
-                                {checkIn.duration_hours.toFixed(1)}h
-                              </span>
-                            </div>
-                          </div>
-                        </div>
-                      </div>
-                    ))}
-
-                    <div className="bg-[#FEF8C8] border-2 border-slate-200 rounded-xl p-2.5">
-                      <div className="flex items-center justify-between">
-                        <span className="text-sm font-bold text-slate-900">Total:</span>
-                        <span className="text-base font-bold text-slate-900">{totalJobTime.toFixed(1)}h</span>
-                      </div>
-                    </div>
-                  </CollapsibleContent>
-                </Collapsible>
-              )}
-            </TabsContent>
-
-            <TabsContent value="form" className="mt-2">
-              <div className="space-y-2.5">
-                <h3 className="text-sm font-bold text-[#000000]">Measurements</h3>
-                <MeasurementsForm
-                  measurements={measurements}
-                  onChange={handleMeasurementsChange}
-                />
-              </div>
-            </TabsContent>
-
-            <TabsContent value="files" className="mt-2">
-              <div className="space-y-3">
+          {activeTab === "photos" && (
+            <Card className="card-enhanced border-2 border-[#E2E3E5] rounded-xl bg-white shadow-sm">
+              <CardContent className="p-4">
                 <EditableFileUpload
                   files={job.image_urls || []}
                   onFilesChange={handleImagesChange}
@@ -918,8 +844,48 @@ export default function JobDetails({ job, onClose, onStatusChange, onDelete }) {
                   label="Photos & Videos"
                   emptyText="Upload media"
                 />
+              </CardContent>
+            </Card>
+          )}
 
-                <div className="grid md:grid-cols-2 gap-2.5 pt-3 border-t-2">
+          {activeTab === "notes" && (
+            <Card className="card-enhanced border-2 border-[#E2E3E5] rounded-xl bg-white shadow-sm">
+              <CardContent className="p-4">
+                <div className="border-2 border-[#E2E3E5] rounded-xl p-3 focus-within:border-[#FAE008] transition-all">
+                  <RichTextEditor
+                    value={notes}
+                    onChange={setNotes}
+                    onBlur={handleNotesBlur}
+                    placeholder="Add notes..."
+                  />
+                </div>
+
+                <div className="mt-4">
+                  <h3 className="text-[13px] font-semibold text-[#111111] mb-2">Measurements</h3>
+                  <MeasurementsForm
+                    measurements={measurements}
+                    onChange={handleMeasurementsChange}
+                  />
+                </div>
+              </CardContent>
+            </Card>
+          )}
+
+          {activeTab === "materials" && (
+            <Card className="card-enhanced border-2 border-[#E2E3E5] rounded-xl bg-white shadow-sm">
+              <CardContent className="p-4 space-y-4">
+                <div>
+                  <Label className="text-[13px] font-semibold text-[#111111] mb-2 block">Pricing Provided</Label>
+                  <Input
+                    value={pricingProvided}
+                    onChange={(e) => setPricingProvided(e.target.value)}
+                    onBlur={handlePricingProvidedBlur}
+                    placeholder="Enter pricing..."
+                    className="h-12 border-2 border-[#E2E3E5] focus:border-[#FAE008] rounded-xl"
+                  />
+                </div>
+
+                <div className="grid grid-cols-2 gap-3 pt-3 border-t border-[#E2E3E5]">
                   <EditableFileUpload
                     files={job.quote_url}
                     onFilesChange={handleQuoteChange}
@@ -940,62 +906,121 @@ export default function JobDetails({ job, onClose, onStatusChange, onDelete }) {
                     emptyText="Upload invoice"
                   />
                 </div>
-              </div>
-            </TabsContent>
-          </Tabs>
-
-          {jobSummaries.length > 0 && (
-            <Collapsible defaultOpen={false} className="mt-3 pt-3 border-t-2">
-              <CollapsibleTrigger className="flex items-center justify-between w-full group bg-slate-50 border-2 border-slate-200 rounded-xl p-3 hover:bg-slate-100 transition-colors">
-                <h4 className="text-sm font-bold text-[#000000]">Previous Visit Summaries ({jobSummaries.length})</h4>
-                <ChevronDown className="w-4 h-4 text-slate-500 transition-transform group-data-[state=open]:rotate-180" />
-              </CollapsibleTrigger>
-              
-              <CollapsibleContent className="pt-3 space-y-3">
-                {jobSummaries.map((summary) => (
-                  <div key={summary.id} className="bg-white border-2 border-slate-200 rounded-xl p-3">
-                    <div className="flex items-center justify-between mb-3">
-                      <span className="font-bold text-[#000000]">{summary.technician_name}</span>
-                      <span className="text-xs text-slate-500 font-medium">
-                        {format(new Date(summary.checkout_time), 'MMM d, yyyy h:mm a')}
-                      </span>
-                    </div>
-                    
-                    {summary.outcome && (
-                      <Badge className={`${outcomeColors[summary.outcome]} mb-3 font-semibold border-2`}>
-                        {summary.outcome.replace(/_/g, ' ')}
-                      </Badge>
-                    )}
-
-                    <div className="space-y-2">
-                      {summary.overview && (
-                        <div>
-                          <div className="text-xs font-bold text-slate-500 mb-1">Overview:</div>
-                          <div className="text-sm text-slate-700" dangerouslySetInnerHTML={{ __html: summary.overview }} />
-                        </div>
-                      )}
-                      
-                      {summary.next_steps && (
-                        <div>
-                          <div className="text-xs font-bold text-slate-500 mb-1">Next Steps:</div>
-                          <div className="text-sm text-slate-700" dangerouslySetInnerHTML={{ __html: summary.next_steps }} />
-                        </div>
-                      )}
-                      
-                      {summary.communication_with_client && (
-                        <div>
-                          <div className="text-xs font-bold text-slate-500 mb-1">Communication:</div>
-                          <div className="text-sm text-slate-700" dangerouslySetInnerHTML={{ __html: summary.communication_with_client }} />
-                        </div>
-                      )}
-                    </div>
-                  </div>
-                ))}
-              </CollapsibleContent>
-            </Collapsible>
+              </CardContent>
+            </Card>
           )}
-        </CardContent>
-      </Card>
+
+          {activeTab === "audit" && (
+            <Card className="card-enhanced border-2 border-[#E2E3E5] rounded-xl bg-white shadow-sm">
+              <CardContent className="p-4">
+                {completedCheckIns.length > 0 && (
+                  <div className="space-y-3 mb-4">
+                    <h3 className="text-[13px] font-semibold text-[#4F4F4F] uppercase tracking-wide">Time Tracking</h3>
+                    {completedCheckIns.map((checkIn, index) => (
+                      <Card key={checkIn.id} className="card-interactive border border-[#E2E3E5] rounded-lg">
+                        <CardContent className="p-3">
+                          <div className="flex items-center justify-between mb-2">
+                            <span className="text-[13px] text-[#4F4F4F]">Visit {completedCheckIns.length - index}</span>
+                            <span className="text-[14px] font-semibold text-[#111111]">{checkIn.technician_name}</span>
+                          </div>
+                          <div className="grid grid-cols-2 gap-2 text-[13px]">
+                            <div>
+                              <span className="text-[#4F4F4F]">In:</span>
+                              <div className="font-medium text-[#111111]">
+                                {format(new Date(checkIn.check_in_time), 'MMM d, h:mm a')}
+                              </div>
+                            </div>
+                            <div>
+                              <span className="text-[#4F4F4F]">Out:</span>
+                              <div className="font-medium text-[#111111]">
+                                {format(new Date(checkIn.check_out_time), 'MMM d, h:mm a')}
+                              </div>
+                            </div>
+                          </div>
+                          <div className="pt-2 mt-2 border-t border-[#E2E3E5]">
+                            <div className="flex items-center justify-between">
+                              <span className="text-[13px] text-[#4F4F4F]">Duration:</span>
+                              <span className="text-[14px] font-bold text-[#111111]">
+                                {checkIn.duration_hours.toFixed(1)}h
+                              </span>
+                            </div>
+                          </div>
+                        </CardContent>
+                      </Card>
+                    ))}
+
+                    {totalJobTime > 0 && (
+                      <div className="bg-[#FEF8C8] border border-[#E2E3E5] rounded-xl p-3">
+                        <div className="flex items-center justify-between">
+                          <span className="text-[13px] font-semibold text-[#111111]">Total:</span>
+                          <span className="text-[16px] font-bold text-[#111111]">{totalJobTime.toFixed(1)}h</span>
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                )}
+
+                {jobSummaries.length > 0 && (
+                  <div className="space-y-3 pt-4 border-t border-[#E2E3E5]">
+                    <h3 className="text-[13px] font-semibold text-[#4F4F4F] uppercase tracking-wide">Visit Summaries</h3>
+                    {jobSummaries.map((summary) => (
+                      <Card key={summary.id} className="card-interactive border border-[#E2E3E5] rounded-lg">
+                        <CardContent className="p-3">
+                          <div className="flex items-center justify-between mb-2">
+                            <span className="text-[14px] font-semibold text-[#111111]">{summary.technician_name}</span>
+                            <span className="text-[12px] text-[#4F4F4F]">
+                              {format(new Date(summary.checkout_time), 'MMM d, h:mm a')}
+                            </span>
+                          </div>
+                          
+                          {summary.outcome && (
+                            <Badge className={`${outcomeColors[summary.outcome]} text-xs font-semibold border mb-2`}>
+                              {summary.outcome.replace(/_/g, ' ')}
+                            </Badge>
+                          )}
+
+                          <div className="space-y-2 text-[13px]">
+                            {summary.overview && (
+                              <div>
+                                <div className="text-[#4F4F4F] font-medium mb-0.5">Overview:</div>
+                                <div className="text-[#111111]" dangerouslySetInnerHTML={{ __html: summary.overview }} />
+                              </div>
+                            )}
+                            
+                            {summary.next_steps && (
+                              <div>
+                                <div className="text-[#4F4F4F] font-medium mb-0.5">Next Steps:</div>
+                                <div className="text-[#111111]" dangerouslySetInnerHTML={{ __html: summary.next_steps }} />
+                              </div>
+                            )}
+                          </div>
+                        </CardContent>
+                      </Card>
+                    ))}
+                  </div>
+                )}
+              </CardContent>
+            </Card>
+          )}
+        </div>
+
+        {/* Floating Action Button */}
+        {!activeCheckIn && (
+          <div className="fixed bottom-4 right-4 z-20">
+            <Button
+              onClick={handleCheckIn}
+              disabled={checkInMutation.isPending}
+              className="bg-[#fae008] hover:bg-[#e5d007] text-black h-14 w-14 rounded-full shadow-lg hover:shadow-xl p-0 transition-all"
+            >
+              {checkInMutation.isPending ? (
+                <Timer className="w-6 h-6 animate-spin" />
+              ) : (
+                <LogIn className="w-6 h-6" />
+              )}
+            </Button>
+          </div>
+        )}
+      </div>
 
       <PriceListModal
         open={showPriceList}
@@ -1025,18 +1050,18 @@ export default function JobDetails({ job, onClose, onStatusChange, onDelete }) {
       )}
 
       <AlertDialog open={showDeleteConfirm} onOpenChange={setShowDeleteConfirm}>
-        <AlertDialogContent className="rounded-2xl border-2 border-slate-200">
+        <AlertDialogContent className="rounded-xl">
           <AlertDialogHeader>
-            <AlertDialogTitle className="text-xl font-bold text-[#000000]">Delete Job?</AlertDialogTitle>
-            <AlertDialogDescription className="text-slate-600">
+            <AlertDialogTitle className="text-[18px] font-semibold">Delete Job?</AlertDialogTitle>
+            <AlertDialogDescription className="text-[14px] text-[#4F4F4F]">
               This job will be moved to the archive. You can restore it within 30 days.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
-            <AlertDialogCancel className="rounded-xl font-semibold border-2">Cancel</AlertDialogCancel>
+            <AlertDialogCancel className="h-12 border-2 border-slate-200 hover:bg-slate-50 text-slate-700 font-semibold rounded-xl">Cancel</AlertDialogCancel>
             <AlertDialogAction
               onClick={handleDeleteClick}
-              className="bg-red-600 hover:bg-red-700 rounded-xl font-semibold"
+              className="bg-[#DC2626] hover:bg-[#B91C1C] h-12 text-white font-semibold rounded-xl"
             >
               Delete
             </AlertDialogAction>
