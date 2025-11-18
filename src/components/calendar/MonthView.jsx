@@ -1,4 +1,3 @@
-
 import React from "react";
 import { Card, CardContent } from "@/components/ui/card";
 import { format, startOfMonth, endOfMonth, eachDayOfInterval, isSameMonth, isSameDay } from "date-fns";
@@ -36,7 +35,7 @@ const getInitials = (name) => {
 };
 
 const avatarColors = [
-  "bg-blue-600", "bg-purple-600", "bg-green-600", "bg-orange-600",
+  "bg-[#FAE008]", "bg-purple-500", "bg-green-500", "bg-orange-500",
 ];
 
 const getAvatarColor = (name) => {
@@ -67,7 +66,7 @@ export default function MonthView({ jobs, currentDate, onJobClick, onQuickBook }
         <CardContent className="p-2 md:p-4">
           <div className="grid grid-cols-7 gap-1 md:gap-2">
             {['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'].map(day => (
-              <div key={day} className="text-center text-xs md:text-sm font-semibold text-[hsl(25,8%,45%)] py-2">
+              <div key={day} className="text-center text-xs md:text-sm font-semibold text-[#4B5563] py-2">
                 {day}
               </div>
             ))}
@@ -83,23 +82,23 @@ export default function MonthView({ jobs, currentDate, onJobClick, onQuickBook }
               return (
                 <div
                   key={day.toISOString()}
-                  className={`aspect-square border rounded-lg p-1 md:p-2 hover:bg-[hsl(32,25%,96%)] transition-colors ${
-                    isToday ? 'bg-[#fae008]/10 border-[#fae008] border-2' : 'border-[hsl(32,15%,88%)]'
+                  className={`aspect-square border rounded-lg p-1 md:p-2 hover:bg-gray-50 transition-colors ${
+                    isToday ? 'bg-[#FAE008]/10 border-[#FAE008] border-2' : 'border-[#E5E7EB]'
                   } ${!isSameMonth(day, currentDate) ? 'opacity-50' : ''}`}
                 >
                   <div className="flex items-start justify-between mb-1">
                     <div className={`text-xs md:text-sm font-medium ${
-                      isToday ? 'text-[#fae008] font-bold' : 'text-[hsl(25,10%,25%)]'
+                      isToday ? 'text-[#FAE008] font-bold' : 'text-[#111827]'
                     }`}>
                       {format(day, 'd')}
                     </div>
                     {isSameMonth(day, currentDate) && (
                       <button
                         onClick={() => onQuickBook(day)}
-                        className="p-0.5 hover:bg-[hsl(32,15%,88%)] rounded transition-colors"
+                        className="p-0.5 hover:bg-gray-100 rounded transition-colors"
                         title="Book job"
                       >
-                        <Plus className="w-3 h-3 text-[hsl(25,8%,55%)]" />
+                        <Plus className="w-3 h-3 text-[#4B5563]" />
                       </button>
                     )}
                   </div>
@@ -121,7 +120,7 @@ export default function MonthView({ jobs, currentDate, onJobClick, onQuickBook }
                               {(Array.isArray(job.assigned_to_name) ? job.assigned_to_name : [job.assigned_to_name]).slice(0, 2).map((name, idx) => (
                                 <div
                                   key={idx}
-                                  className={`${getAvatarColor(name)} w-3.5 h-3.5 rounded-full flex items-center justify-center text-white text-[8px] font-bold border border-white`}
+                                  className={`${getAvatarColor(name)} w-3.5 h-3.5 rounded-full flex items-center justify-center text-black text-[8px] font-bold border border-white`}
                                   title={name}
                                 >
                                   {getInitials(name)}
@@ -130,14 +129,14 @@ export default function MonthView({ jobs, currentDate, onJobClick, onQuickBook }
                             </div>
                           )}
                         </div>
-                        <div className="truncate text-[10px] md:text-xs font-medium text-[hsl(25,10%,12%)]">
+                        <div className="truncate text-[10px] md:text-xs font-medium text-[#111827]">
                           {job.customer_name}
                         </div>
                       </div>
                     ))}
                   </div>
                   {dayJobs.length > 2 && (
-                    <div className="text-[9px] text-[hsl(25,8%,55%)] mt-1 text-center">
+                    <div className="text-[9px] text-[#4B5563] mt-1 text-center">
                       +{dayJobs.length - 2} more
                     </div>
                   )}
@@ -148,12 +147,12 @@ export default function MonthView({ jobs, currentDate, onJobClick, onQuickBook }
         </CardContent>
       </Card>
 
-      <div className="flex flex-wrap gap-2 text-xs bg-white p-3 rounded-lg border border-[hsl(32,15%,88%)]">
-        <span className="font-semibold text-[hsl(25,10%,25%)]">Job Types:</span>
+      <div className="flex flex-wrap gap-2 text-xs bg-white p-3 rounded-lg border border-[#E5E7EB]">
+        <span className="font-semibold text-[#111827]">Job Types:</span>
         {uniqueJobTypes.map((jobType) => (
           <div key={jobType} className="flex items-center gap-1.5">
             <div className={`w-3 h-3 rounded ${getJobTypeColor(jobType, uniqueJobTypes)}`} />
-            <span className="text-[hsl(25,8%,45%)]">{jobType}</span>
+            <span className="text-[#4B5563]">{jobType}</span>
           </div>
         ))}
       </div>
