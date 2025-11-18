@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from "react";
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -188,7 +187,6 @@ export default function JobDetails({ job, onClose, onStatusChange, onDelete }) {
         check_in_time: new Date().toISOString()
       });
       
-      // Update status based on date and check-in
       const newStatus = determineJobStatus(job.scheduled_date, job.outcome, true, job.status);
       await base44.entities.Job.update(job.id, { status: newStatus });
       
@@ -234,7 +232,6 @@ export default function JobDetails({ job, onClose, onStatusChange, onDelete }) {
         outcome: ""
       });
       
-      // Update status after checkout - no longer has active check-in
       const newStatus = determineJobStatus(job.scheduled_date, outcome, false, job.status);
       await base44.entities.Job.update(job.id, { status: newStatus });
     },
@@ -363,7 +360,6 @@ export default function JobDetails({ job, onClose, onStatusChange, onDelete }) {
     logChange('outcome', job.outcome, value);
     updateJobMutation.mutate({ field: 'outcome', value });
     
-    // Update status based on centralized logic - check if there's an active check-in
     const newStatus = determineJobStatus(job.scheduled_date, value, !!activeCheckIn, job.status);
     if (newStatus !== job.status) {
       updateJobMutation.mutate({ field: 'status', value: newStatus });
@@ -508,7 +504,7 @@ export default function JobDetails({ job, onClose, onStatusChange, onDelete }) {
                   size="icon"
                   variant="ghost"
                   onClick={() => window.location.href = `tel:${job.customer_phone}`}
-                  className="h-9 w-9 hover:bg-[#fff9ed] text-slate-600 hover:text-slate-700 rounded-xl transition-all"
+                  className="h-9 w-9 hover:bg-[#FEF8C8] text-slate-600 hover:text-slate-700 rounded-xl transition-all"
                   title="Call"
                 >
                   <Phone className="w-4 h-4" />
@@ -633,8 +629,8 @@ export default function JobDetails({ job, onClose, onStatusChange, onDelete }) {
             <TabsList className="w-full grid grid-cols-4 mb-3 h-10 md:h-11 bg-slate-100 p-1">
               <TabsTrigger value="details" className="text-xs md:text-sm font-semibold">Details</TabsTrigger>
               <TabsTrigger value="visit" className="text-xs md:text-sm font-semibold">
-                <ClipboardCheck className="w-3.5 h-3.5 md:w-4 md:h-4" />
-                <span>Visit</span>
+                <ClipboardCheck className="w-3.5 h-3.5 md:w-4 md:h-4 md:mr-1.5" />
+                <span className="hidden md:inline">Visit</span>
               </TabsTrigger>
               <TabsTrigger value="form" className="text-xs md:text-sm font-semibold">
                 <FileCheck className="w-3.5 h-3.5 md:w-4 md:h-4 md:mr-1.5" />
@@ -643,7 +639,8 @@ export default function JobDetails({ job, onClose, onStatusChange, onDelete }) {
               <TabsTrigger value="files" className="text-xs md:text-sm font-semibold">
                 <ImageIcon className="w-3.5 h-3.5 md:w-4 md:h-4 md:mr-1.5" />
                 <span className="hidden md:inline">Files</span>
-              </TabsList>
+              </TabsTrigger>
+            </TabsList>
 
             <TabsContent value="details" className="space-y-3 mt-2">
               {job.project_id && projectJobs.length > 0 && (
@@ -673,7 +670,7 @@ export default function JobDetails({ job, onClose, onStatusChange, onDelete }) {
                             </Badge>
                           )}
                         </div>
-                        {pJob.notes && pJob.notes !== "<p><br></p>" && ( // Check for empty RichTextEditor content
+                        {pJob.notes && pJob.notes !== "<p><br></p>" && (
                           <div className="text-xs text-slate-600 mt-2 pt-2 border-t border-slate-100">
                             <div className="font-semibold mb-0.5">Notes:</div>
                             <div className="line-clamp-2" dangerouslySetInnerHTML={{ __html: pJob.notes }} />
