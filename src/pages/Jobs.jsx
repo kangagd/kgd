@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from "react";
 import { base44 } from "@/api/base44Client";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
@@ -40,8 +39,7 @@ export default function Jobs() {
   { value: "all", label: "All Jobs", color: "bg-slate-100 text-slate-700" },
   { value: "open", label: "Open", color: "bg-blue-50 text-blue-700 border-blue-200" },
   { value: "scheduled", label: "Scheduled", color: "bg-teal-50 text-teal-700 border-teal-200" },
-  { value: "completed", label: "Completed", color: "bg-green-50 text-green-700 border-green-200" },
-  { value: "cancelled", label: "Cancelled", color: "bg-red-50 text-red-700 border-red-200" }];
+  { value: "completed", label: "Completed", color: "bg-green-50 text-green-700 border-green-200" }];
 
 
   const { data: allJobs = [], isLoading, refetch } = useQuery({
@@ -261,7 +259,7 @@ export default function Jobs() {
 
           {viewMode === "list" &&
           <Tabs value={statusFilter} onValueChange={setStatusFilter}>
-              <TabsList className="w-full grid grid-cols-2 sm:grid-cols-3 md:grid-cols-5 h-auto">
+              <TabsList className="w-full grid grid-cols-2 sm:grid-cols-4 h-auto">
                 {statusFilters.map((filter) =>
               <TabsTrigger key={filter.value} value={filter.value} className="font-semibold text-xs md:text-sm py-2 px-2">
                     {filter.label}
