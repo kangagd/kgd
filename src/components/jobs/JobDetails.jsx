@@ -93,7 +93,7 @@ const getAvatarColor = (name) => {
   return avatarColors[index];
 };
 
-export default function JobDetails({ job, onClose, onStatusChange, onDelete }) {
+export default function JobDetails({ job, onClose, onDelete }) {
   const [activeTab, setActiveTab] = useState("summary");
   const [showPriceList, setShowPriceList] = useState(false);
   const [showAssistant, setShowAssistant] = useState(false);
@@ -375,12 +375,17 @@ export default function JobDetails({ job, onClose, onStatusChange, onDelete }) {
     updateJobMutation.mutate({ field: 'assigned_to_name', value: techNames.join(', ') });
   };
 
-  const handleJobTypeChange = (jobTypeId) => {
+  const handleJobTypeChange = async (jobTypeId) => {
     const jobType = jobTypes.find((jt) => jt.id === jobTypeId);
-    handleFieldSave('job_type_id', job.job_type_id, jobTypeId);
+    logChange('job_type_id', job.job_type_id, jobTypeId);
+    
+    const updateData = { job_type_id: jobTypeId };
     if (jobType) {
-      updateJobMutation.mutate({ field: 'job_type_name', value: jobType.name });
+      updateData.job_type_name = jobType.name;
     }
+    
+    await base44.entities.Job.update(job.id, updateData);
+    queryClient.invalidateQueries({ queryKey: ['jobs'] });
   };
 
   const handleImagesChange = (urls) => {
