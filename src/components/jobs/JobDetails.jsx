@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from "react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -512,41 +511,57 @@ export default function JobDetails({ job, onClose, onDelete }) {
 
   return (
     <>
-      <div className="min-h-screen bg-[#F7F7F7]">
-        {/* Header */}
-        <div className="bg-white border-b border-[#E2E3E5] sticky top-0 z-10">
-          <div className="p-3 md:p-4">
-            <div className="flex items-start justify-between gap-2 mb-3">
-              <div className="flex items-start gap-2 flex-1 min-w-0">
+      <div className="min-h-screen bg-[#F8F9FA]">
+        {/* Sticky Header */}
+        <div className="bg-white border-b border-[#E5E7EB] sticky top-0 z-10 shadow-sm">
+          <div className="p-4">
+            <div className="flex items-start justify-between gap-3 mb-3">
+              <div className="flex items-start gap-3 flex-1 min-w-0">
                 <Button 
                   variant="ghost" 
                   size="icon" 
                   onClick={onClose}
-                  className="h-9 w-9 md:h-10 md:w-10 flex-shrink-0"
+                  className="h-10 w-10 flex-shrink-0 hover:bg-gray-100"
                 >
                   <ArrowLeft className="w-5 h-5" />
                 </Button>
                 <div className="flex-1 min-w-0">
                   <h1 
-                    className="text-base md:text-[20px] font-semibold text-[#111111] mb-1 cursor-pointer hover:text-[#FAE008] transition-colors truncate"
+                    className="text-lg md:text-xl font-bold text-[#111827] mb-1 cursor-pointer hover:text-[#FAE008] transition-colors truncate"
                     onClick={() => setShowCustomerEdit(true)}
                   >
                     {job.customer_name}
                   </h1>
-                  <p className="text-xs md:text-[13px] text-[#4F4F4F]">Job #{job.job_number}</p>
+                  <div className="flex items-center gap-2 flex-wrap">
+                    <span className="text-sm text-[#4B5563]">Job #{job.job_number}</span>
+                    {job.scheduled_date && (
+                      <div className="flex items-center gap-1 text-sm text-[#4B5563]">
+                        <Calendar className="w-4 h-4" />
+                        {format(parseISO(job.scheduled_date), 'MMM d')}
+                        {job.scheduled_time && ` at ${job.scheduled_time}`}
+                      </div>
+                    )}
+                  </div>
                 </div>
               </div>
-              <div className="flex items-center gap-1 flex-shrink-0">
-                <Badge style={{ backgroundColor: statusColors[job.status], color: statusTextColors[job.status] }} className="capitalize font-semibold text-[10px] md:text-xs py-1 px-2 rounded-full border border-current whitespace-nowrap">
+              <div className="flex items-center gap-2 flex-shrink-0">
+                <Badge 
+                  className="capitalize font-semibold text-xs py-1 px-3 rounded-full whitespace-nowrap"
+                  style={{ 
+                    backgroundColor: job.status === 'completed' ? '#FAE008' : statusColors[job.status], 
+                    color: job.status === 'completed' ? '#000000' : statusTextColors[job.status],
+                    border: `1px solid ${job.status === 'completed' ? '#000000' : 'currentColor'}`
+                  }}
+                >
                   {job.status.replace(/_/g, ' ')}
                 </Badge>
                 <DropdownMenu>
                   <DropdownMenuTrigger asChild>
-                    <Button variant="ghost" size="icon" className="h-9 w-9 flex-shrink-0">
-                      <MoreVertical className="w-4 h-4" />
+                    <Button variant="ghost" size="icon" className="h-10 w-10 flex-shrink-0 hover:bg-gray-100">
+                      <MoreVertical className="w-5 h-5" />
                     </Button>
                   </DropdownMenuTrigger>
-                  <DropdownMenuContent align="end">
+                  <DropdownMenuContent align="end" className="w-48">
                     <DropdownMenuItem onClick={() => setShowPriceList(true)}>
                       <DollarSign className="w-4 h-4 mr-2" />
                       Price List
@@ -571,41 +586,21 @@ export default function JobDetails({ job, onClose, onDelete }) {
                 </DropdownMenu>
               </div>
             </div>
-
-            {/* Quick Info Bar */}
-            <div className="flex items-center gap-2 mb-3 flex-wrap">
-              {(Array.isArray(job.assigned_to_name) ? job.assigned_to_name : job.assigned_to_name ? [job.assigned_to_name] : []).slice(0, 2).map((name, idx) => (
-                <div
-                  key={idx}
-                  className={`${getAvatarColor(name)} w-7 h-7 md:w-8 md:h-8 rounded-full flex items-center justify-center text-white text-xs font-bold shadow-soft`}
-                  title={name}
-                >
-                  {getInitials(name)}
-                </div>
-              ))}
-              {job.scheduled_date && (
-                <div className="flex items-center gap-1 text-xs md:text-[13px] text-[#4F4F4F]">
-                  <Calendar className="w-3 h-3 md:w-4 md:h-4" />
-                  {format(parseISO(job.scheduled_date), 'MMM d')}
-                  {job.scheduled_time && ` · ${job.scheduled_time}`}
-                </div>
-              )}
-            </div>
           </div>
 
           {/* Tab Navigation */}
-          <div className="flex overflow-x-auto px-3 md:px-4 gap-1 no-scrollbar">
+          <div className="flex overflow-x-auto px-4 gap-1 no-scrollbar border-t border-[#E5E7EB]">
             {tabs.map((tab) => (
               <button
                 key={tab.id}
                 onClick={() => setActiveTab(tab.id)}
-                className={`flex items-center gap-1.5 px-2.5 md:px-4 py-2.5 md:py-3 text-xs md:text-[13px] font-medium whitespace-nowrap border-b-2 transition-colors flex-shrink-0 ${
+                className={`flex items-center gap-2 px-4 py-3 text-sm font-semibold whitespace-nowrap border-b-2 transition-colors flex-shrink-0 ${
                   activeTab === tab.id
-                    ? 'border-[#FAE008] text-[#111111]'
-                    : 'border-transparent text-[#4F4F4F] hover:text-[#111111]'
+                    ? 'border-[#FAE008] text-[#111827] bg-[#FFFEF0]'
+                    : 'border-transparent text-[#4B5563] hover:text-[#111827] hover:bg-gray-50'
                 }`}
               >
-                <tab.icon className="w-3.5 h-3.5 md:w-4 md:h-4" />
+                <tab.icon className="w-4 h-4" />
                 <span>{tab.label}</span>
               </button>
             ))}
@@ -613,292 +608,416 @@ export default function JobDetails({ job, onClose, onDelete }) {
         </div>
 
         {/* Main Content */}
-        <div className="p-4 space-y-4 pb-24">
+        <div className="p-4 space-y-4 pb-24 max-w-7xl mx-auto">
           {activeTab === "summary" && (
-            <>
-              {/* Job Metadata */}
-              <Card className="card-enhanced">
-                <CardContent className="p-4 space-y-4">
-                  <h3 className="text-[13px] font-semibold text-[#4F4F4F] uppercase tracking-wide">Job Details</h3>
-                  
-                  <div className="space-y-3">
-                    <div>
-                      <div className="text-[12px] text-[#4F4F4F] mb-1">Customer</div>
-                      <div 
-                        className="text-[15px] font-semibold text-[#111111] cursor-pointer hover:text-[#FAE008] transition-colors"
-                        onClick={() => setShowCustomerEdit(true)}
-                      >
-                        {job.customer_name}
-                      </div>
-                    </div>
-
-                    {job.address && (
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+              {/* Left Column */}
+              <div className="space-y-4">
+                {/* Job Details Card */}
+                <Card className="bg-white rounded-xl border border-[#E5E7EB] shadow-sm">
+                  <CardContent className="p-5 space-y-4">
+                    <h3 className="text-sm font-bold text-[#111827] uppercase tracking-wide">Job Details</h3>
+                    
+                    <div className="space-y-4">
                       <div>
-                        <div className="text-[12px] text-[#4F4F4F] mb-1">Address</div>
-                        <div className="flex items-start gap-2">
-                          <MapPin className="w-4 h-4 text-[#4F4F4F] mt-0.5 flex-shrink-0" />
-                          <span className="text-[14px] text-[#111111]">{job.address}</span>
-                        </div>
-                      </div>
-                    )}
-
-                    <div className="flex flex-col sm:flex-row gap-2 pt-2 border-t border-[#E2E3E5]">
-                      {job.customer_phone && (
-                        <Button
-                          size="sm"
-                          variant="outline"
-                          onClick={() => window.location.href = `tel:${job.customer_phone}`}
-                          className="flex-1 h-12"
+                        <div className="text-xs font-medium text-[#4B5563] mb-2">Customer</div>
+                        <div 
+                          className="text-base font-semibold text-[#111827] cursor-pointer hover:text-[#FAE008] transition-colors"
+                          onClick={() => setShowCustomerEdit(true)}
                         >
-                          <Phone className="w-4 h-4 mr-2" />
-                          Call
-                        </Button>
-                      )}
-                      <Button
-                        size="sm"
-                        variant="outline"
-                        onClick={() => window.open(`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(job.address)}`, '_blank')}
-                        className="flex-1 h-12"
-                      >
-                        <Navigation className="w-4 h-4 mr-2" />
-                        Directions
-                      </Button>
-                    </div>
-
-                    <div className="pt-2 border-t border-[#E2E3E5]">
-                      <div className="grid grid-cols-2 gap-3">
-                        <div>
-                          <div className="text-[12px] text-[#4F4F4F] mb-1">Date</div>
-                          <EditableField
-                            value={job.scheduled_date}
-                            onSave={(val) => handleFieldSave('scheduled_date', job.scheduled_date, val)}
-                            type="date"
-                            icon={Calendar}
-                            displayFormat={(val) => val ? format(parseISO(val), 'MMM d, yyyy') : 'Set date'}
-                            placeholder="Set date"
-                          />
-                        </div>
-                        <div>
-                          <div className="text-[12px] text-[#4F4F4F] mb-1">Time</div>
-                          <EditableField
-                            value={job.scheduled_time}
-                            onSave={(val) => handleFieldSave('scheduled_time', job.scheduled_time, val)}
-                            type="time"
-                            icon={Clock}
-                            placeholder="Time"
-                          />
+                          {job.customer_name}
                         </div>
                       </div>
-                    </div>
 
-                    <div>
-                      <div className="text-[12px] text-[#4F4F4F] mb-1">Job Type</div>
-                      <EditableField
-                        value={job.job_type_id}
-                        onSave={handleJobTypeChange}
-                        type="select"
-                        icon={Briefcase}
-                        options={jobTypes.map((jt) => ({ value: jt.id, label: jt.name }))}
-                        displayFormat={(val) => jobTypes.find((jt) => jt.id === val)?.name || val}
-                        placeholder="Select job type"
-                      />
-                    </div>
-
-                    <div>
-                      <div className="text-[12px] text-[#4F4F4F] mb-1">Product</div>
-                      <EditableField
-                        value={job.product}
-                        onSave={(val) => handleFieldSave('product', job.product, val)}
-                        type="select"
-                        icon={Package}
-                        options={[
-                          { value: "Garage Door", label: "Garage Door" },
-                          { value: "Gate", label: "Gate" },
-                          { value: "Roller Shutter", label: "Roller Shutter" },
-                          { value: "Multiple", label: "Multiple" },
-                          { value: "Custom Garage Door", label: "Custom Garage Door" }
-                        ]}
-                        placeholder="Select product"
-                      />
-                    </div>
-
-                    <div>
-                      <div className="text-[12px] text-[#4F4F4F] mb-2">Technicians</div>
-                      <div className="flex items-center gap-2 flex-wrap">
-                        {(Array.isArray(job.assigned_to_name) ? job.assigned_to_name : job.assigned_to_name ? [job.assigned_to_name] : []).map((name, idx) => (
-                          <div
-                            key={idx}
-                            className={`${getAvatarColor(name)} w-10 h-10 rounded-full flex items-center justify-center text-white text-sm font-bold shadow-soft`}
-                            title={name}
-                          >
-                            {getInitials(name)}
+                      {job.address && (
+                        <div>
+                          <div className="text-xs font-medium text-[#4B5563] mb-2">Address</div>
+                          <div className="flex items-start gap-2">
+                            <MapPin className="w-5 h-5 text-[#4B5563] mt-0.5 flex-shrink-0" />
+                            <span className="text-sm text-[#111827]">{job.address}</span>
                           </div>
-                        ))}
+                        </div>
+                      )}
+
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-3 border-t border-[#E5E7EB]">
+                        {job.customer_phone && (
+                          <Button
+                            size="lg"
+                            onClick={() => window.location.href = `tel:${job.customer_phone}`}
+                            className="bg-[#FAE008] hover:bg-[#e5d007] text-black font-semibold h-12 w-full"
+                          >
+                            <Phone className="w-5 h-5 mr-2" />
+                            Call
+                          </Button>
+                        )}
+                        <Button
+                          size="lg"
+                          onClick={() => window.open(`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(job.address)}`, '_blank')}
+                          className="bg-blue-600 hover:bg-blue-700 text-white font-semibold h-12 w-full"
+                        >
+                          <Navigation className="w-5 h-5 mr-2" />
+                          Directions
+                        </Button>
+                      </div>
+
+                      <div className="pt-3 border-t border-[#E5E7EB]">
+                        <div className="grid grid-cols-2 gap-3">
+                          <div>
+                            <div className="text-xs font-medium text-[#4B5563] mb-2">Date</div>
+                            <EditableField
+                              value={job.scheduled_date}
+                              onSave={(val) => handleFieldSave('scheduled_date', job.scheduled_date, val)}
+                              type="date"
+                              icon={Calendar}
+                              displayFormat={(val) => val ? format(parseISO(val), 'MMM d, yyyy') : 'Set date'}
+                              placeholder="Set date"
+                            />
+                          </div>
+                          <div>
+                            <div className="text-xs font-medium text-[#4B5563] mb-2">Time</div>
+                            <EditableField
+                              value={job.scheduled_time}
+                              onSave={(val) => handleFieldSave('scheduled_time', job.scheduled_time, val)}
+                              type="time"
+                              icon={Clock}
+                              placeholder="Time"
+                            />
+                          </div>
+                        </div>
+                      </div>
+
+                      <div>
+                        <div className="text-xs font-medium text-[#4B5563] mb-2">Job Type</div>
                         <EditableField
-                          value={Array.isArray(job.assigned_to) ? job.assigned_to : job.assigned_to ? [job.assigned_to] : []}
-                          onSave={handleAssignedToChange}
-                          type="multi-select"
-                          icon={User}
-                          options={technicians.map((t) => ({ value: t.email, label: t.full_name }))}
-                          displayFormat={(val) => {
-                            const emailsToDisplay = Array.isArray(val) ? val : val ? [val] : [];
-                            return emailsToDisplay.length === 0 ? "Assign" : "Edit";
-                          }}
-                          placeholder="Assign"
+                          value={job.job_type_id}
+                          onSave={handleJobTypeChange}
+                          type="select"
+                          icon={Briefcase}
+                          options={jobTypes.map((jt) => ({ value: jt.id, label: jt.name }))}
+                          displayFormat={(val) => jobTypes.find((jt) => jt.id === val)?.name || val}
+                          placeholder="Select job type"
                         />
                       </div>
-                    </div>
-                  </div>
-                </CardContent>
-              </Card>
 
-              {/* Notes */}
-              <Card className="card-enhanced">
-                <CardContent className="p-4">
-                  <h3 className="text-[13px] font-semibold text-[#4F4F4F] uppercase tracking-wide mb-3">Notes</h3>
-                  <div className="border-2 border-[#E2E3E5] rounded-xl p-3 focus-within:border-[#FAE008] transition-all">
-                    <RichTextEditor
-                      value={notes}
-                      onChange={setNotes}
-                      onBlur={handleNotesBlur}
-                      placeholder="Add notes..."
-                    />
-                  </div>
-                </CardContent>
-              </Card>
-
-              {/* Information */}
-              <Card className="card-enhanced">
-                <CardContent className="p-4">
-                  <h3 className="text-[13px] font-semibold text-[#4F4F4F] uppercase tracking-wide mb-3">Information</h3>
-                  <div className="border-2 border-[#E2E3E5] rounded-xl p-3 focus-within:border-[#FAE008] transition-all">
-                    <RichTextEditor
-                      value={additionalInfo}
-                      onChange={setAdditionalInfo}
-                      onBlur={handleAdditionalInfoBlur}
-                      placeholder="Add additional information..."
-                    />
-                  </div>
-                </CardContent>
-              </Card>
-
-              {/* Pricing */}
-              <Card className="card-enhanced">
-                <CardContent className="p-4">
-                  <h3 className="text-[13px] font-semibold text-[#4F4F4F] uppercase tracking-wide mb-3">Pricing Provided</h3>
-                  <Input
-                    value={pricingProvided}
-                    onChange={(e) => setPricingProvided(e.target.value)}
-                    onBlur={handlePricingProvidedBlur}
-                    placeholder="Enter pricing..."
-                    className="h-12 border-2 border-[#E2E3E5] focus:border-[#FAE008] rounded-xl"
-                  />
-                </CardContent>
-              </Card>
-
-              {/* Status Timeline */}
-              <Card className="card-enhanced">
-                <CardContent className="p-4">
-                  <h3 className="text-[13px] font-semibold text-[#4F4F4F] uppercase tracking-wide mb-4">Status Timeline</h3>
-                  <div className="space-y-3">
-                    <div className="flex items-center gap-3">
-                      <div className="w-8 h-8 rounded-full bg-green-100 flex items-center justify-center flex-shrink-0">
-                        <CheckSquare className="w-4 h-4 text-green-600" />
+                      <div>
+                        <div className="text-xs font-medium text-[#4B5563] mb-2">Product</div>
+                        <EditableField
+                          value={job.product}
+                          onSave={(val) => handleFieldSave('product', job.product, val)}
+                          type="select"
+                          icon={Package}
+                          options={[
+                            { value: "Garage Door", label: "Garage Door" },
+                            { value: "Gate", label: "Gate" },
+                            { value: "Roller Shutter", label: "Roller Shutter" },
+                            { value: "Multiple", label: "Multiple" },
+                            { value: "Custom Garage Door", label: "Custom Garage Door" }
+                          ]}
+                          placeholder="Select product"
+                        />
                       </div>
-                      <div className="flex-1">
-                        <div className="text-[14px] font-semibold text-[#111111]">Created</div>
-                        <div className="text-[12px] text-[#4F4F4F]">
-                          {job.created_date && format(new Date(job.created_date), 'MMM d, yyyy h:mm a')}
+
+                      <div>
+                        <div className="text-xs font-medium text-[#4B5563] mb-2">Technicians</div>
+                        <div className="flex items-center gap-2 flex-wrap">
+                          {(Array.isArray(job.assigned_to_name) ? job.assigned_to_name : job.assigned_to_name ? [job.assigned_to_name] : []).map((name, idx) => (
+                            <div
+                              key={idx}
+                              className={`${getAvatarColor(name)} w-10 h-10 rounded-full flex items-center justify-center text-white text-sm font-bold shadow-sm`}
+                              title={name}
+                            >
+                              {getInitials(name)}
+                            </div>
+                          ))}
+                          <EditableField
+                            value={Array.isArray(job.assigned_to) ? job.assigned_to : job.assigned_to ? [job.assigned_to] : []}
+                            onSave={handleAssignedToChange}
+                            type="multi-select"
+                            icon={User}
+                            options={technicians.map((t) => ({ value: t.email, label: t.full_name }))}
+                            displayFormat={(val) => {
+                              const emailsToDisplay = Array.isArray(val) ? val : val ? [val] : [];
+                              return emailsToDisplay.length === 0 ? "Assign" : "Edit";
+                            }}
+                            placeholder="Assign"
+                          />
                         </div>
                       </div>
                     </div>
+                  </CardContent>
+                </Card>
 
-                    {job.assigned_to && job.assigned_to.length > 0 && (
+                {/* Quick Actions Card - Technician Only */}
+                {isTechnician && (
+                  <Card className="bg-white rounded-xl border border-[#E5E7EB] shadow-sm">
+                    <CardContent className="p-5">
+                      <h3 className="text-sm font-bold text-[#111827] uppercase tracking-wide mb-4">Quick Actions</h3>
+                      {!activeCheckIn ? (
+                        <Button
+                          onClick={handleCheckIn}
+                          disabled={checkInMutation.isPending}
+                          className="bg-green-600 hover:bg-green-700 text-white font-semibold h-14 w-full text-base"
+                        >
+                          <LogIn className="w-5 h-5 mr-2" />
+                          {checkInMutation.isPending ? 'Checking In...' : 'Check In'}
+                        </Button>
+                      ) : (
+                        <div className="space-y-3">
+                          <div className="bg-green-50 border border-green-200 rounded-lg p-3 mb-3">
+                            <div className="flex items-center gap-2 text-green-700 font-semibold text-sm">
+                              <Timer className="w-4 h-4 animate-pulse" />
+                              Checked in at {format(new Date(activeCheckIn.check_in_time), 'h:mm a')}
+                            </div>
+                          </div>
+                          <Button
+                            onClick={handleCheckOut}
+                            disabled={checkOutMutation.isPending}
+                            className="bg-red-600 hover:bg-red-700 text-white font-semibold h-14 w-full text-base"
+                          >
+                            <LogOut className="w-5 h-5 mr-2" />
+                            {checkOutMutation.isPending ? 'Checking Out...' : 'Check Out'}
+                          </Button>
+                          <div className="grid grid-cols-2 gap-2">
+                            <Button
+                              variant="outline"
+                              onClick={() => setActiveTab('photos')}
+                              className="h-11 border-2"
+                            >
+                              <ImageIcon className="w-4 h-4 mr-2" />
+                              Photos
+                            </Button>
+                            <Button
+                              variant="outline"
+                              onClick={() => setActiveTab('measurements')}
+                              className="h-11 border-2"
+                            >
+                              <Ruler className="w-4 h-4 mr-2" />
+                              Measure
+                            </Button>
+                          </div>
+                        </div>
+                      )}
+                    </CardContent>
+                  </Card>
+                )}
+
+                {/* Notes */}
+                <Card className="bg-white rounded-xl border border-[#E5E7EB] shadow-sm">
+                  <CardContent className="p-5">
+                    <h3 className="text-sm font-bold text-[#111827] uppercase tracking-wide mb-3">Notes</h3>
+                    <div className="border-2 border-[#E5E7EB] rounded-xl p-3 focus-within:border-[#FAE008] transition-all">
+                      <RichTextEditor
+                        value={notes}
+                        onChange={setNotes}
+                        onBlur={handleNotesBlur}
+                        placeholder="Add notes..."
+                      />
+                    </div>
+                  </CardContent>
+                </Card>
+
+                {/* Information */}
+                <Card className="bg-white rounded-xl border border-[#E5E7EB] shadow-sm">
+                  <CardContent className="p-5">
+                    <h3 className="text-sm font-bold text-[#111827] uppercase tracking-wide mb-3">Information</h3>
+                    <div className="border-2 border-[#E5E7EB] rounded-xl p-3 focus-within:border-[#FAE008] transition-all">
+                      <RichTextEditor
+                        value={additionalInfo}
+                        onChange={setAdditionalInfo}
+                        onBlur={handleAdditionalInfoBlur}
+                        placeholder="Add additional information..."
+                      />
+                    </div>
+                  </CardContent>
+                </Card>
+              </div>
+
+              {/* Right Column */}
+              <div className="space-y-4">
+                {/* Last Visit Card */}
+                {jobSummaries.length > 0 && (
+                  <Card className="bg-white rounded-xl border border-[#E5E7EB] shadow-sm">
+                    <CardContent className="p-5">
+                      <h3 className="text-sm font-bold text-[#111827] uppercase tracking-wide mb-4">Last Visit</h3>
+                      {jobSummaries.slice(0, 1).map((summary) => (
+                        <div key={summary.id} className="space-y-3">
+                          <div className="flex items-center justify-between pb-3 border-b border-[#E5E7EB]">
+                            <span className="text-sm font-semibold text-[#111827]">{summary.technician_name}</span>
+                            <span className="text-xs text-[#4B5563]">
+                              {format(new Date(summary.checkout_time), 'MMM d, h:mm a')}
+                            </span>
+                          </div>
+                          
+                          {summary.outcome && (
+                            <Badge className={`${outcomeColors[summary.outcome]} text-xs font-semibold`}>
+                              {summary.outcome.replace(/_/g, ' ')}
+                            </Badge>
+                          )}
+
+                          {summary.overview && (
+                            <div>
+                              <div className="text-xs font-semibold text-[#4B5563] mb-1">Overview:</div>
+                              <div className="text-sm text-[#111827]" dangerouslySetInnerHTML={{ __html: summary.overview }} />
+                            </div>
+                          )}
+                          
+                          {summary.next_steps && (
+                            <div>
+                              <div className="text-xs font-semibold text-[#4B5563] mb-1">Next Steps:</div>
+                              <div className="text-sm text-[#111827]" dangerouslySetInnerHTML={{ __html: summary.next_steps }} />
+                            </div>
+                          )}
+                        </div>
+                      ))}
+                    </CardContent>
+                  </Card>
+                )}
+
+                {/* Pricing */}
+                <Card className="bg-white rounded-xl border border-[#E5E7EB] shadow-sm">
+                  <CardContent className="p-5">
+                    <h3 className="text-sm font-bold text-[#111827] uppercase tracking-wide mb-3">Pricing Provided</h3>
+                    <Input
+                      value={pricingProvided}
+                      onChange={(e) => setPricingProvided(e.target.value)}
+                      onBlur={handlePricingProvidedBlur}
+                      placeholder="Enter pricing..."
+                      className="h-12 border-2 border-[#E5E7EB] focus:border-[#FAE008] rounded-xl"
+                    />
+                  </CardContent>
+                </Card>
+
+                {/* Project Association Card */}
+                {job.project_id && (
+                  <Card className="bg-white rounded-xl border border-[#E5E7EB] shadow-sm">
+                    <CardContent className="p-5">
+                      <div className="flex items-center justify-between mb-3">
+                        <h3 className="text-sm font-bold text-[#111827] uppercase tracking-wide">Project</h3>
+                        <FolderKanban className="w-5 h-5 text-[#4B5563]" />
+                      </div>
+                      <div className="space-y-2">
+                        <div className="text-base font-semibold text-[#111827]">{job.project_name}</div>
+                        <Link 
+                          to={createPageUrl("Projects") + `?projectId=${job.project_id}`}
+                          className="text-sm text-blue-600 hover:text-blue-700 font-medium inline-flex items-center gap-1"
+                        >
+                          View Project
+                          <ChevronRight className="w-4 h-4" />
+                        </Link>
+                      </div>
+                    </CardContent>
+                  </Card>
+                )}
+
+                {/* Status Timeline */}
+                <Card className="bg-white rounded-xl border border-[#E5E7EB] shadow-sm">
+                  <CardContent className="p-5">
+                    <h3 className="text-sm font-bold text-[#111827] uppercase tracking-wide mb-4">Status Timeline</h3>
+                    <div className="space-y-3">
                       <div className="flex items-center gap-3">
-                        <div className="w-8 h-8 rounded-full bg-blue-100 flex items-center justify-center flex-shrink-0">
-                          <User className="w-4 h-4 text-blue-600" />
+                        <div className="w-9 h-9 rounded-full bg-green-100 flex items-center justify-center flex-shrink-0">
+                          <CheckSquare className="w-5 h-5 text-green-600" />
                         </div>
                         <div className="flex-1">
-                          <div className="text-[14px] font-semibold text-[#111111]">Assigned</div>
-                          <div className="text-[12px] text-[#4F4F4F]">
-                            {Array.isArray(job.assigned_to_name) ? job.assigned_to_name.join(', ') : job.assigned_to_name}
+                          <div className="text-sm font-semibold text-[#111827]">Created</div>
+                          <div className="text-xs text-[#4B5563]">
+                            {job.created_date && format(new Date(job.created_date), 'MMM d, yyyy h:mm a')}
                           </div>
                         </div>
                       </div>
-                    )}
 
-                    {activeCheckIn && (
-                      <div className="flex items-center gap-3">
-                        <div className="w-8 h-8 rounded-full bg-orange-100 flex items-center justify-center flex-shrink-0">
-                          <Timer className="w-4 h-4 text-orange-600 animate-pulse" />
-                        </div>
-                        <div className="flex-1">
-                          <div className="text-[14px] font-semibold text-[#111111]">In Progress</div>
-                          <div className="text-[12px] text-[#4F4F4F]">
-                            Since {format(new Date(activeCheckIn.check_in_time), 'h:mm a')}
+                      {job.assigned_to && job.assigned_to.length > 0 && (
+                        <div className="flex items-center gap-3">
+                          <div className="w-9 h-9 rounded-full bg-blue-100 flex items-center justify-center flex-shrink-0">
+                            <User className="w-5 h-5 text-blue-600" />
+                          </div>
+                          <div className="flex-1">
+                            <div className="text-sm font-semibold text-[#111827]">Assigned</div>
+                            <div className="text-xs text-[#4B5563]">
+                              {Array.isArray(job.assigned_to_name) ? job.assigned_to_name.join(', ') : job.assigned_to_name}
+                            </div>
                           </div>
                         </div>
-                      </div>
-                    )}
+                      )}
 
-                    {job.status === 'completed' && (
-                      <div className="flex items-center gap-3">
-                        <div className="w-8 h-8 rounded-full bg-green-100 flex items-center justify-center flex-shrink-0">
-                          <CheckSquare className="w-4 h-4 text-green-600" />
+                      {activeCheckIn && (
+                        <div className="flex items-center gap-3">
+                          <div className="w-9 h-9 rounded-full bg-orange-100 flex items-center justify-center flex-shrink-0">
+                            <Timer className="w-5 h-5 text-orange-600 animate-pulse" />
+                          </div>
+                          <div className="flex-1">
+                            <div className="text-sm font-semibold text-[#111827]">In Progress</div>
+                            <div className="text-xs text-[#4B5563]">
+                              Since {format(new Date(activeCheckIn.check_in_time), 'h:mm a')}
+                            </div>
+                          </div>
                         </div>
-                        <div className="flex-1">
-                          <div className="text-[14px] font-semibold text-[#111111]">Completed</div>
-                          <div className="text-[12px] text-[#4F4F4F]">Job finished</div>
-                        </div>
-                      </div>
-                    )}
-                  </div>
-                </CardContent>
-              </Card>
+                      )}
 
-              {/* Project Jobs */}
-              {job.project_id && projectJobs.length > 0 && (
-                <Card className="card-enhanced">
-                  <CardContent className="p-4">
-                    <h3 className="text-[13px] font-semibold text-[#4F4F4F] uppercase tracking-wide mb-3 flex items-center gap-2">
-                      <FolderKanban className="w-4 h-4" />
-                      Project History ({projectJobs.length})
-                    </h3>
-                    <div className="space-y-2">
-                      {projectJobs.map((pJob) => (
-                        <Card key={pJob.id} className="card-interactive">
-                          <CardContent className="p-3">
+                      {job.status === 'completed' && (
+                        <div className="flex items-center gap-3">
+                          <div className="w-9 h-9 rounded-full bg-green-100 flex items-center justify-center flex-shrink-0">
+                            <CheckSquare className="w-5 h-5 text-green-600" />
+                          </div>
+                          <div className="flex-1">
+                            <div className="text-sm font-semibold text-[#111827]">Completed</div>
+                            <div className="text-xs text-[#4B5563]">Job finished</div>
+                          </div>
+                        </div>
+                      )}
+                    </div>
+                  </CardContent>
+                </Card>
+
+                {/* Project Jobs */}
+                {job.project_id && projectJobs.length > 0 && (
+                  <Card className="bg-white rounded-xl border border-[#E5E7EB] shadow-sm">
+                    <CardContent className="p-5">
+                      <h3 className="text-sm font-bold text-[#111827] uppercase tracking-wide mb-3 flex items-center gap-2">
+                        <FolderKanban className="w-5 h-5" />
+                        Project History ({projectJobs.length})
+                      </h3>
+                      <div className="space-y-2">
+                        {projectJobs.map((pJob) => (
+                          <div key={pJob.id} className="border border-[#E5E7EB] rounded-lg p-3 hover:bg-gray-50 transition-colors cursor-pointer">
                             <div className="flex items-start justify-between gap-2 mb-1">
                               <div className="flex-1">
-                                <div className="text-[14px] font-semibold text-[#111111]">
+                                <div className="text-sm font-semibold text-[#111827]">
                                   {pJob.job_type_name || 'Job'} #{pJob.job_number}
                                 </div>
                                 {pJob.scheduled_date && (
-                                  <div className="text-[12px] text-[#4F4F4F] flex items-center gap-1 mt-0.5">
+                                  <div className="text-xs text-[#4B5563] flex items-center gap-1 mt-1">
                                     <Calendar className="w-3 h-3" />
                                     {format(parseISO(pJob.scheduled_date), 'MMM d, yyyy')}
                                   </div>
                                 )}
                               </div>
                               {pJob.status && (
-                                <Badge style={{ backgroundColor: statusColors[pJob.status], color: statusTextColors[pJob.status] }} className={`capitalize font-semibold text-xs py-1 px-3 rounded-full border border-current`}>
+                                <Badge 
+                                  className="capitalize font-semibold text-xs py-1 px-2 rounded-full"
+                                  style={{ 
+                                    backgroundColor: statusColors[pJob.status], 
+                                    color: statusTextColors[pJob.status],
+                                    border: `1px solid currentColor`
+                                  }}
+                                >
                                   {pJob.status.replace(/_/g, ' ')}
                                 </Badge>
                               )}
                             </div>
-                          </CardContent>
-                        </Card>
-                      ))}
-                    </div>
-                  </CardContent>
-                </Card>
-              )}
-            </>
+                          </div>
+                        ))}
+                      </div>
+                    </CardContent>
+                  </Card>
+                )}
+              </div>
+            </div>
           )}
 
           {activeTab === "sitevisit" && (
-            <Card className="card-enhanced">
-              <CardContent className="p-4 space-y-4">
+            <Card className="bg-white rounded-xl border border-[#E5E7EB] shadow-sm max-w-3xl mx-auto">
+              <CardContent className="p-5 space-y-4">
                 <div>
                   <Label className="text-[13px] font-semibold text-[#111111] mb-2 block">Overview *</Label>
                   <div className="border-2 border-[#E2E3E5] rounded-xl p-3 focus-within:border-[#FAE008] transition-all">
@@ -973,8 +1092,8 @@ export default function JobDetails({ job, onClose, onDelete }) {
           )}
 
           {activeTab === "photos" && (
-            <Card className="card-enhanced">
-              <CardContent className="p-4">
+            <Card className="bg-white rounded-xl border border-[#E5E7EB] shadow-sm max-w-3xl mx-auto">
+              <CardContent className="p-5">
                 <EditableFileUpload
                   files={job.image_urls || []}
                   onFilesChange={handleImagesChange}
@@ -989,8 +1108,8 @@ export default function JobDetails({ job, onClose, onDelete }) {
           )}
 
           {activeTab === "measurements" && (
-            <Card className="card-enhanced">
-              <CardContent className="p-4">
+            <Card className="bg-white rounded-xl border border-[#E5E7EB] shadow-sm max-w-3xl mx-auto">
+              <CardContent className="p-5">
                 <h3 className="text-[13px] font-semibold text-[#4F4F4F] uppercase tracking-wide mb-3">Measurements</h3>
                 <MeasurementsForm
                   measurements={measurements}
@@ -1001,8 +1120,8 @@ export default function JobDetails({ job, onClose, onDelete }) {
           )}
 
           {activeTab === "attachments" && (
-            <Card className="card-enhanced">
-              <CardContent className="p-4 space-y-4">
+            <Card className="bg-white rounded-xl border border-[#E5E7EB] shadow-sm max-w-3xl mx-auto">
+              <CardContent className="p-5 space-y-4">
                 {/* Quote */}
                 <div>
                   <div className="flex items-center justify-between mb-2">
@@ -1204,8 +1323,8 @@ export default function JobDetails({ job, onClose, onDelete }) {
           )}
 
           {activeTab === "audit" && (
-            <Card className="card-enhanced">
-              <CardContent className="p-4">
+            <Card className="bg-white rounded-xl border border-[#E5E7EB] shadow-sm max-w-3xl mx-auto">
+              <CardContent className="p-5">
                 {completedCheckIns.length > 0 && (
                   <div className="space-y-3 mb-4">
                     <h3 className="text-[13px] font-semibold text-[#4F4F4F] uppercase tracking-wide">Time Tracking</h3>
@@ -1296,23 +1415,6 @@ export default function JobDetails({ job, onClose, onDelete }) {
             </Card>
           )}
         </div>
-
-        {/* Floating Action Button */}
-        {!activeCheckIn && (
-          <div className="fixed bottom-4 right-4 z-20">
-            <Button
-              onClick={handleCheckIn}
-              disabled={checkInMutation.isPending}
-              className="bg-[#FAE008] hover:bg-[#e5d007] text-black h-12 w-12 md:h-14 md:w-14 rounded-full shadow-lg hover:shadow-xl p-0"
-            >
-              {checkInMutation.isPending ? (
-                <Timer className="w-5 h-5 md:w-6 md:h-6 animate-spin" />
-              ) : (
-                <LogIn className="w-5 h-5 md:w-6 md:h-6" />
-              )}
-            </Button>
-          </div>
-        )}
       </div>
 
       <PriceListModal
