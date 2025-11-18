@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from "react";
 import { Card, CardHeader, CardTitle, CardContent, CardFooter } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -18,6 +19,8 @@ import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/component
 import { ChevronDown } from "lucide-react";
 import MultiTechnicianSelect from "./MultiTechnicianSelect";
 import RichTextEditor from "../common/RichTextEditor";
+import { shouldAutoSchedule } from "./jobStatusHelper";
+import { toast } from "sonner";
 
 const JOB_TYPE_DURATIONS = {
   "Initial Site Visit": 2,
@@ -97,24 +100,83 @@ export default function JobForm({ job, technicians, onSubmit, onCancel, isSubmit
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+
+    if (!formData.customer_id) {
+      alert("Please select a customer");
+      return;
+    }
+
+    if (!formData.scheduled_date) {
+      alert("Please select a scheduled date");
+      return;
+    }
     
+    let currentJobNumber = formData.job_number;
     if (!job) {
       const allJobs = await base44.entities.Job.list('-job_number', 1);
       const lastJobNumber = allJobs && allJobs[0]?.job_number ? allJobs[0].job_number : 4999;
-      formData.job_number = lastJobNumber + 1;
+      currentJobNumber = lastJobNumber + 1;
     }
     
-    const submitData = {
+    // Auto-determine status
+    let status = formData.status || 'open';
+    if (shouldAutoSchedule(formData.scheduled_date, formData.scheduled_time)) {
+      status = 'scheduled';
+    }
+
+    let jobData = {
       ...formData,
-      assigned_to: Array.isArray(formData.assigned_to) ? formData.assigned_to : [],
-      assigned_to_name: Array.isArray(formData.assigned_to_name) ? formData.assigned_to_name : []
+      job_number: currentJobNumber,
+      status: status,
+      assigned_to: formData.assigned_to || [],
+      assigned_to_name: formData.assigned_to
+        ? formData.assigned_to.map((email) => {
+            const tech = technicians.find((t) => t.email === email);
+            return tech?.full_name;
+          }).filter(Boolean)
+        : [],
     };
 
-    if (!submitData.job_type) delete submitData.job_type;
-    if (!submitData.product) delete submitData.product;
-    if (!submitData.outcome) delete submitData.outcome;
+    if (formData.project_id) {
+      const project = projects.find(p => p.id === formData.project_id);
+      if (project) {
+        jobData.project_name = project.title;
+      } else {
+        jobData.project_name = ""; // Clear if project not found
+      }
+    } else {
+        jobData.project_name = ""; // Clear if no project_id
+    }
+
+    const customer = customers.find(c => c.id === formData.customer_id);
+    if (customer) {
+      jobData.customer_name = customer.name;
+      jobData.customer_phone = customer.phone || "";
+      jobData.customer_email = customer.email || "";
+      jobData.customer_type = customer.customer_type || "";
+    } else {
+        jobData.customer_name = "";
+        jobData.customer_phone = "";
+        jobData.customer_email = "";
+        jobData.customer_type = "";
+    }
+
+    // The original formData.job_type is already a string (e.g., "Installation")
+    // If the intention was to use an ID and map to a name, a jobTypes list would be needed.
+    // Based on existing code, formData.job_type already holds the display name.
+    jobData.job_type_name = formData.job_type;
     
-    onSubmit(submitData);
+    // Remove empty fields, preserving original behavior
+    if (!jobData.job_type) delete jobData.job_type;
+    if (!jobData.product) delete jobData.product;
+    if (!jobData.outcome) delete jobData.outcome;
+    if (!jobData.project_id) delete jobData.project_id; // Don't send empty project_id if not selected
+
+    if (status === 'scheduled' && !job) {
+      toast.success(`Job will be created with status: Scheduled`);
+    }
+
+    onSubmit(jobData);
   };
 
   const handleCustomerChange = (customerId) => {
@@ -138,6 +200,7 @@ export default function JobForm({ job, technicians, onSubmit, onCancel, isSubmit
         ...formData,
         project_id: "",
         project_name: "",
+        // When un-assigning project, customer details should remain what they were, or be cleared if no customer selected
       });
     } else {
       const project = projects.find(p => p.id === projectId);
@@ -228,6 +291,7 @@ export default function JobForm({ job, technicians, onSubmit, onCancel, isSubmit
       setLiveDuplicates([]);
     } catch (error) {
       console.error("Error creating customer:", error);
+      toast.error("Error creating customer. Please try again.");
     }
   };
 
@@ -282,6 +346,7 @@ export default function JobForm({ job, technicians, onSubmit, onCancel, isSubmit
       });
     } catch (error) {
       console.error("Error uploading images:", error);
+      toast.error("Failed to upload images. Please try again.");
     }
     setUploadingImages(false);
   };
@@ -296,6 +361,7 @@ export default function JobForm({ job, technicians, onSubmit, onCancel, isSubmit
       setFormData({ ...formData, quote_url: file_url });
     } catch (error) {
       console.error("Error uploading quote:", error);
+      toast.error("Failed to upload quote. Please try again.");
     }
     setUploadingQuote(false);
   };
@@ -310,6 +376,7 @@ export default function JobForm({ job, technicians, onSubmit, onCancel, isSubmit
       setFormData({ ...formData, invoice_url: file_url });
     } catch (error) {
       console.error("Error uploading invoice:", error);
+      toast.error("Failed to upload invoice. Please try again.");
     }
     setUploadingInvoice(false);
   };

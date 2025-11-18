@@ -20,9 +20,10 @@ import EditableField from "./EditableField";
 import EditableFileUpload from "./EditableFileUpload";
 import CustomerEditModal from "../customers/CustomerEditModal";
 import RichTextEditor from "../common/RichTextEditor";
-import { determineJobStatus } from "./jobStatusHelper";
+import { determineJobStatus, shouldAutoSchedule, getStatusChangeMessage } from "./jobStatusHelper";
 import { Link } from "react-router-dom";
 import { createPageUrl } from "@/utils";
+import { toast } from "sonner";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -172,8 +173,12 @@ export default function JobDetails({ job, onClose, onDelete }) {
       });
       
       setInitialImageCount((job.image_urls || []).length);
-      const newStatus = determineJobStatus(job.scheduled_date, job.outcome, true, job.status);
+      const newStatus = 'in_progress';
       await base44.entities.Job.update(job.id, { status: newStatus });
+      
+      if (job.status !== newStatus) {
+        toast.success(getStatusChangeMessage(job.status, newStatus, job.job_number, job.customer_name));
+      }
       
       return checkIn;
     },
@@ -225,6 +230,7 @@ export default function JobDetails({ job, onClose, onDelete }) {
       const newStatus = determineJobStatus(job.scheduled_date, outcome, false, job.status);
       if (newStatus !== job.status) {
         await base44.entities.Job.update(job.id, { status: newStatus });
+        toast.success(getStatusChangeMessage(job.status, newStatus, job.job_number, job.customer_name));
       }
     },
     onSuccess: () => {
@@ -301,9 +307,28 @@ export default function JobDetails({ job, onClose, onDelete }) {
     updateMeasurementsMutation.mutate(data);
   };
 
-  const handleFieldSave = (fieldName, oldValue, newValue) => {
+  const handleFieldSave = async (fieldName, oldValue, newValue) => {
     logChange(fieldName, oldValue, newValue);
-    updateJobMutation.mutate({ field: fieldName, value: newValue });
+    
+    // Check if we need to auto-update status based on scheduling
+    if ((fieldName === 'scheduled_date' || fieldName === 'scheduled_time') && 
+        shouldAutoSchedule(
+          fieldName === 'scheduled_date' ? newValue : job.scheduled_date,
+          fieldName === 'scheduled_time' ? newValue : job.scheduled_time
+        ) && 
+        job.status === 'open') {
+      const newStatus = 'scheduled';
+      await base44.entities.Job.update(job.id, { 
+        [fieldName]: newValue,
+        status: newStatus
+      });
+      queryClient.invalidateQueries({ queryKey: ['jobs'] });
+      if (job.status !== newStatus) { // Check if status actually changed
+        toast.success(getStatusChangeMessage(job.status, newStatus, job.job_number, job.customer_name));
+      }
+    } else {
+      updateJobMutation.mutate({ field: fieldName, value: newValue });
+    }
   };
 
   const handleNotesBlur = () => {
@@ -356,6 +381,7 @@ export default function JobDetails({ job, onClose, onDelete }) {
     const newStatus = determineJobStatus(job.scheduled_date, value, !!activeCheckIn, job.status);
     if (newStatus !== job.status) {
       updateJobMutation.mutate({ field: 'status', value: newStatus });
+      toast.info(`Job will be marked as ${newStatus.replace(/_/g, ' ')} upon checkout`);
     }
   };
 
