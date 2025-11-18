@@ -1,8 +1,8 @@
 import React from "react";
-import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
+import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { ArrowLeft, Edit2, Trash2, MapPin, Phone, Mail, User, Hash } from "lucide-react";
+import { ArrowLeft, Edit, Trash2, MapPin, Phone, Mail, User, Hash, Building2, FileText } from "lucide-react";
 import { base44 } from "@/api/base44Client";
 import { useQuery } from "@tanstack/react-query";
 import { useNavigate } from "react-router-dom";
@@ -18,12 +18,14 @@ import {
   AlertDialogTitle,
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
+import { ChevronDown } from "lucide-react";
 
 const organisationTypeColors = {
-  "Strata": "bg-purple-100 text-purple-700 border-purple-200",
-  "Builder": "bg-blue-100 text-blue-700 border-blue-200",
-  "Real Estate": "bg-green-100 text-green-700 border-green-200",
-  "Supplier": "bg-orange-100 text-orange-700 border-orange-200",
+  "Strata": "bg-purple-500/10 text-purple-800 border-purple-500/20",
+  "Builder": "bg-blue-500/10 text-blue-800 border-blue-500/20",
+  "Real Estate": "bg-green-500/10 text-green-800 border-green-500/20",
+  "Supplier": "bg-orange-500/10 text-orange-800 border-orange-500/20",
 };
 
 export default function OrganisationDetails({ organisation, onClose, onEdit, onDelete }) {
@@ -35,68 +37,65 @@ export default function OrganisationDetails({ organisation, onClose, onEdit, onD
   });
 
   return (
-    <div className="p-6 max-w-5xl mx-auto">
-      <Card className="border-2 border-slate-200 shadow-lg rounded-2xl">
-        <CardHeader className="border-b-2 border-slate-200 bg-gradient-to-r from-slate-50 to-white p-6">
-          <div className="flex items-start justify-between">
-            <div className="flex items-center gap-4 flex-1">
+    <div className="p-4 space-y-3">
+      {/* Header Card */}
+      <Card className="shadow-sm border border-slate-200">
+        <CardContent className="p-4">
+          <div className="flex items-start justify-between gap-4">
+            <div className="flex items-start gap-3 flex-1 min-w-0">
               <Button 
                 variant="ghost" 
                 size="icon" 
                 onClick={onClose}
-                className="hover:bg-slate-200 transition-colors"
+                className="hover:bg-slate-100 h-9 w-9 flex-shrink-0"
               >
                 <ArrowLeft className="w-5 h-5" />
               </Button>
-              <div className="flex-1">
-                <div className="flex items-center gap-3 mb-2">
-                  <CardTitle className="text-2xl font-bold text-[#000000] tracking-tight">
-                    {organisation.name}
-                  </CardTitle>
-                  <Badge className={`${organisationTypeColors[organisation.organisation_type]} font-semibold border-2`}>
+              <div className="flex-1 min-w-0">
+                <h1 className="text-xl font-semibold text-slate-900 mb-2">{organisation.name}</h1>
+                <div className="flex gap-2 flex-wrap">
+                  <Badge className={`${organisationTypeColors[organisation.organisation_type]} rounded-full px-2.5 py-0.5 text-xs font-medium border`}>
                     {organisation.organisation_type}
                   </Badge>
                   {organisation.status === 'inactive' && (
-                    <Badge variant="outline" className="bg-slate-100 text-slate-600 border-slate-300">
+                    <Badge className="bg-gray-500/10 text-gray-700 border-gray-500/20 rounded-full px-2.5 py-0.5 text-xs font-medium border">
                       Inactive
                     </Badge>
                   )}
                 </div>
               </div>
             </div>
-            <div className="flex gap-2">
+            <div className="flex gap-2 flex-shrink-0">
               <Button
                 variant="outline"
-                size="sm"
+                size="icon"
                 onClick={onEdit}
-                className="border-2 hover:bg-slate-100 font-semibold"
+                className="border-slate-300 hover:bg-slate-50 h-9 w-9"
               >
-                <Edit2 className="w-4 h-4 mr-2" />
-                Edit
+                <Edit className="w-4 h-4" />
               </Button>
               <AlertDialog>
                 <AlertDialogTrigger asChild>
                   <Button
                     variant="outline"
-                    size="sm"
-                    className="border-2 hover:bg-red-100 hover:text-red-600 hover:border-red-200"
+                    size="icon"
+                    className="border-slate-300 hover:bg-red-50 hover:text-red-600 h-9 w-9"
                   >
-                    <Trash2 className="w-4 h-4 mr-2" />
-                    Delete
+                    <Trash2 className="w-4 h-4" />
                   </Button>
                 </AlertDialogTrigger>
-                <AlertDialogContent className="rounded-2xl">
+                <AlertDialogContent className="rounded-lg border border-slate-200">
                   <AlertDialogHeader>
-                    <AlertDialogTitle className="text-xl font-bold text-[#000000]">Delete Organisation?</AlertDialogTitle>
-                    <AlertDialogDescription>
+                    <AlertDialogTitle className="text-lg font-semibold">Delete Organisation?</AlertDialogTitle>
+                    <AlertDialogDescription className="text-sm text-slate-600">
                       This will remove the organisation. Linked customers will remain but will no longer be associated with this organisation.
                     </AlertDialogDescription>
                   </AlertDialogHeader>
                   <AlertDialogFooter>
-                    <AlertDialogCancel className="border-2 font-semibold">Cancel</AlertDialogCancel>
+                    <AlertDialogCancel className="rounded-lg font-medium border-slate-300">Cancel</AlertDialogCancel>
                     <AlertDialogAction
                       onClick={onDelete}
-                      className="bg-red-600 hover:bg-red-700 font-semibold"
+                      className="bg-red-600 hover:bg-red-700 rounded-lg font-medium"
                     >
                       Delete
                     </AlertDialogAction>
@@ -105,106 +104,121 @@ export default function OrganisationDetails({ organisation, onClose, onEdit, onD
               </AlertDialog>
             </div>
           </div>
-        </CardHeader>
+        </CardContent>
+      </Card>
 
-        <CardContent className="p-6 space-y-6">
-          <div className="grid md:grid-cols-2 gap-6">
+      {/* Details Card */}
+      <Card className="shadow-sm border border-slate-200">
+        <CardContent className="p-4 space-y-3">
+          <div className="flex items-center gap-2 mb-2">
+            <Building2 className="w-4 h-4 text-slate-500" />
+            <span className="text-xs font-medium text-slate-500 uppercase tracking-wide">Details</span>
+          </div>
+          
+          <div className="space-y-2">
             {organisation.organisation_type === "Strata" && organisation.sp_number && (
-              <div className="space-y-2">
-                <div className="flex items-center gap-2 text-slate-500 text-sm font-semibold">
-                  <Hash className="w-4 h-4" />
-                  <span>SP Number</span>
-                </div>
-                <p className="text-[#000000] font-medium">{organisation.sp_number}</p>
+              <div>
+                <div className="text-xs font-medium text-slate-500 uppercase tracking-wide mb-1">SP Number</div>
+                <p className="text-sm text-slate-900 font-medium">{organisation.sp_number}</p>
               </div>
             )}
 
             {organisation.address && (
-              <div className="space-y-2">
-                <div className="flex items-center gap-2 text-slate-500 text-sm font-semibold">
-                  <MapPin className="w-4 h-4" />
-                  <span>Address</span>
-                </div>
-                <p className="text-[#000000] font-medium">{organisation.address}</p>
+              <div>
+                <div className="text-xs font-medium text-slate-500 uppercase tracking-wide mb-1">Address</div>
+                <p className="text-sm text-slate-900 font-medium">{organisation.address}</p>
               </div>
             )}
 
             {organisation.phone && (
-              <div className="space-y-2">
-                <div className="flex items-center gap-2 text-slate-500 text-sm font-semibold">
-                  <Phone className="w-4 h-4" />
-                  <span>Phone</span>
-                </div>
-                <a href={`tel:${organisation.phone}`} className="text-blue-600 hover:underline font-medium">
+              <div>
+                <div className="text-xs font-medium text-slate-500 uppercase tracking-wide mb-1">Phone</div>
+                <a href={`tel:${organisation.phone}`} className="text-sm text-blue-600 hover:underline font-medium">
                   {organisation.phone}
                 </a>
               </div>
             )}
 
             {organisation.email && (
-              <div className="space-y-2">
-                <div className="flex items-center gap-2 text-slate-500 text-sm font-semibold">
-                  <Mail className="w-4 h-4" />
-                  <span>Email</span>
-                </div>
-                <a href={`mailto:${organisation.email}`} className="text-blue-600 hover:underline font-medium">
+              <div>
+                <div className="text-xs font-medium text-slate-500 uppercase tracking-wide mb-1">Email</div>
+                <a href={`mailto:${organisation.email}`} className="text-sm text-blue-600 hover:underline font-medium">
                   {organisation.email}
                 </a>
               </div>
             )}
           </div>
+        </CardContent>
+      </Card>
 
-          {organisation.notes && (
-            <div className="pt-4 border-t-2 border-slate-200">
-              <h3 className="text-sm font-bold text-slate-500 mb-2">Notes</h3>
-              <div 
-                className="text-slate-700 prose prose-sm max-w-none"
-                dangerouslySetInnerHTML={{ __html: organisation.notes }}
-              />
+      {/* Notes Card */}
+      {organisation.notes && (
+        <Collapsible defaultOpen={false}>
+          <Card className="shadow-sm border border-slate-200">
+            <CollapsibleTrigger className="w-full">
+              <CardContent className="p-4">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-2">
+                    <FileText className="w-4 h-4 text-slate-500" />
+                    <span className="text-xs font-medium text-slate-500 uppercase tracking-wide">Notes</span>
+                  </div>
+                  <ChevronDown className="w-4 h-4 text-slate-400 transition-transform data-[state=open]:rotate-180" />
+                </div>
+              </CardContent>
+            </CollapsibleTrigger>
+            <CollapsibleContent>
+              <CardContent className="px-4 pb-4 pt-0">
+                <div 
+                  className="text-sm text-slate-700 leading-relaxed prose prose-sm max-w-none"
+                  dangerouslySetInnerHTML={{ __html: organisation.notes }}
+                />
+              </CardContent>
+            </CollapsibleContent>
+          </Card>
+        </Collapsible>
+      )}
+
+      {/* Customers Card */}
+      <Card className="shadow-sm border border-slate-200">
+        <CardContent className="p-4 space-y-3">
+          <div className="flex items-center gap-2">
+            <User className="w-4 h-4 text-slate-500" />
+            <span className="text-xs font-medium text-slate-500 uppercase tracking-wide">
+              Linked Customers ({customers.length})
+            </span>
+          </div>
+
+          {customers.length === 0 ? (
+            <div className="text-center py-8 bg-slate-50 rounded-lg border border-slate-200">
+              <User className="w-10 h-10 mx-auto text-slate-300 mb-2" />
+              <p className="text-sm text-slate-500">No customers linked</p>
+            </div>
+          ) : (
+            <div className="space-y-2">
+              {customers.map((customer) => (
+                <div
+                  key={customer.id}
+                  onClick={() => navigate(createPageUrl('Customers') + `?customerId=${customer.id}`)}
+                  className="p-3 bg-slate-50 border border-slate-200 rounded-lg hover:bg-slate-100 transition-colors cursor-pointer"
+                >
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <h4 className="text-sm font-semibold text-slate-900">{customer.name}</h4>
+                      <div className="text-xs text-slate-600 mt-0.5 space-y-0.5">
+                        {customer.phone && <p>{customer.phone}</p>}
+                        {customer.email && <p>{customer.email}</p>}
+                      </div>
+                    </div>
+                    {customer.status === 'inactive' && (
+                      <Badge className="bg-gray-500/10 text-gray-700 border-gray-500/20 rounded-full px-2 py-0.5 text-xs font-medium border">
+                        Inactive
+                      </Badge>
+                    )}
+                  </div>
+                </div>
+              ))}
             </div>
           )}
-
-          <div className="pt-4 border-t-2 border-slate-200">
-            <div className="flex items-center justify-between mb-4">
-              <h3 className="text-lg font-bold text-[#000000] tracking-tight">
-                Linked Customers ({customers.length})
-              </h3>
-            </div>
-
-            {customers.length === 0 ? (
-              <div className="text-center py-8 bg-slate-50 rounded-xl border-2 border-slate-200">
-                <User className="w-12 h-12 mx-auto text-slate-300 mb-3" />
-                <p className="text-slate-600">No customers linked to this organisation</p>
-              </div>
-            ) : (
-              <div className="grid gap-3">
-                {customers.map((customer) => (
-                  <Card
-                    key={customer.id}
-                    className="hover:shadow-md transition-all cursor-pointer border-2 border-slate-200 rounded-xl"
-                    onClick={() => navigate(createPageUrl('Customers') + `?customerId=${customer.id}`)}
-                  >
-                    <CardContent className="p-4">
-                      <div className="flex items-center justify-between">
-                        <div>
-                          <h4 className="font-bold text-[#000000]">{customer.name}</h4>
-                          <div className="text-sm text-slate-600 mt-1 space-y-0.5">
-                            {customer.phone && <p>Phone: {customer.phone}</p>}
-                            {customer.email && <p>Email: {customer.email}</p>}
-                          </div>
-                        </div>
-                        {customer.status === 'inactive' && (
-                          <Badge variant="outline" className="bg-slate-100 text-slate-600">
-                            Inactive
-                          </Badge>
-                        )}
-                      </div>
-                    </CardContent>
-                  </Card>
-                ))}
-              </div>
-            )}
-          </div>
         </CardContent>
       </Card>
     </div>

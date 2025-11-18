@@ -1,22 +1,21 @@
-
 import React, { useState, useEffect } from "react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { MapPin, Calendar, Clock, LogIn, Phone, Mail, Navigation, ChevronRight, Timer } from "lucide-react";
+import { MapPin, Calendar, Clock, LogIn, Phone, Mail, Navigation, Timer, User } from "lucide-react";
 import { format, parseISO } from "date-fns";
 import { base44 } from "@/api/base44Client";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { unescape } from "lodash";
 
 const statusColors = {
-  open: "bg-blue-50 text-blue-700 border-blue-200",
-  scheduled: "bg-teal-50 text-teal-700 border-teal-200",
-  quoted: "bg-purple-50 text-purple-700 border-purple-200",
-  invoiced: "bg-amber-50 text-amber-700 border-amber-200",
-  paid: "bg-emerald-50 text-emerald-700 border-emerald-200",
-  completed: "bg-green-50 text-green-700 border-green-200",
-  lost: "bg-red-50 text-red-700 border-red-200"
+  open: "bg-blue-500/10 text-blue-700 border-blue-500/20",
+  scheduled: "bg-yellow-500/10 text-yellow-700 border-yellow-500/20",
+  quoted: "bg-purple-500/10 text-purple-700 border-purple-500/20",
+  invoiced: "bg-amber-500/10 text-amber-700 border-amber-500/20",
+  paid: "bg-emerald-500/10 text-emerald-700 border-emerald-500/20",
+  completed: "bg-green-500/10 text-green-700 border-green-500/20",
+  cancelled: "bg-gray-500/10 text-gray-700 border-gray-500/20"
 };
 
 const statusLabels = {
@@ -30,11 +29,11 @@ const statusLabels = {
 };
 
 const productColors = {
-  "Garage Door": "bg-[#FEF8C8] text-slate-700",
-  "Gate": "bg-green-100 text-green-700",
-  "Roller Shutter": "bg-purple-100 text-purple-700",
-  "Multiple": "bg-orange-100 text-orange-700",
-  "Custom Garage Door": "bg-pink-100 text-pink-700"
+  "Garage Door": "bg-yellow-500/10 text-yellow-800 border-yellow-500/20",
+  "Gate": "bg-green-500/10 text-green-800 border-green-500/20",
+  "Roller Shutter": "bg-purple-500/10 text-purple-800 border-purple-500/20",
+  "Multiple": "bg-orange-500/10 text-orange-800 border-orange-500/20",
+  "Custom Garage Door": "bg-pink-500/10 text-pink-800 border-pink-500/20"
 };
 
 const getInitials = (name) => {
@@ -48,7 +47,7 @@ const getInitials = (name) => {
 };
 
 const avatarColors = [
-  "bg-[#FCEE7B]",
+  "bg-blue-500",
   "bg-purple-500",
   "bg-green-500",
   "bg-orange-500",
@@ -125,13 +124,13 @@ export default function JobList({ jobs, isLoading, onSelectJob }) {
 
   if (isLoading) {
     return (
-      <div className="grid gap-4">
-        {[1, 2, 3, 4, 5].map((i) => (
-          <Card key={i} className="animate-pulse rounded-2xl">
-            <CardContent className="p-6">
-              <div className="h-6 bg-[hsl(32,15%,88%)] rounded-lg w-1/3 mb-4"></div>
-              <div className="h-4 bg-[hsl(32,15%,88%)] rounded-lg w-2/3 mb-2"></div>
-              <div className="h-4 bg-[hsl(32,15%,88%)] rounded-lg w-1/2"></div>
+      <div className="space-y-3">
+        {[1, 2, 3].map((i) => (
+          <Card key={i} className="animate-pulse shadow-sm border border-slate-200">
+            <CardContent className="p-4">
+              <div className="h-5 bg-slate-200 rounded w-1/3 mb-2"></div>
+              <div className="h-4 bg-slate-200 rounded w-2/3 mb-2"></div>
+              <div className="h-4 bg-slate-200 rounded w-1/2"></div>
             </CardContent>
           </Card>
         ))}
@@ -141,89 +140,86 @@ export default function JobList({ jobs, isLoading, onSelectJob }) {
 
   if (jobs.length === 0) {
     return (
-      <Card className="p-12 text-center rounded-2xl border-2 border-[hsl(32,15%,88%)]">
-        <Timer className="w-16 h-16 mx-auto text-[hsl(32,15%,88%)] mb-4" />
-        <h3 className="text-lg font-bold text-[hsl(25,10%,12%)] mb-2">No jobs found</h3>
-        <p className="text-[hsl(25,8%,45%)]">Try adjusting your filters</p>
+      <Card className="p-12 text-center shadow-sm border border-slate-200">
+        <Timer className="w-12 h-12 mx-auto text-slate-300 mb-3" />
+        <h3 className="text-base font-semibold text-slate-900 mb-1">No jobs found</h3>
+        <p className="text-sm text-slate-500">Try adjusting your filters</p>
       </Card>
     );
   }
 
   return (
-    <div className="grid gap-4">
+    <div className="space-y-3">
       {jobs.map((job) => (
         <Card 
           key={job.id}
-          className="hover:shadow-xl transition-all duration-200 cursor-pointer border-l-4 hover:scale-[1.01] active:scale-[0.99] group rounded-2xl border-2 border-[hsl(32,15%,88%)]"
-          style={{ borderLeftColor: job.status === 'in_progress' ? '#FCEE7B' : job.status === 'completed' ? '#10b981' : '#fae008', borderLeftWidth: '6px' }}
+          className="hover:shadow-md transition-all duration-200 cursor-pointer shadow-sm border border-slate-200"
           onClick={() => onSelectJob(job)}
         >
-          <CardContent className="p-6">
-            <div className="flex items-start justify-between mb-4">
+          <CardContent className="p-4">
+            <div className="flex items-start justify-between gap-4 mb-3">
               <div className="flex-1 min-w-0">
-                <div className="flex items-center gap-2 mb-2">
-                  <h3 className="font-bold text-xl text-[hsl(25,10%,12%)] truncate group-hover:text-[#fae008] transition-colors tracking-tight">{job.customer_name}</h3>
-                  <Badge variant="outline" className="text-xs font-medium text-[hsl(25,8%,45%)] border-[hsl(32,15%,88%)]">
-                    #{job.job_number}
-                  </Badge>
+                <div className="flex items-center gap-2 mb-1">
+                  <h3 className="text-base font-semibold text-slate-900 truncate">{job.customer_name}</h3>
+                  <span className="text-xs text-slate-500">#{job.job_number}</span>
                 </div>
                 
-                <div className="flex items-start gap-2 text-[hsl(25,10%,25%)] mb-3">
-                  <MapPin className="w-4 h-4 text-[#fae008] mt-0.5 flex-shrink-0" />
-                  <span className="text-sm font-medium">{job.address}</span>
+                <div className="flex items-start gap-1.5 text-slate-600 mb-2">
+                  <MapPin className="w-3.5 h-3.5 mt-0.5 flex-shrink-0 text-slate-400" />
+                  <span className="text-sm">{job.address}</span>
                 </div>
 
-                <div className="flex items-center gap-2">
+                <div className="flex items-center gap-2 flex-wrap">
                   {job.customer_phone && (
                     <Button
                       size="icon"
-                      variant="outline"
+                      variant="ghost"
                       onClick={(e) => handleCall(e, job.customer_phone)}
-                      className="h-8 w-8 border-2 hover:bg-[#FEF8C8] hover:border-slate-400 hover:text-slate-700 transition-all"
+                      className="h-7 w-7 hover:bg-slate-100"
                       title="Call"
                     >
-                      <Phone className="w-4 h-4" />
+                      <Phone className="w-3.5 h-3.5" />
                     </Button>
                   )}
                   <Button
                     size="icon"
-                    variant="outline"
+                    variant="ghost"
                     onClick={(e) => handleDirections(e, job.address)}
-                    className="h-8 w-8 border-2 hover:bg-green-50 hover:border-green-400 hover:text-green-700 transition-all"
+                    className="h-7 w-7 hover:bg-slate-100"
                     title="Directions"
                   >
-                    <Navigation className="w-4 h-4" />
+                    <Navigation className="w-3.5 h-3.5" />
                   </Button>
                   {job.customer_email && (
                     <Button
                       size="icon"
-                      variant="outline"
+                      variant="ghost"
                       onClick={(e) => {
                         e.stopPropagation();
                         window.location.href = `mailto:${job.customer_email}`;
                       }}
-                      className="h-8 w-8 border-2 hover:bg-purple-50 hover:border-purple-400 hover:text-purple-700 transition-all"
+                      className="h-7 w-7 hover:bg-slate-100"
                       title="Email"
                     >
-                      <Mail className="w-4 h-4" />
+                      <Mail className="w-3.5 h-3.5" />
                     </Button>
                   )}
                   
                   {job.assigned_to_name && job.assigned_to_name.length > 0 && (
                     <>
-                      <div className="w-px h-6 bg-[hsl(32,15%,88%)] mx-1"></div>
-                      <div className="flex -space-x-2">
+                      <div className="w-px h-5 bg-slate-200 mx-1"></div>
+                      <div className="flex -space-x-1.5">
                         {(Array.isArray(job.assigned_to_name) ? job.assigned_to_name : [job.assigned_to_name]).slice(0, 3).map((name, idx) => (
                           <div
                             key={idx}
-                            className={`${getAvatarColor(name)} w-7 h-7 rounded-full flex items-center justify-center text-white text-xs font-bold border-2 border-white shadow-sm`}
+                            className={`${getAvatarColor(name)} w-6 h-6 rounded-full flex items-center justify-center text-white text-xs font-medium border-2 border-white`}
                             title={name}
                           >
                             {getInitials(name)}
                           </div>
                         ))}
                         {Array.isArray(job.assigned_to_name) && job.assigned_to_name.length > 3 && (
-                          <div className="bg-[hsl(32,15%,88%)] w-7 h-7 rounded-full flex items-center justify-center text-[hsl(25,10%,12%)] text-xs font-bold border-2 border-white shadow-sm">
+                          <div className="bg-slate-300 w-6 h-6 rounded-full flex items-center justify-center text-slate-700 text-xs font-medium border-2 border-white">
                             +{job.assigned_to_name.length - 3}
                           </div>
                         )}
@@ -233,8 +229,8 @@ export default function JobList({ jobs, isLoading, onSelectJob }) {
                 </div>
               </div>
               
-              <div className="flex flex-col gap-2 items-end ml-3">
-                <Badge className={`${statusColors[job.status]} font-semibold shadow-sm border-2`}>
+              <div className="flex flex-col gap-2 items-end">
+                <Badge className={`${statusColors[job.status]} rounded-full px-2.5 py-0.5 text-xs font-medium border`}>
                   {statusLabels[job.status] || job.status}
                 </Badge>
                 {isTechnician && job.status === 'scheduled' && job.assigned_to?.includes(user?.email) && !hasActiveCheckIn(job.id) && (
@@ -242,62 +238,50 @@ export default function JobList({ jobs, isLoading, onSelectJob }) {
                     size="sm"
                     onClick={(e) => handleCheckIn(e, job)}
                     disabled={checkInMutation.isPending}
-                    className="bg-[#fae008] hover:bg-[#e5d007] text-black active:bg-[#d4c006] h-8 text-xs font-semibold shadow-sm transition-all"
+                    className="bg-[#fae008] hover:bg-[#e5d007] text-slate-900 h-7 px-2.5 text-xs font-medium rounded-lg"
                   >
-                    <LogIn className="w-3.5 h-3.5 mr-1.5" />
+                    <LogIn className="w-3 h-3 mr-1" />
                     Check In
                   </Button>
                 )}
               </div>
             </div>
 
-            <div className="space-y-3">
-              <div className="flex flex-wrap items-center gap-4 bg-[hsl(32,25%,96%)] rounded-xl p-4 border border-[hsl(32,15%,88%)]">
-                <div className="flex items-center gap-2 text-[hsl(25,10%,12%)]">
-                  <Calendar className="w-4 h-4 text-[hsl(25,8%,55%)]" />
-                  <span className="text-sm font-semibold">
+            <div className="bg-slate-50 rounded-lg p-2.5 border border-slate-200">
+              <div className="flex flex-wrap items-center gap-3 text-sm">
+                <div className="flex items-center gap-1.5 text-slate-700">
+                  <Calendar className="w-3.5 h-3.5 text-slate-400" />
+                  <span className="font-medium">
                     {job.scheduled_date && format(parseISO(job.scheduled_date), 'MMM d, yyyy')}
                   </span>
                 </div>
                 
                 {job.scheduled_time && (
-                  <div className="flex items-center gap-2 text-[hsl(25,10%,12%)]">
-                    <Clock className="w-4 h-4 text-[hsl(25,8%,55%)]" />
-                    <span className="text-sm font-semibold">{job.scheduled_time}</span>
+                  <div className="flex items-center gap-1.5 text-slate-700">
+                    <Clock className="w-3.5 h-3.5 text-slate-400" />
+                    <span className="font-medium">{job.scheduled_time}</span>
                   </div>
                 )}
 
-                <div className="flex items-center gap-2">
-                  {job.product && (
-                    <Badge className={`${productColors[job.product]} font-semibold border`}>
-                      <Timer className="w-3 h-3 mr-1" />
-                      {job.product}
-                    </Badge>
-                  )}
-                  
-                  {job.job_type_name && (
-                    <Badge className="bg-purple-50 text-purple-900 border-purple-200 border font-semibold">
-                      <Timer className="w-3 h-3 mr-1" />
-                      {job.job_type_name}
-                    </Badge>
-                  )}
-                </div>
-
-                {job.expected_duration && (
-                  <Badge variant="outline" className="bg-white text-[hsl(25,10%,12%)] border-[hsl(32,15%,88%)] font-medium">
-                    {job.expected_duration}h duration
+                {job.product && (
+                  <Badge className={`${productColors[job.product]} rounded-full px-2 py-0.5 text-xs font-medium border`}>
+                    {job.product}
+                  </Badge>
+                )}
+                
+                {job.job_type_name && (
+                  <Badge className="bg-purple-500/10 text-purple-800 border-purple-500/20 rounded-full px-2 py-0.5 text-xs font-medium border">
+                    {job.job_type_name}
                   </Badge>
                 )}
               </div>
-
-              {job.notes && (
-                <div className="bg-amber-50 border-2 border-amber-200 rounded-xl p-3">
-                  <div className="text-sm text-[hsl(25,10%,12%)] line-clamp-2">
-                    <div dangerouslySetInnerHTML={{ __html: unescape(job.notes) }} />
-                  </div>
-                </div>
-              )}
             </div>
+
+            {job.notes && (
+              <div className="mt-2 bg-amber-50 border border-amber-200 rounded-lg p-2">
+                <div className="text-xs text-slate-700 line-clamp-2" dangerouslySetInnerHTML={{ __html: unescape(job.notes) }} />
+              </div>
+            )}
           </CardContent>
         </Card>
       ))}
