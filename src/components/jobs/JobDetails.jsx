@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from "react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -5,7 +6,7 @@ import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Label } from "@/components/ui/label";
-import { ArrowLeft, MapPin, Phone, Calendar, Clock, User, Briefcase, FileText, Image as ImageIcon, DollarSign, Sparkles, LogIn, FileCheck, History, Package, ClipboardCheck, LogOut, Timer, AlertCircle, ChevronDown, Mail, Navigation, Trash2, FolderKanban, CheckSquare, MoreVertical, Paperclip, Ruler } from "lucide-react";
+import { ArrowLeft, MapPin, Phone, Calendar, Clock, User, Briefcase, FileText, Image as ImageIcon, DollarSign, Sparkles, LogIn, FileCheck, History, Package, ClipboardCheck, LogOut, Timer, AlertCircle, ChevronDown, Mail, Navigation, Trash2, FolderKanban, CheckSquare, MoreVertical, Paperclip, Ruler, Upload, X, Eye, Download } from "lucide-react";
 import { format, parseISO } from "date-fns";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
@@ -110,6 +111,10 @@ export default function JobDetails({ job, onClose, onStatusChange, onDelete }) {
   const [outcome, setOutcome] = useState(job.outcome || "");
   const [validationError, setValidationError] = useState("");
   const [initialImageCount, setInitialImageCount] = useState(0);
+  const [quoteCaption, setQuoteCaption] = useState(job.quote_caption || "");
+  const [invoiceCaption, setInvoiceCaption] = useState(job.invoice_caption || "");
+  const [otherDocuments, setOtherDocuments] = useState(job.other_documents || []);
+  const [uploadingOther, setUploadingOther] = useState(false);
   const queryClient = useQueryClient();
 
   const { data: jobTypes = [] } = useQuery({
@@ -388,6 +393,59 @@ export default function JobDetails({ job, onClose, onStatusChange, onDelete }) {
 
   const handleInvoiceChange = (url) => {
     updateJobMutation.mutate({ field: 'invoice_url', value: url });
+  };
+
+  const handleQuoteCaptionBlur = () => {
+    if (quoteCaption !== job.quote_caption) {
+      updateJobMutation.mutate({ field: 'quote_caption', value: quoteCaption });
+    }
+  };
+
+  const handleInvoiceCaptionBlur = () => {
+    if (invoiceCaption !== job.invoice_caption) {
+      updateJobMutation.mutate({ field: 'invoice_caption', value: invoiceCaption });
+    }
+  };
+
+  const handleOtherDocumentUpload = async (e) => {
+    const files = Array.from(e.target.files);
+    if (files.length === 0) return;
+
+    setUploadingOther(true);
+    try {
+      const uploadPromises = files.map(file => 
+        base44.integrations.Core.UploadFile({ file })
+      );
+      const results = await Promise.all(uploadPromises);
+      const newDocs = results.map(result => ({
+        url: result.file_url,
+        caption: ""
+      }));
+      
+      const updatedDocs = [...otherDocuments, ...newDocs];
+      setOtherDocuments(updatedDocs);
+      updateJobMutation.mutate({ field: 'other_documents', value: updatedDocs });
+    } catch (error) {
+      console.error("Error uploading files:", error);
+    }
+    setUploadingOther(false);
+    e.target.value = '';
+  };
+
+  const handleOtherDocumentCaptionChange = (index, caption) => {
+    const updatedDocs = [...otherDocuments];
+    updatedDocs[index].caption = caption;
+    setOtherDocuments(updatedDocs);
+  };
+
+  const handleOtherDocumentCaptionBlur = (index) => {
+    updateJobMutation.mutate({ field: 'other_documents', value: otherDocuments });
+  };
+
+  const handleRemoveOtherDocument = (index) => {
+    const updatedDocs = otherDocuments.filter((_, i) => i !== index);
+    setOtherDocuments(updatedDocs);
+    updateJobMutation.mutate({ field: 'other_documents', value: updatedDocs });
   };
 
   const handleCustomerSubmit = (data) => {
@@ -904,26 +962,201 @@ export default function JobDetails({ job, onClose, onStatusChange, onDelete }) {
           {activeTab === "attachments" && (
             <Card className="card-enhanced">
               <CardContent className="p-4 space-y-4">
-                <div className="grid grid-cols-2 gap-3">
-                  <EditableFileUpload
-                    files={job.quote_url}
-                    onFilesChange={handleQuoteChange}
-                    accept=".pdf,.doc,.docx"
-                    multiple={false}
-                    icon={FileText}
-                    label="Quote"
-                    emptyText="Upload quote"
-                  />
+                {/* Quote */}
+                <div>
+                  <div className="flex items-center justify-between mb-2">
+                    <h3 className="text-[13px] font-semibold text-[#4F4F4F] uppercase tracking-wide">Quote</h3>
+                  </div>
+                  {job.quote_url ? (
+                    <div className="space-y-2">
+                      <div className="bg-white border-2 border-[#E2E3E5] rounded-xl p-3">
+                        <div className="flex items-center gap-3 mb-2">
+                          <div className="w-10 h-10 bg-blue-100 rounded-lg flex items-center justify-center flex-shrink-0">
+                            <FileText className="w-5 h-5 text-blue-600" />
+                          </div>
+                          <div className="flex-1 min-w-0">
+                            <div className="text-[14px] font-semibold text-[#111111]">Quote Document</div>
+                            <div className="text-[12px] text-[#4F4F4F]">PDF file</div>
+                          </div>
+                          <div className="flex gap-2">
+                            <Button
+                              variant="ghost"
+                              size="icon"
+                              onClick={() => window.open(job.quote_url, '_blank')}
+                              className="h-8 w-8"
+                            >
+                              <Eye className="w-4 h-4" />
+                            </Button>
+                            <Button
+                              variant="ghost"
+                              size="icon"
+                              onClick={() => handleQuoteChange(null)}
+                              className="h-8 w-8 text-red-600"
+                            >
+                              <X className="w-4 h-4" />
+                            </Button>
+                          </div>
+                        </div>
+                        <Input
+                          value={quoteCaption}
+                          onChange={(e) => setQuoteCaption(e.target.value)}
+                          onBlur={handleQuoteCaptionBlur}
+                          placeholder="Add caption..."
+                          className="h-10 border-2 border-[#E2E3E5] focus:border-[#FAE008] rounded-lg text-[13px]"
+                        />
+                      </div>
+                    </div>
+                  ) : (
+                    <EditableFileUpload
+                      files={job.quote_url}
+                      onFilesChange={handleQuoteChange}
+                      accept=".pdf,.doc,.docx"
+                      multiple={false}
+                      icon={FileText}
+                      label=""
+                      emptyText="Upload quote"
+                    />
+                  )}
+                </div>
 
-                  <EditableFileUpload
-                    files={job.invoice_url}
-                    onFilesChange={handleInvoiceChange}
-                    accept=".pdf,.doc,.docx"
-                    multiple={false}
-                    icon={FileText}
-                    label="Invoice"
-                    emptyText="Upload invoice"
-                  />
+                {/* Invoice */}
+                <div>
+                  <div className="flex items-center justify-between mb-2">
+                    <h3 className="text-[13px] font-semibold text-[#4F4F4F] uppercase tracking-wide">Invoice</h3>
+                  </div>
+                  {job.invoice_url ? (
+                    <div className="space-y-2">
+                      <div className="bg-white border-2 border-[#E2E3E5] rounded-xl p-3">
+                        <div className="flex items-center gap-3 mb-2">
+                          <div className="w-10 h-10 bg-green-100 rounded-lg flex items-center justify-center flex-shrink-0">
+                            <FileText className="w-5 h-5 text-green-600" />
+                          </div>
+                          <div className="flex-1 min-w-0">
+                            <div className="text-[14px] font-semibold text-[#111111]">Invoice Document</div>
+                            <div className="text-[12px] text-[#4F4F4F]">PDF file</div>
+                          </div>
+                          <div className="flex gap-2">
+                            <Button
+                              variant="ghost"
+                              size="icon"
+                              onClick={() => window.open(job.invoice_url, '_blank')}
+                              className="h-8 w-8"
+                            >
+                              <Eye className="w-4 h-4" />
+                            </Button>
+                            <Button
+                              variant="ghost"
+                              size="icon"
+                              onClick={() => handleInvoiceChange(null)}
+                              className="h-8 w-8 text-red-600"
+                            >
+                              <X className="w-4 h-4" />
+                            </Button>
+                          </div>
+                        </div>
+                        <Input
+                          value={invoiceCaption}
+                          onChange={(e) => setInvoiceCaption(e.target.value)}
+                          onBlur={handleInvoiceCaptionBlur}
+                          placeholder="Add caption..."
+                          className="h-10 border-2 border-[#E2E3E5] focus:border-[#FAE008] rounded-lg text-[13px]"
+                        />
+                      </div>
+                    </div>
+                  ) : (
+                    <EditableFileUpload
+                      files={job.invoice_url}
+                      onFilesChange={handleInvoiceChange}
+                      accept=".pdf,.doc,.docx"
+                      multiple={false}
+                      icon={FileText}
+                      label=""
+                      emptyText="Upload invoice"
+                    />
+                  )}
+                </div>
+
+                {/* Other Documents */}
+                <div className="pt-3 border-t border-[#E2E3E5]">
+                  <div className="flex items-center justify-between mb-3">
+                    <h3 className="text-[13px] font-semibold text-[#4F4F4F] uppercase tracking-wide">Other Documents</h3>
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      onClick={() => document.getElementById('other-docs-input').click()}
+                      disabled={uploadingOther}
+                      className="h-10"
+                    >
+                      {uploadingOther ? (
+                        <>Uploading...</>
+                      ) : (
+                        <>
+                          <Upload className="w-4 h-4 mr-2" />
+                          Add
+                        </>
+                      )}
+                    </Button>
+                    <input
+                      id="other-docs-input"
+                      type="file"
+                      accept=".pdf,.doc,.docx,.xlsx,.xls,.txt"
+                      multiple
+                      className="hidden"
+                      onChange={handleOtherDocumentUpload}
+                    />
+                  </div>
+
+                  {otherDocuments.length > 0 ? (
+                    <div className="space-y-2">
+                      {otherDocuments.map((doc, index) => (
+                        <div key={index} className="bg-white border-2 border-[#E2E3E5] rounded-xl p-3">
+                          <div className="flex items-center gap-3 mb-2">
+                            <div className="w-10 h-10 bg-slate-100 rounded-lg flex items-center justify-center flex-shrink-0">
+                              <FileText className="w-5 h-5 text-slate-600" />
+                            </div>
+                            <div className="flex-1 min-w-0">
+                              <div className="text-[14px] font-semibold text-[#111111]">{doc.caption || `Document ${index + 1}`}</div>
+                              <div className="text-[12px] text-[#4F4F4F]">{doc.url.split('.').pop().toUpperCase()} file</div>
+                            </div>
+                            <div className="flex gap-2">
+                              <Button
+                                variant="ghost"
+                                size="icon"
+                                onClick={() => window.open(doc.url, '_blank')}
+                                className="h-8 w-8"
+                              >
+                                <Eye className="w-4 h-4" />
+                              </Button>
+                              <Button
+                                variant="ghost"
+                                size="icon"
+                                onClick={() => handleRemoveOtherDocument(index)}
+                                className="h-8 w-8 text-red-600"
+                              >
+                                <X className="w-4 h-4" />
+                              </Button>
+                            </div>
+                          </div>
+                          <Input
+                            value={doc.caption}
+                            onChange={(e) => handleOtherDocumentCaptionChange(index, e.target.value)}
+                            onBlur={() => handleOtherDocumentCaptionBlur(index)}
+                            placeholder="Add caption..."
+                            className="h-10 border-2 border-[#E2E3E5] focus:border-[#FAE008] rounded-lg text-[13px]"
+                          />
+                        </div>
+                      ))}
+                    </div>
+                  ) : (
+                    <div 
+                      className="text-center py-8 border-2 border-dashed border-[#E2E3E5] rounded-xl cursor-pointer hover:border-[#FAE008] transition-colors"
+                      onClick={() => document.getElementById('other-docs-input').click()}
+                    >
+                      <Upload className="w-8 h-8 mx-auto mb-2 text-slate-300" />
+                      <p className="text-[13px] font-medium text-[#4F4F4F]">Upload other documents</p>
+                      <p className="text-[12px] text-[#4F4F4F] mt-1">PDF, DOC, XLS, TXT</p>
+                    </div>
+                  )}
                 </div>
               </CardContent>
             </Card>
