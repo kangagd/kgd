@@ -513,7 +513,7 @@ export default function JobForm({ job, technicians, onSubmit, onCancel, isSubmit
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="additional_info" className="text-sm font-semibold text-[#000000]">Additional Info</Label>
+              <Label htmlFor="additional_info" className="text-sm font-semibold text-[#000000]">Job Info</Label>
               <RichTextEditor
                 value={formData.additional_info}
                 onChange={(value) => setFormData({ ...formData, additional_info: value })}
