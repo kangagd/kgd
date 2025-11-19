@@ -1,8 +1,7 @@
-
 import React from "react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
 import { createPageUrl } from "@/utils";
-import { Calendar, Briefcase, Users, LayoutDashboard, Wrench, UserCircle, DollarSign, Archive as ArchiveIcon, Building2, FolderKanban } from "lucide-react";
+import { Calendar, Briefcase, Users, LayoutDashboard, Wrench, UserCircle, DollarSign, Archive as ArchiveIcon, Building2, FolderKanban, RefreshCw } from "lucide-react";
 import {
   Sidebar,
   SidebarContent,
@@ -41,6 +40,9 @@ export default function Layout({ children, currentPageName }) {
   const location = useLocation();
   const navigate = useNavigate();
   const [user, setUser] = React.useState(null);
+  const [viewMode, setViewMode] = React.useState(() => {
+    return localStorage.getItem('viewMode') || 'auto';
+  });
 
   React.useEffect(() => {
     const loadUser = async () => {
@@ -58,7 +60,14 @@ export default function Layout({ children, currentPageName }) {
     await base44.auth.logout();
   };
 
-  const isTechnician = user?.is_field_technician && user?.role !== 'admin';
+  const toggleViewMode = () => {
+    const newMode = viewMode === 'technician' ? 'admin' : 'technician';
+    setViewMode(newMode);
+    localStorage.setItem('viewMode', newMode);
+  };
+
+  const actualIsTechnician = user?.is_field_technician && user?.role !== 'admin';
+  const isTechnician = viewMode === 'technician' ? true : viewMode === 'admin' ? false : actualIsTechnician;
   const navigationItems = isTechnician ? technicianNavigationItems : adminNavigationItems;
 
   if (isTechnician) {
@@ -74,16 +83,25 @@ export default function Layout({ children, currentPageName }) {
                 <h1 className="font-bold text-[#111111] text-sm">KGD</h1>
               </div>
             </div>
-            <button
-              onClick={() => navigate(createPageUrl("UserProfile"))}
-              className="flex items-center gap-2 hover:bg-slate-100 rounded-lg p-1.5 transition-all duration-200"
-            >
-              <div className="w-8 h-8 bg-slate-200 rounded-full flex items-center justify-center">
-                <span className="text-slate-700 font-medium text-xs">
-                  {user?.full_name?.charAt(0)?.toUpperCase() || 'U'}
-                </span>
-              </div>
-            </button>
+            <div className="flex items-center gap-2">
+              <button
+                onClick={toggleViewMode}
+                className="p-1.5 hover:bg-slate-100 rounded-lg transition-all duration-200"
+                title="Toggle view mode"
+              >
+                <RefreshCw className={`w-4 h-4 ${viewMode !== 'auto' ? 'text-[#FAE008]' : 'text-slate-500'}`} />
+              </button>
+              <button
+                onClick={() => navigate(createPageUrl("UserProfile"))}
+                className="flex items-center gap-2 hover:bg-slate-100 rounded-lg p-1.5 transition-all duration-200"
+              >
+                <div className="w-8 h-8 bg-slate-200 rounded-full flex items-center justify-center">
+                  <span className="text-slate-700 font-medium text-xs">
+                    {user?.full_name?.charAt(0)?.toUpperCase() || 'U'}
+                  </span>
+                </div>
+              </button>
+            </div>
           </div>
         </header>
 
@@ -165,7 +183,19 @@ export default function Layout({ children, currentPageName }) {
             </SidebarGroup>
           </SidebarContent>
 
-          <SidebarFooter className="border-t border-[#E2E3E5] p-4">
+          <SidebarFooter className="border-t border-[#E2E3E5] p-4 space-y-3">
+            <div className="flex items-center justify-between px-2">
+              <span className="text-xs text-slate-500 font-medium">View Mode</span>
+              <button
+                onClick={toggleViewMode}
+                className="flex items-center gap-2 px-3 py-1.5 rounded-lg hover:bg-slate-100 transition-all"
+              >
+                <RefreshCw className={`w-4 h-4 ${viewMode !== 'auto' ? 'text-[#FAE008]' : 'text-slate-500'}`} />
+                <span className="text-xs font-semibold text-slate-700 capitalize">
+                  {viewMode === 'auto' ? (isTechnician ? 'Technician' : 'Admin') : viewMode}
+                </span>
+              </button>
+            </div>
             <div className="flex items-center gap-3">
               <button
                 onClick={() => navigate(createPageUrl("UserProfile"))}
