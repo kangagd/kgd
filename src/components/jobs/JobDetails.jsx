@@ -381,7 +381,11 @@ export default function JobDetails({ job, onClose, onStatusChange, onDelete }) {
 
   const handleJobTypeChange = (jobTypeId) => {
     const jobType = jobTypes.find((jt) => jt.id === jobTypeId);
-    handleFieldSave('job_type_id', job.job_type_id, jobTypeId);
+    logChange('job_type_id', job.job_type_id, jobTypeId);
+    updateJobMutation.mutate({ 
+      field: 'job_type_id', 
+      value: jobTypeId
+    });
     if (jobType) {
       updateJobMutation.mutate({ field: 'job_type_name', value: jobType.name });
     }
