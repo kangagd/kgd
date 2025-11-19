@@ -160,17 +160,30 @@ export default function JobList({ jobs, isLoading, onSelectJob }) {
         >
           <CardContent className="p-6">
             <div className="flex items-start justify-between mb-4">
-              <div className="flex-1 min-w-0">
-                <div className="flex items-center gap-2 mb-2">
-                  <h3 className="font-bold text-xl text-[hsl(25,10%,12%)] truncate group-hover:text-[#fae008] transition-colors tracking-tight">{job.customer_name}</h3>
-                  <Badge variant="outline" className="text-xs font-medium text-[hsl(25,8%,45%)] border-[hsl(32,15%,88%)]">
+              <div className="flex-1 min-w-0 space-y-3">
+                <h3 className="text-lg font-semibold text-[#111827] leading-tight group-hover:text-[#FAE008] transition-colors">
+                  {job.customer_name}
+                </h3>
+                
+                <div className="flex items-center gap-2 flex-wrap">
+                  <Badge className="bg-[#F2F4F7] text-[#344054] hover:bg-[#F2F4F7] border-0 font-medium text-sm px-3 py-1 rounded-lg">
                     #{job.job_number}
                   </Badge>
+                  {job.customer_type && (
+                    <Badge className="bg-[#EDE9FE] text-[#6D28D9] hover:bg-[#EDE9FE] border-0 font-semibold text-xs px-3 py-1 rounded-lg">
+                      {job.customer_type}
+                    </Badge>
+                  )}
+                  {job.project_name && (
+                    <Badge className="bg-[#FAE008] text-[#111827] hover:bg-[#FAE008] border-0 font-semibold text-xs px-3 py-1 rounded-lg">
+                      Project: {job.project_name}
+                    </Badge>
+                  )}
                 </div>
                 
-                <div className="flex items-start gap-2 text-[hsl(25,10%,25%)] mb-3">
-                  <MapPin className="w-4 h-4 text-[#fae008] mt-0.5 flex-shrink-0" />
-                  <span className="text-sm font-medium">{job.address}</span>
+                <div className="flex items-start gap-2">
+                  <MapPin className="w-4 h-4 text-[#4B5563] mt-0.5 flex-shrink-0" />
+                  <span className="text-sm text-[#4B5563]">{job.address}</span>
                 </div>
 
                 <div className="flex items-center gap-2">
