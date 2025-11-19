@@ -434,18 +434,18 @@ export default function JobDetails({ job, onClose, onStatusChange, onDelete }) {
                     onClick={() => setShowCustomerEdit(true)}>
                     {job.customer_name}
                   </CardTitle>
-                  {job.project_name &&
                   <Badge className="bg-white text-[#6B7280] hover:bg-white border border-[#E5E7EB] font-medium text-xs px-2.5 py-0.5 rounded-lg">
+                    #{job.job_number}
+                  </Badge>
+                </div>
+                
+                <div className="flex items-center gap-2 flex-wrap">
+                  {job.project_name &&
+                  <Badge className="bg-[#F2F4F7] text-[#344054] hover:bg-[#F2F4F7] border-0 font-medium text-sm px-3 py-1 rounded-lg">
                       <FolderKanban className="w-3 h-3 mr-1" />
                       {job.project_name}
                     </Badge>
                   }
-                </div>
-                
-                <div className="flex items-center gap-2 flex-wrap">
-                  <Badge className="bg-[#F2F4F7] text-[#344054] hover:bg-[#F2F4F7] border-0 font-medium text-sm px-3 py-1 rounded-lg">
-                    #{job.job_number}
-                  </Badge>
                   {job.customer_type &&
                   <Badge className="bg-[#EDE9FE] text-[#6D28D9] hover:bg-[#EDE9FE] border-0 font-semibold text-xs px-3 py-1 rounded-lg">
                       {job.customer_type}
