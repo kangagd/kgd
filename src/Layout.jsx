@@ -40,6 +40,9 @@ export default function Layout({ children, currentPageName }) {
   const location = useLocation();
   const navigate = useNavigate();
   const [user, setUser] = React.useState(null);
+  const [testMode, setTestMode] = React.useState(() => {
+    return localStorage.getItem('testMode') || 'off';
+  });
 
   React.useEffect(() => {
     const loadUser = async () => {
@@ -53,11 +56,19 @@ export default function Layout({ children, currentPageName }) {
     loadUser();
   }, []);
 
+  React.useEffect(() => {
+    localStorage.setItem('testMode', testMode);
+  }, [testMode]);
+
   const handleLogout = async () => {
     await base44.auth.logout();
   };
 
-  const isTechnician = user?.is_field_technician && user?.role !== 'admin';
+  const isTechnician = testMode === 'technician' 
+    ? true 
+    : testMode === 'admin' 
+      ? false 
+      : user?.is_field_technician && user?.role !== 'admin';
   const navigationItems = isTechnician ? technicianNavigationItems : adminNavigationItems;
 
   if (isTechnician) {
@@ -159,6 +170,18 @@ export default function Layout({ children, currentPageName }) {
           </SidebarContent>
 
           <SidebarFooter className="border-t border-slate-200 p-4">
+            <div className="mb-3 p-2 bg-amber-50 border border-amber-200 rounded-lg">
+              <div className="text-xs font-semibold text-amber-900 mb-2">Test Mode</div>
+              <select
+                value={testMode}
+                onChange={(e) => setTestMode(e.target.value)}
+                className="w-full text-xs border border-amber-300 rounded px-2 py-1 bg-white"
+              >
+                <option value="off">Off (Real Role)</option>
+                <option value="admin">Force Admin View</option>
+                <option value="technician">Force Technician View</option>
+              </select>
+            </div>
             <div className="flex items-center gap-3">
               <button
                 onClick={() => navigate(createPageUrl("UserProfile"))}
