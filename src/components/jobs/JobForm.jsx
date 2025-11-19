@@ -14,12 +14,8 @@ import {
   DialogTitle,
   DialogFooter,
 } from "@/components/ui/dialog";
-import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
-import { ChevronDown } from "lucide-react";
 import MultiTechnicianSelect from "./MultiTechnicianSelect";
 import RichTextEditor from "../common/RichTextEditor";
-import { shouldAutoSchedule } from "./jobStatusHelper";
-import { toast } from "sonner";
 
 const JOB_TYPE_DURATIONS = {
   "Initial Site Visit": 2,
@@ -99,88 +95,25 @@ export default function JobForm({ job, technicians, onSubmit, onCancel, isSubmit
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-
-    if (!formData.customer_id) {
-      toast.error("Please select a customer");
-      return;
-    }
-
-    if (!formData.address || formData.address.trim() === "") {
-      toast.error("Please enter a service address");
-      return;
-    }
-
-    if (!formData.scheduled_date) {
-      toast.error("Please select a scheduled date");
-      return;
-    }
     
-    let currentJobNumber = formData.job_number;
     if (!job) {
       const allJobs = await base44.entities.Job.list('-job_number', 1);
       const lastJobNumber = allJobs && allJobs[0]?.job_number ? allJobs[0].job_number : 4999;
-      currentJobNumber = lastJobNumber + 1;
+      formData.job_number = lastJobNumber + 1;
     }
     
-    // Auto-determine status
-    let status = formData.status || 'open';
-    if (shouldAutoSchedule(formData.scheduled_date, formData.scheduled_time)) {
-      status = 'scheduled';
-    }
-
-    let jobData = {
+    const submitData = {
       ...formData,
-      job_number: currentJobNumber,
-      status: status,
-      assigned_to: formData.assigned_to || [],
-      assigned_to_name: formData.assigned_to
-        ? formData.assigned_to.map((email) => {
-            const tech = technicians.find((t) => t.email === email);
-            return tech?.full_name;
-          }).filter(Boolean)
-        : [],
+      assigned_to: Array.isArray(formData.assigned_to) ? formData.assigned_to : [],
+      assigned_to_name: Array.isArray(formData.assigned_to_name) ? formData.assigned_to_name : []
     };
 
-    if (formData.project_id) {
-      const project = projects.find(p => p.id === formData.project_id);
-      if (project) {
-        jobData.project_name = project.title;
-      } else {
-        jobData.project_name = ""; // Clear if project not found
-      }
-    } else {
-        jobData.project_name = ""; // Clear if no project_id
-    }
-
-    const customer = customers.find(c => c.id === formData.customer_id);
-    if (customer) {
-      jobData.customer_name = customer.name;
-      jobData.customer_phone = customer.phone || "";
-      jobData.customer_email = customer.email || "";
-      jobData.customer_type = customer.customer_type || "";
-    } else {
-        jobData.customer_name = "";
-        jobData.customer_phone = "";
-        jobData.customer_email = "";
-        jobData.customer_type = "";
-    }
-
-    // The original formData.job_type is already a string (e.g., "Installation")
-    // If the intention was to use an ID and map to a name, a jobTypes list would be needed.
-    // Based on existing code, formData.job_type already holds the display name.
-    jobData.job_type_name = formData.job_type;
+    // Remove empty string values for enum fields
+    if (!submitData.job_type) delete submitData.job_type;
+    if (!submitData.product) delete submitData.product;
+    if (!submitData.outcome) delete submitData.outcome;
     
-    // Remove empty fields, preserving original behavior
-    if (!jobData.job_type) delete jobData.job_type;
-    if (!jobData.product) delete jobData.product;
-    if (!jobData.outcome) delete jobData.outcome;
-    if (!jobData.project_id) delete jobData.project_id; // Don't send empty project_id if not selected
-
-    if (status === 'scheduled' && !job) {
-      toast.success(`Job will be created with status: Scheduled`);
-    }
-
-    onSubmit(jobData);
+    onSubmit(submitData);
   };
 
   const handleCustomerChange = (customerId) => {
@@ -204,7 +137,6 @@ export default function JobForm({ job, technicians, onSubmit, onCancel, isSubmit
         ...formData,
         project_id: "",
         project_name: "",
-        // When un-assigning project, customer details should remain what they were, or be cleared if no customer selected
       });
     } else {
       const project = projects.find(p => p.id === projectId);
@@ -295,7 +227,6 @@ export default function JobForm({ job, technicians, onSubmit, onCancel, isSubmit
       setLiveDuplicates([]);
     } catch (error) {
       console.error("Error creating customer:", error);
-      toast.error("Error creating customer. Please try again.");
     }
   };
 
@@ -350,7 +281,6 @@ export default function JobForm({ job, technicians, onSubmit, onCancel, isSubmit
       });
     } catch (error) {
       console.error("Error uploading images:", error);
-      toast.error("Failed to upload images. Please try again.");
     }
     setUploadingImages(false);
   };
@@ -365,7 +295,6 @@ export default function JobForm({ job, technicians, onSubmit, onCancel, isSubmit
       setFormData({ ...formData, quote_url: file_url });
     } catch (error) {
       console.error("Error uploading quote:", error);
-      toast.error("Failed to upload quote. Please try again.");
     }
     setUploadingQuote(false);
   };
@@ -380,7 +309,6 @@ export default function JobForm({ job, technicians, onSubmit, onCancel, isSubmit
       setFormData({ ...formData, invoice_url: file_url });
     } catch (error) {
       console.error("Error uploading invoice:", error);
-      toast.error("Failed to upload invoice. Please try again.");
     }
     setUploadingInvoice(false);
   };
@@ -394,386 +322,342 @@ export default function JobForm({ job, technicians, onSubmit, onCancel, isSubmit
 
   return (
     <>
-      <div className="p-4 space-y-3">
-        <Card className="card-enhanced">
-          <CardContent className="p-4">
-            <div className="flex items-start gap-3">
-              <Button 
-                variant="ghost" 
-                size="icon" 
-                onClick={onCancel}
-                className="hover:bg-slate-100 h-9 w-9 flex-shrink-0"
-              >
-                <ArrowLeft className="w-5 h-5" />
-              </Button>
-              <h1 className="text-xl font-semibold text-slate-900">
-                {job ? `Edit Job #${job.job_number}` : formData.project_name ? `New Job - ${formData.project_name}` : 'Create New Job'}
-              </h1>
-            </div>
-          </CardContent>
-        </Card>
+      <Card className="border-2 border-slate-200 shadow-lg rounded-2xl">
+        <CardHeader className="border-b-2 border-slate-200 bg-gradient-to-r from-slate-50 to-white p-6">
+          <div className="flex items-center gap-4">
+            <Button 
+              variant="ghost" 
+              size="icon" 
+              onClick={onCancel}
+              className="hover:bg-slate-200 transition-colors"
+            >
+              <ArrowLeft className="w-5 h-5" />
+            </Button>
+            <CardTitle className="text-2xl font-bold text-[#000000] tracking-tight">
+              {job ? `Edit Job #${job.job_number}` : formData.project_name ? `New Job - ${formData.project_name}` : 'Create New Job'}
+            </CardTitle>
+          </div>
+        </CardHeader>
+        <form onSubmit={handleSubmit}>
+          <CardContent className="p-6 space-y-6">
+            {!preselectedProjectId && (
+              <div className="space-y-2">
+                <Label htmlFor="project_id" className="text-sm font-semibold text-[#000000]">Project (Optional)</Label>
+                <Select 
+                  value={formData.project_id || 'null'} 
+                  onValueChange={handleProjectChange}
+                >
+                  <SelectTrigger className="border-2 border-slate-300 focus:border-[#fae008] focus:ring-2 focus:ring-[#fae008]/20 transition-all">
+                    <SelectValue placeholder="Standalone job or select project" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="null">No Project (Standalone)</SelectItem>
+                    {projects.map((project) => (
+                      <SelectItem key={project.id} value={project.id}>
+                        {project.title}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+            )}
 
-        <form onSubmit={handleSubmit} className="space-y-3">
-          <Card className="card-enhanced">
-            <CardContent className="p-4 space-y-3">
-              <span className="section-header">Basic Information</span>
-              
-              {!preselectedProjectId && (
-                <div className="space-y-1">
-                  <Label htmlFor="project_id" className="text-sm font-medium text-slate-700">Project (Optional)</Label>
-                  <Select 
-                    value={formData.project_id || 'null'} 
-                    onValueChange={handleProjectChange}
+            <div className="space-y-2">
+              <Label htmlFor="customer_id" className="text-sm font-semibold text-[#000000]">Customer *</Label>
+              <div className="flex gap-2">
+                <Select 
+                  value={formData.customer_id} 
+                  onValueChange={handleCustomerChange} 
+                  required
+                  disabled={!!formData.project_id}
+                >
+                  <SelectTrigger className="flex-1 border-2 border-slate-300 focus:border-[#fae008] focus:ring-2 focus:ring-[#fae008]/20 transition-all">
+                    <SelectValue placeholder="Select customer" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {customers.map((customer) => (
+                      <SelectItem key={customer.id} value={customer.id}>
+                        {customer.name}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+                {!formData.project_id && (
+                  <Button
+                    type="button"
+                    variant="outline"
+                    onClick={() => setShowNewCustomerDialog(true)}
+                    className="border-2 hover:bg-slate-100"
                   >
-                    <SelectTrigger className="border-slate-300 h-10">
-                      <SelectValue placeholder="Standalone job or select project" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="null">No Project (Standalone)</SelectItem>
-                      {projects.map((project) => (
-                        <SelectItem key={project.id} value={project.id}>
-                          {project.title}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </div>
-              )}
-
-              <div className="space-y-1">
-                <Label htmlFor="customer_id" className="text-sm font-medium text-slate-700">Customer *</Label>
-                <div className="flex gap-2">
-                  <Select 
-                    value={formData.customer_id} 
-                    onValueChange={handleCustomerChange} 
-                    required
-                    disabled={!!formData.project_id}
-                  >
-                    <SelectTrigger className="flex-1 input-enhanced">
-                      <SelectValue placeholder="Select customer" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {customers.map((customer) => (
-                        <SelectItem key={customer.id} value={customer.id}>
-                          {customer.name}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                  {!formData.project_id && (
-                    <Button
-                      type="button"
-                      onClick={() => setShowNewCustomerDialog(true)}
-                      className="btn-secondary h-[var(--button-height)] w-[var(--button-height)] p-0"
-                    >
-                      <Plus className="w-4 h-4" />
-                    </Button>
-                  )}
-                </div>
-                {formData.project_id && (
-                  <p className="text-xs text-slate-500 mt-1">Customer from project</p>
+                    <Plus className="w-4 h-4" />
+                  </Button>
                 )}
               </div>
+              {formData.project_id && (
+                <p className="text-xs text-slate-500">Customer from project</p>
+              )}
+            </div>
 
-              <div className="space-y-1">
-                <Label htmlFor="address" className="text-sm font-medium text-slate-700">Service Address *</Label>
-                <Input
-                  id="address"
-                  value={formData.address}
-                  onChange={(e) => setFormData({ ...formData, address: e.target.value })}
-                  required
-                  placeholder="Enter service address"
-                  className="input-enhanced"
-                />
-              </div>
-            </CardContent>
-          </Card>
+            <div className="space-y-2">
+              <Label htmlFor="address" className="text-sm font-semibold text-[#000000]">Service Address *</Label>
+              <Input
+                id="address"
+                value={formData.address}
+                onChange={(e) => setFormData({ ...formData, address: e.target.value })}
+                required
+                className="border-2 border-slate-300 focus:border-[#fae008] focus:ring-2 focus:ring-[#fae008]/20 transition-all"
+              />
+            </div>
 
-          <Card className="card-enhanced">
-            <CardContent className="p-4 space-y-3">
-              <span className="section-header">Job Details</span>
-              
-              <div className="grid md:grid-cols-2 gap-3">
-                <div className="space-y-1">
-                  <Label htmlFor="product" className="text-sm font-medium text-slate-700">Product</Label>
-                  <Select value={formData.product} onValueChange={(val) => setFormData({ ...formData, product: val })}>
-                    <SelectTrigger className="input-enhanced">
-                      <SelectValue placeholder="Select product" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="Garage Door">Garage Door</SelectItem>
-                      <SelectItem value="Gate">Gate</SelectItem>
-                      <SelectItem value="Roller Shutter">Roller Shutter</SelectItem>
-                      <SelectItem value="Multiple">Multiple</SelectItem>
-                      <SelectItem value="Custom Garage Door">Custom Garage Door</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
-
-                <div className="space-y-1">
-                  <Label htmlFor="job_type" className="text-sm font-medium text-slate-700">Job Type</Label>
-                  <Select value={formData.job_type} onValueChange={handleJobTypeChange}>
-                    <SelectTrigger className="input-enhanced">
-                      <SelectValue placeholder="Select job type" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="Initial Site Visit">Initial Site Visit</SelectItem>
-                      <SelectItem value="Final Measure">Final Measure</SelectItem>
-                      <SelectItem value="Installation">Installation</SelectItem>
-                      <SelectItem value="On site Repair">On site Repair</SelectItem>
-                      <SelectItem value="Investigation">Investigation</SelectItem>
-                      <SelectItem value="Maintenance">Maintenance</SelectItem>
-                      <SelectItem value="Call Back">Call Back</SelectItem>
-                      <SelectItem value="Emergency Repair">Emergency Repair</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
-
-                <div className="space-y-1">
-                  <Label htmlFor="status" className="text-sm font-medium text-slate-700">Status</Label>
-                  <Select value={formData.status} onValueChange={(val) => setFormData({ ...formData, status: val })}>
-                    <SelectTrigger className="input-enhanced">
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="open">Open</SelectItem>
-                      <SelectItem value="scheduled">Scheduled</SelectItem>
-                      <SelectItem value="completed">Completed</SelectItem>
-                      <SelectItem value="cancelled">Cancelled</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
-
-                <div className="space-y-1">
-                  <Label htmlFor="expected_duration" className="text-sm font-medium text-slate-700">Duration (hours)</Label>
-                  <Input
-                    id="expected_duration"
-                    type="number"
-                    step="0.5"
-                    min="0"
-                    value={formData.expected_duration || ""}
-                    onChange={(e) => setFormData({ ...formData, expected_duration: e.target.value ? parseFloat(e.target.value) : null })}
-                    placeholder="Duration"
-                    className="input-enhanced"
-                  />
-                </div>
+            <div className="grid md:grid-cols-2 gap-6">
+              <div className="space-y-2">
+                <Label htmlFor="product" className="text-sm font-semibold text-[#000000]">Product</Label>
+                <Select value={formData.product} onValueChange={(val) => setFormData({ ...formData, product: val })}>
+                  <SelectTrigger className="border-2 border-slate-300 focus:border-[#fae008] focus:ring-2 focus:ring-[#fae008]/20">
+                    <SelectValue placeholder="Select product" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="Garage Door">Garage Door</SelectItem>
+                    <SelectItem value="Gate">Gate</SelectItem>
+                    <SelectItem value="Roller Shutter">Roller Shutter</SelectItem>
+                    <SelectItem value="Multiple">Multiple</SelectItem>
+                    <SelectItem value="Custom Garage Door">Custom Garage Door</SelectItem>
+                  </SelectContent>
+                </Select>
               </div>
 
-              <div className="space-y-1">
-                <Label htmlFor="assigned_to" className="text-sm font-medium text-slate-700">Assign Technicians</Label>
+              <div className="space-y-2">
+                <Label htmlFor="job_type" className="text-sm font-semibold text-[#000000]">Job Type</Label>
+                <Select value={formData.job_type} onValueChange={handleJobTypeChange}>
+                  <SelectTrigger className="border-2 border-slate-300 focus:border-[#fae008] focus:ring-2 focus:ring-[#fae008]/20">
+                    <SelectValue placeholder="Select job type" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="Initial Site Visit">Initial Site Visit</SelectItem>
+                    <SelectItem value="Final Measure">Final Measure</SelectItem>
+                    <SelectItem value="Installation">Installation</SelectItem>
+                    <SelectItem value="On site Repair">On site Repair</SelectItem>
+                    <SelectItem value="Investigation">Investigation</SelectItem>
+                    <SelectItem value="Maintenance">Maintenance</SelectItem>
+                    <SelectItem value="Call Back">Call Back</SelectItem>
+                    <SelectItem value="Emergency Repair">Emergency Repair</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="assigned_to" className="text-sm font-semibold text-[#000000]">Assign Technicians</Label>
                 <MultiTechnicianSelect
                   selectedEmails={formData.assigned_to}
                   technicians={technicians}
                   onChange={handleTechnicianChange}
                 />
               </div>
-            </CardContent>
-          </Card>
 
-          <Card className="card-enhanced">
-            <CardContent className="p-4 space-y-3">
-              <span className="section-header">Schedule</span>
-              
-              <div className="grid md:grid-cols-2 gap-3">
-                <div className="space-y-1">
-                  <Label htmlFor="scheduled_date" className="text-sm font-medium text-slate-700">Date *</Label>
-                  <Input
-                    id="scheduled_date"
-                    type="date"
-                    value={formData.scheduled_date}
-                    onChange={(e) => setFormData({ ...formData, scheduled_date: e.target.value })}
-                    required
-                    className="input-enhanced"
-                  />
-                </div>
-
-                <div className="space-y-1">
-                  <Label htmlFor="scheduled_time" className="text-sm font-medium text-slate-700">Time</Label>
-                  <Input
-                    id="scheduled_time"
-                    type="time"
-                    value={formData.scheduled_time}
-                    onChange={(e) => setFormData({ ...formData, scheduled_time: e.target.value })}
-                    className="input-enhanced"
-                  />
-                </div>
+              <div className="space-y-2">
+                <Label htmlFor="status" className="text-sm font-semibold text-[#000000]">Status</Label>
+                <Select value={formData.status} onValueChange={(val) => setFormData({ ...formData, status: val })}>
+                  <SelectTrigger className="border-2 border-slate-300 focus:border-[#fae008] focus:ring-2 focus:ring-[#fae008]/20">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="open">Open</SelectItem>
+                    <SelectItem value="scheduled">Scheduled</SelectItem>
+                    <SelectItem value="completed">Completed</SelectItem>
+                    <SelectItem value="cancelled">Cancelled</SelectItem>
+                  </SelectContent>
+                </Select>
               </div>
-            </CardContent>
-          </Card>
 
-          <Collapsible defaultOpen={false}>
-            <Card className="card-enhanced">
-              <CollapsibleTrigger className="w-full">
-                <CardContent className="p-4">
-                  <div className="flex items-center justify-between">
-                    <span className="section-header">Notes & Additional Info</span>
-                    <ChevronDown className="w-4 h-4 text-slate-400 transition-transform data-[state=open]:rotate-180" />
-                  </div>
-                </CardContent>
-              </CollapsibleTrigger>
-              <CollapsibleContent>
-                <CardContent className="px-4 pb-4 pt-0 space-y-3">
-                  <div className="space-y-1">
-                    <Label htmlFor="notes" className="text-sm font-medium text-slate-700">Notes & Instructions</Label>
-                    <RichTextEditor
-                      value={formData.notes}
-                      onChange={(value) => setFormData({ ...formData, notes: value })}
-                      placeholder="Add any special instructions..."
-                    />
-                  </div>
+              <div className="space-y-2">
+                <Label htmlFor="scheduled_date" className="text-sm font-semibold text-[#000000]">Scheduled Date *</Label>
+                <Input
+                  id="scheduled_date"
+                  type="date"
+                  value={formData.scheduled_date}
+                  onChange={(e) => setFormData({ ...formData, scheduled_date: e.target.value })}
+                  required
+                  className="border-2 border-slate-300 focus:border-[#fae008] focus:ring-2 focus:ring-[#fae008]/20 transition-all"
+                />
+              </div>
 
-                  <div className="space-y-1">
-                    <Label htmlFor="additional_info" className="text-sm font-medium text-slate-700">Additional Info</Label>
-                    <RichTextEditor
-                      value={formData.additional_info}
-                      onChange={(value) => setFormData({ ...formData, additional_info: value })}
-                      placeholder="Add any additional information..."
-                    />
-                  </div>
-                </CardContent>
-              </CollapsibleContent>
-            </Card>
-          </Collapsible>
+              <div className="space-y-2">
+                <Label htmlFor="scheduled_time" className="text-sm font-semibold text-[#000000]">Scheduled Time</Label>
+                <Input
+                  id="scheduled_time"
+                  type="time"
+                  value={formData.scheduled_time}
+                  onChange={(e) => setFormData({ ...formData, scheduled_time: e.target.value })}
+                  className="border-2 border-slate-300 focus:border-[#fae008] focus:ring-2 focus:ring-[#fae008]/20 transition-all"
+                />
+              </div>
 
-          <Collapsible defaultOpen={false}>
-            <Card className="card-enhanced">
-              <CollapsibleTrigger className="w-full">
-                <CardContent className="p-4">
-                  <div className="flex items-center justify-between">
-                    <span className="section-header">File Uploads</span>
-                    <ChevronDown className="w-4 h-4 text-slate-400 transition-transform data-[state=open]:rotate-180" />
+              <div className="space-y-2">
+                <Label htmlFor="expected_duration" className="text-sm font-semibold text-[#000000]">Expected Duration (hours)</Label>
+                <Input
+                  id="expected_duration"
+                  type="number"
+                  step="0.5"
+                  value={formData.expected_duration || ""}
+                  onChange={(e) => setFormData({ ...formData, expected_duration: e.target.value ? parseFloat(e.target.value) : null })}
+                  placeholder="Duration"
+                  className="border-2 border-slate-300 focus:border-[#fae008] focus:ring-2 focus:ring-[#fae008]/20 transition-all"
+                />
+              </div>
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="notes" className="text-sm font-semibold text-[#000000]">Notes & Instructions</Label>
+              <RichTextEditor
+                value={formData.notes}
+                onChange={(value) => setFormData({ ...formData, notes: value })}
+                placeholder="Add any special instructions or notes..."
+              />
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="additional_info" className="text-sm font-semibold text-[#000000]">Additional Info</Label>
+              <RichTextEditor
+                value={formData.additional_info}
+                onChange={(value) => setFormData({ ...formData, additional_info: value })}
+                placeholder="Add any additional information..."
+              />
+            </div>
+
+            <div className="space-y-4 pt-4 border-t-2 border-slate-200">
+              <h3 className="font-bold text-[#000000] tracking-tight">File Uploads</h3>
+              
+              <div className="space-y-2">
+                <Label className="text-sm font-semibold text-[#000000]">Images</Label>
+                <div className="flex items-center gap-2">
+                  <Button
+                    type="button"
+                    variant="outline"
+                    onClick={() => document.getElementById('image-upload').click()}
+                    disabled={uploadingImages}
+                    className="border-2 hover:bg-slate-100"
+                  >
+                    {uploadingImages ? (
+                      <><Loader2 className="w-4 h-4 mr-2 animate-spin" />Uploading...</>
+                    ) : (
+                      <><ImageIcon className="w-4 h-4 mr-2" />Upload Images</>
+                    )}
+                  </Button>
+                  <input
+                    id="image-upload"
+                    type="file"
+                    multiple
+                    accept="image/*"
+                    className="hidden"
+                    onChange={handleImageUpload}
+                  />
+                </div>
+                {formData.image_urls && formData.image_urls.length > 0 && (
+                  <div className="grid grid-cols-3 gap-2 mt-2">
+                    {formData.image_urls.map((url, index) => (
+                      <div key={index} className="relative group">
+                        <img src={url} alt={`Upload ${index + 1}`} className="w-full h-24 object-cover rounded-lg border-2 border-slate-200" />
+                        <button
+                          type="button"
+                          onClick={() => removeImage(index)}
+                          className="absolute top-1 right-1 bg-red-500 text-white rounded-full p-1 opacity-0 group-hover:opacity-100 transition-opacity"
+                        >
+                          <X className="w-3 h-3" />
+                        </button>
+                      </div>
+                    ))}
                   </div>
-                </CardContent>
-              </CollapsibleTrigger>
-              <CollapsibleContent>
-                <CardContent className="px-4 pb-4 pt-0 space-y-3">
-                  <div className="space-y-2">
-                    <Label className="text-sm font-medium text-slate-700">Images</Label>
+                )}
+              </div>
+
+              <div className="grid md:grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <Label className="text-sm font-semibold text-[#000000]">Quote</Label>
+                  <div className="flex items-center gap-2">
                     <Button
                       type="button"
                       variant="outline"
-                      onClick={() => document.getElementById('image-upload').click()}
-                      disabled={uploadingImages}
-                      className="btn-secondary w-full"
+                      onClick={() => document.getElementById('quote-upload').click()}
+                      disabled={uploadingQuote}
+                      className="border-2 hover:bg-slate-100"
                     >
-                      {uploadingImages ? (
+                      {uploadingQuote ? (
                         <><Loader2 className="w-4 h-4 mr-2 animate-spin" />Uploading...</>
                       ) : (
-                        <><ImageIcon className="w-4 h-4 mr-2" />Upload Images</>
+                        <><FileText className="w-4 h-4 mr-2" />Upload Quote</>
                       )}
                     </Button>
                     <input
-                      id="image-upload"
+                      id="quote-upload"
                       type="file"
-                      multiple
-                      accept="image/*"
+                      accept=".pdf,.doc,.docx"
                       className="hidden"
-                      onChange={handleImageUpload}
+                      onChange={handleQuoteUpload}
                     />
-                    {formData.image_urls && formData.image_urls.length > 0 && (
-                      <div className="grid grid-cols-3 gap-2">
-                        {formData.image_urls.map((url, index) => (
-                          <div key={index} className="relative group">
-                            <img src={url} alt={`Upload ${index + 1}`} className="w-full h-20 object-cover rounded border border-slate-200" />
-                            <button
-                              type="button"
-                              onClick={() => removeImage(index)}
-                              className="absolute top-1 right-1 bg-red-500 text-white rounded-full p-1 opacity-0 group-hover:opacity-100 transition-opacity"
-                            >
-                              <X className="w-3 h-3" />
-                            </button>
-                          </div>
-                        ))}
-                      </div>
-                    )}
                   </div>
+                  {formData.quote_url && (
+                    <a href={formData.quote_url} target="_blank" rel="noopener noreferrer" 
+                       className="text-sm text-blue-600 hover:underline flex items-center gap-1">
+                      <FileText className="w-3 h-3" />
+                      View Quote
+                    </a>
+                  )}
+                </div>
 
-                  <div className="grid md:grid-cols-2 gap-3">
-                    <div className="space-y-2">
-                      <Label className="text-sm font-medium text-slate-700">Quote</Label>
-                      <Button
-                        type="button"
-                        variant="outline"
-                        onClick={() => document.getElementById('quote-upload').click()}
-                        disabled={uploadingQuote}
-                        className="btn-secondary w-full"
-                      >
-                        {uploadingQuote ? (
-                          <><Loader2 className="w-4 h-4 mr-2 animate-spin" />Uploading...</>
-                        ) : (
-                          <><FileText className="w-4 h-4 mr-2" />Upload Quote</>
-                        )}
-                      </Button>
-                      <input
-                        id="quote-upload"
-                        type="file"
-                        accept=".pdf,.doc,.docx"
-                        className="hidden"
-                        onChange={handleQuoteUpload}
-                      />
-                      {formData.quote_url && (
-                        <a href={formData.quote_url} target="_blank" rel="noopener noreferrer" 
-                           className="text-xs text-blue-600 hover:underline flex items-center gap-1">
-                          <FileText className="w-3 h-3" />
-                          View Quote
-                        </a>
+                <div className="space-y-2">
+                  <Label className="text-sm font-semibold text-[#000000]">Invoice</Label>
+                  <div className="flex items-center gap-2">
+                    <Button
+                      type="button"
+                      variant="outline"
+                      onClick={() => document.getElementById('invoice-upload').click()}
+                      disabled={uploadingInvoice}
+                      className="border-2 hover:bg-slate-100"
+                    >
+                      {uploadingInvoice ? (
+                        <><Loader2 className="w-4 h-4 mr-2 animate-spin" />Uploading...</>
+                      ) : (
+                        <><FileText className="w-4 h-4 mr-2" />Upload Invoice</>
                       )}
-                    </div>
-
-                    <div className="space-y-2">
-                      <Label className="text-sm font-medium text-slate-700">Invoice</Label>
-                      <Button
-                        type="button"
-                        variant="outline"
-                        onClick={() => document.getElementById('invoice-upload').click()}
-                        disabled={uploadingInvoice}
-                        className="btn-secondary w-full"
-                      >
-                        {uploadingInvoice ? (
-                          <><Loader2 className="w-4 h-4 mr-2 animate-spin" />Uploading...</>
-                        ) : (
-                          <><FileText className="w-4 h-4 mr-2" />Upload Invoice</>
-                        )}
-                      </Button>
-                      <input
-                        id="invoice-upload"
-                        type="file"
-                        accept=".pdf,.doc,.docx"
-                        className="hidden"
-                        onChange={handleInvoiceUpload}
-                      />
-                      {formData.invoice_url && (
-                        <a href={formData.invoice_url} target="_blank" rel="noopener noreferrer"
-                           className="text-xs text-blue-600 hover:underline flex items-center gap-1">
-                          <FileText className="w-3 h-3" />
-                          View Invoice
-                        </a>
-                      )}
-                    </div>
+                    </Button>
+                    <input
+                      id="invoice-upload"
+                      type="file"
+                      accept=".pdf,.doc,.docx"
+                      className="hidden"
+                      onChange={handleInvoiceUpload}
+                    />
                   </div>
-                </CardContent>
-              </CollapsibleContent>
-            </Card>
-          </Collapsible>
-
-          <div className="sticky bottom-0 bg-white border-t-2 border-[#E5E7EB] p-4 flex justify-end gap-3 shadow-lg z-20">
+                  {formData.invoice_url && (
+                    <a href={formData.invoice_url} target="_blank" rel="noopener noreferrer"
+                       className="text-sm text-blue-600 hover:underline flex items-center gap-1">
+                      <FileText className="w-3 h-3" />
+                      View Invoice
+                    </a>
+                  )}
+                </div>
+              </div>
+            </div>
+          </CardContent>
+          <CardFooter className="border-t-2 border-slate-200 flex justify-end gap-3 p-6 bg-slate-50">
             <Button 
               type="button" 
+              variant="outline" 
               onClick={onCancel}
-              className="btn-secondary"
+              className="border-2 hover:bg-white font-semibold"
             >
               Cancel
             </Button>
             <Button 
               type="submit" 
-              disabled={isSubmitting}
-              className="btn-primary"
+              disabled={isSubmitting} 
+              className="bg-[#fae008] hover:bg-[#e5d007] active:bg-[#d4c006] text-[#000000] font-bold shadow-md hover:shadow-lg transition-all"
             >
               {isSubmitting ? 'Saving...' : job ? 'Update Job' : 'Create Job'}
             </Button>
-          </div>
+          </CardFooter>
         </form>
-      </div>
+      </Card>
 
       <Dialog open={showNewCustomerDialog} onOpenChange={(open) => {
         setShowNewCustomerDialog(open);
@@ -781,32 +665,31 @@ export default function JobForm({ job, technicians, onSubmit, onCancel, isSubmit
           setLiveDuplicates([]);
         }
       }}>
-        <DialogContent className="rounded-xl max-w-lg border border-slate-200">
+        <DialogContent className="rounded-2xl max-w-lg">
           <DialogHeader>
-            <DialogTitle className="text-lg font-semibold">Add New Customer</DialogTitle>
+            <DialogTitle className="text-xl font-bold text-[#000000]">New Customer</DialogTitle>
           </DialogHeader>
-          <div className="space-y-3">
-            <div className="space-y-1">
-              <Label htmlFor="new_customer_name" className="text-sm font-medium text-slate-700">Name *</Label>
+          <div className="space-y-4">
+            <div className="space-y-2">
+              <Label htmlFor="new_customer_name" className="text-sm font-semibold text-[#000000]">Name *</Label>
               <Input
                 id="new_customer_name"
                 value={newCustomerData.name}
                 onChange={(e) => handleNewCustomerNameChange(e.target.value)}
-                placeholder="Customer name"
-                className="input-enhanced"
+                className="border-2 border-slate-300 focus:border-[#fae008] focus:ring-2 focus:ring-[#fae008]/20"
               />
               {liveDuplicates.length > 0 && (
-                <div className="mt-2 p-2 bg-amber-50 border border-amber-200 rounded-lg">
-                  <p className="text-xs font-medium text-amber-900 mb-2">Existing customers found:</p>
+                <div className="mt-2 p-2 bg-amber-50 border-2 border-amber-200 rounded-xl">
+                  <p className="text-xs font-semibold text-amber-900 mb-2">Existing customers found:</p>
                   <div className="space-y-1 max-h-40 overflow-y-auto">
                     {liveDuplicates.map((customer) => (
                       <button
                         key={customer.id}
                         type="button"
                         onClick={() => handleUseExistingCustomer(customer)}
-                        className="w-full text-left p-2 bg-white border border-amber-200 rounded-lg hover:bg-slate-50 transition-colors"
+                        className="w-full text-left p-2 bg-white border border-amber-200 rounded-lg hover:border-[#fae008] hover:bg-slate-50 transition-all"
                       >
-                        <div className="font-medium text-sm text-slate-900">{customer.name}</div>
+                        <div className="font-semibold text-sm text-[#000000]">{customer.name}</div>
                         <div className="text-xs text-slate-600">
                           {customer.phone && <span>{customer.phone}</span>}
                           {customer.phone && customer.email && <span> • </span>}
@@ -818,43 +701,42 @@ export default function JobForm({ job, technicians, onSubmit, onCancel, isSubmit
                 </div>
               )}
             </div>
-            <div className="space-y-1">
-              <Label htmlFor="new_customer_phone" className="text-sm font-medium text-slate-700">Phone</Label>
+            <div className="space-y-2">
+              <Label htmlFor="new_customer_phone" className="text-sm font-semibold text-[#000000]">Phone</Label>
               <Input
                 id="new_customer_phone"
                 type="tel"
                 value={newCustomerData.phone}
                 onChange={(e) => setNewCustomerData({ ...newCustomerData, phone: e.target.value })}
-                placeholder="Phone number"
-                className="input-enhanced"
+                className="border-2 border-slate-300 focus:border-[#fae008] focus:ring-2 focus:ring-[#fae008]/20"
               />
             </div>
-            <div className="space-y-1">
-              <Label htmlFor="new_customer_email" className="text-sm font-medium text-slate-700">Email</Label>
+            <div className="space-y-2">
+              <Label htmlFor="new_customer_email" className="text-sm font-semibold text-[#000000]">Email</Label>
               <Input
                 id="new_customer_email"
                 type="email"
                 value={newCustomerData.email}
                 onChange={(e) => setNewCustomerData({ ...newCustomerData, email: e.target.value })}
-                placeholder="Email address"
-                className="input-enhanced"
+                className="border-2 border-slate-300 focus:border-[#fae008] focus:ring-2 focus:ring-[#fae008]/20"
               />
             </div>
           </div>
           <DialogFooter>
             <Button 
+              variant="outline" 
               onClick={() => {
                 setShowNewCustomerDialog(false);
                 setLiveDuplicates([]);
               }}
-              className="btn-secondary"
+              className="border-2 font-semibold"
             >
               Cancel
             </Button>
             <Button 
               onClick={handleCreateNewCustomer}
               disabled={!newCustomerData.name}
-              className="btn-primary"
+              className="bg-[#fae008] hover:bg-[#e5d007] text-[#000000] font-bold"
             >
               Create Customer
             </Button>
@@ -863,28 +745,32 @@ export default function JobForm({ job, technicians, onSubmit, onCancel, isSubmit
       </Dialog>
 
       <Dialog open={showDuplicateDialog} onOpenChange={setShowDuplicateDialog}>
-        <DialogContent className="rounded-xl max-w-2xl border border-slate-200">
+        <DialogContent className="rounded-2xl max-w-2xl">
           <DialogHeader>
-            <DialogTitle className="text-lg font-semibold">Potential Duplicates Found</DialogTitle>
+            <DialogTitle className="text-xl font-bold text-[#000000]">Potential Duplicate Customers Found</DialogTitle>
           </DialogHeader>
-          <div className="space-y-3">
+          <div className="space-y-4">
             <p className="text-sm text-slate-600">
-              We found {potentialDuplicates.length} existing customer{potentialDuplicates.length > 1 ? 's' : ''} that might match.
+              We found {potentialDuplicates.length} existing customer{potentialDuplicates.length > 1 ? 's' : ''} that might match. 
+              Would you like to use one of these instead?
             </p>
             
             <div className="space-y-2 max-h-60 overflow-y-auto">
               {potentialDuplicates.map((customer) => (
                 <div 
                   key={customer.id}
-                  className="p-3 border border-slate-200 rounded-lg hover:bg-slate-50 cursor-pointer transition-colors"
+                  className="p-3 border-2 border-slate-200 rounded-xl hover:border-[#fae008] hover:bg-slate-50 cursor-pointer transition-all"
                   onClick={() => handleUseExistingCustomer(customer)}
                 >
                   <div className="flex items-start justify-between">
                     <div className="flex-1">
-                      <h4 className="font-semibold text-slate-900 text-sm">{customer.name}</h4>
-                      <div className="text-xs text-slate-600 space-y-0.5 mt-1">
+                      <h4 className="font-bold text-[#000000]">{customer.name}</h4>
+                      <div className="text-sm text-slate-600 space-y-0.5 mt-1">
                         {customer.phone && <p>Phone: {customer.phone}</p>}
                         {customer.email && <p>Email: {customer.email}</p>}
+                        {customer.customer_type && (
+                          <p className="text-xs text-slate-500">Type: {customer.customer_type}</p>
+                        )}
                       </div>
                     </div>
                     <Button
@@ -894,7 +780,7 @@ export default function JobForm({ job, technicians, onSubmit, onCancel, isSubmit
                         e.stopPropagation();
                         handleUseExistingCustomer(customer);
                       }}
-                      className="border-slate-300 font-medium h-8 px-3 rounded-lg"
+                      className="border-2 font-semibold"
                     >
                       Use This
                     </Button>
@@ -903,28 +789,31 @@ export default function JobForm({ job, technicians, onSubmit, onCancel, isSubmit
               ))}
             </div>
 
-            <div className="pt-2 border-t border-slate-200">
-              <p className="text-xs text-slate-500 mb-2">New customer:</p>
+            <div className="pt-3 border-t-2 border-slate-200">
+              <p className="text-xs text-slate-500 mb-3">
+                New customer you're trying to create:
+              </p>
               <div className="p-2 bg-slate-50 rounded-lg text-sm">
-                <p className="font-medium text-slate-900">{newCustomerData.name}</p>
-                {newCustomerData.phone && <p className="text-slate-600 text-xs">Phone: {newCustomerData.phone}</p>}
-                {newCustomerData.email && <p className="text-slate-600 text-xs">Email: {newCustomerData.email}</p>}
+                <p className="font-semibold text-[#000000]">{newCustomerData.name}</p>
+                {newCustomerData.phone && <p className="text-slate-600">Phone: {newCustomerData.phone}</p>}
+                {newCustomerData.email && <p className="text-slate-600">Email: {newCustomerData.email}</p>}
               </div>
             </div>
           </div>
           <DialogFooter>
             <Button 
+              variant="outline" 
               onClick={() => {
                 setShowDuplicateDialog(false);
                 setShowNewCustomerDialog(true);
               }}
-              className="btn-secondary"
+              className="border-2 font-semibold"
             >
               Go Back
             </Button>
             <Button 
               onClick={handleForceCreateNew}
-              className="btn-primary"
+              className="bg-[#fae008] hover:bg-[#e5d007] text-[#000000] font-bold"
             >
               Create New Anyway
             </Button>

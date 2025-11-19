@@ -1,8 +1,10 @@
 import React, { useState } from "react";
 import { base44 } from "@/api/base44Client";
 import { useQuery } from "@tanstack/react-query";
+import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Button } from "@/components/ui/button";
+import { ChevronLeft, ChevronRight } from "lucide-react";
 import { format, addDays, subDays, addWeeks, subWeeks, addMonths, subMonths } from "date-fns";
-import ScheduleHeader from "../components/schedule/ScheduleHeader";
 import DayView from "../components/calendar/DayView";
 import WeekView from "../components/calendar/WeekView";
 import MonthView from "../components/calendar/MonthView";
@@ -78,7 +80,7 @@ export default function Calendar() {
 
   if (selectedJob) {
     return (
-      <div className="bg-[#FFFDEF] min-h-screen">
+      <div className="bg-gradient-to-br from-[hsl(32,20%,98%)] to-[hsl(32,25%,94%)] min-h-screen">
         <div className="p-2 md:p-8 max-w-4xl mx-auto">
           <JobDetails
             job={selectedJob}
@@ -92,43 +94,60 @@ export default function Calendar() {
   }
 
   return (
-    <div className="p-4 md:p-8 bg-[#F8F9FA] min-h-screen">
-      <div className="max-w-7xl mx-auto space-y-6">
-        <ScheduleHeader
-          currentDate={currentDate}
-          viewMode={viewMode}
-          onViewModeChange={setViewMode}
-          onNavigate={(action) => {
-            if (action === 'prev') handlePrevious();
-            else if (action === 'next') handleNext();
-            else if (action === 'today') handleToday();
-          }}
-          dateRangeText={getDateRangeText()}
-        />
+    <div className="p-4 md:p-8 bg-gradient-to-br from-[hsl(32,20%,98%)] to-[hsl(32,25%,94%)] min-h-screen">
+      <div className="max-w-7xl mx-auto space-y-4">
+        <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
+          <div>
+            <h1 className="text-2xl md:text-3xl font-bold text-[hsl(25,10%,12%)]">Schedule</h1>
+            <p className="text-[hsl(25,8%,45%)] text-sm mt-1">{getDateRangeText()}</p>
+          </div>
 
-        <div className="flex flex-wrap gap-2 items-center">
-          <span className="text-sm font-semibold text-[#4B5563]">Filter by technician:</span>
-          {technicians.map(tech => (
-            <button
-              key={tech.email}
-              onClick={() => toggleTechnician(tech.email)}
-              className={`px-3 py-1.5 text-xs font-semibold rounded-full transition-all ${
-                selectedTechnicians.includes(tech.email)
-                  ? 'bg-[#111827] text-white'
-                  : 'bg-white text-[#111827] border border-[#E5E7EB] hover:bg-gray-50'
-              }`}
-            >
-              {tech.full_name}
-            </button>
-          ))}
-          {selectedTechnicians.length > 0 && (
-            <button
-              onClick={() => setSelectedTechnicians([])}
-              className="px-3 py-1.5 text-xs font-medium text-[#4B5563] hover:text-[#111827]"
-            >
-              Clear
-            </button>
-          )}
+          <div className="flex gap-2">
+            <Button variant="outline" size="sm" onClick={handlePrevious}>
+              <ChevronLeft className="w-4 h-4" />
+            </Button>
+            <Button variant="outline" size="sm" onClick={handleToday}>
+              Today
+            </Button>
+            <Button variant="outline" size="sm" onClick={handleNext}>
+              <ChevronRight className="w-4 h-4" />
+            </Button>
+          </div>
+        </div>
+
+        <div className="flex flex-col md:flex-row gap-4 items-start md:items-center">
+          <Tabs value={viewMode} onValueChange={setViewMode}>
+            <TabsList>
+              <TabsTrigger value="day">Day</TabsTrigger>
+              <TabsTrigger value="week">Week</TabsTrigger>
+              <TabsTrigger value="month">Month</TabsTrigger>
+            </TabsList>
+          </Tabs>
+
+          <div className="flex flex-wrap gap-2">
+            <span className="text-sm text-[hsl(25,8%,45%)] self-center">Filter by technician:</span>
+            {technicians.map(tech => (
+              <Button
+                key={tech.email}
+                variant={selectedTechnicians.includes(tech.email) ? "default" : "outline"}
+                size="sm"
+                onClick={() => toggleTechnician(tech.email)}
+                className={selectedTechnicians.includes(tech.email) ? "bg-[#fae008] text-[hsl(25,10%,12%)] hover:bg-[#e5d007]" : ""}
+              >
+                {tech.full_name}
+              </Button>
+            ))}
+            {selectedTechnicians.length > 0 && (
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={() => setSelectedTechnicians([])}
+                className="text-[hsl(25,8%,45%)]"
+              >
+                Clear
+              </Button>
+            )}
+          </div>
         </div>
 
         {viewMode === "day" && (

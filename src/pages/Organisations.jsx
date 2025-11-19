@@ -1,6 +1,5 @@
-
 import React, { useState } from "react";
-import { Card, CardContent } from "@/components/ui/card";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
@@ -12,7 +11,7 @@ import OrganisationDetails from "../components/organisations/OrganisationDetails
 
 const organisationTypeColors = {
   "Strata": "bg-purple-100 text-purple-700 border-purple-200",
-  "Builder": "bg-[#FEF8C8] text-slate-700 border-slate-200",
+  "Builder": "bg-blue-100 text-blue-700 border-blue-200",
   "Real Estate": "bg-green-100 text-green-700 border-green-200",
   "Supplier": "bg-orange-100 text-orange-700 border-orange-200",
 };
@@ -93,162 +92,153 @@ export default function Organisations() {
 
   if (showForm) {
     return (
-      <div className="p-4 md:p-8 bg-white min-h-screen">
-        <div className="max-w-4xl mx-auto">
-          <OrganisationForm
-            organisation={editingOrganisation}
-            onSubmit={handleSubmit}
-            onCancel={() => {
-              setShowForm(false);
-              setEditingOrganisation(null);
-            }}
-            isSubmitting={createMutation.isPending || updateMutation.isPending}
-          />
-        </div>
-      </div>
+      <OrganisationForm
+        organisation={editingOrganisation}
+        onSubmit={handleSubmit}
+        onCancel={() => {
+          setShowForm(false);
+          setEditingOrganisation(null);
+        }}
+        isSubmitting={createMutation.isPending || updateMutation.isPending}
+      />
     );
   }
 
   if (selectedOrganisation) {
     return (
-      <div className="p-4 md:p-8 bg-white min-h-screen">
-        <div className="max-w-4xl mx-auto">
-          <OrganisationDetails
-            organisation={selectedOrganisation}
-            onClose={() => setSelectedOrganisation(null)}
-            onEdit={() => handleEdit(selectedOrganisation)}
-            onDelete={() => handleDelete(selectedOrganisation.id)}
-          />
-        </div>
-      </div>
+      <OrganisationDetails
+        organisation={selectedOrganisation}
+        onClose={() => setSelectedOrganisation(null)}
+        onEdit={() => handleEdit(selectedOrganisation)}
+        onDelete={() => handleDelete(selectedOrganisation.id)}
+      />
     );
   }
 
   return (
-    <div className="p-4 md:p-8 bg-white min-h-screen">
-      <div className="max-w-7xl mx-auto">
-        <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-6 gap-4">
-          <div>
-            <h1 className="text-3xl font-bold text-[hsl(25,10%,12%)] tracking-tight">Organisations</h1>
-            <p className="text-[hsl(25,8%,45%)] mt-2">Manage organisations and entities</p>
+    <div className="p-6 max-w-7xl mx-auto bg-gradient-to-br from-[hsl(32,20%,98%)] to-[hsl(32,25%,94%)] min-h-screen">
+      <div className="flex items-center justify-between mb-6">
+        <div className="flex items-center gap-3">
+          <div className="w-12 h-12 bg-[#fae008] rounded-xl flex items-center justify-center shadow-md">
+            <Building2 className="w-6 h-6 text-[hsl(25,10%,12%)]" />
           </div>
-          <Button
-            onClick={() => setShowForm(true)}
-            className="bg-[#fae008] text-black hover:bg-[#e5d007] active:bg-[#d4c006] font-semibold shadow-md hover:shadow-lg transition-all w-full md:w-auto"
-          >
-            <Plus className="w-5 h-5 mr-2" />
-            New Organisation
-          </Button>
+          <h1 className="text-3xl font-bold text-[hsl(25,10%,12%)] tracking-tight">Organisations</h1>
         </div>
+        <Button
+          onClick={() => setShowForm(true)}
+          className="bg-[#fae008] hover:bg-[#e5d007] text-[hsl(25,10%,12%)] font-bold shadow-md hover:shadow-lg transition-all"
+        >
+          <Plus className="w-5 h-5 mr-2" />
+          New Organisation
+        </Button>
+      </div>
 
-        <div className="mb-6">
-          <div className="relative">
-            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-[hsl(25,8%,55%)]" />
-            <Input
-              placeholder="Search organisations..."
-              value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
-              className="pl-11 border-2 border-[hsl(32,15%,88%)] focus:border-[#fae008] focus:ring-2 focus:ring-[#fae008]/20 transition-all h-12 text-base rounded-xl"
-            />
-          </div>
+      <div className="mb-6">
+        <div className="relative">
+          <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-[hsl(25,8%,55%)] w-5 h-5" />
+          <Input
+            placeholder="Search organisations..."
+            value={searchTerm}
+            onChange={(e) => setSearchTerm(e.target.value)}
+            className="pl-10 border-2 border-[hsl(32,15%,88%)] focus:border-[#fae008] focus:ring-2 focus:ring-[#fae008]/20 transition-all"
+          />
         </div>
+      </div>
 
-        {isLoading ? (
-          <div className="grid gap-4">
-            {[1, 2, 3].map((i) => (
-              <Card key={i} className="animate-pulse border-2 border-[hsl(32,15%,88%)] rounded-2xl">
-                <CardContent className="p-4 md:p-6">
-                  <div className="h-6 bg-[hsl(32,15%,88%)] rounded w-1/3 mb-4"></div>
-                  <div className="h-4 bg-[hsl(32,15%,88%)] rounded w-2/3"></div>
-                </CardContent>
-              </Card>
-            ))}
-          </div>
-        ) : filteredOrganisations.length === 0 ? (
-          <Card className="p-12 text-center border-2 border-[hsl(32,15%,88%)] rounded-2xl">
-            <Building2 className="w-16 h-16 mx-auto text-[hsl(32,15%,88%)] mb-4" />
-            <h3 className="text-lg font-bold text-[hsl(25,10%,12%)] mb-2">No organisations found</h3>
-            <p className="text-[hsl(25,8%,45%)] mb-4">
-              {searchTerm ? 'Try adjusting your search' : 'Get started by creating your first organisation'}
-            </p>
-            {!searchTerm && (
-              <Button
-                onClick={() => setShowForm(true)}
-                className="bg-[#fae008] hover:bg-[#e5d007] text-black font-bold"
-              >
-                <Plus className="w-4 h-4 mr-2" />
-                Create Organisation
-              </Button>
-            )}
-          </Card>
-        ) : (
-          <div className="grid gap-4">
-            {filteredOrganisations.map((org) => (
-              <Card
-                key={org.id}
-                className="border-2 border-[hsl(32,15%,88%)] hover:border-[#fae008] hover:shadow-lg transition-all cursor-pointer rounded-2xl"
-                onClick={() => setSelectedOrganisation(org)}
-              >
-                <CardContent className="p-4 md:p-6">
-                  <div className="flex items-start justify-between gap-4">
-                    <div className="flex-1">
-                      <div className="flex items-center gap-2 flex-wrap mb-2">
-                        <h3 className="text-lg font-bold text-[hsl(25,10%,12%)]">{org.name}</h3>
-                        {org.organisation_type && (
-                          <Badge className={`${organisationTypeColors[org.organisation_type]} font-semibold border-2`}>
-                            {org.organisation_type}
-                          </Badge>
-                        )}
-                        {org.status === 'inactive' && (
-                          <Badge variant="outline" className="bg-red-50 text-red-700 border-red-200 font-semibold border-2">
-                            Inactive
-                          </Badge>
-                        )}
-                      </div>
+      {isLoading ? (
+        <div className="grid gap-4">
+          {[1, 2, 3].map((i) => (
+            <Card key={i} className="animate-pulse rounded-2xl">
+              <CardContent className="p-6">
+                <div className="h-6 bg-[hsl(32,15%,88%)] rounded w-1/3 mb-4"></div>
+                <div className="h-4 bg-[hsl(32,15%,88%)] rounded w-2/3"></div>
+              </CardContent>
+            </Card>
+          ))}
+        </div>
+      ) : filteredOrganisations.length === 0 ? (
+        <Card className="p-12 text-center rounded-2xl border-2 border-[hsl(32,15%,88%)]">
+          <Building2 className="w-16 h-16 mx-auto text-[hsl(32,15%,88%)] mb-4" />
+          <h3 className="text-lg font-bold text-[hsl(25,10%,12%)] mb-2">No organisations found</h3>
+          <p className="text-[hsl(25,8%,45%)] mb-4">
+            {searchTerm ? 'Try adjusting your search' : 'Get started by creating your first organisation'}
+          </p>
+          {!searchTerm && (
+            <Button
+              onClick={() => setShowForm(true)}
+              className="bg-[#fae008] hover:bg-[#e5d007] text-[hsl(25,10%,12%)] font-bold"
+            >
+              <Plus className="w-4 h-4 mr-2" />
+              Create Organisation
+            </Button>
+          )}
+        </Card>
+      ) : (
+        <div className="grid gap-4">
+          {filteredOrganisations.map((org) => (
+            <Card
+              key={org.id}
+              className="hover:shadow-lg transition-all cursor-pointer border-2 border-[hsl(32,15%,88%)] rounded-2xl group"
+              onClick={() => setSelectedOrganisation(org)}
+            >
+              <CardContent className="p-6">
+                <div className="flex items-start justify-between">
+                  <div className="flex-1">
+                    <div className="flex items-center gap-3 mb-3">
+                      <h3 className="text-xl font-bold text-[hsl(25,10%,12%)] group-hover:text-[#fae008] transition-colors tracking-tight">
+                        {org.name}
+                      </h3>
+                      {org.organisation_type && (
+                        <Badge className={`${organisationTypeColors[org.organisation_type]} font-semibold border-2`}>
+                          {org.organisation_type}
+                        </Badge>
+                      )}
+                      {org.status === 'inactive' && (
+                        <Badge variant="outline" className="bg-[hsl(32,25%,94%)] text-[hsl(25,8%,45%)] border-[hsl(32,15%,88%)]">
+                          Inactive
+                        </Badge>
+                      )}
+                    </div>
 
+                    <div className="space-y-2 text-sm">
                       {org.organisation_type === "Strata" && org.sp_number && (
-                        <div className="flex items-center gap-2 text-sm text-[hsl(25,8%,45%)] mb-2">
-                          <Hash className="w-4 h-4" />
+                        <div className="flex items-start gap-2 text-[hsl(25,8%,45%)]">
+                          <Hash className="w-4 h-4 text-[hsl(25,8%,55%)] mt-0.5 flex-shrink-0" />
                           <span>SP: {org.sp_number}</span>
                         </div>
                       )}
-
                       {org.address && (
-                        <div className="flex items-start gap-2 text-sm text-[hsl(25,8%,45%)] mb-2">
-                          <MapPin className="w-4 h-4 mt-0.5 flex-shrink-0" />
+                        <div className="flex items-start gap-2 text-[hsl(25,8%,45%)]">
+                          <MapPin className="w-4 h-4 text-[hsl(25,8%,55%)] mt-0.5 flex-shrink-0" />
                           <span>{org.address}</span>
                         </div>
                       )}
-
-                      <div className="flex flex-wrap gap-3 text-sm text-[hsl(25,8%,45%)]">
+                      <div className="flex flex-wrap gap-4">
                         {org.phone && (
-                          <div className="flex items-center gap-2">
-                            <Phone className="w-4 h-4" />
+                          <div className="flex items-center gap-2 text-[hsl(25,8%,45%)]">
+                            <Phone className="w-4 h-4 text-[hsl(25,8%,55%)]" />
                             <span>{org.phone}</span>
                           </div>
                         )}
                         {org.email && (
-                          <div className="flex items-center gap-2">
-                            <Mail className="w-4 h-4" />
+                          <div className="flex items-center gap-2 text-[hsl(25,8%,45%)]">
+                            <Mail className="w-4 h-4 text-[hsl(25,8%,55%)]" />
                             <span>{org.email}</span>
                           </div>
                         )}
                       </div>
-                    </div>
-                    
-                    <div className="text-right text-sm text-[hsl(25,8%,45%)]">
-                      <div className="font-bold text-[hsl(25,10%,12%)]">{getCustomerCount(org.id)} customer{getCustomerCount(org.id) !== 1 ? 's' : ''}</div>
-                      {org.created_date && (
-                        <div className="text-xs">Created {new Date(org.created_date).toLocaleDateString()}</div>
-                      )}
+                      <div className="flex items-center gap-2 text-[hsl(25,8%,45%)] pt-2">
+                        <Users className="w-4 h-4 text-[hsl(25,8%,55%)]" />
+                        <span className="font-semibold">{getCustomerCount(org.id)} customer{getCustomerCount(org.id) !== 1 ? 's' : ''}</span>
+                      </div>
                     </div>
                   </div>
-                </CardContent>
-              </Card>
-            ))}
-          </div>
-        )}
-      </div>
+                </div>
+              </CardContent>
+            </Card>
+          ))}
+        </div>
+      )}
     </div>
   );
 }

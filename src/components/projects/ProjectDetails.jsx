@@ -1,8 +1,8 @@
-import React, { useState } from "react";
-import { Card, CardContent } from "@/components/ui/card";
+import React from "react";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { ArrowLeft, Plus, Edit, Trash2, MapPin, Phone, Mail, FileText, Image as ImageIcon, DollarSign, Users, Package, Briefcase, MoreVertical, Calendar, User as UserIcon, Download, Eye, ClipboardList, Activity, Clock } from "lucide-react";
+import { ArrowLeft, Plus, Edit, Trash2, MapPin, Phone, Mail, FileText, Image as ImageIcon } from "lucide-react";
 import { base44 } from "@/api/base44Client";
 import { useQuery } from "@tanstack/react-query";
 import { useNavigate } from "react-router-dom";
@@ -18,20 +18,37 @@ import {
   AlertDialogTitle,
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
-import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
-import { ChevronDown } from "lucide-react";
-import JobVisitCard from "./JobVisitCard";
+
+const statusColors = {
+  open: "bg-slate-100 text-slate-800",
+  scheduled: "bg-blue-100 text-blue-800",
+  quoted: "bg-purple-100 text-purple-800",
+  invoiced: "bg-indigo-100 text-indigo-800",
+  paid: "bg-green-100 text-green-800",
+  completed: "bg-emerald-100 text-emerald-800",
+  cancelled: "bg-slate-100 text-slate-800"
+};
+
+const projectTypeColors = {
+  "Garage Door Install": "bg-blue-100 text-blue-700",
+  "Gate Install": "bg-green-100 text-green-700",
+  "Roller Shutter Install": "bg-purple-100 text-purple-700",
+  "Repair": "bg-orange-100 text-orange-700",
+  "Maintenance": "bg-indigo-100 text-indigo-700"
+};
+
+const jobStatusColors = {
+  open: "bg-slate-100 text-slate-800",
+  scheduled: "bg-blue-100 text-blue-800",
+  quoted: "bg-purple-100 text-purple-800",
+  invoiced: "bg-indigo-100 text-indigo-800",
+  paid: "bg-green-100 text-green-800",
+  completed: "bg-emerald-100 text-emerald-800",
+  cancelled: "bg-slate-100 text-slate-800"
+};
 
 export default function ProjectDetails({ project, onClose, onEdit, onDelete }) {
   const navigate = useNavigate();
-  const [activeTab, setActiveTab] = useState("overview");
-  const [showDeleteDialog, setShowDeleteDialog] = useState(false);
 
   const { data: projectJobs = [] } = useQuery({
     queryKey: ['projectJobs', project.id],
@@ -45,24 +62,6 @@ export default function ProjectDetails({ project, onClose, onEdit, onDelete }) {
     queryFn: () => base44.entities.Customer.get(project.customer_id),
     enabled: !!project.customer_id
   });
-
-  const { data: allJobSummaries = [] } = useQuery({
-    queryKey: ['projectJobSummaries', project.id],
-    queryFn: async () => {
-      const jobIds = jobs.map(j => j.id);
-      if (jobIds.length === 0) return [];
-      
-      const summaries = await Promise.all(
-        jobIds.map(jobId => base44.entities.JobSummary.filter({ job_id: jobId }, '-checkout_time'))
-      );
-      return summaries.flat();
-    },
-    enabled: jobs.length > 0
-  });
-
-  const getJobSummaries = (jobId) => {
-    return allJobSummaries.filter(s => s.job_id === jobId);
-  };
 
   const handleAddJob = () => {
     navigate(createPageUrl("Jobs") + `?action=new&projectId=${project.id}`);
@@ -80,350 +79,191 @@ export default function ProjectDetails({ project, onClose, onEdit, onDelete }) {
 
   const isInstallType = project.project_type && project.project_type.includes("Install");
 
-  const tabs = [
-    { id: "overview", label: "Overview", icon: ClipboardList },
-    { id: "jobs", label: "Jobs", icon: Briefcase, count: jobs.length },
-    { id: "installation", label: "Installation", icon: Package, show: isInstallType && project.doors?.length > 0 },
-    { id: "attachments", label: "Attachments", icon: ImageIcon, show: (project.image_urls?.length > 0 || project.quote_url || project.invoice_url) },
-    { id: "notes", label: "Notes", icon: FileText, show: project.notes },
-  ].filter(tab => tab.show !== false);
-
   return (
-    <div className="min-h-screen bg-[#F8F9FA]">
-      {/* Header */}
-      <div className="bg-white border-b border-[#E5E7EB] sticky top-0 z-10 shadow-sm">
-        <div className="p-4">
-          <div className="flex items-start justify-between gap-4 mb-4">
-            <div className="flex items-start gap-3 flex-1 min-w-0">
-              <Button 
-                variant="ghost" 
-                size="icon" 
-                onClick={onClose}
-                className="h-10 w-10 flex-shrink-0 hover:bg-gray-100"
-              >
-                <ArrowLeft className="w-5 h-5" />
-              </Button>
-              <div className="flex-1 min-w-0">
-                <h1 className="text-xl font-bold text-[#111827] mb-1">{project.title}</h1>
-                <p className="text-sm text-[#4B5563]">{project.project_type}</p>
+    <Card className="border-2 border-slate-200 shadow-lg rounded-2xl">
+      <CardHeader className="border-b-2 border-slate-200 bg-gradient-to-r from-slate-50 to-white p-6">
+        <div className="flex items-start justify-between gap-4">
+          <div className="flex items-start gap-4 flex-1">
+            <Button 
+              variant="ghost" 
+              size="icon" 
+              onClick={onClose}
+              className="hover:bg-slate-200 transition-colors flex-shrink-0"
+            >
+              <ArrowLeft className="w-5 h-5" />
+            </Button>
+            <div className="flex-1">
+              <CardTitle className="text-2xl font-bold text-[#000000] mb-2">{project.title}</CardTitle>
+              <div className="flex gap-2 flex-wrap">
+                {project.project_type && (
+                  <Badge className={`${projectTypeColors[project.project_type]} font-semibold border-2`}>
+                    {project.project_type}
+                  </Badge>
+                )}
+                <Badge className={`${statusColors[project.status]} font-semibold border-2`}>
+                  {project.status}
+                </Badge>
+                {project.stage && (
+                  <Badge variant="outline" className="font-semibold border-2">
+                    {project.stage.replace(/_/g, ' ')}
+                  </Badge>
+                )}
               </div>
             </div>
-            <div className="flex items-center gap-2 flex-shrink-0">
-              <Badge 
-                className="capitalize font-semibold text-xs py-1 px-3 rounded-full"
-                style={{ 
-                  backgroundColor: '#FAE008',
-                  color: '#000000'
-                }}
-              >
-                {project.status.replace(/_/g, ' ')}
-              </Badge>
-              <DropdownMenu>
-                <DropdownMenuTrigger asChild>
-                  <Button variant="ghost" size="icon" className="h-10 w-10 hover:bg-gray-100">
-                    <MoreVertical className="w-5 h-5" />
-                  </Button>
-                </DropdownMenuTrigger>
-                <DropdownMenuContent align="end" className="w-48">
-                  <DropdownMenuItem onClick={() => onEdit(project)}>
-                    <Edit className="w-4 h-4 mr-2" />
-                    Edit Project
-                  </DropdownMenuItem>
-                  <DropdownMenuItem onClick={handleAddJob}>
-                    <Plus className="w-4 h-4 mr-2" />
-                    Add Job
-                  </DropdownMenuItem>
-                  <DropdownMenuItem 
-                    onClick={() => setShowDeleteDialog(true)}
-                    className="text-red-600"
+          </div>
+          <div className="flex gap-2 flex-shrink-0">
+            <Button
+              variant="outline"
+              size="icon"
+              onClick={() => onEdit(project)}
+              className="border-2 hover:bg-slate-100"
+            >
+              <Edit className="w-4 h-4" />
+            </Button>
+            <AlertDialog>
+              <AlertDialogTrigger asChild>
+                <Button
+                  variant="outline"
+                  size="icon"
+                  className="border-2 hover:bg-red-100 hover:text-red-600"
+                >
+                  <Trash2 className="w-4 h-4" />
+                </Button>
+              </AlertDialogTrigger>
+              <AlertDialogContent className="rounded-2xl border-2 border-slate-200">
+                <AlertDialogHeader>
+                  <AlertDialogTitle>Delete Project?</AlertDialogTitle>
+                  <AlertDialogDescription>
+                    This project will be moved to the archive. Associated jobs will not be deleted.
+                  </AlertDialogDescription>
+                </AlertDialogHeader>
+                <AlertDialogFooter>
+                  <AlertDialogCancel className="rounded-xl font-semibold border-2">Cancel</AlertDialogCancel>
+                  <AlertDialogAction
+                    onClick={() => onDelete(project.id)}
+                    className="bg-red-600 hover:bg-red-700 rounded-xl font-semibold"
                   >
-                    <Trash2 className="w-4 h-4 mr-2" />
                     Delete
-                  </DropdownMenuItem>
-                </DropdownMenuContent>
-              </DropdownMenu>
+                  </AlertDialogAction>
+                </AlertDialogFooter>
+              </AlertDialogContent>
+            </AlertDialog>
+          </div>
+        </div>
+      </CardHeader>
+
+      <CardContent className="p-6 space-y-6">
+        <div className="bg-slate-50 rounded-xl p-4 border-2 border-slate-200">
+          <h3 className="font-bold text-[#000000] mb-3 flex items-center gap-2">
+            Customer Information
+          </h3>
+          <div className="space-y-2">
+            <div className="flex items-center gap-2 flex-wrap">
+              <div 
+                className="font-bold text-lg text-[#000000] cursor-pointer hover:text-[#fae008] transition-colors"
+                onClick={handleCustomerClick}
+              >
+                {project.customer_name}
+              </div>
+              {customer?.customer_type && (
+                <Badge variant="outline" className="font-semibold border-2">
+                  {customer.customer_type}
+                </Badge>
+              )}
+            </div>
+            {project.address && (
+              <div className="flex items-start gap-2 text-sm text-slate-600">
+                <MapPin className="w-4 h-4 mt-0.5 flex-shrink-0" />
+                <span>{project.address}</span>
+              </div>
+            )}
+            <div className="flex gap-3">
+              {project.customer_phone && (
+                <Button
+                  size="sm"
+                  variant="ghost"
+                  onClick={() => window.location.href = `tel:${project.customer_phone}`}
+                  className="hover:bg-blue-100 text-slate-600 hover:text-blue-700"
+                >
+                  <Phone className="w-4 h-4 mr-1" />
+                  Call
+                </Button>
+              )}
+              {project.customer_email && (
+                <Button
+                  size="sm"
+                  variant="ghost"
+                  onClick={() => window.location.href = `mailto:${project.customer_email}`}
+                  className="hover:bg-purple-100 text-slate-600 hover:text-purple-700"
+                >
+                  <Mail className="w-4 h-4 mr-1" />
+                  Email
+                </Button>
+              )}
             </div>
           </div>
         </div>
 
-        {/* Tab Navigation */}
-        <div className="flex overflow-x-auto px-4 gap-1 no-scrollbar border-t border-[#E5E7EB]">
-          {tabs.map((tab) => (
-            <button
-              key={tab.id}
-              onClick={() => setActiveTab(tab.id)}
-              className={`flex items-center gap-2 px-4 py-3 text-sm font-semibold whitespace-nowrap border-b-2 transition-colors flex-shrink-0 ${
-                activeTab === tab.id
-                  ? 'border-[#FAE008] text-[#111827] bg-[#FFFEF0]'
-                  : 'border-transparent text-[#4B5563] hover:text-[#111827] hover:bg-gray-50'
-              }`}
-            >
-              <tab.icon className="w-4 h-4" />
-              {tab.label}
-              {tab.count !== undefined && (
-                <span className="bg-gray-100 text-[#4B5563] rounded-full px-2 py-0.5 text-xs font-bold">
-                  {tab.count}
-                </span>
-              )}
-            </button>
-          ))}
-        </div>
-      </div>
+        {project.description && (
+          <div>
+            <h3 className="font-bold text-[#000000] mb-2">Description</h3>
+            <div 
+              className="text-slate-700 prose prose-sm max-w-none"
+              dangerouslySetInnerHTML={{ __html: project.description }}
+            />
+          </div>
+        )}
 
-      {/* Main Content */}
-      <div className="p-4 space-y-4 pb-24 max-w-4xl mx-auto">
-        {activeTab === "overview" && (
-          <>
-            {/* Project Summary */}
-            <Card className="card-enhanced">
-              <CardContent className="p-5 space-y-4">
-                <h3 className="section-header">Project Summary</h3>
-                
-                <div 
-                  className="cursor-pointer hover:text-[#FAE008] transition-colors"
-                  onClick={handleCustomerClick}
-                >
-                  <div className="text-xs font-medium text-[#4B5563] mb-2">Customer</div>
-                  <div className="text-base font-semibold text-[#111827]">{project.customer_name}</div>
-                </div>
-
-                {project.address && (
-                  <div>
-                    <div className="text-xs font-medium text-[#4B5563] mb-2">Address</div>
-                    <div className="flex items-start gap-2">
-                      <MapPin className="w-5 h-5 text-[#4B5563] mt-0.5 flex-shrink-0" />
-                      <span className="text-sm text-[#111827]">{project.address}</span>
-                    </div>
-                  </div>
-                )}
-
-                <div className="grid grid-cols-2 gap-3 pt-3 border-t border-[#E5E7EB]">
-                  {project.customer_phone && (
-                    <Button
-                      size="lg"
-                      onClick={() => window.location.href = `tel:${project.customer_phone}`}
-                      className="bg-[#FAE008] hover:bg-[#e5d007] text-black font-semibold h-12 w-full"
-                    >
-                      <Phone className="w-5 h-5 mr-2" />
-                      Call
-                    </Button>
-                  )}
-                  {project.customer_email && (
-                    <Button
-                      size="lg"
-                      variant="outline"
-                      onClick={() => window.location.href = `mailto:${project.customer_email}`}
-                      className="h-12 w-full"
-                    >
-                      <Mail className="w-5 h-5 mr-2" />
-                      Email
-                    </Button>
-                  )}
-                </div>
-
-                {project.created_date && (
-                  <div className="pt-3 border-t border-[#E5E7EB]">
-                    <div className="text-xs font-medium text-[#4B5563] mb-2">Created</div>
-                    <div className="text-sm text-[#111827]">{new Date(project.created_date).toLocaleDateString()}</div>
-                  </div>
-                )}
-              </CardContent>
-            </Card>
-
-            {/* Description */}
-            {project.description && (
-              <Card className="card-enhanced">
-                <CardContent className="p-5">
-                  <h3 className="section-header">Description</h3>
-                  <Collapsible>
-                    <div 
-                      className="text-xs md:text-[14px] text-[#111111] leading-relaxed prose prose-sm max-w-none line-clamp-4"
-                      dangerouslySetInnerHTML={{ __html: project.description }}
-                    />
-                    <CollapsibleTrigger asChild>
-                      <Button variant="ghost" size="sm" className="mt-1.5 md:mt-2 h-7 md:h-8 text-xs md:text-[13px]">
-                        <ChevronDown className="w-3.5 h-3.5 md:w-4 md:h-4 mr-1" />
-                        Show more
-                      </Button>
-                    </CollapsibleTrigger>
-                    <CollapsibleContent>
-                      <div 
-                        className="text-xs md:text-[14px] text-[#111111] leading-relaxed prose prose-sm max-w-none mt-1.5 md:mt-2"
-                        dangerouslySetInnerHTML={{ __html: project.description }}
-                      />
-                    </CollapsibleContent>
-                  </Collapsible>
-                </CardContent>
-              </Card>
-            )}
-
-            {/* Financials */}
-            {(project.quote_value || project.invoice_value || project.payment_received) && (
-              <Card className="card-enhanced">
-                <CardContent className="p-5">
-                  <h3 className="section-header">Financials</h3>
-                  <div className="grid grid-cols-3 gap-2 md:gap-4">
-                    {project.quote_value && (
+        {isInstallType && project.doors && project.doors.length > 0 && (
+          <div className="bg-blue-50 rounded-xl p-4 border-2 border-blue-200">
+            <h3 className="font-bold text-[#000000] mb-3">Installation Details</h3>
+            <div className="space-y-3">
+              {project.doors.map((door, idx) => (
+                <div key={idx} className="bg-white rounded-lg p-3 border border-blue-200">
+                  <div className="font-semibold text-sm text-blue-900 mb-2">Door {idx + 1}</div>
+                  <div className="grid grid-cols-2 gap-2 text-sm">
+                    {door.height && (
                       <div>
-                        <div className="text-[10px] md:text-[12px] text-[#4F4F4F] mb-0.5 md:mb-1">Quote</div>
-                        <div className="text-sm md:text-[18px] font-semibold text-[#111111]">${project.quote_value}</div>
+                        <span className="text-slate-600">Height:</span>
+                        <span className="ml-1 font-medium text-[#000000]">{door.height}</span>
                       </div>
                     )}
-                    {project.invoice_value && (
+                    {door.width && (
                       <div>
-                        <div className="text-[10px] md:text-[12px] text-[#4F4F4F] mb-0.5 md:mb-1">Invoice</div>
-                        <div className="text-sm md:text-[18px] font-semibold text-[#111111]">${project.invoice_value}</div>
+                        <span className="text-slate-600">Width:</span>
+                        <span className="ml-1 font-medium text-[#000000]">{door.width}</span>
                       </div>
                     )}
-                    {project.payment_received && (
+                    {door.type && (
                       <div>
-                        <div className="text-[10px] md:text-[12px] text-[#4F4F4F] mb-0.5 md:mb-1">Paid</div>
-                        <div className="text-sm md:text-[18px] font-semibold text-[#16A34A]">${project.payment_received}</div>
+                        <span className="text-slate-600">Type:</span>
+                        <span className="ml-1 font-medium text-[#000000]">{door.type}</span>
+                      </div>
+                    )}
+                    {door.style && (
+                      <div>
+                        <span className="text-slate-600">Style:</span>
+                        <span className="ml-1 font-medium text-[#000000]">{door.style}</span>
                       </div>
                     )}
                   </div>
-                </CardContent>
-              </Card>
-            )}
-          </>
-        )}
-
-        {activeTab === "jobs" && (
-          <Card className="card-enhanced">
-            <CardContent className="p-5 space-y-3">
-              <div className="flex items-center justify-between mb-2">
-                <h3 className="section-header">Jobs ({jobs.length})</h3>
-                <Button
-                  onClick={handleAddJob}
-                  size="sm"
-                  className="btn-primary h-10 md:h-12 px-3 md:px-4 text-xs"
-                >
-                  <Plus className="w-3.5 h-3.5 md:w-4 md:h-4 mr-1.5 md:mr-2" />
-                  Add Job
-                </Button>
-              </div>
-
-              {jobs.length === 0 ? (
-                <div className="text-center py-12 bg-[#F8F9FA] rounded-xl">
-                  <Briefcase className="w-12 h-12 mx-auto mb-3 text-[#9CA3AF]" />
-                  <p className="text-sm text-[#4B5563] mb-4">No jobs yet</p>
-                  <Button onClick={handleAddJob} className="btn-primary">
-                    Create First Job
-                  </Button>
                 </div>
-              ) : (
-                <div className="space-y-3">
-                  {jobs.map((job) => {
-                    const jobSummaries = getJobSummaries(job.id);
-                    return (
-                      <Card
-                        key={job.id}
-                        className="card-interactive"
-                        onClick={() => handleJobClick(job.id)}
-                      >
-                        <CardContent className="p-4">
-                          <div className="flex items-start justify-between gap-4 mb-2">
-                            <div>
-                              <div className="text-base font-bold text-[#111827] mb-1">
-                                {job.job_type_name || 'Job'} #{job.job_number}
-                              </div>
-                              {job.scheduled_date && (
-                                <div className="flex items-center gap-1 text-sm text-[#4B5563]">
-                                  <Calendar className="w-4 h-4" />
-                                  {new Date(job.scheduled_date).toLocaleDateString()}
-                                  {job.scheduled_time && ` at ${job.scheduled_time}`}
-                                </div>
-                              )}
-                            </div>
-                            <Badge variant="outline" className={`status-${job.status} capitalize text-xs`}>
-                              {job.status.replace(/_/g, ' ')}
-                            </Badge>
-                          </div>
-
-                          {job.assigned_to_name && job.assigned_to_name.length > 0 && (
-                            <div className="flex items-center gap-2 text-sm text-[#4B5563] mt-2">
-                              <UserIcon className="w-4 h-4" />
-                              <span>{Array.isArray(job.assigned_to_name) ? job.assigned_to_name.join(', ') : job.assigned_to_name}</span>
-                            </div>
-                          )}
-
-                          {(!job.assigned_to_name || job.assigned_to_name.length === 0) && (
-                            <div className="text-sm text-[#9CA3AF] mt-2">
-                              Unassigned
-                            </div>
-                          )}
-
-                          <JobVisitCard 
-                            jobSummaries={jobSummaries}
-                            jobImages={job.image_urls}
-                          />
-                        </CardContent>
-                      </Card>
-                    );
-                  })}
-                </div>
-              )}
-            </CardContent>
-          </Card>
+              ))}
+            </div>
+          </div>
         )}
 
-        {activeTab === "installation" && (
-          <Card className="card-enhanced">
-            <CardContent className="p-5">
-              <h3 className="section-header">Installation Details</h3>
-              <div className="space-y-2 md:space-y-3">
-                {project.doors?.map((door, idx) => (
-                  <Collapsible key={idx} defaultOpen={idx === 0}>
-                    <div className="bg-white border border-[#E2E3E5] rounded-xl overflow-hidden">
-                      <CollapsibleTrigger className="w-full p-3 md:p-4 flex items-center justify-between hover:bg-[#F7F7F7] transition-colors">
-                        <span className="text-sm md:text-[15px] font-semibold text-[#111111]">Door {idx + 1}</span>
-                        <ChevronDown className="w-4 h-4 md:w-5 md:h-5 text-[#4F4F4F] transition-transform data-[state=open]:rotate-180" />
-                      </CollapsibleTrigger>
-                      <CollapsibleContent>
-                        <div className="p-3 md:p-4 pt-0 space-y-1.5 md:space-y-2">
-                          <div className="grid grid-cols-2 gap-2 md:gap-3">
-                            {door.height && (
-                              <div className="bg-[#F7F7F7] rounded-lg p-2 md:p-3">
-                                <div className="text-[10px] md:text-[12px] font-medium text-[#4F4F4F] mb-0.5 md:mb-1">Height</div>
-                                <div className="text-sm md:text-[15px] font-semibold text-[#111111]">{door.height}</div>
-                              </div>
-                            )}
-                            {door.width && (
-                              <div className="bg-[#F7F7F7] rounded-lg p-2 md:p-3">
-                                <div className="text-[10px] md:text-[12px] font-medium text-[#4F4F4F] mb-0.5 md:mb-1">Width</div>
-                                <div className="text-sm md:text-[15px] font-semibold text-[#111111]">{door.width}</div>
-                              </div>
-                            )}
-                            {door.type && (
-                              <div className="bg-[#F7F7F7] rounded-lg p-2 md:p-3">
-                                <div className="text-[10px] md:text-[12px] font-medium text-[#4F4F4F] mb-0.5 md:mb-1">Type</div>
-                                <div className="text-sm md:text-[15px] font-semibold text-[#111111]">{door.type}</div>
-                              </div>
-                            )}
-                            {door.style && (
-                              <div className="bg-[#F7F7F7] rounded-lg p-2 md:p-3">
-                                <div className="text-[10px] md:text-[12px] font-medium text-[#4F4F4F] mb-0.5 md:mb-1">Style</div>
-                                <div className="text-sm md:text-[15px] font-semibold text-[#111111]">{door.style}</div>
-                              </div>
-                            )}
-                          </div>
-                        </div>
-                      </CollapsibleContent>
-                    </div>
-                  </Collapsible>
-                ))}
-              </div>
-            </CardContent>
-          </Card>
-        )}
-
-        {activeTab === "attachments" && (
-          <Card className="card-enhanced">
-            <CardContent className="p-5 space-y-4">
+        {((project.image_urls && project.image_urls.length > 0) || project.quote_url || project.invoice_url) && (
+          <div>
+            <h3 className="font-bold text-[#000000] mb-3">Attachments</h3>
+            <div className="space-y-4">
               {project.image_urls && project.image_urls.length > 0 && (
                 <div>
-                  <h3 className="section-header">Images</h3>
-                  <div className="grid grid-cols-2 gap-2 md:gap-3">
+                  <div className="flex items-center gap-2 mb-2">
+                    <ImageIcon className="w-4 h-4 text-slate-600" />
+                    <span className="text-sm font-semibold text-slate-700">Images</span>
+                  </div>
+                  <div className="grid grid-cols-3 gap-2">
                     {project.image_urls.map((url, index) => (
                       <a 
                         key={index} 
@@ -434,8 +274,8 @@ export default function ProjectDetails({ project, onClose, onEdit, onDelete }) {
                       >
                         <img 
                           src={url} 
-                          alt={`Project ${index + 1}`} 
-                          className="w-full h-24 md:h-32 object-cover rounded-xl shadow-soft hover:shadow-md transition-all"
+                          alt={`Project image ${index + 1}`} 
+                          className="w-full h-24 object-cover rounded-lg border-2 border-slate-200 hover:border-[#fae008] transition-all"
                         />
                       </a>
                     ))}
@@ -445,133 +285,143 @@ export default function ProjectDetails({ project, onClose, onEdit, onDelete }) {
 
               {(project.quote_url || project.invoice_url) && (
                 <div>
-                  <h3 className="section-header">Files</h3>
-                  <div className="space-y-1.5 md:space-y-2">
+                  <div className="flex items-center gap-2 mb-2">
+                    <FileText className="w-4 h-4 text-slate-600" />
+                    <span className="text-sm font-semibold text-slate-700">Files</span>
+                  </div>
+                  <div className="space-y-2">
                     {project.quote_url && (
-                      <div className="bg-white border border-[#E2E3E5] rounded-xl p-3 md:p-4">
-                        <div className="flex items-center gap-2 md:gap-3 mb-2 md:mb-3">
-                          <div className="w-8 h-8 md:w-10 md:h-10 bg-blue-100 rounded-lg flex items-center justify-center flex-shrink-0">
-                            <FileText className="w-4 h-4 md:w-5 md:h-5 text-blue-600" />
-                          </div>
-                          <div className="flex-1 min-w-0">
-                            <div className="text-xs md:text-[14px] font-semibold text-[#111111]">Quote Document</div>
-                            <div className="text-[10px] md:text-[12px] text-[#4F4F4F]">PDF file</div>
-                          </div>
-                        </div>
-                        <div className="flex gap-1.5 md:gap-2">
-                          <Button
-                            variant="outline"
-                            size="sm"
-                            onClick={() => window.open(project.quote_url, '_blank')}
-                            className="flex-1 h-9 md:h-10 text-xs"
-                          >
-                            <Eye className="w-3.5 h-3.5 md:w-4 md:h-4 mr-1.5 md:mr-2" />
-                            Preview
-                          </Button>
-                          <Button
-                            variant="outline"
-                            size="sm"
-                            onClick={() => window.open(project.quote_url, '_blank')}
-                            className="flex-1 h-9 md:h-10 text-xs"
-                          >
-                            <Download className="w-3.5 h-3.5 md:w-4 md:h-4 mr-1.5 md:mr-2" />
-                            Download
-                          </Button>
-                        </div>
-                      </div>
+                      <a 
+                        href={project.quote_url} 
+                        target="_blank" 
+                        rel="noopener noreferrer"
+                        className="flex items-center gap-2 px-3 py-2 bg-white border-2 border-slate-200 rounded-lg hover:border-[#fae008] transition-all"
+                      >
+                        <FileText className="w-4 h-4 text-blue-600" />
+                        <span className="text-sm font-medium text-slate-700">Quote Document</span>
+                      </a>
                     )}
                     {project.invoice_url && (
-                      <div className="bg-white border border-[#E2E3E5] rounded-xl p-3 md:p-4">
-                        <div className="flex items-center gap-2 md:gap-3 mb-2 md:mb-3">
-                          <div className="w-8 h-8 md:w-10 md:h-10 bg-green-100 rounded-lg flex items-center justify-center flex-shrink-0">
-                            <FileText className="w-4 h-4 md:w-5 md:h-5 text-green-600" />
-                          </div>
-                          <div className="flex-1 min-w-0">
-                            <div className="text-xs md:text-[14px] font-semibold text-[#111111]">Invoice Document</div>
-                            <div className="text-[10px] md:text-[12px] text-[#4F4F4F]">PDF file</div>
-                          </div>
-                        </div>
-                        <div className="flex gap-1.5 md:gap-2">
-                          <Button
-                            variant="outline"
-                            size="sm"
-                            onClick={() => window.open(project.invoice_url, '_blank')}
-                            className="flex-1 h-9 md:h-10 text-xs"
-                          >
-                            <Eye className="w-3.5 h-3.5 md:w-4 md:h-4 mr-1.5 md:mr-2" />
-                            Preview
-                          </Button>
-                          <Button
-                            variant="outline"
-                            size="sm"
-                            onClick={() => window.open(project.invoice_url, '_blank')}
-                            className="flex-1 h-9 md:h-10 text-xs"
-                          >
-                            <Download className="w-3.5 h-3.5 md:w-4 md:h-4 mr-1.5 md:mr-2" />
-                            Download
-                          </Button>
-                        </div>
-                      </div>
+                      <a 
+                        href={project.invoice_url} 
+                        target="_blank" 
+                        rel="noopener noreferrer"
+                        className="flex items-center gap-2 px-3 py-2 bg-white border-2 border-slate-200 rounded-lg hover:border-[#fae008] transition-all"
+                      >
+                        <FileText className="w-4 h-4 text-green-600" />
+                        <span className="text-sm font-medium text-slate-700">Invoice Document</span>
+                      </a>
                     )}
                   </div>
                 </div>
               )}
-            </CardContent>
-          </Card>
+            </div>
+          </div>
         )}
 
-        {activeTab === "notes" && (
-          <Card className="card-enhanced">
-            <CardContent className="p-5">
-              <h3 className="section-header">Notes</h3>
-              <div 
-                className="text-xs md:text-[14px] text-[#111111] leading-relaxed prose prose-sm max-w-none"
-                dangerouslySetInnerHTML={{ __html: project.notes }}
-              />
-            </CardContent>
-          </Card>
+        {(project.quote_value || project.invoice_value || project.payment_received) && (
+          <div className="bg-green-50 rounded-xl p-4 border-2 border-green-200">
+            <h3 className="font-bold text-[#000000] mb-3">Financials</h3>
+            <div className="grid grid-cols-3 gap-4 text-sm">
+              {project.quote_value && (
+                <div>
+                  <div className="text-slate-600 font-medium">Quote</div>
+                  <div className="text-lg font-bold text-[#000000]">${project.quote_value}</div>
+                </div>
+              )}
+              {project.invoice_value && (
+                <div>
+                  <div className="text-slate-600 font-medium">Invoice</div>
+                  <div className="text-lg font-bold text-[#000000]">${project.invoice_value}</div>
+                </div>
+              )}
+              {project.payment_received && (
+                <div>
+                  <div className="text-slate-600 font-medium">Paid</div>
+                  <div className="text-lg font-bold text-green-700">${project.payment_received}</div>
+                </div>
+              )}
+            </div>
+          </div>
         )}
-      </div>
 
-      {/* Quick Actions - Floating Bottom Bar */}
-      <div className="fixed bottom-0 left-0 right-0 bg-white border-t border-[#E5E7EB] p-4 shadow-lg z-20">
-        <div className="max-w-4xl mx-auto flex gap-3">
-          <Button
-            onClick={handleAddJob}
-            className="btn-primary flex-1"
-          >
-            <Plus className="w-5 h-5 mr-2" />
-            Add Job
-          </Button>
-          <Button
-            onClick={() => onEdit(project)}
-            className="btn-secondary px-6"
-          >
-            <Edit className="w-5 h-5" />
-          </Button>
-        </div>
-      </div>
+        {project.assigned_technicians_names && project.assigned_technicians_names.length > 0 && (
+          <div>
+            <h3 className="font-bold text-[#000000] mb-2">Assigned Team</h3>
+            <div className="flex gap-2 flex-wrap">
+              {project.assigned_technicians_names.map((name, idx) => (
+                <Badge key={idx} variant="outline" className="font-semibold">
+                  {name}
+                </Badge>
+              ))}
+            </div>
+          </div>
+        )}
 
-      {/* Delete Confirmation Dialog */}
-      <AlertDialog open={showDeleteDialog} onOpenChange={setShowDeleteDialog}>
-        <AlertDialogContent className="rounded-xl">
-          <AlertDialogHeader>
-            <AlertDialogTitle className="text-base md:text-[18px] font-semibold">Delete Project?</AlertDialogTitle>
-            <AlertDialogDescription className="text-xs md:text-[14px] text-[#4F4F4F]">
-              This project will be moved to the archive. Associated jobs will not be deleted.
-            </AlertDialogDescription>
-          </AlertDialogHeader>
-          <AlertDialogFooter>
-            <AlertDialogCancel className="h-10 md:h-12 text-sm">Cancel</AlertDialogCancel>
-            <AlertDialogAction
-              onClick={() => onDelete(project.id)}
-              className="bg-[#DC2626] hover:bg-[#B91C1C] h-10 md:h-12 text-sm"
+        {project.notes && (
+          <div>
+            <h3 className="font-bold text-[#000000] mb-2">Notes</h3>
+            <div 
+              className="text-slate-700 prose prose-sm max-w-none"
+              dangerouslySetInnerHTML={{ __html: project.notes }}
+            />
+          </div>
+        )}
+
+        <div className="pt-4 border-t-2 border-slate-200">
+          <div className="flex items-center justify-between mb-4">
+            <h3 className="font-bold text-[#000000] text-lg">Jobs ({jobs.length})</h3>
+            <Button
+              onClick={handleAddJob}
+              className="bg-[#fae008] text-[#000000] hover:bg-[#e5d007] font-semibold"
             >
-              Delete
-            </AlertDialogAction>
-          </AlertDialogFooter>
-        </AlertDialogContent>
-      </AlertDialog>
-    </div>
+              <Plus className="w-4 h-4 mr-2" />
+              Add Job
+            </Button>
+          </div>
+
+          {jobs.length === 0 ? (
+            <div className="text-center py-8 bg-slate-50 rounded-xl border-2 border-slate-200">
+              <p className="text-slate-500 mb-3">No jobs yet</p>
+              <Button onClick={handleAddJob} className="bg-[#fae008] text-[#000000] font-semibold">
+                Create First Job
+              </Button>
+            </div>
+          ) : (
+            <div className="space-y-3">
+              {jobs.map((job) => (
+                <div
+                  key={job.id}
+                  onClick={() => handleJobClick(job.id)}
+                  className="bg-white border-2 border-slate-200 rounded-xl p-4 hover:border-[#fae008] hover:shadow-md transition-all cursor-pointer"
+                >
+                  <div className="flex items-start justify-between gap-4">
+                    <div className="flex-1">
+                      <div className="flex items-center gap-2 mb-2">
+                        <span className="font-bold text-[#000000]">Job #{job.job_number}</span>
+                        <Badge className={`${jobStatusColors[job.status]} font-semibold border-2`}>
+                          {job.status}
+                        </Badge>
+                        {job.job_type && (
+                          <Badge variant="outline" className="font-semibold">
+                            {job.job_type}
+                          </Badge>
+                        )}
+                      </div>
+                      {job.scheduled_date && (
+                        <p className="text-sm text-slate-600">
+                          {new Date(job.scheduled_date).toLocaleDateString()}
+                          {job.scheduled_time && ` at ${job.scheduled_time}`}
+                        </p>
+                      )}
+                    </div>
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+      </CardContent>
+    </Card>
   );
 }

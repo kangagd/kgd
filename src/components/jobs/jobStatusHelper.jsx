@@ -1,50 +1,31 @@
 /**
- * Determines the appropriate job status based on various conditions
+ * Determines job status based on scheduled date and outcome
+ * Rules (in order of priority):
+ * 1. If scheduled date is in future -> status = scheduled (automatic)
+ * 2. If outcome is 'completed' or 'send_invoice' -> status = completed
+ * 3. Otherwise -> status = open (unless manually set to cancelled)
  */
-export const determineJobStatus = (scheduledDate, outcome, isCheckedIn, currentStatus) => {
-  // If checked in, always mark as in progress
-  if (isCheckedIn) {
-    return 'in_progress';
+export const determineJobStatus = (scheduledDate, outcome, currentStatus = 'open') => {
+  const scheduled = new Date(scheduledDate);
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+  scheduled.setHours(0, 0, 0, 0);
+  
+  // Rule 1: Future dates ALWAYS return scheduled (highest priority, automatic)
+  if (scheduled > today) {
+    return 'scheduled';
   }
-
-  // If outcome is completed or send_invoice after checkout, mark as completed
+  
+  // If manually cancelled, keep it cancelled
+  if (currentStatus === 'cancelled') {
+    return 'cancelled';
+  }
+  
+  // Rule 2: Completed outcomes
   if (outcome === 'completed' || outcome === 'send_invoice') {
     return 'completed';
   }
-
-  // If has scheduled date and time in the future or today, mark as scheduled
-  if (scheduledDate) {
-    const today = new Date().toISOString().split('T')[0];
-    if (scheduledDate >= today && currentStatus !== 'completed') {
-      return 'scheduled';
-    }
-  }
-
-  // Default to open if no other conditions met
-  return currentStatus || 'open';
-};
-
-/**
- * Determines if a job should be automatically updated to scheduled
- */
-export const shouldAutoSchedule = (scheduledDate, scheduledTime) => {
-  return scheduledDate && scheduledTime;
-};
-
-/**
- * Get status change message for notifications
- */
-export const getStatusChangeMessage = (oldStatus, newStatus, jobNumber, customerName) => {
-  const statusLabels = {
-    open: 'Open',
-    scheduled: 'Scheduled',
-    in_progress: 'In Progress',
-    completed: 'Completed',
-    quoted: 'Quoted',
-    invoiced: 'Invoiced',
-    paid: 'Paid',
-    cancelled: 'Cancelled'
-  };
-
-  return `Job #${jobNumber} (${customerName}) status changed from ${statusLabels[oldStatus] || oldStatus} to ${statusLabels[newStatus] || newStatus}`;
+  
+  // Rule 3: Default to open
+  return 'open';
 };

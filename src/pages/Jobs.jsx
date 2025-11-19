@@ -35,19 +35,12 @@ export default function Jobs() {
     loadUser();
   }, []);
 
-  const statusFilters = [
-  { value: "all", label: "All Jobs", color: "bg-slate-100 text-slate-700" },
-  { value: "open", label: "Open", color: "bg-blue-50 text-blue-700 border-blue-200" },
-  { value: "scheduled", label: "Scheduled", color: "bg-teal-50 text-teal-700 border-teal-200" },
-  { value: "completed", label: "Completed", color: "bg-green-50 text-green-700 border-green-200" }];
-
-
   const { data: allJobs = [], isLoading, refetch } = useQuery({
     queryKey: ['allJobs'],
     queryFn: () => base44.entities.Job.list('-scheduled_date')
   });
 
-  const jobs = allJobs.filter((job) => !job.deleted_at);
+  const jobs = allJobs.filter(job => !job.deleted_at);
 
   const { data: technicians = [] } = useQuery({
     queryKey: ['technicians'],
@@ -64,7 +57,6 @@ export default function Jobs() {
       setEditingJob(null);
       setPreselectedCustomerId(null);
       setPreselectedProjectId(null);
-      window.history.replaceState({}, '', window.location.pathname);
     }
   });
 
@@ -117,7 +109,7 @@ export default function Jobs() {
     if (status) {
       setStatusFilter(status);
     }
-  }, [jobs]); // Add jobs as a dependency to useEffect
+  }, [jobs]);
 
   const handleSubmit = (data) => {
     if (editingJob) {
@@ -137,22 +129,11 @@ export default function Jobs() {
     deleteJobMutation.mutate(jobId);
   };
 
-  const handleCancelForm = () => {
-    setShowForm(false);
-    setEditingJob(null);
-    setPreselectedCustomerId(null);
-    setPreselectedProjectId(null);
-    window.history.replaceState({}, '', window.location.pathname);
-  };
-
   const isTechnician = user?.is_field_technician && user?.role !== 'admin';
 
   const filteredJobs = jobs.filter((job) => {
-    if (isTechnician) {
-      const assignedEmails = Array.isArray(job.assigned_to) ? job.assigned_to : job.assigned_to ? [job.assigned_to] : [];
-      if (!assignedEmails.includes(user?.email)) {
-        return false;
-      }
+    if (isTechnician && job.assigned_to !== user?.email) {
+      return false;
     }
 
     const params = new URLSearchParams(window.location.search);
@@ -173,25 +154,30 @@ export default function Jobs() {
 
   if (showForm) {
     return (
-      <div className="p-4 md:p-8 bg-[#F8F9FA] min-h-screen">
+      <div className="p-4 md:p-8 bg-gradient-to-br from-[hsl(32,20%,98%)] to-[hsl(32,25%,94%)] min-h-screen">
         <div className="max-w-4xl mx-auto">
           <JobForm
             job={editingJob}
             technicians={technicians}
             onSubmit={handleSubmit}
-            onCancel={handleCancelForm}
+            onCancel={() => {
+              setShowForm(false);
+              setEditingJob(null);
+              setPreselectedCustomerId(null);
+              setPreselectedProjectId(null);
+            }}
             isSubmitting={createJobMutation.isPending || updateJobMutation.isPending}
             preselectedCustomerId={preselectedCustomerId}
-            preselectedProjectId={preselectedProjectId} />
-
+            preselectedProjectId={preselectedProjectId}
+          />
         </div>
-      </div>);
-
+      </div>
+    );
   }
 
   if (selectedJob) {
     return (
-      <div className="bg-[#F8F9FA] min-h-screen">
+      <div className="bg-gradient-to-br from-[hsl(32,20%,98%)] to-[hsl(32,25%,94%)] min-h-screen">
         <div className="mx-auto p-4 md:p-8 max-w-4xl">
           <JobDetails
             job={selectedJob}
@@ -203,90 +189,91 @@ export default function Jobs() {
                 id: selectedJob.id,
                 data: { status: newStatus }
               });
-            }} />
-
+            }}
+          />
         </div>
-      </div>);
-
+      </div>
+    );
   }
 
   return (
-    <div className="bg-[#F8F9FA] p-2 md:p-8 min-h-screen overflow-x-hidden">
-      <div className="max-w-7xl mx-auto w-full">
-        {!isTechnician &&
-        <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-4 md:mb-6 gap-3 md:gap-4">
+    <div className="p-4 md:p-8 bg-gradient-to-br from-[hsl(32,20%,98%)] to-[hsl(32,25%,94%)] min-h-screen">
+      <div className="max-w-7xl mx-auto">
+        {!isTechnician && (
+          <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-6 gap-4">
             <div>
-              <h1 className="text-xl md:text-3xl font-bold text-[#111827] tracking-tight">Jobs</h1>
-              <p className="text-[#4B5563] mt-1 md:mt-2 text-sm md:text-base">Manage all scheduled jobs</p>
+              <h1 className="text-3xl font-bold text-[hsl(25,10%,12%)] tracking-tight">Jobs</h1>
+              <p className="text-[hsl(25,8%,45%)] mt-2">Manage all scheduled jobs</p>
             </div>
             <Button
-            onClick={() => setShowForm(true)}
-            className="btn-primary w-full md:w-auto">
+              onClick={() => setShowForm(true)}
+              className="bg-[#fae008] text-[hsl(25,10%,12%)] hover:bg-[#e5d007] active:bg-[#d4c006] font-semibold shadow-md hover:shadow-lg transition-all w-full md:w-auto"
+            >
               <Plus className="w-5 h-5 mr-2" />
               New Job
             </Button>
           </div>
-        }
+        )}
 
-        {isTechnician &&
-        <div className="mb-4 md:mb-6">
-            <h1 className="text-lg md:text-2xl lg:text-3xl font-bold text-[#111827] tracking-tight">My Jobs</h1>
+        {isTechnician && (
+          <div className="mb-6">
+            <h1 className="text-2xl md:text-3xl font-bold text-[hsl(25,10%,12%)] tracking-tight">My Jobs</h1>
           </div>
-        }
+        )}
 
-        <div className="flex flex-col gap-3 md:gap-4 mb-4 md:mb-6">
-          <div className="flex gap-2 w-full">
-            <div className="relative flex-1 min-w-0">
-              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 md:w-5 md:h-5 text-[#4B5563]" />
+        <div className="flex flex-col gap-4 mb-6">
+          <div className="flex gap-2">
+            <div className="relative flex-1">
+              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-[hsl(25,8%,55%)]" />
               <Input
                 placeholder="Search jobs..."
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
-                className="input-enhanced pl-9 md:pl-11 w-full" />
-
+                className="pl-11 border-2 border-[hsl(32,15%,88%)] focus:border-[#fae008] focus:ring-2 focus:ring-[#fae008]/20 transition-all h-12 text-base rounded-xl"
+              />
             </div>
-            <Tabs value={viewMode} onValueChange={setViewMode} className="flex-shrink-0">
-              <TabsList className="h-10 md:h-12">
-                <TabsTrigger value="list" className="gap-1 md:gap-2 font-semibold text-xs md:text-sm px-2 md:px-3">
+            <Tabs value={viewMode} onValueChange={setViewMode}>
+              <TabsList className="h-12">
+                <TabsTrigger value="list" className="gap-2 font-semibold">
                   <List className="w-4 h-4" />
-                  <span className="hidden sm:inline">List</span>
+                  <span className="hidden md:inline">List</span>
                 </TabsTrigger>
-                <TabsTrigger value="calendar" className="gap-1 md:gap-2 font-semibold text-xs md:text-sm px-2 md:px-3">
+                <TabsTrigger value="calendar" className="gap-2 font-semibold">
                   <CalendarIcon className="w-4 h-4" />
-                  <span className="hidden sm:inline">Calendar</span>
+                  <span className="hidden md:inline">Calendar</span>
                 </TabsTrigger>
               </TabsList>
             </Tabs>
           </div>
 
-          {viewMode === "list" &&
-          <Tabs value={statusFilter} onValueChange={setStatusFilter} className="w-full overflow-x-hidden">
-              <TabsList className="w-full grid grid-cols-2 sm:grid-cols-4 h-auto gap-1">
-                {statusFilters.map((filter) =>
-              <TabsTrigger key={filter.value} value={filter.value} className="font-semibold text-xs md:text-sm py-2 md:py-2.5 px-2 md:px-3 whitespace-nowrap">
-                {filter.label}
-              </TabsTrigger>
-              )}
+          {viewMode === "list" && (
+            <Tabs value={statusFilter} onValueChange={setStatusFilter}>
+              <TabsList className="w-full grid grid-cols-5 h-11">
+                <TabsTrigger value="all" className="font-semibold">All</TabsTrigger>
+                <TabsTrigger value="open" className="font-semibold">Open</TabsTrigger>
+                <TabsTrigger value="scheduled" className="font-semibold">Scheduled</TabsTrigger>
+                <TabsTrigger value="completed" className="font-semibold">Completed</TabsTrigger>
+                <TabsTrigger value="cancelled" className="font-semibold">Cancelled</TabsTrigger>
               </TabsList>
             </Tabs>
-          }
+          )}
         </div>
 
-        {viewMode === "list" ?
-        <JobList
-          jobs={filteredJobs}
-          isLoading={isLoading}
-          onSelectJob={setSelectedJob} /> :
-
-
-        <CalendarView
-          jobs={filteredJobs}
-          onSelectJob={setSelectedJob}
-          currentDate={calendarDate}
-          onDateChange={setCalendarDate} />
-
-        }
+        {viewMode === "list" ? (
+          <JobList
+            jobs={filteredJobs}
+            isLoading={isLoading}
+            onSelectJob={setSelectedJob}
+          />
+        ) : (
+          <CalendarView
+            jobs={filteredJobs}
+            onSelectJob={setSelectedJob}
+            currentDate={calendarDate}
+            onDateChange={setCalendarDate}
+          />
+        )}
       </div>
-    </div>);
-
+    </div>
+  );
 }

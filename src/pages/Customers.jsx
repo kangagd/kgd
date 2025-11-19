@@ -5,13 +5,13 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
-import { Plus, Search, User, Phone, Mail, MapPin, Building2 } from "lucide-react";
+import { Plus, Search, User, Phone, Mail, MapPin } from "lucide-react";
 import CustomerForm from "../components/customers/CustomerForm";
 import CustomerDetails from "../components/customers/CustomerDetails";
 
 const customerTypeColors = {
   "Owner": "bg-purple-100 text-purple-700 border-purple-200",
-  "Builder": "bg-[#FEF8C8] text-slate-700 border-slate-200",
+  "Builder": "bg-blue-100 text-blue-700 border-blue-200",
   "Real Estate - Tenant": "bg-green-100 text-green-700 border-green-200",
   "Strata - Owner": "bg-amber-100 text-amber-700 border-amber-200",
 };
@@ -93,7 +93,7 @@ export default function Customers() {
 
   if (showForm) {
     return (
-      <div className="p-2 md:p-8 bg-white min-h-screen">
+      <div className="p-4 md:p-8 bg-gradient-to-br from-[hsl(32,20%,98%)] to-[hsl(32,25%,94%)] min-h-screen">
         <div className="max-w-4xl mx-auto">
           <CustomerForm
             customer={editingCustomer}
@@ -111,7 +111,7 @@ export default function Customers() {
 
   if (selectedCustomer) {
     return (
-      <div className="p-2 md:p-8 bg-white min-h-screen">
+      <div className="p-4 md:p-8 bg-gradient-to-br from-[hsl(32,20%,98%)] to-[hsl(32,25%,94%)] min-h-screen">
         <div className="max-w-4xl mx-auto">
           <CustomerDetails
             customer={selectedCustomer}
@@ -125,16 +125,16 @@ export default function Customers() {
   }
 
   return (
-    <div className="p-4 md:p-8 bg-[#F8F9FA] min-h-screen">
+    <div className="p-4 md:p-8 bg-gradient-to-br from-[hsl(32,20%,98%)] to-[hsl(32,25%,94%)] min-h-screen">
       <div className="max-w-7xl mx-auto">
         <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-6 gap-4">
           <div>
-            <h1 className="text-2xl md:text-3xl font-bold text-[#111827] tracking-tight">Customers</h1>
-            <p className="text-[#4B5563] mt-2 text-sm md:text-base">Manage customer information</p>
+            <h1 className="text-3xl font-bold text-[hsl(25,10%,12%)] tracking-tight">Customers</h1>
+            <p className="text-[hsl(25,8%,45%)] mt-2">Manage customer information</p>
           </div>
           <Button
             onClick={() => setShowForm(true)}
-            className="btn-primary w-full md:w-auto h-12"
+            className="bg-[#fae008] text-[hsl(25,10%,12%)] hover:bg-[#e5d007] active:bg-[#d4c006] font-semibold shadow-md hover:shadow-lg transition-all w-full md:w-auto"
           >
             <Plus className="w-5 h-5 mr-2" />
             New Customer
@@ -142,13 +142,13 @@ export default function Customers() {
         </div>
 
         <div className="mb-6">
-          <div className="relative w-full">
-            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-[#4B5563]" />
+          <div className="relative">
+            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-[hsl(25,8%,55%)]" />
             <Input
               placeholder="Search customers..."
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
-              className="input-enhanced pl-11 w-full h-12"
+              className="pl-11 border-2 border-[hsl(32,15%,88%)] focus:border-[#fae008] focus:ring-2 focus:ring-[#fae008]/20 transition-all h-12 text-base rounded-xl"
             />
           </div>
         </div>
@@ -156,77 +156,69 @@ export default function Customers() {
         {isLoading ? (
           <div className="grid gap-4">
             {[1, 2, 3, 4, 5].map((i) => (
-              <Card key={i} className="animate-pulse card-enhanced">
+              <Card key={i} className="animate-pulse rounded-2xl">
                 <CardContent className="p-6">
-                  <div className="h-6 bg-gray-200 rounded w-1/3 mb-3"></div>
-                  <div className="h-4 bg-gray-200 rounded w-2/3 mb-2"></div>
-                  <div className="h-4 bg-gray-200 rounded w-1/2"></div>
+                  <div className="h-6 bg-[hsl(32,15%,88%)] rounded-lg w-1/3 mb-4"></div>
+                  <div className="h-4 bg-[hsl(32,15%,88%)] rounded-lg w-2/3 mb-2"></div>
+                  <div className="h-4 bg-[hsl(32,15%,88%)] rounded-lg w-1/2"></div>
                 </CardContent>
               </Card>
             ))}
           </div>
         ) : filteredCustomers.length === 0 ? (
-          <Card className="card-enhanced text-center py-12">
-            <CardContent>
-              <User className="w-16 h-16 mx-auto text-gray-300 mb-4" />
-              <h3 className="text-lg font-bold text-[#111827] mb-2">No customers found</h3>
-              <p className="text-[#4B5563] text-sm mb-4">Try adjusting your search or add a new customer</p>
-            </CardContent>
+          <Card className="p-12 text-center rounded-2xl border-2 border-[hsl(32,15%,88%)]">
+            <User className="w-16 h-16 mx-auto text-[hsl(32,15%,88%)] mb-4" />
+            <h3 className="text-lg font-bold text-[hsl(25,10%,12%)] mb-2">No customers found</h3>
+            <p className="text-[hsl(25,8%,45%)]">Try adjusting your search or add a new customer</p>
           </Card>
         ) : (
           <div className="grid gap-4">
             {filteredCustomers.map((customer) => (
               <Card
                 key={customer.id}
-                className="card-enhanced card-interactive"
+                className="hover:shadow-xl transition-all duration-200 cursor-pointer border-l-4 hover:scale-[1.01] active:scale-[0.99] group rounded-2xl border-2 border-[hsl(32,15%,88%)]"
+                style={{ borderLeftColor: '#fae008', borderLeftWidth: '6px' }}
                 onClick={() => setSelectedCustomer(customer)}
               >
-                <CardContent className="p-5 md:p-6">
-                  <div className="flex items-start justify-between gap-4">
+                <CardContent className="p-6">
+                  <div className="flex items-start justify-between mb-4">
                     <div className="flex-1 min-w-0">
-                      <div className="flex items-center gap-2 flex-wrap mb-2">
-                        <h3 className="text-base md:text-lg font-bold text-[#111827]">{customer.name}</h3>
+                      <div className="flex items-center gap-2 mb-2 flex-wrap">
+                        <h3 className="font-bold text-xl text-[hsl(25,10%,12%)] group-hover:text-[#fae008] transition-colors tracking-tight">
+                          {customer.name}
+                        </h3>
+                        {customer.status && (
+                          <Badge variant="outline" className="text-xs font-medium border-[hsl(32,15%,88%)]">
+                            {customer.status}
+                          </Badge>
+                        )}
                         {customer.customer_type && (
-                          <Badge variant="outline" className={`${customerTypeColors[customer.customer_type]} font-semibold border-2 text-xs rounded-lg px-2 py-1`}>
+                          <Badge className={`${customerTypeColors[customer.customer_type]} text-xs font-semibold border-2`}>
                             {customer.customer_type}
                           </Badge>
                         )}
                       </div>
 
-                      {customer.organisation_name && (
-                        <div className="flex items-center gap-2 text-sm text-[#4B5563] mb-2">
-                          <Building2 className="w-4 h-4" />
-                          <span>{customer.organisation_name}</span>
-                        </div>
-                      )}
-
-                      {customer.address && (
-                        <div className="flex items-start gap-2 text-sm text-[#4B5563] mb-2">
-                          <MapPin className="w-4 h-4 mt-0.5 flex-shrink-0" />
-                          <span>{customer.address}</span>
-                        </div>
-                      )}
-
-                      <div className="flex flex-wrap gap-3 text-sm text-[#4B5563]">
+                      <div className="space-y-2">
                         {customer.phone && (
-                          <div className="flex items-center gap-2">
-                            <Phone className="w-4 h-4" />
-                            <span className="font-medium">{customer.phone}</span>
+                          <div className="flex items-center gap-2 text-[hsl(25,10%,25%)]">
+                            <Phone className="w-4 h-4 text-[hsl(25,8%,55%)]" />
+                            <span className="text-sm font-medium">{customer.phone}</span>
                           </div>
                         )}
                         {customer.email && (
-                          <div className="flex items-center gap-2">
-                            <Mail className="w-4 h-4" />
-                            <span className="truncate font-medium">{customer.email}</span>
+                          <div className="flex items-center gap-2 text-[hsl(25,10%,25%)]">
+                            <Mail className="w-4 h-4 text-[hsl(25,8%,55%)]" />
+                            <span className="text-sm font-medium truncate">{customer.email}</span>
+                          </div>
+                        )}
+                        {customer.address && (
+                          <div className="flex items-start gap-2 text-[hsl(25,10%,25%)]">
+                            <MapPin className="w-4 h-4 text-[hsl(25,8%,55%)] mt-0.5" />
+                            <span className="text-sm font-medium">{customer.address}</span>
                           </div>
                         )}
                       </div>
-                    </div>
-                    
-                    <div className="text-right text-xs text-[#4B5563] flex-shrink-0">
-                      {customer.created_date && (
-                        <div>Added {new Date(customer.created_date).toLocaleDateString()}</div>
-                      )}
                     </div>
                   </div>
                 </CardContent>

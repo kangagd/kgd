@@ -9,12 +9,22 @@ import { Card, CardContent } from "@/components/ui/card";
 import ProjectForm from "../components/projects/ProjectForm";
 import ProjectDetails from "../components/projects/ProjectDetails";
 
+const statusColors = {
+  open: "bg-[hsl(32,25%,94%)] text-[hsl(25,10%,12%)] border-[hsl(32,15%,88%)]",
+  scheduled: "bg-[#fae008]/20 text-[hsl(25,10%,12%)] border-[#fae008]/30",
+  quoted: "bg-purple-100 text-purple-800 border-purple-200",
+  invoiced: "bg-indigo-100 text-indigo-800 border-indigo-200",
+  paid: "bg-green-100 text-green-800 border-green-200",
+  completed: "bg-emerald-100 text-emerald-800 border-emerald-200",
+  cancelled: "bg-[hsl(32,25%,94%)] text-[hsl(25,10%,12%)] border-[hsl(32,15%,88%)]"
+};
+
 const projectTypeColors = {
-  "Garage Door Install": "bg-blue-50 text-blue-700 border-blue-200",
-  "Gate Install": "bg-green-50 text-green-700 border-green-200",
-  "Roller Shutter Install": "bg-purple-50 text-purple-700 border-purple-200",
-  "Repair": "bg-orange-50 text-orange-700 border-orange-200",
-  "Maintenance": "bg-indigo-50 text-indigo-700 border-indigo-200"
+  "Garage Door Install": "bg-blue-100 text-blue-700",
+  "Gate Install": "bg-green-100 text-green-700",
+  "Roller Shutter Install": "bg-purple-100 text-purple-700",
+  "Repair": "bg-orange-100 text-orange-700",
+  "Maintenance": "bg-indigo-100 text-indigo-700"
 };
 
 export default function Projects() {
@@ -68,17 +78,10 @@ export default function Projects() {
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
     const action = params.get('action');
-    const projectId = params.get('projectId');
-    
     if (action === 'new') {
       setShowForm(true);
     }
-    
-    if (projectId) {
-      const project = projects.find(p => p.id === projectId);
-      if (project) setSelectedProject(project);
-    }
-  }, [projects]);
+  }, []);
 
   const handleSubmit = (data) => {
     if (editingProject) {
@@ -111,7 +114,7 @@ export default function Projects() {
 
   if (showForm) {
     return (
-      <div className="p-4 md:p-8 bg-[#F8F9FA] min-h-screen">
+      <div className="p-4 md:p-8 bg-gradient-to-br from-[hsl(32,20%,98%)] to-[hsl(32,25%,94%)] min-h-screen">
         <div className="max-w-4xl mx-auto">
           <ProjectForm
             project={editingProject}
@@ -129,7 +132,7 @@ export default function Projects() {
 
   if (selectedProject) {
     return (
-      <div className="p-4 md:p-8 bg-[#F8F9FA] min-h-screen">
+      <div className="bg-gradient-to-br from-[hsl(32,20%,98%)] to-[hsl(32,25%,94%)] min-h-screen">
         <div className="mx-auto p-4 md:p-8 max-w-6xl">
           <ProjectDetails
             project={selectedProject}
@@ -143,16 +146,16 @@ export default function Projects() {
   }
 
   return (
-    <div className="p-4 md:p-8 bg-[#F8F9FA] min-h-screen">
+    <div className="p-4 md:p-8 bg-gradient-to-br from-[hsl(32,20%,98%)] to-[hsl(32,25%,94%)] min-h-screen">
       <div className="max-w-7xl mx-auto">
         <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-6 gap-4">
           <div>
-            <h1 className="text-2xl md:text-3xl font-bold text-[#111827] tracking-tight">Projects</h1>
-            <p className="text-[#4B5563] mt-2 text-sm md:text-base">Manage multi-step workflows</p>
+            <h1 className="text-3xl font-bold text-[hsl(25,10%,12%)] tracking-tight">Projects</h1>
+            <p className="text-[hsl(25,8%,45%)] mt-2">Manage multi-step workflows</p>
           </div>
           <Button
             onClick={() => setShowForm(true)}
-            className="btn-primary w-full md:w-auto h-12"
+            className="bg-[#fae008] text-[hsl(25,10%,12%)] hover:bg-[#e5d007] active:bg-[#d4c006] font-semibold shadow-md hover:shadow-lg transition-all w-full md:w-auto"
           >
             <Plus className="w-5 h-5 mr-2" />
             New Project
@@ -160,92 +163,82 @@ export default function Projects() {
         </div>
 
         <div className="mb-6">
-          <div className="relative w-full">
-            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-[#4B5563]" />
+          <div className="relative">
+            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-[hsl(25,8%,55%)]" />
             <Input
               placeholder="Search projects..."
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
-              className="input-enhanced pl-11 w-full h-12"
+              className="pl-11 border-2 border-[hsl(32,15%,88%)] focus:border-[#fae008] focus:ring-2 focus:ring-[#fae008]/20 transition-all h-12 text-base rounded-xl"
             />
           </div>
         </div>
 
         {isLoading && (
-          <div className="grid gap-4">
-            {[1, 2, 3].map((i) => (
-              <Card key={i} className="animate-pulse card-enhanced">
-                <CardContent className="p-6">
-                  <div className="h-6 bg-gray-200 rounded w-1/3 mb-3"></div>
-                  <div className="h-4 bg-gray-200 rounded w-2/3 mb-2"></div>
-                  <div className="h-4 bg-gray-200 rounded w-1/2"></div>
-                </CardContent>
-              </Card>
-            ))}
+          <div className="text-center py-12">
+            <p className="text-[hsl(25,8%,45%)]">Loading projects...</p>
           </div>
         )}
 
         {!isLoading && filteredProjects.length === 0 && (
-          <div className="text-center py-12 card-enhanced">
-            <p className="text-[#4B5563] mb-4 text-sm md:text-base">No projects found</p>
-            <Button onClick={() => setShowForm(true)} className="btn-primary h-12">
+          <div className="text-center py-12 bg-white rounded-2xl border-2 border-[hsl(32,15%,88%)]">
+            <p className="text-[hsl(25,8%,45%)] mb-4">No projects found</p>
+            <Button onClick={() => setShowForm(true)} className="bg-[#fae008] text-[hsl(25,10%,12%)] font-semibold">
               Create First Project
             </Button>
           </div>
         )}
 
-        {!isLoading && filteredProjects.length > 0 && (
-          <div className="grid gap-4">
-            {filteredProjects.map((project) => (
-              <Card
-                key={project.id}
-                className="card-enhanced card-interactive"
-                onClick={() => setSelectedProject(project)}
-              >
-                <CardContent className="p-5 md:p-6">
-                  <div className="flex items-start justify-between gap-4">
-                    <div className="flex-1 min-w-0">
-                      <div className="flex items-center gap-2 flex-wrap mb-2">
-                        <h3 className="text-lg md:text-xl font-bold text-[#111827]">{project.title}</h3>
-                        <Badge className={`status-${project.status} capitalize text-xs`}>
-                          {project.status.replace(/_/g, ' ')}
+        <div className="grid gap-4">
+          {filteredProjects.map((project) => (
+            <Card
+              key={project.id}
+              className="border-2 border-[hsl(32,15%,88%)] hover:border-[#fae008] hover:shadow-lg transition-all cursor-pointer rounded-2xl"
+              onClick={() => setSelectedProject(project)}
+            >
+              <CardContent className="p-4 md:p-6">
+                <div className="flex items-start justify-between gap-4">
+                  <div className="flex-1">
+                    <div className="flex items-center gap-2 flex-wrap mb-2">
+                      <h3 className="text-lg font-bold text-[hsl(25,10%,12%)]">{project.title}</h3>
+                      {project.project_type && (
+                        <Badge className={`${projectTypeColors[project.project_type]} font-semibold border-2`}>
+                          {project.project_type}
                         </Badge>
-                      </div>
-                      <div className="flex items-center gap-2 flex-wrap mb-3">
-                        <p className="text-sm md:text-base text-[#4B5563] font-medium">{project.customer_name}</p>
-                        {project.project_type && (
-                          <Badge className={`${projectTypeColors[project.project_type]} font-semibold border-2 text-xs rounded-lg px-2 py-1`}>
-                            {project.project_type}
+                      )}
+                      <Badge className={`${statusColors[project.status]} font-semibold border-2`}>
+                        {project.status}
+                      </Badge>
+                    </div>
+                    <p className="text-sm text-[hsl(25,8%,45%)] mb-2">{project.customer_name}</p>
+                    {project.description && (
+                      <div
+                        className="text-sm text-[hsl(25,8%,45%)] line-clamp-2 prose prose-sm max-w-none mb-2"
+                        dangerouslySetInnerHTML={{ __html: project.description }}
+                      />
+                    )}
+                    {project.doors && project.doors.length > 0 && (
+                      <div className="mt-2 flex flex-wrap gap-2">
+                        {project.doors.map((door, idx) => (
+                          <Badge key={idx} variant="outline" className="bg-blue-50 border-blue-200 text-blue-700">
+                            Door {idx + 1}: {door.height && door.width ? `${door.height} × ${door.width}` : 'Pending specs'}
+                            {door.type && ` • ${door.type}`}
                           </Badge>
-                        )}
+                        ))}
                       </div>
-                      {project.description && (
-                        <div
-                          className="text-sm text-[#4B5563] line-clamp-2 prose prose-sm max-w-none"
-                          dangerouslySetInnerHTML={{ __html: project.description }}
-                        />
-                      )}
-                      {project.doors && project.doors.length > 0 && (
-                        <div className="mt-3 flex flex-wrap gap-2">
-                          {project.doors.map((door, idx) => (
-                            <Badge key={idx} className="bg-[#F8F9FA] border-2 border-[#E5E7EB] text-[#111827] text-xs font-medium px-2 py-1">
-                              Door {idx + 1}: {door.height && door.width ? `${door.height} × ${door.width}` : 'Pending'}
-                              {door.type && ` • ${door.type}`}
-                            </Badge>
-                          ))}
-                        </div>
-                      )}
-                    </div>
-                    <div className="flex flex-col items-center justify-center bg-[#F8F9FA] rounded-lg px-4 py-3 min-w-[70px]">
-                      <div className="text-2xl font-bold text-[#111827]">{getJobCount(project.id)}</div>
-                      <div className="text-xs text-[#4B5563] font-medium uppercase tracking-wide">Jobs</div>
-                    </div>
+                    )}
                   </div>
-                </CardContent>
-              </Card>
-            ))}
-          </div>
-        )}
+                  <div className="text-right text-sm text-[hsl(25,8%,45%)]">
+                    <div className="font-bold text-[hsl(25,10%,12%)]">{getJobCount(project.id)} jobs</div>
+                    {project.created_date && (
+                      <div className="text-xs">Created {new Date(project.created_date).toLocaleDateString()}</div>
+                    )}
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+          ))}
+        </div>
       </div>
     </div>
   );

@@ -1,3 +1,4 @@
+
 import React, { useState } from "react";
 import { Card, CardContent } from "@/components/ui/card";
 import { format, startOfWeek, addDays, isSameDay } from "date-fns";
@@ -31,11 +32,10 @@ const jobTypeColorsBg = [
 ];
 
 const statusColors = {
-  open: "#9CA3AF",
-  scheduled: "#FAE008",
-  in_progress: "#1E40AF",
-  completed: "#16A34A",
-  cancelled: "#DC2626"
+  open: "bg-[hsl(32,25%,94%)]",
+  scheduled: "bg-[#fae008]",
+  in_progress: "bg-orange-500",
+  completed: "bg-green-500",
 };
 
 const getJobTypeColor = (jobTypeName, allJobTypes) => {
@@ -56,8 +56,8 @@ const getInitials = (name) => {
 };
 
 const avatarColors = [
-  "bg-[#FAE008]", "bg-purple-500", "bg-green-500", "bg-orange-500",
-  "bg-pink-500", "bg-indigo-500", "bg-red-500", "bg-teal-500",
+  "bg-blue-600", "bg-purple-600", "bg-green-600", "bg-orange-600",
+  "bg-pink-600", "bg-indigo-600", "bg-red-600", "bg-teal-600",
 ];
 
 const getAvatarColor = (name) => {
@@ -70,7 +70,6 @@ export default function WeekView({ jobs, currentDate, onJobClick, onQuickBook })
   const [draggedJob, setDraggedJob] = useState(null);
   const [dragOverCell, setDragOverCell] = useState(null);
   const [pendingUpdate, setPendingUpdate] = useState(null);
-  const [clickTimer, setClickTimer] = useState(null);
   const queryClient = useQueryClient();
 
   const { data: technicians = [] } = useQuery({
@@ -118,27 +117,7 @@ export default function WeekView({ jobs, currentDate, onJobClick, onQuickBook })
     });
   };
 
-  const handleJobClick = (e, job) => {
-    if (clickTimer) {
-      // Double click detected
-      clearTimeout(clickTimer);
-      setClickTimer(null);
-      onJobClick(job); // Open full details
-    } else {
-      // Single click - wait to see if double click follows
-      const timer = setTimeout(() => {
-        setClickTimer(null);
-        // Single click - let hover card handle it
-      }, 250);
-      setClickTimer(timer);
-    }
-  };
-
   const handleDragStart = (e, job) => {
-    if (clickTimer) {
-      clearTimeout(clickTimer);
-      setClickTimer(null);
-    }
     setDraggedJob(job);
     e.dataTransfer.effectAllowed = 'move';
     e.currentTarget.style.opacity = '0.5';
@@ -210,19 +189,19 @@ export default function WeekView({ jobs, currentDate, onJobClick, onQuickBook })
   return (
     <>
       <div className="space-y-4">
-        <Card className="card-enhanced">
+        <Card>
           <CardContent className="p-0 overflow-x-auto">
             <div className="min-w-[1200px]">
-              <div className="grid border-b-2 border-[#E5E7EB] bg-[#F8F9FA]" style={{ gridTemplateColumns: `220px repeat(${weekDays.length}, 1fr)` }}>
-                <div className="p-4 border-r-2 border-[#E5E7EB] font-bold text-sm text-[#111827] uppercase tracking-wide">
+              <div className="grid border-b border-[hsl(32,15%,88%)] bg-[hsl(32,25%,96%)]" style={{ gridTemplateColumns: `200px repeat(${weekDays.length}, 1fr)` }}>
+                <div className="p-3 border-r border-[hsl(32,15%,88%)] font-medium text-sm text-[hsl(25,10%,25%)]">
                   Technician
                 </div>
                 {weekDays.map(day => (
-                  <div key={day.toISOString()} className="text-center p-4 border-r-2 border-[#E5E7EB]">
-                    <div className={`text-xs font-semibold uppercase tracking-wide mb-1 ${isSameDay(day, new Date()) ? 'text-[#111827]' : 'text-[#4B5563]'}`}>
+                  <div key={day.toISOString()} className="text-center p-3 border-r border-[hsl(32,15%,88%)]">
+                    <div className={`text-xs font-medium ${isSameDay(day, new Date()) ? 'text-[#fae008]' : 'text-[hsl(25,8%,45%)]'}`}>
                       {format(day, 'EEE')}
                     </div>
-                    <div className={`text-xl font-bold ${isSameDay(day, new Date()) ? 'text-[#FAE008]' : 'text-[#111827]'}`}>
+                    <div className={`text-lg font-bold ${isSameDay(day, new Date()) ? 'text-[#fae008]' : 'text-[hsl(25,10%,12%)]'}`}>
                       {format(day, 'd')}
                     </div>
                   </div>
@@ -230,17 +209,17 @@ export default function WeekView({ jobs, currentDate, onJobClick, onQuickBook })
               </div>
 
               {visibleTechnicians.length === 0 ? (
-                <div className="p-12 text-center text-[#4B5563]">
+                <div className="p-8 text-center text-[hsl(25,8%,45%)]">
                   No technicians assigned to jobs this week.
                 </div>
               ) : (
                 visibleTechnicians.map(technician => (
-                  <div key={technician.id} className="grid border-b-2 border-[#E5E7EB] hover:bg-[#FFFEF0] transition-colors" style={{ gridTemplateColumns: `220px repeat(${weekDays.length}, 1fr)`, minHeight: '160px' }}>
-                    <div className="p-4 border-r-2 border-[#E5E7EB] flex items-center gap-3 sticky left-0 bg-white z-10">
-                      <div className={`${getAvatarColor(technician.full_name)} w-10 h-10 rounded-full flex items-center justify-center text-black font-bold text-sm border-2 border-black`}>
+                  <div key={technician.id} className="grid border-b border-[hsl(32,15%,88%)] hover:bg-[hsl(32,25%,96%)]" style={{ gridTemplateColumns: `200px repeat(${weekDays.length}, 1fr)`, height: '150px' }}>
+                    <div className="p-3 border-r border-[hsl(32,15%,88%)] flex items-center gap-2 sticky left-0 bg-white z-10">
+                      <div className={`${getAvatarColor(technician.full_name)} w-8 h-8 rounded-full flex items-center justify-center text-white font-bold text-xs`}>
                         {getInitials(technician.full_name)}
                       </div>
-                      <span className="text-sm font-bold text-[#111827] truncate">
+                      <span className="text-sm font-medium text-[hsl(25,10%,25%)] truncate">
                         {technician.full_name}
                       </span>
                     </div>
@@ -252,48 +231,38 @@ export default function WeekView({ jobs, currentDate, onJobClick, onQuickBook })
                       return (
                         <div
                           key={day.toISOString()}
-                          className={`p-2 border-r-2 border-[#E5E7EB] transition-all overflow-y-auto ${
-                            isDragOver ? 'bg-[#FAE008]/20 border-[#FAE008]' : ''
-                          } ${isSameDay(day, new Date()) ? 'bg-[#FFFEF0]' : ''}`}
+                          className={`p-2 border-r border-[hsl(32,15%,88%)] transition-colors overflow-y-auto ${
+                            isDragOver ? 'bg-green-50 border-green-400' : ''
+                          }`}
                           onDragOver={(e) => handleDragOver(e, day, technician.email)}
                           onDragLeave={handleDragLeave}
                           onDrop={(e) => handleDrop(e, day, technician.email)}
                         >
-                          <div className="space-y-2">
+                          <div className="space-y-1">
                             {jobsInCell.map(job => (
                               <JobHoverCard key={job.id} job={job} onJobClick={onJobClick}>
                                 <div
                                   draggable
-                                  onClick={(e) => handleJobClick(e, job)}
                                   onDragStart={(e) => handleDragStart(e, job)}
                                   onDragEnd={handleDragEnd}
-                                  className={`p-2.5 rounded-lg cursor-move hover:shadow-lg transition-all border-2 bg-white ${
+                                  className={`p-2 rounded-lg cursor-move hover:shadow-md transition-all border-l-4 ${getJobTypeBgColor(job.job_type_name, uniqueJobTypes)} ${
                                     draggedJob?.id === job.id ? 'opacity-50' : ''
                                   }`}
-                                  style={{ 
-                                    borderColor: job.status === 'scheduled' ? '#FAE008' : '#E5E7EB'
-                                  }}
+                                  style={{ borderLeftColor: statusColors[job.status] || '#fae008' }}
                                 >
-                                  <div className="flex items-center justify-between mb-1.5">
-                                    <span className="text-xs font-bold text-[#111827]">#{job.job_number}</span>
-                                    {job.scheduled_time && (
-                                      <span className="text-xs font-bold px-2 py-0.5 rounded bg-[#FAE008] text-black">
-                                        {job.scheduled_time.slice(0, 5)}
-                                      </span>
-                                    )}
+                                  <div className="text-xs font-semibold text-[hsl(25,10%,12%)] truncate mb-1">
+                                    #{job.job_number}
                                   </div>
-                                  <div className="text-xs font-semibold text-[#111827] truncate mb-1">
+                                  <div className="text-xs text-[hsl(25,8%,45%)] truncate mb-1">
                                     {job.customer_name}
                                   </div>
+                                  <div className="flex items-start gap-1 text-xs text-[hsl(25,8%,55%)] truncate">
+                                    <MapPin className="w-3 h-3 mt-0.5 flex-shrink-0" />
+                                    <span className="truncate">{job.address}</span>
+                                  </div>
                                   {job.job_type_name && (
-                                    <div className="text-xs text-[#4B5563] font-medium truncate mb-1">
+                                    <div className="text-xs text-[hsl(25,8%,45%)] font-medium mt-1 truncate">
                                       {job.job_type_name}
-                                    </div>
-                                  )}
-                                  {job.address && (
-                                    <div className="flex items-start gap-1 text-xs text-[#4B5563]">
-                                      <MapPin className="w-3 h-3 mt-0.5 flex-shrink-0" />
-                                      <span className="truncate">{job.address}</span>
                                     </div>
                                   )}
                                 </div>
@@ -310,25 +279,15 @@ export default function WeekView({ jobs, currentDate, onJobClick, onQuickBook })
           </CardContent>
         </Card>
 
-        <Card className="card-enhanced">
-          <CardContent className="p-3">
-            <div className="flex flex-wrap gap-3 text-xs items-center">
-              <span className="font-bold text-[#111827] uppercase tracking-wide">Legend:</span>
-              <div className="flex items-center gap-2">
-                <div className="w-4 h-4 rounded bg-[#FAE008] border-2 border-black" />
-                <span className="text-[#4B5563] font-medium">Scheduled</span>
-              </div>
-              <div className="flex items-center gap-2">
-                <div className="w-4 h-4 rounded bg-[#1E40AF]" />
-                <span className="text-[#4B5563] font-medium">In Progress</span>
-              </div>
-              <div className="flex items-center gap-2">
-                <div className="w-4 h-4 rounded bg-[#16A34A]" />
-                <span className="text-[#4B5563] font-medium">Completed</span>
-              </div>
+        <div className="flex flex-wrap gap-2 text-xs bg-white p-3 rounded-lg border border-[hsl(32,15%,88%)]">
+          <span className="font-semibold text-[hsl(25,10%,25%)]">Job Types:</span>
+          {uniqueJobTypes.map((jobType) => (
+            <div key={jobType} className="flex items-center gap-1.5">
+              <div className={`w-3 h-3 rounded ${getJobTypeColor(jobType, uniqueJobTypes)}`} />
+              <span className="text-[hsl(25,8%,45%)]">{jobType}</span>
             </div>
-          </CardContent>
-        </Card>
+          ))}
+        </div>
       </div>
 
       <AlertDialog open={!!pendingUpdate} onOpenChange={() => setPendingUpdate(null)}>
@@ -365,10 +324,10 @@ export default function WeekView({ jobs, currentDate, onJobClick, onQuickBook })
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
-            <AlertDialogCancel className="btn-secondary h-12">Cancel</AlertDialogCancel>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
             <AlertDialogAction
               onClick={confirmUpdate}
-              className="btn-primary h-12"
+              className="bg-[#fae008] text-[hsl(25,10%,12%)] hover:bg-[#e5d007]"
             >
               Confirm Changes
             </AlertDialogAction>

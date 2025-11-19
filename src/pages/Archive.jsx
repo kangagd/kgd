@@ -111,7 +111,7 @@ export default function Archive() {
             <Button
               onClick={() => restoreJobMutation.mutate(job.id)}
               disabled={restoreJobMutation.isPending}
-              className="flex-1 bg-[#fae008] hover:bg-[#e5d007] text-black font-semibold rounded-xl"
+              className="flex-1 bg-[#fae008] hover:bg-[#e5d007] text-[hsl(25,10%,12%)] font-semibold rounded-xl"
             >
               <RotateCcw className="w-4 h-4 mr-2" />
               Restore
@@ -164,7 +164,7 @@ export default function Archive() {
             <Button
               onClick={() => restoreCustomerMutation.mutate(customer.id)}
               disabled={restoreCustomerMutation.isPending}
-              className="flex-1 bg-[#fae008] hover:bg-[#e5d007] text-black font-semibold rounded-xl"
+              className="flex-1 bg-[#fae008] hover:bg-[#e5d007] text-[hsl(25,10%,12%)] font-semibold rounded-xl"
             >
               <RotateCcw className="w-4 h-4 mr-2" />
               Restore
@@ -183,7 +183,7 @@ export default function Archive() {
   };
 
   return (
-    <div className="p-4 md:p-8 bg-[#FFFDEF] min-h-screen">
+    <div className="p-4 md:p-8 bg-gradient-to-br from-[hsl(32,20%,98%)] to-[hsl(32,25%,94%)] min-h-screen">
       <div className="max-w-7xl mx-auto">
         <div className="mb-6">
           <div className="flex items-center gap-3 mb-2">
@@ -198,7 +198,7 @@ export default function Archive() {
         </div>
 
         <Tabs defaultValue="jobs" className="w-full">
-          <TabsList className="w-full md:w-auto mb-6 h-11 bg-[#FEF8C8] p-1">
+          <TabsList className="w-full md:w-auto mb-6 h-11 bg-[hsl(32,25%,94%)] p-1">
             <TabsTrigger value="jobs" className="font-semibold">
               Jobs ({deletedJobs.length})
             </TabsTrigger>

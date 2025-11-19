@@ -4,73 +4,26 @@
 
 @layer base {
   :root {
-    --primary-yellow: #FAE008;
-    --primary-black: #000000;
-    --pure-white: #FFFFFF;
-    --background-grey: #F8F9FA;
-    --stroke-dividers: #E5E7EB;
-    --text-primary: #111827;
-    --text-secondary: #4B5563;
-    --disabled: #9CA3AF;
-    
-    --accent-green: #16A34A;
-    --accent-red: #DC2626;
-    --accent-orange: #D97706;
-    --accent-blue: #1E40AF;
-    
-    --status-open: #2563EB;
-    --status-scheduled: #0EA5E9;
-    --status-quoted: #7C3AED;
-    --status-invoiced: #F97316;
-    --status-paid: #16A34A;
-    --status-completed: #15803D;
-    --status-cancelled: #DC2626;
-    
-    --background: 0 0% 100%;
-    --foreground: 0 0% 0%;
+    --background: 32 20% 98%;
+    --foreground: 25 10% 12%;
     --card: 0 0% 100%;
-    --card-foreground: 0 0% 7%;
+    --card-foreground: 25 10% 12%;
     --popover: 0 0% 100%;
-    --popover-foreground: 0 0% 7%;
-    --primary: 48 100% 50%;
-    --primary-foreground: 0 0% 0%;
-    --secondary: 0 0% 97%;
-    --secondary-foreground: 0 0% 7%;
-    --muted: 0 0% 97%;
-    --muted-foreground: 0 0% 31%;
-    --accent: 48 100% 50%;
-    --accent-foreground: 0 0% 0%;
+    --popover-foreground: 25 10% 12%;
+    --primary: 51 98% 51%;
+    --primary-foreground: 25 10% 12%;
+    --secondary: 32 25% 94%;
+    --secondary-foreground: 25 10% 12%;
+    --muted: 32 20% 95%;
+    --muted-foreground: 25 8% 45%;
+    --accent: 51 98% 51%;
+    --accent-foreground: 25 10% 12%;
     --destructive: 0 84.2% 60.2%;
     --destructive-foreground: 0 0% 98%;
-    --border: 0 0% 89%;
-    --input: 0 0% 89%;
-    --ring: 48 100% 50%;
+    --border: 32 15% 88%;
+    --input: 32 15% 88%;
+    --ring: 51 98% 51%;
     --radius: 0.5rem;
-    
-    --spacing-xs: 8px;
-    --spacing-sm: 16px;
-    --spacing-md: 24px;
-    --spacing-lg: 32px;
-    --spacing-xl: 40px;
-    
-    --card-padding: 16px;
-    --card-padding-lg: 20px;
-    --card-radius: 12px;
-    
-    --button-height: 44px;
-    --button-height-lg: 52px;
-    --button-radius: 10px;
-    
-    --tap-target-min: 44px;
-    
-    --shadow-soft: 0 2px 6px rgba(0, 0, 0, 0.06);
-  }
-  
-  @media (min-width: 768px) {
-    :root {
-      --card-padding: 16px;
-      --card-padding-lg: 20px;
-    }
   }
 }
 
@@ -79,366 +32,65 @@
     @apply border-border;
   }
   body {
-    @apply bg-[#F8F9FA] text-[#111827];
+    @apply bg-background text-foreground;
     font-feature-settings: "rlig" 1, "calt" 1;
-    font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen', 'Ubuntu', 'Cantarell', 'Fira Sans', 'Droid Sans', 'Helvetica Neue', sans-serif;
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen', 'Ubuntu', 'Cantarell', 'Fira Sans', 'Droid Sans', 'Helvetica Neue', sans-serif;
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
-    font-size: 14px;
-    line-height: 1.5;
   }
   
-  h1 {
+  h1, h2, h3, h4, h5, h6 {
     @apply font-bold tracking-tight;
-    color: #111827;
-    font-size: 20px;
-    line-height: 1.3;
+    color: hsl(25, 10%, 12%);
   }
   
-  @media (min-width: 768px) {
-    h1 {
-      font-size: 24px;
-    }
-  }
-  
-  h2 {
-    @apply font-semibold tracking-tight;
-    color: #111827;
-    font-size: 16px;
-    line-height: 1.4;
-  }
-  
-  @media (min-width: 768px) {
-    h2 {
-      font-size: 18px;
-    }
-  }
-  
-  h3 {
-    @apply font-semibold tracking-tight;
-    color: #111827;
-    font-size: 14px;
-    line-height: 1.4;
-  }
-  
-  @media (min-width: 768px) {
-    h3 {
-      font-size: 16px;
-    }
-  }
-  
-  h4, h5, h6 {
-    @apply font-semibold tracking-tight;
-    color: #111827;
-    font-size: 13px;
-    line-height: 1.4;
-  }
-  
-  @media (min-width: 768px) {
-    h4, h5, h6 {
-      font-size: 14px;
-    }
-  }
-  
-  p {
-    font-size: 13px;
-    line-height: 1.5;
-  }
-  
-  @media (min-width: 768px) {
-    p {
-      font-size: 14px;
-    }
-  }
-  
-  label {
-    @apply font-medium;
-    color: #4B5563;
-    font-size: 12px;
-  }
-  
-  @media (min-width: 768px) {
-    label {
-      font-size: 13px;
-    }
-  }
-  
-  /* Default button styles */
-  button:not(.btn-secondary):not([class*="ghost"]):not([class*="outline"]):not([class*="destructive"]):not([class*="link"]) {
-    background-color: #FAE008 !important;
-    color: #000000 !important;
-  }
-  
-  button:not(.btn-secondary):not([class*="ghost"]):not([class*="outline"]):not([class*="destructive"]):not([class*="link"]):hover {
-    background-color: #e5d007 !important;
-  }
-  
-  button:not(.btn-secondary):not([class*="ghost"]):not([class*="outline"]):not([class*="destructive"]):not([class*="link"]):active {
-    background-color: #d4c006 !important;
-  }
-
-  /* Improve touch targets on mobile */
-  @media (max-width: 768px) {
-    button, a, [role="button"] {
-      min-height: var(--tap-target-min);
-      min-width: var(--tap-target-min);
-    }
-  }
-  
-  /* Minimum tap target for all interactive elements */
-  button, a, [role="button"], input[type="checkbox"], input[type="radio"] {
-    min-height: var(--tap-target-min);
-  }
-
-  /* Hide scrollbar but allow scrolling */
-  .no-scrollbar::-webkit-scrollbar {
-    display: none;
-  }
-  .no-scrollbar {
-    -ms-overflow-style: none;
-    scrollbar-width: none;
+  p, span, div {
+    @apply tracking-normal;
   }
 }
 
 @layer components {
-  /* Mobile-optimized spacing */
-  @media (max-width: 768px) {
-    .card-enhanced {
-      padding: 10px;
-    }
-    
-    .section-header {
-      font-size: 10px;
-      margin-bottom: 6px;
-    }
-  }
-
-  /* Status Chips - Muted color palette per status */
-    .status-open {
-      @apply bg-orange-50 text-orange-700 border-orange-200 rounded-lg px-2 py-1 font-semibold border-2;
-    }
-
-    .status-scheduled {
-      @apply bg-yellow-50 text-yellow-700 border-yellow-200 rounded-lg px-2 py-1 font-semibold border-2;
-    }
-
-    .status-in_progress {
-      @apply bg-blue-50 text-blue-700 border-blue-200 rounded-lg px-2 py-1 font-semibold border-2;
-    }
-
-    .status-completed {
-      @apply bg-green-50 text-green-700 border-green-200 rounded-lg px-2 py-1 font-semibold border-2;
-    }
-
-    .status-cancelled {
-      @apply bg-red-50 text-red-700 border-red-200 rounded-lg px-2 py-1 font-semibold border-2;
-    }
-
-    .status-quoted {
-      @apply bg-purple-50 text-purple-700 border-purple-200 rounded-lg px-2 py-1 font-semibold border-2;
-    }
-
-    .status-invoiced {
-      @apply bg-indigo-50 text-indigo-700 border-indigo-200 rounded-lg px-2 py-1 font-semibold border-2;
-    }
-
-    .status-paid {
-      @apply bg-emerald-50 text-emerald-700 border-emerald-200 rounded-lg px-2 py-1 font-semibold border-2;
-    }
-  
-  /* Cards following master UI system */
+  /* Enhanced card styles */
   .card-enhanced {
-    @apply bg-white border-2 border-[#E5E7EB];
-    border-radius: 12px;
-    padding: var(--card-padding);
-    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
-    transition: all 150ms ease;
-  }
-
-  .card-enhanced:hover {
-    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.08);
-  }
-
-  @media (min-width: 768px) {
-    .card-enhanced {
-      padding: var(--card-padding-lg);
-    }
+    @apply bg-white rounded-xl border border-[hsl(32,15%,88%)] shadow-sm transition-all duration-200;
   }
   
+  .card-enhanced:hover {
+    @apply shadow-md border-[hsl(32,15%,80%)];
+  }
+  
+  /* Interactive card states */
   .card-interactive {
     @apply cursor-pointer;
-    min-height: 68px;
   }
-
-  @media (min-width: 768px) {
-    .card-interactive {
-      min-height: 72px;
-    }
-  }
-
+  
   .card-interactive:hover {
-    box-shadow: 0 6px 20px rgba(0, 0, 0, 0.1);
-    border-color: #FAE008;
-    transform: translateY(-2px);
+    @apply shadow-lg border-[#fae008]/50 scale-[1.01];
   }
-
+  
   .card-interactive:active {
-    transform: translateY(0);
-    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
+    @apply scale-[0.99];
   }
   
-  .section-header {
-    @apply font-semibold uppercase tracking-wider;
-    font-size: 11px;
-    color: #4B5563;
-    margin-bottom: var(--spacing-xs);
-  }
-
-  @media (min-width: 768px) {
-    .section-header {
-      font-size: 12px;
-    }
-  }
-  
-  /* Primary action buttons - Yellow with Black text */
+  /* Button enhancements */
   .btn-primary {
-    @apply bg-[#FAE008] text-[#000000] font-semibold;
-    border-radius: var(--button-radius);
-    min-height: var(--button-height);
-    padding: 0 24px;
-    font-size: 14px;
-    box-shadow: var(--shadow-soft);
-    transition: all 150ms ease;
+    @apply bg-[#fae008] text-[hsl(25,10%,12%)] font-semibold hover:bg-[#e5d007] active:bg-[#d4c006] transition-all duration-150;
+    @apply shadow-sm hover:shadow-md active:shadow-sm;
   }
-
-  @media (min-width: 768px) {
-    .btn-primary {
-      font-size: 15px;
-      min-height: var(--button-height-lg);
-    }
-  }
-
-  .btn-primary:hover {
-      background-color: #e5d007;
-      box-shadow: 0 4px 16px rgba(250, 224, 8, 0.3);
-      transform: translateY(-2px);
-    }
-
-    .btn-primary:active {
-      background-color: #d4c006;
-      transform: translateY(0);
-      box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
-    }
-
-  /* Secondary buttons - White with Grey border */
+  
   .btn-secondary {
-    @apply bg-white text-[#000000] border-2 border-[#E5E7EB] font-medium;
-    border-radius: var(--button-radius);
-    min-height: var(--button-height);
-    padding: 0 24px;
-    font-size: 14px;
-    transition: all 150ms ease;
+    @apply bg-white text-[hsl(25,10%,12%)] border border-[hsl(32,15%,88%)] font-medium hover:bg-[hsl(32,25%,94%)] hover:border-[hsl(32,15%,80%)];
+    @apply transition-all duration-150 active:bg-[hsl(32,20%,92%)];
   }
-
-  @media (min-width: 768px) {
-    .btn-secondary {
-      font-size: 15px;
-      min-height: var(--button-height-lg);
-    }
-  }
-
-  .btn-secondary:hover {
-      background-color: #F8F9FA;
-      border-color: #4B5563;
-      box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
-    }
-
-    .btn-secondary:active {
-      background-color: #E5E7EB;
-      transform: translateY(0);
-    }
   
-  /* Form inputs - White bg with grey border */
+  /* Form input enhancements */
   .input-enhanced {
-    @apply bg-white border-[#E5E7EB];
-    border-radius: 8px;
-    min-height: var(--button-height);
-    padding: 0 16px;
-    font-size: 14px;
-    box-shadow: var(--shadow-soft);
-  }
-
-  @media (min-width: 768px) {
-    .input-enhanced {
-      font-size: 15px;
-    }
-  }
-
-  .input-enhanced:focus {
-    @apply border-[#FAE008] ring-2 ring-[#FAE008]/20;
+    @apply border-[hsl(32,15%,88%)] focus:border-[#fae008] focus:ring-2 focus:ring-[#fae008]/20;
+    @apply transition-all duration-150;
   }
   
-  .spacing-xs { margin: var(--spacing-xs); }
-  .spacing-sm { margin: var(--spacing-sm); }
-  .spacing-md { margin: var(--spacing-md); }
-  .spacing-lg { margin: var(--spacing-lg); }
-  .spacing-xl { margin: var(--spacing-xl); }
-  
-  .p-card { padding: var(--card-padding); }
-  .p-card-lg { padding: var(--card-padding-lg); }
-  
-  .fade-in {
-    animation: fadeIn 0.2s ease-in;
-  }
-  
-  @keyframes fadeIn {
-    from {
-      opacity: 0;
-      transform: translateY(4px);
-    }
-    to {
-      opacity: 1;
-      transform: translateY(0);
-    }
-  }
-  
-  .section-divider {
-    @apply border-t border-[#E5E7EB];
-    margin-top: 16px;
-    margin-bottom: 16px;
-  }
-
-  @media (min-width: 768px) {
-    .section-divider {
-      margin-top: var(--spacing-md);
-      margin-bottom: var(--spacing-md);
-    }
-  }
-
-  .text-high-contrast {
-    color: #111827;
-    font-weight: 600;
-  }
-
-  .text-secondary {
-    color: #4B5563;
-  }
-
-  .text-disabled {
-    color: #9CA3AF;
-  }
-
-  /* Tab styles */
-  .tab-active {
-    border-bottom: 2px solid #FAE008;
-    color: #111827;
-  }
-
-  .tab-inactive {
-    color: #4B5563;
-  }
-
-  .tab-inactive:hover {
-    color: #111827;
+  /* Badge enhancements */
+  .badge-yellow {
+    @apply bg-[#fae008]/20 text-[hsl(25,10%,12%)] border border-[#fae008]/30 font-medium;
   }
 }
