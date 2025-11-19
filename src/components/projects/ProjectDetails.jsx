@@ -335,7 +335,7 @@ export default function ProjectDetails({ project, onClose, onEdit, onDelete }) {
                                 </div>
                               )}
                             </div>
-                            <Badge className="status-chip capitalize">
+                            <Badge variant="outline" className={`status-${job.status} capitalize text-xs`}>
                               {job.status.replace(/_/g, ' ')}
                             </Badge>
                           </div>

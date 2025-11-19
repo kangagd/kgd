@@ -552,7 +552,7 @@ export default function JobDetails({ job, onClose, onDelete }) {
                 </div>
               </div>
               <div className="flex items-center gap-2 flex-shrink-0">
-                <Badge className={`status-${job.status} capitalize whitespace-nowrap text-xs`}>
+                <Badge variant="outline" className={`status-${job.status} capitalize whitespace-nowrap text-xs`}>
                   {job.status.replace(/_/g, ' ')}
                 </Badge>
                 {!isTechnician && (
@@ -994,7 +994,7 @@ export default function JobDetails({ job, onClose, onDelete }) {
                                 )}
                               </div>
                               {pJob.status && (
-                               <Badge className="status-chip capitalize">
+                               <Badge variant="outline" className={`status-${pJob.status} capitalize text-xs`}>
                                  {pJob.status.replace(/_/g, ' ')}
                                </Badge>
                               )}
