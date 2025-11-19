@@ -207,7 +207,7 @@ export default function Projects() {
                     <div className="flex-1 min-w-0">
                       <div className="flex items-center gap-2 flex-wrap mb-2">
                         <h3 className="text-lg md:text-xl font-bold text-[#111827]">{project.title}</h3>
-                        <Badge className="status-chip capitalize">
+                        <Badge className={`status-${project.status} capitalize text-xs`}>
                           {project.status.replace(/_/g, ' ')}
                         </Badge>
                       </div>

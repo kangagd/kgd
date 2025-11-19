@@ -169,7 +169,7 @@ export default function Dashboard() {
                 <div>
                   <div className="flex items-center gap-2 flex-wrap mb-2">
                     <span className="text-xl md:text-2xl font-bold text-[#111111]">#{nextJob.job_number}</span>
-                    <Badge style={{ backgroundColor: statusColors[nextJob.status], color: statusTextColors[nextJob.status] }} className="capitalize font-semibold text-xs py-1 px-2 md:px-3 rounded-full border border-current">
+                    <Badge className={`status-${nextJob.status} capitalize text-xs`}>
                       {nextJob.status.replace(/_/g, ' ')}
                     </Badge>
                   </div>
@@ -245,11 +245,11 @@ export default function Dashboard() {
           <Card className="card-enhanced overflow-hidden mb-6 border-2 border-[#FAE008]">
             <CardHeader className="bg-[#FFFBE6] border-b-2 border-[#FAE008] p-4 md:p-6">
               <CardTitle className="flex items-center gap-3 text-lg md:text-xl font-bold text-[#111827] tracking-tight">
-                <Calendar className="w-6 h-6 text-[#111827]" />
-                Today's Overview
-                <Badge className="status-chip">
-                  {(isTechnician ? myTodayJobs : todayJobs).length} {(isTechnician ? myTodayJobs : todayJobs).length === 1 ? 'Job' : 'Jobs'}
-                </Badge>
+              <Calendar className="w-6 h-6 text-[#111827]" />
+              Today's Overview
+              <Badge className="bg-slate-50 text-slate-700 border-slate-200 rounded-lg px-2 py-1 font-semibold border-2 text-xs">
+                {(isTechnician ? myTodayJobs : todayJobs).length} {(isTechnician ? myTodayJobs : todayJobs).length === 1 ? 'Job' : 'Jobs'}
+              </Badge>
               </CardTitle>
             </CardHeader>
             <CardContent className="p-3 md:p-6">
@@ -271,7 +271,7 @@ export default function Dashboard() {
                                 {job.job_type_name}
                               </Badge>
                             )}
-                            <Badge className="status-chip capitalize">
+                            <Badge className={`status-${job.status} capitalize text-xs`}>
                               {job.status.replace(/_/g, ' ')}
                             </Badge>
                           </div>

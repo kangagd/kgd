@@ -552,7 +552,7 @@ export default function JobDetails({ job, onClose, onDelete }) {
                 </div>
               </div>
               <div className="flex items-center gap-2 flex-shrink-0">
-                <Badge className="status-chip capitalize whitespace-nowrap">
+                <Badge className={`status-${job.status} capitalize whitespace-nowrap text-xs`}>
                   {job.status.replace(/_/g, ' ')}
                 </Badge>
                 {!isTechnician && (

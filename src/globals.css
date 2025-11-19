@@ -213,24 +213,37 @@
     }
   }
 
-  /* Status Chips - Yellow background with black text */
-    .status-chip {
-      background-color: #FAE008;
-      color: #000000;
-      @apply rounded-lg px-3 py-1.5 font-bold;
-      font-size: 11px;
-      min-height: 26px;
-      display: inline-flex;
-      align-items: center;
-      justify-content: center;
-      border: 2px solid #000000;
+  /* Status Chips - Muted color palette per status */
+    .status-open {
+      @apply bg-orange-50 text-orange-700 border-orange-200 rounded-lg px-2 py-1 font-semibold border-2;
     }
 
-    @media (min-width: 768px) {
-      .status-chip {
-        font-size: 12px;
-        min-height: 28px;
-      }
+    .status-scheduled {
+      @apply bg-yellow-50 text-yellow-700 border-yellow-200 rounded-lg px-2 py-1 font-semibold border-2;
+    }
+
+    .status-in_progress {
+      @apply bg-blue-50 text-blue-700 border-blue-200 rounded-lg px-2 py-1 font-semibold border-2;
+    }
+
+    .status-completed {
+      @apply bg-green-50 text-green-700 border-green-200 rounded-lg px-2 py-1 font-semibold border-2;
+    }
+
+    .status-cancelled {
+      @apply bg-red-50 text-red-700 border-red-200 rounded-lg px-2 py-1 font-semibold border-2;
+    }
+
+    .status-quoted {
+      @apply bg-purple-50 text-purple-700 border-purple-200 rounded-lg px-2 py-1 font-semibold border-2;
+    }
+
+    .status-invoiced {
+      @apply bg-indigo-50 text-indigo-700 border-indigo-200 rounded-lg px-2 py-1 font-semibold border-2;
+    }
+
+    .status-paid {
+      @apply bg-emerald-50 text-emerald-700 border-emerald-200 rounded-lg px-2 py-1 font-semibold border-2;
     }
   
   .status-open {

@@ -263,9 +263,9 @@ export default function Jobs() {
           <Tabs value={statusFilter} onValueChange={setStatusFilter} className="w-full overflow-x-hidden">
               <TabsList className="w-full grid grid-cols-2 sm:grid-cols-4 h-auto gap-1">
                 {statusFilters.map((filter) =>
-              <TabsTrigger key={filter.value} value={filter.value} className="font-semibold text-xs md:text-sm py-1.5 md:py-2 px-1 md:px-2 whitespace-nowrap">
-                    {filter.label}
-                  </TabsTrigger>
+              <TabsTrigger key={filter.value} value={filter.value} className="font-semibold text-xs md:text-sm py-2 md:py-2.5 px-2 md:px-3 whitespace-nowrap">
+                {filter.label}
+              </TabsTrigger>
               )}
               </TabsList>
             </Tabs>
