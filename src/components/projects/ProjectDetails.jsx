@@ -153,37 +153,46 @@ export default function ProjectDetails({ project, onClose, onEdit, onDelete }) {
       </CardHeader>
 
       <CardContent className="p-6 space-y-6">
-        <div className="bg-slate-50 rounded-xl p-4 border-2 border-slate-200">
-          <h3 className="font-bold text-[#000000] mb-3 flex items-center gap-2">
-            Customer Information
-          </h3>
-          <div className="space-y-2">
-            <div className="flex items-center gap-2 flex-wrap">
-              <div 
-                className="font-bold text-lg text-[#000000] cursor-pointer hover:text-[#fae008] transition-colors"
-                onClick={handleCustomerClick}
-              >
-                {project.customer_name}
+        <div className="bg-[#F8F9FA] rounded-lg p-4 space-y-4">
+          <h3 className="font-bold text-[#111827] mb-3">Customer Information</h3>
+          <div className="space-y-3">
+            <div className="flex items-center gap-2.5">
+              <div className="w-10 h-10 bg-[#E5E7EB] rounded-full flex items-center justify-center flex-shrink-0">
+                <span className="text-sm font-bold text-[#111827]">{project.customer_name?.charAt(0)}</span>
               </div>
-              {customer?.customer_type && (
-                <Badge variant="outline" className="font-semibold border-2">
-                  {customer.customer_type}
-                </Badge>
-              )}
+              <div className="flex-1 min-w-0">
+                <div className="text-xs text-[#4B5563] font-medium mb-0.5">Customer</div>
+                <div 
+                  className="text-sm font-semibold text-[#111827] cursor-pointer hover:text-[#FAE008] transition-colors"
+                  onClick={handleCustomerClick}
+                >
+                  {project.customer_name}
+                </div>
+                {customer?.customer_type && (
+                  <Badge className="bg-[#EDE9FE] text-[#6D28D9] hover:bg-[#EDE9FE] border-0 font-semibold text-xs px-2 py-0.5 rounded-lg mt-1">
+                    {customer.customer_type}
+                  </Badge>
+                )}
+              </div>
             </div>
+            
             {project.address && (
-              <div className="flex items-start gap-2 text-sm text-slate-600">
-                <MapPin className="w-4 h-4 mt-0.5 flex-shrink-0" />
-                <span>{project.address}</span>
+              <div className="flex items-start gap-2.5 pt-3 border-t border-[#E5E7EB]">
+                <MapPin className="w-5 h-5 text-[#4B5563] mt-0.5 flex-shrink-0" />
+                <div className="flex-1 min-w-0">
+                  <div className="text-xs text-[#4B5563] font-medium mb-0.5">Address</div>
+                  <span className="text-sm text-[#111827] font-semibold">{project.address}</span>
+                </div>
               </div>
             )}
-            <div className="flex gap-3">
+            
+            <div className="flex gap-2 pt-3 border-t border-[#E5E7EB]">
               {project.customer_phone && (
                 <Button
                   size="sm"
-                  variant="ghost"
+                  variant="outline"
                   onClick={() => window.location.href = `tel:${project.customer_phone}`}
-                  className="hover:bg-blue-100 text-slate-600 hover:text-blue-700"
+                  className="flex-1"
                 >
                   <Phone className="w-4 h-4 mr-1" />
                   Call
@@ -192,9 +201,9 @@ export default function ProjectDetails({ project, onClose, onEdit, onDelete }) {
               {project.customer_email && (
                 <Button
                   size="sm"
-                  variant="ghost"
+                  variant="outline"
                   onClick={() => window.location.href = `mailto:${project.customer_email}`}
-                  className="hover:bg-purple-100 text-slate-600 hover:text-purple-700"
+                  className="flex-1"
                 >
                   <Mail className="w-4 h-4 mr-1" />
                   Email
@@ -320,25 +329,31 @@ export default function ProjectDetails({ project, onClose, onEdit, onDelete }) {
         )}
 
         {(project.quote_value || project.invoice_value || project.payment_received) && (
-          <div className="bg-green-50 rounded-xl p-4 border-2 border-green-200">
-            <h3 className="font-bold text-[#000000] mb-3">Financials</h3>
-            <div className="grid grid-cols-3 gap-4 text-sm">
+          <div className="bg-[#F8F9FA] rounded-lg p-4">
+            <h3 className="font-bold text-[#111827] mb-4">Financials</h3>
+            <div className="grid grid-cols-3 gap-6">
               {project.quote_value && (
-                <div>
-                  <div className="text-slate-600 font-medium">Quote</div>
-                  <div className="text-lg font-bold text-[#000000]">${project.quote_value}</div>
+                <div className="flex items-start gap-2.5">
+                  <div className="flex-1 min-w-0">
+                    <div className="text-xs text-[#4B5563] font-medium mb-1">Quote</div>
+                    <div className="text-lg font-bold text-[#111827]">${project.quote_value}</div>
+                  </div>
                 </div>
               )}
               {project.invoice_value && (
-                <div>
-                  <div className="text-slate-600 font-medium">Invoice</div>
-                  <div className="text-lg font-bold text-[#000000]">${project.invoice_value}</div>
+                <div className="flex items-start gap-2.5">
+                  <div className="flex-1 min-w-0">
+                    <div className="text-xs text-[#4B5563] font-medium mb-1">Invoice</div>
+                    <div className="text-lg font-bold text-[#111827]">${project.invoice_value}</div>
+                  </div>
                 </div>
               )}
               {project.payment_received && (
-                <div>
-                  <div className="text-slate-600 font-medium">Paid</div>
-                  <div className="text-lg font-bold text-green-700">${project.payment_received}</div>
+                <div className="flex items-start gap-2.5">
+                  <div className="flex-1 min-w-0">
+                    <div className="text-xs text-[#4B5563] font-medium mb-1">Paid</div>
+                    <div className="text-lg font-bold text-[#16A34A]">${project.payment_received}</div>
+                  </div>
                 </div>
               )}
             </div>
