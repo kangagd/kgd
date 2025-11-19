@@ -733,62 +733,18 @@ export default function JobDetails({ job, onClose, onStatusChange, onDelete }) {
                 <CardHeader className="bg-[#F8F9FA] px-4 py-3 border-b border-[#E5E7EB]">
                   <div className="flex items-center gap-2">
                     <FileText className="w-4 h-4 text-[#6B7280]" />
-                    <h3 className="text-sm font-bold text-[#111827]">Job Info</h3>
+                    <h3 className="text-sm font-bold text-[#111827]">Notes</h3>
                   </div>
                 </CardHeader>
                 <CardContent className="p-3">
                   <RichTextEditor
-                    value={additionalInfo}
-                    onChange={setAdditionalInfo}
-                    onBlur={handleAdditionalInfoBlur}
-                    placeholder="Add additional information..." />
+                    value={notes}
+                    onChange={setNotes}
+                    onBlur={handleNotesBlur}
+                    placeholder="Add notes..." />
 
                 </CardContent>
               </Card>
-
-              {job.doors && job.doors.length > 0 && (
-                <Card className="border border-[#E5E7EB] shadow-sm overflow-hidden">
-                  <CardHeader className="bg-[#F8F9FA] px-4 py-3 border-b border-[#E5E7EB]">
-                    <div className="flex items-center gap-2">
-                      <Package className="w-4 h-4 text-[#6B7280]" />
-                      <h3 className="text-sm font-bold text-[#111827]">Door Measurements</h3>
-                    </div>
-                  </CardHeader>
-                  <CardContent className="p-3 space-y-3">
-                    {job.doors.map((door, index) => (
-                      <div key={index} className="p-3 bg-slate-50 border border-slate-200 rounded-lg">
-                        <div className="font-semibold text-sm text-[#111827] mb-2">Door {index + 1}</div>
-                        <div className="grid grid-cols-2 gap-2 text-sm">
-                          {door.height && (
-                            <div>
-                              <span className="text-slate-500">Height:</span>
-                              <span className="ml-2 font-medium text-[#111827]">{door.height}</span>
-                            </div>
-                          )}
-                          {door.width && (
-                            <div>
-                              <span className="text-slate-500">Width:</span>
-                              <span className="ml-2 font-medium text-[#111827]">{door.width}</span>
-                            </div>
-                          )}
-                          {door.style && (
-                            <div>
-                              <span className="text-slate-500">Style:</span>
-                              <span className="ml-2 font-medium text-[#111827]">{door.style}</span>
-                            </div>
-                          )}
-                          {door.type && (
-                            <div>
-                              <span className="text-slate-500">Type:</span>
-                              <span className="ml-2 font-medium text-[#111827]">{door.type}</span>
-                            </div>
-                          )}
-                        </div>
-                      </div>
-                    ))}
-                  </CardContent>
-                </Card>
-              )}
 
               <Card className="border border-[#E5E7EB] shadow-sm overflow-hidden">
                 <CardHeader className="bg-[#F8F9FA] px-4 py-3 border-b border-[#E5E7EB]">
@@ -812,15 +768,15 @@ export default function JobDetails({ job, onClose, onStatusChange, onDelete }) {
                 <CardHeader className="bg-[#F8F9FA] px-4 py-3 border-b border-[#E5E7EB]">
                   <div className="flex items-center gap-2">
                     <FileText className="w-4 h-4 text-[#6B7280]" />
-                    <h3 className="text-sm font-bold text-[#111827]">Notes</h3>
+                    <h3 className="text-sm font-bold text-[#111827]">Additional Info</h3>
                   </div>
                 </CardHeader>
                 <CardContent className="p-3">
                   <RichTextEditor
-                    value={notes}
-                    onChange={setNotes}
-                    onBlur={handleNotesBlur}
-                    placeholder="Add notes..." />
+                    value={additionalInfo}
+                    onChange={setAdditionalInfo}
+                    onBlur={handleAdditionalInfoBlur}
+                    placeholder="Add additional information..." />
 
                 </CardContent>
               </Card>

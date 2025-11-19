@@ -40,9 +40,7 @@ export default function JobForm({ job, technicians, onSubmit, onCancel, isSubmit
     outcome: "",
     notes: "",
     additional_info: "",
-    pricing_provided: "",
     measurements: null,
-    doors: [],
     image_urls: [],
     quote_url: "",
     invoice_url: "",
@@ -505,124 +503,20 @@ export default function JobForm({ job, technicians, onSubmit, onCancel, isSubmit
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="additional_info" className="text-sm font-semibold text-[#000000]">Job Info</Label>
-              <RichTextEditor
-                value={formData.additional_info}
-                onChange={(value) => setFormData({ ...formData, additional_info: value })}
-                placeholder="Add any additional information..."
-              />
-            </div>
-
-            <div className="space-y-4 pt-4 border-t-2 border-slate-200">
-              <div className="flex items-center justify-between">
-                <h3 className="font-bold text-[#000000] tracking-tight">Door Measurements</h3>
-                <Button
-                  type="button"
-                  variant="outline"
-                  onClick={() => setFormData({ ...formData, doors: [...(formData.doors || []), { height: "", width: "", style: "", type: "" }] })}
-                  className="border-2 hover:bg-slate-100"
-                >
-                  <Plus className="w-4 h-4 mr-2" />
-                  Add Door
-                </Button>
-              </div>
-              
-              {formData.doors && formData.doors.length > 0 && (
-                <div className="space-y-3">
-                  {formData.doors.map((door, index) => (
-                    <div key={index} className="p-4 border-2 border-slate-200 rounded-xl space-y-3">
-                      <div className="flex items-center justify-between mb-2">
-                        <span className="font-semibold text-sm text-[#000000]">Door {index + 1}</span>
-                        <Button
-                          type="button"
-                          variant="ghost"
-                          size="icon"
-                          onClick={() => {
-                            const newDoors = formData.doors.filter((_, i) => i !== index);
-                            setFormData({ ...formData, doors: newDoors });
-                          }}
-                          className="h-8 w-8 hover:bg-red-50 hover:text-red-600"
-                        >
-                          <X className="w-4 h-4" />
-                        </Button>
-                      </div>
-                      <div className="grid grid-cols-2 gap-3">
-                        <div className="space-y-1">
-                          <Label className="text-xs font-semibold text-[#000000]">Height</Label>
-                          <Input
-                            value={door.height}
-                            onChange={(e) => {
-                              const newDoors = [...formData.doors];
-                              newDoors[index].height = e.target.value;
-                              setFormData({ ...formData, doors: newDoors });
-                            }}
-                            placeholder="e.g., 2100mm"
-                            className="border-2 border-slate-300 focus:border-[#fae008] focus:ring-2 focus:ring-[#fae008]/20"
-                          />
-                        </div>
-                        <div className="space-y-1">
-                          <Label className="text-xs font-semibold text-[#000000]">Width</Label>
-                          <Input
-                            value={door.width}
-                            onChange={(e) => {
-                              const newDoors = [...formData.doors];
-                              newDoors[index].width = e.target.value;
-                              setFormData({ ...formData, doors: newDoors });
-                            }}
-                            placeholder="e.g., 2400mm"
-                            className="border-2 border-slate-300 focus:border-[#fae008] focus:ring-2 focus:ring-[#fae008]/20"
-                          />
-                        </div>
-                        <div className="space-y-1">
-                          <Label className="text-xs font-semibold text-[#000000]">Style</Label>
-                          <Input
-                            value={door.style}
-                            onChange={(e) => {
-                              const newDoors = [...formData.doors];
-                              newDoors[index].style = e.target.value;
-                              setFormData({ ...formData, doors: newDoors });
-                            }}
-                            placeholder="e.g., Panel Lift"
-                            className="border-2 border-slate-300 focus:border-[#fae008] focus:ring-2 focus:ring-[#fae008]/20"
-                          />
-                        </div>
-                        <div className="space-y-1">
-                          <Label className="text-xs font-semibold text-[#000000]">Type</Label>
-                          <Input
-                            value={door.type}
-                            onChange={(e) => {
-                              const newDoors = [...formData.doors];
-                              newDoors[index].type = e.target.value;
-                              setFormData({ ...formData, doors: newDoors });
-                            }}
-                            placeholder="e.g., Sectional"
-                            className="border-2 border-slate-300 focus:border-[#fae008] focus:ring-2 focus:ring-[#fae008]/20"
-                          />
-                        </div>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              )}
-            </div>
-
-            <div className="space-y-2 pt-4 border-t-2 border-slate-200">
-              <Label htmlFor="pricing_provided" className="text-sm font-semibold text-[#000000]">Pricing</Label>
-              <Input
-                id="pricing_provided"
-                value={formData.pricing_provided || ""}
-                onChange={(e) => setFormData({ ...formData, pricing_provided: e.target.value })}
-                placeholder="Enter pricing information..."
-                className="border-2 border-slate-300 focus:border-[#fae008] focus:ring-2 focus:ring-[#fae008]/20 transition-all"
-              />
-            </div>
-
-            <div className="space-y-2 pt-4 border-t-2 border-slate-200">
               <Label htmlFor="notes" className="text-sm font-semibold text-[#000000]">Notes & Instructions</Label>
               <RichTextEditor
                 value={formData.notes}
                 onChange={(value) => setFormData({ ...formData, notes: value })}
                 placeholder="Add any special instructions or notes..."
+              />
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="additional_info" className="text-sm font-semibold text-[#000000]">Additional Info</Label>
+              <RichTextEditor
+                value={formData.additional_info}
+                onChange={(value) => setFormData({ ...formData, additional_info: value })}
+                placeholder="Add any additional information..."
               />
             </div>
 
