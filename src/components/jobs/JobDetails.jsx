@@ -733,41 +733,6 @@ export default function JobDetails({ job, onClose, onStatusChange, onDelete }) {
                 <CardHeader className="bg-[#F8F9FA] px-4 py-3 border-b border-[#E5E7EB]">
                   <div className="flex items-center gap-2">
                     <FileText className="w-4 h-4 text-[#6B7280]" />
-                    <h3 className="text-sm font-bold text-[#111827]">Notes</h3>
-                  </div>
-                </CardHeader>
-                <CardContent className="p-3">
-                  <RichTextEditor
-                    value={notes}
-                    onChange={setNotes}
-                    onBlur={handleNotesBlur}
-                    placeholder="Add notes..." />
-
-                </CardContent>
-              </Card>
-
-              <Card className="border border-[#E5E7EB] shadow-sm overflow-hidden">
-                <CardHeader className="bg-[#F8F9FA] px-4 py-3 border-b border-[#E5E7EB]">
-                  <div className="flex items-center gap-2">
-                    <DollarSign className="w-4 h-4 text-[#6B7280]" />
-                    <h3 className="text-sm font-bold text-[#111827]">Pricing</h3>
-                  </div>
-                </CardHeader>
-                <CardContent className="p-3">
-                  <Input
-                    value={pricingProvided}
-                    onChange={(e) => setPricingProvided(e.target.value)}
-                    onBlur={handlePricingProvidedBlur}
-                    placeholder="Enter pricing..."
-                    className="text-sm h-10 border border-[#E5E7EB] focus:border-[#FAE008] focus:ring-2 focus:ring-[#FAE008]/20 rounded-lg" />
-
-                </CardContent>
-              </Card>
-
-              <Card className="border border-[#E5E7EB] shadow-sm overflow-hidden">
-                <CardHeader className="bg-[#F8F9FA] px-4 py-3 border-b border-[#E5E7EB]">
-                  <div className="flex items-center gap-2">
-                    <FileText className="w-4 h-4 text-[#6B7280]" />
                     <h3 className="text-sm font-bold text-[#111827]">Job Info</h3>
                   </div>
                 </CardHeader>
@@ -824,6 +789,41 @@ export default function JobDetails({ job, onClose, onStatusChange, onDelete }) {
                   </CardContent>
                 </Card>
               )}
+
+              <Card className="border border-[#E5E7EB] shadow-sm overflow-hidden">
+                <CardHeader className="bg-[#F8F9FA] px-4 py-3 border-b border-[#E5E7EB]">
+                  <div className="flex items-center gap-2">
+                    <DollarSign className="w-4 h-4 text-[#6B7280]" />
+                    <h3 className="text-sm font-bold text-[#111827]">Pricing</h3>
+                  </div>
+                </CardHeader>
+                <CardContent className="p-3">
+                  <Input
+                    value={pricingProvided}
+                    onChange={(e) => setPricingProvided(e.target.value)}
+                    onBlur={handlePricingProvidedBlur}
+                    placeholder="Enter pricing..."
+                    className="text-sm h-10 border border-[#E5E7EB] focus:border-[#FAE008] focus:ring-2 focus:ring-[#FAE008]/20 rounded-lg" />
+
+                </CardContent>
+              </Card>
+
+              <Card className="border border-[#E5E7EB] shadow-sm overflow-hidden">
+                <CardHeader className="bg-[#F8F9FA] px-4 py-3 border-b border-[#E5E7EB]">
+                  <div className="flex items-center gap-2">
+                    <FileText className="w-4 h-4 text-[#6B7280]" />
+                    <h3 className="text-sm font-bold text-[#111827]">Notes</h3>
+                  </div>
+                </CardHeader>
+                <CardContent className="p-3">
+                  <RichTextEditor
+                    value={notes}
+                    onChange={setNotes}
+                    onBlur={handleNotesBlur}
+                    placeholder="Add notes..." />
+
+                </CardContent>
+              </Card>
 
               {!isTechnician &&
               <div className="flex flex-col gap-2">
