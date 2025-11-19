@@ -535,7 +535,7 @@ export default function JobDetails({ job, onClose, onStatusChange, onDelete }) {
           </div>
 
           <div className="bg-[#ffffff] p-4 rounded-lg space-y-3">
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-x-6 gap-y-3">
+            <div className="grid grid-cols-2 gap-x-6 gap-y-3">
               <div className="flex items-center gap-2.5">
                 <Calendar className="w-5 h-5 text-[#4B5563]" />
                 <div className="flex-1 min-w-0">
