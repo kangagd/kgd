@@ -80,8 +80,8 @@ export default function Calendar() {
 
   if (selectedJob) {
     return (
-      <div className="bg-gradient-to-br from-[hsl(32,20%,98%)] to-[hsl(32,25%,94%)] min-h-screen">
-        <div className="p-2 md:p-8 max-w-4xl mx-auto">
+      <div className="bg-[#F8F9FA] min-h-screen">
+        <div className="p-5 md:p-10 max-w-4xl mx-auto">
           <JobDetails
             job={selectedJob}
             onClose={() => setSelectedJob(null)}
@@ -94,22 +94,37 @@ export default function Calendar() {
   }
 
   return (
-    <div className="p-4 md:p-8 bg-gradient-to-br from-[hsl(32,20%,98%)] to-[hsl(32,25%,94%)] min-h-screen">
-      <div className="max-w-7xl mx-auto space-y-4">
+    <div className="p-5 md:p-10 bg-[#F8F9FA] min-h-screen">
+      <div className="max-w-7xl mx-auto space-y-6">
         <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
           <div>
-            <h1 className="text-2xl md:text-3xl font-bold text-[hsl(25,10%,12%)]">Schedule</h1>
-            <p className="text-[hsl(25,8%,45%)] text-sm mt-1">{getDateRangeText()}</p>
+            <h1 className="text-3xl font-bold text-[#111827] tracking-tight">Schedule</h1>
+            <p className="text-[#4B5563] text-base mt-2.5">{getDateRangeText()}</p>
           </div>
 
-          <div className="flex gap-2">
-            <Button variant="outline" size="sm" onClick={handlePrevious}>
+          <div className="flex gap-2.5">
+            <Button 
+              variant="outline" 
+              size="sm" 
+              onClick={handlePrevious}
+              className="border border-[#E5E7EB] hover:bg-[#F3F4F6] hover:border-[#D1D5DB] font-semibold transition-all rounded-lg h-10 w-10 p-0"
+            >
               <ChevronLeft className="w-4 h-4" />
             </Button>
-            <Button variant="outline" size="sm" onClick={handleToday}>
+            <Button 
+              variant="outline" 
+              size="sm" 
+              onClick={handleToday}
+              className="border border-[#E5E7EB] hover:bg-[#F3F4F6] hover:border-[#D1D5DB] font-semibold transition-all rounded-lg h-10"
+            >
               Today
             </Button>
-            <Button variant="outline" size="sm" onClick={handleNext}>
+            <Button 
+              variant="outline" 
+              size="sm" 
+              onClick={handleNext}
+              className="border border-[#E5E7EB] hover:bg-[#F3F4F6] hover:border-[#D1D5DB] font-semibold transition-all rounded-lg h-10 w-10 p-0"
+            >
               <ChevronRight className="w-4 h-4" />
             </Button>
           </div>
@@ -117,22 +132,25 @@ export default function Calendar() {
 
         <div className="flex flex-col md:flex-row gap-4 items-start md:items-center">
           <Tabs value={viewMode} onValueChange={setViewMode}>
-            <TabsList>
-              <TabsTrigger value="day">Day</TabsTrigger>
-              <TabsTrigger value="week">Week</TabsTrigger>
-              <TabsTrigger value="month">Month</TabsTrigger>
+            <TabsList className="h-10 bg-white border border-[#E5E7EB]">
+              <TabsTrigger value="day" className="font-semibold data-[state=active]:bg-[#FAE008] data-[state=active]:text-[#111827]">Day</TabsTrigger>
+              <TabsTrigger value="week" className="font-semibold data-[state=active]:bg-[#FAE008] data-[state=active]:text-[#111827]">Week</TabsTrigger>
+              <TabsTrigger value="month" className="font-semibold data-[state=active]:bg-[#FAE008] data-[state=active]:text-[#111827]">Month</TabsTrigger>
             </TabsList>
           </Tabs>
 
-          <div className="flex flex-wrap gap-2">
-            <span className="text-sm text-[hsl(25,8%,45%)] self-center">Filter by technician:</span>
+          <div className="flex flex-wrap gap-2 items-center">
+            <span className="text-sm text-[#4B5563] font-semibold">Filter by technician:</span>
             {technicians.map(tech => (
               <Button
                 key={tech.email}
                 variant={selectedTechnicians.includes(tech.email) ? "default" : "outline"}
                 size="sm"
                 onClick={() => toggleTechnician(tech.email)}
-                className={selectedTechnicians.includes(tech.email) ? "bg-[#fae008] text-[hsl(25,10%,12%)] hover:bg-[#e5d007]" : ""}
+                className={selectedTechnicians.includes(tech.email) 
+                  ? "bg-[#FAE008] text-[#111827] hover:bg-[#E5CF07] font-semibold shadow-sm rounded-lg h-10" 
+                  : "border border-[#E5E7EB] hover:bg-[#F3F4F6] hover:border-[#D1D5DB] font-semibold rounded-lg h-10"
+                }
               >
                 {tech.full_name}
               </Button>
@@ -142,7 +160,7 @@ export default function Calendar() {
                 variant="ghost"
                 size="sm"
                 onClick={() => setSelectedTechnicians([])}
-                className="text-[hsl(25,8%,45%)]"
+                className="text-[#6B7280] hover:text-[#111827] hover:bg-[#F3F4F6] font-semibold rounded-lg h-10"
               >
                 Clear
               </Button>
