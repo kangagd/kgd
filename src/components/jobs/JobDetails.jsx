@@ -427,28 +427,35 @@ export default function JobDetails({ job, onClose, onStatusChange, onDelete }) {
               >
                 <ArrowLeft className="w-5 h-5 text-[#111827]" />
               </Button>
-              <div className="flex-1 min-w-0">
+              <div className="flex-1 min-w-0 space-y-3">
+                <CardTitle
+                  className="text-xl font-semibold text-[#111827] cursor-pointer hover:text-[#FAE008] transition-colors leading-tight"
+                  onClick={() => setShowCustomerEdit(true)}
+                >
+                  {job.customer_name}
+                </CardTitle>
+                
                 <div className="flex items-center gap-2 flex-wrap">
-                  <CardTitle
-                    className="text-xl font-bold text-[#111827] cursor-pointer hover:text-[#FAE008] transition-colors"
-                    onClick={() => setShowCustomerEdit(true)}
-                  >
-                    {job.customer_name}
-                  </CardTitle>
+                  <Badge className="bg-[#F2F4F7] text-[#344054] hover:bg-[#F2F4F7] border-0 font-medium text-sm px-3 py-1 rounded-lg">
+                    #{job.job_number}
+                  </Badge>
                   {job.customer_type && (
-                    <Badge variant="outline" className={`${customerTypeColors[job.customer_type]} text-xs font-semibold border`}>
+                    <Badge className="bg-[#EDE9FE] text-[#6D28D9] hover:bg-[#EDE9FE] border-0 font-semibold text-xs px-3 py-1 rounded-lg">
                       {job.customer_type}
+                    </Badge>
+                  )}
+                  {job.project_name && (
+                    <Badge className="bg-[#FAE008] text-[#111827] hover:bg-[#FAE008] border-0 font-semibold text-xs px-3 py-1 rounded-lg">
+                      <FolderKanban className="w-3 h-3 mr-1" />
+                      {job.project_name}
                     </Badge>
                   )}
                 </div>
                 
-                <p className="text-sm text-[#6B7280] font-medium mt-0.5">Job #{job.job_number}</p>
-                {job.project_name && (
-                  <div className="flex items-center gap-1 mt-1">
-                    <FolderKanban className="w-3.5 h-3.5 text-[#6B7280]" />
-                    <p className="text-xs text-[#6B7280] font-medium">{job.project_name}</p>
-                  </div>
-                )}
+                <div className="flex items-start gap-2">
+                  <MapPin className="text-[#4B5563] w-4 h-4 mt-0.5 flex-shrink-0" />
+                  <span className="text-sm text-[#4B5563] leading-snug">{job.address}</span>
+                </div>
               </div>
             </div>
             
@@ -492,11 +499,6 @@ export default function JobDetails({ job, onClose, onStatusChange, onDelete }) {
                 </Button>
               </div>
             )}
-          </div>
-
-          <div className="flex items-start gap-2">
-            <MapPin className="text-[#6B7280] w-5 h-5 mt-0.5 flex-shrink-0" />
-            <span className="text-base font-semibold text-[#111827]">{job.address}</span>
           </div>
 
           <div className="grid grid-cols-2 md:grid-cols-4 gap-2">
