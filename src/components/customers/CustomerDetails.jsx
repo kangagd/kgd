@@ -123,31 +123,40 @@ export default function CustomerDetails({ customer, onClose, onEdit, onDelete })
             </div>
           )}
 
-          <div>
-            <h3 className="text-sm font-bold text-[#000000] mb-3">Contact Information</h3>
+          <div className="bg-[#F8F9FA] rounded-lg p-4">
+            <h3 className="text-sm font-bold text-[#111827] mb-3">Contact Information</h3>
             <div className="space-y-3">
               {customer.phone && (
-                <div className="flex items-center gap-2 text-slate-700">
-                  <Phone className="w-4 h-4 text-slate-400" />
-                  <a href={`tel:${customer.phone}`} className="hover:text-[#fae008] font-medium transition-colors">
-                    {customer.phone}
-                  </a>
+                <div className="flex items-center gap-2.5">
+                  <Phone className="w-5 h-5 text-[#4B5563]" />
+                  <div className="flex-1 min-w-0">
+                    <div className="text-xs text-[#4B5563] font-medium mb-0.5">Phone</div>
+                    <a href={`tel:${customer.phone}`} className="text-sm font-semibold text-[#111827] hover:text-[#FAE008] transition-colors">
+                      {customer.phone}
+                    </a>
+                  </div>
                 </div>
               )}
               {customer.secondary_phone && (
-                <div className="flex items-center gap-2 text-slate-700">
-                  <Phone className="w-4 h-4 text-slate-400" />
-                  <a href={`tel:${customer.secondary_phone}`} className="hover:text-[#fae008] font-medium transition-colors">
-                    {customer.secondary_phone} (secondary)
-                  </a>
+                <div className="flex items-center gap-2.5 pt-3 border-t border-[#E5E7EB]">
+                  <Phone className="w-5 h-5 text-[#4B5563]" />
+                  <div className="flex-1 min-w-0">
+                    <div className="text-xs text-[#4B5563] font-medium mb-0.5">Secondary Phone</div>
+                    <a href={`tel:${customer.secondary_phone}`} className="text-sm font-semibold text-[#111827] hover:text-[#FAE008] transition-colors">
+                      {customer.secondary_phone}
+                    </a>
+                  </div>
                 </div>
               )}
               {customer.email && (
-                <div className="flex items-center gap-2 text-slate-700">
-                  <Mail className="w-4 h-4 text-slate-400" />
-                  <a href={`mailto:${customer.email}`} className="hover:text-[#fae008] font-medium transition-colors truncate">
-                    {customer.email}
-                  </a>
+                <div className="flex items-center gap-2.5 pt-3 border-t border-[#E5E7EB]">
+                  <Mail className="w-5 h-5 text-[#4B5563]" />
+                  <div className="flex-1 min-w-0">
+                    <div className="text-xs text-[#4B5563] font-medium mb-0.5">Email</div>
+                    <a href={`mailto:${customer.email}`} className="text-sm font-semibold text-[#111827] hover:text-[#FAE008] transition-colors truncate block">
+                      {customer.email}
+                    </a>
+                  </div>
                 </div>
               )}
             </div>
