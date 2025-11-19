@@ -39,14 +39,6 @@ export default function MeasurementsForm({ measurements, onChange }) {
 
   return (
     <div className="space-y-6">
-      <div className="flex items-center gap-2">
-        <Checkbox
-          checked={data.is_islo || false}
-          onCheckedChange={updateIslo}
-        />
-        <Label>ISLO</Label>
-      </div>
-
       <Card>
         <CardHeader>
           <CardTitle>New Door Measurements</CardTitle>
