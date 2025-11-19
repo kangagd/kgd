@@ -1,12 +1,14 @@
-import React from "react";
+import React, { useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { ArrowLeft, Plus, Edit, Trash2, MapPin, Phone, Mail, FileText, Image as ImageIcon } from "lucide-react";
 import { base44 } from "@/api/base44Client";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useNavigate } from "react-router-dom";
 import { createPageUrl } from "@/utils";
+import EditableField from "../jobs/EditableField";
+import RichTextEditor from "../common/RichTextEditor";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -49,6 +51,9 @@ const jobStatusColors = {
 
 export default function ProjectDetails({ project, onClose, onEdit, onDelete }) {
   const navigate = useNavigate();
+  const queryClient = useQueryClient();
+  const [description, setDescription] = useState(project.description || "");
+  const [notes, setNotes] = useState(project.notes || "");
 
   const { data: projectJobs = [] } = useQuery({
     queryKey: ['projectJobs', project.id],
@@ -63,6 +68,18 @@ export default function ProjectDetails({ project, onClose, onEdit, onDelete }) {
     enabled: !!project.customer_id
   });
 
+  const { data: technicians = [] } = useQuery({
+    queryKey: ['technicians'],
+    queryFn: () => base44.entities.User.filter({ is_field_technician: true })
+  });
+
+  const updateProjectMutation = useMutation({
+    mutationFn: ({ field, value }) => base44.entities.Project.update(project.id, { [field]: value }),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['projects'] });
+    }
+  });
+
   const handleAddJob = () => {
     navigate(createPageUrl("Jobs") + `?action=new&projectId=${project.id}`);
   };
@@ -75,6 +92,32 @@ export default function ProjectDetails({ project, onClose, onEdit, onDelete }) {
     if (customer) {
       navigate(createPageUrl("Customers") + `?customerId=${customer.id}`);
     }
+  };
+
+  const handleFieldSave = (fieldName, oldValue, newValue) => {
+    updateProjectMutation.mutate({ field: fieldName, value: newValue });
+  };
+
+  const handleDescriptionBlur = () => {
+    if (description !== project.description) {
+      updateProjectMutation.mutate({ field: 'description', value: description });
+    }
+  };
+
+  const handleNotesBlur = () => {
+    if (notes !== project.notes) {
+      updateProjectMutation.mutate({ field: 'notes', value: notes });
+    }
+  };
+
+  const handleTechniciansChange = (emails) => {
+    const emailsArray = Array.isArray(emails) ? emails : [];
+    const techNames = emailsArray.map(email => {
+      const tech = technicians.find(t => t.email === email);
+      return tech?.full_name || "";
+    }).filter(Boolean);
+    updateProjectMutation.mutate({ field: 'assigned_technicians', value: emailsArray });
+    updateProjectMutation.mutate({ field: 'assigned_technicians_names', value: techNames });
   };
 
   const isInstallType = project.project_type && project.project_type.includes("Install");
@@ -93,20 +136,81 @@ export default function ProjectDetails({ project, onClose, onEdit, onDelete }) {
               <ArrowLeft className="w-5 h-5" />
             </Button>
             <div className="flex-1">
-              <CardTitle className="text-2xl font-bold text-[#000000] mb-2">{project.title}</CardTitle>
+              <EditableField
+                value={project.title}
+                onSave={(val) => handleFieldSave('title', project.title, val)}
+                type="text"
+                placeholder="Project Title"
+                className="text-2xl font-bold text-[#000000] mb-2"
+              />
               <div className="flex gap-2 flex-wrap">
                 {project.project_type && (
-                  <Badge className={`${projectTypeColors[project.project_type]} font-semibold border-2`}>
-                    {project.project_type}
-                  </Badge>
+                  <EditableField
+                    value={project.project_type}
+                    onSave={(val) => handleFieldSave('project_type', project.project_type, val)}
+                    type="select"
+                    options={[
+                      { value: "Garage Door Install", label: "Garage Door Install" },
+                      { value: "Gate Install", label: "Gate Install" },
+                      { value: "Roller Shutter Install", label: "Roller Shutter Install" },
+                      { value: "Repair", label: "Repair" },
+                      { value: "Maintenance", label: "Maintenance" }
+                    ]}
+                    displayFormat={(val) => (
+                      <Badge className={`${projectTypeColors[val]} font-semibold border-2`}>
+                        {val}
+                      </Badge>
+                    )}
+                  />
                 )}
-                <Badge className={`${statusColors[project.status]} font-semibold border-2`}>
-                  {project.status}
-                </Badge>
+                <EditableField
+                  value={project.status}
+                  onSave={(val) => handleFieldSave('status', project.status, val)}
+                  type="select"
+                  options={[
+                    { value: "open", label: "Open" },
+                    { value: "scheduled", label: "Scheduled" },
+                    { value: "quoted", label: "Quoted" },
+                    { value: "invoiced", label: "Invoiced" },
+                    { value: "paid", label: "Paid" },
+                    { value: "completed", label: "Completed" },
+                    { value: "cancelled", label: "Cancelled" }
+                  ]}
+                  displayFormat={(val) => (
+                    <Badge className={`${statusColors[val]} font-semibold border-2`}>
+                      {val}
+                    </Badge>
+                  )}
+                />
                 {project.stage && (
-                  <Badge variant="outline" className="font-semibold border-2">
-                    {project.stage.replace(/_/g, ' ')}
-                  </Badge>
+                  <EditableField
+                    value={project.stage}
+                    onSave={(val) => handleFieldSave('stage', project.stage, val)}
+                    type="select"
+                    options={[
+                      { value: "lead_in", label: "Lead In" },
+                      { value: "measure", label: "Measure" },
+                      { value: "quote_prepared", label: "Quote Prepared" },
+                      { value: "quote_sent", label: "Quote Sent" },
+                      { value: "quote_accepted", label: "Quote Accepted" },
+                      { value: "materials_ordered", label: "Materials Ordered" },
+                      { value: "installation_scheduled", label: "Installation Scheduled" },
+                      { value: "installation_completed", label: "Installation Completed" },
+                      { value: "qa_aftercare", label: "QA Aftercare" },
+                      { value: "final_invoice", label: "Final Invoice" },
+                      { value: "project_closed", label: "Project Closed" },
+                      { value: "diagnose", label: "Diagnose" },
+                      { value: "repair_scheduled", label: "Repair Scheduled" },
+                      { value: "repair_completed", label: "Repair Completed" },
+                      { value: "maintenance_performed", label: "Maintenance Performed" },
+                      { value: "report_delivered", label: "Report Delivered" }
+                    ]}
+                    displayFormat={(val) => (
+                      <Badge variant="outline" className="font-semibold border-2">
+                        {val.replace(/_/g, ' ')}
+                      </Badge>
+                    )}
+                  />
                 )}
               </div>
             </div>
@@ -177,15 +281,19 @@ export default function ProjectDetails({ project, onClose, onEdit, onDelete }) {
             </div>
             
             <div className="grid grid-cols-3 gap-4 pt-3 border-t border-[#E5E7EB]">
-              {project.address && (
-                <div className="flex items-start gap-2.5">
-                  <MapPin className="w-5 h-5 text-[#4B5563] mt-0.5 flex-shrink-0" />
-                  <div className="flex-1 min-w-0">
-                    <div className="text-xs text-[#4B5563] font-medium mb-0.5">Address</div>
-                    <span className="text-sm text-[#111827] font-semibold">{project.address}</span>
-                  </div>
+              <div className="flex items-start gap-2.5">
+                <MapPin className="w-5 h-5 text-[#4B5563] mt-0.5 flex-shrink-0" />
+                <div className="flex-1 min-w-0">
+                  <div className="text-xs text-[#4B5563] font-medium mb-0.5">Address</div>
+                  <EditableField
+                    value={project.address}
+                    onSave={(val) => handleFieldSave('address', project.address, val)}
+                    type="text"
+                    placeholder="Address"
+                    className="text-sm text-[#111827] font-semibold"
+                  />
                 </div>
-              )}
+              </div>
               
               {project.customer_phone && (
                 <div className="flex items-start gap-2.5">
@@ -235,15 +343,17 @@ export default function ProjectDetails({ project, onClose, onEdit, onDelete }) {
           </div>
         </div>
 
-        {project.description && (
-          <div>
-            <h3 className="font-bold text-[#000000] mb-2">Description</h3>
-            <div 
-              className="text-slate-700 prose prose-sm max-w-none"
-              dangerouslySetInnerHTML={{ __html: project.description }}
+        <div>
+          <h3 className="font-bold text-[#000000] mb-2">Description</h3>
+          <div className="border-2 border-slate-300 rounded-xl p-2.5 focus-within:border-[#fae008] focus-within:ring-2 focus-within:ring-[#fae008]/20 transition-all">
+            <RichTextEditor
+              value={description}
+              onChange={setDescription}
+              onBlur={handleDescriptionBlur}
+              placeholder="Add description..."
             />
           </div>
-        )}
+        </div>
 
         {isInstallType && project.doors && project.doors.length > 0 && (
           <div className="bg-blue-50 rounded-xl p-4 border-2 border-blue-200">
@@ -350,60 +460,90 @@ export default function ProjectDetails({ project, onClose, onEdit, onDelete }) {
           </div>
         )}
 
-        {(project.quote_value || project.invoice_value || project.payment_received) && (
-          <div className="bg-[#F8F9FA] rounded-lg p-4">
-            <h3 className="font-bold text-[#111827] mb-4">Financials</h3>
-            <div className="grid grid-cols-3 gap-6">
-              {project.quote_value && (
-                <div className="flex items-start gap-2.5">
-                  <div className="flex-1 min-w-0">
-                    <div className="text-xs text-[#4B5563] font-medium mb-1">Quote</div>
-                    <div className="text-lg font-bold text-[#111827]">${project.quote_value}</div>
-                  </div>
-                </div>
-              )}
-              {project.invoice_value && (
-                <div className="flex items-start gap-2.5">
-                  <div className="flex-1 min-w-0">
-                    <div className="text-xs text-[#4B5563] font-medium mb-1">Invoice</div>
-                    <div className="text-lg font-bold text-[#111827]">${project.invoice_value}</div>
-                  </div>
-                </div>
-              )}
-              {project.payment_received && (
-                <div className="flex items-start gap-2.5">
-                  <div className="flex-1 min-w-0">
-                    <div className="text-xs text-[#4B5563] font-medium mb-1">Paid</div>
-                    <div className="text-lg font-bold text-[#16A34A]">${project.payment_received}</div>
-                  </div>
-                </div>
-              )}
+        <div className="bg-[#F8F9FA] rounded-lg p-4">
+          <h3 className="font-bold text-[#111827] mb-4">Financials</h3>
+          <div className="grid grid-cols-3 gap-6">
+            <div className="flex items-start gap-2.5">
+              <div className="flex-1 min-w-0">
+                <div className="text-xs text-[#4B5563] font-medium mb-1">Quote</div>
+                <EditableField
+                  value={project.quote_value}
+                  onSave={(val) => handleFieldSave('quote_value', project.quote_value, val)}
+                  type="number"
+                  placeholder="Quote amount"
+                  displayFormat={(val) => val ? `$${val}` : "Add quote"}
+                  className="text-lg font-bold text-[#111827]"
+                />
+              </div>
+            </div>
+            <div className="flex items-start gap-2.5">
+              <div className="flex-1 min-w-0">
+                <div className="text-xs text-[#4B5563] font-medium mb-1">Invoice</div>
+                <EditableField
+                  value={project.invoice_value}
+                  onSave={(val) => handleFieldSave('invoice_value', project.invoice_value, val)}
+                  type="number"
+                  placeholder="Invoice amount"
+                  displayFormat={(val) => val ? `$${val}` : "Add invoice"}
+                  className="text-lg font-bold text-[#111827]"
+                />
+              </div>
+            </div>
+            <div className="flex items-start gap-2.5">
+              <div className="flex-1 min-w-0">
+                <div className="text-xs text-[#4B5563] font-medium mb-1">Paid</div>
+                <EditableField
+                  value={project.payment_received}
+                  onSave={(val) => handleFieldSave('payment_received', project.payment_received, val)}
+                  type="number"
+                  placeholder="Payment amount"
+                  displayFormat={(val) => val ? `$${val}` : "Add payment"}
+                  className="text-lg font-bold text-[#16A34A]"
+                />
+              </div>
             </div>
           </div>
-        )}
+        </div>
 
-        {project.assigned_technicians_names && project.assigned_technicians_names.length > 0 && (
-          <div>
-            <h3 className="font-bold text-[#000000] mb-2">Assigned Team</h3>
-            <div className="flex gap-2 flex-wrap">
-              {project.assigned_technicians_names.map((name, idx) => (
-                <Badge key={idx} variant="outline" className="font-semibold">
-                  {name}
-                </Badge>
-              ))}
-            </div>
-          </div>
-        )}
+        <div>
+          <h3 className="font-bold text-[#000000] mb-2">Assigned Team</h3>
+          <EditableField
+            value={project.assigned_technicians || []}
+            onSave={handleTechniciansChange}
+            type="multi-select"
+            options={technicians.map((t) => ({ value: t.email, label: t.full_name }))}
+            displayFormat={(val) => {
+              const emailsToDisplay = Array.isArray(val) ? val : val ? [val] : [];
+              if (emailsToDisplay.length === 0) return "Assign team";
+              const names = emailsToDisplay.map(email => {
+                const tech = technicians.find(t => t.email === email);
+                return tech?.full_name || email;
+              });
+              return (
+                <div className="flex gap-2 flex-wrap">
+                  {names.map((name, idx) => (
+                    <Badge key={idx} variant="outline" className="font-semibold">
+                      {name}
+                    </Badge>
+                  ))}
+                </div>
+              );
+            }}
+            placeholder="Assign team"
+          />
+        </div>
 
-        {project.notes && (
-          <div>
-            <h3 className="font-bold text-[#000000] mb-2">Notes</h3>
-            <div 
-              className="text-slate-700 prose prose-sm max-w-none"
-              dangerouslySetInnerHTML={{ __html: project.notes }}
+        <div>
+          <h3 className="font-bold text-[#000000] mb-2">Notes</h3>
+          <div className="border-2 border-slate-300 rounded-xl p-2.5 focus-within:border-[#fae008] focus-within:ring-2 focus-within:ring-[#fae008]/20 transition-all">
+            <RichTextEditor
+              value={notes}
+              onChange={setNotes}
+              onBlur={handleNotesBlur}
+              placeholder="Add notes..."
             />
           </div>
-        )}
+        </div>
 
         <div className="pt-4 border-t-2 border-slate-200">
           <div className="flex items-center justify-between mb-4">
