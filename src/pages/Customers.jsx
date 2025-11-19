@@ -125,30 +125,30 @@ export default function Customers() {
   }
 
   return (
-    <div className="p-4 md:p-8 bg-gradient-to-br from-[hsl(32,20%,98%)] to-[hsl(32,25%,94%)] min-h-screen">
+    <div className="p-5 md:p-10 bg-[#F8F9FA] min-h-screen">
       <div className="max-w-7xl mx-auto">
-        <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-6 gap-4">
+        <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-8 gap-5">
           <div>
-            <h1 className="text-3xl font-bold text-[hsl(25,10%,12%)] tracking-tight">Customers</h1>
-            <p className="text-[hsl(25,8%,45%)] mt-2">Manage customer information</p>
+            <h1 className="text-3xl font-bold text-[#111827] tracking-tight">Customers</h1>
+            <p className="text-[#4B5563] mt-2.5">Manage customer information</p>
           </div>
           <Button
             onClick={() => setShowForm(true)}
-            className="bg-[#fae008] text-[hsl(25,10%,12%)] hover:bg-[#e5d007] active:bg-[#d4c006] font-semibold shadow-md hover:shadow-lg transition-all w-full md:w-auto"
+            className="bg-[#FAE008] text-[#111827] hover:bg-[#E5CF07] font-semibold shadow-md hover:shadow-lg transition-all w-full md:w-auto h-12 rounded-lg"
           >
             <Plus className="w-5 h-5 mr-2" />
             New Customer
           </Button>
         </div>
 
-        <div className="mb-6">
+        <div className="mb-8">
           <div className="relative">
-            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-[hsl(25,8%,55%)]" />
+            <Search className="absolute left-4 top-1/2 transform -translate-y-1/2 w-5 h-5 text-[#6B7280]" />
             <Input
               placeholder="Search customers..."
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
-              className="pl-11 border-2 border-[hsl(32,15%,88%)] focus:border-[#fae008] focus:ring-2 focus:ring-[#fae008]/20 transition-all h-12 text-base rounded-xl"
+              className="pl-12 border border-[#E5E7EB] focus:border-[#FAE008] focus:ring-2 focus:ring-[#FAE008]/20 transition-all h-12 text-base rounded-lg"
             />
           </div>
         </div>
