@@ -416,52 +416,17 @@ export default function JobDetails({ job, onClose, onStatusChange, onDelete }) {
   return (
     <>
       <Card className={`border border-[#E5E7EB] shadow-sm ${isTechnician ? 'rounded-none' : 'rounded-lg'} overflow-hidden`}>
-        <CardHeader className="border-b border-[#E5E7EB] bg-white p-3 md:p-4 space-y-2">
-          <div className="flex items-start justify-between gap-3">
-            <div className="flex items-start gap-2 flex-1 min-w-0">
-              <Button
-                variant="ghost"
-                size="icon"
-                onClick={onClose}
-                className="h-9 w-9 flex-shrink-0 hover:bg-[#F3F4F6] rounded-lg transition-colors">
+        <CardHeader className="border-b border-[#E5E7EB] bg-white p-3 md:p-4 space-y-3">
+          <div className="flex items-center justify-between gap-3">
+            <Button
+              variant="ghost"
+              size="icon"
+              onClick={onClose}
+              className="h-9 w-9 flex-shrink-0 hover:bg-[#F3F4F6] rounded-lg transition-colors">
 
-                <ArrowLeft className="w-5 h-5 text-[#111827]" />
-              </Button>
-              <div className="flex-1 min-w-0 space-y-3">
-                <div className="flex items-center gap-2 flex-wrap">
-                  <CardTitle
-                    className="text-xl font-semibold text-[#111827] cursor-pointer hover:text-[#FAE008] transition-colors leading-tight"
-                    onClick={() => setShowCustomerEdit(true)}>
-                    {job.customer_name}
-                  </CardTitle>
-                  <Badge className="bg-white text-[#6B7280] hover:bg-white border border-[#E5E7EB] font-medium text-xs px-2.5 py-0.5 rounded-lg">
-                    #{job.job_number}
-                  </Badge>
-                </div>
-                
-                <div className="flex items-center gap-2 flex-wrap">
-                  {job.customer_type &&
-                  <Badge className="bg-[#EDE9FE] text-[#6D28D9] hover:bg-[#EDE9FE] border-0 font-semibold text-xs px-3 py-1 rounded-lg">
-                      {job.customer_type}
-                    </Badge>
-                  }
-                </div>
-                
-                <div className="grid grid-cols-2 gap-x-6">
-                  <div className="flex items-center gap-2.5 cursor-pointer hover:text-green-600 transition-colors" onClick={() => window.open(`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(job.address)}`, '_blank')}>
-                    <Navigation className="text-green-600 w-5 h-5 flex-shrink-0" />
-                    <span className="text-sm text-[#4B5563] leading-snug">{job.address}</span>
-                  </div>
-                  {job.customer_phone && (
-                    <div className="flex items-center gap-2.5 cursor-pointer hover:text-blue-600 transition-colors" onClick={() => window.location.href = `tel:${job.customer_phone}`}>
-                      <Phone className="text-blue-600 w-5 h-5 flex-shrink-0" />
-                      <span className="text-sm text-[#4B5563]">{job.customer_phone}</span>
-                    </div>
-                  )}
-                </div>
-              </div>
-            </div>
-            
+              <ArrowLeft className="w-5 h-5 text-[#111827]" />
+            </Button>
+
             {!isTechnician &&
             <div className="flex gap-1 flex-shrink-0">
                 <Button
@@ -502,6 +467,40 @@ export default function JobDetails({ job, onClose, onStatusChange, onDelete }) {
                 </Button>
               </div>
             }
+          </div>
+
+          <div className="space-y-3">
+            <div className="flex items-center gap-2 flex-wrap">
+              <CardTitle
+                className="text-xl font-semibold text-[#111827] cursor-pointer hover:text-[#FAE008] transition-colors leading-tight"
+                onClick={() => setShowCustomerEdit(true)}>
+                {job.customer_name}
+              </CardTitle>
+              <Badge className="bg-white text-[#6B7280] hover:bg-white border border-[#E5E7EB] font-medium text-xs px-2.5 py-0.5 rounded-lg">
+                #{job.job_number}
+              </Badge>
+            </div>
+
+            <div className="flex items-center gap-2 flex-wrap">
+              {job.customer_type &&
+              <Badge className="bg-[#EDE9FE] text-[#6D28D9] hover:bg-[#EDE9FE] border-0 font-semibold text-xs px-3 py-1 rounded-lg">
+                  {job.customer_type}
+                </Badge>
+              }
+            </div>
+
+            <div className="grid grid-cols-2 gap-x-6">
+              <div className="flex items-center gap-2.5 cursor-pointer hover:text-green-600 transition-colors" onClick={() => window.open(`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(job.address)}`, '_blank')}>
+                <Navigation className="text-green-600 w-5 h-5 flex-shrink-0" />
+                <span className="text-sm text-[#4B5563] leading-snug">{job.address}</span>
+              </div>
+              {job.customer_phone && (
+                <div className="flex items-center gap-2.5 cursor-pointer hover:text-blue-600 transition-colors" onClick={() => window.location.href = `tel:${job.customer_phone}`}>
+                  <Phone className="text-blue-600 w-5 h-5 flex-shrink-0" />
+                  <span className="text-sm text-[#4B5563]">{job.customer_phone}</span>
+                </div>
+              )}
+            </div>
           </div>
 
           <div className="bg-[#ffffff] p-4 rounded-lg space-y-3">
