@@ -290,9 +290,9 @@ export default function ProjectDetails({ project, onClose, onEdit, onDelete }) {
 
         {activeTab === "jobs" && (
           <Card className="card-enhanced">
-            <CardContent className="p-3 md:p-4 space-y-2 md:space-y-3">
-              <div className="flex items-center justify-between mb-1.5 md:mb-2">
-                <h3 className="text-[10px] md:text-[13px] font-semibold text-[#4F4F4F] uppercase tracking-wide">Jobs ({jobs.length})</h3>
+            <CardContent className="p-5 space-y-3">
+              <div className="flex items-center justify-between mb-2">
+                <h3 className="section-header">Jobs ({jobs.length})</h3>
                 <Button
                   onClick={handleAddJob}
                   size="sm"
@@ -304,15 +304,15 @@ export default function ProjectDetails({ project, onClose, onEdit, onDelete }) {
               </div>
 
               {jobs.length === 0 ? (
-                <div className="text-center py-8 md:py-12 bg-[#F7F7F7] rounded-xl">
-                  <Briefcase className="w-10 h-10 md:w-12 md:h-12 mx-auto mb-2 md:mb-3 text-[#BDBDBD]" />
-                  <p className="text-xs md:text-[14px] text-[#4F4F4F] mb-3 md:mb-4">No jobs yet</p>
-                  <Button onClick={handleAddJob} className="btn-primary h-10 md:h-12 text-xs">
+                <div className="text-center py-12 bg-[#F8F9FA] rounded-xl">
+                  <Briefcase className="w-12 h-12 mx-auto mb-3 text-[#9CA3AF]" />
+                  <p className="text-sm text-[#4B5563] mb-4">No jobs yet</p>
+                  <Button onClick={handleAddJob} className="btn-primary">
                     Create First Job
                   </Button>
                 </div>
               ) : (
-                <div className="space-y-2 md:space-y-3">
+                <div className="space-y-3">
                   {jobs.map((job) => {
                     const jobSummaries = getJobSummaries(job.id);
                     return (
@@ -321,22 +321,22 @@ export default function ProjectDetails({ project, onClose, onEdit, onDelete }) {
                         className="card-interactive"
                         onClick={() => handleJobClick(job.id)}
                       >
-                        <CardContent className="p-3 md:p-4">
-                          <div className="flex items-start justify-between gap-3 md:gap-4 mb-1.5 md:mb-2">
+                        <CardContent className="p-4">
+                          <div className="flex items-start justify-between gap-4 mb-2">
                             <div>
-                              <div className="text-sm md:text-[15px] font-bold text-[#111111] mb-0.5 md:mb-1">
+                              <div className="text-base font-bold text-[#111827] mb-1">
                                 {job.job_type_name || 'Job'} #{job.job_number}
                               </div>
                               {job.scheduled_date && (
-                                <div className="flex items-center gap-1 text-xs md:text-[13px] text-[#4F4F4F]">
-                                  <Calendar className="w-3 h-3 md:w-3.5 md:h-3.5" />
+                                <div className="flex items-center gap-1 text-sm text-[#4B5563]">
+                                  <Calendar className="w-4 h-4" />
                                   {new Date(job.scheduled_date).toLocaleDateString()}
                                   {job.scheduled_time && ` at ${job.scheduled_time}`}
                                 </div>
                               )}
                             </div>
                             <Badge 
-                              className="capitalize font-semibold text-xs py-1 px-2 rounded-full"
+                              className="capitalize font-semibold text-xs py-1 px-3 rounded-full"
                               style={{ 
                                 backgroundColor: '#FAE008',
                                 color: '#000000'
@@ -347,14 +347,14 @@ export default function ProjectDetails({ project, onClose, onEdit, onDelete }) {
                           </div>
 
                           {job.assigned_to_name && job.assigned_to_name.length > 0 && (
-                            <div className="flex items-center gap-1.5 md:gap-2 text-xs md:text-[13px] text-[#4F4F4F] mt-1.5 md:mt-2">
-                              <UserIcon className="w-3 h-3 md:w-3.5 md:h-3.5" />
+                            <div className="flex items-center gap-2 text-sm text-[#4B5563] mt-2">
+                              <UserIcon className="w-4 h-4" />
                               <span>{Array.isArray(job.assigned_to_name) ? job.assigned_to_name.join(', ') : job.assigned_to_name}</span>
                             </div>
                           )}
 
-                          {!job.assigned_to_name || job.assigned_to_name.length === 0 && (
-                            <div className="text-xs md:text-[13px] text-[#BDBDBD] mt-1.5 md:mt-2">
+                          {(!job.assigned_to_name || job.assigned_to_name.length === 0) && (
+                            <div className="text-sm text-[#9CA3AF] mt-2">
                               Unassigned
                             </div>
                           )}
@@ -375,8 +375,8 @@ export default function ProjectDetails({ project, onClose, onEdit, onDelete }) {
 
         {activeTab === "installation" && (
           <Card className="card-enhanced">
-            <CardContent className="p-3 md:p-4">
-              <h3 className="text-[10px] md:text-[13px] font-semibold text-[#4F4F4F] uppercase tracking-wide mb-2 md:mb-3">Installation Details</h3>
+            <CardContent className="p-5">
+              <h3 className="section-header">Installation Details</h3>
               <div className="space-y-2 md:space-y-3">
                 {project.doors?.map((door, idx) => (
                   <Collapsible key={idx} defaultOpen={idx === 0}>
@@ -425,10 +425,10 @@ export default function ProjectDetails({ project, onClose, onEdit, onDelete }) {
 
         {activeTab === "attachments" && (
           <Card className="card-enhanced">
-            <CardContent className="p-3 md:p-4 space-y-3 md:space-y-4">
+            <CardContent className="p-5 space-y-4">
               {project.image_urls && project.image_urls.length > 0 && (
                 <div>
-                  <h3 className="text-[10px] md:text-[13px] font-semibold text-[#4F4F4F] uppercase tracking-wide mb-2 md:mb-3">Images</h3>
+                  <h3 className="section-header">Images</h3>
                   <div className="grid grid-cols-2 gap-2 md:gap-3">
                     {project.image_urls.map((url, index) => (
                       <a 
@@ -451,7 +451,7 @@ export default function ProjectDetails({ project, onClose, onEdit, onDelete }) {
 
               {(project.quote_url || project.invoice_url) && (
                 <div>
-                  <h3 className="text-[10px] md:text-[13px] font-semibold text-[#4F4F4F] uppercase tracking-wide mb-2 md:mb-3">Files</h3>
+                  <h3 className="section-header">Files</h3>
                   <div className="space-y-1.5 md:space-y-2">
                     {project.quote_url && (
                       <div className="bg-white border border-[#E2E3E5] rounded-xl p-3 md:p-4">
@@ -528,8 +528,8 @@ export default function ProjectDetails({ project, onClose, onEdit, onDelete }) {
 
         {activeTab === "notes" && (
           <Card className="card-enhanced">
-            <CardContent className="p-3 md:p-4">
-              <h3 className="text-[10px] md:text-[13px] font-semibold text-[#4F4F4F] uppercase tracking-wide mb-2 md:mb-3">Notes</h3>
+            <CardContent className="p-5">
+              <h3 className="section-header">Notes</h3>
               <div 
                 className="text-xs md:text-[14px] text-[#111111] leading-relaxed prose prose-sm max-w-none"
                 dangerouslySetInnerHTML={{ __html: project.notes }}

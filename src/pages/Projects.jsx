@@ -90,10 +90,17 @@ export default function Projects() {
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
     const action = params.get('action');
+    const projectId = params.get('projectId');
+    
     if (action === 'new') {
       setShowForm(true);
     }
-  }, []);
+    
+    if (projectId) {
+      const project = projects.find(p => p.id === projectId);
+      if (project) setSelectedProject(project);
+    }
+  }, [projects]);
 
   const handleSubmit = (data) => {
     if (editingProject) {

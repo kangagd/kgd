@@ -207,13 +207,19 @@ export default function JobDetails({ job, onClose, onDelete }) {
 
   const checkOutMutation = useMutation({
     mutationFn: async () => {
-      if (!overview || !nextSteps || !communicationWithClient || !outcome) {
-        throw new Error("Please fill in all Site Visit fields before checking out.");
+      const missingFields = [];
+      if (!overview || overview === "<p><br></p>") missingFields.push("Overview");
+      if (!nextSteps || nextSteps === "<p><br></p>") missingFields.push("Next Steps");
+      if (!communicationWithClient || communicationWithClient === "<p><br></p>") missingFields.push("Communication");
+      if (!outcome) missingFields.push("Outcome");
+
+      if (missingFields.length > 0) {
+        throw new Error(`Required fields missing: ${missingFields.join(", ")}`);
       }
 
       const currentImageCount = (job.image_urls || []).length;
       if (currentImageCount === initialImageCount) {
-        throw new Error("Please add at least one photo before checking out.");
+        throw new Error("Please add at least one photo before checking out");
       }
 
       const checkOutTime = new Date().toISOString();
@@ -263,6 +269,7 @@ export default function JobDetails({ job, onClose, onDelete }) {
     },
     onError: (error) => {
       setValidationError(error.message);
+      toast.error(error.message);
     }
   });
 
@@ -753,49 +760,48 @@ export default function JobDetails({ job, onClose, onDelete }) {
                     <CardContent className="p-5">
                       <h3 className="text-sm font-bold text-[#111827] uppercase tracking-wide mb-4">Quick Actions</h3>
                       {!activeCheckIn ? (
-                        <Button
-                          onClick={handleCheckIn}
-                          disabled={checkInMutation.isPending}
-                          className="bg-green-600 hover:bg-green-700 text-white font-semibold h-14 w-full text-base"
-                        >
-                          <LogIn className="w-5 h-5 mr-2" />
-                          {checkInMutation.isPending ? 'Checking In...' : 'Check In'}
-                        </Button>
+                       <Button
+                         onClick={handleCheckIn}
+                         disabled={checkInMutation.isPending}
+                         className="bg-green-600 hover:bg-green-700 text-white font-semibold h-14 w-full text-base shadow-md"
+                       >
+                         <LogIn className="w-5 h-5 mr-2" />
+                         {checkInMutation.isPending ? 'Checking In...' : 'Check In'}
+                       </Button>
                       ) : (
-                        <div className="space-y-3">
-                          <div className="bg-green-50 border border-green-200 rounded-lg p-3 mb-3">
-                            <div className="flex items-center gap-2 text-green-700 font-semibold text-sm">
-                              <Timer className="w-4 h-4 animate-pulse" />
-                              Checked in at {format(new Date(activeCheckIn.check_in_time), 'h:mm a')}
-                            </div>
-                          </div>
-                          <Button
-                            onClick={handleCheckOut}
-                            disabled={checkOutMutation.isPending}
-                            className="bg-red-600 hover:bg-red-700 text-white font-semibold h-14 w-full text-base"
-                          >
-                            <LogOut className="w-5 h-5 mr-2" />
-                            {checkOutMutation.isPending ? 'Checking Out...' : 'Check Out'}
-                          </Button>
-                          <div className="grid grid-cols-2 gap-2">
-                            <Button
-                              variant="outline"
-                              onClick={() => setActiveTab('photos')}
-                              className="h-11 border-2"
-                            >
-                              <ImageIcon className="w-4 h-4 mr-2" />
-                              Photos
-                            </Button>
-                            <Button
-                              variant="outline"
-                              onClick={() => setActiveTab('measurements')}
-                              className="h-11 border-2"
-                            >
-                              <Ruler className="w-4 h-4 mr-2" />
-                              Measure
-                            </Button>
-                          </div>
-                        </div>
+                       <div className="space-y-3">
+                         <div className="bg-green-50 border-2 border-green-200 rounded-lg p-3">
+                           <div className="flex items-center gap-2 text-green-700 font-semibold text-sm">
+                             <Timer className="w-4 h-4 animate-pulse" />
+                             Checked in at {format(new Date(activeCheckIn.check_in_time), 'h:mm a')}
+                           </div>
+                         </div>
+                         <Button
+                           onClick={() => setActiveTab('sitevisit')}
+                           className="btn-primary w-full h-14 text-base"
+                         >
+                           <ClipboardCheck className="w-5 h-5 mr-2" />
+                           Complete Visit
+                         </Button>
+                         <div className="grid grid-cols-2 gap-2">
+                           <Button
+                             variant="outline"
+                             onClick={() => setActiveTab('photos')}
+                             className="btn-secondary h-12"
+                           >
+                             <ImageIcon className="w-4 h-4 mr-2" />
+                             Photos
+                           </Button>
+                           <Button
+                             variant="outline"
+                             onClick={() => setActiveTab('measurements')}
+                             className="btn-secondary h-12"
+                           >
+                             <Ruler className="w-4 h-4 mr-2" />
+                             Measure
+                           </Button>
+                         </div>
+                       </div>
                       )}
                     </CardContent>
                   </Card>
@@ -1070,20 +1076,13 @@ export default function JobDetails({ job, onClose, onDelete }) {
                   </Select>
                 </div>
 
-                {validationError && (
-                  <div className="bg-red-50 border-2 border-red-200 rounded-xl p-3 flex items-start gap-2">
-                    <AlertCircle className="w-4 h-4 text-red-600 mt-0.5 flex-shrink-0" />
-                    <span className="text-[13px] text-red-700 font-medium">{validationError}</span>
-                  </div>
-                )}
-
                 {activeCheckIn && (
                   <Button
                     onClick={handleCheckOut}
                     disabled={checkOutMutation.isPending}
-                    className="btn-primary w-full h-12 mt-4"
+                    className="bg-red-600 hover:bg-red-700 text-white font-semibold w-full h-14 mt-4"
                   >
-                    <LogOut className="w-4 h-4 mr-2" />
+                    <LogOut className="w-5 h-5 mr-2" />
                     {checkOutMutation.isPending ? 'Checking Out...' : 'Check Out'}
                   </Button>
                 )}

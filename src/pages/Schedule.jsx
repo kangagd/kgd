@@ -18,15 +18,12 @@ export default function Schedule() {
 
   if (selectedJob) {
     return (
-      <div className="p-4 md:p-8 bg-[#F8F9FA] min-h-screen">
-        <div className="max-w-4xl mx-auto">
-          <JobDetails
-            job={selectedJob}
-            onClose={() => setSelectedJob(null)}
-            onEdit={() => {}}
-            onStatusChange={() => {}}
-          />
-        </div>
+      <div className="bg-[#F8F9FA] min-h-screen">
+        <JobDetails
+          job={selectedJob}
+          onClose={() => setSelectedJob(null)}
+          onDelete={() => {}}
+        />
       </div>
     );
   }
