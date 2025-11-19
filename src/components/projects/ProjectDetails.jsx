@@ -176,15 +176,37 @@ export default function ProjectDetails({ project, onClose, onEdit, onDelete }) {
               </div>
             </div>
             
-            {project.address && (
-              <div className="flex items-start gap-2.5 pt-3 border-t border-[#E5E7EB]">
-                <MapPin className="w-5 h-5 text-[#4B5563] mt-0.5 flex-shrink-0" />
-                <div className="flex-1 min-w-0">
-                  <div className="text-xs text-[#4B5563] font-medium mb-0.5">Address</div>
-                  <span className="text-sm text-[#111827] font-semibold">{project.address}</span>
+            <div className="grid grid-cols-3 gap-4 pt-3 border-t border-[#E5E7EB]">
+              {project.address && (
+                <div className="flex items-start gap-2.5">
+                  <MapPin className="w-5 h-5 text-[#4B5563] mt-0.5 flex-shrink-0" />
+                  <div className="flex-1 min-w-0">
+                    <div className="text-xs text-[#4B5563] font-medium mb-0.5">Address</div>
+                    <span className="text-sm text-[#111827] font-semibold">{project.address}</span>
+                  </div>
                 </div>
-              </div>
-            )}
+              )}
+              
+              {project.customer_phone && (
+                <div className="flex items-start gap-2.5">
+                  <Phone className="w-5 h-5 text-[#4B5563] mt-0.5 flex-shrink-0" />
+                  <div className="flex-1 min-w-0">
+                    <div className="text-xs text-[#4B5563] font-medium mb-0.5">Phone</div>
+                    <span className="text-sm text-[#111827] font-semibold">{project.customer_phone}</span>
+                  </div>
+                </div>
+              )}
+              
+              {project.customer_email && (
+                <div className="flex items-start gap-2.5">
+                  <Mail className="w-5 h-5 text-[#4B5563] mt-0.5 flex-shrink-0" />
+                  <div className="flex-1 min-w-0">
+                    <div className="text-xs text-[#4B5563] font-medium mb-0.5">Email</div>
+                    <span className="text-sm text-[#111827] font-semibold">{project.customer_email}</span>
+                  </div>
+                </div>
+              )}
+            </div>
             
             <div className="flex gap-2 pt-3 border-t border-[#E5E7EB]">
               {project.customer_phone && (
