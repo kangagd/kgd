@@ -1,4 +1,3 @@
-
 import React, { useState } from "react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -32,10 +31,10 @@ const jobTypeColorsBg = [
 ];
 
 const statusColors = {
-  scheduled: "bg-[#fae008]/20 text-[hsl(25,10%,12%)] border-[#fae008]/30",
-  in_progress: "bg-amber-100 text-amber-700 border-amber-200",
-  completed: "bg-green-100 text-green-700 border-green-200",
-  cancelled: "bg-[hsl(32,25%,94%)] text-[hsl(25,8%,45%)] border-[hsl(32,15%,88%)]",
+  scheduled: "bg-[#FAE008]",
+  in_progress: "bg-[#D97706]",
+  completed: "bg-[#16A34A]",
+  cancelled: "bg-[#F3F4F6]",
 };
 
 const getJobTypeColor = (jobTypeName, allJobTypes) => {
@@ -199,18 +198,18 @@ export default function DayView({ jobs, currentDate, onJobClick, onQuickBook }) 
 
   return (
     <>
-      <div className="space-y-4">
-        <Card>
+      <div className="space-y-5">
+        <Card className="rounded-xl border border-[#E5E7EB] shadow-sm">
           <CardContent className="p-0 overflow-x-auto">
             <div className="min-w-[800px]">
               {/* Header with hours */}
-              <div className="flex border-b border-[hsl(32,15%,88%)] bg-[hsl(32,25%,96%)]">
-                <div className="w-32 flex-shrink-0 p-2 border-r border-[hsl(32,15%,88%)] font-medium text-sm text-[hsl(25,10%,25%)]">
+              <div className="flex border-b-2 border-[#E5E7EB] bg-[#F8F9FA]">
+                <div className="w-40 flex-shrink-0 p-4 border-r border-[#E5E7EB] font-bold text-sm text-[#111827] tracking-tight">
                   Technician
                 </div>
                 <div className="flex-1 flex">
                   {hours.map(hour => (
-                    <div key={hour} className="flex-1 text-center p-2 border-r border-[hsl(32,15%,88%)] text-xs text-[hsl(25,8%,45%)]">
+                    <div key={hour} className="flex-1 text-center p-4 border-r border-[#E5E7EB] text-xs font-semibold text-[#6B7280]">
                       {hour === 12 ? '12 PM' : hour > 12 ? `${hour - 12} PM` : `${hour} AM`}
                     </div>
                   ))}
@@ -225,19 +224,19 @@ export default function DayView({ jobs, currentDate, onJobClick, onQuickBook }) 
                 });
 
                 return (
-                  <div key={technician.id} className="flex border-b border-[hsl(32,15%,88%)] hover:bg-[hsl(32,25%,96%)]">
-                    <div className="w-32 flex-shrink-0 p-3 border-r border-[hsl(32,15%,88%)] flex items-center gap-2">
-                      <User className="w-4 h-4 text-[hsl(25,8%,55%)]" />
-                      <span className="text-sm font-medium text-[hsl(25,10%,25%)] truncate">
+                  <div key={technician.id} className="flex border-b border-[#E5E7EB] hover:bg-[#F8F9FA] transition-colors">
+                    <div className="w-40 flex-shrink-0 p-4 border-r border-[#E5E7EB] flex items-center gap-3">
+                      <User className="w-5 h-5 text-[#6B7280]" />
+                      <span className="text-sm font-bold text-[#111827] truncate">
                         {technician.full_name}
                       </span>
                     </div>
-                    <div className="flex-1 relative h-24">
+                    <div className="flex-1 relative h-28">
                       {hours.map(hour => (
                         <div 
                           key={hour} 
-                          className={`absolute top-0 bottom-0 border-r border-[hsl(32,15%,88%)] transition-colors ${
-                            dragOverZone === `${technician.email}-${hour}` ? 'bg-[#fae008]/20' : ''
+                          className={`absolute top-0 bottom-0 border-r border-[#E5E7EB] transition-colors ${
+                            dragOverZone === `${technician.email}-${hour}` ? 'bg-[#FAE008]/20' : ''
                           }`}
                           style={{ 
                             left: `${((hour - startHour) / (endHour - startHour + 1)) * 100}%`,
@@ -259,22 +258,30 @@ export default function DayView({ jobs, currentDate, onJobClick, onQuickBook }) 
                             draggable
                             onDragStart={(e) => handleDragStart(e, job)}
                             onDragEnd={handleDragEnd}
-                            className={`absolute top-2 bottom-2 rounded-lg p-2 cursor-move hover:shadow-lg transition-all border-l-4 ${getJobTypeBgColor(job.job_type_name, uniqueJobTypes)} ${
+                            className={`absolute top-3 bottom-3 rounded-lg p-3 cursor-move hover:shadow-xl transition-all bg-white border border-[#E5E7EB] hover:border-[#FAE008] ${
                               draggedJob?.id === job.id ? 'opacity-50' : ''
                             }`}
-                            style={{ left: position.left, width: position.width, minWidth: '120px', borderLeftColor: '#fae008' }}
+                            style={{ left: position.left, width: position.width, minWidth: '140px' }}
                             onClick={() => onJobClick(job)}
                           >
-                            <div className="text-xs font-semibold text-[hsl(25,10%,12%)] mb-1 truncate">
-                              #{job.job_number}
+                            <div className="flex items-center justify-between mb-2">
+                              <span className="text-xs font-bold text-[#111827]">#{job.job_number}</span>
+                              <span className="text-[10px] px-2 py-0.5 rounded-full bg-[#FAE008] text-[#111827] font-bold">
+                                {job.scheduled_time?.slice(0, 5) || 'No time'}
+                              </span>
                             </div>
-                            <div className="font-semibold text-sm text-[hsl(25,10%,12%)] mb-1 truncate">
+                            <div className="font-bold text-sm text-[#111827] mb-1.5 truncate">
                               {job.customer_name}
                             </div>
-                            <div className="flex items-start gap-1 text-xs text-[hsl(25,8%,45%)] truncate">
+                            <div className="flex items-start gap-1 text-xs text-[#6B7280] truncate mb-1">
                               <MapPin className="w-3 h-3 mt-0.5 flex-shrink-0" />
                               <span className="truncate">{job.address}</span>
                             </div>
+                            {job.job_type_name && (
+                              <div className="text-[10px] text-[#4B5563] font-semibold mt-1.5 truncate bg-[#F3F4F6] px-2 py-1 rounded">
+                                {job.job_type_name}
+                              </div>
+                            )}
                           </div>
                         );
                       })}
@@ -286,51 +293,53 @@ export default function DayView({ jobs, currentDate, onJobClick, onQuickBook }) 
           </CardContent>
         </Card>
 
-        <div className="flex flex-wrap gap-2 text-xs bg-white p-3 rounded-lg border border-[hsl(32,15%,88%)]">
-          <span className="font-semibold text-[hsl(25,10%,25%)]">Job Types:</span>
-          {uniqueJobTypes.map((jobType) => (
-            <div key={jobType} className="flex items-center gap-1.5">
-              <div className={`w-3 h-3 rounded ${getJobTypeColor(jobType, uniqueJobTypes)}`} />
-              <span className="text-[hsl(25,8%,45%)]">{jobType}</span>
-            </div>
-          ))}
-        </div>
+        {uniqueJobTypes.length > 0 && (
+          <div className="flex flex-wrap gap-3 text-xs bg-white p-5 rounded-xl border border-[#E5E7EB] shadow-sm">
+            <span className="font-bold text-[#111827] tracking-tight">Job Types:</span>
+            {uniqueJobTypes.map((jobType) => (
+              <div key={jobType} className="flex items-center gap-2">
+                <div className={`w-3 h-3 rounded ${getJobTypeColor(jobType, uniqueJobTypes)}`} />
+                <span className="text-[#4B5563] font-medium">{jobType}</span>
+              </div>
+            ))}
+          </div>
+        )}
       </div>
 
       <AlertDialog open={!!pendingUpdate} onOpenChange={() => setPendingUpdate(null)}>
-        <AlertDialogContent>
+        <AlertDialogContent className="rounded-2xl">
           <AlertDialogHeader>
-            <AlertDialogTitle className="flex items-center gap-2">
-              <AlertCircle className="w-5 h-5 text-orange-600" />
+            <AlertDialogTitle className="flex items-center gap-2 text-xl font-bold text-[#111827]">
+              <AlertCircle className="w-5 h-5 text-[#D97706]" />
               Confirm Job Reschedule
             </AlertDialogTitle>
-            <AlertDialogDescription className="space-y-2">
-              <p className="font-medium text-[hsl(25,10%,12%)]">
+            <AlertDialogDescription className="space-y-3 text-[#4B5563]">
+              <p className="font-bold text-[#111827] text-base">
                 Job #{pendingUpdate?.job.job_number} - {pendingUpdate?.job.customer_name}
               </p>
               {pendingUpdate?.timeChanged && (
-                <p>
-                  <span className="text-[hsl(25,8%,45%)]">Time:</span>{' '}
-                  <span className="line-through text-[hsl(25,8%,55%)]">{pendingUpdate?.job.scheduled_time?.slice(0, 5)}</span>
+                <p className="text-sm">
+                  <span className="font-semibold">Time:</span>{' '}
+                  <span className="line-through text-[#6B7280]">{pendingUpdate?.job.scheduled_time?.slice(0, 5)}</span>
                   {' → '}
-                  <span className="font-medium text-[#fae008]">{pendingUpdate?.newTime?.slice(0, 5)}</span>
+                  <span className="font-bold text-[#111827]">{pendingUpdate?.newTime?.slice(0, 5)}</span>
                 </p>
               )}
               {pendingUpdate?.techChanged && (
-                <p>
-                  <span className="text-[hsl(25,8%,45%)]">Technician:</span>{' '}
-                  <span className="line-through text-[hsl(25,8%,55%)]">{pendingUpdate?.oldTech}</span>
+                <p className="text-sm">
+                  <span className="font-semibold">Technician:</span>{' '}
+                  <span className="line-through text-[#6B7280]">{pendingUpdate?.oldTech}</span>
                   {' → '}
-                  <span className="font-medium text-[#fae008]">{pendingUpdate?.newTech}</span>
+                  <span className="font-bold text-[#111827]">{pendingUpdate?.newTech}</span>
                 </p>
               )}
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
-            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogCancel className="rounded-lg font-semibold">Cancel</AlertDialogCancel>
             <AlertDialogAction
               onClick={confirmUpdate}
-              className="bg-[#fae008] text-[hsl(25,10%,12%)] hover:bg-[#e5d007]"
+              className="bg-[#FAE008] text-[#111827] hover:bg-[#E5CF07] rounded-lg font-semibold shadow-md"
             >
               Confirm Changes
             </AlertDialogAction>
