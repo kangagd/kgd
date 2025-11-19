@@ -204,6 +204,10 @@ export default function JobDetails({ job, onClose, onStatusChange, onDelete }) {
         throw new Error("Please fill in all Site Visit fields before checking out.");
       }
 
+      if (!job.image_urls || job.image_urls.length === 0) {
+        throw new Error("Please upload at least one photo before checking out.");
+      }
+
       const checkOutTime = new Date().toISOString();
       const checkInTime = new Date(activeCheckIn.check_in_time);
       const durationHours = (new Date(checkOutTime) - checkInTime) / (1000 * 60 * 60);
