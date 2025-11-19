@@ -4,26 +4,28 @@
 
 @layer base {
   :root {
-    --background: 32 20% 98%;
-    --foreground: 25 10% 12%;
+    --background: 0 0% 97.3%;
+    --foreground: 222 47% 11%;
     --card: 0 0% 100%;
-    --card-foreground: 25 10% 12%;
+    --card-foreground: 222 47% 11%;
     --popover: 0 0% 100%;
-    --popover-foreground: 25 10% 12%;
-    --primary: 51 98% 51%;
-    --primary-foreground: 25 10% 12%;
-    --secondary: 32 25% 94%;
-    --secondary-foreground: 25 10% 12%;
-    --muted: 32 20% 95%;
-    --muted-foreground: 25 8% 45%;
-    --accent: 51 98% 51%;
-    --accent-foreground: 25 10% 12%;
-    --destructive: 0 84.2% 60.2%;
-    --destructive-foreground: 0 0% 98%;
-    --border: 32 15% 88%;
-    --input: 32 15% 88%;
-    --ring: 51 98% 51%;
-    --radius: 0.5rem;
+    --popover-foreground: 222 47% 11%;
+    --primary: 50 98% 52%;
+    --primary-foreground: 222 47% 11%;
+    --secondary: 220 14% 96%;
+    --secondary-foreground: 222 47% 11%;
+    --muted: 220 14% 96%;
+    --muted-foreground: 215 16% 47%;
+    --accent: 50 98% 52%;
+    --accent-foreground: 222 47% 11%;
+    --destructive: 0 72% 51%;
+    --destructive-foreground: 0 0% 100%;
+    --border: 220 13% 91%;
+    --input: 220 13% 91%;
+    --ring: 50 98% 52%;
+    --radius: 0.625rem;
+    --success: 142 71% 45%;
+    --warning: 25 95% 53%;
   }
 }
 
@@ -32,7 +34,7 @@
     @apply border-border;
   }
   body {
-    @apply bg-background text-foreground;
+    @apply bg-[#F8F9FA] text-[#111827];
     font-feature-settings: "rlig" 1, "calt" 1;
     font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen', 'Ubuntu', 'Cantarell', 'Fira Sans', 'Droid Sans', 'Helvetica Neue', sans-serif;
     -webkit-font-smoothing: antialiased;
@@ -40,8 +42,7 @@
   }
   
   h1, h2, h3, h4, h5, h6 {
-    @apply font-bold tracking-tight;
-    color: hsl(25, 10%, 12%);
+    @apply font-bold tracking-tight text-[#111827];
   }
   
   p, span, div {
@@ -50,47 +51,62 @@
 }
 
 @layer components {
-  /* Enhanced card styles */
+  /* Card styles */
   .card-enhanced {
-    @apply bg-white rounded-xl border border-[hsl(32,15%,88%)] shadow-sm transition-all duration-200;
+    @apply bg-white rounded-xl border border-[#E5E7EB] shadow-sm transition-all duration-200;
   }
   
   .card-enhanced:hover {
-    @apply shadow-md border-[hsl(32,15%,80%)];
+    @apply shadow-md border-[#D1D5DB];
   }
   
-  /* Interactive card states */
   .card-interactive {
     @apply cursor-pointer;
   }
   
   .card-interactive:hover {
-    @apply shadow-lg border-[#fae008]/50 scale-[1.01];
+    @apply shadow-lg border-[#FAE008] scale-[1.01];
   }
   
   .card-interactive:active {
     @apply scale-[0.99];
   }
   
-  /* Button enhancements */
+  /* Button styles */
   .btn-primary {
-    @apply bg-[#fae008] text-[hsl(25,10%,12%)] font-semibold hover:bg-[#e5d007] active:bg-[#d4c006] transition-all duration-150;
-    @apply shadow-sm hover:shadow-md active:shadow-sm;
+    @apply bg-[#FAE008] text-[#111827] font-semibold hover:bg-[#E5CF07] active:bg-[#D4C006] transition-all duration-150;
+    @apply shadow-sm hover:shadow-md active:shadow-sm min-h-[44px] rounded-lg;
   }
   
   .btn-secondary {
-    @apply bg-white text-[hsl(25,10%,12%)] border border-[hsl(32,15%,88%)] font-medium hover:bg-[hsl(32,25%,94%)] hover:border-[hsl(32,15%,80%)];
-    @apply transition-all duration-150 active:bg-[hsl(32,20%,92%)];
+    @apply bg-white text-[#111827] border border-[#E5E7EB] font-medium hover:bg-[#F9FAFB] hover:border-[#D1D5DB];
+    @apply transition-all duration-150 active:bg-[#F3F4F6] min-h-[44px] rounded-lg;
   }
   
-  /* Form input enhancements */
+  /* Form inputs */
   .input-enhanced {
-    @apply border-[hsl(32,15%,88%)] focus:border-[#fae008] focus:ring-2 focus:ring-[#fae008]/20;
-    @apply transition-all duration-150;
+    @apply border-[#E5E7EB] focus:border-[#FAE008] focus:ring-2 focus:ring-[#FAE008]/20;
+    @apply transition-all duration-150 rounded-lg;
   }
   
-  /* Badge enhancements */
-  .badge-yellow {
-    @apply bg-[#fae008]/20 text-[hsl(25,10%,12%)] border border-[#fae008]/30 font-medium;
+  /* Status badges */
+  .badge-primary {
+    @apply bg-[#FAE008] text-[#111827] border border-[#FAE008] font-semibold px-3 py-1 rounded-full text-xs;
+  }
+  
+  .badge-secondary {
+    @apply bg-[#F3F4F6] text-[#4B5563] border border-[#E5E7EB] font-medium px-3 py-1 rounded-full text-xs;
+  }
+  
+  .badge-success {
+    @apply bg-[#16A34A]/10 text-[#16A34A] border border-[#16A34A]/20 font-medium px-3 py-1 rounded-full text-xs;
+  }
+  
+  .badge-error {
+    @apply bg-[#DC2626]/10 text-[#DC2626] border border-[#DC2626]/20 font-medium px-3 py-1 rounded-full text-xs;
+  }
+  
+  .badge-warning {
+    @apply bg-[#D97706]/10 text-[#D97706] border border-[#D97706]/20 font-medium px-3 py-1 rounded-full text-xs;
   }
 }
