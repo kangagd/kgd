@@ -170,7 +170,7 @@ export default function Dashboard() {
                 <div>
                   <div className="flex items-center gap-2 flex-wrap mb-2">
                     <span className="text-xl md:text-2xl font-bold text-[#111111]">#{nextJob.job_number}</span>
-                    <Badge variant="outline" className={`status-${nextJob.status} capitalize text-xs`}>
+                    <Badge className={`status-${nextJob.status} capitalize`}>
                       {nextJob.status.replace(/_/g, ' ')}
                     </Badge>
                   </div>
@@ -272,7 +272,7 @@ export default function Dashboard() {
                                 {job.job_type_name}
                               </Badge>
                             )}
-                            <Badge variant="outline" className={`status-${job.status} capitalize text-xs`}>
+                            <Badge className={`status-${job.status} capitalize`}>
                               {job.status.replace(/_/g, ' ')}
                             </Badge>
                           </div>
@@ -418,7 +418,7 @@ export default function Dashboard() {
                     >
                       <div className="flex items-center gap-2 mb-1.5 md:mb-2">
                         <span className="font-bold text-[hsl(25,10%,12%)] text-xs md:text-sm">#{job.job_number}</span>
-                        <Badge variant="outline" className={`status-${job.status} capitalize text-xs`}>
+                        <Badge className={`status-${job.status} capitalize`}>
                           {statusLabels[job.status] || job.status}
                         </Badge>
                       </div>

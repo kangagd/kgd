@@ -26,7 +26,7 @@ export default function JobCard({ job, onClick, showActions = false }) {
       <CardContent className="p-3">
         <div className="flex items-start justify-between mb-2">
           <span className="text-sm font-bold text-[#111827]">#{job.job_number}</span>
-          <Badge variant="outline" className={`status-${job.status} capitalize text-xs`}>
+          <Badge className={`status-${job.status} capitalize`}>
             {job.status.replace(/_/g, ' ')}
           </Badge>
         </div>
