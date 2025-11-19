@@ -7,6 +7,22 @@ import { base44 } from "@/api/base44Client";
 import TechnicianRow from "../schedule/TechnicianRow";
 import JobCard from "../schedule/JobCard";
 
+const getInitials = (name) => {
+  if (!name) return "?";
+  return name.split(" ").map(n => n[0]).join("").toUpperCase().slice(0, 2);
+};
+
+const avatarColors = [
+  "bg-[#FAE008]", "bg-purple-500", "bg-green-500", "bg-orange-500",
+  "bg-pink-500", "bg-indigo-500", "bg-red-500", "bg-teal-500",
+];
+
+const getAvatarColor = (name) => {
+  if (!name) return avatarColors[0];
+  const index = name.charCodeAt(0) % avatarColors.length;
+  return avatarColors[index];
+};
+
 
 
 export default function DayView({ jobs, currentDate, onJobClick, onQuickBook }) {
@@ -38,11 +54,19 @@ export default function DayView({ jobs, currentDate, onJobClick, onQuickBook }) 
     <div className="space-y-4">
       {/* Unassigned Jobs */}
       {unassignedJobs.length > 0 && (
-        <div className="bg-white rounded-xl border border-[#E5E7EB] overflow-hidden">
-          <TechnicianRow 
-            technician={{ full_name: "Unassigned" }} 
-            jobCount={unassignedJobs.length}
-          >
+        <Card className="card-enhanced overflow-hidden">
+          <div className="bg-[#F8F9FA] border-b-2 border-[#E5E7EB] p-4">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 rounded-full bg-gray-200 flex items-center justify-center">
+                  <span className="text-gray-600 font-bold text-sm">?</span>
+                </div>
+                <span className="font-bold text-[#111827] text-base">Unassigned</span>
+              </div>
+              <Badge className="status-chip">{unassignedJobs.length} Jobs</Badge>
+            </div>
+          </div>
+          <CardContent className="p-4">
             <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
               {unassignedJobs.map(job => (
                 <JobCard
@@ -53,20 +77,28 @@ export default function DayView({ jobs, currentDate, onJobClick, onQuickBook }) 
                 />
               ))}
             </div>
-          </TechnicianRow>
-        </div>
+          </CardContent>
+        </Card>
       )}
 
       {/* Jobs by Technician */}
       {jobsByTechnician.map(({ technician, jobs: techJobs }) => {
         if (techJobs.length === 0) return null;
-        
+
         return (
-          <div key={technician.id} className="bg-white rounded-xl border border-[#E5E7EB] overflow-hidden">
-            <TechnicianRow 
-              technician={technician} 
-              jobCount={techJobs.length}
-            >
+          <Card key={technician.id} className="card-enhanced overflow-hidden">
+            <div className="bg-[#F8F9FA] border-b-2 border-[#E5E7EB] p-4">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-3">
+                  <div className={`${getAvatarColor(technician.full_name)} w-10 h-10 rounded-full flex items-center justify-center text-black font-bold text-sm border-2 border-black`}>
+                    {getInitials(technician.full_name)}
+                  </div>
+                  <span className="font-bold text-[#111827] text-base">{technician.full_name}</span>
+                </div>
+                <Badge className="status-chip">{techJobs.length} Jobs</Badge>
+              </div>
+            </div>
+            <CardContent className="p-4">
               <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
                 {techJobs.map(job => (
                   <JobCard
@@ -77,21 +109,23 @@ export default function DayView({ jobs, currentDate, onJobClick, onQuickBook }) 
                   />
                 ))}
               </div>
-            </TechnicianRow>
-          </div>
+            </CardContent>
+          </Card>
         );
       })}
 
       {dayJobs.length === 0 && (
-        <div className="bg-white rounded-xl border border-[#E5E7EB] p-12 text-center">
-          <div className="max-w-md mx-auto">
-            <div className="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-4">
-              <Calendar className="w-8 h-8 text-gray-400" />
+        <Card className="card-enhanced">
+          <CardContent className="p-12 text-center">
+            <div className="max-w-md mx-auto">
+              <div className="w-16 h-16 bg-[#F8F9FA] rounded-full flex items-center justify-center mx-auto mb-4">
+                <Calendar className="w-8 h-8 text-gray-300" />
+              </div>
+              <h3 className="text-lg font-bold text-[#111827] mb-2">No jobs scheduled</h3>
+              <p className="text-sm text-[#4B5563]">for {format(currentDate, 'EEEE, MMMM d')}</p>
             </div>
-            <h3 className="text-lg font-bold text-[#111827] mb-2">No jobs scheduled</h3>
-            <p className="text-sm text-[#4B5563]">for {format(currentDate, 'EEEE, MMMM d')}</p>
-          </div>
-        </div>
+          </CardContent>
+        </Card>
       )}
     </div>
   );

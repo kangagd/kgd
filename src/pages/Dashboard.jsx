@@ -9,27 +9,7 @@ import { format, parseISO } from "date-fns";
 import { useNavigate } from "react-router-dom";
 import { createPageUrl } from "@/utils";
 
-const statusColors = {
-  open: "rgba(37, 99, 235, 0.15)",
-  scheduled: "rgba(14, 165, 233, 0.15)",
-  in_progress: "rgba(14, 165, 233, 0.15)",
-  quoted: "rgba(124, 58, 237, 0.15)",
-  invoiced: "rgba(249, 115, 22, 0.15)",
-  paid: "rgba(22, 163, 74, 0.15)",
-  completed: "rgba(21, 128, 61, 0.15)",
-  cancelled: "rgba(220, 38, 38, 0.15)"
-};
 
-const statusTextColors = {
-  open: "#2563EB",
-  scheduled: "#0EA5E9",
-  in_progress: "#0EA5E9",
-  quoted: "#7C3AED",
-  invoiced: "#F97316",
-  paid: "#16A34A",
-  completed: "#15803D",
-  cancelled: "#DC2626"
-};
 
 const statusLabels = {
   open: "Open",
@@ -177,10 +157,10 @@ export default function Dashboard() {
 
         {/* Next Job Section for Technicians */}
         {isTechnician && nextJob && !activeCheckIn && (
-          <Card className="border-2 border-[#FAE008] rounded-2xl mb-4 md:mb-6 overflow-hidden bg-gradient-to-br from-[#FEF8C8] to-white shadow-lg">
-            <CardHeader className="bg-[#FAE008] border-b-2 border-black p-3 md:p-6">
-              <CardTitle className="flex items-center gap-2 md:gap-3 text-lg md:text-xl font-bold text-black tracking-tight">
-                <Target className="w-5 h-5 md:w-6 md:h-6" />
+          <Card className="border-2 border-black rounded-xl mb-6 overflow-hidden bg-gradient-to-br from-[#FAE008] to-[#e5d007] shadow-xl">
+            <CardHeader className="bg-black border-b-2 border-black p-4 md:p-6">
+              <CardTitle className="flex items-center gap-3 text-lg md:text-xl font-bold text-[#FAE008] tracking-tight">
+                <Target className="w-6 h-6" />
                 Next Job
               </CardTitle>
             </CardHeader>
@@ -234,25 +214,24 @@ export default function Dashboard() {
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-2 pt-2">
                   <Button
                     onClick={() => handleStartNavigation(nextJob.address)}
-                    className="bg-blue-600 hover:bg-blue-700 text-white font-semibold w-full h-12 md:h-14"
+                    className="bg-blue-600 hover:bg-blue-700 active:bg-blue-800 text-white font-bold w-full h-14 shadow-lg"
                   >
-                    <Navigation className="w-4 h-4 md:w-5 md:h-5 mr-2" />
-                    Start Navigation
+                    <Navigation className="w-5 h-5 mr-2" />
+                    Navigate
                   </Button>
                   <Button
                     onClick={() => handleMarkAsArrived(nextJob)}
                     disabled={checkInMutation.isPending}
-                    className="bg-green-600 hover:bg-green-700 text-white font-semibold w-full h-12 md:h-14"
+                    className="bg-black hover:bg-gray-900 text-[#FAE008] font-bold w-full h-14 shadow-lg"
                   >
-                    <CheckCircle className="w-4 h-4 md:w-5 md:h-5 mr-2" />
-                    {checkInMutation.isPending ? 'Checking In...' : 'Mark as Arrived'}
+                    <CheckCircle className="w-5 h-5 mr-2" />
+                    {checkInMutation.isPending ? 'Checking In...' : 'Check In'}
                   </Button>
                 </div>
 
                 <Button
-                  variant="outline"
                   onClick={() => handleJobClick(nextJob.id)}
-                  className="w-full h-10 md:h-12 border-2"
+                  className="bg-white hover:bg-gray-50 text-black font-semibold border-2 border-black w-full h-12"
                 >
                   View Full Details
                 </Button>
@@ -263,12 +242,12 @@ export default function Dashboard() {
 
         {/* Daily Overview */}
         {(isTechnician ? myTodayJobs : todayJobs).length > 0 && (
-          <Card className="border-2 border-[#E2E3E5] rounded-2xl mb-4 md:mb-6 overflow-hidden">
-            <CardHeader className="bg-[#FEF8C8] border-b-2 border-[#E2E3E5] p-3 md:p-6">
-              <CardTitle className="flex items-center gap-2 md:gap-3 text-lg md:text-xl font-bold text-[#111111] tracking-tight">
-                <Calendar className="w-5 h-5 md:w-6 md:h-6 text-[#111111]" />
+          <Card className="card-enhanced overflow-hidden mb-6 border-2 border-[#FAE008]">
+            <CardHeader className="bg-[#FFFBE6] border-b-2 border-[#FAE008] p-4 md:p-6">
+              <CardTitle className="flex items-center gap-3 text-lg md:text-xl font-bold text-[#111827] tracking-tight">
+                <Calendar className="w-6 h-6 text-[#111827]" />
                 Today's Overview
-                <Badge className="bg-[#FAE008] text-black font-semibold border-2 border-black text-xs">
+                <Badge className="status-chip">
                   {(isTechnician ? myTodayJobs : todayJobs).length} {(isTechnician ? myTodayJobs : todayJobs).length === 1 ? 'Job' : 'Jobs'}
                 </Badge>
               </CardTitle>
@@ -278,7 +257,7 @@ export default function Dashboard() {
                 {(isTechnician ? myTodayJobs : todayJobs).map((job) => (
                   <Card
                     key={job.id}
-                    className="border-2 border-[#E2E3E5] hover:border-[#FAE008] hover:shadow-lg transition-all cursor-pointer rounded-xl"
+                    className="card-enhanced card-interactive"
                     onClick={() => handleJobClick(job.id)}
                   >
                     <CardContent className="p-3 md:p-4">
@@ -288,7 +267,7 @@ export default function Dashboard() {
                             <span className="text-sm md:text-base font-bold text-[#111111]">#{job.job_number}</span>
                             <span className="text-xs md:text-sm text-[#4F4F4F]">{job.customer_name}</span>
                             {job.job_type_name && (
-                              <Badge className="bg-purple-100 text-purple-700 border-purple-200 font-semibold border-2 text-xs">
+                              <Badge className="bg-indigo-50 text-indigo-700 border-indigo-200 font-semibold border-2 text-xs rounded-lg">
                                 {job.job_type_name}
                               </Badge>
                             )}
@@ -351,10 +330,10 @@ export default function Dashboard() {
           </Card>
         )}
 
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 md:gap-5 mb-4 md:mb-8">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 md:gap-6 mb-6 md:mb-8">
           <div
             onClick={() => handleCardClick('today')}
-            className="bg-white rounded-2xl border-2 border-[hsl(32,15%,88%)] p-4 md:p-6 cursor-pointer hover:shadow-xl hover:border-[#fae008] hover:scale-[1.02] active:scale-[0.98] transition-all duration-200 group"
+            className="card-enhanced card-interactive p-6"
           >
             <div className="flex items-start justify-between mb-3 md:mb-4">
               <div className="w-10 h-10 md:w-12 md:h-12 bg-amber-50 rounded-xl flex items-center justify-center group-hover:bg-amber-100 transition-colors">
@@ -370,7 +349,7 @@ export default function Dashboard() {
 
           <div
             onClick={() => handleCardClick('active')}
-            className="bg-white rounded-2xl border-2 border-[hsl(32,15%,88%)] p-4 md:p-6 cursor-pointer hover:shadow-xl hover:border-[#fae008] hover:scale-[1.02] active:scale-[0.98] transition-all duration-200 group"
+            className="card-enhanced card-interactive p-6"
           >
             <div className="flex items-start justify-between mb-3 md:mb-4">
               <div className="w-10 h-10 md:w-12 md:h-12 bg-[#fae008]/20 rounded-xl flex items-center justify-center group-hover:bg-[#fae008]/30 transition-colors">
@@ -386,7 +365,7 @@ export default function Dashboard() {
 
           <div
             onClick={() => handleCardClick('completed')}
-            className="bg-white rounded-2xl border-2 border-[hsl(32,15%,88%)] p-4 md:p-6 cursor-pointer hover:shadow-xl hover:border-green-300 hover:scale-[1.02] active:scale-[0.98] transition-all duration-200 group"
+            className="card-enhanced card-interactive p-6"
           >
             <div className="flex items-start justify-between mb-3 md:mb-4">
               <div className="w-10 h-10 md:w-12 md:h-12 bg-green-50 rounded-xl flex items-center justify-center group-hover:bg-green-100 transition-colors">
@@ -402,7 +381,7 @@ export default function Dashboard() {
 
           <div
             onClick={() => navigate(createPageUrl("Jobs"))}
-            className="bg-white rounded-2xl border-2 border-[hsl(32,15%,88%)] p-4 md:p-6 cursor-pointer hover:shadow-xl hover:border-purple-300 hover:scale-[1.02] active:scale-[0.98] transition-all duration-200 group"
+            className="card-enhanced card-interactive p-6"
           >
             <div className="flex items-start justify-between mb-3 md:mb-4">
               <div className="w-10 h-10 md:w-12 md:h-12 bg-purple-50 rounded-xl flex items-center justify-center group-hover:bg-purple-100 transition-colors">
@@ -417,10 +396,10 @@ export default function Dashboard() {
           </div>
         </div>
 
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 md:gap-6">
-          <Card className="border-2 border-[hsl(32,15%,88%)] rounded-2xl">
-            <CardHeader className="border-b-2 border-[hsl(32,15%,88%)] p-3 md:p-6">
-              <CardTitle className="text-lg md:text-xl font-bold text-[hsl(25,10%,12%)] tracking-tight">Today's Schedule</CardTitle>
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+          <Card className="card-enhanced">
+            <CardHeader className="border-b-2 border-[#E5E7EB] p-5">
+              <CardTitle className="text-lg md:text-xl font-bold text-[#111827] tracking-tight">Today's Schedule</CardTitle>
             </CardHeader>
             <CardContent className="p-3 md:p-6">
               {(isTechnician ? myTodayJobs : todayJobs).length === 0 ? (
@@ -456,9 +435,9 @@ export default function Dashboard() {
             </CardContent>
           </Card>
 
-          <Card className="border-2 border-[hsl(32,15%,88%)] rounded-2xl">
-            <CardHeader className="border-b-2 border-[hsl(32,15%,88%)] p-3 md:p-6">
-              <CardTitle className="text-lg md:text-xl font-bold text-[hsl(25,10%,12%)] tracking-tight">Recent Check-ins</CardTitle>
+          <Card className="card-enhanced">
+            <CardHeader className="border-b-2 border-[#E5E7EB] p-5">
+              <CardTitle className="text-lg md:text-xl font-bold text-[#111827] tracking-tight">Recent Check-ins</CardTitle>
             </CardHeader>
             <CardContent className="p-3 md:p-6">
               {todayCheckIns.length === 0 ? (
@@ -467,9 +446,9 @@ export default function Dashboard() {
                   <p className="text-[hsl(25,8%,45%)] text-xs md:text-sm">No check-ins today</p>
                 </div>
               ) : (
-                <div className="space-y-2 md:space-y-3">
+                <div className="space-y-3">
                   {todayCheckIns.slice(0, 5).map(checkIn => (
-                    <div key={checkIn.id} className="p-3 md:p-4 rounded-xl border-2 border-[hsl(32,15%,88%)] hover:bg-[#FEF8C8] transition-colors">
+                    <div key={checkIn.id} className="card-enhanced p-4 hover:bg-[#FFFEF0]">
                       <div className="flex items-center justify-between mb-1.5 md:mb-2">
                         <span className="font-semibold text-[hsl(25,10%,12%)] text-xs md:text-sm">{checkIn.technician_name}</span>
                         {checkIn.duration_hours && (

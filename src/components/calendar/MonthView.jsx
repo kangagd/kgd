@@ -62,11 +62,11 @@ export default function MonthView({ jobs, currentDate, onJobClick, onQuickBook }
 
   return (
     <div className="space-y-4">
-      <Card>
+      <Card className="card-enhanced">
         <CardContent className="p-2 md:p-4">
           <div className="grid grid-cols-7 gap-1 md:gap-2">
             {['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'].map(day => (
-              <div key={day} className="text-center text-xs md:text-sm font-semibold text-[#4B5563] py-2">
+              <div key={day} className="text-center text-xs md:text-sm font-bold text-[#111827] py-2 uppercase tracking-wide">
                 {day}
               </div>
             ))}
@@ -82,20 +82,20 @@ export default function MonthView({ jobs, currentDate, onJobClick, onQuickBook }
               return (
                 <div
                   key={day.toISOString()}
-                  className={`aspect-square border rounded-lg p-1 md:p-2 hover:bg-gray-50 transition-colors ${
-                    isToday ? 'bg-[#FAE008]/10 border-[#FAE008] border-2' : 'border-[#E5E7EB]'
-                  } ${!isSameMonth(day, currentDate) ? 'opacity-50' : ''}`}
+                  className={`aspect-square border-2 rounded-xl p-1 md:p-2 hover:bg-[#FFFEF0] transition-all ${
+                    isToday ? 'bg-[#FAE008]/20 border-[#FAE008] shadow-md' : 'border-[#E5E7EB]'
+                  } ${!isSameMonth(day, currentDate) ? 'opacity-40' : ''}`}
                 >
                   <div className="flex items-start justify-between mb-1">
-                    <div className={`text-xs md:text-sm font-medium ${
-                      isToday ? 'text-[#FAE008] font-bold' : 'text-[#111827]'
+                    <div className={`text-sm md:text-base font-bold ${
+                      isToday ? 'text-[#111827]' : 'text-[#111827]'
                     }`}>
                       {format(day, 'd')}
                     </div>
                     {isSameMonth(day, currentDate) && (
                       <button
                         onClick={() => onQuickBook(day)}
-                        className="p-0.5 hover:bg-gray-100 rounded transition-colors"
+                        className="p-1 hover:bg-[#FAE008] hover:text-black rounded-lg transition-all"
                         title="Book job"
                       >
                         <Plus className="w-3 h-3 text-[#4B5563]" />
@@ -107,20 +107,21 @@ export default function MonthView({ jobs, currentDate, onJobClick, onQuickBook }
                       <div
                         key={job.id}
                         onClick={() => onJobClick(job)}
-                        className={`text-xs px-1.5 py-1 rounded cursor-pointer hover:opacity-90 transition-all border-l-2 ${getJobTypeBgColor(job.job_type_name, uniqueJobTypes)}`}
-                        style={{ borderLeftColor: getJobTypeColor(job.job_type_name, uniqueJobTypes).replace('bg-', '#') }}
+                        className="text-xs px-2 py-1.5 rounded-lg cursor-pointer hover:shadow-md transition-all bg-white border-2 border-[#E5E7EB] hover:border-[#FAE008]"
                         title={`${job.customer_name} - ${job.job_type_name || 'No type'} - ${job.scheduled_time || 'No time'}`}
                       >
-                        <div className="flex items-center justify-between gap-1 mb-0.5">
+                        <div className="flex items-center justify-between gap-1 mb-1">
                           {job.scheduled_time && (
-                            <span className="font-semibold text-[10px] text-[hsl(25,10%,25%)]">{job.scheduled_time.slice(0, 5)}</span>
+                            <span className="font-bold text-[10px] px-1.5 py-0.5 rounded bg-[#FAE008] text-black">
+                              {job.scheduled_time.slice(0, 5)}
+                            </span>
                           )}
                           {(job.assigned_to_name && job.assigned_to_name.length > 0) && (
                             <div className="flex -space-x-1">
                               {(Array.isArray(job.assigned_to_name) ? job.assigned_to_name : [job.assigned_to_name]).slice(0, 2).map((name, idx) => (
                                 <div
                                   key={idx}
-                                  className={`${getAvatarColor(name)} w-3.5 h-3.5 rounded-full flex items-center justify-center text-black text-[8px] font-bold border border-white`}
+                                  className={`${getAvatarColor(name)} w-4 h-4 rounded-full flex items-center justify-center text-black text-[8px] font-bold border-2 border-white`}
                                   title={name}
                                 >
                                   {getInitials(name)}
@@ -129,14 +130,19 @@ export default function MonthView({ jobs, currentDate, onJobClick, onQuickBook }
                             </div>
                           )}
                         </div>
-                        <div className="truncate text-[10px] md:text-xs font-medium text-[#111827]">
+                        <div className="truncate text-[10px] md:text-xs font-semibold text-[#111827]">
                           {job.customer_name}
                         </div>
+                        {job.job_type_name && (
+                          <div className="truncate text-[9px] text-[#4B5563] mt-0.5">
+                            {job.job_type_name}
+                          </div>
+                        )}
                       </div>
                     ))}
                   </div>
                   {dayJobs.length > 2 && (
-                    <div className="text-[9px] text-[#4B5563] mt-1 text-center">
+                    <div className="text-[9px] font-semibold text-[#4B5563] mt-1 text-center">
                       +{dayJobs.length - 2} more
                     </div>
                   )}
@@ -147,15 +153,23 @@ export default function MonthView({ jobs, currentDate, onJobClick, onQuickBook }
         </CardContent>
       </Card>
 
-      <div className="flex flex-wrap gap-2 text-xs bg-white p-3 rounded-lg border border-[#E5E7EB]">
-        <span className="font-semibold text-[#111827]">Job Types:</span>
-        {uniqueJobTypes.map((jobType) => (
-          <div key={jobType} className="flex items-center gap-1.5">
-            <div className={`w-3 h-3 rounded ${getJobTypeColor(jobType, uniqueJobTypes)}`} />
-            <span className="text-[#4B5563]">{jobType}</span>
+      <Card className="card-enhanced">
+        <CardContent className="p-3">
+          <div className="flex flex-wrap gap-3 text-xs items-center">
+            <span className="font-bold text-[#111827] uppercase tracking-wide">Time:</span>
+            <div className="flex items-center gap-2">
+              <div className="w-4 h-4 rounded bg-[#FAE008] border-2 border-black" />
+              <span className="text-[#4B5563] font-medium">Job Time</span>
+            </div>
+            <span className="mx-2 text-[#E5E7EB]">|</span>
+            <span className="font-bold text-[#111827] uppercase tracking-wide">Status:</span>
+            <div className="flex items-center gap-2">
+              <div className="w-4 h-4 rounded-lg border-2 border-[#FAE008]" />
+              <span className="text-[#4B5563] font-medium">Scheduled</span>
+            </div>
           </div>
-        ))}
-      </div>
+        </CardContent>
+      </Card>
     </div>
   );
 }

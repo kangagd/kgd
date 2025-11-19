@@ -9,34 +9,12 @@ import { Card, CardContent } from "@/components/ui/card";
 import ProjectForm from "../components/projects/ProjectForm";
 import ProjectDetails from "../components/projects/ProjectDetails";
 
-const statusColors = {
-  open: "rgba(37, 99, 235, 0.15)",
-  scheduled: "rgba(14, 165, 233, 0.15)",
-  in_progress: "rgba(14, 165, 233, 0.15)",
-  quoted: "rgba(124, 58, 237, 0.15)",
-  invoiced: "rgba(249, 115, 22, 0.15)",
-  paid: "rgba(22, 163, 74, 0.15)",
-  completed: "rgba(21, 128, 61, 0.15)",
-  cancelled: "rgba(220, 38, 38, 0.15)"
-};
-
-const statusTextColors = {
-  open: "#2563EB",
-  scheduled: "#0EA5E9",
-  in_progress: "#0EA5E9",
-  quoted: "#7C3AED",
-  invoiced: "#F97316",
-  paid: "#16A34A",
-  completed: "#15803D",
-  cancelled: "#DC2626"
-};
-
 const projectTypeColors = {
-  "Garage Door Install": "bg-[#FEF8C8] text-slate-700",
-  "Gate Install": "bg-green-100 text-green-700",
-  "Roller Shutter Install": "bg-purple-100 text-purple-700",
-  "Repair": "bg-orange-100 text-orange-700",
-  "Maintenance": "bg-indigo-100 text-indigo-700"
+  "Garage Door Install": "bg-blue-50 text-blue-700 border-blue-200",
+  "Gate Install": "bg-green-50 text-green-700 border-green-200",
+  "Roller Shutter Install": "bg-purple-50 text-purple-700 border-purple-200",
+  "Repair": "bg-orange-50 text-orange-700 border-orange-200",
+  "Maintenance": "bg-indigo-50 text-indigo-700 border-indigo-200"
 };
 
 export default function Projects() {
@@ -169,12 +147,12 @@ export default function Projects() {
       <div className="max-w-7xl mx-auto">
         <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-6 gap-4">
           <div>
-            <h1 className="text-3xl font-bold text-[#111827] tracking-tight">Projects</h1>
-            <p className="text-[#4B5563] mt-2">Manage multi-step workflows</p>
+            <h1 className="text-2xl md:text-3xl font-bold text-[#111827] tracking-tight">Projects</h1>
+            <p className="text-[#4B5563] mt-2 text-sm md:text-base">Manage multi-step workflows</p>
           </div>
           <Button
             onClick={() => setShowForm(true)}
-            className="btn-primary w-full md:w-auto"
+            className="btn-primary w-full md:w-auto h-12"
           >
             <Plus className="w-5 h-5 mr-2" />
             New Project
@@ -188,80 +166,86 @@ export default function Projects() {
               placeholder="Search projects..."
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
-              className="input-enhanced pl-11 w-full"
+              className="input-enhanced pl-11 w-full h-12"
             />
           </div>
         </div>
 
         {isLoading && (
-          <div className="text-center py-12">
-            <p className="text-[#4B5563]">Loading projects...</p>
+          <div className="grid gap-4">
+            {[1, 2, 3].map((i) => (
+              <Card key={i} className="animate-pulse card-enhanced">
+                <CardContent className="p-6">
+                  <div className="h-6 bg-gray-200 rounded w-1/3 mb-3"></div>
+                  <div className="h-4 bg-gray-200 rounded w-2/3 mb-2"></div>
+                  <div className="h-4 bg-gray-200 rounded w-1/2"></div>
+                </CardContent>
+              </Card>
+            ))}
           </div>
         )}
 
         {!isLoading && filteredProjects.length === 0 && (
           <div className="text-center py-12 card-enhanced">
-            <p className="text-[#4B5563] mb-4">No projects found</p>
-            <Button onClick={() => setShowForm(true)} className="btn-primary">
+            <p className="text-[#4B5563] mb-4 text-sm md:text-base">No projects found</p>
+            <Button onClick={() => setShowForm(true)} className="btn-primary h-12">
               Create First Project
             </Button>
           </div>
         )}
 
-        <div className="grid gap-4">
-          {filteredProjects.map((project) => (
-            <Card
-              key={project.id}
-              className="card-enhanced card-interactive"
-              onClick={() => setSelectedProject(project)}
-            >
-              <CardContent className="p-4 md:p-6">
-                <div className="flex items-start justify-between gap-4">
-                  <div className="flex-1 min-w-0">
-                    <h3 className="text-lg font-bold text-[#111827] mb-2">{project.title}</h3>
-                    <div className="flex items-center gap-2 flex-wrap mb-2">
-                      {project.project_type && (
-                        <Badge className={`${projectTypeColors[project.project_type]} font-semibold border-2 text-xs`}>
-                          {project.project_type}
+        {!isLoading && filteredProjects.length > 0 && (
+          <div className="grid gap-4">
+            {filteredProjects.map((project) => (
+              <Card
+                key={project.id}
+                className="card-enhanced card-interactive"
+                onClick={() => setSelectedProject(project)}
+              >
+                <CardContent className="p-5 md:p-6">
+                  <div className="flex items-start justify-between gap-4">
+                    <div className="flex-1 min-w-0">
+                      <div className="flex items-center gap-2 flex-wrap mb-2">
+                        <h3 className="text-lg md:text-xl font-bold text-[#111827]">{project.title}</h3>
+                        <Badge className="status-chip capitalize">
+                          {project.status.replace(/_/g, ' ')}
                         </Badge>
-                      )}
-                      <Badge 
-                        className="capitalize font-semibold text-xs py-1 px-3 rounded-full"
-                        style={{ 
-                          backgroundColor: '#FAE008',
-                          color: '#000000'
-                        }}
-                      >
-                        {project.status.replace(/_/g, ' ')}
-                      </Badge>
-                    </div>
-                    <p className="text-sm text-[#4B5563] mb-2 font-medium">{project.customer_name}</p>
-                    {project.description && (
-                      <div
-                        className="text-sm text-[#4B5563] line-clamp-2 prose prose-sm max-w-none mb-2"
-                        dangerouslySetInnerHTML={{ __html: project.description }}
-                      />
-                    )}
-                    {project.doors && project.doors.length > 0 && (
-                      <div className="mt-2 flex flex-wrap gap-2">
-                        {project.doors.map((door, idx) => (
-                          <Badge key={idx} variant="outline" className="bg-white border-[#E5E7EB] text-[#4B5563] text-xs">
-                            Door {idx + 1}: {door.height && door.width ? `${door.height} × ${door.width}` : 'Pending specs'}
-                            {door.type && ` • ${door.type}`}
-                          </Badge>
-                        ))}
                       </div>
-                    )}
+                      <div className="flex items-center gap-2 flex-wrap mb-3">
+                        <p className="text-sm md:text-base text-[#4B5563] font-medium">{project.customer_name}</p>
+                        {project.project_type && (
+                          <Badge className={`${projectTypeColors[project.project_type]} font-semibold border-2 text-xs rounded-lg px-2 py-1`}>
+                            {project.project_type}
+                          </Badge>
+                        )}
+                      </div>
+                      {project.description && (
+                        <div
+                          className="text-sm text-[#4B5563] line-clamp-2 prose prose-sm max-w-none"
+                          dangerouslySetInnerHTML={{ __html: project.description }}
+                        />
+                      )}
+                      {project.doors && project.doors.length > 0 && (
+                        <div className="mt-3 flex flex-wrap gap-2">
+                          {project.doors.map((door, idx) => (
+                            <Badge key={idx} className="bg-[#F8F9FA] border-2 border-[#E5E7EB] text-[#111827] text-xs font-medium px-2 py-1">
+                              Door {idx + 1}: {door.height && door.width ? `${door.height} × ${door.width}` : 'Pending'}
+                              {door.type && ` • ${door.type}`}
+                            </Badge>
+                          ))}
+                        </div>
+                      )}
+                    </div>
+                    <div className="flex flex-col items-center justify-center bg-[#F8F9FA] rounded-lg px-4 py-3 min-w-[70px]">
+                      <div className="text-2xl font-bold text-[#111827]">{getJobCount(project.id)}</div>
+                      <div className="text-xs text-[#4B5563] font-medium uppercase tracking-wide">Jobs</div>
+                    </div>
                   </div>
-                  <div className="text-right text-sm text-[#4B5563] flex-shrink-0">
-                    <div className="font-bold text-[#111827] text-lg">{getJobCount(project.id)}</div>
-                    <div className="text-xs">jobs</div>
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
-          ))}
-        </div>
+                </CardContent>
+              </Card>
+            ))}
+          </div>
+        )}
       </div>
     </div>
   );

@@ -7,34 +7,12 @@ import { format, parseISO } from "date-fns";
 import { base44 } from "@/api/base44Client";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 
-const statusColors = {
-  open: "rgba(37, 99, 235, 0.15)",
-  scheduled: "rgba(14, 165, 233, 0.15)",
-  in_progress: "rgba(14, 165, 233, 0.15)",
-  quoted: "rgba(124, 58, 237, 0.15)",
-  invoiced: "rgba(249, 115, 22, 0.15)",
-  paid: "rgba(22, 163, 74, 0.15)",
-  completed: "rgba(21, 128, 61, 0.15)",
-  cancelled: "rgba(220, 38, 38, 0.15)"
-};
-
-const statusTextColors = {
-  open: "#2563EB",
-  scheduled: "#0EA5E9",
-  in_progress: "#0EA5E9",
-  quoted: "#7C3AED",
-  invoiced: "#F97316",
-  paid: "#16A34A",
-  completed: "#15803D",
-  cancelled: "#DC2626"
-};
-
 const productColors = {
-  "Garage Door": "bg-[#FEF8C8] text-slate-700 border-slate-200",
-  "Gate": "bg-green-100 text-green-700 border-green-200",
-  "Roller Shutter": "bg-purple-100 text-purple-700 border-purple-200",
-  "Multiple": "bg-orange-100 text-orange-700 border-orange-200",
-  "Custom Garage Door": "bg-pink-100 text-pink-700 border-pink-200"
+  "Garage Door": "bg-blue-50 text-blue-700 border-blue-200",
+  "Gate": "bg-green-50 text-green-700 border-green-200",
+  "Roller Shutter": "bg-purple-50 text-purple-700 border-purple-200",
+  "Multiple": "bg-orange-50 text-orange-700 border-orange-200",
+  "Custom Garage Door": "bg-pink-50 text-pink-700 border-pink-200"
 };
 
 const getInitials = (name) => {
@@ -119,38 +97,40 @@ export default function JobList({ jobs, isLoading, onSelectJob }) {
 
   if (jobs.length === 0) {
     return (
-      <Card className="p-8 md:p-12 text-center border-2 border-[hsl(32,15%,88%)] rounded-2xl">
-        <Timer className="w-10 h-10 md:w-12 md:h-12 mx-auto text-slate-300 mb-2 md:mb-3" />
-        <h3 className="text-sm md:text-base font-semibold text-slate-900 mb-1">No jobs found</h3>
-        <p className="text-xs md:text-sm text-slate-500">Try adjusting your filters</p>
+      <Card className="card-enhanced text-center py-12">
+        <CardContent>
+          <Timer className="w-16 h-16 mx-auto text-gray-300 mb-4" />
+          <h3 className="text-lg font-bold text-[#111827] mb-2">No jobs found</h3>
+          <p className="text-sm text-[#4B5563]">Try adjusting your filters</p>
+        </CardContent>
       </Card>);
 
   }
 
   return (
-    <div className="space-y-2 md:space-y-4">
+    <div className="space-y-3 md:space-y-4">
       {jobs.map((job) =>
       <Card
         key={job.id}
-        className="border-2 border-[#E2E3E5] hover:border-[#FAE008] hover:shadow-lg transition-all cursor-pointer rounded-2xl"
+        className="card-enhanced card-interactive"
         onClick={() => onSelectJob(job)}>
 
-          <CardContent className="p-3 md:p-6">
+          <CardContent className="p-4 md:p-6">
             <div className="flex items-start justify-between gap-3 md:gap-4">
               <div className="flex-1 min-w-0">
                 <div className="flex items-center gap-1.5 md:gap-2 flex-wrap mb-1.5 md:mb-2">
                   <h3 className="text-base md:text-lg font-bold text-[#111111]">{job.customer_name}</h3>
                   <span className="text-xs md:text-sm text-[#4F4F4F]">#{job.job_number}</span>
                   {job.product &&
-                <Badge className={`${productColors[job.product]} font-semibold border-2 text-xs rounded-full py-1 px-2 md:px-3`}>
-                      {job.product}
-                    </Badge>
-                }
-                  {job.job_type_name &&
-                <Badge className="bg-purple-100 text-purple-700 border-purple-200 font-semibold border-2 text-xs rounded-full py-1 px-2 md:px-3">
-                      {job.job_type_name}
-                    </Badge>
-                }
+                  <Badge className={`${productColors[job.product]} font-semibold border-2 text-xs rounded-lg py-1 px-2 md:px-3`}>
+                        {job.product}
+                      </Badge>
+                  }
+                    {job.job_type_name &&
+                  <Badge className="bg-indigo-50 text-indigo-700 border-indigo-200 font-semibold border-2 text-xs rounded-lg py-1 px-2 md:px-3">
+                        {job.job_type_name}
+                      </Badge>
+                  }
                   <Badge className="status-chip capitalize">
                     {job.status.replace(/_/g, ' ')}
                   </Badge>
