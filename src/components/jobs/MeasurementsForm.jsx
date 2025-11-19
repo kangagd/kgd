@@ -216,16 +216,21 @@ export default function MeasurementsForm({ measurements, onChange }) {
           <CardTitle className="flex items-center gap-3">
             <span>Existing Door</span>
             <div className="flex items-center gap-2">
-              <Checkbox
-                checked={data.existing_door.removal_required || false}
-                onCheckedChange={(checked) => updateField('existing_door', 'removal_required', checked)}
-              />
-              <Label className="text-sm font-normal">Removal Required</Label>
+              <Label className="text-sm font-normal">Removal Required:</Label>
+              <select
+                value={data.existing_door.removal_required || "N"}
+                onChange={(e) => updateField('existing_door', 'removal_required', e.target.value)}
+                className="h-9 px-3 rounded-md border border-[#E5E7EB] bg-white text-sm"
+              >
+                <option value="N">N</option>
+                <option value="Y">Y</option>
+              </select>
             </div>
           </CardTitle>
         </CardHeader>
-        <CardContent className="space-y-4">
-          <div className="grid grid-cols-3 gap-4">
+        {data.existing_door.removal_required === "Y" && (
+          <CardContent className="space-y-4">
+            <div className="grid grid-cols-3 gap-4">
             <div>
               <Label>Height Left Side</Label>
               <Input
@@ -276,6 +281,7 @@ export default function MeasurementsForm({ measurements, onChange }) {
             </div>
           </div>
         </CardContent>
+        )}
       </Card>
 
       <Card>
