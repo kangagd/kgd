@@ -393,28 +393,40 @@ export default function ProjectDetails({ project, onClose, onEdit, onDelete }) {
                 <div
                   key={job.id}
                   onClick={() => handleJobClick(job.id)}
-                  className="bg-white border-2 border-slate-200 rounded-xl p-4 hover:border-[#fae008] hover:shadow-md transition-all cursor-pointer"
+                  className="bg-white border border-[#E5E7EB] rounded-lg p-4 hover:border-[#FAE008] hover:shadow-md transition-all cursor-pointer"
                 >
-                  <div className="flex items-start justify-between gap-4">
-                    <div className="flex-1">
-                      <div className="flex items-center gap-2 mb-2">
-                        <span className="font-bold text-[#000000]">Job #{job.job_number}</span>
-                        <Badge className={`${jobStatusColors[job.status]} font-semibold border-2`}>
-                          {job.status}
+                  <div className="space-y-3">
+                    <div className="text-lg font-semibold text-[#111827]">
+                      {job.customer_name}
+                    </div>
+                    
+                    <div className="flex items-center gap-2 flex-wrap">
+                      <Badge className="bg-[#F2F4F7] text-[#344054] hover:bg-[#F2F4F7] border-0 font-medium text-sm px-3 py-1 rounded-lg">
+                        #{job.job_number}
+                      </Badge>
+                      <Badge className={`${jobStatusColors[job.status]} hover:${jobStatusColors[job.status]} border-0 font-semibold text-xs px-3 py-1 rounded-lg`}>
+                        {job.status}
+                      </Badge>
+                      {job.job_type_name && (
+                        <Badge className="bg-[#EDE9FE] text-[#6D28D9] hover:bg-[#EDE9FE] border-0 font-semibold text-xs px-3 py-1 rounded-lg">
+                          {job.job_type_name}
                         </Badge>
-                        {job.job_type && (
-                          <Badge variant="outline" className="font-semibold">
-                            {job.job_type}
-                          </Badge>
-                        )}
-                      </div>
-                      {job.scheduled_date && (
-                        <p className="text-sm text-slate-600">
-                          {new Date(job.scheduled_date).toLocaleDateString()}
-                          {job.scheduled_time && ` at ${job.scheduled_time}`}
-                        </p>
                       )}
                     </div>
+                    
+                    {job.scheduled_date && (
+                      <p className="text-sm text-[#4B5563]">
+                        {new Date(job.scheduled_date).toLocaleDateString()}
+                        {job.scheduled_time && ` at ${job.scheduled_time}`}
+                      </p>
+                    )}
+                    
+                    {job.address && (
+                      <div className="flex items-start gap-2">
+                        <MapPin className="w-4 h-4 mt-0.5 flex-shrink-0 text-[#4B5563]" />
+                        <span className="text-sm text-[#4B5563]">{job.address}</span>
+                      </div>
+                    )}
                   </div>
                 </div>
               ))}
