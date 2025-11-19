@@ -1,7 +1,7 @@
 import React from "react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
 import { createPageUrl } from "@/utils";
-import { Calendar, Briefcase, Users, LayoutDashboard, Wrench, UserCircle, DollarSign, Archive as ArchiveIcon, Building2, FolderKanban } from "lucide-react";
+import { Calendar, Briefcase, Users, LayoutDashboard, Wrench, UserCircle, DollarSign, Archive as ArchiveIcon, Building2, FolderKanban, TestTube2 } from "lucide-react";
 import {
   Sidebar,
   SidebarContent,
@@ -126,6 +126,19 @@ export default function Layout({ children, currentPageName }) {
     );
   }
 
+  const handleTestModeToggle = () => {
+    const modes = ['off', 'admin', 'technician'];
+    const currentIndex = modes.indexOf(testMode);
+    const nextMode = modes[(currentIndex + 1) % modes.length];
+    setTestMode(nextMode);
+  };
+
+  const getTestModeLabel = () => {
+    if (testMode === 'admin') return 'Admin';
+    if (testMode === 'technician') return 'Tech';
+    return 'Off';
+  };
+
   return (
     <SidebarProvider>
       <div className="min-h-screen flex w-full bg-slate-50">
@@ -170,18 +183,6 @@ export default function Layout({ children, currentPageName }) {
           </SidebarContent>
 
           <SidebarFooter className="border-t border-slate-200 p-4">
-            <div className="mb-3 p-2 bg-amber-50 border border-amber-200 rounded-lg">
-              <div className="text-xs font-semibold text-amber-900 mb-2">Test Mode</div>
-              <select
-                value={testMode}
-                onChange={(e) => setTestMode(e.target.value)}
-                className="w-full text-xs border border-amber-300 rounded px-2 py-1 bg-white"
-              >
-                <option value="off">Off (Real Role)</option>
-                <option value="admin">Force Admin View</option>
-                <option value="technician">Force Technician View</option>
-              </select>
-            </div>
             <div className="flex items-center gap-3">
               <button
                 onClick={() => navigate(createPageUrl("UserProfile"))}
