@@ -1,7 +1,9 @@
 import React, { useState } from "react";
 import { Card, CardContent } from "@/components/ui/card";
+import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
 import { format, startOfWeek, addDays, isSameDay } from "date-fns";
-import { MapPin, AlertCircle } from "lucide-react";
+import { MapPin, AlertCircle, Clock, Briefcase, AlertTriangle } from "lucide-react";
 import { base44 } from "@/api/base44Client";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import {
@@ -69,6 +71,7 @@ export default function WeekView({ jobs, currentDate, onJobClick, onQuickBook })
   const [draggedJob, setDraggedJob] = useState(null);
   const [dragOverCell, setDragOverCell] = useState(null);
   const [pendingUpdate, setPendingUpdate] = useState(null);
+  const [compactMode, setCompactMode] = useState(false);
   const queryClient = useQueryClient();
 
   const { data: technicians = [] } = useQuery({
@@ -187,38 +190,71 @@ export default function WeekView({ jobs, currentDate, onJobClick, onQuickBook })
 
   return (
     <>
-      <div className="space-y-5">
-        <Card className="rounded-xl border border-[#E5E7EB] shadow-sm">
+      <div className="space-y-3">
+        <div className="flex items-center justify-between">
+          <div className="text-sm text-[#4B5563] font-semibold">
+            {visibleTechnicians.length} {visibleTechnicians.length === 1 ? 'Technician' : 'Technicians'} scheduled
+          </div>
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => setCompactMode(!compactMode)}
+            className={`h-9 font-semibold transition-all rounded-lg border ${
+              compactMode 
+                ? 'bg-[#FAE008] text-[#111827] border-[#FAE008] hover:bg-[#E5CF07]' 
+                : 'border-[#E5E7EB] hover:bg-[#F3F4F6]'
+            }`}
+          >
+            {compactMode ? 'Expanded' : 'Compact'} Mode
+          </Button>
+        </div>
+
+        <Card className="rounded-lg border border-[#E5E7EB] shadow-sm overflow-hidden">
           <CardContent className="p-0 overflow-x-auto">
-            <div className="min-w-[1200px]">
-              <div className="grid border-b-2 border-[#E5E7EB] bg-[#F8F9FA]" style={{ gridTemplateColumns: `200px repeat(${weekDays.length}, 1fr)` }}>
-                <div className="p-4 border-r border-[#E5E7EB] font-bold text-sm text-[#111827] tracking-tight">
+            <div className="min-w-[800px]">
+              <div className="grid border-b border-[#E5E7EB] bg-[#F8F9FA] sticky top-0 z-10" style={{ gridTemplateColumns: `${compactMode ? '140px' : '180px'} repeat(${weekDays.length}, 1fr)` }}>
+                <div className={`${compactMode ? 'p-2' : 'p-3'} border-r border-[#E5E7EB] font-bold text-xs text-[#111827] tracking-tight uppercase`}>
                   Technician
                 </div>
-                {weekDays.map(day => (
-                  <div key={day.toISOString()} className="text-center p-4 border-r border-[#E5E7EB]">
-                    <div className={`text-xs font-bold uppercase tracking-wide ${isSameDay(day, new Date()) ? 'text-[#111827]' : 'text-[#6B7280]'}`}>
-                      {format(day, 'EEE')}
+                {weekDays.map(day => {
+                  const isToday = isSameDay(day, new Date());
+                  return (
+                    <div 
+                      key={day.toISOString()} 
+                      className={`text-center ${compactMode ? 'p-2' : 'p-3'} border-r border-[#E5E7EB] transition-colors ${
+                        isToday ? 'bg-[#FAE008]/10' : ''
+                      }`}
+                    >
+                      <div className={`text-[10px] font-bold uppercase tracking-wider mb-0.5 ${isToday ? 'text-[#111827]' : 'text-[#6B7280]'}`}>
+                        {format(day, 'EEE').toUpperCase()}
+                      </div>
+                      <div className={`text-2xl font-bold leading-none ${isToday ? 'text-[#111827]' : 'text-[#4B5563]'}`}>
+                        {format(day, 'd')}
+                      </div>
                     </div>
-                    <div className={`text-xl font-bold mt-1 ${isSameDay(day, new Date()) ? 'text-[#111827]' : 'text-[#4B5563]'}`}>
-                      {format(day, 'd')}
-                    </div>
-                  </div>
-                ))}
+                  );
+                })}
               </div>
 
               {visibleTechnicians.length === 0 ? (
-                <div className="p-12 text-center text-[#6B7280] font-medium">
+                <div className="p-8 text-center text-[#6B7280] font-medium text-sm">
                   No technicians assigned to jobs this week.
                 </div>
               ) : (
                 visibleTechnicians.map(technician => (
-                  <div key={technician.id} className="grid border-b border-[#E5E7EB] hover:bg-[#F8F9FA] transition-colors" style={{ gridTemplateColumns: `200px repeat(${weekDays.length}, 1fr)`, height: '150px' }}>
-                    <div className="p-4 border-r border-[#E5E7EB] flex items-center gap-3 sticky left-0 bg-white z-10">
-                      <div className={`${getAvatarColor(technician.full_name)} w-10 h-10 rounded-full flex items-center justify-center text-white font-bold text-sm shadow-sm`}>
+                  <div 
+                    key={technician.id} 
+                    className="grid border-b border-[#E5E7EB] hover:bg-[#F8F9FA]/50 transition-colors" 
+                    style={{ 
+                      gridTemplateColumns: `${compactMode ? '140px' : '180px'} repeat(${weekDays.length}, 1fr)`, 
+                      minHeight: compactMode ? '100px' : '140px' 
+                    }}
+                  >
+                    <div className={`${compactMode ? 'p-2' : 'p-3'} border-r border-[#E5E7EB] flex items-center gap-2 sticky left-0 bg-white z-10`}>
+                      <div className={`${getAvatarColor(technician.full_name)} ${compactMode ? 'w-8 h-8' : 'w-10 h-10'} rounded-full flex items-center justify-center text-white font-bold ${compactMode ? 'text-xs' : 'text-sm'} shadow-sm flex-shrink-0`}>
                         {getInitials(technician.full_name)}
                       </div>
-                      <span className="text-sm font-bold text-[#111827] truncate">
+                      <span className={`${compactMode ? 'text-xs' : 'text-sm'} font-bold text-[#111827] truncate`}>
                         {technician.full_name}
                       </span>
                     </div>
@@ -226,49 +262,67 @@ export default function WeekView({ jobs, currentDate, onJobClick, onQuickBook })
                     {weekDays.map(day => {
                       const jobsInCell = getJobsForCell(day, technician.email);
                       const isDragOver = dragOverCell === `${day.toISOString()}-${technician.email}`;
+                      const isToday = isSameDay(day, new Date());
 
                       return (
                         <div
                           key={day.toISOString()}
-                          className={`p-2.5 border-r border-[#E5E7EB] transition-all overflow-y-auto ${
-                            isDragOver ? 'bg-[#16A34A]/5 border-[#16A34A]' : ''
+                          className={`${compactMode ? 'p-1.5' : 'p-2'} border-r border-[#E5E7EB] transition-all overflow-y-auto ${
+                            isDragOver ? 'bg-[#16A34A]/5 border-[#16A34A]' : isToday ? 'bg-[#FAE008]/5' : ''
                           }`}
                           onDragOver={(e) => handleDragOver(e, day, technician.email)}
                           onDragLeave={handleDragLeave}
                           onDrop={(e) => handleDrop(e, day, technician.email)}
                         >
-                          <div className="space-y-2">
-                            {jobsInCell.map(job => (
-                              <JobHoverCard key={job.id} job={job} onJobClick={onJobClick}>
-                                <div
-                                  draggable
-                                  onDragStart={(e) => handleDragStart(e, job)}
-                                  onDragEnd={handleDragEnd}
-                                  className={`p-3 rounded-lg cursor-move hover:shadow-lg transition-all bg-white border border-[#E5E7EB] hover:border-[#FAE008] ${
-                                    draggedJob?.id === job.id ? 'opacity-50' : ''
-                                  }`}
-                                >
-                                  <div className="flex items-center justify-between mb-2">
-                                    <span className="text-xs font-bold text-[#111827]">#{job.job_number}</span>
-                                    <span className={`text-[10px] px-2 py-0.5 rounded-full font-bold ${job.status === 'scheduled' ? 'bg-[#FAE008] text-[#111827]' : 'bg-[#F3F4F6] text-[#6B7280]'}`}>
-                                      {job.scheduled_time || 'No time'}
-                                    </span>
-                                  </div>
-                                  <div className="text-xs font-semibold text-[#111827] truncate mb-1">
-                                    {job.customer_name}
-                                  </div>
-                                  <div className="flex items-start gap-1 text-xs text-[#6B7280] truncate mb-1.5">
-                                    <MapPin className="w-3 h-3 mt-0.5 flex-shrink-0" />
-                                    <span className="truncate">{job.address}</span>
-                                  </div>
-                                  {job.job_type_name && (
-                                    <div className="text-[10px] text-[#4B5563] font-semibold mt-1.5 truncate bg-[#F3F4F6] px-2 py-1 rounded">
-                                      {job.job_type_name}
+                          <div className={compactMode ? 'space-y-1' : 'space-y-1.5'}>
+                            {jobsInCell.map(job => {
+                              const isPriority = job.priority === 'high' || job.outcome === 'return_visit_required';
+                              
+                              return (
+                                <JobHoverCard key={job.id} job={job} onJobClick={onJobClick}>
+                                  <div
+                                    draggable
+                                    onDragStart={(e) => handleDragStart(e, job)}
+                                    onDragEnd={handleDragEnd}
+                                    onClick={() => onJobClick(job)}
+                                    className={`${compactMode ? 'p-2' : 'p-2.5'} rounded-lg cursor-move hover:shadow-md transition-all bg-white border border-[#E5E7EB] hover:border-[#FAE008] ${
+                                      draggedJob?.id === job.id ? 'opacity-50' : ''
+                                    }`}
+                                  >
+                                    <div className="flex items-center justify-between mb-1.5">
+                                      <div className="flex items-center gap-1.5">
+                                        <span className={`${compactMode ? 'text-[10px]' : 'text-xs'} font-bold text-[#111827]`}>#{job.job_number}</span>
+                                        {isPriority && (
+                                          <AlertTriangle className="w-3 h-3 text-[#DC2626]" />
+                                        )}
+                                      </div>
+                                      <Badge className={`${compactMode ? 'text-[9px] px-1.5 py-0' : 'text-[10px] px-2 py-0.5'} rounded font-bold bg-[#FAE008] text-[#111827] border-none`}>
+                                        <Clock className="w-2.5 h-2.5 mr-0.5" />
+                                        {job.scheduled_time?.slice(0, 5) || 'TBD'}
+                                      </Badge>
                                     </div>
-                                  )}
-                                </div>
-                              </JobHoverCard>
-                            ))}
+                                    
+                                    <div className={`${compactMode ? 'text-[10px]' : 'text-xs'} font-bold text-[#111827] truncate mb-1`}>
+                                      {job.customer_name}
+                                    </div>
+                                    
+                                    {!compactMode && (
+                                      <div className="flex items-start gap-1 text-[10px] text-[#6B7280] truncate mb-1.5">
+                                        <MapPin className="w-2.5 h-2.5 mt-0.5 flex-shrink-0" />
+                                        <span className="truncate">{job.address}</span>
+                                      </div>
+                                    )}
+                                    
+                                    {job.job_type_name && (
+                                      <Badge variant="outline" className={`${compactMode ? 'text-[9px] px-1.5 py-0' : 'text-[10px] px-2 py-0.5'} rounded font-semibold bg-[#F3F4F6] text-[#4B5563] border-[#E5E7EB] truncate w-full justify-start`}>
+                                        <Briefcase className="w-2.5 h-2.5 mr-0.5 flex-shrink-0" />
+                                        <span className="truncate">{job.job_type_name}</span>
+                                      </Badge>
+                                    )}
+                                  </div>
+                                </JobHoverCard>
+                              );
+                            })}
                           </div>
                         </div>
                       );
@@ -281,12 +335,12 @@ export default function WeekView({ jobs, currentDate, onJobClick, onQuickBook })
         </Card>
 
         {uniqueJobTypes.length > 0 && (
-          <div className="flex flex-wrap gap-3 text-xs bg-white p-5 rounded-xl border border-[#E5E7EB] shadow-sm">
-            <span className="font-bold text-[#111827] tracking-tight">Job Types:</span>
+          <div className="flex flex-wrap gap-2.5 text-xs bg-white p-3.5 rounded-lg border border-[#E5E7EB] shadow-sm">
+            <span className="font-bold text-[#111827] text-[10px] uppercase tracking-wider">Legend:</span>
             {uniqueJobTypes.map((jobType) => (
-              <div key={jobType} className="flex items-center gap-2">
-                <div className={`w-3 h-3 rounded ${getJobTypeColor(jobType, uniqueJobTypes)}`} />
-                <span className="text-[#4B5563] font-medium">{jobType}</span>
+              <div key={jobType} className="flex items-center gap-1.5">
+                <div className={`w-2.5 h-2.5 rounded-full ${getJobTypeColor(jobType, uniqueJobTypes)}`} />
+                <span className="text-[#4B5563] font-medium text-[11px]">{jobType}</span>
               </div>
             ))}
           </div>
