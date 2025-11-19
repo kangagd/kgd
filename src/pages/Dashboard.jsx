@@ -418,7 +418,7 @@ export default function Dashboard() {
                     >
                       <div className="flex items-center gap-2 mb-1.5 md:mb-2">
                         <span className="font-bold text-[hsl(25,10%,12%)] text-xs md:text-sm">#{job.job_number}</span>
-                        <Badge className="status-chip capitalize">
+                        <Badge variant="outline" className={`status-${job.status} capitalize text-xs`}>
                           {statusLabels[job.status] || job.status}
                         </Badge>
                       </div>
