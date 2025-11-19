@@ -238,6 +238,7 @@ export default function Organisations() {
           ))}
         </div>
       )}
+      </div>
     </div>
   );
 }
