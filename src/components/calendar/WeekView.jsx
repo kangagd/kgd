@@ -1,4 +1,3 @@
-
 import React, { useState } from "react";
 import { Card, CardContent } from "@/components/ui/card";
 import { format, startOfWeek, addDays, isSameDay } from "date-fns";
@@ -32,10 +31,10 @@ const jobTypeColorsBg = [
 ];
 
 const statusColors = {
-  open: "bg-[hsl(32,25%,94%)]",
-  scheduled: "bg-[#fae008]",
-  in_progress: "bg-orange-500",
-  completed: "bg-green-500",
+  open: "bg-[#F3F4F6]",
+  scheduled: "bg-[#FAE008]",
+  in_progress: "bg-[#D97706]",
+  completed: "bg-[#16A34A]",
 };
 
 const getJobTypeColor = (jobTypeName, allJobTypes) => {
@@ -188,20 +187,20 @@ export default function WeekView({ jobs, currentDate, onJobClick, onQuickBook })
 
   return (
     <>
-      <div className="space-y-4">
-        <Card>
+      <div className="space-y-5">
+        <Card className="rounded-xl border border-[#E5E7EB] shadow-sm">
           <CardContent className="p-0 overflow-x-auto">
             <div className="min-w-[1200px]">
-              <div className="grid border-b border-[hsl(32,15%,88%)] bg-[hsl(32,25%,96%)]" style={{ gridTemplateColumns: `200px repeat(${weekDays.length}, 1fr)` }}>
-                <div className="p-3 border-r border-[hsl(32,15%,88%)] font-medium text-sm text-[hsl(25,10%,25%)]">
+              <div className="grid border-b-2 border-[#E5E7EB] bg-[#F8F9FA]" style={{ gridTemplateColumns: `200px repeat(${weekDays.length}, 1fr)` }}>
+                <div className="p-4 border-r border-[#E5E7EB] font-bold text-sm text-[#111827] tracking-tight">
                   Technician
                 </div>
                 {weekDays.map(day => (
-                  <div key={day.toISOString()} className="text-center p-3 border-r border-[hsl(32,15%,88%)]">
-                    <div className={`text-xs font-medium ${isSameDay(day, new Date()) ? 'text-[#fae008]' : 'text-[hsl(25,8%,45%)]'}`}>
+                  <div key={day.toISOString()} className="text-center p-4 border-r border-[#E5E7EB]">
+                    <div className={`text-xs font-bold uppercase tracking-wide ${isSameDay(day, new Date()) ? 'text-[#111827]' : 'text-[#6B7280]'}`}>
                       {format(day, 'EEE')}
                     </div>
-                    <div className={`text-lg font-bold ${isSameDay(day, new Date()) ? 'text-[#fae008]' : 'text-[hsl(25,10%,12%)]'}`}>
+                    <div className={`text-xl font-bold mt-1 ${isSameDay(day, new Date()) ? 'text-[#111827]' : 'text-[#4B5563]'}`}>
                       {format(day, 'd')}
                     </div>
                   </div>
@@ -209,17 +208,17 @@ export default function WeekView({ jobs, currentDate, onJobClick, onQuickBook })
               </div>
 
               {visibleTechnicians.length === 0 ? (
-                <div className="p-8 text-center text-[hsl(25,8%,45%)]">
+                <div className="p-12 text-center text-[#6B7280] font-medium">
                   No technicians assigned to jobs this week.
                 </div>
               ) : (
                 visibleTechnicians.map(technician => (
-                  <div key={technician.id} className="grid border-b border-[hsl(32,15%,88%)] hover:bg-[hsl(32,25%,96%)]" style={{ gridTemplateColumns: `200px repeat(${weekDays.length}, 1fr)`, height: '150px' }}>
-                    <div className="p-3 border-r border-[hsl(32,15%,88%)] flex items-center gap-2 sticky left-0 bg-white z-10">
-                      <div className={`${getAvatarColor(technician.full_name)} w-8 h-8 rounded-full flex items-center justify-center text-white font-bold text-xs`}>
+                  <div key={technician.id} className="grid border-b border-[#E5E7EB] hover:bg-[#F8F9FA] transition-colors" style={{ gridTemplateColumns: `200px repeat(${weekDays.length}, 1fr)`, height: '150px' }}>
+                    <div className="p-4 border-r border-[#E5E7EB] flex items-center gap-3 sticky left-0 bg-white z-10">
+                      <div className={`${getAvatarColor(technician.full_name)} w-10 h-10 rounded-full flex items-center justify-center text-white font-bold text-sm shadow-sm`}>
                         {getInitials(technician.full_name)}
                       </div>
-                      <span className="text-sm font-medium text-[hsl(25,10%,25%)] truncate">
+                      <span className="text-sm font-bold text-[#111827] truncate">
                         {technician.full_name}
                       </span>
                     </div>
@@ -231,37 +230,39 @@ export default function WeekView({ jobs, currentDate, onJobClick, onQuickBook })
                       return (
                         <div
                           key={day.toISOString()}
-                          className={`p-2 border-r border-[hsl(32,15%,88%)] transition-colors overflow-y-auto ${
-                            isDragOver ? 'bg-green-50 border-green-400' : ''
+                          className={`p-2.5 border-r border-[#E5E7EB] transition-all overflow-y-auto ${
+                            isDragOver ? 'bg-[#16A34A]/5 border-[#16A34A]' : ''
                           }`}
                           onDragOver={(e) => handleDragOver(e, day, technician.email)}
                           onDragLeave={handleDragLeave}
                           onDrop={(e) => handleDrop(e, day, technician.email)}
                         >
-                          <div className="space-y-1">
+                          <div className="space-y-2">
                             {jobsInCell.map(job => (
                               <JobHoverCard key={job.id} job={job} onJobClick={onJobClick}>
                                 <div
                                   draggable
                                   onDragStart={(e) => handleDragStart(e, job)}
                                   onDragEnd={handleDragEnd}
-                                  className={`p-2 rounded-lg cursor-move hover:shadow-md transition-all border-l-4 ${getJobTypeBgColor(job.job_type_name, uniqueJobTypes)} ${
+                                  className={`p-3 rounded-lg cursor-move hover:shadow-lg transition-all bg-white border border-[#E5E7EB] hover:border-[#FAE008] ${
                                     draggedJob?.id === job.id ? 'opacity-50' : ''
                                   }`}
-                                  style={{ borderLeftColor: statusColors[job.status] || '#fae008' }}
                                 >
-                                  <div className="text-xs font-semibold text-[hsl(25,10%,12%)] truncate mb-1">
-                                    #{job.job_number}
+                                  <div className="flex items-center justify-between mb-2">
+                                    <span className="text-xs font-bold text-[#111827]">#{job.job_number}</span>
+                                    <span className={`text-[10px] px-2 py-0.5 rounded-full font-bold ${job.status === 'scheduled' ? 'bg-[#FAE008] text-[#111827]' : 'bg-[#F3F4F6] text-[#6B7280]'}`}>
+                                      {job.scheduled_time || 'No time'}
+                                    </span>
                                   </div>
-                                  <div className="text-xs text-[hsl(25,8%,45%)] truncate mb-1">
+                                  <div className="text-xs font-semibold text-[#111827] truncate mb-1">
                                     {job.customer_name}
                                   </div>
-                                  <div className="flex items-start gap-1 text-xs text-[hsl(25,8%,55%)] truncate">
+                                  <div className="flex items-start gap-1 text-xs text-[#6B7280] truncate mb-1.5">
                                     <MapPin className="w-3 h-3 mt-0.5 flex-shrink-0" />
                                     <span className="truncate">{job.address}</span>
                                   </div>
                                   {job.job_type_name && (
-                                    <div className="text-xs text-[hsl(25,8%,45%)] font-medium mt-1 truncate">
+                                    <div className="text-[10px] text-[#4B5563] font-semibold mt-1.5 truncate bg-[#F3F4F6] px-2 py-1 rounded">
                                       {job.job_type_name}
                                     </div>
                                   )}
@@ -279,55 +280,57 @@ export default function WeekView({ jobs, currentDate, onJobClick, onQuickBook })
           </CardContent>
         </Card>
 
-        <div className="flex flex-wrap gap-2 text-xs bg-white p-3 rounded-lg border border-[hsl(32,15%,88%)]">
-          <span className="font-semibold text-[hsl(25,10%,25%)]">Job Types:</span>
-          {uniqueJobTypes.map((jobType) => (
-            <div key={jobType} className="flex items-center gap-1.5">
-              <div className={`w-3 h-3 rounded ${getJobTypeColor(jobType, uniqueJobTypes)}`} />
-              <span className="text-[hsl(25,8%,45%)]">{jobType}</span>
-            </div>
-          ))}
-        </div>
+        {uniqueJobTypes.length > 0 && (
+          <div className="flex flex-wrap gap-3 text-xs bg-white p-5 rounded-xl border border-[#E5E7EB] shadow-sm">
+            <span className="font-bold text-[#111827] tracking-tight">Job Types:</span>
+            {uniqueJobTypes.map((jobType) => (
+              <div key={jobType} className="flex items-center gap-2">
+                <div className={`w-3 h-3 rounded ${getJobTypeColor(jobType, uniqueJobTypes)}`} />
+                <span className="text-[#4B5563] font-medium">{jobType}</span>
+              </div>
+            ))}
+          </div>
+        )}
       </div>
 
       <AlertDialog open={!!pendingUpdate} onOpenChange={() => setPendingUpdate(null)}>
-        <AlertDialogContent>
+        <AlertDialogContent className="rounded-2xl">
           <AlertDialogHeader>
-            <AlertDialogTitle className="flex items-center gap-2">
-              <AlertCircle className="w-5 h-5 text-orange-600" />
+            <AlertDialogTitle className="flex items-center gap-2 text-xl font-bold text-[#111827]">
+              <AlertCircle className="w-5 h-5 text-[#D97706]" />
               Confirm Job Reschedule
             </AlertDialogTitle>
-            <AlertDialogDescription className="space-y-2">
-              <p className="font-medium text-[hsl(25,10%,12%)]">
+            <AlertDialogDescription className="space-y-3 text-[#4B5563]">
+              <p className="font-bold text-[#111827] text-base">
                 Job #{pendingUpdate?.job.job_number} - {pendingUpdate?.job.customer_name}
               </p>
               {pendingUpdate?.dateChanged && (
-                <p>
-                  <span className="text-[hsl(25,8%,45%)]">Date:</span>{' '}
-                  <span className="line-through text-[hsl(25,8%,55%)]">
+                <p className="text-sm">
+                  <span className="font-semibold">Date:</span>{' '}
+                  <span className="line-through text-[#6B7280]">
                     {pendingUpdate?.oldDate && format(new Date(pendingUpdate.oldDate), 'MMM d, yyyy')}
                   </span>
                   {' → '}
-                  <span className="font-medium text-[#fae008]">
+                  <span className="font-bold text-[#111827]">
                     {pendingUpdate?.newDate && format(new Date(pendingUpdate.newDate), 'MMM d, yyyy')}
                   </span>
                 </p>
               )}
               {pendingUpdate?.technicianChanged && (
-                <p>
-                  <span className="text-[hsl(25,8%,45%)]">Technician:</span>{' '}
-                  <span className="line-through text-[hsl(25,8%,55%)]">{pendingUpdate?.oldAssignedToName}</span>
+                <p className="text-sm">
+                  <span className="font-semibold">Technician:</span>{' '}
+                  <span className="line-through text-[#6B7280]">{pendingUpdate?.oldAssignedToName}</span>
                   {' → '}
-                  <span className="font-medium text-[#fae008]">{pendingUpdate?.newAssignedToDisplay}</span>
+                  <span className="font-bold text-[#111827]">{pendingUpdate?.newAssignedToDisplay}</span>
                 </p>
               )}
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
-            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogCancel className="rounded-lg font-semibold">Cancel</AlertDialogCancel>
             <AlertDialogAction
               onClick={confirmUpdate}
-              className="bg-[#fae008] text-[hsl(25,10%,12%)] hover:bg-[#e5d007]"
+              className="bg-[#FAE008] text-[#111827] hover:bg-[#E5CF07] rounded-lg font-semibold shadow-md"
             >
               Confirm Changes
             </AlertDialogAction>
