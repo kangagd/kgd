@@ -64,6 +64,19 @@ export default function Layout({ children, currentPageName }) {
     await base44.auth.logout();
   };
 
+  const handleTestModeToggle = () => {
+    const modes = ['off', 'admin', 'technician'];
+    const currentIndex = modes.indexOf(testMode);
+    const nextMode = modes[(currentIndex + 1) % modes.length];
+    setTestMode(nextMode);
+  };
+
+  const getTestModeLabel = () => {
+    if (testMode === 'admin') return 'Admin';
+    if (testMode === 'technician') return 'Tech';
+    return 'Off';
+  };
+
   const isTechnician = testMode === 'technician' 
     ? true 
     : testMode === 'admin' 
@@ -136,19 +149,6 @@ export default function Layout({ children, currentPageName }) {
       </div>
     );
   }
-
-  const handleTestModeToggle = () => {
-    const modes = ['off', 'admin', 'technician'];
-    const currentIndex = modes.indexOf(testMode);
-    const nextMode = modes[(currentIndex + 1) % modes.length];
-    setTestMode(nextMode);
-  };
-
-  const getTestModeLabel = () => {
-    if (testMode === 'admin') return 'Admin';
-    if (testMode === 'technician') return 'Tech';
-    return 'Off';
-  };
 
   return (
     <SidebarProvider>
