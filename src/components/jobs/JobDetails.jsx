@@ -524,13 +524,19 @@ export default function JobDetails({ job, onClose, onStatusChange, onDelete }) {
                 <Clock className="w-5 h-5 text-[#4B5563]" />
                 <div className="flex-1 min-w-0">
                   <div className="text-xs text-[#4B5563] font-medium mb-0.5">Time</div>
-                  <EditableField
-                    value={job.scheduled_time}
-                    onSave={(val) => handleFieldSave('scheduled_time', job.scheduled_time, val)}
-                    type="time"
-                    placeholder="Time"
-                    className="font-semibold text-[#111827] text-sm" />
-
+                  <div className="flex items-center gap-2">
+                    <EditableField
+                      value={job.scheduled_time}
+                      onSave={(val) => handleFieldSave('scheduled_time', job.scheduled_time, val)}
+                      type="time"
+                      placeholder="Time"
+                      className="font-semibold text-[#111827] text-sm" />
+                    {job.expected_duration && (
+                      <Badge className="bg-white text-[#6B7280] hover:bg-white border border-[#E5E7EB] font-medium text-xs px-2.5 py-0.5 rounded-lg">
+                        {job.expected_duration}h
+                      </Badge>
+                    )}
+                  </div>
                 </div>
               </div>
               <div className="flex items-center gap-2.5">
