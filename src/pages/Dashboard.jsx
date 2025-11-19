@@ -268,7 +268,7 @@ export default function Dashboard() {
                             <span className="text-sm md:text-base font-bold text-[#111111]">#{job.job_number}</span>
                             <span className="text-xs md:text-sm text-[#4F4F4F]">{job.customer_name}</span>
                             {job.job_type_name && (
-                              <Badge className="bg-indigo-50 text-indigo-700 border-indigo-200 font-semibold border-2 text-xs rounded-lg">
+                              <Badge variant="outline" className="bg-indigo-50 text-indigo-700 border-indigo-200 font-semibold border-2 text-xs rounded-lg px-2 py-1">
                                 {job.job_type_name}
                               </Badge>
                             )}

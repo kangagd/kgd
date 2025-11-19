@@ -37,7 +37,7 @@ export default function JobCard({ job, onClick, showActions = false }) {
           </p>
 
           {job.job_type_name && (
-            <Badge className={`${jobTypeColors[jobTypeColor]} font-semibold border-2 text-xs rounded-lg px-2 py-1`}>
+            <Badge variant="outline" className={`${jobTypeColors[jobTypeColor]} font-semibold border-2 text-xs rounded-lg px-2 py-1`}>
               {job.job_type_name}
             </Badge>
           )}

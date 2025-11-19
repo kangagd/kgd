@@ -187,7 +187,7 @@ export default function Customers() {
                       <div className="flex items-center gap-2 flex-wrap mb-2">
                         <h3 className="text-base md:text-lg font-bold text-[#111827]">{customer.name}</h3>
                         {customer.customer_type && (
-                          <Badge className={`${customerTypeColors[customer.customer_type]} font-semibold border-2 text-xs rounded-lg px-2 py-1`}>
+                          <Badge variant="outline" className={`${customerTypeColors[customer.customer_type]} font-semibold border-2 text-xs rounded-lg px-2 py-1`}>
                             {customer.customer_type}
                           </Badge>
                         )}

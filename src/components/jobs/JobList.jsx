@@ -122,12 +122,12 @@ export default function JobList({ jobs, isLoading, onSelectJob }) {
                   <h3 className="text-base md:text-lg font-bold text-[#111111]">{job.customer_name}</h3>
                   <span className="text-xs md:text-sm text-[#4F4F4F]">#{job.job_number}</span>
                   {job.product &&
-                  <Badge className={`${productColors[job.product]} font-semibold border-2 text-xs rounded-lg py-1 px-2 md:px-3`}>
+                  <Badge variant="outline" className={`${productColors[job.product]} font-semibold border-2 text-xs rounded-lg py-1 px-2 md:px-3`}>
                         {job.product}
                       </Badge>
                   }
                     {job.job_type_name &&
-                  <Badge className="bg-indigo-50 text-indigo-700 border-indigo-200 font-semibold border-2 text-xs rounded-lg py-1 px-2 md:px-3">
+                  <Badge variant="outline" className="bg-indigo-50 text-indigo-700 border-indigo-200 font-semibold border-2 text-xs rounded-lg py-1 px-2 md:px-3">
                         {job.job_type_name}
                       </Badge>
                   }
