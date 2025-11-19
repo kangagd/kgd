@@ -15,11 +15,11 @@ export default function Team() {
   const admins = users.filter(u => u.role === 'admin');
 
   return (
-    <div className="p-4 md:p-8 bg-gradient-to-br from-[hsl(32,20%,98%)] to-[hsl(32,25%,94%)] min-h-screen">
+    <div className="p-5 md:p-10 bg-[#F8F9FA] min-h-screen">
       <div className="max-w-6xl mx-auto">
         <div className="mb-8">
-          <h1 className="text-3xl font-bold text-[hsl(25,10%,12%)] tracking-tight">Team Members</h1>
-          <p className="text-[hsl(25,8%,45%)] mt-2">Manage your field team and staff</p>
+          <h1 className="text-3xl font-bold text-[#111827] tracking-tight">Team</h1>
+          <p className="text-[#4B5563] mt-2.5">Manage your team members</p>
         </div>
 
         <div className="grid lg:grid-cols-2 gap-6">

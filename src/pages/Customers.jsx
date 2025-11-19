@@ -93,7 +93,7 @@ export default function Customers() {
 
   if (showForm) {
     return (
-      <div className="p-4 md:p-8 bg-gradient-to-br from-[hsl(32,20%,98%)] to-[hsl(32,25%,94%)] min-h-screen">
+      <div className="p-5 md:p-10 bg-[#F8F9FA] min-h-screen">
         <div className="max-w-4xl mx-auto">
           <CustomerForm
             customer={editingCustomer}
@@ -111,7 +111,7 @@ export default function Customers() {
 
   if (selectedCustomer) {
     return (
-      <div className="p-4 md:p-8 bg-gradient-to-br from-[hsl(32,20%,98%)] to-[hsl(32,25%,94%)] min-h-screen">
+      <div className="p-5 md:p-10 bg-[#F8F9FA] min-h-screen">
         <div className="max-w-4xl mx-auto">
           <CustomerDetails
             customer={selectedCustomer}

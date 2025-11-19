@@ -127,25 +127,22 @@ export default function PriceList() {
   }
 
   return (
-    <div className="p-4 md:p-8 bg-gradient-to-br from-[hsl(32,20%,98%)] to-[hsl(32,25%,94%)] min-h-screen">
+    <div className="p-5 md:p-10 bg-[#F8F9FA] min-h-screen">
       <div className="max-w-7xl mx-auto">
-        <div className="mb-6">
-          <div className="flex items-center justify-between mb-2">
-            <div className="flex items-center gap-3">
-              <DollarSign className="text-[#fae008] w-8 h-8" />
-              <h1 className="text-3xl font-bold text-[hsl(25,10%,12%)]">Price List</h1>
-            </div>
-            {isAdmin && (
-              <Button
-                onClick={() => setShowForm(true)}
-                className="bg-[#fae008] hover:bg-[#e5d007] text-[hsl(25,10%,12%)] font-semibold shadow-md hover:shadow-lg transition-all"
-              >
-                <Plus className="w-4 h-4 mr-2" />
-                Add Item
-              </Button>
-            )}
+        <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-8 gap-5">
+          <div>
+            <h1 className="text-3xl font-bold text-[#111827] tracking-tight">Price List</h1>
+            <p className="text-[#4B5563] mt-2.5">Manage inventory and pricing</p>
           </div>
-          <p className="text-[hsl(25,8%,45%)]">Quick reference for pricing and products</p>
+          {isAdmin && (
+            <Button
+              onClick={() => setShowForm(true)}
+              className="bg-[#FAE008] text-[#111827] hover:bg-[#E5CF07] font-semibold shadow-md hover:shadow-lg transition-all w-full md:w-auto h-12 rounded-lg"
+            >
+              <Plus className="w-5 h-5 mr-2" />
+              Add Item
+            </Button>
+          )}
         </div>
 
         {(lowStockCount > 0 || outOfStockCount > 0) && (
