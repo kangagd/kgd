@@ -22,10 +22,10 @@ import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/component
 import { ChevronDown } from "lucide-react";
 
 const organisationTypeColors = {
-  "Strata": "bg-purple-500/10 text-purple-800 border-purple-500/20",
-  "Builder": "bg-blue-500/10 text-blue-800 border-blue-500/20",
-  "Real Estate": "bg-green-500/10 text-green-800 border-green-500/20",
-  "Supplier": "bg-orange-500/10 text-orange-800 border-orange-500/20",
+  "Strata": "bg-purple-50 text-purple-700 border-purple-200",
+  "Builder": "bg-blue-50 text-blue-700 border-blue-200",
+  "Real Estate": "bg-green-50 text-green-700 border-green-200",
+  "Supplier": "bg-orange-50 text-orange-700 border-orange-200",
 };
 
 export default function OrganisationDetails({ organisation, onClose, onEdit, onDelete }) {
@@ -54,11 +54,11 @@ export default function OrganisationDetails({ organisation, onClose, onEdit, onD
               <div className="flex-1 min-w-0">
                 <h1 className="text-lg md:text-xl font-semibold text-slate-900 mb-1.5 md:mb-2">{organisation.name}</h1>
                 <div className="flex gap-1.5 md:gap-2 flex-wrap">
-                  <Badge className={`${organisationTypeColors[organisation.organisation_type]} rounded-full px-2 py-0.5 text-xs font-medium border`}>
+                  <Badge className={`${organisationTypeColors[organisation.organisation_type]} rounded-lg px-2 py-1 text-xs font-semibold border-2`}>
                     {organisation.organisation_type}
                   </Badge>
                   {organisation.status === 'inactive' && (
-                    <Badge className="bg-gray-500/10 text-gray-700 border-gray-500/20 rounded-full px-2 py-0.5 text-xs font-medium border">
+                    <Badge className="bg-gray-50 text-gray-700 border-gray-200 rounded-lg px-2 py-1 text-xs font-semibold border-2">
                       Inactive
                     </Badge>
                   )}
@@ -210,7 +210,7 @@ export default function OrganisationDetails({ organisation, onClose, onEdit, onD
                       </div>
                     </div>
                     {customer.status === 'inactive' && (
-                      <Badge className="bg-gray-500/10 text-gray-700 border-gray-500/20 rounded-full px-2 py-0.5 text-xs font-medium border">
+                      <Badge className="bg-gray-50 text-gray-700 border-gray-200 rounded-lg px-2 py-1 text-xs font-semibold border-2">
                         Inactive
                       </Badge>
                     )}

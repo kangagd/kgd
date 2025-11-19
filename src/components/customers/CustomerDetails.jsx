@@ -22,10 +22,10 @@ import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/component
 import { ChevronDown } from "lucide-react";
 
 const customerTypeColors = {
-  "Owner": "bg-purple-500/10 text-purple-800 border-purple-500/20",
-  "Builder": "bg-blue-500/10 text-blue-800 border-blue-500/20",
-  "Real Estate - Tenant": "bg-green-500/10 text-green-800 border-green-500/20",
-  "Strata - Owner": "bg-amber-500/10 text-amber-800 border-amber-500/20",
+  "Owner": "bg-purple-50 text-purple-700 border-purple-200",
+  "Builder": "bg-blue-50 text-blue-700 border-blue-200",
+  "Real Estate - Tenant": "bg-green-50 text-green-700 border-green-200",
+  "Strata - Owner": "bg-amber-50 text-amber-700 border-amber-200",
 };
 
 export default function CustomerDetails({ customer, onClose, onEdit, onDelete }) {
@@ -65,13 +65,13 @@ export default function CustomerDetails({ customer, onClose, onEdit, onDelete })
                   <h1 className="text-lg md:text-xl font-semibold text-slate-900 mb-1.5 md:mb-2">{customer.name}</h1>
                   <div className="flex gap-1.5 md:gap-2 flex-wrap">
                     <Badge className={customer.status === 'active' ? 
-                      "bg-green-500/10 text-green-700 border-green-500/20 rounded-full px-2 py-0.5 text-xs font-medium border" : 
-                      "bg-gray-500/10 text-gray-700 border-gray-500/20 rounded-full px-2 py-0.5 text-xs font-medium border"
+                      "bg-green-50 text-green-700 border-green-200 rounded-lg px-2 py-1 text-xs font-semibold border-2" : 
+                      "bg-gray-50 text-gray-700 border-gray-200 rounded-lg px-2 py-1 text-xs font-semibold border-2"
                     }>
                       {customer.status}
                     </Badge>
                     {customer.customer_type && (
-                      <Badge className={`${customerTypeColors[customer.customer_type]} rounded-full px-2 py-0.5 text-xs font-medium border`}>
+                      <Badge className={`${customerTypeColors[customer.customer_type]} rounded-lg px-2 py-1 text-xs font-semibold border-2`}>
                         {customer.customer_type}
                       </Badge>
                     )}
@@ -110,7 +110,7 @@ export default function CustomerDetails({ customer, onClose, onEdit, onDelete })
               <div className="flex items-start justify-between">
                 <div className="flex-1 min-w-0">
                   <h4 className="font-semibold text-sm md:text-base text-slate-900 mb-1">{organisation.name}</h4>
-                  <Badge className="bg-blue-500/10 text-blue-800 border-blue-500/20 rounded-full px-2 py-0.5 text-xs font-medium border mb-1.5 md:mb-2">
+                  <Badge className="bg-indigo-50 text-indigo-700 border-indigo-200 rounded-lg px-2 py-1 text-xs font-semibold border-2 mb-1.5 md:mb-2">
                     {organisation.organisation_type}
                   </Badge>
                   {organisation.address && (
