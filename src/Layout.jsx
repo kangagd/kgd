@@ -122,6 +122,17 @@ export default function Layout({ children, currentPageName }) {
             })}
           </div>
         </nav>
+
+        <button
+          onClick={handleTestModeToggle}
+          className="fixed bottom-20 right-4 z-50 w-12 h-12 bg-amber-500 hover:bg-amber-600 text-white rounded-full shadow-lg flex items-center justify-center transition-all"
+          title={`Test Mode: ${getTestModeLabel()}`}
+        >
+          <TestTube2 className="w-5 h-5" />
+          <span className="absolute -top-1 -right-1 bg-amber-700 text-white text-xs font-bold rounded-full w-5 h-5 flex items-center justify-center">
+            {getTestModeLabel().charAt(0)}
+          </span>
+        </button>
       </div>
     );
   }
@@ -222,6 +233,17 @@ export default function Layout({ children, currentPageName }) {
             {children}
           </div>
         </main>
+
+        <button
+          onClick={handleTestModeToggle}
+          className="fixed bottom-4 right-4 z-50 w-12 h-12 bg-amber-500 hover:bg-amber-600 text-white rounded-full shadow-lg flex items-center justify-center transition-all"
+          title={`Test Mode: ${getTestModeLabel()}`}
+        >
+          <TestTube2 className="w-5 h-5" />
+          <span className="absolute -top-1 -right-1 bg-amber-700 text-white text-xs font-bold rounded-full w-5 h-5 flex items-center justify-center">
+            {getTestModeLabel().charAt(0)}
+          </span>
+        </button>
       </div>
     </SidebarProvider>
   );
