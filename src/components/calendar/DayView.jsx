@@ -65,7 +65,7 @@ export default function DayView({ jobs, currentDate, onJobClick, onQuickBook }) 
                 </div>
                 <span className="font-bold text-[#111827] text-base">Unassigned</span>
               </div>
-              <Badge className="bg-slate-50 text-slate-700 border-slate-200 rounded-lg px-2 py-1 font-semibold border-2 text-xs">{unassignedJobs.length} Jobs</Badge>
+              <Badge variant="outline" className="bg-slate-50 text-slate-700 border-slate-200 rounded-lg px-2 py-1 font-semibold border-2 text-xs">{unassignedJobs.length} Jobs</Badge>
             </div>
           </div>
           <CardContent className="p-4">
@@ -97,7 +97,7 @@ export default function DayView({ jobs, currentDate, onJobClick, onQuickBook }) 
                   </div>
                   <span className="font-bold text-[#111827] text-base">{technician.full_name}</span>
                 </div>
-                <Badge className="bg-slate-50 text-slate-700 border-slate-200 rounded-lg px-2 py-1 font-semibold border-2 text-xs">{techJobs.length} Jobs</Badge>
+                <Badge variant="outline" className="bg-slate-50 text-slate-700 border-slate-200 rounded-lg px-2 py-1 font-semibold border-2 text-xs">{techJobs.length} Jobs</Badge>
               </div>
             </div>
             <CardContent className="p-4">

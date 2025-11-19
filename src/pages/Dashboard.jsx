@@ -248,7 +248,7 @@ export default function Dashboard() {
               <CardTitle className="flex items-center gap-3 text-lg md:text-xl font-bold text-[#111827] tracking-tight">
               <Calendar className="w-6 h-6 text-[#111827]" />
               Today's Overview
-              <Badge className="bg-slate-50 text-slate-700 border-slate-200 rounded-lg px-2 py-1 font-semibold border-2 text-xs">
+              <Badge variant="outline" className="bg-slate-50 text-slate-700 border-slate-200 rounded-lg px-2 py-1 font-semibold border-2 text-xs">
                 {(isTechnician ? myTodayJobs : todayJobs).length} {(isTechnician ? myTodayJobs : todayJobs).length === 1 ? 'Job' : 'Jobs'}
               </Badge>
               </CardTitle>
@@ -268,7 +268,7 @@ export default function Dashboard() {
                             <span className="text-sm md:text-base font-bold text-[#111111]">#{job.job_number}</span>
                             <span className="text-xs md:text-sm text-[#4F4F4F]">{job.customer_name}</span>
                             {job.job_type_name && (
-                              <Badge variant="outline" className="bg-indigo-50 text-indigo-700 border-indigo-200 font-semibold border-2 text-xs rounded-lg px-2 py-1">
+                              <Badge className="bg-indigo-50 text-indigo-700 border-indigo-200 font-semibold border-2 text-xs rounded-lg">
                                 {job.job_type_name}
                               </Badge>
                             )}

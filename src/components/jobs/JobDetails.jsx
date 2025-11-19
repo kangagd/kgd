@@ -850,7 +850,7 @@ export default function JobDetails({ job, onClose, onDelete }) {
                           </div>
                           
                           {summary.outcome && (
-                            <Badge className={`${outcomeColors[summary.outcome]} text-xs font-semibold`}>
+                            <Badge variant="outline" className={`${outcomeColors[summary.outcome]} text-xs font-semibold border-2 rounded-lg px-2 py-1`}>
                               {summary.outcome.replace(/_/g, ' ')}
                             </Badge>
                           )}
@@ -1373,7 +1373,7 @@ export default function JobDetails({ job, onClose, onDelete }) {
                           </div>
                           
                           {summary.outcome && (
-                            <Badge className={`${outcomeColors[summary.outcome]} mb-2`}>
+                            <Badge variant="outline" className={`${outcomeColors[summary.outcome]} mb-2 text-xs font-semibold border-2 rounded-lg px-2 py-1`}>
                               {summary.outcome.replace(/_/g, ' ')}
                             </Badge>
                           )}
