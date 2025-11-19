@@ -506,8 +506,8 @@ export default function JobDetails({ job, onClose, onStatusChange, onDelete }) {
 
           <div className="bg-[#ffffff] p-4 rounded-lg space-y-3">
             <div className="grid grid-cols-3 gap-x-6 gap-y-3">
-              <div className="flex items-start gap-2.5">
-                <Calendar className="w-5 h-5 text-[#4B5563] mt-[18px]" />
+              <div className="flex items-center gap-2.5">
+                <Calendar className="w-5 h-5 text-[#4B5563]" />
                 <div className="flex-1 min-w-0">
                   <div className="text-xs text-[#4B5563] font-medium mb-0.5">Date</div>
                   <EditableField
@@ -520,8 +520,8 @@ export default function JobDetails({ job, onClose, onStatusChange, onDelete }) {
 
                 </div>
               </div>
-              <div className="flex items-start gap-2.5">
-                <Clock className="w-5 h-5 text-[#4B5563] mt-[18px]" />
+              <div className="flex items-center gap-2.5">
+                <Clock className="w-5 h-5 text-[#4B5563]" />
                 <div className="flex-1 min-w-0">
                   <div className="text-xs text-[#4B5563] font-medium mb-0.5">Time</div>
                   <div className="flex items-center gap-2">
@@ -539,8 +539,8 @@ export default function JobDetails({ job, onClose, onStatusChange, onDelete }) {
                   </div>
                 </div>
               </div>
-              <div className="flex items-start gap-2.5">
-                <User className="w-5 h-5 text-[#4B5563] mt-[18px]" />
+              <div className="flex items-center gap-2.5">
+                <User className="w-5 h-5 text-[#4B5563]" />
                 <div className="flex-1 min-w-0">
                   <div className="text-xs text-[#4B5563] font-medium mb-0.5">Technicians</div>
                   <div className="flex items-center gap-1.5">
@@ -573,8 +573,8 @@ export default function JobDetails({ job, onClose, onStatusChange, onDelete }) {
                   </div>
                 </div>
               </div>
-              <div className="flex items-start gap-2.5">
-                <Package className="w-5 h-5 text-[#4B5563] mt-[18px]" />
+              <div className="flex items-center gap-2.5">
+                <Package className="w-5 h-5 text-[#4B5563]" />
                 <div className="flex-1 min-w-0">
                   <div className="text-xs text-[#4B5563] font-medium mb-0.5">Product</div>
                   <EditableField
@@ -593,8 +593,8 @@ export default function JobDetails({ job, onClose, onStatusChange, onDelete }) {
 
                 </div>
               </div>
-              <div className="flex items-start gap-2.5">
-                <Briefcase className="w-5 h-5 text-[#4B5563] mt-[18px]" />
+              <div className="flex items-center gap-2.5">
+                <Briefcase className="w-5 h-5 text-[#4B5563]" />
                 <div className="flex-1 min-w-0">
                   <div className="text-xs text-[#4B5563] font-medium mb-0.5">Job Type</div>
                   <EditableField
