@@ -29,8 +29,8 @@ import {
   AlertDialogDescription,
   AlertDialogFooter,
   AlertDialogHeader,
-  AlertDialogTitle,
-} from "@/components/ui/alert-dialog";
+  AlertDialogTitle } from
+"@/components/ui/alert-dialog";
 
 const statusColors = {
   open: "bg-slate-100 text-slate-800 border-slate-200",
@@ -79,29 +79,29 @@ const customerTypeColors = {
   "Owner": "bg-purple-100 text-purple-700",
   "Builder": "bg-blue-100 text-blue-700",
   "Real Estate - Tenant": "bg-green-100 text-green-700",
-  "Strata - Owner": "bg-amber-100 text-amber-700",
+  "Strata - Owner": "bg-amber-100 text-amber-700"
 };
 
 const getInitials = (name) => {
   if (!name) return "?";
-  return name
-    .split(" ")
-    .map((n) => n[0])
-    .join("")
-    .toUpperCase()
-    .slice(0, 2);
+  return name.
+  split(" ").
+  map((n) => n[0]).
+  join("").
+  toUpperCase().
+  slice(0, 2);
 };
 
 const avatarColors = [
-  "bg-blue-500",
-  "bg-purple-500",
-  "bg-green-500",
-  "bg-orange-500",
-  "bg-pink-500",
-  "bg-indigo-500",
-  "bg-red-500",
-  "bg-teal-500",
-];
+"bg-blue-500",
+"bg-purple-500",
+"bg-green-500",
+"bg-orange-500",
+"bg-pink-500",
+"bg-indigo-500",
+"bg-red-500",
+"bg-teal-500"];
+
 
 const getAvatarColor = (name) => {
   if (!name) return avatarColors[0];
@@ -148,7 +148,7 @@ export default function JobDetails({ job, onClose, onStatusChange, onDelete }) {
     enabled: !!job.project_id
   });
 
-  const projectJobs = allProjectJobs.filter(j => j.id !== job.id && !j.deleted_at);
+  const projectJobs = allProjectJobs.filter((j) => j.id !== job.id && !j.deleted_at);
 
   useEffect(() => {
     const loadUser = async () => {
@@ -185,11 +185,11 @@ export default function JobDetails({ job, onClose, onStatusChange, onDelete }) {
         technician_name: user.full_name,
         check_in_time: new Date().toISOString()
       });
-      
+
       // Update status based on date and check-in
       const newStatus = determineJobStatus(job.scheduled_date, job.outcome, true, job.status);
       await base44.entities.Job.update(job.id, { status: newStatus });
-      
+
       return checkIn;
     },
     onSuccess: () => {
@@ -231,7 +231,7 @@ export default function JobDetails({ job, onClose, onStatusChange, onDelete }) {
         communication_with_client: "",
         outcome: ""
       });
-      
+
       // Update status after checkout - no longer has active check-in
       const newStatus = determineJobStatus(job.scheduled_date, outcome, false, job.status);
       await base44.entities.Job.update(job.id, { status: newStatus });
@@ -360,7 +360,7 @@ export default function JobDetails({ job, onClose, onStatusChange, onDelete }) {
     setOutcome(value);
     logChange('outcome', job.outcome, value);
     updateJobMutation.mutate({ field: 'outcome', value });
-    
+
     // Update status based on centralized logic - check if there's an active check-in
     const newStatus = determineJobStatus(job.scheduled_date, value, !!activeCheckIn, job.status);
     if (newStatus !== job.status) {
@@ -382,8 +382,8 @@ export default function JobDetails({ job, onClose, onStatusChange, onDelete }) {
   const handleJobTypeChange = (jobTypeId) => {
     const jobType = jobTypes.find((jt) => jt.id === jobTypeId);
     logChange('job_type_id', job.job_type_id, jobTypeId);
-    updateJobMutation.mutate({ 
-      field: 'job_type_id', 
+    updateJobMutation.mutate({
+      field: 'job_type_id',
       value: jobTypeId
     });
     if (jobType) {
@@ -419,19 +419,19 @@ export default function JobDetails({ job, onClose, onStatusChange, onDelete }) {
         <CardHeader className="border-b border-[#E5E7EB] bg-white p-3 md:p-4 space-y-2">
           <div className="flex items-start justify-between gap-3">
             <div className="flex items-start gap-2 flex-1 min-w-0">
-              <Button 
-                variant="ghost" 
-                size="icon" 
-                onClick={onClose} 
-                className="h-9 w-9 flex-shrink-0 hover:bg-[#F3F4F6] rounded-lg transition-colors"
-              >
+              <Button
+                variant="ghost"
+                size="icon"
+                onClick={onClose}
+                className="h-9 w-9 flex-shrink-0 hover:bg-[#F3F4F6] rounded-lg transition-colors">
+
                 <ArrowLeft className="w-5 h-5 text-[#111827]" />
               </Button>
               <div className="flex-1 min-w-0 space-y-3">
                 <CardTitle
                   className="text-xl font-semibold text-[#111827] cursor-pointer hover:text-[#FAE008] transition-colors leading-tight"
-                  onClick={() => setShowCustomerEdit(true)}
-                >
+                  onClick={() => setShowCustomerEdit(true)}>
+
                   {job.customer_name}
                 </CardTitle>
                 
@@ -439,17 +439,17 @@ export default function JobDetails({ job, onClose, onStatusChange, onDelete }) {
                   <Badge className="bg-[#F2F4F7] text-[#344054] hover:bg-[#F2F4F7] border-0 font-medium text-sm px-3 py-1 rounded-lg">
                     #{job.job_number}
                   </Badge>
-                  {job.customer_type && (
-                    <Badge className="bg-[#EDE9FE] text-[#6D28D9] hover:bg-[#EDE9FE] border-0 font-semibold text-xs px-3 py-1 rounded-lg">
+                  {job.customer_type &&
+                  <Badge className="bg-[#EDE9FE] text-[#6D28D9] hover:bg-[#EDE9FE] border-0 font-semibold text-xs px-3 py-1 rounded-lg">
                       {job.customer_type}
                     </Badge>
-                  )}
-                  {job.project_name && (
-                    <Badge className="bg-[#FAE008] text-[#111827] hover:bg-[#FAE008] border-0 font-semibold text-xs px-3 py-1 rounded-lg">
+                  }
+                  {job.project_name &&
+                  <Badge className="bg-[#FAE008] text-[#111827] hover:bg-[#FAE008] border-0 font-semibold text-xs px-3 py-1 rounded-lg">
                       <FolderKanban className="w-3 h-3 mr-1" />
                       {job.project_name}
                     </Badge>
-                  )}
+                  }
                 </div>
                 
                 <div className="flex items-start gap-2">
@@ -459,49 +459,49 @@ export default function JobDetails({ job, onClose, onStatusChange, onDelete }) {
               </div>
             </div>
             
-            {!isTechnician && (
-              <div className="flex gap-1 flex-shrink-0">
+            {!isTechnician &&
+            <div className="flex gap-1 flex-shrink-0">
                 <Button
-                  variant="ghost"
-                  size="icon"
-                  onClick={() => setShowDeleteConfirm(true)}
-                  className="h-9 w-9 hover:bg-red-50 hover:text-red-600 transition-all rounded-lg"
-                  title="Delete"
-                >
+                variant="ghost"
+                size="icon"
+                onClick={() => setShowDeleteConfirm(true)}
+                className="h-9 w-9 hover:bg-red-50 hover:text-red-600 transition-all rounded-lg"
+                title="Delete">
+
                   <Trash2 className="w-4 h-4" />
                 </Button>
                 <Button
-                  variant="ghost"
-                  size="icon"
-                  onClick={() => setShowHistory(true)}
-                  className="h-9 w-9 hover:bg-[#F3F4F6] text-[#6B7280] hover:text-[#111827] transition-all rounded-lg"
-                  title="History"
-                >
+                variant="ghost"
+                size="icon"
+                onClick={() => setShowHistory(true)}
+                className="h-9 w-9 hover:bg-[#F3F4F6] text-[#6B7280] hover:text-[#111827] transition-all rounded-lg"
+                title="History">
+
                   <History className="w-4 h-4" />
                 </Button>
                 <Button
-                  variant="ghost"
-                  size="icon"
-                  onClick={() => setShowPriceList(true)}
-                  className="h-9 w-9 hover:bg-[#F3F4F6] text-[#6B7280] hover:text-[#111827] transition-all rounded-lg"
-                  title="Price List"
-                >
+                variant="ghost"
+                size="icon"
+                onClick={() => setShowPriceList(true)}
+                className="h-9 w-9 hover:bg-[#F3F4F6] text-[#6B7280] hover:text-[#111827] transition-all rounded-lg"
+                title="Price List">
+
                   <DollarSign className="w-4 h-4" />
                 </Button>
                 <Button
-                  variant="ghost"
-                  size="icon"
-                  onClick={() => setShowAssistant(true)}
-                  className="h-9 w-9 hover:bg-[#FAE008]/10 text-[#6B7280] hover:text-[#111827] transition-all rounded-lg"
-                  title="AI Assistant"
-                >
+                variant="ghost"
+                size="icon"
+                onClick={() => setShowAssistant(true)}
+                className="h-9 w-9 hover:bg-[#FAE008]/10 text-[#6B7280] hover:text-[#111827] transition-all rounded-lg"
+                title="AI Assistant">
+
                   <Sparkles className="w-4 h-4" />
                 </Button>
               </div>
-            )}
+            }
           </div>
 
-          <div className="bg-[#F8F9FA] rounded-lg p-4 space-y-3">
+          <div className="bg-[#ffffff] p-4 rounded-lg space-y-3">
             <div className="grid grid-cols-2 md:grid-cols-4 gap-x-6 gap-y-3">
               <div className="flex items-center gap-2.5">
                 <Calendar className="w-5 h-5 text-[#4B5563]" />
@@ -513,8 +513,8 @@ export default function JobDetails({ job, onClose, onStatusChange, onDelete }) {
                     type="date"
                     displayFormat={(val) => format(parseISO(val), 'MMM d, yyyy')}
                     placeholder="Set date"
-                    className="font-semibold text-[#111827] text-sm"
-                  />
+                    className="font-semibold text-[#111827] text-sm" />
+
                 </div>
               </div>
               <div className="flex items-center gap-2.5">
@@ -526,8 +526,8 @@ export default function JobDetails({ job, onClose, onStatusChange, onDelete }) {
                     onSave={(val) => handleFieldSave('scheduled_time', job.scheduled_time, val)}
                     type="time"
                     placeholder="Time"
-                    className="font-semibold text-[#111827] text-sm"
-                  />
+                    className="font-semibold text-[#111827] text-sm" />
+
                 </div>
               </div>
               <div className="flex items-center gap-2.5">
@@ -539,15 +539,15 @@ export default function JobDetails({ job, onClose, onStatusChange, onDelete }) {
                     onSave={(val) => handleFieldSave('product', job.product, val)}
                     type="select"
                     options={[
-                      { value: "Garage Door", label: "Garage Door" },
-                      { value: "Gate", label: "Gate" },
-                      { value: "Roller Shutter", label: "Roller Shutter" },
-                      { value: "Multiple", label: "Multiple" },
-                      { value: "Custom Garage Door", label: "Custom Garage Door" }
-                    ]}
+                    { value: "Garage Door", label: "Garage Door" },
+                    { value: "Gate", label: "Gate" },
+                    { value: "Roller Shutter", label: "Roller Shutter" },
+                    { value: "Multiple", label: "Multiple" },
+                    { value: "Custom Garage Door", label: "Custom Garage Door" }]
+                    }
                     className="font-semibold text-[#111827] text-sm"
-                    placeholder="Product"
-                  />
+                    placeholder="Product" />
+
                 </div>
               </div>
               <div className="flex items-center gap-2.5">
@@ -561,8 +561,8 @@ export default function JobDetails({ job, onClose, onStatusChange, onDelete }) {
                     options={jobTypes.map((jt) => ({ value: jt.id, label: jt.name }))}
                     displayFormat={(val) => jobTypes.find((jt) => jt.id === val)?.name || val}
                     placeholder="Job type"
-                    className="font-semibold text-[#111827] text-sm"
-                  />
+                    className="font-semibold text-[#111827] text-sm" />
+
                 </div>
               </div>
             </div>
@@ -573,20 +573,20 @@ export default function JobDetails({ job, onClose, onStatusChange, onDelete }) {
                 <span className="text-xs font-medium text-[#4B5563]">Technicians</span>
               </div>
               <div className="flex items-center gap-1.5">
-                {(Array.isArray(job.assigned_to_name) ? job.assigned_to_name : job.assigned_to_name ? [job.assigned_to_name] : []).slice(0, 3).map((name, idx) => (
-                  <div
-                    key={idx}
-                    className={`${getAvatarColor(name)} w-7 h-7 rounded-full flex items-center justify-center text-white text-xs font-bold shadow-sm`}
-                    title={name}
-                  >
+                {(Array.isArray(job.assigned_to_name) ? job.assigned_to_name : job.assigned_to_name ? [job.assigned_to_name] : []).slice(0, 3).map((name, idx) =>
+                <div
+                  key={idx}
+                  className={`${getAvatarColor(name)} w-7 h-7 rounded-full flex items-center justify-center text-white text-xs font-bold shadow-sm`}
+                  title={name}>
+
                     {getInitials(name)}
                   </div>
-                ))}
-                {Array.isArray(job.assigned_to_name) && job.assigned_to_name.length > 3 && (
-                  <div className="bg-[#6B7280] w-7 h-7 rounded-full flex items-center justify-center text-white text-xs font-bold shadow-sm">
+                )}
+                {Array.isArray(job.assigned_to_name) && job.assigned_to_name.length > 3 &&
+                <div className="bg-[#6B7280] w-7 h-7 rounded-full flex items-center justify-center text-white text-xs font-bold shadow-sm">
                     +{job.assigned_to_name.length - 3}
                   </div>
-                )}
+                }
                 <EditableField
                   value={Array.isArray(job.assigned_to) ? job.assigned_to : job.assigned_to ? [job.assigned_to] : []}
                   onSave={handleAssignedToChange}
@@ -597,65 +597,65 @@ export default function JobDetails({ job, onClose, onStatusChange, onDelete }) {
                     const emailsToDisplay = Array.isArray(val) ? val : val ? [val] : [];
                     return emailsToDisplay.length === 0 ? "Assign" : "Edit";
                   }}
-                  placeholder="Assign"
-                />
+                  placeholder="Assign" />
+
               </div>
             </div>
           </div>
         </CardHeader>
 
         {/* Technician Quick Actions */}
-        {isTechnician && (
-          <div className={`bg-white border-b border-[#E5E7EB] p-3 ${isTechnician ? 'sticky top-0 z-20 shadow-sm' : ''}`}>
+        {isTechnician &&
+        <div className={`bg-white border-b border-[#E5E7EB] p-3 ${isTechnician ? 'sticky top-0 z-20 shadow-sm' : ''}`}>
             <div className="grid grid-cols-4 gap-2">
-              {job.customer_phone && (
-                <Button
-                  variant="outline"
-                  onClick={() => window.location.href = `tel:${job.customer_phone}`}
-                  className="flex flex-col items-center gap-1 h-auto py-3 hover:bg-blue-50 hover:border-blue-200 transition-all rounded-lg"
-                >
+              {job.customer_phone &&
+            <Button
+              variant="outline"
+              onClick={() => window.location.href = `tel:${job.customer_phone}`}
+              className="flex flex-col items-center gap-1 h-auto py-3 hover:bg-blue-50 hover:border-blue-200 transition-all rounded-lg">
+
                   <Phone className="w-5 h-5 text-blue-600" />
                   <span className="text-xs font-semibold text-[#111827]">Call</span>
                 </Button>
-              )}
+            }
               <Button
-                variant="outline"
-                onClick={() => window.open(`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(job.address)}`, '_blank')}
-                className="flex flex-col items-center gap-1 h-auto py-3 hover:bg-green-50 hover:border-green-200 transition-all rounded-lg"
-              >
+              variant="outline"
+              onClick={() => window.open(`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(job.address)}`, '_blank')}
+              className="flex flex-col items-center gap-1 h-auto py-3 hover:bg-green-50 hover:border-green-200 transition-all rounded-lg">
+
                 <Navigation className="w-5 h-5 text-green-600" />
                 <span className="text-xs font-semibold text-[#111827]">Navigate</span>
               </Button>
-              {!activeCheckIn ? (
-                <Button
-                  onClick={handleCheckIn}
-                  disabled={checkInMutation.isPending}
-                  className="flex flex-col items-center gap-1 h-auto py-3 bg-[#FAE008] hover:bg-[#E5CF07] text-[#111827] font-semibold rounded-lg"
-                >
+              {!activeCheckIn ?
+            <Button
+              onClick={handleCheckIn}
+              disabled={checkInMutation.isPending}
+              className="flex flex-col items-center gap-1 h-auto py-3 bg-[#FAE008] hover:bg-[#E5CF07] text-[#111827] font-semibold rounded-lg">
+
                   <LogIn className="w-5 h-5" />
                   <span className="text-xs">Check In</span>
-                </Button>
-              ) : (
-                <Button
-                  onClick={handleCheckOut}
-                  disabled={checkOutMutation.isPending}
-                  className="flex flex-col items-center gap-1 h-auto py-3 bg-[#FAE008] hover:bg-[#E5CF07] text-[#111827] font-semibold rounded-lg"
-                >
+                </Button> :
+
+            <Button
+              onClick={handleCheckOut}
+              disabled={checkOutMutation.isPending}
+              className="flex flex-col items-center gap-1 h-auto py-3 bg-[#FAE008] hover:bg-[#E5CF07] text-[#111827] font-semibold rounded-lg">
+
                   <LogOut className="w-5 h-5" />
                   <span className="text-xs">Check Out</span>
                 </Button>
-              )}
+            }
               <Button
-                variant="outline"
-                onClick={() => setShowPriceList(true)}
-                className="flex flex-col items-center gap-1 h-auto py-3 hover:bg-purple-50 hover:border-purple-200 transition-all rounded-lg"
-              >
+              variant="outline"
+              onClick={() => setShowPriceList(true)}
+              className="flex flex-col items-center gap-1 h-auto py-3 hover:bg-purple-50 hover:border-purple-200 transition-all rounded-lg">
+
                 <DollarSign className="w-5 h-5 text-purple-600" />
                 <span className="text-xs font-semibold text-[#111827]">Price</span>
               </Button>
             </div>
           </div>
-        )}
+        }
         
         <CardContent className="p-3 md:p-4 space-y-3">
           <Tabs defaultValue="details" className="w-full">
@@ -676,49 +676,49 @@ export default function JobDetails({ job, onClose, onStatusChange, onDelete }) {
             </TabsList>
 
             <TabsContent value="details" className="space-y-3 mt-3">
-              {job.project_id && projectJobs.length > 0 && (
-                <div className="bg-blue-50 border-2 border-blue-200 rounded-xl p-3">
+              {job.project_id && projectJobs.length > 0 &&
+              <div className="bg-blue-50 border-2 border-blue-200 rounded-xl p-3">
                   <h3 className="text-sm font-bold text-blue-900 mb-2 flex items-center gap-1.5">
                     <FolderKanban className="w-4 h-4" />
                     Project Job History ({projectJobs.length})
                   </h3>
                   <div className="space-y-2">
-                    {projectJobs.map((pJob) => (
-                      <div key={pJob.id} className="bg-white border border-blue-200 rounded-lg p-2.5 text-sm">
+                    {projectJobs.map((pJob) =>
+                  <div key={pJob.id} className="bg-white border border-blue-200 rounded-lg p-2.5 text-sm">
                         <div className="flex items-start justify-between gap-2 mb-1.5">
                           <div className="flex-1">
                             <div className="font-bold text-slate-900">
                               {pJob.job_type_name || 'Job'} #{pJob.job_number}
                             </div>
-                            {pJob.scheduled_date && (
-                              <div className="text-xs text-slate-600 flex items-center gap-1 mt-0.5">
+                            {pJob.scheduled_date &&
+                        <div className="text-xs text-slate-600 flex items-center gap-1 mt-0.5">
                                 <Calendar className="w-3 h-3" />
                                 {format(parseISO(pJob.scheduled_date), 'MMM d, yyyy')}
                               </div>
-                            )}
+                        }
                           </div>
-                          {pJob.status && (
-                            <Badge className={`${statusColors[pJob.status]} text-xs font-semibold border`}>
+                          {pJob.status &&
+                      <Badge className={`${statusColors[pJob.status]} text-xs font-semibold border`}>
                               {pJob.status.replace(/_/g, ' ')}
                             </Badge>
-                          )}
+                      }
                         </div>
-                        {pJob.notes && pJob.notes !== "<p><br></p>" && ( // Check for empty RichTextEditor content
-                          <div className="text-xs text-slate-600 mt-2 pt-2 border-t border-blue-100">
+                        {pJob.notes && pJob.notes !== "<p><br></p>" && // Check for empty RichTextEditor content
+                    <div className="text-xs text-slate-600 mt-2 pt-2 border-t border-blue-100">
                             <div className="font-semibold mb-0.5">Notes:</div>
                             <div className="line-clamp-2" dangerouslySetInnerHTML={{ __html: pJob.notes }} />
                           </div>
-                        )}
-                        {pJob.outcome && (
-                          <Badge className={`${outcomeColors[pJob.outcome]} text-xs font-semibold border mt-1.5`}>
+                    }
+                        {pJob.outcome &&
+                    <Badge className={`${outcomeColors[pJob.outcome]} text-xs font-semibold border mt-1.5`}>
                             Outcome: {pJob.outcome.replace(/_/g, ' ')}
                           </Badge>
-                        )}
+                    }
                       </div>
-                    ))}
+                  )}
                   </div>
                 </div>
-              )}
+              }
 
               <Card className="border border-[#E5E7EB] shadow-sm overflow-hidden">
                 <CardHeader className="bg-[#F8F9FA] px-4 py-3 border-b border-[#E5E7EB]">
@@ -732,8 +732,8 @@ export default function JobDetails({ job, onClose, onStatusChange, onDelete }) {
                     value={notes}
                     onChange={setNotes}
                     onBlur={handleNotesBlur}
-                    placeholder="Add notes..."
-                  />
+                    placeholder="Add notes..." />
+
                 </CardContent>
               </Card>
 
@@ -750,8 +750,8 @@ export default function JobDetails({ job, onClose, onStatusChange, onDelete }) {
                     onChange={(e) => setPricingProvided(e.target.value)}
                     onBlur={handlePricingProvidedBlur}
                     placeholder="Enter pricing..."
-                    className="text-sm h-10 border border-[#E5E7EB] focus:border-[#FAE008] focus:ring-2 focus:ring-[#FAE008]/20 rounded-lg"
-                  />
+                    className="text-sm h-10 border border-[#E5E7EB] focus:border-[#FAE008] focus:ring-2 focus:ring-[#FAE008]/20 rounded-lg" />
+
                 </CardContent>
               </Card>
 
@@ -767,24 +767,24 @@ export default function JobDetails({ job, onClose, onStatusChange, onDelete }) {
                     value={additionalInfo}
                     onChange={setAdditionalInfo}
                     onBlur={handleAdditionalInfoBlur}
-                    placeholder="Add additional information..."
-                  />
+                    placeholder="Add additional information..." />
+
                 </CardContent>
               </Card>
 
-              {!isTechnician && (
-                <div className="flex flex-col gap-2">
-                  {!activeCheckIn ? (
-                    <Button
-                      onClick={handleCheckIn}
-                      disabled={checkInMutation.isPending}
-                      className="w-full bg-[#FAE008] hover:bg-[#E5CF07] text-[#111827] h-11 font-semibold text-base rounded-lg shadow-sm hover:shadow-md transition-all"
-                    >
+              {!isTechnician &&
+              <div className="flex flex-col gap-2">
+                  {!activeCheckIn ?
+                <Button
+                  onClick={handleCheckIn}
+                  disabled={checkInMutation.isPending}
+                  className="w-full bg-[#FAE008] hover:bg-[#E5CF07] text-[#111827] h-11 font-semibold text-base rounded-lg shadow-sm hover:shadow-md transition-all">
+
                       <LogIn className="w-5 h-5 mr-2" />
                       {checkInMutation.isPending ? 'Checking In...' : 'Check In'}
-                    </Button>
-                  ) : (
-                    <div className="bg-blue-50 border border-blue-200 rounded-lg p-3">
+                    </Button> :
+
+                <div className="bg-blue-50 border border-blue-200 rounded-lg p-3">
                       <div className="flex items-center gap-2 text-blue-700">
                         <Timer className="w-4 h-4" />
                         <span className="text-sm font-semibold">
@@ -792,28 +792,28 @@ export default function JobDetails({ job, onClose, onStatusChange, onDelete }) {
                         </span>
                       </div>
                     </div>
-                  )}
-                  {totalJobTime > 0 && (
-                    <div className="bg-[#F8F9FA] border border-[#E5E7EB] rounded-lg p-3">
+                }
+                  {totalJobTime > 0 &&
+                <div className="bg-[#F8F9FA] border border-[#E5E7EB] rounded-lg p-3">
                       <div className="flex items-center justify-between">
                         <span className="text-sm text-[#6B7280] font-semibold">Total Time:</span>
                         <span className="text-sm font-bold text-[#111827]">{totalJobTime.toFixed(1)}h</span>
                       </div>
                     </div>
-                  )}
+                }
                 </div>
-              )}
+              }
 
-              {jobSummaries.length > 0 && (
-                <Collapsible defaultOpen={true} className="pt-3 border-t-2">
+              {jobSummaries.length > 0 &&
+              <Collapsible defaultOpen={true} className="pt-3 border-t-2">
                   <CollapsibleTrigger className="flex items-center justify-between w-full group bg-slate-50 border-2 border-slate-200 rounded-xl p-3 hover:bg-slate-100 transition-colors">
                     <h4 className="text-sm font-bold text-[#000000]">Previous Visit Summaries ({jobSummaries.length})</h4>
                     <ChevronDown className="w-4 h-4 text-slate-500 transition-transform group-data-[state=open]:rotate-180" />
                   </CollapsibleTrigger>
                   
                   <CollapsibleContent className="pt-3 space-y-3">
-                    {jobSummaries.map((summary) => (
-                      <div key={summary.id} className="bg-white border-2 border-slate-200 rounded-xl p-3">
+                    {jobSummaries.map((summary) =>
+                  <div key={summary.id} className="bg-white border-2 border-slate-200 rounded-xl p-3">
                         <div className="flex items-center justify-between mb-3">
                           <span className="font-bold text-[#000000]">{summary.technician_name}</span>
                           <span className="text-xs text-slate-500 font-medium">
@@ -821,39 +821,39 @@ export default function JobDetails({ job, onClose, onStatusChange, onDelete }) {
                           </span>
                         </div>
                         
-                        {summary.outcome && (
-                          <Badge className={`${outcomeColors[summary.outcome]} mb-3 font-semibold border-2`}>
+                        {summary.outcome &&
+                    <Badge className={`${outcomeColors[summary.outcome]} mb-3 font-semibold border-2`}>
                             {summary.outcome.replace(/_/g, ' ')}
                           </Badge>
-                        )}
+                    }
 
                         <div className="space-y-2">
-                          {summary.overview && (
-                            <div>
+                          {summary.overview &&
+                      <div>
                               <div className="text-xs font-bold text-slate-500 mb-1">Overview:</div>
                               <div className="text-sm text-slate-700" dangerouslySetInnerHTML={{ __html: summary.overview }} />
                             </div>
-                          )}
+                      }
                           
-                          {summary.next_steps && (
-                            <div>
+                          {summary.next_steps &&
+                      <div>
                               <div className="text-xs font-bold text-slate-500 mb-1">Next Steps:</div>
                               <div className="text-sm text-slate-700" dangerouslySetInnerHTML={{ __html: summary.next_steps }} />
                             </div>
-                          )}
+                      }
                           
-                          {summary.communication_with_client && (
-                            <div>
+                          {summary.communication_with_client &&
+                      <div>
                               <div className="text-xs font-bold text-slate-500 mb-1">Communication:</div>
                               <div className="text-sm text-slate-700" dangerouslySetInnerHTML={{ __html: summary.communication_with_client }} />
                             </div>
-                          )}
+                      }
                         </div>
                       </div>
-                    ))}
+                  )}
                   </CollapsibleContent>
                 </Collapsible>
-              )}
+              }
             </TabsContent>
 
             <TabsContent value="visit" className="space-y-3 mt-2">
@@ -865,8 +865,8 @@ export default function JobDetails({ job, onClose, onStatusChange, onDelete }) {
                       value={overview}
                       onChange={setOverview}
                       onBlur={handleOverviewBlur}
-                      placeholder="Overview..."
-                    />
+                      placeholder="Overview..." />
+
                   </div>
                 </div>
 
@@ -877,8 +877,8 @@ export default function JobDetails({ job, onClose, onStatusChange, onDelete }) {
                       value={nextSteps}
                       onChange={setNextSteps}
                       onBlur={handleNextStepsBlur}
-                      placeholder="Next steps..."
-                    />
+                      placeholder="Next steps..." />
+
                   </div>
                 </div>
 
@@ -889,8 +889,8 @@ export default function JobDetails({ job, onClose, onStatusChange, onDelete }) {
                       value={communicationWithClient}
                       onChange={setCommunicationWithClient}
                       onBlur={handleCommunicationBlur}
-                      placeholder="Communication notes..."
-                    />
+                      placeholder="Communication notes..." />
+
                   </div>
                 </div>
 
@@ -910,37 +910,37 @@ export default function JobDetails({ job, onClose, onStatusChange, onDelete }) {
                   </Select>
                 </div>
 
-                {validationError && (
-                  <div className="bg-red-50 border-2 border-red-200 rounded-xl p-2.5 flex items-start gap-2">
+                {validationError &&
+                <div className="bg-red-50 border-2 border-red-200 rounded-xl p-2.5 flex items-start gap-2">
                     <AlertCircle className="w-4 h-4 text-red-600 mt-0.5 flex-shrink-0" />
                     <span className="text-sm text-red-700 font-medium">{validationError}</span>
                   </div>
-                )}
+                }
 
-                {activeCheckIn && (
-                  <div className="pt-3 border-t-2">
+                {activeCheckIn &&
+                <div className="pt-3 border-t-2">
                     <Button
-                      onClick={handleCheckOut}
-                      disabled={checkOutMutation.isPending}
-                      className="w-full bg-blue-600 hover:bg-blue-700 h-11 font-semibold text-base rounded-xl shadow-md hover:shadow-lg transition-all"
-                    >
+                    onClick={handleCheckOut}
+                    disabled={checkOutMutation.isPending}
+                    className="w-full bg-blue-600 hover:bg-blue-700 h-11 font-semibold text-base rounded-xl shadow-md hover:shadow-lg transition-all">
+
                       <LogOut className="w-4 h-4 mr-2" />
                       {checkOutMutation.isPending ? 'Checking Out...' : 'Check Out'}
                     </Button>
                   </div>
-                )}
+                }
               </div>
 
-              {completedCheckIns.length > 0 && (
-                <Collapsible defaultOpen={false} className="pt-3 border-t-2">
+              {completedCheckIns.length > 0 &&
+              <Collapsible defaultOpen={false} className="pt-3 border-t-2">
                   <CollapsibleTrigger className="flex items-center justify-between w-full group bg-slate-50 border-2 border-slate-200 rounded-xl p-3 hover:bg-slate-100 transition-colors">
                     <h4 className="text-sm font-bold text-[#000000]">Time Tracking ({completedCheckIns.length})</h4>
                     <ChevronDown className="w-4 h-4 text-slate-500 transition-transform group-data-[state=open]:rotate-180" />
                   </CollapsibleTrigger>
                   
                   <CollapsibleContent className="pt-2.5 space-y-2.5">
-                    {completedCheckIns.map((checkIn, index) => (
-                      <div key={checkIn.id} className="bg-slate-50 border-2 border-slate-200 rounded-xl p-2.5">
+                    {completedCheckIns.map((checkIn, index) =>
+                  <div key={checkIn.id} className="bg-slate-50 border-2 border-slate-200 rounded-xl p-2.5">
                         <div className="space-y-2">
                           <div className="flex items-center justify-between text-sm">
                             <span className="text-slate-500 font-medium">Visit {completedCheckIns.length - index}</span>
@@ -970,7 +970,7 @@ export default function JobDetails({ job, onClose, onStatusChange, onDelete }) {
                           </div>
                         </div>
                       </div>
-                    ))}
+                  )}
 
                     <div className="bg-blue-50 border-2 border-blue-200 rounded-xl p-2.5">
                       <div className="flex items-center justify-between">
@@ -980,18 +980,18 @@ export default function JobDetails({ job, onClose, onStatusChange, onDelete }) {
                     </div>
                   </CollapsibleContent>
                 </Collapsible>
-              )}
+              }
 
-              {jobSummaries.length > 0 && (
-                <Collapsible defaultOpen={false} className="pt-3 border-t-2">
+              {jobSummaries.length > 0 &&
+              <Collapsible defaultOpen={false} className="pt-3 border-t-2">
                   <CollapsibleTrigger className="flex items-center justify-between w-full group bg-slate-50 border-2 border-slate-200 rounded-xl p-3 hover:bg-slate-100 transition-colors">
                     <h4 className="text-sm font-bold text-[#000000]">Previous Visit Summaries ({jobSummaries.length})</h4>
                     <ChevronDown className="w-4 h-4 text-slate-500 transition-transform group-data-[state=open]:rotate-180" />
                   </CollapsibleTrigger>
                   
                   <CollapsibleContent className="pt-3 space-y-3">
-                    {jobSummaries.map((summary) => (
-                      <div key={summary.id} className="bg-white border-2 border-slate-200 rounded-xl p-3">
+                    {jobSummaries.map((summary) =>
+                  <div key={summary.id} className="bg-white border-2 border-slate-200 rounded-xl p-3">
                         <div className="flex items-center justify-between mb-3">
                           <span className="font-bold text-[#000000]">{summary.technician_name}</span>
                           <span className="text-xs text-slate-500 font-medium">
@@ -999,39 +999,39 @@ export default function JobDetails({ job, onClose, onStatusChange, onDelete }) {
                           </span>
                         </div>
                         
-                        {summary.outcome && (
-                          <Badge className={`${outcomeColors[summary.outcome]} mb-3 font-semibold border-2`}>
+                        {summary.outcome &&
+                    <Badge className={`${outcomeColors[summary.outcome]} mb-3 font-semibold border-2`}>
                             {summary.outcome.replace(/_/g, ' ')}
                           </Badge>
-                        )}
+                    }
 
                         <div className="space-y-2">
-                          {summary.overview && (
-                            <div>
+                          {summary.overview &&
+                      <div>
                               <div className="text-xs font-bold text-slate-500 mb-1">Overview:</div>
                               <div className="text-sm text-slate-700" dangerouslySetInnerHTML={{ __html: summary.overview }} />
                             </div>
-                          )}
+                      }
                           
-                          {summary.next_steps && (
-                            <div>
+                          {summary.next_steps &&
+                      <div>
                               <div className="text-xs font-bold text-slate-500 mb-1">Next Steps:</div>
                               <div className="text-sm text-slate-700" dangerouslySetInnerHTML={{ __html: summary.next_steps }} />
                             </div>
-                          )}
+                      }
                           
-                          {summary.communication_with_client && (
-                            <div>
+                          {summary.communication_with_client &&
+                      <div>
                               <div className="text-xs font-bold text-slate-500 mb-1">Communication:</div>
                               <div className="text-sm text-slate-700" dangerouslySetInnerHTML={{ __html: summary.communication_with_client }} />
                             </div>
-                          )}
+                      }
                         </div>
                       </div>
-                    ))}
+                  )}
                   </CollapsibleContent>
                 </Collapsible>
-              )}
+              }
             </TabsContent>
 
             <TabsContent value="form" className="mt-2">
@@ -1039,20 +1039,20 @@ export default function JobDetails({ job, onClose, onStatusChange, onDelete }) {
                 <h3 className="text-sm font-bold text-[#000000]">Measurements</h3>
                 <MeasurementsForm
                   measurements={measurements}
-                  onChange={handleMeasurementsChange}
-                />
+                  onChange={handleMeasurementsChange} />
+
               </div>
 
-              {jobSummaries.length > 0 && (
-                <Collapsible defaultOpen={true} className="pt-3 border-t-2 mt-3">
+              {jobSummaries.length > 0 &&
+              <Collapsible defaultOpen={true} className="pt-3 border-t-2 mt-3">
                   <CollapsibleTrigger className="flex items-center justify-between w-full group bg-slate-50 border-2 border-slate-200 rounded-xl p-3 hover:bg-slate-100 transition-colors">
                     <h4 className="text-sm font-bold text-[#000000]">Previous Visit Summaries ({jobSummaries.length})</h4>
                     <ChevronDown className="w-4 h-4 text-slate-500 transition-transform group-data-[state=open]:rotate-180" />
                   </CollapsibleTrigger>
                   
                   <CollapsibleContent className="pt-3 space-y-3">
-                    {jobSummaries.map((summary) => (
-                      <div key={summary.id} className="bg-white border-2 border-slate-200 rounded-xl p-3">
+                    {jobSummaries.map((summary) =>
+                  <div key={summary.id} className="bg-white border-2 border-slate-200 rounded-xl p-3">
                         <div className="flex items-center justify-between mb-3">
                           <span className="font-bold text-[#000000]">{summary.technician_name}</span>
                           <span className="text-xs text-slate-500 font-medium">
@@ -1060,39 +1060,39 @@ export default function JobDetails({ job, onClose, onStatusChange, onDelete }) {
                           </span>
                         </div>
                         
-                        {summary.outcome && (
-                          <Badge className={`${outcomeColors[summary.outcome]} mb-3 font-semibold border-2`}>
+                        {summary.outcome &&
+                    <Badge className={`${outcomeColors[summary.outcome]} mb-3 font-semibold border-2`}>
                             {summary.outcome.replace(/_/g, ' ')}
                           </Badge>
-                        )}
+                    }
 
                         <div className="space-y-2">
-                          {summary.overview && (
-                            <div>
+                          {summary.overview &&
+                      <div>
                               <div className="text-xs font-bold text-slate-500 mb-1">Overview:</div>
                               <div className="text-sm text-slate-700" dangerouslySetInnerHTML={{ __html: summary.overview }} />
                             </div>
-                          )}
+                      }
                           
-                          {summary.next_steps && (
-                            <div>
+                          {summary.next_steps &&
+                      <div>
                               <div className="text-xs font-bold text-slate-500 mb-1">Next Steps:</div>
                               <div className="text-sm text-slate-700" dangerouslySetInnerHTML={{ __html: summary.next_steps }} />
                             </div>
-                          )}
+                      }
                           
-                          {summary.communication_with_client && (
-                            <div>
+                          {summary.communication_with_client &&
+                      <div>
                               <div className="text-xs font-bold text-slate-500 mb-1">Communication:</div>
                               <div className="text-sm text-slate-700" dangerouslySetInnerHTML={{ __html: summary.communication_with_client }} />
                             </div>
-                          )}
+                      }
                         </div>
                       </div>
-                    ))}
+                  )}
                   </CollapsibleContent>
                 </Collapsible>
-              )}
+              }
             </TabsContent>
 
             <TabsContent value="files" className="mt-2">
@@ -1104,8 +1104,8 @@ export default function JobDetails({ job, onClose, onStatusChange, onDelete }) {
                   multiple={true}
                   icon={ImageIcon}
                   label="Photos & Videos"
-                  emptyText="Upload media"
-                />
+                  emptyText="Upload media" />
+
 
                 <div className="grid md:grid-cols-2 gap-2.5 pt-3 border-t-2">
                   <EditableFileUpload
@@ -1115,8 +1115,8 @@ export default function JobDetails({ job, onClose, onStatusChange, onDelete }) {
                     multiple={false}
                     icon={FileText}
                     label="Quote"
-                    emptyText="Upload quote"
-                  />
+                    emptyText="Upload quote" />
+
 
                   <EditableFileUpload
                     files={job.invoice_url}
@@ -1125,8 +1125,8 @@ export default function JobDetails({ job, onClose, onStatusChange, onDelete }) {
                     multiple={false}
                     icon={FileText}
                     label="Invoice"
-                    emptyText="Upload invoice"
-                  />
+                    emptyText="Upload invoice" />
+
                 </div>
               </div>
             </TabsContent>
@@ -1136,30 +1136,30 @@ export default function JobDetails({ job, onClose, onStatusChange, onDelete }) {
 
       <PriceListModal
         open={showPriceList}
-        onClose={() => setShowPriceList(false)}
-      />
+        onClose={() => setShowPriceList(false)} />
+
 
       <ChangeHistoryModal
         open={showHistory}
         onClose={() => setShowHistory(false)}
-        jobId={job.id}
-      />
+        jobId={job.id} />
+
 
       <CustomerEditModal
         customer={customer}
         open={showCustomerEdit}
         onClose={() => setShowCustomerEdit(false)}
         onSubmit={handleCustomerSubmit}
-        isSubmitting={updateCustomerMutation.isPending}
-      />
+        isSubmitting={updateCustomerMutation.isPending} />
 
-      {!isTechnician && (
-        <TechnicianAssistant
-          open={showAssistant}
-          onClose={() => setShowAssistant(false)}
-          job={job}
-        />
-      )}
+
+      {!isTechnician &&
+      <TechnicianAssistant
+        open={showAssistant}
+        onClose={() => setShowAssistant(false)}
+        job={job} />
+
+      }
 
       <AlertDialog open={showDeleteConfirm} onOpenChange={setShowDeleteConfirm}>
         <AlertDialogContent className="rounded-2xl border-2 border-slate-200">
@@ -1173,13 +1173,13 @@ export default function JobDetails({ job, onClose, onStatusChange, onDelete }) {
             <AlertDialogCancel className="rounded-xl font-semibold border-2">Cancel</AlertDialogCancel>
             <AlertDialogAction
               onClick={handleDeleteClick}
-              className="bg-red-600 hover:bg-red-700 rounded-xl font-semibold"
-            >
+              className="bg-red-600 hover:bg-red-700 rounded-xl font-semibold">
+
               Delete
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
-    </>
-  );
+    </>);
+
 }
