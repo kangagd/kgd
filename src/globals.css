@@ -214,23 +214,24 @@
   }
 
   /* Status Chips - Yellow background with black text */
-  .status-chip {
-    background-color: #FAE008;
-    color: #000000;
-    @apply rounded-lg px-3 py-1.5 font-bold;
-    font-size: 11px;
-    min-height: 26px;
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-  }
-
-  @media (min-width: 768px) {
     .status-chip {
-      font-size: 12px;
-      min-height: 28px;
+      background-color: #FAE008;
+      color: #000000;
+      @apply rounded-lg px-3 py-1.5 font-bold;
+      font-size: 11px;
+      min-height: 26px;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      border: 2px solid #000000;
     }
-  }
+
+    @media (min-width: 768px) {
+      .status-chip {
+        font-size: 12px;
+        min-height: 28px;
+      }
+    }
   
   .status-open {
     background-color: rgba(37, 99, 235, 0.15);
@@ -274,14 +275,15 @@
   
   /* Cards following master UI system */
   .card-enhanced {
-    @apply bg-white border border-[#E5E7EB];
-    border-radius: var(--card-radius);
+    @apply bg-white border-2 border-[#E5E7EB];
+    border-radius: 12px;
     padding: var(--card-padding);
-    box-shadow: var(--shadow-soft);
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
+    transition: all 150ms ease;
   }
 
   .card-enhanced:hover {
-    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.08);
   }
 
   @media (min-width: 768px) {
@@ -294,21 +296,22 @@
     @apply cursor-pointer;
     min-height: 68px;
   }
-  
+
   @media (min-width: 768px) {
     .card-interactive {
       min-height: 72px;
     }
   }
-  
+
   .card-interactive:hover {
-    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
-    border-color: rgba(250, 224, 8, 0.3);
-    transform: scale(1.01);
+    box-shadow: 0 6px 20px rgba(0, 0, 0, 0.1);
+    border-color: #FAE008;
+    transform: translateY(-2px);
   }
-  
+
   .card-interactive:active {
-    transform: scale(0.99);
+    transform: translateY(0);
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
   }
   
   .section-header {
@@ -343,15 +346,16 @@
   }
 
   .btn-primary:hover {
-    background-color: #e5d007;
-    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
-    transform: scale(1.02);
-  }
+      background-color: #e5d007;
+      box-shadow: 0 4px 16px rgba(250, 224, 8, 0.3);
+      transform: translateY(-2px);
+    }
 
-  .btn-primary:active {
-    background-color: #d4c006;
-    transform: scale(0.98);
-  }
+    .btn-primary:active {
+      background-color: #d4c006;
+      transform: translateY(0);
+      box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+    }
 
   /* Secondary buttons - White with Grey border */
   .btn-secondary {
@@ -371,13 +375,15 @@
   }
 
   .btn-secondary:hover {
-    background-color: #F8F9FA;
-    border-color: #9CA3AF;
-  }
+      background-color: #F8F9FA;
+      border-color: #4B5563;
+      box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
+    }
 
-  .btn-secondary:active {
-    background-color: #F8F9FA;
-  }
+    .btn-secondary:active {
+      background-color: #E5E7EB;
+      transform: translateY(0);
+    }
   
   /* Form inputs - White bg with grey border */
   .input-enhanced {

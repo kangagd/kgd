@@ -335,13 +335,7 @@ export default function ProjectDetails({ project, onClose, onEdit, onDelete }) {
                                 </div>
                               )}
                             </div>
-                            <Badge 
-                              className="capitalize font-semibold text-xs py-1 px-3 rounded-full"
-                              style={{ 
-                                backgroundColor: '#FAE008',
-                                color: '#000000'
-                              }}
-                            >
+                            <Badge className="status-chip capitalize">
                               {job.status.replace(/_/g, ' ')}
                             </Badge>
                           </div>

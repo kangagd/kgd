@@ -151,13 +151,7 @@ export default function JobList({ jobs, isLoading, onSelectJob }) {
                       {job.job_type_name}
                     </Badge>
                 }
-                  <Badge 
-                    style={{ 
-                      backgroundColor: statusColors[job.status] || "rgba(0, 0, 0, 0.1)", 
-                      color: statusTextColors[job.status] || "#000" 
-                    }} 
-                    className="capitalize font-semibold text-xs rounded-full border-2 border-current py-1 px-2 md:px-3"
-                  >
+                  <Badge className="status-chip capitalize">
                     {job.status.replace(/_/g, ' ')}
                   </Badge>
                 </div>

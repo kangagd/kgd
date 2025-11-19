@@ -292,7 +292,7 @@ export default function Dashboard() {
                                 {job.job_type_name}
                               </Badge>
                             )}
-                            <Badge style={{ backgroundColor: statusColors[job.status], color: statusTextColors[job.status] }} className={`capitalize font-semibold text-xs py-1 px-2 md:px-3 rounded-full border border-current`}>
+                            <Badge className="status-chip capitalize">
                               {job.status.replace(/_/g, ' ')}
                             </Badge>
                           </div>
@@ -438,14 +438,7 @@ export default function Dashboard() {
                     >
                       <div className="flex items-center gap-2 mb-1.5 md:mb-2">
                         <span className="font-bold text-[hsl(25,10%,12%)] text-xs md:text-sm">#{job.job_number}</span>
-                        <Badge
-                          style={{
-                            backgroundColor: statusColors[job.status] || "rgba(200, 200, 200, 0.15)",
-                            color: statusTextColors[job.status] || "#666",
-                            borderColor: statusColors[job.status] ? `rgba(${statusColors[job.status].match(/\d+/g).slice(0,3).join(',')}, 0.5)` : "#ccc"
-                          }}
-                          className="font-semibold border-2 text-xs"
-                        >
+                        <Badge className="status-chip capitalize">
                           {statusLabels[job.status] || job.status}
                         </Badge>
                       </div>

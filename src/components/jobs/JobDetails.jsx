@@ -520,30 +520,30 @@ export default function JobDetails({ job, onClose, onDelete }) {
     <>
       <div className="min-h-screen bg-[#F8F9FA]">
         {/* Sticky Header */}
-        <div className="bg-white border-b border-[#E5E7EB] sticky top-0 z-10 shadow-sm">
-          <div className="p-4">
-            <div className="flex items-start justify-between gap-3 mb-3">
-              <div className="flex items-start gap-3 flex-1 min-w-0">
+        <div className="bg-white border-b-2 border-[#E5E7EB] sticky top-0 z-10 shadow-md">
+          <div className="p-3 md:p-4">
+            <div className="flex items-start justify-between gap-3 mb-2">
+              <div className="flex items-start gap-2 md:gap-3 flex-1 min-w-0">
                 <Button 
                   variant="ghost" 
                   size="icon" 
                   onClick={onClose}
-                  className="h-10 w-10 flex-shrink-0 hover:bg-gray-100"
+                  className="h-9 w-9 md:h-10 md:w-10 flex-shrink-0 hover:bg-gray-100 rounded-lg"
                 >
                   <ArrowLeft className="w-5 h-5" />
                 </Button>
                 <div className="flex-1 min-w-0">
                   <h1 
-                    className="text-lg md:text-xl font-bold text-[#111827] mb-1 cursor-pointer hover:text-[#FAE008] transition-colors truncate"
+                    className="text-base md:text-xl font-bold text-[#111827] mb-1 cursor-pointer hover:text-[#FAE008] transition-colors truncate"
                     onClick={() => setShowCustomerEdit(true)}
                   >
                     {job.customer_name}
                   </h1>
                   <div className="flex items-center gap-2 flex-wrap">
-                    <span className="text-sm text-[#4B5563]">Job #{job.job_number}</span>
+                    <span className="text-xs md:text-sm text-[#4B5563] font-semibold">Job #{job.job_number}</span>
                     {job.scheduled_date && (
-                      <div className="flex items-center gap-1 text-sm text-[#4B5563]">
-                        <Calendar className="w-4 h-4" />
+                      <div className="flex items-center gap-1 text-xs md:text-sm text-[#4B5563]">
+                        <Calendar className="w-3 h-3 md:w-4 md:h-4" />
                         {format(parseISO(job.scheduled_date), 'MMM d')}
                         {job.scheduled_time && ` at ${job.scheduled_time}`}
                       </div>
@@ -552,63 +552,78 @@ export default function JobDetails({ job, onClose, onDelete }) {
                 </div>
               </div>
               <div className="flex items-center gap-2 flex-shrink-0">
-                <Badge 
-                  className="capitalize font-semibold text-xs py-1 px-3 rounded-full whitespace-nowrap"
-                  style={{ 
-                    backgroundColor: job.status === 'completed' ? '#FAE008' : statusColors[job.status], 
-                    color: job.status === 'completed' ? '#000000' : statusTextColors[job.status],
-                    border: `1px solid ${job.status === 'completed' ? '#000000' : 'currentColor'}`
-                  }}
-                >
+                <Badge className="status-chip capitalize whitespace-nowrap">
                   {job.status.replace(/_/g, ' ')}
                 </Badge>
-                <DropdownMenu>
-                  <DropdownMenuTrigger asChild>
-                    <Button variant="ghost" size="icon" className="h-10 w-10 flex-shrink-0 hover:bg-gray-100">
-                      <MoreVertical className="w-5 h-5" />
-                    </Button>
-                  </DropdownMenuTrigger>
-                  <DropdownMenuContent align="end" className="w-48">
-                    <DropdownMenuItem onClick={() => setShowPriceList(true)}>
-                      <DollarSign className="w-4 h-4 mr-2" />
-                      Price List
-                    </DropdownMenuItem>
-                    <DropdownMenuItem onClick={() => setShowHistory(true)}>
-                      <History className="w-4 h-4 mr-2" />
-                      History
-                    </DropdownMenuItem>
-                    {!isTechnician && (
-                      <>
-                        <DropdownMenuItem onClick={() => setShowAssistant(true)}>
-                          <Sparkles className="w-4 h-4 mr-2" />
-                          AI Assistant
-                        </DropdownMenuItem>
-                        <DropdownMenuItem onClick={() => setShowDeleteConfirm(true)} className="text-red-600">
-                          <Trash2 className="w-4 h-4 mr-2" />
-                          Delete
-                        </DropdownMenuItem>
-                      </>
-                    )}
-                  </DropdownMenuContent>
-                </DropdownMenu>
+                {!isTechnician && (
+                  <DropdownMenu>
+                    <DropdownMenuTrigger asChild>
+                      <Button variant="ghost" size="icon" className="h-9 w-9 md:h-10 md:w-10 flex-shrink-0 hover:bg-gray-100 rounded-lg">
+                        <MoreVertical className="w-5 h-5" />
+                      </Button>
+                    </DropdownMenuTrigger>
+                    <DropdownMenuContent align="end" className="w-48">
+                      <DropdownMenuItem onClick={() => setShowPriceList(true)}>
+                        <DollarSign className="w-4 h-4 mr-2" />
+                        Price List
+                      </DropdownMenuItem>
+                      <DropdownMenuItem onClick={() => setShowHistory(true)}>
+                        <History className="w-4 h-4 mr-2" />
+                        History
+                      </DropdownMenuItem>
+                      <DropdownMenuItem onClick={() => setShowAssistant(true)}>
+                        <Sparkles className="w-4 h-4 mr-2" />
+                        AI Assistant
+                      </DropdownMenuItem>
+                      <DropdownMenuItem onClick={() => setShowDeleteConfirm(true)} className="text-red-600">
+                        <Trash2 className="w-4 h-4 mr-2" />
+                        Delete
+                      </DropdownMenuItem>
+                    </DropdownMenuContent>
+                  </DropdownMenu>
+                )}
               </div>
             </div>
+
+            {/* Primary Actions for Technicians */}
+            {isTechnician && (
+              <div className="grid grid-cols-2 gap-2 pt-2 border-t border-[#E5E7EB]">
+                {job.customer_phone && (
+                  <Button
+                    size="lg"
+                    onClick={() => window.location.href = `tel:${job.customer_phone}`}
+                    className="btn-primary h-12 w-full font-semibold"
+                  >
+                    <Phone className="w-5 h-5 mr-2" />
+                    Call
+                  </Button>
+                )}
+                <Button
+                  size="lg"
+                  onClick={() => window.open(`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(job.address)}`, '_blank')}
+                  className="bg-blue-600 hover:bg-blue-700 active:bg-blue-800 text-white font-semibold h-12 w-full"
+                >
+                  <Navigation className="w-5 h-5 mr-2" />
+                  Navigate
+                </Button>
+              </div>
+            )}
           </div>
 
           {/* Tab Navigation */}
-          <div className="flex overflow-x-auto px-4 gap-1 no-scrollbar border-t border-[#E5E7EB]">
+          <div className="flex overflow-x-auto px-2 md:px-4 gap-0.5 no-scrollbar bg-[#F8F9FA]">
             {tabs.map((tab) => (
               <button
                 key={tab.id}
                 onClick={() => setActiveTab(tab.id)}
-                className={`flex items-center gap-2 px-4 py-3 text-sm font-semibold whitespace-nowrap border-b-2 transition-colors flex-shrink-0 ${
+                className={`flex items-center gap-1.5 md:gap-2 px-3 md:px-4 py-2.5 md:py-3 text-xs md:text-sm font-semibold whitespace-nowrap transition-all flex-shrink-0 rounded-t-lg ${
                   activeTab === tab.id
-                    ? 'border-[#FAE008] text-[#111827] bg-[#FFFEF0]'
-                    : 'border-transparent text-[#4B5563] hover:text-[#111827] hover:bg-gray-50'
+                    ? 'bg-white text-[#111827] border-b-2 border-[#FAE008]'
+                    : 'text-[#4B5563] hover:text-[#111827] hover:bg-white/50'
                 }`}
               >
                 <tab.icon className="w-4 h-4" />
-                <span>{tab.label}</span>
+                <span className="hidden sm:inline">{tab.label}</span>
               </button>
             ))}
           </div>
@@ -639,33 +654,12 @@ export default function JobDetails({ job, onClose, onDelete }) {
                       {job.address && (
                         <div>
                           <div className="text-xs font-medium text-[#4B5563] mb-2">Address</div>
-                          <div className="flex items-start gap-2">
+                          <div className="flex items-start gap-2 p-3 bg-[#F8F9FA] rounded-lg">
                             <MapPin className="w-5 h-5 text-[#4B5563] mt-0.5 flex-shrink-0" />
-                            <span className="text-sm text-[#111827]">{job.address}</span>
+                            <span className="text-sm text-[#111827] font-medium">{job.address}</span>
                           </div>
                         </div>
                       )}
-
-                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-3 border-t border-[#E5E7EB]">
-                        {job.customer_phone && (
-                          <Button
-                            size="lg"
-                            onClick={() => window.location.href = `tel:${job.customer_phone}`}
-                            className="bg-[#FAE008] hover:bg-[#e5d007] text-black font-semibold h-12 w-full"
-                          >
-                            <Phone className="w-5 h-5 mr-2" />
-                            Call
-                          </Button>
-                        )}
-                        <Button
-                          size="lg"
-                          onClick={() => window.open(`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(job.address)}`, '_blank')}
-                          className="bg-blue-600 hover:bg-blue-700 text-white font-semibold h-12 w-full"
-                        >
-                          <Navigation className="w-5 h-5 mr-2" />
-                          Directions
-                        </Button>
-                      </div>
 
                       <div className="pt-3 border-t border-[#E5E7EB]">
                         <div className="grid grid-cols-2 gap-3">
@@ -754,54 +748,55 @@ export default function JobDetails({ job, onClose, onDelete }) {
                   </CardContent>
                 </Card>
 
-                {/* Quick Actions Card - Technician Only */}
+                {/* On-Site Actions - Technician Only */}
                 {isTechnician && (
-                  <Card className="bg-white rounded-xl border border-[#E5E7EB] shadow-sm">
+                  <Card className="bg-gradient-to-br from-[#FAE008] to-[#e5d007] rounded-xl border-2 border-black shadow-lg">
                     <CardContent className="p-5">
-                      <h3 className="text-sm font-bold text-[#111827] uppercase tracking-wide mb-4">Quick Actions</h3>
-                      {!activeCheckIn ? (
-                       <Button
-                         onClick={handleCheckIn}
-                         disabled={checkInMutation.isPending}
-                         className="bg-green-600 hover:bg-green-700 text-white font-semibold h-14 w-full text-base shadow-md"
-                       >
-                         <LogIn className="w-5 h-5 mr-2" />
-                         {checkInMutation.isPending ? 'Checking In...' : 'Check In'}
-                       </Button>
+                      <h3 className="text-sm font-bold text-black uppercase tracking-wide mb-4 flex items-center gap-2">
+                        <Briefcase className="w-4 h-4" />
+                        On-Site Actions
+                      </h3>
+                       {!activeCheckIn ? (
+                        <Button
+                          onClick={handleCheckIn}
+                          disabled={checkInMutation.isPending}
+                          className="bg-black hover:bg-gray-900 text-[#FAE008] font-bold h-14 w-full text-base shadow-lg"
+                        >
+                          <LogIn className="w-5 h-5 mr-2" />
+                          {checkInMutation.isPending ? 'Checking In...' : 'Check In'}
+                        </Button>
                       ) : (
-                       <div className="space-y-3">
-                         <div className="bg-green-50 border-2 border-green-200 rounded-lg p-3">
-                           <div className="flex items-center gap-2 text-green-700 font-semibold text-sm">
-                             <Timer className="w-4 h-4 animate-pulse" />
-                             Checked in at {format(new Date(activeCheckIn.check_in_time), 'h:mm a')}
-                           </div>
-                         </div>
-                         <Button
-                           onClick={() => setActiveTab('sitevisit')}
-                           className="btn-primary w-full h-14 text-base"
-                         >
-                           <ClipboardCheck className="w-5 h-5 mr-2" />
-                           Complete Visit
-                         </Button>
-                         <div className="grid grid-cols-2 gap-2">
-                           <Button
-                             variant="outline"
-                             onClick={() => setActiveTab('photos')}
-                             className="btn-secondary h-12"
-                           >
-                             <ImageIcon className="w-4 h-4 mr-2" />
-                             Photos
-                           </Button>
-                           <Button
-                             variant="outline"
-                             onClick={() => setActiveTab('measurements')}
-                             className="btn-secondary h-12"
-                           >
-                             <Ruler className="w-4 h-4 mr-2" />
-                             Measure
-                           </Button>
-                         </div>
-                       </div>
+                        <div className="space-y-3">
+                          <div className="bg-white/90 border-2 border-black rounded-lg p-3">
+                            <div className="flex items-center gap-2 text-black font-bold text-sm">
+                              <Timer className="w-4 h-4 animate-pulse" />
+                              On-site since {format(new Date(activeCheckIn.check_in_time), 'h:mm a')}
+                            </div>
+                          </div>
+                          <Button
+                            onClick={() => setActiveTab('sitevisit')}
+                            className="bg-black hover:bg-gray-900 text-[#FAE008] font-bold w-full h-14 text-base shadow-lg"
+                          >
+                            <ClipboardCheck className="w-5 h-5 mr-2" />
+                            Complete Visit
+                          </Button>
+                          <div className="grid grid-cols-2 gap-2">
+                            <Button
+                              onClick={() => setActiveTab('photos')}
+                              className="bg-white hover:bg-gray-50 text-black font-semibold border-2 border-black h-12"
+                            >
+                              <ImageIcon className="w-4 h-4 mr-2" />
+                              Photos
+                            </Button>
+                            <Button
+                              onClick={() => setActiveTab('measurements')}
+                              className="bg-white hover:bg-gray-50 text-black font-semibold border-2 border-black h-12"
+                            >
+                              <Ruler className="w-4 h-4 mr-2" />
+                              Measure
+                            </Button>
+                          </div>
+                        </div>
                       )}
                     </CardContent>
                   </Card>
