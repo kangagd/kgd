@@ -211,26 +211,26 @@ export default function Jobs() {
   }
 
   return (
-    <div className="bg-[#F8F9FA] p-2 md:p-8 min-h-screen overflow-x-hidden">
+    <div className="bg-white p-4 md:p-8 min-h-screen overflow-x-hidden">
       <div className="max-w-7xl mx-auto w-full">
         {!isTechnician &&
-        <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-4 md:mb-6 gap-3 md:gap-4">
+        <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-6 gap-4">
             <div>
-              <h1 className="text-xl md:text-3xl font-bold text-[#111827] tracking-tight">Jobs</h1>
-              <p className="text-[#4B5563] mt-1 md:mt-2 text-sm md:text-base">Manage all scheduled jobs</p>
+              <h1 className="text-2xl md:text-3xl font-semibold text-[#111827]">Jobs</h1>
+              <p className="text-[#6B7280] mt-1.5 text-sm md:text-base">Manage all scheduled jobs</p>
             </div>
             <Button
             onClick={() => setShowForm(true)}
-            className="btn-primary w-full md:w-auto">
-              <Plus className="w-5 h-5 mr-2" />
+            className="btn-primary w-full md:w-auto h-11">
+              <Plus className="w-4 h-4 mr-2" />
               New Job
             </Button>
           </div>
         }
 
         {isTechnician &&
-        <div className="mb-4 md:mb-6">
-            <h1 className="text-lg md:text-2xl lg:text-3xl font-bold text-[#111827] tracking-tight">My Jobs</h1>
+        <div className="mb-6">
+            <h1 className="text-xl md:text-2xl font-semibold text-[#111827]">My Jobs</h1>
           </div>
         }
 

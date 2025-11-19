@@ -1,3 +1,4 @@
+css
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
@@ -79,22 +80,22 @@
     @apply border-border;
   }
   body {
-    @apply bg-[#F8F9FA] text-[#111827];
+    @apply bg-white text-[#111827];
     font-feature-settings: "rlig" 1, "calt" 1;
     font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen', 'Ubuntu', 'Cantarell', 'Fira Sans', 'Droid Sans', 'Helvetica Neue', sans-serif;
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
     font-size: 14px;
-    line-height: 1.5;
+    line-height: 1.6;
   }
   
   h1 {
-    @apply font-bold tracking-tight;
+    @apply font-semibold tracking-tight;
     color: #111827;
     font-size: 20px;
     line-height: 1.3;
   }
-  
+
   @media (min-width: 768px) {
     h1 {
       font-size: 24px;
@@ -163,18 +164,18 @@
     }
   }
   
-  /* Default button styles */
+  /* Default button styles - Minimal */
   button:not(.btn-secondary):not([class*="ghost"]):not([class*="outline"]):not([class*="destructive"]):not([class*="link"]) {
-    background-color: #FAE008 !important;
-    color: #000000 !important;
+    background-color: #111827 !important;
+    color: #FFFFFF !important;
   }
-  
+
   button:not(.btn-secondary):not([class*="ghost"]):not([class*="outline"]):not([class*="destructive"]):not([class*="link"]):hover {
-    background-color: #e5d007 !important;
+    background-color: #000000 !important;
   }
-  
+
   button:not(.btn-secondary):not([class*="ghost"]):not([class*="outline"]):not([class*="destructive"]):not([class*="link"]):active {
-    background-color: #d4c006 !important;
+    background-color: #1F2937 !important;
   }
 
   /* Improve touch targets on mobile */
@@ -213,23 +214,21 @@
     }
   }
 
-  /* Status Chips - Yellow background with black text */
+  /* Status Chips - Minimal design */
     .status-chip {
-      background-color: #FAE008;
-      color: #000000;
-      @apply rounded-lg px-3 py-1.5 font-bold;
+      background-color: #F8F9FA;
+      color: #111827;
+      @apply rounded-md px-2.5 py-1 font-medium;
       font-size: 11px;
-      min-height: 26px;
       display: inline-flex;
       align-items: center;
       justify-content: center;
-      border: 2px solid #000000;
+      border: 1px solid #E5E7EB;
     }
 
     @media (min-width: 768px) {
       .status-chip {
         font-size: 12px;
-        min-height: 28px;
       }
     }
   
@@ -273,17 +272,17 @@
     color: #DC2626;
   }
   
-  /* Cards following master UI system */
+  /* Cards - Minimal design */
   .card-enhanced {
-    @apply bg-white border-2 border-[#E5E7EB];
-    border-radius: 12px;
+    @apply bg-white border border-[#E5E7EB];
+    border-radius: 10px;
     padding: var(--card-padding);
-    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
+    box-shadow: none;
     transition: all 150ms ease;
   }
 
   .card-enhanced:hover {
-    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.08);
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.06);
   }
 
   @media (min-width: 768px) {
@@ -304,21 +303,20 @@
   }
 
   .card-interactive:hover {
-    box-shadow: 0 6px 20px rgba(0, 0, 0, 0.1);
-    border-color: #FAE008;
-    transform: translateY(-2px);
+    border-color: #111827;
+    background-color: #FAFAFA;
   }
 
   .card-interactive:active {
-    transform: translateY(0);
-    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
+    background-color: #F8F9FA;
   }
   
   .section-header {
-    @apply font-semibold uppercase tracking-wider;
+    @apply font-semibold uppercase tracking-wide;
     font-size: 11px;
-    color: #4B5563;
-    margin-bottom: var(--spacing-xs);
+    color: #6B7280;
+    margin-bottom: 12px;
+    letter-spacing: 0.05em;
   }
 
   @media (min-width: 768px) {
@@ -327,82 +325,77 @@
     }
   }
   
-  /* Primary action buttons - Yellow with Black text */
+  /* Primary action buttons - Minimal black */
   .btn-primary {
-    @apply bg-[#FAE008] text-[#000000] font-semibold;
-    border-radius: var(--button-radius);
+    @apply bg-[#111827] text-white font-medium;
+    border-radius: 8px;
     min-height: var(--button-height);
-    padding: 0 24px;
+    padding: 0 20px;
     font-size: 14px;
-    box-shadow: var(--shadow-soft);
+    box-shadow: none;
     transition: all 150ms ease;
   }
 
   @media (min-width: 768px) {
     .btn-primary {
-      font-size: 15px;
+      font-size: 14px;
       min-height: var(--button-height-lg);
     }
   }
 
   .btn-primary:hover {
-      background-color: #e5d007;
-      box-shadow: 0 4px 16px rgba(250, 224, 8, 0.3);
-      transform: translateY(-2px);
-    }
+    background-color: #000000;
+  }
 
-    .btn-primary:active {
-      background-color: #d4c006;
-      transform: translateY(0);
-      box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
-    }
+  .btn-primary:active {
+    background-color: #1F2937;
+  }
 
-  /* Secondary buttons - White with Grey border */
+  /* Secondary buttons - Minimal grey */
   .btn-secondary {
-    @apply bg-white text-[#000000] border-2 border-[#E5E7EB] font-medium;
-    border-radius: var(--button-radius);
+    @apply bg-white text-[#111827] border border-[#E5E7EB] font-medium;
+    border-radius: 8px;
     min-height: var(--button-height);
-    padding: 0 24px;
+    padding: 0 20px;
     font-size: 14px;
     transition: all 150ms ease;
   }
 
   @media (min-width: 768px) {
     .btn-secondary {
-      font-size: 15px;
+      font-size: 14px;
       min-height: var(--button-height-lg);
     }
   }
 
   .btn-secondary:hover {
-      background-color: #F8F9FA;
-      border-color: #4B5563;
-      box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
-    }
+    background-color: #F8F9FA;
+    border-color: #9CA3AF;
+  }
 
-    .btn-secondary:active {
-      background-color: #E5E7EB;
-      transform: translateY(0);
-    }
+  .btn-secondary:active {
+    background-color: #F1F5F9;
+  }
   
-  /* Form inputs - White bg with grey border */
+  /* Form inputs - Minimal design */
   .input-enhanced {
     @apply bg-white border-[#E5E7EB];
     border-radius: 8px;
     min-height: var(--button-height);
-    padding: 0 16px;
+    padding: 0 14px;
     font-size: 14px;
-    box-shadow: var(--shadow-soft);
+    box-shadow: none;
   }
 
   @media (min-width: 768px) {
     .input-enhanced {
-      font-size: 15px;
+      font-size: 14px;
     }
   }
 
   .input-enhanced:focus {
-    @apply border-[#FAE008] ring-2 ring-[#FAE008]/20;
+    @apply border-[#111827] ring-0;
+    outline: none;
   }
   
   .spacing-xs { margin: var(--spacing-xs); }
@@ -430,15 +423,15 @@
   }
   
   .section-divider {
-    @apply border-t border-[#E5E7EB];
-    margin-top: 16px;
-    margin-bottom: 16px;
+    @apply border-t border-[#F1F5F9];
+    margin-top: 20px;
+    margin-bottom: 20px;
   }
 
   @media (min-width: 768px) {
     .section-divider {
-      margin-top: var(--spacing-md);
-      margin-bottom: var(--spacing-md);
+      margin-top: 24px;
+      margin-bottom: 24px;
     }
   }
 

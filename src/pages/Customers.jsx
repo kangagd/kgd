@@ -125,18 +125,18 @@ export default function Customers() {
   }
 
   return (
-    <div className="p-4 md:p-8 bg-[#F8F9FA] min-h-screen">
+    <div className="p-4 md:p-8 bg-white min-h-screen">
       <div className="max-w-7xl mx-auto">
         <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-6 gap-4">
           <div>
-            <h1 className="text-2xl md:text-3xl font-bold text-[#111827] tracking-tight">Customers</h1>
-            <p className="text-[#4B5563] mt-2 text-sm md:text-base">Manage customer information</p>
+            <h1 className="text-2xl md:text-3xl font-semibold text-[#111827]">Customers</h1>
+            <p className="text-[#6B7280] mt-1.5 text-sm md:text-base">Manage customer information</p>
           </div>
           <Button
             onClick={() => setShowForm(true)}
-            className="btn-primary w-full md:w-auto h-12"
+            className="btn-primary w-full md:w-auto h-11"
           >
-            <Plus className="w-5 h-5 mr-2" />
+            <Plus className="w-4 h-4 mr-2" />
             New Customer
           </Button>
         </div>
