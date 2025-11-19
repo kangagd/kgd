@@ -47,7 +47,7 @@ const getAvatarColor = (name) => {
 };
 
 export default function MonthView({ jobs, currentDate, onJobClick, onQuickBook }) {
-  const [compactMode, setCompactMode] = useState(false);
+  const compactMode = true;
   const monthStart = startOfMonth(currentDate);
   const monthEnd = endOfMonth(currentDate);
   const daysInMonth = eachDayOfInterval({ start: monthStart, end: monthEnd });
@@ -65,24 +65,6 @@ export default function MonthView({ jobs, currentDate, onJobClick, onQuickBook }
 
   return (
     <div className="space-y-3">
-      <div className="flex items-center justify-between">
-        <div className="text-sm text-[#4B5563] font-semibold">
-          {jobs.filter(j => j.scheduled_date && isSameMonth(new Date(j.scheduled_date), currentDate)).length} jobs this month
-        </div>
-        <Button
-          variant="outline"
-          size="sm"
-          onClick={() => setCompactMode(!compactMode)}
-          className={`h-9 font-semibold transition-all rounded-lg border ${
-            compactMode 
-              ? 'bg-[#FAE008] text-[#111827] border-[#FAE008] hover:bg-[#E5CF07]' 
-              : 'border-[#E5E7EB] hover:bg-[#F3F4F6]'
-          }`}
-        >
-          {compactMode ? 'Expanded' : 'Compact'} Mode
-        </Button>
-      </div>
-
       <Card className="rounded-lg border border-[#E5E7EB] shadow-sm overflow-hidden">
         <CardContent className={compactMode ? 'p-2' : 'p-3 md:p-4'}>
           <div className={`grid grid-cols-7 ${compactMode ? 'gap-1' : 'gap-1 md:gap-2'}`}>

@@ -71,8 +71,8 @@ export default function WeekView({ jobs, currentDate, onJobClick, onQuickBook })
   const [draggedJob, setDraggedJob] = useState(null);
   const [dragOverCell, setDragOverCell] = useState(null);
   const [pendingUpdate, setPendingUpdate] = useState(null);
-  const [compactMode, setCompactMode] = useState(false);
   const queryClient = useQueryClient();
+  const compactMode = true;
 
   const { data: technicians = [] } = useQuery({
     queryKey: ['technicians'],
@@ -191,24 +191,6 @@ export default function WeekView({ jobs, currentDate, onJobClick, onQuickBook })
   return (
     <>
       <div className="space-y-3">
-        <div className="flex items-center justify-between">
-          <div className="text-sm text-[#4B5563] font-semibold">
-            {visibleTechnicians.length} {visibleTechnicians.length === 1 ? 'Technician' : 'Technicians'} scheduled
-          </div>
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={() => setCompactMode(!compactMode)}
-            className={`h-9 font-semibold transition-all rounded-lg border ${
-              compactMode 
-                ? 'bg-[#FAE008] text-[#111827] border-[#FAE008] hover:bg-[#E5CF07]' 
-                : 'border-[#E5E7EB] hover:bg-[#F3F4F6]'
-            }`}
-          >
-            {compactMode ? 'Expanded' : 'Compact'} Mode
-          </Button>
-        </div>
-
         <Card className="rounded-lg border border-[#E5E7EB] shadow-sm overflow-hidden">
           <CardContent className="p-0 overflow-x-auto">
             <div className="min-w-[800px]">
