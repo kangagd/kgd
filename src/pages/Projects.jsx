@@ -126,7 +126,7 @@ export default function Projects() {
 
   if (showForm) {
     return (
-      <div className="p-4 md:p-8 bg-white min-h-screen">
+      <div className="p-4 md:p-8 bg-[#F8F9FA] min-h-screen">
         <div className="max-w-4xl mx-auto">
           <ProjectForm
             project={editingProject}
@@ -144,7 +144,7 @@ export default function Projects() {
 
   if (selectedProject) {
     return (
-      <div className="p-4 md:p-8 bg-white min-h-screen">
+      <div className="p-4 md:p-8 bg-[#F8F9FA] min-h-screen">
         <div className="mx-auto p-4 md:p-8 max-w-6xl">
           <ProjectDetails
             project={selectedProject}
@@ -219,9 +219,13 @@ export default function Projects() {
                         </Badge>
                       )}
                       <Badge 
-                        className="status-chip text-xs"
+                        className="capitalize font-semibold text-xs py-1 px-3 rounded-full"
+                        style={{ 
+                          backgroundColor: '#FAE008',
+                          color: '#000000'
+                        }}
                       >
-                        {project.status}
+                        {project.status.replace(/_/g, ' ')}
                       </Badge>
                     </div>
                     <p className="text-sm text-[#4B5563] mb-2 font-medium">{project.customer_name}</p>

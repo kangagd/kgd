@@ -170,7 +170,7 @@ export default function Jobs() {
 
   if (showForm) {
     return (
-      <div className="p-4 md:p-8 bg-[#FFFDEF] min-h-screen">
+      <div className="p-4 md:p-8 bg-[#F8F9FA] min-h-screen">
         <div className="max-w-4xl mx-auto">
           <JobForm
             job={editingJob}
@@ -188,7 +188,7 @@ export default function Jobs() {
 
   if (selectedJob) {
     return (
-      <div className="bg-[#FFFDEF] min-h-screen">
+      <div className="bg-[#F8F9FA] min-h-screen">
         <div className="mx-auto p-4 md:p-8 max-w-4xl">
           <JobDetails
             job={selectedJob}
@@ -208,18 +208,17 @@ export default function Jobs() {
   }
 
   return (
-    <div className="bg-[#ffffff] p-2 md:p-8 min-h-screen overflow-x-hidden">
+    <div className="bg-[#F8F9FA] p-2 md:p-8 min-h-screen overflow-x-hidden">
       <div className="max-w-7xl mx-auto w-full">
         {!isTechnician &&
         <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-4 md:mb-6 gap-3 md:gap-4">
             <div>
-              <h1 className="text-xl md:text-3xl font-bold text-[hsl(25,10%,12%)] tracking-tight">Jobs</h1>
-              <p className="text-[hsl(25,8%,45%)] mt-1 md:mt-2 text-sm md:text-base">Manage all scheduled jobs</p>
+              <h1 className="text-xl md:text-3xl font-bold text-[#111827] tracking-tight">Jobs</h1>
+              <p className="text-[#4B5563] mt-1 md:mt-2 text-sm md:text-base">Manage all scheduled jobs</p>
             </div>
             <Button
             onClick={() => setShowForm(true)}
-            className="bg-[#fae008] text-black hover:bg-[#e5d007] active:bg-[#d4c006] font-semibold shadow-md hover:shadow-lg transition-all w-full md:w-auto">
-
+            className="btn-primary w-full md:w-auto">
               <Plus className="w-5 h-5 mr-2" />
               New Job
             </Button>
@@ -228,19 +227,19 @@ export default function Jobs() {
 
         {isTechnician &&
         <div className="mb-4 md:mb-6">
-            <h1 className="text-lg md:text-2xl lg:text-3xl font-bold text-[hsl(25,10%,12%)] tracking-tight">My Jobs</h1>
+            <h1 className="text-lg md:text-2xl lg:text-3xl font-bold text-[#111827] tracking-tight">My Jobs</h1>
           </div>
         }
 
         <div className="flex flex-col gap-3 md:gap-4 mb-4 md:mb-6">
           <div className="flex gap-2 w-full">
             <div className="relative flex-1 min-w-0">
-              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 md:w-5 md:h-5 text-[hsl(25,8%,55%)]" />
+              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 md:w-5 md:h-5 text-[#4B5563]" />
               <Input
                 placeholder="Search jobs..."
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
-                className="pl-9 md:pl-11 border-2 border-[hsl(32,15%,88%)] focus:border-[#fae008] focus:ring-2 focus:ring-[#fae008]/20 transition-all h-10 md:h-12 text-sm md:text-base rounded-xl w-full" />
+                className="input-enhanced pl-9 md:pl-11 w-full" />
 
             </div>
             <Tabs value={viewMode} onValueChange={setViewMode} className="flex-shrink-0">

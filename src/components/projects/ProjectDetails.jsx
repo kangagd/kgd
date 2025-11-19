@@ -109,8 +109,14 @@ export default function ProjectDetails({ project, onClose, onEdit, onDelete }) {
               </div>
             </div>
             <div className="flex items-center gap-2 flex-shrink-0">
-              <Badge className="status-chip text-xs">
-                {project.status}
+              <Badge 
+                className="capitalize font-semibold text-xs py-1 px-3 rounded-full"
+                style={{ 
+                  backgroundColor: '#FAE008',
+                  color: '#000000'
+                }}
+              >
+                {project.status.replace(/_/g, ' ')}
               </Badge>
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>
@@ -216,9 +222,9 @@ export default function ProjectDetails({ project, onClose, onEdit, onDelete }) {
                 </div>
 
                 {project.created_date && (
-                  <div className="pt-1.5 md:pt-2 border-t border-[#E2E3E5]">
-                    <div className="text-[10px] md:text-[12px] text-[#4F4F4F] mb-0.5 md:mb-1">Created</div>
-                    <div className="text-xs md:text-[14px] text-[#111111]">{new Date(project.created_date).toLocaleDateString()}</div>
+                  <div className="pt-3 border-t border-[#E5E7EB]">
+                    <div className="text-xs font-medium text-[#4B5563] mb-2">Created</div>
+                    <div className="text-sm text-[#111827]">{new Date(project.created_date).toLocaleDateString()}</div>
                   </div>
                 )}
               </CardContent>
@@ -329,8 +335,14 @@ export default function ProjectDetails({ project, onClose, onEdit, onDelete }) {
                                 </div>
                               )}
                             </div>
-                            <Badge className="status-badge status-{job.status} text-xs">
-                              {job.status}
+                            <Badge 
+                              className="capitalize font-semibold text-xs py-1 px-2 rounded-full"
+                              style={{ 
+                                backgroundColor: '#FAE008',
+                                color: '#000000'
+                              }}
+                            >
+                              {job.status.replace(/_/g, ' ')}
                             </Badge>
                           </div>
 

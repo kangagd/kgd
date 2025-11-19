@@ -155,7 +155,7 @@ export default function Dashboard() {
   };
 
   return (
-    <div className="p-2 md:p-8 bg-white min-h-screen">
+    <div className="p-2 md:p-8 bg-[#F8F9FA] min-h-screen">
       <div className="max-w-7xl mx-auto">
         <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-4 md:mb-6 gap-3 md:gap-4">
           <div>
