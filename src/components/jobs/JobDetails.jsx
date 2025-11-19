@@ -1239,15 +1239,14 @@ export default function JobDetails({ job, onClose, onDelete }) {
                       )}
                     </Button>
                   </div>
-                    <input
-                      id="other-docs-input"
-                      type="file"
-                      accept=".pdf,.doc,.docx,.xlsx,.xls,.txt"
-                      multiple
-                      className="hidden"
-                      onChange={handleOtherDocumentUpload}
-                    />
-                  </div>
+                  <input
+                    id="other-docs-input"
+                    type="file"
+                    accept=".pdf,.doc,.docx,.xlsx,.xls,.txt"
+                    multiple
+                    className="hidden"
+                    onChange={handleOtherDocumentUpload}
+                  />
 
                   {otherDocuments.length > 0 ? (
                     <div className="space-y-2">
