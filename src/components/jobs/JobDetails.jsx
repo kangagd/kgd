@@ -501,91 +501,105 @@ export default function JobDetails({ job, onClose, onStatusChange, onDelete }) {
             )}
           </div>
 
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-2">
-            <div className="flex items-center gap-2 bg-[#F8F9FA] px-3 py-2 rounded-lg border border-[#E5E7EB]">
-              <Calendar className="w-4 h-4 text-[#6B7280]" />
-              <EditableField
-                value={job.scheduled_date}
-                onSave={(val) => handleFieldSave('scheduled_date', job.scheduled_date, val)}
-                type="date"
-                displayFormat={(val) => format(parseISO(val), 'MMM d, yyyy')}
-                placeholder="Set date"
-                className="font-semibold text-[#111827]"
-              />
-            </div>
-            <div className="flex items-center gap-2 bg-[#F8F9FA] px-3 py-2 rounded-lg border border-[#E5E7EB]">
-              <Clock className="w-4 h-4 text-[#6B7280]" />
-              <EditableField
-                value={job.scheduled_time}
-                onSave={(val) => handleFieldSave('scheduled_time', job.scheduled_time, val)}
-                type="time"
-                placeholder="Time"
-                className="font-semibold text-[#111827]"
-              />
-            </div>
-            <div className="flex items-center gap-2 bg-[#F8F9FA] px-3 py-2 rounded-lg border border-[#E5E7EB]">
-              <Package className="w-4 h-4 text-[#6B7280]" />
-              <EditableField
-                value={job.product}
-                onSave={(val) => handleFieldSave('product', job.product, val)}
-                type="select"
-                options={[
-                  { value: "Garage Door", label: "Garage Door" },
-                  { value: "Gate", label: "Gate" },
-                  { value: "Roller Shutter", label: "Roller Shutter" },
-                  { value: "Multiple", label: "Multiple" },
-                  { value: "Custom Garage Door", label: "Custom Garage Door" }
-                ]}
-                className="font-semibold text-[#111827]"
-                placeholder="Product"
-              />
-            </div>
-            <div className="flex items-center gap-2 bg-[#F8F9FA] px-3 py-2 rounded-lg border border-[#E5E7EB]">
-              <Briefcase className="w-4 h-4 text-[#6B7280]" />
-              <EditableField
-                value={job.job_type_id}
-                onSave={handleJobTypeChange}
-                type="select"
-                options={jobTypes.map((jt) => ({ value: jt.id, label: jt.name }))}
-                displayFormat={(val) => jobTypes.find((jt) => jt.id === val)?.name || val}
-                placeholder="Job type"
-                className="font-semibold text-[#111827]"
-              />
-            </div>
-          </div>
-          
-          <div className="flex items-center justify-between bg-[#F8F9FA] px-3 py-2 rounded-lg border border-[#E5E7EB]">
-            <div className="flex items-center gap-2">
-              <User className="w-4 h-4 text-[#6B7280]" />
-              <span className="text-sm font-semibold text-[#111827]">Technicians</span>
-            </div>
-            <div className="flex items-center gap-1.5">
-              {(Array.isArray(job.assigned_to_name) ? job.assigned_to_name : job.assigned_to_name ? [job.assigned_to_name] : []).slice(0, 3).map((name, idx) => (
-                <div
-                  key={idx}
-                  className={`${getAvatarColor(name)} w-7 h-7 rounded-full flex items-center justify-center text-white text-xs font-bold shadow-sm`}
-                  title={name}
-                >
-                  {getInitials(name)}
+          <div className="bg-[#F8F9FA] rounded-lg p-4 space-y-3">
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-x-6 gap-y-3">
+              <div className="flex items-center gap-2.5">
+                <Calendar className="w-5 h-5 text-[#4B5563]" />
+                <div className="flex-1 min-w-0">
+                  <div className="text-xs text-[#4B5563] font-medium mb-0.5">Date</div>
+                  <EditableField
+                    value={job.scheduled_date}
+                    onSave={(val) => handleFieldSave('scheduled_date', job.scheduled_date, val)}
+                    type="date"
+                    displayFormat={(val) => format(parseISO(val), 'MMM d, yyyy')}
+                    placeholder="Set date"
+                    className="font-semibold text-[#111827] text-sm"
+                  />
                 </div>
-              ))}
-              {Array.isArray(job.assigned_to_name) && job.assigned_to_name.length > 3 && (
-                <div className="bg-[#6B7280] w-7 h-7 rounded-full flex items-center justify-center text-white text-xs font-bold shadow-sm">
-                  +{job.assigned_to_name.length - 3}
+              </div>
+              <div className="flex items-center gap-2.5">
+                <Clock className="w-5 h-5 text-[#4B5563]" />
+                <div className="flex-1 min-w-0">
+                  <div className="text-xs text-[#4B5563] font-medium mb-0.5">Time</div>
+                  <EditableField
+                    value={job.scheduled_time}
+                    onSave={(val) => handleFieldSave('scheduled_time', job.scheduled_time, val)}
+                    type="time"
+                    placeholder="Time"
+                    className="font-semibold text-[#111827] text-sm"
+                  />
                 </div>
-              )}
-              <EditableField
-                value={Array.isArray(job.assigned_to) ? job.assigned_to : job.assigned_to ? [job.assigned_to] : []}
-                onSave={handleAssignedToChange}
-                type="multi-select"
-                icon={Edit}
-                options={technicians.map((t) => ({ value: t.email, label: t.full_name }))}
-                displayFormat={(val) => {
-                  const emailsToDisplay = Array.isArray(val) ? val : val ? [val] : [];
-                  return emailsToDisplay.length === 0 ? "Assign" : "Edit";
-                }}
-                placeholder="Assign"
-              />
+              </div>
+              <div className="flex items-center gap-2.5">
+                <Package className="w-5 h-5 text-[#4B5563]" />
+                <div className="flex-1 min-w-0">
+                  <div className="text-xs text-[#4B5563] font-medium mb-0.5">Product</div>
+                  <EditableField
+                    value={job.product}
+                    onSave={(val) => handleFieldSave('product', job.product, val)}
+                    type="select"
+                    options={[
+                      { value: "Garage Door", label: "Garage Door" },
+                      { value: "Gate", label: "Gate" },
+                      { value: "Roller Shutter", label: "Roller Shutter" },
+                      { value: "Multiple", label: "Multiple" },
+                      { value: "Custom Garage Door", label: "Custom Garage Door" }
+                    ]}
+                    className="font-semibold text-[#111827] text-sm"
+                    placeholder="Product"
+                  />
+                </div>
+              </div>
+              <div className="flex items-center gap-2.5">
+                <Briefcase className="w-5 h-5 text-[#4B5563]" />
+                <div className="flex-1 min-w-0">
+                  <div className="text-xs text-[#4B5563] font-medium mb-0.5">Job Type</div>
+                  <EditableField
+                    value={job.job_type_id}
+                    onSave={handleJobTypeChange}
+                    type="select"
+                    options={jobTypes.map((jt) => ({ value: jt.id, label: jt.name }))}
+                    displayFormat={(val) => jobTypes.find((jt) => jt.id === val)?.name || val}
+                    placeholder="Job type"
+                    className="font-semibold text-[#111827] text-sm"
+                  />
+                </div>
+              </div>
+            </div>
+
+            <div className="border-t border-[#E5E7EB] pt-3 flex items-center justify-between">
+              <div className="flex items-center gap-2.5">
+                <User className="w-5 h-5 text-[#4B5563]" />
+                <span className="text-xs font-medium text-[#4B5563]">Technicians</span>
+              </div>
+              <div className="flex items-center gap-1.5">
+                {(Array.isArray(job.assigned_to_name) ? job.assigned_to_name : job.assigned_to_name ? [job.assigned_to_name] : []).slice(0, 3).map((name, idx) => (
+                  <div
+                    key={idx}
+                    className={`${getAvatarColor(name)} w-7 h-7 rounded-full flex items-center justify-center text-white text-xs font-bold shadow-sm`}
+                    title={name}
+                  >
+                    {getInitials(name)}
+                  </div>
+                ))}
+                {Array.isArray(job.assigned_to_name) && job.assigned_to_name.length > 3 && (
+                  <div className="bg-[#6B7280] w-7 h-7 rounded-full flex items-center justify-center text-white text-xs font-bold shadow-sm">
+                    +{job.assigned_to_name.length - 3}
+                  </div>
+                )}
+                <EditableField
+                  value={Array.isArray(job.assigned_to) ? job.assigned_to : job.assigned_to ? [job.assigned_to] : []}
+                  onSave={handleAssignedToChange}
+                  type="multi-select"
+                  icon={Edit}
+                  options={technicians.map((t) => ({ value: t.email, label: t.full_name }))}
+                  displayFormat={(val) => {
+                    const emailsToDisplay = Array.isArray(val) ? val : val ? [val] : [];
+                    return emailsToDisplay.length === 0 ? "Assign" : "Edit";
+                  }}
+                  placeholder="Assign"
+                />
+              </div>
             </div>
           </div>
         </CardHeader>
