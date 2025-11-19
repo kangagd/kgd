@@ -246,46 +246,6 @@
       @apply bg-emerald-50 text-emerald-700 border-emerald-200 rounded-lg px-2 py-1 font-semibold border-2;
     }
   
-  .status-open {
-    background-color: rgba(37, 99, 235, 0.15);
-    color: #2563EB;
-  }
-  
-  .status-scheduled {
-    background-color: rgba(14, 165, 233, 0.15);
-    color: #0EA5E9;
-  }
-  
-  .status-in_progress {
-    background-color: rgba(14, 165, 233, 0.15);
-    color: #0EA5E9;
-  }
-  
-  .status-quoted {
-    background-color: rgba(124, 58, 237, 0.15);
-    color: #7C3AED;
-  }
-  
-  .status-invoiced {
-    background-color: rgba(249, 115, 22, 0.15);
-    color: #F97316;
-  }
-  
-  .status-paid {
-    background-color: rgba(22, 163, 74, 0.15);
-    color: #16A34A;
-  }
-  
-  .status-completed {
-    background-color: rgba(21, 128, 61, 0.15);
-    color: #15803D;
-  }
-  
-  .status-cancelled {
-    background-color: rgba(220, 38, 38, 0.15);
-    color: #DC2626;
-  }
-  
   /* Cards following master UI system */
   .card-enhanced {
     @apply bg-white border-2 border-[#E5E7EB];
