@@ -116,40 +116,34 @@ export default function MonthView({ jobs, currentDate, onJobClick, onQuickBook }
                           className={`${compactMode ? 'text-[9px] px-1 py-0.5' : 'text-xs px-1.5 py-1'} rounded cursor-pointer hover:shadow-sm transition-all bg-white border border-[#E5E7EB] hover:border-[#FAE008]`}
                           title={`${job.customer_name} - ${job.job_type_name || 'No type'} - ${job.scheduled_time || 'No time'}`}
                         >
-                          <div className="flex items-center justify-between gap-0.5 mb-0.5">
-                            <div className="flex items-center gap-0.5">
+                          <div className="space-y-0.5">
+                            <div className="text-[10px] font-semibold text-[#111827] leading-tight truncate">
+                              {job.customer_name}
+                            </div>
+                            
+                            <div className="flex items-center gap-0.5 flex-wrap">
+                              <Badge className="bg-[#F2F4F7] text-[#344054] hover:bg-[#F2F4F7] border-0 font-medium text-[8px] px-1 py-0 rounded">
+                                #{job.job_number}
+                              </Badge>
+                              {isPriority && (
+                                <Badge className="bg-[#FED7AA] text-[#9A3412] hover:bg-[#FED7AA] border-0 font-semibold text-[8px] px-1 py-0 rounded">
+                                  <AlertTriangle className="w-2 h-2" />
+                                </Badge>
+                              )}
                               {job.scheduled_time && (
-                                <Badge className={`${compactMode ? 'text-[8px] px-1 py-0' : 'text-[9px] px-1.5 py-0'} rounded font-bold bg-[#FAE008] text-[#111827] border-none`}>
-                                  <Clock className={`${compactMode ? 'w-2 h-2' : 'w-2.5 h-2.5'} mr-0.5`} />
+                                <Badge className="bg-[#FAE008] text-[#111827] hover:bg-[#FAE008] border-0 font-semibold text-[8px] px-1 py-0 rounded">
+                                  <Clock className="w-2 h-2 mr-0.5" />
                                   {job.scheduled_time.slice(0, 5)}
                                 </Badge>
                               )}
-                              {isPriority && (
-                                <AlertTriangle className={`${compactMode ? 'w-2 h-2' : 'w-2.5 h-2.5'} text-[#DC2626]`} />
-                              )}
                             </div>
-                            {!compactMode && (job.assigned_to_name && job.assigned_to_name.length > 0) && (
-                              <div className="flex -space-x-1">
-                                {(Array.isArray(job.assigned_to_name) ? job.assigned_to_name : [job.assigned_to_name]).slice(0, 2).map((name, idx) => (
-                                  <div
-                                    key={idx}
-                                    className={`${getAvatarColor(name)} w-3.5 h-3.5 rounded-full flex items-center justify-center text-white text-[7px] font-bold border border-white shadow-sm`}
-                                    title={name}
-                                  >
-                                    {getInitials(name)}
-                                  </div>
-                                ))}
-                              </div>
+                            
+                            {job.job_type_name && (
+                              <Badge className="bg-[#EDE9FE] text-[#6D28D9] hover:bg-[#EDE9FE] border-0 font-semibold text-[8px] px-1.5 py-0 rounded truncate w-full justify-start">
+                                {job.job_type_name}
+                              </Badge>
                             )}
                           </div>
-                          <div className={`truncate ${compactMode ? 'text-[9px]' : 'text-[10px] md:text-xs'} font-bold text-[#111827]`}>
-                            {compactMode ? `#${job.job_number}` : job.customer_name}
-                          </div>
-                          {!compactMode && job.job_type_name && (
-                            <div className="truncate text-[9px] text-[#6B7280] font-medium mt-0.5">
-                              {job.job_type_name}
-                            </div>
-                          )}
                         </div>
                       );
                     })}

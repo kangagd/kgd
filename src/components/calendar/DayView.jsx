@@ -267,33 +267,40 @@ export default function DayView({ jobs, currentDate, onJobClick, onQuickBook }) 
                             style={{ left: position.left, width: position.width, minWidth: compactMode ? '120px' : '140px' }}
                             onClick={() => onJobClick(job)}
                           >
-                            <div className="flex items-center justify-between mb-1.5">
-                              <div className="flex items-center gap-1">
-                                <span className={`${compactMode ? 'text-[10px]' : 'text-xs'} font-bold text-[#111827]`}>#{job.job_number}</span>
+                            <div className="space-y-1">
+                              <div className={`${compactMode ? 'text-[11px]' : 'text-xs'} font-semibold text-[#111827] leading-tight truncate`}>
+                                {job.customer_name}
+                              </div>
+
+                              <div className="flex items-center gap-1 flex-wrap">
+                                <Badge className="bg-[#F2F4F7] text-[#344054] hover:bg-[#F2F4F7] border-0 font-medium text-[9px] px-1.5 py-0 rounded-md">
+                                  #{job.job_number}
+                                </Badge>
                                 {isPriority && (
-                                  <AlertTriangle className="w-3 h-3 text-[#DC2626]" />
+                                  <Badge className="bg-[#FED7AA] text-[#9A3412] hover:bg-[#FED7AA] border-0 font-semibold text-[9px] px-1.5 py-0 rounded-md">
+                                    <AlertTriangle className="w-2.5 h-2.5" />
+                                  </Badge>
                                 )}
+                                <Badge className="bg-[#FAE008] text-[#111827] hover:bg-[#FAE008] border-0 font-semibold text-[9px] px-1.5 py-0 rounded-md">
+                                  <Clock className="w-2.5 h-2.5 mr-0.5" />
+                                  {job.scheduled_time?.slice(0, 5) || 'TBD'}
+                                </Badge>
                               </div>
-                              <Badge className={`${compactMode ? 'text-[9px] px-1.5 py-0' : 'text-[10px] px-2 py-0.5'} rounded font-bold bg-[#FAE008] text-[#111827] border-none`}>
-                                <Clock className="w-2.5 h-2.5 mr-0.5" />
-                                {job.scheduled_time?.slice(0, 5) || 'TBD'}
-                              </Badge>
+
+                              {!compactMode && (
+                                <div className="flex items-start gap-1 text-[10px] text-[#4B5563] truncate">
+                                  <MapPin className="w-2.5 h-2.5 mt-0.5 flex-shrink-0" />
+                                  <span className="truncate">{job.address}</span>
+                                </div>
+                              )}
+
+                              {job.job_type_name && (
+                                <Badge className="bg-[#EDE9FE] text-[#6D28D9] hover:bg-[#EDE9FE] border-0 font-semibold text-[9px] px-1.5 py-0.5 rounded-md truncate w-full justify-start">
+                                  <Briefcase className="w-2.5 h-2.5 mr-0.5 flex-shrink-0" />
+                                  <span className="truncate">{job.job_type_name}</span>
+                                </Badge>
+                              )}
                             </div>
-                            <div className={`font-bold ${compactMode ? 'text-xs' : 'text-sm'} text-[#111827] mb-1 truncate`}>
-                              {job.customer_name}
-                            </div>
-                            {!compactMode && (
-                              <div className="flex items-start gap-1 text-[10px] text-[#6B7280] truncate mb-1">
-                                <MapPin className="w-2.5 h-2.5 mt-0.5 flex-shrink-0" />
-                                <span className="truncate">{job.address}</span>
-                              </div>
-                            )}
-                            {job.job_type_name && (
-                              <Badge variant="outline" className={`${compactMode ? 'text-[9px] px-1.5 py-0' : 'text-[10px] px-2 py-0.5'} rounded font-semibold bg-[#F3F4F6] text-[#4B5563] border-[#E5E7EB] truncate w-full justify-start`}>
-                                <Briefcase className="w-2.5 h-2.5 mr-0.5 flex-shrink-0" />
-                                <span className="truncate">{job.job_type_name}</span>
-                              </Badge>
-                            )}
                           </div>
                         );
                       })}
