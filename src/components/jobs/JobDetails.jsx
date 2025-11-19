@@ -428,19 +428,12 @@ export default function JobDetails({ job, onClose, onStatusChange, onDelete }) {
                 <ArrowLeft className="w-5 h-5 text-[#111827]" />
               </Button>
               <div className="flex-1 min-w-0 space-y-3">
-                <div className="flex items-center gap-2 flex-wrap">
-                  <CardTitle
-                    className="text-xl font-semibold text-[#111827] cursor-pointer hover:text-[#FAE008] transition-colors leading-tight"
-                    onClick={() => setShowCustomerEdit(true)}>
-                    {job.customer_name}
-                  </CardTitle>
-                  {job.project_name &&
-                  <Badge className="bg-[#FFE4D6] text-[#C2410C] hover:bg-[#FFE4D6] border-0 font-semibold text-xs px-3 py-1 rounded-lg">
-                      <FolderKanban className="w-3 h-3 mr-1" />
-                      {job.project_name}
-                    </Badge>
-                  }
-                </div>
+                <CardTitle
+                  className="text-xl font-semibold text-[#111827] cursor-pointer hover:text-[#FAE008] transition-colors leading-tight"
+                  onClick={() => setShowCustomerEdit(true)}>
+
+                  {job.customer_name}
+                </CardTitle>
                 
                 <div className="flex items-center gap-2 flex-wrap">
                   <Badge className="bg-[#F2F4F7] text-[#344054] hover:bg-[#F2F4F7] border-0 font-medium text-sm px-3 py-1 rounded-lg">
@@ -449,6 +442,12 @@ export default function JobDetails({ job, onClose, onStatusChange, onDelete }) {
                   {job.customer_type &&
                   <Badge className="bg-[#EDE9FE] text-[#6D28D9] hover:bg-[#EDE9FE] border-0 font-semibold text-xs px-3 py-1 rounded-lg">
                       {job.customer_type}
+                    </Badge>
+                  }
+                  {job.project_name &&
+                  <Badge className="bg-[#FAE008] text-[#111827] hover:bg-[#FAE008] border-0 font-semibold text-xs px-3 py-1 rounded-lg">
+                      <FolderKanban className="w-3 h-3 mr-1" />
+                      {job.project_name}
                     </Badge>
                   }
                 </div>
