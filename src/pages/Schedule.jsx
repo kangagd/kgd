@@ -18,8 +18,8 @@ export default function Schedule() {
 
   if (selectedJob) {
     return (
-      <div className="bg-gradient-to-br from-[hsl(32,20%,98%)] to-[hsl(32,25%,94%)] min-h-screen">
-        <div className="p-2 md:p-8 max-w-4xl mx-auto">
+      <div className="bg-[#F8F9FA] min-h-screen">
+        <div className="p-5 md:p-10 max-w-4xl mx-auto">
           <JobDetails
             job={selectedJob}
             onClose={() => setSelectedJob(null)}
@@ -32,14 +32,11 @@ export default function Schedule() {
   }
 
   return (
-    <div className="p-4 md:p-8 bg-gradient-to-br from-[hsl(32,20%,98%)] to-[hsl(32,25%,94%)] min-h-screen">
+    <div className="p-5 md:p-10 bg-[#F8F9FA] min-h-screen">
       <div className="max-w-7xl mx-auto">
-        <div className="flex items-center gap-4 mb-6">
-          <CalendarIcon className="w-8 h-8 text-[#fae008]" />
-          <div>
-            <h1 className="text-3xl font-bold text-[hsl(25,10%,12%)]">Schedule</h1>
-            <p className="text-[hsl(25,8%,45%)]">View and manage your schedule</p>
-          </div>
+        <div className="mb-8">
+          <h1 className="text-3xl font-bold text-[#111827] tracking-tight mb-2.5">Schedule</h1>
+          <p className="text-[#4B5563]">View and manage your schedule</p>
         </div>
 
         <CalendarView 
