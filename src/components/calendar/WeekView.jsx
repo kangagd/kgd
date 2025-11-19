@@ -213,16 +213,16 @@ export default function WeekView({ jobs, currentDate, onJobClick, onQuickBook })
         <Card className="card-enhanced">
           <CardContent className="p-0 overflow-x-auto">
             <div className="min-w-[1200px]">
-              <div className="grid border-b border-[#E5E7EB] bg-[#FAFAFA]" style={{ gridTemplateColumns: `200px repeat(${weekDays.length}, 1fr)` }}>
-                <div className="p-4 border-r border-[#E5E7EB] font-medium text-sm text-[#6B7280] uppercase tracking-wide">
+              <div className="grid border-b-2 border-[#E5E7EB] bg-[#F8F9FA]" style={{ gridTemplateColumns: `220px repeat(${weekDays.length}, 1fr)` }}>
+                <div className="p-4 border-r-2 border-[#E5E7EB] font-bold text-sm text-[#111827] uppercase tracking-wide">
                   Technician
                 </div>
                 {weekDays.map(day => (
-                  <div key={day.toISOString()} className="text-center p-4 border-r border-[#E5E7EB]">
-                    <div className={`text-xs font-medium uppercase tracking-wide mb-1 ${isSameDay(day, new Date()) ? 'text-[#111827]' : 'text-[#6B7280]'}`}>
+                  <div key={day.toISOString()} className="text-center p-4 border-r-2 border-[#E5E7EB]">
+                    <div className={`text-xs font-semibold uppercase tracking-wide mb-1 ${isSameDay(day, new Date()) ? 'text-[#111827]' : 'text-[#4B5563]'}`}>
                       {format(day, 'EEE')}
                     </div>
-                    <div className={`text-lg font-semibold ${isSameDay(day, new Date()) ? 'text-[#111827]' : 'text-[#111827]'}`}>
+                    <div className={`text-xl font-bold ${isSameDay(day, new Date()) ? 'text-[#FAE008]' : 'text-[#111827]'}`}>
                       {format(day, 'd')}
                     </div>
                   </div>
@@ -235,12 +235,12 @@ export default function WeekView({ jobs, currentDate, onJobClick, onQuickBook })
                 </div>
               ) : (
                 visibleTechnicians.map(technician => (
-                  <div key={technician.id} className="grid border-b border-[#E5E7EB] hover:bg-[#FAFAFA] transition-colors" style={{ gridTemplateColumns: `200px repeat(${weekDays.length}, 1fr)`, minHeight: '150px' }}>
-                    <div className="p-4 border-r border-[#E5E7EB] flex items-center gap-3 sticky left-0 bg-white z-10">
-                      <div className={`${getAvatarColor(technician.full_name)} w-9 h-9 rounded-full flex items-center justify-center text-black font-semibold text-sm`}>
+                  <div key={technician.id} className="grid border-b-2 border-[#E5E7EB] hover:bg-[#FFFEF0] transition-colors" style={{ gridTemplateColumns: `220px repeat(${weekDays.length}, 1fr)`, minHeight: '160px' }}>
+                    <div className="p-4 border-r-2 border-[#E5E7EB] flex items-center gap-3 sticky left-0 bg-white z-10">
+                      <div className={`${getAvatarColor(technician.full_name)} w-10 h-10 rounded-full flex items-center justify-center text-black font-bold text-sm border-2 border-black`}>
                         {getInitials(technician.full_name)}
                       </div>
-                      <span className="text-sm font-medium text-[#111827] truncate">
+                      <span className="text-sm font-bold text-[#111827] truncate">
                         {technician.full_name}
                       </span>
                     </div>
@@ -252,9 +252,9 @@ export default function WeekView({ jobs, currentDate, onJobClick, onQuickBook })
                       return (
                         <div
                           key={day.toISOString()}
-                          className={`p-2 border-r border-[#E5E7EB] transition-all overflow-y-auto ${
-                            isDragOver ? 'bg-[#F8F9FA]' : ''
-                          } ${isSameDay(day, new Date()) ? 'bg-[#FAFAFA]' : ''}`}
+                          className={`p-2 border-r-2 border-[#E5E7EB] transition-all overflow-y-auto ${
+                            isDragOver ? 'bg-[#FAE008]/20 border-[#FAE008]' : ''
+                          } ${isSameDay(day, new Date()) ? 'bg-[#FFFEF0]' : ''}`}
                           onDragOver={(e) => handleDragOver(e, day, technician.email)}
                           onDragLeave={handleDragLeave}
                           onDrop={(e) => handleDrop(e, day, technician.email)}
@@ -267,24 +267,33 @@ export default function WeekView({ jobs, currentDate, onJobClick, onQuickBook })
                                   onClick={(e) => handleJobClick(e, job)}
                                   onDragStart={(e) => handleDragStart(e, job)}
                                   onDragEnd={handleDragEnd}
-                                  className={`p-2.5 rounded-lg cursor-move hover:shadow-sm transition-all border bg-white ${
+                                  className={`p-2.5 rounded-lg cursor-move hover:shadow-lg transition-all border-2 bg-white ${
                                     draggedJob?.id === job.id ? 'opacity-50' : ''
-                                  } ${job.status === 'scheduled' ? 'border-[#FAE008]' : 'border-[#E5E7EB]'}`}
+                                  }`}
+                                  style={{ 
+                                    borderColor: job.status === 'scheduled' ? '#FAE008' : '#E5E7EB'
+                                  }}
                                 >
                                   <div className="flex items-center justify-between mb-1.5">
-                                    <span className="text-xs font-semibold text-[#111827]">#{job.job_number}</span>
+                                    <span className="text-xs font-bold text-[#111827]">#{job.job_number}</span>
                                     {job.scheduled_time && (
-                                      <span className="text-xs font-semibold text-[#111827]">
+                                      <span className="text-xs font-bold px-2 py-0.5 rounded bg-[#FAE008] text-black">
                                         {job.scheduled_time.slice(0, 5)}
                                       </span>
                                     )}
                                   </div>
-                                  <div className="text-xs font-medium text-[#111827] truncate mb-1">
+                                  <div className="text-xs font-semibold text-[#111827] truncate mb-1">
                                     {job.customer_name}
                                   </div>
                                   {job.job_type_name && (
-                                    <div className="text-xs text-[#6B7280] truncate">
+                                    <div className="text-xs text-[#4B5563] font-medium truncate mb-1">
                                       {job.job_type_name}
+                                    </div>
+                                  )}
+                                  {job.address && (
+                                    <div className="flex items-start gap-1 text-xs text-[#4B5563]">
+                                      <MapPin className="w-3 h-3 mt-0.5 flex-shrink-0" />
+                                      <span className="truncate">{job.address}</span>
                                     </div>
                                   )}
                                 </div>
@@ -302,20 +311,20 @@ export default function WeekView({ jobs, currentDate, onJobClick, onQuickBook })
         </Card>
 
         <Card className="card-enhanced">
-          <CardContent className="p-4">
-            <div className="flex flex-wrap gap-4 text-xs items-center">
-              <span className="font-medium text-[#6B7280] uppercase tracking-wide">Status:</span>
+          <CardContent className="p-3">
+            <div className="flex flex-wrap gap-3 text-xs items-center">
+              <span className="font-bold text-[#111827] uppercase tracking-wide">Legend:</span>
               <div className="flex items-center gap-2">
-                <div className="w-3 h-3 rounded-full bg-[#FAE008]" />
-                <span className="text-[#111827] font-medium">Scheduled</span>
+                <div className="w-4 h-4 rounded bg-[#FAE008] border-2 border-black" />
+                <span className="text-[#4B5563] font-medium">Scheduled</span>
               </div>
               <div className="flex items-center gap-2">
-                <div className="w-3 h-3 rounded-full bg-[#1E40AF]" />
-                <span className="text-[#111827] font-medium">In Progress</span>
+                <div className="w-4 h-4 rounded bg-[#1E40AF]" />
+                <span className="text-[#4B5563] font-medium">In Progress</span>
               </div>
               <div className="flex items-center gap-2">
-                <div className="w-3 h-3 rounded-full bg-[#16A34A]" />
-                <span className="text-[#111827] font-medium">Completed</span>
+                <div className="w-4 h-4 rounded bg-[#16A34A]" />
+                <span className="text-[#4B5563] font-medium">Completed</span>
               </div>
             </div>
           </CardContent>

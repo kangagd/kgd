@@ -72,14 +72,16 @@ export default function Layout({ children, currentPageName }) {
 
   if (isTechnician) {
     return (
-      <div className="min-h-screen flex flex-col bg-white">
-        <header className="bg-white border-b border-[#E5E7EB] px-4 py-3 sticky top-0 z-50">
+      <div className="min-h-screen flex flex-col bg-[#F7F7F7]">
+        <header className="bg-white border-b border-[#E2E3E5] px-3 py-2 sticky top-0 z-50 shadow-sm">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-2">
-              <div className="w-8 h-8 bg-[#111827] rounded-lg flex items-center justify-center">
-                <Wrench className="w-4 h-4 text-white" />
+              <div className="w-8 h-8 bg-[#FAE008] rounded-lg flex items-center justify-center shadow-md">
+                <Wrench className="w-4 h-4 text-black" />
               </div>
-              <h1 className="font-semibold text-[#111827] text-sm">KGD</h1>
+              <div>
+                <h1 className="font-bold text-[#111111] text-sm">KGD</h1>
+              </div>
             </div>
             <div className="flex items-center gap-2">
               <button
@@ -107,7 +109,7 @@ export default function Layout({ children, currentPageName }) {
           {children}
         </main>
 
-        <nav className="fixed bottom-0 left-0 right-0 bg-white border-t border-[#E5E7EB] px-2 py-2">
+        <nav className="fixed bottom-0 left-0 right-0 bg-white border-t border-[#E2E3E5] px-1 py-2 shadow-lg">
           <div className="flex justify-around items-center max-w-screen-sm mx-auto">
             {navigationItems.map((item) => {
               const isActive = location.pathname === item.url;
@@ -115,10 +117,10 @@ export default function Layout({ children, currentPageName }) {
                 <Link
                   key={item.title}
                   to={item.url}
-                  className={`flex flex-col items-center gap-1 px-3 py-2 rounded-lg transition-all ${
+                  className={`flex flex-col items-center gap-1 px-3 py-1.5 rounded-lg transition-all duration-200 ${
                     isActive
-                      ? 'text-[#111827]'
-                      : 'text-[#6B7280] hover:text-[#111827] hover:bg-[#F8F9FA]'
+                      ? 'text-[#000000] bg-[#FAE008]/20'
+                      : 'text-[#4F4F4F] hover:text-[#000000] hover:bg-slate-50'
                   }`}
                 >
                   <item.icon className="w-5 h-5" />
@@ -136,20 +138,23 @@ export default function Layout({ children, currentPageName }) {
     <SidebarProvider>
       <div className="min-h-screen flex w-full bg-white">
         <Sidebar className="border-r border-[#E2E3E5] bg-white">
-          <SidebarHeader className="border-b border-[#E5E7EB] p-5">
+          <SidebarHeader className="border-b border-[#E2E3E5] p-4">
             <div className="flex items-center gap-3">
-              <div className="w-10 h-10 bg-[#111827] rounded-lg flex items-center justify-center">
-                <Wrench className="w-5 h-5 text-white" />
+              <div className="w-11 h-11 bg-[#FAE008] rounded-xl flex items-center justify-center shadow-md">
+                <Wrench className="w-6 h-6 text-black" />
               </div>
               <div>
-                <h2 className="font-semibold text-[#111827] text-base">FieldScheduler</h2>
-                <p className="text-xs text-[#6B7280]">Garage Door Services</p>
+                <h2 className="font-bold text-[#111111] text-base">FieldScheduler</h2>
+                <p className="text-xs text-[#4F4F4F]">Garage Door Services</p>
               </div>
             </div>
           </SidebarHeader>
 
-          <SidebarContent className="p-3">
+          <SidebarContent className="p-2">
             <SidebarGroup>
+              <SidebarGroupLabel className="text-xs font-semibold text-[#4F4F4F] uppercase tracking-wider px-3 py-2">
+                Navigation
+              </SidebarGroupLabel>
               <SidebarGroupContent>
                 <SidebarMenu>
                   {navigationItems.map((item) => {
@@ -158,11 +163,14 @@ export default function Layout({ children, currentPageName }) {
                       <SidebarMenuItem key={item.title}>
                         <SidebarMenuButton
                           asChild
-                          className={`hover:bg-[#F8F9FA] transition-all rounded-lg mb-1 ${
-                            isActive ? 'bg-[#F8F9FA] text-[#111827] font-medium' : 'text-[#6B7280]'
+                          className={`hover:bg-[#FAE008]/10 hover:text-[#000000] transition-all duration-200 rounded-lg mb-1 relative ${
+                            isActive ? 'bg-[#FAE008]/10 text-[#000000]' : ''
                           }`}
                         >
                           <Link to={item.url} className="flex items-center gap-3 px-3 py-2.5">
+                            {isActive && (
+                              <div className="absolute left-0 top-0 bottom-0 w-1 bg-[#FAE008] rounded-r-full"></div>
+                            )}
                             <item.icon className="w-5 h-5" />
                             <span className="font-medium">{item.title}</span>
                           </Link>
@@ -175,15 +183,15 @@ export default function Layout({ children, currentPageName }) {
             </SidebarGroup>
           </SidebarContent>
 
-          <SidebarFooter className="border-t border-[#E5E7EB] p-4 space-y-3">
+          <SidebarFooter className="border-t border-[#E2E3E5] p-4 space-y-3">
             <div className="flex items-center justify-between px-2">
-              <span className="text-xs text-[#6B7280] font-medium">View Mode</span>
+              <span className="text-xs text-slate-500 font-medium">View Mode</span>
               <button
                 onClick={toggleViewMode}
-                className="flex items-center gap-2 px-3 py-1.5 rounded-lg hover:bg-[#F8F9FA] transition-all"
+                className="flex items-center gap-2 px-3 py-1.5 rounded-lg hover:bg-slate-100 transition-all"
               >
-                <RefreshCw className={`w-4 h-4 ${viewMode !== 'auto' ? 'text-[#111827]' : 'text-[#9CA3AF]'}`} />
-                <span className="text-xs font-medium text-[#111827] capitalize">
+                <RefreshCw className={`w-4 h-4 ${viewMode !== 'auto' ? 'text-[#FAE008]' : 'text-slate-500'}`} />
+                <span className="text-xs font-semibold text-slate-700 capitalize">
                   {viewMode === 'auto' ? (isTechnician ? 'Technician' : 'Admin') : viewMode}
                 </span>
               </button>

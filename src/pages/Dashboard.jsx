@@ -135,21 +135,21 @@ export default function Dashboard() {
   };
 
   return (
-    <div className="p-4 md:p-8 bg-white min-h-screen">
+    <div className="p-2 md:p-8 bg-[#F8F9FA] min-h-screen">
       <div className="max-w-7xl mx-auto">
-        <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-6 gap-4">
+        <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-4 md:mb-6 gap-3 md:gap-4">
           <div>
-            <h1 className="text-2xl md:text-3xl font-semibold text-[#111827]">
-              Good {new Date().getHours() < 12 ? 'Morning' : new Date().getHours() < 18 ? 'Afternoon' : 'Evening'}, {user?.full_name?.split(' ')[0] || 'there'}
+            <h1 className="text-2xl md:text-4xl font-bold text-[#111111] tracking-tight">
+              Good {new Date().getHours() < 12 ? 'Morning' : new Date().getHours() < 18 ? 'Afternoon' : 'Evening'}, {user?.full_name?.split(' ')[0] || 'there'}!
             </h1>
-            <p className="text-[#6B7280] mt-1.5 text-sm md:text-base">Here's what's happening today</p>
+            <p className="text-[#4F4F4F] mt-1 md:mt-2 text-sm md:text-base">Here's what's happening today</p>
           </div>
           {!isTechnician && (
             <Button
               onClick={() => window.location.href = '/Jobs?action=new'}
-              className="btn-primary w-full md:w-auto h-11"
+              className="bg-[#FAE008] hover:bg-[#e5d007] active:bg-[#d4c006] text-black font-semibold shadow-md hover:shadow-lg transition-all duration-150 w-full md:w-auto"
             >
-              <Plus className="w-4 h-4 mr-2" />
+              <Plus className="w-5 h-5 mr-2" />
               New Job
             </Button>
           )}
@@ -211,27 +211,27 @@ export default function Dashboard() {
                   </div>
                 )}
 
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-3 pt-3">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-2 pt-2">
                   <Button
                     onClick={() => handleStartNavigation(nextJob.address)}
-                    className="btn-secondary h-11"
+                    className="bg-blue-600 hover:bg-blue-700 active:bg-blue-800 text-white font-bold w-full h-14 shadow-lg"
                   >
-                    <Navigation className="w-4 h-4 mr-2" />
+                    <Navigation className="w-5 h-5 mr-2" />
                     Navigate
                   </Button>
                   <Button
                     onClick={() => handleMarkAsArrived(nextJob)}
                     disabled={checkInMutation.isPending}
-                    className="btn-primary h-11"
+                    className="bg-black hover:bg-gray-900 text-[#FAE008] font-bold w-full h-14 shadow-lg"
                   >
-                    <CheckCircle className="w-4 h-4 mr-2" />
+                    <CheckCircle className="w-5 h-5 mr-2" />
                     {checkInMutation.isPending ? 'Checking In...' : 'Check In'}
                   </Button>
                 </div>
 
                 <Button
                   onClick={() => handleJobClick(nextJob.id)}
-                  className="btn-secondary w-full h-11 mt-2"
+                  className="bg-white hover:bg-gray-50 text-black font-semibold border-2 border-black w-full h-12"
                 >
                   View Full Details
                 </Button>
@@ -242,12 +242,12 @@ export default function Dashboard() {
 
         {/* Daily Overview */}
         {(isTechnician ? myTodayJobs : todayJobs).length > 0 && (
-          <Card className="card-enhanced overflow-hidden mb-6 border-l-4 border-l-[#FAE008]">
-            <CardHeader className="bg-[#FAFAFA] border-b border-[#E5E7EB] p-5">
-              <CardTitle className="flex items-center gap-2 text-lg font-semibold text-[#111827]">
-                <Calendar className="w-5 h-5" />
+          <Card className="card-enhanced overflow-hidden mb-6 border-2 border-[#FAE008]">
+            <CardHeader className="bg-[#FFFBE6] border-b-2 border-[#FAE008] p-4 md:p-6">
+              <CardTitle className="flex items-center gap-3 text-lg md:text-xl font-bold text-[#111827] tracking-tight">
+                <Calendar className="w-6 h-6 text-[#111827]" />
                 Today's Overview
-                <Badge className="status-chip ml-auto">
+                <Badge className="status-chip">
                   {(isTechnician ? myTodayJobs : todayJobs).length} {(isTechnician ? myTodayJobs : todayJobs).length === 1 ? 'Job' : 'Jobs'}
                 </Badge>
               </CardTitle>
@@ -330,56 +330,76 @@ export default function Dashboard() {
           </Card>
         )}
 
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 md:gap-6 mb-6 md:mb-8">
           <div
             onClick={() => handleCardClick('today')}
-            className="card-enhanced card-interactive p-5"
+            className="card-enhanced card-interactive p-6"
           >
-            <div className="flex items-center justify-between mb-3">
-              <Clock className="w-5 h-5 text-[#6B7280]" />
-              <p className="text-3xl font-semibold text-[#111827]">{isTechnician ? myTodayJobs.length : todayJobs.length}</p>
+            <div className="flex items-start justify-between mb-3 md:mb-4">
+              <div className="w-10 h-10 md:w-12 md:h-12 bg-amber-50 rounded-xl flex items-center justify-center group-hover:bg-amber-100 transition-colors">
+                <Clock className="w-5 h-5 md:w-6 md:h-6 text-amber-600" />
+              </div>
+              <div className="text-right">
+                <p className="text-2xl md:text-3xl font-bold text-[hsl(25,10%,12%)]">{isTechnician ? myTodayJobs.length : todayJobs.length}</p>
+              </div>
             </div>
-            <h3 className="text-sm font-medium text-[#6B7280]">Today's Jobs</h3>
+            <h3 className="text-xs md:text-sm font-semibold text-[hsl(25,8%,45%)] uppercase tracking-wide mb-0.5 md:mb-1">Today's Jobs</h3>
+            <p className="text-[10px] md:text-xs text-[hsl(25,8%,55%)] group-hover:text-[hsl(25,8%,35%)] transition-colors">Click to view details →</p>
           </div>
 
           <div
             onClick={() => handleCardClick('active')}
-            className="card-enhanced card-interactive p-5"
+            className="card-enhanced card-interactive p-6"
           >
-            <div className="flex items-center justify-between mb-3">
-              <TrendingUp className="w-5 h-5 text-[#6B7280]" />
-              <p className="text-3xl font-semibold text-[#111827]">{activeJobs.length}</p>
+            <div className="flex items-start justify-between mb-3 md:mb-4">
+              <div className="w-10 h-10 md:w-12 md:h-12 bg-[#fae008]/20 rounded-xl flex items-center justify-center group-hover:bg-[#fae008]/30 transition-colors">
+                <TrendingUp className="w-5 h-5 md:w-6 md:h-6 text-black" />
+              </div>
+              <div className="text-right">
+                <p className="text-2xl md:text-3xl font-bold text-[hsl(25,10%,12%)]">{activeJobs.length}</p>
+              </div>
             </div>
-            <h3 className="text-sm font-medium text-[#6B7280]">Active Jobs</h3>
+            <h3 className="text-xs md:text-sm font-semibold text-[hsl(25,8%,45%)] uppercase tracking-wide mb-0.5 md:mb-1">Active Jobs</h3>
+            <p className="text-[10px] md:text-xs text-[hsl(25,8%,55%)] group-hover:text-[hsl(25,8%,35%)] transition-colors">Click to view details →</p>
           </div>
 
           <div
             onClick={() => handleCardClick('completed')}
-            className="card-enhanced card-interactive p-5"
+            className="card-enhanced card-interactive p-6"
           >
-            <div className="flex items-center justify-between mb-3">
-              <CheckCircle className="w-5 h-5 text-[#6B7280]" />
-              <p className="text-3xl font-semibold text-[#111827]">{completedToday.length}</p>
+            <div className="flex items-start justify-between mb-3 md:mb-4">
+              <div className="w-10 h-10 md:w-12 md:h-12 bg-green-50 rounded-xl flex items-center justify-center group-hover:bg-green-100 transition-colors">
+                <CheckCircle className="w-5 h-5 md:w-6 md:h-6 text-green-600" />
+              </div>
+              <div className="text-right">
+                <p className="text-2xl md:text-3xl font-bold text-[hsl(25,10%,12%)]">{completedToday.length}</p>
+              </div>
             </div>
-            <h3 className="text-sm font-medium text-[#6B7280]">Completed Today</h3>
+            <h3 className="text-xs md:text-sm font-semibold text-[hsl(25,8%,45%)] uppercase tracking-wide mb-0.5 md:mb-1">Completed Today</h3>
+            <p className="text-[10px] md:text-xs text-[hsl(25,8%,55%)] group-hover:text-[hsl(25,8%,35%)] transition-colors">Click to view details →</p>
           </div>
 
           <div
             onClick={() => navigate(createPageUrl("Jobs"))}
-            className="card-enhanced card-interactive p-5"
+            className="card-enhanced card-interactive p-6"
           >
-            <div className="flex items-center justify-between mb-3">
-              <Briefcase className="w-5 h-5 text-[#6B7280]" />
-              <p className="text-3xl font-semibold text-[#111827]">{jobs.length}</p>
+            <div className="flex items-start justify-between mb-3 md:mb-4">
+              <div className="w-10 h-10 md:w-12 md:h-12 bg-purple-50 rounded-xl flex items-center justify-center group-hover:bg-purple-100 transition-colors">
+                <Briefcase className="w-5 h-5 md:w-6 md:h-6 text-purple-600" />
+              </div>
+              <div className="text-right">
+                <p className="text-2xl md:text-3xl font-bold text-[hsl(25,10%,12%)]">{jobs.length}</p>
+              </div>
             </div>
-            <h3 className="text-sm font-medium text-[#6B7280]">Total Jobs</h3>
+            <h3 className="text-xs md:text-sm font-semibold text-[hsl(25,8%,45%)] uppercase tracking-wide mb-0.5 md:mb-1">Total Jobs</h3>
+            <p className="text-[10px] md:text-xs text-[hsl(25,8%,55%)] group-hover:text-[hsl(25,8%,35%)] transition-colors">Click to view all →</p>
           </div>
         </div>
 
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
           <Card className="card-enhanced">
-            <CardHeader className="border-b border-[#E5E7EB] p-5">
-              <CardTitle className="text-lg font-semibold text-[#111827]">Today's Schedule</CardTitle>
+            <CardHeader className="border-b-2 border-[#E5E7EB] p-5">
+              <CardTitle className="text-lg md:text-xl font-bold text-[#111827] tracking-tight">Today's Schedule</CardTitle>
             </CardHeader>
             <CardContent className="p-3 md:p-6">
               {(isTechnician ? myTodayJobs : todayJobs).length === 0 ? (
@@ -416,8 +436,8 @@ export default function Dashboard() {
           </Card>
 
           <Card className="card-enhanced">
-            <CardHeader className="border-b border-[#E5E7EB] p-5">
-              <CardTitle className="text-lg font-semibold text-[#111827]">Recent Check-ins</CardTitle>
+            <CardHeader className="border-b-2 border-[#E5E7EB] p-5">
+              <CardTitle className="text-lg md:text-xl font-bold text-[#111827] tracking-tight">Recent Check-ins</CardTitle>
             </CardHeader>
             <CardContent className="p-3 md:p-6">
               {todayCheckIns.length === 0 ? (

@@ -520,36 +520,33 @@ export default function JobDetails({ job, onClose, onDelete }) {
     <>
       <div className="min-h-screen bg-[#F8F9FA]">
         {/* Sticky Header */}
-        <div className="bg-white border-b border-[#E5E7EB] sticky top-0 z-10">
-          <div className="p-4 md:p-5">
-            <div className="flex items-start justify-between gap-3 mb-3">
-              <div className="flex items-start gap-3 flex-1 min-w-0">
+        <div className="bg-white border-b-2 border-[#E5E7EB] sticky top-0 z-10 shadow-md">
+          <div className="p-3 md:p-4">
+            <div className="flex items-start justify-between gap-3 mb-2">
+              <div className="flex items-start gap-2 md:gap-3 flex-1 min-w-0">
                 <Button 
                   variant="ghost" 
                   size="icon" 
                   onClick={onClose}
-                  className="h-9 w-9 flex-shrink-0 hover:bg-[#F8F9FA] rounded-lg"
+                  className="h-9 w-9 md:h-10 md:w-10 flex-shrink-0 hover:bg-gray-100 rounded-lg"
                 >
                   <ArrowLeft className="w-5 h-5" />
                 </Button>
                 <div className="flex-1 min-w-0">
                   <h1 
-                    className="text-lg md:text-xl font-semibold text-[#111827] mb-1.5 cursor-pointer hover:text-[#4B5563] transition-colors truncate"
+                    className="text-base md:text-xl font-bold text-[#111827] mb-1 cursor-pointer hover:text-[#FAE008] transition-colors truncate"
                     onClick={() => setShowCustomerEdit(true)}
                   >
                     {job.customer_name}
                   </h1>
-                  <div className="flex items-center gap-2 flex-wrap text-sm text-[#6B7280]">
-                    <span>Job #{job.job_number}</span>
+                  <div className="flex items-center gap-2 flex-wrap">
+                    <span className="text-xs md:text-sm text-[#4B5563] font-semibold">Job #{job.job_number}</span>
                     {job.scheduled_date && (
-                      <>
-                        <span>•</span>
-                        <div className="flex items-center gap-1.5">
-                          <Calendar className="w-4 h-4" />
-                          {format(parseISO(job.scheduled_date), 'MMM d')}
-                          {job.scheduled_time && ` at ${job.scheduled_time}`}
-                        </div>
-                      </>
+                      <div className="flex items-center gap-1 text-xs md:text-sm text-[#4B5563]">
+                        <Calendar className="w-3 h-3 md:w-4 md:h-4" />
+                        {format(parseISO(job.scheduled_date), 'MMM d')}
+                        {job.scheduled_time && ` at ${job.scheduled_time}`}
+                      </div>
                     )}
                   </div>
                 </div>
@@ -590,21 +587,23 @@ export default function JobDetails({ job, onClose, onDelete }) {
 
             {/* Primary Actions for Technicians */}
             {isTechnician && (
-              <div className="grid grid-cols-2 gap-3 mt-4">
+              <div className="grid grid-cols-2 gap-2 pt-2 border-t border-[#E5E7EB]">
                 {job.customer_phone && (
                   <Button
+                    size="lg"
                     onClick={() => window.location.href = `tel:${job.customer_phone}`}
-                    className="btn-primary h-11"
+                    className="btn-primary h-12 w-full font-semibold"
                   >
-                    <Phone className="w-4 h-4 mr-2" />
+                    <Phone className="w-5 h-5 mr-2" />
                     Call
                   </Button>
                 )}
                 <Button
+                  size="lg"
                   onClick={() => window.open(`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(job.address)}`, '_blank')}
-                  className="btn-secondary h-11"
+                  className="bg-blue-600 hover:bg-blue-700 active:bg-blue-800 text-white font-semibold h-12 w-full"
                 >
-                  <Navigation className="w-4 h-4 mr-2" />
+                  <Navigation className="w-5 h-5 mr-2" />
                   Navigate
                 </Button>
               </div>
@@ -612,15 +611,15 @@ export default function JobDetails({ job, onClose, onDelete }) {
           </div>
 
           {/* Tab Navigation */}
-          <div className="flex overflow-x-auto px-4 gap-1 no-scrollbar border-t border-[#F1F5F9]">
+          <div className="flex overflow-x-auto px-2 md:px-4 gap-0.5 no-scrollbar bg-[#F8F9FA]">
             {tabs.map((tab) => (
               <button
                 key={tab.id}
                 onClick={() => setActiveTab(tab.id)}
-                className={`flex items-center gap-2 px-4 py-3 text-sm font-medium whitespace-nowrap transition-all flex-shrink-0 border-b-2 ${
+                className={`flex items-center gap-1.5 md:gap-2 px-3 md:px-4 py-2.5 md:py-3 text-xs md:text-sm font-semibold whitespace-nowrap transition-all flex-shrink-0 rounded-t-lg ${
                   activeTab === tab.id
-                    ? 'border-[#111827] text-[#111827]'
-                    : 'border-transparent text-[#6B7280] hover:text-[#111827] hover:border-[#E5E7EB]'
+                    ? 'bg-white text-[#111827] border-b-2 border-[#FAE008]'
+                    : 'text-[#4B5563] hover:text-[#111827] hover:bg-white/50'
                 }`}
               >
                 <tab.icon className="w-4 h-4" />
@@ -631,15 +630,15 @@ export default function JobDetails({ job, onClose, onDelete }) {
         </div>
 
         {/* Main Content */}
-        <div className="p-4 md:p-6 space-y-6 pb-24 max-w-7xl mx-auto bg-[#FAFAFA]">
+        <div className="p-4 space-y-4 pb-24 max-w-7xl mx-auto">
           {activeTab === "summary" && (
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
               {/* Left Column */}
               <div className="space-y-4">
                 {/* Job Details Card */}
-                <Card className="card-enhanced">
-                  <CardContent className="p-5 space-y-5">
-                    <h3 className="section-header">Job Details</h3>
+                <Card className="bg-white rounded-xl border border-[#E5E7EB] shadow-sm">
+                  <CardContent className="p-5 space-y-4">
+                    <h3 className="text-sm font-bold text-[#111827] uppercase tracking-wide">Job Details</h3>
                     
                     <div className="space-y-4">
                       <div>
@@ -751,9 +750,9 @@ export default function JobDetails({ job, onClose, onDelete }) {
 
                 {/* On-Site Actions - Technician Only */}
                 {isTechnician && (
-                  <Card className="card-enhanced border-[#FAE008] bg-[#FFFEF0]">
+                  <Card className="bg-gradient-to-br from-[#FAE008] to-[#e5d007] rounded-xl border-2 border-black shadow-lg">
                     <CardContent className="p-5">
-                      <h3 className="section-header flex items-center gap-2 mb-4">
+                      <h3 className="text-sm font-bold text-black uppercase tracking-wide mb-4 flex items-center gap-2">
                         <Briefcase className="w-4 h-4" />
                         On-Site Actions
                       </h3>
@@ -761,37 +760,37 @@ export default function JobDetails({ job, onClose, onDelete }) {
                         <Button
                           onClick={handleCheckIn}
                           disabled={checkInMutation.isPending}
-                          className="btn-primary h-12 w-full"
+                          className="bg-black hover:bg-gray-900 text-[#FAE008] font-bold h-14 w-full text-base shadow-lg"
                         >
-                          <LogIn className="w-4 h-4 mr-2" />
+                          <LogIn className="w-5 h-5 mr-2" />
                           {checkInMutation.isPending ? 'Checking In...' : 'Check In'}
                         </Button>
                       ) : (
                         <div className="space-y-3">
-                          <div className="bg-white border border-[#E5E7EB] rounded-lg p-3">
-                            <div className="flex items-center gap-2 text-[#111827] font-medium text-sm">
-                              <Timer className="w-4 h-4" />
+                          <div className="bg-white/90 border-2 border-black rounded-lg p-3">
+                            <div className="flex items-center gap-2 text-black font-bold text-sm">
+                              <Timer className="w-4 h-4 animate-pulse" />
                               On-site since {format(new Date(activeCheckIn.check_in_time), 'h:mm a')}
                             </div>
                           </div>
                           <Button
                             onClick={() => setActiveTab('sitevisit')}
-                            className="btn-primary w-full h-12"
+                            className="bg-black hover:bg-gray-900 text-[#FAE008] font-bold w-full h-14 text-base shadow-lg"
                           >
-                            <ClipboardCheck className="w-4 h-4 mr-2" />
+                            <ClipboardCheck className="w-5 h-5 mr-2" />
                             Complete Visit
                           </Button>
                           <div className="grid grid-cols-2 gap-2">
                             <Button
                               onClick={() => setActiveTab('photos')}
-                              className="btn-secondary h-11"
+                              className="bg-white hover:bg-gray-50 text-black font-semibold border-2 border-black h-12"
                             >
                               <ImageIcon className="w-4 h-4 mr-2" />
                               Photos
                             </Button>
                             <Button
                               onClick={() => setActiveTab('measurements')}
-                              className="btn-secondary h-11"
+                              className="bg-white hover:bg-gray-50 text-black font-semibold border-2 border-black h-12"
                             >
                               <Ruler className="w-4 h-4 mr-2" />
                               Measure
@@ -804,10 +803,10 @@ export default function JobDetails({ job, onClose, onDelete }) {
                 )}
 
                 {/* Notes */}
-                <Card className="card-enhanced">
+                <Card className="bg-white rounded-xl border border-[#E5E7EB] shadow-sm">
                   <CardContent className="p-5">
-                    <h3 className="section-header">Notes</h3>
-                    <div className="border border-[#E5E7EB] rounded-lg p-3 focus-within:border-[#111827] transition-all bg-[#FAFAFA]">
+                    <h3 className="text-sm font-bold text-[#111827] uppercase tracking-wide mb-3">Notes</h3>
+                    <div className="border-2 border-[#E5E7EB] rounded-xl p-3 focus-within:border-[#FAE008] transition-all">
                       <RichTextEditor
                         value={notes}
                         onChange={setNotes}
@@ -819,10 +818,10 @@ export default function JobDetails({ job, onClose, onDelete }) {
                 </Card>
 
                 {/* Information */}
-                <Card className="card-enhanced">
+                <Card className="bg-white rounded-xl border border-[#E5E7EB] shadow-sm">
                   <CardContent className="p-5">
-                    <h3 className="section-header">Information</h3>
-                    <div className="border border-[#E5E7EB] rounded-lg p-3 focus-within:border-[#111827] transition-all bg-[#FAFAFA]">
+                    <h3 className="text-sm font-bold text-[#111827] uppercase tracking-wide mb-3">Information</h3>
+                    <div className="border-2 border-[#E5E7EB] rounded-xl p-3 focus-within:border-[#FAE008] transition-all">
                       <RichTextEditor
                         value={additionalInfo}
                         onChange={setAdditionalInfo}
@@ -838,9 +837,9 @@ export default function JobDetails({ job, onClose, onDelete }) {
               <div className="space-y-4">
                 {/* Last Visit Card */}
                 {jobSummaries.length > 0 && (
-                  <Card className="card-enhanced">
+                  <Card className="bg-white rounded-xl border border-[#E5E7EB] shadow-sm">
                     <CardContent className="p-5">
-                      <h3 className="section-header">Last Visit</h3>
+                      <h3 className="text-sm font-bold text-[#111827] uppercase tracking-wide mb-4">Last Visit</h3>
                       {jobSummaries.slice(0, 1).map((summary) => (
                         <div key={summary.id} className="space-y-3">
                           <div className="flex items-center justify-between pb-3 border-b border-[#E5E7EB]">
@@ -876,25 +875,25 @@ export default function JobDetails({ job, onClose, onDelete }) {
                 )}
 
                 {/* Pricing */}
-                <Card className="card-enhanced">
+                <Card className="bg-white rounded-xl border border-[#E5E7EB] shadow-sm">
                   <CardContent className="p-5">
-                    <h3 className="section-header">Pricing Provided</h3>
+                    <h3 className="text-sm font-bold text-[#111827] uppercase tracking-wide mb-3">Pricing Provided</h3>
                     <Input
                       value={pricingProvided}
                       onChange={(e) => setPricingProvided(e.target.value)}
                       onBlur={handlePricingProvidedBlur}
                       placeholder="Enter pricing..."
-                      className="input-enhanced h-11"
+                      className="h-12 border-2 border-[#E5E7EB] focus:border-[#FAE008] rounded-xl"
                     />
                   </CardContent>
                 </Card>
 
                 {/* Project Association Card */}
                 {job.project_id && (
-                  <Card className="card-enhanced">
+                  <Card className="bg-white rounded-xl border border-[#E5E7EB] shadow-sm">
                     <CardContent className="p-5">
                       <div className="flex items-center justify-between mb-3">
-                        <h3 className="section-header mb-0">Project</h3>
+                        <h3 className="text-sm font-bold text-[#111827] uppercase tracking-wide">Project</h3>
                         <FolderKanban className="w-5 h-5 text-[#4B5563]" />
                       </div>
                       <div className="space-y-2">
@@ -912,9 +911,9 @@ export default function JobDetails({ job, onClose, onDelete }) {
                 )}
 
                 {/* Status Timeline */}
-                <Card className="card-enhanced">
+                <Card className="bg-white rounded-xl border border-[#E5E7EB] shadow-sm">
                   <CardContent className="p-5">
-                    <h3 className="section-header">Status Timeline</h3>
+                    <h3 className="text-sm font-bold text-[#111827] uppercase tracking-wide mb-4">Status Timeline</h3>
                     <div className="space-y-3">
                       <div className="flex items-center gap-3">
                         <div className="w-9 h-9 rounded-full bg-green-100 flex items-center justify-center flex-shrink-0">
@@ -973,10 +972,10 @@ export default function JobDetails({ job, onClose, onDelete }) {
 
                 {/* Project Jobs */}
                 {job.project_id && projectJobs.length > 0 && (
-                  <Card className="card-enhanced">
+                  <Card className="bg-white rounded-xl border border-[#E5E7EB] shadow-sm">
                     <CardContent className="p-5">
-                      <h3 className="section-header flex items-center gap-2">
-                        <FolderKanban className="w-4 h-4" />
+                      <h3 className="text-sm font-bold text-[#111827] uppercase tracking-wide mb-3 flex items-center gap-2">
+                        <FolderKanban className="w-5 h-5" />
                         Project History ({projectJobs.length})
                       </h3>
                       <div className="space-y-2">
@@ -1011,11 +1010,11 @@ export default function JobDetails({ job, onClose, onDelete }) {
           )}
 
           {activeTab === "sitevisit" && (
-            <Card className="card-enhanced max-w-3xl mx-auto">
-              <CardContent className="p-6 space-y-5">
+            <Card className="bg-white rounded-xl border border-[#E5E7EB] shadow-sm max-w-3xl mx-auto">
+              <CardContent className="p-5 space-y-4">
                 <div>
-                  <Label className="text-sm font-medium text-[#111827] mb-2 block">Overview *</Label>
-                  <div className="border border-[#E5E7EB] rounded-lg p-3 focus-within:border-[#111827] transition-all bg-[#FAFAFA]">
+                  <Label className="text-[13px] font-semibold text-[#111111] mb-2 block">Overview *</Label>
+                  <div className="border-2 border-[#E2E3E5] rounded-xl p-3 focus-within:border-[#FAE008] transition-all">
                     <RichTextEditor
                       value={overview}
                       onChange={setOverview}
@@ -1026,8 +1025,8 @@ export default function JobDetails({ job, onClose, onDelete }) {
                 </div>
 
                 <div>
-                  <Label className="text-sm font-medium text-[#111827] mb-2 block">Next Steps *</Label>
-                  <div className="border border-[#E5E7EB] rounded-lg p-3 focus-within:border-[#111827] transition-all bg-[#FAFAFA]">
+                  <Label className="text-[13px] font-semibold text-[#111111] mb-2 block">Next Steps *</Label>
+                  <div className="border-2 border-[#E2E3E5] rounded-xl p-3 focus-within:border-[#FAE008] transition-all">
                     <RichTextEditor
                       value={nextSteps}
                       onChange={setNextSteps}
@@ -1038,8 +1037,8 @@ export default function JobDetails({ job, onClose, onDelete }) {
                 </div>
 
                 <div>
-                  <Label className="text-sm font-medium text-[#111827] mb-2 block">Communication *</Label>
-                  <div className="border border-[#E5E7EB] rounded-lg p-3 focus-within:border-[#111827] transition-all bg-[#FAFAFA]">
+                  <Label className="text-[13px] font-semibold text-[#111111] mb-2 block">Communication *</Label>
+                  <div className="border-2 border-[#E2E3E5] rounded-xl p-3 focus-within:border-[#FAE008] transition-all">
                     <RichTextEditor
                       value={communicationWithClient}
                       onChange={setCommunicationWithClient}
@@ -1050,9 +1049,9 @@ export default function JobDetails({ job, onClose, onDelete }) {
                 </div>
 
                 <div>
-                  <Label className="text-sm font-medium text-[#111827] mb-2 block">Outcome *</Label>
+                  <Label className="text-[13px] font-semibold text-[#111111] mb-2 block">Outcome *</Label>
                   <Select value={outcome} onValueChange={handleOutcomeChange}>
-                    <SelectTrigger className="h-11 text-sm border border-[#E5E7EB] focus:border-[#111827] rounded-lg">
+                    <SelectTrigger className="h-12 text-[14px] border-2 border-[#E2E3E5] focus:border-[#FAE008] rounded-xl">
                       <SelectValue placeholder="Select outcome" />
                     </SelectTrigger>
                     <SelectContent>
@@ -1069,9 +1068,9 @@ export default function JobDetails({ job, onClose, onDelete }) {
                   <Button
                     onClick={handleCheckOut}
                     disabled={checkOutMutation.isPending}
-                    className="btn-primary w-full h-12 mt-6"
+                    className="bg-red-600 hover:bg-red-700 text-white font-semibold w-full h-14 mt-4"
                   >
-                    <LogOut className="w-4 h-4 mr-2" />
+                    <LogOut className="w-5 h-5 mr-2" />
                     {checkOutMutation.isPending ? 'Checking Out...' : 'Check Out'}
                   </Button>
                 )}
@@ -1080,8 +1079,8 @@ export default function JobDetails({ job, onClose, onDelete }) {
           )}
 
           {activeTab === "photos" && (
-            <Card className="card-enhanced max-w-3xl mx-auto">
-              <CardContent className="p-6">
+            <Card className="bg-white rounded-xl border border-[#E5E7EB] shadow-sm max-w-3xl mx-auto">
+              <CardContent className="p-5">
                 <EditableFileUpload
                   files={job.image_urls || []}
                   onFilesChange={handleImagesChange}
@@ -1096,9 +1095,9 @@ export default function JobDetails({ job, onClose, onDelete }) {
           )}
 
           {activeTab === "measurements" && (
-            <Card className="card-enhanced max-w-3xl mx-auto">
-              <CardContent className="p-6">
-                <h3 className="section-header">Measurements</h3>
+            <Card className="bg-white rounded-xl border border-[#E5E7EB] shadow-sm max-w-3xl mx-auto">
+              <CardContent className="p-5">
+                <h3 className="text-[13px] font-semibold text-[#4F4F4F] uppercase tracking-wide mb-3">Measurements</h3>
                 <MeasurementsForm
                   measurements={measurements}
                   onChange={handleMeasurementsChange}
@@ -1108,11 +1107,13 @@ export default function JobDetails({ job, onClose, onDelete }) {
           )}
 
           {activeTab === "attachments" && (
-            <Card className="card-enhanced max-w-3xl mx-auto">
-              <CardContent className="p-6 space-y-5">
+            <Card className="bg-white rounded-xl border border-[#E5E7EB] shadow-sm max-w-3xl mx-auto">
+              <CardContent className="p-5 space-y-4">
                 {/* Quote */}
                 <div>
-                  <h3 className="section-header">Quote</h3>
+                  <div className="flex items-center justify-between mb-2">
+                    <h3 className="text-[13px] font-semibold text-[#4F4F4F] uppercase tracking-wide">Quote</h3>
+                  </div>
                   {job.quote_url ? (
                     <div className="space-y-2">
                       <div className="bg-white border-2 border-[#E2E3E5] rounded-xl p-3">
@@ -1167,7 +1168,9 @@ export default function JobDetails({ job, onClose, onDelete }) {
 
                 {/* Invoice */}
                 <div>
-                  <h3 className="section-header">Invoice</h3>
+                  <div className="flex items-center justify-between mb-2">
+                    <h3 className="text-[13px] font-semibold text-[#4F4F4F] uppercase tracking-wide">Invoice</h3>
+                  </div>
                   {job.invoice_url ? (
                     <div className="space-y-2">
                       <div className="bg-white border-2 border-[#E2E3E5] rounded-xl p-3">
@@ -1221,32 +1224,34 @@ export default function JobDetails({ job, onClose, onDelete }) {
                 </div>
 
                 {/* Other Documents */}
-                <div className="pt-5 border-t border-[#F1F5F9]">
+                <div className="pt-3 border-t border-[#E2E3E5]">
                   <div className="flex items-center justify-between mb-3">
-                    <h3 className="section-header mb-0">Other Documents</h3>
+                    <h3 className="text-[13px] font-semibold text-[#4F4F4F] uppercase tracking-wide">Other Documents</h3>
                     <Button
+                      size="sm"
+                      variant="outline"
                       onClick={() => document.getElementById('other-docs-input').click()}
                       disabled={uploadingOther}
-                      className="btn-secondary h-9 text-xs"
+                      className="h-10"
                     >
                       {uploadingOther ? (
                         <>Uploading...</>
                       ) : (
                         <>
-                          <Upload className="w-3.5 h-3.5 mr-1.5" />
+                          <Upload className="w-4 h-4 mr-2" />
                           Add
                         </>
                       )}
                     </Button>
+                    <input
+                      id="other-docs-input"
+                      type="file"
+                      accept=".pdf,.doc,.docx,.xlsx,.xls,.txt"
+                      multiple
+                      className="hidden"
+                      onChange={handleOtherDocumentUpload}
+                    />
                   </div>
-                  <input
-                    id="other-docs-input"
-                    type="file"
-                    accept=".pdf,.doc,.docx,.xlsx,.xls,.txt"
-                    multiple
-                    className="hidden"
-                    onChange={handleOtherDocumentUpload}
-                  />
 
                   {otherDocuments.length > 0 ? (
                     <div className="space-y-2">
@@ -1305,11 +1310,11 @@ export default function JobDetails({ job, onClose, onDelete }) {
           )}
 
           {activeTab === "audit" && (
-            <Card className="card-enhanced max-w-3xl mx-auto">
-              <CardContent className="p-6">
+            <Card className="bg-white rounded-xl border border-[#E5E7EB] shadow-sm max-w-3xl mx-auto">
+              <CardContent className="p-5">
                 {completedCheckIns.length > 0 && (
-                  <div className="space-y-3 mb-6">
-                    <h3 className="section-header">Time Tracking</h3>
+                  <div className="space-y-3 mb-4">
+                    <h3 className="text-[13px] font-semibold text-[#4F4F4F] uppercase tracking-wide">Time Tracking</h3>
                     {completedCheckIns.map((checkIn, index) => (
                       <Card key={checkIn.id} className="card-interactive">
                         <CardContent className="p-3">
@@ -1355,8 +1360,8 @@ export default function JobDetails({ job, onClose, onDelete }) {
                 )}
 
                 {jobSummaries.length > 0 && (
-                  <div className="space-y-3 pt-6 border-t border-[#F1F5F9]">
-                    <h3 className="section-header">Visit Summaries</h3>
+                  <div className="space-y-3 pt-4 border-t border-[#E2E3E5]">
+                    <h3 className="text-[13px] font-semibold text-[#4F4F4F] uppercase tracking-wide">Visit Summaries</h3>
                     {jobSummaries.map((summary) => (
                       <Card key={summary.id} className="card-interactive">
                         <CardContent className="p-3">
