@@ -994,16 +994,9 @@ export default function JobDetails({ job, onClose, onDelete }) {
                                 )}
                               </div>
                               {pJob.status && (
-                                <Badge 
-                                  className="capitalize font-semibold text-xs py-1 px-2 rounded-full"
-                                  style={{ 
-                                    backgroundColor: statusColors[pJob.status], 
-                                    color: statusTextColors[pJob.status],
-                                    border: `1px solid currentColor`
-                                  }}
-                                >
-                                  {pJob.status.replace(/_/g, ' ')}
-                                </Badge>
+                               <Badge className="status-chip capitalize">
+                                 {pJob.status.replace(/_/g, ' ')}
+                               </Badge>
                               )}
                             </div>
                           </div>
