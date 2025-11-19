@@ -448,13 +448,13 @@ export default function JobDetails({ job, onClose, onStatusChange, onDelete }) {
                 </div>
                 
                 <div className="grid grid-cols-2 gap-x-6">
-                  <div className="flex items-start gap-2 cursor-pointer hover:text-green-600 transition-colors" onClick={() => window.open(`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(job.address)}`, '_blank')}>
-                    <Navigation className="text-green-600 w-4 h-4 mt-0.5 flex-shrink-0" />
+                  <div className="flex items-center gap-2.5 cursor-pointer hover:text-green-600 transition-colors" onClick={() => window.open(`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(job.address)}`, '_blank')}>
+                    <Navigation className="text-green-600 w-5 h-5 flex-shrink-0" />
                     <span className="text-sm text-[#4B5563] leading-snug">{job.address}</span>
                   </div>
                   {job.customer_phone && (
-                    <div className="flex items-center gap-2 cursor-pointer hover:text-blue-600 transition-colors" onClick={() => window.location.href = `tel:${job.customer_phone}`}>
-                      <Phone className="text-blue-600 w-4 h-4 flex-shrink-0" />
+                    <div className="flex items-center gap-2.5 cursor-pointer hover:text-blue-600 transition-colors" onClick={() => window.location.href = `tel:${job.customer_phone}`}>
+                      <Phone className="text-blue-600 w-5 h-5 flex-shrink-0" />
                       <span className="text-sm text-[#4B5563]">{job.customer_phone}</span>
                     </div>
                   )}
