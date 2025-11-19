@@ -1,8 +1,9 @@
 import React, { useState } from "react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
 import { isSameDay, format } from "date-fns";
-import { MapPin, User, AlertCircle } from "lucide-react";
+import { MapPin, User, AlertCircle, Clock, Briefcase, AlertTriangle } from "lucide-react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { base44 } from "@/api/base44Client";
 import {
@@ -59,6 +60,7 @@ export default function DayView({ jobs, currentDate, onJobClick, onQuickBook }) 
   const [draggedJob, setDraggedJob] = useState(null);
   const [dragOverZone, setDragOverZone] = useState(null);
   const [pendingUpdate, setPendingUpdate] = useState(null);
+  const [compactMode, setCompactMode] = useState(false);
   const queryClient = useQueryClient();
 
   const { data: technicians = [] } = useQuery({
@@ -198,19 +200,37 @@ export default function DayView({ jobs, currentDate, onJobClick, onQuickBook }) 
 
   return (
     <>
-      <div className="space-y-5">
-        <Card className="rounded-xl border border-[#E5E7EB] shadow-sm">
+      <div className="space-y-3">
+        <div className="flex items-center justify-between">
+          <div className="text-sm text-[#4B5563] font-semibold">
+            {dayJobs.length} {dayJobs.length === 1 ? 'Job' : 'Jobs'} scheduled for {format(currentDate, 'EEEE, MMM d')}
+          </div>
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => setCompactMode(!compactMode)}
+            className={`h-9 font-semibold transition-all rounded-lg border ${
+              compactMode 
+                ? 'bg-[#FAE008] text-[#111827] border-[#FAE008] hover:bg-[#E5CF07]' 
+                : 'border-[#E5E7EB] hover:bg-[#F3F4F6]'
+            }`}
+          >
+            {compactMode ? 'Expanded' : 'Compact'} Mode
+          </Button>
+        </div>
+
+        <Card className="rounded-lg border border-[#E5E7EB] shadow-sm overflow-hidden">
           <CardContent className="p-0 overflow-x-auto">
             <div className="min-w-[800px]">
               {/* Header with hours */}
-              <div className="flex border-b-2 border-[#E5E7EB] bg-[#F8F9FA]">
-                <div className="w-40 flex-shrink-0 p-4 border-r border-[#E5E7EB] font-bold text-sm text-[#111827] tracking-tight">
+              <div className="flex border-b border-[#E5E7EB] bg-[#F8F9FA] sticky top-0 z-10">
+                <div className={`${compactMode ? 'w-32' : 'w-40'} flex-shrink-0 ${compactMode ? 'p-2' : 'p-3'} border-r border-[#E5E7EB] font-bold text-xs text-[#111827] tracking-tight uppercase`}>
                   Technician
                 </div>
                 <div className="flex-1 flex">
                   {hours.map(hour => (
-                    <div key={hour} className="flex-1 text-center p-4 border-r border-[#E5E7EB] text-xs font-semibold text-[#6B7280]">
-                      {hour === 12 ? '12 PM' : hour > 12 ? `${hour - 12} PM` : `${hour} AM`}
+                    <div key={hour} className={`flex-1 text-center ${compactMode ? 'p-2' : 'p-3'} border-r border-[#E5E7EB] text-[10px] font-bold text-[#6B7280] uppercase tracking-wider`}>
+                      {hour === 12 ? '12P' : hour > 12 ? `${hour - 12}P` : `${hour}A`}
                     </div>
                   ))}
                 </div>
@@ -224,14 +244,14 @@ export default function DayView({ jobs, currentDate, onJobClick, onQuickBook }) 
                 });
 
                 return (
-                  <div key={technician.id} className="flex border-b border-[#E5E7EB] hover:bg-[#F8F9FA] transition-colors">
-                    <div className="w-40 flex-shrink-0 p-4 border-r border-[#E5E7EB] flex items-center gap-3">
-                      <User className="w-5 h-5 text-[#6B7280]" />
-                      <span className="text-sm font-bold text-[#111827] truncate">
+                  <div key={technician.id} className="flex border-b border-[#E5E7EB] hover:bg-[#F8F9FA]/50 transition-colors">
+                    <div className={`${compactMode ? 'w-32' : 'w-40'} flex-shrink-0 ${compactMode ? 'p-2' : 'p-3'} border-r border-[#E5E7EB] flex items-center gap-2`}>
+                      <User className={`${compactMode ? 'w-4 h-4' : 'w-5 h-5'} text-[#6B7280]`} />
+                      <span className={`${compactMode ? 'text-xs' : 'text-sm'} font-bold text-[#111827] truncate`}>
                         {technician.full_name}
                       </span>
                     </div>
-                    <div className="flex-1 relative h-28">
+                    <div className={`flex-1 relative ${compactMode ? 'h-20' : 'h-28'}`}>
                       {hours.map(hour => (
                         <div 
                           key={hour} 
@@ -251,6 +271,7 @@ export default function DayView({ jobs, currentDate, onJobClick, onQuickBook }) 
                       {techJobs.map(job => {
                         const position = getJobPosition(job);
                         if (!position) return null;
+                        const isPriority = job.priority === 'high' || job.outcome === 'return_visit_required';
                         
                         return (
                           <div
@@ -258,29 +279,38 @@ export default function DayView({ jobs, currentDate, onJobClick, onQuickBook }) 
                             draggable
                             onDragStart={(e) => handleDragStart(e, job)}
                             onDragEnd={handleDragEnd}
-                            className={`absolute top-3 bottom-3 rounded-lg p-3 cursor-move hover:shadow-xl transition-all bg-white border border-[#E5E7EB] hover:border-[#FAE008] ${
+                            className={`absolute ${compactMode ? 'top-2 bottom-2' : 'top-3 bottom-3'} rounded-lg ${compactMode ? 'p-2' : 'p-2.5'} cursor-move hover:shadow-md transition-all bg-white border border-[#E5E7EB] hover:border-[#FAE008] ${
                               draggedJob?.id === job.id ? 'opacity-50' : ''
                             }`}
-                            style={{ left: position.left, width: position.width, minWidth: '140px' }}
+                            style={{ left: position.left, width: position.width, minWidth: compactMode ? '120px' : '140px' }}
                             onClick={() => onJobClick(job)}
                           >
-                            <div className="flex items-center justify-between mb-2">
-                              <span className="text-xs font-bold text-[#111827]">#{job.job_number}</span>
-                              <span className="text-[10px] px-2 py-0.5 rounded-full bg-[#FAE008] text-[#111827] font-bold">
-                                {job.scheduled_time?.slice(0, 5) || 'No time'}
-                              </span>
+                            <div className="flex items-center justify-between mb-1.5">
+                              <div className="flex items-center gap-1">
+                                <span className={`${compactMode ? 'text-[10px]' : 'text-xs'} font-bold text-[#111827]`}>#{job.job_number}</span>
+                                {isPriority && (
+                                  <AlertTriangle className="w-3 h-3 text-[#DC2626]" />
+                                )}
+                              </div>
+                              <Badge className={`${compactMode ? 'text-[9px] px-1.5 py-0' : 'text-[10px] px-2 py-0.5'} rounded font-bold bg-[#FAE008] text-[#111827] border-none`}>
+                                <Clock className="w-2.5 h-2.5 mr-0.5" />
+                                {job.scheduled_time?.slice(0, 5) || 'TBD'}
+                              </Badge>
                             </div>
-                            <div className="font-bold text-sm text-[#111827] mb-1.5 truncate">
+                            <div className={`font-bold ${compactMode ? 'text-xs' : 'text-sm'} text-[#111827] mb-1 truncate`}>
                               {job.customer_name}
                             </div>
-                            <div className="flex items-start gap-1 text-xs text-[#6B7280] truncate mb-1">
-                              <MapPin className="w-3 h-3 mt-0.5 flex-shrink-0" />
-                              <span className="truncate">{job.address}</span>
-                            </div>
-                            {job.job_type_name && (
-                              <div className="text-[10px] text-[#4B5563] font-semibold mt-1.5 truncate bg-[#F3F4F6] px-2 py-1 rounded">
-                                {job.job_type_name}
+                            {!compactMode && (
+                              <div className="flex items-start gap-1 text-[10px] text-[#6B7280] truncate mb-1">
+                                <MapPin className="w-2.5 h-2.5 mt-0.5 flex-shrink-0" />
+                                <span className="truncate">{job.address}</span>
                               </div>
+                            )}
+                            {job.job_type_name && (
+                              <Badge variant="outline" className={`${compactMode ? 'text-[9px] px-1.5 py-0' : 'text-[10px] px-2 py-0.5'} rounded font-semibold bg-[#F3F4F6] text-[#4B5563] border-[#E5E7EB] truncate w-full justify-start`}>
+                                <Briefcase className="w-2.5 h-2.5 mr-0.5 flex-shrink-0" />
+                                <span className="truncate">{job.job_type_name}</span>
+                              </Badge>
                             )}
                           </div>
                         );
@@ -294,12 +324,12 @@ export default function DayView({ jobs, currentDate, onJobClick, onQuickBook }) 
         </Card>
 
         {uniqueJobTypes.length > 0 && (
-          <div className="flex flex-wrap gap-3 text-xs bg-white p-5 rounded-xl border border-[#E5E7EB] shadow-sm">
-            <span className="font-bold text-[#111827] tracking-tight">Job Types:</span>
+          <div className="flex flex-wrap gap-2.5 text-xs bg-white p-3.5 rounded-lg border border-[#E5E7EB] shadow-sm">
+            <span className="font-bold text-[#111827] text-[10px] uppercase tracking-wider">Legend:</span>
             {uniqueJobTypes.map((jobType) => (
-              <div key={jobType} className="flex items-center gap-2">
-                <div className={`w-3 h-3 rounded ${getJobTypeColor(jobType, uniqueJobTypes)}`} />
-                <span className="text-[#4B5563] font-medium">{jobType}</span>
+              <div key={jobType} className="flex items-center gap-1.5">
+                <div className={`w-2.5 h-2.5 rounded-full ${getJobTypeColor(jobType, uniqueJobTypes)}`} />
+                <span className="text-[#4B5563] font-medium text-[11px]">{jobType}</span>
               </div>
             ))}
           </div>
