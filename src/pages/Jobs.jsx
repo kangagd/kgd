@@ -148,8 +148,11 @@ export default function Jobs() {
   const isTechnician = user?.is_field_technician && user?.role !== 'admin';
 
   const filteredJobs = jobs.filter((job) => {
-    if (isTechnician && job.assigned_to !== user?.email) {
-      return false;
+    if (isTechnician) {
+      const assignedEmails = Array.isArray(job.assigned_to) ? job.assigned_to : job.assigned_to ? [job.assigned_to] : [];
+      if (!assignedEmails.includes(user?.email)) {
+        return false;
+      }
     }
 
     const params = new URLSearchParams(window.location.search);

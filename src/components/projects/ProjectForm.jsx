@@ -17,6 +17,7 @@ import {
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 import { ChevronDown } from "lucide-react";
 import RichTextEditor from "../common/RichTextEditor";
+import { toast } from "sonner";
 
 export default function ProjectForm({ project, onSubmit, onCancel, isSubmitting }) {
   const [formData, setFormData] = useState(project || {
@@ -74,11 +75,23 @@ export default function ProjectForm({ project, onSubmit, onCancel, isSubmitting 
       });
       setShowNewCustomerDialog(false);
       setNewCustomerData({ name: "", phone: "", email: "" });
+      toast.success("Customer created successfully");
     }
   });
 
   const handleSubmit = (e) => {
     e.preventDefault();
+    
+    if (!formData.title || formData.title.trim() === "") {
+      toast.error("Please enter a project title");
+      return;
+    }
+    
+    if (!formData.customer_id) {
+      toast.error("Please select a customer");
+      return;
+    }
+    
     onSubmit(formData);
   };
 
@@ -115,6 +128,10 @@ export default function ProjectForm({ project, onSubmit, onCancel, isSubmitting 
   };
 
   const handleCreateCustomer = () => {
+    if (!newCustomerData.name || newCustomerData.name.trim() === "") {
+      toast.error("Please enter a customer name");
+      return;
+    }
     createCustomerMutation.mutate({ ...newCustomerData, status: "active" });
   };
 
@@ -132,8 +149,10 @@ export default function ProjectForm({ project, onSubmit, onCancel, isSubmitting 
         ...formData,
         image_urls: [...(formData.image_urls || []), ...newImageUrls]
       });
+      toast.success(`${files.length} image(s) uploaded`);
     } catch (error) {
       console.error("Error uploading images:", error);
+      toast.error("Failed to upload images");
     }
     setUploadingImages(false);
   };
@@ -146,8 +165,10 @@ export default function ProjectForm({ project, onSubmit, onCancel, isSubmitting 
     try {
       const { file_url } = await base44.integrations.Core.UploadFile({ file });
       setFormData({ ...formData, quote_url: file_url });
+      toast.success("File uploaded successfully");
     } catch (error) {
       console.error("Error uploading file:", error);
+      toast.error("Failed to upload file");
     }
     setUploadingFiles(false);
   };
@@ -184,7 +205,7 @@ export default function ProjectForm({ project, onSubmit, onCancel, isSubmitting 
   return (
     <>
       <div className="p-4 space-y-3">
-        <Card className="shadow-sm border border-slate-200">
+        <Card className="card-enhanced">
           <CardContent className="p-4">
             <div className="flex items-start gap-3">
               <Button 
@@ -203,9 +224,9 @@ export default function ProjectForm({ project, onSubmit, onCancel, isSubmitting 
         </Card>
 
         <form onSubmit={handleSubmit} className="space-y-3">
-          <Card className="shadow-sm border border-slate-200">
+          <Card className="card-enhanced">
             <CardContent className="p-4 space-y-3">
-              <span className="text-xs font-medium text-slate-500 uppercase tracking-wide">Project Information</span>
+              <span className="section-header">Project Information</span>
               
               <div className="space-y-1">
                 <Label htmlFor="title" className="text-sm font-medium text-slate-700">Project Title *</Label>
@@ -215,7 +236,7 @@ export default function ProjectForm({ project, onSubmit, onCancel, isSubmitting 
                   onChange={(e) => setFormData({ ...formData, title: e.target.value })}
                   required
                   placeholder="e.g., Garage Door Replacement - Unit 6"
-                  className="border-slate-300 h-10"
+                  className="input-enhanced"
                 />
               </div>
 
@@ -223,7 +244,7 @@ export default function ProjectForm({ project, onSubmit, onCancel, isSubmitting 
                 <Label htmlFor="customer_id" className="text-sm font-medium text-slate-700">Customer *</Label>
                 <div className="flex gap-2">
                   <Select value={formData.customer_id} onValueChange={handleCustomerChange} required>
-                    <SelectTrigger className="flex-1 border-slate-300 h-10">
+                    <SelectTrigger className="flex-1 input-enhanced">
                       <SelectValue placeholder="Select customer" />
                     </SelectTrigger>
                     <SelectContent>
@@ -236,9 +257,8 @@ export default function ProjectForm({ project, onSubmit, onCancel, isSubmitting 
                   </Select>
                   <Button
                     type="button"
-                    variant="outline"
+                    className="btn-secondary h-[var(--button-height)] w-[var(--button-height)] p-0"
                     onClick={() => setShowNewCustomerDialog(true)}
-                    className="border-slate-300 hover:bg-slate-50 h-10 w-10 p-0"
                   >
                     <Plus className="w-4 h-4" />
                   </Button>
@@ -251,7 +271,8 @@ export default function ProjectForm({ project, onSubmit, onCancel, isSubmitting 
                   id="address"
                   value={formData.address}
                   onChange={(e) => setFormData({ ...formData, address: e.target.value })}
-                  className="border-slate-300 h-10"
+                  className="input-enhanced"
+                  placeholder="Enter project address"
                 />
               </div>
 
@@ -259,7 +280,7 @@ export default function ProjectForm({ project, onSubmit, onCancel, isSubmitting 
                 <div className="space-y-1">
                   <Label htmlFor="project_type" className="text-sm font-medium text-slate-700">Type</Label>
                   <Select value={formData.project_type} onValueChange={(val) => setFormData({ ...formData, project_type: val })}>
-                    <SelectTrigger className="border-slate-300 h-10">
+                    <SelectTrigger className="input-enhanced">
                       <SelectValue />
                     </SelectTrigger>
                     <SelectContent>
@@ -275,7 +296,7 @@ export default function ProjectForm({ project, onSubmit, onCancel, isSubmitting 
                 <div className="space-y-1">
                   <Label htmlFor="status" className="text-sm font-medium text-slate-700">Status</Label>
                   <Select value={formData.status} onValueChange={(val) => setFormData({ ...formData, status: val })}>
-                    <SelectTrigger className="border-slate-300 h-10">
+                    <SelectTrigger className="input-enhanced">
                       <SelectValue />
                     </SelectTrigger>
                     <SelectContent>
@@ -294,7 +315,7 @@ export default function ProjectForm({ project, onSubmit, onCancel, isSubmitting 
               <div className="space-y-1">
                 <Label htmlFor="stage" className="text-sm font-medium text-slate-700">Current Stage</Label>
                 <Select value={formData.stage} onValueChange={(val) => setFormData({ ...formData, stage: val })}>
-                  <SelectTrigger className="border-slate-300 h-10">
+                  <SelectTrigger className="input-enhanced">
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent>
@@ -316,15 +337,15 @@ export default function ProjectForm({ project, onSubmit, onCancel, isSubmitting 
           </Card>
 
           {isInstallType && (
-            <Card className="shadow-sm border border-slate-200">
+            <Card className="card-enhanced">
               <CardContent className="p-4 space-y-3">
                 <div className="flex items-center justify-between">
-                  <span className="text-xs font-medium text-slate-500 uppercase tracking-wide">Installation Details</span>
+                  <span className="section-header">Installation Details</span>
                   <Button
                     type="button"
                     onClick={addDoor}
                     size="sm"
-                    className="bg-[#fae008] hover:bg-[#e5d007] text-slate-900 h-8 px-3 font-medium rounded-lg"
+                    className="btn-primary h-10 px-3"
                   >
                     <Plus className="w-3.5 h-3.5 mr-1.5" />
                     Add Door
@@ -334,9 +355,9 @@ export default function ProjectForm({ project, onSubmit, onCancel, isSubmitting 
                 {formData.doors && formData.doors.length > 0 ? (
                   <div className="space-y-2">
                     {formData.doors.map((door, index) => (
-                      <div key={index} className="bg-slate-50 border border-slate-200 rounded-lg p-3 space-y-2">
+                      <div key={index} className="bg-slate-50 border-2 border-[#E5E7EB] rounded-xl p-3 space-y-2">
                         <div className="flex items-center justify-between">
-                          <span className="text-xs font-medium text-slate-500 uppercase tracking-wide">Door {index + 1}</span>
+                          <span className="text-xs font-semibold text-[#111827] uppercase tracking-wide">Door {index + 1}</span>
                           <Button
                             type="button"
                             variant="ghost"
@@ -354,7 +375,7 @@ export default function ProjectForm({ project, onSubmit, onCancel, isSubmitting 
                               value={door.height}
                               onChange={(e) => updateDoor(index, 'height', e.target.value)}
                               placeholder="e.g., 2.4m"
-                              className="border-slate-300 h-9 text-sm"
+                              className="input-enhanced h-10"
                             />
                           </div>
                           <div className="space-y-1">
@@ -363,7 +384,7 @@ export default function ProjectForm({ project, onSubmit, onCancel, isSubmitting 
                               value={door.width}
                               onChange={(e) => updateDoor(index, 'width', e.target.value)}
                               placeholder="e.g., 5.0m"
-                              className="border-slate-300 h-9 text-sm"
+                              className="input-enhanced h-10"
                             />
                           </div>
                           <div className="space-y-1">
@@ -372,7 +393,7 @@ export default function ProjectForm({ project, onSubmit, onCancel, isSubmitting 
                               value={door.type}
                               onChange={(e) => updateDoor(index, 'type', e.target.value)}
                               placeholder="e.g., Sectional"
-                              className="border-slate-300 h-9 text-sm"
+                              className="input-enhanced h-10"
                             />
                           </div>
                           <div className="space-y-1">
@@ -381,7 +402,7 @@ export default function ProjectForm({ project, onSubmit, onCancel, isSubmitting 
                               value={door.style}
                               onChange={(e) => updateDoor(index, 'style', e.target.value)}
                               placeholder="e.g., Modern"
-                              className="border-slate-300 h-9 text-sm"
+                              className="input-enhanced h-10"
                             />
                           </div>
                         </div>
@@ -389,14 +410,13 @@ export default function ProjectForm({ project, onSubmit, onCancel, isSubmitting 
                     ))}
                   </div>
                 ) : (
-                  <div className="text-center py-6 bg-slate-50 rounded-lg border border-slate-200">
+                  <div className="text-center py-6 bg-slate-50 rounded-xl border-2 border-[#E5E7EB]">
                     <p className="text-sm text-slate-500 mb-2">No doors added yet</p>
                     <Button
                       type="button"
                       onClick={addDoor}
                       size="sm"
-                      variant="outline"
-                      className="border-slate-300 h-8 px-3 font-medium rounded-lg"
+                      className="btn-secondary h-10"
                     >
                       <Plus className="w-3.5 h-3.5 mr-1.5" />
                       Add First Door
@@ -408,11 +428,11 @@ export default function ProjectForm({ project, onSubmit, onCancel, isSubmitting 
           )}
 
           <Collapsible defaultOpen={false}>
-            <Card className="shadow-sm border border-slate-200">
+            <Card className="card-enhanced">
               <CollapsibleTrigger className="w-full">
                 <CardContent className="p-4">
                   <div className="flex items-center justify-between">
-                    <span className="text-xs font-medium text-slate-500 uppercase tracking-wide">Assigned Team</span>
+                    <span className="section-header">Assigned Team</span>
                     <ChevronDown className="w-4 h-4 text-slate-400 transition-transform data-[state=open]:rotate-180" />
                   </div>
                 </CardContent>
@@ -438,11 +458,11 @@ export default function ProjectForm({ project, onSubmit, onCancel, isSubmitting 
           </Collapsible>
 
           <Collapsible defaultOpen={false}>
-            <Card className="shadow-sm border border-slate-200">
+            <Card className="card-enhanced">
               <CollapsibleTrigger className="w-full">
                 <CardContent className="p-4">
                   <div className="flex items-center justify-between">
-                    <span className="text-xs font-medium text-slate-500 uppercase tracking-wide">Description & Notes</span>
+                    <span className="section-header">Description & Notes</span>
                     <ChevronDown className="w-4 h-4 text-slate-400 transition-transform data-[state=open]:rotate-180" />
                   </div>
                 </CardContent>
@@ -472,11 +492,11 @@ export default function ProjectForm({ project, onSubmit, onCancel, isSubmitting 
           </Collapsible>
 
           <Collapsible defaultOpen={false}>
-            <Card className="shadow-sm border border-slate-200">
+            <Card className="card-enhanced">
               <CollapsibleTrigger className="w-full">
                 <CardContent className="p-4">
                   <div className="flex items-center justify-between">
-                    <span className="text-xs font-medium text-slate-500 uppercase tracking-wide">Attachments</span>
+                    <span className="section-header">Attachments</span>
                     <ChevronDown className="w-4 h-4 text-slate-400 transition-transform data-[state=open]:rotate-180" />
                   </div>
                 </CardContent>
@@ -490,7 +510,7 @@ export default function ProjectForm({ project, onSubmit, onCancel, isSubmitting 
                       variant="outline"
                       onClick={() => document.getElementById('image-upload').click()}
                       disabled={uploadingImages}
-                      className="border-slate-300 hover:bg-slate-50 w-full h-10"
+                      className="btn-secondary w-full"
                     >
                       {uploadingImages ? (
                         <><Loader2 className="w-4 h-4 mr-2 animate-spin" />Uploading...</>
@@ -531,7 +551,7 @@ export default function ProjectForm({ project, onSubmit, onCancel, isSubmitting 
                       variant="outline"
                       onClick={() => document.getElementById('file-upload').click()}
                       disabled={uploadingFiles}
-                      className="border-slate-300 hover:bg-slate-50 w-full h-10"
+                      className="btn-secondary w-full"
                     >
                       {uploadingFiles ? (
                         <><Loader2 className="w-4 h-4 mr-2 animate-spin" />Uploading...</>
@@ -559,19 +579,18 @@ export default function ProjectForm({ project, onSubmit, onCancel, isSubmitting 
             </Card>
           </Collapsible>
 
-          <div className="sticky bottom-0 bg-white border-t border-slate-200 p-4 flex justify-end gap-2 shadow-sm">
+          <div className="sticky bottom-0 bg-white border-t-2 border-[#E5E7EB] p-4 flex justify-end gap-2 shadow-lg">
             <Button 
               type="button" 
-              variant="outline" 
+              className="btn-secondary"
               onClick={onCancel}
-              className="border-slate-300 hover:bg-slate-50 h-10 px-4 font-medium rounded-lg"
             >
               Cancel
             </Button>
             <Button 
               type="submit" 
-              disabled={isSubmitting} 
-              className="bg-[#fae008] hover:bg-[#e5d007] text-slate-900 h-10 px-4 font-medium rounded-lg"
+              disabled={isSubmitting}
+              className="btn-primary"
             >
               {isSubmitting ? 'Saving...' : project ? 'Update Project' : 'Create Project'}
             </Button>
@@ -580,7 +599,7 @@ export default function ProjectForm({ project, onSubmit, onCancel, isSubmitting 
       </div>
 
       <Dialog open={showNewCustomerDialog} onOpenChange={setShowNewCustomerDialog}>
-        <DialogContent className="rounded-lg border border-slate-200">
+        <DialogContent className="rounded-xl border border-slate-200">
           <DialogHeader>
             <DialogTitle className="text-lg font-semibold">Add New Customer</DialogTitle>
           </DialogHeader>
@@ -592,17 +611,18 @@ export default function ProjectForm({ project, onSubmit, onCancel, isSubmitting 
                 value={newCustomerData.name}
                 onChange={(e) => setNewCustomerData({ ...newCustomerData, name: e.target.value })}
                 placeholder="Customer name"
-                className="border-slate-300 h-10"
+                className="input-enhanced"
               />
             </div>
             <div className="space-y-1">
               <Label htmlFor="new_customer_phone" className="text-sm font-medium text-slate-700">Phone</Label>
               <Input
                 id="new_customer_phone"
+                type="tel"
                 value={newCustomerData.phone}
                 onChange={(e) => setNewCustomerData({ ...newCustomerData, phone: e.target.value })}
                 placeholder="Phone number"
-                className="border-slate-300 h-10"
+                className="input-enhanced"
               />
             </div>
             <div className="space-y-1">
@@ -613,23 +633,22 @@ export default function ProjectForm({ project, onSubmit, onCancel, isSubmitting 
                 value={newCustomerData.email}
                 onChange={(e) => setNewCustomerData({ ...newCustomerData, email: e.target.value })}
                 placeholder="Email address"
-                className="border-slate-300 h-10"
+                className="input-enhanced"
               />
             </div>
           </div>
           <DialogFooter>
             <Button
               type="button"
-              variant="outline"
+              className="btn-secondary"
               onClick={() => setShowNewCustomerDialog(false)}
-              className="border-slate-300 font-medium h-9 rounded-lg"
             >
               Cancel
             </Button>
             <Button
               onClick={handleCreateCustomer}
               disabled={!newCustomerData.name || createCustomerMutation.isPending}
-              className="bg-[#fae008] hover:bg-[#e5d007] text-slate-900 font-medium h-9 rounded-lg"
+              className="btn-primary"
             >
               {createCustomerMutation.isPending ? 'Creating...' : 'Create Customer'}
             </Button>

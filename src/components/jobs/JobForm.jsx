@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from "react";
 import { Card, CardHeader, CardTitle, CardContent, CardFooter } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -102,12 +101,17 @@ export default function JobForm({ job, technicians, onSubmit, onCancel, isSubmit
     e.preventDefault();
 
     if (!formData.customer_id) {
-      alert("Please select a customer");
+      toast.error("Please select a customer");
+      return;
+    }
+
+    if (!formData.address || formData.address.trim() === "") {
+      toast.error("Please enter a service address");
       return;
     }
 
     if (!formData.scheduled_date) {
-      alert("Please select a scheduled date");
+      toast.error("Please select a scheduled date");
       return;
     }
     
@@ -391,7 +395,7 @@ export default function JobForm({ job, technicians, onSubmit, onCancel, isSubmit
   return (
     <>
       <div className="p-4 space-y-3">
-        <Card className="shadow-sm border border-slate-200">
+        <Card className="card-enhanced">
           <CardContent className="p-4">
             <div className="flex items-start gap-3">
               <Button 
@@ -410,9 +414,9 @@ export default function JobForm({ job, technicians, onSubmit, onCancel, isSubmit
         </Card>
 
         <form onSubmit={handleSubmit} className="space-y-3">
-          <Card className="shadow-sm border border-slate-200">
+          <Card className="card-enhanced">
             <CardContent className="p-4 space-y-3">
-              <span className="text-xs font-medium text-slate-500 uppercase tracking-wide">Basic Information</span>
+              <span className="section-header">Basic Information</span>
               
               {!preselectedProjectId && (
                 <div className="space-y-1">
@@ -445,7 +449,7 @@ export default function JobForm({ job, technicians, onSubmit, onCancel, isSubmit
                     required
                     disabled={!!formData.project_id}
                   >
-                    <SelectTrigger className="flex-1 border-slate-300 h-10">
+                    <SelectTrigger className="flex-1 input-enhanced">
                       <SelectValue placeholder="Select customer" />
                     </SelectTrigger>
                     <SelectContent>
@@ -459,9 +463,8 @@ export default function JobForm({ job, technicians, onSubmit, onCancel, isSubmit
                   {!formData.project_id && (
                     <Button
                       type="button"
-                      variant="outline"
                       onClick={() => setShowNewCustomerDialog(true)}
-                      className="border-slate-300 hover:bg-slate-50 h-10 w-10 p-0"
+                      className="btn-secondary h-[var(--button-height)] w-[var(--button-height)] p-0"
                     >
                       <Plus className="w-4 h-4" />
                     </Button>
@@ -479,21 +482,22 @@ export default function JobForm({ job, technicians, onSubmit, onCancel, isSubmit
                   value={formData.address}
                   onChange={(e) => setFormData({ ...formData, address: e.target.value })}
                   required
-                  className="border-slate-300 h-10"
+                  placeholder="Enter service address"
+                  className="input-enhanced"
                 />
               </div>
             </CardContent>
           </Card>
 
-          <Card className="shadow-sm border border-slate-200">
+          <Card className="card-enhanced">
             <CardContent className="p-4 space-y-3">
-              <span className="text-xs font-medium text-slate-500 uppercase tracking-wide">Job Details</span>
+              <span className="section-header">Job Details</span>
               
               <div className="grid md:grid-cols-2 gap-3">
                 <div className="space-y-1">
                   <Label htmlFor="product" className="text-sm font-medium text-slate-700">Product</Label>
                   <Select value={formData.product} onValueChange={(val) => setFormData({ ...formData, product: val })}>
-                    <SelectTrigger className="border-slate-300 h-10">
+                    <SelectTrigger className="input-enhanced">
                       <SelectValue placeholder="Select product" />
                     </SelectTrigger>
                     <SelectContent>
@@ -509,7 +513,7 @@ export default function JobForm({ job, technicians, onSubmit, onCancel, isSubmit
                 <div className="space-y-1">
                   <Label htmlFor="job_type" className="text-sm font-medium text-slate-700">Job Type</Label>
                   <Select value={formData.job_type} onValueChange={handleJobTypeChange}>
-                    <SelectTrigger className="border-slate-300 h-10">
+                    <SelectTrigger className="input-enhanced">
                       <SelectValue placeholder="Select job type" />
                     </SelectTrigger>
                     <SelectContent>
@@ -528,7 +532,7 @@ export default function JobForm({ job, technicians, onSubmit, onCancel, isSubmit
                 <div className="space-y-1">
                   <Label htmlFor="status" className="text-sm font-medium text-slate-700">Status</Label>
                   <Select value={formData.status} onValueChange={(val) => setFormData({ ...formData, status: val })}>
-                    <SelectTrigger className="border-slate-300 h-10">
+                    <SelectTrigger className="input-enhanced">
                       <SelectValue />
                     </SelectTrigger>
                     <SelectContent>
@@ -546,10 +550,11 @@ export default function JobForm({ job, technicians, onSubmit, onCancel, isSubmit
                     id="expected_duration"
                     type="number"
                     step="0.5"
+                    min="0"
                     value={formData.expected_duration || ""}
                     onChange={(e) => setFormData({ ...formData, expected_duration: e.target.value ? parseFloat(e.target.value) : null })}
                     placeholder="Duration"
-                    className="border-slate-300 h-10"
+                    className="input-enhanced"
                   />
                 </div>
               </div>
@@ -565,9 +570,9 @@ export default function JobForm({ job, technicians, onSubmit, onCancel, isSubmit
             </CardContent>
           </Card>
 
-          <Card className="shadow-sm border border-slate-200">
+          <Card className="card-enhanced">
             <CardContent className="p-4 space-y-3">
-              <span className="text-xs font-medium text-slate-500 uppercase tracking-wide">Schedule</span>
+              <span className="section-header">Schedule</span>
               
               <div className="grid md:grid-cols-2 gap-3">
                 <div className="space-y-1">
@@ -578,7 +583,7 @@ export default function JobForm({ job, technicians, onSubmit, onCancel, isSubmit
                     value={formData.scheduled_date}
                     onChange={(e) => setFormData({ ...formData, scheduled_date: e.target.value })}
                     required
-                    className="border-slate-300 h-10"
+                    className="input-enhanced"
                   />
                 </div>
 
@@ -589,7 +594,7 @@ export default function JobForm({ job, technicians, onSubmit, onCancel, isSubmit
                     type="time"
                     value={formData.scheduled_time}
                     onChange={(e) => setFormData({ ...formData, scheduled_time: e.target.value })}
-                    className="border-slate-300 h-10"
+                    className="input-enhanced"
                   />
                 </div>
               </div>
@@ -597,11 +602,11 @@ export default function JobForm({ job, technicians, onSubmit, onCancel, isSubmit
           </Card>
 
           <Collapsible defaultOpen={false}>
-            <Card className="shadow-sm border border-slate-200">
+            <Card className="card-enhanced">
               <CollapsibleTrigger className="w-full">
                 <CardContent className="p-4">
                   <div className="flex items-center justify-between">
-                    <span className="text-xs font-medium text-slate-500 uppercase tracking-wide">Notes & Additional Info</span>
+                    <span className="section-header">Notes & Additional Info</span>
                     <ChevronDown className="w-4 h-4 text-slate-400 transition-transform data-[state=open]:rotate-180" />
                   </div>
                 </CardContent>
@@ -631,11 +636,11 @@ export default function JobForm({ job, technicians, onSubmit, onCancel, isSubmit
           </Collapsible>
 
           <Collapsible defaultOpen={false}>
-            <Card className="shadow-sm border border-slate-200">
+            <Card className="card-enhanced">
               <CollapsibleTrigger className="w-full">
                 <CardContent className="p-4">
                   <div className="flex items-center justify-between">
-                    <span className="text-xs font-medium text-slate-500 uppercase tracking-wide">File Uploads</span>
+                    <span className="section-header">File Uploads</span>
                     <ChevronDown className="w-4 h-4 text-slate-400 transition-transform data-[state=open]:rotate-180" />
                   </div>
                 </CardContent>
@@ -649,7 +654,7 @@ export default function JobForm({ job, technicians, onSubmit, onCancel, isSubmit
                       variant="outline"
                       onClick={() => document.getElementById('image-upload').click()}
                       disabled={uploadingImages}
-                      className="border-slate-300 hover:bg-slate-50 w-full h-10"
+                      className="btn-secondary w-full"
                     >
                       {uploadingImages ? (
                         <><Loader2 className="w-4 h-4 mr-2 animate-spin" />Uploading...</>
@@ -691,7 +696,7 @@ export default function JobForm({ job, technicians, onSubmit, onCancel, isSubmit
                         variant="outline"
                         onClick={() => document.getElementById('quote-upload').click()}
                         disabled={uploadingQuote}
-                        className="border-slate-300 hover:bg-slate-50 w-full h-10"
+                        className="btn-secondary w-full"
                       >
                         {uploadingQuote ? (
                           <><Loader2 className="w-4 h-4 mr-2 animate-spin" />Uploading...</>
@@ -722,7 +727,7 @@ export default function JobForm({ job, technicians, onSubmit, onCancel, isSubmit
                         variant="outline"
                         onClick={() => document.getElementById('invoice-upload').click()}
                         disabled={uploadingInvoice}
-                        className="border-slate-300 hover:bg-slate-50 w-full h-10"
+                        className="btn-secondary w-full"
                       >
                         {uploadingInvoice ? (
                           <><Loader2 className="w-4 h-4 mr-2 animate-spin" />Uploading...</>
@@ -751,19 +756,18 @@ export default function JobForm({ job, technicians, onSubmit, onCancel, isSubmit
             </Card>
           </Collapsible>
 
-          <div className="sticky bottom-0 bg-white border-t border-slate-200 p-4 flex justify-end gap-2 shadow-sm">
+          <div className="sticky bottom-0 bg-white border-t-2 border-[#E5E7EB] p-4 flex justify-end gap-3 shadow-lg z-20">
             <Button 
               type="button" 
-              variant="outline" 
               onClick={onCancel}
-              className="border-slate-300 hover:bg-slate-50 h-10 px-4 font-medium rounded-lg"
+              className="btn-secondary"
             >
               Cancel
             </Button>
             <Button 
               type="submit" 
-              disabled={isSubmitting} 
-              className="bg-[#fae008] hover:bg-[#e5d007] text-slate-900 h-10 px-4 font-medium rounded-lg"
+              disabled={isSubmitting}
+              className="btn-primary"
             >
               {isSubmitting ? 'Saving...' : job ? 'Update Job' : 'Create Job'}
             </Button>
@@ -777,9 +781,9 @@ export default function JobForm({ job, technicians, onSubmit, onCancel, isSubmit
           setLiveDuplicates([]);
         }
       }}>
-        <DialogContent className="rounded-lg max-w-lg border border-slate-200">
+        <DialogContent className="rounded-xl max-w-lg border border-slate-200">
           <DialogHeader>
-            <DialogTitle className="text-lg font-semibold">New Customer</DialogTitle>
+            <DialogTitle className="text-lg font-semibold">Add New Customer</DialogTitle>
           </DialogHeader>
           <div className="space-y-3">
             <div className="space-y-1">
@@ -788,7 +792,8 @@ export default function JobForm({ job, technicians, onSubmit, onCancel, isSubmit
                 id="new_customer_name"
                 value={newCustomerData.name}
                 onChange={(e) => handleNewCustomerNameChange(e.target.value)}
-                className="border-slate-300 h-10"
+                placeholder="Customer name"
+                className="input-enhanced"
               />
               {liveDuplicates.length > 0 && (
                 <div className="mt-2 p-2 bg-amber-50 border border-amber-200 rounded-lg">
@@ -820,7 +825,8 @@ export default function JobForm({ job, technicians, onSubmit, onCancel, isSubmit
                 type="tel"
                 value={newCustomerData.phone}
                 onChange={(e) => setNewCustomerData({ ...newCustomerData, phone: e.target.value })}
-                className="border-slate-300 h-10"
+                placeholder="Phone number"
+                className="input-enhanced"
               />
             </div>
             <div className="space-y-1">
@@ -830,25 +836,25 @@ export default function JobForm({ job, technicians, onSubmit, onCancel, isSubmit
                 type="email"
                 value={newCustomerData.email}
                 onChange={(e) => setNewCustomerData({ ...newCustomerData, email: e.target.value })}
-                className="border-slate-300 h-10"
+                placeholder="Email address"
+                className="input-enhanced"
               />
             </div>
           </div>
           <DialogFooter>
             <Button 
-              variant="outline" 
               onClick={() => {
                 setShowNewCustomerDialog(false);
                 setLiveDuplicates([]);
               }}
-              className="border-slate-300 font-medium h-9 rounded-lg"
+              className="btn-secondary"
             >
               Cancel
             </Button>
             <Button 
               onClick={handleCreateNewCustomer}
               disabled={!newCustomerData.name}
-              className="bg-[#fae008] hover:bg-[#e5d007] text-slate-900 font-medium h-9 rounded-lg"
+              className="btn-primary"
             >
               Create Customer
             </Button>
@@ -857,7 +863,7 @@ export default function JobForm({ job, technicians, onSubmit, onCancel, isSubmit
       </Dialog>
 
       <Dialog open={showDuplicateDialog} onOpenChange={setShowDuplicateDialog}>
-        <DialogContent className="rounded-lg max-w-2xl border border-slate-200">
+        <DialogContent className="rounded-xl max-w-2xl border border-slate-200">
           <DialogHeader>
             <DialogTitle className="text-lg font-semibold">Potential Duplicates Found</DialogTitle>
           </DialogHeader>
@@ -908,18 +914,17 @@ export default function JobForm({ job, technicians, onSubmit, onCancel, isSubmit
           </div>
           <DialogFooter>
             <Button 
-              variant="outline" 
               onClick={() => {
                 setShowDuplicateDialog(false);
                 setShowNewCustomerDialog(true);
               }}
-              className="border-slate-300 font-medium h-9 rounded-lg"
+              className="btn-secondary"
             >
               Go Back
             </Button>
             <Button 
               onClick={handleForceCreateNew}
-              className="bg-[#fae008] hover:bg-[#e5d007] text-slate-900 font-medium h-9 rounded-lg"
+              className="btn-primary"
             >
               Create New Anyway
             </Button>
