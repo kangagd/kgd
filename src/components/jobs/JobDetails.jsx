@@ -447,9 +447,47 @@ export default function JobDetails({ job, onClose, onStatusChange, onDelete }) {
                   }
                 </div>
                 
-                <div className="flex items-start gap-2">
-                  <MapPin className="text-[#4B5563] w-4 h-4 mt-0.5 flex-shrink-0" />
-                  <span className="text-sm text-[#4B5563] leading-snug">{job.address}</span>
+                <div className="space-y-2">
+                  <div className="flex items-start gap-2">
+                    <MapPin className="text-[#4B5563] w-4 h-4 mt-0.5 flex-shrink-0" />
+                    <span className="text-sm text-[#4B5563] leading-snug">{job.address}</span>
+                  </div>
+                  {job.customer_phone && (
+                    <div className="flex items-center gap-2">
+                      <Phone className="text-[#4B5563] w-4 h-4 flex-shrink-0" />
+                      <span className="text-sm text-[#4B5563]">{job.customer_phone}</span>
+                    </div>
+                  )}
+                  <div className="flex items-center gap-2">
+                    {job.customer_phone && (
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        onClick={() => window.location.href = `tel:${job.customer_phone}`}
+                        className="h-8 w-8 hover:bg-blue-50 hover:text-blue-600 transition-all rounded-lg"
+                        title="Call">
+                        <Phone className="w-4 h-4" />
+                      </Button>
+                    )}
+                    {job.customer_email && (
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        onClick={() => window.location.href = `mailto:${job.customer_email}`}
+                        className="h-8 w-8 hover:bg-purple-50 hover:text-purple-600 transition-all rounded-lg"
+                        title="Email">
+                        <Mail className="w-4 h-4" />
+                      </Button>
+                    )}
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      onClick={() => window.open(`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(job.address)}`, '_blank')}
+                      className="h-8 w-8 hover:bg-green-50 hover:text-green-600 transition-all rounded-lg"
+                      title="Navigate">
+                      <Navigation className="w-4 h-4" />
+                    </Button>
+                  </div>
                 </div>
               </div>
             </div>
