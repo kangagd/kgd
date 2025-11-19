@@ -40,6 +40,7 @@ export default function JobForm({ job, technicians, onSubmit, onCancel, isSubmit
     outcome: "",
     notes: "",
     additional_info: "",
+    pricing_provided: "",
     measurements: null,
     doors: [],
     image_urls: [],
@@ -504,15 +505,6 @@ export default function JobForm({ job, technicians, onSubmit, onCancel, isSubmit
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="notes" className="text-sm font-semibold text-[#000000]">Notes & Instructions</Label>
-              <RichTextEditor
-                value={formData.notes}
-                onChange={(value) => setFormData({ ...formData, notes: value })}
-                placeholder="Add any special instructions or notes..."
-              />
-            </div>
-
-            <div className="space-y-2">
               <Label htmlFor="additional_info" className="text-sm font-semibold text-[#000000]">Job Info</Label>
               <RichTextEditor
                 value={formData.additional_info}
@@ -612,6 +604,26 @@ export default function JobForm({ job, technicians, onSubmit, onCancel, isSubmit
                   ))}
                 </div>
               )}
+            </div>
+
+            <div className="space-y-2 pt-4 border-t-2 border-slate-200">
+              <Label htmlFor="pricing_provided" className="text-sm font-semibold text-[#000000]">Pricing</Label>
+              <Input
+                id="pricing_provided"
+                value={formData.pricing_provided || ""}
+                onChange={(e) => setFormData({ ...formData, pricing_provided: e.target.value })}
+                placeholder="Enter pricing information..."
+                className="border-2 border-slate-300 focus:border-[#fae008] focus:ring-2 focus:ring-[#fae008]/20 transition-all"
+              />
+            </div>
+
+            <div className="space-y-2 pt-4 border-t-2 border-slate-200">
+              <Label htmlFor="notes" className="text-sm font-semibold text-[#000000]">Notes & Instructions</Label>
+              <RichTextEditor
+                value={formData.notes}
+                onChange={(value) => setFormData({ ...formData, notes: value })}
+                placeholder="Add any special instructions or notes..."
+              />
             </div>
 
             <div className="space-y-4 pt-4 border-t-2 border-slate-200">
