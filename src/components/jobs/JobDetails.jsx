@@ -1222,8 +1222,8 @@ export default function JobDetails({ job, onClose, onDelete }) {
 
                 {/* Other Documents */}
                 <div className="pt-5 border-t border-[#F1F5F9]">
-                  <h3 className="section-header flex items-center justify-between">
-                    <span>Other Documents</span>
+                  <div className="flex items-center justify-between mb-3">
+                    <h3 className="section-header mb-0">Other Documents</h3>
                     <Button
                       onClick={() => document.getElementById('other-docs-input').click()}
                       disabled={uploadingOther}
@@ -1238,7 +1238,7 @@ export default function JobDetails({ job, onClose, onDelete }) {
                         </>
                       )}
                     </Button>
-                  </h3>
+                  </div>
                     <input
                       id="other-docs-input"
                       type="file"
