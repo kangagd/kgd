@@ -3,6 +3,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { MapPin, Phone, Clock } from "lucide-react";
+import { Card as ShadCard } from "@/components/ui/card";
 
 const jobTypeColors = {
   "Install": "bg-purple-50 text-purple-700 border-purple-200",
