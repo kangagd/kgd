@@ -131,7 +131,7 @@ export default function JobList({ jobs, isLoading, onSelectJob }) {
                         {job.job_type_name}
                       </Badge>
                   }
-                  <Badge className={`status-${job.status} capitalize`}>
+                  <Badge variant="outline" className={`status-${job.status} capitalize text-xs`}>
                     {job.status.replace(/_/g, ' ')}
                   </Badge>
                 </div>
