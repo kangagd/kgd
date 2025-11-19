@@ -17,17 +17,6 @@ import {
 import MultiTechnicianSelect from "./MultiTechnicianSelect";
 import RichTextEditor from "../common/RichTextEditor";
 
-const JOB_TYPE_DURATIONS = {
-  "Initial Site Visit": 2,
-  "Final Measure": 2,
-  "Installation": 3,
-  "On site Repair": 2,
-  "Investigation": 1,
-  "Maintenance": 1,
-  "Call Back": 1,
-  "Emergency Repair": 1
-};
-
 export default function JobForm({ job, technicians, onSubmit, onCancel, isSubmitting, preselectedCustomerId, preselectedProjectId }) {
   const [formData, setFormData] = useState(job || {
     job_number: null,
@@ -40,6 +29,7 @@ export default function JobForm({ job, technicians, onSubmit, onCancel, isSubmit
     customer_type: "",
     address: "",
     product: "",
+    job_type_id: "",
     job_type: "",
     assigned_to: [],
     assigned_to_name: [],
@@ -81,6 +71,11 @@ export default function JobForm({ job, technicians, onSubmit, onCancel, isSubmit
 
   const projects = allProjects.filter(p => !p.deleted_at);
 
+  const { data: jobTypes = [] } = useQuery({
+    queryKey: ['jobTypes'],
+    queryFn: () => base44.entities.JobType.filter({ is_active: true })
+  });
+
   useEffect(() => {
     if (preselectedCustomerId && customers.length > 0) {
       handleCustomerChange(preselectedCustomerId);
@@ -109,6 +104,7 @@ export default function JobForm({ job, technicians, onSubmit, onCancel, isSubmit
     };
 
     // Remove empty string values for enum fields
+    if (!submitData.job_type_id) delete submitData.job_type_id;
     if (!submitData.job_type) delete submitData.job_type;
     if (!submitData.product) delete submitData.product;
     if (!submitData.outcome) delete submitData.outcome;
@@ -155,13 +151,16 @@ export default function JobForm({ job, technicians, onSubmit, onCancel, isSubmit
     }
   };
 
-  const handleJobTypeChange = (jobType) => {
-    const duration = JOB_TYPE_DURATIONS[jobType];
-    setFormData({
-      ...formData,
-      job_type: jobType,
-      expected_duration: duration || formData.expected_duration
-    });
+  const handleJobTypeChange = (jobTypeId) => {
+    const jobType = jobTypes.find(jt => jt.id === jobTypeId);
+    if (jobType) {
+      setFormData({
+        ...formData,
+        job_type_id: jobTypeId,
+        job_type: jobType.name,
+        expected_duration: jobType.estimated_duration || formData.expected_duration
+      });
+    }
   };
 
   const checkForDuplicatesLive = (name) => {
@@ -427,20 +426,17 @@ export default function JobForm({ job, technicians, onSubmit, onCancel, isSubmit
               </div>
 
               <div className="space-y-2">
-                <Label htmlFor="job_type" className="text-sm font-semibold text-[#000000]">Job Type</Label>
-                <Select value={formData.job_type} onValueChange={handleJobTypeChange}>
+                <Label htmlFor="job_type_id" className="text-sm font-semibold text-[#000000]">Job Type</Label>
+                <Select value={formData.job_type_id} onValueChange={handleJobTypeChange}>
                   <SelectTrigger className="border-2 border-slate-300 focus:border-[#fae008] focus:ring-2 focus:ring-[#fae008]/20">
                     <SelectValue placeholder="Select job type" />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="Initial Site Visit">Initial Site Visit</SelectItem>
-                    <SelectItem value="Final Measure">Final Measure</SelectItem>
-                    <SelectItem value="Installation">Installation</SelectItem>
-                    <SelectItem value="On site Repair">On site Repair</SelectItem>
-                    <SelectItem value="Investigation">Investigation</SelectItem>
-                    <SelectItem value="Maintenance">Maintenance</SelectItem>
-                    <SelectItem value="Call Back">Call Back</SelectItem>
-                    <SelectItem value="Emergency Repair">Emergency Repair</SelectItem>
+                    {jobTypes.map((jt) => (
+                      <SelectItem key={jt.id} value={jt.id}>
+                        {jt.name}
+                      </SelectItem>
+                    ))}
                   </SelectContent>
                 </Select>
               </div>
