@@ -107,7 +107,9 @@ export default function JobCard({ job, onClick }) {
                 <div className="bg-[#F8F9FA] rounded-lg p-3 space-y-2 text-sm">
                   <div className="flex items-center justify-between text-xs text-[#6B7280]">
                     <span>{latestVisit.technician_name}</span>
-                    <span>{format(new Date(latestVisit.check_out_time), 'MMM d, h:mm a')}</span>
+                    {latestVisit.check_out_time && (
+                      <span>{format(new Date(latestVisit.check_out_time), 'MMM d, h:mm a')}</span>
+                    )}
                   </div>
                   {latestVisit.overview && (
                     <div 

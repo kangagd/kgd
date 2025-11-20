@@ -101,7 +101,7 @@ export default function ProjectVisitsTab({ projectId, isReadOnly }) {
                   <User className="w-4 h-4 text-[#6B7280] flex-shrink-0" />
                   <span className="text-[#111827] font-medium truncate">{visit.technician_name}</span>
                 </div>
-                {visit.scheduled_datetime && (
+                {visit.scheduled_datetime && !isNaN(new Date(visit.scheduled_datetime).getTime()) && (
                   <div className="flex items-center gap-2">
                     <Calendar className="w-4 h-4 text-[#6B7280] flex-shrink-0" />
                     <span className="text-[#4B5563]">{format(new Date(visit.scheduled_datetime), 'MMM d, yyyy')}</span>
@@ -184,9 +184,11 @@ export default function ProjectVisitsTab({ projectId, isReadOnly }) {
               </div>
 
               {/* Checkout timestamp */}
-              <div className="text-xs text-[#9CA3AF] text-right">
-                Checked out {format(new Date(visit.check_out_time), 'MMM d, yyyy h:mm a')}
-              </div>
+              {visit.check_out_time && !isNaN(new Date(visit.check_out_time).getTime()) && (
+                <div className="text-xs text-[#9CA3AF] text-right">
+                  Checked out {format(new Date(visit.check_out_time), 'MMM d, yyyy h:mm a')}
+                </div>
+              )}
             </div>
           </CardContent>
         </Card>
