@@ -346,13 +346,13 @@ export default function ProjectDetails({ project, onClose, onEdit, onDelete }) {
             <div className="flex items-center gap-2.5">
               <MapPin className="w-5 h-5 text-[#4B5563]" />
               <div className="flex-1 min-w-0">
-                <div className="text-[14px] text-[#6B7280] font-medium leading-[1.4] mb-0.5">Address</div>
+                <div className="text-[14px] text-[#6B7280] font-normal leading-[1.4] mb-0.5">Address</div>
                 <EditableField
                   value={project.address}
                   onSave={(val) => handleFieldSave('address', project.address, val)}
                   type="text"
                   placeholder="Set address"
-                  className="text-[14px] font-medium text-[#111827] leading-[1.4]"
+                  className="text-[14px] font-normal text-[#111827] leading-[1.4]"
                 />
               </div>
             </div>
@@ -362,8 +362,8 @@ export default function ProjectDetails({ project, onClose, onEdit, onDelete }) {
                   <Phone className="w-5 h-5 text-[#4B5563]" />
                 </a>
                 <div className="flex-1 min-w-0">
-                  <div className="text-[14px] text-[#6B7280] font-medium leading-[1.4] mb-0.5">Phone</div>
-                  <span className="text-[14px] font-medium text-[#111827] leading-[1.4]">{project.customer_phone}</span>
+                  <div className="text-[14px] text-[#6B7280] font-normal leading-[1.4] mb-0.5">Phone</div>
+                  <span className="text-[14px] font-normal text-[#111827] leading-[1.4]">{project.customer_phone}</span>
                 </div>
               </div>
             )}
@@ -373,8 +373,8 @@ export default function ProjectDetails({ project, onClose, onEdit, onDelete }) {
                   <Mail className="w-5 h-5 text-[#4B5563]" />
                 </a>
                 <div className="flex-1 min-w-0">
-                  <div className="text-[14px] text-[#6B7280] font-medium leading-[1.4] mb-0.5">Email</div>
-                  <span className="text-[14px] font-medium text-[#111827] leading-[1.4]">{project.customer_email}</span>
+                  <div className="text-[14px] text-[#6B7280] font-normal leading-[1.4] mb-0.5">Email</div>
+                  <span className="text-[14px] font-normal text-[#111827] leading-[1.4]">{project.customer_email}</span>
                 </div>
               </div>
             )}
