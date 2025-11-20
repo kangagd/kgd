@@ -760,30 +760,22 @@ Format as HTML bullet points using <ul> and <li> tags. Include only the most cri
 
       <CardContent className="p-3 md:p-4">
         <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-            <TabsList className="w-full grid grid-cols-7 h-11 bg-[#F8F9FA] border border-[#E5E7EB] rounded-lg p-1 mb-4">
-            <TabsTrigger 
-              value="overview" 
-              className="text-[14px] font-medium leading-[1.4] data-[state=active]:bg-white data-[state=active]:shadow-sm"
-            >
+            <TabsList className="mb-4">
+            <TabsTrigger value="overview">
               Overview
             </TabsTrigger>
-            <TabsTrigger value="visits" className="text-[14px] font-medium leading-[1.4] data-[state=active]:bg-white data-[state=active]:shadow-sm">
+            <TabsTrigger value="visits">
               Visits
             </TabsTrigger>
-            <TabsTrigger value="quoting" className="text-[14px] font-medium leading-[1.4] data-[state=active]:bg-white data-[state=active]:shadow-sm">Quoting</TabsTrigger>
-            <TabsTrigger value="parts" className="text-[14px] font-medium leading-[1.4] data-[state=active]:bg-white data-[state=active]:shadow-sm">Parts</TabsTrigger>
-            <TabsTrigger value="images" className="text-[14px] font-medium leading-[1.4] data-[state=active]:bg-white data-[state=active]:shadow-sm">
+            <TabsTrigger value="quoting">Quoting</TabsTrigger>
+            <TabsTrigger value="parts">Parts</TabsTrigger>
+            <TabsTrigger value="images">
               Images
             </TabsTrigger>
-            <TabsTrigger value="attachments" className="text-[14px] font-medium leading-[1.4] data-[state=active]:bg-white data-[state=active]:shadow-sm">
+            <TabsTrigger value="attachments">
               Files
             </TabsTrigger>
-            <TabsTrigger 
-              value="summary" 
-              className={`text-[14px] font-medium leading-[1.4] data-[state=active]:bg-white data-[state=active]:shadow-sm ${
-                project.status === "Completed" ? "bg-[#FAE008]/10 text-[#111827] font-semibold" : ""
-              }`}
-            >
+            <TabsTrigger value="summary">
               Summary
             </TabsTrigger>
             </TabsList>
