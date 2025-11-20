@@ -263,10 +263,14 @@ css
 
   /* Global Tab Styles */
   [role="tablist"] {
-    @apply flex gap-2 p-1 bg-white rounded-xl overflow-x-auto overflow-y-hidden;
+    @apply flex gap-2 p-1 bg-white rounded-xl;
     min-height: 44px;
+    overflow-x: auto;
+    overflow-y: hidden;
+    flex-wrap: nowrap;
     scrollbar-width: none;
     -ms-overflow-style: none;
+    -webkit-overflow-scrolling: touch;
   }
 
   [role="tablist"]::-webkit-scrollbar {
@@ -274,7 +278,7 @@ css
   }
 
   [role="tab"] {
-    @apply flex-shrink-0 px-4 py-2.5 rounded-[10px] font-medium text-[15px] leading-[1.4];
+    @apply px-4 py-2.5 rounded-[10px] font-medium text-[15px] leading-[1.4];
     @apply text-[#4B5563] bg-[#F5F6F7] transition-all duration-200;
     @apply hover:bg-[#E5E7EB] cursor-pointer;
     min-height: 40px;
@@ -282,6 +286,8 @@ css
     align-items: center;
     justify-content: center;
     white-space: nowrap;
+    flex-shrink: 0;
+    flex-grow: 0;
   }
 
   [role="tab"][data-state="active"] {
