@@ -365,6 +365,19 @@ export default function ProjectDetails({ project, onClose, onEdit, onDelete }) {
 
           </div>
         </div>
+
+        <div className="p-3 md:p-4 border-b border-[#E5E7EB]">
+          <div className="flex items-center gap-2 mb-3">
+            <FileText className="w-4 h-4 text-[#6B7280]" />
+            <h3 className="text-sm font-bold text-[#111827]">Notes</h3>
+          </div>
+          <RichTextEditor
+            value={notes}
+            onChange={setNotes}
+            onBlur={handleNotesBlur}
+            placeholder="Add notes..."
+          />
+        </div>
       </CardHeader>
 
       <CardContent className="p-3 md:p-4">
@@ -493,23 +506,6 @@ export default function ProjectDetails({ project, onClose, onEdit, onDelete }) {
                 </CardContent>
               </Card>
             )}
-
-            <Card className="border border-[#E5E7EB] shadow-sm overflow-hidden">
-              <CardHeader className="bg-[#F8F9FA] px-4 py-3 border-b border-[#E5E7EB]">
-                <div className="flex items-center gap-2">
-                  <FileText className="w-4 h-4 text-[#6B7280]" />
-                  <h3 className="text-sm font-bold text-[#111827]">Notes</h3>
-                </div>
-              </CardHeader>
-              <CardContent className="p-3">
-                <RichTextEditor
-                  value={notes}
-                  onChange={setNotes}
-                  onBlur={handleNotesBlur}
-                  placeholder="Add notes..."
-                />
-              </CardContent>
-            </Card>
           </TabsContent>
 
           <TabsContent value="images" className="mt-3">
