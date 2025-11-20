@@ -813,7 +813,7 @@ export default function JobDetails({ job, onClose, onStatusChange, onDelete }) {
               {jobSummaries.length > 0 &&
               <Collapsible defaultOpen={true} className="pt-3 border-t-2">
                   <CollapsibleTrigger className="flex items-center justify-between w-full group bg-slate-50 border-2 border-slate-200 rounded-xl p-3 hover:bg-slate-100 transition-colors">
-                    <h4 className="text-sm font-bold text-[#000000]">Previous Visit Summaries ({jobSummaries.length})</h4>
+                    <h4 className="text-[14px] font-semibold text-[#111827] leading-[1.4]">Previous Visit Summaries ({jobSummaries.length})</h4>
                     <ChevronDown className="w-4 h-4 text-slate-500 transition-transform group-data-[state=open]:rotate-180" />
                   </CollapsibleTrigger>
                   
@@ -991,7 +991,7 @@ export default function JobDetails({ job, onClose, onStatusChange, onDelete }) {
               {jobSummaries.length > 0 &&
               <Collapsible defaultOpen={false} className="pt-3 border-t-2">
                   <CollapsibleTrigger className="flex items-center justify-between w-full group bg-slate-50 border-2 border-slate-200 rounded-xl p-3 hover:bg-slate-100 transition-colors">
-                    <h4 className="text-sm font-bold text-[#000000]">Previous Visit Summaries ({jobSummaries.length})</h4>
+                    <h4 className="text-[14px] font-semibold text-[#111827] leading-[1.4]">Previous Visit Summaries ({jobSummaries.length})</h4>
                     <ChevronDown className="w-4 h-4 text-slate-500 transition-transform group-data-[state=open]:rotate-180" />
                   </CollapsibleTrigger>
                   
@@ -1052,7 +1052,7 @@ export default function JobDetails({ job, onClose, onStatusChange, onDelete }) {
               {jobSummaries.length > 0 &&
               <Collapsible defaultOpen={true} className="pt-3 border-t-2 mt-3">
                   <CollapsibleTrigger className="flex items-center justify-between w-full group bg-slate-50 border-2 border-slate-200 rounded-xl p-3 hover:bg-slate-100 transition-colors">
-                    <h4 className="text-sm font-bold text-[#000000]">Previous Visit Summaries ({jobSummaries.length})</h4>
+                    <h4 className="text-[14px] font-semibold text-[#111827] leading-[1.4]">Previous Visit Summaries ({jobSummaries.length})</h4>
                     <ChevronDown className="w-4 h-4 text-slate-500 transition-transform group-data-[state=open]:rotate-180" />
                   </CollapsibleTrigger>
                   
