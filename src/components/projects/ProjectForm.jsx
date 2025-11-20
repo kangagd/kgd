@@ -192,7 +192,7 @@ export default function ProjectForm({ project, onSubmit, onCancel, isSubmitting 
             >
               <ArrowLeft className="w-5 h-5" />
             </Button>
-            <CardTitle className="text-2xl font-bold text-[#000000] tracking-tight">
+            <CardTitle className="text-[22px] font-semibold text-[#111827] leading-[1.2]">
               {project ? 'Edit Project' : 'Create New Project'}
             </CardTitle>
           </div>
@@ -289,7 +289,7 @@ export default function ProjectForm({ project, onSubmit, onCancel, isSubmitting 
             {isInstallType && (
               <div className="bg-blue-50 border-2 border-blue-200 rounded-xl p-4 space-y-4">
                 <div className="flex items-center justify-between">
-                  <h3 className="font-bold text-[#000000]">Doors</h3>
+                  <h3 className="text-[18px] font-semibold text-[#111827] leading-[1.2]">Doors</h3>
                   <Button
                     type="button"
                     onClick={addDoor}
@@ -306,7 +306,7 @@ export default function ProjectForm({ project, onSubmit, onCancel, isSubmitting 
                     {formData.doors.map((door, index) => (
                       <div key={index} className="bg-white border-2 border-slate-200 rounded-lg p-4 space-y-3">
                         <div className="flex items-center justify-between mb-2">
-                          <span className="font-semibold text-sm text-slate-700">Door {index + 1}</span>
+                          <span className="text-[14px] font-medium text-slate-700 leading-[1.4]">Door {index + 1}</span>
                           <Button
                             type="button"
                             variant="ghost"
@@ -319,7 +319,7 @@ export default function ProjectForm({ project, onSubmit, onCancel, isSubmitting 
                         </div>
                         <div className="grid md:grid-cols-2 gap-3">
                           <div className="space-y-1">
-                            <Label className="text-xs">Height</Label>
+                            <Label className="text-[12px] leading-[1.35]">Height</Label>
                             <Input
                               value={door.height}
                               onChange={(e) => updateDoor(index, 'height', e.target.value)}
@@ -328,7 +328,7 @@ export default function ProjectForm({ project, onSubmit, onCancel, isSubmitting 
                             />
                           </div>
                           <div className="space-y-1">
-                            <Label className="text-xs">Width</Label>
+                            <Label className="text-[12px] leading-[1.35]">Width</Label>
                             <Input
                               value={door.width}
                               onChange={(e) => updateDoor(index, 'width', e.target.value)}
@@ -337,7 +337,7 @@ export default function ProjectForm({ project, onSubmit, onCancel, isSubmitting 
                             />
                           </div>
                           <div className="space-y-1">
-                            <Label className="text-xs">Type</Label>
+                            <Label className="text-[12px] leading-[1.35]">Type</Label>
                             <Input
                               value={door.type}
                               onChange={(e) => updateDoor(index, 'type', e.target.value)}
@@ -346,7 +346,7 @@ export default function ProjectForm({ project, onSubmit, onCancel, isSubmitting 
                             />
                           </div>
                           <div className="space-y-1">
-                            <Label className="text-xs">Style</Label>
+                            <Label className="text-[12px] leading-[1.35]">Style</Label>
                             <Input
                               value={door.style}
                               onChange={(e) => updateDoor(index, 'style', e.target.value)}
@@ -360,7 +360,7 @@ export default function ProjectForm({ project, onSubmit, onCancel, isSubmitting 
                   </div>
                 ) : (
                   <div className="text-center py-6 text-slate-500">
-                    <p className="text-sm mb-2">No doors added yet</p>
+                    <p className="text-[14px] leading-[1.4] mb-2">No doors added yet</p>
                     <Button
                       type="button"
                       onClick={addDoor}
@@ -508,7 +508,7 @@ export default function ProjectForm({ project, onSubmit, onCancel, isSubmitting 
       <Dialog open={showNewCustomerDialog} onOpenChange={setShowNewCustomerDialog}>
         <DialogContent className="rounded-2xl border-2 border-slate-200">
           <DialogHeader>
-            <DialogTitle className="text-xl font-bold text-[#000000]">Add New Customer</DialogTitle>
+            <DialogTitle className="text-[22px] font-semibold text-[#111827] leading-[1.2]">Add New Customer</DialogTitle>
           </DialogHeader>
           <div className="space-y-4 py-4">
             <div className="space-y-2">

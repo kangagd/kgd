@@ -702,7 +702,7 @@ export default function JobForm({ job, technicians, onSubmit, onCancel, isSubmit
                   </div>
                   {formData.quote_url && (
                     <a href={formData.quote_url} target="_blank" rel="noopener noreferrer" 
-                       className="text-sm text-blue-600 hover:underline flex items-center gap-1">
+                       className="text-[14px] text-blue-600 leading-[1.4] hover:underline flex items-center gap-1">
                       <FileText className="w-3 h-3" />
                       View Quote
                     </a>
@@ -735,7 +735,7 @@ export default function JobForm({ job, technicians, onSubmit, onCancel, isSubmit
                   </div>
                   {formData.invoice_url && (
                     <a href={formData.invoice_url} target="_blank" rel="noopener noreferrer"
-                       className="text-sm text-blue-600 hover:underline flex items-center gap-1">
+                       className="text-[14px] text-blue-600 leading-[1.4] hover:underline flex items-center gap-1">
                       <FileText className="w-3 h-3" />
                       View Invoice
                     </a>
@@ -772,11 +772,11 @@ export default function JobForm({ job, technicians, onSubmit, onCancel, isSubmit
       }}>
         <DialogContent className="rounded-2xl max-w-lg">
           <DialogHeader>
-            <DialogTitle className="text-xl font-bold text-[#000000]">New Customer</DialogTitle>
+            <DialogTitle className="text-[22px] font-semibold text-[#111827] leading-[1.2]">New Customer</DialogTitle>
           </DialogHeader>
           <div className="space-y-4">
             <div className="space-y-2">
-              <Label htmlFor="new_customer_name" className="text-sm font-semibold text-[#000000]">Name *</Label>
+              <Label htmlFor="new_customer_name" className="text-[14px] font-medium text-[#111827] leading-[1.4]">Name *</Label>
               <Input
                 id="new_customer_name"
                 value={newCustomerData.name}
@@ -785,7 +785,7 @@ export default function JobForm({ job, technicians, onSubmit, onCancel, isSubmit
               />
               {liveDuplicates.length > 0 && (
                 <div className="mt-2 p-2 bg-amber-50 border-2 border-amber-200 rounded-xl">
-                  <p className="text-xs font-semibold text-amber-900 mb-2">Existing customers found:</p>
+                  <p className="text-[12px] font-medium text-amber-900 leading-[1.35] mb-2">Existing customers found:</p>
                   <div className="space-y-1 max-h-40 overflow-y-auto">
                     {liveDuplicates.map((customer) => (
                       <button
@@ -794,8 +794,8 @@ export default function JobForm({ job, technicians, onSubmit, onCancel, isSubmit
                         onClick={() => handleUseExistingCustomer(customer)}
                         className="w-full text-left p-2 bg-white border border-amber-200 rounded-lg hover:border-[#fae008] hover:bg-slate-50 transition-all"
                       >
-                        <div className="font-semibold text-sm text-[#000000]">{customer.name}</div>
-                        <div className="text-xs text-slate-600">
+                        <div className="text-[14px] font-medium text-[#111827] leading-[1.4]">{customer.name}</div>
+                        <div className="text-[12px] text-slate-600 leading-[1.35]">
                           {customer.phone && <span>{customer.phone}</span>}
                           {customer.phone && customer.email && <span> • </span>}
                           {customer.email && <span>{customer.email}</span>}
@@ -807,7 +807,7 @@ export default function JobForm({ job, technicians, onSubmit, onCancel, isSubmit
               )}
             </div>
             <div className="space-y-2">
-              <Label htmlFor="new_customer_phone" className="text-sm font-semibold text-[#000000]">Phone</Label>
+              <Label htmlFor="new_customer_phone" className="text-[14px] font-medium text-[#111827] leading-[1.4]">Phone</Label>
               <Input
                 id="new_customer_phone"
                 type="tel"
@@ -817,7 +817,7 @@ export default function JobForm({ job, technicians, onSubmit, onCancel, isSubmit
               />
             </div>
             <div className="space-y-2">
-              <Label htmlFor="new_customer_email" className="text-sm font-semibold text-[#000000]">Email</Label>
+              <Label htmlFor="new_customer_email" className="text-[14px] font-medium text-[#111827] leading-[1.4]">Email</Label>
               <Input
                 id="new_customer_email"
                 type="email"
@@ -852,10 +852,10 @@ export default function JobForm({ job, technicians, onSubmit, onCancel, isSubmit
       <Dialog open={showDuplicateDialog} onOpenChange={setShowDuplicateDialog}>
         <DialogContent className="rounded-2xl max-w-2xl">
           <DialogHeader>
-            <DialogTitle className="text-xl font-bold text-[#000000]">Potential Duplicate Customers Found</DialogTitle>
+            <DialogTitle className="text-[22px] font-semibold text-[#111827] leading-[1.2]">Potential Duplicate Customers Found</DialogTitle>
           </DialogHeader>
           <div className="space-y-4">
-            <p className="text-sm text-slate-600">
+            <p className="text-[14px] text-slate-600 leading-[1.4]">
               We found {potentialDuplicates.length} existing customer{potentialDuplicates.length > 1 ? 's' : ''} that might match. 
               Would you like to use one of these instead?
             </p>
@@ -869,12 +869,12 @@ export default function JobForm({ job, technicians, onSubmit, onCancel, isSubmit
                 >
                   <div className="flex items-start justify-between">
                     <div className="flex-1">
-                      <h4 className="font-bold text-[#000000]">{customer.name}</h4>
-                      <div className="text-sm text-slate-600 space-y-0.5 mt-1">
+                      <h4 className="text-[16px] font-medium text-[#111827] leading-[1.4]">{customer.name}</h4>
+                      <div className="text-[14px] text-slate-600 leading-[1.4] space-y-0.5 mt-1">
                         {customer.phone && <p>Phone: {customer.phone}</p>}
                         {customer.email && <p>Email: {customer.email}</p>}
                         {customer.customer_type && (
-                          <p className="text-xs text-slate-500">Type: {customer.customer_type}</p>
+                          <p className="text-[12px] text-slate-500 leading-[1.35]">Type: {customer.customer_type}</p>
                         )}
                       </div>
                     </div>
@@ -895,11 +895,11 @@ export default function JobForm({ job, technicians, onSubmit, onCancel, isSubmit
             </div>
 
             <div className="pt-3 border-t-2 border-slate-200">
-              <p className="text-xs text-slate-500 mb-3">
+              <p className="text-[12px] text-slate-500 leading-[1.35] mb-3">
                 New customer you're trying to create:
               </p>
-              <div className="p-2 bg-slate-50 rounded-lg text-sm">
-                <p className="font-semibold text-[#000000]">{newCustomerData.name}</p>
+              <div className="p-2 bg-slate-50 rounded-lg text-[14px] leading-[1.4]">
+                <p className="font-medium text-[#111827]">{newCustomerData.name}</p>
                 {newCustomerData.phone && <p className="text-slate-600">Phone: {newCustomerData.phone}</p>}
                 {newCustomerData.email && <p className="text-slate-600">Email: {newCustomerData.email}</p>}
               </div>
