@@ -23,6 +23,7 @@ import {
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
 import ProjectChangeHistoryModal from "./ProjectChangeHistoryModal";
+import ProjectStageSelector from "./ProjectStageSelector";
 
 const statusColors = {
   "Lead": "bg-slate-100 text-slate-800",
@@ -274,7 +275,7 @@ export default function ProjectDetails({ project, onClose, onEdit, onDelete }) {
           </div>
         </div>
 
-        <div className="space-y-2">
+        <div className="space-y-3">
           <div className="flex items-center gap-1.5 flex-wrap">
             <EditableField
               value={project.title}
@@ -304,26 +305,6 @@ export default function ProjectDetails({ project, onClose, onEdit, onDelete }) {
                 )}
               />
             )}
-            <EditableField
-              value={project.status}
-              onSave={(val) => handleFieldSave('status', project.status, val)}
-              type="select"
-              options={[
-                { value: "Lead", label: "Lead" },
-                { value: "Initial Site Visit", label: "Initial Site Visit" },
-                { value: "Quote Sent", label: "Quote Sent" },
-                { value: "Quote Approved", label: "Quote Approved" },
-                { value: "Final Measure", label: "Final Measure" },
-                { value: "Parts Ordered", label: "Parts Ordered" },
-                { value: "Scheduled", label: "Scheduled" },
-                { value: "Completed", label: "Completed" }
-              ]}
-              displayFormat={(val) => (
-                <Badge className={`${statusColors[val]} font-semibold border-0 px-2.5 py-0.5 rounded-lg text-xs`}>
-                  {val}
-                </Badge>
-              )}
-            />
             {project.financial_status && (
               <EditableField
                 value={project.financial_status}
@@ -346,6 +327,15 @@ export default function ProjectDetails({ project, onClose, onEdit, onDelete }) {
                 {customer.customer_type}
               </Badge>
             )}
+          </div>
+
+          <div className="bg-white p-3 rounded-lg border border-[#E5E7EB]">
+            <div className="text-xs font-semibold text-[#4B5563] mb-2 uppercase tracking-wide">Project Stage</div>
+            <ProjectStageSelector
+              currentStage={project.status}
+              onStageChange={(newStage) => handleFieldSave('status', project.status, newStage)}
+            />
+          </div>
             </div>
 
             <div 
