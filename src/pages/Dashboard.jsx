@@ -4,10 +4,11 @@ import { useQuery } from "@tanstack/react-query";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Plus, TrendingUp, Clock, Briefcase, Calendar, CheckCircle, MapPin } from "lucide-react";
-import { format, parseISO, isToday, isTomorrow } from "date-fns";
+import { Plus, TrendingUp, Clock, Briefcase, Calendar, CheckCircle } from "lucide-react";
+import { format, parseISO } from "date-fns";
 import { useNavigate } from "react-router-dom";
 import { createPageUrl } from "@/utils";
+import JobCard from "../components/jobs/JobCard";
 
 const statusColors = {
   "Open": "bg-[#F3F4F6] text-[#4B5563] border-[#E5E7EB]",
@@ -167,24 +168,13 @@ export default function Dashboard() {
                 <p className="text-[14px] text-[#4B5563] leading-[1.4] font-normal">No jobs scheduled for today</p>
               </div>
             ) : (
-              <div className="space-y-4">
+              <div className="space-y-3">
                 {todayJobs.map(job => (
-                  <div
+                  <JobCard
                     key={job.id}
-                    className="flex items-center justify-between p-5 rounded-xl border border-[#E5E7EB] hover:bg-[#F9FAFB] hover:border-[#FAE008] cursor-pointer transition-all duration-150 min-h-[72px]"
-                    onClick={() => window.location.href = `/Jobs?id=${job.id}`}
-                  >
-                    <div className="flex-1">
-                      <div className="flex items-center gap-2.5 mb-2">
-                        <span className="text-[14px] font-semibold text-[#111827] leading-[1.4]">#{job.job_number}</span>
-                        <span className={`text-[12px] px-3 py-1 rounded-full border font-medium leading-[1.35] ${statusColors[job.status]}`}>
-                          {job.status}
-                        </span>
-                      </div>
-                      <p className="text-[16px] font-medium text-[#111827] leading-[1.4]">{job.customer_name}</p>
-                      <p className="text-[14px] text-[#4B5563] leading-[1.4] mt-1 font-normal">{job.scheduled_time || 'No time set'}</p>
-                    </div>
-                  </div>
+                    job={job}
+                    onClick={() => navigate(createPageUrl("Jobs") + `?jobId=${job.id}`)}
+                  />
                 ))}
               </div>
             )}
