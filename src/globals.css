@@ -26,6 +26,11 @@
     --radius: 0.625rem;
     --success: 142 71% 45%;
     --warning: 25 95% 53%;
+    
+    /* Typography Colors */
+    --text-primary: #111827;
+    --text-secondary: #4B5563;
+    --text-muted: #6B7280;
   }
 }
 
@@ -36,21 +41,82 @@
   body {
     @apply bg-[#F8F9FA] text-[#111827];
     font-feature-settings: "rlig" 1, "calt" 1;
-    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen', 'Ubuntu', 'Cantarell', 'Fira Sans', 'Droid Sans', 'Helvetica Neue', sans-serif;
+    font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen', 'Ubuntu', 'Cantarell', sans-serif;
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
+    font-size: 14px;
+    font-weight: 400;
+    line-height: 1.4;
   }
   
-  h1, h2, h3, h4, h5, h6 {
-    @apply font-bold tracking-tight text-[#111827];
+  /* Typography Scale */
+  h1 {
+    @apply text-[28px] font-bold leading-[1.2] text-[#111827];
   }
   
-  p, span, div {
-    @apply tracking-normal;
+  h2 {
+    @apply text-[22px] font-semibold leading-[1.2] text-[#111827];
+  }
+  
+  h3 {
+    @apply text-[18px] font-semibold leading-[1.2] text-[#111827];
+  }
+  
+  h4, h5, h6 {
+    @apply text-[16px] font-medium leading-[1.2] text-[#111827];
+  }
+  
+  p, div, span {
+    @apply text-[14px] font-normal leading-[1.4];
+  }
+  
+  label {
+    @apply text-[14px] font-medium leading-[1.4] text-[#111827];
+  }
+  
+  small {
+    @apply text-[12px] font-normal leading-[1.35];
   }
 }
 
 @layer components {
+  /* Typography Utilities */
+  .text-h1 {
+    @apply text-[28px] font-bold leading-[1.2] text-[#111827];
+  }
+  
+  .text-h2 {
+    @apply text-[22px] font-semibold leading-[1.2] text-[#111827];
+  }
+  
+  .text-h3 {
+    @apply text-[18px] font-semibold leading-[1.2] text-[#111827];
+  }
+  
+  .text-body-large {
+    @apply text-[16px] font-medium leading-[1.4];
+  }
+  
+  .text-body {
+    @apply text-[14px] font-normal leading-[1.4];
+  }
+  
+  .text-small {
+    @apply text-[12px] font-normal leading-[1.35];
+  }
+  
+  .text-primary {
+    @apply text-[#111827];
+  }
+  
+  .text-secondary {
+    @apply text-[#4B5563];
+  }
+  
+  .text-muted {
+    @apply text-[#6B7280];
+  }
+
   /* Card styles */
   .card-enhanced {
     @apply bg-white rounded-xl border border-[#E5E7EB] shadow-sm transition-all duration-200;
@@ -75,38 +141,38 @@
   /* Button styles */
   .btn-primary {
     @apply bg-[#FAE008] text-[#111827] font-semibold hover:bg-[#E5CF07] active:bg-[#D4C006] transition-all duration-150;
-    @apply shadow-sm hover:shadow-md active:shadow-sm min-h-[44px] rounded-lg;
+    @apply shadow-sm hover:shadow-md active:shadow-sm min-h-[44px] rounded-lg text-[14px];
   }
   
   .btn-secondary {
     @apply bg-white text-[#111827] border border-[#E5E7EB] font-medium hover:bg-[#F9FAFB] hover:border-[#D1D5DB];
-    @apply transition-all duration-150 active:bg-[#F3F4F6] min-h-[44px] rounded-lg;
+    @apply transition-all duration-150 active:bg-[#F3F4F6] min-h-[44px] rounded-lg text-[14px];
   }
   
   /* Form inputs */
   .input-enhanced {
     @apply border-[#E5E7EB] focus:border-[#FAE008] focus:ring-2 focus:ring-[#FAE008]/20;
-    @apply transition-all duration-150 rounded-lg;
+    @apply transition-all duration-150 rounded-lg text-[14px];
   }
   
   /* Status badges */
   .badge-primary {
-    @apply bg-[#FAE008] text-[#111827] border border-[#FAE008] font-semibold px-3 py-1 rounded-full text-xs;
+    @apply bg-[#FAE008] text-[#111827] border border-[#FAE008] font-medium px-3 py-1 rounded-full text-[12px] leading-[1.35];
   }
   
   .badge-secondary {
-    @apply bg-[#F3F4F6] text-[#4B5563] border border-[#E5E7EB] font-medium px-3 py-1 rounded-full text-xs;
+    @apply bg-[#F3F4F6] text-[#4B5563] border border-[#E5E7EB] font-medium px-3 py-1 rounded-full text-[12px] leading-[1.35];
   }
   
   .badge-success {
-    @apply bg-[#16A34A]/10 text-[#16A34A] border border-[#16A34A]/20 font-medium px-3 py-1 rounded-full text-xs;
+    @apply bg-[#16A34A]/10 text-[#16A34A] border border-[#16A34A]/20 font-medium px-3 py-1 rounded-full text-[12px] leading-[1.35];
   }
   
   .badge-error {
-    @apply bg-[#DC2626]/10 text-[#DC2626] border border-[#DC2626]/20 font-medium px-3 py-1 rounded-full text-xs;
+    @apply bg-[#DC2626]/10 text-[#DC2626] border border-[#DC2626]/20 font-medium px-3 py-1 rounded-full text-[12px] leading-[1.35];
   }
   
   .badge-warning {
-    @apply bg-[#D97706]/10 text-[#D97706] border border-[#D97706]/20 font-medium px-3 py-1 rounded-full text-xs;
+    @apply bg-[#D97706]/10 text-[#D97706] border border-[#D97706]/20 font-medium px-3 py-1 rounded-full text-[12px] leading-[1.35];
   }
 }
