@@ -233,12 +233,12 @@ export default function Jobs() {
               />
             </div>
             <Tabs value={viewMode} onValueChange={setViewMode} className="flex-shrink-0">
-              <TabsList className="h-12 bg-white border border-[#E5E7EB] w-full md:w-auto">
-                <TabsTrigger value="list" className="gap-2 font-semibold min-h-[44px] data-[state=active]:bg-[#FAE008] data-[state=active]:text-[#111827] flex-1 md:flex-initial">
+              <TabsList className="bg-white rounded-full p-1.5 gap-2 w-full md:w-auto">
+                <TabsTrigger value="list" className="gap-2 flex-1 md:flex-initial">
                   <List className="w-4 h-4" />
                   <span className="hidden sm:inline">List</span>
                 </TabsTrigger>
-                <TabsTrigger value="calendar" className="gap-2 font-semibold min-h-[44px] data-[state=active]:bg-[#FAE008] data-[state=active]:text-[#111827] flex-1 md:flex-initial">
+                <TabsTrigger value="calendar" className="gap-2 flex-1 md:flex-initial">
                   <CalendarIcon className="w-4 h-4" />
                   <span className="hidden sm:inline">Calendar</span>
                 </TabsTrigger>
