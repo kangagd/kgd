@@ -182,7 +182,7 @@ export default function Dashboard() {
           </div>
 
           <div className="bg-white rounded-xl border border-[#E5E7EB] p-7 shadow-sm">
-            <h2 className="text-[22px] font-semibold text-[#111827] leading-[1.2] mb-6">Recent Check-ins</h2>
+            <h2 className="text-[22px] font-semibold text-[#111827] leading-[1.2] mb-6">Project Updates</h2>
             {todayCheckIns.length === 0 ? (
               <div className="text-center py-16">
                 <CheckCircle className="w-14 h-14 mx-auto text-[#D1D5DB] mb-4" />
