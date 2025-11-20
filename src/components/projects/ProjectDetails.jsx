@@ -292,9 +292,9 @@ export default function ProjectDetails({ project: initialProject, onClose, onEdi
   }, [project.status]);
 
   return (
-    <div className="relative flex gap-4">
+    <div className="relative flex flex-col lg:flex-row gap-4">
       {/* Customer Sidebar */}
-      <aside className="w-72 flex-shrink-0 sticky top-4 self-start">
+      <aside className="w-full lg:w-72 flex-shrink-0 lg:sticky lg:top-4 lg:self-start">
         <Card className="border border-[#E5E7EB] shadow-sm rounded-lg overflow-hidden">
           <CardHeader className="bg-[#F8F9FA] px-4 py-3 border-b border-[#E5E7EB]">
             <h3 className="text-[18px] font-semibold text-[#111827] leading-[1.2]">Customer</h3>
@@ -447,7 +447,7 @@ export default function ProjectDetails({ project: initialProject, onClose, onEdi
             </aside>
 
             {/* Main Content */}
-            <div className="flex-1 min-w-0">
+            <div className="flex-1 w-full lg:min-w-0">
       <Card className="border border-[#E5E7EB] shadow-sm rounded-lg overflow-hidden">
         <CardHeader className="border-b border-[#E5E7EB] bg-white p-3 md:p-4 space-y-3">
         <div className="flex items-center justify-between gap-3">
