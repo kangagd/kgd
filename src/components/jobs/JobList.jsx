@@ -8,24 +8,11 @@ import { base44 } from "@/api/base44Client";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { unescape } from "lodash";
 
-const statusColors = {
-  open: "bg-[hsl(32,25%,94%)] text-[hsl(25,10%,12%)] border-[hsl(32,15%,88%)]",
-  scheduled: "bg-[#fae008]/20 text-[hsl(25,10%,12%)] border-[#fae008]/30",
-  quoted: "bg-purple-100 text-purple-800 border-purple-200",
-  invoiced: "bg-indigo-100 text-indigo-800 border-indigo-200",
-  paid: "bg-green-100 text-green-800 border-green-200",
-  completed: "bg-emerald-100 text-emerald-800 border-emerald-200",
-  lost: "bg-red-100 text-red-800 border-red-200"
-};
-
-const statusLabels = {
-  open: "Open",
-  scheduled: "Scheduled",
-  quoted: "Quoted",
-  invoiced: "Invoiced",
-  paid: "Paid",
-  completed: "Completed",
-  lost: "Lost"
+const jobStatusColors = {
+  "Open": "bg-slate-100 text-slate-800 border-slate-300",
+  "Scheduled": "bg-blue-100 text-blue-800 border-blue-300",
+  "Completed": "bg-green-100 text-green-800 border-green-300",
+  "Cancelled": "bg-red-100 text-red-800 border-red-300"
 };
 
 const productColors = {
@@ -155,7 +142,7 @@ export default function JobList({ jobs, isLoading, onSelectJob }) {
         <Card 
           key={job.id}
           className="hover:shadow-xl transition-all duration-200 cursor-pointer border-l-4 hover:scale-[1.01] active:scale-[0.99] group rounded-2xl border-2 border-[hsl(32,15%,88%)]"
-          style={{ borderLeftColor: job.status === 'in_progress' ? '#3b82f6' : job.status === 'completed' ? '#10b981' : '#fae008', borderLeftWidth: '6px' }}
+          style={{ borderLeftColor: (job.job_status === 'Completed' || job.status === 'completed') ? '#10b981' : (job.job_status === 'Scheduled' || job.status === 'scheduled') ? '#3b82f6' : '#fae008', borderLeftWidth: '6px' }}
           onClick={() => onSelectJob(job)}
         >
           <CardContent className="p-6">
@@ -247,10 +234,10 @@ export default function JobList({ jobs, isLoading, onSelectJob }) {
               </div>
               
               <div className="flex flex-col gap-2 items-end ml-3">
-                <Badge className={`${statusColors[job.status]} font-semibold shadow-sm border-2`}>
-                  {statusLabels[job.status] || job.status}
+                <Badge className={`${jobStatusColors[job.job_status || job.status] || jobStatusColors["Open"]} font-semibold shadow-sm border-2`}>
+                  {job.job_status || job.status}
                 </Badge>
-                {isTechnician && job.status === 'scheduled' && job.assigned_to?.includes(user?.email) && !hasActiveCheckIn(job.id) && (
+                {isTechnician && (job.job_status === 'Scheduled' || job.status === 'scheduled') && job.assigned_to?.includes(user?.email) && !hasActiveCheckIn(job.id) && (
                   <Button
                     size="sm"
                     onClick={(e) => handleCheckIn(e, job)}
