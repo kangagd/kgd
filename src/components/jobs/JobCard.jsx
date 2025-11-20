@@ -38,9 +38,14 @@ export default function JobCard({ job, onClick }) {
         <div className="space-y-3">
           {/* Title and Customer */}
           <div>
-            <h3 className="text-[18px] font-semibold text-[#111827] leading-[1.2] mb-2">
-              {job.customer_name}
-            </h3>
+            <div className="flex items-center justify-between mb-2">
+              <h3 className="text-[18px] font-semibold text-[#111827] leading-[1.2]">
+                {job.customer_name}
+              </h3>
+              <Badge className="bg-white text-[#6B7280] hover:bg-white border border-[#E5E7EB] font-medium px-2.5 py-0.5 rounded-lg">
+                #{job.job_number}
+              </Badge>
+            </div>
             <div className="flex items-center gap-2">
               <MapPin className="w-4 h-4 text-[#6B7280] flex-shrink-0" />
               <span className="text-[14px] text-[#4B5563] leading-[1.4]">{job.address}</span>
@@ -49,9 +54,6 @@ export default function JobCard({ job, onClick }) {
 
           {/* Metadata row */}
           <div className="flex items-center gap-2 flex-wrap text-[14px]">
-            <Badge className="bg-white text-[#6B7280] hover:bg-white border border-[#E5E7EB] font-medium px-2.5 py-0.5 rounded-lg">
-              #{job.job_number}
-            </Badge>
             {job.project_name && (
               <Badge className="bg-[#FAE008]/20 text-[#92400E] hover:bg-[#FAE008]/20 border-0 font-medium px-2.5 py-0.5 rounded-lg">
                 {job.project_name}
