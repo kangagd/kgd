@@ -187,6 +187,56 @@ export default function JobForm({ job, technicians, onSubmit, onCancel, isSubmit
     if (!submitData.job_type) delete submitData.job_type;
     if (!submitData.product) delete submitData.product;
     if (!submitData.outcome) delete submitData.outcome;
+
+    // Generate AI briefing for new jobs
+    if (!job && formData.project_id) {
+      try {
+        const project = projects.find(p => p.id === formData.project_id);
+        const customer = customers.find(c => c.id === formData.customer_id);
+        
+        // Fetch past visits for this project
+        const pastVisits = await base44.entities.JobSummary.filter({ project_id: formData.project_id }, '-check_out_time', 3);
+        
+        let briefingPrompt = `Generate a concise job briefing for a technician in 3-4 bullet points using HTML <ul> and <li> tags.
+
+**Job Details:**
+- Type: ${formData.job_type || 'General service'}
+- Product: ${formData.product || 'Not specified'}
+- Address: ${formData.address}
+
+**Customer:**
+- Name: ${customer?.name || formData.customer_name}
+- Type: ${customer?.customer_type || 'Standard'}
+
+**Project Context:**
+- ${project?.title || 'Standalone job'}
+- ${project?.description || ''}`;
+
+        if (project?.doors && project.doors.length > 0) {
+          briefingPrompt += `\n\n**Installation Specs:**\n`;
+          project.doors.forEach((door, idx) => {
+            briefingPrompt += `- Door ${idx + 1}: ${door.height || '?'} × ${door.width || '?'} ${door.type ? `• ${door.type}` : ''} ${door.style ? `• ${door.style}` : ''}\n`;
+          });
+        }
+
+        if (pastVisits && pastVisits.length > 0) {
+          briefingPrompt += `\n\n**Recent Visit Context:**\n`;
+          pastVisits.slice(0, 2).forEach((visit) => {
+            briefingPrompt += `- ${visit.technician_name}: ${visit.outcome?.replace(/_/g, ' ') || 'Visit completed'}\n`;
+          });
+        }
+
+        briefingPrompt += `\n\nFormat as HTML bullet points. Focus on: what the technician needs to know, any special customer requirements, and critical next steps.`;
+
+        const briefing = await base44.integrations.Core.InvokeLLM({
+          prompt: briefingPrompt
+        });
+
+        submitData.job_briefing = briefing;
+      } catch (error) {
+        console.error('Failed to generate briefing:', error);
+      }
+    }
     
     onSubmit(submitData);
   };

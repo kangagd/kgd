@@ -651,6 +651,24 @@ export default function JobDetails({ job: initialJob, onClose, onStatusChange, o
           </div>
         </CardHeader>
 
+        {/* AI Job Briefing for Technicians */}
+        {isTechnician && job.job_briefing && (
+          <div className="bg-gradient-to-r from-[#FAE008]/10 to-[#FAE008]/5 border-b border-[#FAE008]/30 p-4">
+            <div className="flex items-start gap-3">
+              <div className="w-8 h-8 bg-[#FAE008] rounded-lg flex items-center justify-center flex-shrink-0">
+                <Sparkles className="w-4 h-4 text-[#111827]" />
+              </div>
+              <div className="flex-1 min-w-0">
+                <h4 className="text-sm font-semibold text-[#111827] mb-2">Job Briefing</h4>
+                <div 
+                  className="text-sm text-[#4B5563] prose prose-sm max-w-none"
+                  dangerouslySetInnerHTML={{ __html: job.job_briefing }}
+                />
+              </div>
+            </div>
+          </div>
+        )}
+
         {/* Technician Quick Actions */}
         {isTechnician &&
         <div className={`bg-white border-b border-[#E5E7EB] p-3 ${isTechnician ? 'sticky top-0 z-20 shadow-sm' : ''}`}>
