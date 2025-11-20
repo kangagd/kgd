@@ -231,8 +231,7 @@ export default function ProjectDetails({ project: initialProject, onClose, onEdi
         job_type_id: jobType?.id || null,
         job_type_name: jobTypeName,
         status: jobTypeName === "Installation" && newStage === "Scheduled" ? "Scheduled" : "Open",
-        scheduled_date: new Date().toISOString().split('T')[0],
-        notes: `Auto-created from project stage: ${newStage}`
+        scheduled_date: new Date().toISOString().split('T')[0]
       });
 
       // Log the auto-creation in change history
