@@ -500,7 +500,7 @@ export default function ProjectDetails({ project, onClose, onEdit, onDelete }) {
           </TabsList>
 
           <TabsContent value="overview" className="space-y-3 mt-3">
-            <div className="bg-white rounded-lg p-4">
+            <div>
               <RichTextField
                 label="Description"
                 value={description}
@@ -510,7 +510,7 @@ export default function ProjectDetails({ project, onClose, onEdit, onDelete }) {
               />
             </div>
 
-            <div className="bg-white rounded-lg p-4">
+            <div>
               <RichTextField
                 label="Notes"
                 value={notes}
