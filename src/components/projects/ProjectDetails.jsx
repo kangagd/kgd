@@ -1153,15 +1153,6 @@ Format as HTML bullet points using <ul> and <li> tags. Include only the most cri
       />
       </Card>
       </div>
-
-      <Button
-        onClick={handleAddJob}
-        className="fixed bottom-6 right-6 h-14 w-14 rounded-full shadow-lg bg-[#FAE008] hover:bg-[#E5CF07] text-[#111827] z-50 hover:scale-105 transition-all"
-        size="icon"
-        title="Add New Visit"
-      >
-        <Plus className="w-6 h-6" />
-      </Button>
     </div>
   );
 }
