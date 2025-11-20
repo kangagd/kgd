@@ -798,7 +798,7 @@ Format as HTML bullet points using <ul> and <li> tags. Include only the most cri
               <div>
                 <div className="flex items-center justify-between mb-1.5">
                   <label className="block text-[13px] md:text-[14px] font-medium text-[#4B5563]">
-                    Installation Details
+                    Measurements Provided
                   </label>
                   {!showAddDoor && (
                     <button
