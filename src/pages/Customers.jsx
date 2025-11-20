@@ -87,7 +87,7 @@ export default function Customers() {
 
   if (showForm) {
     return (
-      <div className="page-container">
+      <div className="p-5 md:p-10 bg-[#F8F9FA] min-h-screen">
         <div className="max-w-4xl mx-auto">
           <CustomerForm
             customer={editingCustomer}
@@ -105,7 +105,7 @@ export default function Customers() {
 
   if (selectedCustomer) {
     return (
-      <div className="page-container">
+      <div className="p-5 md:p-10 bg-[#F8F9FA] min-h-screen">
         <div className="max-w-4xl mx-auto">
           <CustomerDetails
             customer={selectedCustomer}
@@ -119,7 +119,7 @@ export default function Customers() {
   }
 
   return (
-    <div className="page-container overflow-x-hidden">
+    <div className="p-5 md:p-10 bg-[#F8F9FA] min-h-screen overflow-x-hidden">
       <div className="max-w-7xl mx-auto w-full">
         <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-8 gap-5">
           <div>
@@ -166,7 +166,7 @@ export default function Customers() {
             <p className="text-[14px] text-[#6B7280] leading-[1.4]">Try adjusting your search or add a new customer</p>
           </Card>
         ) : (
-          <div className="card-grid">
+          <div className="grid gap-3">
             {filteredCustomers.map((customer) => (
               <CustomerCard
                 key={customer.id}

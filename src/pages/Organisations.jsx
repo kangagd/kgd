@@ -116,7 +116,7 @@ export default function Organisations() {
   }
 
   return (
-    <div className="page-container overflow-x-hidden">
+    <div className="p-5 md:p-10 bg-[#F8F9FA] min-h-screen overflow-x-hidden">
       <div className="max-w-7xl mx-auto w-full">
         <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-8 gap-5">
           <div>
@@ -145,7 +145,7 @@ export default function Organisations() {
         </div>
 
       {isLoading ? (
-        <div className="card-grid">
+        <div className="grid gap-4">
           {[1, 2, 3].map((i) => (
             <Card key={i} className="animate-pulse rounded-2xl">
               <CardContent className="p-6">
@@ -173,7 +173,7 @@ export default function Organisations() {
           )}
         </Card>
       ) : (
-        <div className="card-grid">
+        <div className="grid gap-4">
           {filteredOrganisations.map((org) => (
             <Card
               key={org.id}

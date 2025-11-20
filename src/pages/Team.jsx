@@ -15,7 +15,7 @@ export default function Team() {
   const admins = users.filter(u => u.role === 'admin');
 
   return (
-    <div className="page-container">
+    <div className="p-5 md:p-10 bg-[#F8F9FA] min-h-screen">
       <div className="max-w-6xl mx-auto">
         <div className="mb-8">
           <h1 className="text-3xl font-bold text-[#111827] tracking-tight">Team</h1>

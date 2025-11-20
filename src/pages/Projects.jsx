@@ -183,7 +183,7 @@ export default function Projects() {
 
   if (showForm) {
     return (
-      <div className="page-container">
+      <div className="p-5 md:p-10 bg-[#F8F9FA] min-h-screen">
         <div className="max-w-4xl mx-auto">
           <ProjectForm
             project={editingProject}
@@ -201,8 +201,8 @@ export default function Projects() {
 
   if (selectedProject) {
     return (
-      <div className="page-container">
-        <div className="mx-auto max-w-6xl">
+      <div className="bg-[#F8F9FA] min-h-screen">
+        <div className="mx-auto p-5 md:p-10 max-w-6xl">
           <ProjectDetails
             project={selectedProject}
             onClose={() => setSelectedProject(null)}
@@ -215,7 +215,7 @@ export default function Projects() {
   }
 
   return (
-    <div className="page-container overflow-x-hidden">
+    <div className="p-5 md:p-10 bg-[#F8F9FA] min-h-screen overflow-x-hidden">
       <div className="max-w-7xl mx-auto w-full">
         <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-8 gap-5">
           <div>
@@ -371,7 +371,7 @@ export default function Projects() {
           </div>
         )}
 
-        <div className="card-grid">
+        <div className="grid gap-4">
           {filteredProjects.map((project) => {
             const jobCount = getJobCount(project.id);
             const nextJob = getNextJob(project.id);
@@ -381,10 +381,10 @@ export default function Projects() {
             return (
               <Card
                 key={project.id}
-                className="card-global hover:shadow-lg transition-all duration-200 cursor-pointer hover:border-[#FAE008]"
+                className="hover:shadow-lg transition-all duration-200 cursor-pointer hover:border-[#FAE008] border border-[#E5E7EB] rounded-xl"
                 onClick={() => setSelectedProject(project)}
               >
-                <CardContent className="p-0">
+                <CardContent className="p-4">
                   {/* Top row */}
                   <div className="flex items-start justify-between gap-4 mb-3">
                     <h3 className="text-[18px] font-semibold text-[#111827] leading-[1.2] flex-1">{project.title}</h3>

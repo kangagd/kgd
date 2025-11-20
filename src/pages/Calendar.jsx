@@ -80,8 +80,8 @@ export default function Calendar() {
 
   if (selectedJob) {
     return (
-      <div className="page-container">
-        <div className="max-w-4xl mx-auto">
+      <div className="bg-[#F8F9FA] min-h-screen">
+        <div className="p-5 md:p-10 max-w-4xl mx-auto">
           <JobDetails
             job={selectedJob}
             onClose={() => setSelectedJob(null)}
@@ -94,7 +94,7 @@ export default function Calendar() {
   }
 
   return (
-    <div className="page-container overflow-x-hidden">
+    <div className="p-5 md:p-10 bg-[#F8F9FA] min-h-screen overflow-x-hidden">
       <div className="max-w-7xl mx-auto w-full space-y-6">
         <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
           <div>

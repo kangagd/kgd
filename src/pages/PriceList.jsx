@@ -124,7 +124,7 @@ export default function PriceList() {
   }
 
   return (
-    <div className="page-container overflow-x-hidden">
+    <div className="p-5 md:p-10 bg-[#F8F9FA] min-h-screen overflow-x-hidden">
       <div className="max-w-7xl mx-auto w-full">
         <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-8 gap-5">
           <div>
@@ -189,7 +189,7 @@ export default function PriceList() {
         </div>
 
         {isLoading ? (
-          <div className="card-grid">
+          <div className="grid gap-3">
             {[1, 2, 3, 4, 5].map((i) => (
               <Card key={i} className="p-4 animate-pulse">
                 <div className="h-6 bg-[hsl(32,15%,88%)] rounded w-1/3 mb-2"></div>
@@ -204,7 +204,7 @@ export default function PriceList() {
             <p className="text-[hsl(25,8%,45%)]">Try adjusting your search</p>
           </Card>
         ) : (
-          <div className="card-grid">
+          <div className="grid gap-3">
             {filteredItems.map((item) => (
               <PriceListCard
                 key={item.id}

@@ -183,7 +183,7 @@ export default function Archive() {
   };
 
   return (
-    <div className="page-container">
+    <div className="p-4 md:p-8 bg-gradient-to-br from-[hsl(32,20%,98%)] to-[hsl(32,25%,94%)] min-h-screen">
       <div className="max-w-7xl mx-auto">
         <div className="mb-6">
           <div className="flex items-center gap-3 mb-2">
@@ -209,7 +209,7 @@ export default function Archive() {
 
           <TabsContent value="jobs">
             {jobsLoading ? (
-              <div className="card-grid">
+              <div className="grid gap-4">
                 {[1, 2, 3].map((i) => (
                   <Card key={i} className="animate-pulse rounded-xl">
                     <CardContent className="p-6">
@@ -226,7 +226,7 @@ export default function Archive() {
                 <p className="text-[hsl(25,8%,45%)]">Deleted jobs will appear here for 30 days</p>
               </Card>
             ) : (
-              <div className="card-grid">
+              <div className="grid gap-4">
                 {deletedJobs.map(renderJobCard)}
               </div>
             )}
@@ -234,7 +234,7 @@ export default function Archive() {
 
           <TabsContent value="customers">
             {customersLoading ? (
-              <div className="card-grid">
+              <div className="grid gap-4">
                 {[1, 2, 3].map((i) => (
                   <Card key={i} className="animate-pulse rounded-xl">
                     <CardContent className="p-6">
@@ -251,7 +251,7 @@ export default function Archive() {
                 <p className="text-[hsl(25,8%,45%)]">Deleted customers will appear here for 30 days</p>
               </Card>
             ) : (
-              <div className="card-grid">
+              <div className="grid gap-4">
                 {deletedCustomers.map(renderCustomerCard)}
               </div>
             )}
