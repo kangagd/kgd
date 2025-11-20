@@ -83,6 +83,35 @@ export default function JobForm({ job, technicians, onSubmit, onCancel, isSubmit
     }
   }, [preselectedCustomerId, customers]);
 
+  const generateNotes = async (project, jobTypeId) => {
+    if (!project || !jobTypeId) return;
+
+    const jobType = jobTypes.find(jt => jt.id === jobTypeId);
+    if (!jobType) return;
+
+    try {
+      const prompt = `Generate concise job notes and instructions for a technician based on the following information:
+
+  Job Type: ${jobType.name}
+  ${jobType.description ? `Job Type Description: ${jobType.description}` : ''}
+  Project: ${project.title}
+  Project Type: ${project.project_type}
+  ${project.description ? `Project Description: ${project.description}` : ''}
+  ${project.notes ? `Project Notes: ${project.notes}` : ''}
+  Address: ${project.address || 'Not specified'}
+
+  Generate clear, actionable instructions for the technician. Keep it practical and focused on what they need to know and do during the visit.`;
+
+      const response = await base44.integrations.Core.InvokeLLM({
+        prompt: prompt
+      });
+
+      setFormData(prev => ({ ...prev, notes: response }));
+    } catch (error) {
+      console.error("Failed to generate notes:", error);
+    }
+  };
+
   useEffect(() => {
     if (preselectedProjectId && projects.length > 0 && !job) {
       const project = projects.find(p => p.id === preselectedProjectId);
@@ -106,7 +135,6 @@ export default function JobForm({ job, technicians, onSubmit, onCancel, isSubmit
           customer_email: project.customer_email || "",
           address: project.address || formData.address,
           product: autoProduct,
-          notes: project.notes || "",
           additional_info: project.description || "",
           image_urls: project.image_urls || [],
           quote_url: project.quote_url || "",
@@ -190,7 +218,7 @@ export default function JobForm({ job, technicians, onSubmit, onCancel, isSubmit
     }
   };
 
-  const handleJobTypeChange = (jobTypeId) => {
+  const handleJobTypeChange = async (jobTypeId) => {
     const jobType = jobTypes.find(jt => jt.id === jobTypeId);
     if (jobType) {
       setFormData({
@@ -199,6 +227,14 @@ export default function JobForm({ job, technicians, onSubmit, onCancel, isSubmit
         job_type: jobType.name,
         expected_duration: jobType.estimated_duration || formData.expected_duration
       });
+
+      // Generate notes if we have a project
+      if (formData.project_id && !job) {
+        const project = projects.find(p => p.id === formData.project_id);
+        if (project) {
+          await generateNotes(project, jobTypeId);
+        }
+      }
     }
   };
 
