@@ -185,7 +185,7 @@ export default function ProjectDetails({ project, onClose, onEdit, onDelete }) {
             </div>
           </div>
 
-          <div className="flex items-center gap-2 flex-wrap">
+          <div className="flex items-center gap-1.5 flex-wrap">
             <EditableField
               value={project.title}
               onSave={(val) => handleFieldSave('title', project.title, val)}
@@ -206,7 +206,7 @@ export default function ProjectDetails({ project, onClose, onEdit, onDelete }) {
                   { value: "Maintenance", label: "Maintenance" }
                 ]}
                 displayFormat={(val) => (
-                  <Badge className={`${projectTypeColors[val]} font-semibold border-0 px-3 py-1 rounded-lg`}>
+                  <Badge className={`${projectTypeColors[val]} font-semibold border-0 px-2.5 py-0.5 rounded-lg text-xs`}>
                     {val}
                   </Badge>
                 )}
@@ -226,8 +226,8 @@ export default function ProjectDetails({ project, onClose, onEdit, onDelete }) {
                 { value: "cancelled", label: "Cancelled" }
               ]}
               displayFormat={(val) => (
-                <Badge className={`${statusColors[val]} font-semibold border-0 px-3 py-1 rounded-lg`}>
-                  {val}
+                <Badge className={`${statusColors[val]} font-semibold border-0 px-2.5 py-0.5 rounded-lg text-xs`}>
+                  {val.charAt(0).toUpperCase() + val.slice(1)}
                 </Badge>
               )}
             />
@@ -254,15 +254,18 @@ export default function ProjectDetails({ project, onClose, onEdit, onDelete }) {
                   { value: "maintenance_performed", label: "Maintenance Performed" },
                   { value: "report_delivered", label: "Report Delivered" }
                 ]}
-                displayFormat={(val) => (
-                  <Badge variant="outline" className="font-semibold text-xs border-[#E5E7EB] px-3 py-1 rounded-lg">
-                    {val.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase())}
-                  </Badge>
-                )}
+                displayFormat={(val) => {
+                  const formatted = val.replace(/_/g, ' ');
+                  return (
+                    <Badge variant="outline" className="font-semibold border-[#E5E7EB] px-2.5 py-0.5 rounded-lg text-xs">
+                      {formatted.charAt(0).toUpperCase() + formatted.slice(1)}
+                    </Badge>
+                  );
+                }}
               />
             )}
             {customer?.customer_type && (
-              <Badge className="bg-[#EDE9FE] text-[#6D28D9] hover:bg-[#EDE9FE] border-0 font-semibold text-xs px-3 py-1 rounded-lg">
+              <Badge className="bg-[#EDE9FE] text-[#6D28D9] hover:bg-[#EDE9FE] border-0 font-semibold px-2.5 py-0.5 rounded-lg text-xs">
                 {customer.customer_type}
               </Badge>
             )}
