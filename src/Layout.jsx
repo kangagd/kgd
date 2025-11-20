@@ -190,6 +190,26 @@ export default function Layout({ children, currentPageName }) {
         />
       )}
 
+      {/* Collapse Toggle Button */}
+      <button
+        onClick={() => setIsCollapsed(!isCollapsed)}
+        className={`
+          hidden lg:flex fixed top-4 z-50 w-8 h-8
+          items-center justify-center
+          bg-white border border-[#E5E7EB] rounded-lg shadow-md
+          hover:bg-[#F3F4F6] hover:border-[#FAE008]
+          transition-all duration-300
+          ${isCollapsed ? 'left-[84px]' : 'left-[272px]'}
+        `}
+        aria-label={isCollapsed ? "Expand sidebar" : "Collapse sidebar"}
+      >
+        {isCollapsed ? (
+          <ChevronRight className="w-4 h-4 text-[#4B5563]" />
+        ) : (
+          <ChevronLeft className="w-4 h-4 text-[#4B5563]" />
+        )}
+      </button>
+
       {/* Sidebar / Mobile Drawer */}
       <aside 
         className={`
@@ -259,20 +279,7 @@ export default function Layout({ children, currentPageName }) {
             </div>
           </nav>
 
-          {/* Collapse Toggle (Desktop only) */}
-          <div className="hidden lg:block p-3 border-t border-[#E5E7EB]">
-            <button
-              onClick={() => setIsCollapsed(!isCollapsed)}
-              className="w-full flex items-center justify-center p-2 hover:bg-[#F3F4F6] rounded-lg transition-colors"
-              aria-label={isCollapsed ? "Expand sidebar" : "Collapse sidebar"}
-            >
-              {isCollapsed ? (
-                <ChevronRight className="w-5 h-5 text-[#4B5563]" />
-              ) : (
-                <ChevronLeft className="w-5 h-5 text-[#4B5563]" />
-              )}
-            </button>
-          </div>
+
 
           {/* User Profile */}
           <div className="p-3 border-t border-[#E5E7EB]">
