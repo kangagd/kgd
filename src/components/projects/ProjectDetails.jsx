@@ -56,10 +56,10 @@ const projectTypeColors = {
 };
 
 const jobStatusColors = {
-  "Open": "bg-slate-100 text-slate-800",
-  "Scheduled": "bg-blue-100 text-blue-800",
-  "Completed": "bg-emerald-100 text-emerald-800",
-  "Cancelled": "bg-red-100 text-red-800"
+  "Open": "bg-slate-100 text-slate-700",
+  "Scheduled": "bg-[#FAE008] text-[#111827]",
+  "Completed": "bg-emerald-100 text-emerald-700",
+  "Cancelled": "bg-red-100 text-red-700"
 };
 
 export default function ProjectDetails({ project: initialProject, onClose, onEdit, onDelete }) {
