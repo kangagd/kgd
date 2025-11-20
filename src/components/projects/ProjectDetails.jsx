@@ -277,7 +277,7 @@ export default function ProjectDetails({ project, onClose, onEdit, onDelete }) {
 
         <div className="space-y-3">
           <div className="bg-white p-3 rounded-lg border border-[#E5E7EB] overflow-hidden">
-            <div className="text-xs font-semibold text-[#4B5563] mb-2 uppercase tracking-wide">Project Stage</div>
+            <div className="text-[12px] font-medium text-[#4B5563] leading-[1.35] mb-2 uppercase tracking-wide">Project Stage</div>
             <ProjectStageSelector
               currentStage={project.status}
               onStageChange={(newStage) => handleFieldSave('status', project.status, newStage)}
@@ -290,7 +290,7 @@ export default function ProjectDetails({ project, onClose, onEdit, onDelete }) {
               onSave={(val) => handleFieldSave('title', project.title, val)}
               type="text"
               placeholder="Project Title"
-              className="text-xl font-semibold text-[#111827]"
+              className="text-[22px] font-semibold text-[#111827] leading-[1.2]"
             />
             {project.project_type && (
               <EditableField
@@ -307,7 +307,7 @@ export default function ProjectDetails({ project, onClose, onEdit, onDelete }) {
                   { value: "Maintenance", label: "Maintenance" }
                 ]}
                 displayFormat={(val) => (
-                  <Badge className={`${projectTypeColors[val]} font-semibold border-0 px-2.5 py-0.5 rounded-lg text-xs`}>
+                  <Badge className={`${projectTypeColors[val]} font-medium border-0 px-2.5 py-0.5 rounded-lg text-[12px] leading-[1.35]`}>
                     {val}
                   </Badge>
                 )}
@@ -324,21 +324,21 @@ export default function ProjectDetails({ project, onClose, onEdit, onDelete }) {
                   { value: "Balance paid in full", label: "Balance paid in full" }
                 ]}
                 displayFormat={(val) => (
-                  <Badge className={`${financialStatusColors[val]} font-semibold border-0 px-2.5 py-0.5 rounded-lg text-xs`}>
+                  <Badge className={`${financialStatusColors[val]} font-medium border-0 px-2.5 py-0.5 rounded-lg text-[12px] leading-[1.35]`}>
                     {val}
                   </Badge>
                 )}
               />
             )}
             {customer?.customer_type && (
-              <Badge className="bg-[#EDE9FE] text-[#6D28D9] hover:bg-[#EDE9FE] border-0 font-semibold px-2.5 py-0.5 rounded-lg text-xs">
+              <Badge className="bg-[#EDE9FE] text-[#6D28D9] hover:bg-[#EDE9FE] border-0 font-medium px-2.5 py-0.5 rounded-lg text-[12px] leading-[1.35]">
                 {customer.customer_type}
               </Badge>
             )}
           </div>
 
           <div 
-            className="text-sm font-medium text-[#4B5563] cursor-pointer hover:text-[#FAE008] transition-colors"
+            className="text-[16px] font-medium text-[#4B5563] leading-[1.4] cursor-pointer hover:text-[#FAE008] transition-colors"
             onClick={handleCustomerClick}
           >
             {project.customer_name}
@@ -350,13 +350,13 @@ export default function ProjectDetails({ project, onClose, onEdit, onDelete }) {
             <div className="flex items-center gap-2.5">
               <MapPin className="w-5 h-5 text-[#4B5563]" />
               <div className="flex-1 min-w-0">
-                <div className="text-xs text-[#4B5563] font-medium mb-0.5">Address</div>
+                <div className="text-[12px] text-[#6B7280] font-normal leading-[1.35] mb-0.5">Address</div>
                 <EditableField
                   value={project.address}
                   onSave={(val) => handleFieldSave('address', project.address, val)}
                   type="text"
                   placeholder="Set address"
-                  className="font-semibold text-[#111827] text-sm"
+                  className="text-[14px] font-medium text-[#111827] leading-[1.4]"
                 />
               </div>
             </div>
@@ -366,8 +366,8 @@ export default function ProjectDetails({ project, onClose, onEdit, onDelete }) {
                   <Phone className="w-5 h-5 text-[#4B5563]" />
                 </a>
                 <div className="flex-1 min-w-0">
-                  <div className="text-xs text-[#4B5563] font-medium mb-0.5">Phone</div>
-                  <span className="font-semibold text-[#111827] text-sm">{project.customer_phone}</span>
+                  <div className="text-[12px] text-[#6B7280] font-normal leading-[1.35] mb-0.5">Phone</div>
+                  <span className="text-[14px] font-medium text-[#111827] leading-[1.4]">{project.customer_phone}</span>
                 </div>
               </div>
             )}
@@ -377,8 +377,8 @@ export default function ProjectDetails({ project, onClose, onEdit, onDelete }) {
                   <Mail className="w-5 h-5 text-[#4B5563]" />
                 </a>
                 <div className="flex-1 min-w-0">
-                  <div className="text-xs text-[#4B5563] font-medium mb-0.5">Email</div>
-                  <span className="font-semibold text-[#111827] text-sm">{project.customer_email}</span>
+                  <div className="text-[12px] text-[#6B7280] font-normal leading-[1.35] mb-0.5">Email</div>
+                  <span className="text-[14px] font-medium text-[#111827] leading-[1.4]">{project.customer_email}</span>
                 </div>
               </div>
             )}
@@ -390,16 +390,16 @@ export default function ProjectDetails({ project, onClose, onEdit, onDelete }) {
       <CardContent className="p-3 md:p-4">
         <Tabs defaultValue="overview" className="w-full">
           <TabsList className="w-full grid grid-cols-4 h-11 bg-[#F8F9FA] border border-[#E5E7EB] rounded-lg p-1">
-            <TabsTrigger value="overview" className="text-sm font-semibold data-[state=active]:bg-white data-[state=active]:shadow-sm">Overview</TabsTrigger>
-            <TabsTrigger value="images" className="text-sm font-semibold data-[state=active]:bg-white data-[state=active]:shadow-sm">
+            <TabsTrigger value="overview" className="text-[14px] font-medium leading-[1.4] data-[state=active]:bg-white data-[state=active]:shadow-sm">Overview</TabsTrigger>
+            <TabsTrigger value="images" className="text-[14px] font-medium leading-[1.4] data-[state=active]:bg-white data-[state=active]:shadow-sm">
               <ImageIcon className="w-4 h-4 mr-1.5" />
               <span className="hidden md:inline">Images</span>
             </TabsTrigger>
-            <TabsTrigger value="attachments" className="text-sm font-semibold data-[state=active]:bg-white data-[state=active]:shadow-sm">
+            <TabsTrigger value="attachments" className="text-[14px] font-medium leading-[1.4] data-[state=active]:bg-white data-[state=active]:shadow-sm">
               <FileText className="w-4 h-4 mr-1.5" />
               <span className="hidden md:inline">Files</span>
             </TabsTrigger>
-            <TabsTrigger value="jobs" className="text-sm font-semibold data-[state=active]:bg-white data-[state=active]:shadow-sm">
+            <TabsTrigger value="jobs" className="text-[14px] font-medium leading-[1.4] data-[state=active]:bg-white data-[state=active]:shadow-sm">
               <Briefcase className="w-4 h-4 mr-1.5" />
               <span className="hidden md:inline">Visits</span>
             </TabsTrigger>
@@ -410,7 +410,7 @@ export default function ProjectDetails({ project, onClose, onEdit, onDelete }) {
               <CardHeader className="bg-[#F8F9FA] px-4 py-3 border-b border-[#E5E7EB]">
                 <div className="flex items-center gap-2">
                   <FileText className="w-4 h-4 text-[#6B7280]" />
-                  <h3 className="text-sm font-bold text-[#111827]">Description</h3>
+                  <h3 className="text-[14px] font-semibold text-[#111827] leading-[1.4]">Description</h3>
                 </div>
               </CardHeader>
               <CardContent className="p-3">
@@ -427,7 +427,7 @@ export default function ProjectDetails({ project, onClose, onEdit, onDelete }) {
               <CardHeader className="bg-[#F8F9FA] px-4 py-3 border-b border-[#E5E7EB]">
                 <div className="flex items-center gap-2">
                   <FileText className="w-4 h-4 text-[#6B7280]" />
-                  <h3 className="text-sm font-bold text-[#111827]">Notes</h3>
+                  <h3 className="text-[14px] font-semibold text-[#111827] leading-[1.4]">Notes</h3>
                 </div>
               </CardHeader>
               <CardContent className="p-3">
@@ -446,7 +446,7 @@ export default function ProjectDetails({ project, onClose, onEdit, onDelete }) {
                   <div className="flex items-center justify-between">
                     <div className="flex items-center gap-2">
                       <FileText className="w-4 h-4 text-[#6B7280]" />
-                      <h3 className="text-sm font-bold text-[#111827]">Installation Details</h3>
+                      <h3 className="text-[14px] font-semibold text-[#111827] leading-[1.4]">Installation Details</h3>
                     </div>
                     {!showAddDoor && (
                       <button
@@ -537,7 +537,7 @@ export default function ProjectDetails({ project, onClose, onEdit, onDelete }) {
               <CardHeader className="bg-[#F8F9FA] px-4 py-3 border-b border-[#E5E7EB]">
                 <div className="flex items-center gap-2">
                   <ImageIcon className="w-4 h-4 text-[#6B7280]" />
-                  <h3 className="text-sm font-bold text-[#111827]">Images</h3>
+                  <h3 className="text-[14px] font-semibold text-[#111827] leading-[1.4]">Images</h3>
                 </div>
               </CardHeader>
               <CardContent className="p-3 space-y-3">
@@ -597,7 +597,7 @@ export default function ProjectDetails({ project, onClose, onEdit, onDelete }) {
               <CardHeader className="bg-[#F8F9FA] px-4 py-3 border-b border-[#E5E7EB]">
                 <div className="flex items-center gap-2">
                   <FileText className="w-4 h-4 text-[#6B7280]" />
-                  <h3 className="text-sm font-bold text-[#111827]">Documents</h3>
+                  <h3 className="text-[14px] font-semibold text-[#111827] leading-[1.4]">Documents</h3>
                 </div>
               </CardHeader>
               <CardContent className="p-3 space-y-3">
@@ -611,7 +611,7 @@ export default function ProjectDetails({ project, onClose, onEdit, onDelete }) {
                         className="flex items-center gap-2 px-3 py-2 bg-white border border-[#E5E7EB] rounded-lg hover:border-[#FAE008] transition-all"
                       >
                         <FileText className="w-4 h-4 text-blue-600" />
-                        <span className="text-sm font-medium text-[#111827]">Quote Document</span>
+                        <span className="text-[14px] font-medium text-[#111827] leading-[1.4]">Quote Document</span>
                       </a>
                     )}
                     {project.invoice_url && (
@@ -622,7 +622,7 @@ export default function ProjectDetails({ project, onClose, onEdit, onDelete }) {
                         className="flex items-center gap-2 px-3 py-2 bg-white border border-[#E5E7EB] rounded-lg hover:border-[#FAE008] transition-all"
                       >
                         <FileText className="w-4 h-4 text-green-600" />
-                        <span className="text-sm font-medium text-[#111827]">Invoice Document</span>
+                        <span className="text-[14px] font-medium text-[#111827] leading-[1.4]">Invoice Document</span>
                       </a>
                     )}
                   </div>
@@ -680,7 +680,7 @@ export default function ProjectDetails({ project, onClose, onEdit, onDelete }) {
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-2">
                     <Briefcase className="w-4 h-4 text-[#6B7280]" />
-                    <h3 className="text-sm font-bold text-[#111827]">Visits ({jobs.length})</h3>
+                    <h3 className="text-[14px] font-semibold text-[#111827] leading-[1.4]">Visits ({jobs.length})</h3>
                   </div>
                   <Button
                     onClick={handleAddJob}
@@ -694,7 +694,7 @@ export default function ProjectDetails({ project, onClose, onEdit, onDelete }) {
               <CardContent className="p-3">
                 {jobs.length === 0 ? (
                   <div className="text-center py-8 bg-[#F8F9FA] rounded-lg">
-                    <p className="text-[#6B7280] mb-3 text-sm">No visits yet</p>
+                    <p className="text-[14px] text-[#6B7280] leading-[1.4] mb-3">No visits yet</p>
                     <Button onClick={handleAddJob} className="bg-[#FAE008] text-[#111827] font-semibold h-10">
                       Create First Visit
                     </Button>
@@ -733,7 +733,7 @@ export default function ProjectDetails({ project, onClose, onEdit, onDelete }) {
                             {job.address && (
                               <div className="flex items-start gap-2">
                                 <MapPin className="w-4 h-4 mt-0.5 flex-shrink-0 text-[#4B5563]" />
-                                <span className="text-sm text-[#4B5563]">{job.address}</span>
+                                <span className="text-[14px] text-[#4B5563] leading-[1.4]">{job.address}</span>
                               </div>
                             )}
                           </div>
