@@ -265,16 +265,29 @@ css
   [role="tablist"] {
     @apply flex gap-2 p-1 bg-white rounded-xl;
     min-height: 44px;
-    overflow-x: auto;
+    overflow-x: auto !important;
     overflow-y: hidden;
-    flex-wrap: nowrap;
-    scrollbar-width: none;
-    -ms-overflow-style: none;
+    flex-wrap: nowrap !important;
     -webkit-overflow-scrolling: touch;
+    scrollbar-width: thin;
+    scrollbar-color: #E5E7EB transparent;
   }
 
   [role="tablist"]::-webkit-scrollbar {
-    display: none;
+    height: 6px;
+  }
+
+  [role="tablist"]::-webkit-scrollbar-track {
+    background: transparent;
+  }
+
+  [role="tablist"]::-webkit-scrollbar-thumb {
+    background: #E5E7EB;
+    border-radius: 3px;
+  }
+
+  [role="tablist"]::-webkit-scrollbar-thumb:hover {
+    background: #D1D5DB;
   }
 
   [role="tab"] {
