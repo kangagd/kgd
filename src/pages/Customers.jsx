@@ -5,16 +5,10 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
-import { Plus, Search, User, Phone, Mail, MapPin } from "lucide-react";
+import { Plus, Search, User } from "lucide-react";
 import CustomerForm from "../components/customers/CustomerForm";
 import CustomerDetails from "../components/customers/CustomerDetails";
-
-const customerTypeColors = {
-  "Owner": "bg-purple-100 text-purple-700 border-purple-200",
-  "Builder": "bg-blue-100 text-blue-700 border-blue-200",
-  "Real Estate - Tenant": "bg-green-100 text-green-700 border-green-200",
-  "Strata - Owner": "bg-amber-100 text-amber-700 border-amber-200",
-};
+import CustomerCard from "../components/customers/CustomerCard";
 
 export default function Customers() {
   const [searchTerm, setSearchTerm] = useState("");
@@ -172,57 +166,13 @@ export default function Customers() {
             <p className="text-[14px] text-[#6B7280] leading-[1.4]">Try adjusting your search or add a new customer</p>
           </Card>
         ) : (
-          <div className="grid gap-4">
+          <div className="grid gap-3">
             {filteredCustomers.map((customer) => (
-              <Card
+              <CustomerCard
                 key={customer.id}
-                className="hover:shadow-xl transition-all duration-200 cursor-pointer border-l-4 hover:scale-[1.01] active:scale-[0.99] group rounded-2xl border-2 border-[hsl(32,15%,88%)]"
-                style={{ borderLeftColor: '#fae008', borderLeftWidth: '6px' }}
+                customer={customer}
                 onClick={() => setSelectedCustomer(customer)}
-              >
-                <CardContent className="p-6">
-                  <div className="flex items-start justify-between mb-4">
-                    <div className="flex-1 min-w-0">
-                      <div className="flex items-center gap-2 mb-2 flex-wrap">
-                        <h3 className="text-[22px] font-semibold text-[#111827] leading-[1.2] group-hover:text-[#fae008] transition-colors">
-                          {customer.name}
-                        </h3>
-                        {customer.status && (
-                          <Badge variant="outline" className="text-[12px] font-normal leading-[1.35] border-[#E5E7EB]">
-                            {customer.status}
-                          </Badge>
-                        )}
-                        {customer.customer_type && (
-                          <Badge className={`${customerTypeColors[customer.customer_type]} text-[12px] font-medium leading-[1.35] border-2`}>
-                            {customer.customer_type}
-                          </Badge>
-                        )}
-                      </div>
-
-                      <div className="space-y-2">
-                        {customer.phone && (
-                          <div className="flex items-center gap-2 text-[hsl(25,10%,25%)]">
-                            <Phone className="w-4 h-4 text-[hsl(25,8%,55%)]" />
-                            <span className="text-[14px] font-normal leading-[1.4]">{customer.phone}</span>
-                          </div>
-                        )}
-                        {customer.email && (
-                          <div className="flex items-center gap-2 text-[hsl(25,10%,25%)]">
-                            <Mail className="w-4 h-4 text-[hsl(25,8%,55%)]" />
-                            <span className="text-[14px] font-normal leading-[1.4] truncate">{customer.email}</span>
-                          </div>
-                        )}
-                        {customer.address && (
-                          <div className="flex items-start gap-2 text-[hsl(25,10%,25%)]">
-                            <MapPin className="w-4 h-4 text-[hsl(25,8%,55%)] mt-0.5" />
-                            <span className="text-[14px] font-normal leading-[1.4]">{customer.address}</span>
-                          </div>
-                        )}
-                      </div>
-                    </div>
-                  </div>
-                </CardContent>
-              </Card>
+              />
             ))}
           </div>
         )}
