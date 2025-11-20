@@ -2,7 +2,7 @@ import React, { useState } from "react";
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Textarea } from "@/components/ui/textarea";
+import TextField from "../common/TextField";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Checkbox } from "@/components/ui/checkbox";
@@ -107,25 +107,24 @@ export default function PriceListItemForm({ item, onSubmit, onCancel, isSubmitti
                 </div>
               </div>
 
-              <div>
-                <Label>Description</Label>
-                <Textarea
-                  value={formData.description || ""}
-                  onChange={(e) => setFormData({ ...formData, description: e.target.value })}
-                  placeholder="Enter item description"
-                  rows={3}
-                />
-              </div>
+              <TextField
+                label="Description"
+                value={formData.description || ""}
+                onChange={(e) => setFormData({ ...formData, description: e.target.value })}
+                placeholder="Enter item description and details…"
+                multiline
+                rows={3}
+              />
 
-              <div>
-                <Label>Notes</Label>
-                <Textarea
-                  value={formData.notes || ""}
-                  onChange={(e) => setFormData({ ...formData, notes: e.target.value })}
-                  placeholder="Additional notes"
-                  rows={2}
-                />
-              </div>
+              <TextField
+                label="Notes"
+                value={formData.notes || ""}
+                onChange={(e) => setFormData({ ...formData, notes: e.target.value })}
+                placeholder="Additional notes…"
+                helperText="Internal only"
+                multiline
+                rows={2}
+              />
 
               <div className="flex items-center space-x-2">
                 <Checkbox
