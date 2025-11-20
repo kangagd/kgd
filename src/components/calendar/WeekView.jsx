@@ -32,7 +32,12 @@ const jobTypeColorsBg = [
   "bg-pink-50", "bg-rose-50", "bg-lime-50",
 ];
 
-
+const statusColors = {
+  open: "bg-[#F3F4F6]",
+  scheduled: "bg-[#FAE008]",
+  in_progress: "bg-[#D97706]",
+  completed: "bg-[#16A34A]",
+};
 
 const getJobTypeColor = (jobTypeName, allJobTypes) => {
   if (!jobTypeName) return "bg-slate-500";

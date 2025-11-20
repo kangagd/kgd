@@ -36,7 +36,7 @@ export default function JobForm({ job, technicians, onSubmit, onCancel, isSubmit
     scheduled_date: "",
     scheduled_time: "",
     expected_duration: null,
-    job_status: "Open",
+    status: "open",
     outcome: "",
     notes: "",
     additional_info: "",
@@ -451,16 +451,16 @@ export default function JobForm({ job, technicians, onSubmit, onCancel, isSubmit
               </div>
 
               <div className="space-y-2">
-                <Label htmlFor="job_status" className="text-sm font-semibold text-[#000000]">Job Status</Label>
-                <Select value={formData.job_status || "Open"} onValueChange={(val) => setFormData({ ...formData, job_status: val })}>
+                <Label htmlFor="status" className="text-sm font-semibold text-[#000000]">Status</Label>
+                <Select value={formData.status} onValueChange={(val) => setFormData({ ...formData, status: val })}>
                   <SelectTrigger className="border-2 border-slate-300 focus:border-[#fae008] focus:ring-2 focus:ring-[#fae008]/20">
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="Open">Open</SelectItem>
-                    <SelectItem value="Scheduled">Scheduled</SelectItem>
-                    <SelectItem value="Completed">Completed</SelectItem>
-                    <SelectItem value="Cancelled">Cancelled</SelectItem>
+                    <SelectItem value="open">Open</SelectItem>
+                    <SelectItem value="scheduled">Scheduled</SelectItem>
+                    <SelectItem value="completed">Completed</SelectItem>
+                    <SelectItem value="cancelled">Cancelled</SelectItem>
                   </SelectContent>
                 </Select>
               </div>

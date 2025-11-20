@@ -147,7 +147,7 @@ export default function Jobs() {
     job.address?.toLowerCase().includes(searchTerm.toLowerCase()) ||
     job.job_number?.toString().includes(searchTerm);
 
-    const matchesStatus = statusFilter === "all" || job.job_status === statusFilter || job.status === statusFilter;
+    const matchesStatus = statusFilter === "all" || job.status === statusFilter;
 
     return matchesSearch && matchesStatus;
   });
@@ -250,10 +250,10 @@ export default function Jobs() {
             <Tabs value={statusFilter} onValueChange={setStatusFilter}>
               <TabsList className="w-full grid grid-cols-5 h-12 bg-white border border-[#E5E7EB]">
                 <TabsTrigger value="all" className="font-semibold data-[state=active]:bg-[#FAE008] data-[state=active]:text-[#111827]">All</TabsTrigger>
-                <TabsTrigger value="Open" className="font-semibold data-[state=active]:bg-[#FAE008] data-[state=active]:text-[#111827]">Open</TabsTrigger>
-                <TabsTrigger value="Scheduled" className="font-semibold data-[state=active]:bg-[#FAE008] data-[state=active]:text-[#111827]">Scheduled</TabsTrigger>
-                <TabsTrigger value="Completed" className="font-semibold data-[state=active]:bg-[#FAE008] data-[state=active]:text-[#111827]">Completed</TabsTrigger>
-                <TabsTrigger value="Cancelled" className="font-semibold data-[state=active]:bg-[#FAE008] data-[state=active]:text-[#111827]">Cancelled</TabsTrigger>
+                <TabsTrigger value="open" className="font-semibold data-[state=active]:bg-[#FAE008] data-[state=active]:text-[#111827]">Open</TabsTrigger>
+                <TabsTrigger value="scheduled" className="font-semibold data-[state=active]:bg-[#FAE008] data-[state=active]:text-[#111827]">Scheduled</TabsTrigger>
+                <TabsTrigger value="completed" className="font-semibold data-[state=active]:bg-[#FAE008] data-[state=active]:text-[#111827]">Completed</TabsTrigger>
+                <TabsTrigger value="cancelled" className="font-semibold data-[state=active]:bg-[#FAE008] data-[state=active]:text-[#111827]">Cancelled</TabsTrigger>
               </TabsList>
             </Tabs>
           )}

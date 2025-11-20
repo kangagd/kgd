@@ -31,7 +31,7 @@ export default function CheckIn() {
     queryKey: ['myJobs', user?.email],
     queryFn: () => base44.entities.Job.filter({ 
       assigned_to: user?.email,
-      job_status: ['Scheduled', 'Open']
+      status: ['scheduled', 'in_progress']
     }),
     enabled: !!user?.email,
   });
@@ -49,6 +49,7 @@ export default function CheckIn() {
   const checkInMutation = useMutation({
     mutationFn: async (data) => {
       const checkIn = await base44.entities.CheckInOut.create(data);
+      await base44.entities.Job.update(data.job_id, { status: 'in_progress' });
       return checkIn;
     },
     onSuccess: () => {
@@ -72,7 +73,7 @@ export default function CheckIn() {
       });
       
       await base44.entities.Job.update(jobId, { 
-        job_status: 'Completed',
+        status: 'completed',
         completion_notes: notes
       });
     },

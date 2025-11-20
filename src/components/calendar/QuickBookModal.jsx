@@ -56,7 +56,7 @@ export default function QuickBookModal({ open, onClose, selectedDate }) {
           const tech = technicians.find(t => t.email === email);
           return tech?.full_name;
         }).filter(Boolean),
-        job_status: 'Scheduled'
+        status: 'scheduled'
       };
 
       return base44.entities.Job.create(jobData);

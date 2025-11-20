@@ -4,11 +4,12 @@ import { Badge } from "@/components/ui/badge";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Clock, MapPin, User, FileText, CheckCircle2, Package } from "lucide-react";
 
-const jobStatusColors = {
-  "Open": "bg-slate-100 text-slate-700 border-slate-200",
-  "Scheduled": "bg-blue-100 text-blue-700 border-blue-200",
-  "Completed": "bg-green-100 text-green-700 border-green-200",
-  "Cancelled": "bg-slate-100 text-slate-700 border-slate-200",
+const statusColors = {
+  open: "bg-slate-100 text-slate-700 border-slate-200",
+  scheduled: "bg-blue-100 text-blue-700 border-blue-200",
+  in_progress: "bg-amber-100 text-amber-700 border-amber-200",
+  completed: "bg-green-100 text-green-700 border-green-200",
+  cancelled: "bg-slate-100 text-slate-700 border-slate-200",
 };
 
 const getInitials = (name) => {
@@ -66,8 +67,8 @@ export default function JobHoverCard({ job, onJobClick, children }) {
                 #{job.job_number}
               </Badge>
             </div>
-            <Badge className={`${jobStatusColors[job.job_status || job.status] || jobStatusColors["Open"]} font-medium shadow-sm`}>
-              {job.job_status || job.status}
+            <Badge className={`${statusColors[job.status]} font-medium shadow-sm`}>
+              {job.status.replace(/_/g, ' ')}
             </Badge>
           </div>
 

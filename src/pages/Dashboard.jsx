@@ -9,11 +9,24 @@ import { format, parseISO, isToday, isTomorrow } from "date-fns";
 import { useNavigate } from "react-router-dom";
 import { createPageUrl } from "@/utils";
 
-const jobStatusColors = {
-  "Open": "bg-slate-100 text-slate-800 border-slate-300",
-  "Scheduled": "bg-[#FAE008] text-[#111827] border-[#FAE008]",
-  "Completed": "bg-green-100 text-green-800 border-green-300",
-  "Cancelled": "bg-red-100 text-red-800 border-red-300"
+const statusColors = {
+  open: "bg-[#F3F4F6] text-[#4B5563] border-[#E5E7EB]",
+  scheduled: "bg-[#FAE008] text-[#111827] border-[#FAE008]",
+  quoted: "bg-[#F3F4F6] text-[#4B5563] border-[#E5E7EB]",
+  invoiced: "bg-[#D97706]/10 text-[#D97706] border-[#D97706]/20",
+  paid: "bg-[#16A34A]/10 text-[#16A34A] border-[#16A34A]/20",
+  completed: "bg-[#16A34A]/10 text-[#16A34A] border-[#16A34A]/20",
+  lost: "bg-[#DC2626]/10 text-[#DC2626] border-[#DC2626]/20"
+};
+
+const statusLabels = {
+  open: "Open",
+  scheduled: "Scheduled",
+  quoted: "Quoted",
+  invoiced: "Invoiced",
+  paid: "Paid",
+  completed: "Completed",
+  lost: "Lost"
 };
 
 export default function Dashboard() {
@@ -45,11 +58,11 @@ export default function Dashboard() {
   const today = new Date().toISOString().split('T')[0];
   const tomorrow = new Date(Date.now() + 86400000).toISOString().split('T')[0];
 
-  const todayJobs = jobs.filter(j => j.scheduled_date === today && !j.deleted_at);
-  const activeJobs = checkIns.filter(c => !c.check_out_time).length;
+  const todayJobs = jobs.filter(j => j.scheduled_date === today);
+  const tomorrowJobs = jobs.filter(j => j.scheduled_date === tomorrow);
+  const activeJobs = jobs.filter(j => j.status === 'in_progress');
   const completedToday = jobs.filter(j =>
-    !j.deleted_at &&
-    (j.job_status === 'Completed' || j.status === 'completed') &&
+    j.status === 'completed' &&
     j.updated_date?.split('T')[0] === today
   );
 
@@ -65,8 +78,10 @@ export default function Dashboard() {
     let url = createPageUrl("Jobs");
     if (filterType === 'today') {
       url += `?date=${today}`;
+    } else if (filterType === 'active') {
+      url += `?status=in_progress`;
     } else if (filterType === 'completed') {
-      url += `?status=Completed&date=${today}`;
+      url += `?status=completed&date=${today}`;
     }
     navigate(url);
   };
@@ -108,7 +123,7 @@ export default function Dashboard() {
           </div>
 
           <div
-            onClick={() => navigate(createPageUrl("Schedule"))}
+            onClick={() => handleCardClick('active')}
             className="bg-white rounded-xl border border-[#E5E7EB] p-7 cursor-pointer hover:shadow-xl hover:border-[#FAE008] hover:scale-[1.02] active:scale-[0.98] transition-all duration-200 group"
           >
             <div className="flex items-start justify-between mb-5">
@@ -116,10 +131,10 @@ export default function Dashboard() {
                 <TrendingUp className="w-7 h-7 text-[#111827]" />
               </div>
               <div className="text-right">
-                <p className="text-4xl font-bold text-[#111827]">{activeJobs}</p>
+                <p className="text-4xl font-bold text-[#111827]">{activeJobs.length}</p>
               </div>
             </div>
-            <h3 className="text-sm font-bold text-[#4B5563] uppercase tracking-wide mb-1.5">Active Check-Ins</h3>
+            <h3 className="text-sm font-bold text-[#4B5563] uppercase tracking-wide mb-1.5">Active Jobs</h3>
             <p className="text-xs text-[#6B7280] group-hover:text-[#111827] transition-colors font-medium">Click to view →</p>
           </div>
 
@@ -175,8 +190,8 @@ export default function Dashboard() {
                     <div className="flex-1">
                       <div className="flex items-center gap-2.5 mb-2">
                         <span className="font-bold text-[#111827] text-sm">#{job.job_number}</span>
-                        <span className={`text-xs px-3 py-1 rounded-full border font-semibold ${jobStatusColors[job.job_status || job.status] || jobStatusColors["Open"]}`}>
-                          {job.job_status || job.status}
+                        <span className={`text-xs px-3 py-1 rounded-full border font-semibold ${statusColors[job.status]}`}>
+                          {statusLabels[job.status] || job.status}
                         </span>
                       </div>
                       <p className="text-sm font-semibold text-[#111827]">{job.customer_name}</p>
