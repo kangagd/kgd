@@ -705,7 +705,7 @@ export default function JobDetails({ job, onClose, onStatusChange, onDelete }) {
                           </div>
                           {pJob.status &&
                       <Badge className={`${statusColors[pJob.status]} text-xs font-semibold border`}>
-                              {pJob.status.replace(/_/g, ' ')}
+                              {pJob.status}
                             </Badge>
                       }
                         </div>
@@ -717,7 +717,7 @@ export default function JobDetails({ job, onClose, onStatusChange, onDelete }) {
                     }
                         {pJob.outcome &&
                     <Badge className={`${outcomeColors[pJob.outcome]} text-xs font-semibold border mt-1.5`}>
-                            Outcome: {pJob.outcome.replace(/_/g, ' ')}
+                            Outcome: {pJob.outcome?.replace(/_/g, ' ') || pJob.outcome}
                           </Badge>
                     }
                       </div>
