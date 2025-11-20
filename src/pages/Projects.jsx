@@ -112,6 +112,28 @@ export default function Projects() {
     return allJobs.filter(j => j.project_id === projectId && !j.deleted_at).length;
   };
 
+  const getNextJob = (projectId) => {
+    const projectJobs = allJobs.filter(j => j.project_id === projectId && !j.deleted_at && j.scheduled_date);
+    const futureJobs = projectJobs.filter(j => new Date(j.scheduled_date) >= new Date());
+    if (futureJobs.length === 0) return null;
+    return futureJobs.sort((a, b) => new Date(a.scheduled_date) - new Date(b.scheduled_date))[0];
+  };
+
+  const extractSuburb = (address) => {
+    if (!address) return null;
+    const parts = address.split(',').map(p => p.trim());
+    return parts.length > 1 ? parts[parts.length - 2] : null;
+  };
+
+  const buildScopeSummary = (project) => {
+    if (!project.doors || project.doors.length === 0) return null;
+    const doorCount = project.doors.length;
+    const firstDoor = project.doors[0];
+    const doorType = firstDoor.type || 'doors';
+    const dimensions = firstDoor.height && firstDoor.width ? `${firstDoor.height} x ${firstDoor.width}` : '';
+    return `${doorCount}x ${doorType}${dimensions ? ` • ${dimensions}` : ''}`;
+  };
+
   if (showForm) {
     return (
       <div className="p-5 md:p-10 bg-[#F8F9FA] min-h-screen">
@@ -190,54 +212,82 @@ export default function Projects() {
         )}
 
         <div className="grid gap-4">
-          {filteredProjects.map((project) => (
-            <Card
-              key={project.id}
-              className="border-2 border-[hsl(32,15%,88%)] hover:border-[#fae008] hover:shadow-lg transition-all cursor-pointer rounded-2xl"
-              onClick={() => setSelectedProject(project)}
-            >
-              <CardContent className="p-4 md:p-6">
-                <div className="flex items-start justify-between gap-4">
-                  <div className="flex-1">
-                    <div className="flex items-center gap-2 flex-wrap mb-2">
-                      <h3 className="text-lg font-bold text-[hsl(25,10%,12%)]">{project.title}</h3>
+          {filteredProjects.map((project) => {
+            const jobCount = getJobCount(project.id);
+            const nextJob = getNextJob(project.id);
+            const suburb = extractSuburb(project.address);
+            const scopeSummary = buildScopeSummary(project);
+
+            return (
+              <Card
+                key={project.id}
+                className="border-2 border-[#FAE008] bg-white hover:bg-[#FFFEF5] hover:shadow-lg transition-all cursor-pointer rounded-xl overflow-hidden"
+                onClick={() => setSelectedProject(project)}
+              >
+                <CardContent className="p-5">
+                  {/* Top row */}
+                  <div className="flex items-start justify-between gap-4 mb-3">
+                    <h3 className="text-xl font-bold text-[#111827] flex-1">{project.title}</h3>
+                    <div className="flex items-center gap-2 flex-shrink-0">
                       {project.project_type && (
-                        <Badge className={`${projectTypeColors[project.project_type]} font-semibold border-2`}>
+                        <Badge className={`${projectTypeColors[project.project_type]} font-semibold border-0 px-3 py-1`}>
                           {project.project_type}
                         </Badge>
                       )}
-                      <Badge className={`${statusColors[project.status]} font-semibold border-2`}>
+                      <Badge className={`${statusColors[project.status]} font-semibold border-0 px-3 py-1`}>
                         {project.status}
                       </Badge>
                     </div>
-                    <p className="text-sm text-[hsl(25,8%,45%)] mb-2">{project.customer_name}</p>
-                    {project.description && (
-                      <div
-                        className="text-sm text-[hsl(25,8%,45%)] line-clamp-2 prose prose-sm max-w-none mb-2"
-                        dangerouslySetInnerHTML={{ __html: project.description }}
-                      />
-                    )}
-                    {project.doors && project.doors.length > 0 && (
-                      <div className="mt-2 flex flex-wrap gap-2">
-                        {project.doors.map((door, idx) => (
-                          <Badge key={idx} variant="outline" className="bg-blue-50 border-blue-200 text-blue-700">
-                            Door {idx + 1}: {door.height && door.width ? `${door.height} × ${door.width}` : 'Pending specs'}
-                            {door.type && ` • ${door.type}`}
-                          </Badge>
-                        ))}
+                  </div>
+
+                  {/* Second row */}
+                  <div className="flex items-center gap-4 mb-3 text-[#4B5563]">
+                    <span className="font-medium">{project.customer_name}</span>
+                    {suburb && (
+                      <div className="flex items-center gap-1.5">
+                        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
+                        </svg>
+                        <span className="text-sm">{suburb}</span>
                       </div>
                     )}
                   </div>
-                  <div className="text-right text-sm text-[hsl(25,8%,45%)]">
-                    <div className="font-bold text-[hsl(25,10%,12%)]">{getJobCount(project.id)} jobs</div>
-                    {project.created_date && (
-                      <div className="text-xs">Created {new Date(project.created_date).toLocaleDateString()}</div>
+
+                  {/* Third row */}
+                  {(scopeSummary || project.stage) && (
+                    <div className="flex items-center gap-3 mb-3">
+                      {scopeSummary && (
+                        <span className="text-sm text-[#111827] font-medium">{scopeSummary}</span>
+                      )}
+                      {project.stage && (
+                        <Badge variant="outline" className="font-semibold text-xs border-[#E5E7EB]">
+                          {project.stage.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase())}
+                        </Badge>
+                      )}
+                    </div>
+                  )}
+
+                  {/* Bottom row */}
+                  <div className="flex items-center justify-between text-sm pt-3 border-t border-[#E5E7EB]">
+                    <span className="text-[#4B5563] font-medium">
+                      Jobs: <span className="text-[#111827] font-bold">{jobCount}</span>
+                    </span>
+                    {nextJob && (
+                      <div className="text-[#4B5563]">
+                        <span className="font-medium">Next: </span>
+                        <span className="text-[#111827]">
+                          {new Date(nextJob.scheduled_date).toLocaleDateString('en-AU', { day: 'numeric', month: 'short' })}
+                          {nextJob.scheduled_time && ` · ${nextJob.scheduled_time}`}
+                          {nextJob.job_type_name && ` · ${nextJob.job_type_name}`}
+                        </span>
+                      </div>
                     )}
                   </div>
-                </div>
-              </CardContent>
-            </Card>
-          ))}
+                </CardContent>
+              </Card>
+            );
+          })}
         </div>
       </div>
     </div>
