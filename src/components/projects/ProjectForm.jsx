@@ -25,8 +25,8 @@ export default function ProjectForm({ project, onSubmit, onCancel, isSubmitting 
     title: "",
     description: "",
     project_type: "Garage Door Install",
-    status: "open",
-    stage: "lead_in",
+    project_status: "Lead",
+    financial_status: null,
     address: "",
     quote_value: null,
     invoice_value: null,
@@ -265,22 +265,38 @@ export default function ProjectForm({ project, onSubmit, onCancel, isSubmitting 
               </div>
 
               <div className="space-y-2">
-                <Label htmlFor="status">Status</Label>
-                <Select value={formData.status} onValueChange={(val) => setFormData({ ...formData, status: val })}>
+                <Label htmlFor="project_status">Project Status</Label>
+                <Select value={formData.project_status || "Lead"} onValueChange={(val) => setFormData({ ...formData, project_status: val })}>
                   <SelectTrigger className="border-2 border-slate-300">
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="open">Open</SelectItem>
-                    <SelectItem value="scheduled">Scheduled</SelectItem>
-                    <SelectItem value="quoted">Quoted</SelectItem>
-                    <SelectItem value="invoiced">Invoiced</SelectItem>
-                    <SelectItem value="paid">Paid</SelectItem>
-                    <SelectItem value="completed">Completed</SelectItem>
-                    <SelectItem value="cancelled">Cancelled</SelectItem>
+                    <SelectItem value="Lead">Lead</SelectItem>
+                    <SelectItem value="Initial Site Visit">Initial Site Visit</SelectItem>
+                    <SelectItem value="Quote Sent">Quote Sent</SelectItem>
+                    <SelectItem value="Quote Approved">Quote Approved</SelectItem>
+                    <SelectItem value="Final Measure">Final Measure</SelectItem>
+                    <SelectItem value="Parts Ordered">Parts Ordered</SelectItem>
+                    <SelectItem value="Scheduled">Scheduled</SelectItem>
+                    <SelectItem value="Completed">Completed</SelectItem>
                   </SelectContent>
                 </Select>
               </div>
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="financial_status">Financial Status (Optional)</Label>
+              <Select value={formData.financial_status || ""} onValueChange={(val) => setFormData({ ...formData, financial_status: val || null })}>
+                <SelectTrigger className="border-2 border-slate-300">
+                  <SelectValue placeholder="Select financial status" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value={null}>None</SelectItem>
+                  <SelectItem value="50% payment made">50% payment made</SelectItem>
+                  <SelectItem value="30% payment made (install)">30% payment made (install)</SelectItem>
+                  <SelectItem value="Balance paid in full">Balance paid in full</SelectItem>
+                </SelectContent>
+              </Select>
             </div>
 
             {isInstallType && (
@@ -372,30 +388,6 @@ export default function ProjectForm({ project, onSubmit, onCancel, isSubmitting 
                 )}
               </div>
             )}
-
-            <div className="space-y-2">
-              <Label htmlFor="stage">Current Stage</Label>
-              <Select value={formData.stage} onValueChange={(val) => setFormData({ ...formData, stage: val })}>
-                <SelectTrigger className="border-2 border-slate-300">
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="lead_in">Lead In</SelectItem>
-                  <SelectItem value="measure">Measure</SelectItem>
-                  <SelectItem value="quote_prepared">Quote Prepared</SelectItem>
-                  <SelectItem value="quote_sent">Quote Sent</SelectItem>
-                  <SelectItem value="quote_accepted">Quote Accepted</SelectItem>
-                  <SelectItem value="materials_ordered">Materials Ordered</SelectItem>
-                  <SelectItem value="installation_scheduled">Installation Scheduled</SelectItem>
-                  <SelectItem value="installation_completed">Installation Completed</SelectItem>
-                  <SelectItem value="qa_aftercare">QA / Aftercare</SelectItem>
-                  <SelectItem value="final_invoice">Final Invoice</SelectItem>
-                  <SelectItem value="project_closed">Project Closed</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-
-
 
             <div className="space-y-2">
               <Label htmlFor="description">Description</Label>

@@ -9,14 +9,21 @@ import { Card, CardContent } from "@/components/ui/card";
 import ProjectForm from "../components/projects/ProjectForm";
 import ProjectDetails from "../components/projects/ProjectDetails";
 
-const statusColors = {
-  open: "bg-[hsl(32,25%,94%)] text-[hsl(25,10%,12%)] border-[hsl(32,15%,88%)]",
-  scheduled: "bg-[#fae008]/20 text-[hsl(25,10%,12%)] border-[#fae008]/30",
-  quoted: "bg-purple-100 text-purple-800 border-purple-200",
-  invoiced: "bg-indigo-100 text-indigo-800 border-indigo-200",
-  paid: "bg-green-100 text-green-800 border-green-200",
-  completed: "bg-emerald-100 text-emerald-800 border-emerald-200",
-  cancelled: "bg-[hsl(32,25%,94%)] text-[hsl(25,10%,12%)] border-[hsl(32,15%,88%)]"
+const projectStatusColors = {
+  "Lead": "bg-gray-100 text-gray-800 border-gray-200",
+  "Initial Site Visit": "bg-blue-100 text-blue-800 border-blue-200",
+  "Quote Sent": "bg-purple-100 text-purple-800 border-purple-200",
+  "Quote Approved": "bg-indigo-100 text-indigo-800 border-indigo-200",
+  "Final Measure": "bg-cyan-100 text-cyan-800 border-cyan-200",
+  "Parts Ordered": "bg-orange-100 text-orange-800 border-orange-200",
+  "Scheduled": "bg-yellow-100 text-yellow-800 border-yellow-200",
+  "Completed": "bg-green-100 text-green-800 border-green-200"
+};
+
+const financialStatusColors = {
+  "50% payment made": "bg-amber-100 text-amber-800 border-amber-200",
+  "30% payment made (install)": "bg-orange-100 text-orange-800 border-orange-200",
+  "Balance paid in full": "bg-emerald-100 text-emerald-800 border-emerald-200"
 };
 
 const projectTypeColors = {
@@ -228,15 +235,20 @@ export default function Projects() {
                   {/* Top row */}
                   <div className="flex items-start justify-between gap-4 mb-3">
                     <h3 className="text-xl font-bold text-[#111827] flex-1">{project.title}</h3>
-                    <div className="flex items-center gap-2 flex-shrink-0">
+                    <div className="flex items-center gap-2 flex-shrink-0 flex-wrap">
                       {project.project_type && (
                         <Badge className={`${projectTypeColors[project.project_type]} font-semibold border-0 px-3 py-1`}>
                           {project.project_type}
                         </Badge>
                       )}
-                      <Badge className={`${statusColors[project.status]} font-semibold border-0 px-3 py-1`}>
-                        {project.status}
+                      <Badge className={`${projectStatusColors[project.project_status || "Lead"]} font-semibold border-0 px-3 py-1`}>
+                        {project.project_status || "Lead"}
                       </Badge>
+                      {project.financial_status && (
+                        <Badge className={`${financialStatusColors[project.financial_status]} font-semibold border-0 px-2 py-0.5 text-xs`}>
+                          {project.financial_status}
+                        </Badge>
+                      )}
                     </div>
                   </div>
 
@@ -255,16 +267,9 @@ export default function Projects() {
                   </div>
 
                   {/* Third row */}
-                  {(scopeSummary || project.stage) && (
+                  {scopeSummary && (
                     <div className="flex items-center gap-3 mb-3">
-                      {scopeSummary && (
-                        <span className="text-sm text-[#111827] font-medium">{scopeSummary}</span>
-                      )}
-                      {project.stage && (
-                        <Badge variant="outline" className="font-semibold text-xs border-[#E5E7EB]">
-                          {project.stage.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase())}
-                        </Badge>
-                      )}
+                      <span className="text-sm text-[#111827] font-medium">{scopeSummary}</span>
                     </div>
                   )}
 
