@@ -9,12 +9,9 @@ import { Search, DollarSign, Plus, Pencil, Trash2, PackagePlus, PackageMinus, Al
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import PriceListItemForm from "../components/pricelist/PriceListItemForm";
 import StockAdjustmentModal from "../components/pricelist/StockAdjustmentModal";
+import PriceListCard from "../components/pricelist/PriceListCard";
 
-const categoryColors = {
-  "Service": "bg-blue-100 text-blue-800",
-  "Motor": "bg-purple-100 text-purple-800",
-  "Remotes/Accessories": "bg-green-100 text-green-800"
-};
+
 
 export default function PriceList() {
   const [searchTerm, setSearchTerm] = useState("");
@@ -207,93 +204,17 @@ export default function PriceList() {
             <p className="text-[hsl(25,8%,45%)]">Try adjusting your search</p>
           </Card>
         ) : (
-          <div className="grid gap-2">
-            {filteredItems.map((item) => {
-              const isLowStock = item.stock_level <= item.min_stock_level && item.stock_level > 0;
-              const isOutOfStock = item.stock_level === 0;
-
-              return (
-                <Card key={item.id} className={`hover:shadow-md transition-shadow rounded-2xl border-2 ${isOutOfStock ? 'border-red-300' : isLowStock ? 'border-amber-300' : 'border-[hsl(32,15%,88%)]'}`}>
-                  <CardContent className="p-4">
-                    <div className="flex items-start justify-between gap-4">
-                      <div className="flex-1 min-w-0">
-                        <div className="flex items-center gap-2 mb-2 flex-wrap">
-                          <Badge className={categoryColors[item.category] || "bg-[hsl(32,25%,94%)] text-[hsl(25,10%,12%)]"}>
-                            {item.category}
-                          </Badge>
-                          {!item.in_inventory && (
-                            <Badge variant="outline" className="text-[hsl(25,8%,45%)]">Not in stock</Badge>
-                          )}
-                          {isOutOfStock && (
-                            <Badge className="bg-red-100 text-red-800 border-red-200">
-                              <Package className="w-3 h-3 mr-1" />
-                              Out of Stock
-                            </Badge>
-                          )}
-                          {isLowStock && (
-                            <Badge className="bg-amber-100 text-amber-800 border-amber-200">
-                              <AlertCircle className="w-3 h-3 mr-1" />
-                              Low Stock
-                            </Badge>
-                          )}
-                        </div>
-                        <h3 className="font-semibold text-[hsl(25,10%,12%)] mb-1">{item.item}</h3>
-                        {item.description && (
-                          <p className="text-sm text-[hsl(25,8%,45%)] whitespace-pre-wrap">{item.description}</p>
-                        )}
-                        {item.notes && (
-                          <p className="text-xs text-[hsl(25,8%,55%)] mt-2 italic">{item.notes}</p>
-                        )}
-                        <div className="flex items-center gap-4 mt-2 text-sm">
-                          <span className="text-[hsl(25,8%,45%)]">
-                            Stock: <span className={`font-semibold ${isOutOfStock ? 'text-red-600' : isLowStock ? 'text-amber-600' : 'text-[hsl(25,10%,12%)]'}`}>
-                              {item.stock_level}
-                            </span>
-                          </span>
-                          <span className="text-[hsl(25,8%,55%)]">Min: {item.min_stock_level}</span>
-                        </div>
-                      </div>
-                      <div className="flex items-center gap-2">
-                        <div className="text-right">
-                          <div className="text-[#fae008] text-2xl font-bold">
-                            ${item.price.toFixed(2)}
-                          </div>
-                        </div>
-                        {isAdmin && (
-                          <div className="flex flex-col gap-1">
-                            <Button
-                              size="icon"
-                              variant="ghost"
-                              onClick={() => handleStockAdjust(item)}
-                              className="h-8 w-8 text-green-600 hover:text-green-700 hover:bg-green-50"
-                              title="Adjust Stock"
-                            >
-                              <PackagePlus className="w-4 h-4" />
-                            </Button>
-                            <Button
-                              size="icon"
-                              variant="ghost"
-                              onClick={() => handleEdit(item)}
-                              className="h-8 w-8 text-blue-600 hover:text-blue-700 hover:bg-blue-50"
-                            >
-                              <Pencil className="w-4 h-4" />
-                            </Button>
-                            <Button
-                              size="icon"
-                              variant="ghost"
-                              onClick={() => handleDelete(item.id)}
-                              className="h-8 w-8 text-red-600 hover:text-red-700 hover:bg-red-50"
-                            >
-                              <Trash2 className="w-4 h-4" />
-                            </Button>
-                          </div>
-                        )}
-                      </div>
-                    </div>
-                  </CardContent>
-                </Card>
-              );
-            })}
+          <div className="grid gap-3">
+            {filteredItems.map((item) => (
+              <PriceListCard
+                key={item.id}
+                item={item}
+                isAdmin={isAdmin}
+                onEdit={handleEdit}
+                onDelete={handleDelete}
+                onStockAdjust={handleStockAdjust}
+              />
+            ))}
           </div>
         )}
       </div>
