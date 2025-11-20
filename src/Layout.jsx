@@ -17,7 +17,8 @@ import {
   ChevronLeft,
   ChevronRight,
   TestTube2,
-  LogOut
+  LogOut,
+  Image as ImageIcon
 } from "lucide-react";
 import { base44 } from "@/api/base44Client";
 
@@ -28,6 +29,7 @@ const adminNavigationItems = [
   { title: "Projects", url: createPageUrl("Projects"), icon: FolderKanban },
   { title: "Customers", url: createPageUrl("Customers"), icon: UserCircle },
   { title: "Organisations", url: createPageUrl("Organisations"), icon: Building2 },
+  { title: "Photos", url: createPageUrl("Photos"), icon: ImageIcon },
   { title: "Price List", url: createPageUrl("PriceList"), icon: DollarSign },
   { title: "Team", url: createPageUrl("Team"), icon: Users },
   { title: "Archive", url: createPageUrl("Archive"), icon: ArchiveIcon },
