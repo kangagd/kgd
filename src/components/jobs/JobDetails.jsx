@@ -733,7 +733,6 @@ export default function JobDetails({ job, onClose, onStatusChange, onDelete }) {
                   onChange={setNotes}
                   onBlur={handleNotesBlur}
                   placeholder="Add notes and instructions for technicians…"
-                  helperText="Visible to technicians"
                 />
               </div>
 
@@ -762,7 +761,6 @@ export default function JobDetails({ job, onClose, onStatusChange, onDelete }) {
                   onChange={setAdditionalInfo}
                   onBlur={handleAdditionalInfoBlur}
                   placeholder="Add any additional information or context…"
-                  helperText="Internal only"
                 />
               </div>
 
