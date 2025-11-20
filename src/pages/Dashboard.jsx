@@ -10,10 +10,10 @@ import { useNavigate } from "react-router-dom";
 import { createPageUrl } from "@/utils";
 
 const jobStatusColors = {
-  "Open": "bg-[#F3F4F6] text-[#4B5563] border-[#E5E7EB]",
+  "Open": "bg-slate-100 text-slate-800 border-slate-300",
   "Scheduled": "bg-[#FAE008] text-[#111827] border-[#FAE008]",
-  "Completed": "bg-[#16A34A]/10 text-[#16A34A] border-[#16A34A]/20",
-  "Cancelled": "bg-[#DC2626]/10 text-[#DC2626] border-[#DC2626]/20"
+  "Completed": "bg-green-100 text-green-800 border-green-300",
+  "Cancelled": "bg-red-100 text-red-800 border-red-300"
 };
 
 export default function Dashboard() {
@@ -46,12 +46,11 @@ export default function Dashboard() {
   const tomorrow = new Date(Date.now() + 86400000).toISOString().split('T')[0];
 
   const todayJobs = jobs.filter(j => j.scheduled_date === today && !j.deleted_at);
-  const tomorrowJobs = jobs.filter(j => j.scheduled_date === tomorrow && !j.deleted_at);
-  const activeJobs = jobs.filter(j => (j.job_status === 'Scheduled' || j.status === 'scheduled') && !j.deleted_at);
+  const activeJobs = checkIns.filter(c => !c.check_out_time).length;
   const completedToday = jobs.filter(j =>
+    !j.deleted_at &&
     (j.job_status === 'Completed' || j.status === 'completed') &&
-    j.updated_date?.split('T')[0] === today &&
-    !j.deleted_at
+    j.updated_date?.split('T')[0] === today
   );
 
   const todayCheckIns = checkIns.filter(c =>
@@ -66,10 +65,8 @@ export default function Dashboard() {
     let url = createPageUrl("Jobs");
     if (filterType === 'today') {
       url += `?date=${today}`;
-    } else if (filterType === 'active') {
-      url += `?status=in_progress`;
     } else if (filterType === 'completed') {
-      url += `?status=completed&date=${today}`;
+      url += `?status=Completed&date=${today}`;
     }
     navigate(url);
   };
@@ -111,7 +108,7 @@ export default function Dashboard() {
           </div>
 
           <div
-            onClick={() => handleCardClick('active')}
+            onClick={() => navigate(createPageUrl("Schedule"))}
             className="bg-white rounded-xl border border-[#E5E7EB] p-7 cursor-pointer hover:shadow-xl hover:border-[#FAE008] hover:scale-[1.02] active:scale-[0.98] transition-all duration-200 group"
           >
             <div className="flex items-start justify-between mb-5">
@@ -119,10 +116,10 @@ export default function Dashboard() {
                 <TrendingUp className="w-7 h-7 text-[#111827]" />
               </div>
               <div className="text-right">
-                <p className="text-4xl font-bold text-[#111827]">{activeJobs.length}</p>
+                <p className="text-4xl font-bold text-[#111827]">{activeJobs}</p>
               </div>
             </div>
-            <h3 className="text-sm font-bold text-[#4B5563] uppercase tracking-wide mb-1.5">Active Jobs</h3>
+            <h3 className="text-sm font-bold text-[#4B5563] uppercase tracking-wide mb-1.5">Active Check-Ins</h3>
             <p className="text-xs text-[#6B7280] group-hover:text-[#111827] transition-colors font-medium">Click to view →</p>
           </div>
 

@@ -1,40 +1,27 @@
 /**
- * Determines job status based on scheduled date, outcome, and active check-in
- * NEW UNIFIED STATUS SYSTEM:
- * - Open: Job created but not scheduled yet (or past date with no action)
- * - Scheduled: Has a date/time set
- * - Completed: Job finished (via outcome or manual)
- * - Cancelled: Job cancelled
+ * Determines job status based on scheduled date, time, and outcome
+ * Rules (in order of priority):
+ * 1. If cancelled manually -> Cancelled
+ * 2. If outcome is 'completed' -> Completed
+ * 3. If scheduled_date and scheduled_time are set -> Scheduled
+ * 4. Otherwise -> Open
  */
-export const determineJobStatus = (scheduledDate, outcome, hasActiveCheckIn, currentStatus = 'Open') => {
-  // Normalize status to new format
-  const normalizeStatus = (status) => {
-    if (!status) return 'Open';
-    const lowerStatus = status.toLowerCase();
-    if (lowerStatus === 'open') return 'Open';
-    if (lowerStatus === 'scheduled') return 'Scheduled';
-    if (lowerStatus === 'completed') return 'Completed';
-    if (lowerStatus === 'cancelled') return 'Cancelled';
-    return status;
-  };
-  
-  const normalized = normalizeStatus(currentStatus);
-  
-  // If manually cancelled, keep it cancelled
-  if (normalized === 'Cancelled') {
+export const determineJobStatus = (scheduledDate, scheduledTime, outcome, currentStatus = 'Open') => {
+  // Rule 1: Cancelled stays cancelled
+  if (currentStatus === 'Cancelled' || currentStatus === 'cancelled') {
     return 'Cancelled';
   }
   
-  // If outcome indicates completion
-  if (outcome === 'completed' || outcome === 'send_invoice') {
+  // Rule 2: Completed outcomes
+  if (outcome === 'completed') {
     return 'Completed';
   }
   
-  // If has scheduled date and time -> Scheduled (unless already completed)
-  if (scheduledDate && normalized !== 'Completed') {
+  // Rule 3: If date and time are set -> Scheduled
+  if (scheduledDate && scheduledTime) {
     return 'Scheduled';
   }
   
-  // Default to Open
+  // Rule 4: Default to Open
   return 'Open';
 };
