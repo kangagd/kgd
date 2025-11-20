@@ -106,7 +106,12 @@ const getAvatarColor = (name) => {
   return avatarColors[index];
 };
 
-export default function JobDetails({ job, onClose, onStatusChange, onDelete }) {
+export default function JobDetails({ job: initialJob, onClose, onStatusChange, onDelete }) {
+  const { data: job = initialJob } = useQuery({
+    queryKey: ['job', initialJob.id],
+    queryFn: () => base44.entities.Job.get(initialJob.id),
+    initialData: initialJob
+  });
   const [showPriceList, setShowPriceList] = useState(false);
   const [showAssistant, setShowAssistant] = useState(false);
   const [showHistory, setShowHistory] = useState(false);
