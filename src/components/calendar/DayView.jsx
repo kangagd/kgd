@@ -60,8 +60,21 @@ export default function DayView({ jobs, currentDate, onJobClick, onQuickBook }) 
   const [draggedJob, setDraggedJob] = useState(null);
   const [dragOverZone, setDragOverZone] = useState(null);
   const [pendingUpdate, setPendingUpdate] = useState(null);
+  const [user, setUser] = useState(null);
   const queryClient = useQueryClient();
   const compactMode = true;
+
+  React.useEffect(() => {
+    const loadUser = async () => {
+      try {
+        const currentUser = await base44.auth.me();
+        setUser(currentUser);
+      } catch (error) {
+        console.error("Error loading user:", error);
+      }
+    };
+    loadUser();
+  }, []);
 
   const { data: technicians = [] } = useQuery({
     queryKey: ['technicians'],
@@ -76,9 +89,23 @@ export default function DayView({ jobs, currentDate, onJobClick, onQuickBook }) 
     }
   });
 
+  const isTechnician = user?.is_field_technician && user?.role !== 'admin';
+  
   const dayJobs = jobs.filter(job => 
     job.scheduled_date && isSameDay(new Date(job.scheduled_date), currentDate)
   );
+
+  // For technicians, filter to only their jobs
+  const myJobs = isTechnician 
+    ? dayJobs.filter(job => {
+        const assignedTo = Array.isArray(job.assigned_to) ? job.assigned_to : [];
+        return assignedTo.includes(user.email);
+      }).sort((a, b) => {
+        if (!a.scheduled_time) return 1;
+        if (!b.scheduled_time) return -1;
+        return a.scheduled_time.localeCompare(b.scheduled_time);
+      })
+    : dayJobs;
 
   const uniqueJobTypes = [...new Set(jobs.map(job => job.job_type_name).filter(Boolean))].sort();
 
@@ -198,9 +225,107 @@ export default function DayView({ jobs, currentDate, onJobClick, onQuickBook }) 
     );
   }
 
+  // Mobile technician view
+  if (isTechnician) {
+    const extractSuburb = (address) => {
+      if (!address) return '';
+      const parts = address.split(',').map(s => s.trim());
+      return parts[parts.length - 2] || parts[parts.length - 1] || '';
+    };
+
+    return (
+      <div className="space-y-2 lg:hidden">
+        {myJobs.length === 0 ? (
+          <Card className="p-8 text-center">
+            <p className="text-[#6B7280] text-sm">No jobs scheduled for today</p>
+          </Card>
+        ) : (
+          myJobs.map(job => {
+            const isPriority = job.priority === 'high' || job.outcome === 'return_visit_required';
+            const suburb = extractSuburb(job.address);
+            
+            return (
+              <Card 
+                key={job.id} 
+                className="border border-[#E5E7EB] shadow-sm hover:border-[#FAE008] transition-all cursor-pointer"
+                onClick={() => onJobClick(job)}
+              >
+                <CardContent className="p-4">
+                  <div className="space-y-3">
+                    {/* Time and Priority */}
+                    <div className="flex items-center justify-between gap-2">
+                      <Badge className="bg-[#FAE008] text-[#111827] hover:bg-[#FAE008] border-0 font-bold text-sm px-3 py-1.5 rounded-lg">
+                        <Clock className="w-4 h-4 mr-1.5" />
+                        {job.scheduled_time?.slice(0, 5) || 'TBD'}
+                      </Badge>
+                      {isPriority && (
+                        <Badge className="bg-[#FED7AA] text-[#9A3412] hover:bg-[#FED7AA] border-0 font-semibold text-xs px-2.5 py-1 rounded-lg">
+                          <AlertTriangle className="w-3.5 h-3.5 mr-1" />
+                          Priority
+                        </Badge>
+                      )}
+                    </div>
+
+                    {/* Customer Name */}
+                    <div>
+                      <h3 className="text-base font-bold text-[#111827] leading-tight mb-1">
+                        {job.customer_name}
+                      </h3>
+                      <p className="text-sm text-[#6B7280] font-medium">{suburb}</p>
+                    </div>
+
+                    {/* Job Type and Status */}
+                    <div className="flex items-center gap-2 flex-wrap">
+                      {job.job_type_name && (
+                        <Badge className="bg-[#EDE9FE] text-[#6D28D9] hover:bg-[#EDE9FE] border-0 font-semibold text-xs px-2.5 py-1 rounded-lg">
+                          <Briefcase className="w-3.5 h-3.5 mr-1" />
+                          {job.job_type_name}
+                        </Badge>
+                      )}
+                      <Badge className="bg-[#F2F4F7] text-[#344054] hover:bg-[#F2F4F7] border-0 font-medium text-xs px-2.5 py-1 rounded-lg">
+                        #{job.job_number}
+                      </Badge>
+                    </div>
+
+                    {/* Action Buttons */}
+                    <div className="flex gap-2 pt-2 border-t border-[#E5E7EB]">
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        className="flex-1 border-2 font-semibold min-h-[44px]"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          if (job.customer_phone) window.location.href = `tel:${job.customer_phone}`;
+                        }}
+                      >
+                        📞 Call
+                      </Button>
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        className="flex-1 border-2 font-semibold min-h-[44px]"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          window.open(`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(job.address)}`, '_blank');
+                        }}
+                      >
+                        🧭 Navigate
+                      </Button>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+            );
+          })
+        )}
+      </div>
+    );
+  }
+
+  // Desktop admin view
   return (
     <>
-      <div className="space-y-3">
+      <div className="space-y-3 hidden lg:block">
         <Card className="rounded-lg border border-[#E5E7EB] shadow-sm overflow-hidden">
           <CardContent className="p-0 overflow-x-auto">
             <div className="min-w-[800px]">
@@ -311,18 +436,6 @@ export default function DayView({ jobs, currentDate, onJobClick, onQuickBook }) 
             </div>
           </CardContent>
         </Card>
-
-        {uniqueJobTypes.length > 0 && (
-          <div className="flex flex-wrap gap-2.5 text-xs bg-white p-3.5 rounded-lg border border-[#E5E7EB] shadow-sm">
-            <span className="font-bold text-[#111827] text-[10px] uppercase tracking-wider">Legend:</span>
-            {uniqueJobTypes.map((jobType) => (
-              <div key={jobType} className="flex items-center gap-1.5">
-                <div className={`w-2.5 h-2.5 rounded-full ${getJobTypeColor(jobType, uniqueJobTypes)}`} />
-                <span className="text-[#4B5563] font-medium text-[11px]">{jobType}</span>
-              </div>
-            ))}
-          </div>
-        )}
       </div>
 
       <AlertDialog open={!!pendingUpdate} onOpenChange={() => setPendingUpdate(null)}>

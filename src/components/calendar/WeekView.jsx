@@ -71,14 +71,29 @@ export default function WeekView({ jobs, currentDate, onJobClick, onQuickBook })
   const [draggedJob, setDraggedJob] = useState(null);
   const [dragOverCell, setDragOverCell] = useState(null);
   const [pendingUpdate, setPendingUpdate] = useState(null);
+  const [user, setUser] = useState(null);
   const queryClient = useQueryClient();
   const compactMode = true;
+
+  React.useEffect(() => {
+    const loadUser = async () => {
+      try {
+        const currentUser = await base44.auth.me();
+        setUser(currentUser);
+      } catch (error) {
+        console.error("Error loading user:", error);
+      }
+    };
+    loadUser();
+  }, []);
 
   const { data: technicians = [] } = useQuery({
     queryKey: ['technicians'],
     queryFn: () => base44.entities.User.filter({ is_field_technician: true })
   });
 
+  const isTechnician = user?.is_field_technician && user?.role !== 'admin';
+  
   const weekStart = startOfWeek(currentDate);
   const allWeekDays = Array.from({ length: 7 }, (_, i) => addDays(weekStart, i));
 
@@ -188,9 +203,108 @@ export default function WeekView({ jobs, currentDate, onJobClick, onQuickBook })
     });
   };
 
+  // Mobile technician view
+  if (isTechnician) {
+    const extractSuburb = (address) => {
+      if (!address) return '';
+      const parts = address.split(',').map(s => s.trim());
+      return parts[parts.length - 2] || parts[parts.length - 1] || '';
+    };
+
+    const getMyJobsForDay = (day) => {
+      return jobs.filter(job =>
+        job.scheduled_date &&
+        isSameDay(new Date(job.scheduled_date), day) &&
+        (job.assigned_to && job.assigned_to.includes(user.email))
+      ).sort((a, b) => {
+        if (!a.scheduled_time) return 1;
+        if (!b.scheduled_time) return -1;
+        return a.scheduled_time.localeCompare(b.scheduled_time);
+      });
+    };
+
+    return (
+      <div className="space-y-3 lg:hidden">
+        {weekDays.map(day => {
+          const dayJobs = getMyJobsForDay(day);
+          const isToday = isSameDay(day, new Date());
+
+          return (
+            <div key={day.toISOString()}>
+              {/* Day Header */}
+              <div className={`flex items-center justify-between p-3 rounded-lg border ${
+                isToday ? 'bg-[#FAE008]/10 border-[#FAE008]' : 'bg-white border-[#E5E7EB]'
+              }`}>
+                <div>
+                  <h3 className={`text-sm font-bold uppercase tracking-wider ${isToday ? 'text-[#111827]' : 'text-[#6B7280]'}`}>
+                    {format(day, 'EEE')}
+                  </h3>
+                  <p className={`text-xl font-bold ${isToday ? 'text-[#111827]' : 'text-[#4B5563]'}`}>
+                    {format(day, 'MMM d')}
+                  </p>
+                </div>
+                <Badge className="bg-[#F2F4F7] text-[#344054] hover:bg-[#F2F4F7] border-0 font-bold text-sm px-3 py-1.5 rounded-lg">
+                  {dayJobs.length} {dayJobs.length === 1 ? 'Job' : 'Jobs'}
+                </Badge>
+              </div>
+
+              {/* Jobs for this day */}
+              {dayJobs.length > 0 && (
+                <div className="space-y-2 mt-2">
+                  {dayJobs.map(job => {
+                    const isPriority = job.priority === 'high' || job.outcome === 'return_visit_required';
+                    const suburb = extractSuburb(job.address);
+
+                    return (
+                      <Card 
+                        key={job.id} 
+                        className="border border-[#E5E7EB] shadow-sm hover:border-[#FAE008] transition-all cursor-pointer"
+                        onClick={() => onJobClick(job)}
+                      >
+                        <CardContent className="p-3">
+                          <div className="space-y-2">
+                            <div className="flex items-center justify-between gap-2">
+                              <Badge className="bg-[#FAE008] text-[#111827] hover:bg-[#FAE008] border-0 font-bold text-xs px-2.5 py-1 rounded-lg">
+                                <Clock className="w-3.5 h-3.5 mr-1" />
+                                {job.scheduled_time?.slice(0, 5) || 'TBD'}
+                              </Badge>
+                              {isPriority && (
+                                <Badge className="bg-[#FED7AA] text-[#9A3412] hover:bg-[#FED7AA] border-0 font-semibold text-xs px-2 py-1 rounded-lg">
+                                  <AlertTriangle className="w-3 h-3" />
+                                </Badge>
+                              )}
+                            </div>
+
+                            <div>
+                              <h4 className="text-sm font-bold text-[#111827] leading-tight mb-0.5">
+                                {job.customer_name}
+                              </h4>
+                              <p className="text-xs text-[#6B7280] font-medium">{suburb}</p>
+                            </div>
+
+                            {job.job_type_name && (
+                              <Badge className="bg-[#EDE9FE] text-[#6D28D9] hover:bg-[#EDE9FE] border-0 font-semibold text-xs px-2 py-0.5 rounded-lg">
+                                {job.job_type_name}
+                              </Badge>
+                            )}
+                          </div>
+                        </CardContent>
+                      </Card>
+                    );
+                  })}
+                </div>
+              )}
+            </div>
+          );
+        })}
+      </div>
+    );
+  }
+
+  // Desktop admin view
   return (
     <>
-      <div className="space-y-3">
+      <div className="space-y-3 hidden lg:block">
         <Card className="rounded-lg border border-[#E5E7EB] shadow-sm overflow-hidden">
           <CardContent className="p-0 overflow-x-auto">
             <div className="min-w-[800px]">
@@ -319,18 +433,6 @@ export default function WeekView({ jobs, currentDate, onJobClick, onQuickBook })
             </div>
           </CardContent>
         </Card>
-
-        {uniqueJobTypes.length > 0 && (
-          <div className="flex flex-wrap gap-2.5 text-xs bg-white p-3.5 rounded-lg border border-[#E5E7EB] shadow-sm">
-            <span className="font-bold text-[#111827] text-[10px] uppercase tracking-wider">Legend:</span>
-            {uniqueJobTypes.map((jobType) => (
-              <div key={jobType} className="flex items-center gap-1.5">
-                <div className={`w-2.5 h-2.5 rounded-full ${getJobTypeColor(jobType, uniqueJobTypes)}`} />
-                <span className="text-[#4B5563] font-medium text-[11px]">{jobType}</span>
-              </div>
-            ))}
-          </div>
-        )}
       </div>
 
       <AlertDialog open={!!pendingUpdate} onOpenChange={() => setPendingUpdate(null)}>
