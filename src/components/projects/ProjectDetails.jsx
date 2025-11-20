@@ -233,24 +233,48 @@ export default function ProjectDetails({ project: initialProject, onClose, onEdi
       // Generate AI overview
       let additionalInfo = '';
       try {
-        const prompt = `Based on this project information, provide a brief overview of what is required for this ${jobTypeName} job:
+        const prompt = `Based on this project information, create a concise bullet-point overview for this ${jobTypeName} job:
 
 Project Title: ${project.title}
 Project Type: ${project.project_type || 'N/A'}
 Description: ${project.description || 'No description provided'}
 ${installationDetails}
 
-Provide a concise 2-3 sentence summary of what the technician needs to know for this ${jobTypeName}.`;
+Format as HTML bullet points using <ul> and <li> tags. Include only the most critical information the technician needs. Keep it brief - 3-5 bullet points maximum.`;
 
         const aiResponse = await base44.integrations.Core.InvokeLLM({
           prompt: prompt,
           add_context_from_internet: false
         });
 
-        additionalInfo = aiResponse + installationDetails;
+        additionalInfo = aiResponse;
+        
+        // Add installation details if present
+        if (installationDetails) {
+          additionalInfo += `<br><br><strong>Installation Details:</strong><ul>`;
+          project.doors.forEach((door, idx) => {
+            let doorInfo = `Door ${idx + 1}:`;
+            if (door.height && door.width) doorInfo += ` ${door.height} × ${door.width}`;
+            if (door.type) doorInfo += ` • ${door.type}`;
+            if (door.style) doorInfo += ` • ${door.style}`;
+            additionalInfo += `<li>${doorInfo}</li>`;
+          });
+          additionalInfo += `</ul>`;
+        }
       } catch (error) {
         // Fallback if AI fails
-        additionalInfo = `${project.description || ''}${installationDetails}`;
+        additionalInfo = project.description || '';
+        if (installationDetails) {
+          additionalInfo += `<br><br><strong>Installation Details:</strong><ul>`;
+          project.doors.forEach((door, idx) => {
+            let doorInfo = `Door ${idx + 1}:`;
+            if (door.height && door.width) doorInfo += ` ${door.height} × ${door.width}`;
+            if (door.type) doorInfo += ` • ${door.type}`;
+            if (door.style) doorInfo += ` • ${door.style}`;
+            additionalInfo += `<li>${doorInfo}</li>`;
+          });
+          additionalInfo += `</ul>`;
+        }
       }
 
       // Create the job with project data
