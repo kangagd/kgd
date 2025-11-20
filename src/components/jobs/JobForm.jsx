@@ -84,8 +84,35 @@ export default function JobForm({ job, technicians, onSubmit, onCancel, isSubmit
   }, [preselectedCustomerId, customers]);
 
   useEffect(() => {
-    if (preselectedProjectId && projects.length > 0) {
-      handleProjectChange(preselectedProjectId);
+    if (preselectedProjectId && projects.length > 0 && !job) {
+      const project = projects.find(p => p.id === preselectedProjectId);
+      if (project) {
+        const productMapping = {
+          "Garage Door Install": "Garage Door",
+          "Gate Install": "Gate",
+          "Roller Shutter Install": "Roller Shutter",
+          "Multiple": "Multiple"
+        };
+
+        const autoProduct = productMapping[project.project_type] || "";
+
+        setFormData({
+          ...formData,
+          project_id: preselectedProjectId,
+          project_name: project.title,
+          customer_id: project.customer_id,
+          customer_name: project.customer_name,
+          customer_phone: project.customer_phone || "",
+          customer_email: project.customer_email || "",
+          address: project.address || formData.address,
+          product: autoProduct,
+          notes: project.notes || "",
+          additional_info: project.description || "",
+          image_urls: project.image_urls || [],
+          quote_url: project.quote_url || "",
+          invoice_url: project.invoice_url || ""
+        });
+      }
     }
   }, [preselectedProjectId, projects]);
 
