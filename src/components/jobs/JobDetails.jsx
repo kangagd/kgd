@@ -370,6 +370,12 @@ export default function JobDetails({ job: initialJob, onClose, onStatusChange, o
     logChange('outcome', job.outcome, value);
     updateJobMutation.mutate({ field: 'outcome', value });
 
+    // Auto-update status to Completed for specific outcomes
+    if (value === "send_invoice" || value === "completed") {
+      updateJobMutation.mutate({ field: 'status', value: "Completed" });
+      return;
+    }
+
     // Auto-update status to Open for specific outcomes
     if (value === "new_quote" || value === "update_quote" || value === "return_visit_required") {
       updateJobMutation.mutate({ field: 'status', value: "Open" });
