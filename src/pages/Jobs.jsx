@@ -197,8 +197,8 @@ export default function Jobs() {
   }
 
   return (
-    <div className="p-5 md:p-10 bg-[#F8F9FA] min-h-screen">
-      <div className="max-w-7xl mx-auto">
+    <div className="p-5 md:p-10 bg-[#F8F9FA] min-h-screen overflow-x-hidden">
+      <div className="max-w-7xl mx-auto w-full">
         {!isTechnician && (
           <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-8 gap-5">
             <div>
@@ -222,25 +222,25 @@ export default function Jobs() {
         )}
 
         <div className="flex flex-col gap-5 mb-8">
-          <div className="flex gap-3">
+          <div className="flex flex-col md:flex-row gap-3">
             <div className="relative flex-1">
               <Search className="absolute left-4 top-1/2 transform -translate-y-1/2 w-5 h-5 text-[#6B7280]" />
               <Input
                 placeholder="Search jobs..."
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
-                className="pl-12 border border-[#E5E7EB] focus:border-[#FAE008] focus:ring-2 focus:ring-[#FAE008]/20 transition-all h-12 text-base rounded-lg"
+                className="pl-12 border border-[#E5E7EB] focus:border-[#FAE008] focus:ring-2 focus:ring-[#FAE008]/20 transition-all h-12 text-base rounded-lg w-full"
               />
             </div>
-            <Tabs value={viewMode} onValueChange={setViewMode}>
-              <TabsList className="h-12 bg-white border border-[#E5E7EB]">
-                <TabsTrigger value="list" className="gap-2 font-semibold min-h-[44px] data-[state=active]:bg-[#FAE008] data-[state=active]:text-[#111827]">
+            <Tabs value={viewMode} onValueChange={setViewMode} className="flex-shrink-0">
+              <TabsList className="h-12 bg-white border border-[#E5E7EB] w-full md:w-auto">
+                <TabsTrigger value="list" className="gap-2 font-semibold min-h-[44px] data-[state=active]:bg-[#FAE008] data-[state=active]:text-[#111827] flex-1 md:flex-initial">
                   <List className="w-4 h-4" />
-                  <span className="hidden md:inline">List</span>
+                  <span className="hidden sm:inline">List</span>
                 </TabsTrigger>
-                <TabsTrigger value="calendar" className="gap-2 font-semibold min-h-[44px] data-[state=active]:bg-[#FAE008] data-[state=active]:text-[#111827]">
+                <TabsTrigger value="calendar" className="gap-2 font-semibold min-h-[44px] data-[state=active]:bg-[#FAE008] data-[state=active]:text-[#111827] flex-1 md:flex-initial">
                   <CalendarIcon className="w-4 h-4" />
-                  <span className="hidden md:inline">Calendar</span>
+                  <span className="hidden sm:inline">Calendar</span>
                 </TabsTrigger>
               </TabsList>
             </Tabs>
@@ -249,10 +249,10 @@ export default function Jobs() {
           {viewMode === "list" && (
             <Tabs value={statusFilter} onValueChange={setStatusFilter}>
               <TabsList className="w-full grid grid-cols-4 h-12 bg-white border border-[#E5E7EB]">
-                <TabsTrigger value="all" className="font-semibold data-[state=active]:bg-[#FAE008] data-[state=active]:text-[#111827]">All</TabsTrigger>
-                <TabsTrigger value="Open" className="font-semibold data-[state=active]:bg-[#FAE008] data-[state=active]:text-[#111827]">Open</TabsTrigger>
-                <TabsTrigger value="Scheduled" className="font-semibold data-[state=active]:bg-[#FAE008] data-[state=active]:text-[#111827]">Scheduled</TabsTrigger>
-                <TabsTrigger value="Completed" className="font-semibold data-[state=active]:bg-[#FAE008] data-[state=active]:text-[#111827]">Completed</TabsTrigger>
+                <TabsTrigger value="all" className="font-semibold data-[state=active]:bg-[#FAE008] data-[state=active]:text-[#111827] text-xs md:text-sm">All</TabsTrigger>
+                <TabsTrigger value="Open" className="font-semibold data-[state=active]:bg-[#FAE008] data-[state=active]:text-[#111827] text-xs md:text-sm">Open</TabsTrigger>
+                <TabsTrigger value="Scheduled" className="font-semibold data-[state=active]:bg-[#FAE008] data-[state=active]:text-[#111827] text-xs md:text-sm">Scheduled</TabsTrigger>
+                <TabsTrigger value="Completed" className="font-semibold data-[state=active]:bg-[#FAE008] data-[state=active]:text-[#111827] text-xs md:text-sm">Completed</TabsTrigger>
               </TabsList>
             </Tabs>
           )}

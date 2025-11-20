@@ -448,7 +448,7 @@ Format as HTML bullet points using <ul> and <li> tags. Include only the most cri
   }, [project.status]);
 
   return (
-    <div className="relative flex flex-col lg:flex-row gap-4">
+    <div className="relative flex flex-col lg:flex-row gap-4 overflow-x-hidden">
       {/* Customer Sidebar */}
       <aside className="w-full lg:w-72 flex-shrink-0 lg:sticky lg:top-4 lg:self-start">
         <Card className="border border-[#E5E7EB] shadow-sm rounded-lg overflow-hidden">
@@ -743,36 +743,43 @@ Format as HTML bullet points using <ul> and <li> tags. Include only the most cri
 
       <CardContent className="p-3 md:p-4">
         <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-          <TabsList className="w-full grid grid-cols-7 h-11 bg-[#F8F9FA] border border-[#E5E7EB] rounded-lg p-1">
+          <div className="chip-container mb-4" 
+            style={{ 
+              maskImage: 'linear-gradient(to right, black 0%, black calc(100% - 40px), transparent 100%)',
+              WebkitMaskImage: 'linear-gradient(to right, black 0%, black calc(100% - 40px), transparent 100%)'
+            }}
+          >
+            <TabsList className="inline-flex h-11 bg-[#F8F9FA] border border-[#E5E7EB] rounded-lg p-1">
             <TabsTrigger 
               value="overview" 
-              className="text-[14px] font-medium leading-[1.4] data-[state=active]:bg-white data-[state=active]:shadow-sm"
+              className="text-[14px] font-medium leading-[1.4] data-[state=active]:bg-white data-[state=active]:shadow-sm whitespace-nowrap px-4"
             >
               Overview
             </TabsTrigger>
-            <TabsTrigger value="visits" className="text-[14px] font-medium leading-[1.4] data-[state=active]:bg-white data-[state=active]:shadow-sm">
+            <TabsTrigger value="visits" className="text-[14px] font-medium leading-[1.4] data-[state=active]:bg-white data-[state=active]:shadow-sm whitespace-nowrap px-4">
               <Briefcase className="w-4 h-4 mr-1.5" />
-              <span className="hidden md:inline">Visits</span>
+              <span className="hidden sm:inline">Visits</span>
             </TabsTrigger>
-            <TabsTrigger value="quoting" className="text-[14px] font-medium leading-[1.4] data-[state=active]:bg-white data-[state=active]:shadow-sm">Quoting</TabsTrigger>
-            <TabsTrigger value="parts" className="text-[14px] font-medium leading-[1.4] data-[state=active]:bg-white data-[state=active]:shadow-sm">Parts</TabsTrigger>
-            <TabsTrigger value="images" className="text-[14px] font-medium leading-[1.4] data-[state=active]:bg-white data-[state=active]:shadow-sm">
+            <TabsTrigger value="quoting" className="text-[14px] font-medium leading-[1.4] data-[state=active]:bg-white data-[state=active]:shadow-sm whitespace-nowrap px-4">Quoting</TabsTrigger>
+            <TabsTrigger value="parts" className="text-[14px] font-medium leading-[1.4] data-[state=active]:bg-white data-[state=active]:shadow-sm whitespace-nowrap px-4">Parts</TabsTrigger>
+            <TabsTrigger value="images" className="text-[14px] font-medium leading-[1.4] data-[state=active]:bg-white data-[state=active]:shadow-sm whitespace-nowrap px-4">
               <ImageIcon className="w-4 h-4 mr-1.5" />
-              <span className="hidden md:inline">Images</span>
+              <span className="hidden sm:inline">Images</span>
             </TabsTrigger>
-            <TabsTrigger value="attachments" className="text-[14px] font-medium leading-[1.4] data-[state=active]:bg-white data-[state=active]:shadow-sm">
+            <TabsTrigger value="attachments" className="text-[14px] font-medium leading-[1.4] data-[state=active]:bg-white data-[state=active]:shadow-sm whitespace-nowrap px-4">
               <FileText className="w-4 h-4 mr-1.5" />
-              <span className="hidden md:inline">Files</span>
+              <span className="hidden sm:inline">Files</span>
             </TabsTrigger>
             <TabsTrigger 
               value="summary" 
-              className={`text-[14px] font-medium leading-[1.4] data-[state=active]:bg-white data-[state=active]:shadow-sm ${
+              className={`text-[14px] font-medium leading-[1.4] data-[state=active]:bg-white data-[state=active]:shadow-sm whitespace-nowrap px-4 ${
                 project.status === "Completed" ? "bg-[#FAE008]/10 text-[#111827] font-semibold" : ""
               }`}
             >
               Summary
             </TabsTrigger>
-          </TabsList>
+            </TabsList>
+            </div>
 
           <TabsContent value="overview" className="space-y-3 mt-3">
             <div>

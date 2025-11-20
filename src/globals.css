@@ -81,6 +81,17 @@ css
 }
 
 @layer components {
+  /* Chip Container Scrolling */
+  .chip-container {
+    @apply overflow-x-auto overflow-y-hidden -mx-5 px-5 md:mx-0 md:px-0;
+    scrollbar-width: none;
+    -ms-overflow-style: none;
+  }
+
+  .chip-container::-webkit-scrollbar {
+    display: none;
+  }
+
   /* Typography Utilities */
   .text-h1 {
     @apply text-[28px] font-bold leading-[1.2] text-[#111827];

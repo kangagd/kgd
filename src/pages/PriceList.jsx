@@ -124,8 +124,8 @@ export default function PriceList() {
   }
 
   return (
-    <div className="p-5 md:p-10 bg-[#F8F9FA] min-h-screen">
-      <div className="max-w-7xl mx-auto">
+    <div className="p-5 md:p-10 bg-[#F8F9FA] min-h-screen overflow-x-hidden">
+      <div className="max-w-7xl mx-auto w-full">
         <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-8 gap-5">
           <div>
             <h1 className="text-3xl font-bold text-[#111827] tracking-tight">Price List</h1>

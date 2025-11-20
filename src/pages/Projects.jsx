@@ -214,8 +214,8 @@ export default function Projects() {
   }
 
   return (
-    <div className="p-5 md:p-10 bg-[#F8F9FA] min-h-screen">
-      <div className="max-w-7xl mx-auto">
+    <div className="p-5 md:p-10 bg-[#F8F9FA] min-h-screen overflow-x-hidden">
+      <div className="max-w-7xl mx-auto w-full">
         <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-8 gap-5">
           <div>
             <h1 className="text-[28px] font-bold text-[#111827] leading-[1.2]">Projects</h1>
@@ -231,61 +231,63 @@ export default function Projects() {
         </div>
 
         <div className="mb-8 space-y-4">
-          <div className="flex gap-3">
+          <div className="flex flex-col md:flex-row gap-3">
             <div className="relative flex-1">
               <Search className="absolute left-4 top-1/2 transform -translate-y-1/2 w-5 h-5 text-[#6B7280]" />
               <Input
                 placeholder="Search projects..."
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
-                className="pl-12 border border-[#E5E7EB] focus:border-[#FAE008] focus:ring-2 focus:ring-[#FAE008]/20 transition-all h-12 text-[14px] leading-[1.4] rounded-lg"
+                className="pl-12 border border-[#E5E7EB] focus:border-[#FAE008] focus:ring-2 focus:ring-[#FAE008]/20 transition-all h-12 text-[14px] leading-[1.4] rounded-lg w-full"
               />
             </div>
             <Button
               variant="outline"
               onClick={() => setShowFilters(!showFilters)}
-              className="h-12 px-4 border-2 border-[#E5E7EB] hover:border-[#FAE008] hover:bg-[#FFFEF5]"
+              className="h-12 px-4 border-2 border-[#E5E7EB] hover:border-[#FAE008] hover:bg-[#FFFEF5] flex-shrink-0"
             >
               <SlidersHorizontal className="w-5 h-5 mr-2" />
               Filters
             </Button>
           </div>
 
-          <div className="flex gap-2 overflow-x-auto pb-2 -mx-5 px-5 md:mx-0 md:px-0" style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}>
-            <style jsx>{`
-              div::-webkit-scrollbar {
-                display: none;
-              }
-            `}</style>
-            <Badge
-              onClick={() => setStageFilter("all")}
-              className={`cursor-pointer px-4 py-2 text-[13px] font-medium transition-all whitespace-nowrap rounded-full flex-shrink-0 ${
-                stageFilter === "all"
-                  ? "bg-[#FAE008] text-[#111827] border-2 border-[#FAE008] hover:bg-[#E5CF07]"
-                  : "bg-white text-[#4B5563] border-2 border-[#E5E7EB] hover:border-[#FAE008] hover:bg-[#FFFEF5]"
-              }`}
-            >
-              All Projects
-            </Badge>
-            {Object.keys(statusColors).map((stage) => (
+          <div className="chip-container flex gap-2 pb-2"
+            style={{ 
+              maskImage: 'linear-gradient(to right, black 0%, black calc(100% - 40px), transparent 100%)',
+              WebkitMaskImage: 'linear-gradient(to right, black 0%, black calc(100% - 40px), transparent 100%)'
+            }}
+          >
+            <div className="flex gap-2">
               <Badge
-                key={stage}
-                onClick={() => setStageFilter(stage)}
+                onClick={() => setStageFilter("all")}
                 className={`cursor-pointer px-4 py-2 text-[13px] font-medium transition-all whitespace-nowrap rounded-full flex-shrink-0 ${
-                  stageFilter === stage
-                    ? `${statusColors[stage]} border-2 hover:opacity-90`
+                  stageFilter === "all"
+                    ? "bg-[#FAE008] text-[#111827] border-2 border-[#FAE008] hover:bg-[#E5CF07]"
                     : "bg-white text-[#4B5563] border-2 border-[#E5E7EB] hover:border-[#FAE008] hover:bg-[#FFFEF5]"
                 }`}
               >
-                {stage}
+                All Projects
               </Badge>
-            ))}
+              {Object.keys(statusColors).map((stage) => (
+                <Badge
+                  key={stage}
+                  onClick={() => setStageFilter(stage)}
+                  className={`cursor-pointer px-4 py-2 text-[13px] font-medium transition-all whitespace-nowrap rounded-full flex-shrink-0 ${
+                    stageFilter === stage
+                      ? `${statusColors[stage]} border-2 hover:opacity-90`
+                      : "bg-white text-[#4B5563] border-2 border-[#E5E7EB] hover:border-[#FAE008] hover:bg-[#FFFEF5]"
+                  }`}
+                >
+                  {stage}
+                </Badge>
+              ))}
+            </div>
           </div>
 
           {showFilters && (
             <Card className="border border-[#E5E7EB]">
               <CardContent className="p-4">
-                <div className="grid md:grid-cols-3 gap-4">
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
                   <div className="space-y-2">
                     <Label>Project Stage</Label>
                     <Select value={stageFilter} onValueChange={setStageFilter}>
