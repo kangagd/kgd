@@ -94,8 +94,8 @@ export default function Calendar() {
   }
 
   return (
-    <div className="p-5 md:p-10 bg-[#F8F9FA] min-h-screen">
-      <div className="max-w-7xl mx-auto space-y-6">
+    <div className="p-5 md:p-10 bg-[#F8F9FA] min-h-screen overflow-x-hidden">
+      <div className="max-w-7xl mx-auto w-full space-y-6">
         <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
           <div>
             <h1 className="text-3xl font-bold text-[#111827] tracking-tight">Schedule</h1>
@@ -131,40 +131,47 @@ export default function Calendar() {
         </div>
 
         <div className="flex flex-col md:flex-row gap-4 items-start md:items-center">
-          <Tabs value={viewMode} onValueChange={setViewMode}>
-            <TabsList className="h-10 bg-white border border-[#E5E7EB]">
+          <Tabs value={viewMode} onValueChange={setViewMode} className="w-full md:w-auto">
+            <TabsList className="h-10 bg-white border border-[#E5E7EB] w-full md:w-auto grid grid-cols-3 md:inline-flex">
               <TabsTrigger value="day" className="font-semibold data-[state=active]:bg-[#FAE008] data-[state=active]:text-[#111827]">Day</TabsTrigger>
               <TabsTrigger value="week" className="font-semibold data-[state=active]:bg-[#FAE008] data-[state=active]:text-[#111827]">Week</TabsTrigger>
               <TabsTrigger value="month" className="font-semibold data-[state=active]:bg-[#FAE008] data-[state=active]:text-[#111827]">Month</TabsTrigger>
             </TabsList>
           </Tabs>
 
-          <div className="flex flex-wrap gap-2 items-center">
-            <span className="text-sm text-[#4B5563] font-semibold">Filter by technician:</span>
-            {technicians.map(tech => (
-              <Button
-                key={tech.email}
-                variant={selectedTechnicians.includes(tech.email) ? "default" : "outline"}
-                size="sm"
-                onClick={() => toggleTechnician(tech.email)}
-                className={selectedTechnicians.includes(tech.email) 
-                  ? "bg-[#FAE008] text-[#111827] hover:bg-[#E5CF07] font-semibold shadow-sm rounded-lg h-10" 
-                  : "border border-[#E5E7EB] hover:bg-[#F3F4F6] hover:border-[#D1D5DB] font-semibold rounded-lg h-10"
-                }
-              >
-                {tech.full_name}
-              </Button>
-            ))}
-            {selectedTechnicians.length > 0 && (
-              <Button
-                variant="ghost"
-                size="sm"
-                onClick={() => setSelectedTechnicians([])}
-                className="text-[#6B7280] hover:text-[#111827] hover:bg-[#F3F4F6] font-semibold rounded-lg h-10"
-              >
-                Clear
-              </Button>
-            )}
+          <div className="chip-container w-full md:w-auto"
+            style={{ 
+              maskImage: 'linear-gradient(to right, black 0%, black calc(100% - 40px), transparent 100%)',
+              WebkitMaskImage: 'linear-gradient(to right, black 0%, black calc(100% - 40px), transparent 100%)'
+            }}
+          >
+            <div className="flex gap-2 items-center">
+              <span className="text-sm text-[#4B5563] font-semibold whitespace-nowrap">Filter by technician:</span>
+              {technicians.map(tech => (
+                <Button
+                  key={tech.email}
+                  variant={selectedTechnicians.includes(tech.email) ? "default" : "outline"}
+                  size="sm"
+                  onClick={() => toggleTechnician(tech.email)}
+                  className={`whitespace-nowrap ${selectedTechnicians.includes(tech.email) 
+                    ? "bg-[#FAE008] text-[#111827] hover:bg-[#E5CF07] font-semibold shadow-sm rounded-lg h-10" 
+                    : "border border-[#E5E7EB] hover:bg-[#F3F4F6] hover:border-[#D1D5DB] font-semibold rounded-lg h-10"
+                  }`}
+                >
+                  {tech.full_name}
+                </Button>
+              ))}
+              {selectedTechnicians.length > 0 && (
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => setSelectedTechnicians([])}
+                  className="text-[#6B7280] hover:text-[#111827] hover:bg-[#F3F4F6] font-semibold rounded-lg h-10 whitespace-nowrap"
+                >
+                  Clear
+                </Button>
+              )}
+            </div>
           </div>
         </div>
 

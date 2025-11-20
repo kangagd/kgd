@@ -168,21 +168,21 @@ export default function PriceList() {
         )}
 
         <div className="mb-6 space-y-4">
-          <div className="relative">
+          <div className="relative w-full">
             <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-[hsl(25,8%,55%)]" />
             <Input
               placeholder="Search items, descriptions, categories..."
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
-              className="pl-10 border-2 border-[hsl(32,15%,88%)] focus:border-[#fae008] focus:ring-2 focus:ring-[#fae008]/20"
+              className="pl-10 border-2 border-[hsl(32,15%,88%)] focus:border-[#fae008] focus:ring-2 focus:ring-[#fae008]/20 w-full"
             />
           </div>
           
-          <Tabs value={categoryFilter} onValueChange={setCategoryFilter}>
-            <TabsList>
+          <Tabs value={categoryFilter} onValueChange={setCategoryFilter} className="w-full">
+            <TabsList className="w-full md:w-auto grid grid-cols-2 md:inline-flex">
               <TabsTrigger value="all">All</TabsTrigger>
               {categories.map((cat) => (
-                <TabsTrigger key={cat} value={cat}>{cat}</TabsTrigger>
+                <TabsTrigger key={cat} value={cat} className="text-xs md:text-sm">{cat}</TabsTrigger>
               ))}
             </TabsList>
           </Tabs>
