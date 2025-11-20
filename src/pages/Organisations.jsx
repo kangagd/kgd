@@ -145,7 +145,7 @@ export default function Organisations() {
         </div>
 
       {isLoading ? (
-        <div className="grid gap-4">
+        <div className="card-grid">
           {[1, 2, 3].map((i) => (
             <Card key={i} className="animate-pulse rounded-2xl">
               <CardContent className="p-6">
@@ -173,7 +173,7 @@ export default function Organisations() {
           )}
         </Card>
       ) : (
-        <div className="grid gap-4">
+        <div className="card-grid">
           {filteredOrganisations.map((org) => (
             <Card
               key={org.id}
