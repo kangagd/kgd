@@ -104,9 +104,14 @@ export default function ProjectDetails({ project: initialProject, onClose, onEdi
   const { data: activeViewers = [] } = useQuery({
     queryKey: ['projectViewers', project.id],
     queryFn: async () => {
-      const viewers = await base44.entities.ProjectViewer.filter({ project_id: project.id });
-      const oneMinuteAgo = new Date(Date.now() - 60000).toISOString();
-      return viewers.filter(v => v.last_seen > oneMinuteAgo);
+      try {
+        const user = await base44.auth.me();
+        const viewers = await base44.entities.ProjectViewer.filter({ project_id: project.id });
+        const oneMinuteAgo = new Date(Date.now() - 60000).toISOString();
+        return viewers.filter(v => v.last_seen > oneMinuteAgo && v.user_email !== user.email);
+      } catch (error) {
+        return [];
+      }
     },
     refetchInterval: 10000
   });
@@ -114,22 +119,28 @@ export default function ProjectDetails({ project: initialProject, onClose, onEdi
   React.useEffect(() => {
     let viewerRecordId = null;
     const updatePresence = async () => {
-      const user = await base44.auth.me();
-      const existingViewer = activeViewers.find(v => v.user_email === user.email);
-      
-      const viewerData = {
-        project_id: project.id,
-        user_email: user.email,
-        user_name: user.full_name,
-        last_seen: new Date().toISOString()
-      };
+      try {
+        const user = await base44.auth.me();
+        const viewerData = {
+          project_id: project.id,
+          user_email: user.email,
+          user_name: user.full_name,
+          last_seen: new Date().toISOString()
+        };
 
-      if (existingViewer) {
-        await base44.entities.ProjectViewer.update(existingViewer.id, viewerData);
-        viewerRecordId = existingViewer.id;
-      } else {
-        const newViewer = await base44.entities.ProjectViewer.create(viewerData);
-        viewerRecordId = newViewer.id;
+        if (viewerRecordId) {
+          try {
+            await base44.entities.ProjectViewer.update(viewerRecordId, viewerData);
+          } catch (error) {
+            const newViewer = await base44.entities.ProjectViewer.create(viewerData);
+            viewerRecordId = newViewer.id;
+          }
+        } else {
+          const newViewer = await base44.entities.ProjectViewer.create(viewerData);
+          viewerRecordId = newViewer.id;
+        }
+      } catch (error) {
+        console.error('Error updating presence:', error);
       }
     };
 
@@ -142,7 +153,7 @@ export default function ProjectDetails({ project: initialProject, onClose, onEdi
         base44.entities.ProjectViewer.delete(viewerRecordId).catch(() => {});
       }
     };
-  }, [project.id, activeViewers]);
+  }, [project.id]);
 
   const updateProjectMutation = useMutation({
     mutationFn: ({ field, value }) => base44.entities.Project.update(project.id, { [field]: value }),
