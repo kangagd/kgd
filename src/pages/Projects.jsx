@@ -8,6 +8,7 @@ import { Badge } from "@/components/ui/badge";
 import { Card, CardContent } from "@/components/ui/card";
 import ProjectForm from "../components/projects/ProjectForm";
 import ProjectDetails from "../components/projects/ProjectDetails";
+import ProjectStageSelector from "../components/projects/ProjectStageSelector";
 
 const statusColors = {
   "Lead": "bg-slate-100 text-slate-800 border-slate-200",
@@ -77,6 +78,19 @@ export default function Projects() {
       setSelectedProject(null);
     }
   });
+
+  const handleStageChange = async (projectId, currentStage, newStage) => {
+    const user = await base44.auth.me();
+    await base44.entities.ChangeHistory.create({
+      project_id: projectId,
+      field_name: 'status',
+      old_value: String(currentStage),
+      new_value: String(newStage),
+      changed_by: user.email,
+      changed_by_name: user.full_name
+    });
+    updateProjectMutation.mutate({ id: projectId, data: { status: newStage } });
+  };
 
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
@@ -237,10 +251,16 @@ export default function Projects() {
                           {project.project_type}
                         </Badge>
                       )}
-                      <Badge className={`${statusColors[project.status]} font-semibold border-0 px-3 py-1`}>
-                        {project.status}
-                      </Badge>
                     </div>
+                  </div>
+
+                  {/* Stage selector */}
+                  <div className="mb-3">
+                    <ProjectStageSelector
+                      currentStage={project.status}
+                      onStageChange={(newStage) => handleStageChange(project.id, project.status, newStage)}
+                      size="compact"
+                    />
                   </div>
 
                   {/* Second row */}
