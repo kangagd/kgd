@@ -434,16 +434,11 @@ export default function Projects() {
                   </div>
 
                   {/* Third row */}
-                  {(scopeSummary || project.stage) && (
+                  {project.stage && (
                     <div className="flex items-center gap-3 mb-3">
-                      {scopeSummary && (
-                        <span className="text-[14px] text-[#111827] font-medium leading-[1.4]">{scopeSummary}</span>
-                      )}
-                      {project.stage && (
-                        <Badge variant="outline" className="font-medium text-[12px] leading-[1.35] border-[#E5E7EB]">
-                          {project.stage.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase())}
-                        </Badge>
-                      )}
+                      <Badge variant="outline" className="font-medium text-[12px] leading-[1.35] border-[#E5E7EB]">
+                        {project.stage.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase())}
+                      </Badge>
                     </div>
                   )}
 
