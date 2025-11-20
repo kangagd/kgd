@@ -2,7 +2,7 @@ import React, { useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { ArrowLeft, Plus, Edit, Trash2, MapPin, Phone, Mail, FileText, Image as ImageIcon } from "lucide-react";
+import { ArrowLeft, Plus, Edit, Trash2, MapPin, Phone, Mail, FileText, Image as ImageIcon, User } from "lucide-react";
 import { base44 } from "@/api/base44Client";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useNavigate } from "react-router-dom";
@@ -270,16 +270,58 @@ export default function ProjectDetails({ project, onClose, onEdit, onDelete }) {
               </Badge>
             )}
           </div>
+        </div>
 
-          <div className="flex items-center gap-2.5">
-            <MapPin className="w-5 h-5 text-[#4B5563] flex-shrink-0" />
-            <EditableField
-              value={project.address}
-              onSave={(val) => handleFieldSave('address', project.address, val)}
-              type="text"
-              placeholder="Address"
-              className="text-sm text-[#4B5563]"
-            />
+        <div className="bg-[#ffffff] p-4 rounded-lg space-y-3">
+          <div className="grid grid-cols-2 gap-x-6 gap-y-3">
+            <div className="flex items-center gap-2.5">
+              <MapPin className="w-5 h-5 text-[#4B5563]" />
+              <div className="flex-1 min-w-0">
+                <div className="text-xs text-[#4B5563] font-medium mb-0.5">Address</div>
+                <EditableField
+                  value={project.address}
+                  onSave={(val) => handleFieldSave('address', project.address, val)}
+                  type="text"
+                  placeholder="Set address"
+                  className="font-semibold text-[#111827] text-sm"
+                />
+              </div>
+            </div>
+            {project.customer_phone && (
+              <div className="flex items-center gap-2.5">
+                <Phone className="w-5 h-5 text-[#4B5563]" />
+                <div className="flex-1 min-w-0">
+                  <div className="text-xs text-[#4B5563] font-medium mb-0.5">Phone</div>
+                  <span className="font-semibold text-[#111827] text-sm">{project.customer_phone}</span>
+                </div>
+              </div>
+            )}
+            <div className="flex items-center gap-2.5 col-span-2">
+              <svg className="w-5 h-5 text-[#4B5563]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z" />
+              </svg>
+              <div className="flex-1 min-w-0">
+                <div className="text-xs text-[#4B5563] font-medium mb-0.5">Technicians</div>
+                <EditableField
+                  value={project.assigned_technicians || []}
+                  onSave={handleTechniciansChange}
+                  type="multi-select"
+                  icon={Edit}
+                  options={technicians.map((t) => ({ value: t.email, label: t.full_name }))}
+                  displayFormat={(val) => {
+                    const emailsToDisplay = Array.isArray(val) ? val : val ? [val] : [];
+                    if (emailsToDisplay.length === 0) return "Assign";
+                    const names = emailsToDisplay.map(email => {
+                      const tech = technicians.find(t => t.email === email);
+                      return tech?.full_name || email;
+                    });
+                    return names.slice(0, 3).join(", ") + (names.length > 3 ? ` +${names.length - 3}` : "");
+                  }}
+                  placeholder="Assign"
+                  className="font-semibold text-[#111827] text-sm"
+                />
+              </div>
+            </div>
           </div>
         </div>
       </CardHeader>
@@ -418,40 +460,7 @@ export default function ProjectDetails({ project, onClose, onEdit, onDelete }) {
           </Card>
         )}
 
-        <Card className="border border-[#E5E7EB] shadow-sm overflow-hidden">
-          <CardHeader className="bg-[#F8F9FA] px-4 py-3 border-b border-[#E5E7EB]">
-            <div className="flex items-center gap-2">
-              <FileText className="w-4 h-4 text-[#6B7280]" />
-              <h3 className="text-sm font-bold text-[#111827]">Assigned Team</h3>
-            </div>
-          </CardHeader>
-          <CardContent className="p-3">
-            <EditableField
-              value={project.assigned_technicians || []}
-              onSave={handleTechniciansChange}
-              type="multi-select"
-              options={technicians.map((t) => ({ value: t.email, label: t.full_name }))}
-              displayFormat={(val) => {
-                const emailsToDisplay = Array.isArray(val) ? val : val ? [val] : [];
-                if (emailsToDisplay.length === 0) return "Assign team";
-                const names = emailsToDisplay.map(email => {
-                  const tech = technicians.find(t => t.email === email);
-                  return tech?.full_name || email;
-                });
-                return (
-                  <div className="flex gap-2 flex-wrap">
-                    {names.map((name, idx) => (
-                      <Badge key={idx} variant="outline" className="font-semibold">
-                        {name}
-                      </Badge>
-                    ))}
-                  </div>
-                );
-              }}
-              placeholder="Assign team"
-            />
-          </CardContent>
-        </Card>
+
 
         <Card className="border border-[#E5E7EB] shadow-sm overflow-hidden">
           <CardHeader className="bg-[#F8F9FA] px-4 py-3 border-b border-[#E5E7EB]">
