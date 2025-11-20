@@ -460,51 +460,6 @@ export default function ProjectDetails({ project, onClose, onEdit, onDelete }) {
           </div>
         )}
 
-        <div className="bg-[#F8F9FA] rounded-lg p-4">
-          <h3 className="font-bold text-[#111827] mb-4">Financials</h3>
-          <div className="grid grid-cols-3 gap-6">
-            <div className="flex items-start gap-2.5">
-              <div className="flex-1 min-w-0">
-                <div className="text-xs text-[#4B5563] font-medium mb-1">Quote</div>
-                <EditableField
-                  value={project.quote_value}
-                  onSave={(val) => handleFieldSave('quote_value', project.quote_value, val)}
-                  type="number"
-                  placeholder="Quote amount"
-                  displayFormat={(val) => val ? `$${val}` : "Add quote"}
-                  className="text-lg font-bold text-[#111827]"
-                />
-              </div>
-            </div>
-            <div className="flex items-start gap-2.5">
-              <div className="flex-1 min-w-0">
-                <div className="text-xs text-[#4B5563] font-medium mb-1">Invoice</div>
-                <EditableField
-                  value={project.invoice_value}
-                  onSave={(val) => handleFieldSave('invoice_value', project.invoice_value, val)}
-                  type="number"
-                  placeholder="Invoice amount"
-                  displayFormat={(val) => val ? `$${val}` : "Add invoice"}
-                  className="text-lg font-bold text-[#111827]"
-                />
-              </div>
-            </div>
-            <div className="flex items-start gap-2.5">
-              <div className="flex-1 min-w-0">
-                <div className="text-xs text-[#4B5563] font-medium mb-1">Paid</div>
-                <EditableField
-                  value={project.payment_received}
-                  onSave={(val) => handleFieldSave('payment_received', project.payment_received, val)}
-                  type="number"
-                  placeholder="Payment amount"
-                  displayFormat={(val) => val ? `$${val}` : "Add payment"}
-                  className="text-lg font-bold text-[#16A34A]"
-                />
-              </div>
-            </div>
-          </div>
-        </div>
-
         <div>
           <h3 className="font-bold text-[#000000] mb-2">Assigned Team</h3>
           <EditableField
