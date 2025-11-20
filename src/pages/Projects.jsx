@@ -251,6 +251,32 @@ export default function Projects() {
             </Button>
           </div>
 
+          <div className="flex gap-2 overflow-x-auto pb-2 scrollbar-thin">
+            <Badge
+              onClick={() => setStageFilter("all")}
+              className={`cursor-pointer px-4 py-2 text-[13px] font-medium transition-all whitespace-nowrap ${
+                stageFilter === "all"
+                  ? "bg-[#FAE008] text-[#111827] border-2 border-[#FAE008] hover:bg-[#E5CF07]"
+                  : "bg-white text-[#4B5563] border-2 border-[#E5E7EB] hover:border-[#FAE008] hover:bg-[#FFFEF5]"
+              }`}
+            >
+              All Projects
+            </Badge>
+            {Object.keys(statusColors).map((stage) => (
+              <Badge
+                key={stage}
+                onClick={() => setStageFilter(stage)}
+                className={`cursor-pointer px-4 py-2 text-[13px] font-medium transition-all whitespace-nowrap ${
+                  stageFilter === stage
+                    ? `${statusColors[stage]} border-2 hover:opacity-90`
+                    : "bg-white text-[#4B5563] border-2 border-[#E5E7EB] hover:border-[#FAE008] hover:bg-[#FFFEF5]"
+                }`}
+              >
+                {stage}
+              </Badge>
+            ))}
+          </div>
+
           {showFilters && (
             <Card className="border border-[#E5E7EB]">
               <CardContent className="p-4">
