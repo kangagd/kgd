@@ -202,50 +202,59 @@ export default function JobDetails({ job: initialJob, onClose, onStatusChange, o
 
   const checkOutMutation = useMutation({
     mutationFn: async () => {
-      if (!overview || !nextSteps || !communicationWithClient || !outcome) {
-        throw new Error("Please fill in all Site Visit fields before checking out.");
-      }
-
-      if (!job.image_urls || job.image_urls.length === 0) {
-        throw new Error("Please upload at least one photo before checking out.");
-      }
-
       const checkOutTime = new Date().toISOString();
       const checkInTime = new Date(activeCheckIn.check_in_time);
       const durationHours = (new Date(checkOutTime) - checkInTime) / (1000 * 60 * 60);
       const durationMinutes = Math.round(durationHours * 60);
 
-      // Determine new status
-      const newStatus = determineJobStatus(job.scheduled_date, outcome, false, job.status);
+      // Check if this is a mistake check-in (less than 1 minute)
+      const isMistake = durationMinutes < 1;
 
-      // Build scheduled datetime
-      let scheduledDatetime = null;
-      if (job.scheduled_date) {
-        const dateStr = job.scheduled_date;
-        const timeStr = job.scheduled_time || '09:00';
-        scheduledDatetime = `${dateStr}T${timeStr}:00.000Z`;
+      // Only validate fields if this is a real visit
+      if (!isMistake) {
+        if (!overview || !nextSteps || !communicationWithClient || !outcome) {
+          throw new Error("Please fill in all Site Visit fields before checking out.");
+        }
+
+        if (!job.image_urls || job.image_urls.length === 0) {
+          throw new Error("Please upload at least one photo before checking out.");
+        }
       }
 
-      // Create job summary
-      await base44.entities.JobSummary.create({
-        job_id: job.id,
-        project_id: job.project_id || null,
-        job_number: job.job_number,
-        job_type: job.job_type_name || null,
-        scheduled_datetime: scheduledDatetime,
-        technician_email: user.email,
-        technician_name: user.full_name,
-        check_in_time: activeCheckIn.check_in_time,
-        check_out_time: checkOutTime,
-        duration_minutes: durationMinutes,
-        overview,
-        next_steps: nextSteps,
-        communication_with_client: communicationWithClient,
-        outcome,
-        status_at_checkout: newStatus,
-        photo_urls: job.image_urls || [],
-        measurements: job.measurements || null
-      });
+      // Determine new status
+      const newStatus = isMistake ? job.status : determineJobStatus(job.scheduled_date, outcome, false, job.status);
+
+      // Only create job summary if this is not a mistake check-in
+      if (!isMistake) {
+        // Build scheduled datetime
+        let scheduledDatetime = null;
+        if (job.scheduled_date) {
+          const dateStr = job.scheduled_date;
+          const timeStr = job.scheduled_time || '09:00';
+          scheduledDatetime = `${dateStr}T${timeStr}:00.000Z`;
+        }
+
+        // Create job summary
+        await base44.entities.JobSummary.create({
+          job_id: job.id,
+          project_id: job.project_id || null,
+          job_number: job.job_number,
+          job_type: job.job_type_name || null,
+          scheduled_datetime: scheduledDatetime,
+          technician_email: user.email,
+          technician_name: user.full_name,
+          check_in_time: activeCheckIn.check_in_time,
+          check_out_time: checkOutTime,
+          duration_minutes: durationMinutes,
+          overview,
+          next_steps: nextSteps,
+          communication_with_client: communicationWithClient,
+          outcome,
+          status_at_checkout: newStatus,
+          photo_urls: job.image_urls || [],
+          measurements: job.measurements || null
+        });
+      }
 
       await base44.entities.CheckInOut.update(activeCheckIn.id, {
         check_out_time: checkOutTime,
