@@ -272,8 +272,8 @@ export default function ProjectDetails({ project, onClose, onEdit, onDelete }) {
           </div>
         </div>
 
-        <div className="bg-[#ffffff] p-4 rounded-lg space-y-3">
-          <div className="grid grid-cols-3 gap-x-6 gap-y-3">
+        <div className="bg-[#ffffff] p-3 rounded-lg">
+          <div className="grid grid-cols-3 gap-x-4 gap-y-2">
             <div className="flex items-center gap-2.5">
               <MapPin className="w-5 h-5 text-[#4B5563]" />
               <div className="flex-1 min-w-0">
