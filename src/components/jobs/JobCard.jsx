@@ -58,7 +58,7 @@ export default function JobCard({ job, onClick }) {
               </Badge>
             )}
             {job.status && (
-              <Badge className={`${statusColors[job.status]} font-medium px-2.5 py-0.5 rounded-lg border-0`}>
+              <Badge className={`${statusColors[job.status] || 'bg-slate-100 text-slate-700'} font-medium px-2.5 py-0.5 rounded-lg border-0`}>
                 {job.status}
               </Badge>
             )}
