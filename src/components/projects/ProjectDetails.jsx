@@ -230,6 +230,18 @@ export default function ProjectDetails({ project: initialProject, onClose, onEdi
         });
       }
 
+      // Map project type to product
+      let product = null;
+      if (project.project_type === "Garage Door Install") {
+        product = "Garage Door";
+      } else if (project.project_type === "Gate Install") {
+        product = "Gate";
+      } else if (project.project_type === "Roller Shutter Install") {
+        product = "Roller Shutter";
+      } else if (project.project_type === "Multiple") {
+        product = "Multiple";
+      }
+
       // Generate AI overview
       let additionalInfo = '';
       try {
