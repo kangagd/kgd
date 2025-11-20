@@ -284,14 +284,10 @@ export default function ProjectDetails({ project, onClose, onEdit, onDelete }) {
             />
           </div>
 
-          <div className="flex items-center gap-1.5 flex-wrap">
-            <EditableField
-              value={project.title}
-              onSave={(val) => handleFieldSave('title', project.title, val)}
-              type="text"
-              placeholder="Project Title"
-              className="text-[22px] font-semibold text-[#111827] leading-[1.2]"
-            />
+          <h2 className="text-[22px] font-semibold text-[#111827] leading-[1.2]">
+            {project.title}
+          </h2>
+          <div className="flex items-center gap-1.5 flex-wrap mt-2">
             {project.project_type && (
               <EditableField
                 value={project.project_type}
