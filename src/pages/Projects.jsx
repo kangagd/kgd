@@ -3,9 +3,17 @@ import { base44 } from "@/api/base44Client";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Plus, Search } from "lucide-react";
+import { Plus, Search, SlidersHorizontal } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent } from "@/components/ui/card";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import { Label } from "@/components/ui/label";
 import ProjectForm from "../components/projects/ProjectForm";
 import ProjectDetails from "../components/projects/ProjectDetails";
 
@@ -32,6 +40,12 @@ const projectTypeColors = {
 
 export default function Projects() {
   const [searchTerm, setSearchTerm] = useState("");
+  const [stageFilter, setStageFilter] = useState("all");
+  const [partsStatusFilter, setPartsStatusFilter] = useState("all");
+  const [startDate, setStartDate] = useState("");
+  const [endDate, setEndDate] = useState("");
+  const [sortBy, setSortBy] = useState("created_date");
+  const [showFilters, setShowFilters] = useState(false);
   const [showForm, setShowForm] = useState(false);
   const [selectedProject, setSelectedProject] = useState(null);
   const [editingProject, setEditingProject] = useState(null);
@@ -47,6 +61,11 @@ export default function Projects() {
   const { data: allJobs = [] } = useQuery({
     queryKey: ['allJobs'],
     queryFn: () => base44.entities.Job.list()
+  });
+
+  const { data: allParts = [] } = useQuery({
+    queryKey: ['allParts'],
+    queryFn: () => base44.entities.Part.list()
   });
 
   const createProjectMutation = useMutation({
@@ -104,12 +123,36 @@ export default function Projects() {
     deleteProjectMutation.mutate(projectId);
   };
 
-  const filteredProjects = projects.filter((project) => {
-    return (
-      project.title?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      project.customer_name?.toLowerCase().includes(searchTerm.toLowerCase())
-    );
-  });
+  const filteredProjects = projects
+    .filter((project) => {
+      const matchesSearch = 
+        project.title?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        project.customer_name?.toLowerCase().includes(searchTerm.toLowerCase());
+      
+      const matchesStage = stageFilter === "all" || project.status === stageFilter;
+      
+      const projectParts = allParts.filter(p => p.project_id === project.id);
+      const matchesPartsStatus = partsStatusFilter === "all" || 
+        projectParts.some(p => p.status === partsStatusFilter);
+      
+      let matchesDateRange = true;
+      if (startDate || endDate) {
+        const projectDate = new Date(project.created_date);
+        if (startDate && new Date(startDate) > projectDate) matchesDateRange = false;
+        if (endDate && new Date(endDate) < projectDate) matchesDateRange = false;
+      }
+      
+      return matchesSearch && matchesStage && matchesPartsStatus && matchesDateRange;
+    })
+    .sort((a, b) => {
+      if (sortBy === "created_date") {
+        return new Date(b.created_date) - new Date(a.created_date);
+      } else if (sortBy === "stage") {
+        const stages = ["Lead", "Initial Site Visit", "Quote Sent", "Quote Approved", "Final Measure", "Parts Ordered", "Scheduled", "Completed"];
+        return stages.indexOf(a.status) - stages.indexOf(b.status);
+      }
+      return 0;
+    });
 
   const getJobCount = (projectId) => {
     return allJobs.filter(j => j.project_id === projectId && !j.deleted_at).length;
@@ -187,16 +230,118 @@ export default function Projects() {
           </Button>
         </div>
 
-        <div className="mb-8">
-          <div className="relative">
-            <Search className="absolute left-4 top-1/2 transform -translate-y-1/2 w-5 h-5 text-[#6B7280]" />
-            <Input
-              placeholder="Search projects..."
-              value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
-              className="pl-12 border border-[#E5E7EB] focus:border-[#FAE008] focus:ring-2 focus:ring-[#FAE008]/20 transition-all h-12 text-[14px] leading-[1.4] rounded-lg"
-            />
+        <div className="mb-8 space-y-4">
+          <div className="flex gap-3">
+            <div className="relative flex-1">
+              <Search className="absolute left-4 top-1/2 transform -translate-y-1/2 w-5 h-5 text-[#6B7280]" />
+              <Input
+                placeholder="Search projects..."
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+                className="pl-12 border border-[#E5E7EB] focus:border-[#FAE008] focus:ring-2 focus:ring-[#FAE008]/20 transition-all h-12 text-[14px] leading-[1.4] rounded-lg"
+              />
+            </div>
+            <Button
+              variant="outline"
+              onClick={() => setShowFilters(!showFilters)}
+              className="h-12 px-4 border-2 border-[#E5E7EB] hover:border-[#FAE008] hover:bg-[#FFFEF5]"
+            >
+              <SlidersHorizontal className="w-5 h-5 mr-2" />
+              Filters
+            </Button>
           </div>
+
+          {showFilters && (
+            <Card className="border border-[#E5E7EB]">
+              <CardContent className="p-4">
+                <div className="grid md:grid-cols-3 gap-4">
+                  <div className="space-y-2">
+                    <Label>Project Stage</Label>
+                    <Select value={stageFilter} onValueChange={setStageFilter}>
+                      <SelectTrigger>
+                        <SelectValue placeholder="All Stages" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="all">All Stages</SelectItem>
+                        <SelectItem value="Lead">Lead</SelectItem>
+                        <SelectItem value="Initial Site Visit">Initial Site Visit</SelectItem>
+                        <SelectItem value="Quote Sent">Quote Sent</SelectItem>
+                        <SelectItem value="Quote Approved">Quote Approved</SelectItem>
+                        <SelectItem value="Final Measure">Final Measure</SelectItem>
+                        <SelectItem value="Parts Ordered">Parts Ordered</SelectItem>
+                        <SelectItem value="Scheduled">Scheduled</SelectItem>
+                        <SelectItem value="Completed">Completed</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+
+                  <div className="space-y-2">
+                    <Label>Parts Status</Label>
+                    <Select value={partsStatusFilter} onValueChange={setPartsStatusFilter}>
+                      <SelectTrigger>
+                        <SelectValue placeholder="All Statuses" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="all">All Statuses</SelectItem>
+                        <SelectItem value="Pending">Pending</SelectItem>
+                        <SelectItem value="Ordered">Ordered</SelectItem>
+                        <SelectItem value="Back-ordered">Back-ordered</SelectItem>
+                        <SelectItem value="Delivered">Delivered</SelectItem>
+                        <SelectItem value="Cancelled">Cancelled</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+
+                  <div className="space-y-2">
+                    <Label>Sort By</Label>
+                    <Select value={sortBy} onValueChange={setSortBy}>
+                      <SelectTrigger>
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="created_date">Order Date (Newest)</SelectItem>
+                        <SelectItem value="stage">Project Stage</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+
+                  <div className="space-y-2">
+                    <Label>Start Date</Label>
+                    <Input
+                      type="date"
+                      value={startDate}
+                      onChange={(e) => setStartDate(e.target.value)}
+                    />
+                  </div>
+
+                  <div className="space-y-2">
+                    <Label>End Date</Label>
+                    <Input
+                      type="date"
+                      value={endDate}
+                      onChange={(e) => setEndDate(e.target.value)}
+                    />
+                  </div>
+
+                  <div className="flex items-end">
+                    <Button
+                      variant="outline"
+                      onClick={() => {
+                        setStageFilter("all");
+                        setPartsStatusFilter("all");
+                        setStartDate("");
+                        setEndDate("");
+                        setSortBy("created_date");
+                      }}
+                      className="w-full"
+                    >
+                      Clear Filters
+                    </Button>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+          )}
         </div>
 
         {isLoading && (
