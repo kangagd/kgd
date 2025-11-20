@@ -57,6 +57,7 @@ export default function ProjectDetails({ project, onClose, onEdit, onDelete }) {
   const [notes, setNotes] = useState(project.notes || "");
   const [uploading, setUploading] = useState(false);
   const [newDoor, setNewDoor] = useState({ height: "", width: "", type: "", style: "" });
+  const [showDoorForm, setShowDoorForm] = useState(false);
 
   const { data: projectJobs = [] } = useQuery({
     queryKey: ['projectJobs', project.id],
@@ -163,6 +164,7 @@ export default function ProjectDetails({ project, onClose, onEdit, onDelete }) {
       value: [...currentDoors, newDoor] 
     });
     setNewDoor({ height: "", width: "", type: "", style: "" });
+    setShowDoorForm(false);
   };
 
   const handleRemoveDoor = (indexToRemove) => {
@@ -416,61 +418,90 @@ export default function ProjectDetails({ project, onClose, onEdit, onDelete }) {
               </div>
             </CardHeader>
             <CardContent className="p-3 space-y-3">
-              {project.doors && project.doors.length > 0 && (
-                <div className="flex flex-wrap gap-2">
-                  {project.doors.map((door, idx) => (
-                    <div key={idx} className="relative group">
-                      <Badge variant="outline" className="bg-blue-50 border-blue-200 text-blue-700 font-medium px-3 py-1.5 text-sm pr-8">
-                        Door {idx + 1}: {door.height && door.width ? `${door.height} × ${door.width}` : 'Pending specs'}
-                        {door.type && ` • ${door.type}`}
-                        {door.style && ` • ${door.style}`}
-                      </Badge>
-                      <button
-                        onClick={() => handleRemoveDoor(idx)}
-                        className="absolute -top-1 -right-1 bg-red-500 text-white rounded-full w-5 h-5 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity"
-                      >
-                        <X className="w-3 h-3" />
-                      </button>
+              <div className="relative border border-[#E5E7EB] rounded-lg p-3 bg-[#F8F9FA]">
+                {!showDoorForm && (
+                  <button
+                    onClick={() => setShowDoorForm(true)}
+                    className="absolute top-2 right-2 bg-[#FAE008] hover:bg-[#E5CF07] text-[#111827] rounded-full w-7 h-7 flex items-center justify-center transition-colors shadow-sm"
+                  >
+                    <Plus className="w-4 h-4" />
+                  </button>
+                )}
+                
+                {project.doors && project.doors.length > 0 && (
+                  <div className="flex flex-wrap gap-2 mb-3">
+                    {project.doors.map((door, idx) => (
+                      <div key={idx} className="relative group">
+                        <Badge variant="outline" className="bg-blue-50 border-blue-200 text-blue-700 font-medium px-3 py-1.5 text-sm pr-8">
+                          Door {idx + 1}: {door.height && door.width ? `${door.height} × ${door.width}` : 'Pending specs'}
+                          {door.type && ` • ${door.type}`}
+                          {door.style && ` • ${door.style}`}
+                        </Badge>
+                        <button
+                          onClick={() => handleRemoveDoor(idx)}
+                          className="absolute -top-1 -right-1 bg-red-500 text-white rounded-full w-5 h-5 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity"
+                        >
+                          <X className="w-3 h-3" />
+                        </button>
+                      </div>
+                    ))}
+                  </div>
+                )}
+                
+                {showDoorForm && (
+                  <div className="space-y-2">
+                    <div className="grid grid-cols-2 md:grid-cols-4 gap-2">
+                      <Input
+                        placeholder="Height"
+                        value={newDoor.height}
+                        onChange={(e) => setNewDoor({ ...newDoor, height: e.target.value })}
+                        className="h-9 text-sm"
+                      />
+                      <Input
+                        placeholder="Width"
+                        value={newDoor.width}
+                        onChange={(e) => setNewDoor({ ...newDoor, width: e.target.value })}
+                        className="h-9 text-sm"
+                      />
+                      <Input
+                        placeholder="Type"
+                        value={newDoor.type}
+                        onChange={(e) => setNewDoor({ ...newDoor, type: e.target.value })}
+                        className="h-9 text-sm"
+                      />
+                      <Input
+                        placeholder="Style"
+                        value={newDoor.style}
+                        onChange={(e) => setNewDoor({ ...newDoor, style: e.target.value })}
+                        className="h-9 text-sm"
+                      />
                     </div>
-                  ))}
-                </div>
-              )}
-              
-              <div className="border border-[#E5E7EB] rounded-lg p-3 bg-[#F8F9FA]">
-                <div className="grid grid-cols-2 md:grid-cols-4 gap-2 mb-2">
-                  <Input
-                    placeholder="Height"
-                    value={newDoor.height}
-                    onChange={(e) => setNewDoor({ ...newDoor, height: e.target.value })}
-                    className="h-9 text-sm"
-                  />
-                  <Input
-                    placeholder="Width"
-                    value={newDoor.width}
-                    onChange={(e) => setNewDoor({ ...newDoor, width: e.target.value })}
-                    className="h-9 text-sm"
-                  />
-                  <Input
-                    placeholder="Type"
-                    value={newDoor.type}
-                    onChange={(e) => setNewDoor({ ...newDoor, type: e.target.value })}
-                    className="h-9 text-sm"
-                  />
-                  <Input
-                    placeholder="Style"
-                    value={newDoor.style}
-                    onChange={(e) => setNewDoor({ ...newDoor, style: e.target.value })}
-                    className="h-9 text-sm"
-                  />
-                </div>
-                <Button
-                  onClick={handleAddDoor}
-                  size="sm"
-                  className="bg-[#FAE008] text-[#111827] hover:bg-[#E5CF07] font-semibold h-8"
-                >
-                  <Plus className="w-4 h-4 mr-1" />
-                  Add Door
-                </Button>
+                    <div className="flex gap-2">
+                      <Button
+                        onClick={handleAddDoor}
+                        size="sm"
+                        className="bg-[#FAE008] text-[#111827] hover:bg-[#E5CF07] font-semibold h-8"
+                      >
+                        Add Door
+                      </Button>
+                      <Button
+                        onClick={() => {
+                          setShowDoorForm(false);
+                          setNewDoor({ height: "", width: "", type: "", style: "" });
+                        }}
+                        size="sm"
+                        variant="outline"
+                        className="h-8"
+                      >
+                        Cancel
+                      </Button>
+                    </div>
+                  </div>
+                )}
+                
+                {!showDoorForm && (!project.doors || project.doors.length === 0) && (
+                  <p className="text-sm text-[#6B7280] pr-8">Click + to add door specifications</p>
+                )}
               </div>
             </CardContent>
           </Card>
