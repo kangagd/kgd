@@ -198,16 +198,14 @@ export default function Archive() {
         </div>
 
         <Tabs defaultValue="jobs" className="w-full">
-          <div className="mb-6">
-            <TabsList className="bg-white rounded-full p-1.5 gap-2 inline-flex">
-              <TabsTrigger value="jobs">
-                Jobs ({deletedJobs.length})
-              </TabsTrigger>
-              <TabsTrigger value="customers">
-                Customers ({deletedCustomers.length})
-              </TabsTrigger>
-            </TabsList>
-          </div>
+          <TabsList className="w-full md:w-auto mb-6 h-11 bg-[hsl(32,25%,94%)] p-1">
+            <TabsTrigger value="jobs" className="font-semibold">
+              Jobs ({deletedJobs.length})
+            </TabsTrigger>
+            <TabsTrigger value="customers" className="font-semibold">
+              Customers ({deletedCustomers.length})
+            </TabsTrigger>
+          </TabsList>
 
           <TabsContent value="jobs">
             {jobsLoading ? (
