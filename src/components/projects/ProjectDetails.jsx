@@ -276,8 +276,8 @@ export default function ProjectDetails({ project, onClose, onEdit, onDelete }) {
         </div>
 
         <div className="space-y-3">
-          <div className="bg-white p-3 rounded-lg border border-[#E5E7EB]">
-            <div className="text-xs font-semibold text-[#4B5563] mb-2 uppercase tracking-wide">Project Stage</div>
+          <div className="bg-white p-2.5 rounded-lg border border-[#E5E7EB]">
+            <div className="text-xs font-semibold text-[#4B5563] mb-1.5 uppercase tracking-wide">Project Stage</div>
             <ProjectStageSelector
               currentStage={project.status}
               onStageChange={(newStage) => handleFieldSave('status', project.status, newStage)}
