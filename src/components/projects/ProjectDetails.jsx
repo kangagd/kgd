@@ -752,18 +752,15 @@ Format as HTML bullet points using <ul> and <li> tags. Include only the most cri
               Overview
             </TabsTrigger>
             <TabsTrigger value="visits" className="text-[14px] font-medium leading-[1.4] data-[state=active]:bg-white data-[state=active]:shadow-sm">
-              <Briefcase className="w-4 h-4 mr-1.5" />
-              <span className="hidden md:inline">Visits</span>
+              Visits
             </TabsTrigger>
             <TabsTrigger value="quoting" className="text-[14px] font-medium leading-[1.4] data-[state=active]:bg-white data-[state=active]:shadow-sm">Quoting</TabsTrigger>
             <TabsTrigger value="parts" className="text-[14px] font-medium leading-[1.4] data-[state=active]:bg-white data-[state=active]:shadow-sm">Parts</TabsTrigger>
             <TabsTrigger value="images" className="text-[14px] font-medium leading-[1.4] data-[state=active]:bg-white data-[state=active]:shadow-sm">
-              <ImageIcon className="w-4 h-4 mr-1.5" />
-              <span className="hidden md:inline">Images</span>
+              Images
             </TabsTrigger>
             <TabsTrigger value="attachments" className="text-[14px] font-medium leading-[1.4] data-[state=active]:bg-white data-[state=active]:shadow-sm">
-              <FileText className="w-4 h-4 mr-1.5" />
-              <span className="hidden md:inline">Files</span>
+              Files
             </TabsTrigger>
             <TabsTrigger 
               value="summary" 
