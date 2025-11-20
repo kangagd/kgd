@@ -6,7 +6,7 @@ import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Label } from "@/components/ui/label";
 import { Separator } from "@/components/ui/separator";
-import { ArrowLeft, MapPin, Phone, Calendar, Clock, User, Briefcase, FileText, Image as ImageIcon, DollarSign, Sparkles, LogIn, FileCheck, History, Package, ClipboardCheck, LogOut, Timer, AlertCircle, ChevronDown, Mail, Navigation, Trash2, FolderKanban, Camera, Edit } from "lucide-react";
+import { ArrowLeft, MapPin, Phone, Calendar, Clock, User, Briefcase, FileText, Image as ImageIcon, DollarSign, Sparkles, LogIn, FileCheck, History, Package, ClipboardCheck, LogOut, Timer, AlertCircle, ChevronDown, Mail, Navigation, Trash2, FolderKanban, Camera, Edit, ExternalLink } from "lucide-react";
 import { format, parseISO } from "date-fns";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
@@ -442,8 +442,37 @@ export default function JobDetails({ job: initialJob, onClose, onStatusChange, o
     }
   };
 
-  const handleImagesChange = (urls) => {
+  const handleImagesChange = async (urls) => {
+    // Update job with new images
     updateJobMutation.mutate({ field: 'image_urls', value: urls });
+    
+    // Create Photo records for any new images
+    const existingUrls = job.image_urls || [];
+    const newUrls = Array.isArray(urls) ? urls.filter(url => !existingUrls.includes(url)) : [];
+    
+    if (newUrls.length > 0 && user) {
+      for (const url of newUrls) {
+        try {
+          await base44.entities.Photo.create({
+            image_url: url,
+            job_id: job.id,
+            job_number: job.job_number,
+            customer_id: job.customer_id,
+            customer_name: job.customer_name,
+            project_id: job.project_id || undefined,
+            project_name: job.project_name || undefined,
+            address: job.address,
+            uploaded_at: new Date().toISOString(),
+            product_type: job.product || undefined,
+            technician_email: user.email,
+            technician_name: user.full_name
+          });
+        } catch (error) {
+          console.error('Failed to create photo record:', error);
+        }
+      }
+      queryClient.invalidateQueries({ queryKey: ['photos'] });
+    }
   };
 
   const handleQuoteChange = (url) => {
@@ -1140,13 +1169,25 @@ export default function JobDetails({ job: initialJob, onClose, onStatusChange, o
 
             <TabsContent value="files" className="mt-2">
               <div className="space-y-3">
+                <div className="flex items-center justify-between mb-2">
+                  <h4 className="text-[14px] font-semibold text-[#111827] leading-[1.4]">Photos & Videos</h4>
+                  {job.image_urls && job.image_urls.length > 0 && (
+                    <Link 
+                      to={`${createPageUrl("Photos")}?jobId=${job.id}`}
+                      className="text-[12px] text-[#FAE008] hover:text-[#E5CF07] font-semibold flex items-center gap-1 transition-colors"
+                    >
+                      View in Library
+                      <ExternalLink className="w-3 h-3" />
+                    </Link>
+                  )}
+                </div>
                 <EditableFileUpload
                   files={job.image_urls || []}
                   onFilesChange={handleImagesChange}
                   accept="image/*,video/*"
                   multiple={true}
                   icon={ImageIcon}
-                  label="Photos & Videos"
+                  label=""
                   emptyText="Upload media" />
 
 
