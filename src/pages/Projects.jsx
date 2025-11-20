@@ -175,12 +175,12 @@ export default function Projects() {
       <div className="max-w-7xl mx-auto">
         <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-8 gap-5">
           <div>
-            <h1 className="text-3xl font-bold text-[#111827] tracking-tight">Projects</h1>
-            <p className="text-[#4B5563] mt-2.5">Manage multi-step workflows</p>
+            <h1 className="text-[28px] font-bold text-[#111827] leading-[1.2]">Projects</h1>
+            <p className="text-[14px] text-[#4B5563] leading-[1.4] mt-2.5">Manage multi-step workflows</p>
           </div>
           <Button
             onClick={() => setShowForm(true)}
-            className="bg-[#FAE008] text-[#111827] hover:bg-[#E5CF07] font-semibold shadow-md hover:shadow-lg transition-all w-full md:w-auto h-12 rounded-lg"
+            className="bg-[#FAE008] text-[#111827] hover:bg-[#E5CF07] font-semibold shadow-md hover:shadow-lg transition-all w-full md:w-auto h-12 rounded-lg text-[14px] leading-[1.4]"
           >
             <Plus className="w-5 h-5 mr-2" />
             New Project
@@ -194,7 +194,7 @@ export default function Projects() {
               placeholder="Search projects..."
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
-              className="pl-12 border border-[#E5E7EB] focus:border-[#FAE008] focus:ring-2 focus:ring-[#FAE008]/20 transition-all h-12 text-base rounded-lg"
+              className="pl-12 border border-[#E5E7EB] focus:border-[#FAE008] focus:ring-2 focus:ring-[#FAE008]/20 transition-all h-12 text-[14px] leading-[1.4] rounded-lg"
             />
           </div>
         </div>
@@ -207,8 +207,8 @@ export default function Projects() {
 
         {!isLoading && filteredProjects.length === 0 && (
           <div className="text-center py-12 bg-white rounded-2xl border-2 border-[hsl(32,15%,88%)]">
-            <p className="text-[hsl(25,8%,45%)] mb-4">No projects found</p>
-            <Button onClick={() => setShowForm(true)} className="bg-[#fae008] text-[hsl(25,10%,12%)] font-semibold">
+            <p className="text-[14px] text-[#4B5563] leading-[1.4] mb-4">No projects found</p>
+            <Button onClick={() => setShowForm(true)} className="bg-[#fae008] text-[#111827] font-semibold text-[14px] leading-[1.4]">
               Create First Project
             </Button>
           </div>
@@ -230,14 +230,14 @@ export default function Projects() {
                 <CardContent className="p-5">
                   {/* Top row */}
                   <div className="flex items-start justify-between gap-4 mb-3">
-                    <h3 className="text-xl font-bold text-[#111827] flex-1">{project.title}</h3>
+                    <h3 className="text-[18px] font-semibold text-[#111827] leading-[1.2] flex-1">{project.title}</h3>
                     <div className="flex items-center gap-2 flex-shrink-0">
                       {project.project_type && (
-                        <Badge className={`${projectTypeColors[project.project_type]} font-semibold border-0 px-3 py-1`}>
+                        <Badge className={`${projectTypeColors[project.project_type]} font-medium border-0 px-3 py-1 text-[12px] leading-[1.35]`}>
                           {project.project_type}
                         </Badge>
                       )}
-                      <Badge className={`${statusColors[project.status]} font-semibold border-0 px-3 py-1`}>
+                      <Badge className={`${statusColors[project.status]} font-medium border-0 px-3 py-1 text-[12px] leading-[1.35]`}>
                         {project.status}
                       </Badge>
                     </div>
@@ -245,14 +245,14 @@ export default function Projects() {
 
                   {/* Second row */}
                   <div className="flex items-center gap-4 mb-3 text-[#4B5563]">
-                    <span className="font-medium">{project.customer_name}</span>
+                    <span className="text-[16px] font-medium leading-[1.4]">{project.customer_name}</span>
                     {suburb && (
                       <div className="flex items-center gap-1.5">
                         <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
                           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
                         </svg>
-                        <span className="text-sm">{suburb}</span>
+                        <span className="text-[14px] leading-[1.4]">{suburb}</span>
                       </div>
                     )}
                   </div>
@@ -261,10 +261,10 @@ export default function Projects() {
                   {(scopeSummary || project.stage) && (
                     <div className="flex items-center gap-3 mb-3">
                       {scopeSummary && (
-                        <span className="text-sm text-[#111827] font-medium">{scopeSummary}</span>
+                        <span className="text-[14px] text-[#111827] font-medium leading-[1.4]">{scopeSummary}</span>
                       )}
                       {project.stage && (
-                        <Badge variant="outline" className="font-semibold text-xs border-[#E5E7EB]">
+                        <Badge variant="outline" className="font-medium text-[12px] leading-[1.35] border-[#E5E7EB]">
                           {project.stage.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase())}
                         </Badge>
                       )}
@@ -272,14 +272,14 @@ export default function Projects() {
                   )}
 
                   {/* Bottom row */}
-                  <div className="flex items-center justify-between text-sm pt-3 border-t border-[#E5E7EB]">
+                  <div className="flex items-center justify-between text-[14px] leading-[1.4] pt-3 border-t border-[#E5E7EB]">
                     <span className="text-[#4B5563] font-medium">
-                      Jobs: <span className="text-[#111827] font-bold">{jobCount}</span>
+                      Jobs: <span className="text-[#111827] font-semibold">{jobCount}</span>
                     </span>
                     {nextJob && (
                       <div className="text-[#4B5563]">
                         <span className="font-medium">Next: </span>
-                        <span className="text-[#111827]">
+                        <span className="text-[#111827] font-medium">
                           {new Date(nextJob.scheduled_date).toLocaleDateString('en-AU', { day: 'numeric', month: 'short' })}
                           {nextJob.scheduled_time && ` · ${nextJob.scheduled_time}`}
                           {nextJob.job_type_name && ` · ${nextJob.job_type_name}`}
