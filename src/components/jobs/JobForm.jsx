@@ -137,6 +137,16 @@ export default function JobForm({ job, technicians, onSubmit, onCancel, isSubmit
     } else {
       const project = projects.find(p => p.id === projectId);
       if (project) {
+        // Map project type to product
+        const productMapping = {
+          "Garage Door Install": "Garage Door",
+          "Gate Install": "Gate",
+          "Roller Shutter Install": "Roller Shutter",
+          "Multiple": "Multiple"
+        };
+        
+        const autoProduct = productMapping[project.project_type] || formData.product;
+        
         setFormData({
           ...formData,
           project_id: projectId,
@@ -145,7 +155,8 @@ export default function JobForm({ job, technicians, onSubmit, onCancel, isSubmit
           customer_name: project.customer_name,
           customer_phone: project.customer_phone || "",
           customer_email: project.customer_email || "",
-          address: project.address || formData.address
+          address: project.address || formData.address,
+          product: autoProduct
         });
       }
     }
