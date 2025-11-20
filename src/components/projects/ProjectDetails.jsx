@@ -4,10 +4,10 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
-import { ArrowLeft, Plus, Edit, Trash2, MapPin, Phone, Mail, FileText, Image as ImageIcon, User, Upload, X, Briefcase, History } from "lucide-react";
+import { ArrowLeft, Plus, Edit, Trash2, MapPin, Phone, Mail, FileText, Image as ImageIcon, User, Upload, X, Briefcase, History, ExternalLink } from "lucide-react";
 import { base44 } from "@/api/base44Client";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, Link } from "react-router-dom";
 import { createPageUrl } from "@/utils";
 import EditableField from "../jobs/EditableField";
 import RichTextField from "../common/RichTextField";
@@ -393,10 +393,26 @@ Format as HTML bullet points using <ul> and <li> tags. Include only the most cri
       
       if (type === 'image') {
         const currentImages = project.image_urls || [];
+        const newImages = [...currentImages, file_url];
         updateProjectMutation.mutate({ 
           field: 'image_urls', 
-          value: [...currentImages, file_url] 
+          value: newImages 
         });
+
+        // Create Photo record
+        const user = await base44.auth.me();
+        await base44.entities.Photo.create({
+          image_url: file_url,
+          project_id: project.id,
+          project_name: project.title,
+          customer_id: project.customer_id,
+          customer_name: project.customer_name,
+          address: project.address,
+          uploaded_at: new Date().toISOString(),
+          technician_email: user.email,
+          technician_name: user.full_name
+        });
+        queryClient.invalidateQueries({ queryKey: ['photos'] });
       } else if (type === 'quote') {
         updateProjectMutation.mutate({ field: 'quote_url', value: file_url });
       } else if (type === 'invoice') {
@@ -1016,9 +1032,20 @@ Format as HTML bullet points using <ul> and <li> tags. Include only the most cri
           </TabsContent>
 
           <TabsContent value="images" className="mt-3">
-            <label className="block text-[13px] md:text-[14px] font-medium text-[#4B5563] mb-1.5">
-              Images
-            </label>
+            <div className="flex items-center justify-between mb-1.5">
+              <label className="block text-[13px] md:text-[14px] font-medium text-[#4B5563]">
+                Images
+              </label>
+              {project.image_urls && project.image_urls.length > 0 && (
+                <Link 
+                  to={`${createPageUrl("Photos")}?projectId=${project.id}`}
+                  className="text-[12px] text-[#FAE008] hover:text-[#E5CF07] font-semibold flex items-center gap-1 transition-colors"
+                >
+                  View in Library
+                  <ExternalLink className="w-3 h-3" />
+                </Link>
+              )}
+            </div>
             <Card className="border border-[#E5E7EB] shadow-sm overflow-hidden">
               <CardContent className="p-3 space-y-3">
                 {project.image_urls && project.image_urls.length > 0 && (

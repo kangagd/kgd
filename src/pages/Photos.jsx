@@ -23,14 +23,15 @@ export default function Photos() {
   const [technicianFilter, setTechnicianFilter] = useState("all");
   const [marketingOnly, setMarketingOnly] = useState(false);
   const [preselectedJobId, setPreselectedJobId] = useState(null);
+  const [preselectedProjectId, setPreselectedProjectId] = useState(null);
   const queryClient = useQueryClient();
 
   React.useEffect(() => {
     const params = new URLSearchParams(window.location.search);
     const jobId = params.get('jobId');
-    if (jobId) {
-      setPreselectedJobId(jobId);
-    }
+    const projectId = params.get('projectId');
+    if (jobId) setPreselectedJobId(jobId);
+    if (projectId) setPreselectedProjectId(projectId);
   }, []);
 
   const { data: allPhotos = [], isLoading } = useQuery({
@@ -60,8 +61,9 @@ export default function Photos() {
     const matchesTechnician = technicianFilter === "all" || photo.technician_email === technicianFilter;
     const matchesMarketing = !marketingOnly || photo.is_marketing_approved;
     const matchesJob = !preselectedJobId || photo.job_id === preselectedJobId;
+    const matchesProject = !preselectedProjectId || photo.project_id === preselectedProjectId;
 
-    return matchesSearch && matchesProductType && matchesTag && matchesTechnician && matchesMarketing && matchesJob;
+    return matchesSearch && matchesProductType && matchesTag && matchesTechnician && matchesMarketing && matchesJob && matchesProject;
   });
 
   const activeFiltersCount = 
