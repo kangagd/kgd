@@ -274,12 +274,102 @@ export default function ProjectDetails({ project, onClose, onEdit, onDelete }) {
                 </div>
               )}
             </div>
-          </CardContent>
-        </Card>
-      </aside>
+            </CardContent>
+            </Card>
 
-      {/* Main Content */}
-      <div className="flex-1 min-w-0">
+            {/* Visits Section */}
+            <Card className="border border-[#E5E7EB] shadow-sm rounded-lg overflow-hidden mt-4">
+            <CardHeader className="bg-[#F8F9FA] px-4 py-3 border-b border-[#E5E7EB]">
+            <div className="flex items-center justify-between">
+              <h3 className="text-[18px] font-semibold text-[#111827] leading-[1.2]">Visits ({jobs.length})</h3>
+              <Button
+                onClick={handleAddJob}
+                className="bg-[#FAE008] text-[#111827] hover:bg-[#E5CF07] font-semibold h-9 text-sm"
+              >
+                <Plus className="w-4 h-4 mr-1" />
+                Add
+              </Button>
+            </div>
+            </CardHeader>
+            <CardContent className="p-3">
+            {jobs.length === 0 ? (
+              <div className="text-center py-6 bg-[#F8F9FA] rounded-lg">
+                <p className="text-[14px] text-[#6B7280] leading-[1.4] mb-3">No visits yet</p>
+                <Button onClick={handleAddJob} className="bg-[#FAE008] text-[#111827] font-semibold h-10">
+                  Create First Visit
+                </Button>
+              </div>
+            ) : (
+              <div className="space-y-2">
+                {jobs.map((job) => (
+                  <div
+                    key={job.id}
+                    onClick={() => handleJobClick(job.id)}
+                    className="bg-white border border-[#E5E7EB] rounded-lg p-3 hover:border-[#FAE008] hover:shadow-sm transition-all cursor-pointer"
+                  >
+                    <div className="flex items-start gap-3">
+                      <div className="flex-1 min-w-0 space-y-2">
+                        <div className="flex items-center gap-2 flex-wrap">
+                          <Badge className="bg-white text-[#6B7280] hover:bg-white border border-[#E5E7EB] font-medium text-xs px-2.5 py-0.5 rounded-lg">
+                            #{job.job_number}
+                          </Badge>
+                          <Badge className={`${jobStatusColors[job.status]} hover:${jobStatusColors[job.status]} border-0 font-semibold text-xs px-3 py-1 rounded-lg`}>
+                            {job.status}
+                          </Badge>
+                          {job.job_type_name && (
+                            <Badge className="bg-[#EDE9FE] text-[#6D28D9] hover:bg-[#EDE9FE] border-0 font-semibold text-xs px-3 py-1 rounded-lg">
+                              {job.job_type_name}
+                            </Badge>
+                          )}
+                        </div>
+
+                        {job.scheduled_date && (
+                          <p className="text-sm text-[#4B5563]">
+                            {new Date(job.scheduled_date).toLocaleDateString()}
+                            {job.scheduled_time && ` • ${job.scheduled_time}`}
+                          </p>
+                        )}
+                      </div>
+
+                      {job.assigned_to && job.assigned_to.length > 0 && (
+                        <div className="flex-shrink-0">
+                          {job.assigned_to.length === 1 ? (
+                            <div className="w-10 h-10 bg-[#FAE008] rounded-full flex items-center justify-center">
+                              <span className="text-[#111827] font-semibold text-sm">
+                                {job.assigned_to_name?.[0]?.charAt(0)?.toUpperCase() || job.assigned_to[0]?.charAt(0)?.toUpperCase() || 'T'}
+                              </span>
+                            </div>
+                          ) : (
+                            <div className="flex -space-x-2">
+                              {job.assigned_to.slice(0, 3).map((email, idx) => (
+                                <div key={idx} className="w-10 h-10 bg-[#FAE008] rounded-full flex items-center justify-center border-2 border-white">
+                                  <span className="text-[#111827] font-semibold text-sm">
+                                    {job.assigned_to_name?.[idx]?.charAt(0)?.toUpperCase() || email?.charAt(0)?.toUpperCase() || 'T'}
+                                  </span>
+                                </div>
+                              ))}
+                              {job.assigned_to.length > 3 && (
+                                <div className="w-10 h-10 bg-[#E5E7EB] rounded-full flex items-center justify-center border-2 border-white">
+                                  <span className="text-[#111827] font-semibold text-xs">
+                                    +{job.assigned_to.length - 3}
+                                  </span>
+                                </div>
+                              )}
+                            </div>
+                          )}
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+            </CardContent>
+            </Card>
+            </aside>
+
+            {/* Main Content */}
+            <div className="flex-1 min-w-0">
       <Card className="border border-[#E5E7EB] shadow-sm rounded-lg overflow-hidden">
         <CardHeader className="border-b border-[#E5E7EB] bg-white p-3 md:p-4 space-y-3">
         <div className="flex items-center justify-between gap-3">
@@ -397,7 +487,7 @@ export default function ProjectDetails({ project, onClose, onEdit, onDelete }) {
 
       <CardContent className="p-3 md:p-4">
         <Tabs defaultValue="overview" className="w-full">
-          <TabsList className="w-full grid grid-cols-4 h-11 bg-[#F8F9FA] border border-[#E5E7EB] rounded-lg p-1">
+          <TabsList className="w-full grid grid-cols-3 h-11 bg-[#F8F9FA] border border-[#E5E7EB] rounded-lg p-1">
             <TabsTrigger value="overview" className="text-[14px] font-medium leading-[1.4] data-[state=active]:bg-white data-[state=active]:shadow-sm">Overview</TabsTrigger>
             <TabsTrigger value="images" className="text-[14px] font-medium leading-[1.4] data-[state=active]:bg-white data-[state=active]:shadow-sm">
               <ImageIcon className="w-4 h-4 mr-1.5" />
@@ -406,10 +496,6 @@ export default function ProjectDetails({ project, onClose, onEdit, onDelete }) {
             <TabsTrigger value="attachments" className="text-[14px] font-medium leading-[1.4] data-[state=active]:bg-white data-[state=active]:shadow-sm">
               <FileText className="w-4 h-4 mr-1.5" />
               <span className="hidden md:inline">Files</span>
-            </TabsTrigger>
-            <TabsTrigger value="jobs" className="text-[14px] font-medium leading-[1.4] data-[state=active]:bg-white data-[state=active]:shadow-sm">
-              <Briefcase className="w-4 h-4 mr-1.5" />
-              <span className="hidden md:inline">Visits</span>
             </TabsTrigger>
           </TabsList>
 
@@ -678,107 +764,6 @@ export default function ProjectDetails({ project, onClose, onEdit, onDelete }) {
                     />
                   </label>
                 </div>
-              </CardContent>
-            </Card>
-          </TabsContent>
-
-          <TabsContent value="jobs" className="mt-3">
-            <Card className="border border-[#E5E7EB] shadow-sm overflow-hidden">
-              <CardHeader className="bg-[#F8F9FA] px-4 py-3 border-b border-[#E5E7EB]">
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center gap-2">
-                    <Briefcase className="w-4 h-4 text-[#6B7280]" />
-                    <h3 className="text-[14px] font-semibold text-[#111827] leading-[1.4]">Visits ({jobs.length})</h3>
-                  </div>
-                  <Button
-                    onClick={handleAddJob}
-                    className="bg-[#FAE008] text-[#111827] hover:bg-[#E5CF07] font-semibold h-9 text-sm"
-                  >
-                    <Plus className="w-4 h-4 mr-1" />
-                    Add Visit
-                  </Button>
-                </div>
-              </CardHeader>
-              <CardContent className="p-3">
-                {jobs.length === 0 ? (
-                  <div className="text-center py-8 bg-[#F8F9FA] rounded-lg">
-                    <p className="text-[14px] text-[#6B7280] leading-[1.4] mb-3">No visits yet</p>
-                    <Button onClick={handleAddJob} className="bg-[#FAE008] text-[#111827] font-semibold h-10">
-                      Create First Visit
-                    </Button>
-                  </div>
-                ) : (
-                  <div className="space-y-2">
-                    {jobs.map((job) => (
-                      <div
-                        key={job.id}
-                        onClick={() => handleJobClick(job.id)}
-                        className="bg-white border border-[#E5E7EB] rounded-lg p-3 hover:border-[#FAE008] hover:shadow-sm transition-all cursor-pointer"
-                      >
-                        <div className="flex items-start gap-3">
-                          <div className="flex-1 min-w-0 space-y-2">
-                            <div className="flex items-center gap-2 flex-wrap">
-                              <Badge className="bg-white text-[#6B7280] hover:bg-white border border-[#E5E7EB] font-medium text-xs px-2.5 py-0.5 rounded-lg">
-                                #{job.job_number}
-                              </Badge>
-                              <Badge className={`${jobStatusColors[job.status]} hover:${jobStatusColors[job.status]} border-0 font-semibold text-xs px-3 py-1 rounded-lg`}>
-                                {job.status}
-                              </Badge>
-                              {job.job_type_name && (
-                                <Badge className="bg-[#EDE9FE] text-[#6D28D9] hover:bg-[#EDE9FE] border-0 font-semibold text-xs px-3 py-1 rounded-lg">
-                                  {job.job_type_name}
-                                </Badge>
-                              )}
-                            </div>
-                            
-                            {job.scheduled_date && (
-                              <p className="text-sm text-[#4B5563]">
-                                {new Date(job.scheduled_date).toLocaleDateString()}
-                                {job.scheduled_time && ` • ${job.scheduled_time}`}
-                              </p>
-                            )}
-                            
-                            {job.address && (
-                              <div className="flex items-start gap-2">
-                                <MapPin className="w-4 h-4 mt-0.5 flex-shrink-0 text-[#4B5563]" />
-                                <span className="text-[14px] text-[#4B5563] leading-[1.4]">{job.address}</span>
-                              </div>
-                            )}
-                          </div>
-                          
-                          {job.assigned_to && job.assigned_to.length > 0 && (
-                            <div className="flex-shrink-0">
-                              {job.assigned_to.length === 1 ? (
-                                <div className="w-10 h-10 bg-[#FAE008] rounded-full flex items-center justify-center">
-                                  <span className="text-[#111827] font-semibold text-sm">
-                                    {job.assigned_to_name?.[0]?.charAt(0)?.toUpperCase() || job.assigned_to[0]?.charAt(0)?.toUpperCase() || 'T'}
-                                  </span>
-                                </div>
-                              ) : (
-                                <div className="flex -space-x-2">
-                                  {job.assigned_to.slice(0, 3).map((email, idx) => (
-                                    <div key={idx} className="w-10 h-10 bg-[#FAE008] rounded-full flex items-center justify-center border-2 border-white">
-                                      <span className="text-[#111827] font-semibold text-sm">
-                                        {job.assigned_to_name?.[idx]?.charAt(0)?.toUpperCase() || email?.charAt(0)?.toUpperCase() || 'T'}
-                                      </span>
-                                    </div>
-                                  ))}
-                                  {job.assigned_to.length > 3 && (
-                                    <div className="w-10 h-10 bg-[#E5E7EB] rounded-full flex items-center justify-center border-2 border-white">
-                                      <span className="text-[#111827] font-semibold text-xs">
-                                        +{job.assigned_to.length - 3}
-                                      </span>
-                                    </div>
-                                  )}
-                                </div>
-                              )}
-                            </div>
-                          )}
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                )}
               </CardContent>
             </Card>
           </TabsContent>
