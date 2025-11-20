@@ -9,10 +9,10 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { unescape } from "lodash";
 
 const statusColors = {
-  "Open": "bg-slate-100 text-slate-800 border-slate-200",
-  "Scheduled": "bg-[#fae008]/20 text-[hsl(25,10%,12%)] border-[#fae008]/30",
-  "Completed": "bg-emerald-100 text-emerald-800 border-emerald-200",
-  "Cancelled": "bg-red-100 text-red-800 border-red-200"
+  "Open": "bg-slate-100 text-slate-800",
+  "Scheduled": "bg-[#FAE008] text-[#111827]",
+  "Completed": "bg-emerald-100 text-emerald-800",
+  "Cancelled": "bg-red-100 text-red-800"
 };
 
 const productColors = {
@@ -141,163 +141,142 @@ export default function JobList({ jobs, isLoading, onSelectJob }) {
       {jobs.map((job) => (
         <Card 
           key={job.id}
-          className="hover:shadow-xl transition-all duration-200 cursor-pointer border-l-4 hover:scale-[1.01] active:scale-[0.99] group rounded-2xl border-2 border-[hsl(32,15%,88%)]"
-          style={{ borderLeftColor: job.status === 'in_progress' ? '#3b82f6' : job.status === 'completed' ? '#10b981' : '#fae008', borderLeftWidth: '6px' }}
+          className="relative hover:shadow-lg transition-all duration-200 cursor-pointer hover:scale-[1.005] active:scale-[0.995] group rounded-lg bg-white border border-[#E5E7EB] overflow-hidden"
           onClick={() => onSelectJob(job)}
         >
-          <CardContent className="p-6">
-            <div className="flex items-start justify-between mb-4">
-              <div className="flex-1 min-w-0 space-y-3">
-                <h3 className="text-lg font-semibold text-[#111827] leading-tight group-hover:text-[#FAE008] transition-colors">
+          {/* Yellow accent bar */}
+          <div className="absolute left-0 top-0 bottom-0 w-1.5 bg-[#FAE008]" />
+
+          <CardContent className="p-4 md:p-5 pl-6 md:pl-7">
+            {/* Top row: identity + status */}
+            <div className="flex items-start justify-between gap-3 mb-3">
+              <div className="flex-1 min-w-0">
+                <h3 className="text-xl md:text-2xl font-bold text-[#111827] mb-2 group-hover:text-[#FAE008] transition-colors">
                   {job.customer_name}
                 </h3>
-                
                 <div className="flex items-center gap-2 flex-wrap">
-                  <Badge className="bg-[#F2F4F7] text-[#344054] hover:bg-[#F2F4F7] border-0 font-medium text-sm px-3 py-1 rounded-lg">
+                  <Badge className="bg-[#F3F4F6] text-[#6B7280] hover:bg-[#F3F4F6] border-0 font-medium text-xs px-2.5 py-1 rounded-md">
                     #{job.job_number}
                   </Badge>
-                  {job.customer_type && (
-                    <Badge className="bg-[#EDE9FE] text-[#6D28D9] hover:bg-[#EDE9FE] border-0 font-semibold text-xs px-3 py-1 rounded-lg">
-                      {job.customer_type}
-                    </Badge>
-                  )}
                   {job.project_name && (
-                    <Badge className="bg-[#FAE008] text-[#111827] hover:bg-[#FAE008] border-0 font-semibold text-xs px-3 py-1 rounded-lg">
+                    <Badge className="bg-[#FEF9C3] text-[#854D0E] hover:bg-[#FEF9C3] border-0 font-medium text-xs px-2.5 py-1 rounded-md">
                       Project: {job.project_name}
                     </Badge>
                   )}
                 </div>
-                
-                <div className="flex items-start gap-2">
-                  <MapPin className="w-4 h-4 text-[#4B5563] mt-0.5 flex-shrink-0" />
-                  <span className="text-sm text-[#4B5563]">{job.address}</span>
-                </div>
-
-                <div className="flex items-center gap-2">
-                  {job.customer_phone && (
-                    <Button
-                      size="icon"
-                      variant="outline"
-                      onClick={(e) => handleCall(e, job.customer_phone)}
-                      className="h-8 w-8 border-2 hover:bg-blue-50 hover:border-blue-400 hover:text-blue-700 transition-all"
-                      title="Call"
-                    >
-                      <Phone className="w-4 h-4" />
-                    </Button>
-                  )}
-                  <Button
-                    size="icon"
-                    variant="outline"
-                    onClick={(e) => handleDirections(e, job.address)}
-                    className="h-8 w-8 border-2 hover:bg-green-50 hover:border-green-400 hover:text-green-700 transition-all"
-                      title="Directions"
-                  >
-                    <Navigation className="w-4 h-4" />
-                  </Button>
-                  {job.customer_email && (
-                    <Button
-                      size="icon"
-                      variant="outline"
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        window.location.href = `mailto:${job.customer_email}`;
-                      }}
-                      className="h-8 w-8 border-2 hover:bg-purple-50 hover:border-purple-400 hover:text-purple-700 transition-all"
-                      title="Email"
-                    >
-                      <Mail className="w-4 h-4" />
-                    </Button>
-                  )}
-                  
-                  {job.assigned_to_name && job.assigned_to_name.length > 0 && (
-                    <>
-                      <div className="w-px h-6 bg-[hsl(32,15%,88%)] mx-1"></div>
-                      <div className="flex -space-x-2">
-                        {(Array.isArray(job.assigned_to_name) ? job.assigned_to_name : [job.assigned_to_name]).slice(0, 3).map((name, idx) => (
-                          <div
-                            key={idx}
-                            className={`${getAvatarColor(name)} w-7 h-7 rounded-full flex items-center justify-center text-white text-xs font-bold border-2 border-white shadow-sm`}
-                            title={name}
-                          >
-                            {getInitials(name)}
-                          </div>
-                        ))}
-                        {Array.isArray(job.assigned_to_name) && job.assigned_to_name.length > 3 && (
-                          <div className="bg-[hsl(32,15%,88%)] w-7 h-7 rounded-full flex items-center justify-center text-[hsl(25,10%,12%)] text-xs font-bold border-2 border-white shadow-sm">
-                            +{job.assigned_to_name.length - 3}
-                          </div>
-                        )}
-                      </div>
-                    </>
-                  )}
-                </div>
               </div>
               
-              <div className="flex flex-col gap-2 items-end ml-3">
-                <Badge className={`${statusColors[job.status]} font-semibold shadow-sm border-2`}>
-                  {job.status}
-                </Badge>
-                {isTechnician && job.status === 'Scheduled' && job.assigned_to?.includes(user?.email) && !hasActiveCheckIn(job.id) && (
+              <Badge className={`${statusColors[job.status]} font-semibold text-sm px-3 py-1.5 rounded-lg flex-shrink-0`}>
+                {job.status}
+              </Badge>
+            </div>
+
+            {/* Second row: address + actions */}
+            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 mb-3">
+              <div className="flex items-start gap-2 flex-1 min-w-0">
+                <MapPin className="w-4 h-4 text-[#6B7280] mt-0.5 flex-shrink-0" />
+                <span className="text-sm text-[#4B5563] leading-snug">{job.address}</span>
+              </div>
+              
+              <div className="flex items-center gap-2 flex-shrink-0">
+                {job.customer_phone && (
                   <Button
                     size="sm"
-                    onClick={(e) => handleCheckIn(e, job)}
-                    disabled={checkInMutation.isPending}
-                    className="bg-blue-600 hover:bg-blue-700 active:bg-blue-800 h-8 text-xs font-semibold shadow-sm transition-all"
+                    variant="outline"
+                    onClick={(e) => handleCall(e, job.customer_phone)}
+                    className="h-9 px-3 gap-1.5 border-[#E5E7EB] hover:bg-[#F9FAFB] hover:border-[#D1D5DB] transition-all"
+                    title="Call"
                   >
-                    <LogIn className="w-3.5 h-3.5 mr-1.5" />
-                    Check In
+                    <Phone className="w-4 h-4" />
+                    <span className="hidden sm:inline text-xs">Call</span>
+                  </Button>
+                )}
+                <Button
+                  size="sm"
+                  variant="outline"
+                  onClick={(e) => handleDirections(e, job.address)}
+                  className="h-9 px-3 gap-1.5 border-[#E5E7EB] hover:bg-[#F9FAFB] hover:border-[#D1D5DB] transition-all"
+                  title="Navigate"
+                >
+                  <Navigation className="w-4 h-4" />
+                  <span className="hidden sm:inline text-xs">Navigate</span>
+                </Button>
+                {job.customer_email && (
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      window.location.href = `mailto:${job.customer_email}`;
+                    }}
+                    className="h-9 px-3 gap-1.5 border-[#E5E7EB] hover:bg-[#F9FAFB] hover:border-[#D1D5DB] transition-all"
+                    title="Email"
+                  >
+                    <Mail className="w-4 h-4" />
+                    <span className="hidden sm:inline text-xs">Email</span>
                   </Button>
                 )}
               </div>
             </div>
 
-            <div className="space-y-3">
-              <div className="flex flex-wrap items-center gap-4 bg-[hsl(32,25%,96%)] rounded-xl p-4 border border-[hsl(32,15%,88%)]">
-                <div className="flex items-center gap-2 text-[hsl(25,10%,12%)]">
-                  <Calendar className="w-4 h-4 text-[hsl(25,8%,55%)]" />
-                  <span className="text-sm font-semibold">
-                    {job.scheduled_date && format(parseISO(job.scheduled_date), 'MMM d, yyyy')}
-                  </span>
-                </div>
+            {/* Third row: when + what (light grey band) */}
+            <div className="bg-[#F9FAFB] rounded-lg px-4 py-3 mb-3 border border-[#E5E7EB]">
+              <div className="flex flex-wrap items-center gap-x-4 gap-y-2">
+                {job.scheduled_date && (
+                  <div className="flex items-center gap-1.5">
+                    <Calendar className="w-4 h-4 text-[#6B7280]" />
+                    <span className="text-sm font-medium text-[#111827]">
+                      {format(parseISO(job.scheduled_date), 'MMM d, yyyy')}
+                    </span>
+                  </div>
+                )}
                 
                 {job.scheduled_time && (
-                  <div className="flex items-center gap-2 text-[hsl(25,10%,12%)]">
-                    <Clock className="w-4 h-4 text-[hsl(25,8%,55%)]" />
-                    <span className="text-sm font-semibold">{job.scheduled_time}</span>
+                  <div className="flex items-center gap-1.5">
+                    <Clock className="w-4 h-4 text-[#6B7280]" />
+                    <span className="text-sm font-medium text-[#111827]">{job.scheduled_time}</span>
                   </div>
                 )}
 
-                <div className="flex items-center gap-2">
-                  {job.product && (
-                    <Badge className={`${productColors[job.product]} font-semibold border`}>
-                      <Timer className="w-3 h-3 mr-1" />
-                      {job.product}
-                    </Badge>
-                  )}
-                  
-                  {job.job_type_name && (
-                    <Badge className="bg-purple-50 text-purple-900 border-purple-200 border font-semibold">
-                      <Timer className="w-3 h-3 mr-1" />
-                      {job.job_type_name}
-                    </Badge>
-                  )}
-                </div>
-
-                {job.expected_duration && (
-                  <Badge variant="outline" className="bg-white text-[hsl(25,10%,12%)] border-[hsl(32,15%,88%)] font-medium">
-                    {job.expected_duration}h duration
+                {job.product && (
+                  <Badge className={`${productColors[job.product]} font-medium text-xs px-2.5 py-1 rounded-md border-0`}>
+                    {job.product}
+                  </Badge>
+                )}
+                
+                {job.job_type_name && (
+                  <Badge className="bg-[#EDE9FE] text-[#6D28D9] font-medium text-xs px-2.5 py-1 rounded-md border-0">
+                    {job.job_type_name}
                   </Badge>
                 )}
               </div>
+            </div>
 
-              {job.notes && (
-                <div className="bg-amber-50 border-2 border-amber-200 rounded-xl p-3">
-                  <div className="text-sm text-[hsl(25,10%,12%)] line-clamp-2">
+            {/* Notes band */}
+            {job.notes && (
+              <div className="bg-[#FEFCE8] border border-[#FDE047] rounded-lg px-4 py-3 flex gap-2">
+                <div className="flex-1 min-w-0">
+                  <div className="text-sm text-[#854D0E] leading-relaxed line-clamp-2">
                     <div dangerouslySetInnerHTML={{ __html: unescape(job.notes) }} />
                   </div>
                 </div>
-              )}
-            </div>
+              </div>
+            )}
+
+            {/* Check-in button for technicians */}
+            {isTechnician && job.status === 'Scheduled' && job.assigned_to?.includes(user?.email) && !hasActiveCheckIn(job.id) && (
+              <div className="mt-3 pt-3 border-t border-[#E5E7EB]">
+                <Button
+                  size="sm"
+                  onClick={(e) => handleCheckIn(e, job)}
+                  disabled={checkInMutation.isPending}
+                  className="w-full bg-[#FAE008] hover:bg-[#E5CF07] text-[#111827] h-10 font-semibold transition-all"
+                >
+                  <LogIn className="w-4 h-4 mr-2" />
+                  Check In
+                </Button>
+              </div>
+            )}
           </CardContent>
         </Card>
       ))}
