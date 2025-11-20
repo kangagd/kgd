@@ -57,6 +57,7 @@ export default function ProjectDetails({ project, onClose, onEdit, onDelete }) {
   const [notes, setNotes] = useState(project.notes || "");
   const [uploading, setUploading] = useState(false);
   const [newDoor, setNewDoor] = useState({ height: "", width: "", type: "", style: "" });
+  const [showAddDoor, setShowAddDoor] = useState(false);
 
   const { data: projectJobs = [] } = useQuery({
     queryKey: ['projectJobs', project.id],
@@ -163,6 +164,7 @@ export default function ProjectDetails({ project, onClose, onEdit, onDelete }) {
       value: [...currentDoors, newDoor] 
     });
     setNewDoor({ height: "", width: "", type: "", style: "" });
+    setShowAddDoor(false);
   };
 
   const handleRemoveDoor = (indexToRemove) => {
@@ -408,11 +410,21 @@ export default function ProjectDetails({ project, onClose, onEdit, onDelete }) {
         </Card>
 
         {isInstallType && (
-          <Card className="border border-[#E5E7EB] shadow-sm overflow-hidden">
+          <Card className="border border-[#E5E7EB] shadow-sm overflow-hidden relative">
             <CardHeader className="bg-[#F8F9FA] px-4 py-3 border-b border-[#E5E7EB]">
-              <div className="flex items-center gap-2">
-                <FileText className="w-4 h-4 text-[#6B7280]" />
-                <h3 className="text-sm font-bold text-[#111827]">Installation Details</h3>
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-2">
+                  <FileText className="w-4 h-4 text-[#6B7280]" />
+                  <h3 className="text-sm font-bold text-[#111827]">Installation Details</h3>
+                </div>
+                {!showAddDoor && (
+                  <button
+                    onClick={() => setShowAddDoor(true)}
+                    className="w-8 h-8 bg-[#FAE008] hover:bg-[#E5CF07] rounded-lg flex items-center justify-center transition-colors"
+                  >
+                    <Plus className="w-4 h-4 text-[#111827]" />
+                  </button>
+                )}
               </div>
             </CardHeader>
             <CardContent className="p-3 space-y-3">
@@ -436,42 +448,54 @@ export default function ProjectDetails({ project, onClose, onEdit, onDelete }) {
                 </div>
               )}
               
-              <div className="border border-[#E5E7EB] rounded-lg p-3 bg-[#F8F9FA]">
-                <div className="grid grid-cols-2 md:grid-cols-4 gap-2 mb-2">
-                  <Input
-                    placeholder="Height"
-                    value={newDoor.height}
-                    onChange={(e) => setNewDoor({ ...newDoor, height: e.target.value })}
-                    className="h-9 text-sm"
-                  />
-                  <Input
-                    placeholder="Width"
-                    value={newDoor.width}
-                    onChange={(e) => setNewDoor({ ...newDoor, width: e.target.value })}
-                    className="h-9 text-sm"
-                  />
-                  <Input
-                    placeholder="Type"
-                    value={newDoor.type}
-                    onChange={(e) => setNewDoor({ ...newDoor, type: e.target.value })}
-                    className="h-9 text-sm"
-                  />
-                  <Input
-                    placeholder="Style"
-                    value={newDoor.style}
-                    onChange={(e) => setNewDoor({ ...newDoor, style: e.target.value })}
-                    className="h-9 text-sm"
-                  />
+              {showAddDoor && (
+                <div className="border border-[#E5E7EB] rounded-lg p-3 bg-[#F8F9FA]">
+                  <div className="grid grid-cols-2 md:grid-cols-4 gap-2 mb-2">
+                    <Input
+                      placeholder="Height"
+                      value={newDoor.height}
+                      onChange={(e) => setNewDoor({ ...newDoor, height: e.target.value })}
+                      className="h-9 text-sm"
+                    />
+                    <Input
+                      placeholder="Width"
+                      value={newDoor.width}
+                      onChange={(e) => setNewDoor({ ...newDoor, width: e.target.value })}
+                      className="h-9 text-sm"
+                    />
+                    <Input
+                      placeholder="Type"
+                      value={newDoor.type}
+                      onChange={(e) => setNewDoor({ ...newDoor, type: e.target.value })}
+                      className="h-9 text-sm"
+                    />
+                    <Input
+                      placeholder="Style"
+                      value={newDoor.style}
+                      onChange={(e) => setNewDoor({ ...newDoor, style: e.target.value })}
+                      className="h-9 text-sm"
+                    />
+                  </div>
+                  <div className="flex gap-2">
+                    <Button
+                      onClick={handleAddDoor}
+                      size="sm"
+                      className="bg-[#FAE008] text-[#111827] hover:bg-[#E5CF07] font-semibold h-8"
+                    >
+                      <Plus className="w-4 h-4 mr-1" />
+                      Add Door
+                    </Button>
+                    <Button
+                      onClick={() => setShowAddDoor(false)}
+                      size="sm"
+                      variant="outline"
+                      className="h-8"
+                    >
+                      Cancel
+                    </Button>
+                  </div>
                 </div>
-                <Button
-                  onClick={handleAddDoor}
-                  size="sm"
-                  className="bg-[#FAE008] text-[#111827] hover:bg-[#E5CF07] font-semibold h-8"
-                >
-                  <Plus className="w-4 h-4 mr-1" />
-                  Add Door
-                </Button>
-              </div>
+              )}
             </CardContent>
           </Card>
         )}
