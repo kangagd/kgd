@@ -104,15 +104,7 @@ export default function ProjectVisitsTab({ projectId, isReadOnly }) {
                 {visit.scheduled_datetime && (
                   <div className="flex items-center gap-2">
                     <Calendar className="w-4 h-4 text-[#6B7280] flex-shrink-0" />
-                    <span className="text-[#4B5563]">
-                      {(() => {
-                        try {
-                          return format(new Date(visit.scheduled_datetime), 'MMM d, yyyy');
-                        } catch {
-                          return 'Date N/A';
-                        }
-                      })()}
-                    </span>
+                    <span className="text-[#4B5563]">{format(new Date(visit.scheduled_datetime), 'MMM d, yyyy')}</span>
                   </div>
                 )}
                 <div className="flex items-center gap-2">
@@ -193,13 +185,7 @@ export default function ProjectVisitsTab({ projectId, isReadOnly }) {
 
               {/* Checkout timestamp */}
               <div className="text-xs text-[#9CA3AF] text-right">
-                Checked out {(() => {
-                  try {
-                    return format(new Date(visit.check_out_time), 'MMM d, yyyy h:mm a');
-                  } catch {
-                    return 'recently';
-                  }
-                })()}
+                Checked out {format(new Date(visit.check_out_time), 'MMM d, yyyy h:mm a')}
               </div>
             </div>
           </CardContent>
