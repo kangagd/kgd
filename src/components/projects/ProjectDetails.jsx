@@ -4,7 +4,7 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
-import { ArrowLeft, Plus, Edit, Trash2, MapPin, Phone, Mail, FileText, Image as ImageIcon, User, Upload, X, Briefcase } from "lucide-react";
+import { ArrowLeft, Plus, Edit, Trash2, MapPin, Phone, Mail, FileText, Image as ImageIcon, User, Upload, X, Briefcase, History } from "lucide-react";
 import { base44 } from "@/api/base44Client";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useNavigate } from "react-router-dom";
@@ -22,6 +22,7 @@ import {
   AlertDialogTitle,
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
+import ProjectChangeHistoryModal from "./ProjectChangeHistoryModal";
 
 const statusColors = {
   "Lead": "bg-slate-100 text-slate-800",
@@ -65,6 +66,7 @@ export default function ProjectDetails({ project, onClose, onEdit, onDelete }) {
   const [uploading, setUploading] = useState(false);
   const [newDoor, setNewDoor] = useState({ height: "", width: "", type: "", style: "" });
   const [showAddDoor, setShowAddDoor] = useState(false);
+  const [showHistory, setShowHistory] = useState(false);
 
   const { data: projectJobs = [] } = useQuery({
     queryKey: ['projectJobs', project.id],
@@ -105,18 +107,47 @@ export default function ProjectDetails({ project, onClose, onEdit, onDelete }) {
     }
   };
 
-  const handleFieldSave = (fieldName, oldValue, newValue) => {
+  const handleFieldSave = async (fieldName, oldValue, newValue) => {
+    if (oldValue !== newValue) {
+      const user = await base44.auth.me();
+      await base44.entities.ChangeHistory.create({
+        project_id: project.id,
+        field_name: fieldName,
+        old_value: String(oldValue),
+        new_value: String(newValue),
+        changed_by: user.email,
+        changed_by_name: user.full_name
+      });
+    }
     updateProjectMutation.mutate({ field: fieldName, value: newValue });
   };
 
-  const handleDescriptionBlur = () => {
+  const handleDescriptionBlur = async () => {
     if (description !== project.description) {
+      const user = await base44.auth.me();
+      await base44.entities.ChangeHistory.create({
+        project_id: project.id,
+        field_name: 'description',
+        old_value: String(project.description || ''),
+        new_value: String(description),
+        changed_by: user.email,
+        changed_by_name: user.full_name
+      });
       updateProjectMutation.mutate({ field: 'description', value: description });
     }
   };
 
-  const handleNotesBlur = () => {
+  const handleNotesBlur = async () => {
     if (notes !== project.notes) {
+      const user = await base44.auth.me();
+      await base44.entities.ChangeHistory.create({
+        project_id: project.id,
+        field_name: 'notes',
+        old_value: String(project.notes || ''),
+        new_value: String(notes),
+        changed_by: user.email,
+        changed_by_name: user.full_name
+      });
       updateProjectMutation.mutate({ field: 'notes', value: notes });
     }
   };
@@ -195,6 +226,14 @@ export default function ProjectDetails({ project, onClose, onEdit, onDelete }) {
           </Button>
 
           <div className="flex gap-1 flex-shrink-0">
+            <Button
+              variant="ghost"
+              size="icon"
+              onClick={() => setShowHistory(true)}
+              className="h-9 w-9 hover:bg-[#F3F4F6] text-[#6B7280] hover:text-[#111827] transition-all rounded-lg"
+            >
+              <History className="w-4 h-4" />
+            </Button>
             <Button
               variant="ghost"
               size="icon"
@@ -743,6 +782,12 @@ export default function ProjectDetails({ project, onClose, onEdit, onDelete }) {
           </TabsContent>
         </Tabs>
       </CardContent>
+
+      <ProjectChangeHistoryModal
+        open={showHistory}
+        onClose={() => setShowHistory(false)}
+        projectId={project.id}
+      />
     </Card>
   );
 }
