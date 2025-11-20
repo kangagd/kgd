@@ -58,16 +58,16 @@ export default function CustomerDetails({ customer, onClose, onEdit, onDelete })
                 <ArrowLeft className="w-4 h-4" />
               </Button>
               <div className="flex-1 min-w-0">
-                <CardTitle className="text-2xl font-bold text-[#000000] tracking-tight">{customer.name}</CardTitle>
+                <CardTitle className="text-[22px] font-semibold text-[#111827] leading-[1.2]">{customer.name}</CardTitle>
                 <div className="flex gap-2 mt-2 flex-wrap">
                   <Badge className={customer.status === 'active' ? 
-                    "bg-green-50 text-green-700 border-2 border-green-200 font-semibold" : 
-                    "bg-slate-50 text-slate-700 border-2 border-slate-200 font-semibold"
+                    "bg-green-50 text-green-700 border-2 border-green-200 font-medium text-[12px] leading-[1.35]" : 
+                    "bg-slate-50 text-slate-700 border-2 border-slate-200 font-medium text-[12px] leading-[1.35]"
                   }>
                     {customer.status}
                   </Badge>
                   {customer.customer_type && (
-                    <Badge className={`${customerTypeColors[customer.customer_type]} border-2 font-semibold`}>
+                    <Badge className={`${customerTypeColors[customer.customer_type]} border-2 font-medium text-[12px] leading-[1.35]`}>
                       <Tag className="w-3 h-3 mr-1" />
                       {customer.customer_type}
                     </Badge>
@@ -101,14 +101,14 @@ export default function CustomerDetails({ customer, onClose, onEdit, onDelete })
                 <div className="flex-1">
                   <div className="flex items-center gap-2 text-blue-900 mb-2">
                     <Building2 className="w-4 h-4" />
-                    <span className="text-sm font-bold">Organisation</span>
+                    <span className="text-[14px] font-semibold leading-[1.4]">Organisation</span>
                   </div>
-                  <h4 className="font-bold text-[#000000] text-lg mb-1">{organisation.name}</h4>
-                  <Badge className="bg-blue-100 text-blue-700 border-blue-200 border font-semibold text-xs">
+                  <h4 className="text-[18px] font-semibold text-[#111827] leading-[1.2] mb-1">{organisation.name}</h4>
+                  <Badge className="bg-blue-100 text-blue-700 border-blue-200 border font-medium text-[12px] leading-[1.35]">
                     {organisation.organisation_type}
                   </Badge>
                   {organisation.address && (
-                    <p className="text-sm text-slate-700 mt-2">{organisation.address}</p>
+                    <p className="text-[14px] text-slate-700 leading-[1.4] mt-2">{organisation.address}</p>
                   )}
                 </div>
                 <Button
@@ -124,14 +124,14 @@ export default function CustomerDetails({ customer, onClose, onEdit, onDelete })
           )}
 
           <div className="bg-[#F8F9FA] rounded-lg p-4">
-            <h3 className="text-sm font-bold text-[#111827] mb-3">Contact Information</h3>
+            <h3 className="text-[14px] font-semibold text-[#111827] leading-[1.4] mb-3">Contact Information</h3>
             <div className="space-y-3">
               {customer.phone && (
                 <div className="flex items-center gap-2.5">
                   <Phone className="w-5 h-5 text-[#4B5563]" />
                   <div className="flex-1 min-w-0">
-                    <div className="text-xs text-[#4B5563] font-medium mb-0.5">Phone</div>
-                    <a href={`tel:${customer.phone}`} className="text-sm font-semibold text-[#111827] hover:text-[#FAE008] transition-colors">
+                    <div className="text-[12px] text-[#6B7280] font-normal leading-[1.35] mb-0.5">Phone</div>
+                    <a href={`tel:${customer.phone}`} className="text-[14px] font-medium text-[#111827] leading-[1.4] hover:text-[#FAE008] transition-colors">
                       {customer.phone}
                     </a>
                   </div>
@@ -141,8 +141,8 @@ export default function CustomerDetails({ customer, onClose, onEdit, onDelete })
                 <div className="flex items-center gap-2.5 pt-3 border-t border-[#E5E7EB]">
                   <Phone className="w-5 h-5 text-[#4B5563]" />
                   <div className="flex-1 min-w-0">
-                    <div className="text-xs text-[#4B5563] font-medium mb-0.5">Secondary Phone</div>
-                    <a href={`tel:${customer.secondary_phone}`} className="text-sm font-semibold text-[#111827] hover:text-[#FAE008] transition-colors">
+                    <div className="text-[12px] text-[#6B7280] font-normal leading-[1.35] mb-0.5">Secondary Phone</div>
+                    <a href={`tel:${customer.secondary_phone}`} className="text-[14px] font-medium text-[#111827] leading-[1.4] hover:text-[#FAE008] transition-colors">
                       {customer.secondary_phone}
                     </a>
                   </div>
@@ -152,8 +152,8 @@ export default function CustomerDetails({ customer, onClose, onEdit, onDelete })
                 <div className="flex items-center gap-2.5 pt-3 border-t border-[#E5E7EB]">
                   <Mail className="w-5 h-5 text-[#4B5563]" />
                   <div className="flex-1 min-w-0">
-                    <div className="text-xs text-[#4B5563] font-medium mb-0.5">Email</div>
-                    <a href={`mailto:${customer.email}`} className="text-sm font-semibold text-[#111827] hover:text-[#FAE008] transition-colors truncate block">
+                    <div className="text-[12px] text-[#6B7280] font-normal leading-[1.35] mb-0.5">Email</div>
+                    <a href={`mailto:${customer.email}`} className="text-[14px] font-medium text-[#111827] leading-[1.4] hover:text-[#FAE008] transition-colors truncate block">
                       {customer.email}
                     </a>
                   </div>
@@ -164,8 +164,8 @@ export default function CustomerDetails({ customer, onClose, onEdit, onDelete })
 
           {customer.notes && (
             <div>
-              <h3 className="text-sm font-bold text-[#000000] mb-2">Notes</h3>
-              <p className="text-slate-700 whitespace-pre-wrap bg-slate-50 p-4 rounded-xl border-2 border-slate-200">
+              <h3 className="text-[14px] font-semibold text-[#111827] leading-[1.4] mb-2">Notes</h3>
+              <p className="text-[14px] text-slate-700 leading-[1.4] whitespace-pre-wrap bg-slate-50 p-4 rounded-xl border-2 border-slate-200">
                 {customer.notes}
               </p>
             </div>
@@ -173,7 +173,7 @@ export default function CustomerDetails({ customer, onClose, onEdit, onDelete })
 
           <div className="pt-4 border-t-2 border-slate-200">
             <div className="flex items-center justify-between mb-4">
-              <h3 className="text-sm font-bold text-[#000000]">Job History ({jobs.length})</h3>
+              <h3 className="text-[14px] font-semibold text-[#111827] leading-[1.4]">Job History ({jobs.length})</h3>
               <Link to={createPageUrl("Jobs") + `?action=new&customer_id=${customer.id}`}>
                 <Button size="sm" variant="outline" className="border-2 font-semibold hover:bg-slate-100 rounded-xl">
                   <Plus className="w-4 h-4 mr-2" />
@@ -185,7 +185,7 @@ export default function CustomerDetails({ customer, onClose, onEdit, onDelete })
             {jobs.length === 0 ? (
               <div className="text-center py-12 text-slate-500">
                 <Briefcase className="w-12 h-12 mx-auto mb-3 text-slate-300" />
-                <p className="font-medium">No jobs yet</p>
+                <p className="text-[14px] font-normal leading-[1.4]">No jobs yet</p>
               </div>
             ) : (
               <div className="space-y-3">
@@ -197,8 +197,8 @@ export default function CustomerDetails({ customer, onClose, onEdit, onDelete })
                   >
                     <div className="flex items-start justify-between mb-2">
                       <div className="flex-1 min-w-0">
-                        <h4 className="font-bold text-[#000000] tracking-tight">Job #{job.job_number}</h4>
-                        <p className="text-sm text-slate-600 mt-1 font-medium">{job.address}</p>
+                        <h4 className="text-[16px] font-medium text-[#111827] leading-[1.4]">Job #{job.job_number}</h4>
+                        <p className="text-[14px] text-slate-600 leading-[1.4] mt-1 font-normal">{job.address}</p>
                       </div>
                       <Badge className={
                         job.status === 'completed' ? 'bg-green-50 text-green-700 border-2 border-green-200' :
@@ -209,7 +209,7 @@ export default function CustomerDetails({ customer, onClose, onEdit, onDelete })
                         {job.status.replace('_', ' ')}
                       </Badge>
                     </div>
-                    <div className="text-xs text-slate-600 font-medium">
+                    <div className="text-[12px] text-slate-600 leading-[1.35] font-normal">
                       {job.scheduled_date && format(parseISO(job.scheduled_date), 'MMM d, yyyy')}
                       {job.scheduled_time && ` at ${job.scheduled_time}`}
                     </div>
@@ -224,8 +224,8 @@ export default function CustomerDetails({ customer, onClose, onEdit, onDelete })
       <AlertDialog open={showDeleteConfirm} onOpenChange={setShowDeleteConfirm}>
         <AlertDialogContent className="rounded-2xl border-2 border-slate-200">
           <AlertDialogHeader>
-            <AlertDialogTitle className="text-xl font-bold text-[#000000]">Delete Customer?</AlertDialogTitle>
-            <AlertDialogDescription className="text-slate-600">
+            <AlertDialogTitle className="text-[22px] font-semibold text-[#111827] leading-[1.2]">Delete Customer?</AlertDialogTitle>
+            <AlertDialogDescription className="text-[14px] text-slate-600 leading-[1.4]">
               This customer will be moved to the archive. You can restore them within 30 days.
             </AlertDialogDescription>
           </AlertDialogHeader>
