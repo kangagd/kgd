@@ -362,32 +362,7 @@ export default function ProjectDetails({ project, onClose, onEdit, onDelete }) {
                 </div>
               </div>
             )}
-            <div className="flex items-center gap-2.5 col-span-3">
-              <svg className="w-5 h-5 text-[#4B5563]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z" />
-              </svg>
-              <div className="flex-1 min-w-0">
-                <div className="text-xs text-[#4B5563] font-medium mb-0.5">Technicians</div>
-                <EditableField
-                  value={project.assigned_technicians || []}
-                  onSave={handleTechniciansChange}
-                  type="multi-select"
-                  icon={Edit}
-                  options={technicians.map((t) => ({ value: t.email, label: t.full_name }))}
-                  displayFormat={(val) => {
-                    const emailsToDisplay = Array.isArray(val) ? val : val ? [val] : [];
-                    if (emailsToDisplay.length === 0) return "Assign";
-                    const names = emailsToDisplay.map(email => {
-                      const tech = technicians.find(t => t.email === email);
-                      return tech?.full_name || email;
-                    });
-                    return names.slice(0, 3).join(", ") + (names.length > 3 ? ` +${names.length - 3}` : "");
-                  }}
-                  placeholder="Assign"
-                  className="font-semibold text-[#111827] text-sm"
-                />
-              </div>
-            </div>
+
           </div>
         </div>
       </CardHeader>
