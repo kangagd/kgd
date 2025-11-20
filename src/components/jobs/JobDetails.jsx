@@ -254,8 +254,12 @@ export default function JobDetails({ job, onClose, onStatusChange, onDelete }) {
 
   const updateJobMutation = useMutation({
     mutationFn: ({ field, value }) => base44.entities.Job.update(job.id, { [field]: value }),
-    onSuccess: () => {
+    onSuccess: (updatedJob) => {
       queryClient.invalidateQueries({ queryKey: ['jobs'] });
+      queryClient.setQueryData(['job', job.id], (oldData) => ({
+        ...oldData,
+        ...updatedJob
+      }));
     }
   });
 
