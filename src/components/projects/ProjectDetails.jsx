@@ -123,121 +123,41 @@ export default function ProjectDetails({ project, onClose, onEdit, onDelete }) {
   const isInstallType = project.project_type && project.project_type.includes("Install");
 
   return (
-    <Card className="border-2 border-slate-200 shadow-lg rounded-2xl">
-      <CardHeader className="border-b-2 border-slate-200 bg-gradient-to-r from-slate-50 to-white p-6">
-        <div className="flex items-start justify-between gap-4">
-          <div className="flex items-start gap-4 flex-1">
-            <Button 
-              variant="ghost" 
-              size="icon" 
-              onClick={onClose}
-              className="hover:bg-slate-200 transition-colors flex-shrink-0"
-            >
-              <ArrowLeft className="w-5 h-5" />
-            </Button>
-            <div className="flex-1">
-              <EditableField
-                value={project.title}
-                onSave={(val) => handleFieldSave('title', project.title, val)}
-                type="text"
-                placeholder="Project Title"
-                className="text-2xl font-bold text-[#000000] mb-2"
-              />
-              <div className="flex gap-2 flex-wrap">
-                {project.project_type && (
-                  <EditableField
-                    value={project.project_type}
-                    onSave={(val) => handleFieldSave('project_type', project.project_type, val)}
-                    type="select"
-                    options={[
-                      { value: "Garage Door Install", label: "Garage Door Install" },
-                      { value: "Gate Install", label: "Gate Install" },
-                      { value: "Roller Shutter Install", label: "Roller Shutter Install" },
-                      { value: "Repair", label: "Repair" },
-                      { value: "Maintenance", label: "Maintenance" }
-                    ]}
-                    displayFormat={(val) => (
-                      <Badge className={`${projectTypeColors[val]} font-semibold border-2`}>
-                        {val}
-                      </Badge>
-                    )}
-                  />
-                )}
-                <EditableField
-                  value={project.status}
-                  onSave={(val) => handleFieldSave('status', project.status, val)}
-                  type="select"
-                  options={[
-                    { value: "open", label: "Open" },
-                    { value: "scheduled", label: "Scheduled" },
-                    { value: "quoted", label: "Quoted" },
-                    { value: "invoiced", label: "Invoiced" },
-                    { value: "paid", label: "Paid" },
-                    { value: "completed", label: "Completed" },
-                    { value: "cancelled", label: "Cancelled" }
-                  ]}
-                  displayFormat={(val) => (
-                    <Badge className={`${statusColors[val]} font-semibold border-2`}>
-                      {val}
-                    </Badge>
-                  )}
-                />
-                {project.stage && (
-                  <EditableField
-                    value={project.stage}
-                    onSave={(val) => handleFieldSave('stage', project.stage, val)}
-                    type="select"
-                    options={[
-                      { value: "lead_in", label: "Lead In" },
-                      { value: "measure", label: "Measure" },
-                      { value: "quote_prepared", label: "Quote Prepared" },
-                      { value: "quote_sent", label: "Quote Sent" },
-                      { value: "quote_accepted", label: "Quote Accepted" },
-                      { value: "materials_ordered", label: "Materials Ordered" },
-                      { value: "installation_scheduled", label: "Installation Scheduled" },
-                      { value: "installation_completed", label: "Installation Completed" },
-                      { value: "qa_aftercare", label: "QA Aftercare" },
-                      { value: "final_invoice", label: "Final Invoice" },
-                      { value: "project_closed", label: "Project Closed" },
-                      { value: "diagnose", label: "Diagnose" },
-                      { value: "repair_scheduled", label: "Repair Scheduled" },
-                      { value: "repair_completed", label: "Repair Completed" },
-                      { value: "maintenance_performed", label: "Maintenance Performed" },
-                      { value: "report_delivered", label: "Report Delivered" }
-                    ]}
-                    displayFormat={(val) => (
-                      <Badge variant="outline" className="font-semibold border-2">
-                        {val.replace(/_/g, ' ')}
-                      </Badge>
-                    )}
-                  />
-                )}
-              </div>
-            </div>
-          </div>
-          <div className="flex gap-2 flex-shrink-0">
+    <Card className="border border-[#E5E7EB] shadow-sm rounded-lg overflow-hidden">
+      <CardHeader className="border-b border-[#E5E7EB] bg-white p-3 md:p-4 space-y-3">
+        <div className="flex items-center justify-between gap-3">
+          <Button
+            variant="ghost"
+            size="icon"
+            onClick={onClose}
+            className="h-9 w-9 flex-shrink-0 hover:bg-[#F3F4F6] rounded-lg transition-colors"
+          >
+            <ArrowLeft className="w-5 h-5 text-[#111827]" />
+          </Button>
+
+          <div className="flex gap-1 flex-shrink-0">
             <Button
-              variant="outline"
+              variant="ghost"
               size="icon"
               onClick={() => onEdit(project)}
-              className="border-2 hover:bg-slate-100"
+              className="h-9 w-9 hover:bg-[#F3F4F6] text-[#6B7280] hover:text-[#111827] transition-all rounded-lg"
             >
               <Edit className="w-4 h-4" />
             </Button>
             <AlertDialog>
               <AlertDialogTrigger asChild>
                 <Button
-                  variant="outline"
+                  variant="ghost"
                   size="icon"
-                  className="border-2 hover:bg-red-100 hover:text-red-600"
+                  className="h-9 w-9 hover:bg-red-50 hover:text-red-600 transition-all rounded-lg"
                 >
                   <Trash2 className="w-4 h-4" />
                 </Button>
               </AlertDialogTrigger>
               <AlertDialogContent className="rounded-2xl border-2 border-slate-200">
                 <AlertDialogHeader>
-                  <AlertDialogTitle>Delete Project?</AlertDialogTitle>
-                  <AlertDialogDescription>
+                  <AlertDialogTitle className="text-xl font-bold text-[#000000]">Delete Project?</AlertDialogTitle>
+                  <AlertDialogDescription className="text-slate-600">
                     This project will be moved to the archive. Associated jobs will not be deleted.
                   </AlertDialogDescription>
                 </AlertDialogHeader>
@@ -254,75 +174,132 @@ export default function ProjectDetails({ project, onClose, onEdit, onDelete }) {
             </AlertDialog>
           </div>
         </div>
-      </CardHeader>
 
-      <CardContent className="p-6 space-y-6">
-        <div className="bg-[#F8F9FA] rounded-lg p-4 space-y-4">
-          <h3 className="font-bold text-[#111827] mb-3">Customer Information</h3>
-          <div className="space-y-3">
-            <div className="flex items-center gap-2.5">
-              <div className="w-10 h-10 bg-[#E5E7EB] rounded-full flex items-center justify-center flex-shrink-0">
-                <span className="text-sm font-bold text-[#111827]">{project.customer_name?.charAt(0)}</span>
-              </div>
-              <div className="flex-1 min-w-0">
-                <div className="text-xs text-[#4B5563] font-medium mb-0.5">Customer</div>
-                <div 
-                  className="text-sm font-semibold text-[#111827] cursor-pointer hover:text-[#FAE008] transition-colors"
-                  onClick={handleCustomerClick}
-                >
-                  {project.customer_name}
-                </div>
-                {customer?.customer_type && (
-                  <Badge className="bg-[#EDE9FE] text-[#6D28D9] hover:bg-[#EDE9FE] border-0 font-semibold text-xs px-2 py-0.5 rounded-lg mt-1">
-                    {customer.customer_type}
+        <div className="space-y-3">
+          <div className="flex items-center gap-2 flex-wrap">
+            <div 
+              className="text-xl font-semibold text-[#111827] cursor-pointer hover:text-[#FAE008] transition-colors leading-tight"
+              onClick={handleCustomerClick}
+            >
+              {project.customer_name}
+            </div>
+          </div>
+
+          <div className="flex items-center gap-2 flex-wrap">
+            <EditableField
+              value={project.title}
+              onSave={(val) => handleFieldSave('title', project.title, val)}
+              type="text"
+              placeholder="Project Title"
+              className="font-medium text-[#111827]"
+            />
+          </div>
+
+          <div className="flex items-center gap-2 flex-wrap">
+            {project.project_type && (
+              <EditableField
+                value={project.project_type}
+                onSave={(val) => handleFieldSave('project_type', project.project_type, val)}
+                type="select"
+                options={[
+                  { value: "Garage Door Install", label: "Garage Door Install" },
+                  { value: "Gate Install", label: "Gate Install" },
+                  { value: "Roller Shutter Install", label: "Roller Shutter Install" },
+                  { value: "Repair", label: "Repair" },
+                  { value: "Maintenance", label: "Maintenance" }
+                ]}
+                displayFormat={(val) => (
+                  <Badge className={`${projectTypeColors[val]} font-semibold border-0 px-3 py-1 rounded-lg`}>
+                    {val}
                   </Badge>
                 )}
-              </div>
-            </div>
-            
-            <div className="grid grid-cols-3 gap-4 pt-3 border-t border-[#E5E7EB]">
-              <div className="flex items-start gap-2.5">
-                <MapPin className="w-5 h-5 text-[#4B5563] mt-0.5 flex-shrink-0" />
-                <div className="flex-1 min-w-0">
-                  <div className="text-xs text-[#4B5563] font-medium mb-0.5">Address</div>
-                  <EditableField
-                    value={project.address}
-                    onSave={(val) => handleFieldSave('address', project.address, val)}
-                    type="text"
-                    placeholder="Address"
-                    className="text-sm text-[#111827] font-semibold"
-                  />
-                </div>
-              </div>
-              
-              {project.customer_phone && (
-                <div className="flex items-start gap-2.5">
-                  <Phone className="w-5 h-5 text-[#4B5563] mt-0.5 flex-shrink-0" />
-                  <div className="flex-1 min-w-0">
-                    <div className="text-xs text-[#4B5563] font-medium mb-0.5">Phone</div>
-                    <span className="text-sm text-[#111827] font-semibold">{project.customer_phone}</span>
-                  </div>
-                </div>
+              />
+            )}
+            <EditableField
+              value={project.status}
+              onSave={(val) => handleFieldSave('status', project.status, val)}
+              type="select"
+              options={[
+                { value: "open", label: "Open" },
+                { value: "scheduled", label: "Scheduled" },
+                { value: "quoted", label: "Quoted" },
+                { value: "invoiced", label: "Invoiced" },
+                { value: "paid", label: "Paid" },
+                { value: "completed", label: "Completed" },
+                { value: "cancelled", label: "Cancelled" }
+              ]}
+              displayFormat={(val) => (
+                <Badge className={`${statusColors[val]} font-semibold border-0 px-3 py-1 rounded-lg`}>
+                  {val}
+                </Badge>
               )}
-              
-              {project.customer_email && (
-                <div className="flex items-start gap-2.5">
-                  <Mail className="w-5 h-5 text-[#4B5563] mt-0.5 flex-shrink-0" />
-                  <div className="flex-1 min-w-0">
-                    <div className="text-xs text-[#4B5563] font-medium mb-0.5">Email</div>
-                    <span className="text-sm text-[#111827] font-semibold">{project.customer_email}</span>
-                  </div>
-                </div>
-              )}
+            />
+            {project.stage && (
+              <EditableField
+                value={project.stage}
+                onSave={(val) => handleFieldSave('stage', project.stage, val)}
+                type="select"
+                options={[
+                  { value: "lead_in", label: "Lead In" },
+                  { value: "measure", label: "Measure" },
+                  { value: "quote_prepared", label: "Quote Prepared" },
+                  { value: "quote_sent", label: "Quote Sent" },
+                  { value: "quote_accepted", label: "Quote Accepted" },
+                  { value: "materials_ordered", label: "Materials Ordered" },
+                  { value: "installation_scheduled", label: "Installation Scheduled" },
+                  { value: "installation_completed", label: "Installation Completed" },
+                  { value: "qa_aftercare", label: "QA Aftercare" },
+                  { value: "final_invoice", label: "Final Invoice" },
+                  { value: "project_closed", label: "Project Closed" },
+                  { value: "diagnose", label: "Diagnose" },
+                  { value: "repair_scheduled", label: "Repair Scheduled" },
+                  { value: "repair_completed", label: "Repair Completed" },
+                  { value: "maintenance_performed", label: "Maintenance Performed" },
+                  { value: "report_delivered", label: "Report Delivered" }
+                ]}
+                displayFormat={(val) => (
+                  <Badge variant="outline" className="font-semibold text-xs border-[#E5E7EB] px-3 py-1 rounded-lg">
+                    {val.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase())}
+                  </Badge>
+                )}
+              />
+            )}
+            {customer?.customer_type && (
+              <Badge className="bg-[#EDE9FE] text-[#6D28D9] hover:bg-[#EDE9FE] border-0 font-semibold text-xs px-3 py-1 rounded-lg">
+                {customer.customer_type}
+              </Badge>
+            )}
+          </div>
+
+          <div className="flex items-center gap-2.5">
+            <MapPin className="w-5 h-5 text-[#4B5563] flex-shrink-0" />
+            <EditableField
+              value={project.address}
+              onSave={(val) => handleFieldSave('address', project.address, val)}
+              type="text"
+              placeholder="Address"
+              className="text-sm text-[#4B5563]"
+            />
+          </div>
+        </div>
+      </CardHeader>
+
+      <CardContent className="p-3 md:p-4 space-y-3">
+        <Card className="border border-[#E5E7EB] shadow-sm overflow-hidden">
+          <CardHeader className="bg-[#F8F9FA] px-4 py-3 border-b border-[#E5E7EB]">
+            <div className="flex items-center gap-2">
+              <Phone className="w-4 h-4 text-[#6B7280]" />
+              <h3 className="text-sm font-bold text-[#111827]">Contact</h3>
             </div>
-            
-            <div className="flex gap-2 pt-3 border-t border-[#E5E7EB]">
+          </CardHeader>
+          <CardContent className="p-3">
+            <div className="flex gap-2">
               {project.customer_phone && (
                 <Button
                   size="sm"
                   variant="outline"
                   onClick={() => window.location.href = `tel:${project.customer_phone}`}
-                  className="flex-1"
+                  className="flex-1 h-10"
                 >
                   <Phone className="w-4 h-4 mr-1" />
                   Call
@@ -333,238 +310,233 @@ export default function ProjectDetails({ project, onClose, onEdit, onDelete }) {
                   size="sm"
                   variant="outline"
                   onClick={() => window.location.href = `mailto:${project.customer_email}`}
-                  className="flex-1"
+                  className="flex-1 h-10"
                 >
                   <Mail className="w-4 h-4 mr-1" />
                   Email
                 </Button>
               )}
             </div>
-          </div>
-        </div>
+          </CardContent>
+        </Card>
 
-        <div>
-          <h3 className="font-bold text-[#000000] mb-2">Description</h3>
-          <div className="border-2 border-slate-300 rounded-xl p-2.5 focus-within:border-[#fae008] focus-within:ring-2 focus-within:ring-[#fae008]/20 transition-all">
+        <Card className="border border-[#E5E7EB] shadow-sm overflow-hidden">
+          <CardHeader className="bg-[#F8F9FA] px-4 py-3 border-b border-[#E5E7EB]">
+            <div className="flex items-center gap-2">
+              <FileText className="w-4 h-4 text-[#6B7280]" />
+              <h3 className="text-sm font-bold text-[#111827]">Description</h3>
+            </div>
+          </CardHeader>
+          <CardContent className="p-3">
             <RichTextEditor
               value={description}
               onChange={setDescription}
               onBlur={handleDescriptionBlur}
               placeholder="Add description..."
             />
-          </div>
-        </div>
+          </CardContent>
+        </Card>
 
         {isInstallType && project.doors && project.doors.length > 0 && (
-          <div className="bg-blue-50 rounded-xl p-4 border-2 border-blue-200">
-            <h3 className="font-bold text-[#000000] mb-3">Installation Details</h3>
-            <div className="space-y-3">
-              {project.doors.map((door, idx) => (
-                <div key={idx} className="bg-white rounded-lg p-3 border border-blue-200">
-                  <div className="font-semibold text-sm text-blue-900 mb-2">Door {idx + 1}</div>
-                  <div className="grid grid-cols-2 gap-2 text-sm">
-                    {door.height && (
-                      <div>
-                        <span className="text-slate-600">Height:</span>
-                        <span className="ml-1 font-medium text-[#000000]">{door.height}</span>
-                      </div>
-                    )}
-                    {door.width && (
-                      <div>
-                        <span className="text-slate-600">Width:</span>
-                        <span className="ml-1 font-medium text-[#000000]">{door.width}</span>
-                      </div>
-                    )}
-                    {door.type && (
-                      <div>
-                        <span className="text-slate-600">Type:</span>
-                        <span className="ml-1 font-medium text-[#000000]">{door.type}</span>
-                      </div>
-                    )}
-                    {door.style && (
-                      <div>
-                        <span className="text-slate-600">Style:</span>
-                        <span className="ml-1 font-medium text-[#000000]">{door.style}</span>
-                      </div>
-                    )}
-                  </div>
-                </div>
-              ))}
-            </div>
-          </div>
+          <Card className="border border-[#E5E7EB] shadow-sm overflow-hidden">
+            <CardHeader className="bg-[#F8F9FA] px-4 py-3 border-b border-[#E5E7EB]">
+              <div className="flex items-center gap-2">
+                <FileText className="w-4 h-4 text-[#6B7280]" />
+                <h3 className="text-sm font-bold text-[#111827]">Installation Details</h3>
+              </div>
+            </CardHeader>
+            <CardContent className="p-3">
+              <div className="flex flex-wrap gap-2">
+                {project.doors.map((door, idx) => (
+                  <Badge key={idx} variant="outline" className="bg-blue-50 border-blue-200 text-blue-700 font-medium px-3 py-1.5 text-sm">
+                    Door {idx + 1}: {door.height && door.width ? `${door.height} × ${door.width}` : 'Pending specs'}
+                    {door.type && ` • ${door.type}`}
+                    {door.style && ` • ${door.style}`}
+                  </Badge>
+                ))}
+              </div>
+            </CardContent>
+          </Card>
         )}
 
         {((project.image_urls && project.image_urls.length > 0) || project.quote_url || project.invoice_url) && (
-          <div>
-            <h3 className="font-bold text-[#000000] mb-3">Attachments</h3>
-            <div className="space-y-4">
+          <Card className="border border-[#E5E7EB] shadow-sm overflow-hidden">
+            <CardHeader className="bg-[#F8F9FA] px-4 py-3 border-b border-[#E5E7EB]">
+              <div className="flex items-center gap-2">
+                <ImageIcon className="w-4 h-4 text-[#6B7280]" />
+                <h3 className="text-sm font-bold text-[#111827]">Attachments</h3>
+              </div>
+            </CardHeader>
+            <CardContent className="p-3 space-y-3">
               {project.image_urls && project.image_urls.length > 0 && (
-                <div>
-                  <div className="flex items-center gap-2 mb-2">
-                    <ImageIcon className="w-4 h-4 text-slate-600" />
-                    <span className="text-sm font-semibold text-slate-700">Images</span>
-                  </div>
-                  <div className="grid grid-cols-3 gap-2">
-                    {project.image_urls.map((url, index) => (
-                      <a 
-                        key={index} 
-                        href={url} 
-                        target="_blank" 
-                        rel="noopener noreferrer"
-                        className="block"
-                      >
-                        <img 
-                          src={url} 
-                          alt={`Project image ${index + 1}`} 
-                          className="w-full h-24 object-cover rounded-lg border-2 border-slate-200 hover:border-[#fae008] transition-all"
-                        />
-                      </a>
-                    ))}
-                  </div>
+                <div className="grid grid-cols-3 gap-2">
+                  {project.image_urls.map((url, index) => (
+                    <a 
+                      key={index} 
+                      href={url} 
+                      target="_blank" 
+                      rel="noopener noreferrer"
+                      className="block"
+                    >
+                      <img 
+                        src={url} 
+                        alt={`Project image ${index + 1}`} 
+                        className="w-full h-24 object-cover rounded-lg border border-[#E5E7EB] hover:border-[#FAE008] transition-all"
+                      />
+                    </a>
+                  ))}
                 </div>
               )}
 
               {(project.quote_url || project.invoice_url) && (
-                <div>
-                  <div className="flex items-center gap-2 mb-2">
-                    <FileText className="w-4 h-4 text-slate-600" />
-                    <span className="text-sm font-semibold text-slate-700">Files</span>
-                  </div>
-                  <div className="space-y-2">
-                    {project.quote_url && (
-                      <a 
-                        href={project.quote_url} 
-                        target="_blank" 
-                        rel="noopener noreferrer"
-                        className="flex items-center gap-2 px-3 py-2 bg-white border-2 border-slate-200 rounded-lg hover:border-[#fae008] transition-all"
-                      >
-                        <FileText className="w-4 h-4 text-blue-600" />
-                        <span className="text-sm font-medium text-slate-700">Quote Document</span>
-                      </a>
-                    )}
-                    {project.invoice_url && (
-                      <a 
-                        href={project.invoice_url} 
-                        target="_blank" 
-                        rel="noopener noreferrer"
-                        className="flex items-center gap-2 px-3 py-2 bg-white border-2 border-slate-200 rounded-lg hover:border-[#fae008] transition-all"
-                      >
-                        <FileText className="w-4 h-4 text-green-600" />
-                        <span className="text-sm font-medium text-slate-700">Invoice Document</span>
-                      </a>
-                    )}
-                  </div>
+                <div className="space-y-2">
+                  {project.quote_url && (
+                    <a 
+                      href={project.quote_url} 
+                      target="_blank" 
+                      rel="noopener noreferrer"
+                      className="flex items-center gap-2 px-3 py-2 bg-white border border-[#E5E7EB] rounded-lg hover:border-[#FAE008] transition-all"
+                    >
+                      <FileText className="w-4 h-4 text-blue-600" />
+                      <span className="text-sm font-medium text-[#111827]">Quote Document</span>
+                    </a>
+                  )}
+                  {project.invoice_url && (
+                    <a 
+                      href={project.invoice_url} 
+                      target="_blank" 
+                      rel="noopener noreferrer"
+                      className="flex items-center gap-2 px-3 py-2 bg-white border border-[#E5E7EB] rounded-lg hover:border-[#FAE008] transition-all"
+                    >
+                      <FileText className="w-4 h-4 text-green-600" />
+                      <span className="text-sm font-medium text-[#111827]">Invoice Document</span>
+                    </a>
+                  )}
                 </div>
               )}
-            </div>
-          </div>
+            </CardContent>
+          </Card>
         )}
 
-        <div>
-          <h3 className="font-bold text-[#000000] mb-2">Assigned Team</h3>
-          <EditableField
-            value={project.assigned_technicians || []}
-            onSave={handleTechniciansChange}
-            type="multi-select"
-            options={technicians.map((t) => ({ value: t.email, label: t.full_name }))}
-            displayFormat={(val) => {
-              const emailsToDisplay = Array.isArray(val) ? val : val ? [val] : [];
-              if (emailsToDisplay.length === 0) return "Assign team";
-              const names = emailsToDisplay.map(email => {
-                const tech = technicians.find(t => t.email === email);
-                return tech?.full_name || email;
-              });
-              return (
-                <div className="flex gap-2 flex-wrap">
-                  {names.map((name, idx) => (
-                    <Badge key={idx} variant="outline" className="font-semibold">
-                      {name}
-                    </Badge>
-                  ))}
-                </div>
-              );
-            }}
-            placeholder="Assign team"
-          />
-        </div>
+        <Card className="border border-[#E5E7EB] shadow-sm overflow-hidden">
+          <CardHeader className="bg-[#F8F9FA] px-4 py-3 border-b border-[#E5E7EB]">
+            <div className="flex items-center gap-2">
+              <FileText className="w-4 h-4 text-[#6B7280]" />
+              <h3 className="text-sm font-bold text-[#111827]">Assigned Team</h3>
+            </div>
+          </CardHeader>
+          <CardContent className="p-3">
+            <EditableField
+              value={project.assigned_technicians || []}
+              onSave={handleTechniciansChange}
+              type="multi-select"
+              options={technicians.map((t) => ({ value: t.email, label: t.full_name }))}
+              displayFormat={(val) => {
+                const emailsToDisplay = Array.isArray(val) ? val : val ? [val] : [];
+                if (emailsToDisplay.length === 0) return "Assign team";
+                const names = emailsToDisplay.map(email => {
+                  const tech = technicians.find(t => t.email === email);
+                  return tech?.full_name || email;
+                });
+                return (
+                  <div className="flex gap-2 flex-wrap">
+                    {names.map((name, idx) => (
+                      <Badge key={idx} variant="outline" className="font-semibold">
+                        {name}
+                      </Badge>
+                    ))}
+                  </div>
+                );
+              }}
+              placeholder="Assign team"
+            />
+          </CardContent>
+        </Card>
 
-        <div>
-          <h3 className="font-bold text-[#000000] mb-2">Notes</h3>
-          <div className="border-2 border-slate-300 rounded-xl p-2.5 focus-within:border-[#fae008] focus-within:ring-2 focus-within:ring-[#fae008]/20 transition-all">
+        <Card className="border border-[#E5E7EB] shadow-sm overflow-hidden">
+          <CardHeader className="bg-[#F8F9FA] px-4 py-3 border-b border-[#E5E7EB]">
+            <div className="flex items-center gap-2">
+              <FileText className="w-4 h-4 text-[#6B7280]" />
+              <h3 className="text-sm font-bold text-[#111827]">Notes</h3>
+            </div>
+          </CardHeader>
+          <CardContent className="p-3">
             <RichTextEditor
               value={notes}
               onChange={setNotes}
               onBlur={handleNotesBlur}
               placeholder="Add notes..."
             />
-          </div>
-        </div>
+          </CardContent>
+        </Card>
 
-        <div className="pt-4 border-t-2 border-slate-200">
-          <div className="flex items-center justify-between mb-4">
-            <h3 className="font-bold text-[#000000] text-lg">Jobs ({jobs.length})</h3>
-            <Button
-              onClick={handleAddJob}
-              className="bg-[#fae008] text-[#000000] hover:bg-[#e5d007] font-semibold"
-            >
-              <Plus className="w-4 h-4 mr-2" />
-              Add Job
-            </Button>
-          </div>
-
-          {jobs.length === 0 ? (
-            <div className="text-center py-8 bg-slate-50 rounded-xl border-2 border-slate-200">
-              <p className="text-slate-500 mb-3">No jobs yet</p>
-              <Button onClick={handleAddJob} className="bg-[#fae008] text-[#000000] font-semibold">
-                Create First Job
+        <Card className="border border-[#E5E7EB] shadow-sm overflow-hidden">
+          <CardHeader className="bg-[#F8F9FA] px-4 py-3 border-b border-[#E5E7EB]">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-2">
+                <FileText className="w-4 h-4 text-[#6B7280]" />
+                <h3 className="text-sm font-bold text-[#111827]">Jobs ({jobs.length})</h3>
+              </div>
+              <Button
+                onClick={handleAddJob}
+                className="bg-[#FAE008] text-[#111827] hover:bg-[#E5CF07] font-semibold h-9 text-sm"
+              >
+                <Plus className="w-4 h-4 mr-1" />
+                Add Job
               </Button>
             </div>
-          ) : (
-            <div className="space-y-3">
-              {jobs.map((job) => (
-                <div
-                  key={job.id}
-                  onClick={() => handleJobClick(job.id)}
-                  className="bg-white border border-[#E5E7EB] rounded-lg p-4 hover:border-[#FAE008] hover:shadow-md transition-all cursor-pointer"
-                >
-                  <div className="space-y-3">
-                    <div className="text-lg font-semibold text-[#111827]">
-                      {job.customer_name}
-                    </div>
-                    
-                    <div className="flex items-center gap-2 flex-wrap">
-                      <Badge className="bg-[#F2F4F7] text-[#344054] hover:bg-[#F2F4F7] border-0 font-medium text-sm px-3 py-1 rounded-lg">
-                        #{job.job_number}
-                      </Badge>
-                      <Badge className={`${jobStatusColors[job.status]} hover:${jobStatusColors[job.status]} border-0 font-semibold text-xs px-3 py-1 rounded-lg`}>
-                        {job.status}
-                      </Badge>
-                      {job.job_type_name && (
-                        <Badge className="bg-[#EDE9FE] text-[#6D28D9] hover:bg-[#EDE9FE] border-0 font-semibold text-xs px-3 py-1 rounded-lg">
-                          {job.job_type_name}
+          </CardHeader>
+          <CardContent className="p-3">
+            {jobs.length === 0 ? (
+              <div className="text-center py-8 bg-[#F8F9FA] rounded-lg">
+                <p className="text-[#6B7280] mb-3 text-sm">No jobs yet</p>
+                <Button onClick={handleAddJob} className="bg-[#FAE008] text-[#111827] font-semibold h-10">
+                  Create First Job
+                </Button>
+              </div>
+            ) : (
+              <div className="space-y-2">
+                {jobs.map((job) => (
+                  <div
+                    key={job.id}
+                    onClick={() => handleJobClick(job.id)}
+                    className="bg-white border border-[#E5E7EB] rounded-lg p-3 hover:border-[#FAE008] hover:shadow-sm transition-all cursor-pointer"
+                  >
+                    <div className="space-y-2">
+                      <div className="flex items-center gap-2 flex-wrap">
+                        <Badge className="bg-white text-[#6B7280] hover:bg-white border border-[#E5E7EB] font-medium text-xs px-2.5 py-0.5 rounded-lg">
+                          #{job.job_number}
                         </Badge>
+                        <Badge className={`${jobStatusColors[job.status]} hover:${jobStatusColors[job.status]} border-0 font-semibold text-xs px-3 py-1 rounded-lg`}>
+                          {job.status}
+                        </Badge>
+                        {job.job_type_name && (
+                          <Badge className="bg-[#EDE9FE] text-[#6D28D9] hover:bg-[#EDE9FE] border-0 font-semibold text-xs px-3 py-1 rounded-lg">
+                            {job.job_type_name}
+                          </Badge>
+                        )}
+                      </div>
+                      
+                      {job.scheduled_date && (
+                        <p className="text-sm text-[#4B5563]">
+                          {new Date(job.scheduled_date).toLocaleDateString()}
+                          {job.scheduled_time && ` • ${job.scheduled_time}`}
+                        </p>
+                      )}
+                      
+                      {job.address && (
+                        <div className="flex items-start gap-2">
+                          <MapPin className="w-4 h-4 mt-0.5 flex-shrink-0 text-[#4B5563]" />
+                          <span className="text-sm text-[#4B5563]">{job.address}</span>
+                        </div>
                       )}
                     </div>
-                    
-                    {job.scheduled_date && (
-                      <p className="text-sm text-[#4B5563]">
-                        {new Date(job.scheduled_date).toLocaleDateString()}
-                        {job.scheduled_time && ` at ${job.scheduled_time}`}
-                      </p>
-                    )}
-                    
-                    {job.address && (
-                      <div className="flex items-start gap-2">
-                        <MapPin className="w-4 h-4 mt-0.5 flex-shrink-0 text-[#4B5563]" />
-                        <span className="text-sm text-[#4B5563]">{job.address}</span>
-                      </div>
-                    )}
                   </div>
-                </div>
-              ))}
-            </div>
-          )}
-        </div>
+                ))}
+              </div>
+            )}
+          </CardContent>
+        </Card>
       </CardContent>
     </Card>
   );
