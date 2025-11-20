@@ -253,7 +253,7 @@ export default function Projects() {
           </div>
 
           <Tabs value={stageFilter} onValueChange={setStageFilter} className="w-full">
-            <TabsList className="flex-nowrap overflow-x-auto">
+            <TabsList style={{ display: 'flex', flexWrap: 'nowrap', overflowX: 'auto', overflowY: 'hidden' }}>
               <TabsTrigger value="all">All Projects</TabsTrigger>
               {Object.keys(statusColors).map((stage) => (
                 <TabsTrigger key={stage} value={stage}>

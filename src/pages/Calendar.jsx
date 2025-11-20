@@ -132,7 +132,7 @@ export default function Calendar() {
 
         <div className="flex flex-col md:flex-row gap-4 items-start md:items-center">
           <Tabs value={viewMode} onValueChange={setViewMode} className="w-full md:w-auto">
-            <TabsList className="flex-nowrap overflow-x-auto">
+            <TabsList style={{ display: 'flex', flexWrap: 'nowrap', overflowX: 'auto', overflowY: 'hidden' }}>
               <TabsTrigger value="day">Day</TabsTrigger>
               <TabsTrigger value="week">Week</TabsTrigger>
               <TabsTrigger value="month">Month</TabsTrigger>
