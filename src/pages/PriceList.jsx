@@ -179,10 +179,10 @@ export default function PriceList() {
           </div>
           
           <Tabs value={categoryFilter} onValueChange={setCategoryFilter} className="w-full">
-            <TabsList className="w-full md:w-auto grid grid-cols-2 md:inline-flex">
+            <TabsList>
               <TabsTrigger value="all">All</TabsTrigger>
               {categories.map((cat) => (
-                <TabsTrigger key={cat} value={cat} className="text-xs md:text-sm">{cat}</TabsTrigger>
+                <TabsTrigger key={cat} value={cat}>{cat}</TabsTrigger>
               ))}
             </TabsList>
           </Tabs>

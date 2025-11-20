@@ -198,11 +198,11 @@ export default function Archive() {
         </div>
 
         <Tabs defaultValue="jobs" className="w-full">
-          <TabsList className="w-full md:w-auto mb-6 h-11 bg-[hsl(32,25%,94%)] p-1">
-            <TabsTrigger value="jobs" className="font-semibold">
+          <TabsList className="mb-6">
+            <TabsTrigger value="jobs">
               Jobs ({deletedJobs.length})
             </TabsTrigger>
-            <TabsTrigger value="customers" className="font-semibold">
+            <TabsTrigger value="customers">
               Customers ({deletedCustomers.length})
             </TabsTrigger>
           </TabsList>
