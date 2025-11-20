@@ -213,8 +213,9 @@ export default function ProjectDetails({ project, onClose, onEdit, onDelete }) {
   const isInstallType = project.project_type && project.project_type.includes("Install");
 
   return (
-    <Card className="border border-[#E5E7EB] shadow-sm rounded-lg overflow-hidden">
-      <CardHeader className="border-b border-[#E5E7EB] bg-white p-3 md:p-4 space-y-3">
+    <div className="relative">
+      <Card className="border border-[#E5E7EB] shadow-sm rounded-lg overflow-hidden">
+        <CardHeader className="border-b border-[#E5E7EB] bg-white p-3 md:p-4 space-y-3">
         <div className="flex items-center justify-between gap-3">
           <Button
             variant="ghost"
@@ -792,6 +793,16 @@ export default function ProjectDetails({ project, onClose, onEdit, onDelete }) {
         onClose={() => setShowHistory(false)}
         projectId={project.id}
       />
-    </Card>
+      </Card>
+
+      <Button
+        onClick={handleAddJob}
+        className="fixed bottom-6 right-6 h-14 w-14 rounded-full shadow-lg bg-[#FAE008] hover:bg-[#E5CF07] text-[#111827] z-50 hover:scale-105 transition-all"
+        size="icon"
+        title="Add New Visit"
+      >
+        <Plus className="w-6 h-6" />
+      </Button>
+    </div>
   );
 }
