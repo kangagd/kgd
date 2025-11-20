@@ -289,7 +289,9 @@ export default function ProjectDetails({ project, onClose, onEdit, onDelete }) {
             </div>
             {project.customer_phone && (
               <div className="flex items-center gap-2.5">
-                <Phone className="w-5 h-5 text-[#4B5563]" />
+                <a href={`tel:${project.customer_phone}`} className="hover:bg-[#F3F4F6] p-1 rounded transition-colors">
+                  <Phone className="w-5 h-5 text-[#4B5563]" />
+                </a>
                 <div className="flex-1 min-w-0">
                   <div className="text-xs text-[#4B5563] font-medium mb-0.5">Phone</div>
                   <span className="font-semibold text-[#111827] text-sm">{project.customer_phone}</span>
@@ -298,7 +300,9 @@ export default function ProjectDetails({ project, onClose, onEdit, onDelete }) {
             )}
             {project.customer_email && (
               <div className="flex items-center gap-2.5">
-                <Mail className="w-5 h-5 text-[#4B5563]" />
+                <a href={`mailto:${project.customer_email}`} className="hover:bg-[#F3F4F6] p-1 rounded transition-colors">
+                  <Mail className="w-5 h-5 text-[#4B5563]" />
+                </a>
                 <div className="flex-1 min-w-0">
                   <div className="text-xs text-[#4B5563] font-medium mb-0.5">Email</div>
                   <span className="font-semibold text-[#111827] text-sm">{project.customer_email}</span>
@@ -336,41 +340,6 @@ export default function ProjectDetails({ project, onClose, onEdit, onDelete }) {
       </CardHeader>
 
       <CardContent className="p-3 md:p-4 space-y-3">
-        <Card className="border border-[#E5E7EB] shadow-sm overflow-hidden">
-          <CardHeader className="bg-[#F8F9FA] px-4 py-3 border-b border-[#E5E7EB]">
-            <div className="flex items-center gap-2">
-              <Phone className="w-4 h-4 text-[#6B7280]" />
-              <h3 className="text-sm font-bold text-[#111827]">Contact</h3>
-            </div>
-          </CardHeader>
-          <CardContent className="p-3">
-            <div className="flex gap-2">
-              {project.customer_phone && (
-                <Button
-                  size="sm"
-                  variant="outline"
-                  onClick={() => window.location.href = `tel:${project.customer_phone}`}
-                  className="flex-1 h-10"
-                >
-                  <Phone className="w-4 h-4 mr-1" />
-                  Call
-                </Button>
-              )}
-              {project.customer_email && (
-                <Button
-                  size="sm"
-                  variant="outline"
-                  onClick={() => window.location.href = `mailto:${project.customer_email}`}
-                  className="flex-1 h-10"
-                >
-                  <Mail className="w-4 h-4 mr-1" />
-                  Email
-                </Button>
-              )}
-            </div>
-          </CardContent>
-        </Card>
-
         <Card className="border border-[#E5E7EB] shadow-sm overflow-hidden">
           <CardHeader className="bg-[#F8F9FA] px-4 py-3 border-b border-[#E5E7EB]">
             <div className="flex items-center gap-2">
