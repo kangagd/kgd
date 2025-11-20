@@ -141,10 +141,10 @@ export default function CalendarView({ jobs, onSelectJob, currentDate, onDateCha
 
         <div className="flex items-center gap-3">
           <Tabs value={view} onValueChange={setView}>
-            <TabsList className="h-10 bg-white border border-[#E5E7EB]">
-              <TabsTrigger value="day" title="Day view (D)" className="font-semibold data-[state=active]:bg-[#FAE008] data-[state=active]:text-[#111827]">Day</TabsTrigger>
-              <TabsTrigger value="week" title="Week view (W)" className="font-semibold data-[state=active]:bg-[#FAE008] data-[state=active]:text-[#111827]">Week</TabsTrigger>
-              <TabsTrigger value="month" title="Month view (M)" className="font-semibold data-[state=active]:bg-[#FAE008] data-[state=active]:text-[#111827]">Month</TabsTrigger>
+            <TabsList className="bg-white rounded-full p-1.5 gap-2">
+              <TabsTrigger value="day" title="Day view (D)">Day</TabsTrigger>
+              <TabsTrigger value="week" title="Week view (W)">Week</TabsTrigger>
+              <TabsTrigger value="month" title="Month view (M)">Month</TabsTrigger>
             </TabsList>
           </Tabs>
           <Button
