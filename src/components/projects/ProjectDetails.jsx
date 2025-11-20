@@ -60,16 +60,28 @@ const jobStatusColors = {
   "Cancelled": "bg-red-100 text-red-800"
 };
 
-export default function ProjectDetails({ project, onClose, onEdit, onDelete }) {
+export default function ProjectDetails({ project: initialProject, onClose, onEdit, onDelete }) {
   const navigate = useNavigate();
   const queryClient = useQueryClient();
-  const [description, setDescription] = useState(project.description || "");
-  const [notes, setNotes] = useState(project.notes || "");
   const [uploading, setUploading] = useState(false);
   const [newDoor, setNewDoor] = useState({ height: "", width: "", type: "", style: "" });
   const [showAddDoor, setShowAddDoor] = useState(false);
   const [showHistory, setShowHistory] = useState(false);
   const [activeTab, setActiveTab] = useState("overview");
+
+  const { data: project = initialProject } = useQuery({
+    queryKey: ['project', initialProject.id],
+    queryFn: () => base44.entities.Project.get(initialProject.id),
+    initialData: initialProject
+  });
+
+  const [description, setDescription] = useState(project.description || "");
+  const [notes, setNotes] = useState(project.notes || "");
+
+  React.useEffect(() => {
+    setDescription(project.description || "");
+    setNotes(project.notes || "");
+  }, [project.description, project.notes]);
 
   const { data: projectJobs = [] } = useQuery({
     queryKey: ['projectJobs', project.id],
@@ -94,6 +106,7 @@ export default function ProjectDetails({ project, onClose, onEdit, onDelete }) {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['projects'] });
       queryClient.invalidateQueries({ queryKey: ['allProjects'] });
+      queryClient.invalidateQueries({ queryKey: ['project', project.id] });
     }
   });
 
