@@ -11,7 +11,6 @@ import { useNavigate } from "react-router-dom";
 import { createPageUrl } from "@/utils";
 import EditableField from "../jobs/EditableField";
 import RichTextEditor from "../common/RichTextEditor";
-import FinancialStatusField from "./FinancialStatusField";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -290,7 +289,11 @@ export default function ProjectDetails({ project, onClose, onEdit, onDelete }) {
                 </Badge>
               )}
             />
-            <FinancialStatusField project={project} onSave={handleFieldSave} />
+            {project.financial_status && (
+              <Badge className={`${financialStatusColors[project.financial_status]} font-semibold border-0 px-2.5 py-0.5 rounded-lg text-xs`}>
+                {project.financial_status}
+              </Badge>
+            )}
             {customer?.customer_type && (
               <Badge className="bg-[#EDE9FE] text-[#6D28D9] hover:bg-[#EDE9FE] border-0 font-semibold px-2.5 py-0.5 rounded-lg text-xs">
                 {customer.customer_type}
@@ -669,11 +672,6 @@ export default function ProjectDetails({ project, onClose, onEdit, onDelete }) {
                               {job.job_type_name && (
                                 <Badge className="bg-[#EDE9FE] text-[#6D28D9] hover:bg-[#EDE9FE] border-0 font-semibold text-xs px-3 py-1 rounded-lg">
                                   {job.job_type_name}
-                                </Badge>
-                              )}
-                              {job.outcome && (
-                                <Badge className="bg-purple-100 text-purple-700 hover:bg-purple-100 border-0 font-semibold text-xs px-2.5 py-0.5 rounded-lg">
-                                  {job.outcome.replace(/_/g, ' ')}
                                 </Badge>
                               )}
                             </div>
