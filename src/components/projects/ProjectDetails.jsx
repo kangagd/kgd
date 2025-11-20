@@ -218,7 +218,42 @@ export default function ProjectDetails({ project: initialProject, onClose, onEdi
       const allJobs = await base44.entities.Job.list('-job_number', 1);
       const nextJobNumber = allJobs.length > 0 ? (allJobs[0].job_number || 5000) + 1 : 5000;
 
-      // Create the job
+      // Build installation details text
+      let installationDetails = '';
+      if (project.doors && project.doors.length > 0) {
+        installationDetails = '\n\n**Installation Details:**\n';
+        project.doors.forEach((door, idx) => {
+          installationDetails += `\nDoor ${idx + 1}:`;
+          if (door.height && door.width) installationDetails += ` ${door.height} × ${door.width}`;
+          if (door.type) installationDetails += ` • ${door.type}`;
+          if (door.style) installationDetails += ` • ${door.style}`;
+        });
+      }
+
+      // Generate AI overview
+      let additionalInfo = '';
+      try {
+        const prompt = `Based on this project information, provide a brief overview of what is required for this ${jobTypeName} job:
+
+Project Title: ${project.title}
+Project Type: ${project.project_type || 'N/A'}
+Description: ${project.description || 'No description provided'}
+${installationDetails}
+
+Provide a concise 2-3 sentence summary of what the technician needs to know for this ${jobTypeName}.`;
+
+        const aiResponse = await base44.integrations.Core.InvokeLLM({
+          prompt: prompt,
+          add_context_from_internet: false
+        });
+
+        additionalInfo = aiResponse + installationDetails;
+      } catch (error) {
+        // Fallback if AI fails
+        additionalInfo = `${project.description || ''}${installationDetails}`;
+      }
+
+      // Create the job with project data
       const newJob = await base44.entities.Job.create({
         job_number: nextJobNumber,
         project_id: project.id,
@@ -231,7 +266,11 @@ export default function ProjectDetails({ project: initialProject, onClose, onEdi
         job_type_id: jobType?.id || null,
         job_type_name: jobTypeName,
         status: jobTypeName === "Installation" && newStage === "Scheduled" ? "Scheduled" : "Open",
-        scheduled_date: new Date().toISOString().split('T')[0]
+        scheduled_date: new Date().toISOString().split('T')[0],
+        additional_info: additionalInfo,
+        image_urls: project.image_urls || [],
+        quote_url: project.quote_url || null,
+        invoice_url: project.invoice_url || null
       });
 
       // Log the auto-creation in change history
