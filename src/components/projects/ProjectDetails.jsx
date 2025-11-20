@@ -235,22 +235,13 @@ export default function ProjectDetails({ project, onClose, onEdit, onDelete }) {
         </div>
 
         <div className="space-y-2">
-          <div className="flex items-center gap-2 flex-wrap">
-            <div 
-              className="text-xl font-semibold text-[#111827] cursor-pointer hover:text-[#FAE008] transition-colors leading-tight"
-              onClick={handleCustomerClick}
-            >
-              {project.customer_name}
-            </div>
-          </div>
-
           <div className="flex items-center gap-1.5 flex-wrap">
             <EditableField
               value={project.title}
               onSave={(val) => handleFieldSave('title', project.title, val)}
               type="text"
               placeholder="Project Title"
-              className="font-medium text-[#111827]"
+              className="text-xl font-semibold text-[#111827]"
             />
             {project.project_type && (
               <EditableField
@@ -315,8 +306,15 @@ export default function ProjectDetails({ project, onClose, onEdit, onDelete }) {
                 {customer.customer_type}
               </Badge>
             )}
-          </div>
-        </div>
+            </div>
+
+            <div 
+            className="text-sm font-medium text-[#4B5563] cursor-pointer hover:text-[#FAE008] transition-colors mt-1"
+            onClick={handleCustomerClick}
+            >
+            {project.customer_name}
+            </div>
+            </div>
 
         <div className="bg-[#ffffff] p-3 rounded-lg">
           <div className="grid grid-cols-3 gap-x-4 gap-y-2">
