@@ -25,6 +25,7 @@ import {
 import ProjectChangeHistoryModal from "./ProjectChangeHistoryModal";
 import ProjectStageSelector from "./ProjectStageSelector";
 import PartsSection from "./PartsSection";
+import ProjectSummary from "./ProjectSummary";
 
 const statusColors = {
   "Lead": "bg-slate-100 text-slate-800",
@@ -284,7 +285,9 @@ export default function ProjectDetails({ project: initialProject, onClose, onEdi
   const isInstallType = project.project_type && project.project_type.includes("Install");
 
   React.useEffect(() => {
-    if (project.status === "Parts Ordered") {
+    if (project.status === "Completed") {
+      setActiveTab("summary");
+    } else if (project.status === "Parts Ordered") {
       setActiveTab("parts");
     } else if (project.status === "Quote Sent") {
       setActiveTab("quoting");
@@ -587,8 +590,21 @@ export default function ProjectDetails({ project: initialProject, onClose, onEdi
 
       <CardContent className="p-3 md:p-4">
         <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-          <TabsList className="w-full grid grid-cols-5 h-11 bg-[#F8F9FA] border border-[#E5E7EB] rounded-lg p-1">
-            <TabsTrigger value="overview" className="text-[14px] font-medium leading-[1.4] data-[state=active]:bg-white data-[state=active]:shadow-sm">Overview</TabsTrigger>
+          <TabsList className="w-full grid grid-cols-6 h-11 bg-[#F8F9FA] border border-[#E5E7EB] rounded-lg p-1">
+            <TabsTrigger 
+              value="overview" 
+              className="text-[14px] font-medium leading-[1.4] data-[state=active]:bg-white data-[state=active]:shadow-sm"
+            >
+              Overview
+            </TabsTrigger>
+            <TabsTrigger 
+              value="summary" 
+              className={`text-[14px] font-medium leading-[1.4] data-[state=active]:bg-white data-[state=active]:shadow-sm ${
+                project.status === "Completed" ? "bg-[#FAE008]/10 text-[#111827] font-semibold" : ""
+              }`}
+            >
+              Summary
+            </TabsTrigger>
             <TabsTrigger value="quoting" className="text-[14px] font-medium leading-[1.4] data-[state=active]:bg-white data-[state=active]:shadow-sm">Quoting</TabsTrigger>
             <TabsTrigger value="parts" className="text-[14px] font-medium leading-[1.4] data-[state=active]:bg-white data-[state=active]:shadow-sm">Parts</TabsTrigger>
             <TabsTrigger value="images" className="text-[14px] font-medium leading-[1.4] data-[state=active]:bg-white data-[state=active]:shadow-sm">
@@ -708,6 +724,14 @@ export default function ProjectDetails({ project: initialProject, onClose, onEdi
                 </div>
               </div>
             )}
+          </TabsContent>
+
+          <TabsContent value="summary" className="mt-3">
+            <ProjectSummary 
+              project={project} 
+              jobs={jobs}
+              onUpdateNotes={(value) => updateProjectMutation.mutate({ field: 'notes', value })}
+            />
           </TabsContent>
 
           <TabsContent value="quoting" className="mt-3">
