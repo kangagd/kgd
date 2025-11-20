@@ -101,6 +101,49 @@ export default function ProjectDetails({ project: initialProject, onClose, onEdi
     queryFn: () => base44.entities.User.filter({ is_field_technician: true })
   });
 
+  const { data: activeViewers = [] } = useQuery({
+    queryKey: ['projectViewers', project.id],
+    queryFn: async () => {
+      const viewers = await base44.entities.ProjectViewer.filter({ project_id: project.id });
+      const oneMinuteAgo = new Date(Date.now() - 60000).toISOString();
+      return viewers.filter(v => v.last_seen > oneMinuteAgo);
+    },
+    refetchInterval: 10000
+  });
+
+  React.useEffect(() => {
+    let viewerRecordId = null;
+    const updatePresence = async () => {
+      const user = await base44.auth.me();
+      const existingViewer = activeViewers.find(v => v.user_email === user.email);
+      
+      const viewerData = {
+        project_id: project.id,
+        user_email: user.email,
+        user_name: user.full_name,
+        last_seen: new Date().toISOString()
+      };
+
+      if (existingViewer) {
+        await base44.entities.ProjectViewer.update(existingViewer.id, viewerData);
+        viewerRecordId = existingViewer.id;
+      } else {
+        const newViewer = await base44.entities.ProjectViewer.create(viewerData);
+        viewerRecordId = newViewer.id;
+      }
+    };
+
+    updatePresence();
+    const interval = setInterval(updatePresence, 30000);
+
+    return () => {
+      clearInterval(interval);
+      if (viewerRecordId) {
+        base44.entities.ProjectViewer.delete(viewerRecordId).catch(() => {});
+      }
+    };
+  }, [project.id, activeViewers]);
+
   const updateProjectMutation = useMutation({
     mutationFn: ({ field, value }) => base44.entities.Project.update(project.id, { [field]: value }),
     onSuccess: () => {
@@ -407,6 +450,21 @@ export default function ProjectDetails({ project: initialProject, onClose, onEdi
           </Button>
 
           <div className="flex gap-1 flex-shrink-0">
+            {activeViewers.length > 0 && (
+              <div className="flex -space-x-2 mr-2">
+                {activeViewers.map((viewer, idx) => (
+                  <div
+                    key={viewer.id}
+                    className="w-8 h-8 bg-[#FAE008] rounded-full flex items-center justify-center border-2 border-white"
+                    title={viewer.user_name}
+                  >
+                    <span className="text-[#111827] font-semibold text-xs">
+                      {viewer.user_name?.charAt(0)?.toUpperCase() || 'U'}
+                    </span>
+                  </div>
+                ))}
+              </div>
+            )}
             <Button
               variant="ghost"
               size="icon"
