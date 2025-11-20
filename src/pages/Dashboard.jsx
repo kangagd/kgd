@@ -46,12 +46,13 @@ export default function Dashboard() {
   const today = new Date().toISOString().split('T')[0];
   const tomorrow = new Date(Date.now() + 86400000).toISOString().split('T')[0];
 
-  const todayJobs = jobs.filter(j => j.scheduled_date === today);
-  const tomorrowJobs = jobs.filter(j => j.scheduled_date === tomorrow);
-  const activeJobs = jobs.filter(j => j.status === 'in_progress');
+  const todayJobs = jobs.filter(j => j.scheduled_date === today && !j.deleted_at);
+  const tomorrowJobs = jobs.filter(j => j.scheduled_date === tomorrow && !j.deleted_at);
+  const activeJobs = jobs.filter(j => j.status === 'in_progress' && !j.deleted_at);
   const completedToday = jobs.filter(j =>
     j.status === 'completed' &&
-    j.updated_date?.split('T')[0] === today
+    j.updated_date?.split('T')[0] === today &&
+    !j.deleted_at
   );
 
   const todayCheckIns = checkIns.filter(c =>
