@@ -166,7 +166,7 @@ export default function Customers() {
             <p className="text-[14px] text-[#6B7280] leading-[1.4]">Try adjusting your search or add a new customer</p>
           </Card>
         ) : (
-          <div className="grid gap-3">
+          <div className="card-grid">
             {filteredCustomers.map((customer) => (
               <CustomerCard
                 key={customer.id}
