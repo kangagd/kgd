@@ -377,22 +377,6 @@ export default function ProjectForm({ project, onSubmit, onCancel, isSubmitting 
             )}
 
             <div className="space-y-2">
-              <Label htmlFor="financial_status">Financial Status</Label>
-              <Select value={formData.financial_status} onValueChange={(val) => setFormData({ ...formData, financial_status: val })}>
-                <SelectTrigger className="border-2 border-slate-300">
-                  <SelectValue placeholder="Select financial status" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="50% payment made">50% payment made</SelectItem>
-                  <SelectItem value="30% payment made (install)">30% payment made (install)</SelectItem>
-                  <SelectItem value="Balance paid in full">Balance paid in full</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-
-
-
-            <div className="space-y-2">
               <Label htmlFor="description">Description</Label>
               <RichTextEditor
                 value={formData.description}
