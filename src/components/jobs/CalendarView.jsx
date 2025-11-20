@@ -283,8 +283,8 @@ export default function CalendarView({ jobs, onSelectJob, currentDate, onDateCha
         selectedDate={selectedDate}
       />
 
-      {/* Keyboard shortcuts hint */}
-      <Card className="bg-[#F8F9FA] border border-[#E5E7EB] rounded-xl">
+      {/* Keyboard shortcuts hint - hidden on mobile */}
+      <Card className="bg-[#F8F9FA] border border-[#E5E7EB] rounded-xl hidden lg:block">
         <CardContent className="p-4">
           <div className="text-xs text-[#4B5563] flex flex-wrap gap-x-5 gap-y-2 font-medium">
             <span><kbd className="px-2.5 py-1 bg-white border border-[#E5E7EB] rounded-md text-[#111827] font-bold shadow-sm">←</kbd> <kbd className="px-2.5 py-1 bg-white border border-[#E5E7EB] rounded-md text-[#111827] font-bold shadow-sm">→</kbd> Navigate</span>
