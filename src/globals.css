@@ -230,20 +230,27 @@ css
   /* Card styles */
   .card-enhanced {
     @apply bg-white rounded-xl border border-[#E5E7EB] shadow-sm transition-all duration-200;
+    padding: var(--card-padding-mobile);
   }
-  
+
+  @media (min-width: 1024px) {
+    .card-enhanced {
+      padding: var(--card-padding-desktop);
+    }
+  }
+
   .card-enhanced:hover {
     @apply shadow-md border-[#D1D5DB];
   }
-  
+
   .card-interactive {
     @apply cursor-pointer;
   }
-  
+
   .card-interactive:hover {
     @apply shadow-lg border-[#FAE008] scale-[1.01];
   }
-  
+
   .card-interactive:active {
     @apply scale-[0.99];
   }
