@@ -155,11 +155,11 @@ export default function Layout({ children, currentPageName }) {
       <div className="min-h-screen flex w-full bg-[#F8F9FA]">
         <Sidebar collapsible="icon" className="border-r border-[#E5E7EB]">
           <SidebarHeader className="border-b border-[#E5E7EB] p-5">
-            <div className="flex items-center gap-3">
-              <div className="w-11 h-11 bg-[#FAE008] rounded-xl flex items-center justify-center shadow-md">
+            <div className="flex items-center gap-3 group-data-[collapsible=icon]:justify-center">
+              <div className="w-11 h-11 bg-[#FAE008] rounded-xl flex items-center justify-center shadow-md flex-shrink-0">
                 <Wrench className="w-5 h-5 text-[#111827]" />
               </div>
-              <div>
+              <div className="group-data-[collapsible=icon]:hidden">
                 <h3 className="font-semibold text-[#111827]">FieldScheduler</h3>
                 <p className="text-[12px] text-[#4B5563] leading-[1.35]">Garage Door Services</p>
               </div>
@@ -194,17 +194,17 @@ export default function Layout({ children, currentPageName }) {
           </SidebarContent>
 
           <SidebarFooter className="border-t border-[#E5E7EB] p-4">
-            <div className="flex items-center gap-3">
+            <div className="flex items-center gap-3 group-data-[collapsible=icon]:justify-center">
               <button
                 onClick={() => navigate(createPageUrl("UserProfile"))}
-                className="flex items-center gap-3 flex-1 min-w-0 hover:bg-[#F3F4F6] rounded-lg p-2.5 transition-colors min-h-[44px]"
+                className="flex items-center gap-3 flex-1 min-w-0 hover:bg-[#F3F4F6] rounded-lg p-2.5 transition-colors min-h-[44px] group-data-[collapsible=icon]:flex-initial"
               >
                 <div className="w-10 h-10 bg-[#F3F4F6] rounded-full flex items-center justify-center flex-shrink-0">
                   <span className="text-[#111827] font-semibold text-sm">
                     {user?.full_name?.charAt(0)?.toUpperCase() || 'U'}
                   </span>
                 </div>
-                <div className="flex-1 min-w-0 text-left">
+                <div className="flex-1 min-w-0 text-left group-data-[collapsible=icon]:hidden">
                   <p className="font-medium text-[#111827] text-[14px] leading-[1.4] truncate">
                     {user?.full_name || 'User'}
                   </p>
@@ -213,7 +213,7 @@ export default function Layout({ children, currentPageName }) {
               </button>
               <button
                 onClick={handleLogout}
-                className="text-[12px] text-[#4B5563] hover:text-[#111827] px-2 font-medium leading-[1.35]"
+                className="text-[12px] text-[#4B5563] hover:text-[#111827] px-2 font-medium leading-[1.35] group-data-[collapsible=icon]:hidden"
               >
                 Logout
               </button>
