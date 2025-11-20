@@ -473,18 +473,18 @@ export default function JobDetails({ job, onClose, onStatusChange, onDelete }) {
           <div className="space-y-3">
             <div className="flex items-center gap-2 flex-wrap">
               <CardTitle
-                className="text-xl font-semibold text-[#111827] cursor-pointer hover:text-[#FAE008] transition-colors leading-tight"
+                className="text-[22px] font-semibold text-[#111827] leading-[1.2] cursor-pointer hover:text-[#FAE008] transition-colors"
                 onClick={() => setShowCustomerEdit(true)}>
                 {job.customer_name}
               </CardTitle>
-              <Badge className="bg-white text-[#6B7280] hover:bg-white border border-[#E5E7EB] font-medium text-xs px-2.5 py-0.5 rounded-lg">
+              <Badge className="bg-white text-[#6B7280] hover:bg-white border border-[#E5E7EB] font-medium text-[12px] leading-[1.35] px-2.5 py-0.5 rounded-lg">
                 #{job.job_number}
               </Badge>
             </div>
 
             <div className="flex items-center gap-2 flex-wrap">
               {job.customer_type &&
-              <Badge className="bg-[#EDE9FE] text-[#6D28D9] hover:bg-[#EDE9FE] border-0 font-semibold text-xs px-3 py-1 rounded-lg">
+              <Badge className="bg-[#EDE9FE] text-[#6D28D9] hover:bg-[#EDE9FE] border-0 font-medium text-[12px] leading-[1.35] px-3 py-1 rounded-lg">
                   {job.customer_type}
                 </Badge>
               }
@@ -493,11 +493,11 @@ export default function JobDetails({ job, onClose, onStatusChange, onDelete }) {
             <div className="grid grid-cols-3 gap-x-6">
               <div className="flex items-center gap-2.5 cursor-pointer hover:text-green-600 transition-colors" onClick={() => window.open(`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(job.address)}`, '_blank')}>
                 <Navigation className="text-green-600 w-5 h-5 flex-shrink-0" />
-                <span className="text-sm text-[#4B5563] leading-snug">{job.address}</span>
+                <span className="text-[14px] text-[#4B5563] leading-[1.4]">{job.address}</span>
               </div>
               <div className="flex items-center gap-2.5 cursor-pointer hover:text-blue-600 transition-colors" onClick={() => job.customer_phone && (window.location.href = `tel:${job.customer_phone}`)}>
                 <Phone className="text-blue-600 w-5 h-5 flex-shrink-0" />
-                <span className="text-sm text-[#4B5563]">{job.customer_phone || '-'}</span>
+                <span className="text-[14px] text-[#4B5563] leading-[1.4]">{job.customer_phone || '-'}</span>
               </div>
             </div>
           </div>
@@ -507,30 +507,30 @@ export default function JobDetails({ job, onClose, onStatusChange, onDelete }) {
               <div className="flex items-center gap-2.5">
                 <Calendar className="w-5 h-5 text-[#4B5563]" />
                 <div className="flex-1 min-w-0">
-                  <div className="text-xs text-[#4B5563] font-medium mb-0.5">Date</div>
+                  <div className="text-[12px] text-[#6B7280] font-normal leading-[1.35] mb-0.5">Date</div>
                   <EditableField
                     value={job.scheduled_date}
                     onSave={(val) => handleFieldSave('scheduled_date', job.scheduled_date, val)}
                     type="date"
                     displayFormat={(val) => format(parseISO(val), 'MMM d, yyyy')}
                     placeholder="Set date"
-                    className="font-semibold text-[#111827] text-sm" />
+                    className="text-[14px] font-medium text-[#111827] leading-[1.4]" />
 
                 </div>
               </div>
               <div className="flex items-center gap-2.5">
                 <Clock className="w-5 h-5 text-[#4B5563]" />
                 <div className="flex-1 min-w-0">
-                  <div className="text-xs text-[#4B5563] font-medium mb-0.5">Time</div>
+                  <div className="text-[12px] text-[#6B7280] font-normal leading-[1.35] mb-0.5">Time</div>
                   <div className="flex items-center gap-2">
                     <EditableField
                       value={job.scheduled_time}
                       onSave={(val) => handleFieldSave('scheduled_time', job.scheduled_time, val)}
                       type="time"
                       placeholder="Time"
-                      className="font-semibold text-[#111827] text-sm" />
+                      className="text-[14px] font-medium text-[#111827] leading-[1.4]" />
                     {job.expected_duration && (
-                      <Badge className="bg-white text-[#6B7280] hover:bg-white border border-[#E5E7EB] font-medium text-xs px-2.5 py-0.5 rounded-lg">
+                      <Badge className="bg-white text-[#6B7280] hover:bg-white border border-[#E5E7EB] font-medium text-[12px] leading-[1.35] px-2.5 py-0.5 rounded-lg">
                         {job.expected_duration}h
                       </Badge>
                     )}
@@ -540,7 +540,7 @@ export default function JobDetails({ job, onClose, onStatusChange, onDelete }) {
               <div className="flex items-center gap-2.5">
                 <User className="w-5 h-5 text-[#4B5563]" />
                 <div className="flex-1 min-w-0">
-                  <div className="text-xs text-[#4B5563] font-medium mb-0.5">Technicians</div>
+                  <div className="text-[12px] text-[#6B7280] font-normal leading-[1.35] mb-0.5">Technicians</div>
                   <div className="flex items-center gap-1.5">
                     {(Array.isArray(job.assigned_to_name) ? job.assigned_to_name : job.assigned_to_name ? [job.assigned_to_name] : []).slice(0, 3).map((name, idx) =>
                     <div
@@ -574,7 +574,7 @@ export default function JobDetails({ job, onClose, onStatusChange, onDelete }) {
               <div className="flex items-center gap-2.5">
                 <Package className="w-5 h-5 text-[#4B5563]" />
                 <div className="flex-1 min-w-0">
-                  <div className="text-xs text-[#4B5563] font-medium mb-0.5">Product</div>
+                  <div className="text-[12px] text-[#6B7280] font-normal leading-[1.35] mb-0.5">Product</div>
                   <EditableField
                     value={job.product}
                     onSave={(val) => handleFieldSave('product', job.product, val)}
@@ -586,7 +586,7 @@ export default function JobDetails({ job, onClose, onStatusChange, onDelete }) {
                     { value: "Multiple", label: "Multiple" },
                     { value: "Custom Garage Door", label: "Custom Garage Door" }]
                     }
-                    className="font-semibold text-[#111827] text-sm"
+                    className="text-[14px] font-medium text-[#111827] leading-[1.4]"
                     placeholder="Product" />
 
                 </div>
@@ -594,7 +594,7 @@ export default function JobDetails({ job, onClose, onStatusChange, onDelete }) {
               <div className="flex items-center gap-2.5">
                 <Briefcase className="w-5 h-5 text-[#4B5563]" />
                 <div className="flex-1 min-w-0">
-                  <div className="text-xs text-[#4B5563] font-medium mb-0.5">Job Type</div>
+                  <div className="text-[12px] text-[#6B7280] font-normal leading-[1.35] mb-0.5">Job Type</div>
                   <EditableField
                     value={job.job_type_id}
                     onSave={handleJobTypeChange}
@@ -602,7 +602,7 @@ export default function JobDetails({ job, onClose, onStatusChange, onDelete }) {
                     options={jobTypes.map((jt) => ({ value: jt.id, label: jt.name }))}
                     displayFormat={(val) => jobTypes.find((jt) => jt.id === val)?.name || val}
                     placeholder="Job type"
-                    className="font-semibold text-[#111827] text-sm" />
+                    className="text-[14px] font-medium text-[#111827] leading-[1.4]" />
 
                 </div>
               </div>
@@ -621,7 +621,7 @@ export default function JobDetails({ job, onClose, onStatusChange, onDelete }) {
               className="flex flex-col items-center gap-1 h-auto py-3 hover:bg-blue-50 hover:border-blue-200 transition-all rounded-lg">
 
                   <Phone className="w-5 h-5 text-blue-600" />
-                  <span className="text-xs font-semibold text-[#111827]">Call</span>
+                  <span className="text-[12px] font-medium text-[#111827] leading-[1.35]">Call</span>
                 </Button>
             }
               <Button
@@ -630,7 +630,7 @@ export default function JobDetails({ job, onClose, onStatusChange, onDelete }) {
               className="flex flex-col items-center gap-1 h-auto py-3 hover:bg-green-50 hover:border-green-200 transition-all rounded-lg">
 
                 <Navigation className="w-5 h-5 text-green-600" />
-                <span className="text-xs font-semibold text-[#111827]">Navigate</span>
+                <span className="text-[12px] font-medium text-[#111827] leading-[1.35]">Navigate</span>
               </Button>
               {!activeCheckIn ?
             <Button
@@ -639,7 +639,7 @@ export default function JobDetails({ job, onClose, onStatusChange, onDelete }) {
               className="flex flex-col items-center gap-1 h-auto py-3 bg-[#FAE008] hover:bg-[#E5CF07] text-[#111827] font-semibold rounded-lg">
 
                   <LogIn className="w-5 h-5" />
-                  <span className="text-xs">Check In</span>
+                  <span className="text-[12px] leading-[1.35]">Check In</span>
                 </Button> :
 
             <Button
@@ -648,7 +648,7 @@ export default function JobDetails({ job, onClose, onStatusChange, onDelete }) {
               className="flex flex-col items-center gap-1 h-auto py-3 bg-[#FAE008] hover:bg-[#E5CF07] text-[#111827] font-semibold rounded-lg">
 
                   <LogOut className="w-5 h-5" />
-                  <span className="text-xs">Check Out</span>
+                  <span className="text-[12px] leading-[1.35]">Check Out</span>
                 </Button>
             }
               <Button
@@ -657,7 +657,7 @@ export default function JobDetails({ job, onClose, onStatusChange, onDelete }) {
               className="flex flex-col items-center gap-1 h-auto py-3 hover:bg-purple-50 hover:border-purple-200 transition-all rounded-lg">
 
                 <DollarSign className="w-5 h-5 text-purple-600" />
-                <span className="text-xs font-semibold text-[#111827]">Price</span>
+                <span className="text-[12px] font-medium text-[#111827] leading-[1.35]">Price</span>
               </Button>
             </div>
           </div>
@@ -666,16 +666,16 @@ export default function JobDetails({ job, onClose, onStatusChange, onDelete }) {
         <CardContent className="p-3 md:p-4 space-y-3">
           <Tabs defaultValue="details" className="w-full">
             <TabsList className="w-full grid grid-cols-4 h-11 bg-[#F8F9FA] border border-[#E5E7EB] rounded-lg p-1">
-              <TabsTrigger value="details" className="text-sm font-semibold data-[state=active]:bg-white data-[state=active]:shadow-sm">Details</TabsTrigger>
-              <TabsTrigger value="visit" className="text-sm font-semibold data-[state=active]:bg-white data-[state=active]:shadow-sm">
+              <TabsTrigger value="details" className="text-[14px] font-medium leading-[1.4] data-[state=active]:bg-white data-[state=active]:shadow-sm">Details</TabsTrigger>
+              <TabsTrigger value="visit" className="text-[14px] font-medium leading-[1.4] data-[state=active]:bg-white data-[state=active]:shadow-sm">
                 <ClipboardCheck className="w-4 h-4 mr-1.5" />
                 <span className="hidden md:inline">Visit</span>
               </TabsTrigger>
-              <TabsTrigger value="form" className="text-sm font-semibold data-[state=active]:bg-white data-[state=active]:shadow-sm">
+              <TabsTrigger value="form" className="text-[14px] font-medium leading-[1.4] data-[state=active]:bg-white data-[state=active]:shadow-sm">
                 <FileCheck className="w-4 h-4 mr-1.5" />
                 <span className="hidden md:inline">Form</span>
               </TabsTrigger>
-              <TabsTrigger value="files" className="text-sm font-semibold data-[state=active]:bg-white data-[state=active]:shadow-sm">
+              <TabsTrigger value="files" className="text-[14px] font-medium leading-[1.4] data-[state=active]:bg-white data-[state=active]:shadow-sm">
                 <ImageIcon className="w-4 h-4 mr-1.5" />
                 <span className="hidden md:inline">Files</span>
               </TabsTrigger>
@@ -684,7 +684,7 @@ export default function JobDetails({ job, onClose, onStatusChange, onDelete }) {
             <TabsContent value="details" className="space-y-3 mt-3">
               {job.project_id && projectJobs.length > 0 &&
               <div className="bg-blue-50 border-2 border-blue-200 rounded-xl p-3">
-                  <h3 className="text-sm font-bold text-blue-900 mb-2 flex items-center gap-1.5">
+                  <h3 className="text-[14px] font-semibold text-blue-900 leading-[1.4] mb-2 flex items-center gap-1.5">
                     <FolderKanban className="w-4 h-4" />
                     Project Job History ({projectJobs.length})
                   </h3>
@@ -730,7 +730,7 @@ export default function JobDetails({ job, onClose, onStatusChange, onDelete }) {
                 <CardHeader className="bg-[#F8F9FA] px-4 py-3 border-b border-[#E5E7EB]">
                   <div className="flex items-center gap-2">
                     <FileText className="w-4 h-4 text-[#6B7280]" />
-                    <h3 className="text-sm font-bold text-[#111827]">Notes</h3>
+                    <h3 className="text-[14px] font-semibold text-[#111827] leading-[1.4]">Notes</h3>
                   </div>
                 </CardHeader>
                 <CardContent className="p-3">
@@ -747,7 +747,7 @@ export default function JobDetails({ job, onClose, onStatusChange, onDelete }) {
                 <CardHeader className="bg-[#F8F9FA] px-4 py-3 border-b border-[#E5E7EB]">
                   <div className="flex items-center gap-2">
                     <DollarSign className="w-4 h-4 text-[#6B7280]" />
-                    <h3 className="text-sm font-bold text-[#111827]">Pricing</h3>
+                    <h3 className="text-[14px] font-semibold text-[#111827] leading-[1.4]">Pricing</h3>
                   </div>
                 </CardHeader>
                 <CardContent className="p-3">
@@ -765,7 +765,7 @@ export default function JobDetails({ job, onClose, onStatusChange, onDelete }) {
                 <CardHeader className="bg-[#F8F9FA] px-4 py-3 border-b border-[#E5E7EB]">
                   <div className="flex items-center gap-2">
                     <FileText className="w-4 h-4 text-[#6B7280]" />
-                    <h3 className="text-sm font-bold text-[#111827]">Additional Info</h3>
+                    <h3 className="text-[14px] font-semibold text-[#111827] leading-[1.4]">Additional Info</h3>
                   </div>
                 </CardHeader>
                 <CardContent className="p-3">
@@ -865,7 +865,7 @@ export default function JobDetails({ job, onClose, onStatusChange, onDelete }) {
             <TabsContent value="visit" className="space-y-3 mt-2">
               <div className="space-y-3">
                 <div>
-                  <Label className="text-sm font-bold text-[#000000] mb-1.5 block">Overview *</Label>
+                  <Label className="text-[14px] font-semibold text-[#111827] leading-[1.4] mb-1.5 block">Overview *</Label>
                   <div className="border-2 border-slate-300 rounded-xl p-2.5 focus-within:border-[#fae008] focus-within:ring-2 focus-within:ring-[#fae008]/20 transition-all">
                     <RichTextEditor
                       value={overview}
@@ -877,7 +877,7 @@ export default function JobDetails({ job, onClose, onStatusChange, onDelete }) {
                 </div>
 
                 <div>
-                  <Label className="text-sm font-bold text-[#000000] mb-1.5 block">Next Steps *</Label>
+                  <Label className="text-[14px] font-semibold text-[#111827] leading-[1.4] mb-1.5 block">Next Steps *</Label>
                   <div className="border-2 border-slate-300 rounded-xl p-2.5 focus-within:border-[#fae008] focus-within:ring-2 focus-within:ring-[#fae008]/20 transition-all">
                     <RichTextEditor
                       value={nextSteps}
@@ -889,7 +889,7 @@ export default function JobDetails({ job, onClose, onStatusChange, onDelete }) {
                 </div>
 
                 <div>
-                  <Label className="text-sm font-bold text-[#000000] mb-1.5 block">Communication *</Label>
+                  <Label className="text-[14px] font-semibold text-[#111827] leading-[1.4] mb-1.5 block">Communication *</Label>
                   <div className="border-2 border-slate-300 rounded-xl p-2.5 focus-within:border-[#fae008] focus-within:ring-2 focus-within:ring-[#fae008]/20 transition-all">
                     <RichTextEditor
                       value={communicationWithClient}
@@ -901,7 +901,7 @@ export default function JobDetails({ job, onClose, onStatusChange, onDelete }) {
                 </div>
 
                 <div>
-                  <Label className="text-sm font-bold text-[#000000] mb-1.5 block">Outcome *</Label>
+                  <Label className="text-[14px] font-semibold text-[#111827] leading-[1.4] mb-1.5 block">Outcome *</Label>
                   <Select value={outcome} onValueChange={handleOutcomeChange}>
                     <SelectTrigger className="h-11 text-sm border-2 border-slate-300 focus:border-[#fae008] focus:ring-2 focus:ring-[#fae008]/20 rounded-xl font-medium">
                       <SelectValue placeholder="Select outcome" />
@@ -940,7 +940,7 @@ export default function JobDetails({ job, onClose, onStatusChange, onDelete }) {
               {completedCheckIns.length > 0 &&
               <Collapsible defaultOpen={false} className="pt-3 border-t-2">
                   <CollapsibleTrigger className="flex items-center justify-between w-full group bg-slate-50 border-2 border-slate-200 rounded-xl p-3 hover:bg-slate-100 transition-colors">
-                    <h4 className="text-sm font-bold text-[#000000]">Time Tracking ({completedCheckIns.length})</h4>
+                    <h4 className="text-[14px] font-semibold text-[#111827] leading-[1.4]">Time Tracking ({completedCheckIns.length})</h4>
                     <ChevronDown className="w-4 h-4 text-slate-500 transition-transform group-data-[state=open]:rotate-180" />
                   </CollapsibleTrigger>
                   
@@ -1042,7 +1042,7 @@ export default function JobDetails({ job, onClose, onStatusChange, onDelete }) {
 
             <TabsContent value="form" className="mt-2">
               <div className="space-y-2.5">
-                <h3 className="text-sm font-bold text-[#000000]">Measurements</h3>
+                <h3 className="text-[14px] font-semibold text-[#111827] leading-[1.4]">Measurements</h3>
                 <MeasurementsForm
                   measurements={measurements}
                   onChange={handleMeasurementsChange} />
@@ -1170,8 +1170,8 @@ export default function JobDetails({ job, onClose, onStatusChange, onDelete }) {
       <AlertDialog open={showDeleteConfirm} onOpenChange={setShowDeleteConfirm}>
         <AlertDialogContent className="rounded-2xl border-2 border-slate-200">
           <AlertDialogHeader>
-            <AlertDialogTitle className="text-xl font-bold text-[#000000]">Delete Job?</AlertDialogTitle>
-            <AlertDialogDescription className="text-slate-600">
+            <AlertDialogTitle className="text-[22px] font-semibold text-[#111827] leading-[1.2]">Delete Job?</AlertDialogTitle>
+            <AlertDialogDescription className="text-[14px] text-slate-600 leading-[1.4]">
               This job will be moved to the archive. You can restore it within 30 days.
             </AlertDialogDescription>
           </AlertDialogHeader>
