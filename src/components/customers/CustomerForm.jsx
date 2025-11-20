@@ -6,7 +6,7 @@ import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { ArrowLeft, Plus } from "lucide-react";
-import RichTextEditor from "../common/RichTextEditor";
+import RichTextField from "../common/RichTextField";
 import { base44 } from "@/api/base44Client";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import {
@@ -212,14 +212,13 @@ export default function CustomerForm({ customer, onSubmit, onCancel, isSubmittin
               </Select>
             </div>
 
-            <div className="space-y-2">
-              <Label htmlFor="notes">Notes</Label>
-              <RichTextEditor
-                value={formData.notes}
-                onChange={(value) => setFormData({ ...formData, notes: value })}
-                placeholder="Add any notes about the customer..."
-              />
-            </div>
+            <RichTextField
+              label="Notes"
+              value={formData.notes}
+              onChange={(value) => setFormData({ ...formData, notes: value })}
+              placeholder="Add any notes about the customer…"
+              helperText="Internal only"
+            />
           </CardContent>
           <CardFooter className="border-t border-slate-100 flex justify-end gap-3">
             <Button type="button" variant="outline" onClick={onCancel}>
