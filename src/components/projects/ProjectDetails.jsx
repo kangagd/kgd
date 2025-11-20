@@ -23,21 +23,14 @@ import {
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
 
-const projectStatusColors = {
-  "Lead": "bg-gray-100 text-gray-700",
-  "Initial Site Visit": "bg-blue-100 text-blue-700",
-  "Quote Sent": "bg-purple-100 text-purple-700",
-  "Quote Approved": "bg-indigo-100 text-indigo-700",
-  "Final Measure": "bg-cyan-100 text-cyan-700",
-  "Parts Ordered": "bg-orange-100 text-orange-700",
-  "Scheduled": "bg-yellow-100 text-yellow-700",
-  "Completed": "bg-green-100 text-green-700"
-};
-
-const financialStatusColors = {
-  "50% payment made": "bg-amber-100 text-amber-700",
-  "30% payment made (install)": "bg-orange-100 text-orange-700",
-  "Balance paid in full": "bg-emerald-100 text-emerald-700"
+const statusColors = {
+  open: "bg-slate-100 text-slate-800",
+  scheduled: "bg-blue-100 text-blue-800",
+  quoted: "bg-purple-100 text-purple-800",
+  invoiced: "bg-indigo-100 text-indigo-800",
+  paid: "bg-green-100 text-green-800",
+  completed: "bg-emerald-100 text-emerald-800",
+  cancelled: "bg-slate-100 text-slate-800"
 };
 
 const projectTypeColors = {
@@ -49,10 +42,13 @@ const projectTypeColors = {
 };
 
 const jobStatusColors = {
-  "Open": "bg-slate-100 text-slate-800",
-  "Scheduled": "bg-blue-100 text-blue-800",
-  "Completed": "bg-green-100 text-green-800",
-  "Cancelled": "bg-red-100 text-red-800"
+  open: "bg-slate-100 text-slate-800",
+  scheduled: "bg-blue-100 text-blue-800",
+  quoted: "bg-purple-100 text-purple-800",
+  invoiced: "bg-indigo-100 text-indigo-800",
+  paid: "bg-green-100 text-green-800",
+  completed: "bg-emerald-100 text-emerald-800",
+  cancelled: "bg-slate-100 text-slate-800"
 };
 
 export default function ProjectDetails({ project, onClose, onEdit, onDelete }) {
@@ -270,29 +266,56 @@ export default function ProjectDetails({ project, onClose, onEdit, onDelete }) {
               />
             )}
             <EditableField
-              value={project.project_status || "Lead"}
-              onSave={(val) => handleFieldSave('project_status', project.project_status, val)}
+              value={project.status}
+              onSave={(val) => handleFieldSave('status', project.status, val)}
               type="select"
               options={[
-                { value: "Lead", label: "Lead" },
-                { value: "Initial Site Visit", label: "Initial Site Visit" },
-                { value: "Quote Sent", label: "Quote Sent" },
-                { value: "Quote Approved", label: "Quote Approved" },
-                { value: "Final Measure", label: "Final Measure" },
-                { value: "Parts Ordered", label: "Parts Ordered" },
-                { value: "Scheduled", label: "Scheduled" },
-                { value: "Completed", label: "Completed" }
+                { value: "open", label: "Open" },
+                { value: "scheduled", label: "Scheduled" },
+                { value: "quoted", label: "Quoted" },
+                { value: "invoiced", label: "Invoiced" },
+                { value: "paid", label: "Paid" },
+                { value: "completed", label: "Completed" },
+                { value: "cancelled", label: "Cancelled" }
               ]}
               displayFormat={(val) => (
-                <Badge className={`${projectStatusColors[val] || projectStatusColors["Lead"]} font-semibold border-0 px-3 py-1 rounded-lg text-xs`}>
-                  {val}
+                <Badge className={`${statusColors[val]} font-semibold border-0 px-2.5 py-0.5 rounded-lg text-xs`}>
+                  {val.charAt(0).toUpperCase() + val.slice(1)}
                 </Badge>
               )}
             />
-            {project.financial_status && (
-              <Badge className={`${financialStatusColors[project.financial_status]} font-semibold border-0 px-2.5 py-0.5 rounded-lg text-xs`}>
-                {project.financial_status}
-              </Badge>
+            {project.stage && (
+              <EditableField
+                value={project.stage}
+                onSave={(val) => handleFieldSave('stage', project.stage, val)}
+                type="select"
+                options={[
+                  { value: "lead_in", label: "Lead In" },
+                  { value: "measure", label: "Measure" },
+                  { value: "quote_prepared", label: "Quote Prepared" },
+                  { value: "quote_sent", label: "Quote Sent" },
+                  { value: "quote_accepted", label: "Quote Accepted" },
+                  { value: "materials_ordered", label: "Materials Ordered" },
+                  { value: "installation_scheduled", label: "Installation Scheduled" },
+                  { value: "installation_completed", label: "Installation Completed" },
+                  { value: "qa_aftercare", label: "QA Aftercare" },
+                  { value: "final_invoice", label: "Final Invoice" },
+                  { value: "project_closed", label: "Project Closed" },
+                  { value: "diagnose", label: "Diagnose" },
+                  { value: "repair_scheduled", label: "Repair Scheduled" },
+                  { value: "repair_completed", label: "Repair Completed" },
+                  { value: "maintenance_performed", label: "Maintenance Performed" },
+                  { value: "report_delivered", label: "Report Delivered" }
+                ]}
+                displayFormat={(val) => {
+                  const formatted = val.replace(/_/g, ' ');
+                  return (
+                    <Badge variant="outline" className="font-semibold border-[#E5E7EB] px-2.5 py-0.5 rounded-lg text-xs">
+                      {formatted.charAt(0).toUpperCase() + formatted.slice(1)}
+                    </Badge>
+                  );
+                }}
+              />
             )}
             {customer?.customer_type && (
               <Badge className="bg-[#EDE9FE] text-[#6D28D9] hover:bg-[#EDE9FE] border-0 font-semibold px-2.5 py-0.5 rounded-lg text-xs">
@@ -666,8 +689,8 @@ export default function ProjectDetails({ project, onClose, onEdit, onDelete }) {
                               <Badge className="bg-white text-[#6B7280] hover:bg-white border border-[#E5E7EB] font-medium text-xs px-2.5 py-0.5 rounded-lg">
                                 #{job.job_number}
                               </Badge>
-                              <Badge className={`${jobStatusColors[job.job_status || job.status]} hover:${jobStatusColors[job.job_status || job.status]} border-0 font-semibold text-xs px-3 py-1 rounded-lg`}>
-                                {job.job_status || job.status}
+                              <Badge className={`${jobStatusColors[job.status]} hover:${jobStatusColors[job.status]} border-0 font-semibold text-xs px-3 py-1 rounded-lg`}>
+                                {job.status}
                               </Badge>
                               {job.job_type_name && (
                                 <Badge className="bg-[#EDE9FE] text-[#6D28D9] hover:bg-[#EDE9FE] border-0 font-semibold text-xs px-3 py-1 rounded-lg">
