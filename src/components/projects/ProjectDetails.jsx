@@ -455,6 +455,13 @@ export default function ProjectDetails({ project: initialProject, onClose, onEdi
         </div>
 
         <div className="space-y-3">
+          {project.created_date && (
+            <div className="text-[12px] text-[#6B7280] leading-[1.35]">
+              Opened on {new Date(project.created_date).toLocaleDateString('en-AU', { day: 'numeric', month: 'short', year: 'numeric' })} 
+              {' '}({Math.floor((new Date() - new Date(project.created_date)) / (1000 * 60 * 60 * 24))} days)
+            </div>
+          )}
+
           <div className="bg-white p-3 rounded-lg border border-[#E5E7EB] overflow-hidden">
             <div className="text-[12px] font-medium text-[#4B5563] leading-[1.35] mb-2 uppercase tracking-wide">Project Stage</div>
             <ProjectStageSelector
