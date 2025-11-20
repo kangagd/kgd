@@ -370,6 +370,12 @@ export default function JobDetails({ job: initialJob, onClose, onStatusChange, o
     logChange('outcome', job.outcome, value);
     updateJobMutation.mutate({ field: 'outcome', value });
 
+    // Auto-update status for Initial Site Visit -> new_quote
+    if (job.job_type_name === "Initial Site Visit" && value === "new_quote") {
+      updateJobMutation.mutate({ field: 'status', value: "Open" });
+      return;
+    }
+
     // Update status based on centralized logic - check if there's an active check-in
     const newStatus = determineJobStatus(job.scheduled_date, value, !!activeCheckIn, job.status);
     if (newStatus !== job.status) {
