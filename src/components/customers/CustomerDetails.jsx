@@ -2,7 +2,7 @@ import React, { useState } from "react";
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { ArrowLeft, Edit, Phone, Mail, Briefcase, Plus, Tag, Trash2, Building2 } from "lucide-react";
+import { ArrowLeft, Edit, Phone, Mail, Briefcase, Plus, Tag, Trash2, Building2, MapPin } from "lucide-react";
 import { useQuery } from "@tanstack/react-query";
 import { base44 } from "@/api/base44Client";
 import { Link, useNavigate } from "react-router-dom";
@@ -126,8 +126,19 @@ export default function CustomerDetails({ customer, onClose, onEdit, onDelete })
           <div className="bg-[#F8F9FA] rounded-lg p-4">
             <h3 className="text-[14px] font-semibold text-[#111827] leading-[1.4] mb-3">Contact Information</h3>
             <div className="space-y-3">
+              {customer.address && (
+                <div className="flex items-start gap-2.5">
+                  <MapPin className="w-5 h-5 text-[#4B5563] mt-0.5" />
+                  <div className="flex-1 min-w-0">
+                    <div className="text-[12px] text-[#6B7280] font-normal leading-[1.35] mb-0.5">Address</div>
+                    <div className="text-[14px] font-medium text-[#111827] leading-[1.4]">
+                      {customer.address}
+                    </div>
+                  </div>
+                </div>
+              )}
               {customer.phone && (
-                <div className="flex items-center gap-2.5">
+                <div className={`flex items-center gap-2.5 ${customer.address ? 'pt-3 border-t border-[#E5E7EB]' : ''}`}>
                   <Phone className="w-5 h-5 text-[#4B5563]" />
                   <div className="flex-1 min-w-0">
                     <div className="text-[12px] text-[#6B7280] font-normal leading-[1.35] mb-0.5">Phone</div>
