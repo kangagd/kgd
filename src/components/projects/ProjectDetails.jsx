@@ -44,6 +44,8 @@ const projectTypeColors = {
   "Garage Door Install": "bg-blue-100 text-blue-700",
   "Gate Install": "bg-green-100 text-green-700",
   "Roller Shutter Install": "bg-purple-100 text-purple-700",
+  "Multiple": "bg-pink-100 text-pink-700",
+  "Motor/Accessory": "bg-cyan-100 text-cyan-700",
   "Repair": "bg-orange-100 text-orange-700",
   "Maintenance": "bg-indigo-100 text-indigo-700"
 };
