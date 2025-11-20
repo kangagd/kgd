@@ -395,22 +395,7 @@ export default function ProjectForm({ project, onSubmit, onCancel, isSubmitting 
               </Select>
             </div>
 
-            <div className="space-y-2">
-              <Label>Assigned Technicians</Label>
-              <div className="grid grid-cols-2 gap-2 border-2 border-slate-300 rounded-xl p-3">
-                {technicians.map((tech) => (
-                  <label key={tech.email} className="flex items-center gap-2 cursor-pointer hover:bg-slate-50 p-2 rounded">
-                    <input
-                      type="checkbox"
-                      checked={(formData.assigned_technicians || []).includes(tech.email)}
-                      onChange={() => handleTechnicianToggle(tech.email)}
-                      className="w-4 h-4"
-                    />
-                    <span className="text-sm">{tech.full_name}</span>
-                  </label>
-                ))}
-              </div>
-            </div>
+
 
             <div className="space-y-2">
               <Label htmlFor="description">Description</Label>
