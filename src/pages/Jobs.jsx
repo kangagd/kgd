@@ -248,12 +248,11 @@ export default function Jobs() {
 
           {viewMode === "list" && (
             <Tabs value={statusFilter} onValueChange={setStatusFilter}>
-              <TabsList className="w-full grid grid-cols-5 h-12 bg-white border border-[#E5E7EB]">
+              <TabsList className="w-full grid grid-cols-4 h-12 bg-white border border-[#E5E7EB]">
                 <TabsTrigger value="all" className="font-semibold data-[state=active]:bg-[#FAE008] data-[state=active]:text-[#111827]">All</TabsTrigger>
                 <TabsTrigger value="Open" className="font-semibold data-[state=active]:bg-[#FAE008] data-[state=active]:text-[#111827]">Open</TabsTrigger>
                 <TabsTrigger value="Scheduled" className="font-semibold data-[state=active]:bg-[#FAE008] data-[state=active]:text-[#111827]">Scheduled</TabsTrigger>
                 <TabsTrigger value="Completed" className="font-semibold data-[state=active]:bg-[#FAE008] data-[state=active]:text-[#111827]">Completed</TabsTrigger>
-                <TabsTrigger value="Cancelled" className="font-semibold data-[state=active]:bg-[#FAE008] data-[state=active]:text-[#111827]">Cancelled</TabsTrigger>
               </TabsList>
             </Tabs>
           )}
