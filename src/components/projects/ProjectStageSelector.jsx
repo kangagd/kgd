@@ -64,7 +64,7 @@ export default function ProjectStageSelector({ currentStage, onStageChange, size
 
   return (
     <>
-      <div className={`flex items-center gap-2 ${isCompact ? 'overflow-x-auto scrollbar-hide' : 'flex-wrap'}`}>
+      <div className="flex items-center gap-1.5 overflow-x-auto scrollbar-hide pb-1">
         {PROJECT_STAGES.map((stage, index) => {
           const isPast = index < currentIndex;
           const isCurrent = index === currentIndex;
@@ -76,16 +76,16 @@ export default function ProjectStageSelector({ currentStage, onStageChange, size
               disabled={isCurrent}
               className={`
                 ${getStageStyle(stage, index)}
-                ${isCompact ? 'px-3 py-1.5 text-xs whitespace-nowrap' : 'px-4 py-2 text-sm'}
-                min-h-[44px]
-                rounded-full border-2 transition-all duration-200
+                px-2.5 py-1 text-xs whitespace-nowrap
+                min-h-[32px]
+                rounded-full border transition-all duration-200
                 hover:shadow-md hover:scale-105
                 active:scale-95
                 disabled:cursor-default disabled:hover:scale-100
-                flex items-center gap-1.5 flex-shrink-0
+                flex items-center gap-1 flex-shrink-0
               `}
             >
-              {isPast && <Check className={`${isCompact ? 'w-3 h-3' : 'w-4 h-4'} flex-shrink-0`} />}
+              {isPast && <Check className="w-3 h-3 flex-shrink-0" />}
               <span className={isCurrent ? 'font-bold' : ''}>{stage}</span>
             </button>
           );
