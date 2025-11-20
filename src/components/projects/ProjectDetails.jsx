@@ -24,6 +24,7 @@ import {
 } from "@/components/ui/alert-dialog";
 import ProjectChangeHistoryModal from "./ProjectChangeHistoryModal";
 import ProjectStageSelector from "./ProjectStageSelector";
+import PartsSection from "./PartsSection";
 
 const statusColors = {
   "Lead": "bg-slate-100 text-slate-800",
@@ -68,6 +69,7 @@ export default function ProjectDetails({ project, onClose, onEdit, onDelete }) {
   const [newDoor, setNewDoor] = useState({ height: "", width: "", type: "", style: "" });
   const [showAddDoor, setShowAddDoor] = useState(false);
   const [showHistory, setShowHistory] = useState(false);
+  const [activeTab, setActiveTab] = useState("overview");
 
   const { data: projectJobs = [] } = useQuery({
     queryKey: ['projectJobs', project.id],
@@ -212,6 +214,12 @@ export default function ProjectDetails({ project, onClose, onEdit, onDelete }) {
   };
 
   const isInstallType = project.project_type && project.project_type.includes("Install");
+
+  React.useEffect(() => {
+    if (project.status === "Parts Ordered") {
+      setActiveTab("parts");
+    }
+  }, [project.status]);
 
   return (
     <div className="relative flex gap-4">
@@ -486,9 +494,10 @@ export default function ProjectDetails({ project, onClose, onEdit, onDelete }) {
         </CardHeader>
 
       <CardContent className="p-3 md:p-4">
-        <Tabs defaultValue="overview" className="w-full">
-          <TabsList className="w-full grid grid-cols-3 h-11 bg-[#F8F9FA] border border-[#E5E7EB] rounded-lg p-1">
+        <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
+          <TabsList className="w-full grid grid-cols-4 h-11 bg-[#F8F9FA] border border-[#E5E7EB] rounded-lg p-1">
             <TabsTrigger value="overview" className="text-[14px] font-medium leading-[1.4] data-[state=active]:bg-white data-[state=active]:shadow-sm">Overview</TabsTrigger>
+            <TabsTrigger value="parts" className="text-[14px] font-medium leading-[1.4] data-[state=active]:bg-white data-[state=active]:shadow-sm">Parts</TabsTrigger>
             <TabsTrigger value="images" className="text-[14px] font-medium leading-[1.4] data-[state=active]:bg-white data-[state=active]:shadow-sm">
               <ImageIcon className="w-4 h-4 mr-1.5" />
               <span className="hidden md:inline">Images</span>
@@ -606,6 +615,13 @@ export default function ProjectDetails({ project, onClose, onEdit, onDelete }) {
                 </div>
               </div>
             )}
+          </TabsContent>
+
+          <TabsContent value="parts" className="mt-3">
+            <PartsSection 
+              projectId={project.id} 
+              autoExpand={project.status === "Parts Ordered"} 
+            />
           </TabsContent>
 
           <TabsContent value="images" className="mt-3">
