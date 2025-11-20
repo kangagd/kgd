@@ -539,8 +539,8 @@ export default function ProjectDetails({ project, onClose, onEdit, onDelete }) {
                 
                 <div className="bg-white rounded-lg p-4 border border-[#E5E7EB]">
                 
-                {project.doors && project.doors.length > 0 && (
-                  <div className="flex flex-wrap gap-2 mb-3">
+                {project.doors && project.doors.length > 0 ? (
+                  <div className="flex flex-wrap gap-2">
                     {project.doors.map((door, idx) => (
                       <div key={idx} className="relative group">
                         <Badge variant="outline" className="bg-blue-50 border-blue-200 text-blue-700 font-medium px-3 py-1.5 text-sm pr-8">
@@ -557,6 +557,8 @@ export default function ProjectDetails({ project, onClose, onEdit, onDelete }) {
                       </div>
                     ))}
                   </div>
+                ) : !showAddDoor && (
+                  <p className="text-[14px] text-[#9CA3AF]">No doors added yet</p>
                 )}
                 
                 {showAddDoor && (
