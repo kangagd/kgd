@@ -93,6 +93,7 @@ export default function ProjectDetails({ project, onClose, onEdit, onDelete }) {
     mutationFn: ({ field, value }) => base44.entities.Project.update(project.id, { [field]: value }),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['projects'] });
+      queryClient.invalidateQueries({ queryKey: ['allProjects'] });
     }
   });
 
