@@ -69,7 +69,15 @@ export default function JobCard({ job, onClick }) {
             {job.scheduled_date && (
               <div className="flex items-center gap-1.5">
                 <Calendar className="w-4 h-4 text-[#6B7280]" />
-                <span>{format(parseISO(job.scheduled_date), 'MMM d, yyyy')}</span>
+                <span>
+                  {(() => {
+                    try {
+                      return format(parseISO(job.scheduled_date), 'MMM d, yyyy');
+                    } catch {
+                      return job.scheduled_date;
+                    }
+                  })()}
+                </span>
               </div>
             )}
             {job.scheduled_time && (
@@ -107,7 +115,15 @@ export default function JobCard({ job, onClick }) {
                 <div className="bg-[#F8F9FA] rounded-lg p-3 space-y-2 text-sm">
                   <div className="flex items-center justify-between text-xs text-[#6B7280]">
                     <span>{latestVisit.technician_name}</span>
-                    <span>{format(new Date(latestVisit.check_out_time), 'MMM d, h:mm a')}</span>
+                    <span>
+                      {(() => {
+                        try {
+                          return format(new Date(latestVisit.check_out_time), 'MMM d, h:mm a');
+                        } catch {
+                          return 'Recently';
+                        }
+                      })()}
+                    </span>
                   </div>
                   {latestVisit.overview && (
                     <div 
