@@ -764,21 +764,26 @@ export default function JobDetails({ job: initialJob, onClose, onStatusChange, o
         
         <CardContent className="p-3 md:p-4 space-y-3">
           <Tabs defaultValue="details" className="w-full">
-            <TabsList className="w-full grid grid-cols-4 h-11 bg-[#F8F9FA] border border-[#E5E7EB] rounded-lg p-1">
-              <TabsTrigger value="details" className="text-[14px] font-medium leading-[1.4] data-[state=active]:bg-white data-[state=active]:shadow-sm">Details</TabsTrigger>
-              <TabsTrigger value="visit" className="text-[14px] font-medium leading-[1.4] data-[state=active]:bg-white data-[state=active]:shadow-sm">
-                <ClipboardCheck className="w-4 h-4 mr-1.5" />
-                <span className="hidden md:inline">Visit</span>
-              </TabsTrigger>
-              <TabsTrigger value="form" className="text-[14px] font-medium leading-[1.4] data-[state=active]:bg-white data-[state=active]:shadow-sm">
-                <FileCheck className="w-4 h-4 mr-1.5" />
-                <span className="hidden md:inline">Form</span>
-              </TabsTrigger>
-              <TabsTrigger value="files" className="text-[14px] font-medium leading-[1.4] data-[state=active]:bg-white data-[state=active]:shadow-sm">
-                <ImageIcon className="w-4 h-4 mr-1.5" />
-                <span className="hidden md:inline">Files</span>
-              </TabsTrigger>
-            </TabsList>
+            <div className="mb-4">
+              <TabsList className="inline-flex bg-white rounded-full p-1.5 gap-2 overflow-x-auto w-full md:w-auto">
+                <TabsTrigger value="details">Details</TabsTrigger>
+                <TabsTrigger value="visit">
+                  <ClipboardCheck className="w-4 h-4 mr-1.5" />
+                  <span className="hidden md:inline">Visit</span>
+                  <span className="md:hidden">Visit</span>
+                </TabsTrigger>
+                <TabsTrigger value="form">
+                  <FileCheck className="w-4 h-4 mr-1.5" />
+                  <span className="hidden md:inline">Form</span>
+                  <span className="md:hidden">Form</span>
+                </TabsTrigger>
+                <TabsTrigger value="files">
+                  <ImageIcon className="w-4 h-4 mr-1.5" />
+                  <span className="hidden md:inline">Files</span>
+                  <span className="md:hidden">Files</span>
+                </TabsTrigger>
+              </TabsList>
+            </div>
 
             <TabsContent value="details" className="space-y-3 mt-3">
               {job.project_id && projectJobs.length > 0 &&

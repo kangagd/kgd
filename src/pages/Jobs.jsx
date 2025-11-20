@@ -247,15 +247,17 @@ export default function Jobs() {
           </div>
 
           {viewMode === "list" && (
-            <Tabs value={statusFilter} onValueChange={setStatusFilter}>
-              <TabsList className="w-full grid grid-cols-4 h-12 bg-white border border-[#E5E7EB]">
-                <TabsTrigger value="all" className="font-semibold data-[state=active]:bg-[#FAE008] data-[state=active]:text-[#111827] text-xs md:text-sm">All</TabsTrigger>
-                <TabsTrigger value="Open" className="font-semibold data-[state=active]:bg-[#FAE008] data-[state=active]:text-[#111827] text-xs md:text-sm">Open</TabsTrigger>
-                <TabsTrigger value="Scheduled" className="font-semibold data-[state=active]:bg-[#FAE008] data-[state=active]:text-[#111827] text-xs md:text-sm">Scheduled</TabsTrigger>
-                <TabsTrigger value="Completed" className="font-semibold data-[state=active]:bg-[#FAE008] data-[state=active]:text-[#111827] text-xs md:text-sm">Completed</TabsTrigger>
-              </TabsList>
-            </Tabs>
-          )}
+              <Tabs value={statusFilter} onValueChange={setStatusFilter}>
+                <div className="overflow-x-auto -mx-5 px-5 md:mx-0 md:px-0">
+                  <TabsList className="inline-flex bg-white rounded-full p-1.5 gap-2 min-w-max">
+                    <TabsTrigger value="all">All</TabsTrigger>
+                    <TabsTrigger value="Open">Open</TabsTrigger>
+                    <TabsTrigger value="Scheduled">Scheduled</TabsTrigger>
+                    <TabsTrigger value="Completed">Completed</TabsTrigger>
+                  </TabsList>
+                </div>
+              </Tabs>
+            )}
         </div>
 
         {viewMode === "list" ? (

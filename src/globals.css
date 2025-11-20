@@ -161,12 +161,41 @@ css
     @apply transition-all duration-150 active:bg-[#F3F4F6] min-h-[44px] rounded-lg text-[14px];
   }
   
+  /* Tab Design System */
+
+  /* Tab Container */
+  [role="tablist"] {
+    @apply bg-white rounded-full p-1.5 overflow-x-auto overflow-y-hidden;
+    scrollbar-width: none;
+    -ms-overflow-style: none;
+    scroll-behavior: smooth;
+  }
+
+  [role="tablist"]::-webkit-scrollbar {
+    display: none;
+  }
+
+  /* Tab Triggers */
+  [role="tab"] {
+    @apply px-4 py-2 text-[15px] font-medium text-[#4B5563] rounded-full transition-all duration-200;
+    @apply hover:bg-[#E5E7EB] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#FAE008] focus-visible:ring-offset-2;
+    white-space: nowrap;
+  }
+
+  [role="tab"][data-state="active"] {
+    @apply bg-[#FAE008] text-[#000000] shadow-sm font-semibold;
+  }
+
+  [role="tab"]:disabled {
+    @apply opacity-50 cursor-not-allowed hover:bg-transparent;
+  }
+
   /* Text Field Design System */
 
-  /* Labels */
-  label, .field-label {
-    @apply block text-[13px] md:text-[14px] font-medium text-[#4B5563] mb-1.5;
-  }
+    /* Labels */
+    label, .field-label {
+      @apply block text-[13px] md:text-[14px] font-medium text-[#4B5563] mb-1.5;
+    }
 
   /* Helper Text */
   .helper-text {
