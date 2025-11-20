@@ -149,10 +149,114 @@
     @apply transition-all duration-150 active:bg-[#F3F4F6] min-h-[44px] rounded-lg text-[14px];
   }
   
-  /* Form inputs */
-  .input-enhanced {
-    @apply border-[#E5E7EB] focus:border-[#FAE008] focus:ring-2 focus:ring-[#FAE008]/20;
-    @apply transition-all duration-150 rounded-lg text-[14px];
+  /* Text Field Design System */
+
+  /* Labels */
+  label, .field-label {
+    @apply block text-[13px] md:text-[14px] font-medium text-[#4B5563] mb-1.5;
+  }
+
+  /* Base Input Styles */
+  input[type="text"],
+  input[type="email"],
+  input[type="tel"],
+  input[type="number"],
+  input[type="password"],
+  input[type="search"],
+  input[type="url"],
+  input[type="date"],
+  input[type="time"],
+  input[type="datetime-local"],
+  select,
+  textarea,
+  .input-field {
+    @apply w-full bg-white border border-[#E5E7EB] rounded-[10px] px-3 md:px-[14px] py-2.5 md:py-3;
+    @apply text-[14px] text-[#111827] leading-[1.4];
+    @apply transition-all duration-200;
+    @apply placeholder:text-[#9CA3AF];
+  }
+
+  /* Focus State */
+  input[type="text"]:focus,
+  input[type="email"]:focus,
+  input[type="tel"]:focus,
+  input[type="number"]:focus,
+  input[type="password"]:focus,
+  input[type="search"]:focus,
+  input[type="url"]:focus,
+  input[type="date"]:focus,
+  input[type="time"]:focus,
+  input[type="datetime-local"]:focus,
+  select:focus,
+  textarea:focus,
+  .input-field:focus {
+    @apply outline-none border-[#111827] ring-2 ring-[#111827]/5;
+  }
+
+  /* Disabled State */
+  input:disabled,
+  select:disabled,
+  textarea:disabled,
+  .input-field:disabled {
+    @apply bg-[#F3F4F6] border-[#E5E7EB] text-[#6B7280] cursor-not-allowed;
+  }
+
+  /* Read-only State */
+  input:read-only,
+  textarea:read-only {
+    @apply bg-[#F3F4F6] border-[#E5E7EB] text-[#6B7280];
+  }
+
+  /* Error State */
+  .input-error,
+  input.error,
+  textarea.error,
+  select.error {
+    @apply border-[#DC2626] focus:ring-[#DC2626]/10;
+  }
+
+  .error-message {
+    @apply block text-[12px] md:text-[13px] text-[#DC2626] mt-1.5;
+  }
+
+  /* Textarea Specific */
+  textarea {
+    @apply min-h-[120px] resize-y;
+  }
+
+  /* Rich Text Editor Container */
+  .rich-text-editor {
+    @apply bg-white border border-[#E5E7EB] rounded-[10px] overflow-hidden;
+    @apply transition-all duration-200;
+  }
+
+  .rich-text-editor:focus-within {
+    @apply border-[#111827] ring-2 ring-[#111827]/5;
+  }
+
+  .rich-text-editor .ql-toolbar {
+    @apply border-0 border-b border-[#E5E7EB] bg-[#F8F9FA] px-3 py-2;
+  }
+
+  .rich-text-editor .ql-container {
+    @apply border-0;
+  }
+
+  .rich-text-editor .ql-editor {
+    @apply px-3 md:px-[14px] py-2.5 md:py-3 text-[14px] leading-[1.4] min-h-[120px];
+  }
+
+  .rich-text-editor .ql-editor.ql-blank::before {
+    @apply text-[#9CA3AF] italic;
+  }
+
+  /* Compact Toolbar Icons */
+  .rich-text-editor .ql-toolbar button {
+    @apply w-7 h-7 p-0;
+  }
+
+  .rich-text-editor .ql-toolbar button svg {
+    @apply w-4 h-4;
   }
   
   /* Status badges */
