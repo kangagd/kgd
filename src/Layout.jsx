@@ -153,7 +153,7 @@ export default function Layout({ children, currentPageName }) {
   return (
     <SidebarProvider>
       <div className="min-h-screen flex w-full bg-[#F8F9FA]">
-        <Sidebar className="border-r border-[#E5E7EB]">
+        <Sidebar collapsible="icon" className="border-r border-[#E5E7EB]">
           <SidebarHeader className="border-b border-[#E5E7EB] p-5">
             <div className="flex items-center gap-3">
               <div className="w-11 h-11 bg-[#FAE008] rounded-xl flex items-center justify-center shadow-md">
@@ -222,7 +222,7 @@ export default function Layout({ children, currentPageName }) {
         </Sidebar>
 
         <main className="flex-1 flex flex-col">
-          <header className="bg-white border-b border-[#E5E7EB] px-6 py-4 lg:hidden shadow-sm">
+          <header className="bg-white border-b border-[#E5E7EB] px-6 py-4 shadow-sm">
             <div className="flex items-center gap-4">
               <SidebarTrigger className="hover:bg-[#F3F4F6] p-2 rounded-lg transition-colors duration-150 min-h-[44px] min-w-[44px]" />
               <h2 className="font-semibold text-[#111827]">FieldScheduler</h2>
