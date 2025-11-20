@@ -597,14 +597,6 @@ export default function ProjectDetails({ project: initialProject, onClose, onEdi
             >
               Overview
             </TabsTrigger>
-            <TabsTrigger 
-              value="summary" 
-              className={`text-[14px] font-medium leading-[1.4] data-[state=active]:bg-white data-[state=active]:shadow-sm ${
-                project.status === "Completed" ? "bg-[#FAE008]/10 text-[#111827] font-semibold" : ""
-              }`}
-            >
-              Summary
-            </TabsTrigger>
             <TabsTrigger value="quoting" className="text-[14px] font-medium leading-[1.4] data-[state=active]:bg-white data-[state=active]:shadow-sm">Quoting</TabsTrigger>
             <TabsTrigger value="parts" className="text-[14px] font-medium leading-[1.4] data-[state=active]:bg-white data-[state=active]:shadow-sm">Parts</TabsTrigger>
             <TabsTrigger value="images" className="text-[14px] font-medium leading-[1.4] data-[state=active]:bg-white data-[state=active]:shadow-sm">
@@ -614,6 +606,14 @@ export default function ProjectDetails({ project: initialProject, onClose, onEdi
             <TabsTrigger value="attachments" className="text-[14px] font-medium leading-[1.4] data-[state=active]:bg-white data-[state=active]:shadow-sm">
               <FileText className="w-4 h-4 mr-1.5" />
               <span className="hidden md:inline">Files</span>
+            </TabsTrigger>
+            <TabsTrigger 
+              value="summary" 
+              className={`text-[14px] font-medium leading-[1.4] data-[state=active]:bg-white data-[state=active]:shadow-sm ${
+                project.status === "Completed" ? "bg-[#FAE008]/10 text-[#111827] font-semibold" : ""
+              }`}
+            >
+              Summary
             </TabsTrigger>
           </TabsList>
 
