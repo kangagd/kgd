@@ -8,10 +8,10 @@ import { useQuery } from "@tanstack/react-query";
 import { base44 } from "@/api/base44Client";
 
 const statusColors = {
-  "Open": "bg-slate-100 text-slate-800",
-  "Scheduled": "bg-[#fae008] text-[#111827]",
-  "Completed": "bg-emerald-100 text-emerald-800",
-  "Cancelled": "bg-red-100 text-red-800"
+  "Open": "bg-slate-100 text-slate-700",
+  "Scheduled": "bg-[#fae008] text-[#92400E]",
+  "Completed": "bg-emerald-100 text-emerald-700",
+  "Cancelled": "bg-red-100 text-red-700"
 };
 
 const productColors = {
@@ -53,7 +53,7 @@ export default function JobCard({ job, onClick }) {
               #{job.job_number}
             </Badge>
             {job.project_name && (
-              <Badge className="bg-[#FAE008]/20 text-[#111827] hover:bg-[#FAE008]/20 border-0 font-medium px-2.5 py-0.5 rounded-lg">
+              <Badge className="bg-[#FAE008]/20 text-[#92400E] hover:bg-[#FAE008]/20 border-0 font-medium px-2.5 py-0.5 rounded-lg">
                 {job.project_name}
               </Badge>
             )}

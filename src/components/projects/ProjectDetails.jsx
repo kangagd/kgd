@@ -29,14 +29,14 @@ import ProjectSummary from "./ProjectSummary";
 import ProjectVisitsTab from "./ProjectVisitsTab";
 
 const statusColors = {
-  "Lead": "bg-slate-100 text-slate-800",
-  "Initial Site Visit": "bg-blue-100 text-blue-800",
-  "Quote Sent": "bg-purple-100 text-purple-800",
-  "Quote Approved": "bg-indigo-100 text-indigo-800",
-  "Final Measure": "bg-cyan-100 text-cyan-800",
-  "Parts Ordered": "bg-amber-100 text-amber-800",
-  "Scheduled": "bg-[#fae008]/20 text-[hsl(25,10%,12%)]",
-  "Completed": "bg-emerald-100 text-emerald-800"
+  "Lead": "bg-slate-100 text-slate-700",
+  "Initial Site Visit": "bg-blue-100 text-blue-700",
+  "Quote Sent": "bg-purple-100 text-purple-700",
+  "Quote Approved": "bg-indigo-100 text-indigo-700",
+  "Final Measure": "bg-cyan-100 text-cyan-700",
+  "Parts Ordered": "bg-amber-100 text-amber-700",
+  "Scheduled": "bg-[#fae008]/20 text-[#92400E]",
+  "Completed": "bg-emerald-100 text-emerald-700"
 };
 
 const financialStatusColors = {
