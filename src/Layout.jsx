@@ -154,7 +154,7 @@ export default function Layout({ children, currentPageName }) {
     <SidebarProvider>
       <div className="min-h-screen flex w-full bg-[#F8F9FA]">
         <Sidebar collapsible="icon" className="border-r border-[#E5E7EB]">
-          <SidebarHeader className="border-b border-[#E5E7EB] p-5">
+          <SidebarHeader className="border-b border-[#E5E7EB] p-5 group-data-[collapsible=icon]:p-3">
             <div className="flex items-center gap-3 group-data-[collapsible=icon]:justify-center">
               <div className="w-11 h-11 bg-[#FAE008] rounded-xl flex items-center justify-center shadow-md flex-shrink-0">
                 <Wrench className="w-5 h-5 text-[#111827]" />
@@ -181,7 +181,7 @@ export default function Layout({ children, currentPageName }) {
                           location.pathname === item.url ? 'bg-transparent' : ''
                         }`}
                       >
-                        <Link to={item.url} className="flex items-center gap-3 px-4 py-2.5 group-data-[collapsible=icon]:justify-center">
+                        <Link to={item.url} className="flex items-center gap-3 px-4 py-2.5 group-data-[collapsible=icon]:justify-center group-data-[collapsible=icon]:px-0">
                           <item.icon className={`w-5 h-5 ${
                             location.pathname === item.url ? 'text-[#FAE008]' : 'text-[#4B5563]'
                           }`} />
@@ -197,11 +197,11 @@ export default function Layout({ children, currentPageName }) {
             </SidebarGroup>
           </SidebarContent>
 
-          <SidebarFooter className="border-t border-[#E5E7EB] p-4">
+          <SidebarFooter className="border-t border-[#E5E7EB] p-4 group-data-[collapsible=icon]:p-3">
             <div className="flex items-center gap-3 group-data-[collapsible=icon]:justify-center">
               <button
                 onClick={() => navigate(createPageUrl("UserProfile"))}
-                className="flex items-center gap-3 flex-1 min-w-0 hover:bg-[#F3F4F6] rounded-lg p-2.5 transition-colors min-h-[44px] group-data-[collapsible=icon]:flex-initial"
+                className="flex items-center gap-3 flex-1 min-w-0 hover:bg-[#F3F4F6] rounded-lg p-2.5 transition-colors min-h-[44px] group-data-[collapsible=icon]:flex-initial group-data-[collapsible=icon]:p-0"
               >
                 <div className="w-10 h-10 bg-[#F3F4F6] rounded-full flex items-center justify-center flex-shrink-0">
                   <span className="text-[#111827] font-semibold text-sm">
