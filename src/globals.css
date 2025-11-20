@@ -268,13 +268,44 @@ css
     overflow-x: auto;
     overflow-y: hidden;
     flex-wrap: nowrap;
-    scrollbar-width: none;
-    -ms-overflow-style: none;
     -webkit-overflow-scrolling: touch;
   }
 
-  [role="tablist"]::-webkit-scrollbar {
-    display: none;
+  /* Mobile: hide scrollbar */
+  @media (max-width: 768px) {
+    [role="tablist"] {
+      scrollbar-width: none;
+      -ms-overflow-style: none;
+    }
+
+    [role="tablist"]::-webkit-scrollbar {
+      display: none;
+    }
+  }
+
+  /* Desktop: show subtle scrollbar */
+  @media (min-width: 769px) {
+    [role="tablist"] {
+      scrollbar-width: thin;
+      scrollbar-color: #E5E7EB transparent;
+    }
+
+    [role="tablist"]::-webkit-scrollbar {
+      height: 6px;
+    }
+
+    [role="tablist"]::-webkit-scrollbar-track {
+      background: transparent;
+    }
+
+    [role="tablist"]::-webkit-scrollbar-thumb {
+      background-color: #E5E7EB;
+      border-radius: 3px;
+    }
+
+    [role="tablist"]::-webkit-scrollbar-thumb:hover {
+      background-color: #D1D5DB;
+    }
   }
 
   [role="tab"] {
