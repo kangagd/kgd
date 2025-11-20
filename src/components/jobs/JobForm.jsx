@@ -552,10 +552,12 @@ export default function JobForm({ job, technicians, onSubmit, onCancel, isSubmit
 
             <div className="space-y-2">
               <Label htmlFor="pricing_provided" className="text-sm font-semibold text-[#000000]">Pricing Provided</Label>
-              <RichTextEditor
+              <Input
+                id="pricing_provided"
                 value={formData.pricing_provided}
-                onChange={(value) => setFormData({ ...formData, pricing_provided: value })}
+                onChange={(e) => setFormData({ ...formData, pricing_provided: e.target.value })}
                 placeholder="Enter pricing information provided to customer..."
+                className="border-2 border-slate-300 focus:border-[#fae008] focus:ring-2 focus:ring-[#fae008]/20 transition-all"
               />
             </div>
 
