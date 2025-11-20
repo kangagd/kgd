@@ -687,32 +687,63 @@ export default function ProjectDetails({ project, onClose, onEdit, onDelete }) {
                         onClick={() => handleJobClick(job.id)}
                         className="bg-white border border-[#E5E7EB] rounded-lg p-3 hover:border-[#FAE008] hover:shadow-sm transition-all cursor-pointer"
                       >
-                        <div className="space-y-2">
-                          <div className="flex items-center gap-2 flex-wrap">
-                            <Badge className="bg-white text-[#6B7280] hover:bg-white border border-[#E5E7EB] font-medium text-xs px-2.5 py-0.5 rounded-lg">
-                              #{job.job_number}
-                            </Badge>
-                            <Badge className={`${jobStatusColors[job.status]} hover:${jobStatusColors[job.status]} border-0 font-semibold text-xs px-3 py-1 rounded-lg`}>
-                              {job.status}
-                            </Badge>
-                            {job.job_type_name && (
-                              <Badge className="bg-[#EDE9FE] text-[#6D28D9] hover:bg-[#EDE9FE] border-0 font-semibold text-xs px-3 py-1 rounded-lg">
-                                {job.job_type_name}
+                        <div className="flex items-start gap-3">
+                          <div className="flex-1 min-w-0 space-y-2">
+                            <div className="flex items-center gap-2 flex-wrap">
+                              <Badge className="bg-white text-[#6B7280] hover:bg-white border border-[#E5E7EB] font-medium text-xs px-2.5 py-0.5 rounded-lg">
+                                #{job.job_number}
                               </Badge>
+                              <Badge className={`${jobStatusColors[job.status]} hover:${jobStatusColors[job.status]} border-0 font-semibold text-xs px-3 py-1 rounded-lg`}>
+                                {job.status}
+                              </Badge>
+                              {job.job_type_name && (
+                                <Badge className="bg-[#EDE9FE] text-[#6D28D9] hover:bg-[#EDE9FE] border-0 font-semibold text-xs px-3 py-1 rounded-lg">
+                                  {job.job_type_name}
+                                </Badge>
+                              )}
+                            </div>
+                            
+                            {job.scheduled_date && (
+                              <p className="text-sm text-[#4B5563]">
+                                {new Date(job.scheduled_date).toLocaleDateString()}
+                                {job.scheduled_time && ` • ${job.scheduled_time}`}
+                              </p>
+                            )}
+                            
+                            {job.address && (
+                              <div className="flex items-start gap-2">
+                                <MapPin className="w-4 h-4 mt-0.5 flex-shrink-0 text-[#4B5563]" />
+                                <span className="text-sm text-[#4B5563]">{job.address}</span>
+                              </div>
                             )}
                           </div>
                           
-                          {job.scheduled_date && (
-                            <p className="text-sm text-[#4B5563]">
-                              {new Date(job.scheduled_date).toLocaleDateString()}
-                              {job.scheduled_time && ` • ${job.scheduled_time}`}
-                            </p>
-                          )}
-                          
-                          {job.address && (
-                            <div className="flex items-start gap-2">
-                              <MapPin className="w-4 h-4 mt-0.5 flex-shrink-0 text-[#4B5563]" />
-                              <span className="text-sm text-[#4B5563]">{job.address}</span>
+                          {job.assigned_to && job.assigned_to.length > 0 && (
+                            <div className="flex-shrink-0">
+                              {job.assigned_to.length === 1 ? (
+                                <div className="w-10 h-10 bg-[#FAE008] rounded-full flex items-center justify-center">
+                                  <span className="text-[#111827] font-semibold text-sm">
+                                    {job.assigned_to_name?.[0]?.charAt(0)?.toUpperCase() || job.assigned_to[0]?.charAt(0)?.toUpperCase() || 'T'}
+                                  </span>
+                                </div>
+                              ) : (
+                                <div className="flex -space-x-2">
+                                  {job.assigned_to.slice(0, 3).map((email, idx) => (
+                                    <div key={idx} className="w-10 h-10 bg-[#FAE008] rounded-full flex items-center justify-center border-2 border-white">
+                                      <span className="text-[#111827] font-semibold text-sm">
+                                        {job.assigned_to_name?.[idx]?.charAt(0)?.toUpperCase() || email?.charAt(0)?.toUpperCase() || 'T'}
+                                      </span>
+                                    </div>
+                                  ))}
+                                  {job.assigned_to.length > 3 && (
+                                    <div className="w-10 h-10 bg-[#E5E7EB] rounded-full flex items-center justify-center border-2 border-white">
+                                      <span className="text-[#111827] font-semibold text-xs">
+                                        +{job.assigned_to.length - 3}
+                                      </span>
+                                    </div>
+                                  )}
+                                </div>
+                              )}
                             </div>
                           )}
                         </div>
