@@ -10,7 +10,7 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useNavigate } from "react-router-dom";
 import { createPageUrl } from "@/utils";
 import EditableField from "../jobs/EditableField";
-import RichTextEditor from "../common/RichTextEditor";
+import RichTextField from "../common/RichTextField";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -500,39 +500,26 @@ export default function ProjectDetails({ project, onClose, onEdit, onDelete }) {
           </TabsList>
 
           <TabsContent value="overview" className="space-y-3 mt-3">
-            <Card className="border border-[#E5E7EB] shadow-sm overflow-hidden">
-              <CardHeader className="bg-[#F8F9FA] px-4 py-3 border-b border-[#E5E7EB]">
-                <div className="flex items-center gap-2">
-                  <FileText className="w-4 h-4 text-[#6B7280]" />
-                  <h3 className="text-[14px] font-semibold text-[#111827] leading-[1.4]">Description</h3>
-                </div>
-              </CardHeader>
-              <CardContent className="p-3">
-                <RichTextEditor
-                  value={description}
-                  onChange={setDescription}
-                  onBlur={handleDescriptionBlur}
-                  placeholder="Add description..."
-                />
-              </CardContent>
-            </Card>
+            <div className="bg-white rounded-lg p-4">
+              <RichTextField
+                label="Description"
+                value={description}
+                onChange={setDescription}
+                onBlur={handleDescriptionBlur}
+                placeholder="Add a clear summary of this project…"
+              />
+            </div>
 
-            <Card className="border border-[#E5E7EB] shadow-sm overflow-hidden">
-              <CardHeader className="bg-[#F8F9FA] px-4 py-3 border-b border-[#E5E7EB]">
-                <div className="flex items-center gap-2">
-                  <FileText className="w-4 h-4 text-[#6B7280]" />
-                  <h3 className="text-[14px] font-semibold text-[#111827] leading-[1.4]">Notes</h3>
-                </div>
-              </CardHeader>
-              <CardContent className="p-3">
-                <RichTextEditor
-                  value={notes}
-                  onChange={setNotes}
-                  onBlur={handleNotesBlur}
-                  placeholder="Add notes..."
-                />
-              </CardContent>
-            </Card>
+            <div className="bg-white rounded-lg p-4">
+              <RichTextField
+                label="Notes"
+                value={notes}
+                onChange={setNotes}
+                onBlur={handleNotesBlur}
+                placeholder="Add any extra notes or context for the team…"
+                helperText="Internal only"
+              />
+            </div>
 
             {isInstallType && (
               <Card className="border border-[#E5E7EB] shadow-sm overflow-hidden relative">
