@@ -10,23 +10,10 @@ import { useNavigate } from "react-router-dom";
 import { createPageUrl } from "@/utils";
 
 const statusColors = {
-  open: "bg-[#F3F4F6] text-[#4B5563] border-[#E5E7EB]",
-  scheduled: "bg-[#FAE008] text-[#111827] border-[#FAE008]",
-  quoted: "bg-[#F3F4F6] text-[#4B5563] border-[#E5E7EB]",
-  invoiced: "bg-[#D97706]/10 text-[#D97706] border-[#D97706]/20",
-  paid: "bg-[#16A34A]/10 text-[#16A34A] border-[#16A34A]/20",
-  completed: "bg-[#16A34A]/10 text-[#16A34A] border-[#16A34A]/20",
-  lost: "bg-[#DC2626]/10 text-[#DC2626] border-[#DC2626]/20"
-};
-
-const statusLabels = {
-  open: "Open",
-  scheduled: "Scheduled",
-  quoted: "Quoted",
-  invoiced: "Invoiced",
-  paid: "Paid",
-  completed: "Completed",
-  lost: "Lost"
+  "Open": "bg-[#F3F4F6] text-[#4B5563] border-[#E5E7EB]",
+  "Scheduled": "bg-[#FAE008] text-[#111827] border-[#FAE008]",
+  "Completed": "bg-[#16A34A]/10 text-[#16A34A] border-[#16A34A]/20",
+  "Cancelled": "bg-[#DC2626]/10 text-[#DC2626] border-[#DC2626]/20"
 };
 
 export default function Dashboard() {
@@ -191,7 +178,7 @@ export default function Dashboard() {
                       <div className="flex items-center gap-2.5 mb-2">
                         <span className="font-bold text-[#111827] text-sm">#{job.job_number}</span>
                         <span className={`text-xs px-3 py-1 rounded-full border font-semibold ${statusColors[job.status]}`}>
-                          {statusLabels[job.status] || job.status}
+                          {job.status}
                         </span>
                       </div>
                       <p className="text-sm font-semibold text-[#111827]">{job.customer_name}</p>
