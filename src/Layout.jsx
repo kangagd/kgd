@@ -153,7 +153,7 @@ export default function Layout({ children, currentPageName }) {
   return (
     <SidebarProvider>
       <div className="min-h-screen flex w-full bg-[#F8F9FA]">
-        <Sidebar collapsible="icon" className="border-r border-[#E5E7EB]">
+        <Sidebar collapsible="icon" className="border-r border-[#E5E7EB] data-[state=collapsed]:w-[60px]">
           <SidebarHeader className="border-b border-[#E5E7EB] p-5 group-data-[collapsible=icon]:p-3">
             <div className="flex items-center gap-3 group-data-[collapsible=icon]:justify-center">
               <div className="w-11 h-11 bg-[#FAE008] rounded-xl flex items-center justify-center shadow-md flex-shrink-0">
