@@ -177,13 +177,17 @@ export default function Layout({ children, currentPageName }) {
                     <SidebarMenuItem key={item.title}>
                       <SidebarMenuButton
                         asChild
-                        className={`hover:bg-[#FAE008] hover:text-[#111827] transition-colors duration-150 rounded-lg mb-1 min-h-[44px] ${
-                          location.pathname === item.url ? 'bg-[#FAE008] text-[#111827] font-semibold' : 'text-[#4B5563]'
+                        className={`hover:bg-[#F3F4F6] transition-colors duration-150 rounded-lg mb-1 min-h-[44px] ${
+                          location.pathname === item.url ? 'bg-transparent' : ''
                         }`}
                       >
-                        <Link to={item.url} className="flex items-center gap-3 px-4 py-2.5">
-                          <item.icon className="w-5 h-5" />
-                          <span className="text-[14px] font-medium leading-[1.4]">{item.title}</span>
+                        <Link to={item.url} className="flex items-center gap-3 px-4 py-2.5 group-data-[collapsible=icon]:justify-center">
+                          <item.icon className={`w-5 h-5 ${
+                            location.pathname === item.url ? 'text-[#FAE008]' : 'text-[#4B5563]'
+                          }`} />
+                          <span className={`text-[14px] font-medium leading-[1.4] group-data-[collapsible=icon]:hidden ${
+                            location.pathname === item.url ? 'text-[#111827] font-semibold' : 'text-[#4B5563]'
+                          }`}>{item.title}</span>
                         </Link>
                       </SidebarMenuButton>
                     </SidebarMenuItem>
