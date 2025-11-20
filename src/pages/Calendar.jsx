@@ -132,10 +132,10 @@ export default function Calendar() {
 
         <div className="flex flex-col md:flex-row gap-4 items-start md:items-center">
           <Tabs value={viewMode} onValueChange={setViewMode} className="w-full md:w-auto">
-            <TabsList className="h-10 bg-white border border-[#E5E7EB] w-full md:w-auto grid grid-cols-3 md:inline-flex">
-              <TabsTrigger value="day" className="font-semibold data-[state=active]:bg-[#FAE008] data-[state=active]:text-[#111827]">Day</TabsTrigger>
-              <TabsTrigger value="week" className="font-semibold data-[state=active]:bg-[#FAE008] data-[state=active]:text-[#111827]">Week</TabsTrigger>
-              <TabsTrigger value="month" className="font-semibold data-[state=active]:bg-[#FAE008] data-[state=active]:text-[#111827]">Month</TabsTrigger>
+            <TabsList>
+              <TabsTrigger value="day">Day</TabsTrigger>
+              <TabsTrigger value="week">Week</TabsTrigger>
+              <TabsTrigger value="month">Month</TabsTrigger>
             </TabsList>
           </Tabs>
 

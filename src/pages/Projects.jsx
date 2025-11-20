@@ -6,6 +6,7 @@ import { Input } from "@/components/ui/input";
 import { Plus, Search, SlidersHorizontal } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent } from "@/components/ui/card";
+import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import {
   Select,
   SelectContent,
@@ -251,38 +252,16 @@ export default function Projects() {
             </Button>
           </div>
 
-          <div className="chip-container flex gap-2 pb-2"
-            style={{ 
-              maskImage: 'linear-gradient(to right, black 0%, black calc(100% - 40px), transparent 100%)',
-              WebkitMaskImage: 'linear-gradient(to right, black 0%, black calc(100% - 40px), transparent 100%)'
-            }}
-          >
-            <div className="flex gap-2">
-              <Badge
-                onClick={() => setStageFilter("all")}
-                className={`cursor-pointer px-4 py-2 text-[13px] font-medium transition-all whitespace-nowrap rounded-full flex-shrink-0 ${
-                  stageFilter === "all"
-                    ? "bg-[#FAE008] text-[#111827] border-2 border-[#FAE008] hover:bg-[#E5CF07]"
-                    : "bg-white text-[#4B5563] border-2 border-[#E5E7EB] hover:border-[#FAE008] hover:bg-[#FFFEF5]"
-                }`}
-              >
-                All Projects
-              </Badge>
+          <Tabs value={stageFilter} onValueChange={setStageFilter} className="w-full">
+            <TabsList>
+              <TabsTrigger value="all">All Projects</TabsTrigger>
               {Object.keys(statusColors).map((stage) => (
-                <Badge
-                  key={stage}
-                  onClick={() => setStageFilter(stage)}
-                  className={`cursor-pointer px-4 py-2 text-[13px] font-medium transition-all whitespace-nowrap rounded-full flex-shrink-0 ${
-                    stageFilter === stage
-                      ? `${statusColors[stage]} border-2 hover:opacity-90`
-                      : "bg-white text-[#4B5563] border-2 border-[#E5E7EB] hover:border-[#FAE008] hover:bg-[#FFFEF5]"
-                  }`}
-                >
+                <TabsTrigger key={stage} value={stage}>
                   {stage}
-                </Badge>
+                </TabsTrigger>
               ))}
-            </div>
-          </div>
+            </TabsList>
+          </Tabs>
 
           {showFilters && (
             <Card className="border border-[#E5E7EB]">
