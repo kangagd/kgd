@@ -743,43 +743,36 @@ Format as HTML bullet points using <ul> and <li> tags. Include only the most cri
 
       <CardContent className="p-3 md:p-4">
         <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-          <div className="chip-container mb-4"
-            style={{ 
-              maskImage: 'linear-gradient(to right, black 0%, black calc(100% - 40px), transparent 100%)',
-              WebkitMaskImage: 'linear-gradient(to right, black 0%, black calc(100% - 40px), transparent 100%)'
-            }}
-          >
-            <TabsList className="inline-flex h-11 bg-[#F8F9FA] border border-[#E5E7EB] rounded-lg p-1">
+            <TabsList className="w-full grid grid-cols-7 h-11 bg-[#F8F9FA] border border-[#E5E7EB] rounded-lg p-1 mb-4">
             <TabsTrigger 
               value="overview" 
-              className="text-[14px] font-medium leading-[1.4] data-[state=active]:bg-white data-[state=active]:shadow-sm whitespace-nowrap px-4"
+              className="text-[14px] font-medium leading-[1.4] data-[state=active]:bg-white data-[state=active]:shadow-sm"
             >
               Overview
             </TabsTrigger>
-            <TabsTrigger value="visits" className="text-[14px] font-medium leading-[1.4] data-[state=active]:bg-white data-[state=active]:shadow-sm whitespace-nowrap px-4">
+            <TabsTrigger value="visits" className="text-[14px] font-medium leading-[1.4] data-[state=active]:bg-white data-[state=active]:shadow-sm">
               <Briefcase className="w-4 h-4 mr-1.5" />
-              <span className="hidden sm:inline">Visits</span>
+              <span className="hidden md:inline">Visits</span>
             </TabsTrigger>
-            <TabsTrigger value="quoting" className="text-[14px] font-medium leading-[1.4] data-[state=active]:bg-white data-[state=active]:shadow-sm whitespace-nowrap px-4">Quoting</TabsTrigger>
-            <TabsTrigger value="parts" className="text-[14px] font-medium leading-[1.4] data-[state=active]:bg-white data-[state=active]:shadow-sm whitespace-nowrap px-4">Parts</TabsTrigger>
-            <TabsTrigger value="images" className="text-[14px] font-medium leading-[1.4] data-[state=active]:bg-white data-[state=active]:shadow-sm whitespace-nowrap px-4">
+            <TabsTrigger value="quoting" className="text-[14px] font-medium leading-[1.4] data-[state=active]:bg-white data-[state=active]:shadow-sm">Quoting</TabsTrigger>
+            <TabsTrigger value="parts" className="text-[14px] font-medium leading-[1.4] data-[state=active]:bg-white data-[state=active]:shadow-sm">Parts</TabsTrigger>
+            <TabsTrigger value="images" className="text-[14px] font-medium leading-[1.4] data-[state=active]:bg-white data-[state=active]:shadow-sm">
               <ImageIcon className="w-4 h-4 mr-1.5" />
-              <span className="hidden sm:inline">Images</span>
+              <span className="hidden md:inline">Images</span>
             </TabsTrigger>
-            <TabsTrigger value="attachments" className="text-[14px] font-medium leading-[1.4] data-[state=active]:bg-white data-[state=active]:shadow-sm whitespace-nowrap px-4">
+            <TabsTrigger value="attachments" className="text-[14px] font-medium leading-[1.4] data-[state=active]:bg-white data-[state=active]:shadow-sm">
               <FileText className="w-4 h-4 mr-1.5" />
-              <span className="hidden sm:inline">Files</span>
+              <span className="hidden md:inline">Files</span>
             </TabsTrigger>
             <TabsTrigger 
               value="summary" 
-              className={`text-[14px] font-medium leading-[1.4] data-[state=active]:bg-white data-[state=active]:shadow-sm whitespace-nowrap px-4 ${
+              className={`text-[14px] font-medium leading-[1.4] data-[state=active]:bg-white data-[state=active]:shadow-sm ${
                 project.status === "Completed" ? "bg-[#FAE008]/10 text-[#111827] font-semibold" : ""
               }`}
             >
               Summary
             </TabsTrigger>
             </TabsList>
-          </div>
 
           <TabsContent value="overview" className="space-y-3 mt-3">
             <div>
@@ -1031,7 +1024,7 @@ Format as HTML bullet points using <ul> and <li> tags. Include only the most cri
             <Card className="border border-[#E5E7EB] shadow-sm overflow-hidden">
               <CardContent className="p-3 space-y-3">
                 {project.image_urls && project.image_urls.length > 0 && (
-                  <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
+                  <div className="grid grid-cols-3 gap-2">
                     {project.image_urls.map((url, index) => (
                       <div key={index} className="relative group">
                         <a 
