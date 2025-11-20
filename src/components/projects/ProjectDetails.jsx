@@ -261,6 +261,8 @@ export default function ProjectDetails({ project, onClose, onEdit, onDelete }) {
                   { value: "Garage Door Install", label: "Garage Door Install" },
                   { value: "Gate Install", label: "Gate Install" },
                   { value: "Roller Shutter Install", label: "Roller Shutter Install" },
+                  { value: "Multiple", label: "Multiple" },
+                  { value: "Motor/Accessory", label: "Motor/Accessory" },
                   { value: "Repair", label: "Repair" },
                   { value: "Maintenance", label: "Maintenance" }
                 ]}

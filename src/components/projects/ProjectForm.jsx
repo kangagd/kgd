@@ -258,6 +258,8 @@ export default function ProjectForm({ project, onSubmit, onCancel, isSubmitting 
                     <SelectItem value="Garage Door Install">Garage Door Install</SelectItem>
                     <SelectItem value="Gate Install">Gate Install</SelectItem>
                     <SelectItem value="Roller Shutter Install">Roller Shutter Install</SelectItem>
+                    <SelectItem value="Multiple">Multiple</SelectItem>
+                    <SelectItem value="Motor/Accessory">Motor/Accessory</SelectItem>
                     <SelectItem value="Repair">Repair</SelectItem>
                     <SelectItem value="Maintenance">Maintenance</SelectItem>
                   </SelectContent>
