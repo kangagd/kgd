@@ -39,15 +39,21 @@ const jobStatusColors = {
   "Cancelled": "bg-red-100 text-red-800 border-red-300"
 };
 
-const projectStatusColors = {
-  "Lead": "bg-gray-100 text-gray-800 border-gray-200",
-  "Initial Site Visit": "bg-blue-100 text-blue-800 border-blue-200",
-  "Quote Sent": "bg-purple-100 text-purple-800 border-purple-200",
-  "Quote Approved": "bg-indigo-100 text-indigo-800 border-indigo-200",
-  "Final Measure": "bg-cyan-100 text-cyan-800 border-cyan-200",
-  "Parts Ordered": "bg-orange-100 text-orange-800 border-orange-200",
-  "Scheduled": "bg-yellow-100 text-yellow-800 border-yellow-200",
-  "Completed": "bg-green-100 text-green-800 border-green-200"
+const stageColors = {
+  lead: "bg-slate-100 text-slate-800 border-slate-200",
+  assessment_measure: "bg-yellow-100 text-yellow-800 border-yellow-200",
+  quote_preparing: "bg-orange-100 text-orange-800 border-orange-200",
+  quote_sent: "bg-purple-100 text-purple-800 border-purple-200",
+  quote_approved: "bg-indigo-100 text-indigo-800 border-indigo-200",
+  parts_ordered: "bg-blue-100 text-blue-800 border-blue-200",
+  scheduled: "bg-cyan-100 text-cyan-800 border-cyan-200",
+  technician_on_site: "bg-orange-100 text-orange-800 border-orange-200",
+  return_visit_needed: "bg-amber-100 text-amber-800 border-amber-200",
+  work_completed: "bg-lime-100 text-lime-800 border-lime-200",
+  invoiced: "bg-indigo-100 text-indigo-800 border-indigo-200",
+  paid: "bg-green-100 text-green-800 border-green-200",
+  completed: "bg-emerald-100 text-emerald-800 border-emerald-200",
+  lost: "bg-red-100 text-red-800 border-red-200"
 };
 
 const outcomeColors = {
@@ -178,8 +184,8 @@ export default function JobDetails({ job, onClose, onStatusChange, onDelete }) {
       });
 
       // Update status based on date and check-in
-      const newStatus = determineJobStatus(job.scheduled_date, job.outcome, true, job.job_status || job.status);
-      await base44.entities.Job.update(job.id, { job_status: newStatus });
+      const newStatus = determineJobStatus(job.scheduled_date, job.outcome, true, job.status);
+      await base44.entities.Job.update(job.id, { status: newStatus });
 
       return checkIn;
     },
@@ -228,17 +234,8 @@ export default function JobDetails({ job, onClose, onStatusChange, onDelete }) {
       });
 
       // Update status after checkout - no longer has active check-in
-      const newStatus = determineJobStatus(job.scheduled_date, outcome, false, job.job_status || job.status);
-      await base44.entities.Job.update(job.id, { job_status: newStatus });
-
-      // Update project status if job is part of a project
-      if (job.project_id) {
-        try {
-          await base44.functions.invoke('updateProjectStatus', { projectId: job.project_id });
-        } catch (error) {
-          console.error('Error updating project status:', error);
-        }
-      }
+      const newStatus = determineJobStatus(job.scheduled_date, outcome, false, job.status);
+      await base44.entities.Job.update(job.id, { status: newStatus });
     },
     onSuccess: () => {
       setValidationError("");
@@ -366,9 +363,9 @@ export default function JobDetails({ job, onClose, onStatusChange, onDelete }) {
     updateJobMutation.mutate({ field: 'outcome', value });
 
     // Update status based on centralized logic - check if there's an active check-in
-    const newStatus = determineJobStatus(job.scheduled_date, value, !!activeCheckIn, job.job_status || job.status);
-    if (newStatus !== (job.job_status || job.status)) {
-      updateJobMutation.mutate({ field: 'job_status', value: newStatus });
+    const newStatus = determineJobStatus(job.scheduled_date, value, !!activeCheckIn, job.status);
+    if (newStatus !== job.status) {
+      updateJobMutation.mutate({ field: 'status', value: newStatus });
     }
   };
 
@@ -706,11 +703,11 @@ export default function JobDetails({ job, onClose, onStatusChange, onDelete }) {
                               </div>
                         }
                           </div>
-                          {(pJob.job_status || pJob.status) &&
-                          <Badge className={`${jobStatusColors[pJob.job_status || pJob.status] || jobStatusColors["Open"]} text-xs font-semibold border`}>
-                                {pJob.job_status || pJob.status}
-                              </Badge>
-                          }
+                          {pJob.status &&
+                      <Badge className={`${statusColors[pJob.status]} text-xs font-semibold border`}>
+                              {pJob.status.replace(/_/g, ' ')}
+                            </Badge>
+                      }
                         </div>
                         {pJob.notes && pJob.notes !== "<p><br></p>" && // Check for empty RichTextEditor content
                     <div className="text-xs text-slate-600 mt-2 pt-2 border-t border-blue-100">
