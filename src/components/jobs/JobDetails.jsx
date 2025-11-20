@@ -370,8 +370,8 @@ export default function JobDetails({ job: initialJob, onClose, onStatusChange, o
     logChange('outcome', job.outcome, value);
     updateJobMutation.mutate({ field: 'outcome', value });
 
-    // Auto-update status for Initial Site Visit -> new_quote
-    if (job.job_type_name === "Initial Site Visit" && value === "new_quote") {
+    // Auto-update status to Open for specific outcomes
+    if (value === "new_quote" || value === "update_quote" || value === "return_visit_required") {
       updateJobMutation.mutate({ field: 'status', value: "Open" });
       return;
     }
