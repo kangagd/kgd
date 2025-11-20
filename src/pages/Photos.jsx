@@ -22,7 +22,16 @@ export default function Photos() {
   const [tagFilter, setTagFilter] = useState("all");
   const [technicianFilter, setTechnicianFilter] = useState("all");
   const [marketingOnly, setMarketingOnly] = useState(false);
+  const [preselectedJobId, setPreselectedJobId] = useState(null);
   const queryClient = useQueryClient();
+
+  React.useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    const jobId = params.get('jobId');
+    if (jobId) {
+      setPreselectedJobId(jobId);
+    }
+  }, []);
 
   const { data: allPhotos = [], isLoading } = useQuery({
     queryKey: ['photos'],
@@ -50,8 +59,9 @@ export default function Photos() {
     const matchesTag = tagFilter === "all" || (photo.tags && photo.tags.includes(tagFilter));
     const matchesTechnician = technicianFilter === "all" || photo.technician_email === technicianFilter;
     const matchesMarketing = !marketingOnly || photo.is_marketing_approved;
+    const matchesJob = !preselectedJobId || photo.job_id === preselectedJobId;
 
-    return matchesSearch && matchesProductType && matchesTag && matchesTechnician && matchesMarketing;
+    return matchesSearch && matchesProductType && matchesTag && matchesTechnician && matchesMarketing && matchesJob;
   });
 
   const activeFiltersCount = 
@@ -300,6 +310,7 @@ export default function Photos() {
         open={showUploadModal}
         onClose={() => setShowUploadModal(false)}
         onUploadComplete={handleUploadComplete}
+        preselectedJobId={preselectedJobId}
       />
 
       <PhotoDetailModal
