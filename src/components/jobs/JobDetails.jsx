@@ -19,7 +19,7 @@ import ChangeHistoryModal from "./ChangeHistoryModal";
 import EditableField from "./EditableField";
 import EditableFileUpload from "./EditableFileUpload";
 import CustomerEditModal from "../customers/CustomerEditModal";
-import RichTextEditor from "../common/RichTextEditor";
+import RichTextField from "../common/RichTextField";
 import { determineJobStatus } from "./jobStatusHelper";
 import {
   AlertDialog,
@@ -726,22 +726,16 @@ export default function JobDetails({ job, onClose, onStatusChange, onDelete }) {
                 </div>
               }
 
-              <Card className="border border-[#E5E7EB] shadow-sm overflow-hidden">
-                <CardHeader className="bg-[#F8F9FA] px-4 py-3 border-b border-[#E5E7EB]">
-                  <div className="flex items-center gap-2">
-                    <FileText className="w-4 h-4 text-[#6B7280]" />
-                    <h3 className="text-[14px] font-semibold text-[#111827] leading-[1.4]">Notes</h3>
-                  </div>
-                </CardHeader>
-                <CardContent className="p-3">
-                  <RichTextEditor
-                    value={notes}
-                    onChange={setNotes}
-                    onBlur={handleNotesBlur}
-                    placeholder="Add notes..." />
-
-                </CardContent>
-              </Card>
+              <div className="bg-white rounded-lg p-4">
+                <RichTextField
+                  label="Notes"
+                  value={notes}
+                  onChange={setNotes}
+                  onBlur={handleNotesBlur}
+                  placeholder="Add notes and instructions for technicians…"
+                  helperText="Visible to technicians"
+                />
+              </div>
 
               <Card className="border border-[#E5E7EB] shadow-sm overflow-hidden">
                 <CardHeader className="bg-[#F8F9FA] px-4 py-3 border-b border-[#E5E7EB]">
@@ -761,22 +755,16 @@ export default function JobDetails({ job, onClose, onStatusChange, onDelete }) {
                 </CardContent>
               </Card>
 
-              <Card className="border border-[#E5E7EB] shadow-sm overflow-hidden">
-                <CardHeader className="bg-[#F8F9FA] px-4 py-3 border-b border-[#E5E7EB]">
-                  <div className="flex items-center gap-2">
-                    <FileText className="w-4 h-4 text-[#6B7280]" />
-                    <h3 className="text-[14px] font-semibold text-[#111827] leading-[1.4]">Additional Info</h3>
-                  </div>
-                </CardHeader>
-                <CardContent className="p-3">
-                  <RichTextEditor
-                    value={additionalInfo}
-                    onChange={setAdditionalInfo}
-                    onBlur={handleAdditionalInfoBlur}
-                    placeholder="Add additional information..." />
-
-                </CardContent>
-              </Card>
+              <div className="bg-white rounded-lg p-4">
+                <RichTextField
+                  label="Additional Info"
+                  value={additionalInfo}
+                  onChange={setAdditionalInfo}
+                  onBlur={handleAdditionalInfoBlur}
+                  placeholder="Add any additional information or context…"
+                  helperText="Internal only"
+                />
+              </div>
 
               {!isTechnician &&
               <div className="flex flex-col gap-2">
@@ -864,41 +852,32 @@ export default function JobDetails({ job, onClose, onStatusChange, onDelete }) {
 
             <TabsContent value="visit" className="space-y-3 mt-2">
               <div className="space-y-3">
-                <div>
-                  <Label className="text-[14px] font-semibold text-[#111827] leading-[1.4] mb-1.5 block">Overview *</Label>
-                  <div className="border-2 border-slate-300 rounded-xl p-2.5 focus-within:border-[#fae008] focus-within:ring-2 focus-within:ring-[#fae008]/20 transition-all">
-                    <RichTextEditor
-                      value={overview}
-                      onChange={setOverview}
-                      onBlur={handleOverviewBlur}
-                      placeholder="Overview..." />
+                <RichTextField
+                  label="Overview *"
+                  value={overview}
+                  onChange={setOverview}
+                  onBlur={handleOverviewBlur}
+                  placeholder="Provide a brief summary of what was done during this visit…"
+                  helperText="Required for checkout"
+                />
 
-                  </div>
-                </div>
+                <RichTextField
+                  label="Next Steps *"
+                  value={nextSteps}
+                  onChange={setNextSteps}
+                  onBlur={handleNextStepsBlur}
+                  placeholder="What needs to happen next? Any follow-up required…"
+                  helperText="Required for checkout"
+                />
 
-                <div>
-                  <Label className="text-[14px] font-semibold text-[#111827] leading-[1.4] mb-1.5 block">Next Steps *</Label>
-                  <div className="border-2 border-slate-300 rounded-xl p-2.5 focus-within:border-[#fae008] focus-within:ring-2 focus-within:ring-[#fae008]/20 transition-all">
-                    <RichTextEditor
-                      value={nextSteps}
-                      onChange={setNextSteps}
-                      onBlur={handleNextStepsBlur}
-                      placeholder="Next steps..." />
-
-                  </div>
-                </div>
-
-                <div>
-                  <Label className="text-[14px] font-semibold text-[#111827] leading-[1.4] mb-1.5 block">Communication *</Label>
-                  <div className="border-2 border-slate-300 rounded-xl p-2.5 focus-within:border-[#fae008] focus-within:ring-2 focus-within:ring-[#fae008]/20 transition-all">
-                    <RichTextEditor
-                      value={communicationWithClient}
-                      onChange={setCommunicationWithClient}
-                      onBlur={handleCommunicationBlur}
-                      placeholder="Communication notes..." />
-
-                  </div>
-                </div>
+                <RichTextField
+                  label="Communication *"
+                  value={communicationWithClient}
+                  onChange={setCommunicationWithClient}
+                  onBlur={handleCommunicationBlur}
+                  placeholder="What was discussed with the client? Any agreements made…"
+                  helperText="Required for checkout"
+                />
 
                 <div>
                   <Label className="text-[14px] font-semibold text-[#111827] leading-[1.4] mb-1.5 block">Outcome *</Label>

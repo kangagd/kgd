@@ -15,7 +15,7 @@ import {
   DialogFooter,
 } from "@/components/ui/dialog";
 import MultiTechnicianSelect from "./MultiTechnicianSelect";
-import RichTextEditor from "../common/RichTextEditor";
+import RichTextField from "../common/RichTextField";
 
 export default function JobForm({ job, technicians, onSubmit, onCancel, isSubmitting, preselectedCustomerId, preselectedProjectId }) {
   const [formData, setFormData] = useState(job || {
@@ -600,14 +600,13 @@ export default function JobForm({ job, technicians, onSubmit, onCancel, isSubmit
               </div>
             </div>
 
-            <div className="space-y-2">
-              <Label htmlFor="notes" className="text-[14px] font-medium text-[#111827] leading-[1.4]">Notes & Instructions</Label>
-              <RichTextEditor
-                value={formData.notes}
-                onChange={(value) => setFormData({ ...formData, notes: value })}
-                placeholder="Add any special instructions or notes..."
-              />
-            </div>
+            <RichTextField
+              label="Notes & Instructions"
+              value={formData.notes}
+              onChange={(value) => setFormData({ ...formData, notes: value })}
+              placeholder="Add any special instructions or notes for technicians…"
+              helperText="Visible to technicians"
+            />
 
             <div className="space-y-2">
               <Label htmlFor="pricing_provided" className="text-[14px] font-medium text-[#111827] leading-[1.4]">Pricing Provided</Label>
@@ -620,14 +619,13 @@ export default function JobForm({ job, technicians, onSubmit, onCancel, isSubmit
               />
             </div>
 
-            <div className="space-y-2">
-              <Label htmlFor="additional_info" className="text-[14px] font-medium text-[#111827] leading-[1.4]">Additional Info</Label>
-              <RichTextEditor
-                value={formData.additional_info}
-                onChange={(value) => setFormData({ ...formData, additional_info: value })}
-                placeholder="Add any additional information..."
-              />
-            </div>
+            <RichTextField
+              label="Additional Info"
+              value={formData.additional_info}
+              onChange={(value) => setFormData({ ...formData, additional_info: value })}
+              placeholder="Add any additional information or context…"
+              helperText="Internal only"
+            />
 
             <div className="space-y-4 pt-4 border-t-2 border-slate-200">
               <h3 className="text-[18px] font-semibold text-[#111827] leading-[1.2]">File Uploads</h3>

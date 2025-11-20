@@ -14,7 +14,7 @@ import {
   DialogTitle,
   DialogFooter,
 } from "@/components/ui/dialog";
-import RichTextEditor from "../common/RichTextEditor";
+import RichTextField from "../common/RichTextField";
 
 export default function ProjectForm({ project, onSubmit, onCancel, isSubmitting }) {
   const [formData, setFormData] = useState(project || {
@@ -376,23 +376,20 @@ export default function ProjectForm({ project, onSubmit, onCancel, isSubmitting 
               </div>
             )}
 
-            <div className="space-y-2">
-              <Label htmlFor="description">Description</Label>
-              <RichTextEditor
-                value={formData.description}
-                onChange={(value) => setFormData({ ...formData, description: value })}
-                placeholder="Describe the project scope..."
-              />
-            </div>
+            <RichTextField
+              label="Description"
+              value={formData.description}
+              onChange={(value) => setFormData({ ...formData, description: value })}
+              placeholder="Describe the project scope and requirements…"
+            />
 
-            <div className="space-y-2">
-              <Label htmlFor="notes">Notes</Label>
-              <RichTextEditor
-                value={formData.notes}
-                onChange={(value) => setFormData({ ...formData, notes: value })}
-                placeholder="Additional notes..."
-              />
-            </div>
+            <RichTextField
+              label="Notes"
+              value={formData.notes}
+              onChange={(value) => setFormData({ ...formData, notes: value })}
+              placeholder="Add any extra notes or context for the team…"
+              helperText="Internal only"
+            />
 
             <div className="space-y-4 pt-4 border-t-2 border-slate-200">
               <h3 className="font-bold text-[#000000] tracking-tight">Attachments</h3>
