@@ -522,8 +522,8 @@ export default function ProjectDetails({ project, onClose, onEdit, onDelete }) {
             </div>
 
             {isInstallType && (
-              <div className="bg-white rounded-lg p-4 border border-[#E5E7EB]">
-                <div className="flex items-center justify-between mb-3">
+              <div>
+                <div className="flex items-center justify-between mb-1.5">
                   <label className="block text-[13px] md:text-[14px] font-medium text-[#4B5563]">
                     Installation Details
                   </label>
@@ -536,6 +536,8 @@ export default function ProjectDetails({ project, onClose, onEdit, onDelete }) {
                     </button>
                   )}
                 </div>
+                
+                <div className="bg-white rounded-lg p-4 border border-[#E5E7EB]">
                 
                 {project.doors && project.doors.length > 0 && (
                   <div className="flex flex-wrap gap-2 mb-3">
