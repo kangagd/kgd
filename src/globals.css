@@ -161,14 +161,20 @@ css
     @apply transition-all duration-150 active:bg-[#F3F4F6] min-h-[44px] rounded-lg text-[14px];
   }
   
-  /* Tab Design System */
+  /* Tab Design System - Global Override */
 
   /* Tab Container */
   [role="tablist"] {
-    @apply bg-white rounded-full p-1.5 overflow-x-auto overflow-y-hidden;
-    scrollbar-width: none;
-    -ms-overflow-style: none;
-    scroll-behavior: smooth;
+    @apply bg-white rounded-full p-1.5 overflow-x-auto overflow-y-hidden !important;
+    scrollbar-width: none !important;
+    -ms-overflow-style: none !important;
+    scroll-behavior: smooth !important;
+    display: flex !important;
+    gap: 0.5rem !important;
+    border: none !important;
+    box-shadow: none !important;
+    grid-template-columns: none !important;
+    width: auto !important;
   }
 
   [role="tablist"]::-webkit-scrollbar {
@@ -177,17 +183,26 @@ css
 
   /* Tab Triggers */
   [role="tab"] {
-    @apply px-4 py-2 text-[15px] font-medium text-[#4B5563] rounded-full transition-all duration-200;
-    @apply hover:bg-[#E5E7EB] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#FAE008] focus-visible:ring-offset-2;
-    white-space: nowrap;
+    @apply px-4 py-2 text-[15px] font-medium text-[#4B5563] rounded-full transition-all duration-200 !important;
+    @apply hover:bg-[#E5E7EB] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#FAE008] focus-visible:ring-offset-2 !important;
+    white-space: nowrap !important;
+    border: none !important;
+    box-shadow: none !important;
+    background: transparent !important;
   }
 
   [role="tab"][data-state="active"] {
-    @apply bg-[#FAE008] text-[#000000] shadow-sm font-semibold;
+    @apply bg-[#FAE008] text-[#000000] shadow-sm font-semibold !important;
+    border: 1px solid #E5E7EB !important;
   }
 
   [role="tab"]:disabled {
-    @apply opacity-50 cursor-not-allowed hover:bg-transparent;
+    @apply opacity-50 cursor-not-allowed !important;
+    background: transparent !important;
+  }
+
+  [role="tab"]:hover:not([data-state="active"]):not(:disabled) {
+    @apply bg-[#E5E7EB] !important;
   }
 
   /* Text Field Design System */
