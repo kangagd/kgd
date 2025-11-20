@@ -795,23 +795,15 @@ export default function JobDetails({ job: initialJob, onClose, onStatusChange, o
                 />
               </div>
 
-              <Card className="border border-[#E5E7EB] shadow-sm overflow-hidden">
-                <CardHeader className="bg-[#F8F9FA] px-4 py-3 border-b border-[#E5E7EB]">
-                  <div className="flex items-center gap-2">
-                    <DollarSign className="w-4 h-4 text-[#6B7280]" />
-                    <h3 className="text-[14px] font-semibold text-[#111827] leading-[1.4]">Pricing</h3>
-                  </div>
-                </CardHeader>
-                <CardContent className="p-3">
-                  <Input
-                    value={pricingProvided}
-                    onChange={(e) => setPricingProvided(e.target.value)}
-                    onBlur={handlePricingProvidedBlur}
-                    placeholder="Enter pricing..."
-                    className="text-sm h-10 border border-[#E5E7EB] focus:border-[#FAE008] focus:ring-2 focus:ring-[#FAE008]/20 rounded-lg" />
-
-                </CardContent>
-              </Card>
+              <div className="bg-white rounded-lg p-4">
+                <label className="block text-[13px] md:text-[14px] font-medium text-[#4B5563] mb-1.5">Pricing</label>
+                <Input
+                  value={pricingProvided}
+                  onChange={(e) => setPricingProvided(e.target.value)}
+                  onBlur={handlePricingProvidedBlur}
+                  placeholder="Enter pricing..."
+                />
+              </div>
 
               <div className="bg-white rounded-lg p-4">
                 <RichTextField
