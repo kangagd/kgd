@@ -90,7 +90,7 @@ export default function JobForm({ job, technicians, onSubmit, onCancel, isSubmit
     if (!jobType) return;
 
     try {
-      const prompt = `Generate concise job notes and instructions for a technician based on the following information:
+      const prompt = `Generate well-formatted job notes and instructions for a technician. Use HTML formatting for clear, easy-to-read output.
 
   Job Type: ${jobType.name}
   ${jobType.description ? `Job Type Description: ${jobType.description}` : ''}
@@ -100,7 +100,19 @@ export default function JobForm({ job, technicians, onSubmit, onCancel, isSubmit
   ${project.notes ? `Project Notes: ${project.notes}` : ''}
   Address: ${project.address || 'Not specified'}
 
-  Generate clear, actionable instructions for the technician. Keep it practical and focused on what they need to know and do during the visit.`;
+  Format your response using HTML with:
+  - <h3> for section headings
+  - <ul> and <li> for bullet points
+  - <p> for paragraphs
+  - <strong> for emphasis on important items
+
+  Include sections like:
+  - Job Overview (brief summary)
+  - Key Tasks (bullet list)
+  - Important Notes (any special considerations)
+  - Required Materials/Tools (if applicable)
+
+  Keep it concise, practical, and focused on what the technician needs to know and do.`;
 
       const response = await base44.integrations.Core.InvokeLLM({
         prompt: prompt
