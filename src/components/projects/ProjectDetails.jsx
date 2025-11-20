@@ -214,7 +214,72 @@ export default function ProjectDetails({ project, onClose, onEdit, onDelete }) {
   const isInstallType = project.project_type && project.project_type.includes("Install");
 
   return (
-    <div className="relative">
+    <div className="relative flex gap-4">
+      {/* Customer Sidebar */}
+      <aside className="w-72 flex-shrink-0 sticky top-4 self-start">
+        <Card className="border border-[#E5E7EB] shadow-sm rounded-lg overflow-hidden">
+          <CardHeader className="bg-[#F8F9FA] px-4 py-3 border-b border-[#E5E7EB]">
+            <h3 className="text-[18px] font-semibold text-[#111827] leading-[1.2]">Customer</h3>
+          </CardHeader>
+          <CardContent className="p-4 space-y-4">
+            <div 
+              className="cursor-pointer hover:text-[#FAE008] transition-colors"
+              onClick={handleCustomerClick}
+            >
+              <h3 className="text-[22px] font-semibold text-[#111827] leading-[1.2]">{project.customer_name}</h3>
+            </div>
+
+            {customer?.customer_type && (
+              <Badge className="bg-[#EDE9FE] text-[#6D28D9] hover:bg-[#EDE9FE] border-0 font-medium px-2.5 py-0.5 rounded-lg text-[12px] leading-[1.35]">
+                {customer.customer_type}
+              </Badge>
+            )}
+
+            <div className="space-y-3">
+              <div className="flex items-start gap-2.5">
+                <MapPin className="w-5 h-5 text-[#4B5563] mt-0.5 flex-shrink-0" />
+                <div className="flex-1 min-w-0">
+                  <div className="text-[14px] text-[#6B7280] font-normal leading-[1.4] mb-0.5">Address</div>
+                  <EditableField
+                    value={project.address}
+                    onSave={(val) => handleFieldSave('address', project.address, val)}
+                    type="text"
+                    placeholder="Set address"
+                    className="text-[14px] font-normal text-[#111827] leading-[1.4]"
+                  />
+                </div>
+              </div>
+
+              {project.customer_phone && (
+                <div className="flex items-start gap-2.5">
+                  <a href={`tel:${project.customer_phone}`} className="hover:bg-[#F3F4F6] p-1 rounded transition-colors">
+                    <Phone className="w-5 h-5 text-[#4B5563]" />
+                  </a>
+                  <div className="flex-1 min-w-0">
+                    <div className="text-[14px] text-[#6B7280] font-normal leading-[1.4] mb-0.5">Phone</div>
+                    <span className="text-[14px] font-normal text-[#111827] leading-[1.4]">{project.customer_phone}</span>
+                  </div>
+                </div>
+              )}
+
+              {project.customer_email && (
+                <div className="flex items-start gap-2.5">
+                  <a href={`mailto:${project.customer_email}`} className="hover:bg-[#F3F4F6] p-1 rounded transition-colors">
+                    <Mail className="w-5 h-5 text-[#4B5563]" />
+                  </a>
+                  <div className="flex-1 min-w-0">
+                    <div className="text-[14px] text-[#6B7280] font-normal leading-[1.4] mb-0.5">Email</div>
+                    <span className="text-[14px] font-normal text-[#111827] leading-[1.4]">{project.customer_email}</span>
+                  </div>
+                </div>
+              )}
+            </div>
+          </CardContent>
+        </Card>
+      </aside>
+
+      {/* Main Content */}
+      <div className="flex-1 min-w-0">
       <Card className="border border-[#E5E7EB] shadow-sm rounded-lg overflow-hidden">
         <CardHeader className="border-b border-[#E5E7EB] bg-white p-3 md:p-4 space-y-3">
         <div className="flex items-center justify-between gap-3">
@@ -288,99 +353,46 @@ export default function ProjectDetails({ project, onClose, onEdit, onDelete }) {
             {project.title}
           </h2>
           <div className="flex items-center gap-1.5 flex-wrap mt-2">
-            {project.project_type && (
-              <EditableField
-                value={project.project_type}
-                onSave={(val) => handleFieldSave('project_type', project.project_type, val)}
-                type="select"
-                options={[
-                  { value: "Garage Door Install", label: "Garage Door Install" },
-                  { value: "Gate Install", label: "Gate Install" },
-                  { value: "Roller Shutter Install", label: "Roller Shutter Install" },
-                  { value: "Multiple", label: "Multiple" },
-                  { value: "Motor/Accessory", label: "Motor/Accessory" },
-                  { value: "Repair", label: "Repair" },
-                  { value: "Maintenance", label: "Maintenance" }
-                ]}
-                displayFormat={(val) => (
-                  <Badge className={`${projectTypeColors[val]} font-medium border-0 px-2.5 py-0.5 rounded-lg text-[12px] leading-[1.35]`}>
-                    {val}
-                  </Badge>
-                )}
-              />
-            )}
-            {project.financial_status && (
-              <EditableField
-                value={project.financial_status}
-                onSave={(val) => handleFieldSave('financial_status', project.financial_status, val)}
-                type="select"
-                options={[
-                  { value: "50% payment made", label: "50% payment made" },
-                  { value: "30% payment made (install)", label: "30% payment made (install)" },
-                  { value: "Balance paid in full", label: "Balance paid in full" }
-                ]}
-                displayFormat={(val) => (
-                  <Badge className={`${financialStatusColors[val]} font-medium border-0 px-2.5 py-0.5 rounded-lg text-[12px] leading-[1.35]`}>
-                    {val}
-                  </Badge>
-                )}
-              />
-            )}
-            {customer?.customer_type && (
-              <Badge className="bg-[#EDE9FE] text-[#6D28D9] hover:bg-[#EDE9FE] border-0 font-medium px-2.5 py-0.5 rounded-lg text-[12px] leading-[1.35]">
-                {customer.customer_type}
-              </Badge>
-            )}
-          </div>
-
-          <div 
-            className="text-[16px] font-medium text-[#4B5563] leading-[1.4] cursor-pointer hover:text-[#FAE008] transition-colors"
-            onClick={handleCustomerClick}
-          >
-            {project.customer_name}
-          </div>
-        </div>
-
-        <div className="bg-[#ffffff] p-3 rounded-lg">
-          <div className="grid grid-cols-3 gap-x-4 gap-y-2">
-            <div className="flex items-center gap-2.5">
-              <MapPin className="w-5 h-5 text-[#4B5563]" />
-              <div className="flex-1 min-w-0">
-                <div className="text-[14px] text-[#6B7280] font-normal leading-[1.4] mb-0.5">Address</div>
+              {project.project_type && (
                 <EditableField
-                  value={project.address}
-                  onSave={(val) => handleFieldSave('address', project.address, val)}
-                  type="text"
-                  placeholder="Set address"
-                  className="text-[14px] font-normal text-[#111827] leading-[1.4]"
+                  value={project.project_type}
+                  onSave={(val) => handleFieldSave('project_type', project.project_type, val)}
+                  type="select"
+                  options={[
+                    { value: "Garage Door Install", label: "Garage Door Install" },
+                    { value: "Gate Install", label: "Gate Install" },
+                    { value: "Roller Shutter Install", label: "Roller Shutter Install" },
+                    { value: "Multiple", label: "Multiple" },
+                    { value: "Motor/Accessory", label: "Motor/Accessory" },
+                    { value: "Repair", label: "Repair" },
+                    { value: "Maintenance", label: "Maintenance" }
+                  ]}
+                  displayFormat={(val) => (
+                    <Badge className={`${projectTypeColors[val]} font-medium border-0 px-2.5 py-0.5 rounded-lg text-[12px] leading-[1.35]`}>
+                      {val}
+                    </Badge>
+                  )}
                 />
-              </div>
+              )}
+              {project.financial_status && (
+                <EditableField
+                  value={project.financial_status}
+                  onSave={(val) => handleFieldSave('financial_status', project.financial_status, val)}
+                  type="select"
+                  options={[
+                    { value: "50% payment made", label: "50% payment made" },
+                    { value: "30% payment made (install)", label: "30% payment made (install)" },
+                    { value: "Balance paid in full", label: "Balance paid in full" }
+                  ]}
+                  displayFormat={(val) => (
+                    <Badge className={`${financialStatusColors[val]} font-medium border-0 px-2.5 py-0.5 rounded-lg text-[12px] leading-[1.35]`}>
+                      {val}
+                    </Badge>
+                  )}
+                />
+              )}
             </div>
-            {project.customer_phone && (
-              <div className="flex items-center gap-2.5">
-                <a href={`tel:${project.customer_phone}`} className="hover:bg-[#F3F4F6] p-1 rounded transition-colors">
-                  <Phone className="w-5 h-5 text-[#4B5563]" />
-                </a>
-                <div className="flex-1 min-w-0">
-                  <div className="text-[14px] text-[#6B7280] font-normal leading-[1.4] mb-0.5">Phone</div>
-                  <span className="text-[14px] font-normal text-[#111827] leading-[1.4]">{project.customer_phone}</span>
-                </div>
-              </div>
-            )}
-            {project.customer_email && (
-              <div className="flex items-center gap-2.5">
-                <a href={`mailto:${project.customer_email}`} className="hover:bg-[#F3F4F6] p-1 rounded transition-colors">
-                  <Mail className="w-5 h-5 text-[#4B5563]" />
-                </a>
-                <div className="flex-1 min-w-0">
-                  <div className="text-[14px] text-[#6B7280] font-normal leading-[1.4] mb-0.5">Email</div>
-                  <span className="text-[14px] font-normal text-[#111827] leading-[1.4]">{project.customer_email}</span>
-                </div>
-              </div>
-            )}
-
           </div>
-        </div>
         </CardHeader>
 
       <CardContent className="p-3 md:p-4">
@@ -779,6 +791,7 @@ export default function ProjectDetails({ project, onClose, onEdit, onDelete }) {
         projectId={project.id}
       />
       </Card>
+      </div>
 
       <Button
         onClick={handleAddJob}
