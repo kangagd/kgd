@@ -276,6 +276,14 @@ export default function ProjectDetails({ project, onClose, onEdit, onDelete }) {
         </div>
 
         <div className="space-y-3">
+          <div className="bg-white p-3 rounded-lg border border-[#E5E7EB]">
+            <div className="text-xs font-semibold text-[#4B5563] mb-2 uppercase tracking-wide">Project Stage</div>
+            <ProjectStageSelector
+              currentStage={project.status}
+              onStageChange={(newStage) => handleFieldSave('status', project.status, newStage)}
+            />
+          </div>
+
           <div className="flex items-center gap-1.5 flex-wrap">
             <EditableField
               value={project.title}
@@ -327,14 +335,6 @@ export default function ProjectDetails({ project, onClose, onEdit, onDelete }) {
                 {customer.customer_type}
               </Badge>
             )}
-          </div>
-
-          <div className="bg-white p-3 rounded-lg border border-[#E5E7EB]">
-            <div className="text-xs font-semibold text-[#4B5563] mb-2 uppercase tracking-wide">Project Stage</div>
-            <ProjectStageSelector
-              currentStage={project.status}
-              onStageChange={(newStage) => handleFieldSave('status', project.status, newStage)}
-            />
           </div>
 
           <div 
