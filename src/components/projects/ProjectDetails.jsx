@@ -336,15 +336,14 @@ export default function ProjectDetails({ project, onClose, onEdit, onDelete }) {
               onStageChange={(newStage) => handleFieldSave('status', project.status, newStage)}
             />
           </div>
-            </div>
 
-            <div 
-            className="text-sm font-medium text-[#4B5563] cursor-pointer hover:text-[#FAE008] transition-colors mt-1"
+          <div 
+            className="text-sm font-medium text-[#4B5563] cursor-pointer hover:text-[#FAE008] transition-colors"
             onClick={handleCustomerClick}
-            >
+          >
             {project.customer_name}
-            </div>
-            </div>
+          </div>
+        </div>
 
         <div className="bg-[#ffffff] p-3 rounded-lg">
           <div className="grid grid-cols-3 gap-x-4 gap-y-2">
