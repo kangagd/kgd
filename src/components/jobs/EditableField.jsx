@@ -162,7 +162,7 @@ export default function EditableField({
 
 
       {Icon && <Icon className="w-3 h-3 md:w-4 md:h-4 text-slate-400 flex-shrink-0" />}
-      <span className="text-xs md:text-sm">
+      <span className="text-[14px] font-normal text-[#111827] leading-[1.4]">
         {value ? displayFormat ? displayFormat(value) : value : <span className="text-slate-400">{placeholder}</span>}
       </span>
     </div>);
