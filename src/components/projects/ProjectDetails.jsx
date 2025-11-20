@@ -299,6 +299,7 @@ Format as HTML bullet points using <ul> and <li> tags. Include only the most cri
         customer_phone: project.customer_phone,
         customer_email: project.customer_email,
         address: project.address,
+        product: product,
         job_type_id: jobType?.id || null,
         job_type_name: jobTypeName,
         status: jobTypeName === "Installation" && newStage === "Scheduled" ? "Scheduled" : "Open",
