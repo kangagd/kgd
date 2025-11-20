@@ -609,13 +609,10 @@ export default function ProjectDetails({ project, onClose, onEdit, onDelete }) {
           </TabsContent>
 
           <TabsContent value="images" className="mt-3">
+            <label className="block text-[13px] md:text-[14px] font-medium text-[#4B5563] mb-1.5">
+              Images
+            </label>
             <Card className="border border-[#E5E7EB] shadow-sm overflow-hidden">
-              <CardHeader className="bg-[#F8F9FA] px-4 py-3 border-b border-[#E5E7EB]">
-                <div className="flex items-center gap-2">
-                  <ImageIcon className="w-4 h-4 text-[#6B7280]" />
-                  <h3 className="text-[14px] font-semibold text-[#111827] leading-[1.4]">Images</h3>
-                </div>
-              </CardHeader>
               <CardContent className="p-3 space-y-3">
                 {project.image_urls && project.image_urls.length > 0 && (
                   <div className="grid grid-cols-3 gap-2">
@@ -669,13 +666,10 @@ export default function ProjectDetails({ project, onClose, onEdit, onDelete }) {
           </TabsContent>
 
           <TabsContent value="attachments" className="mt-3">
+            <label className="block text-[13px] md:text-[14px] font-medium text-[#4B5563] mb-1.5">
+              Documents
+            </label>
             <Card className="border border-[#E5E7EB] shadow-sm overflow-hidden">
-              <CardHeader className="bg-[#F8F9FA] px-4 py-3 border-b border-[#E5E7EB]">
-                <div className="flex items-center gap-2">
-                  <FileText className="w-4 h-4 text-[#6B7280]" />
-                  <h3 className="text-[14px] font-semibold text-[#111827] leading-[1.4]">Documents</h3>
-                </div>
-              </CardHeader>
               <CardContent className="p-3 space-y-3">
                 {(project.quote_url || project.invoice_url) && (
                   <div className="space-y-2">
