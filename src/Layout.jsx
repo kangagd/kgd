@@ -1,21 +1,24 @@
-import React from "react";
+import React, { useState, useEffect } from "react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
 import { createPageUrl } from "@/utils";
-import { Calendar, Briefcase, Users, LayoutDashboard, Wrench, UserCircle, DollarSign, Archive as ArchiveIcon, Building2, FolderKanban, TestTube2 } from "lucide-react";
-import {
-  Sidebar,
-  SidebarContent,
-  SidebarGroup,
-  SidebarGroupContent,
-  SidebarGroupLabel,
-  SidebarMenu,
-  SidebarMenuButton,
-  SidebarMenuItem,
-  SidebarHeader,
-  SidebarFooter,
-  SidebarProvider,
-  SidebarTrigger,
-} from "@/components/ui/sidebar";
+import { 
+  Calendar, 
+  Briefcase, 
+  Users, 
+  LayoutDashboard, 
+  Wrench, 
+  UserCircle, 
+  DollarSign, 
+  Archive as ArchiveIcon, 
+  Building2, 
+  FolderKanban,
+  Menu,
+  X,
+  ChevronLeft,
+  ChevronRight,
+  TestTube2,
+  LogOut
+} from "lucide-react";
 import { base44 } from "@/api/base44Client";
 
 const adminNavigationItems = [
@@ -39,12 +42,16 @@ const technicianNavigationItems = [
 export default function Layout({ children, currentPageName }) {
   const location = useLocation();
   const navigate = useNavigate();
-  const [user, setUser] = React.useState(null);
-  const [testMode, setTestMode] = React.useState(() => {
+  const [user, setUser] = useState(null);
+  const [isCollapsed, setIsCollapsed] = useState(() => {
+    return localStorage.getItem('sidebarCollapsed') === 'true';
+  });
+  const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+  const [testMode, setTestMode] = useState(() => {
     return localStorage.getItem('testMode') || 'off';
   });
 
-  React.useEffect(() => {
+  useEffect(() => {
     const loadUser = async () => {
       try {
         const currentUser = await base44.auth.me();
@@ -56,9 +63,29 @@ export default function Layout({ children, currentPageName }) {
     loadUser();
   }, []);
 
-  React.useEffect(() => {
+  useEffect(() => {
     localStorage.setItem('testMode', testMode);
   }, [testMode]);
+
+  useEffect(() => {
+    localStorage.setItem('sidebarCollapsed', isCollapsed);
+  }, [isCollapsed]);
+
+  // Close mobile menu when route changes
+  useEffect(() => {
+    setIsMobileMenuOpen(false);
+  }, [location.pathname]);
+
+  // Close mobile menu on ESC key
+  useEffect(() => {
+    const handleEscape = (e) => {
+      if (e.key === 'Escape' && isMobileMenuOpen) {
+        setIsMobileMenuOpen(false);
+      }
+    };
+    window.addEventListener('keydown', handleEscape);
+    return () => window.removeEventListener('keydown', handleEscape);
+  }, [isMobileMenuOpen]);
 
   const handleLogout = async () => {
     await base44.auth.logout();
@@ -82,8 +109,10 @@ export default function Layout({ children, currentPageName }) {
     : testMode === 'admin' 
       ? false 
       : user?.is_field_technician && user?.role !== 'admin';
+  
   const navigationItems = isTechnician ? technicianNavigationItems : adminNavigationItems;
 
+  // Mobile layout for technicians
   if (isTechnician) {
     return (
       <div className="min-h-screen flex flex-col bg-[#F8F9FA]">
@@ -150,105 +179,173 @@ export default function Layout({ children, currentPageName }) {
     );
   }
 
+  // Desktop/Admin layout
   return (
-    <SidebarProvider>
-      <div className="min-h-screen flex w-full bg-[#F8F9FA]">
-        <Sidebar collapsible="icon" className="border-r border-[#E5E7EB] data-[state=collapsed]:w-[60px]">
-          <SidebarHeader className="border-b border-[#E5E7EB] p-5 group-data-[collapsible=icon]:p-3">
-            <div className="flex items-center gap-3 group-data-[collapsible=icon]:justify-center">
-              <div className="w-11 h-11 bg-[#FAE008] rounded-xl flex items-center justify-center shadow-md flex-shrink-0">
+    <div className="min-h-screen flex bg-[#F8F9FA]">
+      {/* Mobile Overlay */}
+      {isMobileMenuOpen && (
+        <div 
+          className="fixed inset-0 bg-black/50 z-40 lg:hidden transition-opacity"
+          onClick={() => setIsMobileMenuOpen(false)}
+        />
+      )}
+
+      {/* Sidebar / Mobile Drawer */}
+      <aside 
+        className={`
+          fixed lg:sticky top-0 h-screen bg-white border-r border-[#E5E7EB] z-50
+          transition-all duration-300 ease-in-out
+          ${isMobileMenuOpen ? 'translate-x-0' : '-translate-x-full lg:translate-x-0'}
+          ${isCollapsed ? 'lg:w-[72px]' : 'lg:w-[260px]'}
+          w-[260px]
+        `}
+      >
+        <div className="flex flex-col h-full">
+          {/* Header */}
+          <div className="p-4 border-b border-[#E5E7EB] flex items-center justify-between">
+            {!isCollapsed && (
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 bg-[#FAE008] rounded-xl flex items-center justify-center shadow-md flex-shrink-0">
+                  <Wrench className="w-5 h-5 text-[#111827]" />
+                </div>
+                <div>
+                  <h3 className="font-semibold text-[#111827] text-sm">FieldScheduler</h3>
+                  <p className="text-[11px] text-[#4B5563]">Garage Door Services</p>
+                </div>
+              </div>
+            )}
+            {isCollapsed && (
+              <div className="w-10 h-10 bg-[#FAE008] rounded-xl flex items-center justify-center shadow-md mx-auto">
                 <Wrench className="w-5 h-5 text-[#111827]" />
               </div>
-              <div className="group-data-[collapsible=icon]:hidden">
-                <h3 className="font-semibold text-[#111827]">FieldScheduler</h3>
-                <p className="text-[12px] text-[#4B5563] leading-[1.35]">Garage Door Services</p>
-              </div>
+            )}
+            <button
+              onClick={() => setIsMobileMenuOpen(false)}
+              className="lg:hidden p-2 hover:bg-[#F3F4F6] rounded-lg transition-colors"
+              aria-label="Close menu"
+            >
+              <X className="w-5 h-5 text-[#111827]" />
+            </button>
+          </div>
+
+          {/* Navigation */}
+          <nav className="flex-1 overflow-y-auto p-3">
+            <div className="space-y-1">
+              {navigationItems.map((item) => {
+                const isActive = location.pathname === item.url;
+                return (
+                  <Link
+                    key={item.title}
+                    to={item.url}
+                    className={`
+                      flex items-center gap-3 px-3 py-2.5 rounded-lg transition-all
+                      ${isActive 
+                        ? 'bg-[#FAE008]/10 text-[#111827] font-semibold' 
+                        : 'text-[#4B5563] hover:bg-[#F3F4F6] hover:text-[#111827]'
+                      }
+                      ${isCollapsed ? 'justify-center' : ''}
+                      group relative
+                    `}
+                    title={isCollapsed ? item.title : ''}
+                  >
+                    {isActive && <div className="absolute left-0 w-1 h-6 bg-[#FAE008] rounded-r" />}
+                    <item.icon className={`w-5 h-5 flex-shrink-0 ${isActive ? 'text-[#FAE008]' : ''}`} />
+                    {!isCollapsed && (
+                      <span className="text-[14px]">{item.title}</span>
+                    )}
+                  </Link>
+                );
+              })}
             </div>
-          </SidebarHeader>
+          </nav>
 
-          <SidebarContent className="p-3">
-            <SidebarGroup>
-              <SidebarGroupLabel className="text-[12px] font-medium text-[#6B7280] uppercase tracking-wider px-3 py-2 leading-[1.35]">
-                Navigation
-              </SidebarGroupLabel>
-              <SidebarGroupContent>
-                <SidebarMenu>
-                  {navigationItems.map((item) => (
-                    <SidebarMenuItem key={item.title}>
-                      <SidebarMenuButton
-                        asChild
-                        className={`hover:bg-[#F3F4F6] transition-colors duration-150 rounded-lg mb-1 min-h-[44px] ${
-                          location.pathname === item.url ? 'bg-transparent' : ''
-                        }`}
-                      >
-                        <Link to={item.url} className="flex items-center gap-3 px-4 py-2.5 group-data-[collapsible=icon]:justify-center group-data-[collapsible=icon]:px-0">
-                          <item.icon className={`w-5 h-5 ${
-                            location.pathname === item.url ? 'text-[#FAE008]' : 'text-[#4B5563]'
-                          }`} />
-                          <span className={`text-[14px] font-medium leading-[1.4] group-data-[collapsible=icon]:hidden ${
-                            location.pathname === item.url ? 'text-[#111827] font-semibold' : 'text-[#4B5563]'
-                          }`}>{item.title}</span>
-                        </Link>
-                      </SidebarMenuButton>
-                    </SidebarMenuItem>
-                  ))}
-                </SidebarMenu>
-              </SidebarGroupContent>
-            </SidebarGroup>
-          </SidebarContent>
+          {/* Collapse Toggle (Desktop only) */}
+          <div className="hidden lg:block p-3 border-t border-[#E5E7EB]">
+            <button
+              onClick={() => setIsCollapsed(!isCollapsed)}
+              className="w-full flex items-center justify-center p-2 hover:bg-[#F3F4F6] rounded-lg transition-colors"
+              aria-label={isCollapsed ? "Expand sidebar" : "Collapse sidebar"}
+            >
+              {isCollapsed ? (
+                <ChevronRight className="w-5 h-5 text-[#4B5563]" />
+              ) : (
+                <ChevronLeft className="w-5 h-5 text-[#4B5563]" />
+              )}
+            </button>
+          </div>
 
-          <SidebarFooter className="border-t border-[#E5E7EB] p-4 group-data-[collapsible=icon]:p-3">
-            <div className="flex items-center gap-3 group-data-[collapsible=icon]:justify-center">
-              <button
-                onClick={() => navigate(createPageUrl("UserProfile"))}
-                className="flex items-center gap-3 flex-1 min-w-0 hover:bg-[#F3F4F6] rounded-lg p-2.5 transition-colors min-h-[44px] group-data-[collapsible=icon]:flex-initial group-data-[collapsible=icon]:p-0"
-              >
-                <div className="w-10 h-10 bg-[#F3F4F6] rounded-full flex items-center justify-center flex-shrink-0">
-                  <span className="text-[#111827] font-semibold text-sm">
-                    {user?.full_name?.charAt(0)?.toUpperCase() || 'U'}
-                  </span>
-                </div>
-                <div className="flex-1 min-w-0 text-left group-data-[collapsible=icon]:hidden">
-                  <p className="font-medium text-[#111827] text-[14px] leading-[1.4] truncate">
+          {/* User Profile */}
+          <div className="p-3 border-t border-[#E5E7EB]">
+            <button
+              onClick={() => navigate(createPageUrl("UserProfile"))}
+              className={`
+                w-full flex items-center gap-3 p-2.5 hover:bg-[#F3F4F6] rounded-lg transition-colors
+                ${isCollapsed ? 'justify-center' : ''}
+              `}
+            >
+              <div className="w-10 h-10 bg-[#F3F4F6] rounded-full flex items-center justify-center flex-shrink-0">
+                <span className="text-[#111827] font-semibold text-sm">
+                  {user?.full_name?.charAt(0)?.toUpperCase() || 'U'}
+                </span>
+              </div>
+              {!isCollapsed && (
+                <div className="flex-1 min-w-0 text-left">
+                  <p className="font-medium text-[#111827] text-[14px] truncate">
                     {user?.full_name || 'User'}
                   </p>
-                  <p className="text-[12px] text-[#4B5563] leading-[1.35] truncate">{user?.email}</p>
+                  <p className="text-[12px] text-[#4B5563] truncate">{user?.email}</p>
                 </div>
-              </button>
+              )}
+            </button>
+            {!isCollapsed && (
               <button
                 onClick={handleLogout}
-                className="text-[12px] text-[#4B5563] hover:text-[#111827] px-2 font-medium leading-[1.35] group-data-[collapsible=icon]:hidden"
+                className="w-full mt-2 flex items-center gap-2 px-3 py-2 text-[#4B5563] hover:text-[#DC2626] hover:bg-red-50 rounded-lg transition-colors text-[14px]"
               >
+                <LogOut className="w-4 h-4" />
                 Logout
               </button>
-            </div>
-          </SidebarFooter>
-        </Sidebar>
-
-        <main className="flex-1 flex flex-col">
-          <header className="bg-white border-b border-[#E5E7EB] px-6 py-4 shadow-sm">
-            <div className="flex items-center gap-4">
-              <SidebarTrigger className="hover:bg-[#F3F4F6] p-2 rounded-lg transition-colors duration-150 min-h-[44px] min-w-[44px]" />
-              <h2 className="font-semibold text-[#111827]">FieldScheduler</h2>
-            </div>
-          </header>
-
-          <div className="flex-1 overflow-auto">
-            {children}
+            )}
           </div>
-        </main>
+        </div>
+      </aside>
 
-        <button
-          onClick={handleTestModeToggle}
-          className="fixed bottom-6 right-6 z-50 w-12 h-12 bg-[#D97706] hover:bg-[#B45309] text-white rounded-full shadow-lg flex items-center justify-center transition-all"
-          title={`Test Mode: ${getTestModeLabel()}`}
-        >
-          <TestTube2 className="w-5 h-5" />
-          <span className="absolute -top-1 -right-1 bg-[#92400E] text-white text-xs font-bold rounded-full w-5 h-5 flex items-center justify-center">
-            {getTestModeLabel().charAt(0)}
-          </span>
-        </button>
+      {/* Main Content Area */}
+      <div className="flex-1 flex flex-col min-w-0">
+        {/* Mobile Top Bar */}
+        <header className="lg:hidden bg-white border-b border-[#E5E7EB] px-4 py-3 sticky top-0 z-30">
+          <div className="flex items-center justify-between">
+            <button
+              onClick={() => setIsMobileMenuOpen(true)}
+              className="p-2 hover:bg-[#F3F4F6] rounded-lg transition-colors"
+              aria-label="Open navigation"
+            >
+              <Menu className="w-6 h-6 text-[#111827]" />
+            </button>
+            <h1 className="font-semibold text-[#111827]">
+              {navigationItems.find(item => item.url === location.pathname)?.title || 'FieldScheduler'}
+            </h1>
+            <div className="w-10" />
+          </div>
+        </header>
+
+        {/* Page Content */}
+        <main className="flex-1 overflow-auto">
+          {children}
+        </main>
       </div>
-    </SidebarProvider>
+
+      {/* Test Mode Toggle */}
+      <button
+        onClick={handleTestModeToggle}
+        className="fixed bottom-6 right-6 z-50 w-12 h-12 bg-[#D97706] hover:bg-[#B45309] text-white rounded-full shadow-lg flex items-center justify-center transition-all"
+        title={`Test Mode: ${getTestModeLabel()}`}
+      >
+        <TestTube2 className="w-5 h-5" />
+        <span className="absolute -top-1 -right-1 bg-[#92400E] text-white text-xs font-bold rounded-full w-5 h-5 flex items-center justify-center">
+          {getTestModeLabel().charAt(0)}
+        </span>
+      </button>
+    </div>
   );
 }
