@@ -39,6 +39,7 @@ export default function JobForm({ job, technicians, onSubmit, onCancel, isSubmit
     status: "Open",
     outcome: "",
     notes: "",
+    pricing_provided: "",
     additional_info: "",
     measurements: null,
     image_urls: [],
@@ -519,6 +520,15 @@ export default function JobForm({ job, technicians, onSubmit, onCancel, isSubmit
                 value={formData.notes}
                 onChange={(value) => setFormData({ ...formData, notes: value })}
                 placeholder="Add any special instructions or notes..."
+              />
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="pricing_provided" className="text-sm font-semibold text-[#000000]">Pricing Provided</Label>
+              <RichTextEditor
+                value={formData.pricing_provided}
+                onChange={(value) => setFormData({ ...formData, pricing_provided: value })}
+                placeholder="Enter pricing information provided to customer..."
               />
             </div>
 
