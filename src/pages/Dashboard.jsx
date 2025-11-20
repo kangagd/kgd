@@ -78,14 +78,14 @@ export default function Dashboard() {
       <div className="max-w-7xl mx-auto">
         <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-8 md:mb-10 gap-5">
           <div>
-            <h1 className="text-3xl md:text-4xl font-bold text-[#111827] tracking-tight">
+            <h1 className="text-[28px] font-bold text-[#111827] leading-[1.2]">
               Good {new Date().getHours() < 12 ? 'Morning' : new Date().getHours() < 18 ? 'Afternoon' : 'Evening'}, {user?.full_name?.split(' ')[0] || 'there'}!
             </h1>
-            <p className="text-[#4B5563] mt-2.5 text-base">Here's what's happening today</p>
+            <p className="text-[14px] text-[#4B5563] leading-[1.4] mt-2.5">Here's what's happening today</p>
           </div>
           <Button
             onClick={() => window.location.href = '/Jobs?action=new'}
-            className="bg-[#FAE008] hover:bg-[#E5CF07] text-[#111827] font-semibold shadow-md hover:shadow-lg transition-all duration-150 w-full md:w-auto h-12 rounded-lg"
+            className="bg-[#FAE008] hover:bg-[#E5CF07] text-[#111827] font-semibold shadow-md hover:shadow-lg transition-all duration-150 w-full md:w-auto h-12 rounded-lg text-[14px] leading-[1.4]"
           >
             <Plus className="w-5 h-5 mr-2" />
             New Job
@@ -102,11 +102,11 @@ export default function Dashboard() {
                 <Clock className="w-7 h-7 text-[#111827]" />
               </div>
               <div className="text-right">
-                <p className="text-4xl font-bold text-[#111827]">{todayJobs.length}</p>
+                <p className="text-[28px] font-bold text-[#111827] leading-[1.2]">{todayJobs.length}</p>
               </div>
             </div>
-            <h3 className="text-sm font-bold text-[#4B5563] uppercase tracking-wide mb-1.5">Today's Jobs</h3>
-            <p className="text-xs text-[#6B7280] group-hover:text-[#111827] transition-colors font-medium">Click to view →</p>
+            <h3 className="text-[14px] font-semibold text-[#4B5563] leading-[1.4] uppercase tracking-wide mb-1.5">Today's Jobs</h3>
+            <p className="text-[12px] text-[#6B7280] leading-[1.35] group-hover:text-[#111827] transition-colors font-normal">Click to view →</p>
           </div>
 
           <div
@@ -118,11 +118,11 @@ export default function Dashboard() {
                 <TrendingUp className="w-7 h-7 text-[#111827]" />
               </div>
               <div className="text-right">
-                <p className="text-4xl font-bold text-[#111827]">{activeJobs.length}</p>
+                <p className="text-[28px] font-bold text-[#111827] leading-[1.2]">{activeJobs.length}</p>
               </div>
             </div>
-            <h3 className="text-sm font-bold text-[#4B5563] uppercase tracking-wide mb-1.5">Active Jobs</h3>
-            <p className="text-xs text-[#6B7280] group-hover:text-[#111827] transition-colors font-medium">Click to view →</p>
+            <h3 className="text-[14px] font-semibold text-[#4B5563] leading-[1.4] uppercase tracking-wide mb-1.5">Active Jobs</h3>
+            <p className="text-[12px] text-[#6B7280] leading-[1.35] group-hover:text-[#111827] transition-colors font-normal">Click to view →</p>
           </div>
 
           <div
@@ -134,11 +134,11 @@ export default function Dashboard() {
                 <CheckCircle className="w-7 h-7 text-[#16A34A]" />
               </div>
               <div className="text-right">
-                <p className="text-4xl font-bold text-[#111827]">{completedToday.length}</p>
+                <p className="text-[28px] font-bold text-[#111827] leading-[1.2]">{completedToday.length}</p>
               </div>
             </div>
-            <h3 className="text-sm font-bold text-[#4B5563] uppercase tracking-wide mb-1.5">Completed Today</h3>
-            <p className="text-xs text-[#6B7280] group-hover:text-[#111827] transition-colors font-medium">Click to view →</p>
+            <h3 className="text-[14px] font-semibold text-[#4B5563] leading-[1.4] uppercase tracking-wide mb-1.5">Completed Today</h3>
+            <p className="text-[12px] text-[#6B7280] leading-[1.35] group-hover:text-[#111827] transition-colors font-normal">Click to view →</p>
           </div>
 
           <div
@@ -150,21 +150,21 @@ export default function Dashboard() {
                 <Briefcase className="w-7 h-7 text-[#4B5563]" />
               </div>
               <div className="text-right">
-                <p className="text-4xl font-bold text-[#111827]">{jobs.length}</p>
+                <p className="text-[28px] font-bold text-[#111827] leading-[1.2]">{jobs.length}</p>
               </div>
             </div>
-            <h3 className="text-sm font-bold text-[#4B5563] uppercase tracking-wide mb-1.5">Total Jobs</h3>
-            <p className="text-xs text-[#6B7280] group-hover:text-[#111827] transition-colors font-medium">Click to view →</p>
+            <h3 className="text-[14px] font-semibold text-[#4B5563] leading-[1.4] uppercase tracking-wide mb-1.5">Total Jobs</h3>
+            <p className="text-[12px] text-[#6B7280] leading-[1.35] group-hover:text-[#111827] transition-colors font-normal">Click to view →</p>
           </div>
         </div>
 
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 md:gap-7">
           <div className="bg-white rounded-xl border border-[#E5E7EB] p-7 shadow-sm">
-            <h2 className="text-xl font-bold text-[#111827] mb-6 tracking-tight">Today's Schedule</h2>
+            <h2 className="text-[22px] font-semibold text-[#111827] leading-[1.2] mb-6">Today's Schedule</h2>
             {todayJobs.length === 0 ? (
               <div className="text-center py-16">
                 <Clock className="w-14 h-14 mx-auto text-[#D1D5DB] mb-4" />
-                <p className="text-[#4B5563] text-sm font-medium">No jobs scheduled for today</p>
+                <p className="text-[14px] text-[#4B5563] leading-[1.4] font-normal">No jobs scheduled for today</p>
               </div>
             ) : (
               <div className="space-y-4">
@@ -176,13 +176,13 @@ export default function Dashboard() {
                   >
                     <div className="flex-1">
                       <div className="flex items-center gap-2.5 mb-2">
-                        <span className="font-bold text-[#111827] text-sm">#{job.job_number}</span>
-                        <span className={`text-xs px-3 py-1 rounded-full border font-semibold ${statusColors[job.status]}`}>
+                        <span className="text-[14px] font-semibold text-[#111827] leading-[1.4]">#{job.job_number}</span>
+                        <span className={`text-[12px] px-3 py-1 rounded-full border font-medium leading-[1.35] ${statusColors[job.status]}`}>
                           {job.status}
                         </span>
                       </div>
-                      <p className="text-sm font-semibold text-[#111827]">{job.customer_name}</p>
-                      <p className="text-xs text-[#4B5563] mt-1 font-medium">{job.scheduled_time || 'No time set'}</p>
+                      <p className="text-[16px] font-medium text-[#111827] leading-[1.4]">{job.customer_name}</p>
+                      <p className="text-[14px] text-[#4B5563] leading-[1.4] mt-1 font-normal">{job.scheduled_time || 'No time set'}</p>
                     </div>
                   </div>
                 ))}
@@ -191,25 +191,25 @@ export default function Dashboard() {
           </div>
 
           <div className="bg-white rounded-xl border border-[#E5E7EB] p-7 shadow-sm">
-            <h2 className="text-xl font-bold text-[#111827] mb-6 tracking-tight">Recent Check-ins</h2>
+            <h2 className="text-[22px] font-semibold text-[#111827] leading-[1.2] mb-6">Recent Check-ins</h2>
             {todayCheckIns.length === 0 ? (
               <div className="text-center py-16">
                 <CheckCircle className="w-14 h-14 mx-auto text-[#D1D5DB] mb-4" />
-                <p className="text-[#4B5563] text-sm font-medium">No check-ins today</p>
+                <p className="text-[14px] text-[#4B5563] leading-[1.4] font-normal">No check-ins today</p>
               </div>
             ) : (
               <div className="space-y-4">
                 {todayCheckIns.slice(0, 5).map(checkIn => (
                   <div key={checkIn.id} className="p-5 rounded-xl border border-[#E5E7EB] hover:bg-[#F9FAFB] transition-colors min-h-[72px]">
                     <div className="flex items-center justify-between mb-2.5">
-                      <span className="font-bold text-[#111827] text-sm">{checkIn.technician_name}</span>
+                      <span className="text-[16px] font-medium text-[#111827] leading-[1.4]">{checkIn.technician_name}</span>
                       {checkIn.duration_hours && (
-                        <span className="text-sm font-bold text-[#111827] bg-[#FAE008] px-3 py-1.5 rounded-lg">
+                        <span className="text-[14px] font-semibold text-[#111827] leading-[1.4] bg-[#FAE008] px-3 py-1.5 rounded-lg">
                           {checkIn.duration_hours.toFixed(1)}h
                         </span>
                       )}
                     </div>
-                    <div className="text-xs text-[#4B5563] space-y-1.5 font-medium">
+                    <div className="text-[12px] text-[#4B5563] leading-[1.35] space-y-1.5 font-normal">
                       <div className="flex items-center gap-2">
                         <span className="font-semibold">Check-in:</span>
                         <span>{new Date(checkIn.check_in_time).toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' })}</span>
