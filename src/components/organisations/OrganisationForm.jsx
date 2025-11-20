@@ -5,7 +5,7 @@ import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { ArrowLeft } from "lucide-react";
-import RichTextEditor from "../common/RichTextEditor";
+import RichTextField from "../common/RichTextField";
 
 export default function OrganisationForm({ organisation, onSubmit, onCancel, isSubmitting }) {
   const [formData, setFormData] = useState(organisation || {
@@ -151,14 +151,13 @@ export default function OrganisationForm({ organisation, onSubmit, onCancel, isS
             </div>
           </div>
 
-          <div className="space-y-2">
-            <Label htmlFor="notes" className="text-sm font-semibold text-[#000000]">Notes</Label>
-            <RichTextEditor
-              value={formData.notes}
-              onChange={(value) => setFormData({ ...formData, notes: value })}
-              placeholder="Add any notes about this organisation..."
-            />
-          </div>
+          <RichTextField
+            label="Notes"
+            value={formData.notes}
+            onChange={(value) => setFormData({ ...formData, notes: value })}
+            placeholder="Add any notes about this organisation…"
+            helperText="Internal only"
+          />
         </CardContent>
         <CardFooter className="border-t-2 border-slate-200 flex justify-end gap-3 p-6 bg-slate-50">
           <Button 
