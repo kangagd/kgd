@@ -194,6 +194,77 @@ export default function ProjectDetails({ project: initialProject, onClose, onEdi
     updateProjectMutation.mutate({ field: fieldName, value: newValue });
   };
 
+  const handleStageChange = async (newStage) => {
+    const oldStage = project.status;
+    
+    // Save the stage change
+    await handleFieldSave('status', oldStage, newStage);
+
+    // Auto-create jobs based on stage
+    const autoCreateJob = async (jobTypeName) => {
+      // Check if job type already exists for this project
+      const existingJob = jobs.find(j => j.job_type_name === jobTypeName);
+      if (existingJob) {
+        // Job already exists, navigate to it
+        handleJobClick(existingJob.id);
+        return;
+      }
+
+      // Fetch job types to get the ID
+      const jobTypes = await base44.entities.JobType.list();
+      const jobType = jobTypes.find(jt => jt.name === jobTypeName);
+      
+      // Get the latest job number
+      const allJobs = await base44.entities.Job.list('-job_number', 1);
+      const nextJobNumber = allJobs.length > 0 ? (allJobs[0].job_number || 5000) + 1 : 5000;
+
+      // Create the job
+      const newJob = await base44.entities.Job.create({
+        job_number: nextJobNumber,
+        project_id: project.id,
+        project_name: project.title,
+        customer_id: project.customer_id,
+        customer_name: project.customer_name,
+        customer_phone: project.customer_phone,
+        customer_email: project.customer_email,
+        address: project.address,
+        job_type_id: jobType?.id || null,
+        job_type_name: jobTypeName,
+        status: jobTypeName === "Installation" && newStage === "Scheduled" ? "Scheduled" : "Open",
+        notes: `Auto-created from project stage: ${newStage}`
+      });
+
+      // Log the auto-creation in change history
+      const user = await base44.auth.me();
+      await base44.entities.ChangeHistory.create({
+        project_id: project.id,
+        field_name: 'auto_created_job',
+        old_value: '',
+        new_value: `${jobTypeName} (Job #${nextJobNumber})`,
+        changed_by: user.email,
+        changed_by_name: user.full_name
+      });
+
+      // Refresh jobs and navigate to the new job
+      queryClient.invalidateQueries({ queryKey: ['projectJobs', project.id] });
+      queryClient.invalidateQueries({ queryKey: ['allJobs'] });
+      
+      // Navigate to the new job
+      setTimeout(() => {
+        handleJobClick(newJob.id);
+      }, 500);
+    };
+
+    // Stage-based automation
+    if (newStage === "Initial Site Visit") {
+      await autoCreateJob("Initial Site Visit");
+    } else if (newStage === "Final Measure") {
+      await autoCreateJob("Final Measure");
+    } else if (newStage === "Scheduled") {
+      await autoCreateJob("Installation");
+    }
+  };
+
   const handleDescriptionBlur = async () => {
     if (description !== project.description) {
       const user = await base44.auth.me();
@@ -285,12 +356,17 @@ export default function ProjectDetails({ project: initialProject, onClose, onEdi
   const isInstallType = project.project_type && project.project_type.includes("Install");
 
   React.useEffect(() => {
+    // Auto-focus tabs based on project stage
     if (project.status === "Completed") {
       setActiveTab("summary");
+    } else if (project.status === "Lead" || project.status === "Initial Site Visit") {
+      setActiveTab("overview");
+    } else if (project.status === "Quote Sent" || project.status === "Quote Approved") {
+      setActiveTab("quoting");
     } else if (project.status === "Parts Ordered") {
       setActiveTab("parts");
-    } else if (project.status === "Quote Sent") {
-      setActiveTab("quoting");
+    } else if (project.status === "Scheduled") {
+      setActiveTab("overview"); // Stay on overview but jobs list is visible in sidebar
     }
   }, [project.status]);
 
@@ -538,7 +614,7 @@ export default function ProjectDetails({ project: initialProject, onClose, onEdi
             <div className="text-[12px] font-medium text-[#4B5563] leading-[1.35] mb-2 uppercase tracking-wide">Project Stage</div>
             <ProjectStageSelector
               currentStage={project.status}
-              onStageChange={(newStage) => handleFieldSave('status', project.status, newStage)}
+              onStageChange={handleStageChange}
             />
           </div>
 
