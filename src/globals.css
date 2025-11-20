@@ -81,15 +81,113 @@ css
 }
 
 @layer components {
+  /* Global Spacing System */
+  :root {
+    --spacing-xs: 4px;
+    --spacing-s: 8px;
+    --spacing-m: 12px;
+    --spacing-l: 16px;
+    --spacing-xl: 20px;
+    --spacing-xxl: 32px;
+
+    /* Page Margins */
+    --page-margin-mobile: 16px;
+    --page-margin-tablet: 24px;
+    --page-margin-desktop: 32px;
+
+    /* Page Top Spacing */
+    --page-top-mobile: 16px;
+    --page-top-tablet: 20px;
+    --page-top-desktop: 24px;
+
+    /* Card Padding */
+    --card-padding-mobile: 16px;
+    --card-padding-desktop: 24px;
+
+    /* Card Spacing */
+    --card-gap: 20px;
+    --card-inner-gap: 12px;
+  }
+
+  /* Global Page Container */
+  .page-container {
+    @apply bg-[#F8F9FA] min-h-screen;
+    padding: var(--page-top-mobile) var(--page-margin-mobile);
+  }
+
+  @media (min-width: 768px) {
+    .page-container {
+      padding: var(--page-top-tablet) var(--page-margin-tablet);
+    }
+  }
+
+  @media (min-width: 1024px) {
+    .page-container {
+      padding: var(--page-top-desktop) var(--page-margin-desktop);
+    }
+  }
+
+  /* Global Card Styles */
+  .card-global {
+    @apply bg-white rounded-xl border border-[#E5E7EB] shadow-sm;
+    padding: var(--card-padding-mobile);
+  }
+
+  @media (min-width: 1024px) {
+    .card-global {
+      padding: var(--card-padding-desktop);
+    }
+  }
+
+  /* Card Gap Between Cards */
+  .card-grid {
+    display: grid;
+    gap: var(--card-gap);
+  }
+
+  /* Section Title */
+  .section-title {
+    @apply text-[16px] font-semibold text-[#111827] leading-[1.2];
+    margin-top: var(--spacing-xl);
+    margin-bottom: var(--spacing-m);
+  }
+
+  .section-title:first-child {
+    margin-top: 0;
+  }
+
+  /* Inner Card Spacing */
+  .card-content-gap > * + * {
+    margin-top: var(--card-inner-gap);
+  }
+
   /* Chip Container Scrolling */
   .chip-container {
-    @apply overflow-x-auto overflow-y-hidden -mx-5 px-5 md:mx-0 md:px-0;
+    @apply overflow-x-auto overflow-y-hidden;
     scrollbar-width: none;
     -ms-overflow-style: none;
+    padding: var(--spacing-s) 0;
+    margin-left: calc(var(--page-margin-mobile) * -1);
+    margin-right: calc(var(--page-margin-mobile) * -1);
+    padding-left: var(--page-margin-mobile);
+    padding-right: var(--page-margin-mobile);
+  }
+
+  @media (min-width: 768px) {
+    .chip-container {
+      margin-left: 0;
+      margin-right: 0;
+      padding-left: 0;
+      padding-right: 0;
+    }
   }
 
   .chip-container::-webkit-scrollbar {
     display: none;
+  }
+
+  .chip-container > * {
+    gap: var(--spacing-s);
   }
 
   /* Typography Utilities */
