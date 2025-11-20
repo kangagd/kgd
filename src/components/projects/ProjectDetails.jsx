@@ -2,7 +2,8 @@ import React, { useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { ArrowLeft, Plus, Edit, Trash2, MapPin, Phone, Mail, FileText, Image as ImageIcon, User } from "lucide-react";
+import { Input } from "@/components/ui/input";
+import { ArrowLeft, Plus, Edit, Trash2, MapPin, Phone, Mail, FileText, Image as ImageIcon, User, Upload, X } from "lucide-react";
 import { base44 } from "@/api/base44Client";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useNavigate } from "react-router-dom";
@@ -54,6 +55,8 @@ export default function ProjectDetails({ project, onClose, onEdit, onDelete }) {
   const queryClient = useQueryClient();
   const [description, setDescription] = useState(project.description || "");
   const [notes, setNotes] = useState(project.notes || "");
+  const [uploading, setUploading] = useState(false);
+  const [newDoor, setNewDoor] = useState({ height: "", width: "", type: "", style: "" });
 
   const { data: projectJobs = [] } = useQuery({
     queryKey: ['projectJobs', project.id],
@@ -118,6 +121,53 @@ export default function ProjectDetails({ project, onClose, onEdit, onDelete }) {
     }).filter(Boolean);
     updateProjectMutation.mutate({ field: 'assigned_technicians', value: emailsArray });
     updateProjectMutation.mutate({ field: 'assigned_technicians_names', value: techNames });
+  };
+
+  const handleFileUpload = async (event, type) => {
+    const file = event.target.files?.[0];
+    if (!file) return;
+
+    setUploading(true);
+    try {
+      const { file_url } = await base44.integrations.Core.UploadFile({ file });
+      
+      if (type === 'image') {
+        const currentImages = project.image_urls || [];
+        updateProjectMutation.mutate({ 
+          field: 'image_urls', 
+          value: [...currentImages, file_url] 
+        });
+      } else if (type === 'quote') {
+        updateProjectMutation.mutate({ field: 'quote_url', value: file_url });
+      } else if (type === 'invoice') {
+        updateProjectMutation.mutate({ field: 'invoice_url', value: file_url });
+      }
+    } catch (error) {
+      console.error('Upload failed:', error);
+    } finally {
+      setUploading(false);
+    }
+  };
+
+  const handleRemoveImage = (indexToRemove) => {
+    const updatedImages = project.image_urls.filter((_, index) => index !== indexToRemove);
+    updateProjectMutation.mutate({ field: 'image_urls', value: updatedImages });
+  };
+
+  const handleAddDoor = () => {
+    if (!newDoor.height && !newDoor.width && !newDoor.type) return;
+    
+    const currentDoors = project.doors || [];
+    updateProjectMutation.mutate({ 
+      field: 'doors', 
+      value: [...currentDoors, newDoor] 
+    });
+    setNewDoor({ height: "", width: "", type: "", style: "" });
+  };
+
+  const handleRemoveDoor = (indexToRemove) => {
+    const updatedDoors = project.doors.filter((_, index) => index !== indexToRemove);
+    updateProjectMutation.mutate({ field: 'doors', value: updatedDoors });
   };
 
   const isInstallType = project.project_type && project.project_type.includes("Install");
@@ -357,7 +407,7 @@ export default function ProjectDetails({ project, onClose, onEdit, onDelete }) {
           </CardContent>
         </Card>
 
-        {isInstallType && project.doors && project.doors.length > 0 && (
+        {isInstallType && (
           <Card className="border border-[#E5E7EB] shadow-sm overflow-hidden">
             <CardHeader className="bg-[#F8F9FA] px-4 py-3 border-b border-[#E5E7EB]">
               <div className="flex items-center gap-2">
@@ -365,34 +415,80 @@ export default function ProjectDetails({ project, onClose, onEdit, onDelete }) {
                 <h3 className="text-sm font-bold text-[#111827]">Installation Details</h3>
               </div>
             </CardHeader>
-            <CardContent className="p-3">
-              <div className="flex flex-wrap gap-2">
-                {project.doors.map((door, idx) => (
-                  <Badge key={idx} variant="outline" className="bg-blue-50 border-blue-200 text-blue-700 font-medium px-3 py-1.5 text-sm">
-                    Door {idx + 1}: {door.height && door.width ? `${door.height} × ${door.width}` : 'Pending specs'}
-                    {door.type && ` • ${door.type}`}
-                    {door.style && ` • ${door.style}`}
-                  </Badge>
-                ))}
+            <CardContent className="p-3 space-y-3">
+              {project.doors && project.doors.length > 0 && (
+                <div className="flex flex-wrap gap-2">
+                  {project.doors.map((door, idx) => (
+                    <div key={idx} className="relative group">
+                      <Badge variant="outline" className="bg-blue-50 border-blue-200 text-blue-700 font-medium px-3 py-1.5 text-sm pr-8">
+                        Door {idx + 1}: {door.height && door.width ? `${door.height} × ${door.width}` : 'Pending specs'}
+                        {door.type && ` • ${door.type}`}
+                        {door.style && ` • ${door.style}`}
+                      </Badge>
+                      <button
+                        onClick={() => handleRemoveDoor(idx)}
+                        className="absolute -top-1 -right-1 bg-red-500 text-white rounded-full w-5 h-5 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity"
+                      >
+                        <X className="w-3 h-3" />
+                      </button>
+                    </div>
+                  ))}
+                </div>
+              )}
+              
+              <div className="border border-[#E5E7EB] rounded-lg p-3 bg-[#F8F9FA]">
+                <div className="grid grid-cols-2 md:grid-cols-4 gap-2 mb-2">
+                  <Input
+                    placeholder="Height"
+                    value={newDoor.height}
+                    onChange={(e) => setNewDoor({ ...newDoor, height: e.target.value })}
+                    className="h-9 text-sm"
+                  />
+                  <Input
+                    placeholder="Width"
+                    value={newDoor.width}
+                    onChange={(e) => setNewDoor({ ...newDoor, width: e.target.value })}
+                    className="h-9 text-sm"
+                  />
+                  <Input
+                    placeholder="Type"
+                    value={newDoor.type}
+                    onChange={(e) => setNewDoor({ ...newDoor, type: e.target.value })}
+                    className="h-9 text-sm"
+                  />
+                  <Input
+                    placeholder="Style"
+                    value={newDoor.style}
+                    onChange={(e) => setNewDoor({ ...newDoor, style: e.target.value })}
+                    className="h-9 text-sm"
+                  />
+                </div>
+                <Button
+                  onClick={handleAddDoor}
+                  size="sm"
+                  className="bg-[#FAE008] text-[#111827] hover:bg-[#E5CF07] font-semibold h-8"
+                >
+                  <Plus className="w-4 h-4 mr-1" />
+                  Add Door
+                </Button>
               </div>
             </CardContent>
           </Card>
         )}
 
-        {((project.image_urls && project.image_urls.length > 0) || project.quote_url || project.invoice_url) && (
-          <Card className="border border-[#E5E7EB] shadow-sm overflow-hidden">
-            <CardHeader className="bg-[#F8F9FA] px-4 py-3 border-b border-[#E5E7EB]">
-              <div className="flex items-center gap-2">
-                <ImageIcon className="w-4 h-4 text-[#6B7280]" />
-                <h3 className="text-sm font-bold text-[#111827]">Attachments</h3>
-              </div>
-            </CardHeader>
-            <CardContent className="p-3 space-y-3">
-              {project.image_urls && project.image_urls.length > 0 && (
-                <div className="grid grid-cols-3 gap-2">
-                  {project.image_urls.map((url, index) => (
+        <Card className="border border-[#E5E7EB] shadow-sm overflow-hidden">
+          <CardHeader className="bg-[#F8F9FA] px-4 py-3 border-b border-[#E5E7EB]">
+            <div className="flex items-center gap-2">
+              <ImageIcon className="w-4 h-4 text-[#6B7280]" />
+              <h3 className="text-sm font-bold text-[#111827]">Attachments</h3>
+            </div>
+          </CardHeader>
+          <CardContent className="p-3 space-y-3">
+            {project.image_urls && project.image_urls.length > 0 && (
+              <div className="grid grid-cols-3 gap-2">
+                {project.image_urls.map((url, index) => (
+                  <div key={index} className="relative group">
                     <a 
-                      key={index} 
                       href={url} 
                       target="_blank" 
                       rel="noopener noreferrer"
@@ -404,39 +500,108 @@ export default function ProjectDetails({ project, onClose, onEdit, onDelete }) {
                         className="w-full h-24 object-cover rounded-lg border border-[#E5E7EB] hover:border-[#FAE008] transition-all"
                       />
                     </a>
-                  ))}
-                </div>
-              )}
+                    <button
+                      onClick={() => handleRemoveImage(index)}
+                      className="absolute -top-1 -right-1 bg-red-500 text-white rounded-full w-6 h-6 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity"
+                    >
+                      <X className="w-4 h-4" />
+                    </button>
+                  </div>
+                ))}
+              </div>
+            )}
 
-              {(project.quote_url || project.invoice_url) && (
-                <div className="space-y-2">
-                  {project.quote_url && (
-                    <a 
-                      href={project.quote_url} 
-                      target="_blank" 
-                      rel="noopener noreferrer"
-                      className="flex items-center gap-2 px-3 py-2 bg-white border border-[#E5E7EB] rounded-lg hover:border-[#FAE008] transition-all"
-                    >
-                      <FileText className="w-4 h-4 text-blue-600" />
-                      <span className="text-sm font-medium text-[#111827]">Quote Document</span>
-                    </a>
-                  )}
-                  {project.invoice_url && (
-                    <a 
-                      href={project.invoice_url} 
-                      target="_blank" 
-                      rel="noopener noreferrer"
-                      className="flex items-center gap-2 px-3 py-2 bg-white border border-[#E5E7EB] rounded-lg hover:border-[#FAE008] transition-all"
-                    >
-                      <FileText className="w-4 h-4 text-green-600" />
-                      <span className="text-sm font-medium text-[#111827]">Invoice Document</span>
-                    </a>
-                  )}
-                </div>
-              )}
-            </CardContent>
-          </Card>
-        )}
+            <div className="flex gap-2">
+              <label className="flex-1">
+                <Button
+                  type="button"
+                  variant="outline"
+                  className="w-full h-10"
+                  disabled={uploading}
+                  asChild
+                >
+                  <span>
+                    <Upload className="w-4 h-4 mr-2" />
+                    {uploading ? 'Uploading...' : 'Add Image'}
+                  </span>
+                </Button>
+                <input
+                  type="file"
+                  accept="image/*"
+                  className="hidden"
+                  onChange={(e) => handleFileUpload(e, 'image')}
+                />
+              </label>
+              <label className="flex-1">
+                <Button
+                  type="button"
+                  variant="outline"
+                  className="w-full h-10"
+                  disabled={uploading}
+                  asChild
+                >
+                  <span>
+                    <FileText className="w-4 h-4 mr-2" />
+                    Quote
+                  </span>
+                </Button>
+                <input
+                  type="file"
+                  accept=".pdf,.doc,.docx"
+                  className="hidden"
+                  onChange={(e) => handleFileUpload(e, 'quote')}
+                />
+              </label>
+              <label className="flex-1">
+                <Button
+                  type="button"
+                  variant="outline"
+                  className="w-full h-10"
+                  disabled={uploading}
+                  asChild
+                >
+                  <span>
+                    <FileText className="w-4 h-4 mr-2" />
+                    Invoice
+                  </span>
+                </Button>
+                <input
+                  type="file"
+                  accept=".pdf,.doc,.docx"
+                  className="hidden"
+                  onChange={(e) => handleFileUpload(e, 'invoice')}
+                />
+              </label>
+            </div>
+
+            {(project.quote_url || project.invoice_url) && (
+              <div className="space-y-2">
+                {project.quote_url && (
+                  <a 
+                    href={project.quote_url} 
+                    target="_blank" 
+                    rel="noopener noreferrer"
+                    className="flex items-center gap-2 px-3 py-2 bg-white border border-[#E5E7EB] rounded-lg hover:border-[#FAE008] transition-all"
+                  >
+                    <FileText className="w-4 h-4 text-blue-600" />
+                    <span className="text-sm font-medium text-[#111827]">Quote Document</span>
+                  </a>
+                )}
+                {project.invoice_url && (
+                  <a 
+                    href={project.invoice_url} 
+                    target="_blank" 
+                    rel="noopener noreferrer"
+                    className="flex items-center gap-2 px-3 py-2 bg-white border border-[#E5E7EB] rounded-lg hover:border-[#FAE008] transition-all"
+                  >
+                    <FileText className="w-4 h-4 text-green-600" />
+                    <span className="text-sm font-medium text-[#111827]">Invoice Document</span>
+                  </a>
+                )}
+              </div>
+            )}
+          </CardContent>
+        </Card>
 
 
 
