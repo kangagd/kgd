@@ -26,6 +26,7 @@ import ProjectChangeHistoryModal from "./ProjectChangeHistoryModal";
 import ProjectStageSelector from "./ProjectStageSelector";
 import PartsSection from "./PartsSection";
 import ProjectSummary from "./ProjectSummary";
+import ProjectVisitsTab from "./ProjectVisitsTab";
 
 const statusColors = {
   "Lead": "bg-slate-100 text-slate-800",
@@ -742,12 +743,16 @@ Format as HTML bullet points using <ul> and <li> tags. Include only the most cri
 
       <CardContent className="p-3 md:p-4">
         <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-          <TabsList className="w-full grid grid-cols-6 h-11 bg-[#F8F9FA] border border-[#E5E7EB] rounded-lg p-1">
+          <TabsList className="w-full grid grid-cols-7 h-11 bg-[#F8F9FA] border border-[#E5E7EB] rounded-lg p-1">
             <TabsTrigger 
               value="overview" 
               className="text-[14px] font-medium leading-[1.4] data-[state=active]:bg-white data-[state=active]:shadow-sm"
             >
               Overview
+            </TabsTrigger>
+            <TabsTrigger value="visits" className="text-[14px] font-medium leading-[1.4] data-[state=active]:bg-white data-[state=active]:shadow-sm">
+              <Briefcase className="w-4 h-4 mr-1.5" />
+              <span className="hidden md:inline">Visits</span>
             </TabsTrigger>
             <TabsTrigger value="quoting" className="text-[14px] font-medium leading-[1.4] data-[state=active]:bg-white data-[state=active]:shadow-sm">Quoting</TabsTrigger>
             <TabsTrigger value="parts" className="text-[14px] font-medium leading-[1.4] data-[state=active]:bg-white data-[state=active]:shadow-sm">Parts</TabsTrigger>
@@ -876,6 +881,10 @@ Format as HTML bullet points using <ul> and <li> tags. Include only the most cri
                 </div>
               </div>
             )}
+          </TabsContent>
+
+          <TabsContent value="visits" className="mt-3">
+            <ProjectVisitsTab projectId={project.id} isReadOnly={false} />
           </TabsContent>
 
           <TabsContent value="summary" className="mt-3">

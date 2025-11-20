@@ -213,17 +213,38 @@ export default function JobDetails({ job: initialJob, onClose, onStatusChange, o
       const checkOutTime = new Date().toISOString();
       const checkInTime = new Date(activeCheckIn.check_in_time);
       const durationHours = (new Date(checkOutTime) - checkInTime) / (1000 * 60 * 60);
+      const durationMinutes = Math.round(durationHours * 60);
 
+      // Determine new status
+      const newStatus = determineJobStatus(job.scheduled_date, outcome, false, job.status);
+
+      // Build scheduled datetime
+      let scheduledDatetime = null;
+      if (job.scheduled_date) {
+        const dateStr = job.scheduled_date;
+        const timeStr = job.scheduled_time || '09:00';
+        scheduledDatetime = `${dateStr}T${timeStr}:00.000Z`;
+      }
+
+      // Create job summary
       await base44.entities.JobSummary.create({
         job_id: job.id,
+        project_id: job.project_id || null,
         job_number: job.job_number,
+        job_type: job.job_type_name || null,
+        scheduled_datetime: scheduledDatetime,
         technician_email: user.email,
         technician_name: user.full_name,
-        checkout_time: checkOutTime,
+        check_in_time: activeCheckIn.check_in_time,
+        check_out_time: checkOutTime,
+        duration_minutes: durationMinutes,
         overview,
         next_steps: nextSteps,
         communication_with_client: communicationWithClient,
-        outcome
+        outcome,
+        status_at_checkout: newStatus,
+        photo_urls: job.image_urls || [],
+        measurements: job.measurements || null
       });
 
       await base44.entities.CheckInOut.update(activeCheckIn.id, {
@@ -231,8 +252,7 @@ export default function JobDetails({ job: initialJob, onClose, onStatusChange, o
         duration_hours: Math.round(durationHours * 10) / 10
       });
 
-      // Update status after checkout - no longer has active check-in
-      const newStatus = determineJobStatus(job.scheduled_date, outcome, false, job.status);
+      // Update job status and clear temp fields
       await base44.entities.Job.update(job.id, {
         overview: "",
         next_steps: "",
@@ -249,6 +269,7 @@ export default function JobDetails({ job: initialJob, onClose, onStatusChange, o
       setOutcome("");
       queryClient.invalidateQueries({ queryKey: ['checkIns', job.id] });
       queryClient.invalidateQueries({ queryKey: ['jobSummaries', job.id] });
+      queryClient.invalidateQueries({ queryKey: ['projectJobSummaries'] });
       queryClient.invalidateQueries({ queryKey: ['jobs'] });
     },
     onError: (error) => {
