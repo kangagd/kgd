@@ -251,10 +251,15 @@ export default function Projects() {
             </Button>
           </div>
 
-          <div className="flex gap-2 overflow-x-auto pb-2 scrollbar-thin">
+          <div className="flex gap-2 overflow-x-auto pb-2 -mx-5 px-5 md:mx-0 md:px-0" style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}>
+            <style jsx>{`
+              div::-webkit-scrollbar {
+                display: none;
+              }
+            `}</style>
             <Badge
               onClick={() => setStageFilter("all")}
-              className={`cursor-pointer px-4 py-2 text-[13px] font-medium transition-all whitespace-nowrap ${
+              className={`cursor-pointer px-4 py-2 text-[13px] font-medium transition-all whitespace-nowrap rounded-full flex-shrink-0 ${
                 stageFilter === "all"
                   ? "bg-[#FAE008] text-[#111827] border-2 border-[#FAE008] hover:bg-[#E5CF07]"
                   : "bg-white text-[#4B5563] border-2 border-[#E5E7EB] hover:border-[#FAE008] hover:bg-[#FFFEF5]"
@@ -266,7 +271,7 @@ export default function Projects() {
               <Badge
                 key={stage}
                 onClick={() => setStageFilter(stage)}
-                className={`cursor-pointer px-4 py-2 text-[13px] font-medium transition-all whitespace-nowrap ${
+                className={`cursor-pointer px-4 py-2 text-[13px] font-medium transition-all whitespace-nowrap rounded-full flex-shrink-0 ${
                   stageFilter === stage
                     ? `${statusColors[stage]} border-2 hover:opacity-90`
                     : "bg-white text-[#4B5563] border-2 border-[#E5E7EB] hover:border-[#FAE008] hover:bg-[#FFFEF5]"
