@@ -129,12 +129,12 @@ export default function Customers() {
       <div className="max-w-7xl mx-auto">
         <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-8 gap-5">
           <div>
-            <h1 className="text-3xl font-bold text-[#111827] tracking-tight">Customers</h1>
-            <p className="text-[#4B5563] mt-2.5">Manage customer information</p>
+            <h1 className="text-[28px] font-bold text-[#111827] leading-[1.2]">Customers</h1>
+            <p className="text-[14px] text-[#4B5563] leading-[1.4] mt-2.5">Manage customer information</p>
           </div>
           <Button
             onClick={() => setShowForm(true)}
-            className="bg-[#FAE008] text-[#111827] hover:bg-[#E5CF07] font-semibold shadow-md hover:shadow-lg transition-all w-full md:w-auto h-12 rounded-lg"
+            className="bg-[#FAE008] text-[#111827] hover:bg-[#E5CF07] font-semibold shadow-md hover:shadow-lg transition-all w-full md:w-auto h-12 rounded-lg text-[14px] leading-[1.4]"
           >
             <Plus className="w-5 h-5 mr-2" />
             New Customer
@@ -148,7 +148,7 @@ export default function Customers() {
               placeholder="Search customers..."
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
-              className="pl-12 border border-[#E5E7EB] focus:border-[#FAE008] focus:ring-2 focus:ring-[#FAE008]/20 transition-all h-12 text-base rounded-lg"
+              className="pl-12 border border-[#E5E7EB] focus:border-[#FAE008] focus:ring-2 focus:ring-[#FAE008]/20 transition-all h-12 text-[14px] leading-[1.4] rounded-lg"
             />
           </div>
         </div>
@@ -168,8 +168,8 @@ export default function Customers() {
         ) : filteredCustomers.length === 0 ? (
           <Card className="p-12 text-center rounded-2xl border-2 border-[hsl(32,15%,88%)]">
             <User className="w-16 h-16 mx-auto text-[hsl(32,15%,88%)] mb-4" />
-            <h3 className="text-lg font-bold text-[hsl(25,10%,12%)] mb-2">No customers found</h3>
-            <p className="text-[hsl(25,8%,45%)]">Try adjusting your search or add a new customer</p>
+            <h3 className="text-[18px] font-semibold text-[#111827] leading-[1.2] mb-2">No customers found</h3>
+            <p className="text-[14px] text-[#6B7280] leading-[1.4]">Try adjusting your search or add a new customer</p>
           </Card>
         ) : (
           <div className="grid gap-4">
@@ -184,16 +184,16 @@ export default function Customers() {
                   <div className="flex items-start justify-between mb-4">
                     <div className="flex-1 min-w-0">
                       <div className="flex items-center gap-2 mb-2 flex-wrap">
-                        <h3 className="font-bold text-xl text-[hsl(25,10%,12%)] group-hover:text-[#fae008] transition-colors tracking-tight">
+                        <h3 className="text-[22px] font-semibold text-[#111827] leading-[1.2] group-hover:text-[#fae008] transition-colors">
                           {customer.name}
                         </h3>
                         {customer.status && (
-                          <Badge variant="outline" className="text-xs font-medium border-[hsl(32,15%,88%)]">
+                          <Badge variant="outline" className="text-[12px] font-normal leading-[1.35] border-[#E5E7EB]">
                             {customer.status}
                           </Badge>
                         )}
                         {customer.customer_type && (
-                          <Badge className={`${customerTypeColors[customer.customer_type]} text-xs font-semibold border-2`}>
+                          <Badge className={`${customerTypeColors[customer.customer_type]} text-[12px] font-medium leading-[1.35] border-2`}>
                             {customer.customer_type}
                           </Badge>
                         )}
@@ -203,19 +203,19 @@ export default function Customers() {
                         {customer.phone && (
                           <div className="flex items-center gap-2 text-[hsl(25,10%,25%)]">
                             <Phone className="w-4 h-4 text-[hsl(25,8%,55%)]" />
-                            <span className="text-sm font-medium">{customer.phone}</span>
+                            <span className="text-[14px] font-normal leading-[1.4]">{customer.phone}</span>
                           </div>
                         )}
                         {customer.email && (
                           <div className="flex items-center gap-2 text-[hsl(25,10%,25%)]">
                             <Mail className="w-4 h-4 text-[hsl(25,8%,55%)]" />
-                            <span className="text-sm font-medium truncate">{customer.email}</span>
+                            <span className="text-[14px] font-normal leading-[1.4] truncate">{customer.email}</span>
                           </div>
                         )}
                         {customer.address && (
                           <div className="flex items-start gap-2 text-[hsl(25,10%,25%)]">
                             <MapPin className="w-4 h-4 text-[hsl(25,8%,55%)] mt-0.5" />
-                            <span className="text-sm font-medium">{customer.address}</span>
+                            <span className="text-[14px] font-normal leading-[1.4]">{customer.address}</span>
                           </div>
                         )}
                       </div>

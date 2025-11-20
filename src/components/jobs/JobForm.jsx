@@ -430,7 +430,7 @@ export default function JobForm({ job, technicians, onSubmit, onCancel, isSubmit
             >
               <ArrowLeft className="w-5 h-5" />
             </Button>
-            <CardTitle className="text-2xl font-bold text-[#000000] tracking-tight">
+            <CardTitle className="text-[22px] font-semibold text-[#111827] leading-[1.2]">
               {job ? `Edit Job #${job.job_number}` : formData.project_name ? `New Job - ${formData.project_name}` : 'Create New Job'}
             </CardTitle>
           </div>
@@ -439,7 +439,7 @@ export default function JobForm({ job, technicians, onSubmit, onCancel, isSubmit
           <CardContent className="p-6 space-y-6">
             {!preselectedProjectId && (
               <div className="space-y-2">
-                <Label htmlFor="project_id" className="text-sm font-semibold text-[#000000]">Project (Optional)</Label>
+                <Label htmlFor="project_id" className="text-[14px] font-medium text-[#111827] leading-[1.4]">Project (Optional)</Label>
                 <Select 
                   value={formData.project_id || 'null'} 
                   onValueChange={handleProjectChange}
@@ -460,7 +460,7 @@ export default function JobForm({ job, technicians, onSubmit, onCancel, isSubmit
             )}
 
             <div className="space-y-2">
-              <Label htmlFor="customer_id" className="text-sm font-semibold text-[#000000]">Customer *</Label>
+              <Label htmlFor="customer_id" className="text-[14px] font-medium text-[#111827] leading-[1.4]">Customer *</Label>
               <div className="flex gap-2">
                 <Select 
                   value={formData.customer_id} 
@@ -491,12 +491,12 @@ export default function JobForm({ job, technicians, onSubmit, onCancel, isSubmit
                 )}
               </div>
               {formData.project_id && (
-                <p className="text-xs text-slate-500">Customer from project</p>
+                <p className="text-[12px] text-slate-500 leading-[1.35]">Customer from project</p>
               )}
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="address" className="text-sm font-semibold text-[#000000]">Service Address *</Label>
+              <Label htmlFor="address" className="text-[14px] font-medium text-[#111827] leading-[1.4]">Service Address *</Label>
               <Input
                 id="address"
                 value={formData.address}
@@ -508,7 +508,7 @@ export default function JobForm({ job, technicians, onSubmit, onCancel, isSubmit
 
             <div className="grid md:grid-cols-2 gap-6">
               <div className="space-y-2">
-                <Label htmlFor="product" className="text-sm font-semibold text-[#000000]">Product</Label>
+                <Label htmlFor="product" className="text-[14px] font-medium text-[#111827] leading-[1.4]">Product</Label>
                 <Select value={formData.product} onValueChange={(val) => setFormData({ ...formData, product: val })}>
                   <SelectTrigger className="border-2 border-slate-300 focus:border-[#fae008] focus:ring-2 focus:ring-[#fae008]/20">
                     <SelectValue placeholder="Select product" />
@@ -524,7 +524,7 @@ export default function JobForm({ job, technicians, onSubmit, onCancel, isSubmit
               </div>
 
               <div className="space-y-2">
-                <Label htmlFor="job_type_id" className="text-sm font-semibold text-[#000000]">Job Type</Label>
+                <Label htmlFor="job_type_id" className="text-[14px] font-medium text-[#111827] leading-[1.4]">Job Type</Label>
                 <Select value={formData.job_type_id} onValueChange={handleJobTypeChange}>
                   <SelectTrigger className="border-2 border-slate-300 focus:border-[#fae008] focus:ring-2 focus:ring-[#fae008]/20">
                     <SelectValue placeholder="Select job type" />
@@ -540,7 +540,7 @@ export default function JobForm({ job, technicians, onSubmit, onCancel, isSubmit
               </div>
 
               <div className="space-y-2">
-                <Label htmlFor="assigned_to" className="text-sm font-semibold text-[#000000]">Assign Technicians</Label>
+                <Label htmlFor="assigned_to" className="text-[14px] font-medium text-[#111827] leading-[1.4]">Assign Technicians</Label>
                 <MultiTechnicianSelect
                   selectedEmails={formData.assigned_to}
                   technicians={technicians}
@@ -549,7 +549,7 @@ export default function JobForm({ job, technicians, onSubmit, onCancel, isSubmit
               </div>
 
               <div className="space-y-2">
-                <Label htmlFor="status" className="text-sm font-semibold text-[#000000]">Status</Label>
+                <Label htmlFor="status" className="text-[14px] font-medium text-[#111827] leading-[1.4]">Status</Label>
                 <Select value={formData.status} onValueChange={(val) => setFormData({ ...formData, status: val })}>
                   <SelectTrigger className="border-2 border-slate-300 focus:border-[#fae008] focus:ring-2 focus:ring-[#fae008]/20">
                     <SelectValue />
@@ -564,7 +564,7 @@ export default function JobForm({ job, technicians, onSubmit, onCancel, isSubmit
               </div>
 
               <div className="space-y-2">
-                <Label htmlFor="scheduled_date" className="text-sm font-semibold text-[#000000]">Scheduled Date *</Label>
+                <Label htmlFor="scheduled_date" className="text-[14px] font-medium text-[#111827] leading-[1.4]">Scheduled Date *</Label>
                 <Input
                   id="scheduled_date"
                   type="date"
@@ -576,7 +576,7 @@ export default function JobForm({ job, technicians, onSubmit, onCancel, isSubmit
               </div>
 
               <div className="space-y-2">
-                <Label htmlFor="scheduled_time" className="text-sm font-semibold text-[#000000]">Scheduled Time</Label>
+                <Label htmlFor="scheduled_time" className="text-[14px] font-medium text-[#111827] leading-[1.4]">Scheduled Time</Label>
                 <Input
                   id="scheduled_time"
                   type="time"
@@ -587,7 +587,7 @@ export default function JobForm({ job, technicians, onSubmit, onCancel, isSubmit
               </div>
 
               <div className="space-y-2">
-                <Label htmlFor="expected_duration" className="text-sm font-semibold text-[#000000]">Expected Duration (hours)</Label>
+                <Label htmlFor="expected_duration" className="text-[14px] font-medium text-[#111827] leading-[1.4]">Expected Duration (hours)</Label>
                 <Input
                   id="expected_duration"
                   type="number"
@@ -601,7 +601,7 @@ export default function JobForm({ job, technicians, onSubmit, onCancel, isSubmit
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="notes" className="text-sm font-semibold text-[#000000]">Notes & Instructions</Label>
+              <Label htmlFor="notes" className="text-[14px] font-medium text-[#111827] leading-[1.4]">Notes & Instructions</Label>
               <RichTextEditor
                 value={formData.notes}
                 onChange={(value) => setFormData({ ...formData, notes: value })}
@@ -610,7 +610,7 @@ export default function JobForm({ job, technicians, onSubmit, onCancel, isSubmit
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="pricing_provided" className="text-sm font-semibold text-[#000000]">Pricing Provided</Label>
+              <Label htmlFor="pricing_provided" className="text-[14px] font-medium text-[#111827] leading-[1.4]">Pricing Provided</Label>
               <Input
                 id="pricing_provided"
                 value={formData.pricing_provided}
@@ -621,7 +621,7 @@ export default function JobForm({ job, technicians, onSubmit, onCancel, isSubmit
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="additional_info" className="text-sm font-semibold text-[#000000]">Additional Info</Label>
+              <Label htmlFor="additional_info" className="text-[14px] font-medium text-[#111827] leading-[1.4]">Additional Info</Label>
               <RichTextEditor
                 value={formData.additional_info}
                 onChange={(value) => setFormData({ ...formData, additional_info: value })}
@@ -630,10 +630,10 @@ export default function JobForm({ job, technicians, onSubmit, onCancel, isSubmit
             </div>
 
             <div className="space-y-4 pt-4 border-t-2 border-slate-200">
-              <h3 className="font-bold text-[#000000] tracking-tight">File Uploads</h3>
+              <h3 className="text-[18px] font-semibold text-[#111827] leading-[1.2]">File Uploads</h3>
               
               <div className="space-y-2">
-                <Label className="text-sm font-semibold text-[#000000]">Images</Label>
+                <Label className="text-[14px] font-medium text-[#111827] leading-[1.4]">Images</Label>
                 <div className="flex items-center gap-2">
                   <Button
                     type="button"
@@ -677,7 +677,7 @@ export default function JobForm({ job, technicians, onSubmit, onCancel, isSubmit
 
               <div className="grid md:grid-cols-2 gap-4">
                 <div className="space-y-2">
-                  <Label className="text-sm font-semibold text-[#000000]">Quote</Label>
+                  <Label className="text-[14px] font-medium text-[#111827] leading-[1.4]">Quote</Label>
                   <div className="flex items-center gap-2">
                     <Button
                       type="button"
@@ -710,7 +710,7 @@ export default function JobForm({ job, technicians, onSubmit, onCancel, isSubmit
                 </div>
 
                 <div className="space-y-2">
-                  <Label className="text-sm font-semibold text-[#000000]">Invoice</Label>
+                  <Label className="text-[14px] font-medium text-[#111827] leading-[1.4]">Invoice</Label>
                   <div className="flex items-center gap-2">
                     <Button
                       type="button"
