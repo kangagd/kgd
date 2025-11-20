@@ -78,10 +78,21 @@ export default function JobForm({ job, technicians, onSubmit, onCancel, isSubmit
   });
 
   useEffect(() => {
-    if (preselectedCustomerId && customers.length > 0) {
-      handleCustomerChange(preselectedCustomerId);
+    if (preselectedCustomerId && customers.length > 0 && !job) {
+      const customer = customers.find(c => c.id === preselectedCustomerId);
+      if (customer) {
+        setFormData(prev => ({
+          ...prev,
+          customer_id: preselectedCustomerId,
+          customer_name: customer.name,
+          customer_phone: customer.phone || "",
+          customer_email: customer.email || "",
+          customer_type: customer.customer_type || "",
+          address: customer.address || prev.address,
+        }));
+      }
     }
-  }, [preselectedCustomerId, customers]);
+  }, [preselectedCustomerId, customers.length, job]);
 
   const generateNotes = async (project, jobTypeId) => {
     if (!project || !jobTypeId) return;
@@ -137,24 +148,24 @@ export default function JobForm({ job, technicians, onSubmit, onCancel, isSubmit
 
         const autoProduct = productMapping[project.project_type] || "";
 
-        setFormData({
-          ...formData,
+        setFormData(prev => ({
+          ...prev,
           project_id: preselectedProjectId,
           project_name: project.title,
           customer_id: project.customer_id,
           customer_name: project.customer_name,
           customer_phone: project.customer_phone || "",
           customer_email: project.customer_email || "",
-          address: project.address || formData.address,
+          address: project.address || prev.address,
           product: autoProduct,
           additional_info: project.description || "",
           image_urls: project.image_urls || [],
           quote_url: project.quote_url || "",
           invoice_url: project.invoice_url || ""
-        });
+        }));
       }
     }
-  }, [preselectedProjectId, projects]);
+  }, [preselectedProjectId, projects.length, job]);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
