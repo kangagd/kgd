@@ -183,7 +183,7 @@ export default function Projects() {
 
   if (showForm) {
     return (
-      <div className="p-5 md:p-10 bg-[#F8F9FA] min-h-screen">
+      <div className="page-container">
         <div className="max-w-4xl mx-auto">
           <ProjectForm
             project={editingProject}
@@ -201,8 +201,8 @@ export default function Projects() {
 
   if (selectedProject) {
     return (
-      <div className="bg-[#F8F9FA] min-h-screen">
-        <div className="mx-auto p-5 md:p-10 max-w-6xl">
+      <div className="page-container">
+        <div className="mx-auto max-w-6xl">
           <ProjectDetails
             project={selectedProject}
             onClose={() => setSelectedProject(null)}

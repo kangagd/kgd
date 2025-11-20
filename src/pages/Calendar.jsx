@@ -80,8 +80,8 @@ export default function Calendar() {
 
   if (selectedJob) {
     return (
-      <div className="bg-[#F8F9FA] min-h-screen">
-        <div className="p-5 md:p-10 max-w-4xl mx-auto">
+      <div className="page-container">
+        <div className="max-w-4xl mx-auto">
           <JobDetails
             job={selectedJob}
             onClose={() => setSelectedJob(null)}
