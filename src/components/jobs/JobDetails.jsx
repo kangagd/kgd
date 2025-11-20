@@ -231,16 +231,15 @@ export default function JobDetails({ job: initialJob, onClose, onStatusChange, o
         duration_hours: Math.round(durationHours * 10) / 10
       });
 
+      // Update status after checkout - no longer has active check-in
+      const newStatus = determineJobStatus(job.scheduled_date, outcome, false, job.status);
       await base44.entities.Job.update(job.id, {
         overview: "",
         next_steps: "",
         communication_with_client: "",
-        outcome: ""
+        outcome: "",
+        status: newStatus
       });
-
-      // Update status after checkout - no longer has active check-in
-      const newStatus = determineJobStatus(job.scheduled_date, outcome, false, job.status);
-      await base44.entities.Job.update(job.id, { status: newStatus });
     },
     onSuccess: () => {
       setValidationError("");
