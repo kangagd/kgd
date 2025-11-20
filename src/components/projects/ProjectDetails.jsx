@@ -260,7 +260,8 @@ Format as HTML bullet points using <ul> and <li> tags. Include only the most cri
           add_context_from_internet: false
         });
 
-        additionalInfo = aiResponse;
+        // Strip markdown code fences if present
+        additionalInfo = aiResponse.replace(/^```html\n?/i, '').replace(/\n?```$/i, '').trim();
         
         // Add installation details if present
         if (installationDetails) {
@@ -276,7 +277,7 @@ Format as HTML bullet points using <ul> and <li> tags. Include only the most cri
         }
       } catch (error) {
         // Fallback if AI fails
-        additionalInfo = project.description || '';
+        additionalInfo = (project.description || '').replace(/^```html\n?/i, '').replace(/\n?```$/i, '').trim();
         if (installationDetails) {
           additionalInfo += `<br><br><strong>Installation Details:</strong><ul>`;
           project.doors.forEach((door, idx) => {
