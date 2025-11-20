@@ -10,13 +10,14 @@ import ProjectForm from "../components/projects/ProjectForm";
 import ProjectDetails from "../components/projects/ProjectDetails";
 
 const statusColors = {
-  open: "bg-[hsl(32,25%,94%)] text-[hsl(25,10%,12%)] border-[hsl(32,15%,88%)]",
-  scheduled: "bg-[#fae008]/20 text-[hsl(25,10%,12%)] border-[#fae008]/30",
-  quoted: "bg-purple-100 text-purple-800 border-purple-200",
-  invoiced: "bg-indigo-100 text-indigo-800 border-indigo-200",
-  paid: "bg-green-100 text-green-800 border-green-200",
-  completed: "bg-emerald-100 text-emerald-800 border-emerald-200",
-  cancelled: "bg-[hsl(32,25%,94%)] text-[hsl(25,10%,12%)] border-[hsl(32,15%,88%)]"
+  "Lead": "bg-slate-100 text-slate-800 border-slate-200",
+  "Initial Site Visit": "bg-blue-100 text-blue-800 border-blue-200",
+  "Quote Sent": "bg-purple-100 text-purple-800 border-purple-200",
+  "Quote Approved": "bg-indigo-100 text-indigo-800 border-indigo-200",
+  "Final Measure": "bg-cyan-100 text-cyan-800 border-cyan-200",
+  "Parts Ordered": "bg-amber-100 text-amber-800 border-amber-200",
+  "Scheduled": "bg-[#fae008]/20 text-[hsl(25,10%,12%)] border-[#fae008]/30",
+  "Completed": "bg-emerald-100 text-emerald-800 border-emerald-200"
 };
 
 const projectTypeColors = {

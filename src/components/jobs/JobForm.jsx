@@ -36,7 +36,7 @@ export default function JobForm({ job, technicians, onSubmit, onCancel, isSubmit
     scheduled_date: "",
     scheduled_time: "",
     expected_duration: null,
-    status: "open",
+    status: "Open",
     outcome: "",
     notes: "",
     additional_info: "",
@@ -457,10 +457,10 @@ export default function JobForm({ job, technicians, onSubmit, onCancel, isSubmit
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="open">Open</SelectItem>
-                    <SelectItem value="scheduled">Scheduled</SelectItem>
-                    <SelectItem value="completed">Completed</SelectItem>
-                    <SelectItem value="cancelled">Cancelled</SelectItem>
+                    <SelectItem value="Open">Open</SelectItem>
+                    <SelectItem value="Scheduled">Scheduled</SelectItem>
+                    <SelectItem value="Completed">Completed</SelectItem>
+                    <SelectItem value="Cancelled">Cancelled</SelectItem>
                   </SelectContent>
                 </Select>
               </div>

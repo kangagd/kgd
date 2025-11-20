@@ -9,23 +9,10 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { unescape } from "lodash";
 
 const statusColors = {
-  open: "bg-[hsl(32,25%,94%)] text-[hsl(25,10%,12%)] border-[hsl(32,15%,88%)]",
-  scheduled: "bg-[#fae008]/20 text-[hsl(25,10%,12%)] border-[#fae008]/30",
-  quoted: "bg-purple-100 text-purple-800 border-purple-200",
-  invoiced: "bg-indigo-100 text-indigo-800 border-indigo-200",
-  paid: "bg-green-100 text-green-800 border-green-200",
-  completed: "bg-emerald-100 text-emerald-800 border-emerald-200",
-  lost: "bg-red-100 text-red-800 border-red-200"
-};
-
-const statusLabels = {
-  open: "Open",
-  scheduled: "Scheduled",
-  quoted: "Quoted",
-  invoiced: "Invoiced",
-  paid: "Paid",
-  completed: "Completed",
-  lost: "Lost"
+  "Open": "bg-slate-100 text-slate-800 border-slate-200",
+  "Scheduled": "bg-[#fae008]/20 text-[hsl(25,10%,12%)] border-[#fae008]/30",
+  "Completed": "bg-emerald-100 text-emerald-800 border-emerald-200",
+  "Cancelled": "bg-red-100 text-red-800 border-red-200"
 };
 
 const productColors = {
@@ -248,9 +235,9 @@ export default function JobList({ jobs, isLoading, onSelectJob }) {
               
               <div className="flex flex-col gap-2 items-end ml-3">
                 <Badge className={`${statusColors[job.status]} font-semibold shadow-sm border-2`}>
-                  {statusLabels[job.status] || job.status}
+                  {job.status}
                 </Badge>
-                {isTechnician && job.status === 'scheduled' && job.assigned_to?.includes(user?.email) && !hasActiveCheckIn(job.id) && (
+                {isTechnician && job.status === 'Scheduled' && job.assigned_to?.includes(user?.email) && !hasActiveCheckIn(job.id) && (
                   <Button
                     size="sm"
                     onClick={(e) => handleCheckIn(e, job)}
