@@ -175,7 +175,7 @@ export default function ProjectDetails({ project, onClose, onEdit, onDelete }) {
           </div>
         </div>
 
-        <div className="space-y-3">
+        <div className="space-y-2">
           <div className="flex items-center gap-2 flex-wrap">
             <div 
               className="text-xl font-semibold text-[#111827] cursor-pointer hover:text-[#FAE008] transition-colors leading-tight"
@@ -193,9 +193,6 @@ export default function ProjectDetails({ project, onClose, onEdit, onDelete }) {
               placeholder="Project Title"
               className="font-medium text-[#111827]"
             />
-          </div>
-
-          <div className="flex items-center gap-2 flex-wrap">
             {project.project_type && (
               <EditableField
                 value={project.project_type}
