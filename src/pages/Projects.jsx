@@ -371,7 +371,7 @@ export default function Projects() {
           </div>
         )}
 
-        <div className="grid gap-4">
+        <div className="card-grid">
           {filteredProjects.map((project) => {
             const jobCount = getJobCount(project.id);
             const nextJob = getNextJob(project.id);
@@ -381,10 +381,10 @@ export default function Projects() {
             return (
               <Card
                 key={project.id}
-                className="hover:shadow-lg transition-all duration-200 cursor-pointer hover:border-[#FAE008] border border-[#E5E7EB] rounded-xl"
+                className="card-global hover:shadow-lg transition-all duration-200 cursor-pointer hover:border-[#FAE008]"
                 onClick={() => setSelectedProject(project)}
               >
-                <CardContent className="p-4">
+                <CardContent className="p-0">
                   {/* Top row */}
                   <div className="flex items-start justify-between gap-4 mb-3">
                     <h3 className="text-[18px] font-semibold text-[#111827] leading-[1.2] flex-1">{project.title}</h3>
