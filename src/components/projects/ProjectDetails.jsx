@@ -406,7 +406,7 @@ export default function ProjectDetails({ project, onClose, onEdit, onDelete }) {
             </TabsTrigger>
             <TabsTrigger value="jobs" className="text-sm font-semibold data-[state=active]:bg-white data-[state=active]:shadow-sm">
               <Briefcase className="w-4 h-4 mr-1.5" />
-              <span className="hidden md:inline">Jobs</span>
+              <span className="hidden md:inline">Visits</span>
             </TabsTrigger>
           </TabsList>
 
@@ -685,23 +685,23 @@ export default function ProjectDetails({ project, onClose, onEdit, onDelete }) {
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-2">
                     <Briefcase className="w-4 h-4 text-[#6B7280]" />
-                    <h3 className="text-sm font-bold text-[#111827]">Jobs ({jobs.length})</h3>
+                    <h3 className="text-sm font-bold text-[#111827]">Visits ({jobs.length})</h3>
                   </div>
                   <Button
                     onClick={handleAddJob}
                     className="bg-[#FAE008] text-[#111827] hover:bg-[#E5CF07] font-semibold h-9 text-sm"
                   >
                     <Plus className="w-4 h-4 mr-1" />
-                    Add Job
+                    Add Visit
                   </Button>
                 </div>
               </CardHeader>
               <CardContent className="p-3">
                 {jobs.length === 0 ? (
                   <div className="text-center py-8 bg-[#F8F9FA] rounded-lg">
-                    <p className="text-[#6B7280] mb-3 text-sm">No jobs yet</p>
+                    <p className="text-[#6B7280] mb-3 text-sm">No visits yet</p>
                     <Button onClick={handleAddJob} className="bg-[#FAE008] text-[#111827] font-semibold h-10">
-                      Create First Job
+                      Create First Visit
                     </Button>
                   </div>
                 ) : (
