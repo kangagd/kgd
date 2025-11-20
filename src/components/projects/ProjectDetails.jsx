@@ -522,94 +522,85 @@ export default function ProjectDetails({ project, onClose, onEdit, onDelete }) {
             </div>
 
             {isInstallType && (
-              <Card className="border border-[#E5E7EB] shadow-sm overflow-hidden relative">
-                <CardHeader className="bg-[#F8F9FA] px-4 py-3 border-b border-[#E5E7EB]">
-                  <div className="flex items-center justify-between">
-                    <div className="flex items-center gap-2">
-                      <FileText className="w-4 h-4 text-[#6B7280]" />
-                      <h3 className="text-[14px] font-semibold text-[#111827] leading-[1.4]">Installation Details</h3>
-                    </div>
-                    {!showAddDoor && (
-                      <button
-                        onClick={() => setShowAddDoor(true)}
-                        className="w-8 h-8 bg-[#FAE008] hover:bg-[#E5CF07] rounded-lg flex items-center justify-center transition-colors"
-                      >
-                        <Plus className="w-4 h-4 text-[#111827]" />
-                      </button>
-                    )}
+              <div className="bg-white rounded-lg p-4 border border-[#E5E7EB]">
+                <div className="flex items-center justify-between mb-3">
+                  <label className="block text-[13px] md:text-[14px] font-medium text-[#4B5563]">
+                    Installation Details
+                  </label>
+                  {!showAddDoor && (
+                    <button
+                      onClick={() => setShowAddDoor(true)}
+                      className="w-8 h-8 bg-[#FAE008] hover:bg-[#E5CF07] rounded-lg flex items-center justify-center transition-colors"
+                    >
+                      <Plus className="w-4 h-4 text-[#111827]" />
+                    </button>
+                  )}
+                </div>
+                
+                {project.doors && project.doors.length > 0 && (
+                  <div className="flex flex-wrap gap-2 mb-3">
+                    {project.doors.map((door, idx) => (
+                      <div key={idx} className="relative group">
+                        <Badge variant="outline" className="bg-blue-50 border-blue-200 text-blue-700 font-medium px-3 py-1.5 text-sm pr-8">
+                          Door {idx + 1}: {door.height && door.width ? `${door.height} × ${door.width}` : 'Pending specs'}
+                          {door.type && ` • ${door.type}`}
+                          {door.style && ` • ${door.style}`}
+                        </Badge>
+                        <button
+                          onClick={() => handleRemoveDoor(idx)}
+                          className="absolute -top-1 -right-1 bg-red-500 text-white rounded-full w-5 h-5 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity"
+                        >
+                          <X className="w-3 h-3" />
+                        </button>
+                      </div>
+                    ))}
                   </div>
-                </CardHeader>
-                <CardContent className="p-3 space-y-3">
-                  {project.doors && project.doors.length > 0 && (
-                    <div className="flex flex-wrap gap-2">
-                      {project.doors.map((door, idx) => (
-                        <div key={idx} className="relative group">
-                          <Badge variant="outline" className="bg-blue-50 border-blue-200 text-blue-700 font-medium px-3 py-1.5 text-sm pr-8">
-                            Door {idx + 1}: {door.height && door.width ? `${door.height} × ${door.width}` : 'Pending specs'}
-                            {door.type && ` • ${door.type}`}
-                            {door.style && ` • ${door.style}`}
-                          </Badge>
-                          <button
-                            onClick={() => handleRemoveDoor(idx)}
-                            className="absolute -top-1 -right-1 bg-red-500 text-white rounded-full w-5 h-5 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity"
-                          >
-                            <X className="w-3 h-3" />
-                          </button>
-                        </div>
-                      ))}
+                )}
+                
+                {showAddDoor && (
+                  <div className="border border-[#E5E7EB] rounded-lg p-3 bg-[#F8F9FA]">
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-2 mb-2">
+                      <Input
+                        placeholder="Height"
+                        value={newDoor.height}
+                        onChange={(e) => setNewDoor({ ...newDoor, height: e.target.value })}
+                      />
+                      <Input
+                        placeholder="Width"
+                        value={newDoor.width}
+                        onChange={(e) => setNewDoor({ ...newDoor, width: e.target.value })}
+                      />
+                      <Input
+                        placeholder="Type (e.g. Sectional, Roller)"
+                        value={newDoor.type}
+                        onChange={(e) => setNewDoor({ ...newDoor, type: e.target.value })}
+                      />
+                      <Input
+                        placeholder="Style"
+                        value={newDoor.style}
+                        onChange={(e) => setNewDoor({ ...newDoor, style: e.target.value })}
+                      />
                     </div>
-                  )}
-                  
-                  {showAddDoor && (
-                    <div className="border border-[#E5E7EB] rounded-lg p-3 bg-[#F8F9FA]">
-                      <div className="grid grid-cols-2 md:grid-cols-4 gap-2 mb-2">
-                        <Input
-                          placeholder="Height"
-                          value={newDoor.height}
-                          onChange={(e) => setNewDoor({ ...newDoor, height: e.target.value })}
-                          className="h-9 text-sm"
-                        />
-                        <Input
-                          placeholder="Width"
-                          value={newDoor.width}
-                          onChange={(e) => setNewDoor({ ...newDoor, width: e.target.value })}
-                          className="h-9 text-sm"
-                        />
-                        <Input
-                          placeholder="Type"
-                          value={newDoor.type}
-                          onChange={(e) => setNewDoor({ ...newDoor, type: e.target.value })}
-                          className="h-9 text-sm"
-                        />
-                        <Input
-                          placeholder="Style"
-                          value={newDoor.style}
-                          onChange={(e) => setNewDoor({ ...newDoor, style: e.target.value })}
-                          className="h-9 text-sm"
-                        />
-                      </div>
-                      <div className="flex gap-2">
-                        <Button
-                          onClick={handleAddDoor}
-                          size="sm"
-                          className="bg-[#FAE008] text-[#111827] hover:bg-[#E5CF07] font-semibold h-8"
-                        >
-                          <Plus className="w-4 h-4 mr-1" />
-                          Add Door
-                        </Button>
-                        <Button
-                          onClick={() => setShowAddDoor(false)}
-                          size="sm"
-                          variant="outline"
-                          className="h-8"
-                        >
-                          Cancel
-                        </Button>
-                      </div>
+                    <div className="flex gap-2">
+                      <Button
+                        onClick={handleAddDoor}
+                        size="sm"
+                        className="bg-[#FAE008] text-[#111827] hover:bg-[#E5CF07] font-semibold"
+                      >
+                        <Plus className="w-4 h-4 mr-1" />
+                        Add Door
+                      </Button>
+                      <Button
+                        onClick={() => setShowAddDoor(false)}
+                        size="sm"
+                        variant="outline"
+                      >
+                        Cancel
+                      </Button>
                     </div>
-                  )}
-                </CardContent>
-              </Card>
+                  </div>
+                )}
+              </div>
             )}
           </TabsContent>
 
