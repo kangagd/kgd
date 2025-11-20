@@ -829,7 +829,7 @@ export default function JobDetails({ job, onClose, onStatusChange, onDelete }) {
                         
                         {summary.outcome &&
                     <Badge className={`${outcomeColors[summary.outcome]} mb-3 font-semibold border-2`}>
-                            {summary.outcome.replace(/_/g, ' ')}
+                            {summary.outcome?.replace(/_/g, ' ') || summary.outcome}
                           </Badge>
                     }
 
@@ -1007,7 +1007,7 @@ export default function JobDetails({ job, onClose, onStatusChange, onDelete }) {
                         
                         {summary.outcome &&
                     <Badge className={`${outcomeColors[summary.outcome]} mb-3 font-semibold border-2`}>
-                            {summary.outcome.replace(/_/g, ' ')}
+                            {summary.outcome?.replace(/_/g, ' ') || summary.outcome}
                           </Badge>
                     }
 
@@ -1068,7 +1068,7 @@ export default function JobDetails({ job, onClose, onStatusChange, onDelete }) {
                         
                         {summary.outcome &&
                     <Badge className={`${outcomeColors[summary.outcome]} mb-3 font-semibold border-2`}>
-                            {summary.outcome.replace(/_/g, ' ')}
+                            {summary.outcome?.replace(/_/g, ' ') || summary.outcome}
                           </Badge>
                     }
 
