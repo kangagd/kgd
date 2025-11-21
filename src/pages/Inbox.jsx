@@ -22,6 +22,8 @@ export default function Inbox() {
   const [createJobModalOpen, setCreateJobModalOpen] = useState(false);
   const [user, setUser] = useState(null);
   const [userPermissions, setUserPermissions] = useState(null);
+  const [sidebarWidth, setSidebarWidth] = useState(400);
+  const [isResizing, setIsResizing] = useState(false);
   const queryClient = useQueryClient();
 
   useEffect(() => {
@@ -85,6 +87,33 @@ export default function Inbox() {
     
     return () => clearInterval(interval);
   }, [user, queryClient]);
+
+  // Handle resize
+  useEffect(() => {
+    const handleMouseMove = (e) => {
+      if (!isResizing) return;
+      const newWidth = Math.max(300, Math.min(600, e.clientX));
+      setSidebarWidth(newWidth);
+    };
+
+    const handleMouseUp = () => {
+      setIsResizing(false);
+    };
+
+    if (isResizing) {
+      document.addEventListener('mousemove', handleMouseMove);
+      document.addEventListener('mouseup', handleMouseUp);
+      document.body.style.cursor = 'col-resize';
+      document.body.style.userSelect = 'none';
+    }
+
+    return () => {
+      document.removeEventListener('mousemove', handleMouseMove);
+      document.removeEventListener('mouseup', handleMouseUp);
+      document.body.style.cursor = '';
+      document.body.style.userSelect = '';
+    };
+  }, [isResizing]);
 
   const updateThreadMutation = useMutation({
     mutationFn: ({ id, data }) => base44.entities.EmailThread.update(id, data),
@@ -163,7 +192,10 @@ export default function Inbox() {
   return (
     <div className="flex h-screen bg-[#F8F9FA] overflow-hidden">
       {/* Thread List - Left Side */}
-      <div className={`${selectedThread ? 'hidden lg:flex' : 'flex'} flex-col w-full lg:w-[400px] border-r border-[#E5E7EB] bg-white`}>
+      <div 
+        className={`${selectedThread ? 'hidden lg:flex' : 'flex'} flex-col border-r border-[#E5E7EB] bg-white`}
+        style={{ width: selectedThread ? `${sidebarWidth}px` : '100%' }}
+      >
         <div className="p-5 border-b border-[#E5E7EB]">
           <div className="flex items-center justify-between mb-4">
             <h1 className="text-[22px] font-semibold text-[#111827]">Inbox</h1>
@@ -200,6 +232,16 @@ export default function Inbox() {
           isLoading={isLoading}
         />
       </div>
+
+      {/* Resize Handle */}
+      {selectedThread && (
+        <div
+          className="hidden lg:block w-1 bg-[#E5E7EB] hover:bg-[#FAE008] cursor-col-resize transition-colors relative group"
+          onMouseDown={() => setIsResizing(true)}
+        >
+          <div className="absolute inset-y-0 -left-1 -right-1" />
+        </div>
+      )}
 
       {/* Thread Detail - Right Side */}
       <div className={`${selectedThread ? 'flex' : 'hidden lg:flex'} flex-1 flex-col bg-[#F8F9FA]`}>
