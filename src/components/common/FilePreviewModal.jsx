@@ -68,60 +68,50 @@ export default function FilePreviewModal({
   return (
     <>
       <div 
-        className="fixed inset-0 bg-black/80 z-50 flex items-center justify-center p-4"
+        className="fixed inset-0 bg-black/90 z-50 flex items-center justify-center p-4"
         onClick={onClose}
       >
         <div 
-          className="relative bg-white rounded-2xl max-w-5xl w-full max-h-[90vh] overflow-y-auto"
+          className="relative max-w-7xl w-full max-h-[95vh] flex items-center justify-center"
           onClick={(e) => e.stopPropagation()}
         >
-          {/* Header */}
-          <div className="sticky top-0 bg-white border-b border-[#E5E7EB] px-4 py-3 flex items-center justify-between rounded-t-2xl z-10">
-            <div className="flex-1 min-w-0 mr-4">
-              <h3 className="text-[18px] font-semibold text-[#111827] truncate">
-                {file.name || 'File Preview'}
-              </h3>
-              <div className="flex items-center gap-2 mt-1 flex-wrap">
-                {file.type && (
-                  <Badge className="bg-[#F3F4F6] text-[#6B7280] hover:bg-[#F3F4F6] border-0 text-[12px]">
-                    {file.type.toUpperCase()}
-                  </Badge>
-                )}
-                {file.jobNumber && (
-                  <Badge className="bg-blue-50 text-blue-700 hover:bg-blue-50 border-0 text-[12px]">
-                    Job #{file.jobNumber}
-                  </Badge>
-                )}
-                {file.projectName && (
-                  <Badge className="bg-purple-50 text-purple-700 hover:bg-purple-50 border-0 text-[12px]">
-                    {file.projectName}
-                  </Badge>
-                )}
-              </div>
-            </div>
+          {/* Corner Actions */}
+          <div className="absolute top-4 right-4 flex gap-2 z-20">
+            <Button
+              onClick={handleDownload}
+              size="icon"
+              className="w-10 h-10 bg-white/90 hover:bg-white text-[#111827] rounded-full shadow-lg backdrop-blur-sm"
+            >
+              <Download className="w-5 h-5" />
+            </Button>
+            {canDelete && onDelete && (
+              <Button
+                onClick={handleDelete}
+                size="icon"
+                className="w-10 h-10 bg-white/90 hover:bg-white text-red-600 rounded-full shadow-lg backdrop-blur-sm"
+              >
+                <Trash2 className="w-5 h-5" />
+              </Button>
+            )}
             <Button
               onClick={onClose}
               size="icon"
-              variant="ghost"
-              className="h-9 w-9 rounded-lg hover:bg-[#F3F4F6] flex-shrink-0"
+              className="w-10 h-10 bg-white/90 hover:bg-white text-[#111827] rounded-full shadow-lg backdrop-blur-sm"
             >
-              <X className="w-5 h-5 text-[#111827]" />
+              <X className="w-5 h-5" />
             </Button>
           </div>
 
           {/* Content */}
-          <div className="p-6">
+          <div className="w-full h-full flex items-center justify-center">
             {isImage ? (
-              <div className="flex justify-center mb-4">
-                <img 
-                  src={file.url} 
-                  alt={file.name || "Preview"} 
-                  className="max-w-full h-auto rounded-lg shadow-lg"
-                  style={{ maxHeight: 'calc(90vh - 200px)' }}
-                />
-              </div>
+              <img 
+                src={file.url} 
+                alt={file.name || "Preview"} 
+                className="max-w-full max-h-[95vh] object-contain"
+              />
             ) : isPDF ? (
-              <div className="w-full bg-[#F8F9FA] rounded-lg overflow-hidden" style={{ height: 'calc(90vh - 200px)' }}>
+              <div className="w-full h-[95vh] bg-white rounded-lg overflow-hidden shadow-2xl">
                 <iframe
                   src={file.url}
                   className="w-full h-full border-0"
@@ -129,57 +119,17 @@ export default function FilePreviewModal({
                 />
               </div>
             ) : (
-              <div className="flex flex-col items-center justify-center py-12 text-center">
-                <div className="w-20 h-20 bg-[#F3F4F6] rounded-2xl flex items-center justify-center mb-4">
-                  <FileText className="w-10 h-10 text-[#6B7280]" />
+              <div className="flex flex-col items-center justify-center py-12 text-center bg-white/10 backdrop-blur-sm rounded-2xl px-12">
+                <div className="w-20 h-20 bg-white/20 rounded-2xl flex items-center justify-center mb-4">
+                  <FileText className="w-10 h-10 text-white" />
                 </div>
-                <p className="text-[16px] font-medium text-[#111827] mb-2">
+                <p className="text-[16px] font-medium text-white mb-2">
                   Preview not available
                 </p>
-                <p className="text-[14px] text-[#6B7280] mb-6">
+                <p className="text-[14px] text-white/80 mb-6">
                   Use Download to view this file
                 </p>
               </div>
-            )}
-
-            {/* Metadata */}
-            {(file.caption || file.address || file.takenAt) && (
-              <div className="mt-4 p-4 bg-[#F8F9FA] rounded-lg space-y-2">
-                {file.caption && (
-                  <p className="text-[14px] text-[#4B5563]">{file.caption}</p>
-                )}
-                {file.address && (
-                  <p className="text-[12px] text-[#6B7280]">
-                    <span className="font-medium">Location:</span> {file.address}
-                  </p>
-                )}
-                {file.takenAt && (
-                  <p className="text-[12px] text-[#6B7280]">
-                    <span className="font-medium">Taken:</span> {new Date(file.takenAt).toLocaleString()}
-                  </p>
-                )}
-              </div>
-            )}
-          </div>
-
-          {/* Actions */}
-          <div className="sticky bottom-0 bg-white border-t border-[#E5E7EB] px-6 py-4 flex gap-3 rounded-b-2xl">
-            <Button
-              onClick={handleDownload}
-              className="flex-1 bg-[#FAE008] text-[#111827] hover:bg-[#E5CF07] font-semibold h-11 rounded-lg"
-            >
-              <Download className="w-4 h-4 mr-2" />
-              Download
-            </Button>
-            {canDelete && onDelete && (
-              <Button
-                onClick={handleDelete}
-                variant="outline"
-                className="flex-1 border-red-200 text-red-600 hover:bg-red-50 hover:border-red-300 font-semibold h-11 rounded-lg"
-              >
-                <Trash2 className="w-4 h-4 mr-2" />
-                Delete
-              </Button>
             )}
           </div>
         </div>
