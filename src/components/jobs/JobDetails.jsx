@@ -560,15 +560,61 @@ export default function JobDetails({ job: initialJob, onClose, onStatusChange, o
             )}
 
             <div className="flex items-center justify-between gap-3 flex-wrap">
-              <div className="flex items-center gap-2 flex-wrap">
-                <CardTitle
-                  className="text-[22px] font-semibold text-[#111827] leading-[1.2] cursor-pointer hover:text-[#FAE008] transition-colors"
-                  onClick={() => setShowCustomerEdit(true)}>
-                  {job.customer_name}
-                </CardTitle>
-                <Badge className="bg-white text-[#6B7280] hover:bg-white border border-[#E5E7EB] font-medium text-[12px] leading-[1.35] px-2.5 py-0.5 rounded-lg">
-                  #{job.job_number}
-                </Badge>
+              <div>
+                <div className="flex items-center gap-2 flex-wrap mb-2">
+                  <CardTitle
+                    className="text-[22px] font-semibold text-[#111827] leading-[1.2] cursor-pointer hover:text-[#FAE008] transition-colors"
+                    onClick={() => setShowCustomerEdit(true)}>
+                    {job.customer_name}
+                  </CardTitle>
+                  <Badge className="bg-white text-[#6B7280] hover:bg-white border border-[#E5E7EB] font-medium text-[12px] leading-[1.35] px-2.5 py-0.5 rounded-lg">
+                    #{job.job_number}
+                  </Badge>
+                </div>
+                <div className="flex items-center gap-2 flex-wrap">
+                  {job.job_type_name && (
+                    <EditableField
+                      value={job.job_type_id}
+                      onSave={handleJobTypeChange}
+                      type="select"
+                      options={jobTypes.map((jt) => ({ value: jt.id, label: jt.name }))}
+                      displayFormat={(val) => {
+                        const typeName = jobTypes.find((jt) => jt.id === val)?.name || val;
+                        return (
+                          <Badge className="bg-[#EDE9FE] text-[#6D28D9] hover:bg-[#EDE9FE] border-0 font-medium text-[12px] leading-[1.35] px-3 py-1 rounded-lg">
+                            {typeName}
+                          </Badge>
+                        );
+                      }}
+                      placeholder="Job type"
+                    />
+                  )}
+                  {job.product && (
+                    <EditableField
+                      value={job.product}
+                      onSave={(val) => handleFieldSave('product', job.product, val)}
+                      type="select"
+                      options={[
+                        { value: "Garage Door", label: "Garage Door" },
+                        { value: "Gate", label: "Gate" },
+                        { value: "Roller Shutter", label: "Roller Shutter" },
+                        { value: "Multiple", label: "Multiple" },
+                        { value: "Custom Garage Door", label: "Custom Garage Door" }
+                      ]}
+                      displayFormat={(val) => (
+                        <Badge className={`${productColors[val] || 'bg-gray-100 text-gray-700'} font-medium border-0 px-2.5 py-0.5 rounded-lg text-[12px] leading-[1.35]`}>
+                          {val}
+                        </Badge>
+                      )}
+                      placeholder="Product"
+                    />
+                  )}
+                  {job.customer_type && (
+                    <Badge className={`${customerTypeColors[job.customer_type] || 'bg-gray-100 text-gray-700'} hover:bg-opacity-80 border-0 font-medium text-[12px] leading-[1.35] px-3 py-1 rounded-lg`}>
+                      {job.customer_type}
+                    </Badge>
+                  )}
+                </div>
               </div>
 
               <div className="flex items-center gap-2 flex-wrap">
@@ -590,48 +636,34 @@ export default function JobDetails({ job: initialJob, onClose, onStatusChange, o
                     )}
                   />
                 )}
-                {job.job_type_name && (
+                <div className="flex items-center gap-1.5">
+                  {(Array.isArray(job.assigned_to_name) ? job.assigned_to_name : job.assigned_to_name ? [job.assigned_to_name] : []).slice(0, 3).map((name, idx) =>
+                    <div
+                      key={idx}
+                      className={`${getAvatarColor(name)} w-8 h-8 rounded-full flex items-center justify-center text-white text-xs font-bold shadow-sm`}
+                      title={name}
+                    >
+                      {getInitials(name)}
+                    </div>
+                  )}
+                  {Array.isArray(job.assigned_to_name) && job.assigned_to_name.length > 3 &&
+                    <div className="bg-[#6B7280] w-8 h-8 rounded-full flex items-center justify-center text-white text-xs font-bold shadow-sm">
+                      +{job.assigned_to_name.length - 3}
+                    </div>
+                  }
                   <EditableField
-                    value={job.job_type_id}
-                    onSave={handleJobTypeChange}
-                    type="select"
-                    options={jobTypes.map((jt) => ({ value: jt.id, label: jt.name }))}
+                    value={Array.isArray(job.assigned_to) ? job.assigned_to : job.assigned_to ? [job.assigned_to] : []}
+                    onSave={handleAssignedToChange}
+                    type="multi-select"
+                    icon={Edit}
+                    options={technicians.map((t) => ({ value: t.email, label: t.full_name }))}
                     displayFormat={(val) => {
-                      const typeName = jobTypes.find((jt) => jt.id === val)?.name || val;
-                      return (
-                        <Badge className="bg-[#EDE9FE] text-[#6D28D9] hover:bg-[#EDE9FE] border-0 font-medium text-[12px] leading-[1.35] px-3 py-1 rounded-lg">
-                          {typeName}
-                        </Badge>
-                      );
+                      const emailsToDisplay = Array.isArray(val) ? val : val ? [val] : [];
+                      return emailsToDisplay.length === 0 ? "Assign" : "Edit";
                     }}
-                    placeholder="Job type"
+                    placeholder="Assign"
                   />
-                )}
-                {job.product && (
-                  <EditableField
-                    value={job.product}
-                    onSave={(val) => handleFieldSave('product', job.product, val)}
-                    type="select"
-                    options={[
-                      { value: "Garage Door", label: "Garage Door" },
-                      { value: "Gate", label: "Gate" },
-                      { value: "Roller Shutter", label: "Roller Shutter" },
-                      { value: "Multiple", label: "Multiple" },
-                      { value: "Custom Garage Door", label: "Custom Garage Door" }
-                    ]}
-                    displayFormat={(val) => (
-                      <Badge className={`${productColors[val] || 'bg-gray-100 text-gray-700'} font-medium border-0 px-2.5 py-0.5 rounded-lg text-[12px] leading-[1.35]`}>
-                        {val}
-                      </Badge>
-                    )}
-                    placeholder="Product"
-                  />
-                )}
-                {job.customer_type && (
-                  <Badge className={`${customerTypeColors[job.customer_type] || 'bg-gray-100 text-gray-700'} hover:bg-opacity-80 border-0 font-medium text-[12px] leading-[1.35] px-3 py-1 rounded-lg`}>
-                    {job.customer_type}
-                  </Badge>
-                )}
+                </div>
               </div>
             </div>
 
@@ -695,40 +727,7 @@ export default function JobDetails({ job: initialJob, onClose, onStatusChange, o
                     />
                   </div>
                 </div>
-                <div className="flex items-center gap-2.5">
-                  <User className="w-5 h-5 text-[#4B5563] flex-shrink-0" />
-                  <div className="flex-1 min-w-0">
-                    <div className="text-[12px] text-[#6B7280] font-normal leading-[1.35] mb-0.5">Technicians</div>
-                    <div className="flex items-center gap-1.5">
-                      {(Array.isArray(job.assigned_to_name) ? job.assigned_to_name : job.assigned_to_name ? [job.assigned_to_name] : []).slice(0, 3).map((name, idx) =>
-                        <div
-                          key={idx}
-                          className={`${getAvatarColor(name)} w-7 h-7 rounded-full flex items-center justify-center text-white text-xs font-bold shadow-sm`}
-                          title={name}
-                        >
-                          {getInitials(name)}
-                        </div>
-                      )}
-                      {Array.isArray(job.assigned_to_name) && job.assigned_to_name.length > 3 &&
-                        <div className="bg-[#6B7280] w-7 h-7 rounded-full flex items-center justify-center text-white text-xs font-bold shadow-sm">
-                          +{job.assigned_to_name.length - 3}
-                        </div>
-                      }
-                      <EditableField
-                        value={Array.isArray(job.assigned_to) ? job.assigned_to : job.assigned_to ? [job.assigned_to] : []}
-                        onSave={handleAssignedToChange}
-                        type="multi-select"
-                        icon={Edit}
-                        options={technicians.map((t) => ({ value: t.email, label: t.full_name }))}
-                        displayFormat={(val) => {
-                          const emailsToDisplay = Array.isArray(val) ? val : val ? [val] : [];
-                          return emailsToDisplay.length === 0 ? "Assign" : "Edit";
-                        }}
-                        placeholder="Assign"
-                      />
-                    </div>
-                  </div>
-                </div>
+
               </div>
             </div>
           </div>
