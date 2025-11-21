@@ -21,6 +21,8 @@ import {
   Image as ImageIcon
 } from "lucide-react";
 import { base44 } from "@/api/base44Client";
+import { toast } from "sonner";
+import { Toaster } from "@/components/ui/sonner";
 
 const adminNavigationItems = [
   { title: "Dashboard", url: createPageUrl("Dashboard"), icon: LayoutDashboard },
@@ -64,6 +66,56 @@ export default function Layout({ children, currentPageName }) {
     };
     loadUser();
   }, []);
+
+  // Track check-ins/outs for admin notifications
+  useEffect(() => {
+    if (!user || user.role !== 'admin') return;
+
+    const shownNotifications = new Set();
+    
+    const pollCheckInOuts = async () => {
+      try {
+        const recentCheckInOuts = await base44.entities.CheckInOut.list('-updated_date', 10);
+        const now = Date.now();
+        
+        recentCheckInOuts.forEach((checkInOut) => {
+          const lastUpdate = new Date(checkInOut.updated_date).getTime();
+          const isRecent = (now - lastUpdate) < 60000; // Last 60 seconds
+          
+          if (isRecent && !shownNotifications.has(checkInOut.id)) {
+            shownNotifications.add(checkInOut.id);
+            
+            if (checkInOut.check_out_time) {
+              // Check out notification
+              toast.success(
+                `${checkInOut.technician_name} checked out`,
+                {
+                  description: `Job #${checkInOut.job_id}${checkInOut.check_out_notes ? ` • ${checkInOut.check_out_notes}` : ''}`,
+                  duration: 5000,
+                }
+              );
+            } else if (checkInOut.check_in_time) {
+              // Check in notification
+              toast.info(
+                `${checkInOut.technician_name} checked in`,
+                {
+                  description: `Job #${checkInOut.job_id}`,
+                  duration: 4000,
+                }
+              );
+            }
+          }
+        });
+      } catch (error) {
+        console.error('Error polling check-ins/outs:', error);
+      }
+    };
+
+    pollCheckInOuts();
+    const interval = setInterval(pollCheckInOuts, 15000); // Poll every 15 seconds
+
+    return () => clearInterval(interval);
+  }, [user]);
 
   useEffect(() => {
     localStorage.setItem('testMode', testMode);
@@ -184,6 +236,7 @@ export default function Layout({ children, currentPageName }) {
   // Desktop/Admin layout
   return (
     <div className="min-h-screen flex bg-[#F8F9FA]">
+      <Toaster position="top-right" richColors />
       {/* Mobile Overlay */}
       {isMobileMenuOpen && (
         <div 
