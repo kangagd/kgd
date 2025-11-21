@@ -65,7 +65,7 @@ export default function JobCard({ job, onClick }) {
                 {job.customer_name}
               </h3>
               <div className="flex items-center gap-2">
-                <Badge className="bg-white text-[#6B7280] hover:bg-white border border-[#E5E7EB] font-medium px-2.5 py-0.5 rounded-lg">
+                <Badge className="bg-white text-[#6B7280] border border-[#E5E7EB] font-medium px-2.5 py-0.5 rounded-lg">
                   #{job.job_number}
                 </Badge>
                 {job.status && (
@@ -84,7 +84,7 @@ export default function JobCard({ job, onClick }) {
           {/* Metadata row */}
           {job.project_name && (
             <div className="flex items-center gap-2 flex-wrap text-[14px]">
-              <Badge className="bg-[#FAE008]/20 text-[#92400E] hover:bg-[#FAE008]/20 border-0 font-medium px-2.5 py-0.5 rounded-lg">
+              <Badge className="bg-[#FAE008]/20 text-[#92400E] border-0 font-medium px-2.5 py-0.5 rounded-lg">
                 {job.project_name}
               </Badge>
             </div>
@@ -110,7 +110,7 @@ export default function JobCard({ job, onClick }) {
           <div className="flex items-center justify-between gap-2 flex-wrap">
             <div className="flex items-center gap-2 flex-wrap">
               {job.job_type_name && (
-                <Badge className="bg-[#EDE9FE] text-[#6D28D9] hover:bg-[#EDE9FE] border-0 font-medium text-xs px-2.5 py-0.5 rounded-lg">
+                <Badge className="bg-[#EDE9FE] text-[#6D28D9] border-0 font-medium text-xs px-2.5 py-0.5 rounded-lg">
                   {job.job_type_name}
                 </Badge>
               )}
