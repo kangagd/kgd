@@ -182,9 +182,10 @@ Deno.serve(async (req) => {
       });
 
       if (existingMessages.length === 0) {
-        // Extract body
+        // Extract body and attachments
         let bodyHtml = '';
         let bodyText = detail.snippet;
+        const attachments = [];
 
         if (detail.payload.body?.data) {
           bodyText = atob(detail.payload.body.data.replace(/-/g, '+').replace(/_/g, '/'));
@@ -194,6 +195,14 @@ Deno.serve(async (req) => {
               bodyHtml = atob(part.body.data.replace(/-/g, '+').replace(/_/g, '/'));
             } else if (part.mimeType === 'text/plain' && part.body?.data) {
               bodyText = atob(part.body.data.replace(/-/g, '+').replace(/_/g, '/'));
+            } else if (part.filename && part.body?.attachmentId) {
+              // Store attachment metadata (actual file would need to be fetched separately)
+              attachments.push({
+                filename: part.filename,
+                size: part.body.size,
+                mime_type: part.mimeType,
+                attachment_id: part.body.attachmentId
+              });
             }
           }
         }
@@ -209,7 +218,8 @@ Deno.serve(async (req) => {
           body_text: bodyText,
           message_id: messageId,
           in_reply_to: inReplyTo,
-          is_outbound: message.isOutbound
+          is_outbound: message.isOutbound,
+          attachments: attachments.length > 0 ? attachments : undefined
         });
 
         syncedCount++;
