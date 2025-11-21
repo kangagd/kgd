@@ -27,6 +27,7 @@ import ProjectStageSelector from "./ProjectStageSelector";
 import PartsSection from "./PartsSection";
 import ProjectSummary from "./ProjectSummary";
 import ProjectVisitsTab from "./ProjectVisitsTab";
+import FinancialsTab from "./FinancialsTab";
 
 const statusColors = {
   "Lead": "bg-slate-100 text-slate-700",
@@ -70,6 +71,19 @@ export default function ProjectDetails({ project: initialProject, onClose, onEdi
   const [showAddDoor, setShowAddDoor] = useState(false);
   const [showHistory, setShowHistory] = useState(false);
   const [activeTab, setActiveTab] = useState("overview");
+  const [user, setUser] = useState(null);
+
+  React.useEffect(() => {
+    const loadUser = async () => {
+      try {
+        const currentUser = await base44.auth.me();
+        setUser(currentUser);
+      } catch (error) {
+        console.error("Error loading user:", error);
+      }
+    };
+    loadUser();
+  }, []);
 
   const { data: project = initialProject } = useQuery({
     queryKey: ['project', initialProject.id],
@@ -770,6 +784,9 @@ Format as HTML bullet points using <ul> and <li> tags. Include only the most cri
               Visits
             </TabsTrigger>
             <TabsTrigger value="quoting" className="flex-1">Quoting</TabsTrigger>
+            {user?.role === 'admin' && (
+              <TabsTrigger value="financials" className="flex-1">Financials</TabsTrigger>
+            )}
             <TabsTrigger value="parts" className="flex-1">Parts</TabsTrigger>
             <TabsTrigger value="images" className="flex-1">
               Images
@@ -902,6 +919,19 @@ Format as HTML bullet points using <ul> and <li> tags. Include only the most cri
               onUpdateNotes={(value) => updateProjectMutation.mutate({ field: 'notes', value })}
             />
           </TabsContent>
+
+          {user?.role === 'admin' && (
+            <TabsContent value="financials" className="mt-3">
+              <FinancialsTab 
+                project={project}
+                onUpdate={(fields) => {
+                  Object.entries(fields).forEach(([field, value]) => {
+                    updateProjectMutation.mutate({ field, value });
+                  });
+                }}
+              />
+            </TabsContent>
+          )}
 
           <TabsContent value="quoting" className="mt-3">
             <div className="space-y-4">

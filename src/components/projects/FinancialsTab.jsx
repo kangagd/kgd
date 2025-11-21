@@ -1,0 +1,454 @@
+import React, { useState } from "react";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Badge } from "@/components/ui/badge";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Plus, Upload, X, DollarSign, TrendingUp } from "lucide-react";
+import { base44 } from "@/api/base44Client";
+import RichTextField from "../common/RichTextField";
+
+const getFinancialStatusOptions = (projectType) => {
+  if (projectType === "Repair" || projectType === "Motor/Accessory") {
+    return [
+      { value: "Initial Payment Made", label: "Initial Payment Made" },
+      { value: "Balance Paid in Full", label: "Balance Paid in Full" }
+    ];
+  } else if (projectType === "Maintenance") {
+    return [
+      { value: "Balance Paid in Full", label: "Balance Paid in Full" }
+    ];
+  } else {
+    // Installation types
+    return [
+      { value: "Initial Payment Made", label: "Initial Payment Made" },
+      { value: "Second Payment Made", label: "Second Payment Made" },
+      { value: "Balance Paid in Full", label: "Balance Paid in Full" }
+    ];
+  }
+};
+
+export default function FinancialsTab({ project, onUpdate }) {
+  const [uploading, setUploading] = useState(false);
+  const [newPayment, setNewPayment] = useState({
+    payment_name: "",
+    payment_status: "Pending",
+    payment_amount: "",
+    paid_date: "",
+    notes: "",
+    attachments: []
+  });
+  const [showAddPayment, setShowAddPayment] = useState(false);
+
+  const totalCost = (project.materials_cost || 0) + (project.labour_cost || 0) + (project.other_costs || 0);
+  const profit = (project.total_project_value || 0) - totalCost;
+  const marginPercentage = project.total_project_value ? ((profit / project.total_project_value) * 100).toFixed(1) : 0;
+
+  const handleAddPayment = () => {
+    if (!newPayment.payment_name || !newPayment.payment_amount) return;
+
+    const currentPayments = project.payments || [];
+    const payment = {
+      ...newPayment,
+      payment_amount: parseFloat(newPayment.payment_amount),
+      paid_date: newPayment.payment_status === "Paid" && !newPayment.paid_date 
+        ? new Date().toISOString().split('T')[0] 
+        : newPayment.paid_date
+    };
+
+    onUpdate({ payments: [...currentPayments, payment] });
+    setNewPayment({
+      payment_name: "",
+      payment_status: "Pending",
+      payment_amount: "",
+      paid_date: "",
+      notes: "",
+      attachments: []
+    });
+    setShowAddPayment(false);
+  };
+
+  const handleRemovePayment = (index) => {
+    const updatedPayments = project.payments.filter((_, i) => i !== index);
+    onUpdate({ payments: updatedPayments });
+  };
+
+  const handlePaymentStatusChange = (index, newStatus) => {
+    const updatedPayments = [...project.payments];
+    updatedPayments[index].payment_status = newStatus;
+    
+    if (newStatus === "Paid" && !updatedPayments[index].paid_date) {
+      updatedPayments[index].paid_date = new Date().toISOString().split('T')[0];
+    }
+    
+    onUpdate({ payments: updatedPayments });
+  };
+
+  const handleFileUpload = async (event, paymentIndex) => {
+    const file = event.target.files?.[0];
+    if (!file) return;
+
+    setUploading(true);
+    try {
+      const { file_url } = await base44.integrations.Core.UploadFile({ file });
+      
+      const updatedPayments = [...project.payments];
+      const currentAttachments = updatedPayments[paymentIndex].attachments || [];
+      updatedPayments[paymentIndex].attachments = [...currentAttachments, file_url];
+      
+      onUpdate({ payments: updatedPayments });
+    } catch (error) {
+      console.error('Upload failed:', error);
+    } finally {
+      setUploading(false);
+    }
+  };
+
+  const financialStatusOptions = getFinancialStatusOptions(project.project_type);
+  const totalPaid = (project.payments || [])
+    .filter(p => p.payment_status === "Paid")
+    .reduce((sum, p) => sum + (p.payment_amount || 0), 0);
+
+  return (
+    <div className="space-y-4">
+      {/* Financial Summary Card */}
+      <Card className="border border-[#E5E7EB] shadow-sm overflow-hidden">
+        <CardHeader className="bg-[#F8F9FA] border-b border-[#E5E7EB]">
+          <CardTitle className="text-[18px] font-semibold text-[#111827] leading-[1.2] flex items-center gap-2">
+            <DollarSign className="w-5 h-5" />
+            Financial Summary
+          </CardTitle>
+        </CardHeader>
+        <CardContent className="p-4 space-y-4">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div>
+              <label className="block text-[13px] md:text-[14px] font-medium text-[#4B5563] mb-1.5">
+                Total Project Value
+              </label>
+              <div className="relative">
+                <span className="absolute left-3 top-1/2 -translate-y-1/2 text-[#6B7280]">$</span>
+                <Input
+                  type="number"
+                  placeholder="0.00"
+                  value={project.total_project_value || ""}
+                  onChange={(e) => onUpdate({ total_project_value: parseFloat(e.target.value) || null })}
+                  className="pl-8"
+                />
+              </div>
+            </div>
+
+            <div>
+              <label className="block text-[13px] md:text-[14px] font-medium text-[#4B5563] mb-1.5">
+                Financial Status
+              </label>
+              <div className="flex flex-wrap gap-2">
+                {financialStatusOptions.map(option => (
+                  <Badge 
+                    key={option.value}
+                    className="bg-[#FAE008] text-[#111827] hover:bg-[#E5CF07] cursor-pointer font-medium px-3 py-1 rounded-lg text-[12px] leading-[1.35] transition-all"
+                    onClick={() => {/* Status tracking only, no project status change */}}
+                  >
+                    {option.label}
+                  </Badge>
+                ))}
+              </div>
+            </div>
+          </div>
+
+          <div className="border-t border-[#E5E7EB] pt-4">
+            <h4 className="text-[14px] font-semibold text-[#111827] mb-3">Cost Breakdown</h4>
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+              <div>
+                <label className="block text-[12px] font-medium text-[#4B5563] mb-1">
+                  Materials Cost
+                </label>
+                <div className="relative">
+                  <span className="absolute left-3 top-1/2 -translate-y-1/2 text-[#6B7280] text-sm">$</span>
+                  <Input
+                    type="number"
+                    placeholder="0.00"
+                    value={project.materials_cost || ""}
+                    onChange={(e) => onUpdate({ materials_cost: parseFloat(e.target.value) || null })}
+                    className="pl-8 h-9"
+                  />
+                </div>
+              </div>
+
+              <div>
+                <label className="block text-[12px] font-medium text-[#4B5563] mb-1">
+                  Labour Cost
+                </label>
+                <div className="relative">
+                  <span className="absolute left-3 top-1/2 -translate-y-1/2 text-[#6B7280] text-sm">$</span>
+                  <Input
+                    type="number"
+                    placeholder="0.00"
+                    value={project.labour_cost || ""}
+                    onChange={(e) => onUpdate({ labour_cost: parseFloat(e.target.value) || null })}
+                    className="pl-8 h-9"
+                  />
+                </div>
+              </div>
+
+              <div>
+                <label className="block text-[12px] font-medium text-[#4B5563] mb-1">
+                  Other Costs
+                </label>
+                <div className="relative">
+                  <span className="absolute left-3 top-1/2 -translate-y-1/2 text-[#6B7280] text-sm">$</span>
+                  <Input
+                    type="number"
+                    placeholder="0.00"
+                    value={project.other_costs || ""}
+                    onChange={(e) => onUpdate({ other_costs: parseFloat(e.target.value) || null })}
+                    className="pl-8 h-9"
+                  />
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div className="border-t border-[#E5E7EB] pt-4 bg-[#F8F9FA] -mx-4 -mb-4 px-4 py-3">
+            <div className="grid grid-cols-3 gap-4">
+              <div>
+                <div className="text-[12px] text-[#6B7280] mb-0.5">Total Cost</div>
+                <div className="text-[18px] font-bold text-[#111827]">
+                  ${totalCost.toLocaleString('en-AU', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                </div>
+              </div>
+              <div>
+                <div className="text-[12px] text-[#6B7280] mb-0.5">Profit</div>
+                <div className={`text-[18px] font-bold ${profit >= 0 ? 'text-[#16A34A]' : 'text-[#DC2626]'}`}>
+                  ${profit.toLocaleString('en-AU', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                </div>
+              </div>
+              <div>
+                <div className="text-[12px] text-[#6B7280] mb-0.5">Margin</div>
+                <div className={`text-[18px] font-bold ${marginPercentage >= 0 ? 'text-[#16A34A]' : 'text-[#DC2626]'}`}>
+                  {marginPercentage}%
+                </div>
+              </div>
+            </div>
+          </div>
+        </CardContent>
+      </Card>
+
+      {/* Payment Tracking */}
+      <Card className="border border-[#E5E7EB] shadow-sm overflow-hidden">
+        <CardHeader className="bg-[#F8F9FA] border-b border-[#E5E7EB]">
+          <div className="flex items-center justify-between">
+            <CardTitle className="text-[18px] font-semibold text-[#111827] leading-[1.2]">
+              Payment Tracking
+            </CardTitle>
+            <Button
+              onClick={() => setShowAddPayment(true)}
+              size="sm"
+              className="bg-[#FAE008] text-[#111827] hover:bg-[#E5CF07] font-semibold h-9"
+            >
+              <Plus className="w-4 h-4 mr-1" />
+              Add Payment
+            </Button>
+          </div>
+        </CardHeader>
+        <CardContent className="p-4 space-y-3">
+          {showAddPayment && (
+            <div className="bg-[#F8F9FA] border border-[#E5E7EB] rounded-lg p-4 space-y-3">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                <div>
+                  <label className="block text-[12px] font-medium text-[#4B5563] mb-1">
+                    Payment Name
+                  </label>
+                  <Input
+                    placeholder="e.g., Initial Payment"
+                    value={newPayment.payment_name}
+                    onChange={(e) => setNewPayment({ ...newPayment, payment_name: e.target.value })}
+                  />
+                </div>
+                <div>
+                  <label className="block text-[12px] font-medium text-[#4B5563] mb-1">
+                    Amount
+                  </label>
+                  <div className="relative">
+                    <span className="absolute left-3 top-1/2 -translate-y-1/2 text-[#6B7280]">$</span>
+                    <Input
+                      type="number"
+                      placeholder="0.00"
+                      value={newPayment.payment_amount}
+                      onChange={(e) => setNewPayment({ ...newPayment, payment_amount: e.target.value })}
+                      className="pl-8"
+                    />
+                  </div>
+                </div>
+                <div>
+                  <label className="block text-[12px] font-medium text-[#4B5563] mb-1">
+                    Status
+                  </label>
+                  <Select
+                    value={newPayment.payment_status}
+                    onValueChange={(value) => setNewPayment({ ...newPayment, payment_status: value })}
+                  >
+                    <SelectTrigger>
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="Pending">Pending</SelectItem>
+                      <SelectItem value="Paid">Paid</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div>
+                  <label className="block text-[12px] font-medium text-[#4B5563] mb-1">
+                    Paid Date
+                  </label>
+                  <Input
+                    type="date"
+                    value={newPayment.paid_date}
+                    onChange={(e) => setNewPayment({ ...newPayment, paid_date: e.target.value })}
+                  />
+                </div>
+              </div>
+              <div>
+                <label className="block text-[12px] font-medium text-[#4B5563] mb-1">
+                  Notes
+                </label>
+                <Input
+                  placeholder="Payment notes..."
+                  value={newPayment.notes}
+                  onChange={(e) => setNewPayment({ ...newPayment, notes: e.target.value })}
+                />
+              </div>
+              <div className="flex gap-2">
+                <Button onClick={handleAddPayment} className="bg-[#FAE008] text-[#111827] hover:bg-[#E5CF07] font-semibold">
+                  <Plus className="w-4 h-4 mr-1" />
+                  Add Payment
+                </Button>
+                <Button onClick={() => setShowAddPayment(false)} variant="outline">
+                  Cancel
+                </Button>
+              </div>
+            </div>
+          )}
+
+          {project.payments && project.payments.length > 0 ? (
+            <div className="space-y-2">
+              {project.payments.map((payment, index) => (
+                <div key={index} className="bg-white border border-[#E5E7EB] rounded-lg p-3 space-y-2">
+                  <div className="flex items-start justify-between">
+                    <div className="flex-1">
+                      <div className="flex items-center gap-2 mb-1">
+                        <h4 className="text-[14px] font-semibold text-[#111827]">{payment.payment_name}</h4>
+                        <Badge className={`${payment.payment_status === 'Paid' ? 'bg-[#16A34A]/10 text-[#16A34A] border-[#16A34A]/20' : 'bg-[#F3F4F6] text-[#4B5563] border-[#E5E7EB]'} font-medium px-2.5 py-0.5 rounded-lg text-[12px] border`}>
+                          {payment.payment_status}
+                        </Badge>
+                      </div>
+                      <div className="text-[18px] font-bold text-[#111827]">
+                        ${(payment.payment_amount || 0).toLocaleString('en-AU', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                      </div>
+                      {payment.paid_date && (
+                        <div className="text-[12px] text-[#6B7280] mt-1">
+                          Paid on {new Date(payment.paid_date).toLocaleDateString('en-AU')}
+                        </div>
+                      )}
+                      {payment.notes && (
+                        <div className="text-[12px] text-[#4B5563] mt-1">{payment.notes}</div>
+                      )}
+                    </div>
+                    <div className="flex items-center gap-1">
+                      <Select
+                        value={payment.payment_status}
+                        onValueChange={(value) => handlePaymentStatusChange(index, value)}
+                      >
+                        <SelectTrigger className="h-8 w-24 text-xs">
+                          <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="Pending">Pending</SelectItem>
+                          <SelectItem value="Paid">Paid</SelectItem>
+                        </SelectContent>
+                      </Select>
+                      <button
+                        onClick={() => handleRemovePayment(index)}
+                        className="text-red-600 hover:bg-red-50 rounded p-1 transition-colors"
+                      >
+                        <X className="w-4 h-4" />
+                      </button>
+                    </div>
+                  </div>
+
+                  {payment.attachments && payment.attachments.length > 0 && (
+                    <div className="flex flex-wrap gap-1">
+                      {payment.attachments.map((url, attIdx) => (
+                        <a
+                          key={attIdx}
+                          href={url}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="text-[11px] text-[#6D28D9] hover:underline bg-[#EDE9FE] px-2 py-1 rounded"
+                        >
+                          Attachment {attIdx + 1}
+                        </a>
+                      ))}
+                    </div>
+                  )}
+
+                  <label className="block">
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      size="sm"
+                      disabled={uploading}
+                      asChild
+                      className="h-8 text-xs"
+                    >
+                      <span>
+                        <Upload className="w-3 h-3 mr-1" />
+                        {uploading ? 'Uploading...' : 'Add Receipt'}
+                      </span>
+                    </Button>
+                    <input
+                      type="file"
+                      accept=".pdf,.jpg,.jpeg,.png"
+                      className="hidden"
+                      onChange={(e) => handleFileUpload(e, index)}
+                    />
+                  </label>
+                </div>
+              ))}
+            </div>
+          ) : !showAddPayment && (
+            <div className="text-center py-8 text-[#6B7280] text-[14px]">
+              No payments tracked yet
+            </div>
+          )}
+
+          {project.payments && project.payments.length > 0 && (
+            <div className="border-t border-[#E5E7EB] pt-3 bg-[#F8F9FA] -mx-4 -mb-4 px-4 py-3">
+              <div className="flex justify-between items-center">
+                <span className="text-[14px] font-semibold text-[#111827]">Total Paid</span>
+                <span className="text-[18px] font-bold text-[#16A34A]">
+                  ${totalPaid.toLocaleString('en-AU', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                </span>
+              </div>
+            </div>
+          )}
+        </CardContent>
+      </Card>
+
+      {/* Financial Notes */}
+      <Card className="border border-[#E5E7EB] shadow-sm overflow-hidden">
+        <CardHeader className="bg-[#F8F9FA] border-b border-[#E5E7EB]">
+          <CardTitle className="text-[18px] font-semibold text-[#111827] leading-[1.2]">
+            Financial Notes (Admin Only)
+          </CardTitle>
+        </CardHeader>
+        <CardContent className="p-4">
+          <RichTextField
+            value={project.financial_notes || ""}
+            onChange={(value) => onUpdate({ financial_notes: value })}
+            placeholder="Add private financial notes, payment terms, or other admin-only information..."
+          />
+        </CardContent>
+      </Card>
+    </div>
+  );
+}
