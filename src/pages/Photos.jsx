@@ -8,7 +8,8 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Plus, Search, Filter, X, Image as ImageIcon } from "lucide-react";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import PhotoUploadModal from "../components/photos/PhotoUploadModal";
-import PhotoDetailModal from "../components/photos/PhotoDetailModal";
+import FilePreviewModal from "../components/common/FilePreviewModal";
+import { useMutation } from "@tanstack/react-query";
 
 const TAGS = ["Before", "After", "Install", "Repair", "Service", "Maintenance", "Marketing", "Other"];
 const PRODUCT_TYPES = ["Garage Door", "Gate", "Roller Shutter", "Other"];
@@ -48,6 +49,14 @@ export default function Photos() {
   const handleUploadComplete = () => {
     queryClient.invalidateQueries({ queryKey: ['photos'] });
   };
+
+  const deletePhotoMutation = useMutation({
+    mutationFn: (photoId) => base44.entities.Photo.delete(photoId),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['photos'] });
+      setSelectedPhoto(null);
+    }
+  });
 
   // Filters
   const filteredPhotos = allPhotos.filter(photo => {
@@ -316,10 +325,20 @@ export default function Photos() {
         preselectedJobId={preselectedJobId}
       />
 
-      <PhotoDetailModal
-        open={!!selectedPhoto}
+      <FilePreviewModal
+        isOpen={!!selectedPhoto}
         onClose={() => setSelectedPhoto(null)}
-        photo={selectedPhoto}
+        file={selectedPhoto ? {
+          url: selectedPhoto.image_url,
+          name: selectedPhoto.notes || `Photo - ${selectedPhoto.customer_name}`,
+          type: 'image',
+          jobNumber: selectedPhoto.job_number,
+          projectName: selectedPhoto.project_name,
+          address: selectedPhoto.address,
+          caption: selectedPhoto.notes,
+          takenAt: selectedPhoto.uploaded_at
+        } : null}
+        onDelete={() => deletePhotoMutation.mutate(selectedPhoto.id)}
       />
     </div>
   );
