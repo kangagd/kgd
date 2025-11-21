@@ -65,20 +65,19 @@ export default function JobCard({ job, onClick, onViewDetails }) {
                 )}
               </div>
             </div>
+            {/* Metadata row */}
+            {job.project_name && (
+              <div className="flex items-center gap-2 flex-wrap text-[14px]">
+                <Badge className="bg-[#FAE008]/20 text-[#92400E] border-0 font-medium px-2.5 py-0.5 rounded-lg pointer-events-none">
+                  {job.project_name}
+                </Badge>
+              </div>
+            )}
             <div className="flex items-center gap-2">
               <MapPin className="w-4 h-4 text-[#6B7280] flex-shrink-0" />
               <span className="text-[14px] text-[#4B5563] leading-[1.4]">{job.address}</span>
             </div>
           </div>
-
-          {/* Metadata row */}
-          {job.project_name && (
-            <div className="flex items-center gap-2 flex-wrap text-[14px]">
-              <Badge className="bg-[#FAE008]/20 text-[#92400E] border-0 font-medium px-2.5 py-0.5 rounded-lg pointer-events-none">
-                {job.project_name}
-              </Badge>
-            </div>
-          )}
 
           {/* Schedule and Type */}
           <div className="flex items-center gap-4 text-[14px] text-[#4B5563]">
