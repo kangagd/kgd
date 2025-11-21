@@ -22,6 +22,28 @@ const productColors = {
   "Custom Garage Door": "bg-pink-100 text-pink-700"
 };
 
+const getInitials = (name) => {
+  if (!name) return "?";
+  return name.split(" ").map((n) => n[0]).join("").toUpperCase().slice(0, 2);
+};
+
+const avatarColors = [
+  "bg-blue-500",
+  "bg-purple-500",
+  "bg-green-500",
+  "bg-orange-500",
+  "bg-pink-500",
+  "bg-indigo-500",
+  "bg-red-500",
+  "bg-teal-500"
+];
+
+const getAvatarColor = (name) => {
+  if (!name) return avatarColors[0];
+  const index = name.charCodeAt(0) % avatarColors.length;
+  return avatarColors[index];
+};
+
 export default function JobCard({ job, onClick }) {
   const { data: latestVisit } = useQuery({
     queryKey: ['latestJobSummary', job.id],
@@ -84,8 +106,8 @@ export default function JobCard({ job, onClick }) {
             )}
           </div>
 
-          {/* Type badges */}
-          {(job.job_type_name || job.product) && (
+          {/* Type badges and Technicians */}
+          <div className="flex items-center justify-between gap-2 flex-wrap">
             <div className="flex items-center gap-2 flex-wrap">
               {job.job_type_name && (
                 <Badge className="bg-[#EDE9FE] text-[#6D28D9] hover:bg-[#EDE9FE] border-0 font-medium text-xs px-2.5 py-0.5 rounded-lg">
@@ -98,7 +120,27 @@ export default function JobCard({ job, onClick }) {
                 </Badge>
               )}
             </div>
-          )}
+            
+            {/* Assigned Technicians */}
+            {job.assigned_to_name && (
+              <div className="flex items-center gap-1">
+                {(Array.isArray(job.assigned_to_name) ? job.assigned_to_name : [job.assigned_to_name]).slice(0, 3).map((name, idx) => (
+                  <div
+                    key={idx}
+                    className={`${getAvatarColor(name)} w-7 h-7 rounded-full flex items-center justify-center text-white text-xs font-bold shadow-sm`}
+                    title={name}
+                  >
+                    {getInitials(name)}
+                  </div>
+                ))}
+                {Array.isArray(job.assigned_to_name) && job.assigned_to_name.length > 3 && (
+                  <div className="bg-[#6B7280] w-7 h-7 rounded-full flex items-center justify-center text-white text-xs font-bold shadow-sm">
+                    +{job.assigned_to_name.length - 3}
+                  </div>
+                )}
+              </div>
+            )}
+          </div>
 
           {/* Latest visit summary (collapsible) */}
           {latestVisit && (
