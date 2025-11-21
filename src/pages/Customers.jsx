@@ -10,6 +10,9 @@ import { Plus, Search, User } from "lucide-react";
 import CustomerForm from "../components/customers/CustomerForm";
 import CustomerDetails from "../components/customers/CustomerDetails";
 import CustomerCard from "../components/customers/CustomerCard";
+import EntityModal from "../components/common/EntityModal";
+import CustomerModalView from "../components/customers/CustomerModalView";
+import { createPageUrl } from "@/utils";
 
 export default function Customers() {
   const [searchTerm, setSearchTerm] = useState("");
@@ -17,15 +20,32 @@ export default function Customers() {
   const [showForm, setShowForm] = useState(false);
   const [selectedCustomer, setSelectedCustomer] = useState(null);
   const [editingCustomer, setEditingCustomer] = useState(null);
+  const [modalCustomer, setModalCustomer] = useState(null);
   const queryClient = useQueryClient();
 
   const { data: allCustomers = [], isLoading, refetch } = useQuery({
     queryKey: ['allCustomers'],
     queryFn: () => base44.entities.Customer.list(),
-    refetchInterval: 15000, // Refetch every 15 seconds
+    refetchInterval: 15000,
   });
 
   const customers = allCustomers.filter(customer => !customer.deleted_at && customer.status === 'active');
+
+  const { data: allJobs = [] } = useQuery({
+    queryKey: ['allJobs'],
+    queryFn: () => base44.entities.Job.list(),
+  });
+
+  const { data: allProjects = [] } = useQuery({
+    queryKey: ['allProjects'],
+    queryFn: () => base44.entities.Project.list(),
+  });
+
+  const getCustomerCounts = (customerId) => {
+    const jobCount = allJobs.filter(j => j.customer_id === customerId && !j.deleted_at).length;
+    const projectCount = allProjects.filter(p => p.customer_id === customerId && !p.deleted_at).length;
+    return { jobCount, projectCount };
+  };
 
   const createCustomerMutation = useMutation({
     mutationFn: (data) => base44.entities.Customer.create(data),
@@ -77,6 +97,10 @@ export default function Customers() {
 
   const handleDelete = (customerId) => {
     deleteCustomerMutation.mutate(customerId);
+  };
+
+  const handleOpenFullCustomer = (customer) => {
+    window.open(`${createPageUrl("Customers")}?customerId=${customer.id}`, '_blank');
   };
 
   const filteredCustomers = customers.filter((customer) => {

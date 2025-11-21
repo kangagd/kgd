@@ -11,11 +11,20 @@ const customerTypeColors = {
   "Strata - Owner": "bg-amber-100 text-amber-700",
 };
 
-export default function CustomerCard({ customer, onClick }) {
+export default function CustomerCard({ customer, onClick, onViewDetails }) {
+  const handleClick = (e) => {
+    e.stopPropagation();
+    if (onViewDetails) {
+      onViewDetails(customer);
+    } else if (onClick) {
+      onClick();
+    }
+  };
+
   return (
     <Card 
       className="hover:shadow-lg transition-all duration-200 cursor-pointer hover:border-[#FAE008] border border-[#E5E7EB] rounded-xl"
-      onClick={onClick}
+      onClick={handleClick}
     >
       <CardContent className="p-4">
         <Collapsible>
