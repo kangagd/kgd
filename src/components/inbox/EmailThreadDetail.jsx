@@ -15,6 +15,7 @@ import { format, parseISO } from "date-fns";
 import EmailMessageView from "./EmailMessageView";
 import EmailComposer from "./EmailComposer";
 import EmailThreadSummary from "./EmailThreadSummary";
+import ResponseSuggestions from "./ResponseSuggestions";
 import { createPageUrl } from "@/utils";
 
 const statusColors = {
@@ -38,6 +39,7 @@ export default function EmailThreadDetail({
 }) {
   const [composerMode, setComposerMode] = useState(null);
   const [selectedMessage, setSelectedMessage] = useState(null);
+  const [prefilledBody, setPrefilledBody] = useState("");
 
   const { data: messages = [], refetch } = useQuery({
     queryKey: ['emailMessages', thread.id],
@@ -59,9 +61,15 @@ export default function EmailThreadDetail({
     setComposerMode("compose");
   };
 
+  const handleUseTemplate = (template) => {
+    setPrefilledBody(template);
+    handleReply(messages[messages.length - 1]);
+  };
+
   const handleCloseComposer = () => {
     setComposerMode(null);
     setSelectedMessage(null);
+    setPrefilledBody("");
   };
 
   const handleEmailSent = () => {
@@ -84,8 +92,27 @@ export default function EmailThreadDetail({
                 <span className="font-medium">To:</span>
                 <span>{thread.to_addresses.join(', ')}</span>
               </div>
-            )}
-          </div>
+              )}
+
+              {/* Category and Urgency Badges */}
+              <div className="flex items-center gap-2 mt-3">
+              {thread.category && thread.category !== 'Uncategorized' && (
+                <Badge className="bg-blue-100 text-blue-800 border-blue-200">
+                  {thread.category}
+                </Badge>
+              )}
+              {thread.is_urgent && (
+                <Badge className="bg-red-100 text-red-800 border-red-200 animate-pulse">
+                  🚨 Urgent
+                </Badge>
+              )}
+              {thread.urgency_reason && (
+                <span className="text-[12px] text-[#DC2626]">
+                  {thread.urgency_reason}
+                </span>
+              )}
+              </div>
+              </div>
           <Button
             variant="ghost"
             size="icon"
@@ -210,6 +237,14 @@ export default function EmailThreadDetail({
       <div className="flex-1 overflow-y-auto p-5 space-y-4">
         <EmailThreadSummary thread={thread} messages={messages} />
         
+        {!composerMode && messages.length > 0 && userPermissions?.can_reply && (
+          <ResponseSuggestions 
+            thread={thread} 
+            messages={messages}
+            onUseTemplate={handleUseTemplate}
+          />
+        )}
+        
         {composerMode && (
           <EmailComposer
             mode={composerMode}
@@ -217,6 +252,7 @@ export default function EmailThreadDetail({
             message={selectedMessage}
             onClose={handleCloseComposer}
             onSent={handleEmailSent}
+            prefilledBody={prefilledBody}
           />
         )}
 

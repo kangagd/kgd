@@ -104,6 +104,7 @@ Deno.serve(async (req) => {
       });
 
       let threadId;
+      let isNewThread = false;
 
       if (existingThreads.length > 0) {
         threadId = existingThreads[0].id;
@@ -113,7 +114,52 @@ Deno.serve(async (req) => {
           last_message_snippet: detail.snippet
         });
       } else {
-        // Create new thread
+        isNewThread = true;
+        // AI categorization and urgency detection for new threads
+        let category = 'Uncategorized';
+        let isUrgent = false;
+        let urgencyReason = null;
+
+        try {
+          const aiResponse = await fetch('https://api.openai.com/v1/chat/completions', {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+              'Authorization': `Bearer ${Deno.env.get('OPENAI_API_KEY')}`
+            },
+            body: JSON.stringify({
+              model: 'gpt-3.5-turbo',
+              messages: [{
+                role: 'system',
+                content: 'You categorize emails for a garage door/gate service company.'
+              }, {
+                role: 'user',
+                content: `Analyze this email and categorize it. Also determine if it's urgent.
+
+      Subject: ${subject}
+      From: ${from}
+      Body: ${detail.snippet}
+
+      Categories: Support, Sales, Internal, Project Inquiry, Quote Request, Scheduling, General
+
+      Respond in JSON: {"category": "...", "is_urgent": true/false, "urgency_reason": "why urgent or null"}`
+              }],
+              response_format: { type: 'json_object' }
+            })
+          });
+
+          if (aiResponse.ok) {
+            const aiData = await aiResponse.json();
+            const analysis = JSON.parse(aiData.choices[0].message.content);
+            category = analysis.category || 'Uncategorized';
+            isUrgent = analysis.is_urgent || false;
+            urgencyReason = analysis.urgency_reason;
+          }
+        } catch (error) {
+          console.error('AI categorization failed:', error);
+        }
+
+        // Create new thread with AI insights
         const newThread = await base44.entities.EmailThread.create({
           subject,
           from_address: parseEmailAddress(from),
@@ -121,8 +167,11 @@ Deno.serve(async (req) => {
           last_message_date: new Date(date).toISOString(),
           last_message_snippet: detail.snippet,
           status: 'Open',
-          priority: 'Normal',
-          message_count: 1
+          priority: isUrgent ? 'High' : 'Normal',
+          message_count: 1,
+          category: category,
+          is_urgent: isUrgent,
+          urgency_reason: urgencyReason
         });
         threadId = newThread.id;
       }
