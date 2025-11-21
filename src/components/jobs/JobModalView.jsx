@@ -130,7 +130,7 @@ export default function JobModalView({ job }) {
 
       {/* Notes Preview */}
       {job.notes && job.notes !== "<p><br></p>" && (
-        <div className="p-3 bg-[#F8F9FA] rounded-lg">
+        <div className="p-3 bg-[#FAE008]/10 rounded-lg">
           <div className="text-[12px] text-[#6B7280] font-medium mb-1">Notes</div>
           <div 
             className="text-[14px] text-[#4B5563] line-clamp-3 prose prose-sm max-w-none"
