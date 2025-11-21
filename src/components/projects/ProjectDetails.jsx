@@ -760,22 +760,22 @@ Format as HTML bullet points using <ul> and <li> tags. Include only the most cri
 
       <CardContent className="p-3 md:p-4">
         <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-            <TabsList className="mb-4">
-            <TabsTrigger value="overview">
+            <TabsList className="w-full justify-start mb-4">
+            <TabsTrigger value="overview" className="flex-1">
               Overview
             </TabsTrigger>
-            <TabsTrigger value="visits">
+            <TabsTrigger value="visits" className="flex-1">
               Visits
             </TabsTrigger>
-            <TabsTrigger value="quoting">Quoting</TabsTrigger>
-            <TabsTrigger value="parts">Parts</TabsTrigger>
-            <TabsTrigger value="images">
+            <TabsTrigger value="quoting" className="flex-1">Quoting</TabsTrigger>
+            <TabsTrigger value="parts" className="flex-1">Parts</TabsTrigger>
+            <TabsTrigger value="images" className="flex-1">
               Images
             </TabsTrigger>
-            <TabsTrigger value="attachments">
+            <TabsTrigger value="attachments" className="flex-1">
               Files
             </TabsTrigger>
-            <TabsTrigger value="summary">
+            <TabsTrigger value="summary" className="flex-1">
               Summary
             </TabsTrigger>
             </TabsList>
