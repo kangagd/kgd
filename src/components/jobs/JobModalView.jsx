@@ -36,15 +36,17 @@ export default function JobModalView({ job }) {
     <div className="space-y-4">
       {/* Header Info */}
       <div className="space-y-3">
-        <div className="flex items-center gap-2 flex-wrap">
-          <Badge className="bg-white text-[#6B7280] border border-[#E5E7EB] font-medium px-2.5 py-0.5 rounded-lg">
-            #{job.job_number}
-          </Badge>
-          {job.product && (
-            <Badge className={`${productColors[job.product]} font-medium text-xs px-2.5 py-0.5 rounded-lg border-0`}>
-              {job.product}
+        <div className="flex items-center justify-between gap-2 flex-wrap">
+          <div className="flex items-center gap-2">
+            <Badge className="bg-white text-[#6B7280] border border-[#E5E7EB] font-medium px-2.5 py-0.5 rounded-lg">
+              #{job.job_number}
             </Badge>
-          )}
+            {job.product && (
+              <Badge className={`${productColors[job.product]} font-medium text-xs px-2.5 py-0.5 rounded-lg border-0`}>
+                {job.product}
+              </Badge>
+            )}
+          </div>
           {job.status && (
             <Badge className={`${statusColors[job.status]} font-medium px-2.5 py-0.5 rounded-lg border-0`}>
               {job.status}
