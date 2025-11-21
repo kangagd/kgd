@@ -71,9 +71,12 @@ export default function EmailMessageView({ message, isFirst }) {
           )}
 
           {/* Body */}
-          <div className="prose prose-sm max-w-none mb-4">
+          <div className="mb-4">
             {message.body_html ? (
-              <div dangerouslySetInnerHTML={{ __html: message.body_html }} />
+              <div 
+                className="prose prose-sm max-w-none text-[14px] [&_img]:max-w-full [&_img]:h-auto [&_a]:text-blue-600 [&_a]:underline"
+                dangerouslySetInnerHTML={{ __html: message.body_html }} 
+              />
             ) : (
               <div className="whitespace-pre-wrap text-[14px] text-[#111827]">
                 {message.body_text}
