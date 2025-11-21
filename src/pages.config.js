@@ -12,6 +12,7 @@ import Organisations from './pages/Organisations';
 import Projects from './pages/Projects';
 import Photos from './pages/Photos';
 import Reports from './pages/Reports';
+import Inbox from './pages/Inbox';
 import __Layout from './Layout.jsx';
 
 
@@ -30,6 +31,7 @@ export const PAGES = {
     "Projects": Projects,
     "Photos": Photos,
     "Reports": Reports,
+    "Inbox": Inbox,
 }
 
 export const pagesConfig = {

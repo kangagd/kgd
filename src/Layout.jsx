@@ -19,7 +19,8 @@ import {
   TestTube2,
   LogOut,
   Image as ImageIcon,
-  TrendingUp
+  TrendingUp,
+  Mail
 } from "lucide-react";
 import { base44 } from "@/api/base44Client";
 import { toast } from "sonner";
@@ -30,6 +31,7 @@ const adminNavigationItems = [
   { title: "Schedule", url: createPageUrl("Calendar"), icon: Calendar },
   { title: "Jobs", url: createPageUrl("Jobs"), icon: Briefcase },
   { title: "Projects", url: createPageUrl("Projects"), icon: FolderKanban },
+  { title: "Inbox", url: createPageUrl("Inbox"), icon: Mail },
   { title: "Customers", url: createPageUrl("Customers"), icon: UserCircle },
   { title: "Organisations", url: createPageUrl("Organisations"), icon: Building2 },
   { title: "Photos", url: createPageUrl("Photos"), icon: ImageIcon },
