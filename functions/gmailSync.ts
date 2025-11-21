@@ -160,14 +160,14 @@ Deno.serve(async (req) => {
           body_text: bodyText,
           message_id: messageId,
           in_reply_to: inReplyTo,
-          is_outbound: false
+          is_outbound: message.isOutbound
         });
 
         syncedCount++;
       }
     }
 
-    return Response.json({ synced: syncedCount, total: messagesData.messages.length });
+    return Response.json({ synced: syncedCount, total: allMessages.length });
   } catch (error) {
     return Response.json({ error: error.message }, { status: 500 });
   }
