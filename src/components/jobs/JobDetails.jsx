@@ -435,13 +435,19 @@ export default function JobDetails({ job: initialJob, onClose, onStatusChange, o
   const handleJobTypeChange = (jobTypeId) => {
     const jobType = jobTypes.find((jt) => jt.id === jobTypeId);
     logChange('job_type_id', job.job_type_id, jobTypeId);
-    updateJobMutation.mutate({
-      field: 'job_type_id',
-      value: jobTypeId
+    
+    const updates = {
+      job_type_id: jobTypeId,
+      job_type_name: jobType?.name || null
+    };
+    
+    base44.entities.Job.update(job.id, updates).then(() => {
+      queryClient.invalidateQueries({ queryKey: ['jobs'] });
+      queryClient.setQueryData(['job', job.id], (oldData) => ({
+        ...oldData,
+        ...updates
+      }));
     });
-    if (jobType) {
-      updateJobMutation.mutate({ field: 'job_type_name', value: jobType.name });
-    }
   };
 
   const handleImagesChange = async (urls) => {
