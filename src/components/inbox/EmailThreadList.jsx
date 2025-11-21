@@ -51,11 +51,14 @@ export default function EmailThreadList({ threads, selectedThread, onSelectThrea
           onClick={() => onSelectThread(thread)}
           className={`p-4 border-b border-[#E5E7EB] cursor-pointer hover:bg-[#F9FAFB] transition-colors ${
             selectedThread?.id === thread.id ? 'bg-[#FAE008]/10 border-l-4 border-l-[#FAE008]' : ''
-          }`}
+          } ${thread.is_urgent ? 'border-l-4 border-l-red-500 bg-red-50/30' : ''}`}
         >
           <div className="flex items-start justify-between mb-2">
             <div className="flex-1 min-w-0 mr-2">
               <div className="flex items-center gap-2 mb-1">
+                {thread.is_urgent && (
+                  <span className="text-[16px]">🚨</span>
+                )}
                 {!thread.is_read && (
                   <div className="w-2 h-2 bg-[#FAE008] rounded-full flex-shrink-0" />
                 )}
@@ -75,6 +78,12 @@ export default function EmailThreadList({ threads, selectedThread, onSelectThrea
           </p>
 
           <div className="flex items-center gap-2 flex-wrap">
+            {thread.category && thread.category !== 'Uncategorized' && (
+              <Badge className="bg-blue-100 text-blue-800 border-blue-200 text-[11px] px-2 py-0.5">
+                {thread.category}
+              </Badge>
+            )}
+            
             <Badge className={`${statusColors[thread.status]} text-[11px] px-2 py-0.5`}>
               {thread.status}
             </Badge>
