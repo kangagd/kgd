@@ -764,7 +764,7 @@ export default function JobDetails({ job: initialJob, onClose, onStatusChange, o
         
         <CardContent className="p-3 md:p-4 space-y-3">
           <Tabs defaultValue="details" className="w-full">
-            <TabsList className="mb-3">
+            <TabsList className="w-full mb-3">
               <TabsTrigger value="details">Details</TabsTrigger>
               <TabsTrigger value="visit">
                 <ClipboardCheck className="w-4 h-4 mr-1.5" />
