@@ -352,6 +352,30 @@ export default function JobDetails({ job: initialJob, onClose, onStatusChange, o
 
   const handleFieldSave = (fieldName, oldValue, newValue) => {
     logChange(fieldName, oldValue, newValue);
+    
+    // Auto-update status to "Scheduled" when scheduling a future date
+    if (fieldName === 'scheduled_date' && newValue) {
+      const scheduledDate = new Date(newValue);
+      const today = new Date();
+      today.setHours(0, 0, 0, 0);
+      
+      if (scheduledDate >= today && job.status === 'Open') {
+        const updates = {
+          scheduled_date: newValue,
+          status: 'Scheduled'
+        };
+        
+        base44.entities.Job.update(job.id, updates).then(() => {
+          queryClient.invalidateQueries({ queryKey: ['jobs'] });
+          queryClient.setQueryData(['job', job.id], (oldData) => ({
+            ...oldData,
+            ...updates
+          }));
+        });
+        return;
+      }
+    }
+    
     updateJobMutation.mutate({ field: fieldName, value: newValue });
   };
 
