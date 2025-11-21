@@ -3,7 +3,13 @@ import { base44 } from "@/api/base44Client";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Plus, Search, List, Calendar as CalendarIcon } from "lucide-react";
+import { Plus, Search, List, Calendar as CalendarIcon, ArrowUpDown, Filter } from "lucide-react";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from "@/components/ui/popover";
 import JobForm from "../components/jobs/JobForm";
 import JobList from "../components/jobs/JobList";
 import JobDetails from "../components/jobs/JobDetails";
@@ -16,6 +22,11 @@ import { createPageUrl } from "@/utils";
 export default function Jobs() {
   const [searchTerm, setSearchTerm] = useState("");
   const [statusFilter, setStatusFilter] = useState("all");
+  const [technicianFilter, setTechnicianFilter] = useState("all");
+  const [dateFrom, setDateFrom] = useState("");
+  const [dateTo, setDateTo] = useState("");
+  const [sortBy, setSortBy] = useState("scheduled_date");
+  const [sortOrder, setSortOrder] = useState("desc");
   const [showForm, setShowForm] = useState(false);
   const [selectedJob, setSelectedJob] = useState(null);
   const [editingJob, setEditingJob] = useState(null);
@@ -158,7 +169,42 @@ export default function Jobs() {
 
     const matchesStatus = statusFilter === "all" || job.status === statusFilter;
 
-    return matchesSearch && matchesStatus;
+    const matchesTechnician = technicianFilter === "all" || 
+      (Array.isArray(job.assigned_to) 
+        ? job.assigned_to.includes(technicianFilter)
+        : job.assigned_to === technicianFilter);
+
+    const matchesDateRange = (!dateFrom || job.scheduled_date >= dateFrom) &&
+                             (!dateTo || job.scheduled_date <= dateTo);
+
+    return matchesSearch && matchesStatus && matchesTechnician && matchesDateRange;
+  }).sort((a, b) => {
+    let compareA, compareB;
+    
+    switch(sortBy) {
+      case 'scheduled_date':
+        compareA = a.scheduled_date || '';
+        compareB = b.scheduled_date || '';
+        break;
+      case 'customer_name':
+        compareA = a.customer_name?.toLowerCase() || '';
+        compareB = b.customer_name?.toLowerCase() || '';
+        break;
+      case 'job_number':
+        compareA = a.job_number || 0;
+        compareB = b.job_number || 0;
+        break;
+      case 'status':
+        compareA = a.status || '';
+        compareB = b.status || '';
+        break;
+      default:
+        return 0;
+    }
+
+    if (compareA < compareB) return sortOrder === 'asc' ? -1 : 1;
+    if (compareA > compareB) return sortOrder === 'asc' ? 1 : -1;
+    return 0;
   });
 
   if (showForm) {
@@ -256,14 +302,100 @@ export default function Jobs() {
           </div>
 
           {viewMode === "list" && (
-            <Tabs value={statusFilter} onValueChange={setStatusFilter} className="w-full">
-              <TabsList className="w-full justify-start">
-                <TabsTrigger value="all" className="flex-1">All</TabsTrigger>
-                <TabsTrigger value="Open" className="flex-1">Open</TabsTrigger>
-                <TabsTrigger value="Scheduled" className="flex-1">Scheduled</TabsTrigger>
-                <TabsTrigger value="Completed" className="flex-1">Completed</TabsTrigger>
-              </TabsList>
-            </Tabs>
+            <>
+              <Tabs value={statusFilter} onValueChange={setStatusFilter} className="w-full">
+                <TabsList className="w-full justify-start">
+                  <TabsTrigger value="all" className="flex-1">All</TabsTrigger>
+                  <TabsTrigger value="Open" className="flex-1">Open</TabsTrigger>
+                  <TabsTrigger value="Scheduled" className="flex-1">Scheduled</TabsTrigger>
+                  <TabsTrigger value="Completed" className="flex-1">Completed</TabsTrigger>
+                </TabsList>
+              </Tabs>
+
+              <div className="flex flex-col md:flex-row gap-3">
+                <Select value={technicianFilter} onValueChange={setTechnicianFilter}>
+                  <SelectTrigger className="w-full md:w-[200px] h-11">
+                    <SelectValue placeholder="All Technicians" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all">All Technicians</SelectItem>
+                    {technicians.map((tech) => (
+                      <SelectItem key={tech.email} value={tech.email}>
+                        {tech.full_name}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+
+                <Popover>
+                  <PopoverTrigger asChild>
+                    <Button variant="outline" className="w-full md:w-auto h-11 gap-2">
+                      <Filter className="w-4 h-4" />
+                      Date Range
+                      {(dateFrom || dateTo) && (
+                        <span className="ml-1 px-1.5 py-0.5 bg-[#FAE008] text-[#111827] rounded text-xs font-semibold">
+                          {dateFrom && dateTo ? '2' : '1'}
+                        </span>
+                      )}
+                    </Button>
+                  </PopoverTrigger>
+                  <PopoverContent className="w-80">
+                    <div className="space-y-4">
+                      <div>
+                        <label className="text-sm font-medium mb-1.5 block">From Date</label>
+                        <Input
+                          type="date"
+                          value={dateFrom}
+                          onChange={(e) => setDateFrom(e.target.value)}
+                          className="w-full"
+                        />
+                      </div>
+                      <div>
+                        <label className="text-sm font-medium mb-1.5 block">To Date</label>
+                        <Input
+                          type="date"
+                          value={dateTo}
+                          onChange={(e) => setDateTo(e.target.value)}
+                          className="w-full"
+                        />
+                      </div>
+                      {(dateFrom || dateTo) && (
+                        <Button
+                          variant="outline"
+                          onClick={() => {
+                            setDateFrom("");
+                            setDateTo("");
+                          }}
+                          className="w-full"
+                        >
+                          Clear Dates
+                        </Button>
+                      )}
+                    </div>
+                  </PopoverContent>
+                </Popover>
+
+                <Select value={`${sortBy}-${sortOrder}`} onValueChange={(value) => {
+                  const [field, order] = value.split('-');
+                  setSortBy(field);
+                  setSortOrder(order);
+                }}>
+                  <SelectTrigger className="w-full md:w-[220px] h-11">
+                    <ArrowUpDown className="w-4 h-4 mr-2" />
+                    <SelectValue placeholder="Sort by" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="scheduled_date-desc">Date (Newest)</SelectItem>
+                    <SelectItem value="scheduled_date-asc">Date (Oldest)</SelectItem>
+                    <SelectItem value="customer_name-asc">Customer (A-Z)</SelectItem>
+                    <SelectItem value="customer_name-desc">Customer (Z-A)</SelectItem>
+                    <SelectItem value="job_number-desc">Job # (High-Low)</SelectItem>
+                    <SelectItem value="job_number-asc">Job # (Low-High)</SelectItem>
+                    <SelectItem value="status-asc">Status (A-Z)</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+            </>
           )}
         </div>
 
