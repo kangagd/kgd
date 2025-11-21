@@ -18,7 +18,8 @@ import {
   ChevronRight,
   TestTube2,
   LogOut,
-  Image as ImageIcon
+  Image as ImageIcon,
+  TrendingUp
 } from "lucide-react";
 import { base44 } from "@/api/base44Client";
 import { toast } from "sonner";
@@ -33,6 +34,7 @@ const adminNavigationItems = [
   { title: "Organisations", url: createPageUrl("Organisations"), icon: Building2 },
   { title: "Photos", url: createPageUrl("Photos"), icon: ImageIcon },
   { title: "Price List", url: createPageUrl("PriceList"), icon: DollarSign },
+  { title: "Reports", url: createPageUrl("Reports"), icon: TrendingUp },
   { title: "Team", url: createPageUrl("Team"), icon: Users },
   { title: "Archive", url: createPageUrl("Archive"), icon: ArchiveIcon },
 ];

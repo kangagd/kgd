@@ -11,6 +11,7 @@ import Archive from './pages/Archive';
 import Organisations from './pages/Organisations';
 import Projects from './pages/Projects';
 import Photos from './pages/Photos';
+import Reports from './pages/Reports';
 import __Layout from './Layout.jsx';
 
 
@@ -28,6 +29,7 @@ export const PAGES = {
     "Organisations": Organisations,
     "Projects": Projects,
     "Photos": Photos,
+    "Reports": Reports,
 }
 
 export const pagesConfig = {
