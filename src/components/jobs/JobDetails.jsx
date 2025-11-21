@@ -572,23 +572,21 @@ export default function JobDetails({ job: initialJob, onClose, onStatusChange, o
                   </Badge>
                 </div>
                 <div className="flex items-center gap-2 flex-wrap">
-                  {job.job_type_name && (
-                    <EditableField
-                      value={job.job_type_id}
-                      onSave={handleJobTypeChange}
-                      type="select"
-                      options={jobTypes.map((jt) => ({ value: jt.id, label: jt.name }))}
-                      displayFormat={(val) => {
-                        const typeName = jobTypes.find((jt) => jt.id === val)?.name || val;
-                        return (
-                          <Badge className="bg-[#EDE9FE] text-[#6D28D9] hover:bg-[#EDE9FE] border-0 font-medium text-[12px] leading-[1.35] px-3 py-1 rounded-lg">
-                            {typeName}
-                          </Badge>
-                        );
-                      }}
-                      placeholder="Job type"
-                    />
-                  )}
+                  <EditableField
+                    value={job.job_type_id}
+                    onSave={handleJobTypeChange}
+                    type="select"
+                    options={jobTypes.map((jt) => ({ value: jt.id, label: jt.name }))}
+                    displayFormat={(val) => {
+                      const typeName = jobTypes.find((jt) => jt.id === val)?.name || val;
+                      return (
+                        <Badge className="bg-[#EDE9FE] text-[#6D28D9] hover:bg-[#EDE9FE] border-0 font-medium text-[12px] leading-[1.35] px-3 py-1 rounded-lg">
+                          {typeName}
+                        </Badge>
+                      );
+                    }}
+                    placeholder="Job type"
+                  />
                   {job.product && (
                     <EditableField
                       value={job.product}
