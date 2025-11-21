@@ -5,6 +5,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
+import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Plus, Search, User } from "lucide-react";
 import CustomerForm from "../components/customers/CustomerForm";
 import CustomerDetails from "../components/customers/CustomerDetails";
@@ -12,6 +13,7 @@ import CustomerCard from "../components/customers/CustomerCard";
 
 export default function Customers() {
   const [searchTerm, setSearchTerm] = useState("");
+  const [customerTypeFilter, setCustomerTypeFilter] = useState("all");
   const [showForm, setShowForm] = useState(false);
   const [selectedCustomer, setSelectedCustomer] = useState(null);
   const [editingCustomer, setEditingCustomer] = useState(null);
@@ -82,7 +84,10 @@ export default function Customers() {
       customer.phone?.toLowerCase().includes(searchTerm.toLowerCase()) ||
       customer.email?.toLowerCase().includes(searchTerm.toLowerCase()) ||
       customer.address?.toLowerCase().includes(searchTerm.toLowerCase());
-    return matchesSearch;
+    
+    const matchesType = customerTypeFilter === "all" || customer.customer_type === customerTypeFilter;
+    
+    return matchesSearch && matchesType;
   });
 
   if (showForm) {
@@ -135,7 +140,7 @@ export default function Customers() {
           </Button>
         </div>
 
-        <div className="mb-8">
+        <div className="mb-8 space-y-4">
           <div className="relative">
             <Search className="absolute left-4 top-1/2 transform -translate-y-1/2 w-5 h-5 text-[#6B7280]" />
             <Input
@@ -145,6 +150,16 @@ export default function Customers() {
               className="pl-12 border border-[#E5E7EB] focus:border-[#FAE008] focus:ring-2 focus:ring-[#FAE008]/20 transition-all h-12 text-[14px] leading-[1.4] rounded-lg"
             />
           </div>
+
+          <Tabs value={customerTypeFilter} onValueChange={setCustomerTypeFilter} className="w-full">
+            <TabsList style={{ display: 'flex', flexWrap: 'nowrap', overflowX: 'auto', overflowY: 'hidden' }}>
+              <TabsTrigger value="all">All Customers</TabsTrigger>
+              <TabsTrigger value="Owner">Owner</TabsTrigger>
+              <TabsTrigger value="Builder">Builder</TabsTrigger>
+              <TabsTrigger value="Real Estate - Tenant">Real Estate - Tenant</TabsTrigger>
+              <TabsTrigger value="Strata - Owner">Strata - Owner</TabsTrigger>
+            </TabsList>
+          </Tabs>
         </div>
 
         {isLoading ? (
