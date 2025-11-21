@@ -37,7 +37,8 @@ export default function PriceList() {
 
   const { data: priceItems = [], isLoading } = useQuery({
     queryKey: ['priceListItems'],
-    queryFn: () => base44.entities.PriceListItem.list('category')
+    queryFn: () => base44.entities.PriceListItem.list('category'),
+    refetchInterval: 15000, // Refetch every 15 seconds
   });
 
   const createItemMutation = useMutation({

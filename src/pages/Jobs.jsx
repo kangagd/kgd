@@ -37,7 +37,8 @@ export default function Jobs() {
 
   const { data: allJobs = [], isLoading, refetch } = useQuery({
     queryKey: ['allJobs'],
-    queryFn: () => base44.entities.Job.list('-scheduled_date')
+    queryFn: () => base44.entities.Job.list('-scheduled_date'),
+    refetchInterval: 15000, // Refetch every 15 seconds
   });
 
   const jobs = allJobs.filter(job => !job.deleted_at);

@@ -54,7 +54,8 @@ export default function Projects() {
 
   const { data: allProjects = [], isLoading } = useQuery({
     queryKey: ['projects'],
-    queryFn: () => base44.entities.Project.list('-created_date')
+    queryFn: () => base44.entities.Project.list('-created_date'),
+    refetchInterval: 15000, // Refetch every 15 seconds
   });
 
   const projects = allProjects.filter(p => !p.deleted_at);
