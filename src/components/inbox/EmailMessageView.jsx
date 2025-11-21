@@ -71,11 +71,11 @@ export default function EmailMessageView({ message, isFirst }) {
           )}
 
           {/* Body */}
-          <div className="mb-4">
+          <div className="mb-4 overflow-x-auto">
             {message.body_html ? (
               <div 
-                className="email-content prose prose-sm max-w-none text-[14px] leading-relaxed
-                  [&_p]:my-3 [&_p]:leading-relaxed
+                className="email-content prose prose-sm max-w-none text-[14px] leading-relaxed break-words
+                  [&_p]:my-3 [&_p]:leading-relaxed [&_p]:break-words
                   [&_h1]:text-[20px] [&_h1]:font-bold [&_h1]:mt-6 [&_h1]:mb-3
                   [&_h2]:text-[18px] [&_h2]:font-semibold [&_h2]:mt-5 [&_h2]:mb-2
                   [&_h3]:text-[16px] [&_h3]:font-semibold [&_h3]:mt-4 [&_h3]:mb-2
@@ -83,7 +83,7 @@ export default function EmailMessageView({ message, isFirst }) {
                   [&_ol]:my-3 [&_ol]:pl-6 [&_ol]:list-decimal
                   [&_li]:my-1 [&_li]:leading-relaxed
                   [&_blockquote]:border-l-4 [&_blockquote]:border-[#E5E7EB] [&_blockquote]:pl-4 [&_blockquote]:py-2 [&_blockquote]:my-4 [&_blockquote]:italic [&_blockquote]:text-[#6B7280]
-                  [&_a]:text-blue-600 [&_a]:underline [&_a]:hover:text-blue-800
+                  [&_a]:text-blue-600 [&_a]:underline [&_a]:hover:text-blue-800 [&_a]:break-words
                   [&_img]:max-w-full [&_img]:h-auto [&_img]:rounded-lg [&_img]:my-4
                   [&_table]:w-full [&_table]:border-collapse [&_table]:my-4
                   [&_th]:bg-[#F3F4F6] [&_th]:px-4 [&_th]:py-2 [&_th]:text-left [&_th]:font-semibold [&_th]:border [&_th]:border-[#E5E7EB]
@@ -93,11 +93,11 @@ export default function EmailMessageView({ message, isFirst }) {
                   [&_pre_code]:bg-transparent [&_pre_code]:p-0 [&_pre_code]:text-[#F9FAFB]
                   [&_hr]:my-6 [&_hr]:border-t [&_hr]:border-[#E5E7EB]
                   [&_strong]:font-semibold [&_em]:italic
-                  [&_div]:break-words [&_span]:break-words"
+                  [&_div]:break-words [&_span]:break-words [&_*]:overflow-wrap-anywhere"
                 dangerouslySetInnerHTML={{ __html: message.body_html }} 
               />
             ) : (
-              <div className="whitespace-pre-wrap text-[14px] text-[#111827] leading-relaxed">
+              <div className="whitespace-pre-wrap text-[14px] text-[#111827] leading-relaxed break-words overflow-wrap-anywhere">
                 {message.body_text}
               </div>
             )}
