@@ -38,7 +38,11 @@ export default function JobModalView({ job }) {
       <div className="space-y-3">
         <div className="flex items-center justify-between gap-2 flex-wrap">
           <div className="flex items-center gap-2">
-            <span className="text-[12px] text-[#6B7280] font-medium">Job Type</span>
+            {job.job_type_name && (
+              <Badge className="bg-[#EDE9FE] text-[#6D28D9] border-0 font-medium text-xs px-2.5 py-0.5 rounded-lg">
+                {job.job_type_name}
+              </Badge>
+            )}
             {job.product && (
               <Badge className={`${productColors[job.product]} font-medium text-xs px-2.5 py-0.5 rounded-lg border-0`}>
                 {job.product}
@@ -107,16 +111,7 @@ export default function JobModalView({ job }) {
         </div>
       )}
 
-      {/* Job Details */}
-      <div className="space-y-2">
-        {job.job_type_name && (
-          <div className="flex items-center gap-2 flex-wrap">
-            <Badge className="bg-[#EDE9FE] text-[#6D28D9] border-0 font-medium text-xs px-2.5 py-0.5 rounded-lg">
-              {job.job_type_name}
-            </Badge>
-          </div>
-        )}
-      </div>
+
 
       {/* Project Link */}
       {job.project_name && (
