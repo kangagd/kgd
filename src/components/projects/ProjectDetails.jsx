@@ -915,10 +915,10 @@ Format as HTML bullet points using <ul> and <li> tags. Include only the most cri
               Visits
             </TabsTrigger>
             <TabsTrigger value="quoting" className="flex-1">Quoting</TabsTrigger>
+            <TabsTrigger value="parts" className="flex-1">Parts</TabsTrigger>
             {user?.role === 'admin' && (
               <TabsTrigger value="financials" className="flex-1">Financials</TabsTrigger>
             )}
-            <TabsTrigger value="parts" className="flex-1">Parts</TabsTrigger>
             <TabsTrigger value="summary" className="flex-1">
               Summary
             </TabsTrigger>
