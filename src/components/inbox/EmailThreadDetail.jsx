@@ -10,9 +10,10 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { X, Link as LinkIcon, Plus, ExternalLink } from "lucide-react";
+import { X, Link as LinkIcon, Plus, ExternalLink, Reply, Forward, Mail } from "lucide-react";
 import { format, parseISO } from "date-fns";
 import EmailMessageView from "./EmailMessageView";
+import EmailComposer from "./EmailComposer";
 import { createPageUrl } from "@/utils";
 
 const statusColors = {
@@ -34,10 +35,37 @@ export default function EmailThreadDetail({
   onCreateJob,
   userPermissions
 }) {
-  const { data: messages = [] } = useQuery({
+  const [composerMode, setComposerMode] = useState(null);
+  const [selectedMessage, setSelectedMessage] = useState(null);
+
+  const { data: messages = [], refetch } = useQuery({
     queryKey: ['emailMessages', thread.id],
     queryFn: () => base44.entities.EmailMessage.filter({ thread_id: thread.id }, 'sent_at')
   });
+
+  const handleReply = (message) => {
+    setSelectedMessage(message);
+    setComposerMode("reply");
+  };
+
+  const handleForward = (message) => {
+    setSelectedMessage(message);
+    setComposerMode("forward");
+  };
+
+  const handleCompose = () => {
+    setSelectedMessage(null);
+    setComposerMode("compose");
+  };
+
+  const handleCloseComposer = () => {
+    setComposerMode(null);
+    setSelectedMessage(null);
+  };
+
+  const handleEmailSent = () => {
+    refetch();
+  };
 
   return (
     <div className="flex flex-col h-full">
@@ -116,6 +144,19 @@ export default function EmailThreadDetail({
               Create Job
             </Button>
           )}
+
+          {userPermissions?.can_reply && (
+            <>
+              <Button variant="outline" size="sm" onClick={handleCompose}>
+                <Mail className="w-4 h-4 mr-2" />
+                New Email
+              </Button>
+              <Button variant="outline" size="sm" onClick={() => handleReply(messages[messages.length - 1])}>
+                <Reply className="w-4 h-4 mr-2" />
+                Reply
+              </Button>
+            </>
+          )}
         </div>
 
         {/* Linked Items */}
@@ -166,13 +207,47 @@ export default function EmailThreadDetail({
 
       {/* Messages Timeline */}
       <div className="flex-1 overflow-y-auto p-5 space-y-4">
+        {composerMode && (
+          <EmailComposer
+            mode={composerMode}
+            thread={thread}
+            message={selectedMessage}
+            onClose={handleCloseComposer}
+            onSent={handleEmailSent}
+          />
+        )}
+
         {messages.length === 0 ? (
           <div className="text-center py-12">
             <p className="text-[14px] text-[#4B5563]">No messages in this thread</p>
           </div>
         ) : (
           messages.map((message, index) => (
-            <EmailMessageView key={message.id} message={message} isFirst={index === 0} />
+            <div key={message.id}>
+              <EmailMessageView message={message} isFirst={index === 0} />
+              {userPermissions?.can_reply && (
+                <div className="flex gap-2 mt-2 ml-4">
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => handleReply(message)}
+                    className="text-[13px] h-8"
+                  >
+                    <Reply className="w-3 h-3 mr-1" />
+                    Reply
+                  </Button>
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => handleForward(message)}
+                    className="text-[13px] h-8"
+                  >
+                    <Forward className="w-3 h-3 mr-1" />
+                    Forward
+                  </Button>
+                </div>
+              )}
+            </div>
           ))
         )}
       </div>
