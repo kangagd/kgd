@@ -900,7 +900,7 @@ export default function JobDetails({ job: initialJob, onClose, onStatusChange, o
                         <div className="flex items-center justify-between mb-3">
                           <span className="font-bold text-[#000000]">{summary.technician_name}</span>
                           <span className="text-xs text-slate-500 font-medium">
-                            {format(new Date(summary.checkout_time), 'MMM d, yyyy h:mm a')}
+                            {format(new Date(summary.check_out_time), 'MMM d, yyyy h:mm a')}
                           </span>
                         </div>
                         
@@ -1069,7 +1069,7 @@ export default function JobDetails({ job: initialJob, onClose, onStatusChange, o
                         <div className="flex items-center justify-between mb-3">
                           <span className="font-bold text-[#000000]">{summary.technician_name}</span>
                           <span className="text-xs text-slate-500 font-medium">
-                            {format(new Date(summary.checkout_time), 'MMM d, yyyy h:mm a')}
+                            {format(new Date(summary.check_out_time), 'MMM d, yyyy h:mm a')}
                           </span>
                         </div>
                         
@@ -1130,7 +1130,7 @@ export default function JobDetails({ job: initialJob, onClose, onStatusChange, o
                         <div className="flex items-center justify-between mb-3">
                           <span className="font-bold text-[#000000]">{summary.technician_name}</span>
                           <span className="text-xs text-slate-500 font-medium">
-                            {format(new Date(summary.checkout_time), 'MMM d, yyyy h:mm a')}
+                            {format(new Date(summary.check_out_time), 'MMM d, yyyy h:mm a')}
                           </span>
                         </div>
                         
