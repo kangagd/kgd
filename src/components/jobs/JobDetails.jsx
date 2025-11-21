@@ -452,7 +452,8 @@ export default function JobDetails({ job: initialJob, onClose, onStatusChange, o
     
     const updates = {
       job_type_id: jobTypeId,
-      job_type_name: jobType?.name || null
+      job_type_name: jobType?.name || null,
+      expected_duration: jobType?.estimated_duration || null
     };
     
     base44.entities.Job.update(job.id, updates).then(() => {
@@ -757,7 +758,20 @@ export default function JobDetails({ job: initialJob, onClose, onStatusChange, o
                     />
                   </div>
                 </div>
-
+                <div className="flex items-center gap-2.5">
+                  <Timer className="w-5 h-5 text-[#4B5563] flex-shrink-0" />
+                  <div className="flex-1 min-w-0">
+                    <div className="text-[12px] text-[#6B7280] font-normal leading-[1.35] mb-0.5">Duration</div>
+                    <EditableField
+                      value={job.expected_duration}
+                      onSave={(val) => handleFieldSave('expected_duration', job.expected_duration, parseFloat(val) || null)}
+                      type="text"
+                      displayFormat={(val) => val ? `${val}h` : '-'}
+                      placeholder="Duration"
+                      className="text-[14px] font-medium text-[#111827] leading-[1.4]"
+                    />
+                  </div>
+                </div>
               </div>
             </div>
           </div>
