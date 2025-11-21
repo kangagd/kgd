@@ -302,7 +302,7 @@ export default function Jobs() {
           </div>
 
           {viewMode === "list" && (
-            <>
+            <div className="hidden md:flex md:flex-col gap-5">
               <Tabs value={statusFilter} onValueChange={setStatusFilter} className="w-full">
                 <TabsList className="w-full justify-start">
                   <TabsTrigger value="all" className="flex-1">All</TabsTrigger>
@@ -395,7 +395,7 @@ export default function Jobs() {
                   </SelectContent>
                 </Select>
               </div>
-            </>
+            </div>
           )}
         </div>
 
