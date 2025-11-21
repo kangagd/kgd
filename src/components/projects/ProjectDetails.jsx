@@ -712,49 +712,51 @@ Format as HTML bullet points using <ul> and <li> tags. Include only the most cri
             />
           </div>
 
-          <h2 className="text-[22px] font-semibold text-[#111827] leading-[1.2]">
-            {project.title}
-          </h2>
-          <div className="flex items-center gap-1.5 flex-wrap mt-2">
-              {project.project_type && (
-                <EditableField
-                  value={project.project_type}
-                  onSave={(val) => handleFieldSave('project_type', project.project_type, val)}
-                  type="select"
-                  options={[
-                    { value: "Garage Door Install", label: "Garage Door Install" },
-                    { value: "Gate Install", label: "Gate Install" },
-                    { value: "Roller Shutter Install", label: "Roller Shutter Install" },
-                    { value: "Multiple", label: "Multiple" },
-                    { value: "Motor/Accessory", label: "Motor/Accessory" },
-                    { value: "Repair", label: "Repair" },
-                    { value: "Maintenance", label: "Maintenance" }
-                  ]}
-                  displayFormat={(val) => (
-                    <Badge className={`${projectTypeColors[val]} font-medium border-0 px-2.5 py-0.5 rounded-lg text-[12px] leading-[1.35]`}>
-                      {val}
-                    </Badge>
-                  )}
-                />
-              )}
-              {project.financial_status && (
-                <EditableField
-                  value={project.financial_status}
-                  onSave={(val) => handleFieldSave('financial_status', project.financial_status, val)}
-                  type="select"
-                  options={[
-                    { value: "50% payment made", label: "50% payment made" },
-                    { value: "30% payment made (install)", label: "30% payment made (install)" },
-                    { value: "Balance paid in full", label: "Balance paid in full" }
-                  ]}
-                  displayFormat={(val) => (
-                    <Badge className={`${financialStatusColors[val]} font-medium border-0 px-2.5 py-0.5 rounded-lg text-[12px] leading-[1.35]`}>
-                      {val}
-                    </Badge>
-                  )}
-                />
-              )}
+          <div className="flex items-center justify-between gap-3 flex-wrap">
+            <h2 className="text-[22px] font-semibold text-[#111827] leading-[1.2]">
+              {project.title}
+            </h2>
+            {project.project_type && (
+              <EditableField
+                value={project.project_type}
+                onSave={(val) => handleFieldSave('project_type', project.project_type, val)}
+                type="select"
+                options={[
+                  { value: "Garage Door Install", label: "Garage Door Install" },
+                  { value: "Gate Install", label: "Gate Install" },
+                  { value: "Roller Shutter Install", label: "Roller Shutter Install" },
+                  { value: "Multiple", label: "Multiple" },
+                  { value: "Motor/Accessory", label: "Motor/Accessory" },
+                  { value: "Repair", label: "Repair" },
+                  { value: "Maintenance", label: "Maintenance" }
+                ]}
+                displayFormat={(val) => (
+                  <Badge className={`${projectTypeColors[val]} font-medium border-0 px-2.5 py-0.5 rounded-lg text-[12px] leading-[1.35]`}>
+                    {val}
+                  </Badge>
+                )}
+              />
+            )}
+          </div>
+          {project.financial_status && (
+            <div className="mt-2">
+              <EditableField
+                value={project.financial_status}
+                onSave={(val) => handleFieldSave('financial_status', project.financial_status, val)}
+                type="select"
+                options={[
+                  { value: "50% payment made", label: "50% payment made" },
+                  { value: "30% payment made (install)", label: "30% payment made (install)" },
+                  { value: "Balance paid in full", label: "Balance paid in full" }
+                ]}
+                displayFormat={(val) => (
+                  <Badge className={`${financialStatusColors[val]} font-medium border-0 px-2.5 py-0.5 rounded-lg text-[12px] leading-[1.35]`}>
+                    {val}
+                  </Badge>
+                )}
+              />
             </div>
+          )}
           </div>
         </CardHeader>
 
