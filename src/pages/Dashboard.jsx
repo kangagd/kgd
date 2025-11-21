@@ -55,9 +55,12 @@ export default function Dashboard() {
 
   const todayJobs = jobs.filter(j => j.scheduled_date === today && !j.deleted_at);
   const tomorrowJobs = jobs.filter(j => j.scheduled_date === tomorrow && !j.deleted_at);
-  const activeJobs = jobs.filter(j => j.status === 'in_progress' && !j.deleted_at);
+  const upcomingJobs = jobs.filter(j => {
+    const scheduledDate = j.scheduled_date;
+    return scheduledDate && scheduledDate > today && !j.deleted_at && j.status !== 'Completed' && j.status !== 'Cancelled';
+  }).slice(0, 5);
   const completedToday = jobs.filter(j =>
-    j.status === 'completed' &&
+    j.status === 'Completed' &&
     j.updated_date?.split('T')[0] === today &&
     !j.deleted_at
   );
@@ -74,10 +77,10 @@ export default function Dashboard() {
     let url = createPageUrl("Jobs");
     if (filterType === 'today') {
       url += `?date=${today}`;
-    } else if (filterType === 'active') {
-      url += `?status=in_progress`;
+    } else if (filterType === 'upcoming') {
+      url += `?status=Scheduled`;
     } else if (filterType === 'completed') {
-      url += `?status=completed&date=${today}`;
+      url += `?status=Completed&date=${today}`;
     }
     navigate(url);
   };
@@ -119,18 +122,18 @@ export default function Dashboard() {
           </div>
 
           <div
-            onClick={() => handleCardClick('active')}
+            onClick={() => handleCardClick('upcoming')}
             className="bg-white rounded-xl border border-[#E5E7EB] p-7 cursor-pointer hover:shadow-xl hover:border-[#FAE008] hover:scale-[1.02] active:scale-[0.98] transition-all duration-200 group"
           >
             <div className="flex items-start justify-between mb-5">
               <div className="w-14 h-14 bg-[#FAE008]/10 rounded-xl flex items-center justify-center group-hover:bg-[#FAE008]/20 transition-colors">
-                <TrendingUp className="w-7 h-7 text-[#111827]" />
+                <Calendar className="w-7 h-7 text-[#111827]" />
               </div>
               <div className="text-right">
-                <p className="text-[28px] font-bold text-[#111827] leading-[1.2]">{activeJobs.length}</p>
+                <p className="text-[28px] font-bold text-[#111827] leading-[1.2]">{upcomingJobs.length}</p>
               </div>
             </div>
-            <h3 className="text-[14px] font-semibold text-[#4B5563] leading-[1.4] uppercase tracking-wide mb-1.5">Active Jobs</h3>
+            <h3 className="text-[14px] font-semibold text-[#4B5563] leading-[1.4] uppercase tracking-wide mb-1.5">Upcoming Jobs</h3>
             <p className="text-[12px] text-[#6B7280] leading-[1.35] group-hover:text-[#111827] transition-colors font-normal">Click to view →</p>
           </div>
 
