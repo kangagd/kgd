@@ -514,15 +514,6 @@ export default function JobDetails({ job: initialJob, onClose, onStatusChange, o
                 <Button
                 variant="ghost"
                 size="icon"
-                onClick={() => setShowDeleteConfirm(true)}
-                className="h-9 w-9 hover:bg-red-50 hover:text-red-600 transition-all rounded-lg"
-                title="Delete">
-
-                  <Trash2 className="w-4 h-4" />
-                </Button>
-                <Button
-                variant="ghost"
-                size="icon"
                 onClick={() => setShowHistory(true)}
                 className="h-9 w-9 hover:bg-[#F3F4F6] text-[#6B7280] hover:text-[#111827] transition-all rounded-lg"
                 title="History">
@@ -547,144 +538,196 @@ export default function JobDetails({ job: initialJob, onClose, onStatusChange, o
 
                   <Sparkles className="w-4 h-4" />
                 </Button>
+                <Button
+                variant="ghost"
+                size="icon"
+                onClick={() => setShowDeleteConfirm(true)}
+                className="h-9 w-9 hover:bg-red-50 hover:text-red-600 transition-all rounded-lg"
+                title="Delete">
+
+                  <Trash2 className="w-4 h-4" />
+                </Button>
               </div>
             }
           </div>
 
           <div className="space-y-3">
-            <div className="flex items-center gap-2 flex-wrap">
-              <CardTitle
-                className="text-[22px] font-semibold text-[#111827] leading-[1.2] cursor-pointer hover:text-[#FAE008] transition-colors"
-                onClick={() => setShowCustomerEdit(true)}>
-                {job.customer_name}
-              </CardTitle>
-              <Badge className="bg-white text-[#6B7280] hover:bg-white border border-[#E5E7EB] font-medium text-[12px] leading-[1.35] px-2.5 py-0.5 rounded-lg">
-                #{job.job_number}
-              </Badge>
-            </div>
+            {job.scheduled_date && (
+              <div className="text-[12px] text-[#6B7280] leading-[1.35]">
+                Scheduled for {format(parseISO(job.scheduled_date), 'EEEE, MMM d, yyyy')}
+                {job.scheduled_time && ` at ${job.scheduled_time}`}
+              </div>
+            )}
 
-            <div className="flex items-center gap-2 flex-wrap">
-              {job.customer_type &&
-              <Badge className="bg-[#EDE9FE] text-[#6D28D9] hover:bg-[#EDE9FE] border-0 font-medium text-[12px] leading-[1.35] px-3 py-1 rounded-lg">
-                  {job.customer_type}
+            <div className="flex items-center justify-between gap-3 flex-wrap">
+              <div className="flex items-center gap-2 flex-wrap">
+                <CardTitle
+                  className="text-[22px] font-semibold text-[#111827] leading-[1.2] cursor-pointer hover:text-[#FAE008] transition-colors"
+                  onClick={() => setShowCustomerEdit(true)}>
+                  {job.customer_name}
+                </CardTitle>
+                <Badge className="bg-white text-[#6B7280] hover:bg-white border border-[#E5E7EB] font-medium text-[12px] leading-[1.35] px-2.5 py-0.5 rounded-lg">
+                  #{job.job_number}
                 </Badge>
-              }
-            </div>
-
-            <div className="grid grid-cols-3 gap-x-6">
-              <div className="flex items-center gap-2.5 cursor-pointer hover:text-green-600 transition-colors" onClick={() => window.open(`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(job.address)}`, '_blank')}>
-                <Navigation className="text-green-600 w-5 h-5 flex-shrink-0" />
-                <span className="text-[14px] text-[#4B5563] leading-[1.4]">{job.address}</span>
               </div>
-              <div className="flex items-center gap-2.5 cursor-pointer hover:text-blue-600 transition-colors" onClick={() => job.customer_phone && (window.location.href = `tel:${job.customer_phone}`)}>
-                <Phone className="text-blue-600 w-5 h-5 flex-shrink-0" />
-                <span className="text-[14px] text-[#4B5563] leading-[1.4]">{job.customer_phone || '-'}</span>
-              </div>
-            </div>
-          </div>
 
-          <div className="bg-[#ffffff] p-4 rounded-lg space-y-3">
-            <div className="grid grid-cols-3 gap-x-6 gap-y-3">
-              <div className="flex items-center gap-2.5">
-                <Calendar className="w-5 h-5 text-[#4B5563]" />
-                <div className="flex-1 min-w-0">
-                  <div className="text-[12px] text-[#6B7280] font-normal leading-[1.35] mb-0.5">Date</div>
+              <div className="flex items-center gap-2 flex-wrap">
+                {job.status && (
                   <EditableField
-                    value={job.scheduled_date}
-                    onSave={(val) => handleFieldSave('scheduled_date', job.scheduled_date, val)}
-                    type="date"
-                    displayFormat={(val) => format(parseISO(val), 'MMM d, yyyy')}
-                    placeholder="Set date"
-                    className="text-[14px] font-medium text-[#111827] leading-[1.4]" />
-
-                </div>
-              </div>
-              <div className="flex items-center gap-2.5">
-                <Clock className="w-5 h-5 text-[#4B5563]" />
-                <div className="flex-1 min-w-0">
-                  <div className="text-[12px] text-[#6B7280] font-normal leading-[1.35] mb-0.5">Time</div>
-                  <div className="flex items-center gap-2">
-                    <EditableField
-                      value={job.scheduled_time}
-                      onSave={(val) => handleFieldSave('scheduled_time', job.scheduled_time, val)}
-                      type="time"
-                      placeholder="Time"
-                      className="text-[14px] font-medium text-[#111827] leading-[1.4]" />
-                    {job.expected_duration && (
-                      <Badge className="bg-white text-[#6B7280] hover:bg-white border border-[#E5E7EB] font-medium text-[12px] leading-[1.35] px-2.5 py-0.5 rounded-lg">
-                        {job.expected_duration}h
-                      </Badge>
-                    )}
-                  </div>
-                </div>
-              </div>
-              <div className="flex items-center gap-2.5">
-                <User className="w-5 h-5 text-[#4B5563]" />
-                <div className="flex-1 min-w-0">
-                  <div className="text-[12px] text-[#6B7280] font-normal leading-[1.35] mb-0.5">Technicians</div>
-                  <div className="flex items-center gap-1.5">
-                    {(Array.isArray(job.assigned_to_name) ? job.assigned_to_name : job.assigned_to_name ? [job.assigned_to_name] : []).slice(0, 3).map((name, idx) =>
-                    <div
-                      key={idx}
-                      className={`${getAvatarColor(name)} w-7 h-7 rounded-full flex items-center justify-center text-white text-xs font-bold shadow-sm`}
-                      title={name}>
-
-                        {getInitials(name)}
-                      </div>
-                    )}
-                    {Array.isArray(job.assigned_to_name) && job.assigned_to_name.length > 3 &&
-                    <div className="bg-[#6B7280] w-7 h-7 rounded-full flex items-center justify-center text-white text-xs font-bold shadow-sm">
-                        +{job.assigned_to_name.length - 3}
-                      </div>
-                    }
-                    <EditableField
-                      value={Array.isArray(job.assigned_to) ? job.assigned_to : job.assigned_to ? [job.assigned_to] : []}
-                      onSave={handleAssignedToChange}
-                      type="multi-select"
-                      icon={Edit}
-                      options={technicians.map((t) => ({ value: t.email, label: t.full_name }))}
-                      displayFormat={(val) => {
-                        const emailsToDisplay = Array.isArray(val) ? val : val ? [val] : [];
-                        return emailsToDisplay.length === 0 ? "Assign" : "Edit";
-                      }}
-                      placeholder="Assign" />
-
-                  </div>
-                </div>
-              </div>
-              <div className="flex items-center gap-2.5">
-                <Package className="w-5 h-5 text-[#4B5563]" />
-                <div className="flex-1 min-w-0">
-                  <div className="text-[12px] text-[#6B7280] font-normal leading-[1.35] mb-0.5">Product</div>
-                  <EditableField
-                    value={job.product}
-                    onSave={(val) => handleFieldSave('product', job.product, val)}
+                    value={job.status}
+                    onSave={(val) => handleFieldSave('status', job.status, val)}
                     type="select"
                     options={[
-                    { value: "Garage Door", label: "Garage Door" },
-                    { value: "Gate", label: "Gate" },
-                    { value: "Roller Shutter", label: "Roller Shutter" },
-                    { value: "Multiple", label: "Multiple" },
-                    { value: "Custom Garage Door", label: "Custom Garage Door" }]
-                    }
-                    className="text-[14px] font-medium text-[#111827] leading-[1.4]"
-                    placeholder="Product" />
-
-                </div>
-              </div>
-              <div className="flex items-center gap-2.5">
-                <Briefcase className="w-5 h-5 text-[#4B5563]" />
-                <div className="flex-1 min-w-0">
-                  <div className="text-[12px] text-[#6B7280] font-normal leading-[1.35] mb-0.5">Job Type</div>
+                      { value: "Open", label: "Open" },
+                      { value: "Scheduled", label: "Scheduled" },
+                      { value: "Completed", label: "Completed" },
+                      { value: "Cancelled", label: "Cancelled" }
+                    ]}
+                    displayFormat={(val) => (
+                      <Badge className={`${statusColors[val]} font-medium border px-2.5 py-0.5 rounded-lg text-[12px] leading-[1.35]`}>
+                        {val}
+                      </Badge>
+                    )}
+                  />
+                )}
+                {job.job_type_name && (
                   <EditableField
                     value={job.job_type_id}
                     onSave={handleJobTypeChange}
                     type="select"
                     options={jobTypes.map((jt) => ({ value: jt.id, label: jt.name }))}
-                    displayFormat={(val) => jobTypes.find((jt) => jt.id === val)?.name || val}
+                    displayFormat={(val) => {
+                      const typeName = jobTypes.find((jt) => jt.id === val)?.name || val;
+                      return (
+                        <Badge className="bg-[#EDE9FE] text-[#6D28D9] hover:bg-[#EDE9FE] border-0 font-medium text-[12px] leading-[1.35] px-3 py-1 rounded-lg">
+                          {typeName}
+                        </Badge>
+                      );
+                    }}
                     placeholder="Job type"
-                    className="text-[14px] font-medium text-[#111827] leading-[1.4]" />
+                  />
+                )}
+                {job.product && (
+                  <EditableField
+                    value={job.product}
+                    onSave={(val) => handleFieldSave('product', job.product, val)}
+                    type="select"
+                    options={[
+                      { value: "Garage Door", label: "Garage Door" },
+                      { value: "Gate", label: "Gate" },
+                      { value: "Roller Shutter", label: "Roller Shutter" },
+                      { value: "Multiple", label: "Multiple" },
+                      { value: "Custom Garage Door", label: "Custom Garage Door" }
+                    ]}
+                    displayFormat={(val) => (
+                      <Badge className={`${productColors[val] || 'bg-gray-100 text-gray-700'} font-medium border-0 px-2.5 py-0.5 rounded-lg text-[12px] leading-[1.35]`}>
+                        {val}
+                      </Badge>
+                    )}
+                    placeholder="Product"
+                  />
+                )}
+                {job.customer_type && (
+                  <Badge className={`${customerTypeColors[job.customer_type] || 'bg-gray-100 text-gray-700'} hover:bg-opacity-80 border-0 font-medium text-[12px] leading-[1.35] px-3 py-1 rounded-lg`}>
+                    {job.customer_type}
+                  </Badge>
+                )}
+              </div>
+            </div>
 
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+              <div className="flex items-start gap-2.5">
+                <Navigation className="text-green-600 w-5 h-5 flex-shrink-0 mt-0.5" />
+                <div className="flex-1 min-w-0">
+                  <div className="text-[12px] text-[#6B7280] font-normal leading-[1.35] mb-0.5">Address</div>
+                  <button
+                    onClick={() => window.open(`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(job.address)}`, '_blank')}
+                    className="text-[14px] text-[#111827] leading-[1.4] hover:text-green-600 transition-colors text-left"
+                  >
+                    {job.address}
+                  </button>
+                </div>
+              </div>
+              <div className="flex items-start gap-2.5">
+                <Phone className="text-blue-600 w-5 h-5 flex-shrink-0 mt-0.5" />
+                <div className="flex-1 min-w-0">
+                  <div className="text-[12px] text-[#6B7280] font-normal leading-[1.35] mb-0.5">Phone</div>
+                  {job.customer_phone ? (
+                    <a
+                      href={`tel:${job.customer_phone}`}
+                      className="text-[14px] text-[#111827] leading-[1.4] hover:text-blue-600 transition-colors"
+                    >
+                      {job.customer_phone}
+                    </a>
+                  ) : (
+                    <span className="text-[14px] text-[#6B7280] leading-[1.4]">-</span>
+                  )}
+                </div>
+              </div>
+            </div>
+
+            <div className="bg-white p-3 rounded-lg border border-[#E5E7EB]">
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+                <div className="flex items-center gap-2.5">
+                  <Calendar className="w-5 h-5 text-[#4B5563] flex-shrink-0" />
+                  <div className="flex-1 min-w-0">
+                    <div className="text-[12px] text-[#6B7280] font-normal leading-[1.35] mb-0.5">Date</div>
+                    <EditableField
+                      value={job.scheduled_date}
+                      onSave={(val) => handleFieldSave('scheduled_date', job.scheduled_date, val)}
+                      type="date"
+                      displayFormat={(val) => format(parseISO(val), 'MMM d, yyyy')}
+                      placeholder="Set date"
+                      className="text-[14px] font-medium text-[#111827] leading-[1.4]"
+                    />
+                  </div>
+                </div>
+                <div className="flex items-center gap-2.5">
+                  <Clock className="w-5 h-5 text-[#4B5563] flex-shrink-0" />
+                  <div className="flex-1 min-w-0">
+                    <div className="text-[12px] text-[#6B7280] font-normal leading-[1.35] mb-0.5">Time</div>
+                    <EditableField
+                      value={job.scheduled_time}
+                      onSave={(val) => handleFieldSave('scheduled_time', job.scheduled_time, val)}
+                      type="time"
+                      placeholder="Time"
+                      className="text-[14px] font-medium text-[#111827] leading-[1.4]"
+                    />
+                  </div>
+                </div>
+                <div className="flex items-center gap-2.5">
+                  <User className="w-5 h-5 text-[#4B5563] flex-shrink-0" />
+                  <div className="flex-1 min-w-0">
+                    <div className="text-[12px] text-[#6B7280] font-normal leading-[1.35] mb-0.5">Technicians</div>
+                    <div className="flex items-center gap-1.5">
+                      {(Array.isArray(job.assigned_to_name) ? job.assigned_to_name : job.assigned_to_name ? [job.assigned_to_name] : []).slice(0, 3).map((name, idx) =>
+                        <div
+                          key={idx}
+                          className={`${getAvatarColor(name)} w-7 h-7 rounded-full flex items-center justify-center text-white text-xs font-bold shadow-sm`}
+                          title={name}
+                        >
+                          {getInitials(name)}
+                        </div>
+                      )}
+                      {Array.isArray(job.assigned_to_name) && job.assigned_to_name.length > 3 &&
+                        <div className="bg-[#6B7280] w-7 h-7 rounded-full flex items-center justify-center text-white text-xs font-bold shadow-sm">
+                          +{job.assigned_to_name.length - 3}
+                        </div>
+                      }
+                      <EditableField
+                        value={Array.isArray(job.assigned_to) ? job.assigned_to : job.assigned_to ? [job.assigned_to] : []}
+                        onSave={handleAssignedToChange}
+                        type="multi-select"
+                        icon={Edit}
+                        options={technicians.map((t) => ({ value: t.email, label: t.full_name }))}
+                        displayFormat={(val) => {
+                          const emailsToDisplay = Array.isArray(val) ? val : val ? [val] : [];
+                          return emailsToDisplay.length === 0 ? "Assign" : "Edit";
+                        }}
+                        placeholder="Assign"
+                      />
+                    </div>
+                  </div>
                 </div>
               </div>
             </div>
