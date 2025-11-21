@@ -60,7 +60,7 @@ export default function JobModalView({ job }) {
 
         {/* Schedule Info */}
         {job.scheduled_date && (
-          <div className="flex items-center gap-4 text-[14px] text-[#4B5563]">
+          <div className="flex items-center gap-4 text-[14px] text-[#4B5563] flex-wrap">
             <div className="flex items-center gap-1.5">
               <Calendar className="w-4 h-4 text-[#6B7280]" />
               <span>{format(parseISO(job.scheduled_date), 'MMM d, yyyy')}</span>
@@ -69,6 +69,20 @@ export default function JobModalView({ job }) {
               <div className="flex items-center gap-1.5">
                 <Clock className="w-4 h-4 text-[#6B7280]" />
                 <span>{job.scheduled_time}</span>
+              </div>
+            )}
+            {job.assigned_to && job.assigned_to.length > 0 && (
+              <div className="flex items-center gap-2">
+                <span className="text-[12px] text-[#6B7280] font-medium">Assigned to:</span>
+                <TechnicianAvatarGroup
+                  technicians={job.assigned_to.map((email, idx) => ({
+                    email,
+                    full_name: job.assigned_to_name?.[idx] || email,
+                    id: email
+                  }))}
+                  maxDisplay={3}
+                  size="sm"
+                />
               </div>
             )}
           </div>
@@ -102,22 +116,6 @@ export default function JobModalView({ job }) {
             <Badge className="bg-[#EDE9FE] text-[#6D28D9] border-0 font-medium text-xs px-2.5 py-0.5 rounded-lg">
               {job.job_type_name}
             </Badge>
-          </div>
-        )}
-
-        {/* Assigned Technicians */}
-        {job.assigned_to && job.assigned_to.length > 0 && (
-          <div className="flex items-center gap-2">
-            <span className="text-[12px] text-[#6B7280] font-medium">Assigned to:</span>
-            <TechnicianAvatarGroup
-              technicians={job.assigned_to.map((email, idx) => ({
-                email,
-                full_name: job.assigned_to_name?.[idx] || email,
-                id: email
-              }))}
-              maxDisplay={3}
-              size="sm"
-            />
           </div>
         )}
       </div>
