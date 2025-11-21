@@ -354,7 +354,10 @@ export default function DayView({ jobs, currentDate, onJobClick, onQuickBook }) 
                 return (
                   <div key={technician.id} className="flex border-b border-[#E5E7EB] hover:bg-[#F8F9FA]/50 transition-colors">
                     <div className={`${compactMode ? 'w-32' : 'w-40'} flex-shrink-0 ${compactMode ? 'p-2' : 'p-3'} border-r border-[#E5E7EB] flex items-center gap-2`}>
-                      <User className={`${compactMode ? 'w-4 h-4' : 'w-5 h-5'} text-[#6B7280]`} />
+                      <TechnicianAvatar 
+                        technician={technician}
+                        size={compactMode ? "sm" : "md"}
+                      />
                       <span className={`${compactMode ? 'text-xs' : 'text-sm'} font-bold text-[#111827] truncate`}>
                         {technician.full_name}
                       </span>
