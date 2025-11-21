@@ -615,7 +615,7 @@ export default function JobDetails({ job: initialJob, onClose, onStatusChange, o
                   onClick={() => setShowCustomerEdit(true)}>
                   {job.customer_name}
                 </CardTitle>
-                <Badge className="bg-white text-[#6B7280] hover:bg-white border border-[#E5E7EB] font-medium text-[12px] leading-[1.35] px-2.5 py-0.5 rounded-lg">
+                <Badge className="bg-white text-[#6B7280] border border-[#E5E7EB] font-medium text-[12px] leading-[1.35] px-2.5 py-0.5 rounded-lg">
                   #{job.job_number}
                 </Badge>
               </div>
