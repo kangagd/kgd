@@ -7,7 +7,7 @@ import { X, Send, Paperclip, Bold, Italic, Underline, Link as LinkIcon, List, Li
 import { base44 } from "@/api/base44Client";
 import { toast } from "sonner";
 
-export default function EmailComposer({ mode = "compose", thread, message, onClose, onSent }) {
+export default function EmailComposer({ mode = "compose", thread, message, onClose, onSent, prefilledBody = "" }) {
   const [to, setTo] = useState(mode === "reply" ? message?.from_address : "");
   const [cc, setCc] = useState("");
   const [bcc, setBcc] = useState("");
@@ -15,11 +15,19 @@ export default function EmailComposer({ mode = "compose", thread, message, onClo
     mode === "reply" ? `Re: ${thread?.subject || ""}` : 
     mode === "forward" ? `Fwd: ${thread?.subject || ""}` : ""
   );
-  const [body, setBody] = useState(
-    mode === "reply" ? `\n\n<br><br>On ${new Date(message?.sent_at).toLocaleString()}, ${message?.from_name || message?.from_address} wrote:<br><blockquote style="margin-left: 10px; padding-left: 10px; border-left: 2px solid #ccc;">${message?.body_html || message?.body_text}</blockquote>` :
-    mode === "forward" ? `\n\n<br><br>---------- Forwarded message ----------<br>From: ${message?.from_name || message?.from_address}<br>Date: ${new Date(message?.sent_at).toLocaleString()}<br>Subject: ${message?.subject}<br><br>${message?.body_html || message?.body_text}` :
-    ""
-  );
+  
+  const getInitialBody = () => {
+    if (prefilledBody) return prefilledBody;
+    if (mode === "reply") {
+      return `\n\n<br><br>On ${new Date(message?.sent_at).toLocaleString()}, ${message?.from_name || message?.from_address} wrote:<br><blockquote style="margin-left: 10px; padding-left: 10px; border-left: 2px solid #ccc;">${message?.body_html || message?.body_text}</blockquote>`;
+    }
+    if (mode === "forward") {
+      return `\n\n<br><br>---------- Forwarded message ----------<br>From: ${message?.from_name || message?.from_address}<br>Date: ${new Date(message?.sent_at).toLocaleString()}<br>Subject: ${message?.subject}<br><br>${message?.body_html || message?.body_text}`;
+    }
+    return "";
+  };
+  
+  const [body, setBody] = useState(getInitialBody());
   const [attachments, setAttachments] = useState([]);
   const [isSending, setIsSending] = useState(false);
   const [showCc, setShowCc] = useState(false);
