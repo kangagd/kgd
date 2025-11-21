@@ -1,10 +1,11 @@
 import React, { useState } from "react";
 import { format, parseISO } from "date-fns";
-import { ChevronDown, ChevronUp, Paperclip, Download } from "lucide-react";
+import { ChevronDown, ChevronUp, Paperclip, Download, Save } from "lucide-react";
 import { Button } from "@/components/ui/button";
 
-export default function EmailMessageView({ message, isFirst }) {
+export default function EmailMessageView({ message, isFirst, linkedJobId, linkedProjectId, onSaveAttachment }) {
   const [expanded, setExpanded] = useState(isFirst);
+  const [savingAttachment, setSavingAttachment] = useState(null);
 
   const formatFileSize = (bytes) => {
     if (bytes === 0) return '0 Bytes';
@@ -129,18 +130,33 @@ export default function EmailMessageView({ message, isFirst }) {
                         )}
                       </div>
                     </div>
-                    {attachment.url && (
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        asChild
-                        className="flex-shrink-0"
-                      >
-                        <a href={attachment.url} download target="_blank" rel="noopener noreferrer">
-                          <Download className="w-4 h-4" />
-                        </a>
-                      </Button>
-                    )}
+                    <div className="flex items-center gap-2 flex-shrink-0">
+                      {(linkedJobId || linkedProjectId) && onSaveAttachment && (
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => {
+                            setSavingAttachment(idx);
+                            onSaveAttachment(attachment, () => setSavingAttachment(null));
+                          }}
+                          disabled={savingAttachment === idx}
+                          title={`Save to ${linkedJobId ? 'Job' : 'Project'}`}
+                        >
+                          <Save className="w-4 h-4" />
+                        </Button>
+                      )}
+                      {attachment.url && (
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          asChild
+                        >
+                          <a href={attachment.url} download target="_blank" rel="noopener noreferrer">
+                            <Download className="w-4 h-4" />
+                          </a>
+                        </Button>
+                      )}
+                    </div>
                   </div>
                 ))}
               </div>

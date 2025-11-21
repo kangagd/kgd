@@ -10,7 +10,8 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { X, Link as LinkIcon, Plus, ExternalLink, Reply, Forward, Mail } from "lucide-react";
+import { X, Link as LinkIcon, Plus, ExternalLink, Reply, Forward, Mail, Save } from "lucide-react";
+import { toast } from "sonner";
 import { format, parseISO } from "date-fns";
 import EmailMessageView from "./EmailMessageView";
 import EmailComposer from "./EmailComposer";
@@ -74,6 +75,27 @@ export default function EmailThreadDetail({
 
   const handleEmailSent = () => {
     refetch();
+  };
+
+  const handleSaveAttachment = async (attachment, onComplete) => {
+    try {
+      if (thread.linked_job_id) {
+        const job = await base44.entities.Job.get(thread.linked_job_id);
+        const updatedImageUrls = [...(job.image_urls || []), attachment.url];
+        await base44.entities.Job.update(thread.linked_job_id, { image_urls: updatedImageUrls });
+        toast.success(`Attachment saved to Job #${thread.linked_job_number}`);
+      } else if (thread.linked_project_id) {
+        const project = await base44.entities.Project.get(thread.linked_project_id);
+        const updatedImageUrls = [...(project.image_urls || []), attachment.url];
+        await base44.entities.Project.update(thread.linked_project_id, { image_urls: updatedImageUrls });
+        toast.success(`Attachment saved to Project: ${thread.linked_project_title}`);
+      }
+    } catch (error) {
+      toast.error('Failed to save attachment');
+      console.error(error);
+    } finally {
+      if (onComplete) onComplete();
+    }
   };
 
   return (
@@ -263,7 +285,13 @@ export default function EmailThreadDetail({
         ) : (
           messages.map((message, index) => (
             <div key={message.id}>
-              <EmailMessageView message={message} isFirst={index === 0} />
+              <EmailMessageView 
+                message={message} 
+                isFirst={index === 0}
+                linkedJobId={thread.linked_job_id}
+                linkedProjectId={thread.linked_project_id}
+                onSaveAttachment={handleSaveAttachment}
+              />
               {userPermissions?.can_reply && (
                 <div className="flex gap-2 mt-2 ml-4">
                   <Button
