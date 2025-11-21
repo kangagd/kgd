@@ -28,8 +28,7 @@ import PartsSection from "./PartsSection";
 import ProjectSummary from "./ProjectSummary";
 import ProjectVisitsTab from "./ProjectVisitsTab";
 import FinancialsTab from "./FinancialsTab";
-import PhotoModal from "./PhotoModal";
-import DocumentModal from "./DocumentModal";
+import FilePreviewModal from "../common/FilePreviewModal";
 
 const statusColors = {
   "Lead": "bg-slate-100 text-slate-700",
@@ -74,8 +73,7 @@ export default function ProjectDetails({ project: initialProject, onClose, onEdi
   const [showHistory, setShowHistory] = useState(false);
   const [activeTab, setActiveTab] = useState("overview");
   const [user, setUser] = useState(null);
-  const [selectedImage, setSelectedImage] = useState(null);
-  const [selectedDocument, setSelectedDocument] = useState(null);
+  const [previewFile, setPreviewFile] = useState(null);
 
   React.useEffect(() => {
     const loadUser = async () => {
@@ -648,7 +646,14 @@ Format as HTML bullet points using <ul> and <li> tags. Include only the most cri
                     {project.image_urls.slice(0, 4).map((url, index) => (
                       <div key={index} className="relative group">
                         <button
-                          onClick={() => setSelectedImage({ url, index })}
+                          onClick={() => setPreviewFile({
+                            url,
+                            name: `Project Image ${index + 1}`,
+                            type: 'image',
+                            projectName: project.title,
+                            address: project.address,
+                            index
+                          })}
                           className="block w-full"
                         >
                           <img 
@@ -699,7 +704,12 @@ Format as HTML bullet points using <ul> and <li> tags. Include only the most cri
               <CardContent className="p-3 space-y-2">
                 {project.quote_url && (
                   <button
-                    onClick={() => setSelectedDocument({ url: project.quote_url, type: 'Quote' })}
+                    onClick={() => setPreviewFile({
+                      url: project.quote_url,
+                      name: 'Quote',
+                      type: 'pdf',
+                      projectName: project.title
+                    })}
                     className="w-full flex items-center gap-2 px-3 py-2 bg-white border border-[#E5E7EB] rounded-lg hover:border-[#FAE008] transition-all cursor-pointer"
                   >
                     <FileText className="w-4 h-4 text-blue-600 flex-shrink-0" />
@@ -708,7 +718,12 @@ Format as HTML bullet points using <ul> and <li> tags. Include only the most cri
                 )}
                 {project.invoice_url && (
                   <button
-                    onClick={() => setSelectedDocument({ url: project.invoice_url, type: 'Invoice' })}
+                    onClick={() => setPreviewFile({
+                      url: project.invoice_url,
+                      name: 'Invoice',
+                      type: 'pdf',
+                      projectName: project.title
+                    })}
                     className="w-full flex items-center gap-2 px-3 py-2 bg-white border border-[#E5E7EB] rounded-lg hover:border-[#FAE008] transition-all cursor-pointer"
                   >
                     <FileText className="w-4 h-4 text-green-600 flex-shrink-0" />
@@ -1190,32 +1205,20 @@ Format as HTML bullet points using <ul> and <li> tags. Include only the most cri
       </Card>
       </div>
 
-      {selectedImage && (
-        <PhotoModal
-          imageUrl={selectedImage.url}
-          onClose={() => setSelectedImage(null)}
-          onDelete={() => handleRemoveImage(selectedImage.index)}
-        />
-      )}
-
-      {selectedDocument && (
-        <DocumentModal
-          documentUrl={selectedDocument.url}
-          documentType={selectedDocument.type}
-          onClose={() => setSelectedDocument(null)}
-          onDelete={
-            selectedDocument.type === 'Quote'
-              ? () => {
-                  updateProjectMutation.mutate({ field: 'quote_url', value: null });
-                  setSelectedDocument(null);
-                }
-              : () => {
-                  updateProjectMutation.mutate({ field: 'invoice_url', value: null });
-                  setSelectedDocument(null);
-                }
-          }
-        />
-      )}
+      <FilePreviewModal
+        isOpen={!!previewFile}
+        onClose={() => setPreviewFile(null)}
+        file={previewFile}
+        canDelete={user?.role === 'admin'}
+        onDelete={previewFile?.index !== undefined 
+          ? () => handleRemoveImage(previewFile.index)
+          : previewFile?.name === 'Quote'
+            ? () => updateProjectMutation.mutate({ field: 'quote_url', value: null })
+            : previewFile?.name === 'Invoice'
+              ? () => updateProjectMutation.mutate({ field: 'invoice_url', value: null })
+              : null
+        }
+      />
     </div>
   );
 }
