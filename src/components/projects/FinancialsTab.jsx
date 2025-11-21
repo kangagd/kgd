@@ -112,14 +112,14 @@ export default function FinancialsTab({ project, onUpdate }) {
   return (
     <div className="space-y-4">
       {/* Financial Summary Card */}
-      <Card className="border border-[#E5E7EB] shadow-sm overflow-hidden">
-        <CardHeader className="bg-[#F8F9FA] border-b border-[#E5E7EB]">
+      <Card className="border border-[#E5E7EB] shadow-sm rounded-lg overflow-hidden">
+        <CardHeader className="bg-[#F8F9FA] border-b border-[#E5E7EB] p-4">
           <CardTitle className="text-[18px] font-semibold text-[#111827] leading-[1.2] flex items-center gap-2">
             <DollarSign className="w-5 h-5" />
             Financial Summary
           </CardTitle>
         </CardHeader>
-        <CardContent className="p-4 space-y-4">
+        <CardContent className="p-3 md:p-4 space-y-4">
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div>
               <label className="block text-[13px] md:text-[14px] font-medium text-[#4B5563] mb-1.5">
@@ -156,10 +156,10 @@ export default function FinancialsTab({ project, onUpdate }) {
           </div>
 
           <div className="border-t border-[#E5E7EB] pt-4">
-            <h4 className="text-[14px] font-semibold text-[#111827] mb-3">Cost Breakdown</h4>
+            <h4 className="text-[16px] font-medium text-[#111827] mb-3 leading-[1.4]">Cost Breakdown</h4>
             <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
               <div>
-                <label className="block text-[12px] font-medium text-[#4B5563] mb-1">
+                <label className="block text-[13px] md:text-[14px] font-medium text-[#4B5563] mb-1.5">
                   Materials Cost
                 </label>
                 <div className="relative">
@@ -175,7 +175,7 @@ export default function FinancialsTab({ project, onUpdate }) {
               </div>
 
               <div>
-                <label className="block text-[12px] font-medium text-[#4B5563] mb-1">
+                <label className="block text-[13px] md:text-[14px] font-medium text-[#4B5563] mb-1.5">
                   Labour Cost
                 </label>
                 <div className="relative">
@@ -191,7 +191,7 @@ export default function FinancialsTab({ project, onUpdate }) {
               </div>
 
               <div>
-                <label className="block text-[12px] font-medium text-[#4B5563] mb-1">
+                <label className="block text-[13px] md:text-[14px] font-medium text-[#4B5563] mb-1.5">
                   Other Costs
                 </label>
                 <div className="relative">
@@ -234,8 +234,8 @@ export default function FinancialsTab({ project, onUpdate }) {
       </Card>
 
       {/* Payment Tracking */}
-      <Card className="border border-[#E5E7EB] shadow-sm overflow-hidden">
-        <CardHeader className="bg-[#F8F9FA] border-b border-[#E5E7EB]">
+      <Card className="border border-[#E5E7EB] shadow-sm rounded-lg overflow-hidden">
+        <CardHeader className="bg-[#F8F9FA] border-b border-[#E5E7EB] p-4">
           <div className="flex items-center justify-between">
             <CardTitle className="text-[18px] font-semibold text-[#111827] leading-[1.2]">
               Payment Tracking
@@ -250,12 +250,12 @@ export default function FinancialsTab({ project, onUpdate }) {
             </Button>
           </div>
         </CardHeader>
-        <CardContent className="p-4 space-y-3">
+        <CardContent className="p-3 md:p-4 space-y-3">
           {showAddPayment && (
             <div className="bg-[#F8F9FA] border border-[#E5E7EB] rounded-lg p-4 space-y-3">
               <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
                 <div>
-                  <label className="block text-[12px] font-medium text-[#4B5563] mb-1">
+                  <label className="block text-[13px] md:text-[14px] font-medium text-[#4B5563] mb-1.5">
                     Payment Name
                   </label>
                   <Input
@@ -265,7 +265,7 @@ export default function FinancialsTab({ project, onUpdate }) {
                   />
                 </div>
                 <div>
-                  <label className="block text-[12px] font-medium text-[#4B5563] mb-1">
+                  <label className="block text-[13px] md:text-[14px] font-medium text-[#4B5563] mb-1.5">
                     Amount
                   </label>
                   <div className="relative">
@@ -280,7 +280,7 @@ export default function FinancialsTab({ project, onUpdate }) {
                   </div>
                 </div>
                 <div>
-                  <label className="block text-[12px] font-medium text-[#4B5563] mb-1">
+                  <label className="block text-[13px] md:text-[14px] font-medium text-[#4B5563] mb-1.5">
                     Status
                   </label>
                   <Select
@@ -297,7 +297,7 @@ export default function FinancialsTab({ project, onUpdate }) {
                   </Select>
                 </div>
                 <div>
-                  <label className="block text-[12px] font-medium text-[#4B5563] mb-1">
+                  <label className="block text-[13px] md:text-[14px] font-medium text-[#4B5563] mb-1.5">
                     Paid Date
                   </label>
                   <Input
@@ -308,7 +308,7 @@ export default function FinancialsTab({ project, onUpdate }) {
                 </div>
               </div>
               <div>
-                <label className="block text-[12px] font-medium text-[#4B5563] mb-1">
+                <label className="block text-[13px] md:text-[14px] font-medium text-[#4B5563] mb-1.5">
                   Notes
                 </label>
                 <Input
@@ -435,13 +435,13 @@ export default function FinancialsTab({ project, onUpdate }) {
       </Card>
 
       {/* Financial Notes */}
-      <Card className="border border-[#E5E7EB] shadow-sm overflow-hidden">
-        <CardHeader className="bg-[#F8F9FA] border-b border-[#E5E7EB]">
+      <Card className="border border-[#E5E7EB] shadow-sm rounded-lg overflow-hidden">
+        <CardHeader className="bg-[#F8F9FA] border-b border-[#E5E7EB] p-4">
           <CardTitle className="text-[18px] font-semibold text-[#111827] leading-[1.2]">
             Financial Notes (Admin Only)
           </CardTitle>
         </CardHeader>
-        <CardContent className="p-4">
+        <CardContent className="p-3 md:p-4">
           <RichTextField
             value={project.financial_notes || ""}
             onChange={(value) => onUpdate({ financial_notes: value })}
