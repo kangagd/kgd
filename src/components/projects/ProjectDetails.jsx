@@ -28,6 +28,7 @@ import PartsSection from "./PartsSection";
 import ProjectSummary from "./ProjectSummary";
 import ProjectVisitsTab from "./ProjectVisitsTab";
 import FinancialsTab from "./FinancialsTab";
+import PhotoModal from "./PhotoModal";
 
 const statusColors = {
   "Lead": "bg-slate-100 text-slate-700",
@@ -72,6 +73,7 @@ export default function ProjectDetails({ project: initialProject, onClose, onEdi
   const [showHistory, setShowHistory] = useState(false);
   const [activeTab, setActiveTab] = useState("overview");
   const [user, setUser] = useState(null);
+  const [selectedImage, setSelectedImage] = useState(null);
 
   React.useEffect(() => {
     const loadUser = async () => {
@@ -442,6 +444,7 @@ Format as HTML bullet points using <ul> and <li> tags. Include only the most cri
   const handleRemoveImage = (indexToRemove) => {
     const updatedImages = project.image_urls.filter((_, index) => index !== indexToRemove);
     updateProjectMutation.mutate({ field: 'image_urls', value: updatedImages });
+    setSelectedImage(null);
   };
 
   const handleAddDoor = () => {
@@ -642,23 +645,15 @@ Format as HTML bullet points using <ul> and <li> tags. Include only the most cri
                   <div className="grid grid-cols-2 gap-2">
                     {project.image_urls.slice(0, 4).map((url, index) => (
                       <div key={index} className="relative group">
-                        <a 
-                          href={url} 
-                          target="_blank" 
-                          rel="noopener noreferrer"
-                          className="block"
+                        <button
+                          onClick={() => setSelectedImage({ url, index })}
+                          className="block w-full"
                         >
                           <img 
                             src={url} 
                             alt={`Project image ${index + 1}`} 
-                            className="w-full h-20 object-cover rounded-lg border border-[#E5E7EB] hover:border-[#FAE008] transition-all"
+                            className="w-full h-20 object-cover rounded-lg border border-[#E5E7EB] hover:border-[#FAE008] transition-all cursor-pointer"
                           />
-                        </a>
-                        <button
-                          onClick={() => handleRemoveImage(index)}
-                          className="absolute -top-1 -right-1 bg-red-500 text-white rounded-full w-5 h-5 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity"
-                        >
-                          <X className="w-3 h-3" />
                         </button>
                       </div>
                     ))}
@@ -1196,6 +1191,14 @@ Format as HTML bullet points using <ul> and <li> tags. Include only the most cri
       />
       </Card>
       </div>
+
+      {selectedImage && (
+        <PhotoModal
+          imageUrl={selectedImage.url}
+          onClose={() => setSelectedImage(null)}
+          onDelete={() => handleRemoveImage(selectedImage.index)}
+        />
+      )}
     </div>
   );
 }
