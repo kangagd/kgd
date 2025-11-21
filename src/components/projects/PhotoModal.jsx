@@ -19,7 +19,7 @@ export default function PhotoModal({ imageUrl, onClose, onDelete }) {
       onClick={onClose}
     >
       <div 
-        className="relative max-w-3xl max-h-[80vh] w-full"
+        className="relative max-w-3xl max-h-[70vh] w-full"
         onClick={(e) => e.stopPropagation()}
       >
         <div className="absolute top-4 right-4 flex gap-2 z-10">
