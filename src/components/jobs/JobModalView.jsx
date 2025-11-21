@@ -38,7 +38,7 @@ export default function JobModalView({ job }) {
       <div className="space-y-3">
         <div className="flex items-center justify-between gap-2 flex-wrap">
           <div className="flex items-center gap-2">
-            <span className="text-[12px] text-[#6B7280] font-medium">Job Type</span>
+            <span className="text-[12px] text-[#6B7280] font-medium">Job</span>
             {job.product && (
               <Badge className={`${productColors[job.product]} font-medium text-xs px-2.5 py-0.5 rounded-lg border-0`}>
                 {job.product}
