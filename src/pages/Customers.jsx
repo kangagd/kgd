@@ -152,12 +152,12 @@ export default function Customers() {
           </div>
 
           <Tabs value={customerTypeFilter} onValueChange={setCustomerTypeFilter} className="w-full">
-            <TabsList style={{ display: 'flex', flexWrap: 'nowrap', overflowX: 'auto', overflowY: 'hidden' }}>
-              <TabsTrigger value="all">All Customers</TabsTrigger>
-              <TabsTrigger value="Owner">Owner</TabsTrigger>
-              <TabsTrigger value="Builder">Builder</TabsTrigger>
-              <TabsTrigger value="Real Estate - Tenant">Real Estate - Tenant</TabsTrigger>
-              <TabsTrigger value="Strata - Owner">Strata - Owner</TabsTrigger>
+            <TabsList className="w-full justify-start">
+              <TabsTrigger value="all" className="flex-1">All Customers</TabsTrigger>
+              <TabsTrigger value="Owner" className="flex-1">Owner</TabsTrigger>
+              <TabsTrigger value="Builder" className="flex-1">Builder</TabsTrigger>
+              <TabsTrigger value="Real Estate - Tenant" className="flex-1">Real Estate - Tenant</TabsTrigger>
+              <TabsTrigger value="Strata - Owner" className="flex-1">Strata - Owner</TabsTrigger>
             </TabsList>
           </Tabs>
         </div>
