@@ -190,25 +190,30 @@ Deno.serve(async (req) => {
         if (detail.payload.body?.data) {
           bodyText = atob(detail.payload.body.data.replace(/-/g, '+').replace(/_/g, '/'));
         } else if (detail.payload.parts) {
-          for (const part of detail.payload.parts) {
-            if (part.mimeType === 'text/html' && part.body?.data) {
-              bodyHtml = atob(part.body.data.replace(/-/g, '+').replace(/_/g, '/'));
-            } else if (part.mimeType === 'text/plain' && part.body?.data) {
-              bodyText = atob(part.body.data.replace(/-/g, '+').replace(/_/g, '/'));
-            } else if (part.filename && part.body?.attachmentId) {
-              // Store attachment metadata (actual file would need to be fetched separately)
-              attachments.push({
-                filename: part.filename,
-                size: part.body.size,
-                mime_type: part.mimeType,
-                attachment_id: part.body.attachmentId
-              });
+          const processParts = (parts) => {
+            for (const part of parts) {
+              if (part.mimeType === 'text/html' && part.body?.data) {
+                bodyHtml = atob(part.body.data.replace(/-/g, '+').replace(/_/g, '/'));
+              } else if (part.mimeType === 'text/plain' && part.body?.data) {
+                bodyText = atob(part.body.data.replace(/-/g, '+').replace(/_/g, '/'));
+              } else if (part.filename && part.body?.attachmentId) {
+                // Store attachment metadata (actual file would need to be fetched separately)
+                attachments.push({
+                  filename: part.filename,
+                  size: part.body.size || 0,
+                  mime_type: part.mimeType
+                });
+              } else if (part.parts) {
+                // Recursively process nested parts
+                processParts(part.parts);
+              }
             }
-          }
+          };
+          processParts(detail.payload.parts);
         }
 
         // Create message
-        await base44.entities.EmailMessage.create({
+        const messageData = {
           thread_id: threadId,
           from_address: parseEmailAddress(from),
           to_addresses: to.split(',').map(e => parseEmailAddress(e.trim())),
@@ -218,9 +223,14 @@ Deno.serve(async (req) => {
           body_text: bodyText,
           message_id: messageId,
           in_reply_to: inReplyTo,
-          is_outbound: message.isOutbound,
-          attachments: attachments.length > 0 ? attachments : undefined
-        });
+          is_outbound: message.isOutbound
+        };
+        
+        if (attachments.length > 0) {
+          messageData.attachments = attachments;
+        }
+        
+        await base44.entities.EmailMessage.create(messageData);
 
         syncedCount++;
       }
