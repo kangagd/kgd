@@ -12,7 +12,7 @@ import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 import { base44 } from "@/api/base44Client";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import { createPageUrl } from "@/utils";
 import PriceListModal from "./PriceListModal";
 import TechnicianAssistant from "./TechnicianAssistant";
@@ -109,6 +109,7 @@ const getAvatarColor = (name) => {
 };
 
 export default function JobDetails({ job: initialJob, onClose, onStatusChange, onDelete }) {
+  const navigate = useNavigate();
   const { data: job = initialJob } = useQuery({
     queryKey: ['job', initialJob.id],
     queryFn: () => base44.entities.Job.get(initialJob.id),
@@ -548,7 +549,7 @@ export default function JobDetails({ job: initialJob, onClose, onStatusChange, o
             <Button
               variant="ghost"
               size="icon"
-              onClick={onClose}
+              onClick={() => navigate(-1)}
               className="h-9 w-9 flex-shrink-0 hover:bg-[#F3F4F6] rounded-lg transition-colors">
 
               <ArrowLeft className="w-5 h-5 text-[#111827]" />
