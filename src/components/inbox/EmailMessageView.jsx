@@ -74,11 +74,30 @@ export default function EmailMessageView({ message, isFirst }) {
           <div className="mb-4">
             {message.body_html ? (
               <div 
-                className="prose prose-sm max-w-none text-[14px] [&_img]:max-w-full [&_img]:h-auto [&_a]:text-blue-600 [&_a]:underline"
+                className="email-content prose prose-sm max-w-none text-[14px] leading-relaxed
+                  [&_p]:my-3 [&_p]:leading-relaxed
+                  [&_h1]:text-[20px] [&_h1]:font-bold [&_h1]:mt-6 [&_h1]:mb-3
+                  [&_h2]:text-[18px] [&_h2]:font-semibold [&_h2]:mt-5 [&_h2]:mb-2
+                  [&_h3]:text-[16px] [&_h3]:font-semibold [&_h3]:mt-4 [&_h3]:mb-2
+                  [&_ul]:my-3 [&_ul]:pl-6 [&_ul]:list-disc
+                  [&_ol]:my-3 [&_ol]:pl-6 [&_ol]:list-decimal
+                  [&_li]:my-1 [&_li]:leading-relaxed
+                  [&_blockquote]:border-l-4 [&_blockquote]:border-[#E5E7EB] [&_blockquote]:pl-4 [&_blockquote]:py-2 [&_blockquote]:my-4 [&_blockquote]:italic [&_blockquote]:text-[#6B7280]
+                  [&_a]:text-blue-600 [&_a]:underline [&_a]:hover:text-blue-800
+                  [&_img]:max-w-full [&_img]:h-auto [&_img]:rounded-lg [&_img]:my-4
+                  [&_table]:w-full [&_table]:border-collapse [&_table]:my-4
+                  [&_th]:bg-[#F3F4F6] [&_th]:px-4 [&_th]:py-2 [&_th]:text-left [&_th]:font-semibold [&_th]:border [&_th]:border-[#E5E7EB]
+                  [&_td]:px-4 [&_td]:py-2 [&_td]:border [&_td]:border-[#E5E7EB]
+                  [&_code]:bg-[#F3F4F6] [&_code]:px-1.5 [&_code]:py-0.5 [&_code]:rounded [&_code]:text-[13px] [&_code]:font-mono
+                  [&_pre]:bg-[#1F2937] [&_pre]:text-[#F9FAFB] [&_pre]:p-4 [&_pre]:rounded-lg [&_pre]:overflow-x-auto [&_pre]:my-4
+                  [&_pre_code]:bg-transparent [&_pre_code]:p-0 [&_pre_code]:text-[#F9FAFB]
+                  [&_hr]:my-6 [&_hr]:border-t [&_hr]:border-[#E5E7EB]
+                  [&_strong]:font-semibold [&_em]:italic
+                  [&_div]:break-words [&_span]:break-words"
                 dangerouslySetInnerHTML={{ __html: message.body_html }} 
               />
             ) : (
-              <div className="whitespace-pre-wrap text-[14px] text-[#111827]">
+              <div className="whitespace-pre-wrap text-[14px] text-[#111827] leading-relaxed">
                 {message.body_text}
               </div>
             )}
