@@ -584,7 +584,7 @@ export default function JobDetails({ job: initialJob, onClose, onStatusChange, o
                       { value: "Cancelled", label: "Cancelled" }
                     ]}
                     displayFormat={(val) => (
-                      <Badge className={`${statusColors[val]} font-medium border px-2.5 py-0.5 rounded-lg text-[12px] leading-[1.35]`}>
+                      <Badge className={`${statusColors[val]} hover:${statusColors[val]} font-semibold px-3 py-1 rounded-lg text-[12px] leading-[1.35]`}>
                         {val}
                       </Badge>
                     )}
