@@ -23,6 +23,7 @@ import EditableFileUpload from "./EditableFileUpload";
 import CustomerEditModal from "../customers/CustomerEditModal";
 import RichTextField from "../common/RichTextField";
 import { determineJobStatus } from "./jobStatusHelper";
+import TechnicianAvatar, { TechnicianAvatarGroup } from "../common/TechnicianAvatar";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -693,40 +694,22 @@ export default function JobDetails({ job: initialJob, onClose, onStatusChange, o
                     
                     if (namesToDisplay.length === 0) {
                       return (
-                        <div className="relative w-10 h-10 rounded-full bg-[#E5E7EB] flex items-center justify-center cursor-pointer hover:bg-[#D1D5DB] transition-colors border-2 border-[#E5E7EB]">
+                        <div className="relative w-10 h-10 rounded-full bg-[#E5E7EB] flex items-center justify-center cursor-pointer hover:opacity-90 transition-opacity border-2 border-[#E5E7EB]">
                           <User className="w-5 h-5 text-[#6B7280]" />
                         </div>
                       );
                     }
                     
-                    if (namesToDisplay.length === 1) {
-                      return (
-                        <div
-                          className={`${getAvatarColor(namesToDisplay[0])} w-10 h-10 rounded-full flex items-center justify-center text-white text-sm font-bold shadow-sm cursor-pointer hover:scale-105 transition-transform border-2 border-white`}
-                          title={namesToDisplay[0]}
-                        >
-                          {getInitials(namesToDisplay[0])}
-                        </div>
-                      );
-                    }
-                    
                     return (
-                      <div className="flex items-center -space-x-2 cursor-pointer">
-                        {namesToDisplay.slice(0, 2).map((name, idx) =>
-                          <div
-                            key={idx}
-                            className={`${getAvatarColor(name)} w-10 h-10 rounded-full flex items-center justify-center text-white text-sm font-bold shadow-sm border-2 border-white hover:scale-105 transition-transform`}
-                            title={name}
-                          >
-                            {getInitials(name)}
-                          </div>
-                        )}
-                        {namesToDisplay.length > 2 &&
-                          <div className="bg-[#6B7280] w-10 h-10 rounded-full flex items-center justify-center text-white text-xs font-bold shadow-sm border-2 border-white">
-                            +{namesToDisplay.length - 2}
-                          </div>
-                        }
-                      </div>
+                      <TechnicianAvatarGroup
+                        technicians={emailsToDisplay.map((email, idx) => ({
+                          email,
+                          full_name: namesToDisplay[idx] || email,
+                          id: email
+                        }))}
+                        maxDisplay={3}
+                        size="md"
+                      />
                     );
                   }}
                   placeholder="Assign"
