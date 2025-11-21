@@ -606,63 +606,64 @@ export default function JobDetails({ job: initialJob, onClose, onStatusChange, o
               </div>
             )}
 
-            <div className="flex items-center justify-between gap-3 flex-wrap">
-              <div>
-                <div className="flex items-center gap-2 flex-wrap mb-2">
-                  <CardTitle
-                    className="text-[22px] font-semibold text-[#111827] leading-[1.2] cursor-pointer hover:text-[#FAE008] transition-colors"
-                    onClick={() => setShowCustomerEdit(true)}>
-                    {job.customer_name}
-                  </CardTitle>
-                  <Badge className="bg-white text-[#6B7280] hover:bg-white border border-[#E5E7EB] font-medium text-[12px] leading-[1.35] px-2.5 py-0.5 rounded-lg">
-                    #{job.job_number}
-                  </Badge>
-                </div>
-                <div className="flex items-center gap-2 flex-wrap">
-                  <EditableField
-                    value={job.job_type_id}
-                    onSave={handleJobTypeChange}
-                    type="select"
-                    options={jobTypes.map((jt) => ({ value: jt.id, label: jt.name }))}
-                    displayFormat={(val) => {
-                      const typeName = jobTypes.find((jt) => jt.id === val)?.name || val;
-                      return (
-                        <Badge className="bg-[#EDE9FE] text-[#6D28D9] hover:bg-[#EDE9FE] border-0 font-medium text-[12px] leading-[1.35] px-3 py-1 rounded-lg">
-                          {typeName}
-                        </Badge>
-                      );
-                    }}
-                    placeholder="Job type"
-                  />
-                  {job.product && (
-                    <EditableField
-                      value={job.product}
-                      onSave={(val) => handleFieldSave('product', job.product, val)}
-                      type="select"
-                      options={[
-                        { value: "Garage Door", label: "Garage Door" },
-                        { value: "Gate", label: "Gate" },
-                        { value: "Roller Shutter", label: "Roller Shutter" },
-                        { value: "Multiple", label: "Multiple" },
-                        { value: "Custom Garage Door", label: "Custom Garage Door" }
-                      ]}
-                      displayFormat={(val) => (
-                        <Badge className={`${productColors[val] || 'bg-gray-100 text-gray-700'} font-medium border-0 px-2.5 py-0.5 rounded-lg text-[12px] leading-[1.35]`}>
-                          {val}
-                        </Badge>
-                      )}
-                      placeholder="Product"
-                    />
-                  )}
-                  {job.customer_type && (
-                    <Badge className={`${customerTypeColors[job.customer_type] || 'bg-gray-100 text-gray-700'} hover:bg-opacity-80 border-0 font-medium text-[12px] leading-[1.35] px-3 py-1 rounded-lg`}>
-                      {job.customer_type}
-                    </Badge>
-                  )}
-                </div>
+            {/* New Horizontal Layout: Left | Middle | Right */}
+            <div className="flex items-center justify-between gap-4 flex-wrap">
+              {/* Left Group: Customer Name + Job Number */}
+              <div className="flex items-center gap-2 flex-wrap">
+                <CardTitle
+                  className="text-[22px] font-semibold text-[#111827] leading-[1.2] cursor-pointer hover:text-[#FAE008] transition-colors"
+                  onClick={() => setShowCustomerEdit(true)}>
+                  {job.customer_name}
+                </CardTitle>
+                <Badge className="bg-white text-[#6B7280] hover:bg-white border border-[#E5E7EB] font-medium text-[12px] leading-[1.35] px-2.5 py-0.5 rounded-lg">
+                  #{job.job_number}
+                </Badge>
               </div>
 
+              {/* Middle Group: Job Type + Product + Customer Type Chips */}
               <div className="flex items-center gap-2 flex-wrap">
+                <EditableField
+                  value={job.job_type_id}
+                  onSave={handleJobTypeChange}
+                  type="select"
+                  options={jobTypes.map((jt) => ({ value: jt.id, label: jt.name }))}
+                  displayFormat={(val) => {
+                    const typeName = jobTypes.find((jt) => jt.id === val)?.name || val;
+                    return (
+                      <Badge className="bg-[#EDE9FE] text-[#6D28D9] hover:bg-[#EDE9FE] border-0 font-medium text-[12px] leading-[1.35] px-3 py-1 rounded-lg">
+                        {typeName}
+                      </Badge>
+                    );
+                  }}
+                  placeholder="Job type"
+                />
+                <EditableField
+                  value={job.product}
+                  onSave={(val) => handleFieldSave('product', job.product, val)}
+                  type="select"
+                  options={[
+                    { value: "Garage Door", label: "Garage Door" },
+                    { value: "Gate", label: "Gate" },
+                    { value: "Roller Shutter", label: "Roller Shutter" },
+                    { value: "Multiple", label: "Multiple" },
+                    { value: "Custom Garage Door", label: "Custom Garage Door" }
+                  ]}
+                  displayFormat={(val) => (
+                    <Badge className={`${productColors[val] || 'bg-blue-100 text-blue-700'} font-medium border-0 px-3 py-1 rounded-lg text-[12px] leading-[1.35]`}>
+                      {val}
+                    </Badge>
+                  )}
+                  placeholder="Product"
+                />
+                {job.customer_type && (
+                  <Badge className={`${customerTypeColors[job.customer_type] || 'bg-gray-100 text-gray-700'} hover:bg-opacity-80 border-0 font-medium text-[12px] leading-[1.35] px-3 py-1 rounded-lg`}>
+                    {job.customer_type}
+                  </Badge>
+                )}
+              </div>
+
+              {/* Right Group: Status + Technician Avatar */}
+              <div className="flex items-center gap-3 flex-wrap">
                 {job.status && (
                   <EditableField
                     value={job.status}
@@ -692,27 +693,37 @@ export default function JobDetails({ job: initialJob, onClose, onStatusChange, o
                     
                     if (namesToDisplay.length === 0) {
                       return (
-                        <Button variant="outline" size="sm" className="h-8 px-3">
-                          <User className="w-3 h-3 mr-1" />
-                          Assign
-                        </Button>
+                        <div className="relative w-10 h-10 rounded-full bg-[#E5E7EB] flex items-center justify-center cursor-pointer hover:bg-[#D1D5DB] transition-colors border-2 border-[#E5E7EB]">
+                          <User className="w-5 h-5 text-[#6B7280]" />
+                        </div>
+                      );
+                    }
+                    
+                    if (namesToDisplay.length === 1) {
+                      return (
+                        <div
+                          className={`${getAvatarColor(namesToDisplay[0])} w-10 h-10 rounded-full flex items-center justify-center text-white text-sm font-bold shadow-sm cursor-pointer hover:scale-105 transition-transform border-2 border-white`}
+                          title={namesToDisplay[0]}
+                        >
+                          {getInitials(namesToDisplay[0])}
+                        </div>
                       );
                     }
                     
                     return (
-                      <div className="flex items-center gap-1.5 cursor-pointer">
-                        {namesToDisplay.slice(0, 3).map((name, idx) =>
+                      <div className="flex items-center -space-x-2 cursor-pointer">
+                        {namesToDisplay.slice(0, 2).map((name, idx) =>
                           <div
                             key={idx}
-                            className={`${getAvatarColor(name)} w-8 h-8 rounded-full flex items-center justify-center text-white text-xs font-bold shadow-sm`}
+                            className={`${getAvatarColor(name)} w-10 h-10 rounded-full flex items-center justify-center text-white text-sm font-bold shadow-sm border-2 border-white hover:scale-105 transition-transform`}
                             title={name}
                           >
                             {getInitials(name)}
                           </div>
                         )}
-                        {namesToDisplay.length > 3 &&
-                          <div className="bg-[#6B7280] w-8 h-8 rounded-full flex items-center justify-center text-white text-xs font-bold shadow-sm">
-                            +{namesToDisplay.length - 3}
+                        {namesToDisplay.length > 2 &&
+                          <div className="bg-[#6B7280] w-10 h-10 rounded-full flex items-center justify-center text-white text-xs font-bold shadow-sm border-2 border-white">
+                            +{namesToDisplay.length - 2}
                           </div>
                         }
                       </div>
