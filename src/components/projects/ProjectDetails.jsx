@@ -395,8 +395,20 @@ Format as HTML bullet points using <ul> and <li> tags. Include only the most cri
       const tech = technicians.find(t => t.email === email);
       return tech?.full_name || "";
     }).filter(Boolean);
-    updateProjectMutation.mutate({ field: 'assigned_technicians', value: emailsArray });
-    updateProjectMutation.mutate({ field: 'assigned_technicians_names', value: techNames });
+    
+    const updates = {
+      assigned_technicians: emailsArray,
+      assigned_technicians_names: techNames
+    };
+    
+    base44.entities.Project.update(project.id, updates).then(() => {
+      queryClient.invalidateQueries({ queryKey: ['projects'] });
+      queryClient.invalidateQueries({ queryKey: ['allProjects'] });
+      queryClient.setQueryData(['project', project.id], (oldData) => ({
+        ...oldData,
+        ...updates
+      }));
+    });
   };
 
   const handleFileUpload = async (event, type) => {

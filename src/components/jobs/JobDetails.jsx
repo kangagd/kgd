@@ -424,12 +424,26 @@ export default function JobDetails({ job: initialJob, onClose, onStatusChange, o
   const handleAssignedToChange = (emails) => {
     const newAssignedEmails = Array.isArray(emails) ? emails : emails ? [emails] : [];
     const currentAssignedToNormalized = Array.isArray(job.assigned_to) ? job.assigned_to : job.assigned_to ? [job.assigned_to] : [];
-    handleFieldSave('assigned_to', currentAssignedToNormalized, newAssignedEmails);
+    
     const techNames = newAssignedEmails.map((email) => {
       const tech = technicians.find((t) => t.email === email);
       return tech?.full_name;
     }).filter(Boolean);
-    updateJobMutation.mutate({ field: 'assigned_to_name', value: techNames.join(', ') });
+    
+    const updates = {
+      assigned_to: newAssignedEmails,
+      assigned_to_name: techNames
+    };
+    
+    logChange('assigned_to', currentAssignedToNormalized, newAssignedEmails);
+    
+    base44.entities.Job.update(job.id, updates).then(() => {
+      queryClient.invalidateQueries({ queryKey: ['jobs'] });
+      queryClient.setQueryData(['job', job.id], (oldData) => ({
+        ...oldData,
+        ...updates
+      }));
+    });
   };
 
   const handleJobTypeChange = (jobTypeId) => {
