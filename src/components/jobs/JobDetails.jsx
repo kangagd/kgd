@@ -600,28 +600,10 @@ export default function JobDetails({ job: initialJob, onClose, onStatusChange, o
 
           <div className="space-y-3">
             {job.scheduled_date && (
-              <div className="flex items-center gap-2 flex-wrap text-[12px] text-[#6B7280] leading-[1.35]">
+              <div className="text-[12px] text-[#6B7280] leading-[1.35]">
                 <span>Scheduled for {format(parseISO(job.scheduled_date), 'EEEE, MMM d, yyyy')}
                 {job.scheduled_time && ` at ${job.scheduled_time}`}
                 {job.expected_duration && ` for ${job.expected_duration}h`}</span>
-                {job.status && (
-                  <EditableField
-                    value={job.status}
-                    onSave={(val) => handleFieldSave('status', job.status, val)}
-                    type="select"
-                    options={[
-                      { value: "Open", label: "Open" },
-                      { value: "Scheduled", label: "Scheduled" },
-                      { value: "Completed", label: "Completed" },
-                      { value: "Cancelled", label: "Cancelled" }
-                    ]}
-                    displayFormat={(val) => (
-                      <Badge className={`${statusColors[val]} font-semibold px-3 py-1 rounded-lg text-[12px] leading-[1.35]`}>
-                        {val}
-                      </Badge>
-                    )}
-                  />
-                )}
               </div>
             )}
 
