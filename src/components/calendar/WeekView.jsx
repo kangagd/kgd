@@ -6,6 +6,7 @@ import { format, startOfWeek, addDays, isSameDay } from "date-fns";
 import { MapPin, AlertCircle, Clock, Briefcase, AlertTriangle } from "lucide-react";
 import { base44 } from "@/api/base44Client";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import TechnicianAvatar from "../common/TechnicianAvatar";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -347,9 +348,10 @@ export default function WeekView({ jobs, currentDate, onJobClick, onQuickBook })
                     }}
                   >
                     <div className={`${compactMode ? 'p-2' : 'p-3'} border-r border-[#E5E7EB] flex items-center gap-2 sticky left-0 bg-white z-10`}>
-                      <div className={`${getAvatarColor(technician.full_name)} ${compactMode ? 'w-8 h-8' : 'w-10 h-10'} rounded-full flex items-center justify-center text-white font-bold ${compactMode ? 'text-xs' : 'text-sm'} shadow-sm flex-shrink-0`}>
-                        {getInitials(technician.full_name)}
-                      </div>
+                      <TechnicianAvatar 
+                        technician={technician}
+                        size={compactMode ? "sm" : "md"}
+                      />
                       <span className={`${compactMode ? 'text-xs' : 'text-sm'} font-bold text-[#111827] truncate`}>
                         {technician.full_name}
                       </span>

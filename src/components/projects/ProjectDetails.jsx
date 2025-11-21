@@ -11,6 +11,7 @@ import { useNavigate, Link } from "react-router-dom";
 import { createPageUrl } from "@/utils";
 import EditableField from "../jobs/EditableField";
 import RichTextField from "../common/RichTextField";
+import { TechnicianAvatarGroup } from "../common/TechnicianAvatar";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -613,30 +614,15 @@ Format as HTML bullet points using <ul> and <li> tags. Include only the most cri
 
                       {job.assigned_to && job.assigned_to.length > 0 && (
                         <div className="flex-shrink-0">
-                          {job.assigned_to.length === 1 ? (
-                            <div className="w-10 h-10 bg-[#FAE008] rounded-full flex items-center justify-center">
-                              <span className="text-[#111827] font-semibold text-sm">
-                                {job.assigned_to_name?.[0]?.charAt(0)?.toUpperCase() || job.assigned_to[0]?.charAt(0)?.toUpperCase() || 'T'}
-                              </span>
-                            </div>
-                          ) : (
-                            <div className="flex -space-x-2">
-                              {job.assigned_to.slice(0, 3).map((email, idx) => (
-                                <div key={idx} className="w-10 h-10 bg-[#FAE008] rounded-full flex items-center justify-center border-2 border-white">
-                                  <span className="text-[#111827] font-semibold text-sm">
-                                    {job.assigned_to_name?.[idx]?.charAt(0)?.toUpperCase() || email?.charAt(0)?.toUpperCase() || 'T'}
-                                  </span>
-                                </div>
-                              ))}
-                              {job.assigned_to.length > 3 && (
-                                <div className="w-10 h-10 bg-[#E5E7EB] rounded-full flex items-center justify-center border-2 border-white">
-                                  <span className="text-[#111827] font-semibold text-xs">
-                                    +{job.assigned_to.length - 3}
-                                  </span>
-                                </div>
-                              )}
-                            </div>
-                          )}
+                          <TechnicianAvatarGroup
+                            technicians={job.assigned_to.map((email, idx) => ({
+                              email,
+                              full_name: job.assigned_to_name?.[idx] || email,
+                              id: email
+                            }))}
+                            maxDisplay={3}
+                            size="md"
+                          />
                         </div>
                       )}
                     </div>
