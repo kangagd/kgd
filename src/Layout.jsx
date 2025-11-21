@@ -81,13 +81,12 @@ export default function Layout({ children, currentPageName }) {
         
         recentCheckInOuts.forEach((checkInOut) => {
           const lastUpdate = new Date(checkInOut.updated_date).getTime();
-          const isRecent = (now - lastUpdate) < 60000; // Last 60 seconds
+          const isRecent = (now - lastUpdate) < 60000;
           
           if (isRecent && !shownNotifications.has(checkInOut.id)) {
             shownNotifications.add(checkInOut.id);
             
             if (checkInOut.check_out_time) {
-              // Check out notification
               toast.success(
                 `${checkInOut.technician_name} checked out`,
                 {
@@ -96,7 +95,6 @@ export default function Layout({ children, currentPageName }) {
                 }
               );
             } else if (checkInOut.check_in_time) {
-              // Check in notification
               toast.info(
                 `${checkInOut.technician_name} checked in`,
                 {
@@ -113,7 +111,7 @@ export default function Layout({ children, currentPageName }) {
     };
 
     pollCheckInOuts();
-    const interval = setInterval(pollCheckInOuts, 15000); // Poll every 15 seconds
+    const interval = setInterval(pollCheckInOuts, 15000);
 
     return () => clearInterval(interval);
   }, [user]);
@@ -341,10 +339,7 @@ export default function Layout({ children, currentPageName }) {
           <div className="p-3 border-t border-[#E5E7EB]">
             <button
               onClick={() => navigate(createPageUrl("UserProfile"))}
-              className={`
-                w-full flex items-center gap-3 p-2.5 hover:bg-[#F3F4F6] rounded-lg transition-colors
-                ${isCollapsed ? 'justify-center' : ''}
-              `}
+              className={`w-full flex items-center gap-3 p-2.5 hover:bg-[#F3F4F6] rounded-lg transition-colors ${isCollapsed ? 'justify-center' : ''}`}
             >
               <div className="w-10 h-10 bg-[#F3F4F6] rounded-full flex items-center justify-center flex-shrink-0">
                 <span className="text-[#111827] font-semibold text-sm">
