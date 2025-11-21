@@ -590,14 +590,14 @@ Format as HTML bullet points using <ul> and <li> tags. Include only the most cri
                     <div className="flex items-start gap-3">
                       <div className="flex-1 min-w-0 space-y-2">
                         <div className="flex items-center gap-2 flex-wrap">
-                          <Badge className="bg-white text-[#6B7280] hover:bg-white border border-[#E5E7EB] font-medium text-xs px-2.5 py-0.5 rounded-lg">
-                            #{job.job_number}
-                          </Badge>
-                          <Badge className={`${jobStatusColors[job.status]} hover:${jobStatusColors[job.status]} border-0 font-semibold text-xs px-3 py-1 rounded-lg`}>
+                          <Badge className="bg-white text-[#6B7280] border border-[#E5E7EB] font-medium text-xs px-2.5 py-0.5 rounded-lg hover:bg-white">
+                                    #{job.job_number}
+                                  </Badge>
+                          <Badge className={`${jobStatusColors[job.status]} border-0 font-semibold text-xs px-3 py-1 rounded-lg hover:opacity-100`}>
                             {job.status}
                           </Badge>
                           {job.job_type_name && (
-                            <Badge className="bg-[#EDE9FE] text-[#6D28D9] hover:bg-[#EDE9FE] border-0 font-semibold text-xs px-3 py-1 rounded-lg">
+                            <Badge className="bg-[#EDE9FE] text-[#6D28D9] border-0 font-semibold text-xs px-3 py-1 rounded-lg hover:bg-[#EDE9FE]">
                               {job.job_type_name}
                             </Badge>
                           )}
@@ -903,7 +903,7 @@ Format as HTML bullet points using <ul> and <li> tags. Include only the most cri
                   { value: "Maintenance", label: "Maintenance" }
                 ]}
                 displayFormat={(val) => (
-                  <Badge className={`${projectTypeColors[val]} font-medium border-0 px-2.5 py-0.5 rounded-lg text-[12px] leading-[1.35]`}>
+                  <Badge className={`${projectTypeColors[val]} font-medium border-0 px-2.5 py-0.5 rounded-lg text-[12px] leading-[1.35] hover:opacity-100`}>
                     {val}
                   </Badge>
                 )}
@@ -922,7 +922,7 @@ Format as HTML bullet points using <ul> and <li> tags. Include only the most cri
                   { value: "Balance paid in full", label: "Balance paid in full" }
                 ]}
                 displayFormat={(val) => (
-                  <Badge className={`${financialStatusColors[val]} font-medium border-0 px-2.5 py-0.5 rounded-lg text-[12px] leading-[1.35]`}>
+                  <Badge className={`${financialStatusColors[val]} font-medium border-0 px-2.5 py-0.5 rounded-lg text-[12px] leading-[1.35] hover:opacity-100`}>
                     {val}
                   </Badge>
                 )}

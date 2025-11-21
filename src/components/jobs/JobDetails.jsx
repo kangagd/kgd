@@ -615,7 +615,7 @@ export default function JobDetails({ job: initialJob, onClose, onStatusChange, o
                   onClick={() => setShowCustomerEdit(true)}>
                   {job.customer_name}
                 </CardTitle>
-                <Badge className="bg-white text-[#6B7280] border border-[#E5E7EB] font-medium text-[12px] leading-[1.35] px-2.5 py-0.5 rounded-lg">
+                <Badge className="bg-white text-[#6B7280] border border-[#E5E7EB] font-medium text-[12px] leading-[1.35] px-2.5 py-0.5 rounded-lg hover:bg-white">
                   #{job.job_number}
                 </Badge>
               </div>
@@ -630,7 +630,7 @@ export default function JobDetails({ job: initialJob, onClose, onStatusChange, o
                   displayFormat={(val) => {
                     const typeName = jobTypes.find((jt) => jt.id === val)?.name || val;
                     return (
-                      <Badge className="bg-[#EDE9FE] text-[#6D28D9] border-0 font-medium text-[12px] leading-[1.35] px-3 py-1 rounded-lg">
+                      <Badge className="bg-[#EDE9FE] text-[#6D28D9] border-0 font-medium text-[12px] leading-[1.35] px-3 py-1 rounded-lg hover:bg-[#EDE9FE]">
                         {typeName}
                       </Badge>
                     );
@@ -649,14 +649,14 @@ export default function JobDetails({ job: initialJob, onClose, onStatusChange, o
                     { value: "Custom Garage Door", label: "Custom Garage Door" }
                   ]}
                   displayFormat={(val) => (
-                    <Badge className={`${productColors[val] || 'bg-blue-100 text-blue-700'} font-medium border-0 px-3 py-1 rounded-lg text-[12px] leading-[1.35]`}>
+                    <Badge className={`${productColors[val] || 'bg-blue-100 text-blue-700'} font-medium border-0 px-3 py-1 rounded-lg text-[12px] leading-[1.35] hover:opacity-100`}>
                       {val}
                     </Badge>
                   )}
                   placeholder="Product"
                 />
                 {job.customer_type && (
-                  <Badge className={`${customerTypeColors[job.customer_type] || 'bg-gray-100 text-gray-700'} border-0 font-medium text-[12px] leading-[1.35] px-3 py-1 rounded-lg`}>
+                  <Badge className={`${customerTypeColors[job.customer_type] || 'bg-gray-100 text-gray-700'} border-0 font-medium text-[12px] leading-[1.35] px-3 py-1 rounded-lg hover:opacity-100`}>
                     {job.customer_type}
                   </Badge>
                 )}
@@ -676,7 +676,7 @@ export default function JobDetails({ job: initialJob, onClose, onStatusChange, o
                       { value: "Cancelled", label: "Cancelled" }
                     ]}
                     displayFormat={(val) => (
-                      <Badge className={`${statusColors[val]} font-semibold px-3 py-1 rounded-lg text-[12px] leading-[1.35]`}>
+                      <Badge className={`${statusColors[val]} font-semibold px-3 py-1 rounded-lg text-[12px] leading-[1.35] hover:opacity-100`}>
                         {val}
                       </Badge>
                     )}
@@ -925,7 +925,7 @@ export default function JobDetails({ job: initialJob, onClose, onStatusChange, o
                         }
                           </div>
                           {pJob.status &&
-                      <Badge className={`${statusColors[pJob.status]} text-xs font-semibold border`}>
+                      <Badge className={`${statusColors[pJob.status]} text-xs font-semibold border hover:opacity-100`}>
                               {pJob.status}
                             </Badge>
                       }
@@ -937,7 +937,7 @@ export default function JobDetails({ job: initialJob, onClose, onStatusChange, o
                           </div>
                     }
                         {pJob.outcome &&
-                    <Badge className={`${outcomeColors[pJob.outcome]} text-xs font-semibold border mt-1.5`}>
+                    <Badge className={`${outcomeColors[pJob.outcome]} text-xs font-semibold border mt-1.5 hover:opacity-100`}>
                             Outcome: {pJob.outcome?.replace(/_/g, ' ') || pJob.outcome}
                           </Badge>
                     }

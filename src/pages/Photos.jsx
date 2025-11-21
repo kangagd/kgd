@@ -301,12 +301,12 @@ export default function Photos() {
                       </Badge>
                     ))}
                     {photo.product_type && (
-                      <Badge className="bg-[#EDE9FE] text-[#6D28D9] hover:bg-[#EDE9FE] border-0 font-medium text-[10px] px-1.5 py-0">
+                      <Badge className="bg-[#EDE9FE] text-[#6D28D9] border-0 font-medium text-[10px] px-1.5 py-0 hover:bg-[#EDE9FE]">
                         {photo.product_type}
                       </Badge>
                     )}
                     {photo.is_marketing_approved && (
-                      <Badge className="bg-[#D1FAE5] text-[#065F46] hover:bg-[#D1FAE5] border-0 font-medium text-[10px] px-1.5 py-0">
+                      <Badge className="bg-[#D1FAE5] text-[#065F46] border-0 font-medium text-[10px] px-1.5 py-0 hover:bg-[#D1FAE5]">
                         ✓
                       </Badge>
                     )}

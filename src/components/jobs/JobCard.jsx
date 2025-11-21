@@ -65,11 +65,11 @@ export default function JobCard({ job, onClick }) {
                 {job.customer_name}
               </h3>
               <div className="flex items-center gap-2">
-                <Badge className="bg-white text-[#6B7280] border border-[#E5E7EB] font-medium px-2.5 py-0.5 rounded-lg">
+                <Badge className="bg-white text-[#6B7280] border border-[#E5E7EB] font-medium px-2.5 py-0.5 rounded-lg hover:bg-white">
                   #{job.job_number}
                 </Badge>
                 {job.status && (
-                  <Badge className={`${statusColors[job.status] || 'bg-slate-100 text-slate-700'} font-medium px-2.5 py-0.5 rounded-lg border-0`}>
+                  <Badge className={`${statusColors[job.status] || 'bg-slate-100 text-slate-700'} font-medium px-2.5 py-0.5 rounded-lg border-0 hover:opacity-100`}>
                     {job.status}
                   </Badge>
                 )}
@@ -84,7 +84,7 @@ export default function JobCard({ job, onClick }) {
           {/* Metadata row */}
           {job.project_name && (
             <div className="flex items-center gap-2 flex-wrap text-[14px]">
-              <Badge className="bg-[#FAE008]/20 text-[#92400E] border-0 font-medium px-2.5 py-0.5 rounded-lg">
+              <Badge className="bg-[#FAE008]/20 text-[#92400E] border-0 font-medium px-2.5 py-0.5 rounded-lg hover:bg-[#FAE008]/20">
                 {job.project_name}
               </Badge>
             </div>
@@ -110,12 +110,12 @@ export default function JobCard({ job, onClick }) {
           <div className="flex items-center justify-between gap-2 flex-wrap">
             <div className="flex items-center gap-2 flex-wrap">
               {job.job_type_name && (
-                <Badge className="bg-[#EDE9FE] text-[#6D28D9] border-0 font-medium text-xs px-2.5 py-0.5 rounded-lg">
+                <Badge className="bg-[#EDE9FE] text-[#6D28D9] border-0 font-medium text-xs px-2.5 py-0.5 rounded-lg hover:bg-[#EDE9FE]">
                   {job.job_type_name}
                 </Badge>
               )}
               {job.product && (
-                <Badge className={`${productColors[job.product]} font-medium text-xs px-2.5 py-0.5 rounded-lg border-0`}>
+                <Badge className={`${productColors[job.product]} font-medium text-xs px-2.5 py-0.5 rounded-lg border-0 hover:opacity-100`}>
                   {job.product}
                 </Badge>
               )}
