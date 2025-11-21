@@ -9,7 +9,7 @@ import JobList from "../components/jobs/JobList";
 import JobDetails from "../components/jobs/JobDetails";
 import CalendarView from "../components/jobs/CalendarView";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import EntityModal from "../components/common/EntityModal";
+import EntityModal from "../components/common/EntityModal.jsx";
 import JobModalView from "../components/jobs/JobModalView";
 import { createPageUrl } from "@/utils";
 

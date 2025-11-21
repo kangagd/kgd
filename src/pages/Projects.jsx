@@ -17,6 +17,9 @@ import {
 import { Label } from "@/components/ui/label";
 import ProjectForm from "../components/projects/ProjectForm";
 import ProjectDetails from "../components/projects/ProjectDetails";
+import EntityModal from "../components/common/EntityModal.jsx";
+import ProjectModalView from "../components/projects/ProjectModalView";
+import { createPageUrl } from "@/utils";
 
 const statusColors = {
   "Lead": "bg-slate-100 text-slate-800 border-slate-200",
