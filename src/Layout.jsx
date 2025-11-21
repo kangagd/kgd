@@ -118,11 +118,11 @@ export default function Layout({ children, currentPageName }) {
   if (isTechnician) {
     return (
       <div className="min-h-screen flex flex-col bg-[#F8F9FA]">
-        <header className="bg-white border-b border-[#E5E7EB] px-4 py-3 sticky top-0 z-50 shadow-sm">
+        <header className="bg-[var(--color-surface)] border-b border-[var(--color-border)] px-4 py-3 sticky top-0 z-50 shadow-sm">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-2.5">
-              <div className="w-8 h-8 bg-[#FAE008] rounded-lg flex items-center justify-center">
-                <Wrench className="w-4 h-4 text-[#111827]" />
+              <div className="w-8 h-8 bg-[var(--color-primary)] rounded-lg flex items-center justify-center">
+                <Wrench className="w-4 h-4 text-black" />
               </div>
               <div>
                 <h3 className="font-semibold text-[#111827]">KGD</h3>
@@ -145,7 +145,7 @@ export default function Layout({ children, currentPageName }) {
           {children}
         </main>
 
-        <nav className="fixed bottom-0 left-0 right-0 bg-white border-t border-[#E5E7EB] px-2 py-2 shadow-lg">
+        <nav className="fixed bottom-0 left-0 right-0 bg-[var(--color-surface)] border-t border-[var(--color-border)] px-2 py-2 shadow-lg">
           <div className="flex justify-around items-center max-w-screen-sm mx-auto">
             {navigationItems.map((item) => {
               const isActive = location.pathname === item.url;
@@ -155,8 +155,8 @@ export default function Layout({ children, currentPageName }) {
                   to={item.url}
                   className={`flex flex-col items-center gap-1 px-4 py-2 rounded-lg transition-colors min-h-[44px] justify-center ${
                     isActive
-                      ? 'text-[#111827] bg-[#FAE008]'
-                      : 'text-[#4B5563] hover:text-[#111827] hover:bg-[#F3F4F6]'
+                      ? 'text-black bg-[var(--color-primary)]'
+                      : 'text-[var(--color-text-secondary)] hover:text-[var(--color-text-primary)] hover:bg-gray-50'
                   }`}
                 >
                   <item.icon className="w-5 h-5" />
@@ -215,7 +215,7 @@ export default function Layout({ children, currentPageName }) {
       {/* Sidebar / Mobile Drawer */}
       <aside 
         className={`
-          fixed lg:sticky top-0 h-screen bg-white border-r border-[#E5E7EB] z-50
+          fixed lg:sticky top-0 h-screen bg-[var(--color-surface)] border-r border-[var(--color-border)] z-50
           transition-all duration-300 ease-in-out
           ${isMobileMenuOpen ? 'translate-x-0' : '-translate-x-full lg:translate-x-0'}
           ${isCollapsed ? 'lg:w-[72px]' : 'lg:w-[260px]'}
@@ -224,11 +224,11 @@ export default function Layout({ children, currentPageName }) {
       >
         <div className="flex flex-col h-full">
           {/* Header */}
-          <div className="p-4 border-b border-[#E5E7EB] flex items-center justify-between">
+          <div className="p-4 border-b border-[var(--color-border)] flex items-center justify-between">
             {!isCollapsed && (
               <div className="flex items-center gap-3">
-                <div className="w-10 h-10 bg-[#FAE008] rounded-xl flex items-center justify-center shadow-md flex-shrink-0">
-                  <Wrench className="w-5 h-5 text-[#111827]" />
+                <div className="w-10 h-10 bg-[var(--color-primary)] rounded-xl flex items-center justify-center shadow-md flex-shrink-0">
+                  <Wrench className="w-5 h-5 text-black" />
                 </div>
                 <div>
                   <h3 className="font-semibold text-[#111827] text-sm">FieldScheduler</h3>
@@ -237,8 +237,8 @@ export default function Layout({ children, currentPageName }) {
               </div>
             )}
             {isCollapsed && (
-              <div className="w-10 h-10 bg-[#FAE008] rounded-xl flex items-center justify-center shadow-md mx-auto">
-                <Wrench className="w-5 h-5 text-[#111827]" />
+              <div className="w-10 h-10 bg-[var(--color-primary)] rounded-xl flex items-center justify-center shadow-md mx-auto">
+                <Wrench className="w-5 h-5 text-black" />
               </div>
             )}
             <button
@@ -262,16 +262,16 @@ export default function Layout({ children, currentPageName }) {
                     className={`
                       flex items-center gap-3 px-3 py-2.5 rounded-lg transition-all
                       ${isActive 
-                        ? 'bg-[#FAE008]/10 text-[#111827] font-semibold' 
-                        : 'text-[#4B5563] hover:bg-[#F3F4F6] hover:text-[#111827]'
+                        ? 'bg-[var(--color-primary)]/10 text-[var(--color-text-primary)] font-semibold' 
+                        : 'text-[var(--color-text-secondary)] hover:bg-gray-50 hover:text-[var(--color-text-primary)]'
                       }
                       ${isCollapsed ? 'justify-center' : ''}
                       group relative
                     `}
                     title={isCollapsed ? item.title : ''}
                   >
-                    {isActive && <div className="absolute left-0 w-1 h-6 bg-[#FAE008] rounded-r" />}
-                    <item.icon className={`w-5 h-5 flex-shrink-0 ${isActive ? 'text-[#FAE008]' : ''}`} />
+                    {isActive && <div className="absolute left-0 w-1 h-6 bg-[var(--color-primary)] rounded-r" />}
+                    <item.icon className={`w-5 h-5 flex-shrink-0 ${isActive ? 'text-[var(--color-primary)]' : ''}`} />
                     {!isCollapsed && (
                       <span className="text-[14px]">{item.title}</span>
                     )}
@@ -284,7 +284,7 @@ export default function Layout({ children, currentPageName }) {
 
 
           {/* User Profile */}
-          <div className="p-3 border-t border-[#E5E7EB]">
+          <div className="p-3 border-t border-[var(--color-border)]">
             <button
               onClick={() => navigate(createPageUrl("UserProfile"))}
               className={`
@@ -322,7 +322,7 @@ export default function Layout({ children, currentPageName }) {
       {/* Main Content Area */}
       <div className="flex-1 flex flex-col min-w-0">
         {/* Mobile Top Bar */}
-        <header className="lg:hidden bg-white border-b border-[#E5E7EB] px-4 py-3 sticky top-0 z-30">
+        <header className="lg:hidden bg-[var(--color-surface)] border-b border-[var(--color-border)] px-4 py-3 sticky top-0 z-30">
           <div className="flex items-center justify-between">
             <button
               onClick={() => setIsMobileMenuOpen(true)}
