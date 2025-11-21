@@ -2,6 +2,7 @@ import React, { useRef, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Upload, X, Camera, Video } from "lucide-react";
 import { base44 } from "@/api/base44Client";
+import FilePreviewModal from "../common/FilePreviewModal";
 
 export default function EditableFileUpload({ 
   files = [], 
@@ -16,6 +17,7 @@ export default function EditableFileUpload({
   const cameraInputRef = useRef(null);
   const [uploading, setUploading] = useState(false);
   const [isDragging, setIsDragging] = useState(false);
+  const [previewFile, setPreviewFile] = useState(null);
 
   const uploadFiles = async (selectedFiles) => {
     if (selectedFiles.length === 0) return;
@@ -154,13 +156,21 @@ export default function EditableFileUpload({
               {displayFiles.map((url, index) => (
                 <div key={index} className="relative group">
                   {isImageFile(url) ? (
-                    <a href={url} target="_blank" rel="noopener noreferrer">
+                    <button
+                      onClick={() => setPreviewFile({
+                        url,
+                        name: `Image ${index + 1}`,
+                        type: 'image',
+                        index
+                      })}
+                      className="w-full"
+                    >
                       <img 
                         src={url} 
                         alt={`Upload ${index + 1}`} 
-                        className="w-full h-24 md:h-32 object-cover rounded border hover:opacity-80"
+                        className="w-full h-24 md:h-32 object-cover rounded border hover:opacity-80 cursor-pointer"
                       />
-                    </a>
+                    </button>
                   ) : isVideoFile(url) ? (
                     <div className="relative w-full h-24 md:h-32 rounded border bg-slate-900">
                       <video 
@@ -173,9 +183,17 @@ export default function EditableFileUpload({
                       </div>
                     </div>
                   ) : (
-                    <a href={url} target="_blank" rel="noopener noreferrer" className="flex items-center justify-center w-full h-24 md:h-32 bg-slate-100 rounded border hover:bg-slate-200">
+                    <button
+                      onClick={() => setPreviewFile({
+                        url,
+                        name: `File ${index + 1}`,
+                        type: 'pdf',
+                        index
+                      })}
+                      className="flex items-center justify-center w-full h-24 md:h-32 bg-slate-100 rounded border hover:bg-slate-200 cursor-pointer"
+                    >
                       <Upload className="w-6 h-6 text-slate-400" />
-                    </a>
+                    </button>
                   )}
                   <button
                     type="button"
@@ -189,14 +207,17 @@ export default function EditableFileUpload({
             </div>
           ) : (
             <div className="flex items-center justify-between p-3 bg-slate-50 rounded-lg">
-              <a 
-                href={displayFiles[0]} 
-                target="_blank" 
-                rel="noopener noreferrer"
-                className="text-xs md:text-sm text-blue-600 hover:underline flex-1"
+              <button
+                onClick={() => setPreviewFile({
+                  url: displayFiles[0],
+                  name: label || 'File',
+                  type: 'pdf',
+                  index: 0
+                })}
+                className="text-xs md:text-sm text-blue-600 hover:underline flex-1 text-left"
               >
                 View File
-              </a>
+              </button>
               <button
                 type="button"
                 onClick={() => handleRemove(0)}
@@ -221,6 +242,13 @@ export default function EditableFileUpload({
           </div>
         )}
       </div>
+
+      <FilePreviewModal
+        isOpen={!!previewFile}
+        onClose={() => setPreviewFile(null)}
+        file={previewFile}
+        onDelete={previewFile ? () => handleRemove(previewFile.index) : null}
+      />
     </div>
   );
 }
