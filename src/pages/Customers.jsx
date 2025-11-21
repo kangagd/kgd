@@ -231,11 +231,26 @@ export default function Customers() {
               <CustomerCard
                 key={customer.id}
                 customer={customer}
-                onClick={() => setSelectedCustomer(customer)}
+                onViewDetails={(c) => setModalCustomer(c)}
               />
             ))}
           </div>
         )}
+
+        <EntityModal
+          open={!!modalCustomer}
+          onClose={() => setModalCustomer(null)}
+          title={modalCustomer?.name || "Customer"}
+          onOpenFullPage={() => handleOpenFullCustomer(modalCustomer)}
+          fullPageLabel="Open Full Customer"
+        >
+          {modalCustomer && (
+            <CustomerModalView 
+              customer={modalCustomer} 
+              {...getCustomerCounts(modalCustomer.id)}
+            />
+          )}
+        </EntityModal>
       </div>
     </div>
   );
