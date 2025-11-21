@@ -57,7 +57,7 @@ export default function ProjectSummary({ project, jobs, onUpdateNotes }) {
 
             <div>
               <div className="text-[12px] font-medium text-[#6B7280] leading-[1.35] mb-1 uppercase tracking-wide">Status</div>
-              <Badge className="bg-emerald-100 text-emerald-800 hover:bg-emerald-100 border-0 font-semibold px-3 py-1 text-[12px] leading-[1.35]">
+              <Badge className="bg-emerald-100 text-emerald-800 hover:bg-emerald-100 border-0 font-medium px-2.5 py-0.5 text-[12px] leading-[1.35] rounded-lg">
                 <CheckCircle2 className="w-3 h-3 mr-1" />
                 {project.status}
               </Badge>
@@ -112,10 +112,10 @@ export default function ProjectSummary({ project, jobs, onUpdateNotes }) {
                   <div key={job.id} className="bg-[#F8F9FA] rounded-lg p-3 border border-[#E5E7EB]">
                     <div className="flex items-start justify-between gap-2 mb-2">
                       <div className="flex items-center gap-2 flex-wrap">
-                        <Badge className="bg-white text-[#6B7280] hover:bg-white border border-[#E5E7EB] font-medium text-xs px-2 py-0.5">
+                        <Badge className="bg-white text-[#6B7280] hover:bg-white border border-[#E5E7EB] font-medium text-[12px] leading-[1.35] px-2.5 py-0.5 rounded-lg">
                           #{job.job_number}
                         </Badge>
-                        <Badge className={`${jobStatusColors[job.status]} hover:${jobStatusColors[job.status]} border-0 font-medium text-xs px-2 py-0.5`}>
+                        <Badge className={`${jobStatusColors[job.status]} hover:${jobStatusColors[job.status]} border-0 font-medium text-[12px] leading-[1.35] px-2.5 py-0.5 rounded-lg`}>
                           {job.status}
                         </Badge>
                       </div>
