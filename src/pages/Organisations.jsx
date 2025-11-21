@@ -23,6 +23,7 @@ export default function Organisations() {
   const [showForm, setShowForm] = useState(false);
   const [selectedOrganisation, setSelectedOrganisation] = useState(null);
   const [editingOrganisation, setEditingOrganisation] = useState(null);
+  const [modalOrganisation, setModalOrganisation] = useState(null);
   const queryClient = useQueryClient();
 
   const { data: organisations = [], isLoading, refetch } = useQuery({

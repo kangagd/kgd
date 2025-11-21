@@ -9,6 +9,9 @@ import JobList from "../components/jobs/JobList";
 import JobDetails from "../components/jobs/JobDetails";
 import CalendarView from "../components/jobs/CalendarView";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import EntityModal from "../components/common/EntityModal";
+import JobModalView from "../components/jobs/JobModalView";
+import { createPageUrl } from "@/utils";
 
 export default function Jobs() {
   const [searchTerm, setSearchTerm] = useState("");
@@ -21,6 +24,7 @@ export default function Jobs() {
   const [user, setUser] = useState(null);
   const [viewMode, setViewMode] = useState("list");
   const [calendarDate, setCalendarDate] = useState(new Date());
+  const [modalJob, setModalJob] = useState(null);
   const queryClient = useQueryClient();
 
   useEffect(() => {
@@ -128,6 +132,10 @@ export default function Jobs() {
 
   const handleDelete = (jobId) => {
     deleteJobMutation.mutate(jobId);
+  };
+
+  const handleOpenFullJob = (job) => {
+    window.open(`${createPageUrl("Jobs")}?jobId=${job.id}`, '_blank');
   };
 
   const isTechnician = user?.is_field_technician && user?.role !== 'admin';
@@ -263,16 +271,26 @@ export default function Jobs() {
           <JobList
             jobs={filteredJobs}
             isLoading={isLoading}
-            onSelectJob={setSelectedJob}
+            onSelectJob={(job) => setModalJob(job)}
           />
         ) : (
           <CalendarView
             jobs={filteredJobs}
-            onSelectJob={setSelectedJob}
+            onSelectJob={(job) => setModalJob(job)}
             currentDate={calendarDate}
             onDateChange={setCalendarDate}
           />
         )}
+
+        <EntityModal
+          open={!!modalJob}
+          onClose={() => setModalJob(null)}
+          title={`Job #${modalJob?.job_number}`}
+          onOpenFullPage={() => handleOpenFullJob(modalJob)}
+          fullPageLabel="Open Full Job"
+        >
+          {modalJob && <JobModalView job={modalJob} />}
+        </EntityModal>
       </div>
     </div>
   );

@@ -50,6 +50,7 @@ export default function Projects() {
   const [showForm, setShowForm] = useState(false);
   const [selectedProject, setSelectedProject] = useState(null);
   const [editingProject, setEditingProject] = useState(null);
+  const [modalProject, setModalProject] = useState(null);
   const queryClient = useQueryClient();
 
   const { data: allProjects = [], isLoading } = useQuery({
@@ -123,6 +124,10 @@ export default function Projects() {
 
   const handleDelete = (projectId) => {
     deleteProjectMutation.mutate(projectId);
+  };
+
+  const handleOpenFullProject = (project) => {
+    window.open(`${createPageUrl("Projects")}?projectId=${project.id}`, '_blank');
   };
 
   const filteredProjects = projects
@@ -383,7 +388,7 @@ export default function Projects() {
               <Card
                 key={project.id}
                 className="hover:shadow-lg transition-all duration-200 cursor-pointer hover:border-[#FAE008] border border-[#E5E7EB] rounded-xl"
-                onClick={() => setSelectedProject(project)}
+                onClick={() => setModalProject(project)}
               >
                 <CardContent className="p-4">
                   {/* Top row */}
@@ -448,6 +453,21 @@ export default function Projects() {
             );
           })}
         </div>
+
+        <EntityModal
+          open={!!modalProject}
+          onClose={() => setModalProject(null)}
+          title={modalProject?.title || "Project"}
+          onOpenFullPage={() => handleOpenFullProject(modalProject)}
+          fullPageLabel="Open Full Project"
+        >
+          {modalProject && (
+            <ProjectModalView 
+              project={modalProject} 
+              jobCount={getJobCount(modalProject.id)}
+            />
+          )}
+        </EntityModal>
       </div>
     </div>
   );
