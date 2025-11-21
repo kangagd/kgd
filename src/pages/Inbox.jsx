@@ -144,12 +144,11 @@ export default function Inbox() {
         <div className="p-5 border-b border-[#E5E7EB]">
           <div className="flex items-center justify-between mb-4">
             <h1 className="text-[22px] font-semibold text-[#111827]">Inbox</h1>
+            <GmailConnect 
+              user={user} 
+              onSyncComplete={() => queryClient.invalidateQueries({ queryKey: ['emailThreads'] })} 
+            />
           </div>
-          
-          <GmailConnect 
-            user={user} 
-            onSyncComplete={() => queryClient.invalidateQueries({ queryKey: ['emailThreads'] })} 
-          />
           
           <div className="relative mb-4">
             <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-[#6B7280]" />
