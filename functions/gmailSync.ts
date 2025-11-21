@@ -182,38 +182,24 @@ Deno.serve(async (req) => {
       });
 
       if (existingMessages.length === 0) {
-        // Extract body and attachments
+        // Extract body
         let bodyHtml = '';
         let bodyText = detail.snippet;
-        const attachments = [];
 
         if (detail.payload.body?.data) {
           bodyText = atob(detail.payload.body.data.replace(/-/g, '+').replace(/_/g, '/'));
         } else if (detail.payload.parts) {
-          const processParts = (parts) => {
-            for (const part of parts) {
-              if (part.mimeType === 'text/html' && part.body?.data) {
-                bodyHtml = atob(part.body.data.replace(/-/g, '+').replace(/_/g, '/'));
-              } else if (part.mimeType === 'text/plain' && part.body?.data) {
-                bodyText = atob(part.body.data.replace(/-/g, '+').replace(/_/g, '/'));
-              } else if (part.filename && part.body?.attachmentId) {
-                // Store attachment metadata (actual file would need to be fetched separately)
-                attachments.push({
-                  filename: part.filename,
-                  size: part.body.size || 0,
-                  mime_type: part.mimeType
-                });
-              } else if (part.parts) {
-                // Recursively process nested parts
-                processParts(part.parts);
-              }
+          for (const part of detail.payload.parts) {
+            if (part.mimeType === 'text/html' && part.body?.data) {
+              bodyHtml = atob(part.body.data.replace(/-/g, '+').replace(/_/g, '/'));
+            } else if (part.mimeType === 'text/plain' && part.body?.data) {
+              bodyText = atob(part.body.data.replace(/-/g, '+').replace(/_/g, '/'));
             }
-          };
-          processParts(detail.payload.parts);
+          }
         }
 
         // Create message
-        const messageData = {
+        await base44.entities.EmailMessage.create({
           thread_id: threadId,
           from_address: parseEmailAddress(from),
           to_addresses: to.split(',').map(e => parseEmailAddress(e.trim())),
@@ -224,13 +210,7 @@ Deno.serve(async (req) => {
           message_id: messageId,
           in_reply_to: inReplyTo,
           is_outbound: message.isOutbound
-        };
-        
-        if (attachments.length > 0) {
-          messageData.attachments = attachments;
-        }
-        
-        await base44.entities.EmailMessage.create(messageData);
+        });
 
         syncedCount++;
       }
