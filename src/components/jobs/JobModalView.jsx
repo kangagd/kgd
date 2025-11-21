@@ -40,6 +40,11 @@ export default function JobModalView({ job }) {
           <Badge className="bg-white text-[#6B7280] border border-[#E5E7EB] font-medium px-2.5 py-0.5 rounded-lg">
             #{job.job_number}
           </Badge>
+          {job.product && (
+            <Badge className={`${productColors[job.product]} font-medium text-xs px-2.5 py-0.5 rounded-lg border-0`}>
+              {job.product}
+            </Badge>
+          )}
           {job.status && (
             <Badge className={`${statusColors[job.status]} font-medium px-2.5 py-0.5 rounded-lg border-0`}>
               {job.status}
@@ -90,18 +95,13 @@ export default function JobModalView({ job }) {
 
       {/* Job Details */}
       <div className="space-y-2">
-        <div className="flex items-center gap-2 flex-wrap">
-          {job.job_type_name && (
+        {job.job_type_name && (
+          <div className="flex items-center gap-2 flex-wrap">
             <Badge className="bg-[#EDE9FE] text-[#6D28D9] border-0 font-medium text-xs px-2.5 py-0.5 rounded-lg">
               {job.job_type_name}
             </Badge>
-          )}
-          {job.product && (
-            <Badge className={`${productColors[job.product]} font-medium text-xs px-2.5 py-0.5 rounded-lg border-0`}>
-              {job.product}
-            </Badge>
-          )}
-        </div>
+          </div>
+        )}
 
         {/* Assigned Technicians */}
         {job.assigned_to && job.assigned_to.length > 0 && (
