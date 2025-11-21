@@ -761,7 +761,7 @@ export default function JobDetails({ job: initialJob, onClose, onStatusChange, o
                 <div className="flex items-center gap-2.5">
                   <Timer className="w-5 h-5 text-[#4B5563] flex-shrink-0" />
                   <div className="flex-1 min-w-0">
-                    <div className="text-[12px] text-[#6B7280] font-normal leading-[1.35] mb-0.5">Duration</div>
+                    <div className="text-[12px] text-[#6B7280] font-normal leading-[1.35] mb-0.5">Duration (hours)</div>
                     <EditableField
                       value={job.expected_duration}
                       onSave={(val) => handleFieldSave('expected_duration', job.expected_duration, parseFloat(val) || null)}
