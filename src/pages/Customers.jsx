@@ -10,7 +10,7 @@ import { Plus, Search, User } from "lucide-react";
 import CustomerForm from "../components/customers/CustomerForm";
 import CustomerDetails from "../components/customers/CustomerDetails";
 import CustomerCard from "../components/customers/CustomerCard";
-import EntityModal from "../components/common/EntityModal";
+import EntityModal from "../components/common/EntityModal.jsx";
 import CustomerModalView from "../components/customers/CustomerModalView";
 import { createPageUrl } from "@/utils";
 
