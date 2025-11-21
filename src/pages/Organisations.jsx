@@ -3,6 +3,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
+import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Building2, Search, Plus, Phone, Mail, MapPin, Users, Hash } from "lucide-react";
 import { base44 } from "@/api/base44Client";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
@@ -18,6 +19,7 @@ const organisationTypeColors = {
 
 export default function Organisations() {
   const [searchTerm, setSearchTerm] = useState("");
+  const [organisationTypeFilter, setOrganisationTypeFilter] = useState("all");
   const [showForm, setShowForm] = useState(false);
   const [selectedOrganisation, setSelectedOrganisation] = useState(null);
   const [editingOrganisation, setEditingOrganisation] = useState(null);
@@ -80,11 +82,16 @@ export default function Organisations() {
     deleteMutation.mutate(id);
   };
 
-  const filteredOrganisations = organisations.filter(org =>
-    org.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    org.organisation_type?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    org.sp_number?.toLowerCase().includes(searchTerm.toLowerCase())
-  );
+  const filteredOrganisations = organisations.filter(org => {
+    const matchesSearch = 
+      org.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      org.organisation_type?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      org.sp_number?.toLowerCase().includes(searchTerm.toLowerCase());
+    
+    const matchesType = organisationTypeFilter === "all" || org.organisation_type === organisationTypeFilter;
+    
+    return matchesSearch && matchesType;
+  });
 
   const getCustomerCount = (orgId) => {
     return allCustomers.filter(c => c.organisation_id === orgId).length;
@@ -132,7 +139,7 @@ export default function Organisations() {
           </Button>
         </div>
 
-        <div className="mb-8">
+        <div className="mb-8 space-y-4">
           <div className="relative">
             <Search className="absolute left-4 top-1/2 transform -translate-y-1/2 text-[#6B7280] w-5 h-5" />
             <Input
@@ -142,6 +149,16 @@ export default function Organisations() {
               className="pl-12 border border-[#E5E7EB] focus:border-[#FAE008] focus:ring-2 focus:ring-[#FAE008]/20 transition-all h-12 text-[14px] leading-[1.4] rounded-lg"
             />
           </div>
+
+          <Tabs value={organisationTypeFilter} onValueChange={setOrganisationTypeFilter} className="w-full">
+            <TabsList className="w-full justify-start">
+              <TabsTrigger value="all" className="flex-1">All Organisations</TabsTrigger>
+              <TabsTrigger value="Strata" className="flex-1">Strata</TabsTrigger>
+              <TabsTrigger value="Builder" className="flex-1">Builder</TabsTrigger>
+              <TabsTrigger value="Real Estate" className="flex-1">Real Estate</TabsTrigger>
+              <TabsTrigger value="Supplier" className="flex-1">Supplier</TabsTrigger>
+            </TabsList>
+          </Tabs>
         </div>
 
       {isLoading ? (
