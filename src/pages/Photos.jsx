@@ -36,7 +36,8 @@ export default function Photos() {
 
   const { data: allPhotos = [], isLoading } = useQuery({
     queryKey: ['photos'],
-    queryFn: () => base44.entities.Photo.list('-uploaded_at')
+    queryFn: () => base44.entities.Photo.list('-uploaded_at'),
+    refetchInterval: 15000, // Refetch every 15 seconds
   });
 
   const { data: technicians = [] } = useQuery({

@@ -22,6 +22,7 @@ export default function Customers() {
   const { data: allCustomers = [], isLoading, refetch } = useQuery({
     queryKey: ['allCustomers'],
     queryFn: () => base44.entities.Customer.list(),
+    refetchInterval: 15000, // Refetch every 15 seconds
   });
 
   const customers = allCustomers.filter(customer => !customer.deleted_at && customer.status === 'active');

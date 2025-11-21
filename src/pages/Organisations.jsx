@@ -27,7 +27,8 @@ export default function Organisations() {
 
   const { data: organisations = [], isLoading, refetch } = useQuery({
     queryKey: ['organisations'],
-    queryFn: () => base44.entities.Organisation.filter({ deleted_at: { $exists: false } })
+    queryFn: () => base44.entities.Organisation.filter({ deleted_at: { $exists: false } }),
+    refetchInterval: 15000, // Refetch every 15 seconds
   });
 
   const { data: allCustomers = [] } = useQuery({
