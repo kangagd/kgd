@@ -99,26 +99,6 @@ export default function Customers() {
     deleteCustomerMutation.mutate(customerId);
   };
 
-  const { data: allJobs = [] } = useQuery({
-    queryKey: ['allJobs'],
-    queryFn: () => base44.entities.Job.list(),
-  });
-
-  const { data: allProjects = [] } = useQuery({
-    queryKey: ['allProjects'],
-    queryFn: () => base44.entities.Project.list(),
-  });
-
-  const getCustomerCounts = (customerId) => {
-    const jobCount = allJobs.filter(j => j.customer_id === customerId && !j.deleted_at).length;
-    const projectCount = allProjects.filter(p => p.customer_id === customerId && !p.deleted_at).length;
-    return { jobCount, projectCount };
-  };
-
-  const handleOpenFullCustomer = (customer) => {
-    window.open(`${createPageUrl("Customers")}?customerId=${customer.id}`, '_blank');
-  };
-
   const handleOpenFullCustomer = (customer) => {
     window.open(`${createPageUrl("Customers")}?customerId=${customer.id}`, '_blank');
   };
