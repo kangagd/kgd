@@ -48,7 +48,8 @@ export default function Layout({ children, currentPageName }) {
   const navigate = useNavigate();
   const [user, setUser] = useState(null);
   const [isCollapsed, setIsCollapsed] = useState(() => {
-    return localStorage.getItem('sidebarCollapsed') === 'true';
+    const stored = localStorage.getItem('sidebarCollapsed');
+    return stored === null ? true : stored === 'true';
   });
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [testMode, setTestMode] = useState(() => {
