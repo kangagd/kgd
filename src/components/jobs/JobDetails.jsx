@@ -694,9 +694,11 @@ export default function JobDetails({ job: initialJob, onClose, onStatusChange, o
                     
                     if (namesToDisplay.length === 0) {
                       return (
-                        <div className="relative w-10 h-10 rounded-full bg-[#E5E7EB] flex items-center justify-center cursor-pointer hover:opacity-90 transition-opacity border-2 border-[#E5E7EB]">
-                          <User className="w-5 h-5 text-[#6B7280]" />
-                        </div>
+                        <TechnicianAvatar
+                          technician={{ email: '', full_name: 'Unassigned', id: 'unassigned' }}
+                          size="md"
+                          showPlaceholder={true}
+                        />
                       );
                     }
                     
