@@ -630,7 +630,7 @@ export default function JobDetails({ job: initialJob, onClose, onStatusChange, o
                   displayFormat={(val) => {
                     const typeName = jobTypes.find((jt) => jt.id === val)?.name || val;
                     return (
-                      <Badge className="bg-[#EDE9FE] text-[#6D28D9] hover:bg-[#EDE9FE] border-0 font-medium text-[12px] leading-[1.35] px-3 py-1 rounded-lg">
+                      <Badge className="bg-[#EDE9FE] text-[#6D28D9] border-0 font-medium text-[12px] leading-[1.35] px-3 py-1 rounded-lg">
                         {typeName}
                       </Badge>
                     );
@@ -656,7 +656,7 @@ export default function JobDetails({ job: initialJob, onClose, onStatusChange, o
                   placeholder="Product"
                 />
                 {job.customer_type && (
-                  <Badge className={`${customerTypeColors[job.customer_type] || 'bg-gray-100 text-gray-700'} hover:bg-opacity-80 border-0 font-medium text-[12px] leading-[1.35] px-3 py-1 rounded-lg`}>
+                  <Badge className={`${customerTypeColors[job.customer_type] || 'bg-gray-100 text-gray-700'} border-0 font-medium text-[12px] leading-[1.35] px-3 py-1 rounded-lg`}>
                     {job.customer_type}
                   </Badge>
                 )}
@@ -676,7 +676,7 @@ export default function JobDetails({ job: initialJob, onClose, onStatusChange, o
                       { value: "Cancelled", label: "Cancelled" }
                     ]}
                     displayFormat={(val) => (
-                      <Badge className={`${statusColors[val]} hover:${statusColors[val]} font-semibold px-3 py-1 rounded-lg text-[12px] leading-[1.35]`}>
+                      <Badge className={`${statusColors[val]} font-semibold px-3 py-1 rounded-lg text-[12px] leading-[1.35]`}>
                         {val}
                       </Badge>
                     )}
