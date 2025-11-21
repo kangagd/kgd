@@ -182,24 +182,44 @@ Deno.serve(async (req) => {
       });
 
       if (existingMessages.length === 0) {
-        // Extract body
+        // Extract body and attachments
         let bodyHtml = '';
         let bodyText = detail.snippet;
+        const attachments = [];
 
-        if (detail.payload.body?.data) {
-          bodyText = atob(detail.payload.body.data.replace(/-/g, '+').replace(/_/g, '/'));
-        } else if (detail.payload.parts) {
-          for (const part of detail.payload.parts) {
+        const processParts = (parts) => {
+          if (!parts) return;
+          for (const part of parts) {
             if (part.mimeType === 'text/html' && part.body?.data) {
               bodyHtml = atob(part.body.data.replace(/-/g, '+').replace(/_/g, '/'));
             } else if (part.mimeType === 'text/plain' && part.body?.data) {
               bodyText = atob(part.body.data.replace(/-/g, '+').replace(/_/g, '/'));
+            } else if (part.filename && part.filename.length > 0) {
+              // Store attachment metadata
+              attachments.push({
+                filename: part.filename,
+                size: part.body?.size || 0,
+                mime_type: part.mimeType || 'application/octet-stream',
+                url: '' // Placeholder - actual download would require separate API call
+              });
+            }
+            // Recursively process nested parts
+            if (part.parts) {
+              processParts(part.parts);
             }
           }
+        };
+
+        if (detail.payload.body?.data) {
+          bodyText = atob(detail.payload.body.data.replace(/-/g, '+').replace(/_/g, '/'));
+        }
+        
+        if (detail.payload.parts) {
+          processParts(detail.payload.parts);
         }
 
         // Create message
-        await base44.entities.EmailMessage.create({
+        const messageData = {
           thread_id: threadId,
           from_address: parseEmailAddress(from),
           to_addresses: to.split(',').map(e => parseEmailAddress(e.trim())),
@@ -210,7 +230,13 @@ Deno.serve(async (req) => {
           message_id: messageId,
           in_reply_to: inReplyTo,
           is_outbound: message.isOutbound
-        });
+        };
+        
+        if (attachments.length > 0) {
+          messageData.attachments = attachments;
+        }
+        
+        await base44.entities.EmailMessage.create(messageData);
 
         syncedCount++;
       }
