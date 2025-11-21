@@ -319,7 +319,7 @@ export default function Layout({ children, currentPageName }) {
                       flex items-center gap-3 px-3 py-2.5 rounded-lg transition-all
                       ${isActive 
                         ? 'bg-[#FAE008]/10 text-[#111827] font-semibold' 
-                        : 'text-[#4B5563] hover:bg-[#F3F4F6] hover:text-[#111827]'
+                        : 'text-[#111827] hover:bg-[#F3F4F6]'
                       }
                       ${isCollapsed ? 'justify-center' : ''}
                       group relative
