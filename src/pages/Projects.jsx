@@ -3,7 +3,7 @@ import { base44 } from "@/api/base44Client";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Plus, Search, SlidersHorizontal } from "lucide-react";
+import { Plus, Search, SlidersHorizontal, User } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent } from "@/components/ui/card";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -402,7 +402,10 @@ export default function Projects() {
 
                   {/* Second row */}
                   <div className="flex items-center gap-4 mb-3 text-[#4B5563]">
-                    <span className="text-[16px] font-medium leading-[1.4]">{project.customer_name}</span>
+                    <div className="flex items-center gap-1.5">
+                      <User className="w-4 h-4" />
+                      <span className="text-[14px] leading-[1.4]">{project.customer_name}</span>
+                    </div>
                     {suburb && (
                       <div className="flex items-center gap-1.5">
                         <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
