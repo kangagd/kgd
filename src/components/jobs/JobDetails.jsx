@@ -634,34 +634,45 @@ export default function JobDetails({ job: initialJob, onClose, onStatusChange, o
                     )}
                   />
                 )}
-                <div className="flex items-center gap-1.5">
-                  {(Array.isArray(job.assigned_to_name) ? job.assigned_to_name : job.assigned_to_name ? [job.assigned_to_name] : []).slice(0, 3).map((name, idx) =>
-                    <div
-                      key={idx}
-                      className={`${getAvatarColor(name)} w-8 h-8 rounded-full flex items-center justify-center text-white text-xs font-bold shadow-sm`}
-                      title={name}
-                    >
-                      {getInitials(name)}
-                    </div>
-                  )}
-                  {Array.isArray(job.assigned_to_name) && job.assigned_to_name.length > 3 &&
-                    <div className="bg-[#6B7280] w-8 h-8 rounded-full flex items-center justify-center text-white text-xs font-bold shadow-sm">
-                      +{job.assigned_to_name.length - 3}
-                    </div>
-                  }
-                  <EditableField
-                    value={Array.isArray(job.assigned_to) ? job.assigned_to : job.assigned_to ? [job.assigned_to] : []}
-                    onSave={handleAssignedToChange}
-                    type="multi-select"
-                    icon={Edit}
-                    options={technicians.map((t) => ({ value: t.email, label: t.full_name }))}
-                    displayFormat={(val) => {
-                      const emailsToDisplay = Array.isArray(val) ? val : val ? [val] : [];
-                      return emailsToDisplay.length === 0 ? "Assign" : "Edit";
-                    }}
-                    placeholder="Assign"
-                  />
-                </div>
+                <EditableField
+                  value={Array.isArray(job.assigned_to) ? job.assigned_to : job.assigned_to ? [job.assigned_to] : []}
+                  onSave={handleAssignedToChange}
+                  type="multi-select"
+                  options={technicians.map((t) => ({ value: t.email, label: t.full_name }))}
+                  displayFormat={(val) => {
+                    const emailsToDisplay = Array.isArray(val) ? val : val ? [val] : [];
+                    const namesToDisplay = Array.isArray(job.assigned_to_name) ? job.assigned_to_name : job.assigned_to_name ? [job.assigned_to_name] : [];
+                    
+                    if (namesToDisplay.length === 0) {
+                      return (
+                        <Button variant="outline" size="sm" className="h-8 px-3">
+                          <User className="w-3 h-3 mr-1" />
+                          Assign
+                        </Button>
+                      );
+                    }
+                    
+                    return (
+                      <div className="flex items-center gap-1.5 cursor-pointer">
+                        {namesToDisplay.slice(0, 3).map((name, idx) =>
+                          <div
+                            key={idx}
+                            className={`${getAvatarColor(name)} w-8 h-8 rounded-full flex items-center justify-center text-white text-xs font-bold shadow-sm`}
+                            title={name}
+                          >
+                            {getInitials(name)}
+                          </div>
+                        )}
+                        {namesToDisplay.length > 3 &&
+                          <div className="bg-[#6B7280] w-8 h-8 rounded-full flex items-center justify-center text-white text-xs font-bold shadow-sm">
+                            +{namesToDisplay.length - 3}
+                          </div>
+                        }
+                      </div>
+                    );
+                  }}
+                  placeholder="Assign"
+                />
               </div>
             </div>
 
