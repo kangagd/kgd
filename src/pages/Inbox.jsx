@@ -92,7 +92,7 @@ export default function Inbox() {
   useEffect(() => {
     const handleMouseMove = (e) => {
       if (!isResizing) return;
-      const newWidth = Math.max(300, Math.min(600, e.clientX));
+      const newWidth = Math.max(200, Math.min(600, e.clientX));
       setSidebarWidth(newWidth);
     };
 
