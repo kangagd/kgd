@@ -10,6 +10,7 @@ import EmailThreadDetail from "../components/inbox/EmailThreadDetail";
 import LinkThreadModal from "../components/inbox/LinkThreadModal";
 import CreateProjectFromEmailModal from "../components/inbox/CreateProjectFromEmailModal";
 import CreateJobFromEmailModal from "../components/inbox/CreateJobFromEmailModal";
+import GmailConnect from "../components/inbox/GmailConnect";
 
 export default function Inbox() {
   const [searchTerm, setSearchTerm] = useState("");
@@ -141,7 +142,14 @@ export default function Inbox() {
       {/* Thread List - Left Side */}
       <div className={`${selectedThread ? 'hidden lg:flex' : 'flex'} flex-col w-full lg:w-[400px] border-r border-[#E5E7EB] bg-white`}>
         <div className="p-5 border-b border-[#E5E7EB]">
-          <h1 className="text-[22px] font-semibold text-[#111827] mb-4">Inbox</h1>
+          <div className="flex items-center justify-between mb-4">
+            <h1 className="text-[22px] font-semibold text-[#111827]">Inbox</h1>
+          </div>
+          
+          <GmailConnect 
+            user={user} 
+            onSyncComplete={() => queryClient.invalidateQueries({ queryKey: ['emailThreads'] })} 
+          />
           
           <div className="relative mb-4">
             <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-[#6B7280]" />
