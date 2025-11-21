@@ -158,7 +158,7 @@ export default function EditableField({
 
   return (
     <div
-      onClick={() => setIsEditing(true)} className="bg-[#ffffff] text-slate-950 p-2 text-sm font-bold rounded-lg flex items-center gap-2 md:p-3 cursor-pointer hover:bg-slate-100 transition-colors">
+      onClick={() => setIsEditing(true)} className="bg-[#ffffff] text-slate-950 p-2 text-sm font-bold rounded-lg flex items-center gap-2 md:p-3 cursor-pointer transition-colors">
 
 
       {Icon && <Icon className="w-3 h-3 md:w-4 md:h-4 text-slate-400 flex-shrink-0" />}
