@@ -14,6 +14,7 @@ import { X, Link as LinkIcon, Plus, ExternalLink, Reply, Forward, Mail } from "l
 import { format, parseISO } from "date-fns";
 import EmailMessageView from "./EmailMessageView";
 import EmailComposer from "./EmailComposer";
+import EmailThreadSummary from "./EmailThreadSummary";
 import { createPageUrl } from "@/utils";
 
 const statusColors = {
@@ -207,6 +208,8 @@ export default function EmailThreadDetail({
 
       {/* Messages Timeline */}
       <div className="flex-1 overflow-y-auto p-5 space-y-4">
+        <EmailThreadSummary thread={thread} messages={messages} />
+        
         {composerMode && (
           <EmailComposer
             mode={composerMode}
