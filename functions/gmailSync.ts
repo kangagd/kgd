@@ -54,22 +54,34 @@ Deno.serve(async (req) => {
     // Refresh token if needed
     const accessToken = await refreshTokenIfNeeded(user, base44);
 
-    // Fetch recent messages (last 100)
-    const messagesResponse = await fetch(
-      'https://gmail.googleapis.com/gmail/v1/users/me/messages?maxResults=100&labelIds=INBOX',
+    // Fetch recent inbox messages
+    const inboxResponse = await fetch(
+      'https://gmail.googleapis.com/gmail/v1/users/me/messages?maxResults=50&labelIds=INBOX',
       { headers: { 'Authorization': `Bearer ${accessToken}` } }
     );
 
-    const messagesData = await messagesResponse.json();
+    // Fetch recent sent messages
+    const sentResponse = await fetch(
+      'https://gmail.googleapis.com/gmail/v1/users/me/messages?maxResults=50&labelIds=SENT',
+      { headers: { 'Authorization': `Bearer ${accessToken}` } }
+    );
 
-    if (!messagesData.messages) {
+    const inboxData = await inboxResponse.json();
+    const sentData = await sentResponse.json();
+
+    const allMessages = [
+      ...(inboxData.messages || []).map(m => ({ ...m, isOutbound: false })),
+      ...(sentData.messages || []).map(m => ({ ...m, isOutbound: true }))
+    ];
+
+    if (allMessages.length === 0) {
       return Response.json({ synced: 0, message: 'No messages to sync' });
     }
 
     let syncedCount = 0;
 
-    // Process each message
-    for (const message of messagesData.messages.slice(0, 20)) { // Limit to 20 to avoid timeouts
+    // Process each message (limit to 30 to avoid timeouts)
+    for (const message of allMessages.slice(0, 30)) {
       const detailResponse = await fetch(
         `https://gmail.googleapis.com/gmail/v1/users/me/messages/${message.id}`,
         { headers: { 'Authorization': `Bearer ${accessToken}` } }

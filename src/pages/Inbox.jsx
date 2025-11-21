@@ -60,8 +60,31 @@ export default function Inbox() {
   const { data: threads = [], isLoading } = useQuery({
     queryKey: ['emailThreads'],
     queryFn: () => base44.entities.EmailThread.list('-last_message_date'),
-    enabled: !!userPermissions?.can_view
+    enabled: !!userPermissions?.can_view,
+    refetchInterval: 30000 // Auto-refresh every 30 seconds
   });
+
+  // Auto-sync Gmail in background
+  useEffect(() => {
+    if (!user?.gmail_access_token) return;
+    
+    const syncGmail = async () => {
+      try {
+        await base44.functions.invoke('gmailSync', {});
+        queryClient.invalidateQueries({ queryKey: ['emailThreads'] });
+      } catch (error) {
+        console.error('Background sync failed:', error);
+      }
+    };
+    
+    // Initial sync
+    syncGmail();
+    
+    // Sync every 30 seconds
+    const interval = setInterval(syncGmail, 30000);
+    
+    return () => clearInterval(interval);
+  }, [user, queryClient]);
 
   const updateThreadMutation = useMutation({
     mutationFn: ({ id, data }) => base44.entities.EmailThread.update(id, data),
