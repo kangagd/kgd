@@ -2,13 +2,14 @@ import React, { useState } from "react";
 import { base44 } from "@/api/base44Client";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Lightbulb, Loader2, Copy, Check } from "lucide-react";
+import { Lightbulb, Loader2, Copy, Check, ChevronDown, ChevronUp } from "lucide-react";
 import { toast } from "sonner";
 
 export default function ResponseSuggestions({ thread, messages, onUseTemplate }) {
   const [suggestions, setSuggestions] = useState([]);
   const [isLoading, setIsLoading] = useState(false);
   const [copiedIndex, setCopiedIndex] = useState(null);
+  const [isExpanded, setIsExpanded] = useState(true);
 
   const generateSuggestions = async () => {
     setIsLoading(true);
@@ -103,14 +104,24 @@ Respond in this JSON format:
   return (
     <Card className="border border-[#E5E7EB] bg-white mb-4">
       <CardContent className="p-4">
-        <div className="flex items-center gap-2 mb-3">
-          <Lightbulb className="w-5 h-5 text-[#FAE008]" />
-          <h3 className="text-[14px] font-semibold text-[#111827]">
-            Suggested Responses
-          </h3>
+        <div className="flex items-center justify-between mb-3">
+          <div className="flex items-center gap-2">
+            <Lightbulb className="w-5 h-5 text-[#FAE008]" />
+            <h3 className="text-[14px] font-semibold text-[#111827]">
+              Suggested Responses
+            </h3>
+          </div>
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={() => setIsExpanded(!isExpanded)}
+            className="h-8"
+          >
+            {isExpanded ? <ChevronUp className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />}
+          </Button>
         </div>
 
-        {isLoading ? (
+        {isExpanded && (isLoading ? (
           <div className="flex items-center gap-2 text-[#6B7280] text-[13px] py-4">
             <Loader2 className="w-4 h-4 animate-spin" />
             <span>Generating suggestions...</span>
@@ -153,7 +164,7 @@ Respond in this JSON format:
               </div>
             ))}
           </div>
-        )}
+        ))}
       </CardContent>
     </Card>
   );
