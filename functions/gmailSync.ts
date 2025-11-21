@@ -82,20 +82,36 @@ Deno.serve(async (req) => {
 
     // Process each message (limit to 30 to avoid timeouts)
     for (const message of allMessages.slice(0, 30)) {
-      const detailResponse = await fetch(
-        `https://gmail.googleapis.com/gmail/v1/users/me/messages/${message.id}`,
-        { headers: { 'Authorization': `Bearer ${accessToken}` } }
-      );
+      try {
+        const detailResponse = await fetch(
+          `https://gmail.googleapis.com/gmail/v1/users/me/messages/${message.id}`,
+          { headers: { 'Authorization': `Bearer ${accessToken}` } }
+        );
 
-      const detail = await detailResponse.json();
-      const headers = detail.payload.headers;
+        if (!detailResponse.ok) {
+          console.error(`Failed to fetch message ${message.id}`);
+          continue;
+        }
 
-      const subject = headers.find(h => h.name === 'Subject')?.value || '(No Subject)';
-      const from = headers.find(h => h.name === 'From')?.value || '';
-      const to = headers.find(h => h.name === 'To')?.value || '';
-      const date = headers.find(h => h.name === 'Date')?.value;
-      const messageId = headers.find(h => h.name === 'Message-ID')?.value;
-      const inReplyTo = headers.find(h => h.name === 'In-Reply-To')?.value;
+        const detail = await detailResponse.json();
+        if (!detail.payload?.headers) {
+          console.error(`Invalid message format for ${message.id}`);
+          continue;
+        }
+
+        const headers = detail.payload.headers;
+
+        const subject = headers.find(h => h.name === 'Subject')?.value || '(No Subject)';
+        const from = headers.find(h => h.name === 'From')?.value || '';
+        const to = headers.find(h => h.name === 'To')?.value || '';
+        const date = headers.find(h => h.name === 'Date')?.value;
+        const messageId = headers.find(h => h.name === 'Message-ID')?.value;
+        const inReplyTo = headers.find(h => h.name === 'In-Reply-To')?.value;
+
+        if (!date || !messageId) {
+          console.error(`Missing required fields for message ${message.id}`);
+          continue;
+        }
 
       // Check if thread already exists
       const existingThreads = await base44.entities.EmailThread.filter({
@@ -181,64 +197,86 @@ Deno.serve(async (req) => {
         message_id: messageId
       });
 
-      if (existingMessages.length === 0) {
-        // Extract body and attachments
-        let bodyHtml = '';
-        let bodyText = detail.snippet;
-        const attachments = [];
+        if (existingMessages.length === 0) {
+          // Extract body and attachments
+          let bodyHtml = '';
+          let bodyText = detail.snippet || '';
+          const attachments = [];
 
-        const processParts = (parts) => {
-          if (!parts) return;
-          for (const part of parts) {
-            if (part.mimeType === 'text/html' && part.body?.data) {
-              bodyHtml = atob(part.body.data.replace(/-/g, '+').replace(/_/g, '/'));
-            } else if (part.mimeType === 'text/plain' && part.body?.data) {
-              bodyText = atob(part.body.data.replace(/-/g, '+').replace(/_/g, '/'));
-            } else if (part.filename && part.filename.length > 0) {
-              // Store attachment metadata
-              attachments.push({
-                filename: part.filename,
-                size: part.body?.size || 0,
-                mime_type: part.mimeType || 'application/octet-stream',
-                url: '' // Placeholder - actual download would require separate API call
-              });
+          const processParts = (parts) => {
+            if (!parts || !Array.isArray(parts)) return;
+            for (const part of parts) {
+              try {
+                if (part.mimeType === 'text/html' && part.body?.data) {
+                  const decoded = atob(part.body.data.replace(/-/g, '+').replace(/_/g, '/'));
+                  if (decoded) bodyHtml = decoded;
+                } else if (part.mimeType === 'text/plain' && part.body?.data) {
+                  const decoded = atob(part.body.data.replace(/-/g, '+').replace(/_/g, '/'));
+                  if (decoded) bodyText = decoded;
+                } else if (part.filename && part.filename.trim().length > 0) {
+                  // Store attachment metadata
+                  attachments.push({
+                    filename: part.filename,
+                    size: part.body?.size || 0,
+                    mime_type: part.mimeType || 'application/octet-stream',
+                    url: `https://mail.google.com/mail/u/0/#inbox/${message.id}`
+                  });
+                }
+                // Recursively process nested parts
+                if (part.parts) {
+                  processParts(part.parts);
+                }
+              } catch (err) {
+                console.error('Error processing part:', err);
+              }
             }
-            // Recursively process nested parts
-            if (part.parts) {
-              processParts(part.parts);
+          };
+
+          try {
+            if (detail.payload.body?.data) {
+              const decoded = atob(detail.payload.body.data.replace(/-/g, '+').replace(/_/g, '/'));
+              if (decoded) bodyText = decoded;
             }
+          } catch (err) {
+            console.error('Error decoding body:', err);
           }
-        };
+          
+          if (detail.payload.parts) {
+            processParts(detail.payload.parts);
+          }
 
-        if (detail.payload.body?.data) {
-          bodyText = atob(detail.payload.body.data.replace(/-/g, '+').replace(/_/g, '/'));
-        }
-        
-        if (detail.payload.parts) {
-          processParts(detail.payload.parts);
-        }
+          // Parse addresses safely
+          const toAddresses = to ? to.split(',').map(e => parseEmailAddress(e.trim())).filter(e => e) : [];
+          const fromAddress = parseEmailAddress(from) || 'unknown@unknown.com';
 
-        // Create message
-        const messageData = {
-          thread_id: threadId,
-          from_address: parseEmailAddress(from),
-          to_addresses: to.split(',').map(e => parseEmailAddress(e.trim())),
-          sent_at: new Date(date).toISOString(),
-          subject,
-          body_html: bodyHtml,
-          body_text: bodyText,
-          message_id: messageId,
-          in_reply_to: inReplyTo,
-          is_outbound: message.isOutbound
-        };
-        
-        if (attachments.length > 0) {
-          messageData.attachments = attachments;
-        }
-        
-        await base44.entities.EmailMessage.create(messageData);
+          // Create message
+          const messageData = {
+            thread_id: threadId,
+            from_address: fromAddress,
+            to_addresses: toAddresses.length > 0 ? toAddresses : [fromAddress],
+            sent_at: new Date(date).toISOString(),
+            subject: subject || '(No Subject)',
+            body_html: bodyHtml,
+            body_text: bodyText,
+            message_id: messageId,
+            is_outbound: message.isOutbound
+          };
+          
+          if (inReplyTo) {
+            messageData.in_reply_to = inReplyTo;
+          }
+          
+          if (attachments.length > 0) {
+            messageData.attachments = attachments;
+          }
+          
+          await base44.entities.EmailMessage.create(messageData);
 
-        syncedCount++;
+          syncedCount++;
+        }
+      } catch (msgError) {
+        console.error(`Error processing message ${message.id}:`, msgError.message);
+        // Continue with next message
       }
     }
 
