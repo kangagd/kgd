@@ -631,6 +631,144 @@ Format as HTML bullet points using <ul> and <li> tags. Include only the most cri
             )}
             </CardContent>
             </Card>
+
+            {/* Images Section */}
+            <Card className="border border-[#E5E7EB] shadow-sm rounded-lg overflow-hidden mt-4">
+              <CardHeader className="bg-[#F8F9FA] px-4 py-3 border-b border-[#E5E7EB]">
+                <h3 className="text-[18px] font-semibold text-[#111827] leading-[1.2]">Images</h3>
+              </CardHeader>
+              <CardContent className="p-3 space-y-3">
+                {project.image_urls && project.image_urls.length > 0 && (
+                  <div className="grid grid-cols-2 gap-2">
+                    {project.image_urls.slice(0, 4).map((url, index) => (
+                      <div key={index} className="relative group">
+                        <a 
+                          href={url} 
+                          target="_blank" 
+                          rel="noopener noreferrer"
+                          className="block"
+                        >
+                          <img 
+                            src={url} 
+                            alt={`Project image ${index + 1}`} 
+                            className="w-full h-20 object-cover rounded-lg border border-[#E5E7EB] hover:border-[#FAE008] transition-all"
+                          />
+                        </a>
+                        <button
+                          onClick={() => handleRemoveImage(index)}
+                          className="absolute -top-1 -right-1 bg-red-500 text-white rounded-full w-5 h-5 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity"
+                        >
+                          <X className="w-3 h-3" />
+                        </button>
+                      </div>
+                    ))}
+                  </div>
+                )}
+
+                {project.image_urls && project.image_urls.length > 4 && (
+                  <div className="text-[12px] text-[#6B7280] text-center">
+                    +{project.image_urls.length - 4} more images
+                  </div>
+                )}
+
+                <label className="block">
+                  <Button
+                    type="button"
+                    variant="outline"
+                    className="w-full h-9 text-sm"
+                    disabled={uploading}
+                    asChild
+                  >
+                    <span>
+                      <Upload className="w-4 h-4 mr-2" />
+                      {uploading ? 'Uploading...' : 'Add Image'}
+                    </span>
+                  </Button>
+                  <input
+                    type="file"
+                    accept="image/*"
+                    className="hidden"
+                    onChange={(e) => handleFileUpload(e, 'image')}
+                  />
+                </label>
+              </CardContent>
+            </Card>
+
+            {/* Documents Section */}
+            <Card className="border border-[#E5E7EB] shadow-sm rounded-lg overflow-hidden mt-4">
+              <CardHeader className="bg-[#F8F9FA] px-4 py-3 border-b border-[#E5E7EB]">
+                <h3 className="text-[18px] font-semibold text-[#111827] leading-[1.2]">Documents</h3>
+              </CardHeader>
+              <CardContent className="p-3 space-y-2">
+                {project.quote_url && (
+                  <a 
+                    href={project.quote_url} 
+                    target="_blank" 
+                    rel="noopener noreferrer"
+                    className="flex items-center gap-2 px-3 py-2 bg-white border border-[#E5E7EB] rounded-lg hover:border-[#FAE008] transition-all"
+                  >
+                    <FileText className="w-4 h-4 text-blue-600 flex-shrink-0" />
+                    <span className="text-[12px] font-medium text-[#111827] truncate">Quote</span>
+                  </a>
+                )}
+                {project.invoice_url && (
+                  <a 
+                    href={project.invoice_url} 
+                    target="_blank" 
+                    rel="noopener noreferrer"
+                    className="flex items-center gap-2 px-3 py-2 bg-white border border-[#E5E7EB] rounded-lg hover:border-[#FAE008] transition-all"
+                  >
+                    <FileText className="w-4 h-4 text-green-600 flex-shrink-0" />
+                    <span className="text-[12px] font-medium text-[#111827] truncate">Invoice</span>
+                  </a>
+                )}
+
+                <div className="grid grid-cols-2 gap-2 pt-1">
+                  <label className="block">
+                    <Button
+                      type="button"
+                      variant="outline"
+                      size="sm"
+                      className="w-full h-8 text-xs"
+                      disabled={uploading}
+                      asChild
+                    >
+                      <span>
+                        <FileText className="w-3 h-3 mr-1" />
+                        Quote
+                      </span>
+                    </Button>
+                    <input
+                      type="file"
+                      accept=".pdf,.doc,.docx"
+                      className="hidden"
+                      onChange={(e) => handleFileUpload(e, 'quote')}
+                    />
+                  </label>
+                  <label className="block">
+                    <Button
+                      type="button"
+                      variant="outline"
+                      size="sm"
+                      className="w-full h-8 text-xs"
+                      disabled={uploading}
+                      asChild
+                    >
+                      <span>
+                        <FileText className="w-3 h-3 mr-1" />
+                        Invoice
+                      </span>
+                    </Button>
+                    <input
+                      type="file"
+                      accept=".pdf,.doc,.docx"
+                      className="hidden"
+                      onChange={(e) => handleFileUpload(e, 'invoice')}
+                    />
+                  </label>
+                </div>
+              </CardContent>
+            </Card>
             </aside>
 
             {/* Main Content */}
@@ -788,12 +926,6 @@ Format as HTML bullet points using <ul> and <li> tags. Include only the most cri
               <TabsTrigger value="financials" className="flex-1">Financials</TabsTrigger>
             )}
             <TabsTrigger value="parts" className="flex-1">Parts</TabsTrigger>
-            <TabsTrigger value="images" className="flex-1">
-              Images
-            </TabsTrigger>
-            <TabsTrigger value="attachments" className="flex-1">
-              Files
-            </TabsTrigger>
             <TabsTrigger value="summary" className="flex-1">
               Summary
             </TabsTrigger>
@@ -1053,153 +1185,6 @@ Format as HTML bullet points using <ul> and <li> tags. Include only the most cri
               projectId={project.id} 
               autoExpand={project.status === "Parts Ordered"} 
             />
-          </TabsContent>
-
-          <TabsContent value="images" className="mt-3">
-            <div className="flex items-center justify-between mb-1.5">
-              <label className="block text-[13px] md:text-[14px] font-medium text-[#4B5563]">
-                Images
-              </label>
-              {project.image_urls && project.image_urls.length > 0 && (
-                <Link 
-                  to={`${createPageUrl("Photos")}?projectId=${project.id}`}
-                  className="text-[12px] text-[#FAE008] hover:text-[#E5CF07] font-semibold flex items-center gap-1 transition-colors"
-                >
-                  View in Library
-                  <ExternalLink className="w-3 h-3" />
-                </Link>
-              )}
-            </div>
-            <Card className="border border-[#E5E7EB] shadow-sm overflow-hidden">
-              <CardContent className="p-3 space-y-3">
-                {project.image_urls && project.image_urls.length > 0 && (
-                  <div className="grid grid-cols-3 gap-2">
-                    {project.image_urls.map((url, index) => (
-                      <div key={index} className="relative group">
-                        <a 
-                          href={url} 
-                          target="_blank" 
-                          rel="noopener noreferrer"
-                          className="block"
-                        >
-                          <img 
-                            src={url} 
-                            alt={`Project image ${index + 1}`} 
-                            className="w-full h-24 object-cover rounded-lg border border-[#E5E7EB] hover:border-[#FAE008] transition-all"
-                          />
-                        </a>
-                        <button
-                          onClick={() => handleRemoveImage(index)}
-                          className="absolute -top-1 -right-1 bg-red-500 text-white rounded-full w-6 h-6 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity"
-                        >
-                          <X className="w-4 h-4" />
-                        </button>
-                      </div>
-                    ))}
-                  </div>
-                )}
-
-                <label>
-                  <Button
-                    type="button"
-                    variant="outline"
-                    className="w-full h-10"
-                    disabled={uploading}
-                    asChild
-                  >
-                    <span>
-                      <Upload className="w-4 h-4 mr-2" />
-                      {uploading ? 'Uploading...' : 'Add Image'}
-                    </span>
-                  </Button>
-                  <input
-                    type="file"
-                    accept="image/*"
-                    className="hidden"
-                    onChange={(e) => handleFileUpload(e, 'image')}
-                  />
-                </label>
-              </CardContent>
-            </Card>
-          </TabsContent>
-
-          <TabsContent value="attachments" className="mt-3">
-            <label className="block text-[13px] md:text-[14px] font-medium text-[#4B5563] mb-1.5">
-              Documents
-            </label>
-            <Card className="border border-[#E5E7EB] shadow-sm overflow-hidden">
-              <CardContent className="p-3 space-y-3">
-                {(project.quote_url || project.invoice_url) && (
-                  <div className="space-y-2">
-                    {project.quote_url && (
-                      <a 
-                        href={project.quote_url} 
-                        target="_blank" 
-                        rel="noopener noreferrer"
-                        className="flex items-center gap-2 px-3 py-2 bg-white border border-[#E5E7EB] rounded-lg hover:border-[#FAE008] transition-all"
-                      >
-                        <FileText className="w-4 h-4 text-blue-600" />
-                        <span className="text-[14px] font-medium text-[#111827] leading-[1.4]">Quote Document</span>
-                      </a>
-                    )}
-                    {project.invoice_url && (
-                      <a 
-                        href={project.invoice_url} 
-                        target="_blank" 
-                        rel="noopener noreferrer"
-                        className="flex items-center gap-2 px-3 py-2 bg-white border border-[#E5E7EB] rounded-lg hover:border-[#FAE008] transition-all"
-                      >
-                        <FileText className="w-4 h-4 text-green-600" />
-                        <span className="text-[14px] font-medium text-[#111827] leading-[1.4]">Invoice Document</span>
-                      </a>
-                    )}
-                  </div>
-                )}
-
-                <div className="flex gap-2">
-                  <label className="flex-1">
-                    <Button
-                      type="button"
-                      variant="outline"
-                      className="w-full h-10"
-                      disabled={uploading}
-                      asChild
-                    >
-                      <span>
-                        <FileText className="w-4 h-4 mr-2" />
-                        Upload Quote
-                      </span>
-                    </Button>
-                    <input
-                      type="file"
-                      accept=".pdf,.doc,.docx"
-                      className="hidden"
-                      onChange={(e) => handleFileUpload(e, 'quote')}
-                    />
-                  </label>
-                  <label className="flex-1">
-                    <Button
-                      type="button"
-                      variant="outline"
-                      className="w-full h-10"
-                      disabled={uploading}
-                      asChild
-                    >
-                      <span>
-                        <FileText className="w-4 h-4 mr-2" />
-                        Upload Invoice
-                      </span>
-                    </Button>
-                    <input
-                      type="file"
-                      accept=".pdf,.doc,.docx"
-                      className="hidden"
-                      onChange={(e) => handleFileUpload(e, 'invoice')}
-                    />
-                  </label>
-                </div>
-              </CardContent>
-            </Card>
           </TabsContent>
         </Tabs>
       </CardContent>
