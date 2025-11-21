@@ -6,6 +6,7 @@ import { format, parseISO } from "date-fns";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 import { useQuery } from "@tanstack/react-query";
 import { base44 } from "@/api/base44Client";
+import { TechnicianAvatarGroup } from "../common/TechnicianAvatar";
 
 const statusColors = {
   "Open": "bg-slate-100 text-slate-700",
@@ -22,27 +23,7 @@ const productColors = {
   "Custom Garage Door": "bg-pink-100 text-pink-700"
 };
 
-const getInitials = (name) => {
-  if (!name) return "?";
-  return name.split(" ").map((n) => n[0]).join("").toUpperCase().slice(0, 2);
-};
 
-const avatarColors = [
-  "bg-blue-500",
-  "bg-purple-500",
-  "bg-green-500",
-  "bg-orange-500",
-  "bg-pink-500",
-  "bg-indigo-500",
-  "bg-red-500",
-  "bg-teal-500"
-];
-
-const getAvatarColor = (name) => {
-  if (!name) return avatarColors[0];
-  const index = name.charCodeAt(0) % avatarColors.length;
-  return avatarColors[index];
-};
 
 export default function JobCard({ job, onClick }) {
   const { data: latestVisit } = useQuery({
@@ -122,23 +103,16 @@ export default function JobCard({ job, onClick }) {
             </div>
             
             {/* Assigned Technicians */}
-            {job.assigned_to_name && (
-              <div className="flex items-center gap-1">
-                {(Array.isArray(job.assigned_to_name) ? job.assigned_to_name : [job.assigned_to_name]).slice(0, 3).map((name, idx) => (
-                  <div
-                    key={idx}
-                    className={`${getAvatarColor(name)} w-7 h-7 rounded-full flex items-center justify-center text-white text-xs font-bold shadow-sm`}
-                    title={name}
-                  >
-                    {getInitials(name)}
-                  </div>
-                ))}
-                {Array.isArray(job.assigned_to_name) && job.assigned_to_name.length > 3 && (
-                  <div className="bg-[#6B7280] w-7 h-7 rounded-full flex items-center justify-center text-white text-xs font-bold shadow-sm">
-                    +{job.assigned_to_name.length - 3}
-                  </div>
-                )}
-              </div>
+            {job.assigned_to && job.assigned_to.length > 0 && (
+              <TechnicianAvatarGroup
+                technicians={job.assigned_to.map((email, idx) => ({
+                  email,
+                  full_name: job.assigned_to_name?.[idx] || email,
+                  id: email
+                }))}
+                maxDisplay={3}
+                size="sm"
+              />
             )}
           </div>
 
