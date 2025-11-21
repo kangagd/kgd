@@ -327,7 +327,7 @@ export default function Layout({ children, currentPageName }) {
                     title={isCollapsed ? item.title : ''}
                   >
                     {isActive && <div className="absolute left-0 w-1 h-6 bg-[#FAE008] rounded-r" />}
-                    <item.icon className={`w-5 h-5 flex-shrink-0 ${isActive ? 'text-[#FAE008]' : ''}`} />
+                    <item.icon className={`w-5 h-5 flex-shrink-0 ${isActive ? 'text-[#FAE008]' : 'text-[#111827]'}`} />
                     {!isCollapsed && (
                       <span className="text-[14px]">{item.title}</span>
                     )}
