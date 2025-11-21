@@ -114,16 +114,7 @@ export default function JobModalView({ job }) {
         </div>
       )}
 
-      {/* Job Details */}
-      <div className="space-y-2">
-        {job.job_type_name && (
-          <div className="flex items-center gap-2 flex-wrap">
-            <Badge className="bg-[#EDE9FE] text-[#6D28D9] border-0 font-medium text-xs px-2.5 py-0.5 rounded-lg">
-              {job.job_type_name}
-            </Badge>
-          </div>
-        )}
-      </div>
+
 
       {/* Project Link */}
       {job.project_name && (
