@@ -29,6 +29,7 @@ import ProjectSummary from "./ProjectSummary";
 import ProjectVisitsTab from "./ProjectVisitsTab";
 import FinancialsTab from "./FinancialsTab";
 import PhotoModal from "./PhotoModal";
+import DocumentModal from "./DocumentModal";
 
 const statusColors = {
   "Lead": "bg-slate-100 text-slate-700",
@@ -74,6 +75,7 @@ export default function ProjectDetails({ project: initialProject, onClose, onEdi
   const [activeTab, setActiveTab] = useState("overview");
   const [user, setUser] = useState(null);
   const [selectedImage, setSelectedImage] = useState(null);
+  const [selectedDocument, setSelectedDocument] = useState(null);
 
   React.useEffect(() => {
     const loadUser = async () => {
@@ -696,26 +698,22 @@ Format as HTML bullet points using <ul> and <li> tags. Include only the most cri
               </CardHeader>
               <CardContent className="p-3 space-y-2">
                 {project.quote_url && (
-                  <a 
-                    href={project.quote_url} 
-                    target="_blank" 
-                    rel="noopener noreferrer"
-                    className="flex items-center gap-2 px-3 py-2 bg-white border border-[#E5E7EB] rounded-lg hover:border-[#FAE008] transition-all"
+                  <button
+                    onClick={() => setSelectedDocument({ url: project.quote_url, type: 'Quote' })}
+                    className="w-full flex items-center gap-2 px-3 py-2 bg-white border border-[#E5E7EB] rounded-lg hover:border-[#FAE008] transition-all cursor-pointer"
                   >
                     <FileText className="w-4 h-4 text-blue-600 flex-shrink-0" />
                     <span className="text-[12px] font-medium text-[#111827] truncate">Quote</span>
-                  </a>
+                  </button>
                 )}
                 {project.invoice_url && (
-                  <a 
-                    href={project.invoice_url} 
-                    target="_blank" 
-                    rel="noopener noreferrer"
-                    className="flex items-center gap-2 px-3 py-2 bg-white border border-[#E5E7EB] rounded-lg hover:border-[#FAE008] transition-all"
+                  <button
+                    onClick={() => setSelectedDocument({ url: project.invoice_url, type: 'Invoice' })}
+                    className="w-full flex items-center gap-2 px-3 py-2 bg-white border border-[#E5E7EB] rounded-lg hover:border-[#FAE008] transition-all cursor-pointer"
                   >
                     <FileText className="w-4 h-4 text-green-600 flex-shrink-0" />
                     <span className="text-[12px] font-medium text-[#111827] truncate">Invoice</span>
-                  </a>
+                  </button>
                 )}
 
                 <div className="grid grid-cols-2 gap-2 pt-1">
@@ -1197,6 +1195,25 @@ Format as HTML bullet points using <ul> and <li> tags. Include only the most cri
           imageUrl={selectedImage.url}
           onClose={() => setSelectedImage(null)}
           onDelete={() => handleRemoveImage(selectedImage.index)}
+        />
+      )}
+
+      {selectedDocument && (
+        <DocumentModal
+          documentUrl={selectedDocument.url}
+          documentType={selectedDocument.type}
+          onClose={() => setSelectedDocument(null)}
+          onDelete={
+            selectedDocument.type === 'Quote'
+              ? () => {
+                  updateProjectMutation.mutate({ field: 'quote_url', value: null });
+                  setSelectedDocument(null);
+                }
+              : () => {
+                  updateProjectMutation.mutate({ field: 'invoice_url', value: null });
+                  setSelectedDocument(null);
+                }
+          }
         />
       )}
     </div>
