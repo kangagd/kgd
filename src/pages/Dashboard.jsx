@@ -211,7 +211,7 @@ export default function Dashboard() {
                         <h4 className="text-[16px] font-medium text-[#111827] leading-[1.4] mb-1">{project.title}</h4>
                         <p className="text-[14px] text-[#4B5563] leading-[1.4]">{project.customer_name}</p>
                       </div>
-                      <Badge className={`ml-2 ${project.status === 'Completed' ? 'bg-emerald-100 text-emerald-700' : project.status === 'Scheduled' ? 'bg-[#FAE008] text-[#92400E]' : 'bg-slate-100 text-slate-700'} border-0 font-medium px-2.5 py-0.5 rounded-lg`}>
+                      <Badge className={`ml-2 ${project.status === 'Completed' ? 'bg-emerald-100 text-emerald-700' : project.status === 'Scheduled' ? 'bg-[#FAE008] text-[#92400E]' : 'bg-slate-100 text-slate-700'} border-0 font-medium px-2.5 py-0.5 rounded-lg hover:opacity-100`}>
                         {project.status}
                       </Badge>
                     </div>

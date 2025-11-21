@@ -206,7 +206,7 @@ export default function Organisations() {
                         {org.name}
                       </h3>
                       {org.organisation_type && (
-                        <Badge className={`${organisationTypeColors[org.organisation_type]} font-medium text-[12px] leading-[1.35] border-2`}>
+                        <Badge className={`${organisationTypeColors[org.organisation_type]} font-medium text-[12px] leading-[1.35] border-2 hover:opacity-100`}>
                           {org.organisation_type}
                         </Badge>
                       )}
