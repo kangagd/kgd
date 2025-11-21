@@ -9,6 +9,9 @@ import { base44 } from "@/api/base44Client";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import OrganisationForm from "../components/organisations/OrganisationForm";
 import OrganisationDetails from "../components/organisations/OrganisationDetails";
+import EntityModal from "../components/common/EntityModal";
+import OrganisationModalView from "../components/organisations/OrganisationModalView";
+import { createPageUrl } from "@/utils";
 
 const organisationTypeColors = {
   "Strata": "bg-purple-100 text-purple-700 border-purple-200",
@@ -82,6 +85,10 @@ export default function Organisations() {
 
   const handleDelete = (id) => {
     deleteMutation.mutate(id);
+  };
+
+  const handleOpenFullOrganisation = (organisation) => {
+    window.open(`${createPageUrl("Organisations")}?organisationId=${organisation.id}`, '_blank');
   };
 
   const filteredOrganisations = organisations.filter(org => {
@@ -197,7 +204,7 @@ export default function Organisations() {
             <Card
               key={org.id}
               className="hover:shadow-lg transition-all cursor-pointer border-2 border-[hsl(32,15%,88%)] rounded-2xl group"
-              onClick={() => setSelectedOrganisation(org)}
+              onClick={() => setModalOrganisation(org)}
             >
               <CardContent className="p-6">
                 <div className="flex items-start justify-between">
@@ -257,6 +264,21 @@ export default function Organisations() {
           ))}
         </div>
       )}
+
+      <EntityModal
+        open={!!modalOrganisation}
+        onClose={() => setModalOrganisation(null)}
+        title={modalOrganisation?.name || "Organisation"}
+        onOpenFullPage={() => handleOpenFullOrganisation(modalOrganisation)}
+        fullPageLabel="Open Full Organisation"
+      >
+        {modalOrganisation && (
+          <OrganisationModalView 
+            organisation={modalOrganisation} 
+            customerCount={getCustomerCount(modalOrganisation.id)}
+          />
+        )}
+      </EntityModal>
       </div>
     </div>
   );
