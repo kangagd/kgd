@@ -49,7 +49,15 @@ Deno.serve(async (req) => {
 
     // Store tokens using service role
     const base44 = createClientFromRequest(req);
-    await base44.asServiceRole.entities.User.update(state, {
+    
+    // Find user by email
+    const users = await base44.asServiceRole.entities.User.filter({ email: state });
+    if (users.length === 0) {
+      throw new Error('User not found');
+    }
+    
+    // Update user with Gmail tokens
+    await base44.asServiceRole.entities.User.update(users[0].id, {
       gmail_access_token: tokens.access_token,
       gmail_refresh_token: tokens.refresh_token,
       gmail_token_expiry: new Date(Date.now() + tokens.expires_in * 1000).toISOString(),
