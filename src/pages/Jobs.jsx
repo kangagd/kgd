@@ -146,7 +146,8 @@ export default function Jobs() {
   };
 
   const handleOpenFullJob = (job) => {
-    window.open(`${createPageUrl("Jobs")}?jobId=${job.id}`, '_blank');
+    setModalJob(null);
+    setSelectedJob(job);
   };
 
   const isTechnician = user?.is_field_technician && user?.role !== 'admin';
