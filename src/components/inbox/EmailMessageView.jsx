@@ -15,6 +15,19 @@ export default function EmailMessageView({ message, isFirst, linkedJobId, linked
     return Math.round(bytes / Math.pow(k, i) * 100) / 100 + ' ' + sizes[i];
   };
 
+  // Sanitize HTML to remove embedded attachments/images
+  const sanitizeBodyHtml = (html) => {
+    if (!html) return html;
+    
+    // Remove inline images (often used for attachments)
+    let sanitized = html.replace(/<img[^>]*>/gi, '');
+    
+    // Remove data URIs and embedded content
+    sanitized = sanitized.replace(/src=["']data:[^"']*["']/gi, '');
+    
+    return sanitized;
+  };
+
   return (
     <div className="bg-white rounded-xl border border-[#E5E7EB] overflow-hidden">
       {/* Message Header */}
@@ -85,7 +98,6 @@ export default function EmailMessageView({ message, isFirst, linkedJobId, linked
                   [&_li]:my-1 [&_li]:leading-relaxed
                   [&_blockquote]:border-l-4 [&_blockquote]:border-[#E5E7EB] [&_blockquote]:pl-4 [&_blockquote]:py-2 [&_blockquote]:my-4 [&_blockquote]:italic [&_blockquote]:text-[#6B7280]
                   [&_a]:text-blue-600 [&_a]:underline [&_a]:hover:text-blue-800 [&_a]:break-words
-                  [&_img]:max-w-full [&_img]:h-auto [&_img]:rounded-lg [&_img]:my-4
                   [&_table]:w-full [&_table]:border-collapse [&_table]:my-4
                   [&_th]:bg-[#F3F4F6] [&_th]:px-4 [&_th]:py-2 [&_th]:text-left [&_th]:font-semibold [&_th]:border [&_th]:border-[#E5E7EB]
                   [&_td]:px-4 [&_td]:py-2 [&_td]:border [&_td]:border-[#E5E7EB]
@@ -95,7 +107,7 @@ export default function EmailMessageView({ message, isFirst, linkedJobId, linked
                   [&_hr]:my-6 [&_hr]:border-t [&_hr]:border-[#E5E7EB]
                   [&_strong]:font-semibold [&_em]:italic
                   [&_div]:break-words [&_span]:break-words [&_*]:overflow-wrap-anywhere"
-                dangerouslySetInnerHTML={{ __html: message.body_html }} 
+                dangerouslySetInnerHTML={{ __html: sanitizeBodyHtml(message.body_html) }} 
               />
             ) : (
               <div className="whitespace-pre-wrap text-[14px] text-[#111827] leading-relaxed break-words overflow-wrap-anywhere">
