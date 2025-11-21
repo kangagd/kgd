@@ -25,17 +25,26 @@ const productColors = {
 
 
 
-export default function JobCard({ job, onClick }) {
+export default function JobCard({ job, onClick, onViewDetails }) {
   const { data: latestVisit } = useQuery({
     queryKey: ['latestJobSummary', job.id],
     queryFn: () => base44.entities.JobSummary.filter({ job_id: job.id }, '-check_out_time', 1).then(res => res[0] || null),
     enabled: !!job.id
   });
 
+  const handleClick = (e) => {
+    e.stopPropagation();
+    if (onViewDetails) {
+      onViewDetails(job);
+    } else if (onClick) {
+      onClick();
+    }
+  };
+
   return (
     <Card 
       className="hover:shadow-lg transition-all duration-200 cursor-pointer hover:border-[#FAE008] border border-[#E5E7EB] rounded-xl"
-      onClick={onClick}
+      onClick={handleClick}
     >
       <CardContent className="p-4">
         <div className="space-y-3">
