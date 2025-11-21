@@ -395,9 +395,9 @@ export default function Projects() {
               >
                 <CardContent className="p-4">
                   {/* Top row */}
-                  <div className="flex items-start justify-between gap-4 mb-3">
-                    <h3 className="text-[18px] font-semibold text-[#111827] leading-[1.2] flex-1">{project.title}</h3>
-                    <div className="flex items-center gap-2 flex-shrink-0">
+                  <div className="mb-3">
+                    <h3 className="text-[18px] font-semibold text-[#111827] leading-[1.2] mb-2">{project.title}</h3>
+                    <div className="flex items-center gap-2">
                       {project.project_type && (
                         <Badge className={`${projectTypeColors[project.project_type]} font-medium border-0 px-3 py-1 text-[12px] leading-[1.35] hover:opacity-100`}>
                          {project.project_type}
