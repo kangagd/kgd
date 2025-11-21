@@ -247,12 +247,12 @@ export default function Jobs() {
           </div>
 
           {viewMode === "list" && (
-            <Tabs value={statusFilter} onValueChange={setStatusFilter}>
-              <TabsList>
-                <TabsTrigger value="all">All</TabsTrigger>
-                <TabsTrigger value="Open">Open</TabsTrigger>
-                <TabsTrigger value="Scheduled">Scheduled</TabsTrigger>
-                <TabsTrigger value="Completed">Completed</TabsTrigger>
+            <Tabs value={statusFilter} onValueChange={setStatusFilter} className="w-full">
+              <TabsList className="w-full justify-start">
+                <TabsTrigger value="all" className="flex-1">All</TabsTrigger>
+                <TabsTrigger value="Open" className="flex-1">Open</TabsTrigger>
+                <TabsTrigger value="Scheduled" className="flex-1">Scheduled</TabsTrigger>
+                <TabsTrigger value="Completed" className="flex-1">Completed</TabsTrigger>
               </TabsList>
             </Tabs>
           )}
