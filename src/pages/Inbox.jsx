@@ -6,7 +6,7 @@ import { Input } from "@/components/ui/input";
 import { Search, Filter, Mail, Link as LinkIcon } from "lucide-react";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import EmailThreadList from "../components/inbox/EmailThreadList";
-import EmailThreadDetail from "../components/inbox/EmailThreadDetail";
+import EmailDetailView from "../components/inbox/EmailDetailView";
 import LinkThreadModal from "../components/inbox/LinkThreadModal";
 import CreateProjectFromEmailModal from "../components/inbox/CreateProjectFromEmailModal";
 import CreateJobFromEmailModal from "../components/inbox/CreateJobFromEmailModal";
@@ -252,16 +252,13 @@ export default function Inbox() {
       {/* Thread Detail - Right Side */}
       <div className={`${selectedThread ? 'flex' : 'hidden lg:flex'} flex-1 flex-col bg-[#F8F9FA]`}>
         {selectedThread ? (
-          <EmailThreadDetail
+          <EmailDetailView
             thread={selectedThread}
             onClose={() => setSelectedThread(null)}
-            onStatusChange={handleStatusChange}
             onLinkProject={() => openLinkModal('project')}
             onLinkJob={() => openLinkModal('job')}
             onUnlinkProject={handleUnlinkProject}
             onUnlinkJob={handleUnlinkJob}
-            onCreateProject={() => setCreateProjectModalOpen(true)}
-            onCreateJob={() => setCreateJobModalOpen(true)}
             userPermissions={userPermissions}
           />
         ) : (
