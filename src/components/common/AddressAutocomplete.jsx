@@ -81,15 +81,20 @@ export default function AddressAutocomplete({
     if (!isScriptLoaded || !inputRef.current) return;
 
     try {
+      // Destroy existing autocomplete if it exists
+      if (autocompleteRef.current) {
+        window.google.maps.event.clearInstanceListeners(autocompleteRef.current);
+      }
+
       // Initialize autocomplete
       autocompleteRef.current = new window.google.maps.places.Autocomplete(inputRef.current, {
-        componentRestrictions: { country: 'au' }, // Restrict to Australia
-        fields: ['formatted_address', 'address_components', 'geometry'],
+        componentRestrictions: { country: 'au' },
+        fields: ['formatted_address'],
         types: ['address']
       });
 
       // Listen for place selection
-      autocompleteRef.current.addListener('place_changed', () => {
+      const listener = autocompleteRef.current.addListener('place_changed', () => {
         const place = autocompleteRef.current.getPlace();
         
         if (place && place.formatted_address) {
@@ -105,7 +110,7 @@ export default function AddressAutocomplete({
         window.google.maps.event.clearInstanceListeners(autocompleteRef.current);
       }
     };
-  }, [isScriptLoaded, onChange]);
+  }, [isScriptLoaded]);
 
   return (
     <div className="relative">
