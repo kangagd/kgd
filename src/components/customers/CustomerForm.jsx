@@ -42,7 +42,21 @@ export default function CustomerForm({ customer, onSubmit, onCancel, isSubmittin
   });
 
   const [showNewOrgDialog, setShowNewOrgDialog] = useState(false);
-  const [newOrgData, setNewOrgData] = useState({ name: "", organisation_type: undefined, sp_number: "", address: "" });
+  const [newOrgData, setNewOrgData] = useState({
+    name: "",
+    organisation_type: undefined,
+    sp_number: "",
+    address: "", // Legacy field for backward compatibility
+    address_full: "",
+    address_street: "",
+    address_suburb: "",
+    address_state: "",
+    address_postcode: "",
+    address_country: "Australia",
+    google_place_id: "",
+    latitude: null,
+    longitude: null,
+  });
   const [isCreatingOrg, setIsCreatingOrg] = useState(false);
   const [orgTypeFilter, setOrgTypeFilter] = useState("all");
   const queryClient = useQueryClient();
@@ -98,7 +112,21 @@ export default function CustomerForm({ customer, onSubmit, onCancel, isSubmittin
       });
       
       setShowNewOrgDialog(false);
-      setNewOrgData({ name: "", organisation_type: undefined, sp_number: "", address: "" });
+      setNewOrgData({
+        name: "",
+        organisation_type: undefined,
+        sp_number: "",
+        address: "",
+        address_full: "",
+        address_street: "",
+        address_suburb: "",
+        address_state: "",
+        address_postcode: "",
+        address_country: "Australia",
+        google_place_id: "",
+        latitude: null,
+        longitude: null,
+      });
     } catch (error) {
       console.error("Error creating organisation:", error);
     } finally {
@@ -309,8 +337,12 @@ export default function CustomerForm({ customer, onSubmit, onCancel, isSubmittin
               <Label htmlFor="new_org_address">Address</Label>
               <AddressAutocomplete
                 id="new_org_address"
-                value={newOrgData.address}
-                onChange={(value) => setNewOrgData({ ...newOrgData, address: value })}
+                value={newOrgData.address_full || newOrgData.address || ""}
+                onChange={(addressData) => setNewOrgData({ 
+                  ...newOrgData, 
+                  ...addressData, 
+                  address: addressData.address_full // Keep legacy field for backward compatibility
+                })}
                 className="border-2 border-slate-300"
               />
             </div>
