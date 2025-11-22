@@ -250,8 +250,8 @@ export default function Inbox() {
       )}
 
       {/* Thread Detail - Right Side */}
-      <div className={`${selectedThread ? 'flex' : 'hidden lg:flex'} flex-1 flex-col bg-[#F8F9FA]`}>
-        {selectedThread ? (
+      {selectedThread && (
+        <div className="flex flex-1 flex-col bg-[#F8F9FA]">
           <EmailDetailView
             thread={selectedThread}
             onClose={() => setSelectedThread(null)}
@@ -261,15 +261,8 @@ export default function Inbox() {
             onUnlinkJob={handleUnlinkJob}
             userPermissions={userPermissions}
           />
-        ) : (
-          <div className="flex-1 flex items-center justify-center">
-            <div className="text-center">
-              <Mail className="w-16 h-16 mx-auto text-[#D1D5DB] mb-4" />
-              <p className="text-[14px] text-[#4B5563]">Select an email to view</p>
-            </div>
-          </div>
-        )}
-      </div>
+        </div>
+      )}
 
       {/* Modals */}
       {linkModalOpen && (
