@@ -111,6 +111,7 @@ export default function Archive() {
             <Button
               onClick={() => restoreJobMutation.mutate(job.id)}
               disabled={restoreJobMutation.isPending}
+              size="sm"
               className="flex-1 bg-[#fae008] hover:bg-[#e5d007] text-[hsl(25,10%,12%)] font-semibold rounded-xl"
             >
               <RotateCcw className="w-4 h-4 mr-2" />
@@ -118,6 +119,7 @@ export default function Archive() {
             </Button>
             <Button
               variant="destructive"
+              size="sm"
               onClick={() => setConfirmDelete({ type: 'job', id: job.id, name: job.customer_name })}
               className="rounded-xl font-semibold"
             >
@@ -164,6 +166,7 @@ export default function Archive() {
             <Button
               onClick={() => restoreCustomerMutation.mutate(customer.id)}
               disabled={restoreCustomerMutation.isPending}
+              size="sm"
               className="flex-1 bg-[#fae008] hover:bg-[#e5d007] text-[hsl(25,10%,12%)] font-semibold rounded-xl"
             >
               <RotateCcw className="w-4 h-4 mr-2" />
@@ -171,6 +174,7 @@ export default function Archive() {
             </Button>
             <Button
               variant="destructive"
+              size="sm"
               onClick={() => setConfirmDelete({ type: 'customer', id: customer.id, name: customer.name })}
               className="rounded-xl font-semibold"
             >
