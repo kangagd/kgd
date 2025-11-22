@@ -90,33 +90,33 @@ export default function Dashboard() {
   return (
     <div className="p-5 md:p-10 bg-[#F8F9FA] min-h-screen overflow-x-hidden">
       <div className="max-w-7xl mx-auto w-full">
-        <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-8 md:mb-10 gap-5">
+        <div className="flex flex-col md:flex-row justify-between items-center w-full py-3 lg:py-4 mb-4 lg:mb-6 gap-3">
           <div>
-            <h1 className="text-[28px] font-bold text-[#111827] leading-[1.2]">
+            <h1 className="text-2xl font-bold text-[#111827] leading-tight">
               Good {new Date().getHours() < 12 ? 'Morning' : new Date().getHours() < 18 ? 'Afternoon' : 'Evening'}, {user?.full_name?.split(' ')[0] || 'there'}!
             </h1>
-            <p className="text-[14px] text-[#4B5563] leading-[1.4] mt-2.5">Here's what's happening today</p>
+            <p className="text-sm text-[#4B5563] mt-1">Here's what's happening today</p>
           </div>
-          <div className="flex flex-col md:flex-row gap-3 w-full md:w-auto">
+          <div className="flex flex-col md:flex-row gap-2 w-full md:w-auto">
             <Button
               onClick={() => window.location.href = '/Jobs?action=new'}
-              className="bg-[#FAE008] hover:bg-[#E5CF07] text-[#111827] font-semibold shadow-md hover:shadow-lg transition-all duration-150 h-12 rounded-lg text-[14px] leading-[1.4]"
+              className="bg-[#FAE008] hover:bg-[#E5CF07] text-[#111827] font-semibold shadow-sm hover:shadow-md transition h-10 px-4 text-sm rounded-xl"
             >
-              <Plus className="w-5 h-5 mr-2" />
+              <Plus className="w-4 h-4 mr-2" />
               New Job
             </Button>
             <Button
               onClick={() => navigate(createPageUrl("Projects") + '?action=new')}
               variant="outline"
-              className="border-2 border-[#E5E7EB] hover:border-[#FAE008] hover:bg-[#FFFEF5] text-[#111827] font-semibold shadow-sm hover:shadow-md transition-all duration-150 h-12 rounded-lg text-[14px] leading-[1.4]"
+              className="border border-[#E5E7EB] hover:border-[#FAE008] hover:bg-[#F9FAFB] text-[#111827] font-semibold shadow-sm hover:shadow-md transition h-10 px-4 text-sm rounded-xl"
             >
-              <FolderKanban className="w-5 h-5 mr-2" />
+              <FolderKanban className="w-4 h-4 mr-2" />
               New Project
             </Button>
           </div>
         </div>
 
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5 md:gap-6 mb-8 md:mb-10">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5 md:gap-6 mt-4 lg:mt-5 mb-6">
           <div
             onClick={() => handleCardClick('today')}
             className="bg-white rounded-xl border border-[#E5E7EB] p-7 cursor-pointer hover:shadow-xl hover:border-[#FAE008] hover:scale-[1.02] active:scale-[0.98] transition-all duration-200 group"

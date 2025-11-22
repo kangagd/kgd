@@ -222,15 +222,15 @@ export default function Reports() {
   return (
     <div className="p-5 md:p-10 bg-[#F8F9FA] min-h-screen">
       <div className="max-w-7xl mx-auto">
-        <div className="mb-8">
-          <h1 className="text-[28px] font-bold text-[#111827] leading-[1.2]">Business Reports</h1>
-          <p className="text-[14px] text-[#4B5563] leading-[1.4] mt-2.5">
+        <div className="py-3 lg:py-4 mb-4 lg:mb-6">
+          <h1 className="text-2xl font-bold text-[#111827] leading-tight">Business Reports</h1>
+          <p className="text-sm text-[#4B5563] mt-1">
             Track performance and key metrics
           </p>
         </div>
 
         {/* Filters */}
-        <Card className="mb-8 border border-[#E5E7EB]">
+        <Card className="mt-4 lg:mt-5 mb-6 border border-[#E5E7EB]">
           <CardContent className="p-6">
             <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
               <div className="space-y-2">
@@ -274,7 +274,7 @@ export default function Reports() {
         </Card>
 
         {/* Key Metrics */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
           <Card className="border border-[#E5E7EB]">
             <CardContent className="p-6">
               <div className="flex items-center justify-between mb-2">
