@@ -239,39 +239,50 @@ export default function EmailThreadDetail({
 
       {/* Messages Timeline */}
       <div className="flex-1 overflow-y-auto p-5 space-y-4">
-        {/* All Attachments Summary */}
-        {messages.some(m => m.attachments?.length > 0) && (
-          <div className="bg-gradient-to-r from-purple-50 to-blue-50 rounded-xl border border-purple-200/50 p-4">
-            <div className="text-[13px] text-[#6B7280] font-semibold mb-3 flex items-center gap-2">
-              <Paperclip className="w-4 h-4" />
-              All Attachments ({messages.reduce((acc, m) => acc + (m.attachments?.length || 0), 0)})
-            </div>
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
-              {messages.flatMap(message => 
-                (message.attachments || []).map((attachment, idx) => (
-                  <AttachmentCard
-                    key={`${message.id}-${idx}`}
-                    attachment={attachment}
-                    linkedJobId={thread.linked_job_id}
-                    linkedProjectId={thread.linked_project_id}
-                    threadSubject={thread.subject}
-                    threadCategory={thread.category}
-                  />
-                ))
+        {/* Quick Actions Bar */}
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-3">
+          {/* Attachments Preview */}
+          {messages.some(m => m.attachments?.length > 0) && (
+            <div className="group bg-gradient-to-br from-purple-50 to-blue-50 rounded-lg border border-purple-200/50 p-3 hover:shadow-md transition-all relative">
+              <div className="text-[12px] text-[#6B7280] font-semibold mb-2 flex items-center gap-2">
+                <Paperclip className="w-3.5 h-3.5" />
+                Attachments ({messages.reduce((acc, m) => acc + (m.attachments?.length || 0), 0)})
+              </div>
+              <div className="space-y-2 max-h-20 overflow-hidden group-hover:max-h-[500px] transition-all duration-300">
+                {messages.flatMap(message => 
+                  (message.attachments || []).map((attachment, idx) => (
+                    <AttachmentCard
+                      key={`${message.id}-${idx}`}
+                      attachment={attachment}
+                      linkedJobId={thread.linked_job_id}
+                      linkedProjectId={thread.linked_project_id}
+                      threadSubject={thread.subject}
+                      threadCategory={thread.category}
+                    />
+                  ))
+                )}
+              </div>
+              {messages.reduce((acc, m) => acc + (m.attachments?.length || 0), 0) > 1 && (
+                <div className="text-[11px] text-[#6B7280] mt-2 group-hover:hidden">
+                  Hover to see all
+                </div>
               )}
             </div>
-          </div>
-        )}
+          )}
+
+          {/* AI Response Suggestions */}
+          {!composerMode && messages.length > 0 && userPermissions?.can_reply && (
+            <div className="bg-gradient-to-br from-blue-50 to-indigo-50 rounded-lg border border-blue-200/50 p-3 hover:shadow-md transition-all">
+              <ResponseSuggestions 
+                thread={thread} 
+                messages={messages}
+                onUseTemplate={handleUseTemplate}
+              />
+            </div>
+          )}
+        </div>
 
         <EmailThreadSummary thread={thread} messages={messages} />
-        
-        {!composerMode && messages.length > 0 && userPermissions?.can_reply && (
-          <ResponseSuggestions 
-            thread={thread} 
-            messages={messages}
-            onUseTemplate={handleUseTemplate}
-          />
-        )}
         
         {composerMode && (
           <EmailComposer
