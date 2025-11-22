@@ -10,7 +10,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { X, Link as LinkIcon, Plus, ExternalLink, Reply, Forward, Mail, Paperclip } from "lucide-react";
+import { X, Link as LinkIcon, Plus, ExternalLink, Reply, Forward, Mail, Paperclip, RefreshCw } from "lucide-react";
 import { toast } from "sonner";
 import { format, parseISO } from "date-fns";
 import EmailMessageView from "./EmailMessageView";
@@ -74,8 +74,34 @@ export default function EmailThreadDetail({
     setPrefilledBody("");
   };
 
-  const handleEmailSent = () => {
-    refetch();
+  const [isSyncing, setIsSyncing] = useState(false);
+
+  const handleEmailSent = async () => {
+    // Sync Gmail to fetch the sent message
+    setIsSyncing(true);
+    try {
+      await base44.functions.invoke('gmailSync', {});
+      setTimeout(() => refetch(), 1000); // Wait a bit for sync to complete
+    } catch (error) {
+      console.error('Error syncing:', error);
+      refetch(); // Still refetch even if sync fails
+    } finally {
+      setIsSyncing(false);
+    }
+  };
+
+  const handleManualSync = async () => {
+    setIsSyncing(true);
+    try {
+      await base44.functions.invoke('gmailSync', {});
+      setTimeout(() => refetch(), 1000);
+      toast.success('Synced with Gmail');
+    } catch (error) {
+      console.error('Error syncing:', error);
+      toast.error('Failed to sync with Gmail');
+    } finally {
+      setIsSyncing(false);
+    }
   };
 
 
@@ -176,6 +202,16 @@ export default function EmailThreadDetail({
               Create Job
             </Button>
           )}
+
+          <Button 
+            variant="outline" 
+            size="sm" 
+            onClick={handleManualSync}
+            disabled={isSyncing}
+          >
+            <RefreshCw className={`w-4 h-4 mr-2 ${isSyncing ? 'animate-spin' : ''}`} />
+            Sync
+          </Button>
 
           {userPermissions?.can_reply && (
             <>
