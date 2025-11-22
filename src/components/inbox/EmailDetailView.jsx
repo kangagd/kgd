@@ -136,8 +136,22 @@ export default function EmailDetailView({
     refetchInterval: 30000
   });
 
+  const { data: linkedProject } = useQuery({
+    queryKey: ['linkedProject', thread.linked_project_id],
+    queryFn: () => base44.entities.Project.filter({ id: thread.linked_project_id }),
+    enabled: !!thread.linked_project_id
+  });
+
+  const { data: linkedJob } = useQuery({
+    queryKey: ['linkedJob', thread.linked_job_id],
+    queryFn: () => base44.entities.Job.filter({ id: thread.linked_job_id }),
+    enabled: !!thread.linked_job_id
+  });
+
   const latestMessage = messages[messages.length - 1];
   const allAttachments = messages.flatMap(m => m.attachments || []);
+  const project = linkedProject?.[0];
+  const job = linkedJob?.[0];
 
   const handleReply = () => {
     if (!latestMessage) return;
@@ -267,41 +281,9 @@ export default function EmailDetailView({
             <div className="p-6 border-b border-[#E5E7EB]">
               <div className="flex items-start justify-between gap-4 mb-3">
                 <div className="flex-1 min-w-0">
-                  <h1 className="text-[24px] md:text-[28px] font-bold text-[#111827] leading-tight mb-2">
+                  <h1 className="text-[24px] md:text-[28px] font-bold text-[#111827] leading-tight">
                     {thread.subject}
                   </h1>
-                  {(thread.linked_project_id || thread.linked_job_id) && (
-                    <div className="flex flex-wrap items-center gap-2 text-[13px] text-[#6B7280]">
-                      {thread.linked_project_id && (
-                        <div className="flex items-center gap-1">
-                          <LinkIcon className="w-3 h-3" />
-                          <span>Project:</span>
-                          <a
-                            href={createPageUrl("Projects") + `?projectId=${thread.linked_project_id}`}
-                            target="_blank"
-                            rel="noopener noreferrer"
-                            className="text-[#111827] font-medium hover:underline"
-                          >
-                            {thread.linked_project_title}
-                          </a>
-                        </div>
-                      )}
-                      {thread.linked_job_id && (
-                        <div className="flex items-center gap-1">
-                          <LinkIcon className="w-3 h-3" />
-                          <span>Job:</span>
-                          <a
-                            href={createPageUrl("Jobs") + `?jobId=${thread.linked_job_id}`}
-                            target="_blank"
-                            rel="noopener noreferrer"
-                            className="text-[#111827] font-medium hover:underline"
-                          >
-                            #{thread.linked_job_number}
-                          </a>
-                        </div>
-                      )}
-                    </div>
-                  )}
                 </div>
                 <div className="flex items-center gap-2 flex-shrink-0">
                   {userPermissions?.can_reply && (
@@ -444,6 +426,109 @@ export default function EmailDetailView({
                   onClose={handleCloseComposer}
                   onSent={handleEmailSent}
                 />
+              </div>
+            )}
+
+            {/* Linked Items Section */}
+            {(project || job) && (
+              <div className="px-6 py-4 border-b border-[#F3F4F6] bg-gradient-to-br from-blue-50 to-indigo-50">
+                <div className="flex items-center gap-2 mb-3">
+                  <LinkIcon className="w-4 h-4 text-indigo-600" />
+                  <h3 className="text-[14px] font-semibold text-[#111827]">Linked Items</h3>
+                </div>
+                
+                <div className="space-y-3">
+                  {project && (
+                    <div className="bg-white rounded-lg border border-indigo-200 p-4 shadow-sm">
+                      <div className="flex items-start justify-between mb-2">
+                        <div className="flex-1 min-w-0">
+                          <div className="flex items-center gap-2 mb-1">
+                            <span className="text-[12px] font-medium text-indigo-600 uppercase">Project</span>
+                            <Badge variant="outline" className="text-[11px]">{project.status}</Badge>
+                          </div>
+                          <a
+                            href={createPageUrl("Projects") + `?projectId=${project.id}`}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="text-[15px] font-semibold text-[#111827] hover:text-indigo-600 hover:underline"
+                          >
+                            {project.title}
+                          </a>
+                        </div>
+                        {userPermissions?.can_link_to_project && (
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            onClick={onUnlinkProject}
+                            className="text-[#6B7280] hover:text-[#DC2626] h-7 text-[12px]"
+                          >
+                            Unlink
+                          </Button>
+                        )}
+                      </div>
+                      <div className="text-[13px] text-[#6B7280] space-y-1">
+                        <div><strong>Customer:</strong> {project.customer_name}</div>
+                        {project.address && <div><strong>Address:</strong> {project.address}</div>}
+                        {project.project_type && <div><strong>Type:</strong> {project.project_type}</div>}
+                      </div>
+                      <a
+                        href={createPageUrl("Projects") + `?projectId=${project.id}`}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="inline-flex items-center gap-1 text-[12px] text-indigo-600 hover:text-indigo-700 font-medium mt-3"
+                      >
+                        View Full Project
+                        <ExternalLinkIcon className="w-3 h-3" />
+                      </a>
+                    </div>
+                  )}
+
+                  {job && (
+                    <div className="bg-white rounded-lg border border-indigo-200 p-4 shadow-sm">
+                      <div className="flex items-start justify-between mb-2">
+                        <div className="flex-1 min-w-0">
+                          <div className="flex items-center gap-2 mb-1">
+                            <span className="text-[12px] font-medium text-indigo-600 uppercase">Job</span>
+                            <Badge variant="outline" className="text-[11px]">{job.status}</Badge>
+                          </div>
+                          <a
+                            href={createPageUrl("Jobs") + `?jobId=${job.id}`}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="text-[15px] font-semibold text-[#111827] hover:text-indigo-600 hover:underline"
+                          >
+                            Job #{job.job_number}
+                          </a>
+                        </div>
+                        {userPermissions?.can_link_to_job && (
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            onClick={onUnlinkJob}
+                            className="text-[#6B7280] hover:text-[#DC2626] h-7 text-[12px]"
+                          >
+                            Unlink
+                          </Button>
+                        )}
+                      </div>
+                      <div className="text-[13px] text-[#6B7280] space-y-1">
+                        <div><strong>Customer:</strong> {job.customer_name}</div>
+                        {job.address && <div><strong>Address:</strong> {job.address}</div>}
+                        {job.scheduled_date && <div><strong>Scheduled:</strong> {format(parseISO(job.scheduled_date), 'PPP')}</div>}
+                        {job.job_type && <div><strong>Type:</strong> {job.job_type}</div>}
+                      </div>
+                      <a
+                        href={createPageUrl("Jobs") + `?jobId=${job.id}`}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="inline-flex items-center gap-1 text-[12px] text-indigo-600 hover:text-indigo-700 font-medium mt-3"
+                      >
+                        View Full Job
+                        <ExternalLinkIcon className="w-3 h-3" />
+                      </a>
+                    </div>
+                  )}
+                </div>
               </div>
             )}
 
