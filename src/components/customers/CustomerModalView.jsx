@@ -2,6 +2,7 @@ import React from "react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { MapPin, Phone, Mail, Building2, Briefcase, FolderKanban } from "lucide-react";
+import { createPageUrl } from "@/utils";
 
 const customerTypeColors = {
   "Owner": "bg-purple-100 text-purple-700",
@@ -88,20 +89,26 @@ export default function CustomerModalView({ customer, jobCount = 0, projectCount
 
       {/* Activity Summary */}
       <div className="grid grid-cols-2 gap-2">
-        <div className="flex items-center gap-2 p-3 bg-[#F8F9FA] rounded-lg">
+        <button
+          onClick={() => window.location.href = `${createPageUrl('Jobs')}?customerId=${customer.id}`}
+          className="flex items-center gap-2 p-3 bg-[#F8F9FA] rounded-lg hover:bg-[#E5E7EB] transition-colors cursor-pointer"
+        >
           <Briefcase className="w-5 h-5 text-[#6B7280]" />
           <div>
             <div className="text-[12px] text-[#6B7280] font-medium">Jobs</div>
             <div className="text-[16px] font-semibold text-[#111827]">{jobCount}</div>
           </div>
-        </div>
-        <div className="flex items-center gap-2 p-3 bg-[#F8F9FA] rounded-lg">
+        </button>
+        <button
+          onClick={() => window.location.href = `${createPageUrl('Projects')}?customerId=${customer.id}`}
+          className="flex items-center gap-2 p-3 bg-[#F8F9FA] rounded-lg hover:bg-[#E5E7EB] transition-colors cursor-pointer"
+        >
           <FolderKanban className="w-5 h-5 text-[#6B7280]" />
           <div>
             <div className="text-[12px] text-[#6B7280] font-medium">Projects</div>
             <div className="text-[16px] font-semibold text-[#111827]">{projectCount}</div>
           </div>
-        </div>
+        </button>
       </div>
 
       {/* Notes Preview */}
