@@ -1,6 +1,6 @@
 import React, { useEffect, useRef, useState } from "react";
 import { Input } from "@/components/ui/input";
-import { Loader2 } from "lucide-react";
+import { Loader2, AlertCircle } from "lucide-react";
 import { base44 } from "@/api/base44Client";
 
 export default function AddressAutocomplete({ 
@@ -16,6 +16,7 @@ export default function AddressAutocomplete({
   const autocompleteRef = useRef(null);
   const [isScriptLoaded, setIsScriptLoaded] = useState(false);
   const [isScriptLoading, setIsScriptLoading] = useState(false);
+  const [error, setError] = useState(null);
 
   useEffect(() => {
     // Check if Google Maps script is already loaded
@@ -64,12 +65,14 @@ export default function AddressAutocomplete({
         
         script.onerror = () => {
           console.error('Failed to load Google Maps script');
+          setError('Failed to load Google Maps');
           setIsScriptLoading(false);
         };
         
         document.head.appendChild(script);
       } catch (error) {
         console.error('Error loading Google Maps:', error);
+        setError('Could not load address autocomplete');
         setIsScriptLoading(false);
       }
     };
@@ -103,6 +106,7 @@ export default function AddressAutocomplete({
       });
     } catch (error) {
       console.error('Error initializing Google Places Autocomplete:', error);
+      setError('Google Maps API error. Please check API key configuration.');
     }
 
     return () => {
@@ -113,20 +117,28 @@ export default function AddressAutocomplete({
   }, [isScriptLoaded]);
 
   return (
-    <div className="relative">
-      <Input
-        ref={inputRef}
-        id={id}
-        value={value}
-        onChange={(e) => onChange(e.target.value)}
-        placeholder={placeholder}
-        required={required}
-        className={className}
-        disabled={disabled || isScriptLoading}
-      />
-      {isScriptLoading && (
-        <div className="absolute right-3 top-1/2 -translate-y-1/2">
-          <Loader2 className="w-4 h-4 animate-spin text-gray-400" />
+    <div className="space-y-2">
+      <div className="relative">
+        <Input
+          ref={inputRef}
+          id={id}
+          value={value}
+          onChange={(e) => onChange(e.target.value)}
+          placeholder={placeholder}
+          required={required}
+          className={className}
+          disabled={disabled || isScriptLoading}
+        />
+        {isScriptLoading && (
+          <div className="absolute right-3 top-1/2 -translate-y-1/2">
+            <Loader2 className="w-4 h-4 animate-spin text-gray-400" />
+          </div>
+        )}
+      </div>
+      {error && (
+        <div className="flex items-center gap-2 text-sm text-red-600">
+          <AlertCircle className="w-4 h-4" />
+          <span>{error} - Please enable Places API and check billing in Google Cloud Console.</span>
         </div>
       )}
     </div>
