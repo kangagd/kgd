@@ -118,7 +118,7 @@ export default function Customers() {
 
   if (showForm) {
     return (
-      <div className="p-5 md:p-10 bg-[#F8F9FA] min-h-screen">
+      <div className="p-4 md:p-5 lg:p-10 bg-[#F8F9FA] min-h-screen overflow-x-hidden">
         <div className="max-w-4xl mx-auto">
           <CustomerForm
             customer={editingCustomer}
@@ -136,7 +136,7 @@ export default function Customers() {
 
   if (selectedCustomer) {
     return (
-      <div className="p-5 md:p-10 bg-[#F8F9FA] min-h-screen">
+      <div className="p-4 md:p-5 lg:p-10 bg-[#F8F9FA] min-h-screen overflow-x-hidden">
         <div className="max-w-4xl mx-auto">
           <CustomerDetails
             customer={selectedCustomer}
@@ -152,21 +152,21 @@ export default function Customers() {
   return (
     <div className="p-4 md:p-5 lg:p-10 bg-[#F8F9FA] min-h-screen overflow-x-hidden">
       <div className="max-w-7xl mx-auto w-full">
-        <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-8 gap-5">
+        <div className="flex flex-col md:flex-row justify-between items-center w-full py-3 lg:py-4 mb-4 lg:mb-6 gap-3">
           <div>
-            <h1 className="text-[28px] font-bold text-[#111827] leading-[1.2]">Customers</h1>
-            <p className="text-[14px] text-[#4B5563] leading-[1.4] mt-2.5">Manage customer information</p>
+            <h1 className="text-2xl font-bold text-[#111827] leading-tight">Customers</h1>
+            <p className="text-sm text-[#4B5563] mt-1">Manage customer information</p>
           </div>
           <Button
             onClick={() => setShowForm(true)}
-            className="bg-[#FAE008] text-[#111827] hover:bg-[#E5CF07] font-semibold shadow-md hover:shadow-lg transition-all w-full md:w-auto h-12 rounded-lg text-[14px] leading-[1.4]"
+            className="bg-[#FAE008] text-[#111827] hover:bg-[#E5CF07] font-semibold shadow-sm hover:shadow-md transition w-full md:w-auto h-10 px-4 text-sm rounded-xl"
           >
-            <Plus className="w-5 h-5 mr-2" />
+            <Plus className="w-4 h-4 mr-2" />
             New Customer
           </Button>
         </div>
 
-        <div className="mb-8 space-y-4">
+        <div className="space-y-4">
           <div className="relative">
             <Search className="absolute left-4 top-1/2 transform -translate-y-1/2 w-5 h-5 text-[#6B7280]" />
             <Input
@@ -177,15 +177,17 @@ export default function Customers() {
             />
           </div>
 
-          <Tabs value={customerTypeFilter} onValueChange={setCustomerTypeFilter} className="w-full">
-            <TabsList className="w-full justify-start">
-              <TabsTrigger value="all" className="flex-1">All Customers</TabsTrigger>
-              <TabsTrigger value="Owner" className="flex-1">Owner</TabsTrigger>
-              <TabsTrigger value="Builder" className="flex-1">Builder</TabsTrigger>
-              <TabsTrigger value="Real Estate - Tenant" className="flex-1">Real Estate - Tenant</TabsTrigger>
-              <TabsTrigger value="Strata - Owner" className="flex-1">Strata - Owner</TabsTrigger>
-            </TabsList>
-          </Tabs>
+          <div className="chip-container -mx-4 px-4 md:mx-0 md:px-0">
+            <Tabs value={customerTypeFilter} onValueChange={setCustomerTypeFilter} className="w-full">
+              <TabsList className="w-full justify-start min-w-max md:min-w-0">
+                <TabsTrigger value="all" className="flex-1 whitespace-nowrap">All</TabsTrigger>
+                <TabsTrigger value="Owner" className="flex-1 whitespace-nowrap">Owner</TabsTrigger>
+                <TabsTrigger value="Builder" className="flex-1 whitespace-nowrap">Builder</TabsTrigger>
+                <TabsTrigger value="Real Estate - Tenant" className="flex-1 whitespace-nowrap">Real Estate</TabsTrigger>
+                <TabsTrigger value="Strata - Owner" className="flex-1 whitespace-nowrap">Strata</TabsTrigger>
+              </TabsList>
+            </Tabs>
+          </div>
         </div>
 
         {isLoading ? (

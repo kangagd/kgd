@@ -341,32 +341,35 @@ export default function Inbox() {
     <div className="flex h-screen bg-[#F8F9FA] overflow-hidden">
       {/* Thread List - Left Side */}
       <div 
-        className={`${selectedThread ? 'hidden lg:flex' : 'flex'} flex-col border-r border-[#E5E7EB] bg-white`}
+        className={`${selectedThread ? 'hidden lg:flex' : 'flex'} flex-col border-r border-[#E5E7EB] bg-white overflow-x-hidden`}
         style={{ width: selectedThread ? `${sidebarWidth}px` : '100%' }}
       >
-        <div className="p-5 border-b border-[#E5E7EB]">
-          <div className="flex items-center justify-between mb-4">
-            <h1 className="text-[22px] font-semibold text-[#111827]">Inbox</h1>
+        <div className="p-4 md:p-5 border-b border-[#E5E7EB]">
+          <div className="flex items-center justify-between py-3 lg:py-4 gap-3">
             <GmailConnect 
               user={user} 
               onSyncComplete={() => queryClient.invalidateQueries({ queryKey: ['emailThreads'] })} 
             />
           </div>
           
-          <AdvancedSearch
-            onSearchChange={setSearchFilters}
-            currentFilters={searchFilters}
-          />
+          <div className="mt-4">
+            <AdvancedSearch
+              onSearchChange={setSearchFilters}
+              currentFilters={searchFilters}
+            />
+          </div>
 
-          <div className="space-y-3">
-            <Tabs value={statusFilter} onValueChange={setStatusFilter} className="w-full">
-              <TabsList className="w-full grid grid-cols-4 gap-1">
-                <TabsTrigger value="all">All</TabsTrigger>
-                <TabsTrigger value="Open">Open</TabsTrigger>
-                <TabsTrigger value="In Progress">Active</TabsTrigger>
-                <TabsTrigger value="Closed">Closed</TabsTrigger>
-              </TabsList>
-            </Tabs>
+          <div className="space-y-2 mt-4">
+            <div className="chip-container -mx-4 px-4 md:mx-0 md:px-0">
+              <Tabs value={statusFilter} onValueChange={setStatusFilter} className="w-full">
+                <TabsList className="w-full grid grid-cols-4 gap-1 min-w-max md:min-w-0">
+                  <TabsTrigger value="all" className="whitespace-nowrap">All</TabsTrigger>
+                  <TabsTrigger value="Open" className="whitespace-nowrap">Open</TabsTrigger>
+                  <TabsTrigger value="In Progress" className="whitespace-nowrap">Active</TabsTrigger>
+                  <TabsTrigger value="Closed" className="whitespace-nowrap">Closed</TabsTrigger>
+                </TabsList>
+              </Tabs>
+            </div>
 
             <div className="flex items-center gap-2">
               <Select value={priorityFilter} onValueChange={setPriorityFilter}>
@@ -410,7 +413,9 @@ export default function Inbox() {
         </div>
 
         {selectedThreadIds.length > 0 && (
-          <div className="px-5 py-3 bg-[#FAE008]/20 border-b border-[#FAE008]/30 flex items-center gap-3 overflow-x-auto">
+          <div className="px-4 md:px-5 py-3 bg-[#FAE008]/20 border-b border-[#FAE008]/30 overflow-x-hidden">
+            <div className="chip-container -mx-4 px-4 md:mx-0 md:px-0">
+              <div className="flex items-center gap-3 min-w-max md:min-w-0">
             <Button
               variant="ghost"
               size="sm"
@@ -462,6 +467,8 @@ export default function Inbox() {
             >
               Cancel
             </Button>
+              </div>
+            </div>
           </div>
         )}
 
