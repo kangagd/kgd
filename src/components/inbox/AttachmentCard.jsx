@@ -98,7 +98,7 @@ export default function AttachmentCard({
               asChild
               className="h-8 w-8 p-0"
             >
-              <a href={attachment.url} download target="_blank" rel="noopener noreferrer">
+              <a href={attachment.url} download>
                 <Download className="w-4 h-4" />
               </a>
             </Button>
