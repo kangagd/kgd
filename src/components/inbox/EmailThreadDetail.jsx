@@ -97,12 +97,62 @@ export default function EmailThreadDetail({
                 <span className="font-medium">To:</span>
                 <span>{thread.to_addresses.join(', ')}</span>
               </div>
+            )}
+            
+            {/* Category and Urgency Badges */}
+            <div className="flex items-center gap-2 mt-3">
+              {thread.category && thread.category !== 'Uncategorized' && (
+                <Badge className="bg-blue-100 text-blue-800 border-blue-200">
+                  {thread.category}
+                </Badge>
               )}
+              {thread.is_urgent && (
+                <Badge className="bg-red-100 text-red-800 border-red-200 animate-pulse">
+                  🚨 Urgent
+                </Badge>
+              )}
+              {thread.urgency_reason && (
+                <span className="text-[12px] text-[#DC2626]">
+                  {thread.urgency_reason}
+                </span>
+              )}
+            </div>
+          </div>
 
-              </div>
+          <div className="flex items-center gap-2 flex-shrink-0">
+            {userPermissions?.can_change_status ? (
+              <Select value={thread.status} onValueChange={(value) => onStatusChange(thread.id, value)}>
+                <SelectTrigger className="w-auto border-0 h-auto p-0 focus:ring-0">
+                  <Badge className={`${statusColors[thread.status]} px-3 py-1.5 cursor-pointer hover:opacity-80 transition-opacity`}>
+                    {thread.status}
+                  </Badge>
+                </SelectTrigger>
+                <SelectContent align="end">
+                  <SelectItem value="Open">Open</SelectItem>
+                  <SelectItem value="In Progress">In Progress</SelectItem>
+                  <SelectItem value="Closed">Closed</SelectItem>
+                  <SelectItem value="Archived">Archived</SelectItem>
+                </SelectContent>
+              </Select>
+            ) : (
+              <Badge className={`${statusColors[thread.status]} px-3 py-1.5`}>
+                {thread.status}
+              </Badge>
+            )}
+            
+            <Button
+              variant="ghost"
+              size="icon"
+              onClick={onClose}
+              className="lg:hidden"
+            >
+              <X className="w-5 h-5" />
+            </Button>
+          </div>
+        </div>
 
-              {/* Action Buttons */}
-              <div className="flex flex-wrap items-center gap-3">
+        {/* Action Buttons */}
+        <div className="flex flex-wrap items-center gap-3">
                 {userPermissions?.can_link_to_project && (
             <Button variant="outline" size="sm" onClick={onLinkProject}>
               <LinkIcon className="w-4 h-4 mr-2" />
