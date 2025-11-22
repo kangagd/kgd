@@ -1,6 +1,6 @@
 import React, { useEffect, useRef, useState } from "react";
 import { Input } from "@/components/ui/input";
-import { Loader2, AlertCircle } from "lucide-react";
+import { Loader2, AlertCircle, MapPin } from "lucide-react";
 import { base44 } from "@/api/base44Client";
 
 export default function AddressAutocomplete({ 
@@ -12,38 +12,45 @@ export default function AddressAutocomplete({
   className = "",
   disabled = false
 }) {
-  const inputRef = useRef(null);
-  const autocompleteRef = useRef(null);
+  const [inputValue, setInputValue] = useState(value || "");
+  const [predictions, setPredictions] = useState([]);
+  const [showDropdown, setShowDropdown] = useState(false);
   const [isScriptLoaded, setIsScriptLoaded] = useState(false);
   const [isScriptLoading, setIsScriptLoading] = useState(false);
   const [error, setError] = useState(null);
+  const [selectedIndex, setSelectedIndex] = useState(-1);
+  const [isLoadingSuggestions, setIsLoadingSuggestions] = useState(false);
+  
+  const autocompleteServiceRef = useRef(null);
+  const placesServiceRef = useRef(null);
+  const inputRef = useRef(null);
+  const dropdownRef = useRef(null);
+  const dummyMapRef = useRef(null);
+
+  useEffect(() => {
+    setInputValue(value || "");
+  }, [value]);
 
   useEffect(() => {
     // Check if Google Maps script is already loaded
     if (window.google && window.google.maps && window.google.maps.places) {
-      console.log('Google Maps already loaded');
       setIsScriptLoaded(true);
       return;
     }
 
     // Check if script is already being loaded
     if (document.querySelector('script[src*="maps.googleapis.com"]')) {
-      console.log('Google Maps script tag found, waiting for load...');
       setIsScriptLoading(true);
-      // Wait for it to load
       const checkInterval = setInterval(() => {
         if (window.google && window.google.maps && window.google.maps.places) {
-          console.log('Google Maps loaded successfully');
           setIsScriptLoaded(true);
           setIsScriptLoading(false);
           clearInterval(checkInterval);
         }
       }, 100);
       
-      // Timeout after 10 seconds
       setTimeout(() => {
         if (!isScriptLoaded) {
-          console.error('Google Maps script load timeout');
           setError('Address autocomplete timed out');
           setIsScriptLoading(false);
           clearInterval(checkInterval);
@@ -57,38 +64,32 @@ export default function AddressAutocomplete({
     const loadGoogleMapsScript = async () => {
       setIsScriptLoading(true);
       try {
-        console.log('Fetching Google Maps API key...');
         const { data } = await base44.functions.invoke('getGoogleMapsKey');
         const apiKey = data.apiKey;
         
         if (!apiKey) {
-          console.error('No Google Maps API key received');
           setError('Google Maps API key not configured');
           setIsScriptLoading(false);
           return;
         }
         
-        console.log('Loading Google Maps script...');
         const script = document.createElement('script');
         script.src = `https://maps.googleapis.com/maps/api/js?key=${apiKey}&libraries=places`;
         script.async = true;
         script.defer = true;
         
         script.onload = () => {
-          console.log('Google Maps script loaded successfully');
           setIsScriptLoaded(true);
           setIsScriptLoading(false);
         };
         
-        script.onerror = (e) => {
-          console.error('Failed to load Google Maps script:', e);
+        script.onerror = () => {
           setError('Failed to load address autocomplete');
           setIsScriptLoading(false);
         };
         
         document.head.appendChild(script);
       } catch (error) {
-        console.error('Error loading Google Maps:', error);
         setError('Could not load address autocomplete');
         setIsScriptLoading(false);
       }
@@ -98,137 +99,278 @@ export default function AddressAutocomplete({
   }, []);
 
   useEffect(() => {
-    if (!isScriptLoaded || !inputRef.current) {
-      console.log('Not initializing autocomplete:', { isScriptLoaded, hasInputRef: !!inputRef.current });
+    if (!isScriptLoaded) return;
+
+    // Initialize services
+    autocompleteServiceRef.current = new window.google.maps.places.AutocompleteService();
+    
+    // Create a hidden div for PlacesService (it requires a map or div element)
+    if (!dummyMapRef.current) {
+      dummyMapRef.current = document.createElement('div');
+    }
+    placesServiceRef.current = new window.google.maps.places.PlacesService(dummyMapRef.current);
+  }, [isScriptLoaded]);
+
+  useEffect(() => {
+    // Close dropdown when clicking outside
+    const handleClickOutside = (event) => {
+      if (
+        dropdownRef.current &&
+        !dropdownRef.current.contains(event.target) &&
+        !inputRef.current.contains(event.target)
+      ) {
+        setShowDropdown(false);
+      }
+    };
+
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, []);
+
+  const handleInputChange = (e) => {
+    const newValue = e.target.value;
+    setInputValue(newValue);
+    setSelectedIndex(-1);
+
+    if (!newValue.trim()) {
+      setPredictions([]);
+      setShowDropdown(false);
+      // Clear structured fields
+      onChange({
+        address_full: "",
+        address_street: "",
+        address_suburb: "",
+        address_state: "",
+        address_postcode: "",
+        address_country: "Australia",
+        google_place_id: "",
+        latitude: null,
+        longitude: null
+      });
       return;
     }
 
-    try {
-      console.log('Initializing Google Places Autocomplete...');
-      
-      // Destroy existing autocomplete if it exists
-      if (autocompleteRef.current) {
-        window.google.maps.event.clearInstanceListeners(autocompleteRef.current);
-      }
-
-      // Initialize autocomplete
-      autocompleteRef.current = new window.google.maps.places.Autocomplete(inputRef.current, {
-        componentRestrictions: { country: 'au' },
-        fields: ['formatted_address', 'address_components', 'place_id', 'geometry'],
-        types: ['address']
+    if (!autocompleteServiceRef.current) {
+      // Fallback to manual input
+      onChange({
+        address_full: newValue,
+        address_street: "",
+        address_suburb: "",
+        address_state: "",
+        address_postcode: "",
+        address_country: "Australia",
+        google_place_id: "",
+        latitude: null,
+        longitude: null
       });
-
-      console.log('Autocomplete initialized successfully');
-
-      // Listen for place selection
-      const listener = autocompleteRef.current.addListener('place_changed', () => {
-        console.log('Place changed event fired');
-        const place = autocompleteRef.current.getPlace();
-        
-        if (!place || !place.address_components) {
-          console.log('No place selected or incomplete data, using free-form input');
-          // Fallback: user typed but didn't select from dropdown
-          onChange({
-            address_full: inputRef.current.value,
-            address_street: '',
-            address_suburb: '',
-            address_state: '',
-            address_postcode: '',
-            address_country: 'Australia',
-            google_place_id: '',
-            latitude: null,
-            longitude: null
-          });
-          return;
-        }
-
-        console.log('Place selected:', place.formatted_address);
-
-        // Parse address components
-        const components = {};
-        place.address_components.forEach(component => {
-          const types = component.types;
-          if (types.includes('street_number')) {
-            components.street_number = component.long_name;
-          }
-          if (types.includes('route')) {
-            components.route = component.long_name;
-          }
-          if (types.includes('locality')) {
-            components.suburb = component.long_name;
-          }
-          if (types.includes('administrative_area_level_1')) {
-            components.state = component.short_name;
-          }
-          if (types.includes('postal_code')) {
-            components.postcode = component.long_name;
-          }
-          if (types.includes('country')) {
-            components.country = component.long_name;
-          }
-        });
-
-        // Build street address
-        const street = [components.street_number, components.route].filter(Boolean).join(' ');
-
-        // Get coordinates
-        const lat = place.geometry?.location?.lat();
-        const lng = place.geometry?.location?.lng();
-
-        // Return structured address data
-        const addressData = {
-          address_full: place.formatted_address,
-          address_street: street,
-          address_suburb: components.suburb || '',
-          address_state: components.state || '',
-          address_postcode: components.postcode || '',
-          address_country: components.country || 'Australia',
-          google_place_id: place.place_id || '',
-          latitude: lat || null,
-          longitude: lng || null
-        };
-        
-        console.log('Address data:', addressData);
-        onChange(addressData);
-      });
-    } catch (error) {
-      console.error('Error initializing Google Places Autocomplete:', error);
-      setError('Failed to initialize address autocomplete');
+      return;
     }
 
-    return () => {
-      if (autocompleteRef.current) {
-        window.google.maps.event.clearInstanceListeners(autocompleteRef.current);
+    setIsLoadingSuggestions(true);
+
+    // Fetch predictions
+    autocompleteServiceRef.current.getPlacePredictions(
+      {
+        input: newValue,
+        componentRestrictions: { country: 'au' },
+        types: ['address']
+      },
+      (results, status) => {
+        setIsLoadingSuggestions(false);
+        
+        if (status === window.google.maps.places.PlacesServiceStatus.OK && results) {
+          setPredictions(results.slice(0, 7));
+          setShowDropdown(true);
+        } else {
+          setPredictions([]);
+          setShowDropdown(false);
+        }
       }
-    };
-  }, [isScriptLoaded, onChange]);
+    );
+  };
+
+  const handleSelectPrediction = (prediction) => {
+    if (!placesServiceRef.current) return;
+
+    setInputValue(prediction.description);
+    setShowDropdown(false);
+    setPredictions([]);
+
+    // Get detailed place information
+    placesServiceRef.current.getDetails(
+      {
+        placeId: prediction.place_id,
+        fields: ['address_components', 'formatted_address', 'place_id', 'geometry']
+      },
+      (place, status) => {
+        if (status === window.google.maps.places.PlacesServiceStatus.OK && place) {
+          // Parse address components
+          const components = {};
+          place.address_components.forEach(component => {
+            const types = component.types;
+            if (types.includes('street_number')) {
+              components.street_number = component.long_name;
+            }
+            if (types.includes('route')) {
+              components.route = component.long_name;
+            }
+            if (types.includes('locality')) {
+              components.suburb = component.long_name;
+            }
+            if (types.includes('administrative_area_level_1')) {
+              components.state = component.short_name;
+            }
+            if (types.includes('postal_code')) {
+              components.postcode = component.long_name;
+            }
+            if (types.includes('country')) {
+              components.country = component.long_name;
+            }
+          });
+
+          // Build street address
+          const street = [components.street_number, components.route].filter(Boolean).join(' ');
+
+          // Get coordinates
+          const lat = place.geometry?.location?.lat();
+          const lng = place.geometry?.location?.lng();
+
+          // Return structured address data
+          onChange({
+            address_full: place.formatted_address,
+            address_street: street,
+            address_suburb: components.suburb || '',
+            address_state: components.state || '',
+            address_postcode: components.postcode || '',
+            address_country: components.country || 'Australia',
+            google_place_id: place.place_id || '',
+            latitude: lat || null,
+            longitude: lng || null
+          });
+        }
+      }
+    );
+  };
+
+  const handleKeyDown = (e) => {
+    if (!showDropdown || predictions.length === 0) return;
+
+    switch (e.key) {
+      case 'ArrowDown':
+        e.preventDefault();
+        setSelectedIndex(prev => 
+          prev < predictions.length - 1 ? prev + 1 : prev
+        );
+        break;
+      case 'ArrowUp':
+        e.preventDefault();
+        setSelectedIndex(prev => prev > 0 ? prev - 1 : -1);
+        break;
+      case 'Enter':
+        e.preventDefault();
+        if (selectedIndex >= 0 && predictions[selectedIndex]) {
+          handleSelectPrediction(predictions[selectedIndex]);
+        }
+        break;
+      case 'Escape':
+        setShowDropdown(false);
+        setPredictions([]);
+        setSelectedIndex(-1);
+        break;
+    }
+  };
+
+  const formatPrediction = (prediction) => {
+    const terms = prediction.terms;
+    if (!terms || terms.length === 0) {
+      return { primary: prediction.description, secondary: '' };
+    }
+
+    // First term(s) are usually street number + street name
+    const primary = terms.slice(0, Math.min(2, terms.length))
+      .map(t => t.value)
+      .join(' ');
+
+    // Remaining terms are suburb, state, country
+    const secondary = terms.slice(Math.min(2, terms.length))
+      .map(t => t.value)
+      .join(', ');
+
+    return { primary, secondary };
+  };
 
   return (
-    <div className="space-y-2">
+    <div className="relative space-y-2">
       <div className="relative">
         <Input
           ref={inputRef}
           id={id}
-          defaultValue={value}
+          value={inputValue}
+          onChange={handleInputChange}
+          onKeyDown={handleKeyDown}
+          onFocus={() => {
+            if (predictions.length > 0) {
+              setShowDropdown(true);
+            }
+          }}
           placeholder={placeholder}
           required={required}
           className={className}
-          disabled={disabled}
+          disabled={disabled || isScriptLoading}
         />
-        {isScriptLoading && !error && (
+        {isLoadingSuggestions && (
           <div className="absolute right-3 top-1/2 -translate-y-1/2">
-            <Loader2 className="w-4 h-4 animate-spin text-gray-400" />
+            <Loader2 className="w-4 h-4 animate-spin text-[#6B7280]" />
           </div>
         )}
       </div>
-      {error && (
-        <div className="flex items-center gap-2 text-sm text-amber-600">
-          <AlertCircle className="w-4 h-4" />
-          <span>{error} - you can type manually.</span>
+
+      {/* Dropdown */}
+      {showDropdown && predictions.length > 0 && (
+        <div
+          ref={dropdownRef}
+          className="absolute z-50 w-full bg-white rounded-lg shadow-lg border border-[#E5E7EB] max-h-[280px] overflow-y-auto"
+        >
+          {predictions.map((prediction, index) => {
+            const { primary, secondary } = formatPrediction(prediction);
+            return (
+              <button
+                key={prediction.place_id}
+                type="button"
+                onClick={() => handleSelectPrediction(prediction)}
+                className={`
+                  w-full px-4 py-3 text-left flex items-start gap-3 transition-colors
+                  hover:bg-[#F3F4F6] active:bg-[#E5E7EB]
+                  ${index === selectedIndex ? 'bg-[#F3F4F6]' : ''}
+                  ${index === 0 ? 'rounded-t-lg' : ''}
+                  ${index === predictions.length - 1 ? 'rounded-b-lg' : ''}
+                  border-b border-[#E5E7EB] last:border-b-0
+                  min-h-[44px]
+                `}
+              >
+                <MapPin className="w-4 h-4 text-[#6B7280] mt-0.5 flex-shrink-0" />
+                <div className="flex-1 min-w-0">
+                  <div className="font-medium text-[14px] text-[#111827] leading-[1.4]">
+                    {primary}
+                  </div>
+                  {secondary && (
+                    <div className="text-[12px] text-[#6B7280] leading-[1.35] mt-0.5">
+                      {secondary}
+                    </div>
+                  )}
+                </div>
+              </button>
+            );
+          })}
         </div>
       )}
-      {isScriptLoaded && !error && (
-        <p className="text-xs text-green-600">✓ Address autocomplete ready</p>
+
+      {/* Error message */}
+      {error && (
+        <div className="flex items-center gap-2 text-[12px] text-amber-600">
+          <AlertCircle className="w-4 h-4" />
+          <span>Autocomplete unavailable, please enter address manually.</span>
+        </div>
       )}
     </div>
   );
