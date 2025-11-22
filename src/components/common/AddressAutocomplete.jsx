@@ -21,21 +21,35 @@ export default function AddressAutocomplete({
   useEffect(() => {
     // Check if Google Maps script is already loaded
     if (window.google && window.google.maps && window.google.maps.places) {
+      console.log('Google Maps already loaded');
       setIsScriptLoaded(true);
       return;
     }
 
     // Check if script is already being loaded
     if (document.querySelector('script[src*="maps.googleapis.com"]')) {
+      console.log('Google Maps script tag found, waiting for load...');
       setIsScriptLoading(true);
       // Wait for it to load
       const checkInterval = setInterval(() => {
         if (window.google && window.google.maps && window.google.maps.places) {
+          console.log('Google Maps loaded successfully');
           setIsScriptLoaded(true);
           setIsScriptLoading(false);
           clearInterval(checkInterval);
         }
       }, 100);
+      
+      // Timeout after 10 seconds
+      setTimeout(() => {
+        if (!isScriptLoaded) {
+          console.error('Google Maps script load timeout');
+          setError('Address autocomplete timed out');
+          setIsScriptLoading(false);
+          clearInterval(checkInterval);
+        }
+      }, 10000);
+      
       return () => clearInterval(checkInterval);
     }
 
@@ -43,30 +57,32 @@ export default function AddressAutocomplete({
     const loadGoogleMapsScript = async () => {
       setIsScriptLoading(true);
       try {
-        // Get API key from backend
+        console.log('Fetching Google Maps API key...');
         const { data } = await base44.functions.invoke('getGoogleMapsKey');
         const apiKey = data.apiKey;
         
         if (!apiKey) {
-          console.error('No Google Maps API key available');
+          console.error('No Google Maps API key received');
           setError('Google Maps API key not configured');
           setIsScriptLoading(false);
           return;
         }
         
+        console.log('Loading Google Maps script...');
         const script = document.createElement('script');
         script.src = `https://maps.googleapis.com/maps/api/js?key=${apiKey}&libraries=places`;
         script.async = true;
         script.defer = true;
         
         script.onload = () => {
+          console.log('Google Maps script loaded successfully');
           setIsScriptLoaded(true);
           setIsScriptLoading(false);
         };
         
-        script.onerror = () => {
-          console.error('Failed to load Google Maps script');
-          setError('Failed to load Google Maps');
+        script.onerror = (e) => {
+          console.error('Failed to load Google Maps script:', e);
+          setError('Failed to load address autocomplete');
           setIsScriptLoading(false);
         };
         
@@ -82,9 +98,14 @@ export default function AddressAutocomplete({
   }, []);
 
   useEffect(() => {
-    if (!isScriptLoaded || !inputRef.current) return;
+    if (!isScriptLoaded || !inputRef.current) {
+      console.log('Not initializing autocomplete:', { isScriptLoaded, hasInputRef: !!inputRef.current });
+      return;
+    }
 
     try {
+      console.log('Initializing Google Places Autocomplete...');
+      
       // Destroy existing autocomplete if it exists
       if (autocompleteRef.current) {
         window.google.maps.event.clearInstanceListeners(autocompleteRef.current);
@@ -97,11 +118,15 @@ export default function AddressAutocomplete({
         types: ['address']
       });
 
+      console.log('Autocomplete initialized successfully');
+
       // Listen for place selection
       const listener = autocompleteRef.current.addListener('place_changed', () => {
+        console.log('Place changed event fired');
         const place = autocompleteRef.current.getPlace();
         
         if (!place || !place.address_components) {
+          console.log('No place selected or incomplete data, using free-form input');
           // Fallback: user typed but didn't select from dropdown
           onChange({
             address_full: inputRef.current.value,
@@ -116,6 +141,8 @@ export default function AddressAutocomplete({
           });
           return;
         }
+
+        console.log('Place selected:', place.formatted_address);
 
         // Parse address components
         const components = {};
@@ -149,7 +176,7 @@ export default function AddressAutocomplete({
         const lng = place.geometry?.location?.lng();
 
         // Return structured address data
-        onChange({
+        const addressData = {
           address_full: place.formatted_address,
           address_street: street,
           address_suburb: components.suburb || '',
@@ -159,11 +186,14 @@ export default function AddressAutocomplete({
           google_place_id: place.place_id || '',
           latitude: lat || null,
           longitude: lng || null
-        });
+        };
+        
+        console.log('Address data:', addressData);
+        onChange(addressData);
       });
     } catch (error) {
       console.error('Error initializing Google Places Autocomplete:', error);
-      setError('Google Maps API error. Please check API key configuration.');
+      setError('Failed to initialize address autocomplete');
     }
 
     return () => {
@@ -211,8 +241,11 @@ export default function AddressAutocomplete({
       {error && (
         <div className="flex items-center gap-2 text-sm text-amber-600">
           <AlertCircle className="w-4 h-4" />
-          <span>Address autocomplete unavailable - you can type manually.</span>
+          <span>{error} - you can type manually.</span>
         </div>
+      )}
+      {isScriptLoaded && !error && (
+        <p className="text-xs text-green-600">✓ Address autocomplete ready</p>
       )}
     </div>
   );
