@@ -1,6 +1,7 @@
 import React, { useEffect, useRef, useState } from "react";
 import { Input } from "@/components/ui/input";
 import { Loader2 } from "lucide-react";
+import { base44 } from "@/api/base44Client";
 
 export default function AddressAutocomplete({ 
   value, 
@@ -41,8 +42,15 @@ export default function AddressAutocomplete({
     const loadGoogleMapsScript = async () => {
       setIsScriptLoading(true);
       try {
-        // Get API key from environment
-        const apiKey = import.meta.env.VITE_GOOGLE_MAPS_API_KEY || 'GOOGLE_MAPS_API_KEY';
+        // Get API key from backend
+        const { data } = await base44.functions.invoke('getGoogleMapsKey');
+        const apiKey = data.apiKey;
+        
+        if (!apiKey) {
+          console.error('No Google Maps API key available');
+          setIsScriptLoading(false);
+          return;
+        }
         
         const script = document.createElement('script');
         script.src = `https://maps.googleapis.com/maps/api/js?key=${apiKey}&libraries=places`;
