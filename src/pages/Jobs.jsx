@@ -251,7 +251,7 @@ export default function Jobs() {
   }
 
   return (
-    <div className="p-5 md:p-10 bg-[#F8F9FA] min-h-screen overflow-x-hidden">
+    <div className="p-4 md:p-5 lg:p-10 bg-[#F8F9FA] min-h-screen overflow-x-hidden">
       <div className="max-w-7xl mx-auto w-full">
         {!isTechnician && (
           <div className="flex flex-col md:flex-row justify-between items-start md:items-center py-3 lg:py-4 mb-4 lg:mb-6 gap-3">
@@ -301,19 +301,21 @@ export default function Jobs() {
           </div>
 
           {viewMode === "list" && (
-            <div className="hidden md:flex md:flex-col gap-4">
-              <Tabs value={statusFilter} onValueChange={setStatusFilter} className="w-full">
-                <TabsList className="w-full justify-start">
-                  <TabsTrigger value="all" className="flex-1">All</TabsTrigger>
-                  <TabsTrigger value="Open" className="flex-1">Open</TabsTrigger>
-                  <TabsTrigger value="Scheduled" className="flex-1">Scheduled</TabsTrigger>
-                  <TabsTrigger value="Completed" className="flex-1">Completed</TabsTrigger>
-                </TabsList>
-              </Tabs>
+            <div className="flex flex-col gap-3 md:gap-4">
+              <div className="chip-container -mx-4 px-4 md:mx-0 md:px-0">
+                <Tabs value={statusFilter} onValueChange={setStatusFilter} className="w-full">
+                  <TabsList className="w-full justify-start min-w-max md:min-w-0">
+                    <TabsTrigger value="all" className="flex-1">All</TabsTrigger>
+                    <TabsTrigger value="Open" className="flex-1">Open</TabsTrigger>
+                    <TabsTrigger value="Scheduled" className="flex-1">Scheduled</TabsTrigger>
+                    <TabsTrigger value="Completed" className="flex-1">Completed</TabsTrigger>
+                  </TabsList>
+                </Tabs>
+              </div>
 
-              <div className="flex flex-col md:flex-row gap-3">
+              <div className="flex flex-col gap-3">
                 <Select value={technicianFilter} onValueChange={setTechnicianFilter}>
-                  <SelectTrigger className="w-full md:w-[200px] h-11">
+                  <SelectTrigger className="w-full h-11">
                     <SelectValue placeholder="All Technicians" />
                   </SelectTrigger>
                   <SelectContent>
@@ -328,7 +330,7 @@ export default function Jobs() {
 
                 <Popover>
                   <PopoverTrigger asChild>
-                    <Button variant="outline" className="w-full md:w-auto h-11 gap-2">
+                    <Button variant="outline" className="w-full h-11 gap-2">
                       <Filter className="w-4 h-4" />
                       Date Range
                       {(dateFrom || dateTo) && (
@@ -379,7 +381,7 @@ export default function Jobs() {
                   setSortBy(field);
                   setSortOrder(order);
                 }}>
-                  <SelectTrigger className="w-full md:w-[220px] h-11">
+                  <SelectTrigger className="w-full h-11">
                     <ArrowUpDown className="w-4 h-4 mr-2" />
                     <SelectValue placeholder="Sort by" />
                   </SelectTrigger>

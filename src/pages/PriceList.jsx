@@ -125,7 +125,7 @@ export default function PriceList() {
   }
 
   return (
-    <div className="p-5 md:p-10 bg-[#F8F9FA] min-h-screen overflow-x-hidden">
+    <div className="p-4 md:p-5 lg:p-10 bg-[#F8F9FA] min-h-screen overflow-x-hidden">
       <div className="max-w-7xl mx-auto w-full">
         <div className="flex flex-col md:flex-row justify-between items-center w-full py-3 lg:py-4 mb-4 lg:mb-6 gap-3">
           <div>
@@ -179,14 +179,16 @@ export default function PriceList() {
             />
           </div>
           
-          <Tabs value={categoryFilter} onValueChange={setCategoryFilter} className="w-full">
-            <TabsList className="w-full justify-start">
-              <TabsTrigger value="all" className="flex-1">All</TabsTrigger>
-              {categories.map((cat) => (
-                <TabsTrigger key={cat} value={cat} className="flex-1">{cat}</TabsTrigger>
-              ))}
-            </TabsList>
-          </Tabs>
+          <div className="chip-container -mx-4 px-4 md:mx-0 md:px-0">
+            <Tabs value={categoryFilter} onValueChange={setCategoryFilter} className="w-full">
+              <TabsList className="w-full justify-start min-w-max md:min-w-0">
+                <TabsTrigger value="all" className="flex-1 whitespace-nowrap">All</TabsTrigger>
+                {categories.map((cat) => (
+                  <TabsTrigger key={cat} value={cat} className="flex-1 whitespace-nowrap">{cat}</TabsTrigger>
+                ))}
+              </TabsList>
+            </Tabs>
+          </div>
         </div>
 
         {isLoading ? (

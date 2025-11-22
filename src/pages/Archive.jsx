@@ -187,7 +187,7 @@ export default function Archive() {
   };
 
   return (
-    <div className="p-4 md:p-8 bg-gradient-to-br from-[hsl(32,20%,98%)] to-[hsl(32,25%,94%)] min-h-screen">
+    <div className="p-4 md:p-5 lg:p-8 bg-gradient-to-br from-[hsl(32,20%,98%)] to-[hsl(32,25%,94%)] min-h-screen overflow-x-hidden">
       <div className="max-w-7xl mx-auto">
         <div className="py-3 lg:py-4 mb-4 lg:mb-6">
           <div className="flex items-center gap-3">

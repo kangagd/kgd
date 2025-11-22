@@ -88,7 +88,7 @@ export default function Dashboard() {
   };
 
   return (
-    <div className="p-5 md:p-10 bg-[#F8F9FA] min-h-screen overflow-x-hidden">
+    <div className="p-4 md:p-5 lg:p-10 bg-[#F8F9FA] min-h-screen overflow-x-hidden">
       <div className="max-w-7xl mx-auto w-full">
         <div className="flex flex-col md:flex-row justify-between items-center w-full py-3 lg:py-4 mb-4 lg:mb-6 gap-3">
           <div>
@@ -116,7 +116,7 @@ export default function Dashboard() {
           </div>
         </div>
 
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5 md:gap-6 mt-4 lg:mt-5 mb-6">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 md:gap-5 lg:gap-6 mt-4 lg:mt-5 mb-6">
           <div
             onClick={() => handleCardClick('today')}
             className="bg-white rounded-xl border border-[#E5E7EB] p-7 cursor-pointer hover:shadow-xl hover:border-[#FAE008] hover:scale-[1.02] active:scale-[0.98] transition-all duration-200 group"

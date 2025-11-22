@@ -208,26 +208,26 @@ export default function Layout({ children, currentPageName }) {
           </div>
         </header>
 
-        <main className="flex-1 overflow-auto pb-20">
+        <main className="flex-1 overflow-auto pb-20 overflow-x-hidden">
           {children}
         </main>
 
-        <nav className="fixed bottom-0 left-0 right-0 bg-white border-t border-[#E5E7EB] px-2 py-2 shadow-lg">
-          <div className="flex justify-around items-center max-w-screen-sm mx-auto">
+        <nav className="fixed bottom-0 left-0 right-0 bg-white border-t border-[#E5E7EB] shadow-lg safe-area-bottom z-50">
+          <div className="flex justify-around items-center max-w-screen-sm mx-auto px-2 py-2">
             {navigationItems.map((item) => {
               const isActive = location.pathname === item.url;
               return (
                 <Link
                   key={item.title}
                   to={item.url}
-                  className={`flex flex-col items-center gap-1 px-4 py-2 rounded-lg transition-colors min-h-[44px] justify-center ${
+                  className={`flex flex-col items-center gap-1 px-3 py-2 rounded-lg transition-colors min-h-[56px] min-w-[64px] justify-center flex-1 ${
                     isActive
                       ? 'text-[#111827] bg-[#FAE008]'
                       : 'text-[#4B5563] hover:text-[#111827] hover:bg-[#F3F4F6]'
                   }`}
                 >
-                  <item.icon className="w-5 h-5" />
-                  <span className="text-[12px] font-medium leading-[1.35]">{item.title}</span>
+                  <item.icon className="w-5 h-5 flex-shrink-0" />
+                  <span className="text-[11px] font-medium leading-tight">{item.title}</span>
                 </Link>
               );
             })}
@@ -434,21 +434,21 @@ export default function Layout({ children, currentPageName }) {
       {/* Main Content Area */}
       <div className="flex-1 flex flex-col min-w-0">
         {/* Mobile Top Bar */}
-        <header className="lg:hidden bg-white border-b border-[#E5E7EB] px-4 py-3 sticky top-0 z-30">
-          <div className="flex items-center justify-between">
+        <header className="lg:hidden bg-white border-b border-[#E5E7EB] px-4 py-3 sticky top-0 z-30 safe-area-top">
+          <div className="flex items-center justify-between min-h-[44px]">
             <button
               onClick={() => setIsMobileMenuOpen(true)}
-              className="p-2 hover:bg-[#F3F4F6] rounded-lg transition-colors"
+              className="p-2 hover:bg-[#F3F4F6] rounded-lg transition-colors min-w-[44px] min-h-[44px] flex items-center justify-center"
               aria-label="Open navigation"
             >
               <Menu className="w-6 h-6 text-[#111827]" />
             </button>
-            <h1 className="font-semibold text-[#111827]">
+            <h1 className="font-semibold text-[#111827] text-base truncate px-2 flex-1 text-center">
               {primaryNavigationItems.find(item => item.url === location.pathname)?.title || 
                secondaryNavigationItems.find(item => item.url === location.pathname)?.title || 
                'FieldScheduler'}
             </h1>
-            <div className="w-10" />
+            <div className="w-[44px]" />
           </div>
         </header>
 

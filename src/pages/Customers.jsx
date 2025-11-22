@@ -150,7 +150,7 @@ export default function Customers() {
   }
 
   return (
-    <div className="p-5 md:p-10 bg-[#F8F9FA] min-h-screen overflow-x-hidden">
+    <div className="p-4 md:p-5 lg:p-10 bg-[#F8F9FA] min-h-screen overflow-x-hidden">
       <div className="max-w-7xl mx-auto w-full">
         <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-8 gap-5">
           <div>
