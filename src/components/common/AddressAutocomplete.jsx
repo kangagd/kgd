@@ -203,25 +203,6 @@ export default function AddressAutocomplete({
     };
   }, [isScriptLoaded, onChange]);
 
-  const handleManualChange = (e) => {
-    // Only update on blur for manual entry (not on every keystroke)
-    const textValue = e.target.value;
-    if (textValue && !autocompleteRef.current?.gm_accessors_) {
-      // Only if Google autocomplete didn't handle it
-      onChange({
-        address_full: textValue,
-        address_street: '',
-        address_suburb: '',
-        address_state: '',
-        address_postcode: '',
-        address_country: 'Australia',
-        google_place_id: '',
-        latitude: null,
-        longitude: null
-      });
-    }
-  };
-
   return (
     <div className="space-y-2">
       <div className="relative">
@@ -229,7 +210,6 @@ export default function AddressAutocomplete({
           ref={inputRef}
           id={id}
           defaultValue={value}
-          onBlur={handleManualChange}
           placeholder={placeholder}
           required={required}
           className={className}
