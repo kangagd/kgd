@@ -18,7 +18,12 @@ Deno.serve(async (req) => {
             return Response.json({ error: 'API key not configured' }, { status: 500 });
         }
 
-        return Response.json({ apiKey }, { status: 200 });
+        // Trim any whitespace that might have been accidentally added
+        const trimmedKey = apiKey.trim();
+        
+        console.log('API key retrieved, length:', trimmedKey.length);
+
+        return Response.json({ apiKey: trimmedKey }, { status: 200 });
     } catch (error) {
         console.error('Error in getGoogleMapsKey:', error);
         return Response.json({ error: error.message }, { status: 500 });
