@@ -7,7 +7,7 @@ import { X, Send, Paperclip, Bold, Italic, Underline, Link as LinkIcon, List, Li
 import { base44 } from "@/api/base44Client";
 import { toast } from "sonner";
 
-export default function EmailComposer({ mode = "compose", thread, message, onClose, onSent, prefilledBody = "" }) {
+export default function EmailComposer({ mode = "compose", thread, message, onClose, onSent }) {
   const [to, setTo] = useState(mode === "reply" ? message?.from_address : "");
   const [cc, setCc] = useState("");
   const [bcc, setBcc] = useState("");
@@ -17,7 +17,6 @@ export default function EmailComposer({ mode = "compose", thread, message, onClo
   );
   
   const getInitialBody = () => {
-    if (prefilledBody) return prefilledBody;
     if (mode === "reply") {
       return `\n\n<br><br>On ${new Date(message?.sent_at).toLocaleString()}, ${message?.from_name || message?.from_address} wrote:<br><blockquote style="margin-left: 10px; padding-left: 10px; border-left: 2px solid #ccc;">${message?.body_html || message?.body_text}</blockquote>`;
     }

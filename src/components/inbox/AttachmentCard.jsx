@@ -1,7 +1,6 @@
-import React, { useState, useEffect } from "react";
+import React, { useState } from "react";
 import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
-import { Download, Save, FileText, Image as ImageIcon, FileSpreadsheet, FileArchive, Sparkles, Loader2, FolderOpen, Link as LinkIcon } from "lucide-react";
+import { Download, Save, FileText, Image as ImageIcon, FileSpreadsheet, FileArchive, Loader2 } from "lucide-react";
 import { base44 } from "@/api/base44Client";
 import { toast } from "sonner";
 
@@ -23,12 +22,9 @@ export default function AttachmentCard({
   linkedJobId, 
   linkedProjectId, 
   threadSubject,
-  threadCategory,
   onSaveComplete 
 }) {
   const [saving, setSaving] = useState(false);
-  const [loadingSuggestion, setLoadingSuggestion] = useState(false);
-  const [suggestion, setSuggestion] = useState(null);
 
   const formatFileSize = (bytes) => {
     if (bytes === 0) return '0 Bytes';
@@ -37,113 +33,6 @@ export default function AttachmentCard({
     const i = Math.floor(Math.log(bytes) / Math.log(k));
     return Math.round(bytes / Math.pow(k, i) * 100) / 100 + ' ' + sizes[i];
   };
-
-  const getDocumentType = (filename, mimeType) => {
-    const name = filename?.toLowerCase() || '';
-    const type = mimeType?.toLowerCase() || '';
-    
-    // Invoices & Financial
-    if (/invoice|bill|receipt|payment/.test(name)) return 'invoice';
-    if (/quote|estimate|proposal/.test(name)) return 'quote';
-    if (/contract|agreement/.test(name)) return 'contract';
-    
-    // Technical
-    if (/spec|specification|drawing|blueprint|plan/.test(name)) return 'technical';
-    if (/measure|measurement/.test(name)) return 'measurement';
-    
-    // Images
-    if (type.startsWith('image/') || /\.(jpg|jpeg|png|gif)$/.test(name)) {
-      if (/photo|pic|img/.test(name)) return 'photo';
-      return 'image';
-    }
-    
-    return 'document';
-  };
-
-  // AI-powered suggestion
-  useEffect(() => {
-    const generateSuggestion = async () => {
-      if (!attachment.filename) return;
-      
-      const docType = getDocumentType(attachment.filename, attachment.mime_type);
-      
-      // Quick rules-based suggestions
-      if (docType === 'invoice' || docType === 'quote') {
-        if (linkedProjectId) {
-          setSuggestion({
-            action: 'save_to_project',
-            reason: `This looks like ${docType === 'invoice' ? 'an invoice' : 'a quote'} - save to linked project`,
-            icon: FolderOpen,
-            color: 'text-blue-600'
-          });
-        }
-        return;
-      }
-      
-      if (docType === 'photo' || docType === 'image') {
-        if (linkedJobId) {
-          setSuggestion({
-            action: 'save_to_job',
-            reason: 'Save photo to job documentation',
-            icon: FolderOpen,
-            color: 'text-green-600'
-          });
-        } else if (linkedProjectId) {
-          setSuggestion({
-            action: 'save_to_project',
-            reason: 'Save photo to project gallery',
-            icon: FolderOpen,
-            color: 'text-green-600'
-          });
-        }
-        return;
-      }
-      
-      // For complex cases, use AI
-      if (!linkedJobId && !linkedProjectId && threadCategory) {
-        setLoadingSuggestion(true);
-        try {
-          const result = await base44.integrations.Core.InvokeLLM({
-            prompt: `Analyze this email attachment and suggest an action:
-            
-Filename: ${attachment.filename}
-Email Subject: ${threadSubject}
-Email Category: ${threadCategory}
-
-Based on the filename and context, suggest ONE action:
-- "create_project" if it looks like a new project inquiry with specs/drawings
-- "create_job" if it looks like a service request or job-related document
-- "save_for_billing" if it's an invoice/payment document
-- "no_action" if it's just informational
-
-Return JSON with: {"action": "...", "reason": "brief explanation"}`,
-            response_json_schema: {
-              type: "object",
-              properties: {
-                action: { type: "string" },
-                reason: { type: "string" }
-              }
-            }
-          });
-          
-          if (result.action !== 'no_action') {
-            setSuggestion({
-              action: result.action,
-              reason: result.reason,
-              icon: Sparkles,
-              color: 'text-purple-600'
-            });
-          }
-        } catch (error) {
-          console.error('Failed to generate AI suggestion:', error);
-        } finally {
-          setLoadingSuggestion(false);
-        }
-      }
-    };
-    
-    generateSuggestion();
-  }, [attachment.filename, linkedJobId, linkedProjectId, threadCategory, threadSubject]);
 
   const handleSave = async () => {
     setSaving(true);
@@ -216,46 +105,6 @@ Return JSON with: {"action": "...", "reason": "brief explanation"}`,
           )}
         </div>
       </div>
-
-      {/* AI Suggestion */}
-      {loadingSuggestion && (
-        <div className="flex items-center gap-2 text-[11px] text-[#6B7280] mt-1">
-          <Loader2 className="w-3 h-3 animate-spin" />
-          <span>Analyzing attachment...</span>
-        </div>
-      )}
-      
-      {suggestion && !loadingSuggestion && (
-        <div className="flex items-start gap-2 p-2 bg-gradient-to-r from-purple-50 to-blue-50 rounded-md border border-purple-200/50">
-          <suggestion.icon className={`w-3.5 h-3.5 mt-0.5 flex-shrink-0 ${suggestion.color}`} />
-          <div className="flex-1 min-w-0">
-            <p className="text-[11px] text-[#111827] font-medium">Smart Suggestion</p>
-            <p className="text-[11px] text-[#6B7280] mt-0.5">{suggestion.reason}</p>
-          </div>
-          {suggestion.action === 'save_to_job' && linkedJobId && (
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={handleSave}
-              disabled={saving}
-              className="h-7 px-2 text-[11px] bg-white hover:bg-white/80"
-            >
-              Apply
-            </Button>
-          )}
-          {suggestion.action === 'save_to_project' && linkedProjectId && (
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={handleSave}
-              disabled={saving}
-              className="h-7 px-2 text-[11px] bg-white hover:bg-white/80"
-            >
-              Apply
-            </Button>
-          )}
-        </div>
-      )}
     </div>
   );
 }
