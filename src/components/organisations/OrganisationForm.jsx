@@ -6,6 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { ArrowLeft } from "lucide-react";
 import RichTextField from "../common/RichTextField";
+import AddressAutocomplete from "../common/AddressAutocomplete";
 
 export default function OrganisationForm({ organisation, onSubmit, onCancel, isSubmitting }) {
   const [formData, setFormData] = useState(organisation || {
@@ -119,10 +120,10 @@ export default function OrganisationForm({ organisation, onSubmit, onCancel, isS
 
           <div className="space-y-2">
             <Label htmlFor="address" className="text-sm font-semibold text-[#000000]">Address</Label>
-            <Input
+            <AddressAutocomplete
               id="address"
               value={formData.address}
-              onChange={(e) => setFormData({ ...formData, address: e.target.value })}
+              onChange={(value) => setFormData({ ...formData, address: value })}
               className="border-2 border-slate-300 focus:border-[#fae008] focus:ring-2 focus:ring-[#fae008]/20 transition-all"
             />
           </div>

@@ -7,6 +7,7 @@ import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { ArrowLeft, Plus } from "lucide-react";
 import RichTextField from "../common/RichTextField";
+import AddressAutocomplete from "../common/AddressAutocomplete";
 import { base44 } from "@/api/base44Client";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import {
@@ -191,10 +192,10 @@ export default function CustomerForm({ customer, onSubmit, onCancel, isSubmittin
 
             <div className="space-y-2">
               <Label htmlFor="address">Address</Label>
-              <Input
+              <AddressAutocomplete
                 id="address"
                 value={formData.address}
-                onChange={(e) => setFormData({ ...formData, address: e.target.value })}
+                onChange={(value) => setFormData({ ...formData, address: value })}
                 placeholder="Default address for this customer"
               />
             </div>
@@ -274,10 +275,10 @@ export default function CustomerForm({ customer, onSubmit, onCancel, isSubmittin
             )}
             <div className="space-y-2">
               <Label htmlFor="new_org_address">Address</Label>
-              <Input
+              <AddressAutocomplete
                 id="new_org_address"
                 value={newOrgData.address}
-                onChange={(e) => setNewOrgData({ ...newOrgData, address: e.target.value })}
+                onChange={(value) => setNewOrgData({ ...newOrgData, address: value })}
                 className="border-2 border-slate-300"
               />
             </div>

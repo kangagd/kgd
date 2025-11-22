@@ -16,6 +16,7 @@ import {
 } from "@/components/ui/dialog";
 import MultiTechnicianSelect from "./MultiTechnicianSelect";
 import RichTextField from "../common/RichTextField";
+import AddressAutocomplete from "../common/AddressAutocomplete";
 
 export default function JobForm({ job, technicians, onSubmit, onCancel, isSubmitting, preselectedCustomerId, preselectedProjectId }) {
   const [formData, setFormData] = useState(job || {
@@ -547,10 +548,10 @@ export default function JobForm({ job, technicians, onSubmit, onCancel, isSubmit
 
             <div className="space-y-2">
               <Label htmlFor="address" className="text-[14px] font-medium text-[#111827] leading-[1.4]">Service Address *</Label>
-              <Input
+              <AddressAutocomplete
                 id="address"
                 value={formData.address}
-                onChange={(e) => setFormData({ ...formData, address: e.target.value })}
+                onChange={(value) => setFormData({ ...formData, address: value })}
                 required
                 className="border-2 border-slate-300 focus:border-[#fae008] focus:ring-2 focus:ring-[#fae008]/20 transition-all"
               />
