@@ -95,19 +95,19 @@ export default function Calendar() {
 
   return (
     <div className="p-5 md:p-10 bg-[#F8F9FA] min-h-screen overflow-x-hidden">
-      <div className="max-w-7xl mx-auto w-full space-y-6">
-        <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
+      <div className="max-w-7xl mx-auto w-full">
+        <div className="flex flex-col md:flex-row justify-between items-start md:items-center py-3 lg:py-4 mb-4 lg:mb-6 gap-4">
           <div>
-            <h1 className="text-3xl font-bold text-[#111827] tracking-tight">Schedule</h1>
-            <p className="text-[#4B5563] text-base mt-2.5">{getDateRangeText()}</p>
+            <h1 className="text-2xl font-bold text-[#111827] leading-tight">Schedule</h1>
+            <p className="text-sm text-[#4B5563] mt-1">{getDateRangeText()}</p>
           </div>
 
-          <div className="flex gap-2.5">
+          <div className="flex items-center gap-2">
             <Button 
               variant="outline" 
               size="sm" 
               onClick={handlePrevious}
-              className="border border-[#E5E7EB] hover:bg-[#F3F4F6] hover:border-[#D1D5DB] font-semibold transition-all rounded-lg h-10 w-10 p-0"
+              className="border border-[#E5E7EB] hover:bg-[#F3F4F6] hover:border-[#D1D5DB] font-semibold transition-all rounded-xl h-10 w-10 p-0"
             >
               <ChevronLeft className="w-4 h-4" />
             </Button>
@@ -115,7 +115,7 @@ export default function Calendar() {
               variant="outline" 
               size="sm" 
               onClick={handleToday}
-              className="border border-[#E5E7EB] hover:bg-[#F3F4F6] hover:border-[#D1D5DB] font-semibold transition-all rounded-lg h-10"
+              className="border border-[#E5E7EB] hover:bg-[#F3F4F6] hover:border-[#D1D5DB] font-semibold transition-all rounded-xl h-10 px-4 text-sm"
             >
               Today
             </Button>
@@ -123,14 +123,14 @@ export default function Calendar() {
               variant="outline" 
               size="sm" 
               onClick={handleNext}
-              className="border border-[#E5E7EB] hover:bg-[#F3F4F6] hover:border-[#D1D5DB] font-semibold transition-all rounded-lg h-10 w-10 p-0"
+              className="border border-[#E5E7EB] hover:bg-[#F3F4F6] hover:border-[#D1D5DB] font-semibold transition-all rounded-xl h-10 w-10 p-0"
             >
               <ChevronRight className="w-4 h-4" />
             </Button>
           </div>
         </div>
 
-        <div className="flex flex-col md:flex-row gap-4 items-start md:items-center">
+        <div className="flex flex-col md:flex-row gap-4 items-start md:items-center mt-4 lg:mt-5">
           <Tabs value={viewMode} onValueChange={setViewMode} className="w-full md:w-auto">
             <TabsList style={{ display: 'flex', flexWrap: 'nowrap', overflowX: 'auto', overflowY: 'hidden' }}>
               <TabsTrigger value="day">Day</TabsTrigger>

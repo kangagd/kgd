@@ -17,9 +17,9 @@ export default function Team() {
   return (
     <div className="p-5 md:p-10 bg-[#F8F9FA] min-h-screen">
       <div className="max-w-6xl mx-auto">
-        <div className="mb-8">
-          <h1 className="text-3xl font-bold text-[#111827] tracking-tight">Team</h1>
-          <p className="text-[#4B5563] mt-2.5">Manage your team members</p>
+        <div className="py-3 lg:py-4 mb-4 lg:mb-6">
+          <h1 className="text-2xl font-bold text-[#111827] leading-tight">Team</h1>
+          <p className="text-sm text-[#4B5563] mt-1">Manage your team members</p>
         </div>
 
         <div className="grid lg:grid-cols-2 gap-6">
