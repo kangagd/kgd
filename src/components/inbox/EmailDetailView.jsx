@@ -118,6 +118,7 @@ export default function EmailDetailView({
   const [aiCards, setAiCards] = useState([]);
   const [loadingAI, setLoadingAI] = useState(null);
   const [previewAttachment, setPreviewAttachment] = useState(null);
+  const [attachmentsExpanded, setAttachmentsExpanded] = useState(false);
 
   const { data: messages = [], refetch } = useQuery({
     queryKey: ['emailMessages', thread.id],
