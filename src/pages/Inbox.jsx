@@ -18,9 +18,18 @@ import LinkThreadModal from "../components/inbox/LinkThreadModal";
 import CreateProjectFromEmailModal from "../components/inbox/CreateProjectFromEmailModal";
 import CreateJobFromEmailModal from "../components/inbox/CreateJobFromEmailModal";
 import GmailConnect from "../components/inbox/GmailConnect";
+import AdvancedSearch from "../components/inbox/AdvancedSearch";
 
 export default function Inbox() {
-  const [searchTerm, setSearchTerm] = useState("");
+  const [searchFilters, setSearchFilters] = useState({
+    searchText: "",
+    sender: "",
+    recipient: "",
+    dateFrom: "",
+    dateTo: "",
+    hasAttachment: false,
+    searchInBody: true
+  });
   const [statusFilter, setStatusFilter] = useState("all");
   const [priorityFilter, setPriorityFilter] = useState("all");
   const [sortBy, setSortBy] = useState("date");
@@ -74,6 +83,12 @@ export default function Inbox() {
     queryFn: () => base44.entities.EmailThread.list('-last_message_date'),
     enabled: !!userPermissions?.can_view,
     refetchInterval: 30000 // Auto-refresh every 30 seconds
+  });
+
+  const { data: messages = [] } = useQuery({
+    queryKey: ['allEmailMessages'],
+    queryFn: () => base44.entities.EmailMessage.list(),
+    enabled: !!userPermissions?.can_view && searchFilters.searchInBody
   });
 
   // Auto-sync Gmail in background
@@ -143,14 +158,56 @@ export default function Inbox() {
   });
 
   const filteredThreads = threads.filter(thread => {
-    const matchesSearch = 
-      thread.subject?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      thread.from_address?.toLowerCase().includes(searchTerm.toLowerCase());
+    // Text search
+    let matchesSearch = true;
+    if (searchFilters.searchText) {
+      const searchLower = searchFilters.searchText.toLowerCase();
+      const subjectMatch = thread.subject?.toLowerCase().includes(searchLower);
+      const fromMatch = thread.from_address?.toLowerCase().includes(searchLower);
+      const toMatch = thread.to_addresses?.some(addr => addr.toLowerCase().includes(searchLower));
+      
+      // Search in email body if enabled
+      let bodyMatch = false;
+      if (searchFilters.searchInBody && messages.length > 0) {
+        const threadMessages = messages.filter(m => m.thread_id === thread.id);
+        bodyMatch = threadMessages.some(m => 
+          m.body_text?.toLowerCase().includes(searchLower) ||
+          m.body_html?.toLowerCase().includes(searchLower)
+        );
+      }
+      
+      matchesSearch = subjectMatch || fromMatch || toMatch || bodyMatch;
+    }
+
+    // Sender filter
+    const matchesSender = !searchFilters.sender || 
+      thread.from_address?.toLowerCase().includes(searchFilters.sender.toLowerCase());
+
+    // Recipient filter
+    const matchesRecipient = !searchFilters.recipient ||
+      thread.to_addresses?.some(addr => 
+        addr.toLowerCase().includes(searchFilters.recipient.toLowerCase())
+      );
+
+    // Date range filter
+    const threadDate = new Date(thread.last_message_date);
+    const matchesDateFrom = !searchFilters.dateFrom || 
+      threadDate >= new Date(searchFilters.dateFrom);
+    const matchesDateTo = !searchFilters.dateTo || 
+      threadDate <= new Date(searchFilters.dateTo + 'T23:59:59');
+
+    // Attachment filter
+    const matchesAttachment = !searchFilters.hasAttachment || (() => {
+      const threadMessages = messages.filter(m => m.thread_id === thread.id);
+      return threadMessages.some(m => m.attachments && m.attachments.length > 0);
+    })();
     
     const matchesStatus = statusFilter === "all" || thread.status === statusFilter;
     const matchesPriority = priorityFilter === "all" || thread.priority === priorityFilter;
     
-    return matchesSearch && matchesStatus && matchesPriority;
+    return matchesSearch && matchesSender && matchesRecipient && 
+           matchesDateFrom && matchesDateTo && matchesAttachment &&
+           matchesStatus && matchesPriority;
   }).sort((a, b) => {
     switch(sortBy) {
       case "date":
@@ -296,15 +353,10 @@ export default function Inbox() {
             />
           </div>
           
-          <div className="relative mb-4">
-            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-[#6B7280]" />
-            <Input
-              placeholder="Search emails..."
-              value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
-              className="pl-10"
-            />
-          </div>
+          <AdvancedSearch
+            onSearchChange={setSearchFilters}
+            currentFilters={searchFilters}
+          />
 
           <div className="space-y-3">
             <Tabs value={statusFilter} onValueChange={setStatusFilter} className="w-full">
