@@ -302,25 +302,19 @@ export default function EmailComposer({ mode = "compose", thread, message, onClo
           </div>
 
           <div className="relative">
-            <Textarea
-              ref={textareaRef}
-              value={body}
-              onChange={(e) => setBody(e.target.value)}
-              placeholder="Compose your email..."
-              className="min-h-[250px] font-sans hidden"
-            />
             <div 
+              ref={textareaRef}
               contentEditable
-              dangerouslySetInnerHTML={{ __html: body }}
+              suppressContentEditableWarning
               onInput={(e) => setBody(e.currentTarget.innerHTML)}
-              className="min-h-[250px] p-3 border border-[#E5E7EB] rounded-lg focus:outline-none focus:border-[#111827] focus:shadow-sm"
+              className="min-h-[250px] p-3 border border-[#E5E7EB] rounded-lg focus:outline-none focus:border-[#111827] focus:shadow-sm overflow-y-auto"
               style={{ 
-                maxHeight: '400px', 
-                overflowY: 'auto',
+                maxHeight: '400px',
                 fontFamily: 'inherit',
                 fontSize: '14px',
                 lineHeight: '1.5'
               }}
+              dangerouslySetInnerHTML={{ __html: body }}
             />
           </div>
         </div>
