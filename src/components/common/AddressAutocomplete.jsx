@@ -49,6 +49,7 @@ export default function AddressAutocomplete({
         
         if (!apiKey) {
           console.error('No Google Maps API key available');
+          setError('Google Maps API key not configured');
           setIsScriptLoading(false);
           return;
         }
@@ -92,7 +93,7 @@ export default function AddressAutocomplete({
       // Initialize autocomplete
       autocompleteRef.current = new window.google.maps.places.Autocomplete(inputRef.current, {
         componentRestrictions: { country: 'au' },
-        fields: ['formatted_address'],
+        fields: ['formatted_address', 'address_components', 'place_id', 'geometry'],
         types: ['address']
       });
 
@@ -100,9 +101,65 @@ export default function AddressAutocomplete({
       const listener = autocompleteRef.current.addListener('place_changed', () => {
         const place = autocompleteRef.current.getPlace();
         
-        if (place && place.formatted_address) {
-          onChange(place.formatted_address);
+        if (!place || !place.address_components) {
+          // Fallback: user typed but didn't select from dropdown
+          onChange({
+            address_full: inputRef.current.value,
+            address_street: '',
+            address_suburb: '',
+            address_state: '',
+            address_postcode: '',
+            address_country: 'Australia',
+            google_place_id: '',
+            latitude: null,
+            longitude: null
+          });
+          return;
         }
+
+        // Parse address components
+        const components = {};
+        place.address_components.forEach(component => {
+          const types = component.types;
+          if (types.includes('street_number')) {
+            components.street_number = component.long_name;
+          }
+          if (types.includes('route')) {
+            components.route = component.long_name;
+          }
+          if (types.includes('locality')) {
+            components.suburb = component.long_name;
+          }
+          if (types.includes('administrative_area_level_1')) {
+            components.state = component.short_name;
+          }
+          if (types.includes('postal_code')) {
+            components.postcode = component.long_name;
+          }
+          if (types.includes('country')) {
+            components.country = component.long_name;
+          }
+        });
+
+        // Build street address
+        const street = [components.street_number, components.route].filter(Boolean).join(' ');
+
+        // Get coordinates
+        const lat = place.geometry?.location?.lat();
+        const lng = place.geometry?.location?.lng();
+
+        // Return structured address data
+        onChange({
+          address_full: place.formatted_address,
+          address_street: street,
+          address_suburb: components.suburb || '',
+          address_state: components.state || '',
+          address_postcode: components.postcode || '',
+          address_country: components.country || 'Australia',
+          google_place_id: place.place_id || '',
+          latitude: lat || null,
+          longitude: lng || null
+        });
       });
     } catch (error) {
       console.error('Error initializing Google Places Autocomplete:', error);
@@ -114,7 +171,22 @@ export default function AddressAutocomplete({
         window.google.maps.event.clearInstanceListeners(autocompleteRef.current);
       }
     };
-  }, [isScriptLoaded]);
+  }, [isScriptLoaded, onChange]);
+
+  const handleInputChange = (e) => {
+    // Allow free-form typing as fallback
+    onChange({
+      address_full: e.target.value,
+      address_street: '',
+      address_suburb: '',
+      address_state: '',
+      address_postcode: '',
+      address_country: 'Australia',
+      google_place_id: '',
+      latitude: null,
+      longitude: null
+    });
+  };
 
   return (
     <div className="space-y-2">
@@ -123,7 +195,7 @@ export default function AddressAutocomplete({
           ref={inputRef}
           id={id}
           value={value}
-          onChange={(e) => onChange(e.target.value)}
+          onChange={handleInputChange}
           placeholder={placeholder}
           required={required}
           className={className}
@@ -138,7 +210,7 @@ export default function AddressAutocomplete({
       {error && (
         <div className="flex items-center gap-2 text-sm text-red-600">
           <AlertCircle className="w-4 h-4" />
-          <span>{error} - Please enable Places API and check billing in Google Cloud Console.</span>
+          <span>{error} - Falling back to manual entry.</span>
         </div>
       )}
     </div>
