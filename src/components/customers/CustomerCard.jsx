@@ -4,12 +4,7 @@ import { Badge } from "@/components/ui/badge";
 import { Phone, Mail, MapPin, Building2, ChevronDown } from "lucide-react";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 
-const customerTypeColors = {
-  "Owner": "bg-purple-100 text-purple-700",
-  "Builder": "bg-blue-100 text-blue-700",
-  "Real Estate - Tenant": "bg-green-100 text-green-700",
-  "Strata - Owner": "bg-amber-100 text-amber-700",
-};
+
 
 export default function CustomerCard({ customer, onClick, onViewDetails }) {
   const handleClick = (e) => {

@@ -1,8 +1,8 @@
 import React, { useState } from "react";
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
 import { ArrowLeft, Edit, Phone, Mail, Briefcase, Plus, Tag, Trash2, Building2, MapPin } from "lucide-react";
+import { StatusBadge, CustomerTypeBadge, JobStatusBadge } from "../common/StatusBadge";
 import { useQuery } from "@tanstack/react-query";
 import { base44 } from "@/api/base44Client";
 import { Link, useNavigate } from "react-router-dom";
@@ -19,12 +19,7 @@ import {
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 
-const customerTypeColors = {
-  "Owner": "bg-purple-100 text-purple-700 border-purple-200",
-  "Builder": "bg-blue-100 text-blue-700 border-blue-200",
-  "Real Estate - Tenant": "bg-green-100 text-green-700 border-green-200",
-  "Strata - Owner": "bg-amber-100 text-amber-700 border-amber-200",
-};
+
 
 export default function CustomerDetails({ customer, onClose, onEdit, onDelete }) {
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
@@ -58,17 +53,12 @@ export default function CustomerDetails({ customer, onClose, onEdit, onDelete })
               <div className="flex-1 min-w-0">
                 <CardTitle className="text-[22px] font-semibold text-[#111827] leading-[1.2]">{customer.name}</CardTitle>
                 <div className="flex gap-2 mt-2 flex-wrap">
-                  <Badge className={customer.status === 'active' ? 
-                    "bg-green-50 text-green-700 border-2 border-green-200 font-medium text-[12px] leading-[1.35]" : 
-                    "bg-slate-50 text-slate-700 border-2 border-slate-200 font-medium text-[12px] leading-[1.35]"
-                  }>
-                    {customer.status}
-                  </Badge>
+                  <StatusBadge type="status" value={customer.status} />
                   {customer.customer_type && (
-                    <Badge className={`${customerTypeColors[customer.customer_type]} border-2 font-medium text-[12px] leading-[1.35]`}>
+                    <CustomerTypeBadge value={customer.customer_type}>
                       <Tag className="w-3 h-3 mr-1" />
                       {customer.customer_type}
-                    </Badge>
+                    </CustomerTypeBadge>
                   )}
                 </div>
               </div>
@@ -212,16 +202,9 @@ export default function CustomerDetails({ customer, onClose, onEdit, onDelete })
                     <div className="flex items-start justify-between mb-2">
                       <div className="flex-1 min-w-0">
                         <h4 className="text-[16px] font-medium text-[#111827] leading-[1.4]">Job #{job.job_number}</h4>
-                        <p className="text-[14px] text-slate-600 leading-[1.4] mt-1 font-normal">{job.address}</p>
-                      </div>
-                      <Badge className={
-                        job.status === 'completed' ? 'bg-green-50 text-green-700 border-2 border-green-200' :
-                        job.status === 'in_progress' ? 'bg-orange-50 text-orange-700 border-2 border-orange-200' :
-                        job.status === 'cancelled' ? 'bg-slate-50 text-slate-700 border-2 border-slate-200' :
-                        'bg-blue-50 text-blue-700 border-2 border-blue-200'
-                      }>
-                        {job.status.replace('_', ' ')}
-                      </Badge>
+                              <p className="text-[14px] text-slate-600 leading-[1.4] mt-1 font-normal">{job.address}</p>
+                            </div>
+                            <JobStatusBadge value={job.status} />
                     </div>
                     <div className="text-[12px] text-slate-600 leading-[1.35] font-normal">
                       {job.scheduled_date && format(parseISO(job.scheduled_date), 'MMM d, yyyy')}
