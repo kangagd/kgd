@@ -3,7 +3,7 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Phone, Briefcase } from "lucide-react";
 import { TechnicianAvatarGroup } from "../common/TechnicianAvatar";
-import AddressLink from "../common/AddressLink";
+import AddressLink from "@/components/common/AddressLink";
 
 const statusColors = {
   "Lead": "bg-slate-100 text-slate-700",

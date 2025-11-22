@@ -7,7 +7,7 @@ import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/component
 import { useQuery } from "@tanstack/react-query";
 import { base44 } from "@/api/base44Client";
 import { TechnicianAvatarGroup } from "../common/TechnicianAvatar";
-import AddressLink from "../common/AddressLink";
+import AddressLink from "@/components/common/AddressLink";
 
 const statusColors = {
   "Open": "bg-slate-100 text-slate-700",

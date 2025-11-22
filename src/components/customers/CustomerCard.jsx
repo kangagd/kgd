@@ -3,7 +3,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Phone, Mail, Building2, ChevronDown } from "lucide-react";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
-import AddressLink from "../common/AddressLink";
+import AddressLink from "@/components/common/AddressLink";
 
 const customerTypeColors = {
   "Owner": "bg-purple-100 text-purple-700",
