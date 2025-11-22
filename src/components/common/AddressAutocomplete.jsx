@@ -76,20 +76,11 @@ export default function AddressAutocomplete({
         }
         
         console.log('📦 [AddressAutocomplete] Loading Google Maps script...');
-        const script = document.createElement('script');
-        script.src = `https://maps.googleapis.com/maps/api/js?key=${apiKey}&libraries=places&callback=Function.prototype`;
-        script.async = true;
-        script.defer = true;
         
-        script.onload = () => {
-          console.log('✅ [AddressAutocomplete] Google Maps script loaded successfully');
+        // Define global callback before adding script
+        window.initGoogleMaps = () => {
+          console.log('✅ [AddressAutocomplete] Google Maps initialized via callback');
           setIsScriptLoaded(true);
-          setIsScriptLoading(false);
-        };
-        
-        script.onerror = (e) => {
-          console.error('❌ [AddressAutocomplete] Script load error:', e);
-          setError('Failed to load Google Maps');
           setIsScriptLoading(false);
         };
         
@@ -97,6 +88,18 @@ export default function AddressAutocomplete({
         window.gm_authFailure = () => {
           console.error('❌ [Google Maps] Authentication failed - check API key and restrictions');
           setError('Google Maps authentication failed');
+          setIsScriptLoading(false);
+        };
+        
+        const script = document.createElement('script');
+        script.src = `https://maps.googleapis.com/maps/api/js?key=${apiKey}&libraries=places&callback=initGoogleMaps`;
+        script.async = true;
+        script.defer = true;
+        
+        script.onerror = (e) => {
+          console.error('❌ [AddressAutocomplete] Script load error:', e);
+          setError('Failed to load Google Maps');
+          setIsScriptLoading(false);
         };
         
         document.head.appendChild(script);
