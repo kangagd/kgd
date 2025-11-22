@@ -2,7 +2,7 @@ import React from "react";
 import { Badge } from "@/components/ui/badge";
 import { Checkbox } from "@/components/ui/checkbox";
 import { format, parseISO } from "date-fns";
-import { Mail, Paperclip, Link as LinkIcon } from "lucide-react";
+import { Mail, Paperclip, Link as LinkIcon, Trash2 } from "lucide-react";
 
 const statusColors = {
   "Open": "bg-blue-100 text-blue-800 border-blue-200",
@@ -24,7 +24,8 @@ export default function EmailThreadList({
   isLoading,
   selectedThreadIds = [],
   onToggleSelection,
-  onSelectAll
+  onSelectAll,
+  onBulkDelete
 }) {
   if (isLoading) {
     return (
@@ -63,6 +64,15 @@ export default function EmailThreadList({
           <span className="text-[13px] text-[#6B7280]">
             Select all {selectedThreadIds.length > 0 && `(${selectedThreadIds.length})`}
           </span>
+          {selectedThreadIds.length > 0 && onBulkDelete && (
+            <button
+              onClick={onBulkDelete}
+              className="ml-auto p-1.5 text-[#DC2626] hover:bg-red-50 rounded-md transition-colors"
+              title="Delete selected"
+            >
+              <Trash2 className="w-4 h-4" />
+            </button>
+          )}
         </div>
       )}
       {threads.map(thread => (
