@@ -193,31 +193,37 @@ export default function AddressAutocomplete({
     console.log('[AddressAutocomplete] Fetching predictions for:', newValue);
 
     // Fetch predictions
-    autocompleteServiceRef.current.getPlacePredictions(
-      {
-        input: newValue,
-        componentRestrictions: { country: 'au' },
-        types: ['address']
-      },
-      (results, status) => {
-        setIsLoadingSuggestions(false);
-        console.log('[AddressAutocomplete] Prediction status:', status, 'Results:', results);
-        
-        if (status === window.google.maps.places.PlacesServiceStatus.OK && results) {
-          console.log('[AddressAutocomplete] Found', results.length, 'predictions');
-          setPredictions(results.slice(0, 7));
-          setShowDropdown(true);
-        } else if (status === window.google.maps.places.PlacesServiceStatus.ZERO_RESULTS) {
-          console.log('[AddressAutocomplete] No results found');
-          setPredictions([]);
-          setShowDropdown(false);
-        } else {
-          console.error('[AddressAutocomplete] Prediction error:', status);
-          setPredictions([]);
-          setShowDropdown(false);
+    try {
+      autocompleteServiceRef.current.getPlacePredictions(
+        {
+          input: newValue,
+          componentRestrictions: { country: 'au' }
+        },
+        (results, status) => {
+          setIsLoadingSuggestions(false);
+          console.log('[AddressAutocomplete] Prediction status:', status, 'Results:', results);
+          
+          if (status === window.google.maps.places.PlacesServiceStatus.OK && results) {
+            console.log('[AddressAutocomplete] Found', results.length, 'predictions');
+            setPredictions(results.slice(0, 7));
+            setShowDropdown(true);
+          } else if (status === window.google.maps.places.PlacesServiceStatus.ZERO_RESULTS) {
+            console.log('[AddressAutocomplete] No results found');
+            setPredictions([]);
+            setShowDropdown(false);
+          } else {
+            console.error('[AddressAutocomplete] Prediction error:', status);
+            setPredictions([]);
+            setShowDropdown(false);
+          }
         }
-      }
-    );
+      );
+    } catch (err) {
+      console.error('[AddressAutocomplete] Exception during prediction:', err);
+      setIsLoadingSuggestions(false);
+      setPredictions([]);
+      setShowDropdown(false);
+    }
   };
 
   const handleSelectPrediction = (prediction) => {
