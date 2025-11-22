@@ -29,7 +29,7 @@ export default function JobModalView({ job }) {
   };
 
   const handleNavigate = () => {
-    window.open(`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(job.address)}`, '_blank');
+    window.open(`https://www.google.com/maps/dir/?api=1&destination=${encodeURIComponent(job.address)}&travelmode=driving`, '_blank');
   };
 
   return (
