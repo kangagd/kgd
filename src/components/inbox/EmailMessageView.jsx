@@ -1,20 +1,11 @@
 import React, { useState } from "react";
 import { format, parseISO } from "date-fns";
-import { ChevronDown, ChevronUp, Paperclip, Download, Save, FileText, Image as ImageIcon } from "lucide-react";
-import { Button } from "@/components/ui/button";
+import { ChevronDown, ChevronUp, Paperclip } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
+import AttachmentCard from "./AttachmentCard";
 
-export default function EmailMessageView({ message, isFirst, linkedJobId, linkedProjectId, onSaveAttachment }) {
+export default function EmailMessageView({ message, isFirst, linkedJobId, linkedProjectId, threadSubject, threadCategory }) {
   const [expanded, setExpanded] = useState(isFirst);
-  const [savingAttachment, setSavingAttachment] = useState(null);
-
-  const formatFileSize = (bytes) => {
-    if (bytes === 0) return '0 Bytes';
-    const k = 1024;
-    const sizes = ['Bytes', 'KB', 'MB', 'GB'];
-    const i = Math.floor(Math.log(bytes) / Math.log(k));
-    return Math.round(bytes / Math.pow(k, i) * 100) / 100 + ' ' + sizes[i];
-  };
 
   // Minimal sanitization - preserve Gmail layout and styling
   const sanitizeBodyHtml = (html) => {
@@ -35,12 +26,6 @@ export default function EmailMessageView({ message, isFirst, linkedJobId, linked
     // Keep images (including inline/signature images)
     
     return sanitized;
-  };
-
-  const getAttachmentIcon = (mimeType) => {
-    if (!mimeType) return FileText;
-    if (mimeType.startsWith('image/')) return ImageIcon;
-    return FileText;
   };
 
   return (
@@ -158,68 +143,24 @@ export default function EmailMessageView({ message, isFirst, linkedJobId, linked
             )}
           </div>
 
-          {/* Attachments */}
+          {/* Attachments with AI Suggestions */}
           {message.attachments?.length > 0 && (
             <div className="border-t border-[#F3F4F6] pt-5">
               <div className="text-[13px] text-[#6B7280] font-semibold mb-3 flex items-center gap-2">
                 <Paperclip className="w-4 h-4" />
                 Attachments ({message.attachments.length})
               </div>
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
-                {message.attachments.map((attachment, idx) => {
-                  const AttachmentIcon = getAttachmentIcon(attachment.mime_type);
-                  return (
-                    <div
-                      key={idx}
-                      className="flex items-center justify-between p-3 bg-white rounded-lg border border-[#E5E7EB] hover:border-[#D1D5DB] hover:shadow-sm transition-all"
-                    >
-                      <div className="flex items-center gap-3 min-w-0 flex-1">
-                        <div className="w-9 h-9 rounded-lg bg-[#F3F4F6] flex items-center justify-center flex-shrink-0">
-                          <AttachmentIcon className="w-4 h-4 text-[#6B7280]" />
-                        </div>
-                        <div className="min-w-0 flex-1">
-                          <p className="text-[13px] text-[#111827] font-medium truncate">
-                            {attachment.filename}
-                          </p>
-                          {attachment.size > 0 && (
-                            <p className="text-[11px] text-[#6B7280] mt-0.5">
-                              {formatFileSize(attachment.size)}
-                            </p>
-                          )}
-                        </div>
-                      </div>
-                      <div className="flex items-center gap-1 flex-shrink-0 ml-2">
-                        {(linkedJobId || linkedProjectId) && onSaveAttachment && (
-                          <Button
-                            variant="ghost"
-                            size="sm"
-                            onClick={() => {
-                              setSavingAttachment(idx);
-                              onSaveAttachment(attachment, () => setSavingAttachment(null));
-                            }}
-                            disabled={savingAttachment === idx}
-                            title={`Save to ${linkedJobId ? 'Job' : 'Project'}`}
-                            className="h-8 w-8 p-0"
-                          >
-                            <Save className="w-4 h-4" />
-                          </Button>
-                        )}
-                        {attachment.url && (
-                          <Button
-                            variant="ghost"
-                            size="sm"
-                            asChild
-                            className="h-8 w-8 p-0"
-                          >
-                            <a href={attachment.url} download target="_blank" rel="noopener noreferrer">
-                              <Download className="w-4 h-4" />
-                            </a>
-                          </Button>
-                        )}
-                      </div>
-                    </div>
-                  );
-                })}
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                {message.attachments.map((attachment, idx) => (
+                  <AttachmentCard
+                    key={idx}
+                    attachment={attachment}
+                    linkedJobId={linkedJobId}
+                    linkedProjectId={linkedProjectId}
+                    threadSubject={threadSubject}
+                    threadCategory={threadCategory}
+                  />
+                ))}
               </div>
             </div>
           )}
