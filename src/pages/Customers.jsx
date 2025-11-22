@@ -100,7 +100,8 @@ export default function Customers() {
   };
 
   const handleOpenFullCustomer = (customer) => {
-    window.open(`${createPageUrl("Customers")}?customerId=${customer.id}`, '_blank');
+    setModalCustomer(null);
+    setSelectedCustomer(customer);
   };
 
   const filteredCustomers = customers.filter((customer) => {

@@ -145,7 +145,7 @@ export default function Jobs() {
 
   const handleOpenFullJob = (job) => {
     setModalJob(null);
-    setSelectedJob(job);
+    window.location.href = `${createPageUrl("Jobs")}?jobId=${job.id}`;
   };
 
   const isTechnician = user?.is_field_technician && user?.role !== 'admin';

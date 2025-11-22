@@ -130,7 +130,8 @@ export default function Projects() {
   };
 
   const handleOpenFullProject = (project) => {
-    window.open(`${createPageUrl("Projects")}?projectId=${project.id}`, '_blank');
+    setModalProject(null);
+    window.location.href = `${createPageUrl("Projects")}?projectId=${project.id}`;
   };
 
   const filteredProjects = projects
