@@ -238,6 +238,18 @@ export default function Inbox() {
     setSelectedThreadIds([]);
   };
 
+  const handleBulkDelete = async () => {
+    if (!confirm(`Delete ${selectedThreadIds.length} email thread(s)?`)) return;
+    await Promise.all(
+      selectedThreadIds.map(id => base44.entities.EmailThread.delete(id))
+    );
+    queryClient.invalidateQueries({ queryKey: ['emailThreads'] });
+    setSelectedThreadIds([]);
+    if (selectedThread && selectedThreadIds.includes(selectedThread.id)) {
+      setSelectedThread(null);
+    }
+  };
+
   const handleToggleSelection = (threadId) => {
     setSelectedThreadIds(prev => 
       prev.includes(threadId) 
@@ -409,6 +421,7 @@ export default function Inbox() {
           selectedThreadIds={selectedThreadIds}
           onToggleSelection={handleToggleSelection}
           onSelectAll={handleSelectAll}
+          onBulkDelete={handleBulkDelete}
         />
       </div>
 
