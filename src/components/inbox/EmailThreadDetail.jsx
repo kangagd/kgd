@@ -193,10 +193,10 @@ export default function EmailThreadDetail({
               </Button>
             </>
           )}
-          </div>
+        </div>
 
-          {/* Linked Items */}
-          {(thread.linked_project_id || thread.linked_job_id) && (
+        {/* Linked Items */}
+        {(thread.linked_project_id || thread.linked_job_id) && (
           <div className="flex flex-wrap items-center gap-2 mt-3">
             {thread.linked_project_id && (
               <div className="flex items-center gap-2 bg-[#F3F4F6] rounded-lg px-3 py-2">
@@ -236,11 +236,10 @@ export default function EmailThreadDetail({
                   </button>
                 )}
               </div>
-              )}
-              </div>
-              )}
-              </div>
-              </div>
+            )}
+          </div>
+        )}
+      </div>
 
       {/* Messages Timeline */}
       <div className="flex-1 overflow-y-auto p-5 space-y-4">
