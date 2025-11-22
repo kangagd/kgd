@@ -45,6 +45,12 @@ export default function CustomerCard({ customer, onClick, onViewDetails }) {
 
             {/* Primary Contact Info */}
             <div className="space-y-2">
+              {(customer.address_full || customer.address) && (
+                <div className="flex items-start gap-2">
+                  <MapPin className="w-4 h-4 text-[#6B7280] mt-0.5 flex-shrink-0" />
+                  <span className="text-[14px] text-[#4B5563] leading-[1.4]">{customer.address_full || customer.address}</span>
+                </div>
+              )}
               {customer.phone && (
                 <div className="flex items-center gap-2">
                   <Phone className="w-4 h-4 text-[#6B7280] flex-shrink-0" />
@@ -60,7 +66,7 @@ export default function CustomerCard({ customer, onClick, onViewDetails }) {
             </div>
 
             {/* Expandable Details */}
-            {(customer.address || customer.secondary_phone || customer.organisation_name || customer.notes) && (
+            {(customer.secondary_phone || customer.organisation_name || customer.notes) && (
               <CollapsibleTrigger 
                 onClick={(e) => e.stopPropagation()}
                 className="flex items-center gap-2 text-sm font-medium text-[#6B7280] hover:text-[#111827] transition-colors group w-full pt-2 border-t border-[#E5E7EB]"
@@ -71,18 +77,9 @@ export default function CustomerCard({ customer, onClick, onViewDetails }) {
             )}
           </div>
 
-          {(customer.address || customer.secondary_phone || customer.organisation_name || customer.notes) && (
+          {(customer.secondary_phone || customer.organisation_name || customer.notes) && (
             <CollapsibleContent className="pt-3" onClick={(e) => e.stopPropagation()}>
               <div className="bg-[#F8F9FA] rounded-lg p-3 space-y-2">
-                {customer.address && (
-                  <div className="flex items-start gap-2">
-                    <MapPin className="w-4 h-4 text-[#6B7280] mt-0.5 flex-shrink-0" />
-                    <div className="flex-1">
-                      <div className="text-[12px] font-medium text-[#6B7280] leading-[1.35] mb-0.5">Address</div>
-                      <span className="text-[14px] text-[#4B5563] leading-[1.4]">{customer.address}</span>
-                    </div>
-                  </div>
-                )}
                 {customer.secondary_phone && (
                   <div className="flex items-start gap-2">
                     <Phone className="w-4 h-4 text-[#6B7280] mt-0.5 flex-shrink-0" />
