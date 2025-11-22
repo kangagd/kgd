@@ -240,6 +240,9 @@ export default function EmailThreadDetail({
 
       {/* Messages Timeline */}
       <div className="flex-1 overflow-y-auto p-5 space-y-4">
+        {/* AI Summary - Always First */}
+        <EmailThreadSummary thread={thread} messages={messages} />
+
         {/* Quick Actions Bar */}
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-3">
           {/* Attachments Preview */}
@@ -281,11 +284,9 @@ export default function EmailThreadDetail({
               />
             </div>
           )}
-        </div>
+          </div>
 
-        <EmailThreadSummary thread={thread} messages={messages} />
-        
-        {composerMode && (
+          {composerMode && (
           <EmailComposer
             mode={composerMode}
             thread={thread}

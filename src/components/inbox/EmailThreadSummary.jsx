@@ -12,7 +12,7 @@ export default function EmailThreadSummary({ thread, messages }) {
   const [error, setError] = useState(null);
 
   useEffect(() => {
-    if (messages.length >= 3) {
+    if (messages.length >= 2) {
       generateSummary();
     }
   }, [thread.id, messages.length]);
@@ -74,7 +74,7 @@ Respond in this exact JSON format:
     }
   };
 
-  if (messages.length < 3) {
+  if (messages.length < 2) {
     return null;
   }
 
