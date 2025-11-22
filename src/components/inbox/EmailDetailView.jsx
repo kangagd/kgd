@@ -423,6 +423,89 @@ export default function EmailDetailView({
               )}
             </div>
 
+            {/* Attachments Section */}
+            {allAttachments.length > 0 && (
+              <div className="px-6 pt-4 pb-4 border-b border-[#F3F4F6]">
+                <div className="flex items-center gap-2 mb-4">
+                  <Paperclip className="w-4 h-4 text-[#6B7280]" />
+                  <h3 className="text-[14px] font-semibold text-[#111827]">
+                    Attachments ({allAttachments.length})
+                  </h3>
+                </div>
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
+                  {allAttachments.map((attachment, idx) => {
+                    const FileIcon = getFileIcon(attachment.mime_type, attachment.filename);
+                    const isImage = attachment.mime_type?.startsWith('image/');
+                    
+                    return (
+                      <div
+                        key={idx}
+                        className="flex items-center gap-3 p-3 border border-[#E5E7EB] rounded-lg hover:border-[#FAE008] hover:shadow-sm transition-all cursor-pointer group"
+                        onClick={() => isImage && setPreviewAttachment(attachment)}
+                      >
+                        <div className="w-10 h-10 rounded-lg bg-[#F3F4F6] flex items-center justify-center flex-shrink-0">
+                          <FileIcon className="w-5 h-5 text-[#6B7280]" />
+                        </div>
+                        <div className="flex-1 min-w-0">
+                          <p className="text-[13px] font-medium text-[#111827] truncate">
+                            {attachment.filename}
+                          </p>
+                          <p className="text-[11px] text-[#6B7280]">
+                            {attachment.size ? `${(attachment.size / 1024).toFixed(1)} KB` : ''}
+                          </p>
+                        </div>
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          asChild
+                          className="h-8 w-8 opacity-0 group-hover:opacity-100 transition-opacity"
+                          onClick={(e) => e.stopPropagation()}
+                        >
+                          <a href={attachment.url} download target="_blank" rel="noopener noreferrer">
+                            <Download className="w-4 h-4" />
+                          </a>
+                        </Button>
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
+            )}
+
+            {/* AI Actions Section */}
+            <div className="px-6 pt-4 pb-4 border-b border-[#F3F4F6]">
+              <div className="flex items-center gap-2 mb-4">
+                <Sparkles className="w-4 h-4 text-purple-600" />
+                <h3 className="text-[14px] font-semibold text-[#111827]">AI Tools</h3>
+              </div>
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                <Button
+                  variant="outline"
+                  onClick={handleAISummarize}
+                  disabled={loadingAI === 'summarize'}
+                  className="w-full"
+                >
+                  {loadingAI === 'summarize' ? 'Generating...' : 'Summarize Email'}
+                </Button>
+                <Button
+                  variant="outline"
+                  onClick={handleAIExtractActions}
+                  disabled={loadingAI === 'actions'}
+                  className="w-full"
+                >
+                  {loadingAI === 'actions' ? 'Extracting...' : 'Extract Actions'}
+                </Button>
+                <Button
+                  variant="outline"
+                  onClick={handleAISuggestLinks}
+                  disabled={loadingAI === 'links'}
+                  className="w-full"
+                >
+                  {loadingAI === 'links' ? 'Analyzing...' : 'Suggest Links'}
+                </Button>
+              </div>
+            </div>
+
             {/* Email Body */}
             <div className="p-6">
               {latestMessage ? (
@@ -443,57 +526,6 @@ export default function EmailDetailView({
               )}
             </div>
 
-            {/* Attachments Section */}
-            {allAttachments.length > 0 && (
-              <div className="px-6 pb-6">
-                <div className="border-t border-[#F3F4F6] pt-5">
-                  <div className="flex items-center gap-2 mb-4">
-                    <Paperclip className="w-4 h-4 text-[#6B7280]" />
-                    <h3 className="text-[14px] font-semibold text-[#111827]">
-                      Attachments ({allAttachments.length})
-                    </h3>
-                  </div>
-                  <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
-                    {allAttachments.map((attachment, idx) => {
-                      const FileIcon = getFileIcon(attachment.mime_type, attachment.filename);
-                      const isImage = attachment.mime_type?.startsWith('image/');
-                      
-                      return (
-                        <div
-                          key={idx}
-                          className="flex items-center gap-3 p-3 border border-[#E5E7EB] rounded-lg hover:border-[#FAE008] hover:shadow-sm transition-all cursor-pointer group"
-                          onClick={() => isImage && setPreviewAttachment(attachment)}
-                        >
-                          <div className="w-10 h-10 rounded-lg bg-[#F3F4F6] flex items-center justify-center flex-shrink-0">
-                            <FileIcon className="w-5 h-5 text-[#6B7280]" />
-                          </div>
-                          <div className="flex-1 min-w-0">
-                            <p className="text-[13px] font-medium text-[#111827] truncate">
-                              {attachment.filename}
-                            </p>
-                            <p className="text-[11px] text-[#6B7280]">
-                              {attachment.size ? `${(attachment.size / 1024).toFixed(1)} KB` : ''}
-                            </p>
-                          </div>
-                          <Button
-                            variant="ghost"
-                            size="icon"
-                            asChild
-                            className="h-8 w-8 opacity-0 group-hover:opacity-100 transition-opacity"
-                            onClick={(e) => e.stopPropagation()}
-                          >
-                            <a href={attachment.url} download target="_blank" rel="noopener noreferrer">
-                              <Download className="w-4 h-4" />
-                            </a>
-                          </Button>
-                        </div>
-                      );
-                    })}
-                  </div>
-                </div>
-              </div>
-            )}
-
             {/* Email Composer */}
             {composerMode && (
               <div className="px-6 pb-6">
@@ -506,40 +538,6 @@ export default function EmailDetailView({
                 />
               </div>
             )}
-          </div>
-
-          {/* AI Actions Section */}
-          <div className="bg-white rounded-xl shadow-sm border border-[#E5E7EB] p-6 mb-6">
-            <div className="flex items-center gap-2 mb-4">
-              <Sparkles className="w-4 h-4 text-purple-600" />
-              <h3 className="text-[14px] font-semibold text-[#111827]">AI Tools</h3>
-            </div>
-            <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-              <Button
-                variant="outline"
-                onClick={handleAISummarize}
-                disabled={loadingAI === 'summarize'}
-                className="w-full"
-              >
-                {loadingAI === 'summarize' ? 'Generating...' : 'Summarize Email'}
-              </Button>
-              <Button
-                variant="outline"
-                onClick={handleAIExtractActions}
-                disabled={loadingAI === 'actions'}
-                className="w-full"
-              >
-                {loadingAI === 'actions' ? 'Extracting...' : 'Extract Actions'}
-              </Button>
-              <Button
-                variant="outline"
-                onClick={handleAISuggestLinks}
-                disabled={loadingAI === 'links'}
-                className="w-full"
-              >
-                {loadingAI === 'links' ? 'Analyzing...' : 'Suggest Links'}
-              </Button>
-            </div>
           </div>
 
           {/* AI Results Cards */}
