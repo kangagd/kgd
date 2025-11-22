@@ -1,5 +1,7 @@
 import { createClientFromRequest } from 'npm:@base44/sdk@0.8.4';
 
+const processedThreadIds = new Set(); // Track threads for AI processing
+
 async function refreshTokenIfNeeded(user, base44) {
   const expiry = new Date(user.gmail_token_expiry);
   const now = new Date();
@@ -130,53 +132,11 @@ Deno.serve(async (req) => {
           last_message_date: new Date(date).toISOString(),
           last_message_snippet: detail.snippet
         });
+        processedThreadIds.add(threadId); // Queue for AI processing
       } else {
         isNewThread = true;
-        // AI categorization and urgency detection for new threads
-        let category = 'Uncategorized';
-        let isUrgent = false;
-        let urgencyReason = null;
 
-        try {
-          const aiResponse = await fetch('https://api.openai.com/v1/chat/completions', {
-            method: 'POST',
-            headers: {
-              'Content-Type': 'application/json',
-              'Authorization': `Bearer ${Deno.env.get('OPENAI_API_KEY')}`
-            },
-            body: JSON.stringify({
-              model: 'gpt-3.5-turbo',
-              messages: [{
-                role: 'system',
-                content: 'You categorize emails for a garage door/gate service company.'
-              }, {
-                role: 'user',
-                content: `Analyze this email and categorize it. Also determine if it's urgent.
-
-      Subject: ${subject}
-      From: ${from}
-      Body: ${detail.snippet}
-
-      Categories: Support, Sales, Internal, Project Inquiry, Quote Request, Scheduling, General
-
-      Respond in JSON: {"category": "...", "is_urgent": true/false, "urgency_reason": "why urgent or null"}`
-              }],
-              response_format: { type: 'json_object' }
-            })
-          });
-
-          if (aiResponse.ok) {
-            const aiData = await aiResponse.json();
-            const analysis = JSON.parse(aiData.choices[0].message.content);
-            category = analysis.category || 'Uncategorized';
-            isUrgent = analysis.is_urgent || false;
-            urgencyReason = analysis.urgency_reason;
-          }
-        } catch (error) {
-          console.error('AI categorization failed:', error);
-        }
-
-        // Create new thread with AI insights
+        // Create new thread
         const newThread = await base44.entities.EmailThread.create({
           subject,
           from_address: parseEmailAddress(from),
@@ -184,13 +144,11 @@ Deno.serve(async (req) => {
           last_message_date: new Date(date).toISOString(),
           last_message_snippet: detail.snippet,
           status: 'Open',
-          priority: isUrgent ? 'High' : 'Normal',
-          message_count: 1,
-          category: category,
-          is_urgent: isUrgent,
-          urgency_reason: urgencyReason
+          priority: 'Normal',
+          message_count: 1
         });
         threadId = newThread.id;
+        processedThreadIds.add(threadId); // Queue for AI processing
       }
 
       // Check if message already exists
@@ -267,7 +225,22 @@ Deno.serve(async (req) => {
       }
     }
 
-    return Response.json({ synced: syncedCount, total: allMessages.length });
+    // Trigger AI processing for new/updated threads (async, non-blocking)
+    if (processedThreadIds.size > 0) {
+      // Process in background - don't wait for completion
+      Promise.all(
+        Array.from(processedThreadIds).map(threadId => 
+          base44.asServiceRole.functions.invoke('processEmailAI', { thread_id: threadId })
+            .catch(err => console.error('AI processing failed for thread:', threadId, err))
+        )
+      ).catch(() => {}); // Silent fail
+    }
+
+    return Response.json({ 
+      synced: syncedCount, 
+      total: allMessages.length,
+      ai_processing_queued: processedThreadIds.size
+    });
   } catch (error) {
     console.error('Gmail sync error:', error);
     return Response.json({ 
