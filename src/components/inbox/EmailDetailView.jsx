@@ -125,15 +125,17 @@ export default function EmailDetailView({
     refetchInterval: 30000
   });
 
-  const latestMessage = messages[messages.length - 1] || {};
+  const latestMessage = messages[messages.length - 1];
   const allAttachments = messages.flatMap(m => m.attachments || []);
 
   const handleReply = () => {
+    if (!latestMessage) return;
     setSelectedMessage(latestMessage);
     setComposerMode("reply");
   };
 
   const handleForward = () => {
+    if (!latestMessage) return;
     setSelectedMessage(latestMessage);
     setComposerMode("forward");
   };
@@ -178,6 +180,7 @@ export default function EmailDetailView({
   };
 
   const handleAIExtractActions = async () => {
+    if (!latestMessage) return;
     setLoadingAI('actions');
     try {
       const emailContent = latestMessage.body_text || latestMessage.body_html?.replace(/<[^>]*>/g, '').substring(0, 1000);
@@ -206,6 +209,7 @@ export default function EmailDetailView({
   };
 
   const handleAISuggestLinks = async () => {
+    if (!latestMessage) return;
     setLoadingAI('links');
     try {
       const emailContent = `Subject: ${thread.subject}\n\n${latestMessage.body_text || latestMessage.body_html?.replace(/<[^>]*>/g, '').substring(0, 800)}`;
@@ -352,40 +356,42 @@ export default function EmailDetailView({
               </div>
 
               {/* Email Metadata Row */}
-              <div className="flex items-start gap-3">
-                <div className="w-10 h-10 rounded-full bg-[#FAE008] flex items-center justify-center text-[#111827] font-semibold flex-shrink-0">
-                  {getSenderInitials(latestMessage.from_name, latestMessage.from_address)}
-                </div>
-                <div className="flex-1 min-w-0">
-                  <div className="flex items-baseline gap-2 flex-wrap">
-                    <span className="text-[15px] font-semibold text-[#111827]">
-                      {latestMessage.from_name || latestMessage.from_address}
-                    </span>
+              {latestMessage && (
+                <div className="flex items-start gap-3">
+                  <div className="w-10 h-10 rounded-full bg-[#FAE008] flex items-center justify-center text-[#111827] font-semibold flex-shrink-0">
+                    {getSenderInitials(latestMessage.from_name, latestMessage.from_address)}
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <div className="flex items-baseline gap-2 flex-wrap">
+                      <span className="text-[15px] font-semibold text-[#111827]">
+                        {latestMessage.from_name || latestMessage.from_address}
+                      </span>
+                      <span className="text-[13px] text-[#6B7280]">
+                        &lt;{latestMessage.from_address}&gt;
+                      </span>
+                    </div>
+                    <div className="text-[13px] text-[#6B7280] mt-1">
+                      to {latestMessage.to_addresses?.join(', ') || thread.to_addresses?.join(', ')}
+                    </div>
+                  </div>
+                  <div className="flex items-center gap-2 flex-shrink-0">
                     <span className="text-[13px] text-[#6B7280]">
-                      &lt;{latestMessage.from_address}&gt;
+                      {latestMessage.sent_at && format(parseISO(latestMessage.sent_at), 'MMM d, h:mm a')}
                     </span>
-                  </div>
-                  <div className="text-[13px] text-[#6B7280] mt-1">
-                    to {latestMessage.to_addresses?.join(', ') || thread.to_addresses?.join(', ')}
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      onClick={() => setShowFullHeader(!showFullHeader)}
+                      className="h-6 w-6"
+                    >
+                      {showFullHeader ? <ChevronUp className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />}
+                    </Button>
                   </div>
                 </div>
-                <div className="flex items-center gap-2 flex-shrink-0">
-                  <span className="text-[13px] text-[#6B7280]">
-                    {latestMessage.sent_at && format(parseISO(latestMessage.sent_at), 'MMM d, h:mm a')}
-                  </span>
-                  <Button
-                    variant="ghost"
-                    size="icon"
-                    onClick={() => setShowFullHeader(!showFullHeader)}
-                    className="h-6 w-6"
-                  >
-                    {showFullHeader ? <ChevronUp className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />}
-                  </Button>
-                </div>
-              </div>
+              )}
 
               {/* Expanded Header Details */}
-              {showFullHeader && (
+              {showFullHeader && latestMessage && (
                 <div className="mt-4 pt-4 border-t border-[#F3F4F6] space-y-2 text-[13px]">
                   <div className="flex gap-2">
                     <span className="text-[#6B7280] font-medium min-w-[60px]">From:</span>
@@ -419,14 +425,20 @@ export default function EmailDetailView({
 
             {/* Email Body */}
             <div className="p-6">
-              {latestMessage.body_html ? (
-                <div 
-                  className="gmail-email-body prose prose-sm max-w-none"
-                  dangerouslySetInnerHTML={{ __html: sanitizeBodyHtml(latestMessage.body_html) }} 
-                />
+              {latestMessage ? (
+                latestMessage.body_html ? (
+                  <div 
+                    className="gmail-email-body prose prose-sm max-w-none"
+                    dangerouslySetInnerHTML={{ __html: sanitizeBodyHtml(latestMessage.body_html) }} 
+                  />
+                ) : (
+                  <div className="whitespace-pre-wrap text-[14px] text-[#111827] leading-relaxed">
+                    {latestMessage.body_text || '(No content)'}
+                  </div>
+                )
               ) : (
-                <div className="whitespace-pre-wrap text-[14px] text-[#111827] leading-relaxed">
-                  {latestMessage.body_text || '(No content)'}
+                <div className="text-[14px] text-[#6B7280] text-center py-8">
+                  No messages in this thread
                 </div>
               )}
             </div>
