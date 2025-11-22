@@ -524,6 +524,20 @@ export default function EmailDetailView({
                   {loadingAI === 'links' ? 'Analyzing...' : 'Suggest Links'}
                 </Button>
               </div>
+
+              {/* AI Results Cards */}
+              {aiCards.length > 0 && (
+                <div className="space-y-3 mt-4">
+                  {aiCards.map((card) => (
+                    <AIActionCard
+                      key={card.id}
+                      title={card.title}
+                      content={card.content}
+                      onCopy={() => toast.success('Copied to clipboard')}
+                    />
+                  ))}
+                </div>
+              )}
             </div>
 
             {/* Email Body */}
