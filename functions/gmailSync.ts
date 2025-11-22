@@ -80,7 +80,6 @@ Deno.serve(async (req) => {
     }
 
     let syncedCount = 0;
-    const newThreadIds = [];
 
     // Process each message (limit to 30 to avoid timeouts)
     for (const message of allMessages.slice(0, 30)) {
@@ -192,7 +191,6 @@ Deno.serve(async (req) => {
           urgency_reason: urgencyReason
         });
         threadId = newThread.id;
-        newThreadIds.push(threadId);
       }
 
       // Check if message already exists
@@ -267,17 +265,6 @@ Deno.serve(async (req) => {
         console.error(`Error processing message ${message.id}:`, msgError.message);
         // Continue with next message
       }
-    }
-
-    // Trigger AI processing for new threads (async, don't wait)
-    if (newThreadIds.length > 0) {
-      // Process in background - fire and forget (limit to 5 to avoid overload)
-      Promise.all(
-        newThreadIds.slice(0, 5).map(threadId => 
-          base44.asServiceRole.functions.invoke('processEmailAI', { threadId })
-            .catch(err => console.error('AI processing failed for thread:', err))
-        )
-      ).catch(() => {}); // Ignore errors
     }
 
     return Response.json({ synced: syncedCount, total: allMessages.length });
