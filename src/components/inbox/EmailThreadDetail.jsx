@@ -99,58 +99,11 @@ export default function EmailThreadDetail({
               </div>
               )}
 
-              {/* Category and Urgency Badges */}
-              <div className="flex items-center gap-2 mt-3">
-              {thread.category && thread.category !== 'Uncategorized' && (
-                <Badge className="bg-blue-100 text-blue-800 border-blue-200">
-                  {thread.category}
-                </Badge>
-              )}
-              {thread.is_urgent && (
-                <Badge className="bg-red-100 text-red-800 border-red-200 animate-pulse">
-                  🚨 Urgent
-                </Badge>
-              )}
-              {thread.urgency_reason && (
-                <span className="text-[12px] text-[#DC2626]">
-                  {thread.urgency_reason}
-                </span>
-              )}
               </div>
-              </div>
-          <Button
-            variant="ghost"
-            size="icon"
-            onClick={onClose}
-            className="lg:hidden"
-          >
-            <X className="w-5 h-5" />
-          </Button>
-        </div>
 
-        {/* Status and Actions */}
-        <div className="flex flex-wrap items-center gap-3">
-          {userPermissions?.can_change_status && (
-            <Select value={thread.status} onValueChange={(value) => onStatusChange(thread.id, value)}>
-              <SelectTrigger className="w-[140px] h-9">
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="Open">Open</SelectItem>
-                <SelectItem value="In Progress">In Progress</SelectItem>
-                <SelectItem value="Closed">Closed</SelectItem>
-                <SelectItem value="Archived">Archived</SelectItem>
-              </SelectContent>
-            </Select>
-          )}
-
-          {!userPermissions?.can_change_status && (
-            <Badge className={`${statusColors[thread.status]} px-3 py-1`}>
-              {thread.status}
-            </Badge>
-          )}
-
-          {userPermissions?.can_link_to_project && (
+              {/* Action Buttons */}
+              <div className="flex flex-wrap items-center gap-3">
+                {userPermissions?.can_link_to_project && (
             <Button variant="outline" size="sm" onClick={onLinkProject}>
               <LinkIcon className="w-4 h-4 mr-2" />
               Link Project
@@ -190,11 +143,11 @@ export default function EmailThreadDetail({
               </Button>
             </>
           )}
-        </div>
+          </div>
 
         {/* Linked Items */}
         {(thread.linked_project_id || thread.linked_job_id) && (
-          <div className="flex flex-wrap items-center gap-2 mt-4">
+          <div className="flex flex-wrap items-center gap-2 mt-3">
             {thread.linked_project_id && (
               <div className="flex items-center gap-2 bg-[#F3F4F6] rounded-lg px-3 py-2">
                 <span className="text-[13px] text-[#4B5563] font-medium">Project:</span>
@@ -233,9 +186,9 @@ export default function EmailThreadDetail({
                   </button>
                 )}
               </div>
-            )}
-          </div>
-        )}
+              )}
+              </div>
+              )}
       </div>
 
       {/* Messages Timeline */}
