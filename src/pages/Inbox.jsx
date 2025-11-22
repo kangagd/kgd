@@ -22,6 +22,7 @@ import GmailConnect from "../components/inbox/GmailConnect";
 export default function Inbox() {
   const [searchTerm, setSearchTerm] = useState("");
   const [statusFilter, setStatusFilter] = useState("all");
+  const [priorityFilter, setPriorityFilter] = useState("all");
   const [sortBy, setSortBy] = useState("date");
   const [selectedThread, setSelectedThread] = useState(null);
   const [selectedThreadIds, setSelectedThreadIds] = useState([]);
@@ -147,8 +148,9 @@ export default function Inbox() {
       thread.from_address?.toLowerCase().includes(searchTerm.toLowerCase());
     
     const matchesStatus = statusFilter === "all" || thread.status === statusFilter;
+    const matchesPriority = priorityFilter === "all" || thread.priority === priorityFilter;
     
-    return matchesSearch && matchesStatus;
+    return matchesSearch && matchesStatus && matchesPriority;
   }).sort((a, b) => {
     switch(sortBy) {
       case "date":
@@ -159,6 +161,9 @@ export default function Inbox() {
         return (a.subject || "").localeCompare(b.subject || "");
       case "unread":
         return (b.is_read ? 0 : 1) - (a.is_read ? 0 : 1);
+      case "priority":
+        const priorityOrder = { "High": 3, "Normal": 2, "Low": 1 };
+        return (priorityOrder[b.priority] || 2) - (priorityOrder[a.priority] || 2);
       default:
         return 0;
     }
@@ -289,8 +294,8 @@ export default function Inbox() {
             />
           </div>
 
-          <div className="flex items-center gap-2">
-            <Tabs value={statusFilter} onValueChange={setStatusFilter} className="flex-1">
+          <div className="space-y-3">
+            <Tabs value={statusFilter} onValueChange={setStatusFilter} className="w-full">
               <TabsList className="w-full grid grid-cols-4 gap-1">
                 <TabsTrigger value="all">All</TabsTrigger>
                 <TabsTrigger value="Open">Open</TabsTrigger>
@@ -298,28 +303,45 @@ export default function Inbox() {
                 <TabsTrigger value="Closed">Closed</TabsTrigger>
               </TabsList>
             </Tabs>
-            
-            <DropdownMenu>
-              <DropdownMenuTrigger asChild>
-                <Button variant="outline" size="icon">
-                  <ArrowUpDown className="w-4 h-4" />
-                </Button>
-              </DropdownMenuTrigger>
-              <DropdownMenuContent align="end">
-                <DropdownMenuItem onClick={() => setSortBy("date")}>
-                  {sortBy === "date" && "✓ "}Date
-                </DropdownMenuItem>
-                <DropdownMenuItem onClick={() => setSortBy("sender")}>
-                  {sortBy === "sender" && "✓ "}Sender
-                </DropdownMenuItem>
-                <DropdownMenuItem onClick={() => setSortBy("subject")}>
-                  {sortBy === "subject" && "✓ "}Subject
-                </DropdownMenuItem>
-                <DropdownMenuItem onClick={() => setSortBy("unread")}>
-                  {sortBy === "unread" && "✓ "}Unread First
-                </DropdownMenuItem>
-              </DropdownMenuContent>
-            </DropdownMenu>
+
+            <div className="flex items-center gap-2">
+              <Select value={priorityFilter} onValueChange={setPriorityFilter}>
+                <SelectTrigger className="flex-1">
+                  <SelectValue placeholder="Priority" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">All Priorities</SelectItem>
+                  <SelectItem value="High">🔴 High</SelectItem>
+                  <SelectItem value="Normal">🟡 Normal</SelectItem>
+                  <SelectItem value="Low">🟢 Low</SelectItem>
+                </SelectContent>
+              </Select>
+              
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <Button variant="outline" size="icon">
+                    <ArrowUpDown className="w-4 h-4" />
+                  </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="end">
+                  <DropdownMenuItem onClick={() => setSortBy("date")}>
+                    {sortBy === "date" && "✓ "}Date
+                  </DropdownMenuItem>
+                  <DropdownMenuItem onClick={() => setSortBy("priority")}>
+                    {sortBy === "priority" && "✓ "}Priority
+                  </DropdownMenuItem>
+                  <DropdownMenuItem onClick={() => setSortBy("sender")}>
+                    {sortBy === "sender" && "✓ "}Sender
+                  </DropdownMenuItem>
+                  <DropdownMenuItem onClick={() => setSortBy("subject")}>
+                    {sortBy === "subject" && "✓ "}Subject
+                  </DropdownMenuItem>
+                  <DropdownMenuItem onClick={() => setSortBy("unread")}>
+                    {sortBy === "unread" && "✓ "}Unread First
+                  </DropdownMenuItem>
+                </DropdownMenuContent>
+              </DropdownMenu>
+            </div>
           </div>
         </div>
 

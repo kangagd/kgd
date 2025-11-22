@@ -28,7 +28,9 @@ import {
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuTrigger,
+  DropdownMenuSeparator,
 } from "@/components/ui/dropdown-menu";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import {
   Dialog,
   DialogContent,
@@ -129,6 +131,7 @@ export default function EmailDetailView({
   const [loadingAI, setLoadingAI] = useState(null);
   const [previewAttachment, setPreviewAttachment] = useState(null);
   const [attachmentsExpanded, setAttachmentsExpanded] = useState(false);
+  const [updatingPriority, setUpdatingPriority] = useState(false);
 
   const { data: messages = [], refetch } = useQuery({
     queryKey: ['emailMessages', thread.id],
@@ -248,6 +251,32 @@ export default function EmailDetailView({
     }
   };
 
+  const handlePriorityChange = async (newPriority) => {
+    setUpdatingPriority(true);
+    try {
+      await base44.entities.EmailThread.update(thread.id, { priority: newPriority });
+      toast.success(`Priority updated to ${newPriority}`);
+      refetch();
+    } catch (error) {
+      toast.error("Failed to update priority");
+    } finally {
+      setUpdatingPriority(false);
+    }
+  };
+
+  const handleAIReprioritize = async () => {
+    setUpdatingPriority(true);
+    try {
+      const response = await base44.functions.invoke('emailPrioritize', { threadId: thread.id });
+      toast.success(`AI set priority to ${response.data.priority}`);
+      refetch();
+    } catch (error) {
+      toast.error("Failed to analyze priority");
+    } finally {
+      setUpdatingPriority(false);
+    }
+  };
+
   const getSenderInitials = (name, email) => {
     if (name) {
       const parts = name.split(' ');
@@ -270,38 +299,53 @@ export default function EmailDetailView({
                   <h1 className="text-[24px] md:text-[28px] font-bold text-[#111827] leading-tight mb-2">
                     {thread.subject}
                   </h1>
-                  {(thread.linked_project_id || thread.linked_job_id) && (
-                    <div className="flex flex-wrap items-center gap-2 text-[13px] text-[#6B7280]">
-                      {thread.linked_project_id && (
-                        <div className="flex items-center gap-1">
-                          <LinkIcon className="w-3 h-3" />
-                          <span>Project:</span>
-                          <a
-                            href={createPageUrl("Projects") + `?projectId=${thread.linked_project_id}`}
-                            target="_blank"
-                            rel="noopener noreferrer"
-                            className="text-[#111827] font-medium hover:underline"
-                          >
-                            {thread.linked_project_title}
-                          </a>
-                        </div>
-                      )}
-                      {thread.linked_job_id && (
-                        <div className="flex items-center gap-1">
-                          <LinkIcon className="w-3 h-3" />
-                          <span>Job:</span>
-                          <a
-                            href={createPageUrl("Jobs") + `?jobId=${thread.linked_job_id}`}
-                            target="_blank"
-                            rel="noopener noreferrer"
-                            className="text-[#111827] font-medium hover:underline"
-                          >
-                            #{thread.linked_job_number}
-                          </a>
-                        </div>
-                      )}
+                  <div className="flex flex-wrap items-center gap-3 text-[13px] text-[#6B7280]">
+                    {(thread.linked_project_id || thread.linked_job_id) && (
+                      <>
+                        {thread.linked_project_id && (
+                          <div className="flex items-center gap-1">
+                            <LinkIcon className="w-3 h-3" />
+                            <span>Project:</span>
+                            <a
+                              href={createPageUrl("Projects") + `?projectId=${thread.linked_project_id}`}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className="text-[#111827] font-medium hover:underline"
+                            >
+                              {thread.linked_project_title}
+                            </a>
+                          </div>
+                        )}
+                        {thread.linked_job_id && (
+                          <div className="flex items-center gap-1">
+                            <LinkIcon className="w-3 h-3" />
+                            <span>Job:</span>
+                            <a
+                              href={createPageUrl("Jobs") + `?jobId=${thread.linked_job_id}`}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className="text-[#111827] font-medium hover:underline"
+                            >
+                              #{thread.linked_job_number}
+                            </a>
+                          </div>
+                        )}
+                      </>
+                    )}
+                    <div className="flex items-center gap-2">
+                      <span className="text-[#6B7280]">Priority:</span>
+                      <Select value={thread.priority || "Normal"} onValueChange={handlePriorityChange} disabled={updatingPriority}>
+                        <SelectTrigger className="h-7 w-[120px] text-[13px]">
+                          <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="High">🔴 High</SelectItem>
+                          <SelectItem value="Normal">🟡 Normal</SelectItem>
+                          <SelectItem value="Low">🟢 Low</SelectItem>
+                        </SelectContent>
+                      </Select>
                     </div>
-                  )}
+                  </div>
                 </div>
                 <div className="flex items-center gap-2 flex-shrink-0">
                   {userPermissions?.can_reply && (
@@ -353,6 +397,11 @@ export default function EmailDetailView({
                           Unlink Job
                         </DropdownMenuItem>
                       )}
+                      <DropdownMenuSeparator />
+                      <DropdownMenuItem onClick={handleAIReprioritize} disabled={updatingPriority}>
+                        <Sparkles className="w-4 h-4 mr-2" />
+                        AI Re-prioritize
+                      </DropdownMenuItem>
                     </DropdownMenuContent>
                   </DropdownMenu>
                   <Button
