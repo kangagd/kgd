@@ -29,6 +29,15 @@ export default function ProjectForm({ project, onSubmit, onCancel, isSubmitting 
     status: "Lead",
     financial_status: "",
     address: "",
+    address_full: "",
+    address_street: "",
+    address_suburb: "",
+    address_state: "",
+    address_postcode: "",
+    address_country: "Australia",
+    google_place_id: "",
+    latitude: null,
+    longitude: null,
     quote_value: null,
     invoice_value: null,
     payment_received: null,
@@ -89,7 +98,16 @@ export default function ProjectForm({ project, onSubmit, onCancel, isSubmitting 
       customer_name: customer?.name || "",
       customer_phone: customer?.phone || "",
       customer_email: customer?.email || "",
-      address: customer?.address || formData.address
+      address: customer?.address_full || customer?.address || formData.address,
+      address_full: customer?.address_full || customer?.address || formData.address_full,
+      address_street: customer?.address_street || formData.address_street,
+      address_suburb: customer?.address_suburb || formData.address_suburb,
+      address_state: customer?.address_state || formData.address_state,
+      address_postcode: customer?.address_postcode || formData.address_postcode,
+      address_country: customer?.address_country || formData.address_country || "Australia",
+      google_place_id: customer?.google_place_id || formData.google_place_id,
+      latitude: customer?.latitude || formData.latitude,
+      longitude: customer?.longitude || formData.longitude
     });
   };
 
@@ -242,8 +260,12 @@ export default function ProjectForm({ project, onSubmit, onCancel, isSubmitting 
               <Label htmlFor="address">Project Address</Label>
               <AddressAutocomplete
                 id="address"
-                value={formData.address}
-                onChange={(value) => setFormData({ ...formData, address: value })}
+                value={formData.address_full || formData.address || ""}
+                onChange={(addressData) => setFormData({ 
+                  ...formData, 
+                  ...addressData,
+                  address: addressData.address_full // Keep legacy field for backward compatibility
+                })}
                 className="border-2 border-slate-300 focus:border-[#fae008] focus:ring-2 focus:ring-[#fae008]/20"
               />
             </div>
