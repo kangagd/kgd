@@ -7,10 +7,7 @@ Deno.serve(async (req) => {
         // Verify user is authenticated
         const user = await base44.auth.me();
         if (!user) {
-            return new Response(JSON.stringify({ error: 'Unauthorized' }), {
-                status: 401,
-                headers: { 'Content-Type': 'application/json' }
-            });
+            return Response.json({ error: 'Unauthorized' }, { status: 401 });
         }
 
         // Get the API key from environment
@@ -18,21 +15,12 @@ Deno.serve(async (req) => {
         
         if (!apiKey) {
             console.error('GOOGLE_MAPS_API_KEY not found in environment');
-            return new Response(JSON.stringify({ error: 'API key not configured' }), {
-                status: 500,
-                headers: { 'Content-Type': 'application/json' }
-            });
+            return Response.json({ error: 'API key not configured' }, { status: 500 });
         }
 
-        return new Response(JSON.stringify({ apiKey }), {
-            status: 200,
-            headers: { 'Content-Type': 'application/json' }
-        });
+        return Response.json({ apiKey }, { status: 200 });
     } catch (error) {
         console.error('Error in getGoogleMapsKey:', error);
-        return new Response(JSON.stringify({ error: error.message }), {
-            status: 500,
-            headers: { 'Content-Type': 'application/json' }
-        });
+        return Response.json({ error: error.message }, { status: 500 });
     }
 });
