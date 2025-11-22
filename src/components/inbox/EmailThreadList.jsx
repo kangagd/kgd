@@ -85,25 +85,24 @@ export default function EmailThreadList({
                 />
               )}
               <div className="flex-1 min-w-0" onClick={() => onSelectThread(thread)}>
-              <div className="flex items-center gap-2 mb-1">
-                {thread.is_urgent && (
-                  <span className="text-[16px]">🚨</span>
-                )}
-                {!thread.is_read && (
-                  <div className="w-2 h-2 bg-[#FAE008] rounded-full flex-shrink-0" />
-                )}
-                <h3 className={`text-[14px] ${!thread.is_read ? 'font-semibold' : 'font-medium'} text-[#111827] truncate`}>
-                  {thread.subject}
-                </h3>
+                <div className="flex items-center gap-2 mb-1">
+                  {thread.is_urgent && (
+                    <span className="text-[16px]">🚨</span>
+                  )}
+                  {!thread.is_read && (
+                    <div className="w-2 h-2 bg-[#FAE008] rounded-full flex-shrink-0" />
+                  )}
+                  <h3 className={`text-[14px] ${!thread.is_read ? 'font-semibold' : 'font-medium'} text-[#111827] truncate`}>
+                    {thread.subject}
+                  </h3>
+                </div>
+                <p className="text-[12px] text-[#4B5563] truncate">{thread.from_address}</p>
               </div>
-              <p className="text-[12px] text-[#4B5563] truncate">{thread.from_address}</p>
-              </div>
-              </div>
-              </div>
-              <span className="text-[11px] text-[#6B7280] whitespace-nowrap">
+            </div>
+            <span className="text-[11px] text-[#6B7280] whitespace-nowrap">
               {thread.last_message_date && format(parseISO(thread.last_message_date), 'MMM d')}
-              </span>
-              </div>
+            </span>
+          </div>
 
           <div onClick={() => onSelectThread(thread)}>
             <p className="text-[13px] text-[#6B7280] line-clamp-2 mb-2">
