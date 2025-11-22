@@ -6,6 +6,36 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { X, Send, Paperclip, Bold, Italic, Underline, Link as LinkIcon, List, ListOrdered } from "lucide-react";
 import { base44 } from "@/api/base44Client";
 import { toast } from "sonner";
+import { format, parseISO } from "date-fns";
+
+const sanitizeBodyHtml = (html) => {
+  if (!html) return html;
+  
+  let sanitized = html;
+  
+  // Remove outer HTML document wrappers
+  sanitized = sanitized.replace(/<\!DOCTYPE[^>]*>/gi, '');
+  sanitized = sanitized.replace(/<html[^>]*>/gi, '');
+  sanitized = sanitized.replace(/<\/html>/gi, '');
+  sanitized = sanitized.replace(/<head[^>]*>.*?<\/head>/gis, '');
+  sanitized = sanitized.replace(/<meta[^>]*>/gi, '');
+  
+  // Extract body content if wrapped in <body> tags
+  const bodyMatch = sanitized.match(/<body[^>]*>(.*?)<\/body>/is);
+  if (bodyMatch) {
+    sanitized = bodyMatch[1];
+  }
+  
+  // Remove dangerous elements
+  sanitized = sanitized.replace(/<script[^>]*>.*?<\/script>/gi, '');
+  sanitized = sanitized.replace(/<iframe[^>]*>.*?<\/iframe>/gi, '');
+  sanitized = sanitized.replace(/<object[^>]*>.*?<\/object>/gi, '');
+  sanitized = sanitized.replace(/<embed[^>]*>/gi, '');
+  sanitized = sanitized.replace(/<form[^>]*>.*?<\/form>/gi, '');
+  sanitized = sanitized.replace(/on\w+\s*=\s*["'][^"']*["']/gi, '');
+  
+  return sanitized.trim();
+};
 
 export default function EmailComposer({ mode = "compose", thread, message, onClose, onSent }) {
   const [to, setTo] = useState(mode === "reply" ? message?.from_address : "");
@@ -18,10 +48,39 @@ export default function EmailComposer({ mode = "compose", thread, message, onClo
   
   const getInitialBody = () => {
     if (mode === "reply") {
-      return `\n\n<br><br>On ${new Date(message?.sent_at).toLocaleString()}, ${message?.from_name || message?.from_address} wrote:<br><blockquote style="margin-left: 10px; padding-left: 10px; border-left: 2px solid #ccc;">${message?.body_html || message?.body_text}</blockquote>`;
+      // Get the original message content
+      let quotedContent = "";
+      if (message?.body_html) {
+        // Sanitize and strip outer HTML wrappers
+        quotedContent = sanitizeBodyHtml(message.body_html);
+      } else if (message?.body_text) {
+        // Convert plain text to HTML
+        quotedContent = message.body_text.replace(/\n/g, '<br>');
+      }
+      
+      // Format date in Gmail style
+      const dateStr = message?.sent_at 
+        ? format(parseISO(message.sent_at), "d/M/yyyy 'at' HH:mm")
+        : new Date().toLocaleString();
+      
+      const sender = message?.from_name || message?.from_address;
+      
+      // Gmail-style quote block
+      return `<br><br><div style="margin-top: 20px; padding-top: 10px; border-top: 1px solid #e5e7eb;"><div style="color: #6b7280; font-size: 13px; margin-bottom: 8px;">On ${dateStr}, ${sender} wrote:</div><blockquote style="margin: 0; padding-left: 12px; border-left: 3px solid #d1d5db; color: #4b5563;">${quotedContent}</blockquote></div>`;
     }
     if (mode === "forward") {
-      return `\n\n<br><br>---------- Forwarded message ----------<br>From: ${message?.from_name || message?.from_address}<br>Date: ${new Date(message?.sent_at).toLocaleString()}<br>Subject: ${message?.subject}<br><br>${message?.body_html || message?.body_text}`;
+      let forwardedContent = "";
+      if (message?.body_html) {
+        forwardedContent = sanitizeBodyHtml(message.body_html);
+      } else if (message?.body_text) {
+        forwardedContent = message.body_text.replace(/\n/g, '<br>');
+      }
+      
+      const dateStr = message?.sent_at 
+        ? format(parseISO(message.sent_at), "d/M/yyyy 'at' HH:mm")
+        : new Date().toLocaleString();
+      
+      return `<br><br><div style="margin-top: 20px; padding-top: 10px; border-top: 1px solid #e5e7eb;"><div style="color: #6b7280; font-size: 13px; font-weight: 600; margin-bottom: 8px;">---------- Forwarded message ----------</div><div style="color: #6b7280; font-size: 13px; margin-bottom: 8px;"><strong>From:</strong> ${message?.from_name || message?.from_address}<br><strong>Date:</strong> ${dateStr}<br><strong>Subject:</strong> ${message?.subject}</div><div style="margin-top: 12px;">${forwardedContent}</div></div>`;
     }
     return "";
   };
@@ -242,13 +301,28 @@ export default function EmailComposer({ mode = "compose", thread, message, onClo
             />
           </div>
 
-          <Textarea
-            ref={textareaRef}
-            value={body}
-            onChange={(e) => setBody(e.target.value)}
-            placeholder="Compose your email..."
-            className="min-h-[250px] font-sans"
-          />
+          <div className="relative">
+            <Textarea
+              ref={textareaRef}
+              value={body}
+              onChange={(e) => setBody(e.target.value)}
+              placeholder="Compose your email..."
+              className="min-h-[250px] font-sans hidden"
+            />
+            <div 
+              contentEditable
+              dangerouslySetInnerHTML={{ __html: body }}
+              onInput={(e) => setBody(e.currentTarget.innerHTML)}
+              className="min-h-[250px] p-3 border border-[#E5E7EB] rounded-lg focus:outline-none focus:border-[#111827] focus:shadow-sm"
+              style={{ 
+                maxHeight: '400px', 
+                overflowY: 'auto',
+                fontFamily: 'inherit',
+                fontSize: '14px',
+                lineHeight: '1.5'
+              }}
+            />
+          </div>
         </div>
 
         {attachments.length > 0 && (
