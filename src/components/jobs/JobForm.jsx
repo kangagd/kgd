@@ -29,6 +29,15 @@ export default function JobForm({ job, technicians, onSubmit, onCancel, isSubmit
     customer_email: "",
     customer_type: "",
     address: "",
+    address_full: "",
+    address_street: "",
+    address_suburb: "",
+    address_state: "",
+    address_postcode: "",
+    address_country: "Australia",
+    google_place_id: "",
+    latitude: null,
+    longitude: null,
     product: "",
     job_type_id: "",
     job_type: "",
@@ -252,7 +261,16 @@ export default function JobForm({ job, technicians, onSubmit, onCancel, isSubmit
         customer_phone: customer.phone || "",
         customer_email: customer.email || "",
         customer_type: customer.customer_type || "",
-        address: customer.address || formData.address,
+        address: customer.address_full || customer.address || formData.address,
+        address_full: customer.address_full || customer.address || formData.address_full,
+        address_street: customer.address_street || formData.address_street,
+        address_suburb: customer.address_suburb || formData.address_suburb,
+        address_state: customer.address_state || formData.address_state,
+        address_postcode: customer.address_postcode || formData.address_postcode,
+        address_country: customer.address_country || formData.address_country || "Australia",
+        google_place_id: customer.google_place_id || formData.google_place_id,
+        latitude: customer.latitude || formData.latitude,
+        longitude: customer.longitude || formData.longitude,
       });
     }
   };
@@ -285,7 +303,16 @@ export default function JobForm({ job, technicians, onSubmit, onCancel, isSubmit
           customer_name: project.customer_name,
           customer_phone: project.customer_phone || "",
           customer_email: project.customer_email || "",
-          address: project.address || formData.address,
+          address: project.address_full || project.address || formData.address,
+          address_full: project.address_full || project.address || formData.address_full,
+          address_street: project.address_street || formData.address_street,
+          address_suburb: project.address_suburb || formData.address_suburb,
+          address_state: project.address_state || formData.address_state,
+          address_postcode: project.address_postcode || formData.address_postcode,
+          address_country: project.address_country || formData.address_country || "Australia",
+          google_place_id: project.google_place_id || formData.google_place_id,
+          latitude: project.latitude || formData.latitude,
+          longitude: project.longitude || formData.longitude,
           product: autoProduct
         });
       }
@@ -366,7 +393,16 @@ export default function JobForm({ job, technicians, onSubmit, onCancel, isSubmit
         customer_phone: newCustomer.phone || "",
         customer_email: newCustomer.email || "",
         customer_type: newCustomer.customer_type || "",
-        address: newCustomer.address || "",
+        address: newCustomer.address_full || newCustomer.address || "",
+        address_full: newCustomer.address_full || newCustomer.address || "",
+        address_street: newCustomer.address_street || "",
+        address_suburb: newCustomer.address_suburb || "",
+        address_state: newCustomer.address_state || "",
+        address_postcode: newCustomer.address_postcode || "",
+        address_country: newCustomer.address_country || "Australia",
+        google_place_id: newCustomer.google_place_id || "",
+        latitude: newCustomer.latitude || null,
+        longitude: newCustomer.longitude || null,
       });
       setShowNewCustomerDialog(false);
       setShowDuplicateDialog(false);
@@ -550,8 +586,12 @@ export default function JobForm({ job, technicians, onSubmit, onCancel, isSubmit
               <Label htmlFor="address" className="text-[14px] font-medium text-[#111827] leading-[1.4]">Service Address *</Label>
               <AddressAutocomplete
                 id="address"
-                value={formData.address}
-                onChange={(value) => setFormData({ ...formData, address: value })}
+                value={formData.address_full || formData.address || ""}
+                onChange={(addressData) => setFormData({ 
+                  ...formData, 
+                  ...addressData,
+                  address: addressData.address_full // Keep legacy field for backward compatibility
+                })}
                 required
                 className="border-2 border-slate-300 focus:border-[#fae008] focus:ring-2 focus:ring-[#fae008]/20 transition-all"
               />
