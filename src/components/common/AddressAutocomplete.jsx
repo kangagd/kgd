@@ -203,20 +203,23 @@ export default function AddressAutocomplete({
     };
   }, [isScriptLoaded, onChange]);
 
-  const handleInputChange = (e) => {
-    // Allow free-form typing as fallback
+  const handleManualChange = (e) => {
+    // Only update on blur for manual entry (not on every keystroke)
     const textValue = e.target.value;
-    onChange({
-      address_full: textValue,
-      address_street: '',
-      address_suburb: '',
-      address_state: '',
-      address_postcode: '',
-      address_country: 'Australia',
-      google_place_id: '',
-      latitude: null,
-      longitude: null
-    });
+    if (textValue && !autocompleteRef.current?.gm_accessors_) {
+      // Only if Google autocomplete didn't handle it
+      onChange({
+        address_full: textValue,
+        address_street: '',
+        address_suburb: '',
+        address_state: '',
+        address_postcode: '',
+        address_country: 'Australia',
+        google_place_id: '',
+        latitude: null,
+        longitude: null
+      });
+    }
   };
 
   return (
@@ -225,8 +228,8 @@ export default function AddressAutocomplete({
         <Input
           ref={inputRef}
           id={id}
-          value={value}
-          onChange={handleInputChange}
+          defaultValue={value}
+          onBlur={handleManualChange}
           placeholder={placeholder}
           required={required}
           className={className}
