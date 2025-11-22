@@ -3,8 +3,15 @@ import { base44 } from "@/api/base44Client";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Search, Filter, Mail, Link as LinkIcon } from "lucide-react";
+import { Search, Filter, Mail, Link as LinkIcon, Check, Archive, Trash2, ArrowUpDown } from "lucide-react";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 import EmailThreadList from "../components/inbox/EmailThreadList";
 import EmailDetailView from "../components/inbox/EmailDetailView";
 import LinkThreadModal from "../components/inbox/LinkThreadModal";
@@ -15,7 +22,9 @@ import GmailConnect from "../components/inbox/GmailConnect";
 export default function Inbox() {
   const [searchTerm, setSearchTerm] = useState("");
   const [statusFilter, setStatusFilter] = useState("all");
+  const [sortBy, setSortBy] = useState("date");
   const [selectedThread, setSelectedThread] = useState(null);
+  const [selectedThreadIds, setSelectedThreadIds] = useState([]);
   const [linkModalOpen, setLinkModalOpen] = useState(false);
   const [linkType, setLinkType] = useState(null);
   const [createProjectModalOpen, setCreateProjectModalOpen] = useState(false);
@@ -140,6 +149,19 @@ export default function Inbox() {
     const matchesStatus = statusFilter === "all" || thread.status === statusFilter;
     
     return matchesSearch && matchesStatus;
+  }).sort((a, b) => {
+    switch(sortBy) {
+      case "date":
+        return new Date(b.last_message_date) - new Date(a.last_message_date);
+      case "sender":
+        return (a.from_address || "").localeCompare(b.from_address || "");
+      case "subject":
+        return (a.subject || "").localeCompare(b.subject || "");
+      case "unread":
+        return (b.is_read ? 0 : 1) - (a.is_read ? 0 : 1);
+      default:
+        return 0;
+    }
   });
 
   const handleStatusChange = (threadId, newStatus) => {
@@ -179,6 +201,52 @@ export default function Inbox() {
   const openLinkModal = (type) => {
     setLinkType(type);
     setLinkModalOpen(true);
+  };
+
+  const handleBulkStatusChange = async (status) => {
+    await Promise.all(
+      selectedThreadIds.map(id => 
+        base44.entities.EmailThread.update(id, { status })
+      )
+    );
+    queryClient.invalidateQueries({ queryKey: ['emailThreads'] });
+    setSelectedThreadIds([]);
+  };
+
+  const handleBulkMarkRead = async (isRead) => {
+    await Promise.all(
+      selectedThreadIds.map(id => 
+        base44.entities.EmailThread.update(id, { is_read: isRead })
+      )
+    );
+    queryClient.invalidateQueries({ queryKey: ['emailThreads'] });
+    setSelectedThreadIds([]);
+  };
+
+  const handleBulkArchive = async () => {
+    await Promise.all(
+      selectedThreadIds.map(id => 
+        base44.entities.EmailThread.update(id, { status: "Archived" })
+      )
+    );
+    queryClient.invalidateQueries({ queryKey: ['emailThreads'] });
+    setSelectedThreadIds([]);
+  };
+
+  const handleToggleSelection = (threadId) => {
+    setSelectedThreadIds(prev => 
+      prev.includes(threadId) 
+        ? prev.filter(id => id !== threadId)
+        : [...prev, threadId]
+    );
+  };
+
+  const handleSelectAll = () => {
+    if (selectedThreadIds.length === filteredThreads.length) {
+      setSelectedThreadIds([]);
+    } else {
+      setSelectedThreadIds(filteredThreads.map(t => t.id));
+    }
   };
 
   if (!userPermissions?.can_view) {
@@ -221,21 +289,108 @@ export default function Inbox() {
             />
           </div>
 
-          <Tabs value={statusFilter} onValueChange={setStatusFilter} className="w-full">
-            <TabsList className="w-full grid grid-cols-4 gap-1">
-              <TabsTrigger value="all">All</TabsTrigger>
-              <TabsTrigger value="Open">Open</TabsTrigger>
-              <TabsTrigger value="In Progress">Active</TabsTrigger>
-              <TabsTrigger value="Closed">Closed</TabsTrigger>
-            </TabsList>
-          </Tabs>
+          <div className="flex items-center gap-2">
+            <Tabs value={statusFilter} onValueChange={setStatusFilter} className="flex-1">
+              <TabsList className="w-full grid grid-cols-4 gap-1">
+                <TabsTrigger value="all">All</TabsTrigger>
+                <TabsTrigger value="Open">Open</TabsTrigger>
+                <TabsTrigger value="In Progress">Active</TabsTrigger>
+                <TabsTrigger value="Closed">Closed</TabsTrigger>
+              </TabsList>
+            </Tabs>
+            
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button variant="outline" size="icon">
+                  <ArrowUpDown className="w-4 h-4" />
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end">
+                <DropdownMenuItem onClick={() => setSortBy("date")}>
+                  {sortBy === "date" && "✓ "}Date
+                </DropdownMenuItem>
+                <DropdownMenuItem onClick={() => setSortBy("sender")}>
+                  {sortBy === "sender" && "✓ "}Sender
+                </DropdownMenuItem>
+                <DropdownMenuItem onClick={() => setSortBy("subject")}>
+                  {sortBy === "subject" && "✓ "}Subject
+                </DropdownMenuItem>
+                <DropdownMenuItem onClick={() => setSortBy("unread")}>
+                  {sortBy === "unread" && "✓ "}Unread First
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
+          </div>
         </div>
+
+        {selectedThreadIds.length > 0 && (
+          <div className="px-5 py-3 bg-[#FAE008]/20 border-b border-[#FAE008]/30 flex items-center gap-3">
+            <span className="text-[13px] font-medium text-[#111827]">
+              {selectedThreadIds.length} selected
+            </span>
+            <div className="flex-1" />
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={() => handleBulkMarkRead(true)}
+              className="h-8"
+            >
+              Mark Read
+            </Button>
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={() => handleBulkMarkRead(false)}
+              className="h-8"
+            >
+              Mark Unread
+            </Button>
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button variant="ghost" size="sm" className="h-8">
+                  Change Status
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent>
+                <DropdownMenuItem onClick={() => handleBulkStatusChange("Open")}>
+                  Open
+                </DropdownMenuItem>
+                <DropdownMenuItem onClick={() => handleBulkStatusChange("In Progress")}>
+                  In Progress
+                </DropdownMenuItem>
+                <DropdownMenuItem onClick={() => handleBulkStatusChange("Closed")}>
+                  Closed
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={handleBulkArchive}
+              className="h-8 gap-2"
+            >
+              <Archive className="w-4 h-4" />
+              Archive
+            </Button>
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={() => setSelectedThreadIds([])}
+              className="h-8"
+            >
+              Cancel
+            </Button>
+          </div>
+        )}
 
         <EmailThreadList
           threads={filteredThreads}
           selectedThread={selectedThread}
           onSelectThread={setSelectedThread}
           isLoading={isLoading}
+          selectedThreadIds={selectedThreadIds}
+          onToggleSelection={handleToggleSelection}
+          onSelectAll={handleSelectAll}
         />
       </div>
 
