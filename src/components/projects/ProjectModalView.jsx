@@ -1,9 +1,8 @@
 import React from "react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Phone, Briefcase } from "lucide-react";
+import { MapPin, Phone, Briefcase } from "lucide-react";
 import { TechnicianAvatarGroup } from "../common/TechnicianAvatar";
-import AddressLink from "@/components/common/AddressLink";
 
 const statusColors = {
   "Lead": "bg-slate-100 text-slate-700",
@@ -33,7 +32,9 @@ export default function ProjectModalView({ project, jobCount = 0 }) {
     }
   };
 
-
+  const handleNavigate = () => {
+    window.open(`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(project.address)}`, '_blank');
+  };
 
   return (
     <div className="space-y-4">
@@ -62,9 +63,12 @@ export default function ProjectModalView({ project, jobCount = 0 }) {
       </div>
 
       {/* Address */}
-      <div className="p-3 bg-[#F8F9FA] rounded-lg">
-        <div className="text-[12px] text-[#6B7280] font-medium mb-1">Address</div>
-        <AddressLink address={project.address} className="text-[14px] text-[#111827] font-medium" />
+      <div className="flex items-start gap-2.5 p-3 bg-[#F8F9FA] rounded-lg">
+        <MapPin className="w-5 h-5 text-[#6B7280] flex-shrink-0 mt-0.5" />
+        <div className="flex-1 min-w-0">
+          <div className="text-[12px] text-[#6B7280] font-medium mb-0.5">Address</div>
+          <div className="text-[14px] text-[#111827]">{project.address}</div>
+        </div>
       </div>
 
       {/* Contact */}
@@ -125,18 +129,26 @@ export default function ProjectModalView({ project, jobCount = 0 }) {
       )}
 
       {/* Quick Actions */}
-      {project.customer_phone && (
-        <div className="pt-2">
+      <div className="flex gap-2 pt-2">
+        {project.customer_phone && (
           <Button
             onClick={handleCall}
             variant="outline"
-            className="w-full gap-2"
+            className="flex-1 gap-2"
           >
             <Phone className="w-4 h-4" />
-            Call Customer
+            Call
           </Button>
-        </div>
-      )}
+        )}
+        <Button
+          onClick={handleNavigate}
+          variant="outline"
+          className="flex-1 gap-2"
+        >
+          <MapPin className="w-4 h-4" />
+          Navigate
+        </Button>
+      </div>
     </div>
   );
 }
