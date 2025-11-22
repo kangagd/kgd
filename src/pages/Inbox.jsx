@@ -346,7 +346,7 @@ export default function Inbox() {
         </div>
 
         {selectedThreadIds.length > 0 && (
-          <div className="px-5 py-3 bg-[#FAE008]/20 border-b border-[#FAE008]/30 flex items-center gap-3">
+          <div className="px-5 py-3 bg-[#FAE008]/20 border-b border-[#FAE008]/30 flex items-center gap-3 overflow-x-auto">
             <Button
               variant="ghost"
               size="sm"
