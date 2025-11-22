@@ -1,12 +1,13 @@
 import React from "react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { MapPin, Calendar, Clock, ChevronDown } from "lucide-react";
+import { Calendar, Clock, ChevronDown } from "lucide-react";
 import { format, parseISO } from "date-fns";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 import { useQuery } from "@tanstack/react-query";
 import { base44 } from "@/api/base44Client";
 import { TechnicianAvatarGroup } from "../common/TechnicianAvatar";
+import AddressLink from "../common/AddressLink";
 
 const statusColors = {
   "Open": "bg-slate-100 text-slate-700",
@@ -65,10 +66,7 @@ export default function JobCard({ job, onClick, onViewDetails }) {
                 )}
               </div>
             </div>
-            <div className="flex items-center gap-2">
-              <MapPin className="w-4 h-4 text-[#6B7280] flex-shrink-0" />
-              <span className="text-[14px] text-[#4B5563] leading-[1.4]">{job.address}</span>
-            </div>
+            <AddressLink address={job.address} className="text-[14px] text-[#4B5563]" />
           </div>
 
           {/* Metadata row */}

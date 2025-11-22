@@ -1,8 +1,9 @@
 import React from "react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Phone, Mail, MapPin, Building2, ChevronDown } from "lucide-react";
+import { Phone, Mail, Building2, ChevronDown } from "lucide-react";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
+import AddressLink from "../common/AddressLink";
 
 const customerTypeColors = {
   "Owner": "bg-purple-100 text-purple-700",
@@ -75,12 +76,9 @@ export default function CustomerCard({ customer, onClick, onViewDetails }) {
             <CollapsibleContent className="pt-3" onClick={(e) => e.stopPropagation()}>
               <div className="bg-[#F8F9FA] rounded-lg p-3 space-y-2">
                 {customer.address && (
-                  <div className="flex items-start gap-2">
-                    <MapPin className="w-4 h-4 text-[#6B7280] mt-0.5 flex-shrink-0" />
-                    <div className="flex-1">
-                      <div className="text-[12px] font-medium text-[#6B7280] leading-[1.35] mb-0.5">Address</div>
-                      <span className="text-[14px] text-[#4B5563] leading-[1.4]">{customer.address}</span>
-                    </div>
+                  <div>
+                    <div className="text-[12px] font-medium text-[#6B7280] leading-[1.35] mb-1">Address</div>
+                    <AddressLink address={customer.address} className="text-[14px] text-[#4B5563]" />
                   </div>
                 )}
                 {customer.secondary_phone && (
