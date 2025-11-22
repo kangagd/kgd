@@ -26,6 +26,15 @@ export default function CustomerForm({ customer, onSubmit, onCancel, isSubmittin
     email: "",
     secondary_phone: "",
     address: "",
+    address_full: "",
+    address_street: "",
+    address_suburb: "",
+    address_state: "",
+    address_postcode: "",
+    address_country: "Australia",
+    google_place_id: "",
+    latitude: null,
+    longitude: null,
     notes: "",
     status: "active",
     organisation_id: "",
@@ -213,9 +222,13 @@ export default function CustomerForm({ customer, onSubmit, onCancel, isSubmittin
               <Label htmlFor="address">Address</Label>
               <AddressAutocomplete
                 id="address"
-                value={formData.address}
-                onChange={(value) => setFormData({ ...formData, address: value })}
-                placeholder="Default address for this customer"
+                value={formData.address_full || formData.address || ""}
+                onChange={(addressData) => setFormData({ 
+                  ...formData, 
+                  ...addressData,
+                  address: addressData.address_full // Keep legacy field for backward compatibility
+                })}
+                placeholder="Start typing an address..."
               />
             </div>
 
