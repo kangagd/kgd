@@ -1,8 +1,8 @@
 import React from "react";
 import { Card, CardContent } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
 import { Phone, Mail, MapPin, Building2, ChevronDown } from "lucide-react";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
+import { CustomerTypeBadge } from "../common/StatusBadge";
 
 
 
@@ -31,9 +31,7 @@ export default function CustomerCard({ customer, onClick, onViewDetails }) {
                   {customer.name}
                 </h3>
                 {customer.customer_type && (
-                  <Badge className={`${customerTypeColors[customer.customer_type]} font-medium border-0 px-2.5 py-0.5 rounded-lg text-[12px] leading-[1.35]`}>
-                    {customer.customer_type}
-                  </Badge>
+                  <CustomerTypeBadge value={customer.customer_type} />
                 )}
               </div>
             </div>

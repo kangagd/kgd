@@ -1,27 +1,13 @@
 import React from "react";
 import { Card, CardContent } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
 import { MapPin, Calendar, Clock, ChevronDown } from "lucide-react";
 import { format, parseISO } from "date-fns";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 import { useQuery } from "@tanstack/react-query";
 import { base44 } from "@/api/base44Client";
 import { TechnicianAvatarGroup } from "../common/TechnicianAvatar";
-
-const statusColors = {
-  "Open": "bg-slate-100 text-slate-700",
-  "Scheduled": "bg-[#fae008] text-[#92400E]",
-  "Completed": "bg-emerald-100 text-emerald-700",
-  "Cancelled": "bg-red-100 text-red-700"
-};
-
-const productColors = {
-  "Garage Door": "bg-blue-100 text-blue-700",
-  "Gate": "bg-green-100 text-green-700",
-  "Roller Shutter": "bg-purple-100 text-purple-700",
-  "Multiple": "bg-orange-100 text-orange-700",
-  "Custom Garage Door": "bg-pink-100 text-pink-700"
-};
+import { Badge } from "@/components/ui/badge";
+import { JobStatusBadge, JobTypeBadge, ProductTypeBadge } from "../common/StatusBadge";
 
 
 
@@ -55,13 +41,11 @@ export default function JobCard({ job, onClick, onViewDetails }) {
                 {job.customer_name}
               </h3>
               <div className="flex items-center gap-2">
-                <Badge className="bg-white text-[#6B7280] border border-[#E5E7EB] font-medium px-2.5 py-0.5 rounded-lg pointer-events-none">
+                <Badge variant="secondary" className="pointer-events-none">
                   #{job.job_number}
                 </Badge>
                 {job.status && (
-                  <Badge className={`${statusColors[job.status] || 'bg-slate-100 text-slate-700'} font-medium px-2.5 py-0.5 rounded-lg border-0 pointer-events-none`}>
-                    {job.status}
-                  </Badge>
+                  <JobStatusBadge value={job.status} className="pointer-events-none" />
                 )}
               </div>
             </div>
@@ -100,14 +84,10 @@ export default function JobCard({ job, onClick, onViewDetails }) {
           <div className="flex items-center justify-between gap-2 flex-wrap">
             <div className="flex items-center gap-2 flex-wrap">
               {job.job_type_name && (
-                <Badge className="bg-[#EDE9FE] text-[#6D28D9] border-0 font-medium text-xs px-2.5 py-0.5 rounded-lg pointer-events-none">
-                  {job.job_type_name}
-                </Badge>
+                <JobTypeBadge value={job.job_type_name} className="pointer-events-none" />
               )}
               {job.product && (
-                <Badge className={`${productColors[job.product]} font-medium text-xs px-2.5 py-0.5 rounded-lg border-0 pointer-events-none`}>
-                  {job.product}
-                </Badge>
+                <ProductTypeBadge value={job.product} className="pointer-events-none" />
               )}
             </div>
             

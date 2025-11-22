@@ -1,15 +1,8 @@
 import React from "react";
-import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { MapPin, Phone, Mail, Building2, Briefcase, FolderKanban } from "lucide-react";
 import { createPageUrl } from "@/utils";
-
-const customerTypeColors = {
-  "Owner": "bg-purple-100 text-purple-700",
-  "Builder": "bg-blue-100 text-blue-700",
-  "Real Estate - Tenant": "bg-green-100 text-green-700",
-  "Strata - Owner": "bg-amber-100 text-amber-700"
-};
+import { CustomerTypeBadge } from "../common/StatusBadge";
 
 export default function CustomerModalView({ customer, jobCount = 0, projectCount = 0 }) {
   const handleCall = () => {
@@ -39,9 +32,7 @@ export default function CustomerModalView({ customer, jobCount = 0, projectCount
         </h3>
 
         {customer.customer_type && (
-          <Badge className={`${customerTypeColors[customer.customer_type]} border-0 font-medium px-3 py-1 rounded-lg`}>
-            {customer.customer_type}
-          </Badge>
+          <CustomerTypeBadge value={customer.customer_type} />
         )}
       </div>
 

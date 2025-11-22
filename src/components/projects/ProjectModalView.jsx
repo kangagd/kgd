@@ -1,29 +1,8 @@
 import React from "react";
-import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { MapPin, Phone, Briefcase } from "lucide-react";
 import { TechnicianAvatarGroup } from "../common/TechnicianAvatar";
-
-const statusColors = {
-  "Lead": "bg-slate-100 text-slate-700",
-  "Initial Site Visit": "bg-blue-100 text-blue-700",
-  "Quote Sent": "bg-purple-100 text-purple-700",
-  "Quote Approved": "bg-indigo-100 text-indigo-700",
-  "Final Measure": "bg-cyan-100 text-cyan-700",
-  "Parts Ordered": "bg-amber-100 text-amber-700",
-  "Scheduled": "bg-[#fae008]/20 text-[#92400E]",
-  "Completed": "bg-emerald-100 text-emerald-700"
-};
-
-const projectTypeColors = {
-  "Garage Door Install": "bg-blue-100 text-blue-700",
-  "Gate Install": "bg-green-100 text-green-700",
-  "Roller Shutter Install": "bg-purple-100 text-purple-700",
-  "Multiple": "bg-pink-100 text-pink-700",
-  "Motor/Accessory": "bg-cyan-100 text-cyan-700",
-  "Repair": "bg-orange-100 text-orange-700",
-  "Maintenance": "bg-indigo-100 text-indigo-700"
-};
+import { ProjectStatusBadge, ProjectTypeBadge } from "../common/StatusBadge";
 
 export default function ProjectModalView({ project, jobCount = 0 }) {
   const handleCall = () => {
@@ -42,14 +21,10 @@ export default function ProjectModalView({ project, jobCount = 0 }) {
       <div className="space-y-3">
         <div className="flex items-center gap-2 flex-wrap">
           {project.status && (
-            <Badge className={`${statusColors[project.status]} font-medium px-2.5 py-0.5 rounded-lg border-0`}>
-              {project.status}
-            </Badge>
+            <ProjectStatusBadge value={project.status} />
           )}
           {project.project_type && (
-            <Badge className={`${projectTypeColors[project.project_type]} font-medium px-2.5 py-0.5 rounded-lg border-0`}>
-              {project.project_type}
-            </Badge>
+            <ProjectTypeBadge value={project.project_type} />
           )}
         </div>
 
