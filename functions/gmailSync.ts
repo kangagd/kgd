@@ -198,10 +198,9 @@ Deno.serve(async (req) => {
       });
 
         if (existingMessages.length === 0) {
-          // Extract body and attachments
+          // Extract body
           let bodyHtml = '';
           let bodyText = detail.snippet || '';
-          const attachments = [];
 
           const processParts = (parts) => {
             if (!parts || !Array.isArray(parts)) return;
@@ -213,16 +212,7 @@ Deno.serve(async (req) => {
                 } else if (part.mimeType === 'text/plain' && part.body?.data) {
                   const decoded = atob(part.body.data.replace(/-/g, '+').replace(/_/g, '/'));
                   if (decoded) bodyText = decoded;
-                } else if (part.filename && part.filename.trim().length > 0) {
-                  // Store attachment metadata
-                  attachments.push({
-                    filename: part.filename,
-                    size: part.body?.size || 0,
-                    mime_type: part.mimeType || 'application/octet-stream',
-                    url: `https://mail.google.com/mail/u/0/#inbox/${message.id}`
-                  });
                 }
-                // Recursively process nested parts
                 if (part.parts) {
                   processParts(part.parts);
                 }
@@ -264,10 +254,6 @@ Deno.serve(async (req) => {
           
           if (inReplyTo) {
             messageData.in_reply_to = inReplyTo;
-          }
-          
-          if (attachments.length > 0) {
-            messageData.attachments = attachments;
           }
           
           await base44.entities.EmailMessage.create(messageData);
