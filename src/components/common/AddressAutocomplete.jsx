@@ -64,8 +64,8 @@ export default function AddressAutocomplete({
     const loadGoogleMapsScript = async () => {
       setIsScriptLoading(true);
       try {
-        const { data } = await base44.functions.invoke('getGoogleMapsKey');
-        const apiKey = data.apiKey;
+        const response = await base44.functions.invoke('getGoogleMapsKey', {});
+        const apiKey = response.data?.apiKey;
         
         if (!apiKey) {
           setError('Google Maps API key not configured');
