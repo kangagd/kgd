@@ -32,17 +32,23 @@ export default function AddressAutocomplete({
   }, [value]);
 
   useEffect(() => {
+    console.log('[AddressAutocomplete] Initializing component');
+    
     // Check if Google Maps script is already loaded
     if (window.google && window.google.maps && window.google.maps.places) {
+      console.log('[AddressAutocomplete] Google Maps already loaded');
       setIsScriptLoaded(true);
       return;
     }
 
     // Check if script is already being loaded
-    if (document.querySelector('script[src*="maps.googleapis.com"]')) {
+    const existingScript = document.querySelector('script[src*="maps.googleapis.com"]');
+    if (existingScript) {
+      console.log('[AddressAutocomplete] Google Maps script already in DOM, waiting...');
       setIsScriptLoading(true);
       const checkInterval = setInterval(() => {
         if (window.google && window.google.maps && window.google.maps.places) {
+          console.log('[AddressAutocomplete] Google Maps loaded successfully');
           setIsScriptLoaded(true);
           setIsScriptLoading(false);
           clearInterval(checkInterval);
@@ -51,6 +57,7 @@ export default function AddressAutocomplete({
       
       setTimeout(() => {
         if (!isScriptLoaded) {
+          console.error('[AddressAutocomplete] Google Maps load timeout');
           setError('Address autocomplete timed out');
           setIsScriptLoading(false);
           clearInterval(checkInterval);
@@ -64,32 +71,38 @@ export default function AddressAutocomplete({
     const loadGoogleMapsScript = async () => {
       setIsScriptLoading(true);
       try {
+        console.log('[AddressAutocomplete] Fetching API key...');
         const response = await base44.functions.invoke('getGoogleMapsKey', {});
         const apiKey = response.data?.apiKey;
         
         if (!apiKey) {
+          console.error('[AddressAutocomplete] No API key received');
           setError('Google Maps API key not configured');
           setIsScriptLoading(false);
           return;
         }
         
+        console.log('[AddressAutocomplete] API key received, loading script...');
         const script = document.createElement('script');
         script.src = `https://maps.googleapis.com/maps/api/js?key=${apiKey}&libraries=places`;
         script.async = true;
         script.defer = true;
         
         script.onload = () => {
+          console.log('[AddressAutocomplete] Google Maps script loaded successfully');
           setIsScriptLoaded(true);
           setIsScriptLoading(false);
         };
         
-        script.onerror = () => {
+        script.onerror = (e) => {
+          console.error('[AddressAutocomplete] Script load error:', e);
           setError('Failed to load address autocomplete');
           setIsScriptLoading(false);
         };
         
         document.head.appendChild(script);
       } catch (error) {
+        console.error('[AddressAutocomplete] Error loading script:', error);
         setError('Could not load address autocomplete');
         setIsScriptLoading(false);
       }
@@ -101,14 +114,23 @@ export default function AddressAutocomplete({
   useEffect(() => {
     if (!isScriptLoaded) return;
 
-    // Initialize services
-    autocompleteServiceRef.current = new window.google.maps.places.AutocompleteService();
-    
-    // Create a hidden div for PlacesService (it requires a map or div element)
-    if (!dummyMapRef.current) {
-      dummyMapRef.current = document.createElement('div');
+    try {
+      console.log('[AddressAutocomplete] Initializing Google Places services...');
+      
+      // Initialize services
+      autocompleteServiceRef.current = new window.google.maps.places.AutocompleteService();
+      
+      // Create a hidden div for PlacesService (it requires a map or div element)
+      if (!dummyMapRef.current) {
+        dummyMapRef.current = document.createElement('div');
+      }
+      placesServiceRef.current = new window.google.maps.places.PlacesService(dummyMapRef.current);
+      
+      console.log('[AddressAutocomplete] Services initialized successfully');
+    } catch (err) {
+      console.error('[AddressAutocomplete] Error initializing services:', err);
+      setError('Failed to initialize autocomplete');
     }
-    placesServiceRef.current = new window.google.maps.places.PlacesService(dummyMapRef.current);
   }, [isScriptLoaded]);
 
   useEffect(() => {
@@ -151,6 +173,7 @@ export default function AddressAutocomplete({
     }
 
     if (!autocompleteServiceRef.current) {
+      console.warn('[AddressAutocomplete] Service not initialized, using manual input');
       // Fallback to manual input
       onChange({
         address_full: newValue,
@@ -167,6 +190,7 @@ export default function AddressAutocomplete({
     }
 
     setIsLoadingSuggestions(true);
+    console.log('[AddressAutocomplete] Fetching predictions for:', newValue);
 
     // Fetch predictions
     autocompleteServiceRef.current.getPlacePredictions(
@@ -177,11 +201,18 @@ export default function AddressAutocomplete({
       },
       (results, status) => {
         setIsLoadingSuggestions(false);
+        console.log('[AddressAutocomplete] Prediction status:', status, 'Results:', results);
         
         if (status === window.google.maps.places.PlacesServiceStatus.OK && results) {
+          console.log('[AddressAutocomplete] Found', results.length, 'predictions');
           setPredictions(results.slice(0, 7));
           setShowDropdown(true);
+        } else if (status === window.google.maps.places.PlacesServiceStatus.ZERO_RESULTS) {
+          console.log('[AddressAutocomplete] No results found');
+          setPredictions([]);
+          setShowDropdown(false);
         } else {
+          console.error('[AddressAutocomplete] Prediction error:', status);
           setPredictions([]);
           setShowDropdown(false);
         }
@@ -190,8 +221,12 @@ export default function AddressAutocomplete({
   };
 
   const handleSelectPrediction = (prediction) => {
-    if (!placesServiceRef.current) return;
+    if (!placesServiceRef.current) {
+      console.error('[AddressAutocomplete] Places service not initialized');
+      return;
+    }
 
+    console.log('[AddressAutocomplete] Selected prediction:', prediction);
     setInputValue(prediction.description);
     setShowDropdown(false);
     setPredictions([]);
@@ -203,6 +238,8 @@ export default function AddressAutocomplete({
         fields: ['address_components', 'formatted_address', 'place_id', 'geometry']
       },
       (place, status) => {
+        console.log('[AddressAutocomplete] Place details status:', status, 'Place:', place);
+        
         if (status === window.google.maps.places.PlacesServiceStatus.OK && place) {
           // Parse address components
           const components = {};
@@ -235,8 +272,7 @@ export default function AddressAutocomplete({
           const lat = place.geometry?.location?.lat();
           const lng = place.geometry?.location?.lng();
 
-          // Return structured address data
-          onChange({
+          const addressData = {
             address_full: place.formatted_address,
             address_street: street,
             address_suburb: components.suburb || '',
@@ -246,7 +282,12 @@ export default function AddressAutocomplete({
             google_place_id: place.place_id || '',
             latitude: lat || null,
             longitude: lng || null
-          });
+          };
+
+          console.log('[AddressAutocomplete] Parsed address:', addressData);
+          onChange(addressData);
+        } else {
+          console.error('[AddressAutocomplete] Failed to get place details:', status);
         }
       }
     );
@@ -329,7 +370,8 @@ export default function AddressAutocomplete({
       {showDropdown && predictions.length > 0 && (
         <div
           ref={dropdownRef}
-          className="absolute z-50 w-full bg-white rounded-lg shadow-lg border border-[#E5E7EB] max-h-[280px] overflow-y-auto"
+          className="absolute z-50 w-full mt-1 bg-white rounded-lg shadow-lg border border-[#E5E7EB] max-h-[280px] overflow-y-auto"
+          style={{ top: '100%', left: 0, right: 0 }}
         >
           {predictions.map((prediction, index) => {
             const { primary, secondary } = formatPrediction(prediction);
