@@ -39,9 +39,7 @@ export default function OrganisationModalView({ organisation, customerCount = 0 
 
         <div className="flex items-center gap-2 flex-wrap">
           {organisation.organisation_type && (
-            <Badge className={`${organisationTypeColors[organisation.organisation_type]} border-0 font-medium px-3 py-1 rounded-lg`}>
-              {organisation.organisation_type}
-            </Badge>
+            <OrganisationTypeBadge value={organisation.organisation_type} />
           )}
           {organisation.sp_number && (
             <Badge variant="outline" className="font-medium">
