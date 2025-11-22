@@ -58,7 +58,7 @@ const sanitizeBodyHtml = (html) => {
   return sanitized;
 };
 
-const AIActionCard = ({ title, content, onCopy, onAction, actionLabel }) => {
+const AIActionCard = ({ title, content, onCopy, onAction, actionLabel, onClose }) => {
   const [copied, setCopied] = useState(false);
 
   const handleCopy = () => {
@@ -84,6 +84,16 @@ const AIActionCard = ({ title, content, onCopy, onAction, actionLabel }) => {
           >
             {copied ? <span className="text-green-600 text-xs">✓</span> : <Copy className="w-3 h-3" />}
           </Button>
+          {onClose && (
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={onClose}
+              className="h-7 w-7 p-0"
+            >
+              <X className="w-3 h-3" />
+            </Button>
+          )}
         </div>
       </div>
       <div className="text-[13px] text-[#111827] leading-relaxed whitespace-pre-wrap">
@@ -534,6 +544,7 @@ export default function EmailDetailView({
                       title={card.title}
                       content={card.content}
                       onCopy={() => toast.success('Copied to clipboard')}
+                      onClose={() => setAiCards(prev => prev.filter(c => c.id !== card.id))}
                     />
                   ))}
                 </div>
