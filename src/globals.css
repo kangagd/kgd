@@ -85,6 +85,16 @@ css
   }
 }
 
+/* Global Spacing System */
+:root {
+  --spacing-xs: 4px;
+  --spacing-sm: 8px;
+  --spacing-md: 12px;
+  --spacing-lg: 16px;
+  --spacing-xl: 24px;
+  --spacing-2xl: 32px;
+}
+
 /* Mobile Optimizations */
 @media (max-width: 768px) {
   body {
@@ -457,6 +467,30 @@ css
       margin: 16px;
     }
   }
-  
+
+  /* Spacing Utilities */
+  .gap-xs { gap: var(--spacing-xs); }
+  .gap-sm { gap: var(--spacing-sm); }
+  .gap-md { gap: var(--spacing-md); }
+  .gap-lg { gap: var(--spacing-lg); }
+  .gap-xl { gap: var(--spacing-xl); }
+  .gap-2xl { gap: var(--spacing-2xl); }
+
+  .space-y-xs > * + * { margin-top: var(--spacing-xs); }
+  .space-y-sm > * + * { margin-top: var(--spacing-sm); }
+  .space-y-md > * + * { margin-top: var(--spacing-md); }
+  .space-y-lg > * + * { margin-top: var(--spacing-lg); }
+  .space-y-xl > * + * { margin-top: var(--spacing-xl); }
+  .space-y-2xl > * + * { margin-top: var(--spacing-2xl); }
+
+  /* Section Spacing Pattern */
+  .section-gap {
+    margin-bottom: var(--spacing-xl);
+  }
+
+  .filters-row {
+    @apply flex flex-wrap items-center gap-md;
+  }
+
   /* Status badges (moved to StatusBadge component and Badge base styles) */
-}
+  }

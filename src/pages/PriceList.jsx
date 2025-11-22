@@ -144,7 +144,7 @@ export default function PriceList() {
         </div>
 
         {(lowStockCount > 0 || outOfStockCount > 0) && (
-          <div className="mt-4 lg:mt-5 mb-4 flex gap-3">
+          <div className="mb-lg flex gap-md flex-wrap">
             {lowStockCount > 0 && (
               <Button
                 variant="outline"
@@ -168,14 +168,14 @@ export default function PriceList() {
           </div>
         )}
 
-        <div className="mb-4 space-y-4">
+        <div className="space-y-xl section-gap">
           <div className="relative w-full">
-            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-[hsl(25,8%,55%)]" />
+            <Search className="absolute left-4 top-1/2 transform -translate-y-1/2 w-5 h-5 text-[#6B7280]" />
             <Input
               placeholder="Search items, descriptions, categories..."
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
-              className="pl-10 border-2 border-[hsl(32,15%,88%)] focus:border-[#fae008] focus:ring-2 focus:ring-[#fae008]/20 w-full"
+              className="pl-12 border border-[#E5E7EB] focus:border-[#fae008] focus:ring-2 focus:ring-[#fae008]/20 w-full h-12 text-base rounded-lg"
             />
           </div>
           

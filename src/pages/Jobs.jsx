@@ -330,7 +330,7 @@ export default function Jobs() {
 
                 <Popover>
                   <PopoverTrigger asChild>
-                    <Button variant="outline" className="w-full h-11 gap-2">
+                    <Button variant="outline" className="w-full md:w-auto h-11 gap-2">
                       <Filter className="w-4 h-4" />
                       Date Range
                       {(dateFrom || dateTo) && (
@@ -381,7 +381,7 @@ export default function Jobs() {
                   setSortBy(field);
                   setSortOrder(order);
                 }}>
-                  <SelectTrigger className="w-full h-11">
+                  <SelectTrigger className="w-full md:w-[220px] h-11">
                     <ArrowUpDown className="w-4 h-4 mr-2" />
                     <SelectValue placeholder="Sort by" />
                   </SelectTrigger>

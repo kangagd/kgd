@@ -202,7 +202,7 @@ export default function Archive() {
         </div>
 
         <Tabs defaultValue="jobs" className="w-full">
-          <TabsList className="mt-4 mb-4">
+          <TabsList className="section-gap">
             <TabsTrigger value="jobs">
               Jobs ({deletedJobs.length})
             </TabsTrigger>
@@ -213,7 +213,7 @@ export default function Archive() {
 
           <TabsContent value="jobs">
             {jobsLoading ? (
-              <div className="grid gap-4">
+              <div className="grid gap-md">
                 {[1, 2, 3].map((i) => (
                   <Card key={i} className="animate-pulse rounded-xl">
                     <CardContent className="p-6">
@@ -230,7 +230,7 @@ export default function Archive() {
                 <p className="text-[hsl(25,8%,45%)]">Deleted jobs will appear here for 30 days</p>
               </Card>
             ) : (
-              <div className="grid gap-4">
+              <div className="grid gap-md">
                 {deletedJobs.map(renderJobCard)}
               </div>
             )}
@@ -238,7 +238,7 @@ export default function Archive() {
 
           <TabsContent value="customers">
             {customersLoading ? (
-              <div className="grid gap-4">
+              <div className="grid gap-md">
                 {[1, 2, 3].map((i) => (
                   <Card key={i} className="animate-pulse rounded-xl">
                     <CardContent className="p-6">
@@ -255,7 +255,7 @@ export default function Archive() {
                 <p className="text-[hsl(25,8%,45%)]">Deleted customers will appear here for 30 days</p>
               </Card>
             ) : (
-              <div className="grid gap-4">
+              <div className="grid gap-md">
                 {deletedCustomers.map(renderCustomerCard)}
               </div>
             )}
