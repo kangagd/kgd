@@ -47,19 +47,9 @@ Deno.serve(async (req) => {
     if (!user) {
       return Response.json({ error: 'Unauthorized' }, { status: 401 });
     }
-    
-    // Check if Gmail is connected
+
     if (!user.gmail_access_token) {
       return Response.json({ error: 'Gmail not connected', synced: 0 }, { status: 200 });
-    }
-    const user = await base44.auth.me();
-
-    if (!user) {
-      return Response.json({ error: 'Unauthorized' }, { status: 401 });
-    }
-
-    if (!user.gmail_access_token) {
-      return Response.json({ error: 'Gmail not connected' }, { status: 400 });
     }
 
     // Refresh token if needed
@@ -279,6 +269,10 @@ Deno.serve(async (req) => {
 
     return Response.json({ synced: syncedCount, total: allMessages.length });
   } catch (error) {
-    return Response.json({ error: error.message }, { status: 500 });
+    console.error('Gmail sync error:', error);
+    return Response.json({ 
+      error: error.message || 'Sync failed', 
+      synced: 0 
+    }, { status: 200 }); // Return 200 to prevent breaking the UI
   }
 });
