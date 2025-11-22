@@ -37,7 +37,7 @@ export default function EmailMessageView({ message, isFirst, linkedJobId, linked
       >
         <div className="flex items-start justify-between gap-3">
           <div className="flex-1 min-w-0">
-            <div className="flex items-center gap-2 mb-1.5 flex-wrap">
+            <div className="flex items-center gap-2 flex-wrap">
               <span className="text-[15px] font-semibold text-[#111827]">
                 {message.from_name || message.from_address}
               </span>
@@ -46,18 +46,15 @@ export default function EmailMessageView({ message, isFirst, linkedJobId, linked
                   Sent
                 </Badge>
               )}
-              {!expanded && message.attachments?.length > 0 && (
+              {message.attachments?.length > 0 && (
                 <Badge variant="outline" className="text-[11px] h-5 flex items-center gap-1">
                   <Paperclip className="w-3 h-3" />
                   {message.attachments.length}
                 </Badge>
               )}
-            </div>
-            <div className="text-[13px] text-[#6B7280] mb-1">
-              {message.from_address}
-            </div>
-            <div className="text-[12px] text-[#9CA3AF]">
-              {message.sent_at && format(parseISO(message.sent_at), 'EEEE, MMMM d, yyyy • h:mm a')}
+              <span className="text-[12px] text-[#9CA3AF] ml-auto">
+                {message.sent_at && format(parseISO(message.sent_at), 'MMM d • h:mm a')}
+              </span>
             </div>
           </div>
           <button className="text-[#6B7280] hover:text-[#111827] flex-shrink-0">
