@@ -86,24 +86,24 @@ export default function Photos() {
     <div className="p-5 md:p-10 bg-[#F8F9FA] min-h-screen overflow-x-hidden">
       <div className="max-w-7xl mx-auto w-full">
         {/* Header */}
-        <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-8 gap-5">
+        <div className="flex flex-col md:flex-row justify-between items-center w-full py-3 lg:py-4 mb-4 lg:mb-6 gap-3">
           <div>
-            <h1 className="text-[28px] font-bold text-[#111827] leading-[1.2]">Photos</h1>
-            <p className="text-[14px] text-[#4B5563] leading-[1.4] mt-2.5">
+            <h1 className="text-2xl font-bold text-[#111827] leading-tight">Photos</h1>
+            <p className="text-sm text-[#4B5563] mt-1">
               Central media library for all job and project photos
             </p>
           </div>
           <Button
             onClick={() => setShowUploadModal(true)}
-            className="bg-[#FAE008] text-[#111827] hover:bg-[#E5CF07] font-semibold shadow-md hover:shadow-lg transition-all w-full md:w-auto h-12 rounded-lg text-[14px]"
+            className="bg-[#FAE008] text-[#111827] hover:bg-[#E5CF07] font-semibold shadow-sm hover:shadow-md transition w-full md:w-auto h-10 px-4 text-sm rounded-xl"
           >
-            <Plus className="w-5 h-5 mr-2" />
+            <Plus className="w-4 h-4 mr-2" />
             Upload Photos
           </Button>
         </div>
 
         {/* Search and Filters */}
-        <div className="mb-8 space-y-3">
+        <div className="mt-4 lg:mt-5 mb-6 space-y-3">
           <div className="flex gap-3">
             <div className="relative flex-1">
               <Search className="absolute left-4 top-1/2 transform -translate-y-1/2 w-5 h-5 text-[#6B7280]" />
