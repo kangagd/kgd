@@ -75,6 +75,16 @@ export default function AddressAutocomplete({
           return;
         }
         
+        console.log('🔑 [AddressAutocomplete] API key retrieved (length:', apiKey?.length, ')');
+        
+        // Validate API key format (should be 39 characters)
+        if (apiKey.length < 30) {
+          console.error('❌ [AddressAutocomplete] API key seems invalid (too short)');
+          setError('Invalid Google Maps API key');
+          setIsScriptLoading(false);
+          return;
+        }
+        
         console.log('📦 [AddressAutocomplete] Loading Google Maps script...');
         
         // Define global callback before adding script
@@ -84,10 +94,17 @@ export default function AddressAutocomplete({
           setIsScriptLoading(false);
         };
         
-        // Listen for Google Maps errors
+        // Listen for Google Maps errors (must be set before script loads)
         window.gm_authFailure = () => {
-          console.error('❌ [Google Maps] Authentication failed - check API key and restrictions');
-          setError('Google Maps authentication failed');
+          console.error('❌ [Google Maps] Authentication failed!');
+          console.error('Common causes:');
+          console.error('1. Invalid API key');
+          console.error('2. Maps JavaScript API not enabled');
+          console.error('3. Places API not enabled');
+          console.error('4. Billing not enabled on Google Cloud project');
+          console.error('5. HTTP referrer restrictions blocking this domain');
+          console.error('6. API restrictions preventing these APIs');
+          setError('Google Maps authentication failed - check console for details');
           setIsScriptLoading(false);
         };
         
