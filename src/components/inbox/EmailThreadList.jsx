@@ -1,21 +1,9 @@
 import React from "react";
-import { Badge } from "@/components/ui/badge";
 import { Checkbox } from "@/components/ui/checkbox";
 import { format, parseISO } from "date-fns";
 import { Mail, Paperclip, Link as LinkIcon, Trash2 } from "lucide-react";
-
-const statusColors = {
-  "Open": "bg-blue-100 text-blue-800 border-blue-200",
-  "In Progress": "bg-amber-100 text-amber-800 border-amber-200",
-  "Closed": "bg-gray-100 text-gray-800 border-gray-200",
-  "Archived": "bg-slate-100 text-slate-600 border-slate-200"
-};
-
-const priorityColors = {
-  "Low": "bg-gray-100 text-gray-600",
-  "Normal": "bg-blue-100 text-blue-700",
-  "High": "bg-red-100 text-red-700"
-};
+import { EmailStatusBadge, EmailPriorityBadge } from "../common/StatusBadge";
+import { Badge } from "@/components/ui/badge";
 
 export default function EmailThreadList({ 
   threads, 
@@ -123,19 +111,15 @@ export default function EmailThreadList({
 
             <div className="flex items-center gap-2 flex-wrap">
             {thread.category && thread.category !== 'Uncategorized' && (
-              <Badge className="bg-blue-100 text-blue-800 border-blue-200 text-[11px] px-2 py-0.5">
+              <Badge variant="secondary">
                 {thread.category}
               </Badge>
             )}
             
-            <Badge className={`${statusColors[thread.status]} text-[11px] px-2 py-0.5`}>
-              {thread.status}
-            </Badge>
+            <EmailStatusBadge value={thread.status} />
             
             {thread.priority !== 'Normal' && (
-              <Badge className={`${priorityColors[thread.priority]} text-[11px] px-2 py-0.5`}>
-                {thread.priority}
-              </Badge>
+              <EmailPriorityBadge value={thread.priority} />
             )}
 
             {(thread.linked_project_id || thread.linked_job_id) && (

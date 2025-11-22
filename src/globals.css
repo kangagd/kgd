@@ -410,24 +410,5 @@ css
     @apply focus-visible:outline-none;
   }
   
-  /* Status badges */
-  .badge-primary {
-    @apply bg-[#FAE008] text-[#111827] border border-[#FAE008] font-medium px-3 py-1 rounded-full text-[12px] leading-[1.35];
-  }
-  
-  .badge-secondary {
-    @apply bg-[#F3F4F6] text-[#4B5563] border border-[#E5E7EB] font-medium px-3 py-1 rounded-full text-[12px] leading-[1.35];
-  }
-  
-  .badge-success {
-    @apply bg-[#16A34A]/10 text-[#16A34A] border border-[#16A34A]/20 font-medium px-3 py-1 rounded-full text-[12px] leading-[1.35];
-  }
-  
-  .badge-error {
-    @apply bg-[#DC2626]/10 text-[#DC2626] border border-[#DC2626]/20 font-medium px-3 py-1 rounded-full text-[12px] leading-[1.35];
-  }
-  
-  .badge-warning {
-    @apply bg-[#D97706]/10 text-[#D97706] border border-[#D97706]/20 font-medium px-3 py-1 rounded-full text-[12px] leading-[1.35];
-  }
+  /* Status badges (moved to StatusBadge component and Badge base styles) */
 }
