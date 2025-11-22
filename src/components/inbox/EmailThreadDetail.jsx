@@ -16,8 +16,6 @@ import { format, parseISO } from "date-fns";
 import EmailMessageView from "./EmailMessageView";
 import EmailComposer from "./EmailComposer";
 import AttachmentCard from "./AttachmentCard";
-import AIAssistantPanel from "./AIAssistantPanel";
-import LinkedEntitiesPanel from "./LinkedEntitiesPanel";
 import { createPageUrl } from "@/utils";
 
 const statusColors = {
@@ -41,20 +39,12 @@ export default function EmailThreadDetail({
 }) {
   const [composerMode, setComposerMode] = useState(null);
   const [selectedMessage, setSelectedMessage] = useState(null);
-  const [showAIPanel, setShowAIPanel] = useState(true);
 
   const { data: messages = [], refetch } = useQuery({
     queryKey: ['emailMessages', thread.id],
     queryFn: () => base44.entities.EmailMessage.filter({ thread_id: thread.id }, 'sent_at'),
     refetchInterval: 30000 // Auto-refresh every 30 seconds
   });
-
-  // Auto-select latest message for AI insights
-  React.useEffect(() => {
-    if (messages.length > 0 && !selectedMessage) {
-      setSelectedMessage(messages[messages.length - 1]);
-    }
-  }, [messages]);
 
   const handleReply = (message) => {
     setSelectedMessage(message);
@@ -83,11 +73,9 @@ export default function EmailThreadDetail({
 
 
   return (
-    <div className="flex h-full overflow-hidden">
-      {/* Main Content Area */}
-      <div className="flex-1 flex flex-col min-w-0 overflow-hidden">
-        {/* Header */}
-        <div className="bg-white border-b border-[#E5E7EB] p-5 flex-shrink-0">
+    <div className="flex flex-col h-full">
+      {/* Header */}
+      <div className="bg-white border-b border-[#E5E7EB] p-5">
         <div className="flex items-start justify-between mb-4">
           <div className="flex-1 min-w-0 mr-4">
             <h2 className="text-[18px] font-semibold text-[#111827] mb-2">{thread.subject}</h2>
@@ -105,16 +93,6 @@ export default function EmailThreadDetail({
           </div>
 
           <div className="flex items-center gap-2 flex-shrink-0">
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={() => setShowAIPanel(!showAIPanel)}
-              className="hidden lg:flex"
-            >
-              <Mail className="w-4 h-4 mr-2" />
-              AI {showAIPanel ? 'Hide' : 'Show'}
-            </Button>
-            
             {userPermissions?.can_change_status ? (
               <Select value={thread.status} onValueChange={(value) => onStatusChange(thread.id, value)}>
                 <SelectTrigger className="w-auto border-0 h-auto p-0 focus:ring-0">
@@ -234,9 +212,6 @@ export default function EmailThreadDetail({
             )}
           </div>
         )}
-
-        {/* Linked Entities */}
-        <LinkedEntitiesPanel thread={thread} message={null} />
       </div>
 
       {/* Messages Timeline */}
@@ -285,13 +260,7 @@ export default function EmailThreadDetail({
           </div>
         ) : (
           messages.map((message, index) => (
-            <div 
-              key={message.id}
-              onClick={() => setSelectedMessage(message)}
-              className={`cursor-pointer transition-all ${
-                selectedMessage?.id === message.id ? 'ring-2 ring-[#FAE008] rounded-xl' : ''
-              }`}
-            >
+            <div key={message.id}>
               <EmailMessageView 
                 message={message} 
                 isFirst={index === 0}
@@ -324,21 +293,7 @@ export default function EmailThreadDetail({
             </div>
           ))
         )}
-        </div>
       </div>
-
-      {/* AI Assistant Panel - Desktop */}
-      {showAIPanel && (
-        <div className="hidden lg:block w-[380px] border-l border-[#E5E7EB] flex-shrink-0 overflow-hidden">
-          <AIAssistantPanel
-            thread={thread}
-            selectedMessage={selectedMessage}
-            onCreateProject={onCreateProject}
-            onCreateJob={onCreateJob}
-            onRefresh={refetch}
-          />
-        </div>
-      )}
     </div>
   );
 }
