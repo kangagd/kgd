@@ -22,31 +22,32 @@ export default function EmailThreadSummary({ thread, messages }) {
     setError(null);
     
     try {
-      // Prepare email content for AI
-      const emailContent = messages.map((msg, idx) => 
-        `Email ${idx + 1} (${msg.is_outbound ? 'Sent' : 'Received'} - ${new Date(msg.sent_at).toLocaleDateString()}):\n` +
-        `From: ${msg.from_address}\n` +
-        `Subject: ${msg.subject}\n` +
-        `Body: ${msg.body_text || msg.body_html?.replace(/<[^>]*>/g, '').substring(0, 1000)}\n\n`
-      ).join('---\n\n');
+      // Prepare email content for AI - limit to last 10 messages and 500 chars per email
+      const recentMessages = messages.slice(-10);
+      const emailContent = recentMessages.map((msg, idx) => {
+        const bodyText = msg.body_text || msg.body_html?.replace(/<[^>]*>/g, '') || '';
+        const truncatedBody = bodyText.substring(0, 500);
+        
+        return `Email ${idx + 1} (${msg.is_outbound ? 'Sent' : 'Received'} - ${new Date(msg.sent_at).toLocaleDateString()}):\n` +
+          `From: ${msg.from_address}\n` +
+          `Subject: ${msg.subject}\n` +
+          `Body: ${truncatedBody}\n\n`;
+      }).join('---\n\n');
 
       // Generate summary
       const summaryResponse = await base44.integrations.Core.InvokeLLM({
-        prompt: `Analyze this email thread and provide:
-1. A concise 2-3 sentence summary of the entire conversation
-2. A list of key action items or decisions (if any)
-3. Any important deadlines mentioned
+        prompt: `Analyze this email thread and provide a concise summary with key items.
 
 Email thread:
 ${emailContent}
 
-Respond in this exact JSON format:
-{
-  "summary": "Brief overview of the conversation",
-  "action_items": ["Action item 1", "Action item 2"],
-  "key_decisions": ["Decision 1", "Decision 2"],
-  "deadlines": ["Deadline 1", "Deadline 2"]
-}`,
+Provide:
+1. A brief 2-3 sentence summary
+2. Action items (tasks that need to be done)
+3. Key decisions made
+4. Important dates or deadlines
+
+Keep it concise and focused on what matters most.`,
         response_json_schema: {
           type: "object",
           properties: {
@@ -68,7 +69,8 @@ Respond in this exact JSON format:
       
       setActionItems(allActionItems);
     } catch (err) {
-      setError(err.message);
+      console.error('Summary generation error:', err);
+      setError(err.message || 'Failed to generate summary');
     } finally {
       setIsLoading(false);
     }
@@ -113,9 +115,19 @@ Respond in this exact JSON format:
             )}
 
             {error && (
-              <div className="flex items-center gap-2 text-[#DC2626] text-[13px] bg-red-50 rounded-lg p-3">
-                <AlertCircle className="w-4 h-4" />
-                <span>Failed to generate summary: {error}</span>
+              <div className="bg-red-50 rounded-lg p-3">
+                <div className="flex items-center gap-2 text-[#DC2626] text-[13px] mb-2">
+                  <AlertCircle className="w-4 h-4" />
+                  <span>Failed to generate summary</span>
+                </div>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={generateSummary}
+                  className="w-full"
+                >
+                  Try Again
+                </Button>
               </div>
             )}
 
