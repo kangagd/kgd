@@ -30,9 +30,9 @@ export default function CustomerDetails({ customer, onClose, onEdit, onDelete })
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   const navigate = useNavigate();
 
-  const { data: allJobs = [] } = useQuery({
+  const { data: jobs = [] } = useQuery({
     queryKey: ['customerJobs', customer.id],
-    queryFn: () => base44.entities.Job.filter({ customer_id: customer.id }, '-scheduled_date'),
+    queryFn: () => base44.entities.Job.filter({ customer_id: customer.id, deleted_at: { $exists: false } }, '-scheduled_date'),
   });
 
   const { data: organisation } = useQuery({
@@ -40,8 +40,6 @@ export default function CustomerDetails({ customer, onClose, onEdit, onDelete })
     queryFn: () => base44.entities.Organisation.get(customer.organisation_id),
     enabled: !!customer.organisation_id
   });
-
-  const jobs = allJobs.filter(job => !job.deleted_at);
 
   const handleDelete = () => {
     onDelete(customer.id);
