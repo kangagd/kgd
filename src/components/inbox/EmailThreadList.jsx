@@ -60,7 +60,9 @@ export default function EmailThreadList({
             checked={selectedThreadIds.length === threads.length && threads.length > 0}
             onCheckedChange={onSelectAll}
           />
-          <span className="text-[13px] text-[#6B7280]">Select all</span>
+          <span className="text-[13px] text-[#6B7280]">
+            Select all {selectedThreadIds.length > 0 && `(${selectedThreadIds.length})`}
+          </span>
         </div>
       )}
       {threads.map(thread => (
