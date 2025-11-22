@@ -294,7 +294,7 @@ export default function Layout({ children, currentPageName }) {
             )}
             {isCollapsed && (
               <div className="w-10 h-10 bg-[#FAE008] rounded-xl flex items-center justify-center shadow-md mx-auto">
-                <Wrench className="w-5 h-5 text-[#111827]" />
+                <span className="text-[11px] font-bold text-[#111827]">DB</span>
               </div>
             )}
             <button
