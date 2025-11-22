@@ -175,8 +175,9 @@ export default function AddressAutocomplete({
 
   const handleInputChange = (e) => {
     // Allow free-form typing as fallback
+    const textValue = e.target.value;
     onChange({
-      address_full: e.target.value,
+      address_full: textValue,
       address_street: '',
       address_suburb: '',
       address_state: '',
@@ -199,18 +200,18 @@ export default function AddressAutocomplete({
           placeholder={placeholder}
           required={required}
           className={className}
-          disabled={disabled || isScriptLoading}
+          disabled={disabled}
         />
-        {isScriptLoading && (
+        {isScriptLoading && !error && (
           <div className="absolute right-3 top-1/2 -translate-y-1/2">
             <Loader2 className="w-4 h-4 animate-spin text-gray-400" />
           </div>
         )}
       </div>
       {error && (
-        <div className="flex items-center gap-2 text-sm text-red-600">
+        <div className="flex items-center gap-2 text-sm text-amber-600">
           <AlertCircle className="w-4 h-4" />
-          <span>{error} - Falling back to manual entry.</span>
+          <span>Address autocomplete unavailable - you can type manually.</span>
         </div>
       )}
     </div>
