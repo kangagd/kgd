@@ -424,6 +424,19 @@ export default function EmailDetailView({
               )}
             </div>
 
+            {/* Email Composer */}
+            {composerMode && (
+              <div className="px-6 py-4 border-b border-[#F3F4F6] bg-[#FAFBFC]">
+                <EmailComposer
+                  mode={composerMode}
+                  thread={thread}
+                  message={selectedMessage}
+                  onClose={handleCloseComposer}
+                  onSent={handleEmailSent}
+                />
+              </div>
+            )}
+
             {/* Attachments Section */}
             {allAttachments.length > 0 && (
               <div className="px-6 pt-4 pb-4 border-b border-[#F3F4F6]">
@@ -532,19 +545,6 @@ export default function EmailDetailView({
                 </div>
               )}
             </div>
-
-            {/* Email Composer */}
-            {composerMode && (
-              <div className="px-6 pb-6">
-                <EmailComposer
-                  mode={composerMode}
-                  thread={thread}
-                  message={selectedMessage}
-                  onClose={handleCloseComposer}
-                  onSent={handleEmailSent}
-                />
-              </div>
-            )}
           </div>
 
           {/* AI Results Cards */}
