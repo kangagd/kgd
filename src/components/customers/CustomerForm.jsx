@@ -35,12 +35,17 @@ export default function CustomerForm({ customer, onSubmit, onCancel, isSubmittin
   const [showNewOrgDialog, setShowNewOrgDialog] = useState(false);
   const [newOrgData, setNewOrgData] = useState({ name: "", organisation_type: undefined, sp_number: "", address: "" });
   const [isCreatingOrg, setIsCreatingOrg] = useState(false);
+  const [orgTypeFilter, setOrgTypeFilter] = useState("all");
   const queryClient = useQueryClient();
 
   const { data: organisations = [] } = useQuery({
     queryKey: ['organisations'],
     queryFn: () => base44.entities.Organisation.filter({ status: 'active', deleted_at: { $exists: false } })
   });
+
+  const filteredOrganisations = organisations.filter(org => 
+    orgTypeFilter === "all" || org.organisation_type === orgTypeFilter
+  );
 
   const handleSubmit = (e) => {
     e.preventDefault();
@@ -119,6 +124,20 @@ export default function CustomerForm({ customer, onSubmit, onCancel, isSubmittin
 
             <div className="space-y-2">
               <Label htmlFor="organisation_id">Organisation (Optional)</Label>
+              <div className="flex gap-2 mb-2">
+                <Select value={orgTypeFilter} onValueChange={setOrgTypeFilter}>
+                  <SelectTrigger className="w-[200px]">
+                    <SelectValue placeholder="Filter by type" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all">All Types</SelectItem>
+                    <SelectItem value="Strata">Strata</SelectItem>
+                    <SelectItem value="Builder">Builder</SelectItem>
+                    <SelectItem value="Real Estate">Real Estate</SelectItem>
+                    <SelectItem value="Supplier">Supplier</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
               <div className="flex gap-2">
                 <Select value={formData.organisation_id} onValueChange={handleOrganisationChange}>
                   <SelectTrigger className="flex-1">
@@ -126,7 +145,7 @@ export default function CustomerForm({ customer, onSubmit, onCancel, isSubmittin
                   </SelectTrigger>
                   <SelectContent>
                     <SelectItem value={null}>None</SelectItem>
-                    {organisations.map((org) => (
+                    {filteredOrganisations.map((org) => (
                       <SelectItem key={org.id} value={org.id}>
                         {org.name}{org.organisation_type ? ` (${org.organisation_type})` : ''}
                       </SelectItem>
