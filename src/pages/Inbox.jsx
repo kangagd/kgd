@@ -325,10 +325,6 @@ export default function Inbox() {
 
         {selectedThreadIds.length > 0 && (
           <div className="px-5 py-3 bg-[#FAE008]/20 border-b border-[#FAE008]/30 flex items-center gap-3">
-            <span className="text-[13px] font-medium text-[#111827]">
-              {selectedThreadIds.length} selected
-            </span>
-            <div className="flex-1" />
             <Button
               variant="ghost"
               size="sm"
