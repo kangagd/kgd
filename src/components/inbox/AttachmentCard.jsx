@@ -217,44 +217,26 @@ Return JSON with: {"action": "...", "reason": "brief explanation"}`,
         </div>
       </div>
 
-      {/* AI Suggestion */}
+      {/* AI Suggestion - Compact */}
       {loadingSuggestion && (
-        <div className="flex items-center gap-2 text-[11px] text-[#6B7280] mt-1">
+        <div className="flex items-center gap-1.5 text-[10px] text-[#6B7280]">
           <Loader2 className="w-3 h-3 animate-spin" />
-          <span>Analyzing attachment...</span>
+          <span>Analyzing...</span>
         </div>
       )}
       
       {suggestion && !loadingSuggestion && (
-        <div className="flex items-start gap-2 p-2 bg-gradient-to-r from-purple-50 to-blue-50 rounded-md border border-purple-200/50">
-          <suggestion.icon className={`w-3.5 h-3.5 mt-0.5 flex-shrink-0 ${suggestion.color}`} />
-          <div className="flex-1 min-w-0">
-            <p className="text-[11px] text-[#111827] font-medium">Smart Suggestion</p>
-            <p className="text-[11px] text-[#6B7280] mt-0.5">{suggestion.reason}</p>
-          </div>
-          {suggestion.action === 'save_to_job' && linkedJobId && (
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={handleSave}
-              disabled={saving}
-              className="h-7 px-2 text-[11px] bg-white hover:bg-white/80"
-            >
-              Apply
-            </Button>
-          )}
-          {suggestion.action === 'save_to_project' && linkedProjectId && (
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={handleSave}
-              disabled={saving}
-              className="h-7 px-2 text-[11px] bg-white hover:bg-white/80"
-            >
-              Apply
-            </Button>
-          )}
-        </div>
+        <Button
+          variant="ghost"
+          size="sm"
+          onClick={handleSave}
+          disabled={saving || (!linkedJobId && !linkedProjectId)}
+          className="h-7 w-full justify-start gap-1.5 px-2 text-[10px] bg-gradient-to-r from-purple-50 to-blue-50 hover:from-purple-100 hover:to-blue-100 border border-purple-200/50"
+          title={suggestion.reason}
+        >
+          <Sparkles className="w-3 h-3 text-purple-600" />
+          <span className="truncate">{suggestion.reason}</span>
+        </Button>
       )}
     </div>
   );
