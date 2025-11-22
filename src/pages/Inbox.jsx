@@ -72,20 +72,26 @@ export default function Inbox() {
     
     const syncGmail = async () => {
       try {
-        await base44.functions.invoke('gmailSync', {});
-        queryClient.invalidateQueries({ queryKey: ['emailThreads'] });
+        const result = await base44.functions.invoke('gmailSync', {});
+        if (result?.data) {
+          queryClient.invalidateQueries({ queryKey: ['emailThreads'] });
+        }
       } catch (error) {
+        // Silent fail - don't disrupt user experience
         console.error('Background sync failed:', error);
       }
     };
     
-    // Initial sync
-    syncGmail();
+    // Initial sync after a small delay
+    const timeout = setTimeout(syncGmail, 2000);
     
-    // Sync every 30 seconds
-    const interval = setInterval(syncGmail, 30000);
+    // Sync every 60 seconds (reduced frequency to avoid rate limits)
+    const interval = setInterval(syncGmail, 60000);
     
-    return () => clearInterval(interval);
+    return () => {
+      clearTimeout(timeout);
+      clearInterval(interval);
+    };
   }, [user, queryClient]);
 
   // Handle resize

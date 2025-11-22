@@ -41,6 +41,17 @@ function parseEmailAddress(addressString) {
 Deno.serve(async (req) => {
   try {
     const base44 = createClientFromRequest(req);
+    
+    // Check authentication first
+    const user = await base44.auth.me();
+    if (!user) {
+      return Response.json({ error: 'Unauthorized' }, { status: 401 });
+    }
+    
+    // Check if Gmail is connected
+    if (!user.gmail_access_token) {
+      return Response.json({ error: 'Gmail not connected', synced: 0 }, { status: 200 });
+    }
     const user = await base44.auth.me();
 
     if (!user) {
