@@ -137,41 +137,41 @@ Deno.serve(async (req) => {
         let isUrgent = false;
         let urgencyReason = null;
 
+        let priority = 'Normal';
+        
         try {
-          const aiResponse = await fetch('https://api.openai.com/v1/chat/completions', {
-            method: 'POST',
-            headers: {
-              'Content-Type': 'application/json',
-              'Authorization': `Bearer ${Deno.env.get('OPENAI_API_KEY')}`
-            },
-            body: JSON.stringify({
-              model: 'gpt-3.5-turbo',
-              messages: [{
-                role: 'system',
-                content: 'You categorize emails for a garage door/gate service company.'
-              }, {
-                role: 'user',
-                content: `Analyze this email and categorize it. Also determine if it's urgent.
+          const aiResponse = await base44.asServiceRole.integrations.Core.InvokeLLM({
+            prompt: `Analyze this email from a garage door service company and provide categorization.
 
-      Subject: ${subject}
-      From: ${from}
-      Body: ${detail.snippet}
+Subject: ${subject}
+From: ${from}
+Body: ${detail.snippet}
 
-      Categories: Support, Sales, Internal, Project Inquiry, Quote Request, Scheduling, General
+Categories: Customer Inquiry, Quote Request, Job Update, Technical Issue, Payment/Invoice, Complaint, General/Other
 
-      Respond in JSON: {"category": "...", "is_urgent": true/false, "urgency_reason": "why urgent or null"}`
-              }],
-              response_format: { type: 'json_object' }
-            })
+Priority Guidelines:
+- HIGH: Urgent issues, safety concerns, customer complaints, job delays, payment issues, time-sensitive quotes
+- NORMAL: General inquiries, follow-ups, scheduling requests, routine updates
+- LOW: Marketing emails, newsletters, informational content, non-urgent administrative emails
+
+Also determine if this requires immediate attention (urgent flag).
+
+Return JSON with category, priority (High/Normal/Low), is_urgent boolean, and urgency_reason.`,
+            response_json_schema: {
+              type: "object",
+              properties: {
+                category: { type: "string" },
+                priority: { type: "string", enum: ["High", "Normal", "Low"] },
+                is_urgent: { type: "boolean" },
+                urgency_reason: { type: "string" }
+              }
+            }
           });
 
-          if (aiResponse.ok) {
-            const aiData = await aiResponse.json();
-            const analysis = JSON.parse(aiData.choices[0].message.content);
-            category = analysis.category || 'Uncategorized';
-            isUrgent = analysis.is_urgent || false;
-            urgencyReason = analysis.urgency_reason;
-          }
+          category = aiResponse.category || 'Uncategorized';
+          priority = aiResponse.priority || 'Normal';
+          isUrgent = aiResponse.is_urgent || false;
+          urgencyReason = aiResponse.urgency_reason;
         } catch (error) {
           console.error('AI categorization failed:', error);
         }
@@ -184,7 +184,7 @@ Deno.serve(async (req) => {
           last_message_date: new Date(date).toISOString(),
           last_message_snippet: detail.snippet,
           status: 'Open',
-          priority: isUrgent ? 'High' : 'Normal',
+          priority: priority,
           message_count: 1,
           category: category,
           is_urgent: isUrgent,
