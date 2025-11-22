@@ -81,6 +81,82 @@ css
 }
 
 @layer components {
+  /* Gmail Email Body - Preserve original layout */
+  .gmail-email-body {
+    /* Reset aggressive global styles */
+    all: initial;
+    display: block;
+    font-family: inherit;
+    font-size: 14px;
+    line-height: 1.5;
+    color: #111827;
+    word-wrap: break-word;
+    overflow-wrap: anywhere;
+  }
+
+  .gmail-email-body * {
+    /* Allow email's own styles to take precedence */
+    box-sizing: border-box;
+  }
+
+  /* Preserve table layouts (common in email signatures) */
+  .gmail-email-body table {
+    border-collapse: collapse;
+    border-spacing: 0;
+  }
+
+  .gmail-email-body td,
+  .gmail-email-body th {
+    /* Don't add borders - let email control this */
+    padding: 0;
+  }
+
+  /* Make links clickable and styled */
+  .gmail-email-body a {
+    color: #2563EB;
+    text-decoration: underline;
+    cursor: pointer;
+  }
+
+  .gmail-email-body a:hover {
+    color: #1E40AF;
+  }
+
+  /* Images should be responsive but not break layout */
+  .gmail-email-body img {
+    max-width: 100%;
+    height: auto;
+    vertical-align: middle;
+  }
+
+  /* Preserve paragraph spacing */
+  .gmail-email-body p {
+    margin: 0.5em 0;
+  }
+
+  .gmail-email-body p:first-child {
+    margin-top: 0;
+  }
+
+  .gmail-email-body p:last-child {
+    margin-bottom: 0;
+  }
+
+  /* Lists */
+  .gmail-email-body ul,
+  .gmail-email-body ol {
+    margin: 0.5em 0;
+    padding-left: 2em;
+  }
+
+  /* Blockquotes */
+  .gmail-email-body blockquote {
+    margin: 0.5em 0;
+    padding-left: 1em;
+    border-left: 3px solid #E5E7EB;
+    color: #6B7280;
+  }
+
   /* Chip Container Scrolling */
   .chip-container {
     @apply overflow-x-auto overflow-y-hidden -mx-5 px-5 md:mx-0 md:px-0;

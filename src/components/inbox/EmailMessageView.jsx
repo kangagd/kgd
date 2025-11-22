@@ -16,28 +16,23 @@ export default function EmailMessageView({ message, isFirst, linkedJobId, linked
     return Math.round(bytes / Math.pow(k, i) * 100) / 100 + ' ' + sizes[i];
   };
 
-  // Sanitize and enhance HTML for safe, professional display
+  // Minimal sanitization - preserve Gmail layout and styling
   const sanitizeBodyHtml = (html) => {
     if (!html) return html;
     
     let sanitized = html;
     
-    // Remove dangerous tags
+    // Only remove dangerous executable content
     sanitized = sanitized.replace(/<script[^>]*>.*?<\/script>/gi, '');
     sanitized = sanitized.replace(/<iframe[^>]*>.*?<\/iframe>/gi, '');
     sanitized = sanitized.replace(/<object[^>]*>.*?<\/object>/gi, '');
     sanitized = sanitized.replace(/<embed[^>]*>/gi, '');
     sanitized = sanitized.replace(/<form[^>]*>.*?<\/form>/gi, '');
+    sanitized = sanitized.replace(/on\w+\s*=\s*["'][^"']*["']/gi, ''); // Remove event handlers
     
-    // Remove inline styles that might break layout
-    sanitized = sanitized.replace(/style=["'][^"']*["']/gi, '');
-    
-    // Remove data URIs from img tags (but keep the img tag for inline images)
-    sanitized = sanitized.replace(/<img[^>]*src=["']data:[^"']*["'][^>]*>/gi, '');
-    
-    // Clean up tracking pixels (1x1 images)
-    sanitized = sanitized.replace(/<img[^>]*width=["']1["'][^>]*height=["']1["'][^>]*>/gi, '');
-    sanitized = sanitized.replace(/<img[^>]*height=["']1["'][^>]*width=["']1["'][^>]*>/gi, '');
+    // Keep inline styles - they're needed for Gmail layout
+    // Keep tables and their structure
+    // Keep images (including inline/signature images)
     
     return sanitized;
   };
@@ -142,33 +137,18 @@ export default function EmailMessageView({ message, isFirst, linkedJobId, linked
             )}
           </div>
 
-          {/* Email Body */}
+          {/* Email Body - Gmail-style rendering */}
           <div className="mb-5">
             {message.body_html ? (
               <div 
-                className="email-body prose prose-sm max-w-none text-[14px] leading-[1.6] text-[#111827]
-                  [&_p]:my-2.5 [&_p]:leading-[1.6] [&_p]:text-[#111827]
-                  [&_h1]:text-[22px] [&_h1]:font-bold [&_h1]:mt-6 [&_h1]:mb-3 [&_h1]:text-[#111827]
-                  [&_h2]:text-[18px] [&_h2]:font-semibold [&_h2]:mt-5 [&_h2]:mb-2.5 [&_h2]:text-[#111827]
-                  [&_h3]:text-[16px] [&_h3]:font-semibold [&_h3]:mt-4 [&_h3]:mb-2 [&_h3]:text-[#111827]
-                  [&_ul]:my-3 [&_ul]:pl-6 [&_ul]:list-disc [&_ul]:space-y-1
-                  [&_ol]:my-3 [&_ol]:pl-6 [&_ol]:list-decimal [&_ol]:space-y-1
-                  [&_li]:leading-[1.6] [&_li]:text-[#111827]
-                  [&_blockquote]:border-l-3 [&_blockquote]:border-[#E5E7EB] [&_blockquote]:pl-4 [&_blockquote]:py-2 [&_blockquote]:my-3 [&_blockquote]:italic [&_blockquote]:text-[#6B7280] [&_blockquote]:bg-[#F9FAFB]
-                  [&_a]:text-[#2563EB] [&_a]:underline [&_a]:hover:text-[#1E40AF] [&_a]:break-words [&_a]:font-medium
-                  [&_img]:max-w-full [&_img]:h-auto [&_img]:rounded-lg [&_img]:my-3 [&_img]:shadow-sm
-                  [&_table]:w-full [&_table]:border-collapse [&_table]:my-4 [&_table]:text-[13px]
-                  [&_th]:bg-[#F3F4F6] [&_th]:px-3 [&_th]:py-2 [&_th]:text-left [&_th]:font-semibold [&_th]:border [&_th]:border-[#E5E7EB] [&_th]:text-[#111827]
-                  [&_td]:px-3 [&_td]:py-2 [&_td]:border [&_td]:border-[#E5E7EB] [&_td]:text-[#111827]
-                  [&_code]:bg-[#F3F4F6] [&_code]:px-1.5 [&_code]:py-0.5 [&_code]:rounded [&_code]:text-[13px] [&_code]:font-mono [&_code]:text-[#DC2626]
-                  [&_pre]:bg-[#1F2937] [&_pre]:text-[#F9FAFB] [&_pre]:p-4 [&_pre]:rounded-lg [&_pre]:overflow-x-auto [&_pre]:my-4 [&_pre]:text-[13px]
-                  [&_pre_code]:bg-transparent [&_pre_code]:p-0 [&_pre_code]:text-[#F9FAFB] [&_pre_code]:text-[13px]
-                  [&_hr]:my-5 [&_hr]:border-t [&_hr]:border-[#E5E7EB]
-                  [&_strong]:font-semibold [&_strong]:text-[#111827]
-                  [&_em]:italic
-                  [&_b]:font-semibold [&_b]:text-[#111827]
-                  [&_div]:break-words [&_span]:break-words
-                  break-words overflow-wrap-anywhere"
+                className="gmail-email-body"
+                style={{
+                  fontSize: '14px',
+                  lineHeight: '1.5',
+                  color: '#111827',
+                  wordWrap: 'break-word',
+                  overflowWrap: 'anywhere'
+                }}
                 dangerouslySetInnerHTML={{ __html: sanitizeBodyHtml(message.body_html) }} 
               />
             ) : (
