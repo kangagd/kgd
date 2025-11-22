@@ -560,20 +560,6 @@ export default function EmailDetailView({
               )}
             </div>
           </div>
-
-          {/* AI Results Cards */}
-          {aiCards.length > 0 && (
-            <div className="space-y-4">
-              {aiCards.map((card) => (
-                <AIActionCard
-                  key={card.id}
-                  title={card.title}
-                  content={card.content}
-                  onCopy={() => toast.success('Copied to clipboard')}
-                />
-              ))}
-            </div>
-          )}
         </div>
       </div>
 
