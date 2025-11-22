@@ -446,6 +446,11 @@ export default function Inbox() {
             onUnlinkProject={handleUnlinkProject}
             onUnlinkJob={handleUnlinkJob}
             userPermissions={userPermissions}
+            onDelete={async (threadId) => {
+              await base44.entities.EmailThread.delete(threadId);
+              queryClient.invalidateQueries({ queryKey: ['emailThreads'] });
+              setSelectedThread(null);
+            }}
           />
         </div>
       )}

@@ -17,7 +17,8 @@ import {
   Sparkles,
   Copy,
   Link as LinkIcon,
-  X
+  X,
+  Trash2
 } from "lucide-react";
 import { format, parseISO } from "date-fns";
 import { toast } from "sonner";
@@ -122,7 +123,8 @@ export default function EmailDetailView({
   onLinkJob,
   onUnlinkProject,
   onUnlinkJob,
-  userPermissions
+  userPermissions,
+  onDelete
 }) {
   const [composerMode, setComposerMode] = useState(null);
   const [selectedMessage, setSelectedMessage] = useState(null);
@@ -367,6 +369,19 @@ export default function EmailDetailView({
                         className="h-9 w-9"
                       >
                         <Forward className="w-4 h-4" />
+                      </Button>
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        onClick={() => {
+                          if (confirm('Delete this email thread?')) {
+                            onDelete?.(thread.id);
+                          }
+                        }}
+                        title="Delete"
+                        className="h-9 w-9 hover:text-[#DC2626] hover:bg-red-50"
+                      >
+                        <Trash2 className="w-4 h-4" />
                       </Button>
                     </>
                   )}
