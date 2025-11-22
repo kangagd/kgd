@@ -20,19 +20,23 @@ import {
   LogOut,
   Image as ImageIcon,
   TrendingUp,
-  Mail
+  Mail,
+  ChevronDown
 } from "lucide-react";
 import { base44 } from "@/api/base44Client";
 import { toast } from "sonner";
 import { Toaster } from "@/components/ui/sonner";
 
-const adminNavigationItems = [
+const primaryNavigationItems = [
   { title: "Dashboard", url: createPageUrl("Dashboard"), icon: LayoutDashboard },
-  { title: "Schedule", url: createPageUrl("Calendar"), icon: Calendar },
-  { title: "Jobs", url: createPageUrl("Jobs"), icon: Briefcase },
-  { title: "Projects", url: createPageUrl("Projects"), icon: FolderKanban },
   { title: "Inbox", url: createPageUrl("Inbox"), icon: Mail },
+  { title: "Schedule", url: createPageUrl("Calendar"), icon: Calendar },
+  { title: "Projects", url: createPageUrl("Projects"), icon: FolderKanban },
+  { title: "Jobs", url: createPageUrl("Jobs"), icon: Briefcase },
   { title: "Customers", url: createPageUrl("Customers"), icon: UserCircle },
+];
+
+const secondaryNavigationItems = [
   { title: "Organisations", url: createPageUrl("Organisations"), icon: Building2 },
   { title: "Photos", url: createPageUrl("Photos"), icon: ImageIcon },
   { title: "Price List", url: createPageUrl("PriceList"), icon: DollarSign },
@@ -58,6 +62,10 @@ export default function Layout({ children, currentPageName }) {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [testMode, setTestMode] = useState(() => {
     return localStorage.getItem('testMode') || 'off';
+  });
+  const [isMoreMenuOpen, setIsMoreMenuOpen] = useState(() => {
+    const stored = localStorage.getItem('moreMenuOpen');
+    return stored === 'true';
   });
 
   useEffect(() => {
@@ -128,6 +136,10 @@ export default function Layout({ children, currentPageName }) {
     localStorage.setItem('sidebarCollapsed', isCollapsed);
   }, [isCollapsed]);
 
+  useEffect(() => {
+    localStorage.setItem('moreMenuOpen', isMoreMenuOpen);
+  }, [isMoreMenuOpen]);
+
   // Close mobile menu when route changes
   useEffect(() => {
     setIsMobileMenuOpen(false);
@@ -167,7 +179,7 @@ export default function Layout({ children, currentPageName }) {
       ? false 
       : user?.is_field_technician && user?.role !== 'admin';
   
-  const navigationItems = isTechnician ? technicianNavigationItems : adminNavigationItems;
+  const navigationItems = isTechnician ? technicianNavigationItems : primaryNavigationItems;
 
   // Mobile layout for technicians
   if (isTechnician) {
@@ -279,27 +291,11 @@ export default function Layout({ children, currentPageName }) {
         `}
       >
         <div className="flex flex-col h-full">
-          {/* Header */}
-          <div className="p-4 border-b border-[#E5E7EB] flex items-center justify-between">
-            {!isCollapsed && (
-              <div className="flex items-center gap-3">
-                <div className="w-10 h-10 bg-[#FAE008] rounded-xl flex items-center justify-center shadow-md flex-shrink-0">
-                  <Wrench className="w-5 h-5 text-[#111827]" />
-                </div>
-                <div>
-                  <h3 className="font-semibold text-[#111827] text-sm">FieldScheduler</h3>
-                  <p className="text-[11px] text-[#4B5563]">Garage Door Services</p>
-                </div>
-              </div>
-            )}
-            {isCollapsed && (
-              <div className="w-10 h-10 bg-[#FAE008] rounded-xl flex items-center justify-center shadow-md mx-auto">
-                <Wrench className="w-5 h-5 text-[#111827]" />
-              </div>
-            )}
+          {/* Close button (mobile only) */}
+          <div className="lg:hidden p-4 border-b border-[#E5E7EB] flex items-center justify-end">
             <button
               onClick={() => setIsMobileMenuOpen(false)}
-              className="lg:hidden p-2 hover:bg-[#F3F4F6] rounded-lg transition-colors"
+              className="p-2 hover:bg-[#F3F4F6] rounded-lg transition-colors"
               aria-label="Close menu"
             >
               <X className="w-5 h-5 text-[#111827]" />
@@ -309,7 +305,8 @@ export default function Layout({ children, currentPageName }) {
           {/* Navigation */}
           <nav className="flex-1 overflow-y-auto p-3">
             <div className="space-y-1">
-              {navigationItems.map((item) => {
+              {/* Primary Navigation Items */}
+              {primaryNavigationItems.map((item) => {
                 const isActive = location.pathname === item.url;
                 return (
                   <Link
@@ -331,6 +328,68 @@ export default function Layout({ children, currentPageName }) {
                     {!isCollapsed && (
                       <span className="text-[14px]">{item.title}</span>
                     )}
+                  </Link>
+                );
+              })}
+
+              {/* More Menu Accordion */}
+              {!isCollapsed && (
+                <div className="mt-2">
+                  <button
+                    onClick={() => setIsMoreMenuOpen(!isMoreMenuOpen)}
+                    className="w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-[#111827] hover:bg-[#F3F4F6] transition-all"
+                  >
+                    <ChevronDown className={`w-5 h-5 flex-shrink-0 transition-transform ${isMoreMenuOpen ? 'rotate-180' : ''}`} />
+                    <span className="text-[14px] font-medium">More</span>
+                  </button>
+                  
+                  {isMoreMenuOpen && (
+                    <div className="mt-1 space-y-1 pl-3">
+                      {secondaryNavigationItems.map((item) => {
+                        const isActive = location.pathname === item.url;
+                        return (
+                          <Link
+                            key={item.title}
+                            to={item.url}
+                            className={`
+                              flex items-center gap-3 px-3 py-2.5 rounded-lg transition-all
+                              ${isActive 
+                                ? 'bg-[#FAE008]/10 text-[#111827] font-semibold' 
+                                : 'text-[#111827] hover:bg-[#F3F4F6]'
+                              }
+                              group relative
+                            `}
+                          >
+                            {isActive && <div className="absolute left-0 w-1 h-6 bg-[#FAE008] rounded-r" />}
+                            <item.icon className={`w-5 h-5 flex-shrink-0 ${isActive ? 'text-[#FAE008]' : 'text-[#111827]'}`} />
+                            <span className="text-[14px]">{item.title}</span>
+                          </Link>
+                        );
+                      })}
+                    </div>
+                  )}
+                </div>
+              )}
+
+              {/* Collapsed More Menu */}
+              {isCollapsed && secondaryNavigationItems.map((item) => {
+                const isActive = location.pathname === item.url;
+                return (
+                  <Link
+                    key={item.title}
+                    to={item.url}
+                    className={`
+                      flex items-center gap-3 px-3 py-2.5 rounded-lg transition-all justify-center
+                      ${isActive 
+                        ? 'bg-[#FAE008]/10 text-[#111827] font-semibold' 
+                        : 'text-[#111827] hover:bg-[#F3F4F6]'
+                      }
+                      group relative
+                    `}
+                    title={item.title}
+                  >
+                    {isActive && <div className="absolute left-0 w-1 h-6 bg-[#FAE008] rounded-r" />}
+                    <item.icon className={`w-5 h-5 flex-shrink-0 ${isActive ? 'text-[#FAE008]' : 'text-[#111827]'}`} />
                   </Link>
                 );
               })}
@@ -385,7 +444,9 @@ export default function Layout({ children, currentPageName }) {
               <Menu className="w-6 h-6 text-[#111827]" />
             </button>
             <h1 className="font-semibold text-[#111827]">
-              {navigationItems.find(item => item.url === location.pathname)?.title || 'FieldScheduler'}
+              {primaryNavigationItems.find(item => item.url === location.pathname)?.title || 
+               secondaryNavigationItems.find(item => item.url === location.pathname)?.title || 
+               'FieldScheduler'}
             </h1>
             <div className="w-10" />
           </div>
