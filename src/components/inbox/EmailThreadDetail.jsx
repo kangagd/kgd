@@ -15,8 +15,6 @@ import { toast } from "sonner";
 import { format, parseISO } from "date-fns";
 import EmailMessageView from "./EmailMessageView";
 import EmailComposer from "./EmailComposer";
-import EmailThreadSummary from "./EmailThreadSummary";
-import ResponseSuggestions from "./ResponseSuggestions";
 import AttachmentCard from "./AttachmentCard";
 import { createPageUrl } from "@/utils";
 
@@ -41,7 +39,6 @@ export default function EmailThreadDetail({
 }) {
   const [composerMode, setComposerMode] = useState(null);
   const [selectedMessage, setSelectedMessage] = useState(null);
-  const [prefilledBody, setPrefilledBody] = useState("");
 
   const { data: messages = [], refetch } = useQuery({
     queryKey: ['emailMessages', thread.id],
@@ -64,15 +61,9 @@ export default function EmailThreadDetail({
     setComposerMode("compose");
   };
 
-  const handleUseTemplate = (template) => {
-    setPrefilledBody(template);
-    handleReply(messages[messages.length - 1]);
-  };
-
   const handleCloseComposer = () => {
     setComposerMode(null);
     setSelectedMessage(null);
-    setPrefilledBody("");
   };
 
   const handleEmailSent = () => {
@@ -98,25 +89,7 @@ export default function EmailThreadDetail({
                 <span>{thread.to_addresses.join(', ')}</span>
               </div>
             )}
-            
-            {/* Category and Urgency Badges */}
-            <div className="flex items-center gap-2 mt-3">
-              {thread.category && thread.category !== 'Uncategorized' && (
-                <Badge className="bg-blue-100 text-blue-800 border-blue-200">
-                  {thread.category}
-                </Badge>
-              )}
-              {thread.is_urgent && (
-                <Badge className="bg-red-100 text-red-800 border-red-200 animate-pulse">
-                  🚨 Urgent
-                </Badge>
-              )}
-              {thread.urgency_reason && (
-                <span className="text-[12px] text-[#DC2626]">
-                  {thread.urgency_reason}
-                </span>
-              )}
-            </div>
+
           </div>
 
           <div className="flex items-center gap-2 flex-shrink-0">
@@ -243,60 +216,41 @@ export default function EmailThreadDetail({
 
       {/* Messages Timeline */}
       <div className="flex-1 overflow-y-auto p-5 space-y-4">
-        {/* AI Summary - Always First */}
-        <EmailThreadSummary thread={thread} messages={messages} />
-
-        {/* Quick Actions Bar */}
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-3">
-          {/* Attachments Preview */}
-          {messages.some(m => m.attachments?.length > 0) && (
-            <div className="group bg-gradient-to-br from-purple-50 to-blue-50 rounded-lg border border-purple-200/50 p-3 hover:shadow-md transition-all relative">
-              <div className="text-[12px] text-[#6B7280] font-semibold mb-2 flex items-center gap-2">
-                <Paperclip className="w-3.5 h-3.5" />
-                Attachments ({messages.reduce((acc, m) => acc + (m.attachments?.length || 0), 0)})
-              </div>
-              <div className="space-y-2 max-h-20 overflow-hidden group-hover:max-h-[500px] transition-all duration-300">
-                {messages.flatMap(message => 
-                  (message.attachments || []).map((attachment, idx) => (
-                    <AttachmentCard
-                      key={`${message.id}-${idx}`}
-                      attachment={attachment}
-                      linkedJobId={thread.linked_job_id}
-                      linkedProjectId={thread.linked_project_id}
-                      threadSubject={thread.subject}
-                      threadCategory={thread.category}
-                    />
-                  ))
-                )}
-              </div>
-              {messages.reduce((acc, m) => acc + (m.attachments?.length || 0), 0) > 1 && (
-                <div className="text-[11px] text-[#6B7280] mt-2 group-hover:hidden">
-                  Hover to see all
-                </div>
+        {/* Attachments Preview */}
+        {messages.some(m => m.attachments?.length > 0) && (
+          <div className="group bg-gradient-to-br from-purple-50 to-blue-50 rounded-lg border border-purple-200/50 p-3 hover:shadow-md transition-all relative">
+            <div className="text-[12px] text-[#6B7280] font-semibold mb-2 flex items-center gap-2">
+              <Paperclip className="w-3.5 h-3.5" />
+              Attachments ({messages.reduce((acc, m) => acc + (m.attachments?.length || 0), 0)})
+            </div>
+            <div className="space-y-2 max-h-20 overflow-hidden group-hover:max-h-[500px] transition-all duration-300">
+              {messages.flatMap(message => 
+                (message.attachments || []).map((attachment, idx) => (
+                  <AttachmentCard
+                    key={`${message.id}-${idx}`}
+                    attachment={attachment}
+                    linkedJobId={thread.linked_job_id}
+                    linkedProjectId={thread.linked_project_id}
+                    threadSubject={thread.subject}
+                  />
+                ))
               )}
             </div>
-          )}
-
-          {/* AI Response Suggestions */}
-          {!composerMode && messages.length > 0 && userPermissions?.can_reply && (
-            <div className="bg-gradient-to-br from-blue-50 to-indigo-50 rounded-lg border border-blue-200/50 p-3 hover:shadow-md transition-all">
-              <ResponseSuggestions 
-                thread={thread} 
-                messages={messages}
-                onUseTemplate={handleUseTemplate}
-              />
-            </div>
-          )}
+            {messages.reduce((acc, m) => acc + (m.attachments?.length || 0), 0) > 1 && (
+              <div className="text-[11px] text-[#6B7280] mt-2 group-hover:hidden">
+                Hover to see all
+              </div>
+            )}
           </div>
+        )}
 
-          {composerMode && (
+        {composerMode && (
           <EmailComposer
             mode={composerMode}
             thread={thread}
             message={selectedMessage}
             onClose={handleCloseComposer}
             onSent={handleEmailSent}
-            prefilledBody={prefilledBody}
           />
         )}
 
@@ -313,7 +267,6 @@ export default function EmailThreadDetail({
                 linkedJobId={thread.linked_job_id}
                 linkedProjectId={thread.linked_project_id}
                 threadSubject={thread.subject}
-                threadCategory={thread.category}
               />
               {userPermissions?.can_reply && (
                 <div className="flex gap-2 mt-2 ml-4">
