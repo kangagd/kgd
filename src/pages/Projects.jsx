@@ -66,7 +66,7 @@ export default function Projects() {
 
   const { data: allJobs = [] } = useQuery({
     queryKey: ['allJobs'],
-    queryFn: () => base44.entities.Job.list()
+    queryFn: () => base44.entities.Job.filter({ deleted_at: { $exists: false } })
   });
 
   const { data: allParts = [] } = useQuery({

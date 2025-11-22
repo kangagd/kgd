@@ -33,10 +33,12 @@ export default function Dashboard() {
     loadUser();
   }, []);
 
-  const { data: jobs = [] } = useQuery({
+  const { data: allJobs = [] } = useQuery({
     queryKey: ['jobs'],
     queryFn: () => base44.entities.Job.list('-scheduled_date'),
   });
+
+  const jobs = allJobs.filter(j => !j.deleted_at);
 
   const { data: checkIns = [] } = useQuery({
     queryKey: ['checkIns'],

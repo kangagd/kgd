@@ -50,13 +50,11 @@ export default function Jobs() {
     loadUser();
   }, []);
 
-  const { data: allJobs = [], isLoading, refetch } = useQuery({
+  const { data: jobs = [], isLoading, refetch } = useQuery({
     queryKey: ['allJobs'],
-    queryFn: () => base44.entities.Job.list('-scheduled_date'),
+    queryFn: () => base44.entities.Job.filter({ deleted_at: { $exists: false } }, '-scheduled_date'),
     refetchInterval: 15000, // Refetch every 15 seconds
   });
-
-  const jobs = allJobs.filter(job => !job.deleted_at);
 
   const { data: technicians = [] } = useQuery({
     queryKey: ['technicians'],
