@@ -10,13 +10,14 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { X, Link as LinkIcon, Plus, ExternalLink, Reply, Forward, Mail, Save } from "lucide-react";
+import { X, Link as LinkIcon, Plus, ExternalLink, Reply, Forward, Mail, Paperclip } from "lucide-react";
 import { toast } from "sonner";
 import { format, parseISO } from "date-fns";
 import EmailMessageView from "./EmailMessageView";
 import EmailComposer from "./EmailComposer";
 import EmailThreadSummary from "./EmailThreadSummary";
 import ResponseSuggestions from "./ResponseSuggestions";
+import AttachmentCard from "./AttachmentCard";
 import { createPageUrl } from "@/utils";
 
 const statusColors = {
@@ -238,6 +239,30 @@ export default function EmailThreadDetail({
 
       {/* Messages Timeline */}
       <div className="flex-1 overflow-y-auto p-5 space-y-4">
+        {/* All Attachments Summary */}
+        {messages.some(m => m.attachments?.length > 0) && (
+          <div className="bg-gradient-to-r from-purple-50 to-blue-50 rounded-xl border border-purple-200/50 p-4">
+            <div className="text-[13px] text-[#6B7280] font-semibold mb-3 flex items-center gap-2">
+              <Paperclip className="w-4 h-4" />
+              All Attachments ({messages.reduce((acc, m) => acc + (m.attachments?.length || 0), 0)})
+            </div>
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
+              {messages.flatMap(message => 
+                (message.attachments || []).map((attachment, idx) => (
+                  <AttachmentCard
+                    key={`${message.id}-${idx}`}
+                    attachment={attachment}
+                    linkedJobId={thread.linked_job_id}
+                    linkedProjectId={thread.linked_project_id}
+                    threadSubject={thread.subject}
+                    threadCategory={thread.category}
+                  />
+                ))
+              )}
+            </div>
+          </div>
+        )}
+
         <EmailThreadSummary thread={thread} messages={messages} />
         
         {!composerMode && messages.length > 0 && userPermissions?.can_reply && (
