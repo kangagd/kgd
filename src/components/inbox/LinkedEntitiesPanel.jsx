@@ -155,32 +155,36 @@ export default function LinkedEntitiesPanel({ thread, message }) {
           {linkedEntities.map((link) => {
             const Icon = getEntityIcon(link.entity_type);
             return (
-              <div
-                key={link.id}
-                className="flex items-center justify-between bg-[#F3F4F6] rounded-lg px-3 py-2"
-              >
-                <a
-                  href={getEntityUrl(link.entity_type, link.entity_id)}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="flex items-center gap-2 flex-1 min-w-0 hover:underline"
+              <div key={link.id} className="flex items-center gap-2">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  asChild
+                  className="flex-1 justify-start h-auto py-2 px-3"
                 >
-                  <Icon className="w-4 h-4 text-[#6B7280] flex-shrink-0" />
-                  <div className="flex-1 min-w-0">
-                    <p className="text-[11px] text-[#6B7280] uppercase font-semibold">
-                      {link.entity_type}
-                    </p>
-                    <p className="text-[13px] text-[#111827] truncate">{link.entity_name}</p>
-                  </div>
-                  <ExternalLink className="w-3 h-3 text-[#6B7280] flex-shrink-0" />
-                </a>
+                  <a
+                    href={getEntityUrl(link.entity_type, link.entity_id)}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="flex items-center gap-2 w-full"
+                  >
+                    <Icon className="w-4 h-4 flex-shrink-0" />
+                    <div className="flex-1 min-w-0 text-left">
+                      <p className="text-[11px] text-[#6B7280] uppercase font-semibold">
+                        {link.entity_type}
+                      </p>
+                      <p className="text-[13px] text-[#111827] font-medium truncate">{link.entity_name}</p>
+                    </div>
+                    <ExternalLink className="w-3 h-3 flex-shrink-0 opacity-50" />
+                  </a>
+                </Button>
                 <Button
                   variant="ghost"
                   size="sm"
                   onClick={() => deleteLinkMutation.mutate(link.id)}
-                  className="h-6 w-6 p-0 ml-2"
+                  className="h-8 w-8 p-0 flex-shrink-0"
                 >
-                  <X className="w-3 h-3" />
+                  <X className="w-4 h-4" />
                 </Button>
               </div>
             );
