@@ -53,10 +53,6 @@ export default function ProjectModalView({ project, jobCount = 0 }) {
           )}
         </div>
 
-        <h3 className="text-[22px] font-semibold text-[#111827] leading-[1.2]">
-          {project.title}
-        </h3>
-
         <div className="text-[16px] font-medium text-[#4B5563]">
           {project.customer_name}
         </div>
