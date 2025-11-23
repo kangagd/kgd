@@ -160,11 +160,11 @@ export default function JobDetails({ job: initialJob, onClose, onStatusChange, o
 
   const { data: allProjectJobs = [] } = useQuery({
     queryKey: ['projectJobs', job.project_id],
-    queryFn: () => base44.entities.Job.filter({ project_id: job.project_id }),
+    queryFn: () => base44.entities.Job.filter({ project_id: job.project_id, deleted_at: { $exists: false } }),
     enabled: !!job.project_id
   });
 
-  const projectJobs = allProjectJobs.filter((j) => j.id !== job.id && !j.deleted_at);
+  const projectJobs = allProjectJobs.filter((j) => j.id !== job.id);
 
   useEffect(() => {
     const loadUser = async () => {
