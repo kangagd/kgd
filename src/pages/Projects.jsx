@@ -5,6 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Plus, Search, SlidersHorizontal, User, Filter, Eye } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
+import { ProjectStatusBadge, ProjectTypeBadge } from "../components/common/StatusBadge";
 import { Card, CardContent } from "@/components/ui/card";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import {
@@ -21,27 +22,7 @@ import EntityModal from "../components/common/EntityModal.jsx";
 import ProjectModalView from "../components/projects/ProjectModalView";
 import { createPageUrl } from "@/utils";
 
-const statusColors = {
-  "Lead": "bg-slate-100 text-slate-800 border-slate-200",
-  "Initial Site Visit": "bg-blue-100 text-blue-800 border-blue-200",
-  "Quote Sent": "bg-purple-100 text-purple-800 border-purple-200",
-  "Quote Approved": "bg-indigo-100 text-indigo-800 border-indigo-200",
-  "Final Measure": "bg-cyan-100 text-cyan-800 border-cyan-200",
-  "Parts Ordered": "bg-amber-100 text-amber-800 border-amber-200",
-  "Scheduled": "bg-[#fae008]/20 text-[hsl(25,10%,12%)] border-[#fae008]/30",
-  "Completed": "bg-emerald-100 text-emerald-800 border-emerald-200",
-  "Warranty": "bg-red-100 text-red-800 border-red-200"
-};
 
-const projectTypeColors = {
-  "Garage Door Install": "bg-blue-100 text-blue-700",
-  "Gate Install": "bg-green-100 text-green-700",
-  "Roller Shutter Install": "bg-purple-100 text-purple-700",
-  "Multiple": "bg-pink-100 text-pink-700",
-  "Motor/Accessory": "bg-cyan-100 text-cyan-700",
-  "Repair": "bg-orange-100 text-orange-700",
-  "Maintenance": "bg-indigo-100 text-indigo-700"
-};
 
 export default function Projects() {
   const [searchTerm, setSearchTerm] = useState("");
@@ -411,13 +392,9 @@ export default function Projects() {
                     <h3 className="text-[18px] font-semibold text-[#111827] leading-[1.2] mb-2 pr-8">{project.title}</h3>
                     <div className="flex items-center gap-2">
                       {project.project_type && (
-                        <Badge className={`${projectTypeColors[project.project_type]} font-medium border-0 px-3 py-1 text-[12px] leading-[1.35] hover:opacity-100`}>
-                         {project.project_type}
-                        </Badge>
+                        <ProjectTypeBadge value={project.project_type} />
                       )}
-                      <Badge className={`${statusColors[project.status]} font-medium border-0 px-3 py-1 text-[12px] leading-[1.35] hover:opacity-100`}>
-                        {project.status}
-                      </Badge>
+                      <ProjectStatusBadge value={project.status} />
                     </div>
                   </div>
 
