@@ -1073,7 +1073,7 @@ export default function JobDetails({ job: initialJob, onClose, onStatusChange, o
                 />
 
                 <div>
-                  <Label className="text-[14px] font-semibold text-[#111827] leading-[1.4] mb-1.5 block">Outcome *</Label>
+                  <Label className="block text-[13px] md:text-[14px] font-medium text-[#4B5563] mb-1.5">Outcome *</Label>
                   <Select value={outcome} onValueChange={handleOutcomeChange}>
                     <SelectTrigger className="h-11 text-sm border-2 border-slate-300 focus:border-[#fae008] focus:ring-2 focus:ring-[#fae008]/20 rounded-xl font-medium">
                       <SelectValue placeholder="Select outcome" />
@@ -1111,14 +1111,14 @@ export default function JobDetails({ job: initialJob, onClose, onStatusChange, o
 
               {completedCheckIns.length > 0 &&
               <Collapsible defaultOpen={false} className="pt-3 border-t-2">
-                  <CollapsibleTrigger className="flex items-center justify-between w-full group bg-slate-50 border-2 border-slate-200 rounded-xl p-3 hover:bg-slate-100 transition-colors">
+                  <CollapsibleTrigger className="flex items-center justify-between w-full group bg-[#F9FAFB] border border-[#E5E7EB] rounded-xl p-3 hover:bg-[#F3F4F6] transition-colors">
                     <h4 className="text-[14px] font-semibold text-[#111827] leading-[1.4]">Time Tracking ({completedCheckIns.length})</h4>
                     <ChevronDown className="w-4 h-4 text-slate-500 transition-transform group-data-[state=open]:rotate-180" />
                   </CollapsibleTrigger>
                   
                   <CollapsibleContent className="pt-2.5 space-y-2.5">
                     {completedCheckIns.map((checkIn, index) =>
-                  <div key={checkIn.id} className="bg-slate-50 border-2 border-slate-200 rounded-xl p-2.5">
+                  <div key={checkIn.id} className="bg-[#F9FAFB] border border-[#E5E7EB] rounded-xl p-2.5">
                         <div className="space-y-2">
                           <div className="flex items-center justify-between text-sm">
                             <span className="text-slate-500 font-medium">Visit {completedCheckIns.length - index}</span>
@@ -1214,7 +1214,7 @@ export default function JobDetails({ job: initialJob, onClose, onStatusChange, o
 
             <TabsContent value="form" className="mt-2">
               <div className="space-y-2.5">
-                <h3 className="text-[14px] font-semibold text-[#111827] leading-[1.4]">Measurements</h3>
+                <h3 className="text-[16px] font-semibold text-[#111827] leading-[1.2] mb-3">Measurements</h3>
                 <MeasurementsForm
                   measurements={measurements}
                   onChange={handleMeasurementsChange} />
@@ -1223,7 +1223,7 @@ export default function JobDetails({ job: initialJob, onClose, onStatusChange, o
 
               {jobSummaries.length > 0 &&
               <Collapsible defaultOpen={true} className="pt-3 border-t-2 mt-3">
-                  <CollapsibleTrigger className="flex items-center justify-between w-full group bg-slate-50 border-2 border-slate-200 rounded-xl p-3 hover:bg-slate-100 transition-colors">
+                  <CollapsibleTrigger className="flex items-center justify-between w-full group bg-[#F9FAFB] border border-[#E5E7EB] rounded-xl p-3 hover:bg-[#F3F4F6] transition-colors">
                     <h4 className="text-[14px] font-semibold text-[#111827] leading-[1.4]">Previous Visit Summaries ({jobSummaries.length})</h4>
                     <ChevronDown className="w-4 h-4 text-slate-500 transition-transform group-data-[state=open]:rotate-180" />
                   </CollapsibleTrigger>
@@ -1276,7 +1276,7 @@ export default function JobDetails({ job: initialJob, onClose, onStatusChange, o
             <TabsContent value="files" className="mt-2">
               <div className="space-y-3">
                 <div className="flex items-center justify-between mb-2">
-                  <h4 className="text-[14px] font-semibold text-[#111827] leading-[1.4]">Photos & Videos</h4>
+                  <h4 className="text-[16px] font-semibold text-[#111827] leading-[1.2]">Photos & Videos</h4>
                   {job.image_urls && job.image_urls.length > 0 && (
                     <Link 
                       to={`${createPageUrl("Photos")}?jobId=${job.id}`}
@@ -1299,7 +1299,7 @@ export default function JobDetails({ job: initialJob, onClose, onStatusChange, o
 
                 <div className="pt-3 border-t-2 space-y-3">
                   <div className="flex items-center justify-between">
-                    <h4 className="text-[14px] font-semibold text-[#111827] leading-[1.4]">Invoices</h4>
+                    <h4 className="text-[16px] font-semibold text-[#111827] leading-[1.2]">Invoices</h4>
                     <Button
                       onClick={() => setShowInvoiceForm(true)}
                       size="sm"
