@@ -55,7 +55,9 @@ export default function Jobs() {
   const { data: jobs = [], isLoading, refetch } = useQuery({
     queryKey: ['allJobs'],
     queryFn: () => base44.entities.Job.filter({ deleted_at: { $exists: false } }, '-scheduled_date'),
-    refetchInterval: 15000, // Refetch every 15 seconds
+    refetchInterval: 5000,
+    refetchOnMount: 'always',
+    refetchOnWindowFocus: true
   });
 
   const jobIdFromUrl = new URLSearchParams(window.location.search).get('jobId');

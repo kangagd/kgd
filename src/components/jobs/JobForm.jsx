@@ -177,9 +177,13 @@ export default function JobForm({ job, technicians, onSubmit, onCancel, isSubmit
     }
   }, [preselectedProjectId, projects.length, job]);
 
-  const handleSubmit = async (e) => {
-    e.preventDefault();
-    
+  const handleAutoSave = async () => {
+    if (!job && !formData.customer_id) {
+      // Don't auto-save if no customer is selected
+      onCancel();
+      return;
+    }
+
     if (!job) {
       const allJobs = await base44.entities.Job.list('-job_number', 1);
       const lastJobNumber = allJobs && allJobs[0]?.job_number ? allJobs[0].job_number : 4999;
@@ -204,7 +208,6 @@ export default function JobForm({ job, technicians, onSubmit, onCancel, isSubmit
         const project = projects.find(p => p.id === formData.project_id);
         const customer = customers.find(c => c.id === formData.customer_id);
         
-        // Fetch past visits for this project
         const pastVisits = await base44.entities.JobSummary.filter({ project_id: formData.project_id }, '-check_out_time', 3);
         
         let briefingPrompt = `Generate a concise job briefing for a technician in 3-4 bullet points using HTML <ul> and <li> tags.
@@ -249,6 +252,12 @@ export default function JobForm({ job, technicians, onSubmit, onCancel, isSubmit
     }
     
     onSubmit(submitData);
+  };
+
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    await handleAutoSave();
+
   };
 
   const handleCustomerChange = (customerId) => {
@@ -512,7 +521,7 @@ export default function JobForm({ job, technicians, onSubmit, onCancel, isSubmit
             <Button 
               variant="ghost" 
               size="icon" 
-              onClick={onCancel}
+              onClick={handleAutoSave}
               className="hover:bg-slate-200 transition-colors"
             >
               <ArrowLeft className="w-5 h-5" />
