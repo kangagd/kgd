@@ -151,16 +151,29 @@ export default function Layout({ children, currentPageName }) {
 
   // Mobile layout for technicians
   if (isTechnician) {
+    const [techMobileMenuOpen, setTechMobileMenuOpen] = React.useState(false);
+
     return (
       <div className="min-h-screen flex flex-col bg-[#ffffff]">
+        {/* Mobile Overlay */}
+        {techMobileMenuOpen && (
+          <div 
+            className="fixed inset-0 bg-black/50 z-40 transition-opacity"
+            onClick={() => setTechMobileMenuOpen(false)}
+          />
+        )}
+
         <header className="bg-white border-b border-[#E5E7EB] px-4 py-3 sticky top-0 z-50 shadow-sm safe-area-top">
           <div className="flex items-center justify-between min-h-[44px]">
-            <div className="flex items-center gap-2">
+            <button
+              onClick={() => setTechMobileMenuOpen(!techMobileMenuOpen)}
+              className="flex items-center gap-2 hover:bg-[#F3F4F6] rounded-lg p-2 transition-colors min-h-[44px] min-w-[44px]"
+            >
               <div className="w-8 h-8 bg-[#FAE008] rounded-lg flex items-center justify-center">
                 <Wrench className="w-4 h-4 text-[#111827]" />
               </div>
               <h3 className="font-semibold text-[#111827] text-[14px]">KGD</h3>
-            </div>
+            </button>
             <button
               onClick={() => navigate(createPageUrl("UserProfile"))}
               className="flex items-center hover:bg-[#F3F4F6] rounded-lg p-2 transition-colors min-h-[44px] min-w-[44px] justify-center"
@@ -174,31 +187,37 @@ export default function Layout({ children, currentPageName }) {
           </div>
         </header>
 
-        <main className="flex-1 overflow-y-auto overflow-x-hidden pb-20 bg-[#ffffff]">
-          {children}
-        </main>
-
-        <nav className="fixed bottom-0 left-0 right-0 bg-white border-t border-[#E5E7EB] shadow-lg z-50 safe-area-bottom">
-          <div className="flex items-center max-w-screen-sm mx-auto">
+        {/* Dropdown Menu */}
+        <div 
+          className={`fixed top-[60px] left-0 right-0 bg-white border-b border-[#E5E7EB] shadow-lg z-40 transition-all duration-300 ${
+            techMobileMenuOpen ? 'translate-y-0 opacity-100' : '-translate-y-full opacity-0 pointer-events-none'
+          }`}
+        >
+          <nav className="p-2">
             {navigationItems.map((item) => {
               const isActive = location.pathname === item.url;
               return (
                 <Link
                   key={item.title}
                   to={item.url}
-                  className={`flex flex-col items-center justify-center gap-1 py-2 rounded-lg transition-colors min-h-[56px] min-w-[64px] flex-1 ${
+                  onClick={() => setTechMobileMenuOpen(false)}
+                  className={`flex items-center gap-3 px-4 py-3 rounded-lg transition-colors ${
                     isActive
                       ? 'bg-[#FAE008] text-[#111827]'
                       : 'text-[#4B5563] hover:text-[#111827] hover:bg-[#F3F4F6]'
                   }`}
                 >
                   <item.icon className="w-5 h-5 flex-shrink-0" />
-                  <span className="text-[11px] font-medium leading-tight">{item.title}</span>
+                  <span className="text-[14px] font-medium">{item.title}</span>
                 </Link>
               );
             })}
-          </div>
-        </nav>
+          </nav>
+        </div>
+
+        <main className="flex-1 overflow-y-auto overflow-x-hidden pb-24 bg-[#ffffff]">
+          {children}
+        </main>
 
         <button
           onClick={handleTestModeToggle}

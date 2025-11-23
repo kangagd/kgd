@@ -812,10 +812,10 @@ export default function JobDetails({ job: initialJob, onClose, onStatusChange, o
           </div>
         )}
 
-        {/* Technician Quick Actions */}
+        {/* Technician Sticky Bottom Actions */}
         {isTechnician &&
-        <div className={`bg-white border-b border-[#E5E7EB] p-3 ${isTechnician ? 'sticky top-0 z-20 shadow-sm' : ''}`}>
-            <div className="grid grid-cols-4 gap-2">
+        <div className="fixed bottom-0 left-0 right-0 bg-white border-t border-[#E5E7EB] shadow-lg z-50 safe-area-bottom p-3">
+            <div className="grid grid-cols-4 gap-2 max-w-screen-sm mx-auto">
               {job.customer_phone &&
             <Button
               variant="outline"
@@ -823,7 +823,7 @@ export default function JobDetails({ job: initialJob, onClose, onStatusChange, o
               className="flex flex-col items-center gap-1 h-auto py-3 hover:bg-blue-50 hover:border-blue-200 transition-all rounded-lg">
 
                   <Phone className="w-5 h-5 text-blue-600" />
-                  <span className="text-[12px] font-medium text-[#111827] leading-[1.35]">Call</span>
+                  <span className="text-[10px] font-medium text-[#111827] leading-[1.35]">Call</span>
                 </Button>
             }
               <Button
@@ -832,7 +832,7 @@ export default function JobDetails({ job: initialJob, onClose, onStatusChange, o
               className="flex flex-col items-center gap-1 h-auto py-3 hover:bg-green-50 hover:border-green-200 transition-all rounded-lg">
 
                 <Navigation className="w-5 h-5 text-green-600" />
-                <span className="text-[12px] font-medium text-[#111827] leading-[1.35]">Navigate</span>
+                <span className="text-[10px] font-medium text-[#111827] leading-[1.35]">Navigate</span>
               </Button>
               {!activeCheckIn ?
             <Button
@@ -841,7 +841,7 @@ export default function JobDetails({ job: initialJob, onClose, onStatusChange, o
               className="flex flex-col items-center gap-1 h-auto py-3 bg-[#FAE008] hover:bg-[#E5CF07] text-[#111827] font-semibold rounded-lg">
 
                   <LogIn className="w-5 h-5" />
-                  <span className="text-[12px] leading-[1.35]">Check In</span>
+                  <span className="text-[10px] leading-[1.35]">Check In</span>
                 </Button> :
 
             <Button
@@ -850,7 +850,7 @@ export default function JobDetails({ job: initialJob, onClose, onStatusChange, o
               className="flex flex-col items-center gap-1 h-auto py-3 bg-[#FAE008] hover:bg-[#E5CF07] text-[#111827] font-semibold rounded-lg">
 
                   <LogOut className="w-5 h-5" />
-                  <span className="text-[12px] leading-[1.35]">Check Out</span>
+                  <span className="text-[10px] leading-[1.35]">Check Out</span>
                 </Button>
             }
               <Button
@@ -859,7 +859,7 @@ export default function JobDetails({ job: initialJob, onClose, onStatusChange, o
               className="flex flex-col items-center gap-1 h-auto py-3 hover:bg-purple-50 hover:border-purple-200 transition-all rounded-lg">
 
                 <DollarSign className="w-5 h-5 text-purple-600" />
-                <span className="text-[12px] font-medium text-[#111827] leading-[1.35]">Price</span>
+                <span className="text-[10px] font-medium text-[#111827] leading-[1.35]">Price</span>
               </Button>
             </div>
           </div>
