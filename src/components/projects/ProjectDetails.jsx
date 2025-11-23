@@ -497,7 +497,7 @@ Format as HTML bullet points using <ul> and <li> tags. Include only the most cri
     <div className="relative flex flex-col lg:flex-row gap-4 overflow-x-hidden">
       {/* Customer Sidebar */}
       <aside className="w-full lg:w-72 flex-shrink-0 lg:sticky lg:top-4 lg:self-start">
-        <Card className="border border-[#E5E7EB] shadow-sm rounded-lg overflow-hidden">
+        <Card className="border border-[#E5E7EB] shadow-sm rounded-xl overflow-hidden">
           <CardHeader className="bg-[#F8F9FA] px-4 py-3 border-b border-[#E5E7EB]">
             <h3 className="text-[18px] font-semibold text-[#111827] leading-[1.2]">Customer</h3>
           </CardHeader>
@@ -558,7 +558,7 @@ Format as HTML bullet points using <ul> and <li> tags. Include only the most cri
             </Card>
 
             {/* Visits Section */}
-            <Card className="border border-[#E5E7EB] shadow-sm rounded-lg overflow-hidden mt-4">
+            <Card className="border border-[#E5E7EB] shadow-sm rounded-xl overflow-hidden mt-4">
             <CardHeader className="bg-[#F8F9FA] px-4 py-3 border-b border-[#E5E7EB]">
             <div className="flex items-center justify-between">
               <h3 className="text-[18px] font-semibold text-[#111827] leading-[1.2]">Visits ({jobs.length})</h3>
@@ -633,7 +633,7 @@ Format as HTML bullet points using <ul> and <li> tags. Include only the most cri
             </Card>
 
             {/* Images Section */}
-            <Card className="border border-[#E5E7EB] shadow-sm rounded-lg overflow-hidden mt-4">
+            <Card className="border border-[#E5E7EB] shadow-sm rounded-xl overflow-hidden mt-4">
               <CardHeader className="bg-[#F8F9FA] px-4 py-3 border-b border-[#E5E7EB]">
                 <h3 className="text-[18px] font-semibold text-[#111827] leading-[1.2]">Images</h3>
               </CardHeader>
@@ -694,7 +694,7 @@ Format as HTML bullet points using <ul> and <li> tags. Include only the most cri
             </Card>
 
             {/* Documents Section */}
-            <Card className="border border-[#E5E7EB] shadow-sm rounded-lg overflow-hidden mt-4">
+            <Card className="border border-[#E5E7EB] shadow-sm rounded-xl overflow-hidden mt-4">
               <CardHeader className="bg-[#F8F9FA] px-4 py-3 border-b border-[#E5E7EB]">
                 <h3 className="text-[18px] font-semibold text-[#111827] leading-[1.2]">Documents</h3>
               </CardHeader>
@@ -778,7 +778,7 @@ Format as HTML bullet points using <ul> and <li> tags. Include only the most cri
 
             {/* Main Content */}
             <div className="flex-1 w-full lg:min-w-0">
-      <Card className="border border-[#E5E7EB] shadow-sm rounded-lg overflow-hidden">
+      <Card className="border border-[#E5E7EB] shadow-sm rounded-xl overflow-hidden">
         <CardHeader className="border-b border-[#E5E7EB] bg-white p-3 md:p-4 space-y-3">
         <div className="flex items-center justify-between gap-3">
           <Button
@@ -1111,7 +1111,7 @@ Format as HTML bullet points using <ul> and <li> tags. Include only the most cri
                 <label className="block text-[13px] md:text-[14px] font-medium text-[#4B5563] mb-1.5">
                   Quote Attachments
                 </label>
-                <Card className="border border-[#E5E7EB] shadow-sm overflow-hidden">
+                <Card className="border border-[#E5E7EB] shadow-sm rounded-xl overflow-hidden">
                   <CardContent className="p-3 space-y-3">
                     {project.quote_attachments && project.quote_attachments.length > 0 && (
                       <div className="space-y-2">
