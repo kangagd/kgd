@@ -260,16 +260,18 @@ export default function Projects() {
             </div>
           </div>
 
-          <Tabs value={stageFilter} onValueChange={setStageFilter} className="w-full">
-            <TabsList className="w-full">
-              <TabsTrigger value="all" className="flex-1">All Projects</TabsTrigger>
-              {Object.keys(statusColors).slice(0, 3).map((stage) => (
-                <TabsTrigger key={stage} value={stage} className="flex-1">
-                  {stage}
-                </TabsTrigger>
-              ))}
-            </TabsList>
-          </Tabs>
+          <div className="chip-container -mx-4 px-4 md:mx-0 md:px-0">
+            <Tabs value={stageFilter} onValueChange={setStageFilter} className="w-full">
+              <TabsList className="w-full justify-start min-w-max md:min-w-0">
+                <TabsTrigger value="all" className="flex-1 whitespace-nowrap">All Projects</TabsTrigger>
+                {Object.keys(statusColors).map((stage) => (
+                  <TabsTrigger key={stage} value={stage} className="flex-1 whitespace-nowrap">
+                    {stage}
+                  </TabsTrigger>
+                ))}
+              </TabsList>
+            </Tabs>
+          </div>
 
           {showFilters && (
             <Card className="border border-[#E5E7EB]">
