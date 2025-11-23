@@ -220,6 +220,7 @@ export default function CreateInvoiceModal({
                             onChange={(e) => setSearchTerm(e.target.value)}
                             className="h-8 text-sm"
                             onClick={(e) => e.stopPropagation()}
+                            autoFocus={false}
                           />
                         </div>
                         <div className="max-h-[200px] overflow-y-auto">
