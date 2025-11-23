@@ -27,7 +27,6 @@ import TechnicianAvatar, { TechnicianAvatarGroup } from "../common/TechnicianAva
 import JobActivityLog from "./JobActivityLog";
 import JobChat from "./JobChat";
 import JobMapView from "./JobMapView";
-import TechBriefCard from "./TechBriefCard";
 import {
   Dialog,
   DialogContent,
@@ -857,9 +856,6 @@ export default function JobDetails({ job: initialJob, onClose, onStatusChange, o
         }
         
         <CardContent className={`p-3 md:p-4 space-y-3 ${isTechnician ? 'pb-32' : ''}`}>
-          {/* Tech Brief Card */}
-          <TechBriefCard jobId={job.id} isAdmin={!isTechnician} />
-
           <Tabs defaultValue="details" className="w-full">
             <TabsList className="w-full justify-start mb-3 overflow-x-auto flex-nowrap">
               <TabsTrigger value="details" className="flex-1">Details</TabsTrigger>
