@@ -103,8 +103,7 @@ export default function Dashboard() {
             </Button>
             <Button
               onClick={() => navigate(createPageUrl("Projects") + '?action=new')}
-              variant="outline"
-              className="border border-[#E5E7EB] hover:border-[#FAE008] hover:bg-[#F9FAFB] text-[#111827] font-semibold shadow-sm hover:shadow-md transition h-10 px-4 text-sm rounded-xl"
+              className="bg-[#FAE008] hover:bg-[#E5CF07] text-[#111827] font-semibold shadow-sm hover:shadow-md transition h-10 px-4 text-sm rounded-xl"
             >
               <FolderKanban className="w-4 h-4 mr-2" />
               New Project
