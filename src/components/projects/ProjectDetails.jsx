@@ -836,14 +836,22 @@ Format as HTML bullet points using <ul> and <li> tags. Include only the most cri
       <Card className="border border-[#E5E7EB] shadow-sm rounded-lg overflow-hidden">
         <CardHeader className="border-b border-[#E5E7EB] bg-white p-3 md:p-4 space-y-3">
         <div className="flex items-center justify-between gap-3">
-          <Button
-            variant="ghost"
-            size="icon"
-            onClick={onClose}
-            className="h-9 w-9 flex-shrink-0 hover:bg-[#F3F4F6] rounded-lg transition-colors"
-          >
-            <ArrowLeft className="w-5 h-5 text-[#111827]" />
-          </Button>
+          <div className="flex items-center gap-2">
+            <Button
+              variant="ghost"
+              size="icon"
+              onClick={onClose}
+              className="h-9 w-9 flex-shrink-0 hover:bg-[#F3F4F6] rounded-lg transition-colors"
+            >
+              <ArrowLeft className="w-5 h-5 text-[#111827]" />
+            </Button>
+            {project.created_date && (
+              <div className="text-[12px] text-[#6B7280] leading-[1.35] hidden sm:block">
+                Opened on {new Date(project.created_date).toLocaleDateString('en-AU', { day: 'numeric', month: 'short', year: 'numeric' })} 
+                {' '}({Math.floor((new Date() - new Date(project.created_date)) / (1000 * 60 * 60 * 24))} days)
+              </div>
+            )}
+          </div>
 
           <div className="flex gap-1 flex-shrink-0">
             {activeViewers.length > 0 && (
@@ -909,13 +917,6 @@ Format as HTML bullet points using <ul> and <li> tags. Include only the most cri
         </div>
 
         <div className="space-y-3">
-          {project.created_date && (
-            <div className="text-[12px] text-[#6B7280] leading-[1.35]">
-              Opened on {new Date(project.created_date).toLocaleDateString('en-AU', { day: 'numeric', month: 'short', year: 'numeric' })} 
-              {' '}({Math.floor((new Date() - new Date(project.created_date)) / (1000 * 60 * 60 * 24))} days)
-            </div>
-          )}
-
           <div className="flex items-center justify-between gap-3 flex-wrap">
             <h2 className="text-[22px] font-semibold text-[#111827] leading-[1.2]">
               {project.title}
