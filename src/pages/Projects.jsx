@@ -241,7 +241,7 @@ export default function Projects() {
           </Button>
         </div>
 
-        <div className="mt-4 lg:mt-5 space-y-4">
+        <div className="flex flex-col gap-4 mb-6">
           <div className="flex flex-col md:flex-row gap-3">
             <div className="relative flex-1">
               <Search className="absolute left-4 top-1/2 transform -translate-y-1/2 w-5 h-5 text-[#6B7280]" />
@@ -255,7 +255,7 @@ export default function Projects() {
             <Button
               variant="outline"
               onClick={() => setShowFilters(!showFilters)}
-              className="h-12 px-4 border-2 border-[#E5E7EB] hover:border-[#FAE008] hover:bg-[#FFFEF5] flex-shrink-0"
+              className="h-12 px-4 border border-[#E5E7EB] hover:border-[#FAE008] hover:bg-[#FFFEF5] flex-shrink-0"
             >
               <SlidersHorizontal className="w-5 h-5 mr-2" />
               Filters

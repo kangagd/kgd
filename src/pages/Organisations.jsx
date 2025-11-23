@@ -148,7 +148,7 @@ export default function Organisations() {
           </Button>
         </div>
 
-        <div className="mt-4 lg:mt-5 space-y-4">
+        <div className="flex flex-col gap-4 mb-6">
           <div className="relative">
             <Search className="absolute left-4 top-1/2 transform -translate-y-1/2 text-[#6B7280] w-5 h-5" />
             <Input
@@ -159,15 +159,17 @@ export default function Organisations() {
             />
           </div>
 
-          <Tabs value={organisationTypeFilter} onValueChange={setOrganisationTypeFilter} className="w-full">
-            <TabsList className="w-full justify-start">
-              <TabsTrigger value="all" className="flex-1">All Organisations</TabsTrigger>
-              <TabsTrigger value="Strata" className="flex-1">Strata</TabsTrigger>
-              <TabsTrigger value="Builder" className="flex-1">Builder</TabsTrigger>
-              <TabsTrigger value="Real Estate" className="flex-1">Real Estate</TabsTrigger>
-              <TabsTrigger value="Supplier" className="flex-1">Supplier</TabsTrigger>
-            </TabsList>
-          </Tabs>
+          <div className="chip-container -mx-4 px-4 md:mx-0 md:px-0">
+            <Tabs value={organisationTypeFilter} onValueChange={setOrganisationTypeFilter} className="w-full">
+              <TabsList className="w-full justify-start min-w-max md:min-w-0">
+                <TabsTrigger value="all" className="flex-1 whitespace-nowrap">All Organisations</TabsTrigger>
+                <TabsTrigger value="Strata" className="flex-1 whitespace-nowrap">Strata</TabsTrigger>
+                <TabsTrigger value="Builder" className="flex-1 whitespace-nowrap">Builder</TabsTrigger>
+                <TabsTrigger value="Real Estate" className="flex-1 whitespace-nowrap">Real Estate</TabsTrigger>
+                <TabsTrigger value="Supplier" className="flex-1 whitespace-nowrap">Supplier</TabsTrigger>
+              </TabsList>
+            </Tabs>
+          </div>
         </div>
 
       {isLoading ? (
