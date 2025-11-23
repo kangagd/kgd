@@ -574,10 +574,7 @@ Format as HTML bullet points using <ul> and <li> tags. Include only the most cri
             <CardContent className="p-3">
             {jobs.length === 0 ? (
               <div className="text-center py-6 bg-[#F8F9FA] rounded-lg">
-                <p className="text-[14px] text-[#6B7280] leading-[1.4] mb-3">No visits yet</p>
-                <Button onClick={handleAddJob} className="bg-[#FAE008] text-[#111827] font-semibold h-10">
-                  Create First Visit
-                </Button>
+                <p className="text-[14px] text-[#6B7280] leading-[1.4]">No visits yet</p>
               </div>
             ) : (
               <div className="space-y-2">
