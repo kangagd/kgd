@@ -205,14 +205,17 @@ export default function CreateInvoiceModal({
 
                   <div>
                     <Label className="text-[12px] text-[#6B7280] mb-1">Quick Select</Label>
-                    <Select onValueChange={(value) => {
-                      selectPriceListItem(index, value);
-                      setSearchTerm("");
-                    }}>
+                    <Select 
+                      onValueChange={(value) => {
+                        selectPriceListItem(index, value);
+                        setSearchTerm("");
+                      }}
+                      onOpenChange={() => setSearchTerm("")}
+                    >
                       <SelectTrigger className="h-9 text-sm border-[#E5E7EB]">
                         <SelectValue placeholder="Select from Price List" />
                       </SelectTrigger>
-                      <SelectContent>
+                      <SelectContent onCloseAutoFocus={(e) => e.preventDefault()}>
                         <div className="px-2 py-2 border-b border-[#E5E7EB]">
                           <Input
                             placeholder="Search items..."
