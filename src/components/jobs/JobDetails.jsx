@@ -1094,7 +1094,19 @@ export default function JobDetails({ job: initialJob, onClose, onStatusChange, o
                   </div>
                 }
 
-                {activeCheckIn &&
+                {activeCheckIn && isTechnician &&
+                <div className="fixed bottom-0 left-0 right-0 bg-white border-t border-[#E5E7EB] shadow-lg z-50 p-3">
+                    <Button
+                    onClick={handleCheckOut}
+                    disabled={checkOutMutation.isPending}
+                    className="w-full bg-blue-600 hover:bg-blue-700 h-11 font-semibold text-base rounded-xl shadow-md hover:shadow-lg transition-all max-w-screen-sm mx-auto">
+
+                      <LogOut className="w-4 h-4 mr-2" />
+                      {checkOutMutation.isPending ? 'Checking Out...' : 'Check Out'}
+                    </Button>
+                  </div>
+                }
+                {activeCheckIn && !isTechnician &&
                 <div className="pt-3 border-t-2">
                     <Button
                     onClick={handleCheckOut}
