@@ -30,7 +30,7 @@ import { Toaster } from "@/components/ui/sonner";
 const primaryNavigationItems = [
   { title: "Dashboard", url: createPageUrl("Dashboard"), icon: LayoutDashboard },
   { title: "Inbox", url: createPageUrl("Inbox"), icon: Mail },
-  { title: "Schedule", url: createPageUrl("Calendar"), icon: Calendar },
+  { title: "Schedule", url: createPageUrl("Schedule"), icon: Calendar },
   { title: "Projects", url: createPageUrl("Projects"), icon: FolderKanban },
   { title: "Jobs", url: createPageUrl("Jobs"), icon: Briefcase },
   { title: "Customers", url: createPageUrl("Customers"), icon: UserCircle },
