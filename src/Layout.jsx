@@ -245,7 +245,7 @@ export default function Layout({ children, currentPageName }) {
           {children}
         </main>
 
-        {user?.email === 'admin@kangaroogd.com.au' && (
+        {user && user.email === 'admin@kangaroogd.com.au' && (
           <button
             onClick={handleTestModeToggle}
             className="fixed bottom-24 right-4 z-50 w-12 h-12 bg-[#D97706] hover:bg-[#B45309] text-white rounded-full shadow-lg flex items-center justify-center transition-all"
@@ -502,7 +502,7 @@ export default function Layout({ children, currentPageName }) {
       </div>
 
       {/* Test Mode Toggle */}
-      {user?.email === 'admin@kangaroogd.com.au' && (
+      {user && user.email === 'admin@kangaroogd.com.au' && (
         <button
           onClick={handleTestModeToggle}
           className="fixed bottom-6 right-6 z-50 w-12 h-12 bg-[#D97706] hover:bg-[#B45309] text-white rounded-full shadow-lg flex items-center justify-center transition-all"
