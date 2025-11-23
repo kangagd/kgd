@@ -1,9 +1,10 @@
-import React, { useState } from "react";
+import React, { useState, useMemo } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Checkbox } from "@/components/ui/checkbox";
+import { AlertCircle } from "lucide-react";
 
 export default function MeasurementsForm({ measurements, onChange }) {
   const [data, setData] = useState(measurements || {
@@ -25,6 +26,42 @@ export default function MeasurementsForm({ measurements, onChange }) {
     onChange(updated);
   };
 
+  const validationErrors = useMemo(() => {
+    const errors = {};
+    
+    // Height validation: Left H, Mid H, Right H variance > 200mm
+    const heights = [
+      data.new_door.height_left,
+      data.new_door.height_mid,
+      data.new_door.height_right
+    ].filter(v => v != null && !isNaN(v));
+    
+    if (heights.length >= 2) {
+      const maxHeight = Math.max(...heights);
+      const minHeight = Math.min(...heights);
+      if (maxHeight - minHeight > 200) {
+        errors.height = `Height variance of ${Math.round(maxHeight - minHeight)}mm exceeds 200mm threshold`;
+      }
+    }
+    
+    // Width validation: Top W, Mid W, Bottom W variance > 100mm
+    const widths = [
+      data.new_door.width_top,
+      data.new_door.width_mid,
+      data.new_door.width_bottom
+    ].filter(v => v != null && !isNaN(v));
+    
+    if (widths.length >= 2) {
+      const maxWidth = Math.max(...widths);
+      const minWidth = Math.min(...widths);
+      if (maxWidth - minWidth > 100) {
+        errors.width = `Width variance of ${Math.round(maxWidth - minWidth)}mm exceeds 100mm threshold`;
+      }
+    }
+    
+    return errors;
+  }, [data.new_door]);
+
   const updateAdditionalInfo = (value) => {
     const updated = { ...data, additional_info: value };
     setData(updated);
@@ -44,58 +81,80 @@ export default function MeasurementsForm({ measurements, onChange }) {
           <CardTitle>New Door Measurements</CardTitle>
         </CardHeader>
         <CardContent className="space-y-4">
-          <div className="grid grid-cols-3 gap-4">
-            <div>
-              <Label>Left H</Label>
-              <Input
-                type="number"
-                value={data.new_door.height_left || ""}
-                onChange={(e) => updateField('new_door', 'height_left', parseFloat(e.target.value))}
-              />
+          <div className="space-y-2">
+            <div className="grid grid-cols-3 gap-4">
+              <div>
+                <Label>Left H</Label>
+                <Input
+                  type="number"
+                  value={data.new_door.height_left || ""}
+                  onChange={(e) => updateField('new_door', 'height_left', parseFloat(e.target.value))}
+                  className={validationErrors.height ? "border-amber-500" : ""}
+                />
+              </div>
+              <div>
+                <Label>Mid H</Label>
+                <Input
+                  type="number"
+                  value={data.new_door.height_mid || ""}
+                  onChange={(e) => updateField('new_door', 'height_mid', parseFloat(e.target.value))}
+                  className={validationErrors.height ? "border-amber-500" : ""}
+                />
+              </div>
+              <div>
+                <Label>Right H</Label>
+                <Input
+                  type="number"
+                  value={data.new_door.height_right || ""}
+                  onChange={(e) => updateField('new_door', 'height_right', parseFloat(e.target.value))}
+                  className={validationErrors.height ? "border-amber-500" : ""}
+                />
+              </div>
             </div>
-            <div>
-              <Label>Mid H</Label>
-              <Input
-                type="number"
-                value={data.new_door.height_mid || ""}
-                onChange={(e) => updateField('new_door', 'height_mid', parseFloat(e.target.value))}
-              />
-            </div>
-            <div>
-              <Label>Right H</Label>
-              <Input
-                type="number"
-                value={data.new_door.height_right || ""}
-                onChange={(e) => updateField('new_door', 'height_right', parseFloat(e.target.value))}
-              />
-            </div>
+            {validationErrors.height && (
+              <div className="flex items-center gap-2 text-amber-600 text-sm bg-amber-50 border border-amber-200 rounded-md p-2">
+                <AlertCircle className="w-4 h-4 flex-shrink-0" />
+                <span>{validationErrors.height}</span>
+              </div>
+            )}
           </div>
 
-          <div className="grid grid-cols-3 gap-4">
-            <div>
-              <Label>Top W</Label>
-              <Input
-                type="number"
-                value={data.new_door.width_top || ""}
-                onChange={(e) => updateField('new_door', 'width_top', parseFloat(e.target.value))}
-              />
+          <div className="space-y-2">
+            <div className="grid grid-cols-3 gap-4">
+              <div>
+                <Label>Top W</Label>
+                <Input
+                  type="number"
+                  value={data.new_door.width_top || ""}
+                  onChange={(e) => updateField('new_door', 'width_top', parseFloat(e.target.value))}
+                  className={validationErrors.width ? "border-amber-500" : ""}
+                />
+              </div>
+              <div>
+                <Label>Mid W</Label>
+                <Input
+                  type="number"
+                  value={data.new_door.width_mid || ""}
+                  onChange={(e) => updateField('new_door', 'width_mid', parseFloat(e.target.value))}
+                  className={validationErrors.width ? "border-amber-500" : ""}
+                />
+              </div>
+              <div>
+                <Label>Bottom W</Label>
+                <Input
+                  type="number"
+                  value={data.new_door.width_bottom || ""}
+                  onChange={(e) => updateField('new_door', 'width_bottom', parseFloat(e.target.value))}
+                  className={validationErrors.width ? "border-amber-500" : ""}
+                />
+              </div>
             </div>
-            <div>
-              <Label>Mid W</Label>
-              <Input
-                type="number"
-                value={data.new_door.width_mid || ""}
-                onChange={(e) => updateField('new_door', 'width_mid', parseFloat(e.target.value))}
-              />
-            </div>
-            <div>
-              <Label>Bottom W</Label>
-              <Input
-                type="number"
-                value={data.new_door.width_bottom || ""}
-                onChange={(e) => updateField('new_door', 'width_bottom', parseFloat(e.target.value))}
-              />
-            </div>
+            {validationErrors.width && (
+              <div className="flex items-center gap-2 text-amber-600 text-sm bg-amber-50 border border-amber-200 rounded-md p-2">
+                <AlertCircle className="w-4 h-4 flex-shrink-0" />
+                <span>{validationErrors.width}</span>
+              </div>
+            )}
           </div>
 
           <div className="grid grid-cols-3 gap-4">
