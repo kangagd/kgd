@@ -502,20 +502,22 @@ Format as HTML bullet points using <ul> and <li> tags. Include only the most cri
             <h3 className="text-[16px] font-semibold text-[#111827] leading-[1.2]">Customer</h3>
           </CardHeader>
           <CardContent className="p-4 space-y-4">
-            <div 
-              className="cursor-pointer hover:text-[#FAE008] transition-colors"
-              onClick={handleCustomerClick}
-            >
-              <h2 className="text-[22px] font-semibold text-[#111827] leading-[1.2]">{project.customer_name}</h2>
+            <div>
+              <div 
+                className="cursor-pointer hover:text-[#FAE008] transition-colors mb-2"
+                onClick={handleCustomerClick}
+              >
+                <h2 className="text-[22px] font-semibold text-[#111827] leading-[1.2]">{project.customer_name}</h2>
+              </div>
+
+              {customer?.customer_type && (
+                <Badge className="bg-[#EDE9FE] text-[#6D28D9] hover:bg-[#EDE9FE] border-0 font-medium px-2.5 py-0.5 rounded-lg text-[12px] leading-[1.35]">
+                  {customer.customer_type}
+                </Badge>
+              )}
             </div>
 
-            {customer?.customer_type && (
-              <Badge className="bg-[#EDE9FE] text-[#6D28D9] hover:bg-[#EDE9FE] border-0 font-medium px-2.5 py-0.5 rounded-lg text-[12px] leading-[1.35]">
-                {customer.customer_type}
-              </Badge>
-            )}
-
-            <div className="space-y-3">
+            <div className="space-y-4">
               <div className="flex items-start gap-2.5">
                 <MapPin className="w-5 h-5 text-[#4B5563] mt-0.5 flex-shrink-0" />
                 <div className="flex-1 min-w-0">
