@@ -865,14 +865,6 @@ Format as HTML bullet points using <ul> and <li> tags. Include only the most cri
             <h2 className="text-[22px] font-semibold text-[#111827] leading-[1.2]">
               {project.title}
             </h2>
-
-          <div className="bg-white p-3 rounded-lg border border-[#E5E7EB] overflow-hidden">
-            <div className="text-[12px] font-medium text-[#4B5563] leading-[1.35] mb-2 uppercase tracking-wide">Project Stage</div>
-            <ProjectStageSelector
-              currentStage={project.status}
-              onStageChange={handleStageChange}
-            />
-          </div>
             {project.project_type && (
               <EditableField
                 value={project.project_type}
@@ -894,6 +886,14 @@ Format as HTML bullet points using <ul> and <li> tags. Include only the most cri
                 )}
               />
             )}
+          </div>
+
+          <div className="bg-white p-3 rounded-lg border border-[#E5E7EB] overflow-hidden">
+            <div className="text-[12px] font-medium text-[#4B5563] leading-[1.35] mb-2 uppercase tracking-wide">Project Stage</div>
+            <ProjectStageSelector
+              currentStage={project.status}
+              onStageChange={handleStageChange}
+            />
           </div>
           {project.financial_status && (
             <div className="mt-2">
