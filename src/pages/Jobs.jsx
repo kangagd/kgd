@@ -275,7 +275,7 @@ export default function Jobs() {
             job={selectedJob}
             onClose={() => {
               setSelectedJob(null);
-              navigate(-1);
+              navigate(createPageUrl("Jobs"));
             }}
             onEdit={handleEdit}
             onDelete={handleDelete}
