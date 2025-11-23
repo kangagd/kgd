@@ -278,126 +278,128 @@ export default function Jobs() {
         )}
 
         <div className="flex flex-col gap-3 mb-6">
-          <div className="flex flex-col md:flex-row gap-3">
+          <div className="flex gap-3">
             <div className="relative flex-1">
-              <Search className="absolute left-4 top-1/2 transform -translate-y-1/2 w-5 h-5 text-[#6B7280]" />
+              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-[#6B7280]" />
               <Input
                 placeholder="Search jobs..."
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
-                className="pl-12 border border-[#E5E7EB] focus:border-[#FAE008] focus:ring-2 focus:ring-[#FAE008]/20 transition-all h-12 text-base rounded-lg w-full"
+                className="pl-9 pr-3 border border-[#E5E7EB] focus:border-[#111827] focus:ring-1 focus:ring-[#111827] transition-all h-10 text-sm rounded-lg w-full"
               />
+              <button 
+                className="absolute right-3 top-1/2 transform -translate-y-1/2 text-[#6B7280] hover:text-[#111827] transition-colors"
+                onClick={() => setShowFilters(!showFilters)}
+              >
+                <Filter className="w-4 h-4" />
+              </button>
             </div>
-            <Tabs value={viewMode} onValueChange={setViewMode} className="flex-shrink-0">
-              <TabsList>
-                <TabsTrigger value="list" className="gap-2">
-                  <List className="w-4 h-4" />
-                  <span className="hidden sm:inline">List</span>
-                </TabsTrigger>
-                <TabsTrigger value="calendar" className="gap-2">
-                  <CalendarIcon className="w-4 h-4" />
-                  <span className="hidden sm:inline">Calendar</span>
-                </TabsTrigger>
-              </TabsList>
-            </Tabs>
           </div>
 
           {viewMode === "list" && (
-            <div className="flex flex-col gap-3 md:gap-4">
-              <div className="chip-container -mx-4 px-4 md:mx-0 md:px-0">
-                <Tabs value={statusFilter} onValueChange={setStatusFilter} className="w-full">
-                  <TabsList className="w-full justify-start min-w-max md:min-w-0">
-                    <TabsTrigger value="all" className="flex-1">All</TabsTrigger>
-                    <TabsTrigger value="Open" className="flex-1">Open</TabsTrigger>
-                    <TabsTrigger value="Scheduled" className="flex-1">Scheduled</TabsTrigger>
-                    <TabsTrigger value="Completed" className="flex-1">Completed</TabsTrigger>
-                  </TabsList>
-                </Tabs>
-              </div>
+            <div className="flex items-center gap-3">
+              <Tabs value={statusFilter} onValueChange={setStatusFilter} className="flex-1">
+                <TabsList className="w-full">
+                  <TabsTrigger value="all" className="flex-1">All</TabsTrigger>
+                  <TabsTrigger value="Open" className="flex-1">Open</TabsTrigger>
+                  <TabsTrigger value="Scheduled" className="flex-1">Scheduled</TabsTrigger>
+                  <TabsTrigger value="Completed" className="flex-1">Completed</TabsTrigger>
+                </TabsList>
+              </Tabs>
+              <Button
+                variant="outline"
+                onClick={() => setShowFilters(!showFilters)}
+                className="flex-shrink-0 h-10 px-3 border border-[#E5E7EB] hover:border-[#FAE008] hover:bg-[#FFFEF5] gap-2"
+              >
+                <Filter className="w-4 h-4" />
+                Filters
+              </Button>
+            </div>
+          )}
 
-              <div className="flex flex-wrap gap-3">
-                <Select value={technicianFilter} onValueChange={setTechnicianFilter}>
-                  <SelectTrigger className="w-full md:w-[200px] h-11">
-                    <SelectValue placeholder="All Technicians" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="all">All Technicians</SelectItem>
-                    {technicians.map((tech) => (
-                      <SelectItem key={tech.email} value={tech.email}>
-                        {tech.full_name}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
+          {showFilters && viewMode === "list" && (
+            <div className="flex flex-wrap gap-3">
+              <Select value={technicianFilter} onValueChange={setTechnicianFilter}>
+                <SelectTrigger className="w-full md:w-[200px] h-10">
+                  <SelectValue placeholder="All Technicians" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">All Technicians</SelectItem>
+                  {technicians.map((tech) => (
+                    <SelectItem key={tech.email} value={tech.email}>
+                      {tech.full_name}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
 
-                <Popover>
-                  <PopoverTrigger asChild>
-                    <Button variant="outline" className="w-full md:w-auto h-11 gap-2">
-                      <Filter className="w-4 h-4" />
-                      Date Range
-                      {(dateFrom || dateTo) && (
-                        <span className="ml-1 px-1.5 py-0.5 bg-[#FAE008] text-[#111827] rounded text-xs font-semibold">
-                          {dateFrom && dateTo ? '2' : '1'}
-                        </span>
-                      )}
-                    </Button>
-                  </PopoverTrigger>
-                  <PopoverContent className="w-80">
-                    <div className="space-y-4">
-                      <div>
-                        <label className="text-sm font-medium mb-1.5 block">From Date</label>
-                        <Input
-                          type="date"
-                          value={dateFrom}
-                          onChange={(e) => setDateFrom(e.target.value)}
-                          className="w-full"
-                        />
-                      </div>
-                      <div>
-                        <label className="text-sm font-medium mb-1.5 block">To Date</label>
-                        <Input
-                          type="date"
-                          value={dateTo}
-                          onChange={(e) => setDateTo(e.target.value)}
-                          className="w-full"
-                        />
-                      </div>
-                      {(dateFrom || dateTo) && (
-                        <Button
-                          variant="outline"
-                          onClick={() => {
-                            setDateFrom("");
-                            setDateTo("");
-                          }}
-                          className="w-full"
-                        >
-                          Clear Dates
-                        </Button>
-                      )}
+              <Popover>
+                <PopoverTrigger asChild>
+                  <Button variant="outline" className="w-full md:w-auto h-10 gap-2">
+                    <Filter className="w-4 h-4" />
+                    Date Range
+                    {(dateFrom || dateTo) && (
+                      <span className="ml-1 px-1.5 py-0.5 bg-[#FAE008] text-[#111827] rounded text-xs font-semibold">
+                        {dateFrom && dateTo ? '2' : '1'}
+                      </span>
+                    )}
+                  </Button>
+                </PopoverTrigger>
+                <PopoverContent className="w-80">
+                  <div className="space-y-4">
+                    <div>
+                      <label className="text-sm font-medium mb-1.5 block">From Date</label>
+                      <Input
+                        type="date"
+                        value={dateFrom}
+                        onChange={(e) => setDateFrom(e.target.value)}
+                        className="w-full"
+                      />
                     </div>
-                  </PopoverContent>
-                </Popover>
+                    <div>
+                      <label className="text-sm font-medium mb-1.5 block">To Date</label>
+                      <Input
+                        type="date"
+                        value={dateTo}
+                        onChange={(e) => setDateTo(e.target.value)}
+                        className="w-full"
+                      />
+                    </div>
+                    {(dateFrom || dateTo) && (
+                      <Button
+                        variant="outline"
+                        onClick={() => {
+                          setDateFrom("");
+                          setDateTo("");
+                        }}
+                        className="w-full"
+                      >
+                        Clear Dates
+                      </Button>
+                    )}
+                  </div>
+                </PopoverContent>
+              </Popover>
 
-                <Select value={`${sortBy}-${sortOrder}`} onValueChange={(value) => {
-                  const [field, order] = value.split('-');
-                  setSortBy(field);
-                  setSortOrder(order);
-                }}>
-                  <SelectTrigger className="w-full md:w-[220px] h-11">
-                    <ArrowUpDown className="w-4 h-4 mr-2" />
-                    <SelectValue placeholder="Sort by" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="scheduled_date-desc">Date (Newest)</SelectItem>
-                    <SelectItem value="scheduled_date-asc">Date (Oldest)</SelectItem>
-                    <SelectItem value="customer_name-asc">Customer (A-Z)</SelectItem>
-                    <SelectItem value="customer_name-desc">Customer (Z-A)</SelectItem>
-                    <SelectItem value="job_number-desc">Job # (High-Low)</SelectItem>
-                    <SelectItem value="job_number-asc">Job # (Low-High)</SelectItem>
-                    <SelectItem value="status-asc">Status (A-Z)</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
+              <Select value={`${sortBy}-${sortOrder}`} onValueChange={(value) => {
+                const [field, order] = value.split('-');
+                setSortBy(field);
+                setSortOrder(order);
+              }}>
+                <SelectTrigger className="w-full md:w-[220px] h-10">
+                  <ArrowUpDown className="w-4 h-4 mr-2" />
+                  <SelectValue placeholder="Sort by" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="scheduled_date-desc">Date (Newest)</SelectItem>
+                  <SelectItem value="scheduled_date-asc">Date (Oldest)</SelectItem>
+                  <SelectItem value="customer_name-asc">Customer (A-Z)</SelectItem>
+                  <SelectItem value="customer_name-desc">Customer (Z-A)</SelectItem>
+                  <SelectItem value="job_number-desc">Job # (High-Low)</SelectItem>
+                  <SelectItem value="job_number-asc">Job # (Low-High)</SelectItem>
+                  <SelectItem value="status-asc">Status (A-Z)</SelectItem>
+                </SelectContent>
+              </Select>
             </div>
           )}
         </div>
