@@ -232,9 +232,10 @@ export default function CalendarView({ jobs, onSelectJob, currentDate, onDateCha
                   className="h-10"
                 >
                   Clear Filters
-                </Button>
-              )}
-            </div>
+                  </Button>
+                  )}
+                  </div>
+                  )}
           </CardContent>
         </Card>
       )}
