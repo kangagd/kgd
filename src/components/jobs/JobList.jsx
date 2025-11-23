@@ -3,7 +3,7 @@ import JobCard from "./JobCard";
 import { Card, CardContent } from "@/components/ui/card";
 import { Timer } from "lucide-react";
 
-export default function JobList({ jobs, isLoading, onSelectJob }) {
+export default function JobList({ jobs, isLoading, onSelectJob, onViewDetails }) {
 
   if (isLoading) {
     return (
@@ -38,6 +38,7 @@ export default function JobList({ jobs, isLoading, onSelectJob }) {
           key={job.id}
           job={job}
           onClick={() => onSelectJob(job)}
+          onViewDetails={onViewDetails}
         />
       ))}
     </div>

@@ -416,7 +416,8 @@ export default function Jobs() {
           <JobList
             jobs={filteredJobs}
             isLoading={isLoading}
-            onSelectJob={(job) => setModalJob(job)}
+            onSelectJob={(job) => setSelectedJob(job)}
+            onViewDetails={(job) => setModalJob(job)}
           />
         ) : (
           <CalendarView
