@@ -213,7 +213,9 @@ export default function ProjectDetails({ project: initialProject, onClose, onEdi
       toast.success(`Invoice #${data.xero_invoice_number} created successfully in Xero`);
     },
     onError: (error) => {
-      toast.error(`Failed to create invoice: ${error.message || 'Unknown error'}`);
+      console.error('Invoice creation error:', error);
+      const errorMsg = error?.response?.data?.error || error?.message || 'Unknown error';
+      toast.error(`Failed to create invoice: ${errorMsg}`);
     }
   });
 

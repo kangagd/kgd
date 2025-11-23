@@ -163,6 +163,10 @@ Deno.serve(async (req) => {
 
   } catch (error) {
     console.error('Create invoice from job error:', error);
-    return Response.json({ error: error.message }, { status: 500 });
+    console.error('Error stack:', error.stack);
+    return Response.json({ 
+      error: error.message || 'Failed to create invoice',
+      details: error.stack 
+    }, { status: 500 });
   }
 });
