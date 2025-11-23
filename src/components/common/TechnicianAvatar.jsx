@@ -69,8 +69,7 @@ export default function TechnicianAvatar({
         text-white font-bold 
         border-2 border-white
         shadow-sm
-        transition-opacity duration-200
-        ${onClick ? 'cursor-pointer hover:opacity-95' : ''}
+        ${onClick ? 'cursor-pointer' : ''}
         ${className}
       `}
       style={{ backgroundColor }}
