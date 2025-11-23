@@ -445,6 +445,13 @@ Format as HTML bullet points using <ul> and <li> tags. Include only the most cri
         updateProjectMutation.mutate({ field: 'quote_url', value: file_url });
       } else if (type === 'invoice') {
         updateProjectMutation.mutate({ field: 'invoice_url', value: file_url });
+      } else if (type === 'other') {
+        const fileName = prompt('Enter a name for this document:');
+        if (fileName) {
+          const currentDocs = project.other_documents || [];
+          const newDocs = [...currentDocs, { name: fileName, url: file_url }];
+          updateProjectMutation.mutate({ field: 'other_documents', value: newDocs });
+        }
       }
     } catch (error) {
       console.error('Upload failed:', error);
@@ -502,22 +509,20 @@ Format as HTML bullet points using <ul> and <li> tags. Include only the most cri
             <h3 className="text-[16px] font-semibold text-[#111827] leading-[1.2]">Customer</h3>
           </CardHeader>
           <CardContent className="p-4 space-y-4">
-            <div>
-              <div 
-                className="cursor-pointer hover:text-[#FAE008] transition-colors mb-2"
-                onClick={handleCustomerClick}
-              >
-                <h2 className="text-[22px] font-semibold text-[#111827] leading-[1.2]">{project.customer_name}</h2>
-              </div>
-
-              {customer?.customer_type && (
-                <Badge className="bg-[#EDE9FE] text-[#6D28D9] hover:bg-[#EDE9FE] border-0 font-medium px-2.5 py-0.5 rounded-lg text-[12px] leading-[1.35]">
-                  {customer.customer_type}
-                </Badge>
-              )}
+            <div 
+              className="cursor-pointer hover:text-[#FAE008] transition-colors"
+              onClick={handleCustomerClick}
+            >
+              <h2 className="text-[22px] font-semibold text-[#111827] leading-[1.2]">{project.customer_name}</h2>
             </div>
 
-            <div className="space-y-4">
+            {customer?.customer_type && (
+              <Badge className="bg-[#EDE9FE] text-[#6D28D9] hover:bg-[#EDE9FE] border-0 font-medium px-2.5 py-0.5 rounded-lg text-[12px] leading-[1.35]">
+                {customer.customer_type}
+              </Badge>
+            )}
+
+            <div className="space-y-3">
               <div className="flex items-start gap-2.5">
                 <MapPin className="w-5 h-5 text-[#4B5563] mt-0.5 flex-shrink-0" />
                 <div className="flex-1 min-w-0">
@@ -726,8 +731,38 @@ Format as HTML bullet points using <ul> and <li> tags. Include only the most cri
                     <span className="text-[12px] font-medium text-[#111827] truncate">Invoice</span>
                   </button>
                 )}
+                
+                {project.other_documents && project.other_documents.length > 0 && (
+                  <>
+                    {project.other_documents.map((doc, index) => (
+                      <div key={index} className="w-full flex items-center gap-2 px-3 py-2 bg-white border border-[#E5E7EB] rounded-lg group">
+                        <button
+                          onClick={() => setPreviewFile({
+                            url: doc.url,
+                            name: doc.name,
+                            type: 'pdf',
+                            projectName: project.title
+                          })}
+                          className="flex-1 flex items-center gap-2 hover:text-[#FAE008] transition-colors"
+                        >
+                          <FileText className="w-4 h-4 text-[#6B7280] flex-shrink-0" />
+                          <span className="text-[12px] font-medium text-[#111827] truncate">{doc.name}</span>
+                        </button>
+                        <button
+                          onClick={() => {
+                            const updatedDocs = project.other_documents.filter((_, i) => i !== index);
+                            updateProjectMutation.mutate({ field: 'other_documents', value: updatedDocs });
+                          }}
+                          className="opacity-0 group-hover:opacity-100 text-red-600 hover:bg-red-50 rounded p-1 transition-opacity"
+                        >
+                          <X className="w-3 h-3" />
+                        </button>
+                      </div>
+                    ))}
+                  </>
+                )}
 
-                <div className="grid grid-cols-2 gap-2 pt-1">
+                <div className="grid grid-cols-3 gap-2 pt-1">
                   <label className="block">
                     <Button
                       type="button"
@@ -768,6 +803,27 @@ Format as HTML bullet points using <ul> and <li> tags. Include only the most cri
                       accept=".pdf,.doc,.docx"
                       className="hidden"
                       onChange={(e) => handleFileUpload(e, 'invoice')}
+                    />
+                  </label>
+                  <label className="block">
+                    <Button
+                      type="button"
+                      variant="outline"
+                      size="sm"
+                      className="w-full h-8 text-xs"
+                      disabled={uploading}
+                      asChild
+                    >
+                      <span>
+                        <Plus className="w-3 h-3 mr-1" />
+                        Other
+                      </span>
+                    </Button>
+                    <input
+                      type="file"
+                      accept=".pdf,.doc,.docx"
+                      className="hidden"
+                      onChange={(e) => handleFileUpload(e, 'other')}
                     />
                   </label>
                 </div>
