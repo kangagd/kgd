@@ -30,6 +30,8 @@ import ProjectSummary from "./ProjectSummary";
 import ProjectVisitsTab from "./ProjectVisitsTab";
 import FinancialsTab from "./FinancialsTab";
 import FilePreviewModal from "../common/FilePreviewModal";
+import XeroInvoiceCard from "../invoices/XeroInvoiceCard";
+import CreateInvoiceModal from "../invoices/CreateInvoiceModal";
 
 const statusColors = {
   "Lead": "bg-slate-100 text-slate-700",
@@ -76,6 +78,7 @@ export default function ProjectDetails({ project: initialProject, onClose, onEdi
   const [activeTab, setActiveTab] = useState("overview");
   const [user, setUser] = useState(null);
   const [previewFile, setPreviewFile] = useState(null);
+  const [showInvoiceModal, setShowInvoiceModal] = useState(false);
 
   React.useEffect(() => {
     const loadUser = async () => {
@@ -134,6 +137,18 @@ export default function ProjectDetails({ project: initialProject, onClose, onEdi
     refetchInterval: 10000
   });
 
+  const { data: xeroInvoices = [] } = useQuery({
+    queryKey: ['projectXeroInvoices', project.id],
+    queryFn: async () => {
+      if (!project.xero_invoices || project.xero_invoices.length === 0) return [];
+      const invoices = await Promise.all(
+        project.xero_invoices.map(id => base44.entities.XeroInvoice.get(id))
+      );
+      return invoices.filter(Boolean);
+    },
+    enabled: !!project.xero_invoices && project.xero_invoices.length > 0
+  });
+
   React.useEffect(() => {
     let viewerRecordId = null;
     const updatePresence = async () => {
@@ -179,6 +194,33 @@ export default function ProjectDetails({ project: initialProject, onClose, onEdi
       queryClient.invalidateQueries({ queryKey: ['projects'] });
       queryClient.invalidateQueries({ queryKey: ['allProjects'] });
       queryClient.invalidateQueries({ queryKey: ['project', project.id] });
+    }
+  });
+
+  const createProjectInvoiceMutation = useMutation({
+    mutationFn: async (amount) => {
+      const response = await base44.functions.invoke('createInvoiceFromProject', { 
+        project_id: project.id,
+        amount: amount 
+      });
+      return response.data;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['projectXeroInvoices', project.id] });
+      queryClient.invalidateQueries({ queryKey: ['project', project.id] });
+      setShowInvoiceModal(false);
+    }
+  });
+
+  const syncProjectInvoiceMutation = useMutation({
+    mutationFn: async (invoiceId) => {
+      const response = await base44.functions.invoke('syncXeroInvoiceStatus', { 
+        invoice_id: invoiceId 
+      });
+      return response.data;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['projectXeroInvoices', project.id] });
     }
   });
 
@@ -1115,14 +1157,63 @@ Format as HTML bullet points using <ul> and <li> tags. Include only the most cri
 
           {user?.role === 'admin' && (
             <TabsContent value="financials" className="mt-3">
-              <FinancialsTab 
-                project={project}
-                onUpdate={(fields) => {
-                  Object.entries(fields).forEach(([field, value]) => {
-                    updateProjectMutation.mutate({ field, value });
-                  });
-                }}
-              />
+              <div className="space-y-4">
+                <Card className="border border-[#E5E7EB] shadow-sm rounded-lg">
+                  <CardHeader className="bg-white px-4 py-3 border-b border-[#E5E7EB] flex flex-row items-center justify-between">
+                    <CardTitle className="text-[16px] font-semibold text-[#111827] leading-[1.2]">
+                      Xero Invoices ({xeroInvoices.length})
+                    </CardTitle>
+                    <Button
+                      onClick={() => setShowInvoiceModal(true)}
+                      size="sm"
+                      className="bg-[#FAE008] text-[#111827] hover:bg-[#E5CF07] font-semibold h-8"
+                    >
+                      <Plus className="w-4 h-4 mr-1" />
+                      Create Invoice
+                    </Button>
+                  </CardHeader>
+                  <CardContent className="p-4">
+                    {xeroInvoices.length === 0 ? (
+                      <div className="text-center py-6 bg-[#F9FAFB] rounded-lg border border-[#E5E7EB]">
+                        <DollarSign className="w-12 h-12 text-[#E5E7EB] mx-auto mb-3" />
+                        <p className="text-[14px] text-[#6B7280] mb-4">
+                          No invoices created for this project yet.
+                        </p>
+                        <Button
+                          onClick={() => setShowInvoiceModal(true)}
+                          variant="outline"
+                          size="sm"
+                          className="border-[#E5E7EB] hover:border-[#FAE008] hover:bg-[#FFFEF5]"
+                        >
+                          <Plus className="w-4 h-4 mr-2" />
+                          Create First Invoice
+                        </Button>
+                      </div>
+                    ) : (
+                      <div className="space-y-3">
+                        {xeroInvoices.map((invoice) => (
+                          <XeroInvoiceCard
+                            key={invoice.id}
+                            invoice={invoice}
+                            onRefreshStatus={() => syncProjectInvoiceMutation.mutate(invoice.id)}
+                            onViewInXero={() => window.open(invoice.pdf_url, '_blank')}
+                            isRefreshing={syncProjectInvoiceMutation.isPending}
+                          />
+                        ))}
+                      </div>
+                    )}
+                  </CardContent>
+                </Card>
+
+                <FinancialsTab 
+                  project={project}
+                  onUpdate={(fields) => {
+                    Object.entries(fields).forEach(([field, value]) => {
+                      updateProjectMutation.mutate({ field, value });
+                    });
+                  }}
+                />
+              </div>
             </TabsContent>
           )}
 
@@ -1271,6 +1362,20 @@ Format as HTML bullet points using <ul> and <li> tags. Include only the most cri
               ? () => updateProjectMutation.mutate({ field: 'invoice_url', value: null })
               : null
         }
+      />
+
+      <CreateInvoiceModal
+        open={showInvoiceModal}
+        onClose={() => setShowInvoiceModal(false)}
+        onConfirm={(amount) => createProjectInvoiceMutation.mutate(amount)}
+        isSubmitting={createProjectInvoiceMutation.isPending}
+        type="project"
+        data={{
+          customer_name: project.customer_name,
+          customer_email: project.customer_email,
+          title: project.title,
+          project_type: project.project_type
+        }}
       />
     </div>
   );

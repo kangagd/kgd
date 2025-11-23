@@ -27,6 +27,8 @@ import TechnicianAvatar, { TechnicianAvatarGroup } from "../common/TechnicianAva
 import JobActivityLog from "./JobActivityLog";
 import JobChat from "./JobChat";
 import JobMapView from "./JobMapView";
+import XeroInvoiceCard from "../invoices/XeroInvoiceCard";
+import CreateInvoiceModal from "../invoices/CreateInvoiceModal";
 import {
   Dialog,
   DialogContent,
@@ -130,6 +132,7 @@ export default function JobDetails({ job: initialJob, onClose, onStatusChange, o
   const [showHistory, setShowHistory] = useState(false);
   const [showCustomerEdit, setShowCustomerEdit] = useState(false);
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
+  const [showInvoiceModal, setShowInvoiceModal] = useState(false);
   const [user, setUser] = useState(null);
   const [measurements, setMeasurements] = useState(job.measurements || null);
   const [notes, setNotes] = useState(job.notes || "");
@@ -186,6 +189,12 @@ export default function JobDetails({ job: initialJob, onClose, onStatusChange, o
     queryKey: ['customer', job.customer_id],
     queryFn: () => base44.entities.Customer.get(job.customer_id),
     enabled: !!job.customer_id
+  });
+
+  const { data: xeroInvoice } = useQuery({
+    queryKey: ['xeroInvoice', job.xero_invoice_id],
+    queryFn: () => base44.entities.XeroInvoice.get(job.xero_invoice_id),
+    enabled: !!job.xero_invoice_id
   });
 
   const activeCheckIn = checkIns.find((c) => !c.check_out_time && c.technician_email === user?.email);
@@ -342,6 +351,34 @@ export default function JobDetails({ job: initialJob, onClose, onStatusChange, o
   };
 
   const isTechnician = user?.is_field_technician && user?.role !== 'admin';
+  const isAdmin = user?.role === 'admin';
+
+  const createInvoiceMutation = useMutation({
+    mutationFn: async (amount) => {
+      const response = await base44.functions.invoke('createInvoiceFromJob', { 
+        job_id: job.id,
+        amount: amount 
+      });
+      return response.data;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['xeroInvoice'] });
+      queryClient.invalidateQueries({ queryKey: ['job', job.id] });
+      setShowInvoiceModal(false);
+    }
+  });
+
+  const syncInvoiceMutation = useMutation({
+    mutationFn: async () => {
+      const response = await base44.functions.invoke('syncXeroInvoiceStatus', { 
+        invoice_id: xeroInvoice.id 
+      });
+      return response.data;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['xeroInvoice', job.xero_invoice_id] });
+    }
+  });
 
   const handleCheckIn = () => {
     checkInMutation.mutate();
@@ -883,6 +920,40 @@ export default function JobDetails({ job: initialJob, onClose, onStatusChange, o
             </TabsList>
 
             <TabsContent value="details" className="space-y-4 mt-3">
+              {isAdmin && (
+                <Card className="border border-[#E5E7EB] shadow-sm rounded-lg">
+                  <CardHeader className="bg-white px-4 py-3 border-b border-[#E5E7EB]">
+                    <CardTitle className="text-[16px] font-semibold text-[#111827] leading-[1.2]">
+                      Billing & Invoice
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent className="p-4">
+                    {!xeroInvoice ? (
+                      <div className="text-center py-6">
+                        <DollarSign className="w-12 h-12 text-[#E5E7EB] mx-auto mb-3" />
+                        <p className="text-[14px] text-[#6B7280] mb-4">
+                          No invoice has been created for this job yet.
+                        </p>
+                        <Button
+                          onClick={() => setShowInvoiceModal(true)}
+                          className="bg-[#FAE008] text-[#111827] hover:bg-[#E5CF07] font-semibold shadow-sm h-10 px-6"
+                        >
+                          <DollarSign className="w-4 h-4 mr-2" />
+                          Send via Xero
+                        </Button>
+                      </div>
+                    ) : (
+                      <XeroInvoiceCard
+                        invoice={xeroInvoice}
+                        onRefreshStatus={() => syncInvoiceMutation.mutate()}
+                        onViewInXero={() => window.open(xeroInvoice.pdf_url, '_blank')}
+                        isRefreshing={syncInvoiceMutation.isPending}
+                      />
+                    )}
+                  </CardContent>
+                </Card>
+              )}
+
               {job.project_id && projectJobs.length > 0 &&
               <div className="bg-blue-50 border-2 border-blue-200 rounded-xl p-3 mb-4">
                   <h3 className="text-[14px] font-semibold text-blue-900 leading-[1.4] mb-2 flex items-center gap-1.5">
@@ -1416,6 +1487,20 @@ export default function JobDetails({ job: initialJob, onClose, onStatusChange, o
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
+
+      <CreateInvoiceModal
+        open={showInvoiceModal}
+        onClose={() => setShowInvoiceModal(false)}
+        onConfirm={(amount) => createInvoiceMutation.mutate(amount)}
+        isSubmitting={createInvoiceMutation.isPending}
+        type="job"
+        data={{
+          customer_name: job.customer_name,
+          customer_email: job.customer_email,
+          job_number: job.job_number,
+          project_name: job.project_name
+        }}
+      />
 
       </>);
 
