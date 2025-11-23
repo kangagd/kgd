@@ -517,7 +517,14 @@ Format as HTML bullet points using <ul> and <li> tags. Include only the most cri
 
             <div className="space-y-3">
               <div className="flex items-start gap-2.5">
-                <MapPin className="w-5 h-5 text-[#4B5563] mt-0.5 flex-shrink-0" />
+                <a 
+                  href={project.address ? `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(project.address)}` : '#'}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="hover:bg-[#F3F4F6] p-1 rounded transition-colors"
+                >
+                  <MapPin className="w-5 h-5 text-[#4B5563]" />
+                </a>
                 <div className="flex-1 min-w-0">
                   <div className="text-[14px] text-[#6B7280] font-normal leading-[1.4] mb-0.5">Address</div>
                   <EditableField
