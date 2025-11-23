@@ -896,10 +896,7 @@ export default function JobDetails({ job: initialJob, onClose, onStatusChange, o
                 <ImageIcon className="w-4 h-4 mr-1.5" />
                 <span className="hidden md:inline">Files</span>
               </TabsTrigger>
-              <TabsTrigger value="activity" className="flex-1">
-                <History className="w-4 h-4 mr-1.5" />
-                <span className="hidden md:inline">Activity</span>
-              </TabsTrigger>
+
               <TabsTrigger value="chat" className="flex-1">
                 <MessageCircle className="w-4 h-4 mr-1.5" />
                 <span className="hidden md:inline">Chat</span>
