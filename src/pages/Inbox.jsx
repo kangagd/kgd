@@ -3,7 +3,7 @@ import { base44 } from "@/api/base44Client";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Search, Filter, Mail, Link as LinkIcon, Check, Archive, Trash2, ArrowUpDown } from "lucide-react";
+import { Search, Filter, Mail, Link as LinkIcon, Check, Archive, Trash2, ArrowUpDown, SlidersHorizontal } from "lucide-react";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import {
@@ -33,6 +33,7 @@ export default function Inbox() {
   const [statusFilter, setStatusFilter] = useState("all");
   const [priorityFilter, setPriorityFilter] = useState("all");
   const [sortBy, setSortBy] = useState("date");
+  const [showFilters, setShowFilters] = useState(false);
   const [selectedThread, setSelectedThread] = useState(null);
   const [selectedThreadIds, setSelectedThreadIds] = useState([]);
   const [linkModalOpen, setLinkModalOpen] = useState(false);
@@ -360,55 +361,59 @@ export default function Inbox() {
           </div>
 
           <div className="flex flex-col gap-4">
-            <div className="chip-container -mx-4 px-4 md:mx-0 md:px-0">
-              <Tabs value={statusFilter} onValueChange={setStatusFilter} className="w-full">
-                <TabsList className="w-full grid grid-cols-4 gap-1 min-w-max md:min-w-0">
-                  <TabsTrigger value="all" className="whitespace-nowrap">All</TabsTrigger>
-                  <TabsTrigger value="Open" className="whitespace-nowrap">Open</TabsTrigger>
-                  <TabsTrigger value="In Progress" className="whitespace-nowrap">Active</TabsTrigger>
-                  <TabsTrigger value="Closed" className="whitespace-nowrap">Closed</TabsTrigger>
-                </TabsList>
-              </Tabs>
+            <div className="flex gap-3">
+              <div className="chip-container -mx-4 px-4 md:mx-0 md:px-0 flex-1">
+                <Tabs value={statusFilter} onValueChange={setStatusFilter} className="w-full">
+                  <TabsList className="w-full grid grid-cols-4 gap-1 min-w-max md:min-w-0">
+                    <TabsTrigger value="all" className="whitespace-nowrap">All</TabsTrigger>
+                    <TabsTrigger value="Open" className="whitespace-nowrap">Open</TabsTrigger>
+                    <TabsTrigger value="In Progress" className="whitespace-nowrap">Active</TabsTrigger>
+                    <TabsTrigger value="Closed" className="whitespace-nowrap">Closed</TabsTrigger>
+                  </TabsList>
+                </Tabs>
+              </div>
+              <Button
+                variant="outline"
+                onClick={() => setShowFilters(!showFilters)}
+                className="flex-shrink-0 h-12 px-4 border border-[#E5E7EB] hover:border-[#FAE008] hover:bg-[#FFFEF5]"
+              >
+                <SlidersHorizontal className="w-5 h-5 mr-2" />
+                Filters
+              </Button>
             </div>
 
-            <div className="flex items-center gap-3">
-              <Select value={priorityFilter} onValueChange={setPriorityFilter}>
-                <SelectTrigger className="flex-1">
-                  <SelectValue placeholder="Priority" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="all">All Priorities</SelectItem>
-                  <SelectItem value="High">🔴 High</SelectItem>
-                  <SelectItem value="Normal">🟡 Normal</SelectItem>
-                  <SelectItem value="Low">🟢 Low</SelectItem>
-                </SelectContent>
-              </Select>
-              
-              <DropdownMenu>
-                <DropdownMenuTrigger asChild>
-                  <Button variant="outline" size="icon">
-                    <ArrowUpDown className="w-4 h-4" />
-                  </Button>
-                </DropdownMenuTrigger>
-                <DropdownMenuContent align="end">
-                  <DropdownMenuItem onClick={() => setSortBy("date")}>
-                    {sortBy === "date" && "✓ "}Date
-                  </DropdownMenuItem>
-                  <DropdownMenuItem onClick={() => setSortBy("priority")}>
-                    {sortBy === "priority" && "✓ "}Priority
-                  </DropdownMenuItem>
-                  <DropdownMenuItem onClick={() => setSortBy("sender")}>
-                    {sortBy === "sender" && "✓ "}Sender
-                  </DropdownMenuItem>
-                  <DropdownMenuItem onClick={() => setSortBy("subject")}>
-                    {sortBy === "subject" && "✓ "}Subject
-                  </DropdownMenuItem>
-                  <DropdownMenuItem onClick={() => setSortBy("unread")}>
-                    {sortBy === "unread" && "✓ "}Unread First
-                  </DropdownMenuItem>
-                </DropdownMenuContent>
-              </DropdownMenu>
-            </div>
+            {showFilters && (
+              <Card className="border border-[#E5E7EB]">
+                <CardContent className="p-4">
+                  <div className="flex flex-wrap gap-3">
+                    <Select value={priorityFilter} onValueChange={setPriorityFilter}>
+                      <SelectTrigger className="w-full md:w-[180px] h-11">
+                        <SelectValue placeholder="Priority" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="all">All Priorities</SelectItem>
+                        <SelectItem value="High">🔴 High</SelectItem>
+                        <SelectItem value="Normal">🟡 Normal</SelectItem>
+                        <SelectItem value="Low">🟢 Low</SelectItem>
+                      </SelectContent>
+                    </Select>
+                    
+                    <Select value={sortBy} onValueChange={setSortBy}>
+                      <SelectTrigger className="w-full md:w-[200px] h-11">
+                        <SelectValue placeholder="Sort by" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="date">Date</SelectItem>
+                        <SelectItem value="priority">Priority</SelectItem>
+                        <SelectItem value="sender">Sender</SelectItem>
+                        <SelectItem value="subject">Subject</SelectItem>
+                        <SelectItem value="unread">Unread First</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+                </CardContent>
+              </Card>
+            )}
           </div>
         </div>
 
