@@ -235,7 +235,7 @@ export default function DayView({ jobs, currentDate, onJobClick, onQuickBook }) 
     };
 
     return (
-      <div className="space-y-2 lg:hidden">
+      <div className="space-y-2">
         {myJobs.length === 0 ? (
           <Card className="p-8 text-center">
             <p className="text-[#6B7280] text-sm">No jobs scheduled for today</p>

@@ -225,7 +225,7 @@ export default function WeekView({ jobs, currentDate, onJobClick, onQuickBook })
     };
 
     return (
-      <div className="space-y-3 lg:hidden">
+      <div className="space-y-3">
         {weekDays.map(day => {
           const dayJobs = getMyJobsForDay(day);
           const isToday = isSameDay(day, new Date());
