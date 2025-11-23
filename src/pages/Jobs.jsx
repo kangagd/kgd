@@ -19,8 +19,10 @@ import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import EntityModal from "../components/common/EntityModal.jsx";
 import JobModalView from "../components/jobs/JobModalView";
 import { createPageUrl } from "@/utils";
+import { useNavigate } from "react-router-dom";
 
 export default function Jobs() {
+  const navigate = useNavigate();
   const [searchTerm, setSearchTerm] = useState("");
   const [statusFilter, setStatusFilter] = useState("all");
   const [technicianFilter, setTechnicianFilter] = useState("all");
