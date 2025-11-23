@@ -230,6 +230,10 @@ export default function ProjectDetails({ project: initialProject, onClose, onEdi
       const jobTypes = await base44.entities.JobType.list();
       const jobType = jobTypes.find(jt => jt.name === jobTypeName);
       
+      if (!jobType) {
+        console.warn(`JobType "${jobTypeName}" not found. Available job types:`, jobTypes.map(jt => jt.name));
+      }
+      
       // Get the latest job number
       const allJobs = await base44.entities.Job.list('-job_number', 1);
       const nextJobNumber = allJobs.length > 0 ? (allJobs[0].job_number || 5000) + 1 : 5000;
