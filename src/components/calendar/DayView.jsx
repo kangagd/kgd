@@ -326,7 +326,7 @@ export default function DayView({ jobs, currentDate, onJobClick, onQuickBook }) 
   // Desktop admin view
   return (
     <>
-      <div className="space-y-3 hidden lg:block">
+      <div className="space-y-3">
         <Card className="rounded-lg border border-[#E5E7EB] shadow-sm overflow-hidden">
           <CardContent className="p-0 overflow-x-auto">
             <div className="min-w-[800px]">
