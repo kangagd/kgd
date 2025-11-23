@@ -865,7 +865,7 @@ export default function JobDetails({ job: initialJob, onClose, onStatusChange, o
           </div>
         }
         
-        <CardContent className="p-3 md:p-4 space-y-3">
+        <CardContent className={`p-3 md:p-4 space-y-3 ${isTechnician ? 'pb-32' : ''}`}>
           <Tabs defaultValue="details" className="w-full">
             <TabsList className="w-full justify-start mb-3">
               <TabsTrigger value="details" className="flex-1">Details</TabsTrigger>
