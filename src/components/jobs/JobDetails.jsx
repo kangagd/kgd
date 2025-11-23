@@ -884,9 +884,9 @@ export default function JobDetails({ job: initialJob, onClose, onStatusChange, o
               </TabsTrigger>
             </TabsList>
 
-            <TabsContent value="details" className="space-y-3 mt-3">
+            <TabsContent value="details" className="space-y-4 mt-3">
               {job.project_id && projectJobs.length > 0 &&
-              <div className="bg-blue-50 border-2 border-blue-200 rounded-xl p-3">
+              <div className="bg-blue-50 border-2 border-blue-200 rounded-xl p-3 mb-4">
                   <h3 className="text-[14px] font-semibold text-blue-900 leading-[1.4] mb-2 flex items-center gap-1.5">
                     <FolderKanban className="w-4 h-4" />
                     Project Job History ({projectJobs.length})
@@ -929,7 +929,7 @@ export default function JobDetails({ job: initialJob, onClose, onStatusChange, o
                 </div>
               }
 
-              <div className="bg-white rounded-lg p-4">
+              <div>
                 <RichTextField
                   label="Job Info"
                   value={additionalInfo}
@@ -939,7 +939,7 @@ export default function JobDetails({ job: initialJob, onClose, onStatusChange, o
                 />
               </div>
 
-              <div className="bg-white rounded-lg p-4">
+              <div>
                 <label className="block text-[13px] md:text-[14px] font-medium text-[#4B5563] mb-1.5">Pricing</label>
                 <Input
                   value={pricingProvided}
@@ -949,7 +949,7 @@ export default function JobDetails({ job: initialJob, onClose, onStatusChange, o
                 />
               </div>
 
-              <div className="bg-white rounded-lg p-4">
+              <div>
                 <RichTextField
                   label="Notes"
                   value={notes}
