@@ -268,10 +268,7 @@ export default function Jobs() {
         <div className="mx-auto p-5 md:p-10 max-w-4xl">
           <JobDetails
             job={selectedJob}
-            onClose={() => {
-              setSelectedJob(null);
-              window.history.pushState({}, '', createPageUrl("Jobs"));
-            }}
+            onClose={() => window.history.back()}
             onEdit={handleEdit}
             onDelete={handleDelete}
             onStatusChange={(newStatus) => {
