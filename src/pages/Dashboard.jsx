@@ -197,6 +197,7 @@ export default function Dashboard() {
                     key={job.id}
                     job={job}
                     onClick={() => navigate(createPageUrl("Jobs") + `?jobId=${job.id}`)}
+                    onViewDetails={() => {}}
                   />
                 ))}
               </div>
