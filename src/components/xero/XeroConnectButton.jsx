@@ -1,18 +1,26 @@
 import React, { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { base44 } from "@/api/base44Client";
-import { ExternalLink, CheckCircle, AlertCircle } from "lucide-react";
+import { ExternalLink, CheckCircle, AlertCircle, Settings } from "lucide-react";
 import { useQuery } from "@tanstack/react-query";
+import XeroSettingsModal from "./XeroSettingsModal";
 
 export default function XeroConnectButton() {
   const [isConnecting, setIsConnecting] = useState(false);
+  const [showSettings, setShowSettings] = useState(false);
 
   const { data: xeroConnections = [] } = useQuery({
     queryKey: ['xeroConnection'],
     queryFn: () => base44.entities.XeroConnection.list()
   });
 
+  const { data: xeroSettings = [] } = useQuery({
+    queryKey: ['xeroSettings'],
+    queryFn: () => base44.entities.XeroSettings.list()
+  });
+
   const isConnected = xeroConnections.length > 0;
+  const hasSettings = xeroSettings.length > 0;
 
   const handleConnect = async () => {
     try {
@@ -37,10 +45,24 @@ export default function XeroConnectButton() {
 
   if (isConnected) {
     return (
-      <div className="flex items-center gap-2 text-green-600">
-        <CheckCircle className="w-5 h-5" />
-        <span className="text-sm font-medium">Xero Connected</span>
-      </div>
+      <>
+        <div className="flex items-center gap-2">
+          <div className="flex items-center gap-2 text-green-600">
+            <CheckCircle className="w-5 h-5" />
+            <span className="text-sm font-medium">Xero Connected</span>
+          </div>
+          <Button
+            onClick={() => setShowSettings(true)}
+            variant="outline"
+            size="sm"
+            className="gap-2"
+          >
+            <Settings className="w-4 h-4" />
+            {hasSettings ? 'Settings' : 'Configure'}
+          </Button>
+        </div>
+        <XeroSettingsModal open={showSettings} onClose={() => setShowSettings(false)} />
+      </>
     );
   }
 
