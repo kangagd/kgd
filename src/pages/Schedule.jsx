@@ -344,7 +344,7 @@ export default function Schedule() {
     <div className="px-4 py-4 lg:px-6 lg:py-6 bg-[#ffffff] min-h-screen">
       <div className="max-w-7xl mx-auto">
         {/* Sticky Header */}
-        <div className="sticky top-0 bg-[#ffffff] z-10 pb-4 mb-6">
+        <div className="sticky top-0 bg-[#ffffff] z-10 pb-3 mb-4">
           <div className="flex flex-col lg:flex-row justify-between items-start lg:items-center gap-4 mb-4">
             <div>
               <h1 className="text-3xl font-semibold text-[#111827] leading-tight">Schedule</h1>
