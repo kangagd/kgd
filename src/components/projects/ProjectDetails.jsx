@@ -416,39 +416,50 @@ Format as HTML bullet points using <ul> and <li> tags. Include only the most cri
   };
 
   const handleFileUpload = async (event, type) => {
-    const file = event.target.files?.[0];
-    if (!file) return;
+    const files = type === 'other' ? Array.from(event.target.files || []) : [event.target.files?.[0]];
+    if (files.length === 0 || !files[0]) return;
 
     setUploading(true);
     try {
-      const { file_url } = await base44.integrations.Core.UploadFile({ file });
-      
-      if (type === 'image') {
-        const currentImages = project.image_urls || [];
-        const newImages = [...currentImages, file_url];
+      if (type === 'other') {
+        const uploadPromises = files.map(file => base44.integrations.Core.UploadFile({ file }));
+        const results = await Promise.all(uploadPromises);
+        const newUrls = results.map(r => r.file_url);
+        const currentDocs = project.other_documents || [];
         updateProjectMutation.mutate({ 
-          field: 'image_urls', 
-          value: newImages 
+          field: 'other_documents', 
+          value: [...currentDocs, ...newUrls] 
         });
+      } else {
+        const { file_url } = await base44.integrations.Core.UploadFile({ file: files[0] });
+        
+        if (type === 'image') {
+          const currentImages = project.image_urls || [];
+          const newImages = [...currentImages, file_url];
+          updateProjectMutation.mutate({ 
+            field: 'image_urls', 
+            value: newImages 
+          });
 
-        // Create Photo record
-        const user = await base44.auth.me();
-        await base44.entities.Photo.create({
-          image_url: file_url,
-          project_id: project.id,
-          project_name: project.title,
-          customer_id: project.customer_id,
-          customer_name: project.customer_name,
-          address: project.address,
-          uploaded_at: new Date().toISOString(),
-          technician_email: user.email,
-          technician_name: user.full_name
-        });
-        queryClient.invalidateQueries({ queryKey: ['photos'] });
-      } else if (type === 'quote') {
-        updateProjectMutation.mutate({ field: 'quote_url', value: file_url });
-      } else if (type === 'invoice') {
-        updateProjectMutation.mutate({ field: 'invoice_url', value: file_url });
+          // Create Photo record
+          const user = await base44.auth.me();
+          await base44.entities.Photo.create({
+            image_url: file_url,
+            project_id: project.id,
+            project_name: project.title,
+            customer_id: project.customer_id,
+            customer_name: project.customer_name,
+            address: project.address,
+            uploaded_at: new Date().toISOString(),
+            technician_email: user.email,
+            technician_name: user.full_name
+          });
+          queryClient.invalidateQueries({ queryKey: ['photos'] });
+        } else if (type === 'quote') {
+          updateProjectMutation.mutate({ field: 'quote_url', value: file_url });
+        } else if (type === 'invoice') {
+          updateProjectMutation.mutate({ field: 'invoice_url', value: file_url });
+        }
       }
     } catch (error) {
       console.error('Upload failed:', error);
@@ -729,6 +740,26 @@ Format as HTML bullet points using <ul> and <li> tags. Include only the most cri
                   </button>
                 )}
 
+                {project.other_documents && project.other_documents.length > 0 && (
+                  <div className="space-y-1 pt-1 border-t border-[#E5E7EB]">
+                    {project.other_documents.map((url, index) => (
+                      <button
+                        key={index}
+                        onClick={() => setPreviewFile({
+                          url,
+                          name: `Document ${index + 1}`,
+                          type: 'pdf',
+                          projectName: project.title
+                        })}
+                        className="w-full flex items-center gap-2 px-3 py-2 bg-white border border-[#E5E7EB] rounded-lg hover:border-[#FAE008] transition-all cursor-pointer"
+                      >
+                        <FileText className="w-4 h-4 text-purple-600 flex-shrink-0" />
+                        <span className="text-[12px] font-medium text-[#111827] truncate">Document {index + 1}</span>
+                      </button>
+                    ))}
+                  </div>
+                )}
+
                 <div className="grid grid-cols-2 gap-2 pt-1">
                   <label className="block">
                     <Button
@@ -770,6 +801,28 @@ Format as HTML bullet points using <ul> and <li> tags. Include only the most cri
                       accept=".pdf,.doc,.docx"
                       className="hidden"
                       onChange={(e) => handleFileUpload(e, 'invoice')}
+                    />
+                  </label>
+                  <label className="block col-span-2">
+                    <Button
+                      type="button"
+                      variant="outline"
+                      size="sm"
+                      className="w-full h-8 text-xs"
+                      disabled={uploading}
+                      asChild
+                    >
+                      <span>
+                        <Upload className="w-3 h-3 mr-1" />
+                        Other Docs
+                      </span>
+                    </Button>
+                    <input
+                      type="file"
+                      multiple
+                      accept=".pdf,.doc,.docx,.xls,.xlsx,.txt"
+                      className="hidden"
+                      onChange={(e) => handleFileUpload(e, 'other')}
                     />
                   </label>
                 </div>
