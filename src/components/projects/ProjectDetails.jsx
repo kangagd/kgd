@@ -498,8 +498,8 @@ Format as HTML bullet points using <ul> and <li> tags. Include only the most cri
       {/* Customer Sidebar */}
       <aside className="w-full lg:w-72 flex-shrink-0 lg:sticky lg:top-4 lg:self-start">
         <Card className="border border-[#E5E7EB] shadow-sm rounded-lg overflow-hidden">
-          <CardHeader className="bg-[#F8F9FA] px-4 py-3 border-b border-[#E5E7EB]">
-            <h3 className="text-[18px] font-semibold text-[#111827] leading-[1.2]">Customer</h3>
+          <CardHeader className="bg-white px-4 py-3 border-b border-[#E5E7EB]">
+            <h3 className="text-[16px] font-semibold text-[#111827] leading-[1.2]">Customer</h3>
           </CardHeader>
           <CardContent className="p-4 space-y-4">
             <div 
@@ -559,9 +559,9 @@ Format as HTML bullet points using <ul> and <li> tags. Include only the most cri
 
             {/* Visits Section */}
             <Card className="border border-[#E5E7EB] shadow-sm rounded-lg overflow-hidden mt-4">
-            <CardHeader className="bg-[#F8F9FA] px-4 py-3 border-b border-[#E5E7EB]">
+            <CardHeader className="bg-white px-4 py-3 border-b border-[#E5E7EB]">
             <div className="flex items-center justify-between">
-              <h3 className="text-[18px] font-semibold text-[#111827] leading-[1.2]">Visits ({jobs.length})</h3>
+              <h3 className="text-[16px] font-semibold text-[#111827] leading-[1.2]">Visits ({jobs.length})</h3>
               <Button
                 onClick={handleAddJob}
                 className="bg-[#FAE008] text-[#111827] hover:bg-[#E5CF07] font-semibold h-9 text-sm"
@@ -634,8 +634,8 @@ Format as HTML bullet points using <ul> and <li> tags. Include only the most cri
 
             {/* Images Section */}
             <Card className="border border-[#E5E7EB] shadow-sm rounded-lg overflow-hidden mt-4">
-              <CardHeader className="bg-[#F8F9FA] px-4 py-3 border-b border-[#E5E7EB]">
-                <h3 className="text-[18px] font-semibold text-[#111827] leading-[1.2]">Images</h3>
+              <CardHeader className="bg-white px-4 py-3 border-b border-[#E5E7EB]">
+                <h3 className="text-[16px] font-semibold text-[#111827] leading-[1.2]">Images</h3>
               </CardHeader>
               <CardContent className="p-3 space-y-3">
                 {project.image_urls && project.image_urls.length > 0 && (
@@ -695,8 +695,8 @@ Format as HTML bullet points using <ul> and <li> tags. Include only the most cri
 
             {/* Documents Section */}
             <Card className="border border-[#E5E7EB] shadow-sm rounded-lg overflow-hidden mt-4">
-              <CardHeader className="bg-[#F8F9FA] px-4 py-3 border-b border-[#E5E7EB]">
-                <h3 className="text-[18px] font-semibold text-[#111827] leading-[1.2]">Documents</h3>
+              <CardHeader className="bg-white px-4 py-3 border-b border-[#E5E7EB]">
+                <h3 className="text-[16px] font-semibold text-[#111827] leading-[1.2]">Documents</h3>
               </CardHeader>
               <CardContent className="p-3 space-y-2">
                 {project.quote_url && (
