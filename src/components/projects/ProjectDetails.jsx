@@ -339,8 +339,11 @@ Format as HTML bullet points using <ul> and <li> tags. Include only the most cri
       });
 
       // Refresh jobs and navigate to the new job
-      queryClient.invalidateQueries({ queryKey: ['projectJobs', project.id] });
-      queryClient.invalidateQueries({ queryKey: ['allJobs'] });
+      await queryClient.invalidateQueries({ queryKey: ['projectJobs', project.id] });
+      await queryClient.invalidateQueries({ queryKey: ['allJobs'] });
+      
+      // Small delay to ensure queries have refetched
+      await new Promise(resolve => setTimeout(resolve, 100));
       
       // Navigate to the new job
       navigate(createPageUrl("Jobs") + `?jobId=${newJob.id}`);
