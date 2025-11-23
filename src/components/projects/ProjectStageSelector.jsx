@@ -1,15 +1,5 @@
-import React, { useState } from "react";
+import React from "react";
 import { Check } from "lucide-react";
-import {
-  AlertDialog,
-  AlertDialogAction,
-  AlertDialogCancel,
-  AlertDialogContent,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogTitle,
-} from "@/components/ui/alert-dialog";
 
 const PROJECT_STAGES = [
   "Lead",
