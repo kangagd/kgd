@@ -705,7 +705,15 @@ export default function JobForm({ job, technicians, onSubmit, onCancel, isSubmit
                   id="scheduled_date"
                   type="date"
                   value={formData.scheduled_date}
-                  onChange={(e) => setFormData({ ...formData, scheduled_date: e.target.value })}
+                  onChange={(e) => {
+                    const newDate = e.target.value;
+                    const newStatus = newDate ? 'Scheduled' : 'Open';
+                    setFormData({ 
+                      ...formData, 
+                      scheduled_date: newDate,
+                      status: newStatus
+                    });
+                  }}
                   required
                   className="border-2 border-slate-300 focus:border-[#fae008] focus:ring-2 focus:ring-[#fae008]/20 transition-all"
                 />
