@@ -29,7 +29,8 @@ const statusColors = {
   "Final Measure": "bg-cyan-100 text-cyan-800 border-cyan-200",
   "Parts Ordered": "bg-amber-100 text-amber-800 border-amber-200",
   "Scheduled": "bg-[#fae008]/20 text-[hsl(25,10%,12%)] border-[#fae008]/30",
-  "Completed": "bg-emerald-100 text-emerald-800 border-emerald-200"
+  "Completed": "bg-emerald-100 text-emerald-800 border-emerald-200",
+  "Warranty": "bg-red-100 text-red-800 border-red-200"
 };
 
 const projectTypeColors = {
@@ -168,7 +169,7 @@ export default function Projects() {
       if (sortBy === "created_date") {
         return new Date(b.created_date) - new Date(a.created_date);
       } else if (sortBy === "stage") {
-        const stages = ["Lead", "Initial Site Visit", "Quote Sent", "Quote Approved", "Final Measure", "Parts Ordered", "Scheduled", "Completed"];
+        const stages = ["Lead", "Initial Site Visit", "Quote Sent", "Quote Approved", "Final Measure", "Parts Ordered", "Scheduled", "Completed", "Warranty"];
         return stages.indexOf(a.status) - stages.indexOf(b.status);
       }
       return 0;
@@ -300,6 +301,7 @@ export default function Projects() {
                       <SelectItem value="Parts Ordered">Parts Ordered</SelectItem>
                       <SelectItem value="Scheduled">Scheduled</SelectItem>
                       <SelectItem value="Completed">Completed</SelectItem>
+                      <SelectItem value="Warranty">Warranty</SelectItem>
                     </SelectContent>
                   </Select>
 
