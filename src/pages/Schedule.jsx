@@ -8,13 +8,38 @@ import JobDetails from "../components/jobs/JobDetails";
 export default function Schedule() {
   const [currentDate, setCurrentDate] = useState(new Date());
   const [selectedJob, setSelectedJob] = useState(null);
+  const [user, setUser] = useState(null);
+
+  React.useEffect(() => {
+    const loadUser = async () => {
+      try {
+        setUser(await base44.auth.me());
+      } catch (error) {
+        console.error("Error loading user:", error);
+      }
+    };
+    loadUser();
+  }, []);
 
   const { data: allJobs = [], isLoading } = useQuery({
     queryKey: ['jobs'],
     queryFn: () => base44.entities.Job.list('-scheduled_date'),
   });
 
-  const jobs = allJobs.filter(job => !job.deleted_at);
+  const isTechnician = user?.is_field_technician && user?.role !== 'admin';
+  
+  const jobs = allJobs.filter(job => {
+    if (!job.deleted_at) {
+      if (isTechnician && user) {
+        const isAssigned = Array.isArray(job.assigned_to) 
+          ? job.assigned_to.includes(user.email)
+          : job.assigned_to === user.email;
+        return isAssigned;
+      }
+      return true;
+    }
+    return false;
+  });
 
   if (selectedJob) {
     return (
