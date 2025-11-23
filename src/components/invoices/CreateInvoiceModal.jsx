@@ -223,6 +223,7 @@ export default function CreateInvoiceModal({
                             onChange={(e) => setSearchTerm(e.target.value)}
                             className="h-8 text-sm"
                             onClick={(e) => e.stopPropagation()}
+                            onBlur={(e) => e.preventDefault()}
                             autoFocus={false}
                           />
                         </div>
