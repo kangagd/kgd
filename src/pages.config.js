@@ -13,6 +13,7 @@ import Projects from './pages/Projects';
 import Photos from './pages/Photos';
 import Reports from './pages/Reports';
 import Inbox from './pages/Inbox';
+import SearchResults from './pages/SearchResults';
 import __Layout from './Layout.jsx';
 
 
@@ -32,6 +33,7 @@ export const PAGES = {
     "Photos": Photos,
     "Reports": Reports,
     "Inbox": Inbox,
+    "SearchResults": SearchResults,
 }
 
 export const pagesConfig = {

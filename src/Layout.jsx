@@ -22,7 +22,8 @@ import {
   TrendingUp,
   Mail,
   ChevronDown,
-  Plus
+  Plus,
+  Search
 } from "lucide-react";
 import { base44 } from "@/api/base44Client";
 import { toast } from "sonner";
@@ -32,6 +33,7 @@ import NotificationBell from "./components/notifications/NotificationBell";
 
 const primaryNavigationItems = [
   { title: "Dashboard", url: createPageUrl("Dashboard"), icon: LayoutDashboard },
+  { title: "Search", url: createPageUrl("SearchResults"), icon: Search },
   { title: "Inbox", url: createPageUrl("Inbox"), icon: Mail },
   { title: "Schedule", url: createPageUrl("Schedule"), icon: Calendar },
   { title: "Projects", url: createPageUrl("Projects"), icon: FolderKanban },
@@ -51,6 +53,7 @@ const secondaryNavigationItems = [
 const technicianNavigationItems = [
   { title: "Schedule", url: createPageUrl("Schedule"), icon: Calendar },
   { title: "Jobs", url: createPageUrl("Jobs"), icon: Briefcase },
+  { title: "Search", url: createPageUrl("SearchResults"), icon: Search },
   { title: "Price List", url: createPageUrl("PriceList"), icon: DollarSign },
 ];
 
