@@ -109,7 +109,7 @@ export default function Projects() {
     const action = params.get('action');
     const projectId = params.get('projectId');
     
-    if (action === 'new') {
+    if (action === 'new' || action === 'create') {
       setShowForm(true);
     }
     

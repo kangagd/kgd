@@ -139,7 +139,7 @@ export default function Jobs() {
     const projectId = params.get('projectId');
     const status = params.get('status');
 
-    if (action === 'new' || customerId || projectId) {
+    if (action === 'new' || action === 'create' || customerId || projectId) {
       setShowForm(true);
       if (customerId) setPreselectedCustomerId(customerId);
       if (projectId) setPreselectedProjectId(projectId);
