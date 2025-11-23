@@ -55,24 +55,21 @@ export default function Layout({ children, currentPageName }) {
   const location = useLocation();
   const navigate = useNavigate();
   const [user, setUser] = useState(null);
-  const [isCollapsed, setIsCollapsed] = useState(() => {
-    const stored = localStorage.getItem('sidebarCollapsed');
-    return stored === null ? true : stored === 'true';
-  });
+  const [isCollapsed, setIsCollapsed] = useState(() => 
+    localStorage.getItem('sidebarCollapsed') === 'true'
+  );
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
-  const [testMode, setTestMode] = useState(() => {
-    return localStorage.getItem('testMode') || 'off';
-  });
-  const [isMoreMenuOpen, setIsMoreMenuOpen] = useState(() => {
-    const stored = localStorage.getItem('moreMenuOpen');
-    return stored === 'true';
-  });
+  const [testMode, setTestMode] = useState(() => 
+    localStorage.getItem('testMode') || 'off'
+  );
+  const [isMoreMenuOpen, setIsMoreMenuOpen] = useState(() => 
+    localStorage.getItem('moreMenuOpen') === 'true'
+  );
 
   useEffect(() => {
     const loadUser = async () => {
       try {
-        const currentUser = await base44.auth.me();
-        setUser(currentUser);
+        setUser(await base44.auth.me());
       } catch (error) {
         console.error("Error loading user:", error);
       }
@@ -80,7 +77,7 @@ export default function Layout({ children, currentPageName }) {
     loadUser();
   }, []);
 
-  // Track check-ins/outs for admin notifications
+  // Admin check-in/out notifications
   useEffect(() => {
     if (!user || user.role !== 'admin') return;
 
@@ -99,21 +96,15 @@ export default function Layout({ children, currentPageName }) {
             shownNotifications.add(checkInOut.id);
             
             if (checkInOut.check_out_time) {
-              toast.success(
-                `${checkInOut.technician_name} checked out`,
-                {
-                  description: `Job #${checkInOut.job_id}${checkInOut.check_out_notes ? ` • ${checkInOut.check_out_notes}` : ''}`,
-                  duration: 5000,
-                }
-              );
+              toast.success(`${checkInOut.technician_name} checked out`, {
+                description: `Job #${checkInOut.job_id}${checkInOut.check_out_notes ? ` • ${checkInOut.check_out_notes}` : ''}`,
+                duration: 5000,
+              });
             } else if (checkInOut.check_in_time) {
-              toast.info(
-                `${checkInOut.technician_name} checked in`,
-                {
-                  description: `Job #${checkInOut.job_id}`,
-                  duration: 4000,
-                }
-              );
+              toast.info(`${checkInOut.technician_name} checked in`, {
+                description: `Job #${checkInOut.job_id}`,
+                duration: 4000,
+              });
             }
           }
         });
@@ -124,54 +115,31 @@ export default function Layout({ children, currentPageName }) {
 
     pollCheckInOuts();
     const interval = setInterval(pollCheckInOuts, 15000);
-
     return () => clearInterval(interval);
   }, [user]);
 
-  useEffect(() => {
-    localStorage.setItem('testMode', testMode);
-  }, [testMode]);
+  // Persist state
+  useEffect(() => { localStorage.setItem('testMode', testMode); }, [testMode]);
+  useEffect(() => { localStorage.setItem('sidebarCollapsed', isCollapsed); }, [isCollapsed]);
+  useEffect(() => { localStorage.setItem('moreMenuOpen', isMoreMenuOpen); }, [isMoreMenuOpen]);
 
+  // Close mobile menu on route change or ESC key
+  useEffect(() => { setIsMobileMenuOpen(false); }, [location.pathname]);
   useEffect(() => {
-    localStorage.setItem('sidebarCollapsed', isCollapsed);
-  }, [isCollapsed]);
-
-  useEffect(() => {
-    localStorage.setItem('moreMenuOpen', isMoreMenuOpen);
-  }, [isMoreMenuOpen]);
-
-  // Close mobile menu when route changes
-  useEffect(() => {
-    setIsMobileMenuOpen(false);
-  }, [location.pathname]);
-
-  // Close mobile menu on ESC key
-  useEffect(() => {
-    const handleEscape = (e) => {
-      if (e.key === 'Escape' && isMobileMenuOpen) {
-        setIsMobileMenuOpen(false);
-      }
-    };
+    const handleEscape = (e) => e.key === 'Escape' && isMobileMenuOpen && setIsMobileMenuOpen(false);
     window.addEventListener('keydown', handleEscape);
     return () => window.removeEventListener('keydown', handleEscape);
   }, [isMobileMenuOpen]);
 
-  const handleLogout = async () => {
-    await base44.auth.logout();
-  };
+  const handleLogout = () => base44.auth.logout();
 
   const handleTestModeToggle = () => {
     const modes = ['off', 'admin', 'technician'];
-    const currentIndex = modes.indexOf(testMode);
-    const nextMode = modes[(currentIndex + 1) % modes.length];
-    setTestMode(nextMode);
+    setTestMode(modes[(modes.indexOf(testMode) + 1) % modes.length]);
   };
 
-  const getTestModeLabel = () => {
-    if (testMode === 'admin') return 'Admin';
-    if (testMode === 'technician') return 'Tech';
-    return 'Off';
-  };
+  const getTestModeLabel = () => 
+    testMode === 'admin' ? 'Admin' : testMode === 'technician' ? 'Tech' : 'Off';
 
   const isTechnician = testMode === 'technician' 
     ? true 
@@ -185,19 +153,17 @@ export default function Layout({ children, currentPageName }) {
   if (isTechnician) {
     return (
       <div className="min-h-screen flex flex-col bg-[#F8F9FA]">
-        <header className="bg-white border-b border-[#E5E7EB] px-4 py-3 sticky top-0 z-50 shadow-sm">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-2.5">
+        <header className="bg-white border-b border-[#E5E7EB] px-4 py-3 sticky top-0 z-50 shadow-sm safe-area-top">
+          <div className="flex items-center justify-between min-h-[44px]">
+            <div className="flex items-center gap-2">
               <div className="w-8 h-8 bg-[#FAE008] rounded-lg flex items-center justify-center">
                 <Wrench className="w-4 h-4 text-[#111827]" />
               </div>
-              <div>
-                <h3 className="font-semibold text-[#111827]">KGD</h3>
-              </div>
+              <h3 className="font-semibold text-[#111827] text-[14px]">KGD</h3>
             </div>
             <button
               onClick={() => navigate(createPageUrl("UserProfile"))}
-              className="flex items-center gap-2 hover:bg-[#F3F4F6] rounded-lg p-2 transition-colors min-h-[44px]"
+              className="flex items-center hover:bg-[#F3F4F6] rounded-lg p-2 transition-colors min-h-[44px] min-w-[44px] justify-center"
             >
               <div className="w-8 h-8 bg-[#F3F4F6] rounded-full flex items-center justify-center">
                 <span className="text-[#111827] font-semibold text-sm">
@@ -208,21 +174,21 @@ export default function Layout({ children, currentPageName }) {
           </div>
         </header>
 
-        <main className="flex-1 overflow-auto pb-20 overflow-x-hidden">
+        <main className="flex-1 overflow-y-auto overflow-x-hidden pb-20">
           {children}
         </main>
 
-        <nav className="fixed bottom-0 left-0 right-0 bg-white border-t border-[#E5E7EB] shadow-lg safe-area-bottom z-50">
-          <div className="flex justify-around items-center max-w-screen-sm mx-auto px-2 py-2">
+        <nav className="fixed bottom-0 left-0 right-0 bg-white border-t border-[#E5E7EB] shadow-lg z-50 safe-area-bottom">
+          <div className="flex items-center max-w-screen-sm mx-auto">
             {navigationItems.map((item) => {
               const isActive = location.pathname === item.url;
               return (
                 <Link
                   key={item.title}
                   to={item.url}
-                  className={`flex flex-col items-center gap-1 px-3 py-2 rounded-lg transition-colors min-h-[56px] min-w-[64px] justify-center flex-1 ${
+                  className={`flex flex-col items-center justify-center gap-1 py-2 rounded-lg transition-colors min-h-[56px] min-w-[64px] flex-1 ${
                     isActive
-                      ? 'text-[#111827] bg-[#FAE008]'
+                      ? 'bg-[#FAE008] text-[#111827]'
                       : 'text-[#4B5563] hover:text-[#111827] hover:bg-[#F3F4F6]'
                   }`}
                 >
@@ -292,10 +258,10 @@ export default function Layout({ children, currentPageName }) {
       >
         <div className="flex flex-col h-full">
           {/* Close button (mobile only) */}
-          <div className="lg:hidden p-4 border-b border-[#E5E7EB] flex items-center justify-end">
+          <div className="lg:hidden p-3 border-b border-[#E5E7EB] flex items-center justify-end">
             <button
               onClick={() => setIsMobileMenuOpen(false)}
-              className="p-2 hover:bg-[#F3F4F6] rounded-lg transition-colors"
+              className="p-2 hover:bg-[#F3F4F6] rounded-lg transition-colors min-h-[44px] min-w-[44px] flex items-center justify-center"
               aria-label="Close menu"
             >
               <X className="w-5 h-5 text-[#111827]" />
@@ -305,7 +271,7 @@ export default function Layout({ children, currentPageName }) {
           {/* Navigation */}
           <nav className="flex-1 overflow-y-auto p-3">
             <div className="space-y-1">
-              {/* Primary Navigation Items */}
+              {/* Primary Navigation */}
               {primaryNavigationItems.map((item) => {
                 const isActive = location.pathname === item.url;
                 return (
@@ -313,36 +279,33 @@ export default function Layout({ children, currentPageName }) {
                     key={item.title}
                     to={item.url}
                     className={`
-                      flex items-center gap-3 px-3 py-2.5 rounded-lg transition-all
+                      flex items-center gap-3 px-3 py-2.5 rounded-lg transition-all relative
                       ${isActive 
                         ? 'bg-[#FAE008]/10 text-[#111827] font-semibold' 
                         : 'text-[#111827] hover:bg-[#F3F4F6]'
                       }
                       ${isCollapsed ? 'justify-center' : ''}
-                      group relative
                     `}
                     title={isCollapsed ? item.title : ''}
                   >
                     {isActive && <div className="absolute left-0 w-1 h-6 bg-[#FAE008] rounded-r" />}
                     <item.icon className={`w-5 h-5 flex-shrink-0 ${isActive ? 'text-[#FAE008]' : 'text-[#111827]'}`} />
-                    {!isCollapsed && (
-                      <span className="text-[14px]">{item.title}</span>
-                    )}
+                    {!isCollapsed && <span className="text-[14px]">{item.title}</span>}
                   </Link>
                 );
               })}
 
-              {/* More Menu Accordion */}
+              {/* More Menu */}
               {!isCollapsed && (
                 <div className="mt-2">
                   <button
                     onClick={() => setIsMoreMenuOpen(!isMoreMenuOpen)}
                     className="w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-[#111827] hover:bg-[#F3F4F6] transition-all"
                   >
-                    <ChevronDown className={`w-5 h-5 flex-shrink-0 transition-transform ${isMoreMenuOpen ? 'rotate-180' : ''}`} />
+                    <ChevronDown className={`w-5 h-5 flex-shrink-0 transition-transform duration-200 ${isMoreMenuOpen ? 'rotate-180' : ''}`} />
                     <span className="text-[14px] font-medium">More</span>
                   </button>
-                  
+
                   {isMoreMenuOpen && (
                     <div className="mt-1 space-y-1 pl-3">
                       {secondaryNavigationItems.map((item) => {
@@ -352,12 +315,11 @@ export default function Layout({ children, currentPageName }) {
                             key={item.title}
                             to={item.url}
                             className={`
-                              flex items-center gap-3 px-3 py-2.5 rounded-lg transition-all
+                              flex items-center gap-3 px-3 py-2.5 rounded-lg transition-all relative
                               ${isActive 
                                 ? 'bg-[#FAE008]/10 text-[#111827] font-semibold' 
                                 : 'text-[#111827] hover:bg-[#F3F4F6]'
                               }
-                              group relative
                             `}
                           >
                             {isActive && <div className="absolute left-0 w-1 h-6 bg-[#FAE008] rounded-r" />}
@@ -371,7 +333,7 @@ export default function Layout({ children, currentPageName }) {
                 </div>
               )}
 
-              {/* Collapsed More Menu */}
+              {/* Collapsed Secondary Items */}
               {isCollapsed && secondaryNavigationItems.map((item) => {
                 const isActive = location.pathname === item.url;
                 return (
@@ -379,12 +341,11 @@ export default function Layout({ children, currentPageName }) {
                     key={item.title}
                     to={item.url}
                     className={`
-                      flex items-center gap-3 px-3 py-2.5 rounded-lg transition-all justify-center
+                      flex items-center gap-3 px-3 py-2.5 rounded-lg transition-all justify-center relative
                       ${isActive 
                         ? 'bg-[#FAE008]/10 text-[#111827] font-semibold' 
                         : 'text-[#111827] hover:bg-[#F3F4F6]'
                       }
-                      group relative
                     `}
                     title={item.title}
                   >
@@ -396,38 +357,36 @@ export default function Layout({ children, currentPageName }) {
             </div>
           </nav>
 
-
-
-          {/* User Profile */}
-          <div className="p-3 border-t border-[#E5E7EB]">
-            <button
-              onClick={() => navigate(createPageUrl("UserProfile"))}
-              className={`w-full flex items-center gap-3 p-2.5 hover:bg-[#F3F4F6] rounded-lg transition-colors ${isCollapsed ? 'justify-center' : ''}`}
-            >
-              <div className="w-10 h-10 bg-[#F3F4F6] rounded-full flex items-center justify-center flex-shrink-0">
-                <span className="text-[#111827] font-semibold text-sm">
-                  {user?.full_name?.charAt(0)?.toUpperCase() || 'U'}
-                </span>
-              </div>
-              {!isCollapsed && (
-                <div className="flex-1 min-w-0 text-left">
-                  <p className="font-medium text-[#111827] text-[14px] truncate">
-                    {user?.full_name || 'User'}
-                  </p>
-                  <p className="text-[12px] text-[#4B5563] truncate">{user?.email}</p>
-                </div>
-              )}
-            </button>
-            {!isCollapsed && (
-              <button
-                onClick={handleLogout}
-                className="w-full mt-2 flex items-center gap-2 px-3 py-2 text-[#4B5563] hover:text-[#DC2626] hover:bg-red-50 rounded-lg transition-colors text-[14px]"
-              >
-                <LogOut className="w-4 h-4" />
-                Logout
-              </button>
-            )}
-          </div>
+{/* User Profile & Logout */}
+<div className="p-3 border-t border-[#E5E7EB]">
+  <button
+    onClick={() => navigate(createPageUrl("UserProfile"))}
+    className={`w-full flex items-center gap-3 px-3 py-2.5 hover:bg-[#F3F4F6] rounded-lg transition-colors ${isCollapsed ? 'justify-center' : ''}`}
+  >
+    <div className="w-8 h-8 bg-[#F3F4F6] rounded-full flex items-center justify-center flex-shrink-0">
+      <span className="text-[#111827] font-semibold text-sm">
+        {user?.full_name?.charAt(0)?.toUpperCase() || 'U'}
+      </span>
+    </div>
+    {!isCollapsed && (
+      <div className="flex-1 min-w-0 text-left">
+        <p className="font-medium text-[#111827] text-[14px] truncate">
+          {user?.full_name || 'User'}
+        </p>
+        <p className="text-[12px] text-[#4B5563] truncate">{user?.email}</p>
+      </div>
+    )}
+  </button>
+  {!isCollapsed && (
+    <button
+      onClick={handleLogout}
+      className="w-full mt-2 flex items-center gap-2 px-3 py-2.5 text-[#4B5563] hover:text-[#DC2626] hover:bg-red-50 rounded-lg transition-colors text-[14px]"
+    >
+      <LogOut className="w-4 h-4" />
+      Logout
+    </button>
+  )}
+</div>
         </div>
       </aside>
 
@@ -443,17 +402,15 @@ export default function Layout({ children, currentPageName }) {
             >
               <Menu className="w-6 h-6 text-[#111827]" />
             </button>
-            <h1 className="font-semibold text-[#111827] text-base truncate px-2 flex-1 text-center">
-              {primaryNavigationItems.find(item => item.url === location.pathname)?.title || 
-               secondaryNavigationItems.find(item => item.url === location.pathname)?.title || 
-               'FieldScheduler'}
+            <h1 className="font-semibold text-[#111827] text-[14px] truncate px-2 flex-1 text-center">
+              {[...primaryNavigationItems, ...secondaryNavigationItems].find(item => item.url === location.pathname)?.title || 'FieldScheduler'}
             </h1>
             <div className="w-[44px]" />
           </div>
         </header>
 
         {/* Page Content */}
-        <main className="flex-1 overflow-auto">
+        <main className="flex-1 overflow-y-auto overflow-x-hidden">
           {children}
         </main>
       </div>
