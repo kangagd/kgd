@@ -562,14 +562,23 @@ export default function JobDetails({ job: initialJob, onClose, onStatusChange, o
       <Card className={`border border-[#E5E7EB] shadow-sm ${isTechnician ? 'rounded-none' : 'rounded-lg'} overflow-hidden`}>
         <CardHeader className="border-b border-[#E5E7EB] bg-white p-3 md:p-4 space-y-3">
           <div className="flex items-center justify-between gap-3">
-            <Button
-              variant="ghost"
-              size="icon"
-              onClick={() => navigate(-1)}
-              className="h-9 w-9 flex-shrink-0 hover:bg-[#F3F4F6] rounded-lg transition-colors">
+            <div className="flex items-center gap-2">
+              <Button
+                variant="ghost"
+                size="icon"
+                onClick={() => navigate(-1)}
+                className="h-9 w-9 flex-shrink-0 hover:bg-[#F3F4F6] rounded-lg transition-colors">
 
-              <ArrowLeft className="w-5 h-5 text-[#111827]" />
-            </Button>
+                <ArrowLeft className="w-5 h-5 text-[#111827]" />
+              </Button>
+              {job.scheduled_date && (
+                <div className="text-[12px] text-[#6B7280] leading-[1.35] hidden sm:block">
+                  <span>Scheduled for {format(parseISO(job.scheduled_date), 'EEEE, MMM d, yyyy')}
+                  {job.scheduled_time && ` at ${job.scheduled_time}`}
+                  {job.expected_duration && ` for ${job.expected_duration}h`}</span>
+                </div>
+              )}
+            </div>
 
             {!isTechnician &&
             <div className="flex gap-1 flex-shrink-0">
@@ -614,14 +623,6 @@ export default function JobDetails({ job: initialJob, onClose, onStatusChange, o
           </div>
 
           <div className="space-y-3">
-            {job.scheduled_date && (
-              <div className="text-[12px] text-[#6B7280] leading-[1.35]">
-                <span>Scheduled for {format(parseISO(job.scheduled_date), 'EEEE, MMM d, yyyy')}
-                {job.scheduled_time && ` at ${job.scheduled_time}`}
-                {job.expected_duration && ` for ${job.expected_duration}h`}</span>
-              </div>
-            )}
-
             {/* New Horizontal Layout: Left | Middle */}
             <div className="flex items-center justify-between gap-4 flex-wrap">
               {/* Left Group: Customer Name + Job Number */}
