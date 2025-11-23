@@ -622,7 +622,7 @@ export default function JobDetails({ job: initialJob, onClose, onStatusChange, o
               </div>
             )}
 
-            {/* New Horizontal Layout: Left | Middle | Right */}
+            {/* New Horizontal Layout: Left | Middle */}
             <div className="flex items-center justify-between gap-4 flex-wrap">
               {/* Left Group: Customer Name + Job Number */}
               <div className="flex items-center gap-2 flex-wrap">
@@ -677,43 +677,6 @@ export default function JobDetails({ job: initialJob, onClose, onStatusChange, o
                   </Badge>
                 )}
               </div>
-
-              {/* Right Group: Technician Avatar */}
-              <div className="flex items-center gap-3 flex-wrap">
-                <EditableField
-                  value={Array.isArray(job.assigned_to) ? job.assigned_to : job.assigned_to ? [job.assigned_to] : []}
-                  onSave={handleAssignedToChange}
-                  type="multi-select"
-                  options={technicians.map((t) => ({ value: t.email, label: t.full_name }))}
-                  displayFormat={(val) => {
-                    const emailsToDisplay = Array.isArray(val) ? val : val ? [val] : [];
-                    const namesToDisplay = Array.isArray(job.assigned_to_name) ? job.assigned_to_name : job.assigned_to_name ? [job.assigned_to_name] : [];
-                    
-                    if (namesToDisplay.length === 0) {
-                      return (
-                        <TechnicianAvatar
-                          technician={{ email: '', full_name: 'Unassigned', id: 'unassigned' }}
-                          size="md"
-                          showPlaceholder={true}
-                        />
-                      );
-                    }
-                    
-                    return (
-                      <TechnicianAvatarGroup
-                        technicians={emailsToDisplay.map((email, idx) => ({
-                          email,
-                          full_name: namesToDisplay[idx] || email,
-                          id: email
-                        }))}
-                        maxDisplay={3}
-                        size="md"
-                      />
-                    );
-                  }}
-                  placeholder="Assign"
-                />
-              </div>
             </div>
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
@@ -748,6 +711,42 @@ export default function JobDetails({ job: initialJob, onClose, onStatusChange, o
             </div>
 
             <div className="bg-white p-3 rounded-lg border border-[#E5E7EB]">
+              <div className="flex items-start justify-between gap-3 mb-3">
+                <div className="text-[12px] text-[#6B7280] font-normal leading-[1.35]">Schedule</div>
+                <EditableField
+                  value={Array.isArray(job.assigned_to) ? job.assigned_to : job.assigned_to ? [job.assigned_to] : []}
+                  onSave={handleAssignedToChange}
+                  type="multi-select"
+                  options={technicians.map((t) => ({ value: t.email, label: t.full_name }))}
+                  displayFormat={(val) => {
+                    const emailsToDisplay = Array.isArray(val) ? val : val ? [val] : [];
+                    const namesToDisplay = Array.isArray(job.assigned_to_name) ? job.assigned_to_name : job.assigned_to_name ? [job.assigned_to_name] : [];
+
+                    if (namesToDisplay.length === 0) {
+                      return (
+                        <TechnicianAvatar
+                          technician={{ email: '', full_name: 'Unassigned', id: 'unassigned' }}
+                          size="md"
+                          showPlaceholder={true}
+                        />
+                      );
+                    }
+
+                    return (
+                      <TechnicianAvatarGroup
+                        technicians={emailsToDisplay.map((email, idx) => ({
+                          email,
+                          full_name: namesToDisplay[idx] || email,
+                          id: email
+                        }))}
+                        maxDisplay={3}
+                        size="md"
+                      />
+                    );
+                  }}
+                  placeholder="Assign"
+                />
+              </div>
               <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
                 <div className="flex items-center gap-2.5">
                   <Calendar className="w-5 h-5 text-[#4B5563] flex-shrink-0" />
