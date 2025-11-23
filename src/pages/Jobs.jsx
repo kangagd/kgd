@@ -54,7 +54,12 @@ export default function Jobs() {
 
   const { data: jobs = [], isLoading, refetch } = useQuery({
     queryKey: ['allJobs'],
-    queryFn: () => base44.entities.Job.filter({ deleted_at: { $exists: false } }, '-scheduled_date'),
+    queryFn: async () => {
+      const allJobs = await base44.entities.Job.filter({ deleted_at: { $exists: false } }, '-created_date');
+      console.log('[Jobs Debug] Total jobs fetched:', allJobs.length);
+      console.log('[Jobs Debug] All jobs:', allJobs);
+      return allJobs;
+    },
     refetchInterval: 5000,
     refetchOnMount: 'always',
     refetchOnWindowFocus: true
@@ -163,20 +168,23 @@ export default function Jobs() {
   const isTechnician = user?.is_field_technician && user?.role !== 'admin';
 
   const filteredJobs = jobs.filter((job) => {
-    if (isTechnician && job.assigned_to !== user?.email) {
-      return false;
+    // Technician filtering: only filter if user is explicitly a technician
+    if (isTechnician) {
+      const isAssignedToTechnician = Array.isArray(job.assigned_to) 
+        ? job.assigned_to.includes(user?.email)
+        : job.assigned_to === user?.email;
+      
+      if (!isAssignedToTechnician) {
+        return false;
+      }
     }
 
-    const params = new URLSearchParams(window.location.search);
-    const dateFilter = params.get('date');
-    if (dateFilter && job.scheduled_date !== dateFilter) {
-      return false;
-    }
-
-    const matchesSearch =
-    job.customer_name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    job.address?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    job.job_number?.toString().includes(searchTerm);
+    // Remove URL date filter - let users see all jobs regardless of URL params
+    
+    const matchesSearch = !searchTerm || 
+      job.customer_name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      job.address?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      job.job_number?.toString().includes(searchTerm);
 
     const matchesStatus = statusFilter === "all" || job.status === statusFilter;
 
@@ -185,8 +193,8 @@ export default function Jobs() {
         ? job.assigned_to.includes(technicianFilter)
         : job.assigned_to === technicianFilter);
 
-    const matchesDateRange = (!dateFrom || job.scheduled_date >= dateFrom) &&
-                             (!dateTo || job.scheduled_date <= dateTo);
+    const matchesDateRange = (!dateFrom || !job.scheduled_date || job.scheduled_date >= dateFrom) &&
+                             (!dateTo || !job.scheduled_date || job.scheduled_date <= dateTo);
 
     return matchesSearch && matchesStatus && matchesTechnician && matchesDateRange;
   }).sort((a, b) => {
@@ -217,6 +225,19 @@ export default function Jobs() {
     if (compareA > compareB) return sortOrder === 'asc' ? 1 : -1;
     return 0;
   });
+
+  // Debug logging
+  useEffect(() => {
+    console.log('[Jobs Debug] Filters applied:');
+    console.log('  - Status filter:', statusFilter);
+    console.log('  - Technician filter:', technicianFilter);
+    console.log('  - Date from:', dateFrom);
+    console.log('  - Date to:', dateTo);
+    console.log('  - Search term:', searchTerm);
+    console.log('  - Is technician:', isTechnician);
+    console.log('[Jobs Debug] Jobs after filtering:', filteredJobs.length);
+    console.log('[Jobs Debug] Filtered jobs:', filteredJobs);
+  }, [filteredJobs, statusFilter, technicianFilter, dateFrom, dateTo, searchTerm, isTechnician]);
 
   if (showForm) {
     return (
