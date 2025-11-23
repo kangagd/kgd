@@ -280,21 +280,17 @@ export default function JobDetails({ job: initialJob, onClose, onStatusChange, o
         duration_hours: Math.round(durationHours * 10) / 10
       });
 
-      // Update job status and clear temp fields
+      // Update job status and save the visit details
       await base44.entities.Job.update(job.id, {
-        overview: "",
-        next_steps: "",
-        communication_with_client: "",
-        outcome: "",
+        overview: overview,
+        next_steps: nextSteps,
+        communication_with_client: communicationWithClient,
+        outcome: outcome,
         status: newStatus
       });
     },
     onSuccess: () => {
       setValidationError("");
-      setOverview("");
-      setNextSteps("");
-      setCommunicationWithClient("");
-      setOutcome("");
       queryClient.invalidateQueries({ queryKey: ['checkIns', job.id] });
       queryClient.invalidateQueries({ queryKey: ['jobSummaries', job.id] });
       queryClient.invalidateQueries({ queryKey: ['projectJobSummaries'] });
