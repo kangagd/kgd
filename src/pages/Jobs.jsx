@@ -58,6 +58,14 @@ export default function Jobs() {
     refetchInterval: 15000, // Refetch every 15 seconds
   });
 
+  const jobIdFromUrl = new URLSearchParams(window.location.search).get('jobId');
+
+  const { data: directJob } = useQuery({
+    queryKey: ['job', jobIdFromUrl],
+    queryFn: () => base44.entities.Job.get(jobIdFromUrl),
+    enabled: !!jobIdFromUrl && !selectedJob,
+  });
+
   const { data: technicians = [] } = useQuery({
     queryKey: ['technicians'],
     queryFn: () => base44.entities.User.filter({ is_field_technician: true })
@@ -106,7 +114,6 @@ export default function Jobs() {
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
     const action = params.get('action');
-    const jobId = params.get('jobId');
     const customerId = params.get('customerId');
     const projectId = params.get('projectId');
     const status = params.get('status');
@@ -117,17 +124,16 @@ export default function Jobs() {
       if (projectId) setPreselectedProjectId(projectId);
     }
 
-    if (jobId && jobs.length > 0 && !selectedJob) {
-      const job = jobs.find((j) => j.id === jobId);
-      if (job) {
-        setSelectedJob(job);
-      }
-    }
-
     if (status) {
       setStatusFilter(status);
     }
-  }, [jobs, selectedJob]);
+  }, []);
+
+  useEffect(() => {
+    if (directJob && !selectedJob) {
+      setSelectedJob(directJob);
+    }
+  }, [directJob, selectedJob]);
 
   const handleSubmit = (data) => {
     if (editingJob) {
