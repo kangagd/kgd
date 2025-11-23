@@ -82,6 +82,8 @@ export default function CreateInvoiceModal({
   };
 
   const handleConfirm = () => {
+    setError("");
+    
     // Validate line items
     const validItems = lineItems.filter(item => item.description && parseFloat(item.amount) > 0);
     

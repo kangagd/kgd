@@ -206,10 +206,14 @@ export default function ProjectDetails({ project: initialProject, onClose, onEdi
       });
       return response.data;
     },
-    onSuccess: () => {
+    onSuccess: (data) => {
       queryClient.invalidateQueries({ queryKey: ['projectXeroInvoices', project.id] });
       queryClient.invalidateQueries({ queryKey: ['project', project.id] });
       setShowInvoiceModal(false);
+      toast.success(`Invoice #${data.xero_invoice_number} created successfully in Xero`);
+    },
+    onError: (error) => {
+      toast.error(`Failed to create invoice: ${error.message || 'Unknown error'}`);
     }
   });
 

@@ -362,10 +362,14 @@ export default function JobDetails({ job: initialJob, onClose, onStatusChange, o
       });
       return response.data;
     },
-    onSuccess: () => {
+    onSuccess: (data) => {
       queryClient.invalidateQueries({ queryKey: ['xeroInvoice'] });
       queryClient.invalidateQueries({ queryKey: ['job', job.id] });
       setShowInvoiceModal(false);
+      toast.success(`Invoice #${data.xero_invoice_number} created successfully in Xero`);
+    },
+    onError: (error) => {
+      toast.error(`Failed to create invoice: ${error.message || 'Unknown error'}`);
     }
   });
 
