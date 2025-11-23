@@ -19,10 +19,11 @@ import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import EntityModal from "../components/common/EntityModal.jsx";
 import JobModalView from "../components/jobs/JobModalView";
 import { createPageUrl } from "@/utils";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useSearchParams } from "react-router-dom";
 
 export default function Jobs() {
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
   const [searchTerm, setSearchTerm] = useState("");
   const [statusFilter, setStatusFilter] = useState("all");
   const [technicianFilter, setTechnicianFilter] = useState("all");
@@ -67,12 +68,12 @@ export default function Jobs() {
     refetchOnWindowFocus: true
   });
 
-  const jobIdFromUrl = new URLSearchParams(window.location.search).get('jobId');
+  const jobIdFromUrl = searchParams.get('jobId');
 
   const { data: directJob } = useQuery({
     queryKey: ['job', jobIdFromUrl],
     queryFn: () => base44.entities.Job.get(jobIdFromUrl),
-    enabled: !!jobIdFromUrl && !selectedJob,
+    enabled: !!jobIdFromUrl,
   });
 
   const { data: technicians = [] } = useQuery({
@@ -139,10 +140,12 @@ export default function Jobs() {
   }, []);
 
   useEffect(() => {
-    if (directJob && !selectedJob) {
+    if (jobIdFromUrl && directJob) {
       setSelectedJob(directJob);
+    } else if (!jobIdFromUrl && selectedJob) {
+      setSelectedJob(null);
     }
-  }, [directJob, selectedJob]);
+  }, [jobIdFromUrl, directJob]);
 
   const handleSubmit = (data) => {
     if (editingJob) {
