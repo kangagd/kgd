@@ -710,87 +710,94 @@ export default function JobDetails({ job: initialJob, onClose, onStatusChange, o
               </div>
             </div>
 
-            <div className="bg-white p-3 rounded-lg border border-[#E5E7EB]">
-              <div className="flex items-start justify-between gap-3 mb-3">
+            <Collapsible defaultOpen={true} className="bg-white rounded-lg border border-[#E5E7EB]">
+              <CollapsibleTrigger className="w-full flex items-center justify-between p-3 hover:bg-[#F9FAFB] transition-colors group">
                 <div className="text-[12px] text-[#6B7280] font-normal leading-[1.35]">Schedule</div>
-                <EditableField
-                  value={Array.isArray(job.assigned_to) ? job.assigned_to : job.assigned_to ? [job.assigned_to] : []}
-                  onSave={handleAssignedToChange}
-                  type="multi-select"
-                  options={technicians.map((t) => ({ value: t.email, label: t.full_name }))}
-                  displayFormat={(val) => {
-                    const emailsToDisplay = Array.isArray(val) ? val : val ? [val] : [];
-                    const namesToDisplay = Array.isArray(job.assigned_to_name) ? job.assigned_to_name : job.assigned_to_name ? [job.assigned_to_name] : [];
+                <ChevronDown className="w-4 h-4 text-[#6B7280] transition-transform group-data-[state=open]:rotate-180" />
+              </CollapsibleTrigger>
+              <CollapsibleContent>
+                <div className="px-3 pb-3 space-y-3">
+                  <div className="flex items-start justify-end gap-3">
+                    <EditableField
+                      value={Array.isArray(job.assigned_to) ? job.assigned_to : job.assigned_to ? [job.assigned_to] : []}
+                      onSave={handleAssignedToChange}
+                      type="multi-select"
+                      options={technicians.map((t) => ({ value: t.email, label: t.full_name }))}
+                      displayFormat={(val) => {
+                        const emailsToDisplay = Array.isArray(val) ? val : val ? [val] : [];
+                        const namesToDisplay = Array.isArray(job.assigned_to_name) ? job.assigned_to_name : job.assigned_to_name ? [job.assigned_to_name] : [];
 
-                    if (namesToDisplay.length === 0) {
-                      return (
-                        <TechnicianAvatar
-                          technician={{ email: '', full_name: 'Unassigned', id: 'unassigned' }}
-                          size="md"
-                          showPlaceholder={true}
+                        if (namesToDisplay.length === 0) {
+                          return (
+                            <TechnicianAvatar
+                              technician={{ email: '', full_name: 'Unassigned', id: 'unassigned' }}
+                              size="md"
+                              showPlaceholder={true}
+                            />
+                          );
+                        }
+
+                        return (
+                          <TechnicianAvatarGroup
+                            technicians={emailsToDisplay.map((email, idx) => ({
+                              email,
+                              full_name: namesToDisplay[idx] || email,
+                              id: email
+                            }))}
+                            maxDisplay={3}
+                            size="md"
+                          />
+                        );
+                      }}
+                      placeholder="Assign"
+                    />
+                  </div>
+                  <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+                    <div className="flex items-center gap-2.5">
+                      <Calendar className="w-5 h-5 text-[#4B5563] flex-shrink-0" />
+                      <div className="flex-1 min-w-0">
+                        <div className="text-[12px] text-[#6B7280] font-normal leading-[1.35] mb-0.5">Date</div>
+                        <EditableField
+                          value={job.scheduled_date}
+                          onSave={(val) => handleFieldSave('scheduled_date', job.scheduled_date, val)}
+                          type="date"
+                          displayFormat={(val) => format(parseISO(val), 'MMM d, yyyy')}
+                          placeholder="Set date"
+                          className="text-[14px] font-medium text-[#111827] leading-[1.4]"
                         />
-                      );
-                    }
-
-                    return (
-                      <TechnicianAvatarGroup
-                        technicians={emailsToDisplay.map((email, idx) => ({
-                          email,
-                          full_name: namesToDisplay[idx] || email,
-                          id: email
-                        }))}
-                        maxDisplay={3}
-                        size="md"
-                      />
-                    );
-                  }}
-                  placeholder="Assign"
-                />
-              </div>
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
-                <div className="flex items-center gap-2.5">
-                  <Calendar className="w-5 h-5 text-[#4B5563] flex-shrink-0" />
-                  <div className="flex-1 min-w-0">
-                    <div className="text-[12px] text-[#6B7280] font-normal leading-[1.35] mb-0.5">Date</div>
-                    <EditableField
-                      value={job.scheduled_date}
-                      onSave={(val) => handleFieldSave('scheduled_date', job.scheduled_date, val)}
-                      type="date"
-                      displayFormat={(val) => format(parseISO(val), 'MMM d, yyyy')}
-                      placeholder="Set date"
-                      className="text-[14px] font-medium text-[#111827] leading-[1.4]"
-                    />
+                      </div>
+                    </div>
+                    <div className="flex items-center gap-2.5">
+                      <Clock className="w-5 h-5 text-[#4B5563] flex-shrink-0" />
+                      <div className="flex-1 min-w-0">
+                        <div className="text-[12px] text-[#6B7280] font-normal leading-[1.35] mb-0.5">Time</div>
+                        <EditableField
+                          value={job.scheduled_time}
+                          onSave={(val) => handleFieldSave('scheduled_time', job.scheduled_time, val)}
+                          type="time"
+                          placeholder="Time"
+                          className="text-[14px] font-medium text-[#111827] leading-[1.4]"
+                        />
+                      </div>
+                    </div>
+                    <div className="flex items-center gap-2.5">
+                      <Timer className="w-5 h-5 text-[#4B5563] flex-shrink-0" />
+                      <div className="flex-1 min-w-0">
+                        <div className="text-[12px] text-[#6B7280] font-normal leading-[1.35] mb-0.5">Duration (hours)</div>
+                        <EditableField
+                          value={job.expected_duration}
+                          onSave={(val) => handleFieldSave('expected_duration', job.expected_duration, parseFloat(val) || null)}
+                          type="text"
+                          displayFormat={(val) => val ? `${val}h` : '-'}
+                          placeholder="Duration"
+                          className="text-[14px] font-medium text-[#111827] leading-[1.4]"
+                        />
+                      </div>
+                    </div>
                   </div>
                 </div>
-                <div className="flex items-center gap-2.5">
-                  <Clock className="w-5 h-5 text-[#4B5563] flex-shrink-0" />
-                  <div className="flex-1 min-w-0">
-                    <div className="text-[12px] text-[#6B7280] font-normal leading-[1.35] mb-0.5">Time</div>
-                    <EditableField
-                      value={job.scheduled_time}
-                      onSave={(val) => handleFieldSave('scheduled_time', job.scheduled_time, val)}
-                      type="time"
-                      placeholder="Time"
-                      className="text-[14px] font-medium text-[#111827] leading-[1.4]"
-                    />
-                  </div>
-                </div>
-                <div className="flex items-center gap-2.5">
-                  <Timer className="w-5 h-5 text-[#4B5563] flex-shrink-0" />
-                  <div className="flex-1 min-w-0">
-                    <div className="text-[12px] text-[#6B7280] font-normal leading-[1.35] mb-0.5">Duration (hours)</div>
-                    <EditableField
-                      value={job.expected_duration}
-                      onSave={(val) => handleFieldSave('expected_duration', job.expected_duration, parseFloat(val) || null)}
-                      type="text"
-                      displayFormat={(val) => val ? `${val}h` : '-'}
-                      placeholder="Duration"
-                      className="text-[14px] font-medium text-[#111827] leading-[1.4]"
-                    />
-                  </div>
-                </div>
-              </div>
-            </div>
+              </CollapsibleContent>
+            </Collapsible>
           </div>
         </CardHeader>
 
