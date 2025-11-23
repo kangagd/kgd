@@ -354,14 +354,14 @@ export default function Inbox() {
             />
           </div>
           
-          <div className="mt-4">
+          <div className="mt-3">
             <AdvancedSearch
               onSearchChange={setSearchFilters}
               currentFilters={searchFilters}
             />
           </div>
 
-          <div className="flex flex-col gap-4">
+          <div className="flex flex-col gap-3 mt-3">
             <div className="flex gap-3">
               <div className="chip-container -mx-4 px-4 md:mx-0 md:px-0 flex-1">
                 <Tabs value={statusFilter} onValueChange={setStatusFilter} className="w-full">
