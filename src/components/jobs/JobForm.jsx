@@ -4,7 +4,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { ArrowLeft, Upload, X, FileText, Image as ImageIcon, Loader2, Plus } from "lucide-react";
+import { ArrowLeft, Upload, X, FileText, Image as ImageIcon, Loader2, Plus, Sparkles } from "lucide-react";
 import { base44 } from "@/api/base44Client";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import {
@@ -65,6 +65,7 @@ export default function JobForm({ job, technicians, onSubmit, onCancel, isSubmit
   const [newCustomerData, setNewCustomerData] = useState({ name: "", phone: "", email: "" });
   const [potentialDuplicates, setPotentialDuplicates] = useState([]);
   const [liveDuplicates, setLiveDuplicates] = useState([]);
+  const [generatingBriefing, setGeneratingBriefing] = useState(false);
 
   const queryClient = useQueryClient();
 
@@ -142,6 +143,70 @@ export default function JobForm({ job, technicians, onSubmit, onCancel, isSubmit
       setFormData(prev => ({ ...prev, notes: response }));
     } catch (error) {
       console.error("Failed to generate notes:", error);
+    }
+  };
+
+  const generateJobBriefing = async () => {
+    setGeneratingBriefing(true);
+    try {
+      const customer = customers.find(c => c.id === formData.customer_id);
+      const project = formData.project_id ? projects.find(p => p.id === formData.project_id) : null;
+      const jobType = jobTypes.find(jt => jt.id === formData.job_type_id);
+      
+      let briefingPrompt = `Generate a concise job briefing for a technician in 3-5 bullet points using HTML <ul> and <li> tags.
+
+**Job Details:**
+- Type: ${jobType?.name || formData.job_type || 'General service'}
+- Product: ${formData.product || 'Not specified'}
+- Address: ${formData.address_full || formData.address || 'Not specified'}
+${formData.scheduled_date ? `- Scheduled: ${formData.scheduled_date}${formData.scheduled_time ? ` at ${formData.scheduled_time}` : ''}` : ''}
+
+**Customer:**
+- Name: ${customer?.name || formData.customer_name || 'Not specified'}
+- Type: ${customer?.customer_type || formData.customer_type || 'Standard'}
+${customer?.phone || formData.customer_phone ? `- Phone: ${customer?.phone || formData.customer_phone}` : ''}`;
+
+      if (project) {
+        briefingPrompt += `\n\n**Project Context:**
+- ${project.title}
+${project.description ? `- ${project.description}` : ''}
+${project.status ? `- Status: ${project.status}` : ''}`;
+
+        if (project.doors && project.doors.length > 0) {
+          briefingPrompt += `\n\n**Installation Specs:**`;
+          project.doors.forEach((door, idx) => {
+            briefingPrompt += `\n- Door ${idx + 1}: ${door.height || '?'} × ${door.width || '?'}${door.type ? ` • ${door.type}` : ''}${door.style ? ` • ${door.style}` : ''}`;
+          });
+        }
+
+        const pastVisits = await base44.entities.JobSummary.filter({ project_id: formData.project_id }, '-check_out_time', 3);
+        if (pastVisits && pastVisits.length > 0) {
+          briefingPrompt += `\n\n**Recent Visit Context:**`;
+          pastVisits.slice(0, 2).forEach((visit) => {
+            briefingPrompt += `\n- ${visit.technician_name}: ${visit.outcome?.replace(/_/g, ' ') || 'Visit completed'}`;
+          });
+        }
+      }
+
+      if (formData.notes) {
+        briefingPrompt += `\n\n**Additional Notes:**\n${formData.notes.replace(/<[^>]*>/g, '')}`;
+      }
+
+      briefingPrompt += `\n\nFormat as HTML bullet points (<ul><li>). Focus on:
+- What the technician needs to know upfront
+- Any special customer requirements or site-specific details
+- Critical next steps or preparation needed
+Keep it brief and action-oriented.`;
+
+      const briefing = await base44.integrations.Core.InvokeLLM({
+        prompt: briefingPrompt
+      });
+
+      setFormData(prev => ({ ...prev, job_briefing: briefing }));
+    } catch (error) {
+      console.error('Failed to generate briefing:', error);
+    } finally {
+      setGeneratingBriefing(false);
     }
   };
 
@@ -751,6 +816,33 @@ export default function JobForm({ job, technicians, onSubmit, onCancel, isSubmit
               placeholder="Add any special instructions or notes for technicians…"
               helperText="Visible to technicians"
             />
+
+            <div className="space-y-2">
+              <div className="flex items-center justify-between">
+                <Label className="text-[14px] font-medium text-[#111827] leading-[1.4]">Job Briefing</Label>
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  onClick={generateJobBriefing}
+                  disabled={generatingBriefing || !formData.customer_id}
+                  className="border-2 hover:bg-slate-100"
+                >
+                  {generatingBriefing ? (
+                    <><Loader2 className="w-3 h-3 mr-2 animate-spin" />Generating...</>
+                  ) : (
+                    <><Sparkles className="w-3 h-3 mr-2" />Generate AI Briefing</>
+                  )}
+                </Button>
+              </div>
+              <div 
+                className="min-h-[100px] p-4 border-2 border-slate-300 rounded-lg bg-white"
+                dangerouslySetInnerHTML={{ __html: formData.job_briefing || '<p class="text-slate-400 text-sm">No briefing generated yet. Click "Generate AI Briefing" to create one based on job details.</p>' }}
+              />
+              <p className="text-[12px] text-slate-500 leading-[1.35]">
+                AI-generated summary for technicians with key job context
+              </p>
+            </div>
 
             <div className="space-y-2">
               <Label htmlFor="pricing_provided" className="text-[14px] font-medium text-[#111827] leading-[1.4]">Pricing Provided</Label>
