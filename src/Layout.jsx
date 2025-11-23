@@ -245,16 +245,18 @@ export default function Layout({ children, currentPageName }) {
           {children}
         </main>
 
-        <button
-          onClick={handleTestModeToggle}
-          className="fixed bottom-24 right-4 z-50 w-12 h-12 bg-[#D97706] hover:bg-[#B45309] text-white rounded-full shadow-lg flex items-center justify-center transition-all"
-          title={`Test Mode: ${getTestModeLabel()}`}
-        >
-          <TestTube2 className="w-5 h-5" />
-          <span className="absolute -top-1 -right-1 bg-[#92400E] text-white text-xs font-bold rounded-full w-5 h-5 flex items-center justify-center">
-            {getTestModeLabel().charAt(0)}
-          </span>
-        </button>
+        {user?.email === 'admin@kangaroogd.com.au' && (
+          <button
+            onClick={handleTestModeToggle}
+            className="fixed bottom-24 right-4 z-50 w-12 h-12 bg-[#D97706] hover:bg-[#B45309] text-white rounded-full shadow-lg flex items-center justify-center transition-all"
+            title={`Test Mode: ${getTestModeLabel()}`}
+          >
+            <TestTube2 className="w-5 h-5" />
+            <span className="absolute -top-1 -right-1 bg-[#92400E] text-white text-xs font-bold rounded-full w-5 h-5 flex items-center justify-center">
+              {getTestModeLabel().charAt(0)}
+            </span>
+          </button>
+        )}
       </div>
     );
   }
@@ -500,16 +502,18 @@ export default function Layout({ children, currentPageName }) {
       </div>
 
       {/* Test Mode Toggle */}
-      <button
-        onClick={handleTestModeToggle}
-        className="fixed bottom-6 right-6 z-50 w-12 h-12 bg-[#D97706] hover:bg-[#B45309] text-white rounded-full shadow-lg flex items-center justify-center transition-all"
-        title={`Test Mode: ${getTestModeLabel()}`}
-      >
-        <TestTube2 className="w-5 h-5" />
-        <span className="absolute -top-1 -right-1 bg-[#92400E] text-white text-xs font-bold rounded-full w-5 h-5 flex items-center justify-center">
-          {getTestModeLabel().charAt(0)}
-        </span>
-      </button>
+      {user?.email === 'admin@kangaroogd.com.au' && (
+        <button
+          onClick={handleTestModeToggle}
+          className="fixed bottom-6 right-6 z-50 w-12 h-12 bg-[#D97706] hover:bg-[#B45309] text-white rounded-full shadow-lg flex items-center justify-center transition-all"
+          title={`Test Mode: ${getTestModeLabel()}`}
+        >
+          <TestTube2 className="w-5 h-5" />
+          <span className="absolute -top-1 -right-1 bg-[#92400E] text-white text-xs font-bold rounded-full w-5 h-5 flex items-center justify-center">
+            {getTestModeLabel().charAt(0)}
+          </span>
+        </button>
+      )}
     </div>
   );
 }
