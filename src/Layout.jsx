@@ -21,11 +21,13 @@ import {
   Image as ImageIcon,
   TrendingUp,
   Mail,
-  ChevronDown
+  ChevronDown,
+  Plus
 } from "lucide-react";
 import { base44 } from "@/api/base44Client";
 import { toast } from "sonner";
 import { Toaster } from "@/components/ui/sonner";
+import { Button } from "@/components/ui/button";
 
 const primaryNavigationItems = [
   { title: "Dashboard", url: createPageUrl("Dashboard"), icon: LayoutDashboard },
