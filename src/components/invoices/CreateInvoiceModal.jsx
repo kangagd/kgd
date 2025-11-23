@@ -114,14 +114,14 @@ export default function CreateInvoiceModal({
 
   return (
     <Dialog open={open} onOpenChange={handleClose}>
-      <DialogContent className="sm:max-w-[500px] rounded-2xl border-2 border-[#E5E7EB]">
-        <DialogHeader>
+      <DialogContent className="sm:max-w-[500px] max-h-[90vh] rounded-2xl border-2 border-[#E5E7EB] flex flex-col">
+        <DialogHeader className="flex-shrink-0">
           <DialogTitle className="text-[22px] font-semibold text-[#111827] leading-[1.2]">
             Create Xero Invoice for this {type === "job" ? "Job" : "Project"}?
           </DialogTitle>
         </DialogHeader>
 
-        <div className="space-y-4 py-4">
+        <div className="space-y-4 py-4 overflow-y-auto flex-1">
           <div className="bg-[#F9FAFB] border border-[#E5E7EB] rounded-lg p-4 space-y-3">
             <div className="flex items-start gap-3">
               <User className="w-5 h-5 text-[#4B5563] flex-shrink-0 mt-0.5" />
@@ -316,7 +316,7 @@ export default function CreateInvoiceModal({
           </div>
         </div>
 
-        <DialogFooter className="gap-2">
+        <DialogFooter className="gap-2 flex-shrink-0 border-t border-[#E5E7EB] pt-4">
           <Button
             variant="outline"
             onClick={handleClose}
