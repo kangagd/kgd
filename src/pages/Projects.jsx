@@ -3,7 +3,7 @@ import { base44 } from "@/api/base44Client";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Plus, Search, SlidersHorizontal, User, Filter } from "lucide-react";
+import { Plus, Search, SlidersHorizontal, User, Filter, Eye } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent } from "@/components/ui/card";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -389,13 +389,24 @@ export default function Projects() {
             return (
               <Card
                 key={project.id}
-                className="hover:shadow-lg transition-all duration-200 cursor-pointer hover:border-[#FAE008] border border-[#E5E7EB] rounded-xl"
-                onClick={() => setModalProject(project)}
+                className="hover:shadow-lg transition-all duration-200 cursor-pointer hover:border-[#FAE008] border border-[#E5E7EB] rounded-xl relative"
+                onClick={() => setSelectedProject(project)}
               >
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  className="absolute top-2 right-2 h-8 w-8 rounded-lg hover:bg-[#F3F4F6] z-10"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    setModalProject(project);
+                  }}
+                >
+                  <Eye className="w-4 h-4 text-[#6B7280]" />
+                </Button>
                 <CardContent className="p-4">
                   {/* Top row */}
                   <div className="mb-3">
-                    <h3 className="text-[18px] font-semibold text-[#111827] leading-[1.2] mb-2">{project.title}</h3>
+                    <h3 className="text-[18px] font-semibold text-[#111827] leading-[1.2] mb-2 pr-8">{project.title}</h3>
                     <div className="flex items-center gap-2">
                       {project.project_type && (
                         <Badge className={`${projectTypeColors[project.project_type]} font-medium border-0 px-3 py-1 text-[12px] leading-[1.35] hover:opacity-100`}>

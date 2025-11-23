@@ -1,32 +1,46 @@
 import React from "react";
 import { Card, CardContent } from "@/components/ui/card";
-import { Phone, Mail, MapPin, Building2, ChevronDown } from "lucide-react";
+import { Phone, Mail, MapPin, Building2, ChevronDown, Eye } from "lucide-react";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 import { CustomerTypeBadge } from "../common/StatusBadge";
+import { Button } from "@/components/ui/button";
 
 
 
 export default function CustomerCard({ customer, onClick, onViewDetails }) {
   const handleClick = (e) => {
     e.stopPropagation();
+    if (onClick) {
+      onClick();
+    }
+  };
+
+  const handlePreview = (e) => {
+    e.stopPropagation();
     if (onViewDetails) {
       onViewDetails(customer);
-    } else if (onClick) {
-      onClick();
     }
   };
 
   return (
     <Card 
-      className="hover:shadow-lg transition-all duration-200 cursor-pointer hover:border-[#FAE008] border border-[#E5E7EB] rounded-xl"
+      className="hover:shadow-lg transition-all duration-200 cursor-pointer hover:border-[#FAE008] border border-[#E5E7EB] rounded-xl relative"
       onClick={handleClick}
     >
+      <Button
+        variant="ghost"
+        size="icon"
+        className="absolute top-2 right-2 h-8 w-8 rounded-lg hover:bg-[#F3F4F6] z-10"
+        onClick={handlePreview}
+      >
+        <Eye className="w-4 h-4 text-[#6B7280]" />
+      </Button>
       <CardContent className="p-4">
         <Collapsible>
           <div className="space-y-3">
             {/* Header Row */}
             <div>
-              <div className="flex items-center justify-between mb-2">
+              <div className="flex items-center justify-between mb-2 pr-8">
                 <h3 className="text-[18px] font-semibold text-[#111827] leading-[1.2]">
                   {customer.name}
                 </h3>
