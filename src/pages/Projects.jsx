@@ -112,13 +112,13 @@ export default function Projects() {
       setShowForm(true);
     }
     
-    if (projectId) {
+    if (projectId && projects.length > 0 && !selectedProject) {
       const project = projects.find((p) => p.id === projectId);
       if (project) {
         setSelectedProject(project);
       }
     }
-  }, [projects]);
+  }, [projects, selectedProject]);
 
   const handleSubmit = (data) => {
     if (editingProject) {
