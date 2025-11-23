@@ -13,28 +13,13 @@ const PROJECT_STAGES = [
 ];
 
 export default function ProjectStageSelector({ currentStage, onStageChange, size = "default" }) {
-  const [selectedStage, setSelectedStage] = useState(null);
-  const [showConfirm, setShowConfirm] = useState(false);
-
   const currentIndex = PROJECT_STAGES.indexOf(currentStage);
 
   const handleStageClick = (stage) => {
     if (stage === currentStage) return;
-    setSelectedStage(stage);
-    setShowConfirm(true);
-  };
-
-  const handleConfirm = () => {
-    if (selectedStage && onStageChange) {
-      onStageChange(selectedStage);
+    if (onStageChange) {
+      onStageChange(stage);
     }
-    setShowConfirm(false);
-    setSelectedStage(null);
-  };
-
-  const handleCancel = () => {
-    setShowConfirm(false);
-    setSelectedStage(null);
   };
 
   const getStageStyle = (stage, index) => {
