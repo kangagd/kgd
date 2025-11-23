@@ -66,33 +66,6 @@ export default function ProjectStageSelector({ currentStage, onStageChange, size
           );
         })}
       </div>
-
-      <AlertDialog open={showConfirm} onOpenChange={setShowConfirm}>
-        <AlertDialogContent className="rounded-2xl border-2 border-[#E5E7EB]">
-          <AlertDialogHeader>
-            <AlertDialogTitle className="text-xl font-bold text-[#000000]">
-              Change Project Stage?
-            </AlertDialogTitle>
-            <AlertDialogDescription className="text-[#4B5563]">
-              Change project stage to <span className="font-semibold text-[#111827]">{selectedStage}</span>?
-            </AlertDialogDescription>
-          </AlertDialogHeader>
-          <AlertDialogFooter>
-            <AlertDialogCancel 
-              onClick={handleCancel}
-              className="rounded-xl font-semibold border-2"
-            >
-              Cancel
-            </AlertDialogCancel>
-            <AlertDialogAction
-              onClick={handleConfirm}
-              className="bg-[#FAE008] hover:bg-[#E5CF07] text-[#000000] rounded-xl font-bold shadow-md"
-            >
-              Confirm
-            </AlertDialogAction>
-          </AlertDialogFooter>
-        </AlertDialogContent>
-      </AlertDialog>
     </>
   );
 }
