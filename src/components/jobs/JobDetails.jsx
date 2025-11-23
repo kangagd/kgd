@@ -543,6 +543,10 @@ export default function JobDetails({ job: initialJob, onClose, onStatusChange, o
     updateJobMutation.mutate({ field: 'invoice_url', value: url });
   };
 
+  const handleOtherDocumentsChange = (urls) => {
+    updateJobMutation.mutate({ field: 'other_documents', value: urls });
+  };
+
   const handleCustomerSubmit = (data) => {
     updateCustomerMutation.mutate({ id: job.customer_id, data });
   };
@@ -1346,6 +1350,17 @@ export default function JobDetails({ job: initialJob, onClose, onStatusChange, o
                     label="Invoice"
                     emptyText="Upload invoice" />
 
+                </div>
+
+                <div className="pt-3 border-t-2">
+                  <EditableFileUpload
+                    files={job.other_documents || []}
+                    onFilesChange={handleOtherDocumentsChange}
+                    accept=".pdf,.doc,.docx,.xls,.xlsx,.txt"
+                    multiple={true}
+                    icon={FileText}
+                    label="Other Documents"
+                    emptyText="Upload documents" />
                 </div>
               </div>
             </TabsContent>
