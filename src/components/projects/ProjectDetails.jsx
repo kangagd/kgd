@@ -343,9 +343,7 @@ Format as HTML bullet points using <ul> and <li> tags. Include only the most cri
       queryClient.invalidateQueries({ queryKey: ['allJobs'] });
       
       // Navigate to the new job
-      setTimeout(() => {
-        handleJobClick(newJob.id);
-      }, 500);
+      navigate(createPageUrl("Jobs") + `?jobId=${newJob.id}`);
     };
 
     // Stage-based automation
