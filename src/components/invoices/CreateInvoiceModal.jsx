@@ -9,8 +9,11 @@ import {
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { DollarSign, User, Briefcase, FileText, AlertCircle } from "lucide-react";
+import { DollarSign, User, Briefcase, FileText, AlertCircle, Plus, X, Package } from "lucide-react";
 import { Alert, AlertDescription } from "@/components/ui/alert";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { base44 } from "@/api/base44Client";
+import { useQuery } from "@tanstack/react-query";
 
 export default function CreateInvoiceModal({ 
   open, 
@@ -20,20 +23,75 @@ export default function CreateInvoiceModal({
   type = "job", // "job" or "project"
   data = {}
 }) {
-  const [amount, setAmount] = useState("");
+  const [lineItems, setLineItems] = useState([{ description: "", amount: "" }]);
   const [error, setError] = useState("");
 
+  const { data: priceListItems = [] } = useQuery({
+    queryKey: ['priceListItems'],
+    queryFn: () => base44.entities.PriceListItem.list('category'),
+    enabled: open
+  });
+
+  const addLineItem = () => {
+    setLineItems([...lineItems, { description: "", amount: "" }]);
+  };
+
+  const removeLineItem = (index) => {
+    if (lineItems.length === 1) return;
+    setLineItems(lineItems.filter((_, i) => i !== index));
+  };
+
+  const updateLineItem = (index, field, value) => {
+    const updated = [...lineItems];
+    updated[index][field] = value;
+    setLineItems(updated);
+  };
+
+  const selectPriceListItem = (index, itemId) => {
+    const item = priceListItems.find(i => i.id === itemId);
+    if (item) {
+      const updated = [...lineItems];
+      updated[index] = {
+        description: item.item + (item.description ? ` - ${item.description}` : ''),
+        amount: item.price.toString()
+      };
+      setLineItems(updated);
+    }
+  };
+
+  const calculateTotal = () => {
+    return lineItems.reduce((sum, item) => {
+      const amount = parseFloat(item.amount) || 0;
+      return sum + amount;
+    }, 0);
+  };
+
   const handleConfirm = () => {
-    const numAmount = parseFloat(amount);
-    if (!numAmount || numAmount <= 0) {
-      setError("Please enter a valid amount");
+    // Validate line items
+    const validItems = lineItems.filter(item => item.description && parseFloat(item.amount) > 0);
+    
+    if (validItems.length === 0) {
+      setError("Please add at least one line item with a valid amount");
       return;
     }
-    onConfirm(numAmount);
+
+    const total = calculateTotal();
+    if (total <= 0) {
+      setError("Total invoice amount must be greater than zero");
+      return;
+    }
+
+    onConfirm({ 
+      lineItems: validItems.map(item => ({
+        description: item.description,
+        amount: parseFloat(item.amount)
+      })),
+      total 
+    });
   };
 
   const handleClose = () => {
-    setAmount("");
+    setLineItems([{ description: "", amount: "" }]);
     setError("");
     onClose();
   };
@@ -95,26 +153,92 @@ export default function CreateInvoiceModal({
           </div>
 
           <div>
-            <Label className="block text-[13px] md:text-[14px] font-medium text-[#4B5563] mb-1.5">
-              Invoice Amount *
-            </Label>
-            <div className="relative">
-              <DollarSign className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-[#6B7280]" />
-              <Input
-                type="number"
-                step="0.01"
-                placeholder="0.00"
-                value={amount}
-                onChange={(e) => {
-                  setAmount(e.target.value);
-                  setError("");
-                }}
-                className="pl-10 h-11 text-[15px] border-[#E5E7EB] focus:border-[#111827]"
-                autoFocus
-              />
+            <div className="flex items-center justify-between mb-2">
+              <Label className="block text-[13px] md:text-[14px] font-medium text-[#4B5563]">
+                Invoice Line Items *
+              </Label>
+              <Button
+                type="button"
+                onClick={addLineItem}
+                size="sm"
+                variant="outline"
+                className="h-8 text-xs border-[#E5E7EB] hover:border-[#FAE008] hover:bg-[#FFFEF5]"
+              >
+                <Plus className="w-3 h-3 mr-1" />
+                Add Item
+              </Button>
             </div>
-            <div className="text-[12px] text-[#6B7280] mt-1.5">
-              This will create an authorised invoice in Xero
+
+            <div className="space-y-3 max-h-[300px] overflow-y-auto pr-1">
+              {lineItems.map((item, index) => (
+                <div key={index} className="bg-[#F9FAFB] border border-[#E5E7EB] rounded-lg p-3 space-y-2">
+                  <div className="flex items-center justify-between mb-2">
+                    <span className="text-[12px] font-medium text-[#6B7280]">Item {index + 1}</span>
+                    {lineItems.length > 1 && (
+                      <button
+                        type="button"
+                        onClick={() => removeLineItem(index)}
+                        className="text-red-600 hover:bg-red-50 rounded p-1"
+                      >
+                        <X className="w-4 h-4" />
+                      </button>
+                    )}
+                  </div>
+
+                  <div>
+                    <Label className="text-[12px] text-[#6B7280] mb-1">Quick Select</Label>
+                    <Select onValueChange={(value) => selectPriceListItem(index, value)}>
+                      <SelectTrigger className="h-9 text-sm border-[#E5E7EB]">
+                        <SelectValue placeholder="Select from Price List" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {priceListItems.map((priceItem) => (
+                          <SelectItem key={priceItem.id} value={priceItem.id}>
+                            <div className="flex items-center justify-between gap-3 w-full">
+                              <span className="text-sm">{priceItem.item}</span>
+                              <span className="text-xs text-[#6B7280]">${priceItem.price}</span>
+                            </div>
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+
+                  <div>
+                    <Label className="text-[12px] text-[#6B7280] mb-1">Description</Label>
+                    <Input
+                      placeholder="Item description"
+                      value={item.description}
+                      onChange={(e) => updateLineItem(index, 'description', e.target.value)}
+                      className="h-9 text-sm border-[#E5E7EB]"
+                    />
+                  </div>
+
+                  <div>
+                    <Label className="text-[12px] text-[#6B7280] mb-1">Amount</Label>
+                    <div className="relative">
+                      <DollarSign className="absolute left-2 top-1/2 -translate-y-1/2 w-4 h-4 text-[#6B7280]" />
+                      <Input
+                        type="number"
+                        step="0.01"
+                        placeholder="0.00"
+                        value={item.amount}
+                        onChange={(e) => updateLineItem(index, 'amount', e.target.value)}
+                        className="pl-8 h-9 text-sm border-[#E5E7EB]"
+                      />
+                    </div>
+                  </div>
+                </div>
+              ))}
+            </div>
+
+            <div className="mt-3 pt-3 border-t border-[#E5E7EB]">
+              <div className="flex items-center justify-between">
+                <span className="text-[14px] font-semibold text-[#111827]">Total Invoice Amount</span>
+                <span className="text-[18px] font-bold text-[#111827]">
+                  ${calculateTotal().toFixed(2)}
+                </span>
+              </div>
             </div>
           </div>
 
