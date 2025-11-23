@@ -363,8 +363,8 @@ export default function Schedule() {
             </div>
           </div>
 
-          {/* View Tabs with improved styling */}
-          <div className="mb-4">
+          {/* View Tabs with Filters - Single row on desktop */}
+          <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4 mb-4">
             <Tabs value={view} onValueChange={setView}>
               <TabsList className="bg-white w-full lg:w-auto shadow-sm">
                 <TabsTrigger value="day" className="flex-1 lg:flex-initial data-[state=active]:font-semibold data-[state=active]:shadow-sm">
@@ -378,10 +378,9 @@ export default function Schedule() {
                 </TabsTrigger>
               </TabsList>
             </Tabs>
-          </div>
 
-          {/* Filters - Single row on desktop */}
-          <div className="flex flex-wrap gap-3">
+            {/* Filters */}
+            <div className="flex flex-wrap gap-3">
             <Select value={technicianFilter} onValueChange={setTechnicianFilter}>
               <SelectTrigger className="w-full lg:w-[200px] h-10 rounded-xl">
                 <SelectValue placeholder="All Technicians" />
@@ -408,8 +407,9 @@ export default function Schedule() {
                 <SelectItem value="Cancelled">Cancelled</SelectItem>
               </SelectContent>
             </Select>
-          </div>
-        </div>
+            </div>
+            </div>
+            </div>
 
         {/* Content */}
         {isLoading ? (
