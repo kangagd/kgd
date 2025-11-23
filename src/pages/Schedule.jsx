@@ -32,13 +32,8 @@ export default function Schedule() {
   }
 
   return (
-    <div className="p-5 md:p-10 bg-[#F8F9FA] min-h-screen">
-      <div className="max-w-7xl mx-auto">
-        <div className="py-3 lg:py-4 mb-4 lg:mb-6">
-          <h1 className="text-2xl font-bold text-[#111827] leading-tight">Schedule</h1>
-          <p className="text-sm text-[#4B5563] mt-1">View and manage your schedule</p>
-        </div>
-
+    <div className="p-4 md:p-5 lg:p-10 bg-[#F8F9FA] min-h-screen overflow-x-hidden">
+      <div className="max-w-7xl mx-auto w-full">
         <CalendarView 
           jobs={jobs}
           onSelectJob={setSelectedJob}

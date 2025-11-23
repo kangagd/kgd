@@ -102,153 +102,149 @@ export default function CalendarView({ jobs, onSelectJob, currentDate, onDateCha
   const activeFiltersCount = (statusFilter !== "all" ? 1 : 0) + (jobTypeFilter !== "all" ? 1 : 0);
 
   return (
-    <div className="space-y-5">
-      <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
-        <div className="flex items-center gap-2.5">
+    <div className="space-y-3">
+      {/* Header */}
+      <div className="flex flex-col md:flex-row justify-between items-start md:items-center py-3 lg:py-4 mb-3 gap-3">
+        <div>
+          <h1 className="text-2xl font-bold text-[#111827] leading-tight">Schedule</h1>
+          <p className="text-sm text-[#4B5563] mt-1">View and manage your schedule</p>
+        </div>
+        <div className="flex items-center gap-2">
           <Button
             variant="outline"
-            size="sm"
             onClick={handlePrevious}
             title="Previous (←)"
-            className="border border-[#E5E7EB] hover:bg-[#F3F4F6] hover:border-[#D1D5DB] font-semibold transition-all rounded-lg h-10 w-10 p-0"
+            className="h-10 w-10 p-0 rounded-xl border border-[#E5E7EB] hover:border-[#FAE008] hover:bg-[#FFFEF5]"
           >
             <ChevronLeft className="w-4 h-4" />
           </Button>
-          <h2 className="text-lg md:text-xl font-bold text-[#111827] min-w-[180px] text-center tracking-tight">
-            {view === "month" && format(currentDate, 'MMMM yyyy')}
-            {view === "week" && `Week of ${format(currentDate, 'MMM d, yyyy')}`}
-            {view === "day" && format(currentDate, 'EEEE, MMM d, yyyy')}
-          </h2>
           <Button
             variant="outline"
-            size="sm"
             onClick={() => onDateChange(new Date())}
             title="Today (T)"
-            className="border border-[#E5E7EB] hover:bg-[#F3F4F6] hover:border-[#D1D5DB] font-semibold transition-all rounded-lg h-10"
+            className="h-10 px-4 rounded-xl border border-[#E5E7EB] hover:border-[#FAE008] hover:bg-[#FFFEF5] font-medium"
           >
             Today
           </Button>
           <Button
             variant="outline"
-            size="sm"
             onClick={handleNext}
             title="Next (→)"
-            className="border border-[#E5E7EB] hover:bg-[#F3F4F6] hover:border-[#D1D5DB] font-semibold transition-all rounded-lg h-10 w-10 p-0"
+            className="h-10 w-10 p-0 rounded-xl border border-[#E5E7EB] hover:border-[#FAE008] hover:bg-[#FFFEF5]"
           >
             <ChevronRight className="w-4 h-4" />
           </Button>
         </div>
+      </div>
 
-        <div className="flex items-center gap-3">
-          <Tabs value={view} onValueChange={setView}>
-            <TabsList className="h-10 bg-white border border-[#E5E7EB]">
-              <TabsTrigger value="day" title="Day view (D)" className="font-semibold data-[state=active]:bg-[#FAE008] data-[state=active]:text-[#111827]">Day</TabsTrigger>
-              <TabsTrigger value="week" title="Week view (W)" className="font-semibold data-[state=active]:bg-[#FAE008] data-[state=active]:text-[#111827]">Week</TabsTrigger>
-              <TabsTrigger value="month" title="Month view (M)" className="font-semibold data-[state=active]:bg-[#FAE008] data-[state=active]:text-[#111827]">Month</TabsTrigger>
+      {/* Search Bar */}
+      <div className="flex gap-3">
+        <div className="relative flex-1">
+          <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-[#6B7280]" />
+          <Input
+            id="calendar-search"
+            placeholder="Search jobs..."
+            value={searchTerm}
+            onChange={(e) => setSearchTerm(e.target.value)}
+            className="pl-9 pr-3 border border-[#E5E7EB] focus:border-[#111827] focus:ring-1 focus:ring-[#111827] transition-all h-10 text-sm rounded-lg w-full"
+          />
+        </div>
+      </div>
+
+      {/* View Tabs + Date Display + Book Button + Filters */}
+      <div className="flex flex-col md:flex-row md:items-center gap-3">
+        <div className="flex items-center gap-3 flex-1">
+          <Tabs value={view} onValueChange={setView} className="flex-shrink-0">
+            <TabsList>
+              <TabsTrigger value="day" title="Day view (D)">Day</TabsTrigger>
+              <TabsTrigger value="week" title="Week view (W)">Week</TabsTrigger>
+              <TabsTrigger value="month" title="Month view (M)">Month</TabsTrigger>
             </TabsList>
           </Tabs>
+          <div className="text-sm text-[#4B5563] font-medium">
+            {view === "month" && format(currentDate, 'MMMM yyyy')}
+            {view === "week" && format(currentDate, 'MMM d') + ' – ' + format(addDays(currentDate, 6), 'MMM d, yyyy')}
+            {view === "day" && format(currentDate, 'EEEE, MMM d, yyyy')}
+          </div>
+        </div>
+        <div className="flex items-center gap-3">
           <Button
             onClick={() => handleQuickBook()}
-            className="bg-[#FAE008] text-[#111827] hover:bg-[#E5CF07] font-semibold shadow-md hover:shadow-lg transition-all rounded-lg h-10"
-            size="sm"
+            className="bg-[#FAE008] text-[#111827] hover:bg-[#E5CF07] font-semibold shadow-sm hover:shadow-md transition h-10 px-4 text-sm rounded-xl"
             title="New job (N)"
           >
             <Plus className="w-4 h-4 mr-2" />
             Book Job
           </Button>
-        </div>
-      </div>
-
-      {/* Search and Filters */}
-      <div className="space-y-3">
-        <div className="flex gap-3">
-          <div className="relative flex-1">
-            <Search className="absolute left-4 top-1/2 transform -translate-y-1/2 w-5 h-5 text-[#6B7280]" />
-            <Input
-              id="calendar-search"
-              placeholder="Search jobs... (press / to focus)"
-              value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
-              className="pl-12 border border-[#E5E7EB] focus:border-[#FAE008] focus:ring-2 focus:ring-[#FAE008]/20 transition-all h-12 text-base rounded-lg"
-            />
-          </div>
           <Button
             variant="outline"
-            size="sm"
             onClick={() => setShowFilters(!showFilters)}
-            className={`border border-[#E5E7EB] hover:bg-[#F3F4F6] font-semibold transition-all h-12 rounded-lg ${activeFiltersCount > 0 ? "border-[#FAE008] bg-[#FAE008]/10" : ""}`}
+            className="flex-shrink-0 h-10 px-3 border border-[#E5E7EB] hover:border-[#FAE008] hover:bg-[#FFFEF5] gap-2"
           >
-            <Filter className="w-4 h-4 mr-2" />
+            <Filter className="w-4 h-4" />
             Filters
             {activeFiltersCount > 0 && (
-              <Badge className="ml-2 bg-[#FAE008] text-[#111827] px-2 py-0.5 text-xs font-bold">
+              <span className="ml-1 px-1.5 py-0.5 bg-[#FAE008] text-[#111827] rounded text-xs font-semibold">
                 {activeFiltersCount}
-              </Badge>
+              </span>
             )}
           </Button>
         </div>
-
-        {showFilters && (
-          <Card className="rounded-xl border border-[#E5E7EB]">
-            <CardContent className="p-5">
-              <div className="flex flex-wrap gap-4 items-center">
-                <div className="flex-1 min-w-[200px]">
-                  <label className="text-xs font-bold text-[#111827] mb-2 block tracking-tight uppercase">Status</label>
-                  <Select value={statusFilter} onValueChange={setStatusFilter}>
-                    <SelectTrigger className="h-11 border border-[#E5E7EB] focus:border-[#FAE008] focus:ring-2 focus:ring-[#FAE008]/20">
-                      <SelectValue placeholder="All statuses" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="all">All Statuses</SelectItem>
-                      <SelectItem value="open">Open</SelectItem>
-                      <SelectItem value="scheduled">Scheduled</SelectItem>
-                      <SelectItem value="in_progress">In Progress</SelectItem>
-                      <SelectItem value="completed">Completed</SelectItem>
-                      <SelectItem value="cancelled">Cancelled</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
-
-                <div className="flex-1 min-w-[200px]">
-                  <label className="text-xs font-bold text-[#111827] mb-2 block tracking-tight uppercase">Job Type</label>
-                  <Select value={jobTypeFilter} onValueChange={setJobTypeFilter}>
-                    <SelectTrigger className="h-11 border border-[#E5E7EB] focus:border-[#FAE008] focus:ring-2 focus:ring-[#FAE008]/20">
-                      <SelectValue placeholder="All job types" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="all">All Job Types</SelectItem>
-                      {uniqueJobTypes.map(jobType => (
-                        <SelectItem key={jobType} value={jobType}>{jobType}</SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </div>
-
-                {(statusFilter !== "all" || jobTypeFilter !== "all") && (
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    onClick={() => {
-                      setStatusFilter("all");
-                      setJobTypeFilter("all");
-                    }}
-                    className="self-end font-semibold h-11"
-                  >
-                    <X className="w-4 h-4 mr-1" />
-                    Clear
-                  </Button>
-                )}
-              </div>
-            </CardContent>
-          </Card>
-        )}
-
-        {(searchTerm || statusFilter !== "all" || jobTypeFilter !== "all") && (
-          <div className="text-sm text-[#4B5563] font-semibold">
-            Showing {filteredJobs.length} of {jobs.length} jobs
-          </div>
-        )}
       </div>
+
+      {/* Filter Panel */}
+      {showFilters && (
+        <Card className="border border-[#E5E7EB]">
+          <CardContent className="p-4">
+            <div className="flex flex-wrap gap-3">
+              <Select value={statusFilter} onValueChange={setStatusFilter}>
+                <SelectTrigger className="w-full md:w-[180px] h-10">
+                  <SelectValue placeholder="All Statuses" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">All Statuses</SelectItem>
+                  <SelectItem value="Open">Open</SelectItem>
+                  <SelectItem value="Scheduled">Scheduled</SelectItem>
+                  <SelectItem value="Completed">Completed</SelectItem>
+                  <SelectItem value="Cancelled">Cancelled</SelectItem>
+                </SelectContent>
+              </Select>
+
+              <Select value={jobTypeFilter} onValueChange={setJobTypeFilter}>
+                <SelectTrigger className="w-full md:w-[180px] h-10">
+                  <SelectValue placeholder="All Job Types" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">All Job Types</SelectItem>
+                  {uniqueJobTypes.map(jobType => (
+                    <SelectItem key={jobType} value={jobType}>{jobType}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+
+              {(statusFilter !== "all" || jobTypeFilter !== "all") && (
+                <Button
+                  variant="outline"
+                  onClick={() => {
+                    setStatusFilter("all");
+                    setJobTypeFilter("all");
+                  }}
+                  className="h-10"
+                >
+                  Clear Filters
+                </Button>
+              )}
+            </div>
+          </CardContent>
+        </Card>
+      )}
+
+      {/* Results Count */}
+      {(searchTerm || statusFilter !== "all" || jobTypeFilter !== "all") && (
+        <div className="text-sm text-[#4B5563]">
+          Showing {filteredJobs.length} of {jobs.length} jobs
+        </div>
+      )}
 
       {view === "month" && (
         <MonthView
