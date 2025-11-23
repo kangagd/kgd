@@ -28,6 +28,7 @@ import { base44 } from "@/api/base44Client";
 import { toast } from "sonner";
 import { Toaster } from "@/components/ui/sonner";
 import { Button } from "@/components/ui/button";
+import NotificationBell from "./components/notifications/NotificationBell";
 
 const primaryNavigationItems = [
   { title: "Dashboard", url: createPageUrl("Dashboard"), icon: LayoutDashboard },
