@@ -84,22 +84,6 @@ export default function JobCard({ job, onClick, onViewDetails }) {
           variant="ghost"
           size="icon"
           className="h-8 w-8 rounded-lg hover:bg-[#F3F4F6]"
-          onClick={(e) => {
-            e.stopPropagation();
-            saveMutation.mutate();
-          }}
-          disabled={!user || saveMutation.isPending}
-        >
-          {isSaved ? (
-            <BookmarkCheck className="w-4 h-4 text-[#FAE008]" />
-          ) : (
-            <Bookmark className="w-4 h-4 text-[#6B7280]" />
-          )}
-        </Button>
-        <Button
-          variant="ghost"
-          size="icon"
-          className="h-8 w-8 rounded-lg hover:bg-[#F3F4F6]"
           onClick={handlePreview}
         >
           <Eye className="w-4 h-4 text-[#6B7280]" />
