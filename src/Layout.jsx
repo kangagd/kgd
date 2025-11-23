@@ -147,7 +147,7 @@ export default function Layout({ children, currentPageName }) {
       document.removeEventListener('touchmove', handleTouchMove);
       document.removeEventListener('touchend', handleTouchEnd);
     };
-  }, [pullDistance, isRefreshing, isTechnician]);
+  }, [pullDistance, isRefreshing, isTechnician, isMobileMenuOpen, techMobileMenuOpen, setIsMobileMenuOpen, setTechMobileMenuOpen]);
 
   // Admin check-in/out notifications
   useEffect(() => {
