@@ -220,7 +220,7 @@ export default function Reports() {
   }, [allParts]);
 
   return (
-    <div className="p-4 md:p-5 lg:p-10 bg-[#F8F9FA] min-h-screen overflow-x-hidden">
+    <div className="p-4 md:p-5 lg:p-10 bg-[#ffffff] min-h-screen overflow-x-hidden">
       <div className="max-w-7xl mx-auto">
         <div className="py-3 lg:py-4 mb-4 lg:mb-6">
           <h1 className="text-2xl font-bold text-[#111827] leading-tight">Business Reports</h1>

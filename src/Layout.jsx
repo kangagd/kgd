@@ -152,7 +152,7 @@ export default function Layout({ children, currentPageName }) {
   // Mobile layout for technicians
   if (isTechnician) {
     return (
-      <div className="min-h-screen flex flex-col bg-[#F8F9FA]">
+      <div className="min-h-screen flex flex-col bg-[#ffffff]">
         <header className="bg-white border-b border-[#E5E7EB] px-4 py-3 sticky top-0 z-50 shadow-sm safe-area-top">
           <div className="flex items-center justify-between min-h-[44px]">
             <div className="flex items-center gap-2">
@@ -174,7 +174,7 @@ export default function Layout({ children, currentPageName }) {
           </div>
         </header>
 
-        <main className="flex-1 overflow-y-auto overflow-x-hidden pb-20">
+        <main className="flex-1 overflow-y-auto overflow-x-hidden pb-20 bg-[#ffffff]">
           {children}
         </main>
 
@@ -216,7 +216,7 @@ export default function Layout({ children, currentPageName }) {
 
   // Desktop/Admin layout
   return (
-    <div className="min-h-screen flex bg-[#F8F9FA]">
+    <div className="min-h-screen flex bg-[#ffffff]">
       <Toaster position="top-right" richColors />
       {/* Mobile Overlay */}
       {isMobileMenuOpen && (
@@ -391,7 +391,7 @@ export default function Layout({ children, currentPageName }) {
       </aside>
 
       {/* Main Content Area */}
-      <div className="flex-1 flex flex-col min-w-0">
+      <div className="flex-1 flex flex-col min-w-0 bg-[#ffffff]">
         {/* Mobile Top Bar */}
         <header className="lg:hidden bg-white border-b border-[#E5E7EB] px-4 py-3 sticky top-0 z-30 safe-area-top">
           <div className="flex items-center justify-between min-h-[44px]">
@@ -410,7 +410,7 @@ export default function Layout({ children, currentPageName }) {
         </header>
 
         {/* Page Content */}
-        <main className="flex-1 overflow-y-auto overflow-x-hidden">
+        <main className="flex-1 overflow-y-auto overflow-x-hidden bg-[#ffffff]">
           {children}
         </main>
       </div>

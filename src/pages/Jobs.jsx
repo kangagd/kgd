@@ -210,7 +210,7 @@ export default function Jobs() {
 
   if (showForm) {
     return (
-      <div className="p-5 md:p-10 bg-[#F8F9FA] min-h-screen">
+      <div className="p-5 md:p-10 bg-[#ffffff] min-h-screen">
         <div className="max-w-4xl mx-auto">
           <JobForm
             job={editingJob}
@@ -233,7 +233,7 @@ export default function Jobs() {
 
   if (selectedJob) {
     return (
-      <div className="bg-[#F8F9FA] min-h-screen">
+      <div className="bg-[#ffffff] min-h-screen">
         <div className="mx-auto p-5 md:p-10 max-w-4xl">
           <JobDetails
             job={selectedJob}
@@ -253,7 +253,7 @@ export default function Jobs() {
   }
 
   return (
-    <div className="p-4 md:p-5 lg:p-10 bg-[#F8F9FA] min-h-screen overflow-x-hidden">
+    <div className="p-4 md:p-5 lg:p-10 bg-[#ffffff] min-h-screen overflow-x-hidden">
       <div className="max-w-7xl mx-auto w-full">
         {!isTechnician && (
           <div className="flex flex-col md:flex-row justify-between items-start md:items-center py-3 lg:py-4 mb-4 lg:mb-6 gap-3">

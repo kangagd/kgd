@@ -327,7 +327,7 @@ export default function Inbox() {
 
   if (!userPermissions?.can_view) {
     return (
-      <div className="p-5 md:p-10 bg-[#F8F9FA] min-h-screen">
+      <div className="p-5 md:p-10 bg-[#ffffff] min-h-screen">
         <div className="max-w-4xl mx-auto text-center py-20">
           <Mail className="w-16 h-16 mx-auto text-[#D1D5DB] mb-4" />
           <h2 className="text-[22px] font-semibold text-[#111827] mb-2">Access Required</h2>
@@ -340,7 +340,7 @@ export default function Inbox() {
   }
 
   return (
-    <div className="flex h-screen bg-[#F8F9FA] overflow-hidden">
+    <div className="flex h-screen bg-[#ffffff] overflow-hidden">
       {/* Thread List - Left Side */}
       <div 
         className={`${selectedThread ? 'hidden lg:flex' : 'flex'} flex-col border-r border-[#E5E7EB] bg-white overflow-x-hidden`}
@@ -502,7 +502,7 @@ export default function Inbox() {
 
       {/* Thread Detail - Right Side */}
       {selectedThread && (
-        <div className="flex flex-1 flex-col bg-[#F8F9FA]">
+        <div className="flex flex-1 flex-col bg-[#ffffff]">
           <EmailDetailView
             thread={selectedThread}
             onClose={() => setSelectedThread(null)}
