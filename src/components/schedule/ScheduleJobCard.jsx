@@ -2,35 +2,8 @@ import React from "react";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { MapPin, Briefcase, ExternalLink } from "lucide-react";
-
-const statusColors = {
-  Open: "default",
-  Scheduled: "primary",
-  Completed: "success",
-  Cancelled: "error"
-};
-
-const productColors = {
-  "Garage Door": "bg-blue-100 text-blue-800",
-  "Gate": "bg-green-100 text-green-800",
-  "Roller Shutter": "bg-purple-100 text-purple-800",
-  "Multiple": "bg-orange-100 text-orange-800",
-  "Custom Garage Door": "bg-indigo-100 text-indigo-800"
-};
-
-const getAvatarColor = (name) => {
-  const colors = [
-    'bg-blue-500', 'bg-green-500', 'bg-purple-500', 
-    'bg-pink-500', 'bg-yellow-500', 'bg-indigo-500'
-  ];
-  const index = name?.charCodeAt(0) % colors.length || 0;
-  return colors[index];
-};
-
-const getInitials = (name) => {
-  if (!name) return '?';
-  return name.split(' ').map(n => n[0]).join('').toUpperCase().slice(0, 2);
-};
+import { JobStatusBadge, JobTypeBadge, ProductTypeBadge } from "../common/StatusBadge";
+import { TechnicianAvatarGroup } from "../common/TechnicianAvatar";
 
 export default function ScheduleJobCard({ job, onClick, onAddressClick, onProjectClick }) {
   return (
@@ -43,9 +16,7 @@ export default function ScheduleJobCard({ job, onClick, onAddressClick, onProjec
         <div className="text-sm font-semibold text-[#111827]">
           {job.scheduled_time || 'Time TBD'}
         </div>
-        <Badge variant={statusColors[job.status] || 'default'}>
-          {job.status}
-        </Badge>
+        <JobStatusBadge value={job.status} />
       </div>
 
       {/* Middle Section: Job Info */}
@@ -63,37 +34,27 @@ export default function ScheduleJobCard({ job, onClick, onAddressClick, onProjec
         </div>
 
         {/* Technicians */}
-        {job.assigned_to_name && job.assigned_to_name.length > 0 && (
+        {job.assigned_to && job.assigned_to.length > 0 && (
           <div className="flex items-center gap-2 ml-6">
-            <div className="flex -space-x-2">
-              {job.assigned_to_name.slice(0, 3).map((name, idx) => (
-                <div
-                  key={idx}
-                  className={`w-6 h-6 rounded-full ${getAvatarColor(name)} flex items-center justify-center text-xs font-semibold text-white border-2 border-white`}
-                  title={name}
-                >
-                  {getInitials(name)}
-                </div>
-              ))}
-            </div>
-            <div className="text-xs text-[#6B7280]">
-              {job.assigned_to_name.slice(0, 2).join(', ')}
-              {job.assigned_to_name.length > 2 && ` +${job.assigned_to_name.length - 2}`}
-            </div>
+            <TechnicianAvatarGroup
+              technicians={job.assigned_to.map((email, idx) => ({
+                email,
+                full_name: job.assigned_to_name?.[idx] || email,
+                id: email
+              }))}
+              maxDisplay={3}
+              size="xs"
+            />
           </div>
         )}
 
         {/* Job Type + Product Chips */}
         <div className="flex flex-wrap gap-2 ml-6">
           {job.job_type_name && (
-            <span className="inline-flex items-center px-2 py-0.5 rounded-md text-xs font-medium bg-[#F3F4F6] text-[#4B5563]">
-              {job.job_type_name}
-            </span>
+            <JobTypeBadge value={job.job_type_name} />
           )}
           {job.product && (
-            <span className={`inline-flex items-center px-2 py-0.5 rounded-md text-xs font-medium ${productColors[job.product] || 'bg-gray-100 text-gray-800'}`}>
-              {job.product}
-            </span>
+            <ProductTypeBadge value={job.product} />
           )}
         </div>
       </div>
