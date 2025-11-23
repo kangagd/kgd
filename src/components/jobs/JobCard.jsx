@@ -1,18 +1,59 @@
-import React from "react";
+import React, { useState } from "react";
 import { Card, CardContent } from "@/components/ui/card";
-import { MapPin, Calendar, Clock, ChevronDown, Eye } from "lucide-react";
+import { MapPin, Calendar, Clock, ChevronDown, Eye, Bookmark, BookmarkCheck } from "lucide-react";
 import { format, parseISO } from "date-fns";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { base44 } from "@/api/base44Client";
 import { TechnicianAvatarGroup } from "../common/TechnicianAvatar";
 import { Badge } from "@/components/ui/badge";
 import { JobStatusBadge, JobTypeBadge, ProductTypeBadge } from "../common/StatusBadge";
 import { Button } from "@/components/ui/button";
+import { toast } from "sonner";
 
 
 
 export default function JobCard({ job, onClick, onViewDetails }) {
+  const [user, setUser] = useState(null);
+  const queryClient = useQueryClient();
+
+  React.useEffect(() => {
+    const loadUser = async () => {
+      try {
+        setUser(await base44.auth.me());
+      } catch (error) {
+        console.error("Error loading user:", error);
+      }
+    };
+    loadUser();
+  }, []);
+
+  const { data: savedJobs = [] } = useQuery({
+    queryKey: ['savedJobs', user?.email],
+    queryFn: () => base44.entities.SavedJob.filter({ user_email: user.email }),
+    enabled: !!user?.email
+  });
+
+  const isSaved = savedJobs.some(sj => sj.job_id === job.id);
+
+  const saveMutation = useMutation({
+    mutationFn: async () => {
+      if (isSaved) {
+        const savedJob = savedJobs.find(sj => sj.job_id === job.id);
+        await base44.entities.SavedJob.delete(savedJob.id);
+      } else {
+        await base44.entities.SavedJob.create({
+          job_id: job.id,
+          user_email: user.email,
+          user_name: user.full_name
+        });
+      }
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['savedJobs'] });
+      toast.success(isSaved ? 'Job unsaved' : 'Job saved');
+    }
+  });
   const { data: latestVisit } = useQuery({
     queryKey: ['latestJobSummary', job.id],
     queryFn: () => base44.entities.JobSummary.filter({ job_id: job.id }, '-check_out_time', 1).then(res => res[0] || null),
@@ -38,14 +79,32 @@ export default function JobCard({ job, onClick, onViewDetails }) {
       className="hover:shadow-lg transition-all duration-200 cursor-pointer hover:border-[#FAE008] border border-[#E5E7EB] rounded-xl relative"
       onClick={handleClick}
     >
-      <Button
-        variant="ghost"
-        size="icon"
-        className="absolute top-2 right-2 h-8 w-8 rounded-lg hover:bg-[#F3F4F6] z-10"
-        onClick={handlePreview}
-      >
-        <Eye className="w-4 h-4 text-[#6B7280]" />
-      </Button>
+      <div className="absolute top-2 right-2 flex gap-1 z-10">
+        <Button
+          variant="ghost"
+          size="icon"
+          className="h-8 w-8 rounded-lg hover:bg-[#F3F4F6]"
+          onClick={(e) => {
+            e.stopPropagation();
+            saveMutation.mutate();
+          }}
+          disabled={!user || saveMutation.isPending}
+        >
+          {isSaved ? (
+            <BookmarkCheck className="w-4 h-4 text-[#FAE008]" />
+          ) : (
+            <Bookmark className="w-4 h-4 text-[#6B7280]" />
+          )}
+        </Button>
+        <Button
+          variant="ghost"
+          size="icon"
+          className="h-8 w-8 rounded-lg hover:bg-[#F3F4F6]"
+          onClick={handlePreview}
+        >
+          <Eye className="w-4 h-4 text-[#6B7280]" />
+        </Button>
+      </div>
       <CardContent className="p-4">
         <div className="space-y-3">
           {/* Title and Customer */}
