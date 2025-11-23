@@ -193,6 +193,30 @@ export default function Layout({ children, currentPageName }) {
           }`}
         >
           <nav className="p-2">
+            {/* Create Buttons */}
+            <div className="grid grid-cols-2 gap-2 mb-3 pb-3 border-b border-[#E5E7EB]">
+              <Button
+                onClick={() => {
+                  navigate(createPageUrl("Jobs") + "?action=create");
+                  setTechMobileMenuOpen(false);
+                }}
+                className="bg-[#FAE008] hover:bg-[#E5CF07] text-[#111827] font-semibold shadow-sm"
+              >
+                <Plus className="w-4 h-4 mr-1" />
+                Job
+              </Button>
+              <Button
+                onClick={() => {
+                  navigate(createPageUrl("Projects") + "?action=create");
+                  setTechMobileMenuOpen(false);
+                }}
+                className="bg-[#FAE008] hover:bg-[#E5CF07] text-[#111827] font-semibold shadow-sm"
+              >
+                <Plus className="w-4 h-4 mr-1" />
+                Project
+              </Button>
+            </div>
+
             {navigationItems.map((item) => {
               const isActive = location.pathname === item.url;
               return (
@@ -289,6 +313,24 @@ export default function Layout({ children, currentPageName }) {
           {/* Navigation */}
           <nav className="flex-1 overflow-y-auto p-3">
             <div className="space-y-1">
+              {/* Create Buttons */}
+              <div className={`grid ${isCollapsed ? 'grid-cols-1' : 'grid-cols-2'} gap-2 mb-4 pb-4 border-b border-[#E5E7EB]`}>
+                <Button
+                  onClick={() => navigate(createPageUrl("Jobs") + "?action=create")}
+                  className={`bg-[#FAE008] hover:bg-[#E5CF07] text-[#111827] font-semibold shadow-sm ${isCollapsed ? 'w-full px-2' : ''}`}
+                >
+                  <Plus className="w-4 h-4 mr-2" />
+                  {!isCollapsed && "Job"}
+                </Button>
+                <Button
+                  onClick={() => navigate(createPageUrl("Projects") + "?action=create")}
+                  className={`bg-[#FAE008] hover:bg-[#E5CF07] text-[#111827] font-semibold shadow-sm ${isCollapsed ? 'w-full px-2' : ''}`}
+                >
+                  <Plus className="w-4 h-4 mr-2" />
+                  {!isCollapsed && "Project"}
+                </Button>
+              </div>
+
               {/* Primary Navigation */}
               {primaryNavigationItems.map((item) => {
                 const isActive = location.pathname === item.url;
