@@ -313,9 +313,9 @@ export default function Jobs() {
                 </Tabs>
               </div>
 
-              <div className="flex flex-col gap-3">
+              <div className="flex flex-wrap gap-3">
                 <Select value={technicianFilter} onValueChange={setTechnicianFilter}>
-                  <SelectTrigger className="w-full h-11">
+                  <SelectTrigger className="w-full md:w-[200px] h-11">
                     <SelectValue placeholder="All Technicians" />
                   </SelectTrigger>
                   <SelectContent>
