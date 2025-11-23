@@ -117,15 +117,17 @@ export default function Jobs() {
       if (projectId) setPreselectedProjectId(projectId);
     }
 
-    if (jobId) {
+    if (jobId && jobs.length > 0 && !selectedJob) {
       const job = jobs.find((j) => j.id === jobId);
-      if (job) setSelectedJob(job);
+      if (job) {
+        setSelectedJob(job);
+      }
     }
 
     if (status) {
       setStatusFilter(status);
     }
-  }, [jobs]);
+  }, [jobs, selectedJob]);
 
   const handleSubmit = (data) => {
     if (editingJob) {
