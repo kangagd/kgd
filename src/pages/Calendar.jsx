@@ -139,18 +139,16 @@ export default function Calendar() {
             </TabsList>
           </Tabs>
 
-          <div className="chip-container w-full md:w-auto"
+          <div className="chip-container w-full md:w-auto md:ml-auto"
             style={{ 
               maskImage: 'linear-gradient(to right, black 0%, black calc(100% - 40px), transparent 100%)',
               WebkitMaskImage: 'linear-gradient(to right, black 0%, black calc(100% - 40px), transparent 100%)'
             }}
           >
-            <div className="flex gap-2 items-center">
-              <span className="text-sm text-[#4B5563] font-semibold whitespace-nowrap">Filter by technician:</span>
+            <div className="flex gap-2 items-center justify-end">
               {technicians.map(tech => (
                 <Button
                   key={tech.email}
-                  variant={selectedTechnicians.includes(tech.email) ? "default" : "outline"}
                   size="sm"
                   onClick={() => toggleTechnician(tech.email)}
                   className={`whitespace-nowrap ${selectedTechnicians.includes(tech.email) 
