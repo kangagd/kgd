@@ -66,11 +66,19 @@ export default function CreateInvoiceModal({
     }
   };
 
-  const calculateTotal = () => {
+  const calculateSubtotal = () => {
     return lineItems.reduce((sum, item) => {
       const amount = parseFloat(item.amount) || 0;
       return sum + amount;
     }, 0);
+  };
+
+  const calculateGST = () => {
+    return calculateSubtotal() * 0.10;
+  };
+
+  const calculateTotal = () => {
+    return calculateSubtotal() + calculateGST();
   };
 
   const handleConfirm = () => {
@@ -243,7 +251,7 @@ export default function CreateInvoiceModal({
                   </div>
 
                   <div>
-                    <Label className="text-[12px] text-[#6B7280] mb-1">Amount</Label>
+                    <Label className="text-[12px] text-[#6B7280] mb-1">Amount (excl. GST)</Label>
                     <div className="relative">
                       <DollarSign className="absolute left-2 top-1/2 -translate-y-1/2 w-4 h-4 text-[#6B7280]" />
                       <Input
@@ -255,14 +263,31 @@ export default function CreateInvoiceModal({
                         className="pl-8 h-9 text-sm border-[#E5E7EB]"
                       />
                     </div>
+                    {item.amount && parseFloat(item.amount) > 0 && (
+                      <div className="text-[11px] text-[#6B7280] mt-1">
+                        + ${(parseFloat(item.amount) * 0.10).toFixed(2)} GST = ${(parseFloat(item.amount) * 1.10).toFixed(2)}
+                      </div>
+                    )}
                   </div>
                 </div>
               ))}
             </div>
 
-            <div className="mt-3 pt-3 border-t border-[#E5E7EB]">
-              <div className="flex items-center justify-between">
-                <span className="text-[14px] font-semibold text-[#111827]">Total Invoice Amount</span>
+            <div className="mt-3 pt-3 border-t border-[#E5E7EB] space-y-2">
+              <div className="flex items-center justify-between text-[14px]">
+                <span className="text-[#6B7280]">Subtotal (excl. GST)</span>
+                <span className="font-medium text-[#111827]">
+                  ${calculateSubtotal().toFixed(2)}
+                </span>
+              </div>
+              <div className="flex items-center justify-between text-[14px]">
+                <span className="text-[#6B7280]">GST (10%)</span>
+                <span className="font-medium text-[#111827]">
+                  ${calculateGST().toFixed(2)}
+                </span>
+              </div>
+              <div className="flex items-center justify-between pt-2 border-t border-[#E5E7EB]">
+                <span className="text-[14px] font-semibold text-[#111827]">Total (incl. GST)</span>
                 <span className="text-[18px] font-bold text-[#111827]">
                   ${calculateTotal().toFixed(2)}
                 </span>
