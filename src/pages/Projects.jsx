@@ -251,29 +251,25 @@ export default function Projects() {
                 onChange={(e) => setSearchTerm(e.target.value)}
                 className="pl-9 pr-3 border border-[#E5E7EB] focus:border-[#111827] focus:ring-1 focus:ring-[#111827] transition-all h-10 text-sm rounded-lg w-full"
               />
+              <button 
+                className="absolute right-3 top-1/2 transform -translate-y-1/2 text-[#6B7280] hover:text-[#111827] transition-colors"
+                onClick={() => setShowFilters(!showFilters)}
+              >
+                <Filter className="w-4 h-4" />
+              </button>
             </div>
           </div>
 
-          <div className="flex items-center gap-3">
-            <Tabs value={stageFilter} onValueChange={setStageFilter} className="flex-1">
-              <TabsList className="w-full">
-                <TabsTrigger value="all" className="flex-1">All Projects</TabsTrigger>
-                {Object.keys(statusColors).slice(0, 3).map((stage) => (
-                  <TabsTrigger key={stage} value={stage} className="flex-1">
-                    {stage}
-                  </TabsTrigger>
-                ))}
-              </TabsList>
-            </Tabs>
-            <Button
-              variant="outline"
-              onClick={() => setShowFilters(!showFilters)}
-              className="flex-shrink-0 h-10 px-3 border border-[#E5E7EB] hover:border-[#FAE008] hover:bg-[#FFFEF5] gap-2"
-            >
-              <SlidersHorizontal className="w-4 h-4" />
-              Filters
-            </Button>
-          </div>
+          <Tabs value={stageFilter} onValueChange={setStageFilter} className="w-full">
+            <TabsList className="w-full">
+              <TabsTrigger value="all" className="flex-1">All Projects</TabsTrigger>
+              {Object.keys(statusColors).slice(0, 3).map((stage) => (
+                <TabsTrigger key={stage} value={stage} className="flex-1">
+                  {stage}
+                </TabsTrigger>
+              ))}
+            </TabsList>
+          </Tabs>
 
           {showFilters && (
             <Card className="border border-[#E5E7EB]">
