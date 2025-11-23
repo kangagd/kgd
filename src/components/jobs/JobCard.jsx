@@ -18,20 +18,8 @@ export default function JobCard({ job, onClick, onViewDetails }) {
     enabled: !!job.id
   });
 
-  const [lastClickTime, setLastClickTime] = React.useState(0);
-
   const handleClick = (e) => {
     e.stopPropagation();
-    const now = Date.now();
-    
-    // Double-click: navigate to full page
-    if (now - lastClickTime < 300) {
-      window.location.href = `/jobs?jobId=${job.id}`;
-      return;
-    }
-    
-    // Single click: open modal
-    setLastClickTime(now);
     if (onViewDetails) {
       onViewDetails(job);
     } else if (onClick) {

@@ -7,20 +7,8 @@ import { CustomerTypeBadge } from "../common/StatusBadge";
 
 
 export default function CustomerCard({ customer, onClick, onViewDetails }) {
-  const [lastClickTime, setLastClickTime] = React.useState(0);
-
   const handleClick = (e) => {
     e.stopPropagation();
-    const now = Date.now();
-    
-    // Double-click: navigate to full page
-    if (now - lastClickTime < 300) {
-      window.location.href = `/customers?customerId=${customer.id}`;
-      return;
-    }
-    
-    // Single click: open modal
-    setLastClickTime(now);
     if (onViewDetails) {
       onViewDetails(customer);
     } else if (onClick) {

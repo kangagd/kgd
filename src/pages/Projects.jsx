@@ -54,8 +54,6 @@ export default function Projects() {
   const [selectedProject, setSelectedProject] = useState(null);
   const [editingProject, setEditingProject] = useState(null);
   const [modalProject, setModalProject] = useState(null);
-  const [lastClickTime, setLastClickTime] = useState(0);
-  const [lastClickedProjectId, setLastClickedProjectId] = useState(null);
   const queryClient = useQueryClient();
 
   const { data: allProjects = [], isLoading } = useQuery({
@@ -392,18 +390,7 @@ export default function Projects() {
               <Card
                 key={project.id}
                 className="hover:shadow-lg transition-all duration-200 cursor-pointer hover:border-[#FAE008] border border-[#E5E7EB] rounded-xl"
-                onClick={(e) => {
-                  const now = Date.now();
-                  // Double-click: navigate to full page (same project clicked within 300ms)
-                  if (now - lastClickTime < 300 && lastClickedProjectId === project.id) {
-                    window.location.href = `${createPageUrl("Projects")}?projectId=${project.id}`;
-                    return;
-                  }
-                  // Single click: open modal
-                  setLastClickTime(now);
-                  setLastClickedProjectId(project.id);
-                  setModalProject(project);
-                }}
+                onClick={() => setModalProject(project)}
               >
                 <CardContent className="p-4">
                   {/* Top row */}
