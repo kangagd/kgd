@@ -255,11 +255,15 @@ export default function Projects() {
             <Tabs value={stageFilter} onValueChange={setStageFilter}>
               <TabsList className="inline-flex w-auto justify-start">
                 <TabsTrigger value="all" className="whitespace-nowrap flex-shrink-0">All Projects</TabsTrigger>
-                {Object.keys(statusColors).map((stage) => (
-                  <TabsTrigger key={stage} value={stage} className="whitespace-nowrap flex-shrink-0">
-                    {stage}
-                  </TabsTrigger>
-                ))}
+                <TabsTrigger value="Lead" className="whitespace-nowrap flex-shrink-0">Lead</TabsTrigger>
+                <TabsTrigger value="Initial Site Visit" className="whitespace-nowrap flex-shrink-0">Initial Site Visit</TabsTrigger>
+                <TabsTrigger value="Quote Sent" className="whitespace-nowrap flex-shrink-0">Quote Sent</TabsTrigger>
+                <TabsTrigger value="Quote Approved" className="whitespace-nowrap flex-shrink-0">Quote Approved</TabsTrigger>
+                <TabsTrigger value="Final Measure" className="whitespace-nowrap flex-shrink-0">Final Measure</TabsTrigger>
+                <TabsTrigger value="Parts Ordered" className="whitespace-nowrap flex-shrink-0">Parts Ordered</TabsTrigger>
+                <TabsTrigger value="Scheduled" className="whitespace-nowrap flex-shrink-0">Scheduled</TabsTrigger>
+                <TabsTrigger value="Completed" className="whitespace-nowrap flex-shrink-0">Completed</TabsTrigger>
+                <TabsTrigger value="Warranty" className="whitespace-nowrap flex-shrink-0">Warranty</TabsTrigger>
               </TabsList>
             </Tabs>
           </div>
