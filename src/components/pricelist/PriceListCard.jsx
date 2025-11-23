@@ -11,7 +11,7 @@ const categoryColors = {
   "Remotes/Accessories": "bg-green-100 text-green-700"
 };
 
-export default function PriceListCard({ item, isAdmin, onEdit, onDelete, onStockAdjust }) {
+export default function PriceListCard({ item, isAdmin, canModifyStock, onEdit, onDelete, onStockAdjust }) {
   const isLowStock = item.stock_level <= item.min_stock_level && item.stock_level > 0;
   const isOutOfStock = item.stock_level === 0;
 
@@ -70,8 +70,8 @@ export default function PriceListCard({ item, isAdmin, onEdit, onDelete, onStock
               </div>
 
               {/* Quick Action Buttons */}
-              {isAdmin && (
-                <div className="flex items-center gap-1">
+              <div className="flex items-center gap-1">
+                {canModifyStock && (
                   <Button
                     size="icon"
                     variant="ghost"
@@ -84,32 +84,36 @@ export default function PriceListCard({ item, isAdmin, onEdit, onDelete, onStock
                   >
                     <PackagePlus className="w-4 h-4" />
                   </Button>
-                  <Button
-                    size="icon"
-                    variant="ghost"
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      onEdit(item);
-                    }}
-                    className="h-8 w-8 text-[#6B7280] hover:text-[#111827] hover:bg-[#F3F4F6] rounded-lg"
-                    title="Edit"
-                  >
-                    <Pencil className="w-4 h-4" />
-                  </Button>
-                  <Button
-                    size="icon"
-                    variant="ghost"
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      onDelete(item.id);
-                    }}
-                    className="h-8 w-8 text-[#6B7280] hover:text-red-600 hover:bg-red-50 rounded-lg"
-                    title="Delete"
-                  >
-                    <Trash2 className="w-4 h-4" />
-                  </Button>
-                </div>
-              )}
+                )}
+                {isAdmin && (
+                  <>
+                    <Button
+                      size="icon"
+                      variant="ghost"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        onEdit(item);
+                      }}
+                      className="h-8 w-8 text-[#6B7280] hover:text-[#111827] hover:bg-[#F3F4F6] rounded-lg"
+                      title="Edit"
+                    >
+                      <Pencil className="w-4 h-4" />
+                    </Button>
+                    <Button
+                      size="icon"
+                      variant="ghost"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        onDelete(item.id);
+                      }}
+                      className="h-8 w-8 text-[#6B7280] hover:text-red-600 hover:bg-red-50 rounded-lg"
+                      title="Delete"
+                    >
+                      <Trash2 className="w-4 h-4" />
+                    </Button>
+                  </>
+                )}
+              </div>
             </div>
 
             {/* Expandable Details */}

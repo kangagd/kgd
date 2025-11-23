@@ -84,6 +84,8 @@ export default function PriceList() {
 
   const categories = ["Service", "Motor", "Remotes/Accessories"];
   const isAdmin = user?.role === 'admin';
+  const isTechnician = user?.is_field_technician;
+  const canModifyStock = isAdmin || isTechnician;
   const lowStockCount = priceItems.filter((item) => item.stock_level <= item.min_stock_level && item.stock_level > 0).length;
   const outOfStockCount = priceItems.filter((item) => item.stock_level === 0).length;
 
@@ -213,6 +215,7 @@ export default function PriceList() {
                 key={item.id}
                 item={item}
                 isAdmin={isAdmin}
+                canModifyStock={canModifyStock}
                 onEdit={handleEdit}
                 onDelete={handleDelete}
                 onStockAdjust={handleStockAdjust}
