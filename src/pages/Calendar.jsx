@@ -3,12 +3,13 @@ import { base44 } from "@/api/base44Client";
 import { useQuery } from "@tanstack/react-query";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Button } from "@/components/ui/button";
-import { ChevronLeft, ChevronRight } from "lucide-react";
+import { ChevronLeft, ChevronRight, X } from "lucide-react";
 import { format, addDays, subDays, addWeeks, subWeeks, addMonths, subMonths } from "date-fns";
 import DayView from "../components/calendar/DayView";
 import WeekView from "../components/calendar/WeekView";
 import MonthView from "../components/calendar/MonthView";
 import JobDetails from "../components/jobs/JobDetails";
+import TechnicianAvatar from "../components/common/TechnicianAvatar";
 
 export default function Calendar() {
   const [viewMode, setViewMode] = useState("week");
@@ -147,26 +148,27 @@ export default function Calendar() {
           >
             <div className="flex gap-2 items-center justify-end">
               {technicians.map(tech => (
-                <Button
+                <button
                   key={tech.email}
-                  size="sm"
                   onClick={() => toggleTechnician(tech.email)}
-                  className={`whitespace-nowrap ${selectedTechnicians.includes(tech.email) 
-                    ? "bg-[#FAE008] text-[#111827] hover:bg-[#E5CF07] font-semibold shadow-sm rounded-lg h-10" 
-                    : "border border-[#E5E7EB] hover:bg-[#F3F4F6] hover:border-[#D1D5DB] font-semibold rounded-lg h-10"
+                  className={`relative cursor-pointer transition-all rounded-full ${
+                    selectedTechnicians.includes(tech.email) 
+                      ? "ring-2 ring-[#FAE008] ring-offset-2" 
+                      : "opacity-60 hover:opacity-100"
                   }`}
+                  title={tech.full_name}
                 >
-                  {tech.full_name}
-                </Button>
+                  <TechnicianAvatar technician={tech} size="md" />
+                </button>
               ))}
               {selectedTechnicians.length > 0 && (
                 <Button
                   variant="ghost"
                   size="sm"
                   onClick={() => setSelectedTechnicians([])}
-                  className="text-[#6B7280] hover:text-[#111827] hover:bg-[#F3F4F6] font-semibold rounded-lg h-10 whitespace-nowrap"
+                  className="text-[#6B7280] hover:text-[#111827] hover:bg-[#F3F4F6] font-semibold rounded-lg h-10 whitespace-nowrap ml-2"
                 >
-                  Clear
+                  <X className="w-4 h-4" />
                 </Button>
               )}
             </div>
