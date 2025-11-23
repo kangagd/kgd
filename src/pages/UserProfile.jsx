@@ -102,7 +102,7 @@ export default function UserProfile() {
   const isAdmin = user.role === 'admin';
 
   return (
-    <div className="min-h-screen bg-slate-50 p-2 md:p-8">
+    <div className="min-h-screen bg-[#ffffff] p-2 md:p-8">
       <div className="max-w-4xl mx-auto space-y-6">
         <div className="flex items-center gap-4 mb-6">
           <Button variant="ghost" size="icon" onClick={() => navigate(-1)}>

@@ -111,7 +111,7 @@ export default function CheckIn() {
   };
 
   return (
-    <div className="p-4 md:p-8 bg-slate-50 min-h-screen">
+    <div className="p-4 md:p-8 bg-[#ffffff] min-h-screen">
       <div className="max-w-4xl mx-auto">
         <div className="mb-8">
           <h1 className="text-3xl font-bold text-slate-900">Check In/Out</h1>
