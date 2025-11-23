@@ -931,11 +931,11 @@ export default function JobDetails({ job: initialJob, onClose, onStatusChange, o
 
               <div className="bg-white rounded-lg p-4">
                 <RichTextField
-                  label="Notes"
-                  value={notes}
-                  onChange={setNotes}
-                  onBlur={handleNotesBlur}
-                  placeholder="Add notes and instructions for technicians…"
+                  label="Job Info"
+                  value={additionalInfo}
+                  onChange={setAdditionalInfo}
+                  onBlur={handleAdditionalInfoBlur}
+                  placeholder="Add any additional information or context…"
                 />
               </div>
 
@@ -951,11 +951,11 @@ export default function JobDetails({ job: initialJob, onClose, onStatusChange, o
 
               <div className="bg-white rounded-lg p-4">
                 <RichTextField
-                  label="Job Info"
-                  value={additionalInfo}
-                  onChange={setAdditionalInfo}
-                  onBlur={handleAdditionalInfoBlur}
-                  placeholder="Add any additional information or context…"
+                  label="Notes"
+                  value={notes}
+                  onChange={setNotes}
+                  onBlur={handleNotesBlur}
+                  placeholder="Add notes and instructions for technicians…"
                 />
               </div>
 
