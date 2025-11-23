@@ -234,6 +234,8 @@ export default function Jobs() {
 
   // Debug logging
   useEffect(() => {
+    console.log('[Jobs Debug] Raw jobs count:', jobs.length);
+    console.log('[Jobs Debug] Raw jobs:', jobs);
     console.log('[Jobs Debug] Filters applied:');
     console.log('  - Status filter:', statusFilter);
     console.log('  - Technician filter:', technicianFilter);
@@ -241,9 +243,13 @@ export default function Jobs() {
     console.log('  - Date to:', dateTo);
     console.log('  - Search term:', searchTerm);
     console.log('  - Is technician:', isTechnician);
+    console.log('  - User:', user);
     console.log('[Jobs Debug] Jobs after filtering:', filteredJobs.length);
     console.log('[Jobs Debug] Filtered jobs:', filteredJobs);
-  }, [filteredJobs, statusFilter, technicianFilter, dateFrom, dateTo, searchTerm, isTechnician]);
+    console.log('[Jobs Debug] showForm:', showForm);
+    console.log('[Jobs Debug] selectedJob:', selectedJob);
+    console.log('[Jobs Debug] viewMode:', viewMode);
+  }, [jobs, filteredJobs, statusFilter, technicianFilter, dateFrom, dateTo, searchTerm, isTechnician, user, showForm, selectedJob, viewMode]);
 
   if (showForm) {
     return (
