@@ -6,7 +6,7 @@ import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Label } from "@/components/ui/label";
 import { Separator } from "@/components/ui/separator";
-import { ArrowLeft, MapPin, Phone, Calendar, Clock, User, Briefcase, FileText, Image as ImageIcon, DollarSign, Sparkles, LogIn, FileCheck, History, Package, ClipboardCheck, LogOut, Timer, AlertCircle, ChevronDown, Mail, Navigation, Trash2, FolderKanban, Camera, Edit, ExternalLink, Receipt, MessageCircle } from "lucide-react";
+import { ArrowLeft, MapPin, Phone, Calendar, Clock, User, Briefcase, FileText, Image as ImageIcon, DollarSign, Sparkles, LogIn, FileCheck, History, Package, ClipboardCheck, LogOut, Timer, AlertCircle, ChevronDown, Mail, Navigation, Trash2, FolderKanban, Camera, Edit, ExternalLink, MessageCircle } from "lucide-react";
 import { format, parseISO } from "date-fns";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
@@ -24,8 +24,6 @@ import CustomerEditModal from "../customers/CustomerEditModal";
 import RichTextField from "../common/RichTextField";
 import { determineJobStatus } from "./jobStatusHelper";
 import TechnicianAvatar, { TechnicianAvatarGroup } from "../common/TechnicianAvatar";
-import InvoiceForm from "../invoices/InvoiceForm";
-import InvoiceList from "../invoices/InvoiceList";
 import JobActivityLog from "./JobActivityLog";
 import JobChat from "./JobChat";
 import JobMapView from "./JobMapView";
@@ -132,8 +130,6 @@ export default function JobDetails({ job: initialJob, onClose, onStatusChange, o
   const [showHistory, setShowHistory] = useState(false);
   const [showCustomerEdit, setShowCustomerEdit] = useState(false);
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
-  const [showInvoiceForm, setShowInvoiceForm] = useState(false);
-  const [selectedInvoice, setSelectedInvoice] = useState(null);
   const [user, setUser] = useState(null);
   const [measurements, setMeasurements] = useState(job.measurements || null);
   const [notes, setNotes] = useState(job.notes || "");
@@ -190,11 +186,6 @@ export default function JobDetails({ job: initialJob, onClose, onStatusChange, o
     queryKey: ['customer', job.customer_id],
     queryFn: () => base44.entities.Customer.get(job.customer_id),
     enabled: !!job.customer_id
-  });
-
-  const { data: invoices = [] } = useQuery({
-    queryKey: ['invoices', job.id],
-    queryFn: () => base44.entities.Invoice.filter({ job_id: job.id }, '-created_date')
   });
 
   const activeCheckIn = checkIns.find((c) => !c.check_out_time && c.technician_email === user?.email);
@@ -1332,21 +1323,6 @@ export default function JobDetails({ job: initialJob, onClose, onStatusChange, o
                   emptyText="Upload media" />
 
 
-                <div className="pt-3 border-t-2 space-y-3">
-                  <div className="flex items-center justify-between">
-                    <h4 className="text-[16px] font-semibold text-[#111827] leading-[1.2]">Invoices</h4>
-                    <Button
-                      onClick={() => setShowInvoiceForm(true)}
-                      size="sm"
-                      className="bg-[#FAE008] text-[#111827] hover:bg-[#E5CF07] font-semibold h-9"
-                    >
-                      <Receipt className="w-4 h-4 mr-2" />
-                      Create Invoice
-                    </Button>
-                  </div>
-                  <InvoiceList invoices={invoices} onSelectInvoice={setSelectedInvoice} />
-                </div>
-
                 <div className="grid md:grid-cols-2 gap-2.5 pt-3 border-t-2">
                   <EditableFileUpload
                     files={job.quote_url}
@@ -1457,77 +1433,6 @@ export default function JobDetails({ job: initialJob, onClose, onStatusChange, o
         </AlertDialogContent>
       </AlertDialog>
 
-      <Dialog open={showInvoiceForm} onOpenChange={setShowInvoiceForm}>
-        <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
-          <DialogHeader>
-            <DialogTitle>Create Invoice</DialogTitle>
-          </DialogHeader>
-          <InvoiceForm
-            job={job}
-            onSuccess={() => {
-              setShowInvoiceForm(false);
-              queryClient.invalidateQueries({ queryKey: ['invoices', job.id] });
-            }}
-            onCancel={() => setShowInvoiceForm(false)}
-          />
-        </DialogContent>
-      </Dialog>
-
-      <Dialog open={!!selectedInvoice} onOpenChange={() => setSelectedInvoice(null)}>
-        <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
-          <DialogHeader>
-            <DialogTitle>{selectedInvoice?.invoice_number}</DialogTitle>
-          </DialogHeader>
-          {selectedInvoice && (
-            <div className="space-y-4">
-              <div className="grid grid-cols-2 gap-4 text-sm">
-                <div>
-                  <span className="text-[#6B7280]">Customer:</span>
-                  <div className="font-semibold text-[#111827]">{selectedInvoice.customer_name}</div>
-                </div>
-                <div>
-                  <span className="text-[#6B7280]">Status:</span>
-                  <div><Badge>{selectedInvoice.status}</Badge></div>
-                </div>
-                <div>
-                  <span className="text-[#6B7280]">Invoice Date:</span>
-                  <div className="font-semibold text-[#111827]">
-                    {format(new Date(selectedInvoice.invoice_date), 'MMM d, yyyy')}
-                  </div>
-                </div>
-                <div>
-                  <span className="text-[#6B7280]">Due Date:</span>
-                  <div className="font-semibold text-[#111827]">
-                    {format(new Date(selectedInvoice.due_date), 'MMM d, yyyy')}
-                  </div>
-                </div>
-              </div>
-              <div className="border-t pt-4">
-                <div className="space-y-2 text-sm">
-                  <div className="flex justify-between">
-                    <span>Subtotal:</span>
-                    <span className="font-semibold">${selectedInvoice.subtotal.toFixed(2)}</span>
-                  </div>
-                  <div className="flex justify-between">
-                    <span>GST (10%):</span>
-                    <span className="font-semibold">${selectedInvoice.tax_amount.toFixed(2)}</span>
-                  </div>
-                  <div className="flex justify-between text-lg font-bold pt-2 border-t">
-                    <span>Total:</span>
-                    <span>${selectedInvoice.total.toFixed(2)}</span>
-                  </div>
-                </div>
-              </div>
-              {selectedInvoice.notes && (
-                <div className="border-t pt-4">
-                  <span className="text-sm text-[#6B7280]">Notes:</span>
-                  <p className="text-sm text-[#111827] mt-1">{selectedInvoice.notes}</p>
-                </div>
-              )}
-            </div>
-          )}
-        </DialogContent>
-      </Dialog>
-    </>);
+      </>);
 
 }
