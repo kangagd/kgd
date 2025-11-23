@@ -144,7 +144,7 @@ export default function PriceList() {
         </div>
 
         {(lowStockCount > 0 || outOfStockCount > 0) && (
-          <div className="mb-lg flex gap-md flex-wrap">
+          <div className="mb-4 flex gap-3 flex-wrap">
             {lowStockCount > 0 && (
               <Button
                 variant="outline"
@@ -168,7 +168,7 @@ export default function PriceList() {
           </div>
         )}
 
-        <div className="space-y-xl section-gap">
+        <div className="flex flex-col gap-4 mb-6">
           <div className="relative w-full">
             <Search className="absolute left-4 top-1/2 transform -translate-y-1/2 w-5 h-5 text-[#6B7280]" />
             <Input

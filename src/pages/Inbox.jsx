@@ -359,7 +359,7 @@ export default function Inbox() {
             />
           </div>
 
-          <div className="space-y-lg">
+          <div className="flex flex-col gap-4">
             <div className="chip-container -mx-4 px-4 md:mx-0 md:px-0">
               <Tabs value={statusFilter} onValueChange={setStatusFilter} className="w-full">
                 <TabsList className="w-full grid grid-cols-4 gap-1 min-w-max md:min-w-0">
@@ -371,7 +371,7 @@ export default function Inbox() {
               </Tabs>
             </div>
 
-            <div className="flex items-center gap-md">
+            <div className="flex items-center gap-3">
               <Select value={priorityFilter} onValueChange={setPriorityFilter}>
                 <SelectTrigger className="flex-1">
                   <SelectValue placeholder="Priority" />
@@ -415,7 +415,7 @@ export default function Inbox() {
         {selectedThreadIds.length > 0 && (
           <div className="px-4 md:px-5 py-3 bg-[#FAE008]/20 border-b border-[#FAE008]/30 overflow-x-hidden">
             <div className="chip-container -mx-4 px-4 md:mx-0 md:px-0">
-              <div className="flex items-center gap-md min-w-max md:min-w-0">
+              <div className="flex items-center gap-3 min-w-max md:min-w-0">
             <Button
               variant="ghost"
               size="sm"

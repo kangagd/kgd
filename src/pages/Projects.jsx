@@ -277,9 +277,9 @@ export default function Projects() {
 
           {showFilters && (
             <Card className="border border-[#E5E7EB]">
-              <CardContent className="p-lg">
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-md">
-                  <div className="space-y-sm">
+              <CardContent className="p-4">
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                  <div className="space-y-2">
                     <Label>Project Stage</Label>
                     <Select value={stageFilter} onValueChange={setStageFilter}>
                       <SelectTrigger>
@@ -299,7 +299,7 @@ export default function Projects() {
                     </Select>
                   </div>
 
-                  <div className="space-y-sm">
+                  <div className="space-y-2">
                     <Label>Parts Status</Label>
                     <Select value={partsStatusFilter} onValueChange={setPartsStatusFilter}>
                       <SelectTrigger>
@@ -316,7 +316,7 @@ export default function Projects() {
                     </Select>
                   </div>
 
-                  <div className="space-y-sm">
+                  <div className="space-y-2">
                     <Label>Sort By</Label>
                     <Select value={sortBy} onValueChange={setSortBy}>
                       <SelectTrigger>
@@ -329,7 +329,7 @@ export default function Projects() {
                     </Select>
                   </div>
 
-                  <div className="space-y-sm">
+                  <div className="space-y-2">
                     <Label>Start Date</Label>
                     <Input
                       type="date"
@@ -338,7 +338,7 @@ export default function Projects() {
                     />
                   </div>
 
-                  <div className="space-y-sm">
+                  <div className="space-y-2">
                     <Label>End Date</Label>
                     <Input
                       type="date"

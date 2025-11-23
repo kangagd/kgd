@@ -103,8 +103,8 @@ export default function Photos() {
         </div>
 
         {/* Search and Filters */}
-        <div className="space-y-xl section-gap">
-          <div className="flex gap-md flex-col md:flex-row">
+        <div className="flex flex-col gap-4 mb-6">
+          <div className="flex gap-3 flex-col md:flex-row">
             <div className="relative flex-1">
               <Search className="absolute left-4 top-1/2 transform -translate-y-1/2 w-5 h-5 text-[#6B7280]" />
               <Input
@@ -133,9 +133,9 @@ export default function Photos() {
 
           {showFilters && (
             <Card className="rounded-lg border border-[#E5E7EB]">
-              <CardContent className="p-lg">
+              <CardContent className="p-4">
                 <div className="chip-container -mx-4 px-4 md:mx-0 md:px-0">
-                  <div className="flex gap-md pb-2 min-w-max md:min-w-0 md:flex-wrap">
+                  <div className="flex gap-3 pb-2 min-w-max md:min-w-0 md:flex-wrap">
                     <div className="min-w-[200px]">
                       <label className="text-xs font-bold text-[#111827] mb-1.5 block tracking-tight uppercase">
                         Product Type

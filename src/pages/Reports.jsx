@@ -230,10 +230,10 @@ export default function Reports() {
         </div>
 
         {/* Filters */}
-        <Card className="section-gap border border-[#E5E7EB]">
-          <CardContent className="p-lg">
-            <div className="grid grid-cols-1 md:grid-cols-4 gap-md">
-              <div className="space-y-sm">
+        <Card className="mb-6 border border-[#E5E7EB]">
+          <CardContent className="p-4">
+            <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+              <div className="space-y-2">
                 <Label className="flex items-center gap-2">
                   <Calendar className="w-4 h-4" />
                   From Date
@@ -246,7 +246,7 @@ export default function Reports() {
                 />
               </div>
               
-              <div className="space-y-sm">
+              <div className="space-y-2">
                 <Label className="flex items-center gap-2">
                   <Calendar className="w-4 h-4" />
                   To Date
@@ -259,7 +259,7 @@ export default function Reports() {
                 />
               </div>
 
-              <div className="space-y-sm md:col-span-2">
+              <div className="space-y-2 md:col-span-2">
                 <Label>Project Status</Label>
                 <Tabs value={projectStatusFilter} onValueChange={setProjectStatusFilter}>
                   <TabsList className="w-full">
@@ -274,7 +274,7 @@ export default function Reports() {
         </Card>
 
         {/* Key Metrics */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-lg section-gap">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
           <Card className="border border-[#E5E7EB]">
             <CardContent className="p-6">
               <div className="flex items-center justify-between mb-2">
@@ -331,7 +331,7 @@ export default function Reports() {
         </div>
 
         {/* Charts Row 1 */}
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-xl section-gap">
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
           {/* Project Status Distribution */}
           <Card className="border border-[#E5E7EB]">
             <CardHeader>
@@ -388,7 +388,7 @@ export default function Reports() {
         </div>
 
         {/* Technician Performance */}
-        <Card className="border border-[#E5E7EB] section-gap">
+        <Card className="border border-[#E5E7EB] mb-6">
           <CardHeader>
             <CardTitle className="text-[18px] font-semibold">Technician Performance</CardTitle>
           </CardHeader>
@@ -431,7 +431,7 @@ export default function Reports() {
         </Card>
 
         {/* Inventory & Parts Status */}
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-xl">
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
           {/* Inventory Status */}
           <Card className="border border-[#E5E7EB]">
             <CardHeader>
