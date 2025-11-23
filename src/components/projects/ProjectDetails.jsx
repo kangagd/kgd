@@ -39,7 +39,8 @@ const statusColors = {
   "Final Measure": "bg-cyan-100 text-cyan-700",
   "Parts Ordered": "bg-amber-100 text-amber-700",
   "Scheduled": "bg-[#fae008]/20 text-[#92400E]",
-  "Completed": "bg-emerald-100 text-emerald-700"
+  "Completed": "bg-emerald-100 text-emerald-700",
+  "Warranty": "bg-red-100 text-red-700"
 };
 
 const financialStatusColors = {

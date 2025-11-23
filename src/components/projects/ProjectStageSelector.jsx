@@ -9,7 +9,8 @@ const PROJECT_STAGES = [
   "Final Measure",
   "Parts Ordered",
   "Scheduled",
-  "Completed"
+  "Completed",
+  "Warranty"
 ];
 
 export default function ProjectStageSelector({ currentStage, onStageChange, size = "default" }) {
