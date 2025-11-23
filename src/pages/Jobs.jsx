@@ -58,10 +58,21 @@ export default function Jobs() {
   const { data: jobs = [], isLoading, refetch } = useQuery({
     queryKey: ['allJobs'],
     queryFn: async () => {
-      const allJobs = await base44.entities.Job.filter({ deleted_at: { $exists: false } }, '-created_date');
-      console.log('[Jobs Debug] Total jobs fetched:', allJobs.length);
-      console.log('[Jobs Debug] All jobs:', allJobs);
-      return allJobs;
+      try {
+        console.log('[Jobs Debug] Fetching jobs...');
+        const allJobs = await base44.entities.Job.list();
+        console.log('[Jobs Debug] ✅ Total jobs fetched:', allJobs.length);
+        console.log('[Jobs Debug] All jobs:', allJobs);
+        
+        // Filter out deleted jobs in the frontend
+        const activeJobs = allJobs.filter(job => !job.deleted_at);
+        console.log('[Jobs Debug] Active jobs (not deleted):', activeJobs.length);
+        
+        return activeJobs;
+      } catch (error) {
+        console.error('[Jobs Debug] ❌ Error fetching jobs:', error);
+        return [];
+      }
     },
     refetchInterval: 5000,
     refetchOnMount: 'always',
