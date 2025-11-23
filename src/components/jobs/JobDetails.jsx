@@ -951,7 +951,7 @@ export default function JobDetails({ job: initialJob, onClose, onStatusChange, o
 
               <div className="bg-white rounded-lg p-4">
                 <RichTextField
-                  label="Additional Info"
+                  label="Job Info"
                   value={additionalInfo}
                   onChange={setAdditionalInfo}
                   onBlur={handleAdditionalInfoBlur}
