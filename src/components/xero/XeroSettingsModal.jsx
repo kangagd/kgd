@@ -83,13 +83,13 @@ export default function XeroSettingsModal({ open, onClose }) {
             <Label htmlFor="account_code">Default Account Code *</Label>
             <Input
               id="account_code"
-              placeholder="e.g., 200 (Sales)"
+              placeholder="e.g., 200"
               value={formData.default_account_code}
-              onChange={(e) => setFormData({...formData, default_account_code: e.target.value})}
+              onChange={(e) => setFormData({...formData, default_account_code: e.target.value.trim()})}
               required
             />
-            <p className="text-xs text-gray-500 mt-1">
-              The Xero account code for sales revenue
+            <p className="text-xs text-red-600 mt-1 font-medium">
+              Enter only the numeric code (e.g., "200"), not the full name
             </p>
           </div>
 
@@ -97,13 +97,13 @@ export default function XeroSettingsModal({ open, onClose }) {
             <Label htmlFor="tax_type">Default Tax Type *</Label>
             <Input
               id="tax_type"
-              placeholder="e.g., OUTPUT2 (GST on Income)"
+              placeholder="e.g., OUTPUT2"
               value={formData.default_tax_type}
-              onChange={(e) => setFormData({...formData, default_tax_type: e.target.value})}
+              onChange={(e) => setFormData({...formData, default_tax_type: e.target.value.trim().toUpperCase()})}
               required
             />
-            <p className="text-xs text-gray-500 mt-1">
-              Common: OUTPUT2 (GST on Income), TAX001 (10% GST)
+            <p className="text-xs text-red-600 mt-1 font-medium">
+              Enter the exact tax code from Xero (e.g., "OUTPUT2" for GST on Income)
             </p>
           </div>
 
