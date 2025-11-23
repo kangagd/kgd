@@ -49,10 +49,14 @@ Deno.serve(async (req) => {
       return Response.json({ error: 'Unauthorized - Admin access required' }, { status: 403 });
     }
 
-    const { job_id, amount } = await req.json();
+    const { job_id, lineItems, total } = await req.json();
 
     if (!job_id) {
       return Response.json({ error: 'job_id is required' }, { status: 400 });
+    }
+
+    if (!lineItems || lineItems.length === 0) {
+      return Response.json({ error: 'Line items are required' }, { status: 400 });
     }
 
     // Get job and related data
@@ -74,14 +78,23 @@ Deno.serve(async (req) => {
     const xeroSettings = settings[0];
     const connection = await refreshAndGetConnection(base44);
 
-    // Build invoice description
-    let description = `Job #${job.job_number}`;
-    if (job.job_type) description += ` - ${job.job_type}`;
-    if (job.project_name) description += ` - ${job.project_name}`;
-
     // Prepare invoice payload
     const today = new Date().toISOString().split('T')[0];
     const dueDate = new Date(Date.now() + (xeroSettings.payment_terms_days || 7) * 24 * 60 * 60 * 1000).toISOString().split('T')[0];
+
+    // Build invoice reference for first line item
+    let reference = `Job #${job.job_number}`;
+    if (job.job_type) reference += ` - ${job.job_type}`;
+    if (job.project_name) reference += ` - ${job.project_name}`;
+
+    // Convert line items to Xero format
+    const xeroLineItems = lineItems.map((item, index) => ({
+      Description: index === 0 ? `${reference}\n${item.description}` : item.description,
+      Quantity: 1,
+      UnitAmount: item.amount,
+      AccountCode: xeroSettings.default_account_code,
+      TaxType: xeroSettings.default_tax_type
+    }));
 
     const invoicePayload = {
       Invoices: [{
@@ -92,14 +105,9 @@ Deno.serve(async (req) => {
         },
         Date: today,
         DueDate: dueDate,
-        LineItems: [{
-          Description: description,
-          Quantity: 1,
-          UnitAmount: amount || 0,
-          AccountCode: xeroSettings.default_account_code,
-          TaxType: xeroSettings.default_tax_type
-        }],
-        Status: 'AUTHORISED'
+        LineItems: xeroLineItems,
+        Status: 'AUTHORISED',
+        Reference: `Job #${job.job_number}`
       }]
     };
 

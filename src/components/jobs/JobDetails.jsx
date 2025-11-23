@@ -354,10 +354,11 @@ export default function JobDetails({ job: initialJob, onClose, onStatusChange, o
   const isAdmin = user?.role === 'admin';
 
   const createInvoiceMutation = useMutation({
-    mutationFn: async (amount) => {
+    mutationFn: async (invoiceData) => {
       const response = await base44.functions.invoke('createInvoiceFromJob', { 
         job_id: job.id,
-        amount: amount 
+        lineItems: invoiceData.lineItems,
+        total: invoiceData.total
       });
       return response.data;
     },
@@ -1491,7 +1492,7 @@ export default function JobDetails({ job: initialJob, onClose, onStatusChange, o
       <CreateInvoiceModal
         open={showInvoiceModal}
         onClose={() => setShowInvoiceModal(false)}
-        onConfirm={(amount) => createInvoiceMutation.mutate(amount)}
+        onConfirm={(invoiceData) => createInvoiceMutation.mutate(invoiceData)}
         isSubmitting={createInvoiceMutation.isPending}
         type="job"
         data={{

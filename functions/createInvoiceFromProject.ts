@@ -49,10 +49,14 @@ Deno.serve(async (req) => {
       return Response.json({ error: 'Unauthorized - Admin access required' }, { status: 403 });
     }
 
-    const { project_id, amount } = await req.json();
+    const { project_id, lineItems, total } = await req.json();
 
     if (!project_id) {
       return Response.json({ error: 'project_id is required' }, { status: 400 });
+    }
+
+    if (!lineItems || lineItems.length === 0) {
+      return Response.json({ error: 'Line items are required' }, { status: 400 });
     }
 
     // Get project and related data
@@ -77,14 +81,23 @@ Deno.serve(async (req) => {
     // Get associated jobs count
     const jobs = await base44.asServiceRole.entities.Job.filter({ project_id: project.id });
 
-    // Build invoice description
-    let description = `Project: ${project.title}`;
-    if (project.project_type) description += ` - ${project.project_type}`;
-    if (jobs.length > 0) description += ` (${jobs.length} job${jobs.length > 1 ? 's' : ''})`;
-
     // Prepare invoice payload
     const today = new Date().toISOString().split('T')[0];
     const dueDate = new Date(Date.now() + (xeroSettings.payment_terms_days || 7) * 24 * 60 * 60 * 1000).toISOString().split('T')[0];
+
+    // Build invoice reference
+    let reference = `Project: ${project.title}`;
+    if (project.project_type) reference += ` - ${project.project_type}`;
+    if (jobs.length > 0) reference += ` (${jobs.length} job${jobs.length > 1 ? 's' : ''})`;
+
+    // Convert line items to Xero format
+    const xeroLineItems = lineItems.map((item, index) => ({
+      Description: index === 0 ? `${reference}\n${item.description}` : item.description,
+      Quantity: 1,
+      UnitAmount: item.amount,
+      AccountCode: xeroSettings.default_account_code,
+      TaxType: xeroSettings.default_tax_type
+    }));
 
     const invoicePayload = {
       Invoices: [{
@@ -95,14 +108,9 @@ Deno.serve(async (req) => {
         },
         Date: today,
         DueDate: dueDate,
-        LineItems: [{
-          Description: description,
-          Quantity: 1,
-          UnitAmount: amount || project.quote_value || 0,
-          AccountCode: xeroSettings.default_account_code,
-          TaxType: xeroSettings.default_tax_type
-        }],
-        Status: 'AUTHORISED'
+        LineItems: xeroLineItems,
+        Status: 'AUTHORISED',
+        Reference: project.title
       }]
     };
 

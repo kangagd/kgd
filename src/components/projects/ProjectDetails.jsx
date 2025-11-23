@@ -198,10 +198,11 @@ export default function ProjectDetails({ project: initialProject, onClose, onEdi
   });
 
   const createProjectInvoiceMutation = useMutation({
-    mutationFn: async (amount) => {
+    mutationFn: async (invoiceData) => {
       const response = await base44.functions.invoke('createInvoiceFromProject', { 
         project_id: project.id,
-        amount: amount 
+        lineItems: invoiceData.lineItems,
+        total: invoiceData.total
       });
       return response.data;
     },
@@ -1367,7 +1368,7 @@ Format as HTML bullet points using <ul> and <li> tags. Include only the most cri
       <CreateInvoiceModal
         open={showInvoiceModal}
         onClose={() => setShowInvoiceModal(false)}
-        onConfirm={(amount) => createProjectInvoiceMutation.mutate(amount)}
+        onConfirm={(invoiceData) => createProjectInvoiceMutation.mutate(invoiceData)}
         isSubmitting={createProjectInvoiceMutation.isPending}
         type="project"
         data={{
