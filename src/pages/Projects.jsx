@@ -242,112 +242,101 @@ export default function Projects() {
         </div>
 
         <div className="flex flex-col gap-3 mb-6">
-          <div className="flex flex-col md:flex-row gap-3">
+          <div className="flex gap-3">
             <div className="relative flex-1">
-              <Search className="absolute left-4 top-1/2 transform -translate-y-1/2 w-5 h-5 text-[#6B7280]" />
+              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-[#6B7280]" />
               <Input
                 placeholder="Search projects..."
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
-                className="pl-12 border border-[#E5E7EB] focus:border-[#FAE008] focus:ring-2 focus:ring-[#FAE008]/20 transition-all h-12 text-base rounded-lg w-full"
+                className="pl-9 pr-3 border border-[#E5E7EB] focus:border-[#111827] focus:ring-1 focus:ring-[#111827] transition-all h-10 text-sm rounded-lg w-full"
               />
             </div>
-            <Button
-              variant="outline"
-              onClick={() => setShowFilters(!showFilters)}
-              className="h-12 px-4 border border-[#E5E7EB] hover:border-[#FAE008] hover:bg-[#FFFEF5] flex-shrink-0"
-            >
-              <SlidersHorizontal className="w-5 h-5 mr-2" />
-              Filters
-            </Button>
           </div>
 
-          <div className="chip-container -mx-4 px-4 md:mx-0 md:px-0">
-            <Tabs value={stageFilter} onValueChange={setStageFilter} className="w-full">
-              <TabsList className="w-full justify-start min-w-max md:min-w-0">
-                <TabsTrigger value="all" className="flex-1 whitespace-nowrap">All Projects</TabsTrigger>
-                {Object.keys(statusColors).map((stage) => (
-                  <TabsTrigger key={stage} value={stage} className="flex-1 whitespace-nowrap">
+          <div className="flex items-center gap-3">
+            <Tabs value={stageFilter} onValueChange={setStageFilter} className="flex-1">
+              <TabsList className="w-full">
+                <TabsTrigger value="all" className="flex-1">All Projects</TabsTrigger>
+                {Object.keys(statusColors).slice(0, 3).map((stage) => (
+                  <TabsTrigger key={stage} value={stage} className="flex-1">
                     {stage}
                   </TabsTrigger>
                 ))}
               </TabsList>
             </Tabs>
+            <Button
+              variant="outline"
+              onClick={() => setShowFilters(!showFilters)}
+              className="flex-shrink-0 h-10 px-3 border border-[#E5E7EB] hover:border-[#FAE008] hover:bg-[#FFFEF5] gap-2"
+            >
+              <SlidersHorizontal className="w-4 h-4" />
+              Filters
+            </Button>
           </div>
 
           {showFilters && (
             <Card className="border border-[#E5E7EB]">
               <CardContent className="p-4">
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                  <div className="space-y-2">
-                    <Label>Project Stage</Label>
-                    <Select value={stageFilter} onValueChange={setStageFilter}>
-                      <SelectTrigger>
-                        <SelectValue placeholder="All Stages" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="all">All Stages</SelectItem>
-                        <SelectItem value="Lead">Lead</SelectItem>
-                        <SelectItem value="Initial Site Visit">Initial Site Visit</SelectItem>
-                        <SelectItem value="Quote Sent">Quote Sent</SelectItem>
-                        <SelectItem value="Quote Approved">Quote Approved</SelectItem>
-                        <SelectItem value="Final Measure">Final Measure</SelectItem>
-                        <SelectItem value="Parts Ordered">Parts Ordered</SelectItem>
-                        <SelectItem value="Scheduled">Scheduled</SelectItem>
-                        <SelectItem value="Completed">Completed</SelectItem>
-                      </SelectContent>
-                    </Select>
-                  </div>
+                <div className="flex flex-wrap gap-3">
+                  <Select value={stageFilter} onValueChange={setStageFilter}>
+                    <SelectTrigger className="w-full md:w-[200px] h-10">
+                      <SelectValue placeholder="All Stages" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="all">All Stages</SelectItem>
+                      <SelectItem value="Lead">Lead</SelectItem>
+                      <SelectItem value="Initial Site Visit">Initial Site Visit</SelectItem>
+                      <SelectItem value="Quote Sent">Quote Sent</SelectItem>
+                      <SelectItem value="Quote Approved">Quote Approved</SelectItem>
+                      <SelectItem value="Final Measure">Final Measure</SelectItem>
+                      <SelectItem value="Parts Ordered">Parts Ordered</SelectItem>
+                      <SelectItem value="Scheduled">Scheduled</SelectItem>
+                      <SelectItem value="Completed">Completed</SelectItem>
+                    </SelectContent>
+                  </Select>
 
-                  <div className="space-y-2">
-                    <Label>Parts Status</Label>
-                    <Select value={partsStatusFilter} onValueChange={setPartsStatusFilter}>
-                      <SelectTrigger>
-                        <SelectValue placeholder="All Statuses" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="all">All Statuses</SelectItem>
-                        <SelectItem value="Pending">Pending</SelectItem>
-                        <SelectItem value="Ordered">Ordered</SelectItem>
-                        <SelectItem value="Back-ordered">Back-ordered</SelectItem>
-                        <SelectItem value="Delivered">Delivered</SelectItem>
-                        <SelectItem value="Cancelled">Cancelled</SelectItem>
-                      </SelectContent>
-                    </Select>
-                  </div>
+                  <Select value={partsStatusFilter} onValueChange={setPartsStatusFilter}>
+                    <SelectTrigger className="w-full md:w-[180px] h-10">
+                      <SelectValue placeholder="Parts Status" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="all">All Statuses</SelectItem>
+                      <SelectItem value="Pending">Pending</SelectItem>
+                      <SelectItem value="Ordered">Ordered</SelectItem>
+                      <SelectItem value="Back-ordered">Back-ordered</SelectItem>
+                      <SelectItem value="Delivered">Delivered</SelectItem>
+                      <SelectItem value="Cancelled">Cancelled</SelectItem>
+                    </SelectContent>
+                  </Select>
 
-                  <div className="space-y-2">
-                    <Label>Sort By</Label>
-                    <Select value={sortBy} onValueChange={setSortBy}>
-                      <SelectTrigger>
-                        <SelectValue />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="created_date">Order Date (Newest)</SelectItem>
-                        <SelectItem value="stage">Project Stage</SelectItem>
-                      </SelectContent>
-                    </Select>
-                  </div>
+                  <Select value={sortBy} onValueChange={setSortBy}>
+                    <SelectTrigger className="w-full md:w-[200px] h-10">
+                      <SelectValue placeholder="Sort by" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="created_date">Order Date (Newest)</SelectItem>
+                      <SelectItem value="stage">Project Stage</SelectItem>
+                    </SelectContent>
+                  </Select>
 
-                  <div className="space-y-2">
-                    <Label>Start Date</Label>
-                    <Input
-                      type="date"
-                      value={startDate}
-                      onChange={(e) => setStartDate(e.target.value)}
-                    />
-                  </div>
+                  <Input
+                    type="date"
+                    value={startDate}
+                    onChange={(e) => setStartDate(e.target.value)}
+                    placeholder="Start Date"
+                    className="w-full md:w-[160px] h-10"
+                  />
 
-                  <div className="space-y-2">
-                    <Label>End Date</Label>
-                    <Input
-                      type="date"
-                      value={endDate}
-                      onChange={(e) => setEndDate(e.target.value)}
-                    />
-                  </div>
+                  <Input
+                    type="date"
+                    value={endDate}
+                    onChange={(e) => setEndDate(e.target.value)}
+                    placeholder="End Date"
+                    className="w-full md:w-[160px] h-10"
+                  />
 
-                  <div className="flex items-end">
+                  {(stageFilter !== "all" || partsStatusFilter !== "all" || startDate || endDate || sortBy !== "created_date") && (
                     <Button
                       variant="outline"
                       onClick={() => {
@@ -357,11 +346,11 @@ export default function Projects() {
                         setEndDate("");
                         setSortBy("created_date");
                       }}
-                      className="w-full"
+                      className="h-10"
                     >
                       Clear Filters
                     </Button>
-                  </div>
+                  )}
                 </div>
               </CardContent>
             </Card>
