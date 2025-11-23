@@ -25,12 +25,19 @@ export default function CreateInvoiceModal({
 }) {
   const [lineItems, setLineItems] = useState([{ description: "", amount: "" }]);
   const [error, setError] = useState("");
+  const [searchTerm, setSearchTerm] = useState("");
 
   const { data: priceListItems = [] } = useQuery({
     queryKey: ['priceListItems'],
     queryFn: () => base44.entities.PriceListItem.list('category'),
     enabled: open
   });
+
+  const filteredPriceListItems = priceListItems.filter(item =>
+    item.item?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    item.description?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    item.category?.toLowerCase().includes(searchTerm.toLowerCase())
+  );
 
   const addLineItem = () => {
     setLineItems([...lineItems, { description: "", amount: "" }]);
@@ -93,6 +100,7 @@ export default function CreateInvoiceModal({
   const handleClose = () => {
     setLineItems([{ description: "", amount: "" }]);
     setError("");
+    setSearchTerm("");
     onClose();
   };
 
@@ -187,19 +195,39 @@ export default function CreateInvoiceModal({
 
                   <div>
                     <Label className="text-[12px] text-[#6B7280] mb-1">Quick Select</Label>
-                    <Select onValueChange={(value) => selectPriceListItem(index, value)}>
+                    <Select onValueChange={(value) => {
+                      selectPriceListItem(index, value);
+                      setSearchTerm("");
+                    }}>
                       <SelectTrigger className="h-9 text-sm border-[#E5E7EB]">
                         <SelectValue placeholder="Select from Price List" />
                       </SelectTrigger>
                       <SelectContent>
-                        {priceListItems.map((priceItem) => (
-                          <SelectItem key={priceItem.id} value={priceItem.id}>
-                            <div className="flex items-center justify-between gap-3 w-full">
-                              <span className="text-sm">{priceItem.item}</span>
-                              <span className="text-xs text-[#6B7280]">${priceItem.price}</span>
+                        <div className="px-2 py-2 border-b border-[#E5E7EB]">
+                          <Input
+                            placeholder="Search items..."
+                            value={searchTerm}
+                            onChange={(e) => setSearchTerm(e.target.value)}
+                            className="h-8 text-sm"
+                            onClick={(e) => e.stopPropagation()}
+                          />
+                        </div>
+                        <div className="max-h-[200px] overflow-y-auto">
+                          {filteredPriceListItems.length === 0 ? (
+                            <div className="px-2 py-3 text-sm text-[#6B7280] text-center">
+                              No items found
                             </div>
-                          </SelectItem>
-                        ))}
+                          ) : (
+                            filteredPriceListItems.map((priceItem) => (
+                              <SelectItem key={priceItem.id} value={priceItem.id}>
+                                <div className="flex items-center justify-between gap-3 w-full">
+                                  <span className="text-sm">{priceItem.item}</span>
+                                  <span className="text-xs text-[#6B7280]">${priceItem.price}</span>
+                                </div>
+                              </SelectItem>
+                            ))
+                          )}
+                        </div>
                       </SelectContent>
                     </Select>
                   </div>
