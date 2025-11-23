@@ -321,16 +321,30 @@ export default function Layout({ children, currentPageName }) {
                 <Button
                   onClick={() => navigate(createPageUrl("Jobs") + "?action=create")}
                   className={`bg-[#FAE008] hover:bg-[#E5CF07] text-[#111827] font-semibold shadow-sm ${isCollapsed ? 'w-full px-2' : ''}`}
+                  title={isCollapsed ? "Create Job" : ""}
                 >
-                  <Plus className="w-4 h-4 mr-2" />
-                  {!isCollapsed && "Job"}
+                  {isCollapsed ? (
+                    <Briefcase className="w-4 h-4" />
+                  ) : (
+                    <>
+                      <Plus className="w-4 h-4 mr-2" />
+                      Job
+                    </>
+                  )}
                 </Button>
                 <Button
                   onClick={() => navigate(createPageUrl("Projects") + "?action=create")}
                   className={`bg-[#FAE008] hover:bg-[#E5CF07] text-[#111827] font-semibold shadow-sm ${isCollapsed ? 'w-full px-2' : ''}`}
+                  title={isCollapsed ? "Create Project" : ""}
                 >
-                  <Plus className="w-4 h-4 mr-2" />
-                  {!isCollapsed && "Project"}
+                  {isCollapsed ? (
+                    <FolderKanban className="w-4 h-4" />
+                  ) : (
+                    <>
+                      <Plus className="w-4 h-4 mr-2" />
+                      Project
+                    </>
+                  )}
                 </Button>
               </div>
 
