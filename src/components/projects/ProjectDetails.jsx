@@ -355,7 +355,7 @@ Format as HTML bullet points using <ul> and <li> tags. Include only the most cri
 
     // Stage-based automation
     if (newStage === "Initial Site Visit") {
-      await autoCreateJob("Initial Site Visit");
+      await autoCreateJob("Initial Site Measure");
     } else if (newStage === "Final Measure") {
       await autoCreateJob("Final Measure");
     } else if (newStage === "Scheduled") {
