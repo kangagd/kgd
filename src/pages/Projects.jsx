@@ -270,9 +270,9 @@ export default function Projects() {
             </div>
           </div>
 
-          <div className="chip-container -mx-4 px-4 md:mx-0 md:px-0">
-            <Tabs value={stageFilter} onValueChange={setStageFilter} className="w-full">
-              <TabsList className="inline-flex w-auto min-w-full justify-start">
+          <div className="overflow-x-auto -mx-4 px-4 md:mx-0 md:px-0 scrollbar-hide">
+            <Tabs value={stageFilter} onValueChange={setStageFilter}>
+              <TabsList className="inline-flex w-auto justify-start">
                 <TabsTrigger value="all" className="whitespace-nowrap flex-shrink-0">All Projects</TabsTrigger>
                 {Object.keys(statusColors).map((stage) => (
                   <TabsTrigger key={stage} value={stage} className="whitespace-nowrap flex-shrink-0">
