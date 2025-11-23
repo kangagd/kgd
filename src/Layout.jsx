@@ -65,6 +65,7 @@ export default function Layout({ children, currentPageName }) {
   const [isMoreMenuOpen, setIsMoreMenuOpen] = useState(() => 
     localStorage.getItem('moreMenuOpen') === 'true'
   );
+  const [techMobileMenuOpen, setTechMobileMenuOpen] = useState(false);
 
   useEffect(() => {
     const loadUser = async () => {
@@ -151,8 +152,6 @@ export default function Layout({ children, currentPageName }) {
 
   // Mobile layout for technicians
   if (isTechnician) {
-    const [techMobileMenuOpen, setTechMobileMenuOpen] = React.useState(false);
-
     return (
       <div className="min-h-screen flex flex-col bg-[#ffffff]">
         {/* Mobile Overlay */}
