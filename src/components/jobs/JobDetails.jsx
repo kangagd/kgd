@@ -845,11 +845,11 @@ export default function JobDetails({ job: initialJob, onClose, onStatusChange, o
             }
               <Button
               variant="outline"
-              onClick={() => setShowPriceList(true)}
-              className="flex flex-col items-center gap-1 h-auto py-3 hover:bg-purple-50 hover:border-purple-200 transition-all rounded-lg">
+              onClick={() => setShowAssistant(true)}
+              className="flex flex-col items-center gap-1 h-auto py-3 hover:bg-[#FAE008]/10 hover:border-[#FAE008] transition-all rounded-lg">
 
-                <DollarSign className="w-5 h-5 text-purple-600" />
-                <span className="text-[10px] font-medium text-[#111827] leading-[1.35]">Price</span>
+                <Sparkles className="w-5 h-5 text-[#111827]" />
+                <span className="text-[10px] font-medium text-[#111827] leading-[1.35]">AI</span>
               </Button>
             </div>
           </div>
