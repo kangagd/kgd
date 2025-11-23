@@ -73,6 +73,7 @@ export default function Layout({ children, currentPageName }) {
   const [isPulling, setIsPulling] = useState(false);
   const [isRefreshing, setIsRefreshing] = useState(false);
   const touchStartY = React.useRef(0);
+  const touchStartX = React.useRef(0);
   const scrollPosition = React.useRef(0);
 
   useEffect(() => {
@@ -86,9 +87,10 @@ export default function Layout({ children, currentPageName }) {
     loadUser();
   }, []);
 
-  // Pull to refresh
+  // Pull to refresh and swipe to open menu
   useEffect(() => {
     const handleTouchStart = (e) => {
+      touchStartX.current = e.touches[0].clientX;
       if (window.scrollY === 0) {
         touchStartY.current = e.touches[0].clientY;
         scrollPosition.current = window.scrollY;
@@ -96,21 +98,37 @@ export default function Layout({ children, currentPageName }) {
     };
 
     const handleTouchMove = (e) => {
+      const touchX = e.touches[0].clientX;
+      const touchY = e.touches[0].clientY;
+      const deltaX = touchX - touchStartX.current;
+      const deltaY = touchY - touchStartY.current;
+      
+      // Pull to refresh
       if (isRefreshing) return;
       
-      const touchY = e.touches[0].clientY;
-      const distance = touchY - touchStartY.current;
-      
-      if (distance > 0 && window.scrollY === 0) {
+      if (deltaY > 0 && window.scrollY === 0 && Math.abs(deltaX) < 30) {
         setIsPulling(true);
-        setPullDistance(Math.min(distance * 0.5, 80));
-        if (distance > 80) {
+        setPullDistance(Math.min(deltaY * 0.5, 80));
+        if (deltaY > 80) {
           e.preventDefault();
         }
       }
     };
 
-    const handleTouchEnd = () => {
+    const handleTouchEnd = (e) => {
+      const touchX = e.changedTouches[0].clientX;
+      const deltaX = touchX - touchStartX.current;
+      
+      // Swipe right from left edge to open menu
+      if (touchStartX.current < 30 && deltaX > 80) {
+        if (isTechnician) {
+          setTechMobileMenuOpen(true);
+        } else {
+          setIsMobileMenuOpen(true);
+        }
+      }
+      
+      // Pull to refresh
       if (pullDistance > 60 && !isRefreshing) {
         setIsRefreshing(true);
         window.location.reload();
@@ -129,7 +147,7 @@ export default function Layout({ children, currentPageName }) {
       document.removeEventListener('touchmove', handleTouchMove);
       document.removeEventListener('touchend', handleTouchEnd);
     };
-  }, [pullDistance, isRefreshing]);
+  }, [pullDistance, isRefreshing, isTechnician]);
 
   // Admin check-in/out notifications
   useEffect(() => {
