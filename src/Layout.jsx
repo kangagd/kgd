@@ -205,6 +205,12 @@ export default function Layout({ children, currentPageName }) {
 
   const handleLogout = () => base44.auth.logout();
 
+  const isTechnician = testMode === 'technician' 
+    ? true 
+    : testMode === 'admin' 
+      ? false 
+      : user?.is_field_technician && user?.role !== 'admin';
+
   const handleTestModeToggle = () => {
     const modes = ['off', 'admin', 'technician'];
     setTestMode(modes[(modes.indexOf(testMode) + 1) % modes.length]);
@@ -212,12 +218,6 @@ export default function Layout({ children, currentPageName }) {
 
   const getTestModeLabel = () => 
     testMode === 'admin' ? 'Admin' : testMode === 'technician' ? 'Tech' : 'Off';
-
-  const isTechnician = testMode === 'technician' 
-    ? true 
-    : testMode === 'admin' 
-      ? false 
-      : user?.is_field_technician && user?.role !== 'admin';
   
   const navigationItems = isTechnician ? technicianNavigationItems : primaryNavigationItems;
 
