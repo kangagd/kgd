@@ -1382,13 +1382,6 @@ export default function JobDetails({ job: initialJob, onClose, onStatusChange, o
               </div>
             </TabsContent>
 
-            <TabsContent value="activity" className="mt-2">
-              <div className="space-y-3">
-                <h3 className="text-[16px] font-semibold text-[#111827] leading-[1.2]">Activity Log</h3>
-                <JobActivityLog jobId={job.id} />
-              </div>
-            </TabsContent>
-
             <TabsContent value="chat" className="mt-2">
               <div className="space-y-3">
                 <h3 className="text-[16px] font-semibold text-[#111827] leading-[1.2]">Team Chat</h3>
