@@ -87,6 +87,22 @@ export default function Layout({ children, currentPageName }) {
     loadUser();
   }, []);
 
+  const handleTestModeToggle = () => {
+    const modes = ['off', 'admin', 'technician'];
+    setTestMode(modes[(modes.indexOf(testMode) + 1) % modes.length]);
+  };
+
+  const getTestModeLabel = () => 
+    testMode === 'admin' ? 'Admin' : testMode === 'technician' ? 'Tech' : 'Off';
+
+  const isTechnician = testMode === 'technician' 
+    ? true 
+    : testMode === 'admin' 
+      ? false 
+      : user?.is_field_technician && user?.role !== 'admin';
+  
+  const navigationItems = isTechnician ? technicianNavigationItems : primaryNavigationItems;
+
   // Pull to refresh and swipe to open menu
   useEffect(() => {
     const handleTouchStart = (e) => {
@@ -202,22 +218,6 @@ export default function Layout({ children, currentPageName }) {
     window.addEventListener('keydown', handleEscape);
     return () => window.removeEventListener('keydown', handleEscape);
   }, [isMobileMenuOpen]);
-
-  const handleTestModeToggle = () => {
-    const modes = ['off', 'admin', 'technician'];
-    setTestMode(modes[(modes.indexOf(testMode) + 1) % modes.length]);
-  };
-
-  const getTestModeLabel = () => 
-    testMode === 'admin' ? 'Admin' : testMode === 'technician' ? 'Tech' : 'Off';
-
-  const isTechnician = testMode === 'technician' 
-    ? true 
-    : testMode === 'admin' 
-      ? false 
-      : user?.is_field_technician && user?.role !== 'admin';
-  
-  const navigationItems = isTechnician ? technicianNavigationItems : primaryNavigationItems;
 
   const handleLogout = () => base44.auth.logout();
 
