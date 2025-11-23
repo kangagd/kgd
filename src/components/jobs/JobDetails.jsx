@@ -6,7 +6,7 @@ import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Label } from "@/components/ui/label";
 import { Separator } from "@/components/ui/separator";
-import { ArrowLeft, MapPin, Phone, Calendar, Clock, User, Briefcase, FileText, Image as ImageIcon, DollarSign, Sparkles, LogIn, FileCheck, History, Package, ClipboardCheck, LogOut, Timer, AlertCircle, ChevronDown, Mail, Navigation, Trash2, FolderKanban, Camera, Edit, ExternalLink, Receipt } from "lucide-react";
+import { ArrowLeft, MapPin, Phone, Calendar, Clock, User, Briefcase, FileText, Image as ImageIcon, DollarSign, Sparkles, LogIn, FileCheck, History, Package, ClipboardCheck, LogOut, Timer, AlertCircle, ChevronDown, Mail, Navigation, Trash2, FolderKanban, Camera, Edit, ExternalLink, Receipt, MessageCircle } from "lucide-react";
 import { format, parseISO } from "date-fns";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
@@ -26,6 +26,9 @@ import { determineJobStatus } from "./jobStatusHelper";
 import TechnicianAvatar, { TechnicianAvatarGroup } from "../common/TechnicianAvatar";
 import InvoiceForm from "../invoices/InvoiceForm";
 import InvoiceList from "../invoices/InvoiceList";
+import JobActivityLog from "./JobActivityLog";
+import JobChat from "./JobChat";
+import JobMapView from "./JobMapView";
 import {
   Dialog,
   DialogContent,
@@ -879,7 +882,7 @@ export default function JobDetails({ job: initialJob, onClose, onStatusChange, o
         
         <CardContent className={`p-3 md:p-4 space-y-3 ${isTechnician ? 'pb-32' : ''}`}>
           <Tabs defaultValue="details" className="w-full">
-            <TabsList className="w-full justify-start mb-3">
+            <TabsList className="w-full justify-start mb-3 overflow-x-auto flex-nowrap">
               <TabsTrigger value="details" className="flex-1">Details</TabsTrigger>
               <TabsTrigger value="visit" className="flex-1">
                 <ClipboardCheck className="w-4 h-4 mr-1.5" />
@@ -892,6 +895,18 @@ export default function JobDetails({ job: initialJob, onClose, onStatusChange, o
               <TabsTrigger value="files" className="flex-1">
                 <ImageIcon className="w-4 h-4 mr-1.5" />
                 <span className="hidden md:inline">Files</span>
+              </TabsTrigger>
+              <TabsTrigger value="activity" className="flex-1">
+                <History className="w-4 h-4 mr-1.5" />
+                <span className="hidden md:inline">Activity</span>
+              </TabsTrigger>
+              <TabsTrigger value="chat" className="flex-1">
+                <MessageCircle className="w-4 h-4 mr-1.5" />
+                <span className="hidden md:inline">Chat</span>
+              </TabsTrigger>
+              <TabsTrigger value="map" className="flex-1">
+                <MapPin className="w-4 h-4 mr-1.5" />
+                <span className="hidden md:inline">Map</span>
               </TabsTrigger>
             </TabsList>
 
@@ -1369,9 +1384,41 @@ export default function JobDetails({ job: initialJob, onClose, onStatusChange, o
                 </div>
               </div>
             </TabsContent>
-          </Tabs>
-        </CardContent>
-      </Card>
+
+            <TabsContent value="activity" className="mt-2">
+              <div className="space-y-3">
+                <h3 className="text-[16px] font-semibold text-[#111827] leading-[1.2]">Activity Log</h3>
+                <JobActivityLog jobId={job.id} />
+              </div>
+            </TabsContent>
+
+            <TabsContent value="chat" className="mt-2">
+              <div className="space-y-3">
+                <h3 className="text-[16px] font-semibold text-[#111827] leading-[1.2]">Team Chat</h3>
+                <p className="text-sm text-gray-600">Real-time messaging with assigned technicians and supervisors</p>
+                <JobChat jobId={job.id} />
+              </div>
+            </TabsContent>
+
+            <TabsContent value="map" className="mt-2">
+              <div className="space-y-3">
+                <h3 className="text-[16px] font-semibold text-[#111827] leading-[1.2]">Job Location</h3>
+                <JobMapView job={job} />
+                <div className="flex gap-2">
+                  <Button
+                    variant="outline"
+                    onClick={() => window.open(`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(job.address)}`, '_blank')}
+                    className="flex-1"
+                  >
+                    <Navigation className="w-4 h-4 mr-2" />
+                    Open in Google Maps
+                  </Button>
+                </div>
+              </div>
+            </TabsContent>
+            </Tabs>
+            </CardContent>
+            </Card>
 
       <PriceListModal
         open={showPriceList}
