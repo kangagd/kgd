@@ -174,15 +174,16 @@ export default function Jobs() {
 
   const filteredJobs = jobs.filter((job) => {
     // Technician filtering: only filter if user is explicitly a technician
-    if (isTechnician) {
-      const isAssignedToTechnician = Array.isArray(job.assigned_to) 
-        ? job.assigned_to.includes(user?.email)
-        : job.assigned_to === user?.email;
-      
-      if (!isAssignedToTechnician) {
-        return false;
-      }
-    }
+    // TEMPORARILY COMMENTED OUT FOR DEBUGGING
+    // if (isTechnician) {
+    //   const isAssignedToTechnician = Array.isArray(job.assigned_to) 
+    //     ? job.assigned_to.includes(user?.email)
+    //     : job.assigned_to === user?.email;
+    //   
+    //   if (!isAssignedToTechnician) {
+    //     return false;
+    //   }
+    // }
 
     // Remove URL date filter - let users see all jobs regardless of URL params
     
