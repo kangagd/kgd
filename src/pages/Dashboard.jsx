@@ -4,18 +4,14 @@ import { useQuery } from "@tanstack/react-query";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
+import { ProjectStatusBadge } from "../components/common/StatusBadge";
 import { Plus, TrendingUp, Clock, Briefcase, Calendar, CheckCircle, FolderKanban } from "lucide-react";
 import { format, parseISO } from "date-fns";
 import { useNavigate } from "react-router-dom";
 import { createPageUrl } from "@/utils";
 import JobCard from "../components/jobs/JobCard";
 
-const statusColors = {
-  "Open": "bg-[#F3F4F6] text-[#4B5563] border-[#E5E7EB]",
-  "Scheduled": "bg-[#FAE008] text-[#111827] border-[#FAE008]",
-  "Completed": "bg-[#16A34A]/10 text-[#16A34A] border-[#16A34A]/20",
-  "Cancelled": "bg-[#DC2626]/10 text-[#DC2626] border-[#DC2626]/20"
-};
+
 
 export default function Dashboard() {
   const [user, setUser] = useState(null);
@@ -224,9 +220,7 @@ export default function Dashboard() {
                         <h4 className="text-[16px] font-medium text-[#111827] leading-[1.4] mb-1">{project.title}</h4>
                         <p className="text-[14px] text-[#4B5563] leading-[1.4]">{project.customer_name}</p>
                       </div>
-                      <Badge className={`ml-2 ${project.status === 'Completed' ? 'bg-emerald-100 text-emerald-700' : project.status === 'Scheduled' ? 'bg-[#FAE008] text-[#92400E]' : 'bg-slate-100 text-slate-700'} border-0 font-medium px-2.5 py-0.5 rounded-lg hover:opacity-100`}>
-                        {project.status}
-                      </Badge>
+                      <ProjectStatusBadge value={project.status} className="ml-2" />
                     </div>
                     <p className="text-[12px] text-[#6B7280] leading-[1.35]">
                       Updated {format(parseISO(project.updated_date), 'MMM d, h:mm a')}
