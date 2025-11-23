@@ -23,7 +23,8 @@ import {
   Mail,
   ChevronDown,
   Plus,
-  Search
+  Search,
+  MoreHorizontal
 } from "lucide-react";
 import { base44 } from "@/api/base44Client";
 import { toast } from "sonner";
@@ -71,6 +72,7 @@ export default function Layout({ children, currentPageName }) {
   const [isMoreMenuOpen, setIsMoreMenuOpen] = useState(() => 
     localStorage.getItem('moreMenuOpen') === 'true'
   );
+  const [collapsedMoreOpen, setCollapsedMoreOpen] = useState(false);
   const [techMobileMenuOpen, setTechMobileMenuOpen] = useState(false);
   const [pullDistance, setPullDistance] = useState(0);
   const [isPulling, setIsPulling] = useState(false);
@@ -497,27 +499,44 @@ export default function Layout({ children, currentPageName }) {
                 </div>
               )}
 
-              {/* Collapsed Secondary Items */}
-              {isCollapsed && secondaryNavigationItems.map((item) => {
-                const isActive = location.pathname === item.url;
-                return (
-                  <Link
-                    key={item.title}
-                    to={item.url}
-                    className={`
-                      flex items-center gap-3 px-3 py-2.5 rounded-lg transition-all justify-center relative
-                      ${isActive 
-                        ? 'bg-[#FAE008]/10 text-[#111827] font-semibold' 
-                        : 'text-[#111827] hover:bg-[#F3F4F6]'
-                      }
-                    `}
-                    title={item.title}
-                  >
-                    {isActive && <div className="absolute left-0 w-1 h-6 bg-[#FAE008] rounded-r" />}
-                    <item.icon className={`w-5 h-5 flex-shrink-0 ${isActive ? 'text-[#FAE008]' : 'text-[#111827]'}`} />
-                  </Link>
-                );
-              })}
+              {/* Collapsed More Menu */}
+              {isCollapsed && (
+                <Popover open={collapsedMoreOpen} onOpenChange={setCollapsedMoreOpen}>
+                  <PopoverTrigger asChild>
+                    <button
+                      className="flex items-center gap-3 px-3 py-2.5 rounded-lg transition-all justify-center relative text-[#111827] hover:bg-[#F3F4F6]"
+                      title="More"
+                    >
+                      <MoreHorizontal className="w-5 h-5 flex-shrink-0" />
+                    </button>
+                  </PopoverTrigger>
+                  <PopoverContent side="right" align="start" className="w-56 p-2">
+                    <div className="space-y-1">
+                      {secondaryNavigationItems.map((item) => {
+                        const isActive = location.pathname === item.url;
+                        return (
+                          <Link
+                            key={item.title}
+                            to={item.url}
+                            onClick={() => setCollapsedMoreOpen(false)}
+                            className={`
+                              flex items-center gap-3 px-3 py-2.5 rounded-lg transition-all relative
+                              ${isActive 
+                                ? 'bg-[#FAE008]/10 text-[#111827] font-semibold' 
+                                : 'text-[#111827] hover:bg-[#F3F4F6]'
+                              }
+                            `}
+                          >
+                            {isActive && <div className="absolute left-0 w-1 h-6 bg-[#FAE008] rounded-r" />}
+                            <item.icon className={`w-5 h-5 flex-shrink-0 ${isActive ? 'text-[#FAE008]' : 'text-[#111827]'}`} />
+                            <span className="text-[14px]">{item.title}</span>
+                          </Link>
+                        );
+                      })}
+                    </div>
+                  </PopoverContent>
+                </Popover>
+              )}
             </div>
           </nav>
 
