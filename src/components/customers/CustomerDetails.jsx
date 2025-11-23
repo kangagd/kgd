@@ -112,53 +112,54 @@ export default function CustomerDetails({ customer, onClose, onEdit, onDelete })
           )}
 
           <div className="bg-white rounded-lg border border-[#E5E7EB] p-4">
-            <h3 className="text-[14px] font-semibold text-[#111827] leading-[1.4] mb-3">Contact Information</h3>
-            <div className="space-y-3">
+            <h3 className="text-[14px] font-semibold text-[#111827] leading-[1.4] mb-4">Contact Information</h3>
+            <div className="space-y-5">
               {(customer.address_full || customer.address) && (
-                <div className="flex items-start gap-2.5">
-                  <MapPin className="text-green-600 w-5 h-5 flex-shrink-0 mt-0.5" />
-                  <div className="flex-1 min-w-0">
-                    <div className="text-[12px] text-[#6B7280] font-normal leading-[1.35] mb-0.5">Address</div>
+                <div className="flex items-start gap-3">
+                  <MapPin className="text-green-600 w-6 h-6 flex-shrink-0 mt-0.5" />
+                  <div className="flex-1 min-w-0 flex flex-col gap-1">
+                    <div className="text-sm font-medium text-[#6B7280]">Address</div>
                     <button
                       onClick={() => window.open(`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(customer.address_full || customer.address)}`, '_blank')}
-                      className="text-[14px] text-[#111827] leading-[1.4] hover:text-green-600 transition-colors text-left"
+                      className="text-base text-[#111827] leading-normal hover:text-green-600 transition-colors text-left break-words"
                     >
                       {customer.address_full || customer.address}
                     </button>
                   </div>
                 </div>
               )}
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                {customer.phone && (
-                  <div className="flex items-start gap-2.5">
-                    <Phone className="text-blue-600 w-5 h-5 flex-shrink-0 mt-0.5" />
-                    <div className="flex-1 min-w-0">
-                      <div className="text-[12px] text-[#6B7280] font-normal leading-[1.35] mb-0.5">Phone</div>
-                      <a href={`tel:${customer.phone}`} className="text-[14px] text-[#111827] leading-[1.4] hover:text-blue-600 transition-colors">
-                        {customer.phone}
-                      </a>
-                    </div>
+              
+              {customer.phone && (
+                <div className="flex items-start gap-3">
+                  <Phone className="text-blue-600 w-6 h-6 flex-shrink-0 mt-0.5" />
+                  <div className="flex-1 min-w-0 flex flex-col gap-1">
+                    <div className="text-sm font-medium text-[#6B7280]">Phone</div>
+                    <a href={`tel:${customer.phone}`} className="text-base text-[#111827] leading-normal hover:text-blue-600 transition-colors">
+                      {customer.phone}
+                    </a>
                   </div>
-                )}
-                {customer.email && (
-                  <div className="flex items-start gap-2.5">
-                    <Mail className="text-purple-600 w-5 h-5 flex-shrink-0 mt-0.5" />
-                    <div className="flex-1 min-w-0">
-                      <div className="text-[12px] text-[#6B7280] font-normal leading-[1.35] mb-0.5">Email</div>
-                      <a href={`mailto:${customer.email}`} className="text-[14px] text-[#111827] leading-[1.4] hover:text-purple-600 transition-colors truncate block">
-                        {customer.email}
-                      </a>
-                    </div>
-                  </div>
-                )}
-              </div>
+                </div>
+              )}
+              
               {customer.secondary_phone && (
-                <div className="flex items-start gap-2.5">
-                  <Phone className="text-blue-600 w-5 h-5 flex-shrink-0 mt-0.5" />
-                  <div className="flex-1 min-w-0">
-                    <div className="text-[12px] text-[#6B7280] font-normal leading-[1.35] mb-0.5">Secondary Phone</div>
-                    <a href={`tel:${customer.secondary_phone}`} className="text-[14px] text-[#111827] leading-[1.4] hover:text-blue-600 transition-colors">
+                <div className="flex items-start gap-3">
+                  <Phone className="text-blue-600 w-6 h-6 flex-shrink-0 mt-0.5" />
+                  <div className="flex-1 min-w-0 flex flex-col gap-1">
+                    <div className="text-sm font-medium text-[#6B7280]">Secondary Phone</div>
+                    <a href={`tel:${customer.secondary_phone}`} className="text-base text-[#111827] leading-normal hover:text-blue-600 transition-colors">
                       {customer.secondary_phone}
+                    </a>
+                  </div>
+                </div>
+              )}
+              
+              {customer.email && (
+                <div className="flex items-start gap-3">
+                  <Mail className="text-purple-600 w-6 h-6 flex-shrink-0 mt-0.5" />
+                  <div className="flex-1 min-w-0 flex flex-col gap-1">
+                    <div className="text-sm font-medium text-[#6B7280]">Email</div>
+                    <a href={`mailto:${customer.email}`} className="text-base text-[#111827] leading-normal hover:text-purple-600 transition-colors break-all">
+                      {customer.email}
                     </a>
                   </div>
                 </div>
