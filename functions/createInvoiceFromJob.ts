@@ -107,6 +107,7 @@ Deno.serve(async (req) => {
         DueDate: dueDate,
         LineItems: xeroLineItems,
         Status: 'AUTHORISED',
+        InvoiceNumber: String(job.job_number),
         Reference: `Job #${job.job_number}`
       }]
     };
