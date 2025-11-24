@@ -413,23 +413,39 @@ export default function QuoteItemManager({ quote, quoteItems, quoteSections, onU
           <div className="grid md:grid-cols-2 gap-4">
             <div className="space-y-2">
               <Label>Item Title *</Label>
-              <Popover open={searchOpen} onOpenChange={setSearchOpen}>
-                <PopoverTrigger asChild>
-                  <div className="relative">
-                    <Input
-                      value={newItem.title}
-                      onChange={(e) => {
-                        setNewItem({ ...newItem, title: e.target.value, product_id: "" });
-                        setSearchQuery(e.target.value);
-                        setSearchOpen(true);
-                      }}
-                      onFocus={() => setSearchOpen(true)}
-                      placeholder="Search products or enter custom item..."
-                      className="pr-10"
-                    />
-                    <Search className="absolute right-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-[#6B7280]" />
-                  </div>
-                </PopoverTrigger>
+              <div className="relative">
+                <Input
+                  value={newItem.title}
+                  onChange={(e) => {
+                    setNewItem({ ...newItem, title: e.target.value, product_id: "" });
+                    setSearchQuery(e.target.value);
+                    if (e.target.value.length > 0) {
+                      setSearchOpen(true);
+                    }
+                  }}
+                  onFocus={() => {
+                    if (newItem.title.length > 0) {
+                      setSearchOpen(true);
+                    }
+                  }}
+                  placeholder="Type custom item or search price list..."
+                  className="pr-10"
+                />
+                {newItem.title.length > 0 && (
+                  <button
+                    type="button"
+                    onClick={() => setSearchOpen(!searchOpen)}
+                    className="absolute right-3 top-1/2 transform -translate-y-1/2 text-[#6B7280] hover:text-[#111827]"
+                  >
+                    <Search className="w-4 h-4" />
+                  </button>
+                )}
+              </div>
+              {searchOpen && filteredProducts.length > 0 && (
+                <Popover open={searchOpen} onOpenChange={setSearchOpen}>
+                  <PopoverTrigger asChild>
+                    <div className="hidden" />
+                  </PopoverTrigger>
                 <PopoverContent className="p-0 w-[400px]" align="start">
                   <Command>
                     <CommandInput 
@@ -438,7 +454,11 @@ export default function QuoteItemManager({ quote, quoteItems, quoteSections, onU
                       onValueChange={setSearchQuery}
                     />
                     <CommandList>
-                      <CommandEmpty>No products found.</CommandEmpty>
+                      <CommandEmpty>
+                        <div className="py-6 text-center text-sm text-[#6B7280]">
+                          No products found. Continue entering custom item details below.
+                        </div>
+                      </CommandEmpty>
                       <CommandGroup heading="Price List Items">
                         {filteredProducts.map((product) => (
                           <CommandItem
@@ -466,7 +486,8 @@ export default function QuoteItemManager({ quote, quoteItems, quoteSections, onU
                     </CommandList>
                   </Command>
                 </PopoverContent>
-              </Popover>
+                </Popover>
+                )}
             </div>
             <div className="space-y-2">
               <Label>Unit Label</Label>
