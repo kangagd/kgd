@@ -51,7 +51,20 @@ export default function ProjectForm({ project, onSubmit, onCancel, isSubmitting 
   });
 
   const [showNewCustomerDialog, setShowNewCustomerDialog] = useState(false);
-  const [newCustomerData, setNewCustomerData] = useState({ name: "", phone: "", email: "" });
+  const [newCustomerData, setNewCustomerData] = useState({ 
+    name: "", 
+    phone: "", 
+    email: "",
+    address_full: "",
+    address_street: "",
+    address_suburb: "",
+    address_state: "",
+    address_postcode: "",
+    address_country: "Australia",
+    google_place_id: "",
+    latitude: null,
+    longitude: null
+  });
   const [uploadingImages, setUploadingImages] = useState(false);
   const [uploadingFiles, setUploadingFiles] = useState(false);
 
@@ -78,10 +91,34 @@ export default function ProjectForm({ project, onSubmit, onCancel, isSubmitting 
         customer_id: newCustomer.id,
         customer_name: newCustomer.name,
         customer_phone: newCustomer.phone || "",
-        customer_email: newCustomer.email || ""
+        customer_email: newCustomer.email || "",
+        // Auto-populate project address from new customer
+        address: newCustomer.address_full || "",
+        address_full: newCustomer.address_full || "",
+        address_street: newCustomer.address_street || "",
+        address_suburb: newCustomer.address_suburb || "",
+        address_state: newCustomer.address_state || "",
+        address_postcode: newCustomer.address_postcode || "",
+        address_country: newCustomer.address_country || "Australia",
+        google_place_id: newCustomer.google_place_id || "",
+        latitude: newCustomer.latitude || null,
+        longitude: newCustomer.longitude || null
       });
       setShowNewCustomerDialog(false);
-      setNewCustomerData({ name: "", phone: "", email: "" });
+      setNewCustomerData({ 
+        name: "", 
+        phone: "", 
+        email: "",
+        address_full: "",
+        address_street: "",
+        address_suburb: "",
+        address_state: "",
+        address_postcode: "",
+        address_country: "Australia",
+        google_place_id: "",
+        latitude: null,
+        longitude: null
+      });
     }
   });
 
@@ -560,6 +597,18 @@ export default function ProjectForm({ project, onSubmit, onCancel, isSubmitting 
                 onChange={(e) => setNewCustomerData({ ...newCustomerData, email: e.target.value })}
                 placeholder="Email address"
                 className="border-2 border-slate-300 focus:border-[#fae008]"
+              />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="new_customer_address">Address</Label>
+              <AddressAutocomplete
+                id="new_customer_address"
+                value={newCustomerData.address_full || ""}
+                onChange={(addressData) => setNewCustomerData({ 
+                  ...newCustomerData, 
+                  ...addressData
+                })}
+                className="border-2 border-slate-300 focus:border-[#fae008] focus:ring-2 focus:ring-[#fae008]/20"
               />
             </div>
           </div>
