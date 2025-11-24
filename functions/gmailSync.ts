@@ -43,10 +43,18 @@ Deno.serve(async (req) => {
     const base44 = createClientFromRequest(req);
     
     // Check authentication first
-    const user = await base44.auth.me();
-    if (!user) {
+    const currentUser = await base44.auth.me();
+    if (!currentUser) {
       return Response.json({ error: 'Unauthorized' }, { status: 401 });
     }
+
+    // Fetch full user record with gmail tokens using service role
+    const users = await base44.asServiceRole.entities.User.filter({ email: currentUser.email });
+    if (users.length === 0) {
+      return Response.json({ error: 'User record not found' }, { status: 404 });
+    }
+    
+    const user = users[0];
 
     if (!user.gmail_access_token) {
       return Response.json({ error: 'Gmail not connected', synced: 0 }, { status: 200 });
