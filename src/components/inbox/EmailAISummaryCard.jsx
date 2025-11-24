@@ -75,7 +75,33 @@ export default function EmailAISummaryCard({ thread, onThreadUpdate, onCreatePro
         customerId = newCustomer.id;
       }
 
-      // Create the project with AI suggestions
+      // Fetch email messages to get attachments
+      const emailMessages = await base44.entities.EmailMessage.filter({ thread_id: thread.id });
+      
+      // Collect all attachments from email messages
+      const imageUrls = [];
+      const documentUrls = [];
+      
+      emailMessages.forEach(message => {
+        if (message.attachments && message.attachments.length > 0) {
+          message.attachments.forEach(attachment => {
+            if (attachment.url) {
+              const mimeType = attachment.mime_type?.toLowerCase() || '';
+              const filename = attachment.filename?.toLowerCase() || '';
+              
+              // Check if it's an image
+              if (mimeType.startsWith('image/') || /\.(jpg|jpeg|png|gif|bmp|webp)$/.test(filename)) {
+                imageUrls.push(attachment.url);
+              } else {
+                // It's a document
+                documentUrls.push(attachment.url);
+              }
+            }
+          });
+        }
+      });
+
+      // Create the project with AI suggestions and attachments
       const projectData = {
         customer_id: customerId,
         customer_name: customerName,
@@ -87,7 +113,9 @@ export default function EmailAISummaryCard({ thread, onThreadUpdate, onCreatePro
         address_full: suggestions.suggested_address || '',
         status: 'Lead',
         notes: `Created from email: ${thread.from_address}\n\nAI Key Points:\n${(thread.ai_key_points || []).map(p => `• ${p}`).join('\n')}`,
-        source_email_thread_id: thread.id
+        source_email_thread_id: thread.id,
+        image_urls: imageUrls.length > 0 ? imageUrls : undefined,
+        other_documents: documentUrls.length > 0 ? documentUrls : undefined
       };
 
       const newProject = await base44.entities.Project.create(projectData);
