@@ -1597,8 +1597,6 @@ export default function JobDetails({ job: initialJob, onClose, onStatusChange, o
         <TakePaymentModal
           open={showPaymentModal}
           onClose={() => setShowPaymentModal(false)}
-          onConfirm={(paymentData) => processPaymentMutation.mutate(paymentData)}
-          isSubmitting={processPaymentMutation.isPending}
           invoice={xeroInvoice}
         />
       )}
