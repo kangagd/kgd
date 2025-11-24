@@ -16,6 +16,7 @@ import Inbox from './pages/Inbox';
 import SearchResults from './pages/SearchResults';
 import Quotes from './pages/Quotes';
 import PublicQuote from './pages/PublicQuote';
+import QuoteTemplates from './pages/QuoteTemplates';
 import __Layout from './Layout.jsx';
 
 
@@ -38,6 +39,7 @@ export const PAGES = {
     "SearchResults": SearchResults,
     "Quotes": Quotes,
     "PublicQuote": PublicQuote,
+    "QuoteTemplates": QuoteTemplates,
 }
 
 export const pagesConfig = {

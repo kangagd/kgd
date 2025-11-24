@@ -44,6 +44,11 @@ export default function QuoteItemManager({ quote, quoteItems, quoteSections, onU
     queryFn: () => base44.entities.PriceListItem.list()
   });
 
+  const { data: quoteTemplates = [] } = useQuery({
+    queryKey: ['quoteTemplates'],
+    queryFn: () => base44.entities.QuoteTemplate.list('-sort_order')
+  });
+
   const filteredProducts = useMemo(() => {
     if (!searchQuery) return priceListItems.filter(p => p.in_inventory !== false);
     const query = searchQuery.toLowerCase();
@@ -54,6 +59,17 @@ export default function QuoteItemManager({ quote, quoteItems, quoteSections, onU
        p.description?.toLowerCase().includes(query))
     );
   }, [priceListItems, searchQuery]);
+
+  const filteredTemplates = useMemo(() => {
+    if (!searchQuery) return quoteTemplates.filter(t => t.is_active);
+    const query = searchQuery.toLowerCase();
+    return quoteTemplates.filter(t => 
+      t.is_active && 
+      (t.name.toLowerCase().includes(query) || 
+       t.category?.toLowerCase().includes(query) ||
+       t.description?.toLowerCase().includes(query))
+    );
+  }, [quoteTemplates, searchQuery]);
 
   const createSectionMutation = useMutation({
     mutationFn: (data) => base44.entities.QuoteSection.create(data),
@@ -189,6 +205,23 @@ export default function QuoteItemManager({ quote, quoteItems, quoteSections, onU
         unit_price: product.price
       });
       setSearchQuery(product.item);
+      setSearchOpen(false);
+    }
+  };
+
+  const handleTemplateSelect = (templateId) => {
+    const template = quoteTemplates.find(t => t.id === templateId);
+    if (template) {
+      setNewItem({
+        ...newItem,
+        product_id: "",
+        title: template.name,
+        description: template.description || "",
+        unit_price: template.unit_price,
+        quantity: template.default_quantity,
+        unit_label: template.unit_label
+      });
+      setSearchQuery(template.name);
       setSearchOpen(false);
     }
   };
@@ -446,7 +479,30 @@ export default function QuoteItemManager({ quote, quoteItems, quoteSections, onU
                   </button>
                 )}
                 {searchOpen && newItem.title.length > 0 && (
-                  <div className="absolute z-50 w-full mt-1 bg-white border border-[#E5E7EB] rounded-lg shadow-lg max-h-[300px] overflow-y-auto">
+                  <div className="absolute z-50 w-full mt-1 bg-white border border-[#E5E7EB] rounded-lg shadow-lg max-h-[400px] overflow-y-auto">
+                    {filteredTemplates.length > 0 && (
+                      <div className="p-2 border-b border-[#E5E7EB]">
+                        <div className="text-xs font-semibold text-[#6B7280] px-2 py-1 mb-1">Templates</div>
+                        {filteredTemplates.map((template) => (
+                          <button
+                            key={template.id}
+                            type="button"
+                            onClick={() => handleTemplateSelect(template.id)}
+                            className="w-full flex justify-between items-center px-3 py-2 hover:bg-[#FAE008]/10 rounded-lg transition-colors text-left"
+                          >
+                            <div className="flex-1 min-w-0">
+                              <div className="font-medium text-[#111827]">{template.name}</div>
+                              <div className="text-xs text-[#6B7280]">
+                                {template.category} • {template.default_quantity} {template.unit_label}
+                              </div>
+                            </div>
+                            <div className="text-sm font-semibold text-[#111827] ml-4">
+                              ${template.unit_price.toFixed(2)}
+                            </div>
+                          </button>
+                        ))}
+                      </div>
+                    )}
                     {filteredProducts.length > 0 ? (
                       <div className="p-2">
                         <div className="text-xs font-semibold text-[#6B7280] px-2 py-1 mb-1">Price List Items</div>
@@ -471,9 +527,9 @@ export default function QuoteItemManager({ quote, quoteItems, quoteSections, onU
                           </button>
                         ))}
                       </div>
-                    ) : (
+                    ) : filteredTemplates.length === 0 && (
                       <div className="py-6 text-center text-sm text-[#6B7280]">
-                        No products found. Continue entering custom item details below.
+                        No templates or products found. Continue entering custom item details below.
                       </div>
                     )}
                   </div>
