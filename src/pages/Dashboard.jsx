@@ -11,6 +11,7 @@ import { useNavigate } from "react-router-dom";
 import { createPageUrl } from "@/utils";
 import JobCard from "../components/jobs/JobCard";
 import XeroConnectButton from "../components/xero/XeroConnectButton";
+import MaintenanceRemindersCard from "../components/dashboard/MaintenanceRemindersCard";
 
 
 
@@ -179,7 +180,7 @@ export default function Dashboard() {
           </div>
         </div>
 
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
           <div className="bg-white rounded-xl border border-[#E5E7EB] p-7 shadow-sm">
             <h2 className="text-[22px] font-semibold text-[#111827] leading-[1.2] mb-6">Today's Schedule</h2>
             {todayJobs.length === 0 ? (
@@ -232,6 +233,10 @@ export default function Dashboard() {
             )}
           </div>
         </div>
+
+        {user?.role === 'admin' && (
+          <MaintenanceRemindersCard user={user} />
+        )}
       </div>
     </div>
   );

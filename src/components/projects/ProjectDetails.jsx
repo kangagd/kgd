@@ -34,6 +34,8 @@ import FilePreviewModal from "../common/FilePreviewModal";
 import XeroInvoiceCard from "../invoices/XeroInvoiceCard";
 import CreateInvoiceModal from "../invoices/CreateInvoiceModal";
 import TakePaymentModal from "../invoices/TakePaymentModal";
+import WarrantyCard from "./WarrantyCard";
+import MaintenanceSection from "./MaintenanceSection";
 
 const statusColors = {
   "Lead": "bg-slate-100 text-slate-700",
@@ -274,6 +276,23 @@ export default function ProjectDetails({ project: initialProject, onClose, onEdi
     
     // Save the stage change
     await handleFieldSave('status', oldStage, newStage);
+
+    // Handle project completion warranty logic
+    if (newStage === 'Completed' && oldStage !== 'Completed') {
+      try {
+        await base44.functions.invoke('handleProjectCompletion', {
+          project_id: project.id,
+          new_status: newStage,
+          old_status: oldStage,
+          completed_date: project.completed_date || new Date().toISOString().split('T')[0]
+        });
+        queryClient.invalidateQueries({ queryKey: ['project', project.id] });
+        queryClient.invalidateQueries({ queryKey: ['maintenanceReminders', project.id] });
+        toast.success('Project completed and warranty activated');
+      } catch (error) {
+        console.error('Error handling project completion:', error);
+      }
+    }
 
     // Auto-create jobs based on stage
     const autoCreateJob = async (jobTypeName) => {
@@ -1054,6 +1073,13 @@ Format as HTML bullet points using <ul> and <li> tags. Include only the most cri
             </div>
 
           <TabsContent value="overview" className="space-y-3 mt-3">
+            {user?.role === 'admin' && (
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <WarrantyCard project={project} />
+                <MaintenanceSection projectId={project.id} />
+              </div>
+            )}
+
             <div>
               <RichTextField
                 label="Description"
