@@ -109,9 +109,11 @@ export default function JobForm({ job, technicians, onSubmit, onCancel, isSubmit
     }
   }, [preselectedCustomerId, customers.length, job?.id]);
 
-  // Handle prefilled data from email - try to match customer by email
+  // Handle prefilled data from email - try to match customer by email (runs once)
+  const [customerMatchAttempted, setCustomerMatchAttempted] = useState(false);
   useEffect(() => {
-    if (!job?.id && job?.customer_email && customers.length > 0 && !formData.customer_id) {
+    if (!job?.id && job?.customer_email && customers.length > 0 && !formData.customer_id && !customerMatchAttempted) {
+      setCustomerMatchAttempted(true);
       const matchingCustomer = customers.find(c => 
         c.email?.toLowerCase() === job.customer_email?.toLowerCase()
       );
@@ -126,7 +128,7 @@ export default function JobForm({ job, technicians, onSubmit, onCancel, isSubmit
         }));
       }
     }
-  }, [job?.id, job?.customer_email, customers.length, formData.customer_id]);
+  }, [job?.id, job?.customer_email, customers.length, customerMatchAttempted]);
 
   const generateNotes = async (project, jobTypeId) => {
     if (!project || !jobTypeId) return;

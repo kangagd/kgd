@@ -81,9 +81,11 @@ export default function ProjectForm({ project, onSubmit, onCancel, isSubmitting 
 
   const customers = allCustomers.filter(c => c.status === 'active' && !c.deleted_at);
 
-  // Handle prefilled data from email - try to match customer by email
+  // Handle prefilled data from email - try to match customer by email (runs once)
+  const [customerMatchAttempted, setCustomerMatchAttempted] = useState(false);
   useEffect(() => {
-    if (!project?.id && project?.customer_email && customers.length > 0 && !formData.customer_id) {
+    if (!project?.id && project?.customer_email && customers.length > 0 && !formData.customer_id && !customerMatchAttempted) {
+      setCustomerMatchAttempted(true);
       const matchingCustomer = customers.find(c => 
         c.email?.toLowerCase() === project.customer_email?.toLowerCase()
       );
@@ -97,7 +99,7 @@ export default function ProjectForm({ project, onSubmit, onCancel, isSubmitting 
         }));
       }
     }
-  }, [project?.id, project?.customer_email, customers.length, formData.customer_id]);
+  }, [project?.id, project?.customer_email, customers.length, customerMatchAttempted]);
 
   const { data: technicians = [] } = useQuery({
     queryKey: ['technicians'],
