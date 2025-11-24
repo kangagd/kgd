@@ -47,7 +47,7 @@ export default function Inbox() {
   const [selectedThreadIds, setSelectedThreadIds] = useState([]);
   const [linkModalOpen, setLinkModalOpen] = useState(false);
   const [linkType, setLinkType] = useState(null);
-  const [createProjectModalOpen, setCreateProjectModalOpen] = useState(false);
+
   const [createJobModalOpen, setCreateJobModalOpen] = useState(false);
   const [user, setUser] = useState(null);
   const [userPermissions, setUserPermissions] = useState(null);
