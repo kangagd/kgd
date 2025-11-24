@@ -19,7 +19,7 @@ import RichTextField from "../common/RichTextField";
 import AddressAutocomplete from "../common/AddressAutocomplete";
 
 export default function JobForm({ job, technicians, onSubmit, onCancel, isSubmitting, preselectedCustomerId, preselectedProjectId }) {
-  const [formData, setFormData] = useState(job || {
+  const defaultFormData = {
     job_number: null,
     project_id: preselectedProjectId || "",
     project_name: "",
@@ -55,7 +55,11 @@ export default function JobForm({ job, technicians, onSubmit, onCancel, isSubmit
     image_urls: [],
     quote_url: "",
     invoice_url: "",
-  });
+  };
+
+  // Merge prefilled data with defaults, but only use job data if it has an id (existing job)
+  const initialData = job?.id ? job : { ...defaultFormData, ...job };
+  const [formData, setFormData] = useState(initialData);
 
   const [uploadingImages, setUploadingImages] = useState(false);
   const [uploadingQuote, setUploadingQuote] = useState(false);
