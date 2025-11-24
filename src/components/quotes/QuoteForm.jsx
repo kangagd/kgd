@@ -7,7 +7,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Textarea } from "@/components/ui/textarea";
 import { ArrowLeft } from "lucide-react";
 
-export default function QuoteForm({ quote, onSubmit, onCancel, isSubmitting, projects, customers }) {
+export default function QuoteForm({ quote, onSubmit, onCancel, isSubmitting, projects, customers, jobs = [] }) {
   const [formData, setFormData] = useState(quote || {
     quote_number: "",
     title: "",
@@ -37,13 +37,27 @@ export default function QuoteForm({ quote, onSubmit, onCancel, isSubmitting, pro
 
   useEffect(() => {
     if (!formData.quote_number && !quote) {
-      // Generate quote number
-      setFormData(prev => ({
-        ...prev,
-        quote_number: `Q-${Date.now().toString().slice(-6)}`
-      }));
+      if (formData.job_id && jobs.length > 0) {
+        const linkedJob = jobs.find(job => job.id === formData.job_id);
+        if (linkedJob?.job_number) {
+          setFormData(prev => ({
+            ...prev,
+            quote_number: `Q-${linkedJob.job_number}`
+          }));
+        } else {
+          setFormData(prev => ({
+            ...prev,
+            quote_number: `Q-${Date.now().toString().slice(-6)}`
+          }));
+        }
+      } else {
+        setFormData(prev => ({
+          ...prev,
+          quote_number: `Q-${Date.now().toString().slice(-6)}`
+        }));
+      }
     }
-  }, []);
+  }, [formData.job_id, jobs]);
 
   const handleSubmit = (e) => {
     e.preventDefault();
@@ -66,6 +80,10 @@ export default function QuoteForm({ quote, onSubmit, onCancel, isSubmitting, pro
   const handleProjectChange = (projectId) => {
     const project = projects.find(p => p.id === projectId);
     if (project) {
+      // Find the most recent job for this project
+      const projectJobs = jobs.filter(job => job.project_id === projectId);
+      const latestJob = projectJobs.sort((a, b) => b.job_number - a.job_number)[0];
+      
       setFormData({
         ...formData,
         project_id: projectId,
@@ -74,6 +92,9 @@ export default function QuoteForm({ quote, onSubmit, onCancel, isSubmitting, pro
         customer_name: project.customer_name,
         customer_email: project.customer_email || "",
         customer_phone: project.customer_phone || "",
+        job_id: latestJob?.id || "",
+        job_number: latestJob?.job_number || null,
+        quote_number: latestJob?.job_number ? `Q-${latestJob.job_number}` : formData.quote_number
       });
     }
   };

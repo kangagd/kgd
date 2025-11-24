@@ -38,6 +38,11 @@ export default function Quotes() {
     queryFn: () => base44.entities.Customer.list()
   });
 
+  const { data: jobs = [] } = useQuery({
+    queryKey: ['jobs'],
+    queryFn: () => base44.entities.Job.list()
+  });
+
   const createQuoteMutation = useMutation({
     mutationFn: (data) => base44.entities.Quote.create(data),
     onSuccess: (newQuote) => {
@@ -88,6 +93,7 @@ export default function Quotes() {
           isSubmitting={createQuoteMutation.isPending}
           projects={projects}
           customers={customers}
+          jobs={jobs}
         />
       </div>
     );
