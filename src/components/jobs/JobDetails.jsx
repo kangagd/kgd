@@ -1470,20 +1470,20 @@ export default function JobDetails({ job: initialJob, onClose, onStatusChange, o
               <div className="space-y-3">
                 <h3 className="text-[16px] font-semibold text-[#111827] leading-[1.2]">Quotes & Invoicing</h3>
 
-                {isAdmin && (
-                  <Card className="border border-[#E5E7EB] shadow-sm rounded-lg">
-                    <CardHeader className="bg-white px-4 py-3 border-b border-[#E5E7EB]">
-                      <CardTitle className="text-[16px] font-semibold text-[#111827] leading-[1.2]">
-                        Xero Invoice
-                      </CardTitle>
-                    </CardHeader>
-                    <CardContent className="p-4">
-                      {!xeroInvoice ? (
-                        <div className="text-center py-6">
-                          <DollarSign className="w-12 h-12 text-[#E5E7EB] mx-auto mb-3" />
-                          <p className="text-[14px] text-[#6B7280] mb-4">
-                            No invoice has been created for this job yet.
-                          </p>
+                <Card className="border border-[#E5E7EB] shadow-sm rounded-lg">
+                  <CardHeader className="bg-white px-4 py-3 border-b border-[#E5E7EB]">
+                    <CardTitle className="text-[16px] font-semibold text-[#111827] leading-[1.2]">
+                      Xero Invoice
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent className="p-4">
+                    {!xeroInvoice ? (
+                      <div className="text-center py-6">
+                        <DollarSign className="w-12 h-12 text-[#E5E7EB] mx-auto mb-3" />
+                        <p className="text-[14px] text-[#6B7280] mb-4">
+                          No invoice has been created for this job yet.
+                        </p>
+                        {isAdmin && (
                           <Button
                             onClick={() => setShowInvoiceModal(true)}
                             className="bg-[#FAE008] text-[#111827] hover:bg-[#E5CF07] font-semibold shadow-sm h-10 px-6"
@@ -1491,21 +1491,21 @@ export default function JobDetails({ job: initialJob, onClose, onStatusChange, o
                             <DollarSign className="w-4 h-4 mr-2" />
                             Create Invoice
                           </Button>
-                        </div>
-                      ) : (
-                        <XeroInvoiceCard
-                          invoice={xeroInvoice}
-                          onRefreshStatus={() => syncInvoiceMutation.mutate()}
-                          onViewInXero={() => window.open(xeroInvoice.pdf_url, '_blank')}
-                          onDownloadPdf={() => downloadPdfMutation.mutate()}
-                          onTakePayment={() => setShowPaymentModal(true)}
-                          isRefreshing={syncInvoiceMutation.isPending}
-                          isDownloading={downloadPdfMutation.isPending}
-                        />
-                      )}
-                    </CardContent>
-                  </Card>
-                )}
+                        )}
+                      </div>
+                    ) : (
+                      <XeroInvoiceCard
+                        invoice={xeroInvoice}
+                        onRefreshStatus={() => syncInvoiceMutation.mutate()}
+                        onViewInXero={() => window.open(xeroInvoice.pdf_url, '_blank')}
+                        onDownloadPdf={() => downloadPdfMutation.mutate()}
+                        onTakePayment={isAdmin ? () => setShowPaymentModal(true) : null}
+                        isRefreshing={syncInvoiceMutation.isPending}
+                        isDownloading={downloadPdfMutation.isPending}
+                      />
+                    )}
+                  </CardContent>
+                </Card>
 
                 <div className="grid md:grid-cols-2 gap-2.5 pt-3 border-t-2">
                   <EditableFileUpload
