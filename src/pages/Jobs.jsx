@@ -327,12 +327,23 @@ Extract the following if available:
     console.log('[Jobs Debug] viewMode:', viewMode);
   }, [jobs, filteredJobs, statusFilter, technicianFilter, dateFrom, dateTo, searchTerm, isTechnician, user, showForm, selectedJob, viewMode]);
 
+  if (loadingEmailData) {
+    return (
+      <div className="p-5 md:p-10 bg-[#ffffff] min-h-screen flex items-center justify-center">
+        <div className="text-center">
+          <div className="w-12 h-12 border-4 border-[#FAE008] border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
+          <p className="text-[#4B5563] font-medium">Extracting job details from email...</p>
+        </div>
+      </div>
+    );
+  }
+
   if (showForm) {
     return (
       <div className="p-5 md:p-10 bg-[#ffffff] min-h-screen">
         <div className="max-w-4xl mx-auto">
           <JobForm
-            job={editingJob}
+            job={editingJob || prefilledJobData}
             technicians={technicians}
             onSubmit={handleSubmit}
             onCancel={() => {
@@ -340,6 +351,7 @@ Extract the following if available:
               setEditingJob(null);
               setPreselectedCustomerId(null);
               setPreselectedProjectId(null);
+              setPrefilledJobData(null);
             }}
             isSubmitting={createJobMutation.isPending || updateJobMutation.isPending}
             preselectedCustomerId={preselectedCustomerId}
