@@ -1598,6 +1598,7 @@ export default function JobDetails({ job: initialJob, onClose, onStatusChange, o
           open={showPaymentModal}
           onClose={() => setShowPaymentModal(false)}
           invoice={xeroInvoice}
+          paymentUrl={job.xero_payment_url}
         />
       )}
 

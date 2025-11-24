@@ -1415,6 +1415,7 @@ Format as HTML bullet points using <ul> and <li> tags. Include only the most cri
             setSelectedInvoice(null);
           }}
           invoice={selectedInvoice}
+          paymentUrl={project.xero_payment_url}
         />
       )}
     </div>

@@ -83,13 +83,27 @@ Deno.serve(async (req) => {
     const xeroResult = await xeroResponse.json();
     const xeroInvoice = xeroResult.Invoices[0];
 
+    // Extract online payment URL from Xero response
+    const onlinePaymentUrl = xeroInvoice.OnlineInvoiceUrl || null;
+
     // If invoice is voided, delete it from the app
     if (xeroInvoice.Status === 'VOIDED') {
       // Unlink from job if linked
       if (invoiceRecord.job_id) {
         await base44.asServiceRole.entities.Job.update(invoiceRecord.job_id, {
-          xero_invoice_id: null
+          xero_invoice_id: null,
+          xero_payment_url: null
         });
+      }
+
+      // Unlink from project if linked
+      if (invoiceRecord.project_id) {
+        const project = await base44.asServiceRole.entities.Project.get(invoiceRecord.project_id);
+        if (project && project.xero_payment_url) {
+          await base44.asServiceRole.entities.Project.update(invoiceRecord.project_id, {
+            xero_payment_url: null
+          });
+        }
       }
 
       // Delete the invoice record
@@ -140,6 +154,20 @@ Deno.serve(async (req) => {
       last_payment_date: lastPaymentDate,
       raw_payload: xeroInvoice
     });
+
+    // Update payment URL on linked job if it exists
+    if (invoiceRecord.job_id) {
+      await base44.asServiceRole.entities.Job.update(invoiceRecord.job_id, {
+        xero_payment_url: onlinePaymentUrl
+      });
+    }
+
+    // Update payment URL on linked project if it exists
+    if (invoiceRecord.project_id) {
+      await base44.asServiceRole.entities.Project.update(invoiceRecord.project_id, {
+        xero_payment_url: onlinePaymentUrl
+      });
+    }
 
     return Response.json({
       success: true,

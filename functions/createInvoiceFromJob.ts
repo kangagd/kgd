@@ -195,6 +195,9 @@ Deno.serve(async (req) => {
     const xeroResult = await xeroResponse.json();
     const xeroInvoice = xeroResult.Invoices[0];
 
+    // Extract online payment URL from Xero response
+    const onlinePaymentUrl = xeroInvoice.OnlineInvoiceUrl || null;
+
     // Create XeroInvoice record
     const invoiceRecord = await base44.asServiceRole.entities.XeroInvoice.create({
       xero_invoice_id: xeroInvoice.InvoiceID,
@@ -214,9 +217,10 @@ Deno.serve(async (req) => {
       created_by_user_id: user.id
     });
 
-    // Link invoice to job
+    // Link invoice and payment URL to job
     await base44.asServiceRole.entities.Job.update(job.id, {
-      xero_invoice_id: invoiceRecord.id
+      xero_invoice_id: invoiceRecord.id,
+      xero_payment_url: onlinePaymentUrl
     });
 
     return Response.json({

@@ -13,11 +13,13 @@ import { Alert, AlertDescription } from "@/components/ui/alert";
 export default function TakePaymentModal({ 
   open, 
   onClose,
-  invoice
+  invoice,
+  paymentUrl
 }) {
   const handlePayOnXero = () => {
-    if (invoice?.pdf_url) {
-      window.open(invoice.pdf_url, '_blank');
+    const url = paymentUrl || invoice?.pdf_url;
+    if (url) {
+      window.open(url, '_blank');
     }
     onClose();
   };

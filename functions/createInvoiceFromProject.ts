@@ -187,6 +187,9 @@ Deno.serve(async (req) => {
     const xeroResult = await xeroResponse.json();
     const xeroInvoice = xeroResult.Invoices[0];
 
+    // Extract online payment URL from Xero response
+    const onlinePaymentUrl = xeroInvoice.OnlineInvoiceUrl || null;
+
     // Create XeroInvoice record
     const invoiceRecord = await base44.asServiceRole.entities.XeroInvoice.create({
       xero_invoice_id: xeroInvoice.InvoiceID,
@@ -203,6 +206,11 @@ Deno.serve(async (req) => {
       pdf_url: `https://go.xero.com/AccountsReceivable/View.aspx?InvoiceID=${xeroInvoice.InvoiceID}`,
       raw_payload: xeroInvoice,
       created_by_user_id: user.id
+    });
+
+    // Update project with payment URL
+    await base44.asServiceRole.entities.Project.update(project.id, {
+      xero_payment_url: onlinePaymentUrl
     });
 
     return Response.json({
