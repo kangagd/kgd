@@ -364,6 +364,11 @@ export default function JobDetails({ job: initialJob, onClose, onStatusChange, o
   const isTechnician = user?.is_field_technician && user?.role !== 'admin';
   const isAdmin = user?.role === 'admin';
 
+  // Use mobile view for technicians on small screens
+  if (isTechnician && isMobile) {
+    return <TechnicianMobileJobView job={job} onClose={onClose} user={user} />;
+  }
+
   const createInvoiceMutation = useMutation({
     mutationFn: async (invoiceData) => {
       const response = await base44.functions.invoke('createInvoiceFromJob', { 
