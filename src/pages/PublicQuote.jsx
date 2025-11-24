@@ -14,6 +14,7 @@ export default function PublicQuote() {
   const token = urlParams.get('token');
   
   const [quote, setQuote] = useState(null);
+  const [quoteItems, setQuoteItems] = useState([]);
   const [selectedItems, setSelectedItems] = useState({});
   const [signerName, setSignerName] = useState("");
   const [signerEmail, setSignerEmail] = useState("");
@@ -23,15 +24,13 @@ export default function PublicQuote() {
   const canvasRef = useRef(null);
   const [isDrawing, setIsDrawing] = useState(false);
 
-  const { data: allQuotes = [], isLoading } = useQuery({
-    queryKey: ['publicQuotes'],
-    queryFn: () => base44.entities.Quote.list()
-  });
-
-  const { data: quoteItems = [] } = useQuery({
-    queryKey: ['quoteItems', quote?.id],
-    queryFn: () => base44.entities.QuoteItem.filter({ quote_id: quote.id }),
-    enabled: !!quote
+  const { data: quoteData, isLoading } = useQuery({
+    queryKey: ['publicQuote', token],
+    queryFn: async () => {
+      const response = await base44.functions.invoke('getPublicQuote', { token });
+      return response.data;
+    },
+    enabled: !!token
   });
 
   const createSignatureMutation = useMutation({
@@ -47,26 +46,25 @@ export default function PublicQuote() {
   });
 
   useEffect(() => {
-    if (allQuotes.length > 0 && token) {
-      const foundQuote = allQuotes.find(q => q.public_share_token === token);
-      if (foundQuote) {
-        setQuote(foundQuote);
-        createEventMutation.mutate({
-          quote_id: foundQuote.id,
-          event_type: "viewed",
-          occurred_at: new Date().toISOString(),
-          metadata: JSON.stringify({ ip: "client" })
-        });
+    if (quoteData?.quote) {
+      setQuote(quoteData.quote);
+      setQuoteItems(quoteData.quoteItems || []);
+      
+      createEventMutation.mutate({
+        quote_id: quoteData.quote.id,
+        event_type: "viewed",
+        occurred_at: new Date().toISOString(),
+        metadata: JSON.stringify({ ip: "client" })
+      });
 
-        if (foundQuote.status === "Sent") {
-          updateQuoteMutation.mutate({
-            id: foundQuote.id,
-            data: { ...foundQuote, status: "Viewed" }
-          });
-        }
+      if (quoteData.quote.status === "Sent") {
+        updateQuoteMutation.mutate({
+          id: quoteData.quote.id,
+          data: { ...quoteData.quote, status: "Viewed" }
+        });
       }
     }
-  }, [allQuotes, token]);
+  }, [quoteData]);
 
   useEffect(() => {
     if (quoteItems.length > 0) {
