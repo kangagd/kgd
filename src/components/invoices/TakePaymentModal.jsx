@@ -64,44 +64,56 @@ export default function TakePaymentModal({
   };
 
   const initializeStripe = async (publishableKey) => {
-    if (!window.Stripe || !publishableKey) return;
+    if (!window.Stripe || !publishableKey) {
+      console.log('Stripe not ready:', { hasStripe: !!window.Stripe, hasKey: !!publishableKey });
+      return;
+    }
     
     const stripeInstance = window.Stripe(publishableKey);
     setStripe(stripeInstance);
 
-    // Create Payment Request for Apple Pay / Google Pay
-    const pr = stripeInstance.paymentRequest({
-      country: 'AU',
-      currency: 'aud',
-      total: {
-        label: `Invoice #${invoice?.xero_invoice_number || ''}`,
-        amount: Math.round((invoice?.amount_due || 0) * 100)
-      },
-      requestPayerName: true,
-      requestPayerEmail: true
-    });
-
-    // Check if Apple Pay or Google Pay is available
-    const result = await pr.canMakePayment();
-    if (result) {
-      setPaymentRequest(pr);
-      setCanMakePayment(true);
-
-      // Handle payment from wallet
-      pr.on('paymentmethod', async (ev) => {
-        try {
-          const amount = parseFloat(paymentAmount);
-          await onConfirm({
-            payment_amount: amount,
-            payment_method_id: ev.paymentMethod.id
-          });
-          ev.complete('success');
-          handleClose();
-        } catch (err) {
-          ev.complete('fail');
-          setError(err.message || 'Payment failed');
-        }
+    try {
+      // Create Payment Request for Apple Pay / Google Pay
+      const pr = stripeInstance.paymentRequest({
+        country: 'AU',
+        currency: 'aud',
+        total: {
+          label: `Invoice #${invoice?.xero_invoice_number || ''}`,
+          amount: Math.round((invoice?.amount_due || 0) * 100)
+        },
+        requestPayerName: true,
+        requestPayerEmail: true
       });
+
+      // Check if Apple Pay or Google Pay is available
+      console.log('Checking if wallet payment is available...');
+      const result = await pr.canMakePayment();
+      console.log('Wallet payment availability:', result);
+      
+      if (result) {
+        setPaymentRequest(pr);
+        setCanMakePayment(true);
+
+        // Handle payment from wallet
+        pr.on('paymentmethod', async (ev) => {
+          try {
+            const amount = parseFloat(paymentAmount);
+            await onConfirm({
+              payment_amount: amount,
+              payment_method_id: ev.paymentMethod.id
+            });
+            ev.complete('success');
+            handleClose();
+          } catch (err) {
+            ev.complete('fail');
+            setError(err.message || 'Payment failed');
+          }
+        });
+      } else {
+        console.log('Apple Pay/Google Pay not available on this device');
+      }
+    } catch (err) {
+      console.error('Error initializing payment request:', err);
     }
   };
 
