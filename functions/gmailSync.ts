@@ -139,7 +139,6 @@ Deno.serve(async (req) => {
       });
 
       let threadId;
-      let isNewThread = false;
 
       if (existingThreads.length > 0) {
         threadId = existingThreads[0].id;
@@ -149,52 +148,7 @@ Deno.serve(async (req) => {
           last_message_snippet: detail.snippet
         });
       } else {
-        isNewThread = true;
-        // AI categorization and urgency detection for new threads
-        let category = 'Uncategorized';
-        let isUrgent = false;
-        let urgencyReason = null;
-
-        let priority = 'Normal';
-        
-        try {
-          const aiResponse = await base44.asServiceRole.integrations.Core.InvokeLLM({
-            prompt: `Analyze this email from a garage door service company and provide categorization.
-
-Subject: ${subject}
-From: ${from}
-Body: ${detail.snippet}
-
-Categories: Customer Inquiry, Quote Request, Job Update, Technical Issue, Payment/Invoice, Complaint, General/Other
-
-Priority Guidelines:
-- HIGH: Urgent issues, safety concerns, customer complaints, job delays, payment issues, time-sensitive quotes
-- NORMAL: General inquiries, follow-ups, scheduling requests, routine updates
-- LOW: Marketing emails, newsletters, informational content, non-urgent administrative emails
-
-Also determine if this requires immediate attention (urgent flag).
-
-Return JSON with category, priority (High/Normal/Low), is_urgent boolean, and urgency_reason.`,
-            response_json_schema: {
-              type: "object",
-              properties: {
-                category: { type: "string" },
-                priority: { type: "string", enum: ["High", "Normal", "Low"] },
-                is_urgent: { type: "boolean" },
-                urgency_reason: { type: "string" }
-              }
-            }
-          });
-
-          category = aiResponse.category || 'Uncategorized';
-          priority = aiResponse.priority || 'Normal';
-          isUrgent = aiResponse.is_urgent || false;
-          urgencyReason = aiResponse.urgency_reason;
-        } catch (error) {
-          console.error('AI categorization failed:', error);
-        }
-
-        // Create new thread with AI insights
+        // Create new thread
         const newThread = await base44.asServiceRole.entities.EmailThread.create({
           subject,
           from_address: parseEmailAddress(from),
@@ -202,11 +156,8 @@ Return JSON with category, priority (High/Normal/Low), is_urgent boolean, and ur
           last_message_date: new Date(date).toISOString(),
           last_message_snippet: detail.snippet,
           status: 'Open',
-          priority: priority,
-          message_count: 1,
-          category: category,
-          is_urgent: isUrgent,
-          urgency_reason: urgencyReason
+          priority: 'Normal',
+          message_count: 1
         });
         threadId = newThread.id;
       }
