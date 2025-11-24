@@ -45,9 +45,9 @@ Deno.serve(async (req) => {
   try {
     const base44 = createClientFromRequest(req);
     
-    // Get all unpaid/partially paid invoices
+    // Get all active invoices (not paid or voided)
     const invoices = await base44.asServiceRole.entities.XeroInvoice.filter({
-      status: { $in: ['AUTHORISED', 'SUBMITTED', 'OVERDUE'] }
+      status: { $in: ['AUTHORISED', 'SUBMITTED', 'OVERDUE', 'DRAFT'] }
     });
 
     if (invoices.length === 0) {
@@ -122,26 +122,50 @@ Deno.serve(async (req) => {
             }
           }
 
-          // Update invoice record
-          await base44.asServiceRole.entities.XeroInvoice.update(invoice.id, {
-            status: finalStatus,
-            total_amount: xeroInvoice.Total,
-            amount_due: xeroInvoice.AmountDue,
-            amount_paid: xeroInvoice.AmountPaid || 0,
-            online_payment_url: onlinePaymentUrl,
-            raw_payload: xeroInvoice
-          });
+          // Handle voided invoices - delete them
+          if (finalStatus === 'VOIDED') {
+            await base44.asServiceRole.entities.XeroInvoice.delete(invoice.id);
+            
+            if (invoice.job_id) {
+              await base44.asServiceRole.entities.Job.update(invoice.job_id, {
+                xero_invoice_id: null,
+                xero_payment_url: null
+              });
+            }
+            if (invoice.project_id) {
+              await base44.asServiceRole.entities.Project.update(invoice.project_id, {
+                xero_payment_url: null
+              });
+            }
 
-          // Update linked job/project
-          if (invoice.job_id) {
-            await base44.asServiceRole.entities.Job.update(invoice.job_id, {
-              xero_payment_url: onlinePaymentUrl
+            updated.push({
+              invoice_number: invoice.xero_invoice_number,
+              old_status: invoice.status,
+              new_status: 'VOIDED (deleted)',
+              action: 'deleted'
             });
-          }
-          if (invoice.project_id) {
-            await base44.asServiceRole.entities.Project.update(invoice.project_id, {
-              xero_payment_url: onlinePaymentUrl
+          } else {
+            // Update invoice record
+            await base44.asServiceRole.entities.XeroInvoice.update(invoice.id, {
+              status: finalStatus,
+              total_amount: xeroInvoice.Total,
+              amount_due: xeroInvoice.AmountDue,
+              amount_paid: xeroInvoice.AmountPaid || 0,
+              online_payment_url: onlinePaymentUrl,
+              raw_payload: xeroInvoice
             });
+
+            // Update linked job/project
+            if (invoice.job_id) {
+              await base44.asServiceRole.entities.Job.update(invoice.job_id, {
+                xero_payment_url: onlinePaymentUrl
+              });
+            }
+            if (invoice.project_id) {
+              await base44.asServiceRole.entities.Project.update(invoice.project_id, {
+                xero_payment_url: onlinePaymentUrl
+              });
+            }
           }
 
           updated.push({
