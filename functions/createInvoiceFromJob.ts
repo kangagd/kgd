@@ -78,6 +78,48 @@ Deno.serve(async (req) => {
     const xeroSettings = settings[0];
     const connection = await refreshAndGetConnection(base44);
 
+    // Find available invoice number (handle duplicates with .1, .2, etc.)
+    let invoiceNumber = String(job.job_number);
+    let suffix = 0;
+    let numberAvailable = false;
+    
+    while (!numberAvailable) {
+      const checkNumber = suffix === 0 ? invoiceNumber : `${invoiceNumber}.${suffix}`;
+      
+      // Check if invoice number exists in Xero
+      const checkResponse = await fetch(
+        `https://api.xero.com/api.xro/2.0/Invoices?where=InvoiceNumber="${checkNumber}"`,
+        {
+          headers: {
+            'Authorization': `Bearer ${connection.access_token}`,
+            'xero-tenant-id': connection.xero_tenant_id,
+            'Accept': 'application/json'
+          }
+        }
+      );
+      
+      if (checkResponse.ok) {
+        const checkResult = await checkResponse.json();
+        if (checkResult.Invoices && checkResult.Invoices.length > 0) {
+          // Number exists, try next suffix
+          suffix++;
+        } else {
+          // Number available
+          invoiceNumber = checkNumber;
+          numberAvailable = true;
+        }
+      } else {
+        // If check fails, use the number anyway
+        invoiceNumber = checkNumber;
+        numberAvailable = true;
+      }
+      
+      // Safety limit to prevent infinite loop
+      if (suffix > 50) {
+        throw new Error('Could not find available invoice number');
+      }
+    }
+
     // Prepare invoice payload
     const today = new Date().toISOString().split('T')[0];
     const dueDate = new Date(Date.now() + (xeroSettings.payment_terms_days || 7) * 24 * 60 * 60 * 1000).toISOString().split('T')[0];
@@ -117,7 +159,7 @@ Deno.serve(async (req) => {
         DueDate: dueDate,
         LineItems: xeroLineItems,
         Status: 'AUTHORISED',
-        InvoiceNumber: String(job.job_number),
+        InvoiceNumber: invoiceNumber,
         Reference: `Job #${job.job_number}${job.address ? ` - ${job.address}` : ''}`
       }]
     };
