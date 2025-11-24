@@ -2,7 +2,7 @@ import React from "react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { DollarSign, ExternalLink, RefreshCw, Calendar, Download } from "lucide-react";
+import { DollarSign, ExternalLink, RefreshCw, Calendar, Download, CheckCircle2, AlertCircle, Clock } from "lucide-react";
 import { format } from "date-fns";
 
 const invoiceStatusColors = {
@@ -13,7 +13,24 @@ const invoiceStatusColors = {
   "Voided": "bg-red-100 text-red-700 border-red-200"
 };
 
+const getPaymentStatus = (invoice) => {
+  const amountDue = invoice.amount_due || 0;
+  const amountPaid = invoice.amount_paid || 0;
+  const total = invoice.total_amount || 0;
+
+  if (amountDue === 0 && amountPaid >= total) {
+    return { label: 'Paid', color: 'bg-green-100 text-green-700 border-green-200', icon: CheckCircle2 };
+  } else if (amountPaid > 0 && amountDue > 0) {
+    return { label: 'Partially Paid', color: 'bg-yellow-100 text-yellow-700 border-yellow-200', icon: Clock };
+  } else {
+    return { label: 'Owed', color: 'bg-red-100 text-red-700 border-red-200', icon: AlertCircle };
+  }
+};
+
 export default function XeroInvoiceCard({ invoice, onRefreshStatus, onViewInXero, onDownloadPdf, isRefreshing, isDownloading }) {
+  const paymentStatus = getPaymentStatus(invoice);
+  const PaymentIcon = paymentStatus.icon;
+
   return (
     <Card className="border border-[#E5E7EB] shadow-sm rounded-lg">
       <CardContent className="p-4">
@@ -25,9 +42,15 @@ export default function XeroInvoiceCard({ invoice, onRefreshStatus, onViewInXero
                 Invoice #{invoice.xero_invoice_number}
               </h4>
             </div>
-            <Badge className={`${invoiceStatusColors[invoice.status]} font-semibold text-[11px] px-2.5 py-0.5 rounded-lg border`}>
-              {invoice.status}
-            </Badge>
+            <div className="flex items-center gap-2 flex-wrap">
+              <Badge className={`${invoiceStatusColors[invoice.status]} font-semibold text-[11px] px-2.5 py-0.5 rounded-lg border`}>
+                {invoice.status}
+              </Badge>
+              <Badge className={`${paymentStatus.color} font-semibold text-[11px] px-2.5 py-0.5 rounded-lg border flex items-center gap-1`}>
+                <PaymentIcon className="w-3 h-3" />
+                {paymentStatus.label}
+              </Badge>
+            </div>
           </div>
           
           <div className="text-right">
@@ -90,6 +113,7 @@ export default function XeroInvoiceCard({ invoice, onRefreshStatus, onViewInXero
             size="sm"
             disabled={isRefreshing}
             className="h-9 px-3 border-[#E5E7EB] hover:border-[#FAE008] hover:bg-[#FFFEF5]"
+            title="Sync payment status from Xero"
           >
             <RefreshCw className={`w-4 h-4 ${isRefreshing ? 'animate-spin' : ''}`} />
           </Button>
