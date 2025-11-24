@@ -36,7 +36,6 @@ import CreateInvoiceModal from "../invoices/CreateInvoiceModal";
 import TakePaymentModal from "../invoices/TakePaymentModal";
 import WarrantyCard from "./WarrantyCard";
 import MaintenanceSection from "./MaintenanceSection";
-import AIInsightsPanel from "./AIInsightsPanel";
 
 const statusColors = {
   "Lead": "bg-slate-100 text-slate-700",
@@ -1078,15 +1077,6 @@ Format as HTML bullet points using <ul> and <li> tags. Include only the most cri
             </div>
 
           <TabsContent value="overview" className="space-y-3 mt-3">
-            {/* AI Insights Panel */}
-            {(project.ai_email_summary || project.ai_source_email_thread_id) && (
-              <AIInsightsPanel
-                project={project}
-                onApplySuggestion={(field, value) => handleFieldSave(field, project[field], value)}
-                onRefresh={() => queryClient.invalidateQueries({ queryKey: ['project', project.id] })}
-              />
-            )}
-
             <div>
               <RichTextField
                 label="Description"
