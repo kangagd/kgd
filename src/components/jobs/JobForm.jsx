@@ -102,10 +102,13 @@ export default function JobForm({ job, technicians, onSubmit, onCancel, isSubmit
     queryFn: () => base44.entities.JobType.filter({ is_active: true })
   });
 
+  const [preselectedCustomerApplied, setPreselectedCustomerApplied] = useState(false);
+  
   useEffect(() => {
-    if (preselectedCustomerId && customers.length > 0 && !job?.id) {
+    if (preselectedCustomerId && customers.length > 0 && !job?.id && !preselectedCustomerApplied) {
       const customer = customers.find(c => c.id === preselectedCustomerId);
       if (customer) {
+        setPreselectedCustomerApplied(true);
         setFormData(prev => ({
           ...prev,
           customer_id: preselectedCustomerId,
@@ -117,7 +120,7 @@ export default function JobForm({ job, technicians, onSubmit, onCancel, isSubmit
         }));
       }
     }
-  }, [preselectedCustomerId, customers.length, job?.id]);
+  }, [preselectedCustomerId, customers.length, job?.id, preselectedCustomerApplied]);
 
   // Handle prefilled data from email - try to match customer by email (runs once)
   useEffect(() => {
@@ -182,10 +185,13 @@ export default function JobForm({ job, technicians, onSubmit, onCancel, isSubmit
 
 
 
+  const [preselectedProjectApplied, setPreselectedProjectApplied] = useState(false);
+  
   useEffect(() => {
-    if (preselectedProjectId && projects.length > 0 && !job) {
+    if (preselectedProjectId && projects.length > 0 && !job && !preselectedProjectApplied) {
       const project = projects.find(p => p.id === preselectedProjectId);
       if (project) {
+        setPreselectedProjectApplied(true);
         const productMapping = {
           "Garage Door Install": "Garage Door",
           "Gate Install": "Gate",
@@ -212,7 +218,7 @@ export default function JobForm({ job, technicians, onSubmit, onCancel, isSubmit
         }));
       }
     }
-  }, [preselectedProjectId, projects.length, job]);
+  }, [preselectedProjectId, projects.length, job, preselectedProjectApplied]);
 
   const handleAutoSave = async () => {
     if (!job && !formData.customer_id) {
