@@ -17,12 +17,17 @@ export default function TakePaymentModal({
   paymentUrl
 }) {
   const handlePayOnXero = () => {
-    const url = paymentUrl || invoice?.online_payment_url || invoice?.pdf_url;
-    if (url) {
-      window.open(url, '_blank');
+    const publicUrl = paymentUrl || invoice?.online_payment_url;
+    if (publicUrl) {
+      window.open(publicUrl, '_blank');
+      onClose();
+    } else {
+      // Public URL not available - do not fall back to admin URL
+      console.error('Public invoice URL not available');
     }
-    onClose();
   };
+
+  const hasPublicUrl = !!(paymentUrl || invoice?.online_payment_url);
 
   return (
     <Dialog open={open} onOpenChange={onClose}>
@@ -49,11 +54,19 @@ export default function TakePaymentModal({
             </div>
           </div>
 
-          <Alert className="border-blue-200 bg-blue-50">
-            <AlertDescription className="text-[14px] text-blue-900 leading-relaxed">
-              <strong>Secure Payment via Xero:</strong> Click below to view the invoice and make a payment through Xero's secure payment portal. All card details are handled directly by Xero and their payment provider.
-            </AlertDescription>
-          </Alert>
+          {hasPublicUrl ? (
+            <Alert className="border-blue-200 bg-blue-50">
+              <AlertDescription className="text-[14px] text-blue-900 leading-relaxed">
+                <strong>Secure Payment via Xero:</strong> Click below to view the invoice and make a payment through Xero's secure payment portal. All card details are handled directly by Xero and their payment provider.
+              </AlertDescription>
+            </Alert>
+          ) : (
+            <Alert className="border-red-200 bg-red-50">
+              <AlertDescription className="text-[14px] text-red-900 leading-relaxed">
+                <strong>Public invoice link not available.</strong> Please refresh the invoice from Xero or contact support.
+              </AlertDescription>
+            </Alert>
+          )}
         </div>
 
         <DialogFooter className="gap-2">
@@ -66,7 +79,8 @@ export default function TakePaymentModal({
           </Button>
           <Button
             onClick={handlePayOnXero}
-            className="bg-[#FAE008] text-[#111827] hover:bg-[#E5CF07] font-semibold rounded-lg shadow-sm"
+            disabled={!hasPublicUrl}
+            className="bg-[#FAE008] text-[#111827] hover:bg-[#E5CF07] font-semibold rounded-lg shadow-sm disabled:opacity-50 disabled:cursor-not-allowed"
           >
             <ExternalLink className="w-4 h-4 mr-2" />
             Pay on Xero
