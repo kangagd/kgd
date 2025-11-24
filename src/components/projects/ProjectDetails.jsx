@@ -33,6 +33,7 @@ import FinancialsTab from "./FinancialsTab";
 import FilePreviewModal from "../common/FilePreviewModal";
 import XeroInvoiceCard from "../invoices/XeroInvoiceCard";
 import CreateInvoiceModal from "../invoices/CreateInvoiceModal";
+import TakePaymentModal from "../invoices/TakePaymentModal";
 
 const statusColors = {
   "Lead": "bg-slate-100 text-slate-700",
@@ -80,6 +81,8 @@ export default function ProjectDetails({ project: initialProject, onClose, onEdi
   const [user, setUser] = useState(null);
   const [previewFile, setPreviewFile] = useState(null);
   const [showInvoiceModal, setShowInvoiceModal] = useState(false);
+  const [showPaymentModal, setShowPaymentModal] = useState(false);
+  const [selectedInvoice, setSelectedInvoice] = useState(null);
 
   React.useEffect(() => {
     const loadUser = async () => {
@@ -232,6 +235,26 @@ export default function ProjectDetails({ project: initialProject, onClose, onEdi
       if (data.voided) {
         toast.info('Invoice was voided in Xero and removed from the app');
       }
+    }
+  });
+
+  const processPaymentMutation = useMutation({
+    mutationFn: async (paymentData) => {
+      const response = await base44.functions.invoke('processXeroPayment', {
+        invoice_id: selectedInvoice.id,
+        payment_amount: paymentData.payment_amount,
+        payment_method_id: paymentData.payment_method_id
+      });
+      return response.data;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['projectXeroInvoices', project.id] });
+      setShowPaymentModal(false);
+      setSelectedInvoice(null);
+      toast.success('Payment processed successfully');
+    },
+    onError: (error) => {
+      toast.error(error.message || 'Failed to process payment');
     }
   });
 
@@ -1350,7 +1373,10 @@ Format as HTML bullet points using <ul> and <li> tags. Include only the most cri
                         invoice={invoice}
                         onRefreshStatus={() => syncProjectInvoiceMutation.mutate(invoice.id)}
                         onViewInXero={() => window.open(invoice.pdf_url, '_blank')}
-                        onTakePayment={() => setShowPaymentModal(true)}
+                        onTakePayment={() => {
+                          setSelectedInvoice(invoice);
+                          setShowPaymentModal(true);
+                        }}
                         isRefreshing={syncProjectInvoiceMutation.isPending}
                       />
                     ))}
@@ -1398,6 +1424,19 @@ Format as HTML bullet points using <ul> and <li> tags. Include only the most cri
           project_type: project.project_type
         }}
       />
+
+      {selectedInvoice && (
+        <TakePaymentModal
+          open={showPaymentModal}
+          onClose={() => {
+            setShowPaymentModal(false);
+            setSelectedInvoice(null);
+          }}
+          onConfirm={(paymentData) => processPaymentMutation.mutate(paymentData)}
+          isSubmitting={processPaymentMutation.isPending}
+          invoice={selectedInvoice}
+        />
+      )}
     </div>
   );
 }
