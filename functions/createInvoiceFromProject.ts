@@ -127,28 +127,22 @@ Deno.serve(async (req) => {
     const today = new Date().toISOString().split('T')[0];
     const dueDate = new Date(Date.now() + (xeroSettings.payment_terms_days || 7) * 24 * 60 * 60 * 1000).toISOString().split('T')[0];
 
-    // Convert line items to Xero format (with discounts handled as separate line items)
-    const xeroLineItems = [];
-    lineItems.forEach((item) => {
-      // Add main line item
-      xeroLineItems.push({
+    // Convert line items to Xero format (with discounts applied to line items)
+    const xeroLineItems = lineItems.map((item) => {
+      const lineItem = {
         Description: item.description,
         Quantity: 1,
         UnitAmount: item.amount,
         AccountCode: xeroSettings.default_account_code,
         TaxType: xeroSettings.default_tax_type
-      });
+      };
 
-      // Add discount as a separate negative line item if applicable
+      // Add discount to line item if applicable
       if (item.discount && item.discount > 0) {
-        xeroLineItems.push({
-          Description: `Discount - ${item.description}`,
-          Quantity: 1,
-          UnitAmount: -item.discount,
-          AccountCode: xeroSettings.default_account_code,
-          TaxType: xeroSettings.default_tax_type
-        });
+        lineItem.DiscountAmount = item.discount;
       }
+
+      return lineItem;
     });
 
     const invoicePayload = {
