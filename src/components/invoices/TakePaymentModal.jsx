@@ -16,10 +16,8 @@ export default function TakePaymentModal({
   invoice
 }) {
   const handlePayOnXero = () => {
-    // Open Xero's online invoice payment portal
-    const paymentUrl = invoice?.online_invoice_url || invoice?.pdf_url;
-    if (paymentUrl) {
-      window.open(paymentUrl, '_blank');
+    if (invoice?.pdf_url) {
+      window.open(invoice.pdf_url, '_blank');
     }
     onClose();
   };
@@ -51,7 +49,7 @@ export default function TakePaymentModal({
 
           <Alert className="border-blue-200 bg-blue-50">
             <AlertDescription className="text-[14px] text-blue-900 leading-relaxed">
-              <strong>Secure Payment via Xero:</strong> Opens Xero's secure payment portal where you can collect payment using a card reader or have the customer pay online. All card details are handled directly by Xero.
+              <strong>Secure Payment via Xero:</strong> Click below to view the invoice and make a payment through Xero's secure payment portal. All card details are handled directly by Xero and their payment provider.
             </AlertDescription>
           </Alert>
         </div>
@@ -69,7 +67,7 @@ export default function TakePaymentModal({
             className="bg-[#FAE008] text-[#111827] hover:bg-[#E5CF07] font-semibold rounded-lg shadow-sm"
           >
             <ExternalLink className="w-4 h-4 mr-2" />
-            Open Xero Payment Portal
+            Pay on Xero
           </Button>
         </DialogFooter>
       </DialogContent>
