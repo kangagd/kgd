@@ -157,7 +157,7 @@ export default function QuoteItemManager({ quote, quoteItems, quoteSections, onU
 
   useEffect(() => {
     recalculateTotals();
-  }, [quoteItems.length]);
+  }, [quoteItems, quoteSections]);
 
   const handleAddItem = () => {
     const lineSubtotal = (newItem.quantity * newItem.unit_price) - (newItem.discount || 0);
