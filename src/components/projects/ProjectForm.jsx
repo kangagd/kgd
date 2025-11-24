@@ -17,43 +17,46 @@ import {
 import RichTextField from "../common/RichTextField";
 import AddressAutocomplete from "../common/AddressAutocomplete";
 
+const DEFAULT_PROJECT_FORM_DATA = {
+  customer_id: "",
+  customer_name: "",
+  customer_phone: "",
+  customer_email: "",
+  title: "",
+  description: "",
+  project_type: "Garage Door Install",
+  status: "Lead",
+  financial_status: "",
+  address: "",
+  address_full: "",
+  address_street: "",
+  address_suburb: "",
+  address_state: "",
+  address_postcode: "",
+  address_country: "Australia",
+  google_place_id: "",
+  latitude: null,
+  longitude: null,
+  quote_value: null,
+  invoice_value: null,
+  payment_received: null,
+  assigned_technicians: [],
+  assigned_technicians_names: [],
+  notes: "",
+  image_urls: [],
+  quote_url: "",
+  invoice_url: "",
+  doors: []
+};
+
 export default function ProjectForm({ project, onSubmit, onCancel, isSubmitting }) {
-  const defaultFormData = {
-    customer_id: "",
-    customer_name: "",
-    customer_phone: "",
-    customer_email: "",
-    title: "",
-    description: "",
-    project_type: "Garage Door Install",
-    status: "Lead",
-    financial_status: "",
-    address: "",
-    address_full: "",
-    address_street: "",
-    address_suburb: "",
-    address_state: "",
-    address_postcode: "",
-    address_country: "Australia",
-    google_place_id: "",
-    latitude: null,
-    longitude: null,
-    quote_value: null,
-    invoice_value: null,
-    payment_received: null,
-    assigned_technicians: [],
-    assigned_technicians_names: [],
-    notes: "",
-    image_urls: [],
-    quote_url: "",
-    invoice_url: "",
-    doors: []
-  };
-
   // Merge prefilled data with defaults, but only use project data if it has an id (existing project)
-  const initialData = project?.id ? project : { ...defaultFormData, ...project };
-  const [formData, setFormData] = useState(initialData);
-
+  const getInitialData = () => {
+    if (project?.id) return project;
+    return { ...DEFAULT_PROJECT_FORM_DATA, ...project };
+  };
+  
+  const [formData, setFormData] = useState(getInitialData);
   const [showNewCustomerDialog, setShowNewCustomerDialog] = useState(false);
   const [customerMatchAttempted, setCustomerMatchAttempted] = useState(false);
   const [newCustomerData, setNewCustomerData] = useState({ 
