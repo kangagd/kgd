@@ -304,43 +304,37 @@ export default function EmailDetailView({
                     {thread.subject}
                   </h1>
                   <div className="flex flex-wrap items-center gap-3 text-[13px] text-[#6B7280]">
-                    {/* Multiple project links */}
-                    {(thread.linked_project_ids?.length > 0 || thread.linked_project_id) && (
-                      <div className="flex items-center gap-1 flex-wrap">
-                        <LinkIcon className="w-3 h-3" />
-                        <span>Projects:</span>
-                        {(thread.linked_project_ids || [thread.linked_project_id]).map((projectId, idx) => (
-                          <a
-                            key={projectId}
-                            href={createPageUrl("Projects") + `?projectId=${projectId}`}
-                            target="_blank"
-                            rel="noopener noreferrer"
-                            className="text-[#111827] font-medium hover:underline"
-                          >
-                            {(thread.linked_project_titles || [thread.linked_project_title])[idx]}
-                            {idx < (thread.linked_project_ids || [thread.linked_project_id]).length - 1 && ', '}
-                          </a>
-                        ))}
-                      </div>
-                    )}
-                    {/* Multiple job links */}
-                    {(thread.linked_job_ids?.length > 0 || thread.linked_job_id) && (
-                      <div className="flex items-center gap-1 flex-wrap">
-                        <LinkIcon className="w-3 h-3" />
-                        <span>Jobs:</span>
-                        {(thread.linked_job_ids || [thread.linked_job_id]).map((jobId, idx) => (
-                          <a
-                            key={jobId}
-                            href={createPageUrl("Jobs") + `?jobId=${jobId}`}
-                            target="_blank"
-                            rel="noopener noreferrer"
-                            className="text-[#111827] font-medium hover:underline"
-                          >
-                            #{(thread.linked_job_numbers || [thread.linked_job_number])[idx]}
-                            {idx < (thread.linked_job_ids || [thread.linked_job_id]).length - 1 && ', '}
-                          </a>
-                        ))}
-                      </div>
+                    {(thread.linked_project_id || thread.linked_job_id) && (
+                      <>
+                        {thread.linked_project_id && (
+                          <div className="flex items-center gap-1">
+                            <LinkIcon className="w-3 h-3" />
+                            <span>Project:</span>
+                            <a
+                              href={createPageUrl("Projects") + `?projectId=${thread.linked_project_id}`}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className="text-[#111827] font-medium hover:underline"
+                            >
+                              {thread.linked_project_title}
+                            </a>
+                          </div>
+                        )}
+                        {thread.linked_job_id && (
+                          <div className="flex items-center gap-1">
+                            <LinkIcon className="w-3 h-3" />
+                            <span>Job:</span>
+                            <a
+                              href={createPageUrl("Jobs") + `?jobId=${thread.linked_job_id}`}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className="text-[#111827] font-medium hover:underline"
+                            >
+                              #{thread.linked_job_number}
+                            </a>
+                          </div>
+                        )}
+                      </>
                     )}
                     <div className="flex items-center gap-2">
                       <span className="text-[#6B7280]">Priority:</span>
@@ -421,14 +415,14 @@ export default function EmailDetailView({
                           Link to Job
                         </DropdownMenuItem>
                       )}
-                      {(thread.linked_project_ids?.length > 0 || thread.linked_project_id) && userPermissions?.can_link_to_project && (
-                        <DropdownMenuItem onClick={() => onUnlinkProject()}>
-                          Unlink All Projects
+                      {thread.linked_project_id && userPermissions?.can_link_to_project && (
+                        <DropdownMenuItem onClick={onUnlinkProject}>
+                          Unlink Project
                         </DropdownMenuItem>
                       )}
-                      {(thread.linked_job_ids?.length > 0 || thread.linked_job_id) && userPermissions?.can_link_to_job && (
-                        <DropdownMenuItem onClick={() => onUnlinkJob()}>
-                          Unlink All Jobs
+                      {thread.linked_job_id && userPermissions?.can_link_to_job && (
+                        <DropdownMenuItem onClick={onUnlinkJob}>
+                          Unlink Job
                         </DropdownMenuItem>
                       )}
                       <DropdownMenuSeparator />

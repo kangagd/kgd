@@ -268,141 +268,33 @@ export default function Inbox() {
     updateThreadMutation.mutate({ id: threadId, data: { status: newStatus } });
   };
 
-  const handleLinkProject = (projectIds, projectTitles) => {
-    // Support both single and multiple links
-    const idsArray = Array.isArray(projectIds) ? projectIds : [projectIds];
-    const titlesArray = Array.isArray(projectTitles) ? projectTitles : [projectTitles];
-    
-    // Merge with existing links
-    const existingIds = selectedThread.linked_project_ids || [];
-    const existingTitles = selectedThread.linked_project_titles || [];
-    
-    // Add legacy link if it exists
-    if (selectedThread.linked_project_id && !existingIds.includes(selectedThread.linked_project_id)) {
-      existingIds.push(selectedThread.linked_project_id);
-      existingTitles.push(selectedThread.linked_project_title);
-    }
-    
-    const newIds = [...new Set([...existingIds, ...idsArray])];
-    const newTitles = [...existingTitles];
-    idsArray.forEach((id, idx) => {
-      if (!existingIds.includes(id)) {
-        newTitles.push(titlesArray[idx]);
-      }
-    });
-    
+  const handleLinkProject = (projectId, projectTitle) => {
     updateThreadMutation.mutate({
       id: selectedThread.id,
-      data: { 
-        linked_project_ids: newIds, 
-        linked_project_titles: newTitles,
-        // Keep legacy fields for backward compatibility
-        linked_project_id: newIds[0] || null,
-        linked_project_title: newTitles[0] || null
-      }
+      data: { linked_project_id: projectId, linked_project_title: projectTitle }
     });
     setLinkModalOpen(false);
   };
 
-  const handleLinkJob = (jobIds, jobNumbers) => {
-    // Support both single and multiple links
-    const idsArray = Array.isArray(jobIds) ? jobIds : [jobIds];
-    const numbersArray = Array.isArray(jobNumbers) ? jobNumbers : [jobNumbers];
-    
-    // Merge with existing links
-    const existingIds = selectedThread.linked_job_ids || [];
-    const existingNumbers = selectedThread.linked_job_numbers || [];
-    
-    // Add legacy link if it exists
-    if (selectedThread.linked_job_id && !existingIds.includes(selectedThread.linked_job_id)) {
-      existingIds.push(selectedThread.linked_job_id);
-      existingNumbers.push(selectedThread.linked_job_number);
-    }
-    
-    const newIds = [...new Set([...existingIds, ...idsArray])];
-    const newNumbers = [...existingNumbers];
-    idsArray.forEach((id, idx) => {
-      if (!existingIds.includes(id)) {
-        newNumbers.push(numbersArray[idx]);
-      }
-    });
-    
+  const handleLinkJob = (jobId, jobNumber) => {
     updateThreadMutation.mutate({
       id: selectedThread.id,
-      data: { 
-        linked_job_ids: newIds, 
-        linked_job_numbers: newNumbers,
-        // Keep legacy fields for backward compatibility
-        linked_job_id: newIds[0] || null,
-        linked_job_number: newNumbers[0] || null
-      }
+      data: { linked_job_id: jobId, linked_job_number: jobNumber }
     });
     setLinkModalOpen(false);
   };
 
-  const handleUnlinkProject = (projectIdToRemove) => {
-    const existingIds = selectedThread.linked_project_ids || [];
-    const existingTitles = selectedThread.linked_project_titles || [];
-    
-    // If no specific ID provided, clear all
-    if (!projectIdToRemove) {
-      updateThreadMutation.mutate({
-        id: selectedThread.id,
-        data: { 
-          linked_project_ids: [], 
-          linked_project_titles: [],
-          linked_project_id: null, 
-          linked_project_title: null 
-        }
-      });
-      return;
-    }
-    
-    const idx = existingIds.indexOf(projectIdToRemove);
-    const newIds = existingIds.filter(id => id !== projectIdToRemove);
-    const newTitles = existingTitles.filter((_, i) => i !== idx);
-    
+  const handleUnlinkProject = () => {
     updateThreadMutation.mutate({
       id: selectedThread.id,
-      data: { 
-        linked_project_ids: newIds, 
-        linked_project_titles: newTitles,
-        linked_project_id: newIds[0] || null,
-        linked_project_title: newTitles[0] || null
-      }
+      data: { linked_project_id: null, linked_project_title: null }
     });
   };
 
-  const handleUnlinkJob = (jobIdToRemove) => {
-    const existingIds = selectedThread.linked_job_ids || [];
-    const existingNumbers = selectedThread.linked_job_numbers || [];
-    
-    // If no specific ID provided, clear all
-    if (!jobIdToRemove) {
-      updateThreadMutation.mutate({
-        id: selectedThread.id,
-        data: { 
-          linked_job_ids: [], 
-          linked_job_numbers: [],
-          linked_job_id: null, 
-          linked_job_number: null 
-        }
-      });
-      return;
-    }
-    
-    const idx = existingIds.indexOf(jobIdToRemove);
-    const newIds = existingIds.filter(id => id !== jobIdToRemove);
-    const newNumbers = existingNumbers.filter((_, i) => i !== idx);
-    
+  const handleUnlinkJob = () => {
     updateThreadMutation.mutate({
       id: selectedThread.id,
-      data: { 
-        linked_job_ids: newIds, 
-        linked_job_numbers: newNumbers,
-        linked_job_id: newIds[0] || null,
-        linked_job_number: newNumbers[0] || null
-      }
+      data: { linked_job_id: null, linked_job_number: null }
     });
   };
 
@@ -739,15 +631,6 @@ export default function Inbox() {
           linkType={linkType}
           onLinkProject={handleLinkProject}
           onLinkJob={handleLinkJob}
-          thread={selectedThread}
-          existingProjectIds={[
-            ...(selectedThread?.linked_project_ids || []),
-            ...(selectedThread?.linked_project_id ? [selectedThread.linked_project_id] : [])
-          ]}
-          existingJobIds={[
-            ...(selectedThread?.linked_job_ids || []),
-            ...(selectedThread?.linked_job_id ? [selectedThread.linked_job_id] : [])
-          ]}
         />
       )}
 
