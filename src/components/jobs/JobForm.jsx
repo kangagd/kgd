@@ -18,48 +18,57 @@ import MultiTechnicianSelect from "./MultiTechnicianSelect";
 import RichTextField from "../common/RichTextField";
 import AddressAutocomplete from "../common/AddressAutocomplete";
 
-export default function JobForm({ job, technicians, onSubmit, onCancel, isSubmitting, preselectedCustomerId, preselectedProjectId }) {
-  const defaultFormData = {
-    job_number: null,
-    project_id: preselectedProjectId || "",
-    project_name: "",
-    customer_id: preselectedCustomerId || "",
-    customer_name: "",
-    customer_phone: "",
-    customer_email: "",
-    customer_type: "",
-    address: "",
-    address_full: "",
-    address_street: "",
-    address_suburb: "",
-    address_state: "",
-    address_postcode: "",
-    address_country: "Australia",
-    google_place_id: "",
-    latitude: null,
-    longitude: null,
-    product: "",
-    job_type_id: "",
-    job_type: "",
-    assigned_to: [],
-    assigned_to_name: [],
-    scheduled_date: "",
-    scheduled_time: "",
-    expected_duration: null,
-    status: "Open",
-    outcome: "",
-    notes: "",
-    pricing_provided: "",
-    additional_info: "",
-    measurements: null,
-    image_urls: [],
-    quote_url: "",
-    invoice_url: "",
-  };
+const DEFAULT_JOB_FORM_DATA = {
+  job_number: null,
+  project_id: "",
+  project_name: "",
+  customer_id: "",
+  customer_name: "",
+  customer_phone: "",
+  customer_email: "",
+  customer_type: "",
+  address: "",
+  address_full: "",
+  address_street: "",
+  address_suburb: "",
+  address_state: "",
+  address_postcode: "",
+  address_country: "Australia",
+  google_place_id: "",
+  latitude: null,
+  longitude: null,
+  product: "",
+  job_type_id: "",
+  job_type: "",
+  assigned_to: [],
+  assigned_to_name: [],
+  scheduled_date: "",
+  scheduled_time: "",
+  expected_duration: null,
+  status: "Open",
+  outcome: "",
+  notes: "",
+  pricing_provided: "",
+  additional_info: "",
+  measurements: null,
+  image_urls: [],
+  quote_url: "",
+  invoice_url: "",
+};
 
+export default function JobForm({ job, technicians, onSubmit, onCancel, isSubmitting, preselectedCustomerId, preselectedProjectId }) {
   // Merge prefilled data with defaults, but only use job data if it has an id (existing job)
-  const initialData = job?.id ? job : { ...defaultFormData, ...job };
-  const [formData, setFormData] = useState(initialData);
+  const getInitialData = () => {
+    if (job?.id) return job;
+    return { 
+      ...DEFAULT_JOB_FORM_DATA, 
+      ...job,
+      project_id: preselectedProjectId || job?.project_id || "",
+      customer_id: preselectedCustomerId || job?.customer_id || ""
+    };
+  };
+  
+  const [formData, setFormData] = useState(getInitialData);
 
   const [uploadingImages, setUploadingImages] = useState(false);
   const [uploadingQuote, setUploadingQuote] = useState(false);
