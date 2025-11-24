@@ -1,9 +1,8 @@
 import React from "react";
 import { Checkbox } from "@/components/ui/checkbox";
 import { format, parseISO } from "date-fns";
-import { Mail, Paperclip, Link as LinkIcon, Trash2 } from "lucide-react";
+import { Mail, Link as LinkIcon, Trash2 } from "lucide-react";
 import { EmailStatusBadge, EmailPriorityBadge } from "../common/StatusBadge";
-import { Badge } from "@/components/ui/badge";
 
 export default function EmailThreadList({ 
   threads, 
@@ -69,9 +68,7 @@ export default function EmailThreadList({
           key={thread.id}
           className={`p-4 border-b border-[#E5E7EB] cursor-pointer hover:bg-[#F9FAFB] transition-colors ${
             selectedThread?.id === thread.id ? 'bg-[#FAE008]/10 border-l-4 border-l-[#FAE008]' : ''
-          } ${thread.is_urgent ? 'border-l-4 border-l-red-500 bg-red-50/30' : ''} ${
-            selectedThreadIds.includes(thread.id) ? 'bg-[#FAE008]/5' : ''
-          }`}
+          } ${selectedThreadIds.includes(thread.id) ? 'bg-[#FAE008]/5' : ''}`}
         >
           <div className="flex items-start justify-between mb-2 group/row">
             <div className="flex items-start gap-3 flex-1 min-w-0 mr-2">
@@ -87,9 +84,6 @@ export default function EmailThreadList({
               )}
               <div className="flex-1 min-w-0" onClick={() => onSelectThread(thread)}>
                 <div className="flex items-center gap-2 mb-1">
-                  {thread.is_urgent && (
-                    <span className="text-[16px]">🚨</span>
-                  )}
                   {!thread.is_read && (
                     <div className="w-2 h-2 bg-[#FAE008] rounded-full flex-shrink-0" />
                   )}
@@ -127,21 +121,15 @@ export default function EmailThreadList({
             </p>
 
             <div className="flex items-center gap-2 flex-wrap">
-            {thread.category && thread.category !== 'Uncategorized' && (
-              <Badge variant="secondary">
-                {thread.category}
-              </Badge>
-            )}
-            
-            <EmailStatusBadge value={thread.status} />
-            
-            {thread.priority !== 'Normal' && (
-              <EmailPriorityBadge value={thread.priority} />
-            )}
+              <EmailStatusBadge value={thread.status} />
+              
+              {thread.priority !== 'Normal' && (
+                <EmailPriorityBadge value={thread.priority} />
+              )}
 
-            {(thread.linked_project_id || thread.linked_job_id) && (
-              <LinkIcon className="w-3 h-3 text-[#4B5563]" />
-            )}
+              {(thread.linked_project_id || thread.linked_job_id) && (
+                <LinkIcon className="w-3 h-3 text-[#4B5563]" />
+              )}
             </div>
           </div>
         </div>
