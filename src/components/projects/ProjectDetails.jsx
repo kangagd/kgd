@@ -1038,6 +1038,7 @@ Format as HTML bullet points using <ul> and <li> tags. Include only the most cri
                 </TabsTrigger>
                 <TabsTrigger value="quoting" className="flex-1 whitespace-nowrap">Quoting</TabsTrigger>
                 <TabsTrigger value="parts" className="flex-1 whitespace-nowrap">Parts</TabsTrigger>
+                <TabsTrigger value="invoices" className="flex-1 whitespace-nowrap">Invoices</TabsTrigger>
                 {user?.role === 'admin' && (
                   <TabsTrigger value="financials" className="flex-1 whitespace-nowrap">Financials</TabsTrigger>
                 )}
@@ -1170,65 +1171,14 @@ Format as HTML bullet points using <ul> and <li> tags. Include only the most cri
 
           {user?.role === 'admin' && (
             <TabsContent value="financials" className="mt-3">
-              <div className="space-y-4">
-                <Card className="border border-[#E5E7EB] shadow-sm rounded-lg">
-                  <CardHeader className="bg-white px-4 py-3 border-b border-[#E5E7EB]">
-                    <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
-                      <CardTitle className="text-[16px] font-semibold text-[#111827] leading-[1.2]">
-                        Xero Invoices ({xeroInvoices.length})
-                      </CardTitle>
-                      <Button
-                        onClick={() => setShowInvoiceModal(true)}
-                        size="sm"
-                        className="bg-[#FAE008] text-[#111827] hover:bg-[#E5CF07] font-semibold h-8 w-full sm:w-auto"
-                      >
-                        <Plus className="w-4 h-4 mr-1" />
-                        Create Invoice
-                      </Button>
-                    </div>
-                  </CardHeader>
-                  <CardContent className="p-4">
-                    {xeroInvoices.length === 0 ? (
-                      <div className="text-center py-6 bg-[#F9FAFB] rounded-lg border border-[#E5E7EB]">
-                        <DollarSign className="w-12 h-12 text-[#E5E7EB] mx-auto mb-3" />
-                        <p className="text-[14px] text-[#6B7280] mb-4">
-                          No invoices created for this project yet.
-                        </p>
-                        <Button
-                          onClick={() => setShowInvoiceModal(true)}
-                          variant="outline"
-                          size="sm"
-                          className="border-[#E5E7EB] hover:border-[#FAE008] hover:bg-[#FFFEF5]"
-                        >
-                          <Plus className="w-4 h-4 mr-2" />
-                          Create First Invoice
-                        </Button>
-                      </div>
-                    ) : (
-                      <div className="space-y-3">
-                        {xeroInvoices.map((invoice) => (
-                          <XeroInvoiceCard
-                            key={invoice.id}
-                            invoice={invoice}
-                            onRefreshStatus={() => syncProjectInvoiceMutation.mutate(invoice.id)}
-                            onViewInXero={() => window.open(invoice.pdf_url, '_blank')}
-                            isRefreshing={syncProjectInvoiceMutation.isPending}
-                          />
-                        ))}
-                      </div>
-                    )}
-                  </CardContent>
-                </Card>
-
-                <FinancialsTab 
-                  project={project}
-                  onUpdate={(fields) => {
-                    Object.entries(fields).forEach(([field, value]) => {
-                      updateProjectMutation.mutate({ field, value });
-                    });
-                  }}
-                />
-              </div>
+              <FinancialsTab 
+                project={project}
+                onUpdate={(fields) => {
+                  Object.entries(fields).forEach(([field, value]) => {
+                    updateProjectMutation.mutate({ field, value });
+                  });
+                }}
+              />
             </TabsContent>
           )}
 
@@ -1353,7 +1303,63 @@ Format as HTML bullet points using <ul> and <li> tags. Include only the most cri
               autoExpand={project.status === "Parts Ordered"} 
             />
           </TabsContent>
-        </Tabs>
+
+          <TabsContent value="invoices" className="mt-3">
+            <Card className="border border-[#E5E7EB] shadow-sm rounded-lg">
+              <CardHeader className="bg-white px-4 py-3 border-b border-[#E5E7EB]">
+                <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
+                  <CardTitle className="text-[16px] font-semibold text-[#111827] leading-[1.2]">
+                    Xero Invoices ({xeroInvoices.length})
+                  </CardTitle>
+                  {user?.role === 'admin' && (
+                    <Button
+                      onClick={() => setShowInvoiceModal(true)}
+                      size="sm"
+                      className="bg-[#FAE008] text-[#111827] hover:bg-[#E5CF07] font-semibold h-8 w-full sm:w-auto"
+                    >
+                      <Plus className="w-4 h-4 mr-1" />
+                      Create Invoice
+                    </Button>
+                  )}
+                </div>
+              </CardHeader>
+              <CardContent className="p-4">
+                {xeroInvoices.length === 0 ? (
+                  <div className="text-center py-6 bg-[#F9FAFB] rounded-lg border border-[#E5E7EB]">
+                    <DollarSign className="w-12 h-12 text-[#E5E7EB] mx-auto mb-3" />
+                    <p className="text-[14px] text-[#6B7280] mb-4">
+                      No invoices created for this project yet.
+                    </p>
+                    {user?.role === 'admin' && (
+                      <Button
+                        onClick={() => setShowInvoiceModal(true)}
+                        variant="outline"
+                        size="sm"
+                        className="border-[#E5E7EB] hover:border-[#FAE008] hover:bg-[#FFFEF5]"
+                      >
+                        <Plus className="w-4 h-4 mr-2" />
+                        Create First Invoice
+                      </Button>
+                    )}
+                  </div>
+                ) : (
+                  <div className="space-y-3">
+                    {xeroInvoices.map((invoice) => (
+                      <XeroInvoiceCard
+                        key={invoice.id}
+                        invoice={invoice}
+                        onRefreshStatus={() => syncProjectInvoiceMutation.mutate(invoice.id)}
+                        onViewInXero={() => window.open(invoice.pdf_url, '_blank')}
+                        isRefreshing={syncProjectInvoiceMutation.isPending}
+                        canTakePayment={user?.role === 'admin'}
+                      />
+                    ))}
+                  </div>
+                )}
+              </CardContent>
+            </Card>
+          </TabsContent>
+          </Tabs>
       </CardContent>
 
       <ProjectChangeHistoryModal
