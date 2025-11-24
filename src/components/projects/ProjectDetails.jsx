@@ -1028,22 +1028,24 @@ Format as HTML bullet points using <ul> and <li> tags. Include only the most cri
 
       <CardContent className="p-3 md:p-4">
         <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-            <TabsList className="w-full justify-start mb-4">
-            <TabsTrigger value="overview" className="flex-1">
-              Overview
-            </TabsTrigger>
-            <TabsTrigger value="visits" className="flex-1">
-              Visits
-            </TabsTrigger>
-            <TabsTrigger value="quoting" className="flex-1">Quoting</TabsTrigger>
-            <TabsTrigger value="parts" className="flex-1">Parts</TabsTrigger>
-            {user?.role === 'admin' && (
-              <TabsTrigger value="financials" className="flex-1">Financials</TabsTrigger>
-            )}
-            <TabsTrigger value="summary" className="flex-1">
-              Summary
-            </TabsTrigger>
-            </TabsList>
+            <div className="overflow-x-auto -mx-3 px-3 md:mx-0 md:px-0 mb-4">
+              <TabsList className="w-full justify-start min-w-max md:min-w-0">
+                <TabsTrigger value="overview" className="flex-1 whitespace-nowrap">
+                  Overview
+                </TabsTrigger>
+                <TabsTrigger value="visits" className="flex-1 whitespace-nowrap">
+                  Visits
+                </TabsTrigger>
+                <TabsTrigger value="quoting" className="flex-1 whitespace-nowrap">Quoting</TabsTrigger>
+                <TabsTrigger value="parts" className="flex-1 whitespace-nowrap">Parts</TabsTrigger>
+                {user?.role === 'admin' && (
+                  <TabsTrigger value="financials" className="flex-1 whitespace-nowrap">Financials</TabsTrigger>
+                )}
+                <TabsTrigger value="summary" className="flex-1 whitespace-nowrap">
+                  Summary
+                </TabsTrigger>
+              </TabsList>
+            </div>
 
           <TabsContent value="overview" className="space-y-3 mt-3">
             <div>
