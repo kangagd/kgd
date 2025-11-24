@@ -295,18 +295,18 @@ export default function Layout({ children, currentPageName }) {
             </div>
 
             {navigationItems.map((item) => {
-              const isActive = location.pathname === item.url;
-              return (
-                <Link
-                  key={item.title}
-                  to={item.url}
-                  onClick={() => setTechMobileMenuOpen(false)}
-                  className={`flex items-center gap-3 px-4 py-3 rounded-lg transition-colors ${
-                    isActive
-                      ? 'bg-[#FAE008] text-[#111827]'
-                      : 'text-[#4B5563] hover:text-[#111827] hover:bg-[#F3F4F6]'
-                  }`}
-                >
+            const isActive = location.pathname === item.url;
+            return (
+              <Link
+                key={item.title}
+                to={item.url}
+                onClick={() => setTechMobileMenuOpen(false)}
+                className={`flex items-center gap-3 px-4 py-3 rounded-lg transition-colors no-underline ${
+                  isActive
+                    ? 'bg-[#FAE008] text-[#111827]'
+                    : 'text-[#4B5563] hover:text-[#111827] hover:bg-[#F3F4F6]'
+                }`}
+              >
                   <item.icon className="w-5 h-5 flex-shrink-0" />
                   <span className="text-[14px] font-medium">{item.title}</span>
                 </Link>
@@ -446,7 +446,7 @@ export default function Layout({ children, currentPageName }) {
                     key={item.title}
                     to={item.url}
                     className={`
-                      flex items-center gap-3 px-3 py-2.5 rounded-lg transition-all relative
+                      flex items-center gap-3 px-3 py-2.5 rounded-lg transition-all relative no-underline
                       ${isActive 
                         ? 'bg-[#FAE008]/10 text-[#111827] font-semibold' 
                         : 'text-[#111827] hover:bg-[#F3F4F6]'
@@ -482,7 +482,7 @@ export default function Layout({ children, currentPageName }) {
                             key={item.title}
                             to={item.url}
                             className={`
-                              flex items-center gap-3 px-3 py-2.5 rounded-lg transition-all relative
+                              flex items-center gap-3 px-3 py-2.5 rounded-lg transition-all relative no-underline
                               ${isActive 
                                 ? 'bg-[#FAE008]/10 text-[#111827] font-semibold' 
                                 : 'text-[#111827] hover:bg-[#F3F4F6]'
@@ -521,7 +521,7 @@ export default function Layout({ children, currentPageName }) {
                             to={item.url}
                             onClick={() => setCollapsedMoreOpen(false)}
                             className={`
-                              flex items-center gap-3 px-3 py-2.5 rounded-lg transition-all relative
+                              flex items-center gap-3 px-3 py-2.5 rounded-lg transition-all relative no-underline
                               ${isActive 
                                 ? 'bg-[#FAE008]/10 text-[#111827] font-semibold' 
                                 : 'text-[#111827] hover:bg-[#F3F4F6]'
