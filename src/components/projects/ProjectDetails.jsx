@@ -227,8 +227,11 @@ export default function ProjectDetails({ project: initialProject, onClose, onEdi
       });
       return response.data;
     },
-    onSuccess: () => {
+    onSuccess: (data) => {
       queryClient.invalidateQueries({ queryKey: ['projectXeroInvoices', project.id] });
+      if (data.voided) {
+        toast.info('Invoice was voided in Xero and removed from the app');
+      }
     }
   });
 
