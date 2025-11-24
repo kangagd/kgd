@@ -44,6 +44,7 @@ Deno.serve(async (req) => {
     
     // Check authentication first
     const currentUser = await base44.auth.me();
+    console.log('Current user:', currentUser);
     if (!currentUser) {
       return Response.json({ error: 'Unauthorized' }, { status: 401 });
     }
