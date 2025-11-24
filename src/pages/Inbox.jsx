@@ -17,7 +17,6 @@ import {
 import EmailThreadList from "../components/inbox/EmailThreadList";
 import EmailDetailView from "../components/inbox/EmailDetailView";
 import LinkThreadModal from "../components/inbox/LinkThreadModal";
-
 import CreateJobFromEmailModal from "../components/inbox/CreateJobFromEmailModal";
 import GmailConnect from "../components/inbox/GmailConnect";
 import AdvancedSearch from "../components/inbox/AdvancedSearch";
