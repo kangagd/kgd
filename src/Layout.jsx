@@ -45,8 +45,6 @@ const primaryNavigationItems = [
 ];
 
 const secondaryNavigationItems = [
-  { title: "Quotes", url: createPageUrl("Quotes"), icon: FileText },
-  { title: "Quote Templates", url: createPageUrl("QuoteTemplates"), icon: FileText },
   { title: "Organisations", url: createPageUrl("Organisations"), icon: Building2 },
   { title: "Photos", url: createPageUrl("Photos"), icon: ImageIcon },
   { title: "Price List", url: createPageUrl("PriceList"), icon: DollarSign },
