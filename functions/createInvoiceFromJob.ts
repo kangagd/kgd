@@ -189,8 +189,35 @@ Deno.serve(async (req) => {
     const xeroResult = await xeroResponse.json();
     const xeroInvoice = xeroResult.Invoices[0];
 
-    // Extract public online payment URL (customer-facing) from Xero response
-    const onlinePaymentUrl = xeroInvoice.OnlineInvoiceUrl || null;
+    // Fetch public online payment URL using dedicated OnlineInvoice endpoint
+    let onlinePaymentUrl = null;
+    for (let attempt = 0; attempt < 5; attempt++) {
+      try {
+        const onlineInvoiceResponse = await fetch(
+          `https://api.xero.com/api.xro/2.0/Invoices/${xeroInvoice.InvoiceID}/OnlineInvoice`,
+          {
+            headers: {
+              'Authorization': `Bearer ${connection.access_token}`,
+              'xero-tenant-id': connection.xero_tenant_id,
+              'Accept': 'application/json'
+            }
+          }
+        );
+
+        if (onlineInvoiceResponse.ok) {
+          const onlineInvoiceResult = await onlineInvoiceResponse.json();
+          onlinePaymentUrl = onlineInvoiceResult.OnlineInvoices?.[0]?.OnlineInvoiceUrl || null;
+          if (onlinePaymentUrl) break;
+        }
+      } catch (err) {
+        console.warn(`Attempt ${attempt + 1} to fetch online invoice URL failed:`, err);
+      }
+
+      // Wait 1.5 seconds before retrying
+      if (attempt < 4) {
+        await new Promise(resolve => setTimeout(resolve, 1500));
+      }
+    }
 
     // Create XeroInvoice record
     const invoiceRecord = await base44.asServiceRole.entities.XeroInvoice.create({
