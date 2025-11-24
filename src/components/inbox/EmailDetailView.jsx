@@ -6,7 +6,6 @@ import { Badge } from "@/components/ui/badge";
 import {
   Reply,
   Forward,
-  ExternalLink as ExternalLinkIcon,
   MoreVertical,
   ChevronDown,
   ChevronUp,
@@ -14,8 +13,6 @@ import {
   Download,
   FileText,
   Image as ImageIcon,
-  Sparkles,
-  Copy,
   Link as LinkIcon,
   X,
   Trash2
@@ -62,61 +59,6 @@ const sanitizeBodyHtml = (html) => {
   return sanitized;
 };
 
-const AIActionCard = ({ title, content, onCopy, onAction, actionLabel, onClose }) => {
-  const [copied, setCopied] = useState(false);
-
-  const handleCopy = () => {
-    navigator.clipboard.writeText(content);
-    setCopied(true);
-    setTimeout(() => setCopied(false), 2000);
-    if (onCopy) onCopy();
-  };
-
-  return (
-    <div className="bg-gradient-to-br from-purple-50 to-blue-50 rounded-xl border border-purple-200/50 p-4 shadow-sm">
-      <div className="flex items-start justify-between mb-3">
-        <div className="flex items-center gap-2">
-          <Sparkles className="w-4 h-4 text-purple-600" />
-          <h4 className="text-[14px] font-semibold text-[#111827]">{title}</h4>
-        </div>
-        <div className="flex items-center gap-1">
-          <Button
-            variant="ghost"
-            size="sm"
-            onClick={handleCopy}
-            className="h-7 w-7 p-0"
-          >
-            {copied ? <span className="text-green-600 text-xs">✓</span> : <Copy className="w-3 h-3" />}
-          </Button>
-          {onClose && (
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={onClose}
-              className="h-7 w-7 p-0"
-            >
-              <X className="w-3 h-3" />
-            </Button>
-          )}
-        </div>
-      </div>
-      <div className="text-[13px] text-[#111827] leading-relaxed whitespace-pre-wrap">
-        {content}
-      </div>
-      {onAction && actionLabel && (
-        <Button
-          variant="outline"
-          size="sm"
-          onClick={onAction}
-          className="mt-3 text-[12px] h-8"
-        >
-          {actionLabel}
-        </Button>
-      )}
-    </div>
-  );
-};
-
 export default function EmailDetailView({
   thread,
   onClose,
@@ -131,8 +73,6 @@ export default function EmailDetailView({
   const [composerMode, setComposerMode] = useState(null);
   const [selectedMessage, setSelectedMessage] = useState(null);
   const [showFullHeader, setShowFullHeader] = useState(false);
-  const [aiCards, setAiCards] = useState([]);
-  const [loadingAI, setLoadingAI] = useState(null);
   const [previewAttachment, setPreviewAttachment] = useState(null);
   const [attachmentsExpanded, setAttachmentsExpanded] = useState(false);
   const [updatingPriority, setUpdatingPriority] = useState(false);
@@ -167,94 +107,6 @@ export default function EmailDetailView({
     refetch();
   };
 
-  const handleAISummarize = async () => {
-    setLoadingAI('summarize');
-    try {
-      const emailContent = messages.map(m => 
-        `From: ${m.from_address}\nDate: ${format(parseISO(m.sent_at), 'PPP')}\n\n${m.body_text || m.body_html?.replace(/<[^>]*>/g, '').substring(0, 1000)}`
-      ).join('\n\n---\n\n');
-
-      const response = await base44.integrations.Core.InvokeLLM({
-        prompt: `Summarize this email thread in 2-3 clear sentences. Focus on key decisions, requests, and outcomes.\n\n${emailContent}`,
-        response_json_schema: {
-          type: "object",
-          properties: {
-            summary: { type: "string" }
-          }
-        }
-      });
-
-      setAiCards(prev => [{
-        id: Date.now(),
-        title: "Email Summary",
-        content: response.summary,
-        type: "summary"
-      }, ...prev]);
-    } catch (error) {
-      toast.error("Failed to generate summary");
-    } finally {
-      setLoadingAI(null);
-    }
-  };
-
-  const handleAIExtractActions = async () => {
-    if (!latestMessage) return;
-    setLoadingAI('actions');
-    try {
-      const emailContent = latestMessage.body_text || latestMessage.body_html?.replace(/<[^>]*>/g, '').substring(0, 1000);
-
-      const response = await base44.integrations.Core.InvokeLLM({
-        prompt: `Extract action items from this email. List them as bullet points.\n\nEmail:\n${emailContent}`,
-        response_json_schema: {
-          type: "object",
-          properties: {
-            actions: { type: "string" }
-          }
-        }
-      });
-
-      setAiCards(prev => [{
-        id: Date.now(),
-        title: "Suggested Actions",
-        content: response.actions,
-        type: "actions"
-      }, ...prev]);
-    } catch (error) {
-      toast.error("Failed to extract actions");
-    } finally {
-      setLoadingAI(null);
-    }
-  };
-
-  const handleAISuggestLinks = async () => {
-    if (!latestMessage) return;
-    setLoadingAI('links');
-    try {
-      const emailContent = `Subject: ${thread.subject}\n\n${latestMessage.body_text || latestMessage.body_html?.replace(/<[^>]*>/g, '').substring(0, 800)}`;
-
-      const response = await base44.integrations.Core.InvokeLLM({
-        prompt: `Based on this email from a garage door service company, suggest if it should be linked to an existing job or project. Provide reasoning.\n\n${emailContent}`,
-        response_json_schema: {
-          type: "object",
-          properties: {
-            suggestion: { type: "string" }
-          }
-        }
-      });
-
-      setAiCards(prev => [{
-        id: Date.now(),
-        title: "Link Suggestions",
-        content: response.suggestion,
-        type: "links"
-      }, ...prev]);
-    } catch (error) {
-      toast.error("Failed to generate link suggestions");
-    } finally {
-      setLoadingAI(null);
-    }
-  };
-
   const handlePriorityChange = async (newPriority) => {
     setUpdatingPriority(true);
     try {
@@ -263,19 +115,6 @@ export default function EmailDetailView({
       refetch();
     } catch (error) {
       toast.error("Failed to update priority");
-    } finally {
-      setUpdatingPriority(false);
-    }
-  };
-
-  const handleAIReprioritize = async () => {
-    setUpdatingPriority(true);
-    try {
-      const response = await base44.functions.invoke('emailPrioritize', { threadId: thread.id });
-      toast.success(`AI set priority to ${response.data.priority}`);
-      refetch();
-    } catch (error) {
-      toast.error("Failed to analyze priority");
     } finally {
       setUpdatingPriority(false);
     }
@@ -425,11 +264,6 @@ export default function EmailDetailView({
                           Unlink Job
                         </DropdownMenuItem>
                       )}
-                      <DropdownMenuSeparator />
-                      <DropdownMenuItem onClick={handleAIReprioritize} disabled={updatingPriority}>
-                        <Sparkles className="w-4 h-4 mr-2" />
-                        AI Re-prioritize
-                      </DropdownMenuItem>
                     </DropdownMenuContent>
                   </DropdownMenu>
                   <Button
@@ -578,55 +412,6 @@ export default function EmailDetailView({
                 )}
               </div>
             )}
-
-            {/* AI Actions Section */}
-            <div className="px-6 pt-4 pb-4 border-b border-[#F3F4F6]">
-              <div className="flex items-center gap-2 mb-4">
-                <Sparkles className="w-4 h-4 text-purple-600" />
-                <h3 className="text-[14px] font-semibold text-[#111827]">AI Tools</h3>
-              </div>
-              <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-                <Button
-                  variant="outline"
-                  onClick={handleAISummarize}
-                  disabled={loadingAI === 'summarize'}
-                  className="w-full"
-                >
-                  {loadingAI === 'summarize' ? 'Generating...' : 'Summarize Email'}
-                </Button>
-                <Button
-                  variant="outline"
-                  onClick={handleAIExtractActions}
-                  disabled={loadingAI === 'actions'}
-                  className="w-full"
-                >
-                  {loadingAI === 'actions' ? 'Extracting...' : 'Extract Actions'}
-                </Button>
-                <Button
-                  variant="outline"
-                  onClick={handleAISuggestLinks}
-                  disabled={loadingAI === 'links'}
-                  className="w-full"
-                >
-                  {loadingAI === 'links' ? 'Analyzing...' : 'Suggest Links'}
-                </Button>
-              </div>
-
-              {/* AI Results Cards */}
-              {aiCards.length > 0 && (
-                <div className="space-y-3 mt-4">
-                  {aiCards.map((card) => (
-                    <AIActionCard
-                      key={card.id}
-                      title={card.title}
-                      content={card.content}
-                      onCopy={() => toast.success('Copied to clipboard')}
-                      onClose={() => setAiCards(prev => prev.filter(c => c.id !== card.id))}
-                    />
-                  ))}
-                </div>
-              )}
-            </div>
 
             {/* Email Body */}
             <div className="p-6">

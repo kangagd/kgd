@@ -5,7 +5,7 @@ import { useNavigate, useSearchParams } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent } from "@/components/ui/card";
-import { Search, Filter, Mail, Link as LinkIcon, Check, Archive, Trash2, ArrowUpDown, SlidersHorizontal, Tags, Loader2, Plus } from "lucide-react";
+import { Search, Filter, Mail, Link as LinkIcon, Check, Archive, Trash2, ArrowUpDown, SlidersHorizontal, Plus } from "lucide-react";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import {
@@ -53,7 +53,6 @@ export default function Inbox() {
   const [userPermissions, setUserPermissions] = useState(null);
   const [sidebarWidth, setSidebarWidth] = useState(400);
   const [isResizing, setIsResizing] = useState(false);
-  const [isTagging, setIsTagging] = useState(false);
   const [showComposer, setShowComposer] = useState(false);
   const queryClient = useQueryClient();
 
@@ -361,27 +360,6 @@ export default function Inbox() {
     }
   };
 
-  const handleBulkTag = async () => {
-    if (!user || user.role !== 'admin') return;
-    
-    setIsTagging(true);
-    try {
-      const result = await base44.functions.invoke('bulkTagEmails', { batch_size: 10 });
-      queryClient.invalidateQueries({ queryKey: ['emailThreads'] });
-      
-      if (result?.data?.remaining > 0) {
-        alert(`Tagged ${result.data.processed} threads. ${result.data.remaining} remaining. Click again to continue.`);
-      } else {
-        alert(result?.data?.message || 'All threads tagged!');
-      }
-    } catch (error) {
-      console.error('Bulk tagging failed:', error);
-      alert('Failed to tag threads. Please try again.');
-    } finally {
-      setIsTagging(false);
-    }
-  };
-
   if (!userPermissions?.can_view) {
     return (
       <div className="p-5 md:p-10 bg-[#ffffff] min-h-screen">
@@ -409,37 +387,14 @@ export default function Inbox() {
               user={user} 
               onSyncComplete={() => queryClient.invalidateQueries({ queryKey: ['emailThreads'] })} 
             />
-            <div className="flex items-center gap-2">
-              <Button
-                onClick={() => setShowComposer(true)}
-                size="sm"
-                className="bg-[#FAE008] text-[#111827] hover:bg-[#E5CF07] font-semibold h-9"
-              >
-                <Plus className="w-4 h-4 mr-1" />
-                New Email
-              </Button>
-              {user?.role === 'admin' && (
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={handleBulkTag}
-                  disabled={isTagging}
-                  className="flex-shrink-0 h-9"
-                >
-                  {isTagging ? (
-                    <>
-                      <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                      Tagging...
-                    </>
-                  ) : (
-                    <>
-                      <Tags className="w-4 h-4 mr-2" />
-                      AI Tag
-                    </>
-                  )}
-                </Button>
-              )}
-            </div>
+            <Button
+              onClick={() => setShowComposer(true)}
+              size="sm"
+              className="bg-[#FAE008] text-[#111827] hover:bg-[#E5CF07] font-semibold h-9"
+            >
+              <Plus className="w-4 h-4 mr-1" />
+              New Email
+            </Button>
           </div>
           
           <div className="mt-3">
