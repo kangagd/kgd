@@ -4,7 +4,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
-import { Plus, Trash2, GripVertical, Search, ChevronDown, ChevronRight, FolderPlus } from "lucide-react";
+import { Plus, Trash2, GripVertical, Search, ChevronDown, ChevronRight, FolderPlus, Edit2, Check, X } from "lucide-react";
 import { base44 } from "@/api/base44Client";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { Switch } from "@/components/ui/switch";
@@ -22,6 +22,8 @@ export default function QuoteItemManager({ quote, quoteItems, quoteSections, onU
   const [newSectionOptionGroup, setNewSectionOptionGroup] = useState("");
   const [showNewSectionForm, setShowNewSectionForm] = useState(false);
   const [collapsedSections, setCollapsedSections] = useState({});
+  const [editingSectionId, setEditingSectionId] = useState(null);
+  const [editingSectionData, setEditingSectionData] = useState(null);
   const [newItem, setNewItem] = useState({
     product_id: "",
     section_id: "",
@@ -227,6 +229,34 @@ export default function QuoteItemManager({ quote, quoteItems, quoteSections, onU
         data: { ...section, is_selected: !section.is_selected } 
       });
     }
+  };
+
+  const startEditingSection = (section) => {
+    setEditingSectionId(section.id);
+    setEditingSectionData({
+      title: section.title,
+      description: section.description || "",
+      is_optional: section.is_optional || false,
+      option_group_key: section.option_group_key || ""
+    });
+  };
+
+  const cancelEditingSection = () => {
+    setEditingSectionId(null);
+    setEditingSectionData(null);
+  };
+
+  const saveEditingSection = (section) => {
+    updateSectionMutation.mutate({
+      id: section.id,
+      data: {
+        ...section,
+        ...editingSectionData,
+        option_group_key: editingSectionData.option_group_key.trim() || null
+      }
+    });
+    setEditingSectionId(null);
+    setEditingSectionData(null);
   };
 
   const handleDeleteSection = (sectionId) => {
@@ -495,61 +525,122 @@ export default function QuoteItemManager({ quote, quoteItems, quoteSections, onU
                   <div key={section.id} className="space-y-2">
                     <Card className={`border ${section.is_optional && !section.is_selected ? 'bg-white border-[#D1D5DB]' : 'bg-[#F9FAFB] border-[#E5E7EB]'}`}>
                       <CardContent className="p-4">
-                        <div className="flex items-center justify-between">
-                          <div className="flex items-center gap-3 flex-1">
-                            {section.is_optional && (
-                              <div className="flex items-center">
-                                {section.option_group_key ? (
-                                  <input
-                                    type="radio"
-                                    checked={section.is_selected}
-                                    onChange={() => handleToggleSectionSelection(section)}
-                                    className="w-4 h-4 cursor-pointer"
-                                  />
-                                ) : (
-                                  <Switch
-                                    checked={section.is_selected}
-                                    onCheckedChange={() => handleToggleSectionSelection(section)}
-                                  />
-                                )}
+                        {editingSectionId === section.id ? (
+                          <div className="space-y-3">
+                            <Input
+                              value={editingSectionData.title}
+                              onChange={(e) => setEditingSectionData({ ...editingSectionData, title: e.target.value })}
+                              placeholder="Section title"
+                            />
+                            <Textarea
+                              value={editingSectionData.description}
+                              onChange={(e) => setEditingSectionData({ ...editingSectionData, description: e.target.value })}
+                              placeholder="Section description (optional)"
+                              className="min-h-[60px]"
+                            />
+                            <div className="flex items-center gap-4">
+                              <div className="flex items-center space-x-2">
+                                <Switch
+                                  checked={editingSectionData.is_optional}
+                                  onCheckedChange={(checked) => setEditingSectionData({ ...editingSectionData, is_optional: checked })}
+                                />
+                                <Label className="text-sm">Optional Section</Label>
                               </div>
-                            )}
-                            <button
-                              onClick={() => toggleSection(section.id)}
-                              className="flex items-center gap-2 flex-1 text-left hover:opacity-70 transition-opacity"
-                            >
-                              {isCollapsed ? (
-                                <ChevronRight className="w-5 h-5 text-[#6B7280]" />
-                              ) : (
-                                <ChevronDown className="w-5 h-5 text-[#6B7280]" />
+                              {editingSectionData.is_optional && (
+                                <Input
+                                  value={editingSectionData.option_group_key}
+                                  onChange={(e) => setEditingSectionData({ ...editingSectionData, option_group_key: e.target.value })}
+                                  placeholder="Option group (for radio behavior)"
+                                  className="flex-1"
+                                />
                               )}
-                              <h4 className={`font-semibold ${section.is_optional && !section.is_selected ? 'text-[#6B7280]' : 'text-[#111827]'}`}>
-                                {section.title}
-                              </h4>
-                              <span className="text-sm text-[#6B7280]">({sectionItems.length})</span>
-                              {section.is_optional && (
-                                <span className="text-xs bg-[#FAE008]/20 text-[#92400E] px-2 py-0.5 rounded-lg">
-                                  {section.option_group_key ? 'Choose One' : 'Optional'}
+                            </div>
+                            <div className="flex gap-2">
+                              <Button
+                                size="sm"
+                                onClick={() => saveEditingSection(section)}
+                                className="bg-[#FAE008] hover:bg-[#E5CF07] text-[#111827]"
+                              >
+                                <Check className="w-4 h-4 mr-1" />
+                                Save
+                              </Button>
+                              <Button
+                                size="sm"
+                                variant="outline"
+                                onClick={cancelEditingSection}
+                              >
+                                <X className="w-4 h-4 mr-1" />
+                                Cancel
+                              </Button>
+                            </div>
+                          </div>
+                        ) : (
+                          <>
+                            <div className="flex items-center justify-between">
+                              <div className="flex items-center gap-3 flex-1">
+                                {section.is_optional && (
+                                  <div className="flex items-center">
+                                    {section.option_group_key ? (
+                                      <input
+                                        type="radio"
+                                        checked={section.is_selected}
+                                        onChange={() => handleToggleSectionSelection(section)}
+                                        className="w-4 h-4 cursor-pointer"
+                                      />
+                                    ) : (
+                                      <Switch
+                                        checked={section.is_selected}
+                                        onCheckedChange={() => handleToggleSectionSelection(section)}
+                                      />
+                                    )}
+                                  </div>
+                                )}
+                                <button
+                                  onClick={() => toggleSection(section.id)}
+                                  className="flex items-center gap-2 flex-1 text-left hover:opacity-70 transition-opacity"
+                                >
+                                  {isCollapsed ? (
+                                    <ChevronRight className="w-5 h-5 text-[#6B7280]" />
+                                  ) : (
+                                    <ChevronDown className="w-5 h-5 text-[#6B7280]" />
+                                  )}
+                                  <h4 className={`font-semibold ${section.is_optional && !section.is_selected ? 'text-[#6B7280]' : 'text-[#111827]'}`}>
+                                    {section.title}
+                                  </h4>
+                                  <span className="text-sm text-[#6B7280]">({sectionItems.length})</span>
+                                  {section.is_optional && (
+                                    <span className="text-xs bg-[#FAE008]/20 text-[#92400E] px-2 py-0.5 rounded-lg">
+                                      {section.option_group_key ? 'Choose One' : 'Optional'}
+                                    </span>
+                                  )}
+                                </button>
+                              </div>
+                              <div className="flex items-center gap-2">
+                                <span className={`text-sm font-semibold ${section.is_optional && !section.is_selected ? 'text-[#6B7280]' : 'text-[#111827]'}`}>
+                                  ${sectionTotal.toLocaleString('en-AU', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                                 </span>
-                              )}
-                            </button>
-                          </div>
-                          <div className="flex items-center gap-4">
-                            <span className={`text-sm font-semibold ${section.is_optional && !section.is_selected ? 'text-[#6B7280]' : 'text-[#111827]'}`}>
-                              ${sectionTotal.toLocaleString('en-AU', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
-                            </span>
-                            <Button
-                              variant="ghost"
-                              size="icon"
-                              onClick={() => handleDeleteSection(section.id)}
-                              className="hover:bg-red-100 hover:text-red-600"
-                            >
-                              <Trash2 className="w-4 h-4" />
-                            </Button>
-                          </div>
-                        </div>
-                        {section.description && !isCollapsed && (
-                          <p className="text-sm text-[#6B7280] mt-2 ml-7">{section.description}</p>
+                                <Button
+                                  variant="ghost"
+                                  size="icon"
+                                  onClick={() => startEditingSection(section)}
+                                  className="hover:bg-[#F3F4F6]"
+                                >
+                                  <Edit2 className="w-4 h-4" />
+                                </Button>
+                                <Button
+                                  variant="ghost"
+                                  size="icon"
+                                  onClick={() => handleDeleteSection(section.id)}
+                                  className="hover:bg-red-100 hover:text-red-600"
+                                >
+                                  <Trash2 className="w-4 h-4" />
+                                </Button>
+                              </div>
+                            </div>
+                            {section.description && !isCollapsed && (
+                              <p className="text-sm text-[#6B7280] mt-2 ml-7">{section.description}</p>
+                            )}
+                          </>
                         )}
                       </CardContent>
                     </Card>
