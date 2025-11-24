@@ -64,13 +64,6 @@ export default function PublicQuote() {
         occurred_at: new Date().toISOString(),
         metadata: JSON.stringify({ ip: "client" })
       });
-
-      if (quoteData.quote.status === "Sent") {
-        updateQuoteMutation.mutate({
-          id: quoteData.quote.id,
-          data: { ...quoteData.quote, status: "Viewed" }
-        });
-      }
     }
   }, [quoteData]);
 

@@ -23,14 +23,20 @@ Deno.serve(async (req) => {
       public_share_token: token 
     });
 
-    if (quotes.length === 0) {
-      return new Response(JSON.stringify({ error: 'Quote not found' }), { 
+    if (!quotes || quotes.length === 0) {
+      return new Response(JSON.stringify({ error: 'Quote not found or token invalid' }), { 
         status: 404,
         headers: { 'Content-Type': 'application/json' }
       });
     }
 
     const quote = quotes[0];
+
+    // Update status to Viewed if currently Sent
+    if (quote.status === 'Sent') {
+      await base44.entities.Quote.update(quote.id, { status: 'Viewed' });
+      quote.status = 'Viewed';
+    }
 
     // Fetch related items
     const quoteItems = await base44.entities.QuoteItem.filter({ 
