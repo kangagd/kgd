@@ -9,6 +9,7 @@ import { format, parseISO } from "date-fns";
 export default function EmailAISummaryCard({ thread, onThreadUpdate, onCreateProject }) {
   const [showKeyPoints, setShowKeyPoints] = useState(false);
   const [isGenerating, setIsGenerating] = useState(false);
+  const [isCreatingProject, setIsCreatingProject] = useState(false);
 
   const hasInsights = thread.ai_summary || (thread.ai_key_points && thread.ai_key_points.length > 0);
 
@@ -36,6 +37,93 @@ export default function EmailAISummaryCard({ thread, onThreadUpdate, onCreatePro
     }
   };
 
+  const handleCreateProjectWithAI = async () => {
+    if (!thread.ai_suggested_project_fields) {
+      toast.error("Please generate AI insights first");
+      return;
+    }
+
+    setIsCreatingProject(true);
+    try {
+      const suggestions = thread.ai_suggested_project_fields;
+      
+      // First, try to find or create the customer
+      let customerId = null;
+      let customerName = suggestions.suggested_customer_name || thread.from_address?.split('@')[0] || 'Unknown';
+      let customerEmail = suggestions.suggested_customer_email || thread.from_address;
+      let customerPhone = suggestions.suggested_customer_phone || '';
+
+      // Check if customer exists by email
+      if (customerEmail) {
+        const existingCustomers = await base44.entities.Customer.filter({ email: customerEmail });
+        if (existingCustomers.length > 0) {
+          customerId = existingCustomers[0].id;
+          customerName = existingCustomers[0].name;
+          customerPhone = existingCustomers[0].phone || customerPhone;
+        }
+      }
+
+      // If no customer found, create one
+      if (!customerId) {
+        const newCustomer = await base44.entities.Customer.create({
+          name: customerName,
+          email: customerEmail,
+          phone: customerPhone,
+          address_full: suggestions.suggested_address || '',
+          status: 'active'
+        });
+        customerId = newCustomer.id;
+      }
+
+      // Create the project with AI suggestions
+      const projectData = {
+        customer_id: customerId,
+        customer_name: customerName,
+        customer_email: customerEmail,
+        customer_phone: customerPhone,
+        title: suggestions.suggested_title || thread.subject || 'New Project',
+        description: suggestions.suggested_description || thread.ai_summary || '',
+        project_type: suggestions.suggested_project_type || 'Repair',
+        address_full: suggestions.suggested_address || '',
+        status: 'Lead',
+        notes: `Created from email: ${thread.from_address}\n\nAI Key Points:\n${(thread.ai_key_points || []).map(p => `• ${p}`).join('\n')}`,
+        source_email_thread_id: thread.id
+      };
+
+      const newProject = await base44.entities.Project.create(projectData);
+
+      // Link the email thread to the project
+      await base44.entities.EmailThread.update(thread.id, {
+        linked_project_id: newProject.id,
+        linked_project_title: newProject.title
+      });
+
+      // Mark the AI insight as applied
+      const insights = await base44.entities.AIEmailInsight.filter({ email_thread_id: thread.id });
+      if (insights.length > 0) {
+        await base44.entities.AIEmailInsight.update(insights[0].id, {
+          project_id: newProject.id,
+          applied_to_project: true,
+          applied_at: new Date().toISOString()
+        });
+      }
+
+      toast.success("Project created with AI suggestions");
+      
+      if (onThreadUpdate) {
+        onThreadUpdate();
+      }
+
+      // Navigate to the new project
+      window.location.href = `/Projects?projectId=${newProject.id}&fromEmail=${thread.id}`;
+    } catch (error) {
+      console.error("Error creating project:", error);
+      toast.error("Failed to create project");
+    } finally {
+      setIsCreatingProject(false);
+    }
+  };
+
   return (
     <Card className="border border-[#E0E7FF] bg-gradient-to-r from-[#EEF2FF] to-[#F5F3FF] shadow-sm mb-4">
       <CardContent className="p-4">
@@ -58,11 +146,16 @@ export default function EmailAISummaryCard({ thread, onThreadUpdate, onCreatePro
               <Button
                 variant="outline"
                 size="sm"
-                onClick={onCreateProject}
+                onClick={handleCreateProjectWithAI}
+                disabled={isCreatingProject}
                 className="h-8 text-[12px] border-[#6366F1]/30 text-[#4338CA] hover:bg-[#6366F1]/10 hover:border-[#6366F1]"
               >
-                <FolderPlus className="w-3.5 h-3.5 mr-1.5" />
-                Use for Project
+                {isCreatingProject ? (
+                  <Loader2 className="w-3.5 h-3.5 mr-1.5 animate-spin" />
+                ) : (
+                  <FolderPlus className="w-3.5 h-3.5 mr-1.5" />
+                )}
+                {isCreatingProject ? "Creating..." : "Use for Project"}
               </Button>
             )}
             <Button
