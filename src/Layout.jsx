@@ -543,13 +543,13 @@ export default function Layout({ children, currentPageName }) {
 
           {/* Notification Bell */}
           {!isCollapsed && (
-            <div className="px-3 pb-3 border-b border-[#E5E7EB]">
+            <div className="px-3 pb-3 border-b border-[#E5E7EB] flex-shrink-0">
               <NotificationBell user={user} />
             </div>
           )}
 
           {/* User Profile & Logout */}
-          <div className="p-3 border-t border-[#E5E7EB]">
+          <div className="p-3 border-t border-[#E5E7EB] flex-shrink-0">
   <button
     onClick={() => navigate(createPageUrl("UserProfile"))}
     className={`w-full flex items-center gap-3 px-3 py-2.5 hover:bg-[#F3F4F6] rounded-lg transition-colors ${isCollapsed ? 'justify-center' : ''}`}
