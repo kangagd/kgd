@@ -4,7 +4,7 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
-import { ArrowLeft, Plus, Edit, Trash2, MapPin, Phone, Mail, FileText, Image as ImageIcon, User, Upload, X, Briefcase, History, ExternalLink, DollarSign, Sparkles } from "lucide-react";
+import { ArrowLeft, Plus, Edit, Trash2, MapPin, Phone, Mail, FileText, Image as ImageIcon, User, Upload, X, Briefcase, History, ExternalLink, DollarSign } from "lucide-react";
 import { base44 } from "@/api/base44Client";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useNavigate, Link } from "react-router-dom";
@@ -36,7 +36,6 @@ import CreateInvoiceModal from "../invoices/CreateInvoiceModal";
 import TakePaymentModal from "../invoices/TakePaymentModal";
 import WarrantyCard from "./WarrantyCard";
 import MaintenanceSection from "./MaintenanceSection";
-import AIQuoteGenerator from "./AIQuoteGenerator";
 
 const statusColors = {
   "Lead": "bg-slate-100 text-slate-700",
@@ -86,7 +85,6 @@ export default function ProjectDetails({ project: initialProject, onClose, onEdi
   const [showInvoiceModal, setShowInvoiceModal] = useState(false);
   const [showPaymentModal, setShowPaymentModal] = useState(false);
   const [selectedInvoice, setSelectedInvoice] = useState(null);
-  const [showAIQuoteGenerator, setShowAIQuoteGenerator] = useState(false);
 
   React.useEffect(() => {
     const loadUser = async () => {
@@ -1213,28 +1211,6 @@ Format as HTML bullet points using <ul> and <li> tags. Include only the most cri
 
           <TabsContent value="quoting" className="mt-3">
             <div className="space-y-4">
-              {!showAIQuoteGenerator && user?.role === 'admin' && (
-                <Button
-                  onClick={() => setShowAIQuoteGenerator(true)}
-                  className="w-full bg-gradient-to-r from-[#FAE008] to-[#E5CF07] text-[#111827] hover:from-[#E5CF07] hover:to-[#D4C006] font-semibold shadow-sm"
-                >
-                  <Sparkles className="w-4 h-4 mr-2" />
-                  Generate Quote with AI
-                </Button>
-              )}
-
-              {showAIQuoteGenerator && (
-                <AIQuoteGenerator
-                  project={project}
-                  onQuoteGenerated={(quoteData) => {
-                    Object.entries(quoteData).forEach(([field, value]) => {
-                      updateProjectMutation.mutate({ field, value });
-                    });
-                  }}
-                  onClose={() => setShowAIQuoteGenerator(false)}
-                />
-              )}
-
               <div>
                 <label className="block text-[13px] md:text-[14px] font-medium text-[#4B5563] mb-1.5">
                   Quote Value
