@@ -357,13 +357,13 @@ export default function Inbox() {
   }
 
   return (
-    <div className="flex h-screen bg-[#ffffff] overflow-hidden">
+    <div className="flex h-[calc(100vh-60px)] lg:h-screen bg-[#ffffff] overflow-hidden">
       {/* Thread List - Left Side */}
       <div 
         className={`${selectedThread ? 'hidden lg:flex' : 'flex'} flex-col border-r border-[#E5E7EB] bg-white overflow-x-hidden`}
         style={{ width: selectedThread ? `${sidebarWidth}px` : '100%' }}
       >
-        <div className="p-4 md:p-5 border-b border-[#E5E7EB]">
+        <div className="p-4 md:p-5 border-b border-[#E5E7EB] bg-white">
           <div className="flex items-center justify-between py-3 lg:py-4 gap-3">
             <GmailConnect 
               user={user} 
