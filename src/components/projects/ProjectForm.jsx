@@ -81,6 +81,24 @@ export default function ProjectForm({ project, onSubmit, onCancel, isSubmitting 
 
   const customers = allCustomers.filter(c => c.status === 'active' && !c.deleted_at);
 
+  // Handle prefilled data from email - try to match customer by email
+  useEffect(() => {
+    if (!project?.id && project?.customer_email && customers.length > 0 && !formData.customer_id) {
+      const matchingCustomer = customers.find(c => 
+        c.email?.toLowerCase() === project.customer_email?.toLowerCase()
+      );
+      if (matchingCustomer) {
+        setFormData(prev => ({
+          ...prev,
+          customer_id: matchingCustomer.id,
+          customer_name: matchingCustomer.name,
+          customer_phone: matchingCustomer.phone || prev.customer_phone,
+          customer_email: matchingCustomer.email || prev.customer_email,
+        }));
+      }
+    }
+  }, [project?.id, project?.customer_email, customers.length, formData.customer_id]);
+
   const { data: technicians = [] } = useQuery({
     queryKey: ['technicians'],
     queryFn: () => base44.entities.User.filter({ is_field_technician: true })
