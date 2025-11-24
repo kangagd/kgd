@@ -75,10 +75,6 @@ export default function QuoteItemManager({ quote, quoteItems, quoteSections, onU
     }
   });
 
-  useEffect(() => {
-    recalculateTotals();
-  }, [quoteItems]);
-
   const recalculateTotals = () => {
     const items = quoteItems.filter(item => !item.is_optional || item.is_selected);
     const subtotal = items.reduce((sum, item) => {
@@ -94,13 +90,25 @@ export default function QuoteItemManager({ quote, quoteItems, quoteSections, onU
 
     const total = subtotal + taxTotal;
 
-    onUpdate({
-      ...quote,
+    const newTotals = {
       subtotal,
       tax_total: taxTotal,
       total
-    });
+    };
+
+    if (quote.subtotal !== newTotals.subtotal || 
+        quote.tax_total !== newTotals.tax_total || 
+        quote.total !== newTotals.total) {
+      onUpdate({
+        ...quote,
+        ...newTotals
+      });
+    }
   };
+
+  useEffect(() => {
+    recalculateTotals();
+  }, [quoteItems.length]);
 
   const handleAddItem = () => {
     const lineSubtotal = (newItem.quantity * newItem.unit_price) - (newItem.discount || 0);
