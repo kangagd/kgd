@@ -50,11 +50,14 @@ Deno.serve(async (req) => {
       return Response.json({ error: 'Unauthorized - Admin access required' }, { status: 403 });
     }
 
-    const { invoice_id, payment_amount, payment_method_id } = await req.json();
+    const { invoice_id, payment_amount, payment_method_id, stripe_fee, total_charge } = await req.json();
 
     if (!invoice_id || !payment_amount || !payment_method_id) {
       return Response.json({ error: 'invoice_id, payment_amount, and payment_method_id are required' }, { status: 400 });
     }
+
+    // Use total_charge (including fee) for Stripe, payment_amount for Xero
+    const amountToCharge = total_charge || payment_amount;
 
     // Get invoice record
     const invoiceRecord = await base44.asServiceRole.entities.XeroInvoice.get(invoice_id);
@@ -71,7 +74,7 @@ Deno.serve(async (req) => {
     const stripe = new Stripe(stripeSecretKey);
     
     const paymentIntent = await stripe.paymentIntents.create({
-      amount: Math.round(payment_amount * 100), // Convert to cents
+      amount: Math.round(amountToCharge * 100), // Convert to cents (includes processing fee)
       currency: 'aud',
       payment_method: payment_method_id,
       confirm: true,
@@ -79,11 +82,14 @@ Deno.serve(async (req) => {
         enabled: true,
         allow_redirects: 'never'
       },
-      description: `Payment for Invoice #${invoiceRecord.xero_invoice_number}`,
+      description: `Payment for Invoice #${invoiceRecord.xero_invoice_number}${stripe_fee ? ` (incl. $${stripe_fee.toFixed(2)} processing fee)` : ''}`,
       metadata: {
         invoice_id: invoice_id,
         xero_invoice_id: invoiceRecord.xero_invoice_id,
-        customer_name: invoiceRecord.customer_name
+        customer_name: invoiceRecord.customer_name,
+        invoice_amount: payment_amount.toString(),
+        processing_fee: stripe_fee?.toString() || '0',
+        total_charged: amountToCharge.toString()
       }
     });
 

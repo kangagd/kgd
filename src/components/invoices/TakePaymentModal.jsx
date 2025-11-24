@@ -223,8 +223,16 @@ export default function TakePaymentModal({
               <span className="font-semibold text-[#111827]">#{invoice?.xero_invoice_number}</span>
             </div>
             <div className="flex items-center justify-between text-[14px]">
-              <span className="text-[#6B7280]">Amount Due</span>
-              <span className="font-bold text-[#111827]">${invoice?.amount_due?.toFixed(2)}</span>
+              <span className="text-[#6B7280]">Invoice Amount</span>
+              <span className="font-semibold text-[#111827]">${parseFloat(paymentAmount || 0).toFixed(2)}</span>
+            </div>
+            <div className="flex items-center justify-between text-[14px]">
+              <span className="text-[#6B7280]">Processing Fee (1.75% + $0.30)</span>
+              <span className="font-semibold text-[#111827]">${stripeFee.toFixed(2)}</span>
+            </div>
+            <div className="flex items-center justify-between text-[14px] pt-2 border-t border-[#E5E7EB]">
+              <span className="font-semibold text-[#111827]">Total to Charge</span>
+              <span className="font-bold text-[#111827] text-base">${totalCharge.toFixed(2)}</span>
             </div>
           </div>
 
@@ -355,7 +363,7 @@ export default function TakePaymentModal({
             disabled={isSubmitting || !stripeLoaded}
             className="bg-[#FAE008] text-[#111827] hover:bg-[#E5CF07] font-semibold rounded-lg shadow-sm"
           >
-            {isSubmitting ? 'Processing Payment...' : `Process $${paymentAmount}`}
+            {isSubmitting ? 'Processing Payment...' : `Charge $${totalCharge.toFixed(2)}`}
           </Button>
         </DialogFooter>
       </DialogContent>
