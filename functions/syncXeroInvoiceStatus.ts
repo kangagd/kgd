@@ -83,8 +83,27 @@ Deno.serve(async (req) => {
     const xeroResult = await xeroResponse.json();
     const xeroInvoice = xeroResult.Invoices[0];
 
-    // Extract public online payment URL (customer-facing) from Xero response
-    const onlinePaymentUrl = xeroInvoice.OnlineInvoiceUrl || null;
+    // Fetch public online payment URL using dedicated OnlineInvoice endpoint
+    let onlinePaymentUrl = null;
+    try {
+      const onlineInvoiceResponse = await fetch(
+        `https://api.xero.com/api.xro/2.0/Invoices/${xeroInvoice.InvoiceID}/OnlineInvoice`,
+        {
+          headers: {
+            'Authorization': `Bearer ${connection.access_token}`,
+            'xero-tenant-id': connection.xero_tenant_id,
+            'Accept': 'application/json'
+          }
+        }
+      );
+
+      if (onlineInvoiceResponse.ok) {
+        const onlineInvoiceResult = await onlineInvoiceResponse.json();
+        onlinePaymentUrl = onlineInvoiceResult.OnlineInvoices?.[0]?.OnlineInvoiceUrl || null;
+      }
+    } catch (err) {
+      console.warn('Failed to fetch online invoice URL during sync:', err);
+    }
 
     // If invoice is voided, delete it from the app
     if (xeroInvoice.Status === 'VOIDED') {
