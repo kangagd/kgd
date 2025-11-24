@@ -3,7 +3,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { X, Send, Paperclip, Bold, Italic, Underline, Link as LinkIcon, List, ListOrdered } from "lucide-react";
+import { X, Send, Paperclip } from "lucide-react";
 import { base44 } from "@/api/base44Client";
 import { toast } from "sonner";
 import { format, parseISO } from "date-fns";
@@ -117,41 +117,6 @@ export default function EmailComposer({ mode = "compose", thread, message, onClo
 
   const removeAttachment = (index) => {
     setAttachments(attachments.filter((_, i) => i !== index));
-  };
-
-  const insertFormatting = (tag) => {
-    const textarea = textareaRef.current;
-    const start = textarea.selectionStart;
-    const end = textarea.selectionEnd;
-    const selectedText = body.substring(start, end);
-    
-    let formattedText = "";
-    switch(tag) {
-      case "bold":
-        formattedText = `<strong>${selectedText}</strong>`;
-        break;
-      case "italic":
-        formattedText = `<em>${selectedText}</em>`;
-        break;
-      case "underline":
-        formattedText = `<u>${selectedText}</u>`;
-        break;
-      case "link":
-        const url = prompt("Enter URL:");
-        if (url) formattedText = `<a href="${url}">${selectedText || url}</a>`;
-        break;
-      case "ul":
-        formattedText = `<ul><li>${selectedText}</li></ul>`;
-        break;
-      case "ol":
-        formattedText = `<ol><li>${selectedText}</li></ol>`;
-        break;
-      default:
-        formattedText = selectedText;
-    }
-    
-    const newBody = body.substring(0, start) + formattedText + body.substring(end);
-    setBody(newBody);
   };
 
   const handleSend = async () => {
