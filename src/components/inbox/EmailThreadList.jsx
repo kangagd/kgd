@@ -13,7 +13,8 @@ export default function EmailThreadList({
   selectedThreadIds = [],
   onToggleSelection,
   onSelectAll,
-  onBulkDelete
+  onBulkDelete,
+  onDeleteThread
 }) {
   if (isLoading) {
     return (
@@ -72,7 +73,7 @@ export default function EmailThreadList({
             selectedThreadIds.includes(thread.id) ? 'bg-[#FAE008]/5' : ''
           }`}
         >
-          <div className="flex items-start justify-between mb-2">
+          <div className="flex items-start justify-between mb-2 group/row">
             <div className="flex items-start gap-3 flex-1 min-w-0 mr-2">
               {onToggleSelection && (
                 <Checkbox
@@ -99,9 +100,25 @@ export default function EmailThreadList({
                 <p className="text-[12px] text-[#4B5563] truncate">{thread.from_address}</p>
               </div>
             </div>
-            <span className="text-[11px] text-[#6B7280] whitespace-nowrap">
-              {thread.last_message_date && format(parseISO(thread.last_message_date), 'MMM d')}
-            </span>
+            <div className="flex items-center gap-2">
+              <span className="text-[11px] text-[#6B7280] whitespace-nowrap">
+                {thread.last_message_date && format(parseISO(thread.last_message_date), 'MMM d')}
+              </span>
+              {onDeleteThread && (
+                <button
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    if (confirm('Delete this email thread?')) {
+                      onDeleteThread(thread.id);
+                    }
+                  }}
+                  className="p-1 text-[#9CA3AF] hover:text-[#DC2626] hover:bg-red-50 rounded opacity-0 group-hover/row:opacity-100 transition-all"
+                  title="Delete"
+                >
+                  <Trash2 className="w-3.5 h-3.5" />
+                </button>
+              )}
+            </div>
           </div>
 
           <div onClick={() => onSelectThread(thread)}>
