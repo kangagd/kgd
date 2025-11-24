@@ -419,16 +419,18 @@ export default function QuoteItemManager({ quote, quoteItems, quoteSections, onU
                   onChange={(e) => {
                     setNewItem({ ...newItem, title: e.target.value, product_id: "" });
                     setSearchQuery(e.target.value);
-                    if (e.target.value.length > 0 && filteredProducts.length > 0) {
+                    if (e.target.value.length > 0) {
                       setSearchOpen(true);
-                    } else {
-                      setSearchOpen(false);
                     }
+                  }}
+                  onBlur={() => {
+                    // Delay to allow click on dropdown item
+                    setTimeout(() => setSearchOpen(false), 200);
                   }}
                   placeholder="Type custom item or search price list..."
                   className="pr-10"
                 />
-                {newItem.title.length > 0 && filteredProducts.length > 0 && (
+                {newItem.title.length > 0 && (
                   <button
                     type="button"
                     onClick={() => setSearchOpen(!searchOpen)}
@@ -437,46 +439,37 @@ export default function QuoteItemManager({ quote, quoteItems, quoteSections, onU
                     <Search className="w-4 h-4" />
                   </button>
                 )}
-                {searchOpen && filteredProducts.length > 0 && (
-                  <div className="absolute z-50 w-full mt-1 bg-white border border-[#E5E7EB] rounded-lg shadow-lg">
-                    <Command>
-                      <CommandInput 
-                        placeholder="Search products..." 
-                        value={searchQuery}
-                        onValueChange={setSearchQuery}
-                      />
-                      <CommandList>
-                        <CommandEmpty>
-                          <div className="py-6 text-center text-sm text-[#6B7280]">
-                            No products found. Continue entering custom item details below.
-                          </div>
-                        </CommandEmpty>
-                        <CommandGroup heading="Price List Items">
-                          {filteredProducts.map((product) => (
-                            <CommandItem
-                              key={product.id}
-                              value={product.id}
-                              onSelect={() => handleProductSelect(product.id)}
-                              className="cursor-pointer"
-                            >
-                              <div className="flex justify-between items-center w-full">
-                                <div>
-                                  <div className="font-medium">{product.item}</div>
-                                  {product.description && (
-                                    <div className="text-xs text-[#6B7280] truncate max-w-[250px]">
-                                      {product.description}
-                                    </div>
-                                  )}
+                {searchOpen && newItem.title.length > 0 && (
+                  <div className="absolute z-50 w-full mt-1 bg-white border border-[#E5E7EB] rounded-lg shadow-lg max-h-[300px] overflow-y-auto">
+                    {filteredProducts.length > 0 ? (
+                      <div className="p-2">
+                        <div className="text-xs font-semibold text-[#6B7280] px-2 py-1 mb-1">Price List Items</div>
+                        {filteredProducts.map((product) => (
+                          <button
+                            key={product.id}
+                            type="button"
+                            onClick={() => handleProductSelect(product.id)}
+                            className="w-full flex justify-between items-center px-3 py-2 hover:bg-[#F3F4F6] rounded-lg transition-colors text-left"
+                          >
+                            <div className="flex-1 min-w-0">
+                              <div className="font-medium text-[#111827]">{product.item}</div>
+                              {product.description && (
+                                <div className="text-xs text-[#6B7280] truncate">
+                                  {product.description}
                                 </div>
-                                <div className="text-sm font-semibold text-[#111827]">
-                                  ${product.price.toFixed(2)}
-                                </div>
-                              </div>
-                            </CommandItem>
-                          ))}
-                        </CommandGroup>
-                      </CommandList>
-                    </Command>
+                              )}
+                            </div>
+                            <div className="text-sm font-semibold text-[#111827] ml-4">
+                              ${product.price.toFixed(2)}
+                            </div>
+                          </button>
+                        ))}
+                      </div>
+                    ) : (
+                      <div className="py-6 text-center text-sm text-[#6B7280]">
+                        No products found. Continue entering custom item details below.
+                      </div>
+                    )}
                   </div>
                 )}
               </div>
