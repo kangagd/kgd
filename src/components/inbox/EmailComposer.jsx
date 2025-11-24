@@ -264,24 +264,6 @@ export default function EmailComposer({ mode = "compose", thread, message, onClo
 
         <div className="space-y-2">
           <div className="flex items-center gap-1 border-b border-[#E5E7EB] pb-2">
-            <Button variant="ghost" size="icon" onClick={() => insertFormatting("bold")} title="Bold">
-              <Bold className="w-4 h-4" />
-            </Button>
-            <Button variant="ghost" size="icon" onClick={() => insertFormatting("italic")} title="Italic">
-              <Italic className="w-4 h-4" />
-            </Button>
-            <Button variant="ghost" size="icon" onClick={() => insertFormatting("underline")} title="Underline">
-              <Underline className="w-4 h-4" />
-            </Button>
-            <Button variant="ghost" size="icon" onClick={() => insertFormatting("link")} title="Insert Link">
-              <LinkIcon className="w-4 h-4" />
-            </Button>
-            <Button variant="ghost" size="icon" onClick={() => insertFormatting("ul")} title="Bullet List">
-              <List className="w-4 h-4" />
-            </Button>
-            <Button variant="ghost" size="icon" onClick={() => insertFormatting("ol")} title="Numbered List">
-              <ListOrdered className="w-4 h-4" />
-            </Button>
             <div className="flex-1" />
             <Button
               variant="ghost"
@@ -301,22 +283,13 @@ export default function EmailComposer({ mode = "compose", thread, message, onClo
             />
           </div>
 
-          <div className="relative">
-            <div 
-              ref={textareaRef}
-              contentEditable
-              suppressContentEditableWarning
-              onInput={(e) => setBody(e.currentTarget.innerHTML)}
-              className="min-h-[250px] p-3 border border-[#E5E7EB] rounded-lg focus:outline-none focus:border-[#111827] focus:shadow-sm overflow-y-auto"
-              style={{ 
-                maxHeight: '400px',
-                fontFamily: 'inherit',
-                fontSize: '14px',
-                lineHeight: '1.5'
-              }}
-              dangerouslySetInnerHTML={{ __html: body }}
-            />
-          </div>
+          <Textarea
+            ref={textareaRef}
+            value={body}
+            onChange={(e) => setBody(e.target.value)}
+            placeholder="Write your message here..."
+            className="min-h-[250px] resize-y"
+          />
         </div>
 
         {attachments.length > 0 && (
