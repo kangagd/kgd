@@ -83,6 +83,25 @@ Deno.serve(async (req) => {
     const xeroResult = await xeroResponse.json();
     const xeroInvoice = xeroResult.Invoices[0];
 
+    // If invoice is voided, delete it from the app
+    if (xeroInvoice.Status === 'VOIDED') {
+      // Unlink from job if linked
+      if (invoiceRecord.job_id) {
+        await base44.asServiceRole.entities.Job.update(invoiceRecord.job_id, {
+          xero_invoice_id: null
+        });
+      }
+
+      // Delete the invoice record
+      await base44.asServiceRole.entities.XeroInvoice.delete(invoice_id);
+
+      return Response.json({
+        success: true,
+        voided: true,
+        message: 'Invoice was voided in Xero and removed from the app'
+      });
+    }
+
     // Update our invoice record with latest data
     const updatedInvoice = await base44.asServiceRole.entities.XeroInvoice.update(invoice_id, {
       status: xeroInvoice.Status,
