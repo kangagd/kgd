@@ -385,8 +385,12 @@ export default function JobDetails({ job: initialJob, onClose, onStatusChange, o
       });
       return response.data;
     },
-    onSuccess: () => {
+    onSuccess: (data) => {
       queryClient.invalidateQueries({ queryKey: ['xeroInvoice', job.xero_invoice_id] });
+      queryClient.invalidateQueries({ queryKey: ['job', job.id] });
+      if (data.voided) {
+        toast.info('Invoice was voided in Xero and removed from the app');
+      }
     }
   });
 
