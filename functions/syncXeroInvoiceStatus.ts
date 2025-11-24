@@ -152,6 +152,7 @@ Deno.serve(async (req) => {
       payment_terms: xeroInvoice.Terms || null,
       credit_notes_total: creditNotesTotal,
       last_payment_date: lastPaymentDate,
+      online_payment_url: onlinePaymentUrl,
       raw_payload: xeroInvoice
     });
 

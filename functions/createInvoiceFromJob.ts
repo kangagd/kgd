@@ -213,6 +213,7 @@ Deno.serve(async (req) => {
       issue_date: today,
       due_date: dueDate,
       pdf_url: `https://go.xero.com/AccountsReceivable/View.aspx?InvoiceID=${xeroInvoice.InvoiceID}`,
+      online_payment_url: onlinePaymentUrl,
       raw_payload: xeroInvoice,
       created_by_user_id: user.id
     });

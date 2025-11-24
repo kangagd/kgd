@@ -17,7 +17,7 @@ export default function TakePaymentModal({
   paymentUrl
 }) {
   const handlePayOnXero = () => {
-    const url = paymentUrl || invoice?.pdf_url;
+    const url = paymentUrl || invoice?.online_payment_url || invoice?.pdf_url;
     if (url) {
       window.open(url, '_blank');
     }
