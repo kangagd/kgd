@@ -36,6 +36,8 @@ export default function Jobs() {
   const [editingJob, setEditingJob] = useState(null);
   const [preselectedCustomerId, setPreselectedCustomerId] = useState(null);
   const [preselectedProjectId, setPreselectedProjectId] = useState(null);
+  const [prefilledJobData, setPrefilledJobData] = useState(null);
+  const [loadingEmailData, setLoadingEmailData] = useState(false);
   const [user, setUser] = useState(null);
   const [viewMode, setViewMode] = useState("list");
   const [calendarDate, setCalendarDate] = useState(new Date());
