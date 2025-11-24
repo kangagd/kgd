@@ -115,9 +115,9 @@ Deno.serve(async (req) => {
         }
 
       // Check if thread already exists
-      const existingThreads = await base44.entities.EmailThread.filter({
-        subject: subject,
-        from_address: parseEmailAddress(from)
+      const existingThreads = await base44.asServiceRole.entities.EmailThread.filter({
+       subject: subject,
+       from_address: parseEmailAddress(from)
       });
 
       let threadId;
@@ -126,7 +126,7 @@ Deno.serve(async (req) => {
       if (existingThreads.length > 0) {
         threadId = existingThreads[0].id;
         // Update last message date
-        await base44.entities.EmailThread.update(threadId, {
+        await base44.asServiceRole.entities.EmailThread.update(threadId, {
           last_message_date: new Date(date).toISOString(),
           last_message_snippet: detail.snippet
         });
@@ -177,7 +177,7 @@ Return JSON with category, priority (High/Normal/Low), is_urgent boolean, and ur
         }
 
         // Create new thread with AI insights
-        const newThread = await base44.entities.EmailThread.create({
+        const newThread = await base44.asServiceRole.entities.EmailThread.create({
           subject,
           from_address: parseEmailAddress(from),
           to_addresses: to.split(',').map(e => parseEmailAddress(e.trim())),
@@ -194,7 +194,7 @@ Return JSON with category, priority (High/Normal/Low), is_urgent boolean, and ur
       }
 
       // Check if message already exists
-      const existingMessages = await base44.entities.EmailMessage.filter({
+      const existingMessages = await base44.asServiceRole.entities.EmailMessage.filter({
         message_id: messageId
       });
 
@@ -257,7 +257,7 @@ Return JSON with category, priority (High/Normal/Low), is_urgent boolean, and ur
             messageData.in_reply_to = inReplyTo;
           }
           
-          await base44.entities.EmailMessage.create(messageData);
+          await base44.asServiceRole.entities.EmailMessage.create(messageData);
 
           syncedCount++;
         }
