@@ -263,16 +263,28 @@ Extract the following if available:
     return `${doorCount}x ${doorType}${dimensions ? ` • ${dimensions}` : ''}`;
   };
 
+  if (loadingEmailData) {
+    return (
+      <div className="p-5 md:p-10 bg-[#ffffff] min-h-screen flex items-center justify-center">
+        <div className="text-center">
+          <div className="w-12 h-12 border-4 border-[#FAE008] border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
+          <p className="text-[#4B5563] font-medium">Extracting project details from email...</p>
+        </div>
+      </div>
+    );
+  }
+
   if (showForm) {
     return (
       <div className="p-5 md:p-10 bg-[#ffffff] min-h-screen">
         <div className="max-w-4xl mx-auto">
           <ProjectForm
-            project={editingProject}
+            project={editingProject || prefilledData}
             onSubmit={handleSubmit}
             onCancel={() => {
               setShowForm(false);
               setEditingProject(null);
+              setPrefilledData(null);
             }}
             isSubmitting={createProjectMutation.isPending || updateProjectMutation.isPending}
           />
