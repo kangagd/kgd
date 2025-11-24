@@ -1172,18 +1172,20 @@ Format as HTML bullet points using <ul> and <li> tags. Include only the most cri
             <TabsContent value="financials" className="mt-3">
               <div className="space-y-4">
                 <Card className="border border-[#E5E7EB] shadow-sm rounded-lg">
-                  <CardHeader className="bg-white px-4 py-3 border-b border-[#E5E7EB] flex flex-row items-center justify-between">
-                    <CardTitle className="text-[16px] font-semibold text-[#111827] leading-[1.2]">
-                      Xero Invoices ({xeroInvoices.length})
-                    </CardTitle>
-                    <Button
-                      onClick={() => setShowInvoiceModal(true)}
-                      size="sm"
-                      className="bg-[#FAE008] text-[#111827] hover:bg-[#E5CF07] font-semibold h-8"
-                    >
-                      <Plus className="w-4 h-4 mr-1" />
-                      Create Invoice
-                    </Button>
+                  <CardHeader className="bg-white px-4 py-3 border-b border-[#E5E7EB]">
+                    <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
+                      <CardTitle className="text-[16px] font-semibold text-[#111827] leading-[1.2]">
+                        Xero Invoices ({xeroInvoices.length})
+                      </CardTitle>
+                      <Button
+                        onClick={() => setShowInvoiceModal(true)}
+                        size="sm"
+                        className="bg-[#FAE008] text-[#111827] hover:bg-[#E5CF07] font-semibold h-8 w-full sm:w-auto"
+                      >
+                        <Plus className="w-4 h-4 mr-1" />
+                        Create Invoice
+                      </Button>
+                    </div>
                   </CardHeader>
                   <CardContent className="p-4">
                     {xeroInvoices.length === 0 ? (
