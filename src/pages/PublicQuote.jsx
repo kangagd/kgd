@@ -8,7 +8,6 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Switch } from "@/components/ui/switch";
 import { CheckCircle, AlertCircle, Loader2 } from "lucide-react";
-import SignatureCanvas from "react-signature-canvas";
 
 export default function PublicQuote() {
   const urlParams = new URLSearchParams(window.location.search);
@@ -21,7 +20,8 @@ export default function PublicQuote() {
   const [acceptedTerms, setAcceptedTerms] = useState(false);
   const [signatureData, setSignatureData] = useState("");
   const [submitted, setSubmitted] = useState(false);
-  const sigCanvas = useRef(null);
+  const canvasRef = useRef(null);
+  const [isDrawing, setIsDrawing] = useState(false);
 
   const { data: allQuotes = [], isLoading } = useQuery({
     queryKey: ['publicQuotes'],
@@ -95,10 +95,49 @@ export default function PublicQuote() {
     }));
   };
 
+  const startDrawing = (e) => {
+    const canvas = canvasRef.current;
+    if (!canvas) return;
+    setIsDrawing(true);
+    const ctx = canvas.getContext('2d');
+    const rect = canvas.getBoundingClientRect();
+    const x = (e.clientX || e.touches?.[0]?.clientX) - rect.left;
+    const y = (e.clientY || e.touches?.[0]?.clientY) - rect.top;
+    ctx.beginPath();
+    ctx.moveTo(x, y);
+  };
+
+  const draw = (e) => {
+    if (!isDrawing) return;
+    const canvas = canvasRef.current;
+    if (!canvas) return;
+    const ctx = canvas.getContext('2d');
+    const rect = canvas.getBoundingClientRect();
+    const x = (e.clientX || e.touches?.[0]?.clientX) - rect.left;
+    const y = (e.clientY || e.touches?.[0]?.clientY) - rect.top;
+    ctx.lineTo(x, y);
+    ctx.strokeStyle = '#000';
+    ctx.lineWidth = 2;
+    ctx.lineCap = 'round';
+    ctx.stroke();
+  };
+
+  const stopDrawing = () => {
+    setIsDrawing(false);
+  };
+
+  const clearSignature = () => {
+    const canvas = canvasRef.current;
+    if (!canvas) return;
+    const ctx = canvas.getContext('2d');
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+  };
+
   const handleAccept = async () => {
-    if (!sigCanvas.current) return;
+    const canvas = canvasRef.current;
+    if (!canvas) return;
     
-    const signature = sigCanvas.current.toDataURL();
+    const signature = canvas.toDataURL();
     
     await createSignatureMutation.mutateAsync({
       quote_id: quote.id,
@@ -329,18 +368,25 @@ export default function PublicQuote() {
               <div className="space-y-2">
                 <Label>Signature *</Label>
                 <div className="border-2 border-[#E5E7EB] rounded-lg overflow-hidden">
-                  <SignatureCanvas
-                    ref={sigCanvas}
-                    canvasProps={{
-                      className: 'w-full h-32 bg-white',
-                    }}
+                  <canvas
+                    ref={canvasRef}
+                    width={600}
+                    height={150}
+                    className="w-full h-32 bg-white cursor-crosshair touch-none"
+                    onMouseDown={startDrawing}
+                    onMouseMove={draw}
+                    onMouseUp={stopDrawing}
+                    onMouseLeave={stopDrawing}
+                    onTouchStart={startDrawing}
+                    onTouchMove={draw}
+                    onTouchEnd={stopDrawing}
                   />
                 </div>
                 <Button
                   type="button"
                   variant="outline"
                   size="sm"
-                  onClick={() => sigCanvas.current?.clear()}
+                  onClick={clearSignature}
                 >
                   Clear Signature
                 </Button>
