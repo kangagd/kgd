@@ -385,7 +385,7 @@ export default function Layout({ children, currentPageName }) {
       <aside 
         className={`
           fixed lg:sticky top-0 h-screen bg-white border-r border-[#E5E7EB] z-50
-          transition-all duration-300 ease-in-out
+          transition-all duration-300 ease-in-out flex-shrink-0
           ${isMobileMenuOpen ? 'translate-x-0' : '-translate-x-full lg:translate-x-0'}
           ${isCollapsed ? 'lg:w-[72px]' : 'lg:w-[260px]'}
           w-[260px]
