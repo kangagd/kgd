@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from "react";
 import { base44 } from "@/api/base44Client";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { useNavigate, useSearchParams } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent } from "@/components/ui/card";
@@ -22,6 +23,10 @@ import GmailConnect from "../components/inbox/GmailConnect";
 import AdvancedSearch from "../components/inbox/AdvancedSearch";
 
 export default function Inbox() {
+  const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
+  const threadIdFromUrl = searchParams.get('threadId');
+  
   const [searchFilters, setSearchFilters] = useState({
     searchText: "",
     sender: "",
@@ -86,6 +91,18 @@ export default function Inbox() {
     enabled: !!userPermissions?.can_view,
     refetchInterval: 30000 // Auto-refresh every 30 seconds
   });
+  
+  // Sync selectedThread with URL parameter
+  useEffect(() => {
+    if (threadIdFromUrl && threads.length > 0) {
+      const thread = threads.find(t => t.id === threadIdFromUrl);
+      if (thread) {
+        setSelectedThread(thread);
+      }
+    } else if (!threadIdFromUrl && selectedThread) {
+      setSelectedThread(null);
+    }
+  }, [threadIdFromUrl, threads]);
 
   const { data: messages = [] } = useQuery({
     queryKey: ['allEmailMessages'],
@@ -481,7 +498,13 @@ export default function Inbox() {
         <EmailThreadList
           threads={filteredThreads}
           selectedThread={selectedThread}
-          onSelectThread={setSelectedThread}
+          onSelectThread={(thread) => {
+            if (thread) {
+              navigate(`?threadId=${thread.id}`, { replace: true });
+            } else {
+              navigate('', { replace: true });
+            }
+          }}
           isLoading={isLoading}
           selectedThreadIds={selectedThreadIds}
           onToggleSelection={handleToggleSelection}
@@ -505,7 +528,7 @@ export default function Inbox() {
         <div className="flex flex-1 flex-col bg-[#ffffff]">
           <EmailDetailView
             thread={selectedThread}
-            onClose={() => setSelectedThread(null)}
+            onClose={() => navigate('', { replace: true })}
             onLinkProject={() => openLinkModal('project')}
             onLinkJob={() => openLinkModal('job')}
             onUnlinkProject={handleUnlinkProject}
