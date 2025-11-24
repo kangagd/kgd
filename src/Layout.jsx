@@ -24,7 +24,8 @@ import {
   ChevronDown,
   Plus,
   Search,
-  MoreHorizontal
+  MoreHorizontal,
+  FileText
 } from "lucide-react";
 import { base44 } from "@/api/base44Client";
 import { toast } from "sonner";
@@ -44,6 +45,7 @@ const primaryNavigationItems = [
 ];
 
 const secondaryNavigationItems = [
+  { title: "Quotes", url: createPageUrl("Quotes"), icon: FileText },
   { title: "Organisations", url: createPageUrl("Organisations"), icon: Building2 },
   { title: "Photos", url: createPageUrl("Photos"), icon: ImageIcon },
   { title: "Price List", url: createPageUrl("PriceList"), icon: DollarSign },
