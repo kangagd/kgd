@@ -4,20 +4,25 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
-import { Plus, Trash2, GripVertical, Search } from "lucide-react";
+import { Plus, Trash2, GripVertical, Search, ChevronDown, ChevronRight, FolderPlus } from "lucide-react";
 import { base44 } from "@/api/base44Client";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { Switch } from "@/components/ui/switch";
 import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from "@/components/ui/command";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 
 export default function QuoteItemManager({ quote, quoteItems, quoteSections, onUpdate }) {
   const queryClient = useQueryClient();
   const [editingItem, setEditingItem] = useState(null);
   const [searchOpen, setSearchOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
+  const [newSectionName, setNewSectionName] = useState("");
+  const [showNewSectionForm, setShowNewSectionForm] = useState(false);
+  const [collapsedSections, setCollapsedSections] = useState({});
   const [newItem, setNewItem] = useState({
     product_id: "",
+    section_id: "",
     title: "",
     description: "",
     quantity: 1,
@@ -43,12 +48,30 @@ export default function QuoteItemManager({ quote, quoteItems, quoteSections, onU
     );
   }, [priceListItems, searchQuery]);
 
+  const createSectionMutation = useMutation({
+    mutationFn: (data) => base44.entities.QuoteSection.create(data),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['quoteSections', quote.id] });
+      setNewSectionName("");
+      setShowNewSectionForm(false);
+    }
+  });
+
+  const deleteSectionMutation = useMutation({
+    mutationFn: (id) => base44.entities.QuoteSection.delete(id),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['quoteSections', quote.id] });
+      queryClient.invalidateQueries({ queryKey: ['quoteItems', quote.id] });
+    }
+  });
+
   const createItemMutation = useMutation({
     mutationFn: (data) => base44.entities.QuoteItem.create(data),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['quoteItems', quote.id] });
       setNewItem({
         product_id: "",
+        section_id: "",
         title: "",
         description: "",
         quantity: 1,
@@ -151,6 +174,51 @@ export default function QuoteItemManager({ quote, quoteItems, quoteSections, onU
     }
   };
 
+  const handleCreateSection = () => {
+    if (!newSectionName.trim()) return;
+    const sortOrder = quoteSections.length;
+    createSectionMutation.mutate({
+      quote_id: quote.id,
+      title: newSectionName,
+      sort_order: sortOrder
+    });
+  };
+
+  const handleDeleteSection = (sectionId) => {
+    const itemsInSection = quoteItems.filter(item => item.section_id === sectionId);
+    if (itemsInSection.length > 0) {
+      if (!confirm(`This section has ${itemsInSection.length} item(s). Delete anyway? Items will be moved to "Uncategorized".`)) {
+        return;
+      }
+    }
+    deleteSectionMutation.mutate(sectionId);
+  };
+
+  const toggleSection = (sectionId) => {
+    setCollapsedSections(prev => ({
+      ...prev,
+      [sectionId]: !prev[sectionId]
+    }));
+  };
+
+  const groupedItems = useMemo(() => {
+    const groups = {
+      uncategorized: quoteItems.filter(item => !item.section_id)
+    };
+    
+    quoteSections.forEach(section => {
+      groups[section.id] = quoteItems.filter(item => item.section_id === section.id);
+    });
+    
+    return groups;
+  }, [quoteItems, quoteSections]);
+
+  const calculateSectionTotal = (items) => {
+    return items
+      .filter(item => !item.is_optional || item.is_selected)
+      .reduce((sum, item) => sum + (item.line_total || 0), 0);
+  };
+
   return (
     <div className="space-y-6">
       <Card className="bg-white border border-[#E5E7EB]">
@@ -242,6 +310,22 @@ export default function QuoteItemManager({ quote, quoteItems, quoteSections, onU
                 step="0.01"
               />
             </div>
+            <div className="space-y-2">
+              <Label>Section (Optional)</Label>
+              <Select value={newItem.section_id} onValueChange={(val) => setNewItem({ ...newItem, section_id: val })}>
+                <SelectTrigger>
+                  <SelectValue placeholder="No section" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value={null}>No section</SelectItem>
+                  {quoteSections.map((section) => (
+                    <SelectItem key={section.id} value={section.id}>
+                      {section.title}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
             <div className="md:col-span-2 space-y-2">
               <Label>Description</Label>
               <Textarea
@@ -270,70 +354,225 @@ export default function QuoteItemManager({ quote, quoteItems, quoteSections, onU
         </CardContent>
       </Card>
 
-      <div className="space-y-3">
-        <h3 className="text-lg font-semibold text-[#111827]">Quote Items</h3>
+      <div className="space-y-4">
+        <div className="flex items-center justify-between">
+          <h3 className="text-lg font-semibold text-[#111827]">Quote Items</h3>
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => setShowNewSectionForm(!showNewSectionForm)}
+            className="text-sm"
+          >
+            <FolderPlus className="w-4 h-4 mr-2" />
+            New Section
+          </Button>
+        </div>
+
+        {showNewSectionForm && (
+          <Card className="bg-white border border-[#E5E7EB]">
+            <CardContent className="p-4">
+              <div className="flex gap-2">
+                <Input
+                  value={newSectionName}
+                  onChange={(e) => setNewSectionName(e.target.value)}
+                  placeholder="Section name (e.g., Labor, Materials, Add-ons)"
+                  onKeyDown={(e) => e.key === 'Enter' && handleCreateSection()}
+                />
+                <Button
+                  onClick={handleCreateSection}
+                  disabled={!newSectionName.trim() || createSectionMutation.isPending}
+                  className="bg-[#FAE008] hover:bg-[#E5CF07] text-[#111827] font-semibold"
+                >
+                  Create
+                </Button>
+                <Button
+                  variant="outline"
+                  onClick={() => {
+                    setShowNewSectionForm(false);
+                    setNewSectionName("");
+                  }}
+                >
+                  Cancel
+                </Button>
+              </div>
+            </CardContent>
+          </Card>
+        )}
+
         {quoteItems.length === 0 ? (
           <div className="text-center py-12 bg-white rounded-xl border border-[#E5E7EB]">
             <p className="text-[#6B7280]">No items added yet</p>
           </div>
         ) : (
-          quoteItems.map((item) => (
-            <Card key={item.id} className="bg-white border border-[#E5E7EB]">
-              <CardContent className="p-4">
-                <div className="flex items-start justify-between gap-4">
-                  <div className="flex-1">
-                    <div className="flex items-center gap-2 mb-2">
-                      <h4 className="font-semibold text-[#111827]">{item.title}</h4>
-                      {item.is_optional && (
-                        <span className="text-xs bg-[#FAE008]/20 text-[#92400E] px-2 py-0.5 rounded-lg">
-                          Optional
-                        </span>
-                      )}
-                    </div>
-                    {item.description && (
-                      <p className="text-sm text-[#6B7280] mb-3">{item.description}</p>
-                    )}
-                    <div className="flex items-center gap-6 text-sm">
-                      <div>
-                        <span className="text-[#6B7280]">Qty: </span>
-                        <span className="text-[#111827] font-medium">{item.quantity} {item.unit_label}</span>
-                      </div>
-                      <div>
-                        <span className="text-[#6B7280]">Price: </span>
-                        <span className="text-[#111827] font-medium">
-                          ${item.unit_price.toLocaleString('en-AU', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
-                        </span>
-                      </div>
-                      {item.is_optional && (
-                        <div className="flex items-center gap-2">
-                          <Switch
-                            checked={item.is_selected}
-                            onCheckedChange={() => handleToggleOptional(item)}
-                          />
-                          <span className="text-xs text-[#6B7280]">
-                            {item.is_selected ? 'Included' : 'Excluded'}
-                          </span>
+          <div className="space-y-4">
+            {quoteSections
+              .sort((a, b) => (a.sort_order || 0) - (b.sort_order || 0))
+              .map((section) => {
+                const sectionItems = groupedItems[section.id] || [];
+                const isCollapsed = collapsedSections[section.id];
+                const sectionTotal = calculateSectionTotal(sectionItems);
+
+                return (
+                  <div key={section.id} className="space-y-2">
+                    <Card className="bg-[#F9FAFB] border border-[#E5E7EB]">
+                      <CardContent className="p-4">
+                        <div className="flex items-center justify-between">
+                          <button
+                            onClick={() => toggleSection(section.id)}
+                            className="flex items-center gap-2 flex-1 text-left hover:opacity-70 transition-opacity"
+                          >
+                            {isCollapsed ? (
+                              <ChevronRight className="w-5 h-5 text-[#6B7280]" />
+                            ) : (
+                              <ChevronDown className="w-5 h-5 text-[#6B7280]" />
+                            )}
+                            <h4 className="font-semibold text-[#111827]">{section.title}</h4>
+                            <span className="text-sm text-[#6B7280]">({sectionItems.length})</span>
+                          </button>
+                          <div className="flex items-center gap-4">
+                            <span className="text-sm font-semibold text-[#111827]">
+                              ${sectionTotal.toLocaleString('en-AU', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                            </span>
+                            <Button
+                              variant="ghost"
+                              size="icon"
+                              onClick={() => handleDeleteSection(section.id)}
+                              className="hover:bg-red-100 hover:text-red-600"
+                            >
+                              <Trash2 className="w-4 h-4" />
+                            </Button>
+                          </div>
                         </div>
-                      )}
-                    </div>
+                        {section.description && !isCollapsed && (
+                          <p className="text-sm text-[#6B7280] mt-2 ml-7">{section.description}</p>
+                        )}
+                      </CardContent>
+                    </Card>
+
+                    {!isCollapsed && sectionItems.map((item) => (
+                      <Card key={item.id} className="bg-white border border-[#E5E7EB] ml-7">
+                        <CardContent className="p-4">
+                          <div className="flex items-start justify-between gap-4">
+                            <div className="flex-1">
+                              <div className="flex items-center gap-2 mb-2">
+                                <h4 className="font-semibold text-[#111827]">{item.title}</h4>
+                                {item.is_optional && (
+                                  <span className="text-xs bg-[#FAE008]/20 text-[#92400E] px-2 py-0.5 rounded-lg">
+                                    Optional
+                                  </span>
+                                )}
+                              </div>
+                              {item.description && (
+                                <p className="text-sm text-[#6B7280] mb-3">{item.description}</p>
+                              )}
+                              <div className="flex items-center gap-6 text-sm">
+                                <div>
+                                  <span className="text-[#6B7280]">Qty: </span>
+                                  <span className="text-[#111827] font-medium">{item.quantity} {item.unit_label}</span>
+                                </div>
+                                <div>
+                                  <span className="text-[#6B7280]">Price: </span>
+                                  <span className="text-[#111827] font-medium">
+                                    ${item.unit_price.toLocaleString('en-AU', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                                  </span>
+                                </div>
+                                {item.is_optional && (
+                                  <div className="flex items-center gap-2">
+                                    <Switch
+                                      checked={item.is_selected}
+                                      onCheckedChange={() => handleToggleOptional(item)}
+                                    />
+                                    <span className="text-xs text-[#6B7280]">
+                                      {item.is_selected ? 'Included' : 'Excluded'}
+                                    </span>
+                                  </div>
+                                )}
+                              </div>
+                            </div>
+                            <div className="text-right">
+                              <div className="text-lg font-bold text-[#111827] mb-2">
+                                ${(item.line_total || 0).toLocaleString('en-AU', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                              </div>
+                              <Button
+                                variant="ghost"
+                                size="icon"
+                                onClick={() => handleDeleteItem(item.id)}
+                                className="hover:bg-red-100 hover:text-red-600"
+                              >
+                                <Trash2 className="w-4 h-4" />
+                              </Button>
+                            </div>
+                          </div>
+                        </CardContent>
+                      </Card>
+                    ))}
                   </div>
-                  <div className="text-right">
-                    <div className="text-lg font-bold text-[#111827] mb-2">
-                      ${(item.line_total || 0).toLocaleString('en-AU', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
-                    </div>
-                    <Button
-                      variant="ghost"
-                      size="icon"
-                      onClick={() => handleDeleteItem(item.id)}
-                      className="hover:bg-red-100 hover:text-red-600"
-                    >
-                      <Trash2 className="w-4 h-4" />
-                    </Button>
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
-          ))
+                );
+              })}
+
+            {groupedItems.uncategorized.length > 0 && (
+              <div className="space-y-2">
+                <h4 className="font-medium text-[#6B7280] text-sm">Uncategorized Items</h4>
+                {groupedItems.uncategorized.map((item) => (
+                  <Card key={item.id} className="bg-white border border-[#E5E7EB]">
+                    <CardContent className="p-4">
+                      <div className="flex items-start justify-between gap-4">
+                        <div className="flex-1">
+                          <div className="flex items-center gap-2 mb-2">
+                            <h4 className="font-semibold text-[#111827]">{item.title}</h4>
+                            {item.is_optional && (
+                              <span className="text-xs bg-[#FAE008]/20 text-[#92400E] px-2 py-0.5 rounded-lg">
+                                Optional
+                              </span>
+                            )}
+                          </div>
+                          {item.description && (
+                            <p className="text-sm text-[#6B7280] mb-3">{item.description}</p>
+                          )}
+                          <div className="flex items-center gap-6 text-sm">
+                            <div>
+                              <span className="text-[#6B7280]">Qty: </span>
+                              <span className="text-[#111827] font-medium">{item.quantity} {item.unit_label}</span>
+                            </div>
+                            <div>
+                              <span className="text-[#6B7280]">Price: </span>
+                              <span className="text-[#111827] font-medium">
+                                ${item.unit_price.toLocaleString('en-AU', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                              </span>
+                            </div>
+                            {item.is_optional && (
+                              <div className="flex items-center gap-2">
+                                <Switch
+                                  checked={item.is_selected}
+                                  onCheckedChange={() => handleToggleOptional(item)}
+                                />
+                                <span className="text-xs text-[#6B7280]">
+                                  {item.is_selected ? 'Included' : 'Excluded'}
+                                </span>
+                              </div>
+                            )}
+                          </div>
+                        </div>
+                        <div className="text-right">
+                          <div className="text-lg font-bold text-[#111827] mb-2">
+                            ${(item.line_total || 0).toLocaleString('en-AU', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                          </div>
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            onClick={() => handleDeleteItem(item.id)}
+                            className="hover:bg-red-100 hover:text-red-600"
+                          >
+                            <Trash2 className="w-4 h-4" />
+                          </Button>
+                        </div>
+                      </div>
+                    </CardContent>
+                  </Card>
+                ))}
+              </div>
+            )}
+          </div>
         )}
       </div>
 
