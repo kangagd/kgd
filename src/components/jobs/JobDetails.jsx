@@ -31,7 +31,6 @@ import JobMapView from "./JobMapView";
 import XeroInvoiceCard from "../invoices/XeroInvoiceCard";
 import CreateInvoiceModal from "../invoices/CreateInvoiceModal";
 import TakePaymentModal from "../invoices/TakePaymentModal";
-import TechnicianMobileJobView from "./TechnicianMobileJobView";
 import {
   Dialog,
   DialogContent,
@@ -138,13 +137,6 @@ export default function JobDetails({ job: initialJob, onClose, onStatusChange, o
   const [showInvoiceModal, setShowInvoiceModal] = useState(false);
   const [showPaymentModal, setShowPaymentModal] = useState(false);
   const [user, setUser] = useState(null);
-  const [isMobile, setIsMobile] = useState(window.innerWidth < 768);
-
-  useEffect(() => {
-    const handleResize = () => setIsMobile(window.innerWidth < 768);
-    window.addEventListener('resize', handleResize);
-    return () => window.removeEventListener('resize', handleResize);
-  }, []);
   const [measurements, setMeasurements] = useState(job.measurements || null);
   const [notes, setNotes] = useState(job.notes || "");
   const [overview, setOverview] = useState(job.overview || "");
@@ -363,11 +355,6 @@ export default function JobDetails({ job: initialJob, onClose, onStatusChange, o
 
   const isTechnician = user?.is_field_technician && user?.role !== 'admin';
   const isAdmin = user?.role === 'admin';
-
-  // Use mobile view for technicians on small screens
-  if (isTechnician && isMobile) {
-    return <TechnicianMobileJobView job={job} onClose={onClose} user={user} />;
-  }
 
   const createInvoiceMutation = useMutation({
     mutationFn: async (invoiceData) => {
