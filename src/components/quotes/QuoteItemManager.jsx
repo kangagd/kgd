@@ -58,6 +58,7 @@ export default function QuoteItemManager({ quote, quoteItems, quoteSections, onU
         is_optional: false,
         is_selected: true
       });
+      setSearchQuery("");
     }
   });
 
@@ -147,29 +148,62 @@ export default function QuoteItemManager({ quote, quoteItems, quoteSections, onU
         <CardContent className="p-6">
           <h3 className="text-lg font-semibold text-[#111827] mb-4">Add Line Item</h3>
           <div className="grid md:grid-cols-2 gap-4">
-            <div className="md:col-span-2 space-y-2">
-              <Label>Select from Price List (Optional)</Label>
-              <Select value={newItem.product_id} onValueChange={handleProductSelect}>
-                <SelectTrigger>
-                  <SelectValue placeholder="Select a product or enter custom item below" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value={null}>Custom Item (No Product)</SelectItem>
-                  {priceListItems.filter(p => p.in_inventory !== false).map((product) => (
-                    <SelectItem key={product.id} value={product.id}>
-                      {product.item} - ${product.price.toFixed(2)}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
             <div className="space-y-2">
               <Label>Item Title *</Label>
-              <Input
-                value={newItem.title}
-                onChange={(e) => setNewItem({ ...newItem, title: e.target.value })}
-                placeholder="e.g., Garage Door Installation"
-              />
+              <Popover open={searchOpen} onOpenChange={setSearchOpen}>
+                <PopoverTrigger asChild>
+                  <div className="relative">
+                    <Input
+                      value={newItem.title}
+                      onChange={(e) => {
+                        setNewItem({ ...newItem, title: e.target.value, product_id: "" });
+                        setSearchQuery(e.target.value);
+                        setSearchOpen(true);
+                      }}
+                      onFocus={() => setSearchOpen(true)}
+                      placeholder="Search products or enter custom item..."
+                      className="pr-10"
+                    />
+                    <Search className="absolute right-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-[#6B7280]" />
+                  </div>
+                </PopoverTrigger>
+                <PopoverContent className="p-0 w-[400px]" align="start">
+                  <Command>
+                    <CommandInput 
+                      placeholder="Search products..." 
+                      value={searchQuery}
+                      onValueChange={setSearchQuery}
+                    />
+                    <CommandList>
+                      <CommandEmpty>No products found.</CommandEmpty>
+                      <CommandGroup heading="Price List Items">
+                        {filteredProducts.map((product) => (
+                          <CommandItem
+                            key={product.id}
+                            value={product.id}
+                            onSelect={() => handleProductSelect(product.id)}
+                            className="cursor-pointer"
+                          >
+                            <div className="flex justify-between items-center w-full">
+                              <div>
+                                <div className="font-medium">{product.item}</div>
+                                {product.description && (
+                                  <div className="text-xs text-[#6B7280] truncate max-w-[250px]">
+                                    {product.description}
+                                  </div>
+                                )}
+                              </div>
+                              <div className="text-sm font-semibold text-[#111827]">
+                                ${product.price.toFixed(2)}
+                              </div>
+                            </div>
+                          </CommandItem>
+                        ))}
+                      </CommandGroup>
+                    </CommandList>
+                  </Command>
+                </PopoverContent>
+              </Popover>
             </div>
             <div className="space-y-2">
               <Label>Unit Label</Label>
