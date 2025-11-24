@@ -6,13 +6,15 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Plus, Trash2, GripVertical } from "lucide-react";
 import { base44 } from "@/api/base44Client";
-import { useMutation, useQueryClient } from "@tanstack/react-query";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { Switch } from "@/components/ui/switch";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 
 export default function QuoteItemManager({ quote, quoteItems, quoteSections, onUpdate }) {
   const queryClient = useQueryClient();
   const [editingItem, setEditingItem] = useState(null);
   const [newItem, setNewItem] = useState({
+    product_id: "",
     title: "",
     description: "",
     quantity: 1,
@@ -22,12 +24,18 @@ export default function QuoteItemManager({ quote, quoteItems, quoteSections, onU
     is_selected: true
   });
 
+  const { data: priceListItems = [] } = useQuery({
+    queryKey: ['priceListItems'],
+    queryFn: () => base44.entities.PriceListItem.list()
+  });
+
   const createItemMutation = useMutation({
     mutationFn: (data) => base44.entities.QuoteItem.create(data),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['quoteItems', quote.id] });
       recalculateTotals();
       setNewItem({
+        product_id: "",
         title: "",
         description: "",
         quantity: 1,
@@ -104,12 +112,49 @@ export default function QuoteItemManager({ quote, quoteItems, quoteSections, onU
     updateItemMutation.mutate({ id: item.id, data: updatedData });
   };
 
+  const handleProductSelect = (productId) => {
+    const product = priceListItems.find(p => p.id === productId);
+    if (product) {
+      setNewItem({
+        ...newItem,
+        product_id: productId,
+        title: product.item,
+        description: product.description || "",
+        unit_price: product.price
+      });
+    } else {
+      setNewItem({
+        ...newItem,
+        product_id: "",
+        title: "",
+        description: "",
+        unit_price: 0
+      });
+    }
+  };
+
   return (
     <div className="space-y-6">
       <Card className="bg-white border border-[#E5E7EB]">
         <CardContent className="p-6">
           <h3 className="text-lg font-semibold text-[#111827] mb-4">Add Line Item</h3>
           <div className="grid md:grid-cols-2 gap-4">
+            <div className="md:col-span-2 space-y-2">
+              <Label>Select from Price List (Optional)</Label>
+              <Select value={newItem.product_id} onValueChange={handleProductSelect}>
+                <SelectTrigger>
+                  <SelectValue placeholder="Select a product or enter custom item below" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value={null}>Custom Item (No Product)</SelectItem>
+                  {priceListItems.filter(p => p.in_inventory !== false).map((product) => (
+                    <SelectItem key={product.id} value={product.id}>
+                      {product.item} - ${product.price.toFixed(2)}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
             <div className="space-y-2">
               <Label>Item Title *</Label>
               <Input
