@@ -1,4 +1,4 @@
-import { createClientFromRequest } from 'npm:@base44/sdk@0.8.4';
+import { createClient } from 'npm:@base44/sdk@0.8.4';
 
 Deno.serve(async (req) => {
   try {
@@ -12,10 +12,14 @@ Deno.serve(async (req) => {
       });
     }
 
-    const base44 = createClientFromRequest(req);
+    // Use service role client - no authentication required for public access
+    const base44 = createClient(
+      Deno.env.get('BASE44_APP_ID'),
+      Deno.env.get('BASE44_SERVICE_ROLE_KEY')
+    );
 
-    // Use service role to fetch quote and related data without authentication
-    const quotes = await base44.asServiceRole.entities.Quote.filter({ 
+    // Fetch quote and related data
+    const quotes = await base44.entities.Quote.filter({ 
       public_share_token: token 
     });
 
@@ -29,11 +33,11 @@ Deno.serve(async (req) => {
     const quote = quotes[0];
 
     // Fetch related items
-    const quoteItems = await base44.asServiceRole.entities.QuoteItem.filter({ 
+    const quoteItems = await base44.entities.QuoteItem.filter({ 
       quote_id: quote.id 
     });
 
-    const quoteSections = await base44.asServiceRole.entities.QuoteSection.filter({ 
+    const quoteSections = await base44.entities.QuoteSection.filter({ 
       quote_id: quote.id 
     });
 
@@ -46,7 +50,7 @@ Deno.serve(async (req) => {
       headers: { 'Content-Type': 'application/json' }
     });
   } catch (error) {
-    return new Response(JSON.stringify({ error: error.message }), { 
+    return new Response(JSON.stringify({ error: error.message, stack: error.stack }), { 
       status: 500,
       headers: { 'Content-Type': 'application/json' }
     });
