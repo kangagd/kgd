@@ -59,6 +59,18 @@ export default function QuoteForm({ quote, onSubmit, onCancel, isSubmitting, pro
     }
   }, [formData.job_id, jobs]);
 
+  useEffect(() => {
+    if (formData.issue_date && !quote) {
+      const issueDate = new Date(formData.issue_date);
+      const expiryDate = new Date(issueDate);
+      expiryDate.setDate(expiryDate.getDate() + 30);
+      setFormData(prev => ({
+        ...prev,
+        expiry_date: expiryDate.toISOString().split('T')[0]
+      }));
+    }
+  }, [formData.issue_date]);
+
   const handleSubmit = (e) => {
     e.preventDefault();
     onSubmit(formData);
