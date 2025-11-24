@@ -26,7 +26,7 @@ export default function XeroSettingsModal({ open, onClose }) {
 
   const [formData, setFormData] = useState({
     default_account_code: "",
-    default_tax_type: "OUTPUT2",
+    default_tax_type: "",
     currency: "AUD",
     payment_terms_days: 7,
     is_active: true

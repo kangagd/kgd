@@ -124,8 +124,19 @@ Deno.serve(async (req) => {
     });
 
     if (!xeroResponse.ok) {
-      const error = await xeroResponse.text();
-      throw new Error(`Xero API error: ${error}`);
+      const errorText = await xeroResponse.text();
+      let errorDetails = errorText;
+      try {
+        const errorJson = JSON.parse(errorText);
+        if (errorJson.Elements && errorJson.Elements[0]?.ValidationErrors) {
+          const validationErrors = errorJson.Elements[0].ValidationErrors;
+          const errorMessages = validationErrors.map(e => e.Message).join('; ');
+          errorDetails = `Xero validation failed: ${errorMessages}. Please check your Xero Settings - the Tax Type (${xeroSettings.default_tax_type}) may not be compatible with Account Code (${xeroSettings.default_account_code}). Go to Xero → Settings → Tax Rates to find the correct tax code.`;
+        }
+      } catch (e) {
+        // Keep original error text if parsing fails
+      }
+      throw new Error(errorDetails);
     }
 
     const xeroResult = await xeroResponse.json();
