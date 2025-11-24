@@ -3,13 +3,17 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { base44 } from "@/api/base44Client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Send, MessageCircle } from "lucide-react";
+import { Send, MessageCircle, AtSign } from "lucide-react";
 import { format } from "date-fns";
 
 export default function JobChat({ jobId }) {
   const [message, setMessage] = useState("");
   const [user, setUser] = useState(null);
+  const [showMentionMenu, setShowMentionMenu] = useState(false);
+  const [mentionSearch, setMentionSearch] = useState("");
+  const [mentionPosition, setMentionPosition] = useState(0);
   const messagesEndRef = useRef(null);
+  const inputRef = useRef(null);
   const queryClient = useQueryClient();
 
   useEffect(() => {
@@ -29,14 +33,60 @@ export default function JobChat({ jobId }) {
     refetchInterval: 5000
   });
 
+  const { data: job } = useQuery({
+    queryKey: ['job', jobId],
+    queryFn: () => base44.entities.Job.get(jobId),
+    enabled: !!jobId
+  });
+
+  const { data: allUsers = [] } = useQuery({
+    queryKey: ['users'],
+    queryFn: () => base44.entities.User.list()
+  });
+
   const sendMessageMutation = useMutation({
-    mutationFn: (messageText) => 
-      base44.entities.JobMessage.create({
+    mutationFn: async (messageText) => {
+      // Extract mentioned users from message
+      const mentionedUsers = [];
+      const mentionRegex = /@(\w+(?:\s+\w+)?)/g;
+      let match;
+      
+      while ((match = mentionRegex.exec(messageText)) !== null) {
+        const mentionedName = match[1];
+        const mentionedUser = allUsers.find(u => 
+          u.full_name?.toLowerCase() === mentionedName.toLowerCase()
+        );
+        if (mentionedUser && !mentionedUsers.includes(mentionedUser.email)) {
+          mentionedUsers.push(mentionedUser.email);
+        }
+      }
+
+      // Create the message
+      const newMessage = await base44.entities.JobMessage.create({
         job_id: jobId,
         sender_email: user.email,
         sender_name: user.full_name,
-        message: messageText
-      }),
+        message: messageText,
+        mentioned_users: mentionedUsers
+      });
+
+      // Send notifications to mentioned users
+      if (mentionedUsers.length > 0) {
+        try {
+          await base44.functions.invoke('sendChatMentionNotification', {
+            mentioned_user_emails: mentionedUsers,
+            sender_name: user.full_name,
+            job_id: jobId,
+            job_number: job?.job_number,
+            message_preview: messageText.substring(0, 100)
+          });
+        } catch (error) {
+          console.error('Failed to send mention notifications:', error);
+        }
+      }
+
+      return newMessage;
+    },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['jobMessages', jobId] });
       setMessage("");
@@ -47,8 +97,47 @@ export default function JobChat({ jobId }) {
     e.preventDefault();
     if (message.trim() && user) {
       sendMessageMutation.mutate(message);
+      setShowMentionMenu(false);
     }
   };
+
+  const handleInputChange = (e) => {
+    const value = e.target.value;
+    setMessage(value);
+
+    // Check if @ was just typed
+    const cursorPosition = e.target.selectionStart;
+    const textBeforeCursor = value.substring(0, cursorPosition);
+    const lastAtIndex = textBeforeCursor.lastIndexOf('@');
+    
+    if (lastAtIndex !== -1) {
+      const textAfterAt = textBeforeCursor.substring(lastAtIndex + 1);
+      // Only show menu if there's no space after @ or if we're still typing a name
+      if (!textAfterAt.includes(' ')) {
+        setMentionSearch(textAfterAt);
+        setMentionPosition(lastAtIndex);
+        setShowMentionMenu(true);
+      } else {
+        setShowMentionMenu(false);
+      }
+    } else {
+      setShowMentionMenu(false);
+    }
+  };
+
+  const insertMention = (userName) => {
+    const beforeMention = message.substring(0, mentionPosition);
+    const afterMention = message.substring(mentionPosition + mentionSearch.length + 1);
+    const newMessage = `${beforeMention}@${userName} ${afterMention}`;
+    setMessage(newMessage);
+    setShowMentionMenu(false);
+    inputRef.current?.focus();
+  };
+
+  const filteredUsers = allUsers.filter(u => 
+    u.full_name?.toLowerCase().includes(mentionSearch.toLowerCase()) &&
+    u.email !== user?.email
+  ).slice(0, 5);
 
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
@@ -84,7 +173,26 @@ export default function JobChat({ jobId }) {
                   <p className="text-xs font-semibold mb-1">
                     {msg.sender_name}
                   </p>
-                  <p className="text-sm">{msg.message}</p>
+                  <p className="text-sm whitespace-pre-wrap">
+                    {msg.message.split(/(@\w+(?:\s+\w+)?)/).map((part, i) => {
+                      if (part.startsWith('@')) {
+                        const mentionedName = part.substring(1);
+                        const mentionedUser = allUsers.find(u => 
+                          u.full_name?.toLowerCase() === mentionedName.toLowerCase()
+                        );
+                        const isCurrentUser = mentionedUser?.email === user?.email;
+                        return (
+                          <span 
+                            key={i} 
+                            className={`font-semibold ${isCurrentUser ? 'bg-blue-200 text-blue-900 px-1 rounded' : 'text-blue-600'}`}
+                          >
+                            {part}
+                          </span>
+                        );
+                      }
+                      return part;
+                    })}
+                  </p>
                   <p className="text-xs opacity-70 mt-1">
                     {format(new Date(msg.created_date), 'h:mm a')}
                   </p>
@@ -95,20 +203,45 @@ export default function JobChat({ jobId }) {
         )}
         <div ref={messagesEndRef} />
       </div>
-      <form onSubmit={handleSend} className="flex gap-2 mt-3">
-        <Input
-          value={message}
-          onChange={(e) => setMessage(e.target.value)}
-          placeholder="Type a message..."
-          className="flex-1"
-        />
-        <Button
-          type="submit"
-          disabled={!message.trim() || sendMessageMutation.isPending}
-          className="bg-[#FAE008] text-gray-900 hover:bg-[#E5CF07]"
-        >
-          <Send className="w-4 h-4" />
-        </Button>
+      <form onSubmit={handleSend} className="mt-3">
+        <div className="relative">
+          {showMentionMenu && filteredUsers.length > 0 && (
+            <div className="absolute bottom-full left-0 mb-2 w-64 bg-white border border-gray-200 rounded-lg shadow-lg max-h-48 overflow-y-auto z-10">
+              {filteredUsers.map((u) => (
+                <button
+                  key={u.id}
+                  type="button"
+                  onClick={() => insertMention(u.full_name)}
+                  className="w-full text-left px-3 py-2 hover:bg-gray-100 flex items-center gap-2 transition-colors"
+                >
+                  <div className="w-8 h-8 bg-gray-200 rounded-full flex items-center justify-center text-xs font-semibold">
+                    {u.full_name?.charAt(0)?.toUpperCase()}
+                  </div>
+                  <div>
+                    <div className="text-sm font-medium">{u.full_name}</div>
+                    <div className="text-xs text-gray-500">{u.email}</div>
+                  </div>
+                </button>
+              ))}
+            </div>
+          )}
+          <div className="flex gap-2">
+            <Input
+              ref={inputRef}
+              value={message}
+              onChange={handleInputChange}
+              placeholder="Type a message... (use @ to mention)"
+              className="flex-1"
+            />
+            <Button
+              type="submit"
+              disabled={!message.trim() || sendMessageMutation.isPending}
+              className="bg-[#FAE008] text-gray-900 hover:bg-[#E5CF07]"
+            >
+              <Send className="w-4 h-4" />
+            </Button>
+          </div>
+        </div>
       </form>
     </div>
   );
