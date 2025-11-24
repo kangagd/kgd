@@ -27,7 +27,9 @@ export default function AdvancedSearch({ onSearchChange, currentFilters }) {
   const [dateFrom, setDateFrom] = useState(currentFilters?.dateFrom || "");
   const [dateTo, setDateTo] = useState(currentFilters?.dateTo || "");
   const [hasAttachment, setHasAttachment] = useState(currentFilters?.hasAttachment || false);
+  const [attachmentName, setAttachmentName] = useState(currentFilters?.attachmentName || "");
   const [searchInBody, setSearchInBody] = useState(currentFilters?.searchInBody !== false);
+  const [statusFilter, setStatusFilter] = useState(currentFilters?.statusFilter || "all");
   const [isOpen, setIsOpen] = useState(false);
   const [savedSearches, setSavedSearches] = useState([]);
   const [saveDialogOpen, setSaveDialogOpen] = useState(false);
@@ -55,7 +57,9 @@ export default function AdvancedSearch({ onSearchChange, currentFilters }) {
       dateFrom,
       dateTo,
       hasAttachment,
-      searchInBody
+      attachmentName,
+      searchInBody,
+      statusFilter
     });
     setIsOpen(false);
   };
@@ -67,7 +71,9 @@ export default function AdvancedSearch({ onSearchChange, currentFilters }) {
     setDateFrom("");
     setDateTo("");
     setHasAttachment(false);
+    setAttachmentName("");
     setSearchInBody(true);
+    setStatusFilter("all");
     onSearchChange({
       searchText: "",
       sender: "",
@@ -75,7 +81,9 @@ export default function AdvancedSearch({ onSearchChange, currentFilters }) {
       dateFrom: "",
       dateTo: "",
       hasAttachment: false,
-      searchInBody: true
+      attachmentName: "",
+      searchInBody: true,
+      statusFilter: "all"
     });
   };
 
@@ -97,7 +105,9 @@ export default function AdvancedSearch({ onSearchChange, currentFilters }) {
           dateFrom,
           dateTo,
           hasAttachment,
-          searchInBody
+          attachmentName,
+          searchInBody,
+          statusFilter
         }
       };
 
@@ -120,7 +130,9 @@ export default function AdvancedSearch({ onSearchChange, currentFilters }) {
     setDateFrom(filters.dateFrom || "");
     setDateTo(filters.dateTo || "");
     setHasAttachment(filters.hasAttachment || false);
+    setAttachmentName(filters.attachmentName || "");
     setSearchInBody(filters.searchInBody !== false);
+    setStatusFilter(filters.statusFilter || "all");
     onSearchChange(filters);
     setIsOpen(false);
   };
@@ -143,7 +155,9 @@ export default function AdvancedSearch({ onSearchChange, currentFilters }) {
     recipient,
     dateFrom,
     dateTo,
-    hasAttachment
+    hasAttachment,
+    attachmentName,
+    statusFilter !== "all"
   ].filter(Boolean).length;
 
   return (
@@ -162,7 +176,9 @@ export default function AdvancedSearch({ onSearchChange, currentFilters }) {
               dateFrom,
               dateTo,
               hasAttachment,
-              searchInBody
+              attachmentName,
+              searchInBody,
+              statusFilter
             });
           }}
           className="pl-10 pr-24"
@@ -244,6 +260,32 @@ export default function AdvancedSearch({ onSearchChange, currentFilters }) {
                     <Label htmlFor="hasAttachment" className="text-[13px] cursor-pointer">
                       Has attachments
                     </Label>
+                  </div>
+
+                  <div>
+                    <Label className="text-[13px]">Attachment Name</Label>
+                    <Input
+                      placeholder="invoice.pdf, contract..."
+                      value={attachmentName}
+                      onChange={(e) => setAttachmentName(e.target.value)}
+                      className="mt-1"
+                    />
+                  </div>
+
+                  <div>
+                    <Label className="text-[13px]">Status</Label>
+                    <Select value={statusFilter} onValueChange={setStatusFilter}>
+                      <SelectTrigger className="mt-1">
+                        <SelectValue placeholder="All statuses" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="all">All Statuses</SelectItem>
+                        <SelectItem value="Open">Open</SelectItem>
+                        <SelectItem value="In Progress">In Progress</SelectItem>
+                        <SelectItem value="Closed">Closed</SelectItem>
+                        <SelectItem value="Archived">Archived</SelectItem>
+                      </SelectContent>
+                    </Select>
                   </div>
 
                   <div className="flex items-center gap-2">

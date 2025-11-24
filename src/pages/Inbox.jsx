@@ -34,7 +34,9 @@ export default function Inbox() {
     dateFrom: "",
     dateTo: "",
     hasAttachment: false,
-    searchInBody: true
+    attachmentName: "",
+    searchInBody: true,
+    statusFilter: "all"
   });
   const [statusFilter, setStatusFilter] = useState("all");
   const [priorityFilter, setPriorityFilter] = useState("all");
@@ -220,12 +222,26 @@ export default function Inbox() {
       const threadMessages = messages.filter(m => m.thread_id === thread.id);
       return threadMessages.some(m => m.attachments && m.attachments.length > 0);
     })();
-    
+
+    // Attachment name filter
+    const matchesAttachmentName = !searchFilters.attachmentName || (() => {
+      const threadMessages = messages.filter(m => m.thread_id === thread.id);
+      return threadMessages.some(m => 
+        m.attachments && m.attachments.some(att => 
+          att.filename?.toLowerCase().includes(searchFilters.attachmentName.toLowerCase())
+        )
+      );
+    })();
+
+    // Advanced status filter (from search filters)
+    const matchesAdvancedStatus = searchFilters.statusFilter === "all" || thread.status === searchFilters.statusFilter;
+
     const matchesStatus = statusFilter === "all" || thread.status === statusFilter;
     const matchesPriority = priorityFilter === "all" || thread.priority === priorityFilter;
-    
+
     return matchesSearch && matchesSender && matchesRecipient && 
-           matchesDateFrom && matchesDateTo && matchesAttachment &&
+           matchesDateFrom && matchesDateTo && matchesAttachment && 
+           matchesAttachmentName && matchesAdvancedStatus &&
            matchesStatus && matchesPriority;
   }).sort((a, b) => {
     switch(sortBy) {
