@@ -21,12 +21,11 @@ export default function TakePaymentModal({
   invoice
 }) {
   const [paymentAmount, setPaymentAmount] = useState(invoice?.amount_due?.toFixed(2) || "0.00");
-  const [cardNumber, setCardNumber] = useState("");
-  const [expiry, setExpiry] = useState("");
-  const [cvc, setCvc] = useState("");
   const [error, setError] = useState("");
   const [stripeLoaded, setStripeLoaded] = useState(false);
   const [stripe, setStripe] = useState(null);
+  const [elements, setElements] = useState(null);
+  const [cardElement, setCardElement] = useState(null);
   const [paymentRequest, setPaymentRequest] = useState(null);
   const [canMakePayment, setCanMakePayment] = useState(false);
   const [stripePublishableKey, setStripePublishableKey] = useState(null);
@@ -71,6 +70,10 @@ export default function TakePaymentModal({
     
     const stripeInstance = window.Stripe(publishableKey);
     setStripe(stripeInstance);
+
+    // Create Elements instance
+    const elementsInstance = stripeInstance.elements();
+    setElements(elementsInstance);
 
     try {
       // Create Payment Request for Apple Pay / Google Pay
@@ -132,27 +135,6 @@ export default function TakePaymentModal({
     }
   }, [paymentAmount, paymentRequest, invoice]);
 
-  const formatCardNumber = (value) => {
-    const v = value.replace(/\s+/g, '').replace(/[^0-9]/gi, '');
-    const matches = v.match(/\d{4,16}/g);
-    const match = (matches && matches[0]) || '';
-    const parts = [];
-
-    for (let i = 0, len = match.length; i < len; i += 4) {
-      parts.push(match.substring(i, i + 4));
-    }
-
-    return parts.length ? parts.join(' ') : value;
-  };
-
-  const formatExpiry = (value) => {
-    const v = value.replace(/\s+/g, '').replace(/[^0-9]/gi, '');
-    if (v.length >= 2) {
-      return `${v.substring(0, 2)}/${v.substring(2, 4)}`;
-    }
-    return v;
-  };
-
   const handleConfirm = async () => {
     setError("");
 
@@ -168,38 +150,16 @@ export default function TakePaymentModal({
       return;
     }
 
-    if (!cardNumber || cardNumber.replace(/\s/g, '').length < 13) {
-      setError("Please enter a valid card number");
-      return;
-    }
-
-    if (!expiry || expiry.length < 5) {
-      setError("Please enter a valid expiry date (MM/YY)");
-      return;
-    }
-
-    if (!cvc || cvc.length < 3) {
-      setError("Please enter a valid CVC");
+    if (!stripe || !cardElement) {
+      setError("Payment system not initialized");
       return;
     }
 
     try {
-      if (!stripe) {
-        setError("Payment system not initialized");
-        return;
-      }
-      
-      const [month, year] = expiry.split('/');
-
-      // Create payment method
+      // Create payment method using Card Element
       const { paymentMethod, error: stripeError } = await stripe.createPaymentMethod({
         type: 'card',
-        card: {
-          number: cardNumber.replace(/\s/g, ''),
-          exp_month: parseInt(month),
-          exp_year: parseInt(`20${year}`),
-          cvc: cvc
-        }
+        card: cardElement,
       });
 
       if (stripeError) {
@@ -213,10 +173,10 @@ export default function TakePaymentModal({
         payment_method_id: paymentMethod.id
       });
 
-      // Reset form
-      setCardNumber("");
-      setExpiry("");
-      setCvc("");
+      // Clear card element
+      if (cardElement) {
+        cardElement.clear();
+      }
       setPaymentAmount("0.00");
     } catch (err) {
       setError(err.message || "Payment failed");
@@ -224,9 +184,9 @@ export default function TakePaymentModal({
   };
 
   const handleClose = () => {
-    setCardNumber("");
-    setExpiry("");
-    setCvc("");
+    if (cardElement) {
+      cardElement.clear();
+    }
     setPaymentAmount(invoice?.amount_due?.toFixed(2) || "0.00");
     setError("");
     if (prButton) {
@@ -311,34 +271,38 @@ export default function TakePaymentModal({
               </Label>
             </div>
 
-            <div className="space-y-3">
-              <div>
-                <Input
-                  type="text"
-                  placeholder="1234 5678 9012 3456"
-                  value={cardNumber}
-                  onChange={(e) => setCardNumber(formatCardNumber(e.target.value))}
-                  maxLength={19}
-                />
-              </div>
-
-              <div className="grid grid-cols-2 gap-3">
-                <Input
-                  type="text"
-                  placeholder="MM/YY"
-                  value={expiry}
-                  onChange={(e) => setExpiry(formatExpiry(e.target.value))}
-                  maxLength={5}
-                />
-                <Input
-                  type="text"
-                  placeholder="CVC"
-                  value={cvc}
-                  onChange={(e) => setCvc(e.target.value.replace(/[^0-9]/g, ''))}
-                  maxLength={4}
-                />
-              </div>
-            </div>
+            <div 
+              className="p-3 border border-[#E5E7EB] rounded-lg bg-white"
+              ref={(el) => {
+                if (el && elements && !cardElement) {
+                  const card = elements.create('card', {
+                    style: {
+                      base: {
+                        fontSize: '16px',
+                        color: '#111827',
+                        fontFamily: 'Inter, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif',
+                        '::placeholder': {
+                          color: '#9CA3AF',
+                        },
+                      },
+                      invalid: {
+                        color: '#DC2626',
+                      },
+                    },
+                  });
+                  card.mount(el);
+                  setCardElement(card);
+                  
+                  card.on('change', (event) => {
+                    if (event.error) {
+                      setError(event.error.message);
+                    } else {
+                      setError('');
+                    }
+                  });
+                }
+              }}
+            />
           </div>
 
           {error && (
