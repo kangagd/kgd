@@ -89,8 +89,9 @@ export default function Projects() {
     const params = new URLSearchParams(window.location.search);
     const action = params.get('action');
     const projectId = params.get('projectId');
+    const fromEmailId = params.get('fromEmail');
     
-    if (action === 'new' || action === 'create') {
+    if (action === 'new' || action === 'create' || fromEmailId) {
       setShowForm(true);
     }
     
