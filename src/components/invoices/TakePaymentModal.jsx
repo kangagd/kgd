@@ -25,6 +25,9 @@ export default function TakePaymentModal({
   const [cvc, setCvc] = useState("");
   const [error, setError] = useState("");
   const [stripeLoaded, setStripeLoaded] = useState(false);
+  const [stripe, setStripe] = useState(null);
+  const [paymentRequest, setPaymentRequest] = useState(null);
+  const [canMakePayment, setCanMakePayment] = useState(false);
 
   useEffect(() => {
     if (open) {
@@ -32,13 +35,74 @@ export default function TakePaymentModal({
       if (!window.Stripe) {
         const script = document.createElement('script');
         script.src = 'https://js.stripe.com/v3/';
-        script.onload = () => setStripeLoaded(true);
+        script.onload = () => {
+          setStripeLoaded(true);
+          initializeStripe();
+        };
         document.body.appendChild(script);
       } else {
         setStripeLoaded(true);
+        initializeStripe();
       }
     }
   }, [open]);
+
+  const initializeStripe = async () => {
+    if (!window.Stripe || !window.STRIPE_PUBLISHABLE_KEY) return;
+    
+    const stripeInstance = window.Stripe(window.STRIPE_PUBLISHABLE_KEY);
+    setStripe(stripeInstance);
+
+    // Create Payment Request for Apple Pay / Google Pay
+    const pr = stripeInstance.paymentRequest({
+      country: 'AU',
+      currency: 'aud',
+      total: {
+        label: `Invoice #${invoice?.xero_invoice_number || ''}`,
+        amount: Math.round((invoice?.amount_due || 0) * 100)
+      },
+      requestPayerName: true,
+      requestPayerEmail: true
+    });
+
+    // Check if Apple Pay or Google Pay is available
+    const result = await pr.canMakePayment();
+    if (result) {
+      setPaymentRequest(pr);
+      setCanMakePayment(true);
+
+      // Handle payment from wallet
+      pr.on('paymentmethod', async (ev) => {
+        try {
+          const amount = parseFloat(paymentAmount);
+          await onConfirm({
+            payment_amount: amount,
+            payment_method_id: ev.paymentMethod.id
+          });
+          ev.complete('success');
+          handleClose();
+        } catch (err) {
+          ev.complete('fail');
+          setError(err.message || 'Payment failed');
+        }
+      });
+    }
+  };
+
+  // Update payment request amount when it changes
+  useEffect(() => {
+    if (paymentRequest && paymentAmount) {
+      const amount = parseFloat(paymentAmount);
+      if (!isNaN(amount) && amount > 0) {
+        paymentRequest.update({
+          total: {
+            label: `Invoice #${invoice?.xero_invoice_number || ''}`,
+            amount: Math.round(amount * 100)
+          }
+        });
+      }
+    }
+  }, [paymentAmount, paymentRequest, invoice]);
 
   const formatCardNumber = (value) => {
     const v = value.replace(/\s+/g, '').replace(/[^0-9]/gi, '');
@@ -175,6 +239,37 @@ export default function TakePaymentModal({
               />
             </div>
           </div>
+
+          {canMakePayment && paymentRequest && (
+            <div>
+              <Label className="block text-[13px] md:text-[14px] font-medium text-[#4B5563] mb-3">
+                Quick Pay with Apple Pay / Google Pay
+              </Label>
+              <div 
+                id="payment-request-button"
+                className="mb-4"
+              >
+                <div 
+                  ref={(el) => {
+                    if (el && paymentRequest && stripe) {
+                      const prButton = stripe.elements().create('paymentRequestButton', {
+                        paymentRequest: paymentRequest,
+                      });
+                      prButton.mount(el);
+                    }
+                  }}
+                />
+              </div>
+              <div className="relative mb-4">
+                <div className="absolute inset-0 flex items-center">
+                  <span className="w-full border-t border-[#E5E7EB]" />
+                </div>
+                <div className="relative flex justify-center text-xs uppercase">
+                  <span className="bg-white px-2 text-[#6B7280]">Or pay with card</span>
+                </div>
+              </div>
+            </div>
+          )}
 
           <div className="border-t border-[#E5E7EB] pt-4">
             <div className="flex items-center gap-2 mb-3">
