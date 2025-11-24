@@ -17,7 +17,7 @@ import {
 import EmailThreadList from "../components/inbox/EmailThreadList";
 import EmailDetailView from "../components/inbox/EmailDetailView";
 import LinkThreadModal from "../components/inbox/LinkThreadModal";
-import CreateProjectFromEmailModal from "../components/inbox/CreateProjectFromEmailModal";
+
 import CreateJobFromEmailModal from "../components/inbox/CreateJobFromEmailModal";
 import GmailConnect from "../components/inbox/GmailConnect";
 import AdvancedSearch from "../components/inbox/AdvancedSearch";
@@ -634,17 +634,7 @@ export default function Inbox() {
         />
       )}
 
-      {createProjectModalOpen && (
-        <CreateProjectFromEmailModal
-          open={createProjectModalOpen}
-          onClose={() => setCreateProjectModalOpen(false)}
-          thread={selectedThread}
-          onSuccess={(projectId, projectTitle) => {
-            handleLinkProject(projectId, projectTitle);
-            setCreateProjectModalOpen(false);
-          }}
-        />
-      )}
+
 
       {createJobModalOpen && (
         <CreateJobFromEmailModal
