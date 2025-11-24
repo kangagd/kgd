@@ -58,6 +58,14 @@ export default function Quotes() {
     }
   });
 
+  const deleteQuoteMutation = useMutation({
+    mutationFn: (id) => base44.entities.Quote.delete(id),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['quotes'] });
+      setSearchParams({});
+    }
+  });
+
   const filteredQuotes = allQuotes.filter(quote => {
     const matchesSearch = !searchTerm || 
       quote.quote_number?.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -108,6 +116,11 @@ export default function Quotes() {
             quote={selectedQuote}
             onUpdate={handleUpdateQuote}
             onCancel={handleCancel}
+            onDelete={() => {
+              if (confirm('Are you sure you want to delete this draft quote?')) {
+                deleteQuoteMutation.mutate(selectedQuote.id);
+              }
+            }}
             projects={projects}
             customers={customers}
           />
