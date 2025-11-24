@@ -75,7 +75,14 @@ export default function XeroSettingsModal({ open, onClose }) {
           <Alert className="border-blue-200 bg-blue-50">
             <AlertCircle className="w-4 h-4 text-blue-600" />
             <AlertDescription className="text-sm text-blue-900">
-              These settings will be used when creating invoices in Xero. You can find your account code in Xero under Settings → Chart of Accounts.
+              <div className="space-y-2">
+                <p className="font-semibold">How to find your Xero codes:</p>
+                <ol className="list-decimal list-inside space-y-1 text-xs">
+                  <li><strong>Account Code:</strong> Xero → Settings → Chart of Accounts → Find your sales account (e.g., "200")</li>
+                  <li><strong>Tax Type:</strong> Xero → Settings → Tax Rates → Copy the exact code (e.g., "TAX001", "OUTPUT", "OUTPUT2")</li>
+                </ol>
+                <p className="text-xs font-semibold text-red-600 mt-2">⚠️ The tax code must be compatible with your account code in Xero!</p>
+              </div>
             </AlertDescription>
           </Alert>
 
@@ -97,13 +104,16 @@ export default function XeroSettingsModal({ open, onClose }) {
             <Label htmlFor="tax_type">Default Tax Type *</Label>
             <Input
               id="tax_type"
-              placeholder="e.g., OUTPUT2"
+              placeholder="e.g., TAX001 or OUTPUT"
               value={formData.default_tax_type}
               onChange={(e) => setFormData({...formData, default_tax_type: e.target.value.trim().toUpperCase()})}
               required
             />
             <p className="text-xs text-red-600 mt-1 font-medium">
-              Enter the exact tax code from Xero (e.g., "OUTPUT2" for GST on Income)
+              Copy the EXACT code from Xero → Settings → Tax Rates (e.g., "TAX001", "OUTPUT", "GST")
+            </p>
+            <p className="text-xs text-gray-500 mt-1">
+              Common codes: TAX001 (10% GST), OUTPUT (GST on Income), EXEMPTOUTPUT (Tax Exempt)
             </p>
           </div>
 
