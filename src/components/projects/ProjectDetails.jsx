@@ -238,25 +238,7 @@ export default function ProjectDetails({ project: initialProject, onClose, onEdi
     }
   });
 
-  const processPaymentMutation = useMutation({
-    mutationFn: async (paymentData) => {
-      const response = await base44.functions.invoke('processXeroPayment', {
-        invoice_id: selectedInvoice.id,
-        payment_amount: paymentData.payment_amount,
-        payment_method_id: paymentData.payment_method_id
-      });
-      return response.data;
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['projectXeroInvoices', project.id] });
-      setShowPaymentModal(false);
-      setSelectedInvoice(null);
-      toast.success('Payment processed successfully');
-    },
-    onError: (error) => {
-      toast.error(error.message || 'Failed to process payment');
-    }
-  });
+
 
   const handleAddJob = () => {
     navigate(createPageUrl("Jobs") + `?action=new&projectId=${project.id}`);
@@ -1432,8 +1414,6 @@ Format as HTML bullet points using <ul> and <li> tags. Include only the most cri
             setShowPaymentModal(false);
             setSelectedInvoice(null);
           }}
-          onConfirm={(paymentData) => processPaymentMutation.mutate(paymentData)}
-          isSubmitting={processPaymentMutation.isPending}
           invoice={selectedInvoice}
         />
       )}
