@@ -100,12 +100,16 @@ Deno.serve(async (req) => {
     // Record payment in Xero
     const connection = await refreshAndGetConnection(base44);
     
+    // Get Xero settings for account code
+    const settings = await base44.asServiceRole.entities.XeroSettings.list();
+    const bankAccountCode = settings[0]?.bank_account_code || '200';
+    
     const paymentPayload = {
       Invoice: {
         InvoiceID: invoiceRecord.xero_invoice_id
       },
       Account: {
-        Code: '200' // Bank account code - you may want to make this configurable
+        Code: bankAccountCode
       },
       Date: new Date().toISOString().split('T')[0],
       Amount: payment_amount
