@@ -18,6 +18,8 @@ export default function QuoteItemManager({ quote, quoteItems, quoteSections, onU
   const [searchOpen, setSearchOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
   const [newSectionName, setNewSectionName] = useState("");
+  const [newSectionIsOptional, setNewSectionIsOptional] = useState(false);
+  const [newSectionOptionGroup, setNewSectionOptionGroup] = useState("");
   const [showNewSectionForm, setShowNewSectionForm] = useState(false);
   const [collapsedSections, setCollapsedSections] = useState({});
   const [newItem, setNewItem] = useState({
@@ -53,7 +55,16 @@ export default function QuoteItemManager({ quote, quoteItems, quoteSections, onU
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['quoteSections', quote.id] });
       setNewSectionName("");
+      setNewSectionIsOptional(false);
+      setNewSectionOptionGroup("");
       setShowNewSectionForm(false);
+    }
+  });
+
+  const updateSectionMutation = useMutation({
+    mutationFn: ({ id, data }) => base44.entities.QuoteSection.update(id, data),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['quoteSections', quote.id] });
     }
   });
 
@@ -99,7 +110,18 @@ export default function QuoteItemManager({ quote, quoteItems, quoteSections, onU
   });
 
   const recalculateTotals = () => {
-    const items = quoteItems.filter(item => !item.is_optional || item.is_selected);
+    const selectedSectionIds = new Set(
+      quoteSections.filter(s => !s.is_optional || s.is_selected).map(s => s.id)
+    );
+    
+    const items = quoteItems.filter(item => {
+      // Check if item's section is selected (or item has no section)
+      const sectionSelected = !item.section_id || selectedSectionIds.has(item.section_id);
+      // Check if item itself is selected (if optional)
+      const itemSelected = !item.is_optional || item.is_selected;
+      return sectionSelected && itemSelected;
+    });
+    
     const subtotal = items.reduce((sum, item) => {
       const lineSubtotal = (item.quantity * item.unit_price) - (item.discount || 0);
       return sum + lineSubtotal;
@@ -180,8 +202,31 @@ export default function QuoteItemManager({ quote, quoteItems, quoteSections, onU
     createSectionMutation.mutate({
       quote_id: quote.id,
       title: newSectionName,
-      sort_order: sortOrder
+      sort_order: sortOrder,
+      is_optional: newSectionIsOptional,
+      is_selected: true,
+      option_group_key: newSectionOptionGroup.trim() || null
     });
+  };
+
+  const handleToggleSectionSelection = (section) => {
+    if (section.option_group_key) {
+      // Radio button behavior - deselect other sections in the same group
+      const sectionsInGroup = quoteSections.filter(s => s.option_group_key === section.option_group_key);
+      sectionsInGroup.forEach(s => {
+        if (s.id === section.id) {
+          updateSectionMutation.mutate({ id: s.id, data: { ...s, is_selected: true } });
+        } else if (s.is_selected) {
+          updateSectionMutation.mutate({ id: s.id, data: { ...s, is_selected: false } });
+        }
+      });
+    } else {
+      // Checkbox behavior - toggle this section only
+      updateSectionMutation.mutate({ 
+        id: section.id, 
+        data: { ...section, is_selected: !section.is_selected } 
+      });
+    }
   };
 
   const handleDeleteSection = (sectionId) => {
@@ -218,6 +263,19 @@ export default function QuoteItemManager({ quote, quoteItems, quoteSections, onU
       .filter(item => !item.is_optional || item.is_selected)
       .reduce((sum, item) => sum + (item.line_total || 0), 0);
   };
+
+  const optionGroups = useMemo(() => {
+    const groups = {};
+    quoteSections.forEach(section => {
+      if (section.option_group_key) {
+        if (!groups[section.option_group_key]) {
+          groups[section.option_group_key] = [];
+        }
+        groups[section.option_group_key].push(section);
+      }
+    });
+    return groups;
+  }, [quoteSections]);
 
   return (
     <div className="space-y-6">
@@ -371,29 +429,50 @@ export default function QuoteItemManager({ quote, quoteItems, quoteSections, onU
         {showNewSectionForm && (
           <Card className="bg-white border border-[#E5E7EB]">
             <CardContent className="p-4">
-              <div className="flex gap-2">
+              <div className="space-y-3">
                 <Input
                   value={newSectionName}
                   onChange={(e) => setNewSectionName(e.target.value)}
                   placeholder="Section name (e.g., Labor, Materials, Add-ons)"
-                  onKeyDown={(e) => e.key === 'Enter' && handleCreateSection()}
+                  onKeyDown={(e) => e.key === 'Enter' && !newSectionIsOptional && !newSectionOptionGroup && handleCreateSection()}
                 />
-                <Button
-                  onClick={handleCreateSection}
-                  disabled={!newSectionName.trim() || createSectionMutation.isPending}
-                  className="bg-[#FAE008] hover:bg-[#E5CF07] text-[#111827] font-semibold"
-                >
-                  Create
-                </Button>
-                <Button
-                  variant="outline"
-                  onClick={() => {
-                    setShowNewSectionForm(false);
-                    setNewSectionName("");
-                  }}
-                >
-                  Cancel
-                </Button>
+                <div className="flex items-center gap-4">
+                  <div className="flex items-center space-x-2">
+                    <Switch
+                      checked={newSectionIsOptional}
+                      onCheckedChange={setNewSectionIsOptional}
+                    />
+                    <Label className="text-sm">Optional Section</Label>
+                  </div>
+                  {newSectionIsOptional && (
+                    <Input
+                      value={newSectionOptionGroup}
+                      onChange={(e) => setNewSectionOptionGroup(e.target.value)}
+                      placeholder="Option group (optional, for radio behavior)"
+                      className="flex-1"
+                    />
+                  )}
+                </div>
+                <div className="flex gap-2">
+                  <Button
+                    onClick={handleCreateSection}
+                    disabled={!newSectionName.trim() || createSectionMutation.isPending}
+                    className="bg-[#FAE008] hover:bg-[#E5CF07] text-[#111827] font-semibold"
+                  >
+                    Create
+                  </Button>
+                  <Button
+                    variant="outline"
+                    onClick={() => {
+                      setShowNewSectionForm(false);
+                      setNewSectionName("");
+                      setNewSectionIsOptional(false);
+                      setNewSectionOptionGroup("");
+                    }}
+                  >
+                    Cancel
+                  </Button>
+                </div>
               </div>
             </CardContent>
           </Card>
@@ -414,23 +493,49 @@ export default function QuoteItemManager({ quote, quoteItems, quoteSections, onU
 
                 return (
                   <div key={section.id} className="space-y-2">
-                    <Card className="bg-[#F9FAFB] border border-[#E5E7EB]">
+                    <Card className={`border ${section.is_optional && !section.is_selected ? 'bg-white border-[#D1D5DB]' : 'bg-[#F9FAFB] border-[#E5E7EB]'}`}>
                       <CardContent className="p-4">
                         <div className="flex items-center justify-between">
-                          <button
-                            onClick={() => toggleSection(section.id)}
-                            className="flex items-center gap-2 flex-1 text-left hover:opacity-70 transition-opacity"
-                          >
-                            {isCollapsed ? (
-                              <ChevronRight className="w-5 h-5 text-[#6B7280]" />
-                            ) : (
-                              <ChevronDown className="w-5 h-5 text-[#6B7280]" />
+                          <div className="flex items-center gap-3 flex-1">
+                            {section.is_optional && (
+                              <div className="flex items-center">
+                                {section.option_group_key ? (
+                                  <input
+                                    type="radio"
+                                    checked={section.is_selected}
+                                    onChange={() => handleToggleSectionSelection(section)}
+                                    className="w-4 h-4 cursor-pointer"
+                                  />
+                                ) : (
+                                  <Switch
+                                    checked={section.is_selected}
+                                    onCheckedChange={() => handleToggleSectionSelection(section)}
+                                  />
+                                )}
+                              </div>
                             )}
-                            <h4 className="font-semibold text-[#111827]">{section.title}</h4>
-                            <span className="text-sm text-[#6B7280]">({sectionItems.length})</span>
-                          </button>
+                            <button
+                              onClick={() => toggleSection(section.id)}
+                              className="flex items-center gap-2 flex-1 text-left hover:opacity-70 transition-opacity"
+                            >
+                              {isCollapsed ? (
+                                <ChevronRight className="w-5 h-5 text-[#6B7280]" />
+                              ) : (
+                                <ChevronDown className="w-5 h-5 text-[#6B7280]" />
+                              )}
+                              <h4 className={`font-semibold ${section.is_optional && !section.is_selected ? 'text-[#6B7280]' : 'text-[#111827]'}`}>
+                                {section.title}
+                              </h4>
+                              <span className="text-sm text-[#6B7280]">({sectionItems.length})</span>
+                              {section.is_optional && (
+                                <span className="text-xs bg-[#FAE008]/20 text-[#92400E] px-2 py-0.5 rounded-lg">
+                                  {section.option_group_key ? 'Choose One' : 'Optional'}
+                                </span>
+                              )}
+                            </button>
+                          </div>
                           <div className="flex items-center gap-4">
-                            <span className="text-sm font-semibold text-[#111827]">
+                            <span className={`text-sm font-semibold ${section.is_optional && !section.is_selected ? 'text-[#6B7280]' : 'text-[#111827]'}`}>
                               ${sectionTotal.toLocaleString('en-AU', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                             </span>
                             <Button
