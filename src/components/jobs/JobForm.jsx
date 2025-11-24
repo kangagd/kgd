@@ -93,7 +93,7 @@ export default function JobForm({ job, technicians, onSubmit, onCancel, isSubmit
   });
 
   useEffect(() => {
-    if (preselectedCustomerId && customers.length > 0 && !job) {
+    if (preselectedCustomerId && customers.length > 0 && !job?.id) {
       const customer = customers.find(c => c.id === preselectedCustomerId);
       if (customer) {
         setFormData(prev => ({
@@ -107,7 +107,26 @@ export default function JobForm({ job, technicians, onSubmit, onCancel, isSubmit
         }));
       }
     }
-  }, [preselectedCustomerId, customers.length, job]);
+  }, [preselectedCustomerId, customers.length, job?.id]);
+
+  // Handle prefilled data from email - try to match customer by email
+  useEffect(() => {
+    if (!job?.id && job?.customer_email && customers.length > 0 && !formData.customer_id) {
+      const matchingCustomer = customers.find(c => 
+        c.email?.toLowerCase() === job.customer_email?.toLowerCase()
+      );
+      if (matchingCustomer) {
+        setFormData(prev => ({
+          ...prev,
+          customer_id: matchingCustomer.id,
+          customer_name: matchingCustomer.name,
+          customer_phone: matchingCustomer.phone || prev.customer_phone,
+          customer_email: matchingCustomer.email || prev.customer_email,
+          customer_type: matchingCustomer.customer_type || "",
+        }));
+      }
+    }
+  }, [job?.id, job?.customer_email, customers.length, formData.customer_id]);
 
   const generateNotes = async (project, jobTypeId) => {
     if (!project || !jobTypeId) return;
