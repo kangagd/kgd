@@ -138,11 +138,24 @@ export default function Jobs() {
     const customerId = params.get('customerId');
     const projectId = params.get('projectId');
     const status = params.get('status');
+    const fromEmailId = params.get('fromEmail');
 
-    if (action === 'new' || action === 'create' || customerId || projectId) {
+    if (action === 'new' || action === 'create' || customerId || projectId || fromEmailId) {
       setShowForm(true);
       if (customerId) setPreselectedCustomerId(customerId);
       if (projectId) setPreselectedProjectId(projectId);
+      
+      // Pre-populate from email thread
+      if (fromEmailId) {
+        (async () => {
+          try {
+            const thread = await base44.entities.EmailThread.get(fromEmailId);
+            // Set preselected data based on email - customer matching will happen in JobForm
+          } catch (error) {
+            console.error('Failed to load email thread:', error);
+          }
+        })();
+      }
     }
 
     if (status) {
