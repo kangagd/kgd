@@ -11,6 +11,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { CreditCard, AlertCircle } from "lucide-react";
 import { Alert, AlertDescription } from "@/components/ui/alert";
+import { base44 } from "@/api/base44Client";
 
 export default function TakePaymentModal({ 
   open, 
@@ -28,29 +29,44 @@ export default function TakePaymentModal({
   const [stripe, setStripe] = useState(null);
   const [paymentRequest, setPaymentRequest] = useState(null);
   const [canMakePayment, setCanMakePayment] = useState(false);
+  const [stripePublishableKey, setStripePublishableKey] = useState(null);
+  const [prButton, setPrButton] = useState(null);
 
   useEffect(() => {
     if (open) {
+      // Fetch Stripe publishable key and load Stripe.js
+      fetchStripeKey();
+    }
+  }, [open]);
+
+  const fetchStripeKey = async () => {
+    try {
+      const { data } = await base44.functions.invoke('getStripePublishableKey');
+      setStripePublishableKey(data.publishableKey);
+      
       // Load Stripe.js
       if (!window.Stripe) {
         const script = document.createElement('script');
         script.src = 'https://js.stripe.com/v3/';
         script.onload = () => {
           setStripeLoaded(true);
-          initializeStripe();
+          initializeStripe(data.publishableKey);
         };
         document.body.appendChild(script);
       } else {
         setStripeLoaded(true);
-        initializeStripe();
+        initializeStripe(data.publishableKey);
       }
+    } catch (err) {
+      console.error('Failed to fetch Stripe key:', err);
+      setError('Failed to initialize payment system');
     }
-  }, [open]);
+  };
 
-  const initializeStripe = async () => {
-    if (!window.Stripe || !window.STRIPE_PUBLISHABLE_KEY) return;
+  const initializeStripe = async (publishableKey) => {
+    if (!window.Stripe || !publishableKey) return;
     
-    const stripeInstance = window.Stripe(window.STRIPE_PUBLISHABLE_KEY);
+    const stripeInstance = window.Stripe(publishableKey);
     setStripe(stripeInstance);
 
     // Create Payment Request for Apple Pay / Google Pay
@@ -156,8 +172,10 @@ export default function TakePaymentModal({
     }
 
     try {
-      // Initialize Stripe
-      const stripe = window.Stripe(window.STRIPE_PUBLISHABLE_KEY);
+      if (!stripe) {
+        setError("Payment system not initialized");
+        return;
+      }
       
       const [month, year] = expiry.split('/');
 
@@ -199,6 +217,10 @@ export default function TakePaymentModal({
     setCvc("");
     setPaymentAmount(invoice?.amount_due?.toFixed(2) || "0.00");
     setError("");
+    if (prButton) {
+      prButton.unmount();
+      setPrButton(null);
+    }
     onClose();
   };
 
@@ -243,23 +265,21 @@ export default function TakePaymentModal({
           {canMakePayment && paymentRequest && (
             <div>
               <Label className="block text-[13px] md:text-[14px] font-medium text-[#4B5563] mb-3">
-                Quick Pay with Apple Pay / Google Pay
+                Quick Pay
               </Label>
               <div 
                 id="payment-request-button"
                 className="mb-4"
-              >
-                <div 
-                  ref={(el) => {
-                    if (el && paymentRequest && stripe) {
-                      const prButton = stripe.elements().create('paymentRequestButton', {
-                        paymentRequest: paymentRequest,
-                      });
-                      prButton.mount(el);
-                    }
-                  }}
-                />
-              </div>
+                ref={(el) => {
+                  if (el && paymentRequest && stripe && !prButton) {
+                    const button = stripe.elements().create('paymentRequestButton', {
+                      paymentRequest: paymentRequest,
+                    });
+                    button.mount(el);
+                    setPrButton(button);
+                  }
+                }}
+              />
               <div className="relative mb-4">
                 <div className="absolute inset-0 flex items-center">
                   <span className="w-full border-t border-[#E5E7EB]" />
