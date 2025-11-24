@@ -1,18 +1,21 @@
-import React, { useState } from "react";
+import React, { useState, useMemo } from "react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
-import { Plus, Trash2, GripVertical } from "lucide-react";
+import { Plus, Trash2, GripVertical, Search } from "lucide-react";
 import { base44 } from "@/api/base44Client";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { Switch } from "@/components/ui/switch";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from "@/components/ui/command";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 
 export default function QuoteItemManager({ quote, quoteItems, quoteSections, onUpdate }) {
   const queryClient = useQueryClient();
   const [editingItem, setEditingItem] = useState(null);
+  const [searchOpen, setSearchOpen] = useState(false);
+  const [searchQuery, setSearchQuery] = useState("");
   const [newItem, setNewItem] = useState({
     product_id: "",
     title: "",
@@ -28,6 +31,17 @@ export default function QuoteItemManager({ quote, quoteItems, quoteSections, onU
     queryKey: ['priceListItems'],
     queryFn: () => base44.entities.PriceListItem.list()
   });
+
+  const filteredProducts = useMemo(() => {
+    if (!searchQuery) return priceListItems.filter(p => p.in_inventory !== false);
+    const query = searchQuery.toLowerCase();
+    return priceListItems.filter(p => 
+      p.in_inventory !== false && 
+      (p.item.toLowerCase().includes(query) || 
+       p.category?.toLowerCase().includes(query) ||
+       p.description?.toLowerCase().includes(query))
+    );
+  }, [priceListItems, searchQuery]);
 
   const createItemMutation = useMutation({
     mutationFn: (data) => base44.entities.QuoteItem.create(data),
@@ -122,14 +136,8 @@ export default function QuoteItemManager({ quote, quoteItems, quoteSections, onU
         description: product.description || "",
         unit_price: product.price
       });
-    } else {
-      setNewItem({
-        ...newItem,
-        product_id: "",
-        title: "",
-        description: "",
-        unit_price: 0
-      });
+      setSearchQuery(product.item);
+      setSearchOpen(false);
     }
   };
 
