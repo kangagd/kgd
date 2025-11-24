@@ -184,9 +184,15 @@ export default function EmailAISummaryCard({ thread, onThreadUpdate, onCreatePro
 
         {hasInsights && (
           <>
-            <p className="text-[14px] text-[#374151] leading-relaxed">
-              {thread.ai_summary}
-            </p>
+            {/* Summary as bullet points */}
+            <ul className="space-y-1.5 pl-1">
+              {thread.ai_summary?.split(/[.!?]+/).filter(s => s.trim()).map((sentence, idx) => (
+                <li key={idx} className="flex items-start gap-2 text-[14px] text-[#374151]">
+                  <span className="text-[#6366F1] mt-1">•</span>
+                  <span>{sentence.trim()}</span>
+                </li>
+              ))}
+            </ul>
 
             {thread.ai_key_points && thread.ai_key_points.length > 0 && (
               <div className="mt-3">
@@ -217,15 +223,32 @@ export default function EmailAISummaryCard({ thread, onThreadUpdate, onCreatePro
 
             {thread.ai_suggested_project_fields && (
               <div className="mt-3 pt-3 border-t border-[#E0E7FF]">
-                <p className="text-[12px] text-[#6B7280]">
-                  <span className="font-medium text-[#4338CA]">Suggested:</span>
+                <ul className="space-y-1 pl-1">
                   {thread.ai_suggested_project_fields.suggested_title && (
-                    <span className="ml-1">"{thread.ai_suggested_project_fields.suggested_title}"</span>
+                    <li className="flex items-start gap-2 text-[12px] text-[#6B7280]">
+                      <span className="text-[#4338CA]">•</span>
+                      <span><span className="font-medium">Title:</span> {thread.ai_suggested_project_fields.suggested_title}</span>
+                    </li>
                   )}
                   {thread.ai_suggested_project_fields.suggested_project_type && (
-                    <span className="ml-1">• {thread.ai_suggested_project_fields.suggested_project_type}</span>
+                    <li className="flex items-start gap-2 text-[12px] text-[#6B7280]">
+                      <span className="text-[#4338CA]">•</span>
+                      <span><span className="font-medium">Type:</span> {thread.ai_suggested_project_fields.suggested_project_type}</span>
+                    </li>
                   )}
-                </p>
+                  {thread.ai_suggested_project_fields.suggested_customer_name && (
+                    <li className="flex items-start gap-2 text-[12px] text-[#6B7280]">
+                      <span className="text-[#4338CA]">•</span>
+                      <span><span className="font-medium">Customer:</span> {thread.ai_suggested_project_fields.suggested_customer_name}</span>
+                    </li>
+                  )}
+                  {thread.ai_suggested_project_fields.suggested_address && (
+                    <li className="flex items-start gap-2 text-[12px] text-[#6B7280]">
+                      <span className="text-[#4338CA]">•</span>
+                      <span><span className="font-medium">Address:</span> {thread.ai_suggested_project_fields.suggested_address}</span>
+                    </li>
+                  )}
+                </ul>
               </div>
             )}
           </>
