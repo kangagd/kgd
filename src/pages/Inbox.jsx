@@ -5,7 +5,7 @@ import { useNavigate, useSearchParams } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent } from "@/components/ui/card";
-import { Search, Filter, Mail, Link as LinkIcon, Check, Archive, Trash2, ArrowUpDown, SlidersHorizontal, Tags, Loader2 } from "lucide-react";
+import { Search, Filter, Mail, Link as LinkIcon, Check, Archive, Trash2, ArrowUpDown, SlidersHorizontal, Tags, Loader2, Plus } from "lucide-react";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import {
@@ -21,6 +21,7 @@ import CreateProjectFromEmailModal from "../components/inbox/CreateProjectFromEm
 import CreateJobFromEmailModal from "../components/inbox/CreateJobFromEmailModal";
 import GmailConnect from "../components/inbox/GmailConnect";
 import AdvancedSearch from "../components/inbox/AdvancedSearch";
+import EmailComposer from "../components/inbox/EmailComposer";
 
 export default function Inbox() {
   const navigate = useNavigate();
@@ -53,6 +54,7 @@ export default function Inbox() {
   const [sidebarWidth, setSidebarWidth] = useState(400);
   const [isResizing, setIsResizing] = useState(false);
   const [isTagging, setIsTagging] = useState(false);
+  const [showComposer, setShowComposer] = useState(false);
   const queryClient = useQueryClient();
 
   useEffect(() => {
@@ -407,27 +409,37 @@ export default function Inbox() {
               user={user} 
               onSyncComplete={() => queryClient.invalidateQueries({ queryKey: ['emailThreads'] })} 
             />
-            {user?.role === 'admin' && (
+            <div className="flex items-center gap-2">
               <Button
-                variant="outline"
+                onClick={() => setShowComposer(true)}
                 size="sm"
-                onClick={handleBulkTag}
-                disabled={isTagging}
-                className="flex-shrink-0 h-9"
+                className="bg-[#FAE008] text-[#111827] hover:bg-[#E5CF07] font-semibold h-9"
               >
-                {isTagging ? (
-                  <>
-                    <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                    Tagging...
-                  </>
-                ) : (
-                  <>
-                    <Tags className="w-4 h-4 mr-2" />
-                    AI Tag
-                  </>
-                )}
+                <Plus className="w-4 h-4 mr-1" />
+                New Email
               </Button>
-            )}
+              {user?.role === 'admin' && (
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={handleBulkTag}
+                  disabled={isTagging}
+                  className="flex-shrink-0 h-9"
+                >
+                  {isTagging ? (
+                    <>
+                      <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                      Tagging...
+                    </>
+                  ) : (
+                    <>
+                      <Tags className="w-4 h-4 mr-2" />
+                      AI Tag
+                    </>
+                  )}
+                </Button>
+              )}
+            </div>
           </div>
           
           <div className="mt-3">
@@ -645,6 +657,22 @@ export default function Inbox() {
           }}
         />
       )}
-    </div>
-  );
+
+      {/* New Email Composer Modal */}
+      {showComposer && (
+        <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4">
+          <div className="w-full max-w-2xl">
+            <EmailComposer
+              mode="compose"
+              onClose={() => setShowComposer(false)}
+              onSent={() => {
+                queryClient.invalidateQueries({ queryKey: ['emailThreads'] });
+                setShowComposer(false);
+              }}
+            />
+          </div>
+        </div>
+      )}
+      </div>
+      );
 }
