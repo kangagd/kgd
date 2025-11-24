@@ -2,10 +2,14 @@ import { createClientFromRequest } from 'npm:@base44/sdk@0.8.4';
 
 Deno.serve(async (req) => {
   try {
-    const { token } = await req.json();
+    const body = await req.json();
+    const token = body.token;
 
     if (!token) {
-      return Response.json({ error: 'Token is required' }, { status: 400 });
+      return new Response(JSON.stringify({ error: 'Token is required' }), { 
+        status: 400,
+        headers: { 'Content-Type': 'application/json' }
+      });
     }
 
     const base44 = createClientFromRequest(req);
@@ -16,7 +20,10 @@ Deno.serve(async (req) => {
     });
 
     if (quotes.length === 0) {
-      return Response.json({ error: 'Quote not found' }, { status: 404 });
+      return new Response(JSON.stringify({ error: 'Quote not found' }), { 
+        status: 404,
+        headers: { 'Content-Type': 'application/json' }
+      });
     }
 
     const quote = quotes[0];
@@ -30,12 +37,18 @@ Deno.serve(async (req) => {
       quote_id: quote.id 
     });
 
-    return Response.json({ 
+    return new Response(JSON.stringify({ 
       quote, 
       quoteItems, 
       quoteSections 
+    }), {
+      status: 200,
+      headers: { 'Content-Type': 'application/json' }
     });
   } catch (error) {
-    return Response.json({ error: error.message }, { status: 500 });
+    return new Response(JSON.stringify({ error: error.message }), { 
+      status: 500,
+      headers: { 'Content-Type': 'application/json' }
+    });
   }
 });
