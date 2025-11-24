@@ -423,6 +423,12 @@ export default function QuoteItemManager({ quote, quoteItems, quoteSections, onU
                       setSearchOpen(true);
                     }
                   }}
+                  onKeyDown={(e) => {
+                    if (e.key === 'Enter') {
+                      e.preventDefault();
+                      setSearchOpen(false);
+                    }
+                  }}
                   onBlur={() => {
                     // Delay to allow click on dropdown item
                     setTimeout(() => setSearchOpen(false), 200);
