@@ -157,31 +157,47 @@ Deno.serve(async (req) => {
 
         let priority = 'Normal';
         
+        let suggestedAction = 'none';
+        let suggestedActionData = null;
+
         try {
           const aiResponse = await base44.asServiceRole.integrations.Core.InvokeLLM({
-            prompt: `Analyze this email from a garage door service company and provide categorization.
+            prompt: `Analyze this email from a garage door service company and provide categorization and action suggestions.
 
 Subject: ${subject}
 From: ${from}
 Body: ${detail.snippet}
 
-Categories: Customer Inquiry, Quote Request, Job Update, Technical Issue, Payment/Invoice, Complaint, General/Other
+Tasks:
+1. Categorize: Customer Inquiry, Quote Request, Job Update, Technical Issue, Payment/Invoice, Complaint, General/Other
+2. Set Priority (High/Normal/Low):
+   - HIGH: Urgent issues, safety concerns, complaints, job delays, payment issues
+   - NORMAL: General inquiries, scheduling, routine updates
+   - LOW: Marketing, newsletters, non-urgent admin
+3. Detect urgency and explain why if urgent
+4. Detect if this requires creating a PROJECT or JOB:
+   - PROJECT: New installation, quote request, large job, multi-visit work (e.g., "quote for new garage door", "install door", "replace gate")
+   - JOB: Service call, repair, quick fix, single visit (e.g., "door won't open", "motor broken", "service needed")
+   - NONE: No action needed
 
-Priority Guidelines:
-- HIGH: Urgent issues, safety concerns, customer complaints, job delays, payment issues, time-sensitive quotes
-- NORMAL: General inquiries, follow-ups, scheduling requests, routine updates
-- LOW: Marketing emails, newsletters, informational content, non-urgent administrative emails
+If PROJECT or JOB suggested, extract:
+- Customer name (from email signature or content)
+- Phone number if mentioned
+- Address if mentioned
+- Project/Job description
+- Product type (Garage Door, Gate, Roller Shutter, etc.)
+- Any specific details mentioned
 
-Also determine if this requires immediate attention (urgent flag).
-
-Return JSON with category, priority (High/Normal/Low), is_urgent boolean, and urgency_reason.`,
+Return JSON with: category, priority, is_urgent, urgency_reason, suggested_action (create_project/create_job/none), action_data (if project: {customer_name, customer_email, customer_phone, title, description, project_type, address}; if job: {customer_name, customer_email, customer_phone, notes, product, address})`,
             response_json_schema: {
               type: "object",
               properties: {
                 category: { type: "string" },
                 priority: { type: "string", enum: ["High", "Normal", "Low"] },
                 is_urgent: { type: "boolean" },
-                urgency_reason: { type: "string" }
+                urgency_reason: { type: "string" },
+                suggested_action: { type: "string", enum: ["create_project", "create_job", "none"] },
+                action_data: { type: "object" }
               }
             }
           });
@@ -190,6 +206,8 @@ Return JSON with category, priority (High/Normal/Low), is_urgent boolean, and ur
           priority = aiResponse.priority || 'Normal';
           isUrgent = aiResponse.is_urgent || false;
           urgencyReason = aiResponse.urgency_reason;
+          suggestedAction = aiResponse.suggested_action || 'none';
+          suggestedActionData = aiResponse.action_data || null;
         } catch (error) {
           console.error('AI categorization failed:', error);
         }
@@ -206,7 +224,10 @@ Return JSON with category, priority (High/Normal/Low), is_urgent boolean, and ur
           message_count: 1,
           category: category,
           is_urgent: isUrgent,
-          urgency_reason: urgencyReason
+          urgency_reason: urgencyReason,
+          suggested_action: suggestedAction,
+          suggested_action_data: suggestedActionData,
+          action_dismissed: false
         });
         threadId = newThread.id;
       }
