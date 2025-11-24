@@ -391,7 +391,7 @@ export default function Layout({ children, currentPageName }) {
           w-[260px]
         `}
       >
-        <div className="flex flex-col h-full">
+        <div className="flex flex-col h-full overflow-hidden">
           {/* Close button (mobile only) */}
           <div className="lg:hidden p-3 border-b border-[#E5E7EB] flex items-center justify-end">
             <button
