@@ -30,7 +30,7 @@ function AssistantContent({ job, conversation, messages, isLoading, input, setIn
 
   return (
     <>
-      <ScrollArea className="flex-1 pr-4 h-[500px]" ref={scrollRef}>
+      <ScrollArea className="flex-1 pr-4 h-[500px] sm:h-[500px] max-h-[calc(100dvh-300px)]" ref={scrollRef}>
         <div className="space-y-4 pb-4">
           {messages.length === 0 ? (
             <div className="text-center py-12">
@@ -178,16 +178,16 @@ export default function TechnicianAssistant({ open, onClose, job, embedded = fal
 
   return (
     <Dialog open={open} onOpenChange={(isOpen) => { if (!isOpen) onClose(); }}>
-      <DialogContent className="max-w-3xl max-h-[85vh] flex flex-col border-2 border-slate-200 rounded-2xl">
-        <DialogHeader className="border-b-2 border-slate-200 pb-4">
+      <DialogContent className="max-w-3xl max-h-[85vh] sm:max-h-[85vh] h-[100dvh] sm:h-auto w-full sm:max-w-3xl flex flex-col border-2 border-slate-200 sm:rounded-2xl rounded-none p-0">
+        <DialogHeader className="border-b-2 border-slate-200 pb-4 p-4">
           <div className="flex items-center gap-2">
-            <div className="w-10 h-10 bg-[#fae008]/20 rounded-xl flex items-center justify-center">
+            <div className="w-10 h-10 bg-[#fae008]/20 rounded-xl flex items-center justify-center flex-shrink-0">
               <Sparkles className="w-5 h-5 text-[#000000]" />
             </div>
-            <div>
+            <div className="flex-1 min-w-0">
               <DialogTitle className="text-xl font-bold text-[#000000] tracking-tight">Technician Assistant</DialogTitle>
               {job && (
-                <p className="text-sm text-slate-500 font-medium">
+                <p className="text-sm text-slate-500 font-medium truncate">
                   Job #{job.job_number} - {job.customer_name}
                 </p>
               )}
@@ -195,16 +195,18 @@ export default function TechnicianAssistant({ open, onClose, job, embedded = fal
           </div>
         </DialogHeader>
 
-        <AssistantContent
-          job={job}
-          conversation={conversation}
-          messages={messages}
-          isLoading={isLoading}
-          input={input}
-          setInput={setInput}
-          handleSend={handleSend}
-          handleKeyPress={handleKeyPress}
-        />
+        <div className="flex-1 flex flex-col p-4 overflow-hidden">
+          <AssistantContent
+            job={job}
+            conversation={conversation}
+            messages={messages}
+            isLoading={isLoading}
+            input={input}
+            setInput={setInput}
+            handleSend={handleSend}
+            handleKeyPress={handleKeyPress}
+          />
+        </div>
       </DialogContent>
     </Dialog>
   );
