@@ -23,6 +23,7 @@ import {
 import { format, parseISO } from "date-fns";
 import { toast } from "sonner";
 import { createPageUrl } from "@/utils";
+import { useNavigate } from "react-router-dom";
 import EmailComposer from "./EmailComposer";
 import {
   DropdownMenu,
@@ -126,6 +127,7 @@ export default function EmailDetailView({
   userPermissions,
   onDelete
 }) {
+  const navigate = useNavigate();
   const [composerMode, setComposerMode] = useState(null);
   const [selectedMessage, setSelectedMessage] = useState(null);
   const [showFullHeader, setShowFullHeader] = useState(false);
@@ -392,6 +394,17 @@ export default function EmailDetailView({
                       </Button>
                     </DropdownMenuTrigger>
                     <DropdownMenuContent align="end">
+                      {userPermissions?.can_create_project_from_email && (
+                        <DropdownMenuItem onClick={() => navigate(createPageUrl("Projects") + `?action=create&fromEmail=${thread.id}`)}>
+                          Create Project
+                        </DropdownMenuItem>
+                      )}
+                      {userPermissions?.can_create_job_from_email && (
+                        <DropdownMenuItem onClick={() => navigate(createPageUrl("Jobs") + `?action=create&fromEmail=${thread.id}`)}>
+                          Create Job
+                        </DropdownMenuItem>
+                      )}
+                      <DropdownMenuSeparator />
                       {userPermissions?.can_link_to_project && (
                         <DropdownMenuItem onClick={onLinkProject}>
                           Link to Project
