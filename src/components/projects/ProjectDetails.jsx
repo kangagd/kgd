@@ -36,6 +36,7 @@ import CreateInvoiceModal from "../invoices/CreateInvoiceModal";
 import TakePaymentModal from "../invoices/TakePaymentModal";
 import WarrantyCard from "./WarrantyCard";
 import MaintenanceSection from "./MaintenanceSection";
+import LinkedEmailsSection from "../inbox/LinkedEmailsSection";
 
 const statusColors = {
   "Lead": "bg-slate-100 text-slate-700",
@@ -783,6 +784,27 @@ Format as HTML bullet points using <ul> and <li> tags. Include only the most cri
                 </label>
               </CardContent>
             </Card>
+
+            {/* Linked Emails Section */}
+            <LinkedEmailsSection 
+              projectId={project.id}
+              onUnlink={async (threadId) => {
+                const thread = await base44.entities.EmailThread.get(threadId);
+                const existingIds = thread.linked_project_ids || [];
+                const existingTitles = thread.linked_project_titles || [];
+                const idx = existingIds.indexOf(project.id);
+                const newIds = existingIds.filter(id => id !== project.id);
+                const newTitles = existingTitles.filter((_, i) => i !== idx);
+                
+                await base44.entities.EmailThread.update(threadId, {
+                  linked_project_ids: newIds,
+                  linked_project_titles: newTitles,
+                  linked_project_id: newIds[0] || null,
+                  linked_project_title: newTitles[0] || null
+                });
+                queryClient.invalidateQueries({ queryKey: ['linkedEmails', project.id] });
+              }}
+            />
 
             {/* Documents Section */}
             <Card className="border border-[#E5E7EB] shadow-sm rounded-lg overflow-hidden mt-4">

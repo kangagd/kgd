@@ -47,6 +47,7 @@ import {
   AlertDialogHeader,
   AlertDialogTitle } from
 "@/components/ui/alert-dialog";
+import LinkedEmailsSection from "../inbox/LinkedEmailsSection";
 
 const statusColors = {
   "Open": "bg-slate-100 text-slate-800 border-slate-200",
@@ -1462,6 +1463,29 @@ export default function JobDetails({ job: initialJob, onClose, onStatusChange, o
                     <Navigation className="w-4 h-4 mr-2" />
                     Open in Google Maps
                   </Button>
+                </div>
+
+                {/* Linked Emails */}
+                <div className="mt-4">
+                  <LinkedEmailsSection 
+                    jobId={job.id}
+                    onUnlink={async (threadId) => {
+                      const thread = await base44.entities.EmailThread.get(threadId);
+                      const existingIds = thread.linked_job_ids || [];
+                      const existingNumbers = thread.linked_job_numbers || [];
+                      const idx = existingIds.indexOf(job.id);
+                      const newIds = existingIds.filter(id => id !== job.id);
+                      const newNumbers = existingNumbers.filter((_, i) => i !== idx);
+
+                      await base44.entities.EmailThread.update(threadId, {
+                        linked_job_ids: newIds,
+                        linked_job_numbers: newNumbers,
+                        linked_job_id: newIds[0] || null,
+                        linked_job_number: newNumbers[0] || null
+                      });
+                      queryClient.invalidateQueries({ queryKey: ['linkedEmails', null, job.id] });
+                    }}
+                  />
                 </div>
               </div>
             </TabsContent>
