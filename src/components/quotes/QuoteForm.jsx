@@ -30,7 +30,52 @@ export default function QuoteForm({ quote, onSubmit, onCancel, isSubmitting, pro
     discount_total: 0,
     total: 0,
     allow_item_selection: false,
-    terms_and_conditions: "",
+    terms_and_conditions: `1. These terms and conditions apply to any work performed and materials supplied by KangarooGD Pty Ltd and shall govern the contract unless expressly modified in writing. "We," "us," "the contractor," and "our" represent KangarooGD Pty Ltd, "you," "the client," "the customer," and "your" represent the person who requested services and enters into this contract.
+
+2. Full Terms available at www.kangaroogd.com.au/terms-and-conditions
+
+3. Quotes are valid for 30 days from the date of issue.
+
+4. Acceptance is confirmed upon receipt of deposit, signed approval, or written confirmation.
+
+5. Payment terms for Installations:
+   - Upon acceptance, an invoice will be issued per the following structure:
+   - 50% payment is due upon receipt of the initial invoice to cover material costs.
+   - 30% payment is due at least 2 days prior to job commencement to cover initial labour.
+   - The remaining balance is due on site on completion – payment can be made via bank transfer, credit card (additional charges apply) or PayTo.
+
+6. Payment terms for Other Works:
+   - 50% payment is required on acceptance of quote. Balance is due on site on completion - payment can be made via bank transfer, credit card (additional charges apply) or PayTo.
+
+7. Initial payments are non-refundable once materials have been ordered.
+
+8. Cancellations before materials are ordered are subject to a cancellation fee.
+
+9. Initial Payments are non-refundable once materials are ordered.
+
+10. Additional charges may apply for call-outs, cancellations, after-hours work, or re-attendance.
+
+11. After hours Call Out Fee applies:
+    - Saturday and weekday after-hours works incur a call-out fee of $199+GST.
+    - Sunday and Public Holiday works incur a call-out fee of $249+GST.
+
+12. Warranty-Related Visits:
+    - Business hours will not incur a call out fee if warranty is valid.
+    - Standard call-out fees apply for after hours visits (See 11.1).
+
+13. All prices are exclusive of GST unless otherwise specified.
+
+14. The client must ensure site readiness, accessibility, and structural suitability. Delays or obstructions may incur additional costs.
+
+15. A standard 24-month warranty applies unless otherwise stated, excluding oil canning, general wear, misuse, corrosion, or environmental factors.
+
+16. KangarooGD accepts no liability for indirect, consequential, or delay-related losses beyond its control.
+
+17. Ownership of goods remains with KangarooGD until full payment is received.
+
+18. Completion is deemed to occur upon final payment in full.
+
+19. For full Terms & Conditions, please visit: www.kangaroogd.com.au/terms-and-conditions`,
     internal_notes: "",
     public_share_token: Math.random().toString(36).substring(2, 15),
   });
