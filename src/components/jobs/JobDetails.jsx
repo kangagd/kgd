@@ -1531,13 +1531,10 @@ export default function JobDetails({ job: initialJob, onClose, onStatusChange, o
         isSubmitting={updateCustomerMutation.isPending} />
 
 
-      {!isTechnician &&
       <TechnicianAssistant
         open={showAssistant}
         onClose={() => setShowAssistant(false)}
         job={job} />
-
-      }
 
       <AlertDialog open={showDeleteConfirm} onOpenChange={setShowDeleteConfirm}>
         <AlertDialogContent className="rounded-2xl border-2 border-slate-200">
