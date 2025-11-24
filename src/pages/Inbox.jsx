@@ -571,6 +571,13 @@ export default function Inbox() {
           onToggleSelection={handleToggleSelection}
           onSelectAll={handleSelectAll}
           onBulkDelete={handleBulkDelete}
+          onDeleteThread={async (threadId) => {
+            await base44.entities.EmailThread.delete(threadId);
+            queryClient.invalidateQueries({ queryKey: ['emailThreads'] });
+            if (selectedThread?.id === threadId) {
+              navigate('', { replace: true });
+            }
+          }}
         />
       </div>
 
