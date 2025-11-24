@@ -245,46 +245,6 @@ export default function QuoteForm({ quote, onSubmit, onCancel, isSubmitting, pro
             </div>
           </div>
 
-          <div className="bg-[#F9FAFB] border border-[#E5E7EB] rounded-lg p-4 space-y-4">
-            <div className="flex items-center justify-between mb-2">
-              <h3 className="text-sm font-semibold text-[#111827]">Billing Details</h3>
-              <p className="text-xs text-[#6B7280]">Override customer details for this quote</p>
-            </div>
-
-            <div className="space-y-2">
-              <Label htmlFor="customer_name">Customer Name *</Label>
-              <Input
-                id="customer_name"
-                value={formData.customer_name}
-                onChange={(e) => setFormData({ ...formData, customer_name: e.target.value })}
-                required
-                placeholder="Customer name for quote"
-              />
-            </div>
-
-            <div className="grid md:grid-cols-2 gap-4">
-              <div className="space-y-2">
-                <Label htmlFor="customer_email">Customer Email</Label>
-                <Input
-                  id="customer_email"
-                  type="email"
-                  value={formData.customer_email}
-                  onChange={(e) => setFormData({ ...formData, customer_email: e.target.value })}
-                  placeholder="customer@example.com"
-                />
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="customer_phone">Customer Phone</Label>
-                <Input
-                  id="customer_phone"
-                  value={formData.customer_phone}
-                  onChange={(e) => setFormData({ ...formData, customer_phone: e.target.value })}
-                  placeholder="Phone number"
-                />
-              </div>
-            </div>
-          </div>
-
           <div className="grid md:grid-cols-2 gap-6">
             <div className="space-y-2">
               <Label htmlFor="expiry_date">Expiry Date (Optional)</Label>
