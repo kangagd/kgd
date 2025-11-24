@@ -18,57 +18,44 @@ import MultiTechnicianSelect from "./MultiTechnicianSelect";
 import RichTextField from "../common/RichTextField";
 import AddressAutocomplete from "../common/AddressAutocomplete";
 
-const DEFAULT_JOB_FORM_DATA = {
-  job_number: null,
-  project_id: "",
-  project_name: "",
-  customer_id: "",
-  customer_name: "",
-  customer_phone: "",
-  customer_email: "",
-  customer_type: "",
-  address: "",
-  address_full: "",
-  address_street: "",
-  address_suburb: "",
-  address_state: "",
-  address_postcode: "",
-  address_country: "Australia",
-  google_place_id: "",
-  latitude: null,
-  longitude: null,
-  product: "",
-  job_type_id: "",
-  job_type: "",
-  assigned_to: [],
-  assigned_to_name: [],
-  scheduled_date: "",
-  scheduled_time: "",
-  expected_duration: null,
-  status: "Open",
-  outcome: "",
-  notes: "",
-  pricing_provided: "",
-  additional_info: "",
-  measurements: null,
-  image_urls: [],
-  quote_url: "",
-  invoice_url: "",
-};
-
 export default function JobForm({ job, technicians, onSubmit, onCancel, isSubmitting, preselectedCustomerId, preselectedProjectId }) {
-  // Merge prefilled data with defaults, but only use job data if it has an id (existing job)
-  const getInitialData = () => {
-    if (job?.id) return job;
-    return { 
-      ...DEFAULT_JOB_FORM_DATA, 
-      ...job,
-      project_id: preselectedProjectId || job?.project_id || "",
-      customer_id: preselectedCustomerId || job?.customer_id || ""
-    };
-  };
-  
-  const [formData, setFormData] = useState(getInitialData);
+  const [formData, setFormData] = useState(job || {
+    job_number: null,
+    project_id: preselectedProjectId || "",
+    project_name: "",
+    customer_id: preselectedCustomerId || "",
+    customer_name: "",
+    customer_phone: "",
+    customer_email: "",
+    customer_type: "",
+    address: "",
+    address_full: "",
+    address_street: "",
+    address_suburb: "",
+    address_state: "",
+    address_postcode: "",
+    address_country: "Australia",
+    google_place_id: "",
+    latitude: null,
+    longitude: null,
+    product: "",
+    job_type_id: "",
+    job_type: "",
+    assigned_to: [],
+    assigned_to_name: [],
+    scheduled_date: "",
+    scheduled_time: "",
+    expected_duration: null,
+    status: "Open",
+    outcome: "",
+    notes: "",
+    pricing_provided: "",
+    additional_info: "",
+    measurements: null,
+    image_urls: [],
+    quote_url: "",
+    invoice_url: "",
+  });
 
   const [uploadingImages, setUploadingImages] = useState(false);
   const [uploadingQuote, setUploadingQuote] = useState(false);
@@ -78,7 +65,6 @@ export default function JobForm({ job, technicians, onSubmit, onCancel, isSubmit
   const [newCustomerData, setNewCustomerData] = useState({ name: "", phone: "", email: "" });
   const [potentialDuplicates, setPotentialDuplicates] = useState([]);
   const [liveDuplicates, setLiveDuplicates] = useState([]);
-  const [customerMatchAttempted, setCustomerMatchAttempted] = useState(false);
 
 
   const queryClient = useQueryClient();
@@ -102,13 +88,10 @@ export default function JobForm({ job, technicians, onSubmit, onCancel, isSubmit
     queryFn: () => base44.entities.JobType.filter({ is_active: true })
   });
 
-  const [preselectedCustomerApplied, setPreselectedCustomerApplied] = useState(false);
-  
   useEffect(() => {
-    if (preselectedCustomerId && customers.length > 0 && !job?.id && !preselectedCustomerApplied) {
+    if (preselectedCustomerId && customers.length > 0 && !job) {
       const customer = customers.find(c => c.id === preselectedCustomerId);
       if (customer) {
-        setPreselectedCustomerApplied(true);
         setFormData(prev => ({
           ...prev,
           customer_id: preselectedCustomerId,
@@ -120,27 +103,7 @@ export default function JobForm({ job, technicians, onSubmit, onCancel, isSubmit
         }));
       }
     }
-  }, [preselectedCustomerId, customers.length, job?.id, preselectedCustomerApplied]);
-
-  // Handle prefilled data from email - try to match customer by email (runs once)
-  useEffect(() => {
-    if (!job?.id && job?.customer_email && customers.length > 0 && !formData.customer_id && !customerMatchAttempted) {
-      setCustomerMatchAttempted(true);
-      const matchingCustomer = customers.find(c => 
-        c.email?.toLowerCase() === job.customer_email?.toLowerCase()
-      );
-      if (matchingCustomer) {
-        setFormData(prev => ({
-          ...prev,
-          customer_id: matchingCustomer.id,
-          customer_name: matchingCustomer.name,
-          customer_phone: matchingCustomer.phone || prev.customer_phone,
-          customer_email: matchingCustomer.email || prev.customer_email,
-          customer_type: matchingCustomer.customer_type || "",
-        }));
-      }
-    }
-  }, [job?.id, job?.customer_email, customers.length, customerMatchAttempted]);
+  }, [preselectedCustomerId, customers.length, job]);
 
   const generateNotes = async (project, jobTypeId) => {
     if (!project || !jobTypeId) return;
@@ -185,13 +148,10 @@ export default function JobForm({ job, technicians, onSubmit, onCancel, isSubmit
 
 
 
-  const [preselectedProjectApplied, setPreselectedProjectApplied] = useState(false);
-  
   useEffect(() => {
-    if (preselectedProjectId && projects.length > 0 && !job && !preselectedProjectApplied) {
+    if (preselectedProjectId && projects.length > 0 && !job) {
       const project = projects.find(p => p.id === preselectedProjectId);
       if (project) {
-        setPreselectedProjectApplied(true);
         const productMapping = {
           "Garage Door Install": "Garage Door",
           "Gate Install": "Gate",
@@ -218,7 +178,7 @@ export default function JobForm({ job, technicians, onSubmit, onCancel, isSubmit
         }));
       }
     }
-  }, [preselectedProjectId, projects.length, job, preselectedProjectApplied]);
+  }, [preselectedProjectId, projects.length, job]);
 
   const handleAutoSave = async () => {
     if (!job && !formData.customer_id) {

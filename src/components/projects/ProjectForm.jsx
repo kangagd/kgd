@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState } from "react";
 import { Card, CardHeader, CardTitle, CardContent, CardFooter } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -17,48 +17,40 @@ import {
 import RichTextField from "../common/RichTextField";
 import AddressAutocomplete from "../common/AddressAutocomplete";
 
-const DEFAULT_PROJECT_FORM_DATA = {
-  customer_id: "",
-  customer_name: "",
-  customer_phone: "",
-  customer_email: "",
-  title: "",
-  description: "",
-  project_type: "Garage Door Install",
-  status: "Lead",
-  financial_status: "",
-  address: "",
-  address_full: "",
-  address_street: "",
-  address_suburb: "",
-  address_state: "",
-  address_postcode: "",
-  address_country: "Australia",
-  google_place_id: "",
-  latitude: null,
-  longitude: null,
-  quote_value: null,
-  invoice_value: null,
-  payment_received: null,
-  assigned_technicians: [],
-  assigned_technicians_names: [],
-  notes: "",
-  image_urls: [],
-  quote_url: "",
-  invoice_url: "",
-  doors: []
-};
-
 export default function ProjectForm({ project, onSubmit, onCancel, isSubmitting }) {
-  // Merge prefilled data with defaults, but only use project data if it has an id (existing project)
-  const getInitialData = () => {
-    if (project?.id) return project;
-    return { ...DEFAULT_PROJECT_FORM_DATA, ...project };
-  };
-  
-  const [formData, setFormData] = useState(getInitialData);
+  const [formData, setFormData] = useState(project || {
+    customer_id: "",
+    customer_name: "",
+    customer_phone: "",
+    customer_email: "",
+    title: "",
+    description: "",
+    project_type: "Garage Door Install",
+    status: "Lead",
+    financial_status: "",
+    address: "",
+    address_full: "",
+    address_street: "",
+    address_suburb: "",
+    address_state: "",
+    address_postcode: "",
+    address_country: "Australia",
+    google_place_id: "",
+    latitude: null,
+    longitude: null,
+    quote_value: null,
+    invoice_value: null,
+    payment_received: null,
+    assigned_technicians: [],
+    assigned_technicians_names: [],
+    notes: "",
+    image_urls: [],
+    quote_url: "",
+    invoice_url: "",
+    doors: []
+  });
+
   const [showNewCustomerDialog, setShowNewCustomerDialog] = useState(false);
-  const [customerMatchAttempted, setCustomerMatchAttempted] = useState(false);
   const [newCustomerData, setNewCustomerData] = useState({ 
     name: "", 
     phone: "", 
@@ -84,25 +76,6 @@ export default function ProjectForm({ project, onSubmit, onCancel, isSubmitting 
   });
 
   const customers = allCustomers.filter(c => c.status === 'active' && !c.deleted_at);
-
-  // Handle prefilled data from email - try to match customer by email (runs once)
-  useEffect(() => {
-    if (!project?.id && project?.customer_email && customers.length > 0 && !formData.customer_id && !customerMatchAttempted) {
-      setCustomerMatchAttempted(true);
-      const matchingCustomer = customers.find(c => 
-        c.email?.toLowerCase() === project.customer_email?.toLowerCase()
-      );
-      if (matchingCustomer) {
-        setFormData(prev => ({
-          ...prev,
-          customer_id: matchingCustomer.id,
-          customer_name: matchingCustomer.name,
-          customer_phone: matchingCustomer.phone || prev.customer_phone,
-          customer_email: matchingCustomer.email || prev.customer_email,
-        }));
-      }
-    }
-  }, [project?.id, project?.customer_email, customers.length, customerMatchAttempted]);
 
   const { data: technicians = [] } = useQuery({
     queryKey: ['technicians'],

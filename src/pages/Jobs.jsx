@@ -36,8 +36,6 @@ export default function Jobs() {
   const [editingJob, setEditingJob] = useState(null);
   const [preselectedCustomerId, setPreselectedCustomerId] = useState(null);
   const [preselectedProjectId, setPreselectedProjectId] = useState(null);
-  const [prefilledJobData, setPrefilledJobData] = useState(null);
-  const [loadingEmailData, setLoadingEmailData] = useState(false);
   const [user, setUser] = useState(null);
   const [viewMode, setViewMode] = useState("list");
   const [calendarDate, setCalendarDate] = useState(new Date());
@@ -140,80 +138,17 @@ export default function Jobs() {
     const customerId = params.get('customerId');
     const projectId = params.get('projectId');
     const status = params.get('status');
-    const fromEmail = params.get('fromEmail');
 
     if (action === 'new' || action === 'create' || customerId || projectId) {
-      if (fromEmail) {
-        loadEmailDataForJob(fromEmail);
-      } else {
-        setShowForm(true);
-        if (customerId) setPreselectedCustomerId(customerId);
-        if (projectId) setPreselectedProjectId(projectId);
-      }
+      setShowForm(true);
+      if (customerId) setPreselectedCustomerId(customerId);
+      if (projectId) setPreselectedProjectId(projectId);
     }
 
     if (status) {
       setStatusFilter(status);
     }
   }, []);
-
-  const loadEmailDataForJob = async (threadId) => {
-    setLoadingEmailData(true);
-    try {
-      const thread = await base44.entities.EmailThread.get(threadId);
-      const messages = await base44.entities.EmailMessage.filter({ thread_id: threadId }, 'sent_at');
-      
-      const emailContent = messages.map(m => 
-        `From: ${m.from_name || m.from_address}\nDate: ${m.sent_at}\nSubject: ${thread.subject}\n\n${m.body_text || m.body_html?.replace(/<[^>]*>/g, '').substring(0, 2000)}`
-      ).join('\n\n---\n\n');
-
-      const response = await base44.integrations.Core.InvokeLLM({
-        prompt: `Extract job information from this email thread for a garage door service company. Extract as much useful information as possible.
-
-Email Thread:
-${emailContent}
-
-Extract the following if available:
-- Customer name
-- Customer phone
-- Customer email (sender's email)
-- Address (full address if mentioned)
-- Product type (one of: Garage Door, Gate, Roller Shutter, Multiple, Custom Garage Door)
-- Job description/notes (what the customer needs done)
-- Any urgency indicators or preferred scheduling`,
-        response_json_schema: {
-          type: "object",
-          properties: {
-            customer_name: { type: "string" },
-            customer_phone: { type: "string" },
-            customer_email: { type: "string" },
-            address_full: { type: "string" },
-            product: { type: "string" },
-            notes: { type: "string" },
-            urgency: { type: "string" }
-          }
-        }
-      });
-
-      // Validate product type
-      const validProducts = ["Garage Door", "Gate", "Roller Shutter", "Multiple", "Custom Garage Door"];
-      const product = validProducts.includes(response.product) ? response.product : "Garage Door";
-
-      setPrefilledJobData({
-        ...response,
-        product,
-        customer_email: response.customer_email || thread.from_address,
-        status: "Open",
-        _fromEmailThreadId: threadId
-      });
-      setShowForm(true);
-    } catch (error) {
-      console.error("Error extracting email data:", error);
-      setShowForm(true);
-    } finally {
-      setLoadingEmailData(false);
-    }
-  };
 
   useEffect(() => {
     if (jobIdFromUrl && directJob) {
@@ -327,23 +262,12 @@ Extract the following if available:
     console.log('[Jobs Debug] viewMode:', viewMode);
   }, [jobs, filteredJobs, statusFilter, technicianFilter, dateFrom, dateTo, searchTerm, isTechnician, user, showForm, selectedJob, viewMode]);
 
-  if (loadingEmailData) {
-    return (
-      <div className="p-5 md:p-10 bg-[#ffffff] min-h-screen flex items-center justify-center">
-        <div className="text-center">
-          <div className="w-12 h-12 border-4 border-[#FAE008] border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
-          <p className="text-[#4B5563] font-medium">Extracting job details from email...</p>
-        </div>
-      </div>
-    );
-  }
-
   if (showForm) {
     return (
       <div className="p-5 md:p-10 bg-[#ffffff] min-h-screen">
         <div className="max-w-4xl mx-auto">
           <JobForm
-            job={editingJob || prefilledJobData}
+            job={editingJob}
             technicians={technicians}
             onSubmit={handleSubmit}
             onCancel={() => {
@@ -351,7 +275,6 @@ Extract the following if available:
               setEditingJob(null);
               setPreselectedCustomerId(null);
               setPreselectedProjectId(null);
-              setPrefilledJobData(null);
             }}
             isSubmitting={createJobMutation.isPending || updateJobMutation.isPending}
             preselectedCustomerId={preselectedCustomerId}
