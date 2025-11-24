@@ -2,7 +2,7 @@ import React from "react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { DollarSign, ExternalLink, RefreshCw, Calendar } from "lucide-react";
+import { DollarSign, ExternalLink, RefreshCw, Calendar, Download } from "lucide-react";
 import { format } from "date-fns";
 
 const invoiceStatusColors = {
@@ -13,7 +13,7 @@ const invoiceStatusColors = {
   "Voided": "bg-red-100 text-red-700 border-red-200"
 };
 
-export default function XeroInvoiceCard({ invoice, onRefreshStatus, onViewInXero, isRefreshing }) {
+export default function XeroInvoiceCard({ invoice, onRefreshStatus, onViewInXero, onDownloadPdf, isRefreshing, isDownloading }) {
   return (
     <Card className="border border-[#E5E7EB] shadow-sm rounded-lg">
       <CardContent className="p-4">
@@ -74,6 +74,15 @@ export default function XeroInvoiceCard({ invoice, onRefreshStatus, onViewInXero
           >
             <ExternalLink className="w-4 h-4 mr-1.5" />
             View in Xero
+          </Button>
+          <Button
+            onClick={onDownloadPdf}
+            variant="outline"
+            size="sm"
+            disabled={isDownloading}
+            className="h-9 px-3 border-[#E5E7EB] hover:border-[#FAE008] hover:bg-[#FFFEF5]"
+          >
+            <Download className={`w-4 h-4 ${isDownloading ? 'animate-pulse' : ''}`} />
           </Button>
           <Button
             onClick={onRefreshStatus}

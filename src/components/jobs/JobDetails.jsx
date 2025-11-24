@@ -1447,7 +1447,9 @@ export default function JobDetails({ job: initialJob, onClose, onStatusChange, o
                           invoice={xeroInvoice}
                           onRefreshStatus={() => syncInvoiceMutation.mutate()}
                           onViewInXero={() => window.open(xeroInvoice.pdf_url, '_blank')}
+                          onDownloadPdf={() => downloadPdfMutation.mutate()}
                           isRefreshing={syncInvoiceMutation.isPending}
+                          isDownloading={downloadPdfMutation.isPending}
                         />
                       )}
                     </CardContent>
