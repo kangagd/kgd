@@ -85,19 +85,29 @@ Deno.serve(async (req) => {
     const today = new Date().toISOString().split('T')[0];
     const dueDate = new Date(Date.now() + (xeroSettings.payment_terms_days || 7) * 24 * 60 * 60 * 1000).toISOString().split('T')[0];
 
-    // Build invoice reference
-    let reference = `Project: ${project.title}`;
-    if (project.project_type) reference += ` - ${project.project_type}`;
-    if (jobs.length > 0) reference += ` (${jobs.length} job${jobs.length > 1 ? 's' : ''})`;
+    // Convert line items to Xero format (with discounts handled as separate line items)
+    const xeroLineItems = [];
+    lineItems.forEach((item) => {
+      // Add main line item
+      xeroLineItems.push({
+        Description: item.description,
+        Quantity: 1,
+        UnitAmount: item.amount,
+        AccountCode: xeroSettings.default_account_code,
+        TaxType: xeroSettings.default_tax_type
+      });
 
-    // Convert line items to Xero format
-    const xeroLineItems = lineItems.map((item, index) => ({
-      Description: index === 0 ? `${reference}\n${item.description}` : item.description,
-      Quantity: 1,
-      UnitAmount: item.amount,
-      AccountCode: xeroSettings.default_account_code,
-      TaxType: xeroSettings.default_tax_type
-    }));
+      // Add discount as a separate negative line item if applicable
+      if (item.discount && item.discount > 0) {
+        xeroLineItems.push({
+          Description: `Discount - ${item.description}`,
+          Quantity: 1,
+          UnitAmount: -item.discount,
+          AccountCode: xeroSettings.default_account_code,
+          TaxType: xeroSettings.default_tax_type
+        });
+      }
+    });
 
     const invoicePayload = {
       Invoices: [{
@@ -110,7 +120,7 @@ Deno.serve(async (req) => {
         DueDate: dueDate,
         LineItems: xeroLineItems,
         Status: 'AUTHORISED',
-        Reference: project.title
+        Reference: `${project.title}${project.address ? ` - ${project.address}` : ''}`
       }]
     };
 
