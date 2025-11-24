@@ -85,13 +85,22 @@ export default function Projects() {
     }
   });
 
+  const [prefilledData, setPrefilledData] = useState(null);
+  const [loadingEmailData, setLoadingEmailData] = useState(false);
+
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
     const action = params.get('action');
     const projectId = params.get('projectId');
+    const fromEmail = params.get('fromEmail');
     
     if (action === 'new' || action === 'create') {
-      setShowForm(true);
+      if (fromEmail) {
+        // Load email and extract data with AI
+        loadEmailData(fromEmail);
+      } else {
+        setShowForm(true);
+      }
     }
     
     if (projectId && projects.length > 0 && !selectedProject) {
@@ -101,6 +110,78 @@ export default function Projects() {
       }
     }
   }, [projects, selectedProject]);
+
+  const loadEmailData = async (threadId) => {
+    setLoadingEmailData(true);
+    try {
+      const thread = await base44.entities.EmailThread.get(threadId);
+      const messages = await base44.entities.EmailMessage.filter({ thread_id: threadId }, 'sent_at');
+      
+      const emailContent = messages.map(m => 
+        `From: ${m.from_name || m.from_address}\nDate: ${m.sent_at}\nSubject: ${thread.subject}\n\n${m.body_text || m.body_html?.replace(/<[^>]*>/g, '').substring(0, 2000)}`
+      ).join('\n\n---\n\n');
+
+      const response = await base44.integrations.Core.InvokeLLM({
+        prompt: `Extract project information from this email thread for a garage door service company. Extract as much useful information as possible.
+
+Email Thread:
+${emailContent}
+
+Extract the following if available:
+- Project title (descriptive title based on what the customer needs)
+- Customer name
+- Customer phone
+- Customer email (sender's email)
+- Address (full address if mentioned)
+- Project type (one of: Garage Door Install, Gate Install, Roller Shutter Install, Multiple, Motor/Accessory, Repair, Maintenance)
+- Description/notes (summary of what the customer needs)
+- Any door specifications (height, width, type, style)`,
+        response_json_schema: {
+          type: "object",
+          properties: {
+            title: { type: "string" },
+            customer_name: { type: "string" },
+            customer_phone: { type: "string" },
+            customer_email: { type: "string" },
+            address_full: { type: "string" },
+            project_type: { type: "string" },
+            description: { type: "string" },
+            notes: { type: "string" },
+            doors: {
+              type: "array",
+              items: {
+                type: "object",
+                properties: {
+                  height: { type: "string" },
+                  width: { type: "string" },
+                  type: { type: "string" },
+                  style: { type: "string" }
+                }
+              }
+            }
+          }
+        }
+      });
+
+      // Validate project_type
+      const validTypes = ["Garage Door Install", "Gate Install", "Roller Shutter Install", "Multiple", "Motor/Accessory", "Repair", "Maintenance"];
+      const projectType = validTypes.includes(response.project_type) ? response.project_type : "Garage Door Install";
+
+      setPrefilledData({
+        ...response,
+        project_type: projectType,
+        customer_email: response.customer_email || thread.from_address,
+        status: "Lead",
+        _fromEmailThreadId: threadId
+      });
+      setShowForm(true);
+    } catch (error) {
+      console.error("Error extracting email data:", error);
+      setShowForm(true);
+    } finally {
+      setLoadingEmailData(false);
+    }
+  };
 
   const handleSubmit = (data) => {
     if (editingProject) {
