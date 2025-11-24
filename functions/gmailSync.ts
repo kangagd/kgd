@@ -22,7 +22,7 @@ async function refreshTokenIfNeeded(user, base44) {
     
     const tokens = await tokenResponse.json();
     
-    await base44.asServiceRole.entities.User.update(user.email, {
+    await base44.asServiceRole.entities.User.update(user.id, {
       gmail_access_token: tokens.access_token,
       gmail_token_expiry: new Date(Date.now() + tokens.expires_in * 1000).toISOString()
     });
