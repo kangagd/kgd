@@ -404,8 +404,8 @@ export default function Layout({ children, currentPageName }) {
           </div>
 
           {/* Navigation */}
-          <nav className="flex-1 overflow-y-auto p-3">
-            <div className="space-y-1">
+          <nav className="flex-1 overflow-y-auto overflow-x-hidden p-3 min-h-0">
+            <div className="space-y-1 min-w-0">
               {/* Create Buttons */}
               <div className={`grid ${isCollapsed ? 'grid-cols-1' : 'grid-cols-2'} gap-2 mb-4 pb-4 border-b border-[#E5E7EB]`}>
                 <Button
