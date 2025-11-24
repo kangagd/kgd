@@ -574,6 +574,9 @@ export default function Inbox() {
               queryClient.invalidateQueries({ queryKey: ['emailThreads'] });
               setSelectedThread(null);
             }}
+            onThreadUpdate={() => {
+              queryClient.invalidateQueries({ queryKey: ['emailThreads'] });
+            }}
           />
         </div>
       )}
