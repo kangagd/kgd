@@ -1350,7 +1350,7 @@ Format as HTML bullet points using <ul> and <li> tags. Include only the most cri
                         invoice={invoice}
                         onRefreshStatus={() => syncProjectInvoiceMutation.mutate(invoice.id)}
                         onViewInXero={() => window.open(invoice.pdf_url, '_blank')}
-                        onTakePayment={user?.role === 'admin' ? () => {} : null}
+                        onTakePayment={() => setShowPaymentModal(true)}
                         isRefreshing={syncProjectInvoiceMutation.isPending}
                       />
                     ))}

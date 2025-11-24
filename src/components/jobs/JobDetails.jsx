@@ -1499,7 +1499,7 @@ export default function JobDetails({ job: initialJob, onClose, onStatusChange, o
                         onRefreshStatus={() => syncInvoiceMutation.mutate()}
                         onViewInXero={() => window.open(xeroInvoice.pdf_url, '_blank')}
                         onDownloadPdf={() => downloadPdfMutation.mutate()}
-                        onTakePayment={isAdmin ? () => setShowPaymentModal(true) : null}
+                        onTakePayment={() => setShowPaymentModal(true)}
                         isRefreshing={syncInvoiceMutation.isPending}
                         isDownloading={downloadPdfMutation.isPending}
                       />
