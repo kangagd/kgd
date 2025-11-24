@@ -23,14 +23,22 @@ export default function PublicQuote() {
   const [submitted, setSubmitted] = useState(false);
   const canvasRef = useRef(null);
   const [isDrawing, setIsDrawing] = useState(false);
+  const [error, setError] = useState(null);
 
   const { data: quoteData, isLoading } = useQuery({
     queryKey: ['publicQuote', token],
     queryFn: async () => {
-      const response = await base44.functions.invoke('getPublicQuote', { token });
-      return response.data;
+      try {
+        const response = await base44.functions.invoke('getPublicQuote', { token });
+        return response.data;
+      } catch (err) {
+        console.error('Error fetching quote:', err);
+        setError(err.message);
+        throw err;
+      }
     },
-    enabled: !!token
+    enabled: !!token,
+    retry: false
   });
 
   const createSignatureMutation = useMutation({
@@ -169,6 +177,20 @@ export default function PublicQuote() {
     );
   }
 
+  if (!token) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-[#F9FAFB]">
+        <Card className="max-w-md">
+          <CardContent className="p-12 text-center">
+            <AlertCircle className="w-16 h-16 text-red-500 mx-auto mb-4" />
+            <h2 className="text-xl font-semibold text-[#111827] mb-2">Invalid Link</h2>
+            <p className="text-[#6B7280]">No quote token provided in the URL.</p>
+          </CardContent>
+        </Card>
+      </div>
+    );
+  }
+
   if (!quote) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-[#F9FAFB]">
@@ -177,6 +199,7 @@ export default function PublicQuote() {
             <AlertCircle className="w-16 h-16 text-red-500 mx-auto mb-4" />
             <h2 className="text-xl font-semibold text-[#111827] mb-2">Quote Not Found</h2>
             <p className="text-[#6B7280]">This quote link is invalid or has been removed.</p>
+            {error && <p className="text-xs text-red-500 mt-2">Error: {error}</p>}
           </CardContent>
         </Card>
       </div>
