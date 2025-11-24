@@ -421,14 +421,14 @@ export default function EmailDetailView({
                           Link to Job
                         </DropdownMenuItem>
                       )}
-                      {thread.linked_project_id && userPermissions?.can_link_to_project && (
-                        <DropdownMenuItem onClick={onUnlinkProject}>
-                          Unlink Project
+                      {(thread.linked_project_ids?.length > 0 || thread.linked_project_id) && userPermissions?.can_link_to_project && (
+                        <DropdownMenuItem onClick={() => onUnlinkProject()}>
+                          Unlink All Projects
                         </DropdownMenuItem>
                       )}
-                      {thread.linked_job_id && userPermissions?.can_link_to_job && (
-                        <DropdownMenuItem onClick={onUnlinkJob}>
-                          Unlink Job
+                      {(thread.linked_job_ids?.length > 0 || thread.linked_job_id) && userPermissions?.can_link_to_job && (
+                        <DropdownMenuItem onClick={() => onUnlinkJob()}>
+                          Unlink All Jobs
                         </DropdownMenuItem>
                       )}
                       <DropdownMenuSeparator />
