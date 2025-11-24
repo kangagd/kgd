@@ -9,7 +9,7 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import QuoteItemManager from "./QuoteItemManager";
 import QuoteTimeline from "./QuoteTimeline";
 
-export default function QuoteDetails({ quote, onUpdate, onCancel, projects, customers }) {
+export default function QuoteDetails({ quote, onUpdate, onCancel, onDelete, projects, customers }) {
   const queryClient = useQueryClient();
   const [activeTab, setActiveTab] = useState("items");
 
@@ -89,13 +89,23 @@ export default function QuoteDetails({ quote, onUpdate, onCancel, projects, cust
             </div>
             <div className="flex gap-2">
               {quote.status === "Draft" && (
-                <Button
-                  onClick={handleSendQuote}
-                  className="bg-[#FAE008] hover:bg-[#E5CF07] text-[#111827] font-semibold"
-                >
-                  <Send className="w-4 h-4 mr-2" />
-                  Send Quote
-                </Button>
+                <>
+                  <Button
+                    onClick={handleSendQuote}
+                    className="bg-[#FAE008] hover:bg-[#E5CF07] text-[#111827] font-semibold"
+                  >
+                    <Send className="w-4 h-4 mr-2" />
+                    Send Quote
+                  </Button>
+                  <Button
+                    variant="outline"
+                    onClick={onDelete}
+                    className="hover:bg-red-50 hover:text-red-600 hover:border-red-200"
+                  >
+                    <Trash2 className="w-4 h-4 mr-2" />
+                    Delete
+                  </Button>
+                </>
               )}
               <Button
                 variant="outline"
