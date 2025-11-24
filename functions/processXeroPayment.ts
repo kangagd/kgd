@@ -63,7 +63,12 @@ Deno.serve(async (req) => {
     }
 
     // Process payment with Stripe
-    const stripe = new Stripe(Deno.env.get('STRIPE_SECRET_KEY'));
+    const stripeSecretKey = Deno.env.get('STRIPE_SECRET_KEY');
+    if (!stripeSecretKey) {
+      throw new Error('Stripe secret key not configured');
+    }
+    
+    const stripe = new Stripe(stripeSecretKey);
     
     const paymentIntent = await stripe.paymentIntents.create({
       amount: Math.round(payment_amount * 100), // Convert to cents
