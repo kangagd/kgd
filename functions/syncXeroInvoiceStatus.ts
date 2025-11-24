@@ -102,12 +102,42 @@ Deno.serve(async (req) => {
       });
     }
 
+    // Determine if invoice is overdue
+    let finalStatus = xeroInvoice.Status;
+    if (xeroInvoice.DueDate && xeroInvoice.AmountDue > 0) {
+      const dueDate = new Date(xeroInvoice.DueDate);
+      const today = new Date();
+      today.setHours(0, 0, 0, 0);
+      
+      if (dueDate < today && xeroInvoice.Status !== 'PAID') {
+        finalStatus = 'OVERDUE';
+      }
+    }
+
+    // Extract last payment date from Payments array
+    let lastPaymentDate = null;
+    if (xeroInvoice.Payments && xeroInvoice.Payments.length > 0) {
+      const sortedPayments = xeroInvoice.Payments.sort((a, b) => 
+        new Date(b.Date) - new Date(a.Date)
+      );
+      lastPaymentDate = sortedPayments[0].Date;
+    }
+
+    // Calculate total credit notes
+    let creditNotesTotal = 0;
+    if (xeroInvoice.CreditNotes && xeroInvoice.CreditNotes.length > 0) {
+      creditNotesTotal = xeroInvoice.CreditNotes.reduce((sum, cn) => sum + (cn.Total || 0), 0);
+    }
+
     // Update our invoice record with latest data
     const updatedInvoice = await base44.asServiceRole.entities.XeroInvoice.update(invoice_id, {
-      status: xeroInvoice.Status,
+      status: finalStatus,
       total_amount: xeroInvoice.Total,
       amount_due: xeroInvoice.AmountDue,
       amount_paid: xeroInvoice.AmountPaid || 0,
+      payment_terms: xeroInvoice.Terms || null,
+      credit_notes_total: creditNotesTotal,
+      last_payment_date: lastPaymentDate,
       raw_payload: xeroInvoice
     });
 
