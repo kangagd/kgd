@@ -114,7 +114,8 @@ export default function ProjectDetails({ project: initialProject, onClose, onEdi
 
   const { data: jobs = [] } = useQuery({
     queryKey: ['projectJobs', project.id],
-    queryFn: () => base44.entities.Job.filter({ project_id: project.id, deleted_at: { $exists: false } })
+    queryFn: () => base44.entities.Job.filter({ project_id: project.id, deleted_at: { $exists: false } }),
+    refetchInterval: 5000
   });
 
   const { data: customer } = useQuery({
