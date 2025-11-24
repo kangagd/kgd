@@ -390,14 +390,16 @@ export default function Inbox() {
                   </TabsList>
                 </Tabs>
               </div>
-              <Button
-                variant="outline"
-                onClick={() => setShowFilters(!showFilters)}
-                className="flex-shrink-0 h-10 px-3 border border-[#E5E7EB] hover:border-[#FAE008] hover:bg-[#FFFEF5]"
-              >
-                <SlidersHorizontal className="w-5 h-5 mr-2" />
-                Filters
-              </Button>
+              {!selectedThread && (
+                <Button
+                  variant="outline"
+                  onClick={() => setShowFilters(!showFilters)}
+                  className="flex-shrink-0 h-10 px-3 border border-[#E5E7EB] hover:border-[#FAE008] hover:bg-[#FFFEF5]"
+                >
+                  <SlidersHorizontal className="w-5 h-5 mr-2" />
+                  Filters
+                </Button>
+              )}
             </div>
 
             {showFilters && (
