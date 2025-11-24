@@ -77,10 +77,26 @@ export default function Projects() {
 
   const deleteProjectMutation = useMutation({
     mutationFn: async (projectId) => {
+      // Get the project to check for linked email thread
+      const project = projects.find(p => p.id === projectId);
+      
+      // If project has a linked email thread, unlink it
+      if (project?.source_email_thread_id) {
+        try {
+          await base44.entities.EmailThread.update(project.source_email_thread_id, {
+            linked_project_id: null,
+            linked_project_title: null
+          });
+        } catch (error) {
+          console.error('Error unlinking email thread:', error);
+        }
+      }
+      
       await base44.entities.Project.update(projectId, { deleted_at: new Date().toISOString() });
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['projects'] });
+      queryClient.invalidateQueries({ queryKey: ['emailThreads'] });
       setSelectedProject(null);
     }
   });
