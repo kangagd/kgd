@@ -90,13 +90,21 @@ export default function XeroInvoiceCard({ invoice, onRefreshStatus, onViewInXero
 
         <div className="space-y-2">
           {invoice.amount_due > 0 && onTakePayment && (
-            <Button
-              onClick={onTakePayment}
-              className="w-full bg-[#FAE008] text-[#111827] hover:bg-[#E5CF07] font-semibold h-9 text-sm"
-            >
-              <CreditCard className="w-4 h-4 mr-1.5" />
-              Take Payment
-            </Button>
+            <>
+              <Button
+                onClick={onTakePayment}
+                disabled={!invoice.online_payment_url}
+                className="w-full bg-[#FAE008] text-[#111827] hover:bg-[#E5CF07] font-semibold h-9 text-sm disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:bg-[#FAE008]"
+              >
+                <CreditCard className="w-4 h-4 mr-1.5" />
+                {invoice.online_payment_url ? 'Pay Securely Online' : 'No Public Link'}
+              </Button>
+              {!invoice.online_payment_url && (
+                <div className="text-xs text-amber-600 bg-amber-50 border border-amber-200 rounded-lg p-2">
+                  ⚠️ Public payment link not available. Try syncing the invoice status.
+                </div>
+              )}
+            </>
           )}
           <div className="flex gap-2">
             <Button
@@ -104,6 +112,7 @@ export default function XeroInvoiceCard({ invoice, onRefreshStatus, onViewInXero
               variant="outline"
               size="sm"
               className="flex-1 h-9 text-sm border-[#E5E7EB] hover:border-[#FAE008] hover:bg-[#FFFEF5]"
+              title="Admin view - opens in Xero dashboard"
             >
               <ExternalLink className="w-4 h-4 mr-1.5" />
               View in Xero
