@@ -114,15 +114,13 @@ export default function QuoteItemManager({ quote, quoteItems, quoteSections, onU
     }
   });
 
-  const recalculateTotals = () => {
+  useEffect(() => {
     const selectedSectionIds = new Set(
       quoteSections.filter(s => !s.is_optional || s.is_selected).map(s => s.id)
     );
     
     const items = quoteItems.filter(item => {
-      // Check if item's section is selected (or item has no section)
       const sectionSelected = !item.section_id || selectedSectionIds.has(item.section_id);
-      // Check if item itself is selected (if optional)
       const itemSelected = !item.is_optional || item.is_selected;
       return sectionSelected && itemSelected;
     });
@@ -140,25 +138,19 @@ export default function QuoteItemManager({ quote, quoteItems, quoteSections, onU
 
     const total = subtotal + taxTotal;
 
-    const newTotals = {
-      subtotal,
-      tax_total: taxTotal,
-      total
-    };
-
-    if (quote.subtotal !== newTotals.subtotal || 
-        quote.tax_total !== newTotals.tax_total || 
-        quote.total !== newTotals.total) {
+    // Only update if totals actually changed
+    if (Math.abs((quote.subtotal || 0) - subtotal) > 0.01 || 
+        Math.abs((quote.tax_total || 0) - taxTotal) > 0.01 || 
+        Math.abs((quote.total || 0) - total) > 0.01) {
       onUpdate({
         ...quote,
-        ...newTotals
+        subtotal,
+        tax_total: taxTotal,
+        total
       });
     }
-  };
-
-  useEffect(() => {
-    recalculateTotals();
-  }, [quoteItems, quoteSections]);
+  }, [quoteItems.map(i => `${i.id}-${i.is_selected}-${i.quantity}-${i.unit_price}`).join(','), 
+      quoteSections.map(s => `${s.id}-${s.is_selected}`).join(',')]);
 
   const handleAddItem = () => {
     const lineSubtotal = (newItem.quantity * newItem.unit_price) - (newItem.discount || 0);
