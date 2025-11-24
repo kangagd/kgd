@@ -1,4 +1,4 @@
-import React, { useState, useMemo } from "react";
+import React, { useState, useMemo, useEffect } from "react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -47,7 +47,6 @@ export default function QuoteItemManager({ quote, quoteItems, quoteSections, onU
     mutationFn: (data) => base44.entities.QuoteItem.create(data),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['quoteItems', quote.id] });
-      recalculateTotals();
       setNewItem({
         product_id: "",
         title: "",
@@ -66,7 +65,6 @@ export default function QuoteItemManager({ quote, quoteItems, quoteSections, onU
     mutationFn: ({ id, data }) => base44.entities.QuoteItem.update(id, data),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['quoteItems', quote.id] });
-      recalculateTotals();
     }
   });
 
@@ -74,9 +72,12 @@ export default function QuoteItemManager({ quote, quoteItems, quoteSections, onU
     mutationFn: (id) => base44.entities.QuoteItem.delete(id),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['quoteItems', quote.id] });
-      recalculateTotals();
     }
   });
+
+  useEffect(() => {
+    recalculateTotals();
+  }, [quoteItems]);
 
   const recalculateTotals = () => {
     const items = quoteItems.filter(item => !item.is_optional || item.is_selected);
