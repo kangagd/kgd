@@ -69,6 +69,7 @@ export default function JobForm({ job, technicians, onSubmit, onCancel, isSubmit
   const [newCustomerData, setNewCustomerData] = useState({ name: "", phone: "", email: "" });
   const [potentialDuplicates, setPotentialDuplicates] = useState([]);
   const [liveDuplicates, setLiveDuplicates] = useState([]);
+  const [customerMatchAttempted, setCustomerMatchAttempted] = useState(false);
 
 
   const queryClient = useQueryClient();
@@ -110,7 +111,6 @@ export default function JobForm({ job, technicians, onSubmit, onCancel, isSubmit
   }, [preselectedCustomerId, customers.length, job?.id]);
 
   // Handle prefilled data from email - try to match customer by email (runs once)
-  const [customerMatchAttempted, setCustomerMatchAttempted] = useState(false);
   useEffect(() => {
     if (!job?.id && job?.customer_email && customers.length > 0 && !formData.customer_id && !customerMatchAttempted) {
       setCustomerMatchAttempted(true);

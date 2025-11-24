@@ -55,6 +55,7 @@ export default function ProjectForm({ project, onSubmit, onCancel, isSubmitting 
   const [formData, setFormData] = useState(initialData);
 
   const [showNewCustomerDialog, setShowNewCustomerDialog] = useState(false);
+  const [customerMatchAttempted, setCustomerMatchAttempted] = useState(false);
   const [newCustomerData, setNewCustomerData] = useState({ 
     name: "", 
     phone: "", 
@@ -82,7 +83,6 @@ export default function ProjectForm({ project, onSubmit, onCancel, isSubmitting 
   const customers = allCustomers.filter(c => c.status === 'active' && !c.deleted_at);
 
   // Handle prefilled data from email - try to match customer by email (runs once)
-  const [customerMatchAttempted, setCustomerMatchAttempted] = useState(false);
   useEffect(() => {
     if (!project?.id && project?.customer_email && customers.length > 0 && !formData.customer_id && !customerMatchAttempted) {
       setCustomerMatchAttempted(true);
