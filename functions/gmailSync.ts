@@ -61,6 +61,12 @@ Deno.serve(async (req) => {
       { headers: { 'Authorization': `Bearer ${accessToken}` } }
     );
 
+    if (!inboxResponse.ok) {
+      const error = await inboxResponse.text();
+      console.error('Gmail inbox fetch failed:', error);
+      return Response.json({ error: 'Failed to fetch Gmail inbox', details: error, synced: 0 }, { status: 200 });
+    }
+
     // Fetch recent sent messages
     const sentResponse = await fetch(
       'https://gmail.googleapis.com/gmail/v1/users/me/messages?maxResults=50&labelIds=SENT',
@@ -69,6 +75,9 @@ Deno.serve(async (req) => {
 
     const inboxData = await inboxResponse.json();
     const sentData = await sentResponse.json();
+
+    console.log('Gmail API response - Inbox messages:', inboxData.messages?.length || 0);
+    console.log('Gmail API response - Sent messages:', sentData.messages?.length || 0);
 
     const allMessages = [
       ...(inboxData.messages || []).map(m => ({ ...m, isOutbound: false })),
