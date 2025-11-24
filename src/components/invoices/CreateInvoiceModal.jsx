@@ -60,7 +60,7 @@ export default function CreateInvoiceModal({
     if (item) {
       const updated = [...lineItems];
       updated[index] = {
-        description: item.item + (item.description ? ` - ${item.description}` : ''),
+        description: item.description || item.item,
         amount: item.price.toString(),
         discount: ""
       };
