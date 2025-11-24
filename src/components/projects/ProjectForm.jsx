@@ -18,7 +18,7 @@ import RichTextField from "../common/RichTextField";
 import AddressAutocomplete from "../common/AddressAutocomplete";
 
 export default function ProjectForm({ project, onSubmit, onCancel, isSubmitting }) {
-  const [formData, setFormData] = useState(project || {
+  const defaultFormData = {
     customer_id: "",
     customer_name: "",
     customer_phone: "",
@@ -48,7 +48,11 @@ export default function ProjectForm({ project, onSubmit, onCancel, isSubmitting 
     quote_url: "",
     invoice_url: "",
     doors: []
-  });
+  };
+
+  // Merge prefilled data with defaults, but only use project data if it has an id (existing project)
+  const initialData = project?.id ? project : { ...defaultFormData, ...project };
+  const [formData, setFormData] = useState(initialData);
 
   const [showNewCustomerDialog, setShowNewCustomerDialog] = useState(false);
   const [newCustomerData, setNewCustomerData] = useState({ 
