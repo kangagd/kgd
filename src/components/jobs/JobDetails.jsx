@@ -30,6 +30,7 @@ import JobChat from "./JobChat";
 import JobMapView from "./JobMapView";
 import XeroInvoiceCard from "../invoices/XeroInvoiceCard";
 import CreateInvoiceModal from "../invoices/CreateInvoiceModal";
+import TakePaymentModal from "../invoices/TakePaymentModal";
 import {
   Dialog,
   DialogContent,
@@ -134,6 +135,7 @@ export default function JobDetails({ job: initialJob, onClose, onStatusChange, o
   const [showCustomerEdit, setShowCustomerEdit] = useState(false);
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   const [showInvoiceModal, setShowInvoiceModal] = useState(false);
+  const [showPaymentModal, setShowPaymentModal] = useState(false);
   const [user, setUser] = useState(null);
   const [measurements, setMeasurements] = useState(job.measurements || null);
   const [notes, setNotes] = useState(job.notes || "");
@@ -409,6 +411,26 @@ export default function JobDetails({ job: initialJob, onClose, onStatusChange, o
     },
     onError: (error) => {
       toast.error(error.message || 'Failed to download invoice PDF');
+    }
+  });
+
+  const processPaymentMutation = useMutation({
+    mutationFn: async (paymentData) => {
+      const response = await base44.functions.invoke('processXeroPayment', {
+        invoice_id: xeroInvoice.id,
+        payment_amount: paymentData.payment_amount,
+        payment_method_id: paymentData.payment_method_id
+      });
+      return response.data;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['xeroInvoice', job.xero_invoice_id] });
+      queryClient.invalidateQueries({ queryKey: ['job', job.id] });
+      setShowPaymentModal(false);
+      toast.success('Payment processed successfully');
+    },
+    onError: (error) => {
+      toast.error(error.message || 'Failed to process payment');
     }
   });
 
@@ -1472,6 +1494,7 @@ export default function JobDetails({ job: initialJob, onClose, onStatusChange, o
                           onRefreshStatus={() => syncInvoiceMutation.mutate()}
                           onViewInXero={() => window.open(xeroInvoice.pdf_url, '_blank')}
                           onDownloadPdf={() => downloadPdfMutation.mutate()}
+                          onTakePayment={() => setShowPaymentModal(true)}
                           isRefreshing={syncInvoiceMutation.isPending}
                           isDownloading={downloadPdfMutation.isPending}
                         />
@@ -1565,6 +1588,16 @@ export default function JobDetails({ job: initialJob, onClose, onStatusChange, o
           project_name: job.project_name
         }}
       />
+
+      {xeroInvoice && (
+        <TakePaymentModal
+          open={showPaymentModal}
+          onClose={() => setShowPaymentModal(false)}
+          onConfirm={(paymentData) => processPaymentMutation.mutate(paymentData)}
+          isSubmitting={processPaymentMutation.isPending}
+          invoice={xeroInvoice}
+        />
+      )}
 
       </>);
 

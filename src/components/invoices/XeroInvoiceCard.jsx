@@ -2,7 +2,7 @@ import React from "react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { DollarSign, ExternalLink, RefreshCw, Calendar, Download, CheckCircle2, AlertCircle, Clock } from "lucide-react";
+import { DollarSign, ExternalLink, RefreshCw, Calendar, Download, CheckCircle2, AlertCircle, Clock, CreditCard } from "lucide-react";
 import { format } from "date-fns";
 
 const invoiceStatusColors = {
@@ -27,7 +27,7 @@ const getPaymentStatus = (invoice) => {
   }
 };
 
-export default function XeroInvoiceCard({ invoice, onRefreshStatus, onViewInXero, onDownloadPdf, isRefreshing, isDownloading }) {
+export default function XeroInvoiceCard({ invoice, onRefreshStatus, onViewInXero, onDownloadPdf, onTakePayment, isRefreshing, isDownloading }) {
   const paymentStatus = getPaymentStatus(invoice);
   const PaymentIcon = paymentStatus.icon;
 
@@ -88,35 +88,46 @@ export default function XeroInvoiceCard({ invoice, onRefreshStatus, onViewInXero
           </span>
         </div>
 
-        <div className="flex gap-2">
-          <Button
-            onClick={onViewInXero}
-            variant="outline"
-            size="sm"
-            className="flex-1 h-9 text-sm border-[#E5E7EB] hover:border-[#FAE008] hover:bg-[#FFFEF5]"
-          >
-            <ExternalLink className="w-4 h-4 mr-1.5" />
-            View in Xero
-          </Button>
-          <Button
-            onClick={onDownloadPdf}
-            variant="outline"
-            size="sm"
-            disabled={isDownloading}
-            className="h-9 px-3 border-[#E5E7EB] hover:border-[#FAE008] hover:bg-[#FFFEF5]"
-          >
-            <Download className={`w-4 h-4 ${isDownloading ? 'animate-pulse' : ''}`} />
-          </Button>
-          <Button
-            onClick={onRefreshStatus}
-            variant="outline"
-            size="sm"
-            disabled={isRefreshing}
-            className="h-9 px-3 border-[#E5E7EB] hover:border-[#FAE008] hover:bg-[#FFFEF5]"
-            title="Sync payment status from Xero"
-          >
-            <RefreshCw className={`w-4 h-4 ${isRefreshing ? 'animate-spin' : ''}`} />
-          </Button>
+        <div className="space-y-2">
+          {invoice.amount_due > 0 && onTakePayment && (
+            <Button
+              onClick={onTakePayment}
+              className="w-full bg-[#FAE008] text-[#111827] hover:bg-[#E5CF07] font-semibold h-9 text-sm"
+            >
+              <CreditCard className="w-4 h-4 mr-1.5" />
+              Take Payment
+            </Button>
+          )}
+          <div className="flex gap-2">
+            <Button
+              onClick={onViewInXero}
+              variant="outline"
+              size="sm"
+              className="flex-1 h-9 text-sm border-[#E5E7EB] hover:border-[#FAE008] hover:bg-[#FFFEF5]"
+            >
+              <ExternalLink className="w-4 h-4 mr-1.5" />
+              View in Xero
+            </Button>
+            <Button
+              onClick={onDownloadPdf}
+              variant="outline"
+              size="sm"
+              disabled={isDownloading}
+              className="h-9 px-3 border-[#E5E7EB] hover:border-[#FAE008] hover:bg-[#FFFEF5]"
+            >
+              <Download className={`w-4 h-4 ${isDownloading ? 'animate-pulse' : ''}`} />
+            </Button>
+            <Button
+              onClick={onRefreshStatus}
+              variant="outline"
+              size="sm"
+              disabled={isRefreshing}
+              className="h-9 px-3 border-[#E5E7EB] hover:border-[#FAE008] hover:bg-[#FFFEF5]"
+              title="Sync payment status from Xero"
+            >
+              <RefreshCw className={`w-4 h-4 ${isRefreshing ? 'animate-spin' : ''}`} />
+            </Button>
+          </div>
         </div>
       </CardContent>
     </Card>
