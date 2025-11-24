@@ -24,6 +24,8 @@ export default function QuoteItemManager({ quote, quoteItems, quoteSections, onU
   const [collapsedSections, setCollapsedSections] = useState({});
   const [editingSectionId, setEditingSectionId] = useState(null);
   const [editingSectionData, setEditingSectionData] = useState(null);
+  const [editingItemId, setEditingItemId] = useState(null);
+  const [editingItemData, setEditingItemData] = useState(null);
   const [newItem, setNewItem] = useState({
     product_id: "",
     section_id: "",
@@ -257,6 +259,43 @@ export default function QuoteItemManager({ quote, quoteItems, quoteSections, onU
     });
     setEditingSectionId(null);
     setEditingSectionData(null);
+  };
+
+  const startEditingItem = (item) => {
+    setEditingItemId(item.id);
+    setEditingItemData({
+      title: item.title,
+      description: item.description || "",
+      quantity: item.quantity,
+      unit_price: item.unit_price,
+      unit_label: item.unit_label,
+      section_id: item.section_id || "",
+      is_optional: item.is_optional || false
+    });
+  };
+
+  const cancelEditingItem = () => {
+    setEditingItemId(null);
+    setEditingItemData(null);
+  };
+
+  const saveEditingItem = (item) => {
+    const lineSubtotal = (editingItemData.quantity * editingItemData.unit_price) - (item.discount || 0);
+    const lineTax = lineSubtotal * (item.tax_rate || 0.1);
+    const lineTotal = lineSubtotal + lineTax;
+
+    updateItemMutation.mutate({
+      id: item.id,
+      data: {
+        ...item,
+        ...editingItemData,
+        section_id: editingItemData.section_id || null,
+        line_subtotal: lineSubtotal,
+        line_total: lineTotal
+      }
+    });
+    setEditingItemId(null);
+    setEditingItemData(null);
   };
 
   const handleDeleteSection = (sectionId) => {
@@ -648,57 +687,158 @@ export default function QuoteItemManager({ quote, quoteItems, quoteSections, onU
                     {!isCollapsed && sectionItems.map((item) => (
                       <Card key={item.id} className="bg-white border border-[#E5E7EB] ml-7">
                         <CardContent className="p-4">
-                          <div className="flex items-start justify-between gap-4">
-                            <div className="flex-1">
-                              <div className="flex items-center gap-2 mb-2">
-                                <h4 className="font-semibold text-[#111827]">{item.title}</h4>
-                                {item.is_optional && (
-                                  <span className="text-xs bg-[#FAE008]/20 text-[#92400E] px-2 py-0.5 rounded-lg">
-                                    Optional
-                                  </span>
-                                )}
+                          {editingItemId === item.id ? (
+                            <div className="space-y-3">
+                              <Input
+                                value={editingItemData.title}
+                                onChange={(e) => setEditingItemData({ ...editingItemData, title: e.target.value })}
+                                placeholder="Item title"
+                              />
+                              <Textarea
+                                value={editingItemData.description}
+                                onChange={(e) => setEditingItemData({ ...editingItemData, description: e.target.value })}
+                                placeholder="Item description"
+                                className="min-h-[60px]"
+                              />
+                              <div className="grid md:grid-cols-3 gap-3">
+                                <div>
+                                  <Label className="text-xs">Quantity</Label>
+                                  <Input
+                                    type="number"
+                                    value={editingItemData.quantity}
+                                    onChange={(e) => setEditingItemData({ ...editingItemData, quantity: parseFloat(e.target.value) || 0 })}
+                                    min="0"
+                                    step="0.01"
+                                  />
+                                </div>
+                                <div>
+                                  <Label className="text-xs">Unit Price</Label>
+                                  <Input
+                                    type="number"
+                                    value={editingItemData.unit_price}
+                                    onChange={(e) => setEditingItemData({ ...editingItemData, unit_price: parseFloat(e.target.value) || 0 })}
+                                    min="0"
+                                    step="0.01"
+                                  />
+                                </div>
+                                <div>
+                                  <Label className="text-xs">Unit Label</Label>
+                                  <Input
+                                    value={editingItemData.unit_label}
+                                    onChange={(e) => setEditingItemData({ ...editingItemData, unit_label: e.target.value })}
+                                    placeholder="each"
+                                  />
+                                </div>
                               </div>
-                              {item.description && (
-                                <p className="text-sm text-[#6B7280] mb-3">{item.description}</p>
-                              )}
-                              <div className="flex items-center gap-6 text-sm">
+                              <div className="grid md:grid-cols-2 gap-3">
                                 <div>
-                                  <span className="text-[#6B7280]">Qty: </span>
-                                  <span className="text-[#111827] font-medium">{item.quantity} {item.unit_label}</span>
+                                  <Label className="text-xs">Section</Label>
+                                  <Select value={editingItemData.section_id} onValueChange={(val) => setEditingItemData({ ...editingItemData, section_id: val })}>
+                                    <SelectTrigger>
+                                      <SelectValue placeholder="No section" />
+                                    </SelectTrigger>
+                                    <SelectContent>
+                                      <SelectItem value={null}>No section</SelectItem>
+                                      {quoteSections.map((section) => (
+                                        <SelectItem key={section.id} value={section.id}>
+                                          {section.title}
+                                        </SelectItem>
+                                      ))}
+                                    </SelectContent>
+                                  </Select>
                                 </div>
-                                <div>
-                                  <span className="text-[#6B7280]">Price: </span>
-                                  <span className="text-[#111827] font-medium">
-                                    ${item.unit_price.toLocaleString('en-AU', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
-                                  </span>
-                                </div>
-                                {item.is_optional && (
-                                  <div className="flex items-center gap-2">
+                                <div className="flex items-end">
+                                  <div className="flex items-center space-x-2">
                                     <Switch
-                                      checked={item.is_selected}
-                                      onCheckedChange={() => handleToggleOptional(item)}
+                                      checked={editingItemData.is_optional}
+                                      onCheckedChange={(checked) => setEditingItemData({ ...editingItemData, is_optional: checked })}
                                     />
-                                    <span className="text-xs text-[#6B7280]">
-                                      {item.is_selected ? 'Included' : 'Excluded'}
+                                    <Label className="text-xs">Optional</Label>
+                                  </div>
+                                </div>
+                              </div>
+                              <div className="flex gap-2">
+                                <Button
+                                  size="sm"
+                                  onClick={() => saveEditingItem(item)}
+                                  className="bg-[#FAE008] hover:bg-[#E5CF07] text-[#111827]"
+                                >
+                                  <Check className="w-4 h-4 mr-1" />
+                                  Save
+                                </Button>
+                                <Button
+                                  size="sm"
+                                  variant="outline"
+                                  onClick={cancelEditingItem}
+                                >
+                                  <X className="w-4 h-4 mr-1" />
+                                  Cancel
+                                </Button>
+                              </div>
+                            </div>
+                          ) : (
+                            <div className="flex items-start justify-between gap-4">
+                              <div className="flex-1">
+                                <div className="flex items-center gap-2 mb-2">
+                                  <h4 className="font-semibold text-[#111827]">{item.title}</h4>
+                                  {item.is_optional && (
+                                    <span className="text-xs bg-[#FAE008]/20 text-[#92400E] px-2 py-0.5 rounded-lg">
+                                      Optional
+                                    </span>
+                                  )}
+                                </div>
+                                {item.description && (
+                                  <p className="text-sm text-[#6B7280] mb-3">{item.description}</p>
+                                )}
+                                <div className="flex items-center gap-6 text-sm">
+                                  <div>
+                                    <span className="text-[#6B7280]">Qty: </span>
+                                    <span className="text-[#111827] font-medium">{item.quantity} {item.unit_label}</span>
+                                  </div>
+                                  <div>
+                                    <span className="text-[#6B7280]">Price: </span>
+                                    <span className="text-[#111827] font-medium">
+                                      ${item.unit_price.toLocaleString('en-AU', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                                     </span>
                                   </div>
-                                )}
+                                  {item.is_optional && (
+                                    <div className="flex items-center gap-2">
+                                      <Switch
+                                        checked={item.is_selected}
+                                        onCheckedChange={() => handleToggleOptional(item)}
+                                      />
+                                      <span className="text-xs text-[#6B7280]">
+                                        {item.is_selected ? 'Included' : 'Excluded'}
+                                      </span>
+                                    </div>
+                                  )}
+                                </div>
+                              </div>
+                              <div className="text-right flex flex-col items-end gap-2">
+                                <div className="text-lg font-bold text-[#111827]">
+                                  ${(item.line_total || 0).toLocaleString('en-AU', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                                </div>
+                                <div className="flex gap-1">
+                                  <Button
+                                    variant="ghost"
+                                    size="icon"
+                                    onClick={() => startEditingItem(item)}
+                                    className="hover:bg-[#F3F4F6]"
+                                  >
+                                    <Edit2 className="w-4 h-4" />
+                                  </Button>
+                                  <Button
+                                    variant="ghost"
+                                    size="icon"
+                                    onClick={() => handleDeleteItem(item.id)}
+                                    className="hover:bg-red-100 hover:text-red-600"
+                                  >
+                                    <Trash2 className="w-4 h-4" />
+                                  </Button>
+                                </div>
                               </div>
                             </div>
-                            <div className="text-right">
-                              <div className="text-lg font-bold text-[#111827] mb-2">
-                                ${(item.line_total || 0).toLocaleString('en-AU', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
-                              </div>
-                              <Button
-                                variant="ghost"
-                                size="icon"
-                                onClick={() => handleDeleteItem(item.id)}
-                                className="hover:bg-red-100 hover:text-red-600"
-                              >
-                                <Trash2 className="w-4 h-4" />
-                              </Button>
-                            </div>
-                          </div>
+                          )}
                         </CardContent>
                       </Card>
                     ))}
@@ -712,57 +852,158 @@ export default function QuoteItemManager({ quote, quoteItems, quoteSections, onU
                 {groupedItems.uncategorized.map((item) => (
                   <Card key={item.id} className="bg-white border border-[#E5E7EB]">
                     <CardContent className="p-4">
-                      <div className="flex items-start justify-between gap-4">
-                        <div className="flex-1">
-                          <div className="flex items-center gap-2 mb-2">
-                            <h4 className="font-semibold text-[#111827]">{item.title}</h4>
-                            {item.is_optional && (
-                              <span className="text-xs bg-[#FAE008]/20 text-[#92400E] px-2 py-0.5 rounded-lg">
-                                Optional
-                              </span>
-                            )}
+                      {editingItemId === item.id ? (
+                        <div className="space-y-3">
+                          <Input
+                            value={editingItemData.title}
+                            onChange={(e) => setEditingItemData({ ...editingItemData, title: e.target.value })}
+                            placeholder="Item title"
+                          />
+                          <Textarea
+                            value={editingItemData.description}
+                            onChange={(e) => setEditingItemData({ ...editingItemData, description: e.target.value })}
+                            placeholder="Item description"
+                            className="min-h-[60px]"
+                          />
+                          <div className="grid md:grid-cols-3 gap-3">
+                            <div>
+                              <Label className="text-xs">Quantity</Label>
+                              <Input
+                                type="number"
+                                value={editingItemData.quantity}
+                                onChange={(e) => setEditingItemData({ ...editingItemData, quantity: parseFloat(e.target.value) || 0 })}
+                                min="0"
+                                step="0.01"
+                              />
+                            </div>
+                            <div>
+                              <Label className="text-xs">Unit Price</Label>
+                              <Input
+                                type="number"
+                                value={editingItemData.unit_price}
+                                onChange={(e) => setEditingItemData({ ...editingItemData, unit_price: parseFloat(e.target.value) || 0 })}
+                                min="0"
+                                step="0.01"
+                              />
+                            </div>
+                            <div>
+                              <Label className="text-xs">Unit Label</Label>
+                              <Input
+                                value={editingItemData.unit_label}
+                                onChange={(e) => setEditingItemData({ ...editingItemData, unit_label: e.target.value })}
+                                placeholder="each"
+                              />
+                            </div>
                           </div>
-                          {item.description && (
-                            <p className="text-sm text-[#6B7280] mb-3">{item.description}</p>
-                          )}
-                          <div className="flex items-center gap-6 text-sm">
+                          <div className="grid md:grid-cols-2 gap-3">
                             <div>
-                              <span className="text-[#6B7280]">Qty: </span>
-                              <span className="text-[#111827] font-medium">{item.quantity} {item.unit_label}</span>
+                              <Label className="text-xs">Section</Label>
+                              <Select value={editingItemData.section_id} onValueChange={(val) => setEditingItemData({ ...editingItemData, section_id: val })}>
+                                <SelectTrigger>
+                                  <SelectValue placeholder="No section" />
+                                </SelectTrigger>
+                                <SelectContent>
+                                  <SelectItem value={null}>No section</SelectItem>
+                                  {quoteSections.map((section) => (
+                                    <SelectItem key={section.id} value={section.id}>
+                                      {section.title}
+                                    </SelectItem>
+                                  ))}
+                                </SelectContent>
+                              </Select>
                             </div>
-                            <div>
-                              <span className="text-[#6B7280]">Price: </span>
-                              <span className="text-[#111827] font-medium">
-                                ${item.unit_price.toLocaleString('en-AU', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
-                              </span>
-                            </div>
-                            {item.is_optional && (
-                              <div className="flex items-center gap-2">
+                            <div className="flex items-end">
+                              <div className="flex items-center space-x-2">
                                 <Switch
-                                  checked={item.is_selected}
-                                  onCheckedChange={() => handleToggleOptional(item)}
+                                  checked={editingItemData.is_optional}
+                                  onCheckedChange={(checked) => setEditingItemData({ ...editingItemData, is_optional: checked })}
                                 />
-                                <span className="text-xs text-[#6B7280]">
-                                  {item.is_selected ? 'Included' : 'Excluded'}
+                                <Label className="text-xs">Optional</Label>
+                              </div>
+                            </div>
+                          </div>
+                          <div className="flex gap-2">
+                            <Button
+                              size="sm"
+                              onClick={() => saveEditingItem(item)}
+                              className="bg-[#FAE008] hover:bg-[#E5CF07] text-[#111827]"
+                            >
+                              <Check className="w-4 h-4 mr-1" />
+                              Save
+                            </Button>
+                            <Button
+                              size="sm"
+                              variant="outline"
+                              onClick={cancelEditingItem}
+                            >
+                              <X className="w-4 h-4 mr-1" />
+                              Cancel
+                            </Button>
+                          </div>
+                        </div>
+                      ) : (
+                        <div className="flex items-start justify-between gap-4">
+                          <div className="flex-1">
+                            <div className="flex items-center gap-2 mb-2">
+                              <h4 className="font-semibold text-[#111827]">{item.title}</h4>
+                              {item.is_optional && (
+                                <span className="text-xs bg-[#FAE008]/20 text-[#92400E] px-2 py-0.5 rounded-lg">
+                                  Optional
+                                </span>
+                              )}
+                            </div>
+                            {item.description && (
+                              <p className="text-sm text-[#6B7280] mb-3">{item.description}</p>
+                            )}
+                            <div className="flex items-center gap-6 text-sm">
+                              <div>
+                                <span className="text-[#6B7280]">Qty: </span>
+                                <span className="text-[#111827] font-medium">{item.quantity} {item.unit_label}</span>
+                              </div>
+                              <div>
+                                <span className="text-[#6B7280]">Price: </span>
+                                <span className="text-[#111827] font-medium">
+                                  ${item.unit_price.toLocaleString('en-AU', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                                 </span>
                               </div>
-                            )}
+                              {item.is_optional && (
+                                <div className="flex items-center gap-2">
+                                  <Switch
+                                    checked={item.is_selected}
+                                    onCheckedChange={() => handleToggleOptional(item)}
+                                  />
+                                  <span className="text-xs text-[#6B7280]">
+                                    {item.is_selected ? 'Included' : 'Excluded'}
+                                  </span>
+                                </div>
+                              )}
+                            </div>
+                          </div>
+                          <div className="text-right flex flex-col items-end gap-2">
+                            <div className="text-lg font-bold text-[#111827]">
+                              ${(item.line_total || 0).toLocaleString('en-AU', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                            </div>
+                            <div className="flex gap-1">
+                              <Button
+                                variant="ghost"
+                                size="icon"
+                                onClick={() => startEditingItem(item)}
+                                className="hover:bg-[#F3F4F6]"
+                              >
+                                <Edit2 className="w-4 h-4" />
+                              </Button>
+                              <Button
+                                variant="ghost"
+                                size="icon"
+                                onClick={() => handleDeleteItem(item.id)}
+                                className="hover:bg-red-100 hover:text-red-600"
+                              >
+                                <Trash2 className="w-4 h-4" />
+                              </Button>
+                            </div>
                           </div>
                         </div>
-                        <div className="text-right">
-                          <div className="text-lg font-bold text-[#111827] mb-2">
-                            ${(item.line_total || 0).toLocaleString('en-AU', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
-                          </div>
-                          <Button
-                            variant="ghost"
-                            size="icon"
-                            onClick={() => handleDeleteItem(item.id)}
-                            className="hover:bg-red-100 hover:text-red-600"
-                          >
-                            <Trash2 className="w-4 h-4" />
-                          </Button>
-                        </div>
-                      </div>
+                      )}
                     </CardContent>
                   </Card>
                 ))}
