@@ -31,6 +31,15 @@ export default function TakePaymentModal({
   const [stripePublishableKey, setStripePublishableKey] = useState(null);
   const [prButton, setPrButton] = useState(null);
 
+  // Calculate Stripe fee (1.75% + $0.30 for AU cards)
+  const calculateStripeFee = (amount) => {
+    const numAmount = parseFloat(amount) || 0;
+    return (numAmount * 0.0175) + 0.30;
+  };
+
+  const stripeFee = calculateStripeFee(paymentAmount);
+  const totalCharge = parseFloat(paymentAmount) + stripeFee;
+
   useEffect(() => {
     if (open) {
       // Fetch Stripe publishable key and load Stripe.js
@@ -167,10 +176,12 @@ export default function TakePaymentModal({
         return;
       }
 
-      // Call backend to process payment
+      // Call backend to process payment (including fee)
       await onConfirm({
         payment_amount: amount,
-        payment_method_id: paymentMethod.id
+        payment_method_id: paymentMethod.id,
+        stripe_fee: stripeFee,
+        total_charge: totalCharge
       });
 
       // Clear card element
