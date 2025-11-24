@@ -1069,17 +1069,13 @@ Format as HTML bullet points using <ul> and <li> tags. Include only the most cri
                 <TabsTrigger value="summary" className="flex-1 whitespace-nowrap">
                   Summary
                 </TabsTrigger>
+                {user?.role === 'admin' && (
+                  <TabsTrigger value="warranty" className="flex-1 whitespace-nowrap">Warranty</TabsTrigger>
+                )}
               </TabsList>
             </div>
 
           <TabsContent value="overview" className="space-y-3 mt-3">
-            {user?.role === 'admin' && (
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <WarrantyCard project={project} />
-                <MaintenanceSection projectId={project.id} />
-              </div>
-            )}
-
             <div>
               <RichTextField
                 label="Description"
@@ -1393,6 +1389,15 @@ Format as HTML bullet points using <ul> and <li> tags. Include only the most cri
               </CardContent>
             </Card>
           </TabsContent>
+
+          {user?.role === 'admin' && (
+            <TabsContent value="warranty" className="mt-3">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <WarrantyCard project={project} />
+                <MaintenanceSection projectId={project.id} />
+              </div>
+            </TabsContent>
+          )}
           </Tabs>
       </CardContent>
 
