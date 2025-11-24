@@ -451,26 +451,27 @@ export default function Layout({ children, currentPageName }) {
 
               {/* Primary Navigation */}
               {primaryNavigationItems.map((item) => {
-                const isActive = location.pathname === item.url;
-                return (
-                  <Link
-                    key={item.title}
-                    to={item.url}
-                    className={`
-                      flex items-center gap-3 px-3 py-2.5 rounded-lg transition-all relative no-underline
-                      ${isActive 
-                        ? 'bg-[#FAE008]/10 text-[#111827] font-semibold' 
-                        : 'text-[#111827] hover:bg-[#F3F4F6]'
-                      }
-                      ${isCollapsed ? 'justify-center' : ''}
-                    `}
-                    title={isCollapsed ? item.title : ''}
-                  >
-                    {isActive && <div className="absolute left-0 w-1 h-6 bg-[#FAE008] rounded-r" />}
-                    <item.icon className={`w-5 h-5 flex-shrink-0 ${isActive ? 'text-[#FAE008]' : 'text-[#111827]'}`} />
-                    {!isCollapsed && <span className="text-[14px]">{item.title}</span>}
-                  </Link>
-                );
+              const isActive = location.pathname === item.url;
+              return (
+                <Link
+                  key={item.title}
+                  to={item.url}
+                  className={`
+                    flex items-center gap-3 px-3 py-2.5 rounded-lg transition-all relative
+                    ${isActive 
+                      ? 'bg-[#FAE008]/10 text-[#111827] font-semibold' 
+                      : 'text-[#111827] hover:bg-[#F3F4F6]'
+                    }
+                    ${isCollapsed ? 'justify-center' : ''}
+                  `}
+                  style={{ textDecoration: 'none', color: 'inherit' }}
+                  title={isCollapsed ? item.title : ''}
+                >
+                  {isActive && <div className="absolute left-0 w-1 h-6 bg-[#FAE008] rounded-r" />}
+                  <item.icon className={`w-5 h-5 flex-shrink-0 ${isActive ? 'text-[#FAE008]' : 'text-[#111827]'}`} />
+                  {!isCollapsed && <span className="text-[14px]">{item.title}</span>}
+                </Link>
+              );
               })}
 
               {/* More Menu */}
