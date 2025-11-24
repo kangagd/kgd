@@ -189,7 +189,7 @@ Deno.serve(async (req) => {
     const xeroResult = await xeroResponse.json();
     const xeroInvoice = xeroResult.Invoices[0];
 
-    // Extract online payment URL from Xero response
+    // Extract public online payment URL (customer-facing) from Xero response
     const onlinePaymentUrl = xeroInvoice.OnlineInvoiceUrl || null;
 
     // Create XeroInvoice record
@@ -206,16 +206,16 @@ Deno.serve(async (req) => {
       amount_paid: xeroInvoice.AmountPaid || 0,
       issue_date: today,
       due_date: dueDate,
-      pdf_url: `https://go.xero.com/AccountsReceivable/View.aspx?InvoiceID=${xeroInvoice.InvoiceID}`,
-      online_payment_url: onlinePaymentUrl,
+      pdf_url: `https://go.xero.com/AccountsReceivable/View.aspx?InvoiceID=${xeroInvoice.InvoiceID}`, // Admin URL - internal use only
+      online_payment_url: onlinePaymentUrl, // Public customer-facing URL
       raw_payload: xeroInvoice,
       created_by_user_id: user.id
     });
 
-    // Link invoice and payment URL to job
+    // Link invoice and public payment URL to job
     await base44.asServiceRole.entities.Job.update(job.id, {
       xero_invoice_id: invoiceRecord.id,
-      xero_payment_url: onlinePaymentUrl
+      xero_payment_url: onlinePaymentUrl // Public customer-facing URL
     });
 
     return Response.json({

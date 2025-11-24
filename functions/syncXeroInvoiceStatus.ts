@@ -83,7 +83,7 @@ Deno.serve(async (req) => {
     const xeroResult = await xeroResponse.json();
     const xeroInvoice = xeroResult.Invoices[0];
 
-    // Extract online payment URL from Xero response
+    // Extract public online payment URL (customer-facing) from Xero response
     const onlinePaymentUrl = xeroInvoice.OnlineInvoiceUrl || null;
 
     // If invoice is voided, delete it from the app
@@ -152,21 +152,21 @@ Deno.serve(async (req) => {
       payment_terms: xeroInvoice.Terms || null,
       credit_notes_total: creditNotesTotal,
       last_payment_date: lastPaymentDate,
-      online_payment_url: onlinePaymentUrl,
+      online_payment_url: onlinePaymentUrl, // Public customer-facing URL
       raw_payload: xeroInvoice
     });
 
-    // Update payment URL on linked job if it exists
+    // Update public payment URL on linked job if it exists
     if (invoiceRecord.job_id) {
       await base44.asServiceRole.entities.Job.update(invoiceRecord.job_id, {
-        xero_payment_url: onlinePaymentUrl
+        xero_payment_url: onlinePaymentUrl // Public customer-facing URL
       });
     }
 
-    // Update payment URL on linked project if it exists
+    // Update public payment URL on linked project if it exists
     if (invoiceRecord.project_id) {
       await base44.asServiceRole.entities.Project.update(invoiceRecord.project_id, {
-        xero_payment_url: onlinePaymentUrl
+        xero_payment_url: onlinePaymentUrl // Public customer-facing URL
       });
     }
 
