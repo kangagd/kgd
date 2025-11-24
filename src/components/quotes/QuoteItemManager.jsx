@@ -11,6 +11,7 @@ import { Switch } from "@/components/ui/switch";
 import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from "@/components/ui/command";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { DragDropContext, Droppable, Draggable } from "@hello-pangea/dnd";
 
 export default function QuoteItemManager({ quote, quoteItems, quoteSections, onUpdate }) {
   const queryClient = useQueryClient();
@@ -298,6 +299,72 @@ export default function QuoteItemManager({ quote, quoteItems, quoteSections, onU
     setEditingItemData(null);
   };
 
+  const handleDragEnd = async (result) => {
+    if (!result.destination) return;
+
+    const { source, destination, type } = result;
+
+    if (type === 'section') {
+      // Reordering sections
+      const sections = [...quoteSections].sort((a, b) => (a.sort_order || 0) - (b.sort_order || 0));
+      const [removed] = sections.splice(source.index, 1);
+      sections.splice(destination.index, 0, removed);
+
+      // Update sort_order for all sections
+      sections.forEach((section, index) => {
+        updateSectionMutation.mutate({
+          id: section.id,
+          data: { ...section, sort_order: index }
+        });
+      });
+    } else if (type === 'item') {
+      // Reordering items
+      const sourceSectionId = source.droppableId.replace('items-', '') || null;
+      const destSectionId = destination.droppableId.replace('items-', '') || null;
+
+      const sourceItems = quoteItems
+        .filter(item => (item.section_id || null) === sourceSectionId)
+        .sort((a, b) => (a.sort_order || 0) - (b.sort_order || 0));
+
+      if (sourceSectionId === destSectionId) {
+        // Same section reorder
+        const [removed] = sourceItems.splice(source.index, 1);
+        sourceItems.splice(destination.index, 0, removed);
+
+        sourceItems.forEach((item, index) => {
+          updateItemMutation.mutate({
+            id: item.id,
+            data: { ...item, sort_order: index }
+          });
+        });
+      } else {
+        // Move to different section
+        const destItems = quoteItems
+          .filter(item => (item.section_id || null) === destSectionId)
+          .sort((a, b) => (a.sort_order || 0) - (b.sort_order || 0));
+
+        const [removed] = sourceItems.splice(source.index, 1);
+        destItems.splice(destination.index, 0, removed);
+
+        // Update source section items
+        sourceItems.forEach((item, index) => {
+          updateItemMutation.mutate({
+            id: item.id,
+            data: { ...item, sort_order: index }
+          });
+        });
+
+        // Update destination section items (including moved item)
+        destItems.forEach((item, index) => {
+          updateItemMutation.mutate({
+            id: item.id,
+            data: { ...item, section_id: destSectionId, sort_order: index }
+          });
+        });
+      }
+    }
+  };
+
   const handleDeleteSection = (sectionId) => {
     const itemsInSection = quoteItems.filter(item => item.section_id === sectionId);
     if (itemsInSection.length > 0) {
@@ -552,17 +619,26 @@ export default function QuoteItemManager({ quote, quoteItems, quoteSections, onU
             <p className="text-[#6B7280]">No items added yet</p>
           </div>
         ) : (
-          <div className="space-y-4">
-            {quoteSections
-              .sort((a, b) => (a.sort_order || 0) - (b.sort_order || 0))
-              .map((section) => {
+          <DragDropContext onDragEnd={handleDragEnd}>
+            <Droppable droppableId="sections" type="section">
+              {(provided) => (
+                <div {...provided.droppableProps} ref={provided.innerRef} className="space-y-4">
+                  {quoteSections
+                    .sort((a, b) => (a.sort_order || 0) - (b.sort_order || 0))
+                    .map((section, sectionIndex) => {
                 const sectionItems = groupedItems[section.id] || [];
                 const isCollapsed = collapsedSections[section.id];
                 const sectionTotal = calculateSectionTotal(sectionItems);
 
                 return (
-                  <div key={section.id} className="space-y-2">
-                    <Card className={`border ${section.is_optional && !section.is_selected ? 'bg-white border-[#D1D5DB]' : 'bg-[#F9FAFB] border-[#E5E7EB]'}`}>
+                  <Draggable key={section.id} draggableId={section.id} index={sectionIndex}>
+                    {(provided, snapshot) => (
+                      <div
+                        ref={provided.innerRef}
+                        {...provided.draggableProps}
+                        className="space-y-2"
+                      >
+                        <Card className={`border ${section.is_optional && !section.is_selected ? 'bg-white border-[#D1D5DB]' : 'bg-[#F9FAFB] border-[#E5E7EB]'} ${snapshot.isDragging ? 'shadow-lg' : ''}`}>
                       <CardContent className="p-4">
                         {editingSectionId === section.id ? (
                           <div className="space-y-3">
@@ -617,6 +693,9 @@ export default function QuoteItemManager({ quote, quoteItems, quoteSections, onU
                           <>
                             <div className="flex items-center justify-between">
                               <div className="flex items-center gap-3 flex-1">
+                                <div {...provided.dragHandleProps} className="cursor-grab active:cursor-grabbing">
+                                  <GripVertical className="w-5 h-5 text-[#6B7280]" />
+                                </div>
                                 {section.is_optional && (
                                   <div className="flex items-center">
                                     {section.option_group_key ? (
@@ -684,9 +763,26 @@ export default function QuoteItemManager({ quote, quoteItems, quoteSections, onU
                       </CardContent>
                     </Card>
 
-                    {!isCollapsed && sectionItems.map((item) => (
-                      <Card key={item.id} className="bg-white border border-[#E5E7EB] ml-7">
-                        <CardContent className="p-4">
+                    {!isCollapsed && (
+                      <Droppable droppableId={`items-${section.id}`} type="item">
+                        {(provided) => (
+                          <div {...provided.droppableProps} ref={provided.innerRef} className="space-y-2">
+                            {sectionItems
+                              .sort((a, b) => (a.sort_order || 0) - (b.sort_order || 0))
+                              .map((item, itemIndex) => (
+                      <Draggable key={item.id} draggableId={item.id} index={itemIndex}>
+                        {(provided, snapshot) => (
+                          <Card 
+                            ref={provided.innerRef}
+                            {...provided.draggableProps}
+                            className={`bg-white border border-[#E5E7EB] ml-7 ${snapshot.isDragging ? 'shadow-lg' : ''}`}
+                          >
+                            <CardContent className="p-4">
+                              <div className="flex items-start gap-2">
+                                <div {...provided.dragHandleProps} className="cursor-grab active:cursor-grabbing mt-1">
+                                  <GripVertical className="w-5 h-5 text-[#6B7280]" />
+                                </div>
+                                <div className="flex-1">
                           {editingItemId === item.id ? (
                             <div className="space-y-3">
                               <Input
@@ -839,19 +935,49 @@ export default function QuoteItemManager({ quote, quoteItems, quoteSections, onU
                               </div>
                             </div>
                           )}
-                        </CardContent>
-                      </Card>
+                                </div>
+                              </div>
+                            </CardContent>
+                          </Card>
+                        )}
+                      </Draggable>
                     ))}
+                            {provided.placeholder}
+                          </div>
+                        )}
+                      </Droppable>
+                    )}
                   </div>
-                );
-              })}
+                  )}
+                  </Draggable>
+                  );
+                  })}
+                  {provided.placeholder}
+                  </div>
+                  )}
+                  </Droppable>
 
-            {groupedItems.uncategorized.length > 0 && (
-              <div className="space-y-2">
-                <h4 className="font-medium text-[#6B7280] text-sm">Uncategorized Items</h4>
-                {groupedItems.uncategorized.map((item) => (
-                  <Card key={item.id} className="bg-white border border-[#E5E7EB]">
-                    <CardContent className="p-4">
+                  {groupedItems.uncategorized.length > 0 && (
+                    <Droppable droppableId="items-" type="item">
+                      {(provided) => (
+                        <div {...provided.droppableProps} ref={provided.innerRef} className="space-y-2">
+                          <h4 className="font-medium text-[#6B7280] text-sm">Uncategorized Items</h4>
+                          {groupedItems.uncategorized
+                            .sort((a, b) => (a.sort_order || 0) - (b.sort_order || 0))
+                            .map((item, itemIndex) => (
+                  <Draggable key={item.id} draggableId={item.id} index={itemIndex}>
+                    {(provided, snapshot) => (
+                      <Card 
+                        ref={provided.innerRef}
+                        {...provided.draggableProps}
+                        className={`bg-white border border-[#E5E7EB] ${snapshot.isDragging ? 'shadow-lg' : ''}`}
+                      >
+                        <CardContent className="p-4">
+                          <div className="flex items-start gap-2">
+                            <div {...provided.dragHandleProps} className="cursor-grab active:cursor-grabbing mt-1">
+                              <GripVertical className="w-5 h-5 text-[#6B7280]" />
+                            </div>
+                            <div className="flex-1">
                       {editingItemId === item.id ? (
                         <div className="space-y-3">
                           <Input
@@ -1004,14 +1130,21 @@ export default function QuoteItemManager({ quote, quoteItems, quoteSections, onU
                           </div>
                         </div>
                       )}
-                    </CardContent>
-                  </Card>
+                            </div>
+                          </div>
+                        </CardContent>
+                      </Card>
+                    )}
+                  </Draggable>
                 ))}
+                          {provided.placeholder}
+                        </div>
+                      )}
+                    </Droppable>
+              )}
+              </DragDropContext>
+              )}
               </div>
-            )}
-          </div>
-        )}
-      </div>
 
       <Card className="bg-[#F9FAFB] border border-[#E5E7EB]">
         <CardContent className="p-6">
