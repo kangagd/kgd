@@ -116,6 +116,12 @@ const BADGE_VARIANTS = {
 // Global base badge styles (applied to all variants)
 const baseBadgeStyles = "inline-flex items-center rounded-lg px-2.5 py-0.5 text-xs font-medium transition-colors border-0 shadow-none";
 
+// Capitalize first letter of each word
+const capitalizeWords = (str) => {
+  if (!str) return '';
+  return str.split(' ').map(word => word.charAt(0).toUpperCase() + word.slice(1).toLowerCase()).join(' ');
+};
+
 export function StatusBadge({ type, value, className, ...props }) {
   if (!value) return null;
   
@@ -127,7 +133,7 @@ export function StatusBadge({ type, value, className, ...props }) {
       className={cn(baseBadgeStyles, variantClass, className)}
       {...props}
     >
-      {value}
+      {capitalizeWords(value)}
     </span>
   );
 }
