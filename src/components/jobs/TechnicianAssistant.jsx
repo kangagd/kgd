@@ -30,7 +30,7 @@ function AssistantContent({ job, conversation, messages, isLoading, input, setIn
 
   return (
     <>
-      <ScrollArea className="flex-1 pr-4 h-[500px] sm:h-[500px] max-h-[calc(100dvh-300px)]" ref={scrollRef}>
+      <div className="flex-1 overflow-y-auto pr-2" ref={scrollRef} style={{ maxHeight: 'calc(100dvh - 280px)' }}>
         <div className="space-y-4 pb-4">
           {messages.length === 0 ? (
             <div className="text-center py-12">
@@ -68,7 +68,7 @@ function AssistantContent({ job, conversation, messages, isLoading, input, setIn
             </div>
           )}
         </div>
-      </ScrollArea>
+      </div>
 
       <div className="flex gap-2 pt-4 border-t-2 border-slate-200">
         <Textarea
