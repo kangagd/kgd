@@ -1,6 +1,6 @@
 import React, { useState } from "react";
 import { base44 } from "@/api/base44Client";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import {
@@ -22,6 +22,7 @@ import { toast } from "sonner";
 import { createPageUrl } from "@/utils";
 import { useNavigate } from "react-router-dom";
 import EmailComposer from "./EmailComposer";
+import EmailAISummaryCard from "./EmailAISummaryCard";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -67,9 +68,11 @@ export default function EmailDetailView({
   onUnlinkProject,
   onUnlinkJob,
   userPermissions,
-  onDelete
+  onDelete,
+  onThreadUpdate
 }) {
   const navigate = useNavigate();
+  const queryClient = useQueryClient();
   const [composerMode, setComposerMode] = useState(null);
   const [selectedMessage, setSelectedMessage] = useState(null);
   const [showFullHeader, setShowFullHeader] = useState(false);
@@ -120,6 +123,17 @@ export default function EmailDetailView({
     }
   };
 
+  const handleThreadUpdate = () => {
+    queryClient.invalidateQueries({ queryKey: ['emailThreads'] });
+    if (onThreadUpdate) {
+      onThreadUpdate();
+    }
+  };
+
+  const handleCreateProjectFromAI = () => {
+    navigate(createPageUrl("Projects") + `?action=create&fromEmail=${thread.id}`);
+  };
+
   const getSenderInitials = (name, email) => {
     if (name) {
       const parts = name.split(' ');
@@ -133,6 +147,13 @@ export default function EmailDetailView({
       {/* Centered Content Container */}
       <div className="flex-1 overflow-y-auto">
         <div className="max-w-4xl mx-auto p-4 md:p-6 lg:p-8">
+          {/* AI Summary Card */}
+          <EmailAISummaryCard 
+            thread={thread}
+            onThreadUpdate={handleThreadUpdate}
+            onCreateProject={userPermissions?.can_create_project_from_email ? handleCreateProjectFromAI : null}
+          />
+
           {/* Main Email Card */}
           <div className="bg-white rounded-xl shadow-sm border border-[#E5E7EB] overflow-hidden mb-6">
             {/* Header - Subject & Actions */}
