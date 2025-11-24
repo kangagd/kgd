@@ -1,7 +1,8 @@
 import React, { useState } from "react";
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { ArrowLeft, Send, Eye, Copy, Archive, Plus, Trash2, Edit } from "lucide-react";
+import { Input } from "@/components/ui/input";
+import { ArrowLeft, Send, Eye, Copy, Archive, Plus, Trash2, Edit, Check, X } from "lucide-react";
 import { StatusBadge } from "../common/StatusBadge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { base44 } from "@/api/base44Client";
@@ -12,6 +13,12 @@ import QuoteTimeline from "./QuoteTimeline";
 export default function QuoteDetails({ quote, onUpdate, onCancel, onDelete, projects, customers }) {
   const queryClient = useQueryClient();
   const [activeTab, setActiveTab] = useState("items");
+  const [editingCustomer, setEditingCustomer] = useState(false);
+  const [customerData, setCustomerData] = useState({
+    customer_name: quote.customer_name || "",
+    customer_email: quote.customer_email || "",
+    customer_phone: quote.customer_phone || ""
+  });
 
   const { data: quoteItems = [] } = useQuery({
     queryKey: ['quoteItems', quote.id],
@@ -62,6 +69,20 @@ export default function QuoteDetails({ quote, onUpdate, onCancel, onDelete, proj
 
   const customer = customers.find(c => c.id === quote.customer_id);
   const project = projects.find(p => p.id === quote.project_id);
+
+  const handleSaveCustomerDetails = () => {
+    onUpdate({ ...quote, ...customerData });
+    setEditingCustomer(false);
+  };
+
+  const handleCancelCustomerEdit = () => {
+    setCustomerData({
+      customer_name: quote.customer_name || "",
+      customer_email: quote.customer_email || "",
+      customer_phone: quote.customer_phone || ""
+    });
+    setEditingCustomer(false);
+  };
 
   return (
     <div className="max-w-7xl mx-auto">
@@ -130,31 +151,93 @@ export default function QuoteDetails({ quote, onUpdate, onCancel, onDelete, proj
             <div className="md:col-span-2 space-y-6">
               <Card className="bg-[#F9FAFB] border border-[#E5E7EB]">
                 <CardContent className="p-4">
-                  <h3 className="text-sm font-semibold text-[#111827] mb-3">Customer</h3>
-                  <div className="space-y-2 text-sm">
-                    <div>
-                      <span className="text-[#6B7280]">Name: </span>
-                      <span className="text-[#111827] font-medium">{quote.customer_name}</span>
-                    </div>
-                    {quote.customer_email && (
-                      <div>
-                        <span className="text-[#6B7280]">Email: </span>
-                        <span className="text-[#111827]">{quote.customer_email}</span>
-                      </div>
-                    )}
-                    {quote.customer_phone && (
-                      <div>
-                        <span className="text-[#6B7280]">Phone: </span>
-                        <span className="text-[#111827]">{quote.customer_phone}</span>
-                      </div>
-                    )}
-                    {project && (
-                      <div>
-                        <span className="text-[#6B7280]">Project: </span>
-                        <span className="text-[#111827] font-medium">{project.title}</span>
+                  <div className="flex items-center justify-between mb-3">
+                    <h3 className="text-sm font-semibold text-[#111827]">Customer</h3>
+                    {!editingCustomer ? (
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        onClick={() => setEditingCustomer(true)}
+                        className="h-7 w-7"
+                      >
+                        <Edit className="w-4 h-4" />
+                      </Button>
+                    ) : (
+                      <div className="flex gap-1">
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          onClick={handleSaveCustomerDetails}
+                          className="h-7 w-7 hover:bg-green-100 hover:text-green-600"
+                        >
+                          <Check className="w-4 h-4" />
+                        </Button>
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          onClick={handleCancelCustomerEdit}
+                          className="h-7 w-7 hover:bg-red-100 hover:text-red-600"
+                        >
+                          <X className="w-4 h-4" />
+                        </Button>
                       </div>
                     )}
                   </div>
+                  {editingCustomer ? (
+                    <div className="space-y-3">
+                      <div>
+                        <label className="text-xs text-[#6B7280] mb-1 block">Name</label>
+                        <Input
+                          value={customerData.customer_name}
+                          onChange={(e) => setCustomerData({ ...customerData, customer_name: e.target.value })}
+                          className="text-sm"
+                        />
+                      </div>
+                      <div>
+                        <label className="text-xs text-[#6B7280] mb-1 block">Email</label>
+                        <Input
+                          type="email"
+                          value={customerData.customer_email}
+                          onChange={(e) => setCustomerData({ ...customerData, customer_email: e.target.value })}
+                          className="text-sm"
+                        />
+                      </div>
+                      <div>
+                        <label className="text-xs text-[#6B7280] mb-1 block">Phone</label>
+                        <Input
+                          type="tel"
+                          value={customerData.customer_phone}
+                          onChange={(e) => setCustomerData({ ...customerData, customer_phone: e.target.value })}
+                          className="text-sm"
+                        />
+                      </div>
+                    </div>
+                  ) : (
+                    <div className="space-y-2 text-sm">
+                      <div>
+                        <span className="text-[#6B7280]">Name: </span>
+                        <span className="text-[#111827] font-medium">{quote.customer_name}</span>
+                      </div>
+                      {quote.customer_email && (
+                        <div>
+                          <span className="text-[#6B7280]">Email: </span>
+                          <span className="text-[#111827]">{quote.customer_email}</span>
+                        </div>
+                      )}
+                      {quote.customer_phone && (
+                        <div>
+                          <span className="text-[#6B7280]">Phone: </span>
+                          <span className="text-[#111827]">{quote.customer_phone}</span>
+                        </div>
+                      )}
+                      {project && (
+                        <div>
+                          <span className="text-[#6B7280]">Project: </span>
+                          <span className="text-[#111827] font-medium">{project.title}</span>
+                        </div>
+                      )}
+                    </div>
+                  )}
                 </CardContent>
               </Card>
             </div>
