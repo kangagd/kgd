@@ -925,7 +925,11 @@ export default function JobDetails({ job: initialJob, onClose, onStatusChange, o
                 <MapPin className="w-4 h-4 mr-1.5" />
                 <span className="hidden md:inline">Map</span>
               </TabsTrigger>
-            </TabsList>
+              <TabsTrigger value="invoicing" className="flex-1">
+                <DollarSign className="w-4 h-4 mr-1.5" />
+                <span className="hidden md:inline">Invoice</span>
+              </TabsTrigger>
+              </TabsList>
 
             <TabsContent value="details" className="space-y-4 mt-3">
               {job.project_id && projectJobs.length > 0 &&
@@ -1114,40 +1118,6 @@ export default function JobDetails({ job: initialJob, onClose, onStatusChange, o
                   placeholder="What was discussed with the client? Any agreements made…"
                   helperText="Required for checkout"
                 />
-
-                {isAdmin && (
-                  <Card className="border border-[#E5E7EB] shadow-sm rounded-lg">
-                    <CardHeader className="bg-white px-4 py-3 border-b border-[#E5E7EB]">
-                      <CardTitle className="text-[16px] font-semibold text-[#111827] leading-[1.2]">
-                        Billing & Invoice
-                      </CardTitle>
-                    </CardHeader>
-                    <CardContent className="p-4">
-                      {!xeroInvoice ? (
-                        <div className="text-center py-6">
-                          <DollarSign className="w-12 h-12 text-[#E5E7EB] mx-auto mb-3" />
-                          <p className="text-[14px] text-[#6B7280] mb-4">
-                            No invoice has been created for this job yet.
-                          </p>
-                          <Button
-                            onClick={() => setShowInvoiceModal(true)}
-                            className="bg-[#FAE008] text-[#111827] hover:bg-[#E5CF07] font-semibold shadow-sm h-10 px-6"
-                          >
-                            <DollarSign className="w-4 h-4 mr-2" />
-                            Send via Xero
-                          </Button>
-                        </div>
-                      ) : (
-                        <XeroInvoiceCard
-                          invoice={xeroInvoice}
-                          onRefreshStatus={() => syncInvoiceMutation.mutate()}
-                          onViewInXero={() => window.open(xeroInvoice.pdf_url, '_blank')}
-                          isRefreshing={syncInvoiceMutation.isPending}
-                        />
-                      )}
-                    </CardContent>
-                  </Card>
-                )}
 
                 <div>
                   <Label className="block text-[13px] md:text-[14px] font-medium text-[#4B5563] mb-1.5">Outcome *</Label>
@@ -1442,6 +1412,66 @@ export default function JobDetails({ job: initialJob, onClose, onStatusChange, o
                     <Navigation className="w-4 h-4 mr-2" />
                     Open in Google Maps
                   </Button>
+                </div>
+              </div>
+            </TabsContent>
+
+            <TabsContent value="invoicing" className="mt-2">
+              <div className="space-y-3">
+                <h3 className="text-[16px] font-semibold text-[#111827] leading-[1.2]">Quotes & Invoicing</h3>
+
+                {isAdmin && (
+                  <Card className="border border-[#E5E7EB] shadow-sm rounded-lg">
+                    <CardHeader className="bg-white px-4 py-3 border-b border-[#E5E7EB]">
+                      <CardTitle className="text-[16px] font-semibold text-[#111827] leading-[1.2]">
+                        Xero Invoice
+                      </CardTitle>
+                    </CardHeader>
+                    <CardContent className="p-4">
+                      {!xeroInvoice ? (
+                        <div className="text-center py-6">
+                          <DollarSign className="w-12 h-12 text-[#E5E7EB] mx-auto mb-3" />
+                          <p className="text-[14px] text-[#6B7280] mb-4">
+                            No invoice has been created for this job yet.
+                          </p>
+                          <Button
+                            onClick={() => setShowInvoiceModal(true)}
+                            className="bg-[#FAE008] text-[#111827] hover:bg-[#E5CF07] font-semibold shadow-sm h-10 px-6"
+                          >
+                            <DollarSign className="w-4 h-4 mr-2" />
+                            Create Invoice
+                          </Button>
+                        </div>
+                      ) : (
+                        <XeroInvoiceCard
+                          invoice={xeroInvoice}
+                          onRefreshStatus={() => syncInvoiceMutation.mutate()}
+                          onViewInXero={() => window.open(xeroInvoice.pdf_url, '_blank')}
+                          isRefreshing={syncInvoiceMutation.isPending}
+                        />
+                      )}
+                    </CardContent>
+                  </Card>
+                )}
+
+                <div className="grid md:grid-cols-2 gap-2.5 pt-3 border-t-2">
+                  <EditableFileUpload
+                    files={job.quote_url}
+                    onFilesChange={handleQuoteChange}
+                    accept=".pdf,.doc,.docx"
+                    multiple={false}
+                    icon={FileText}
+                    label="Quote"
+                    emptyText="Upload quote" />
+
+                  <EditableFileUpload
+                    files={job.invoice_url}
+                    onFilesChange={handleInvoiceChange}
+                    accept=".pdf,.doc,.docx"
+                    multiple={false}
+                    icon={FileText}
+                    label="Invoice"
+                    emptyText="Upload invoice" />
                 </div>
               </div>
             </TabsContent>
