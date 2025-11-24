@@ -1,5 +1,5 @@
 import React, { useEffect } from "react";
-import { X, Download, Trash2, FileText, File } from "lucide-react";
+import { X, Download, Trash2, FileText, File, ExternalLink } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import {
@@ -55,6 +55,10 @@ export default function FilePreviewModal({
     document.body.removeChild(link);
   };
 
+  const handleOpenInNewTab = () => {
+    window.open(file.url, '_blank', 'noopener,noreferrer');
+  };
+
   const handleDelete = () => {
     setShowDeleteConfirm(true);
   };
@@ -78,9 +82,18 @@ export default function FilePreviewModal({
           {/* Corner Actions */}
           <div className="absolute top-4 right-4 flex gap-2 z-20">
             <Button
+              onClick={handleOpenInNewTab}
+              size="icon"
+              className="w-10 h-10 bg-white/90 hover:bg-white text-[#111827] rounded-full shadow-lg backdrop-blur-sm"
+              title="Open in new tab"
+            >
+              <ExternalLink className="w-5 h-5" />
+            </Button>
+            <Button
               onClick={handleDownload}
               size="icon"
               className="w-10 h-10 bg-white/90 hover:bg-white text-[#111827] rounded-full shadow-lg backdrop-blur-sm"
+              title="Download"
             >
               <Download className="w-5 h-5" />
             </Button>
