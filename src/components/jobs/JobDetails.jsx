@@ -388,6 +388,30 @@ export default function JobDetails({ job: initialJob, onClose, onStatusChange, o
     }
   });
 
+  const downloadPdfMutation = useMutation({
+    mutationFn: async () => {
+      const response = await base44.functions.invoke('getInvoicePdf', {
+        xero_invoice_id: xeroInvoice.xero_invoice_id
+      });
+      return response.data;
+    },
+    onSuccess: (data) => {
+      const blob = new Blob([data], { type: 'application/pdf' });
+      const url = window.URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `invoice-${xeroInvoice.xero_invoice_number}.pdf`;
+      document.body.appendChild(a);
+      a.click();
+      window.URL.revokeObjectURL(url);
+      a.remove();
+      toast.success('Invoice PDF downloaded');
+    },
+    onError: (error) => {
+      toast.error(error.message || 'Failed to download invoice PDF');
+    }
+  });
+
   const handleCheckIn = () => {
     checkInMutation.mutate();
   };
