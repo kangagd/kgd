@@ -202,9 +202,9 @@ export default function CustomerDetails({ customer, onClose, onEdit, onDelete })
           {customer.notes && (
             <div>
               <h3 className="text-[14px] font-semibold text-[#111827] leading-[1.4] mb-2">Notes</h3>
-              <p className="text-[14px] text-slate-700 leading-[1.4] whitespace-pre-wrap bg-slate-50 p-4 rounded-xl border-2 border-slate-200">
+              <div className="text-[14px] text-slate-700 leading-[1.4] whitespace-pre-wrap bg-slate-50 p-4 rounded-xl border-2 border-slate-200">
                 {customer.notes}
-              </p>
+              </div>
             </div>
           )}
 
