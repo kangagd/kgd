@@ -398,7 +398,7 @@ export default function Schedule() {
                             >
                               <DraggableJobCard
                                 job={job}
-                                onClick={() => setSelectedJob(job)}
+                                onClick={() => setModalJob(job)}
                                 onAddressClick={handleAddressClick}
                                 onProjectClick={handleProjectClick}
                                 isDragging={dragSnapshot.isDragging}
