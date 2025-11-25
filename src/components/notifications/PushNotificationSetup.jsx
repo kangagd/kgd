@@ -58,8 +58,38 @@ export default function PushNotificationSetup() {
         return;
       }
 
-      // Register service worker
-      const registration = await navigator.serviceWorker.register('/sw.js');
+      // Register service worker - use inline service worker via blob
+      const swCode = `
+        self.addEventListener('push', function(event) {
+          const data = event.data ? event.data.json() : {};
+          const title = data.title || 'New Notification';
+          const options = {
+            body: data.body || '',
+            icon: data.icon || '/favicon.ico',
+            badge: data.badge || '/favicon.ico',
+            data: data.data || {}
+          };
+          event.waitUntil(self.registration.showNotification(title, options));
+        });
+
+        self.addEventListener('notificationclick', function(event) {
+          event.notification.close();
+          event.waitUntil(clients.openWindow('/'));
+        });
+      `;
+      
+      const blob = new Blob([swCode], { type: 'application/javascript' });
+      const swUrl = URL.createObjectURL(blob);
+      
+      let registration;
+      try {
+        registration = await navigator.serviceWorker.register(swUrl, { scope: '/' });
+      } catch (swError) {
+        // Fallback: try to use existing service worker if blob registration fails
+        console.log('Blob SW failed, checking for existing SW:', swError);
+        registration = await navigator.serviceWorker.ready;
+      }
+      
       await navigator.serviceWorker.ready;
 
       // Get VAPID public key from backend
