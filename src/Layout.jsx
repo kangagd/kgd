@@ -560,34 +560,48 @@ export default function Layout({ children, currentPageName }) {
 
           {/* User Profile & Logout */}
           <div className="p-3 border-t border-[#E5E7EB] flex-shrink-0">
-  <button
-    onClick={() => navigate(createPageUrl("UserProfile"))}
-    className={`w-full flex items-center gap-3 px-3 py-2.5 hover:bg-[#F3F4F6] rounded-lg transition-colors ${isCollapsed ? 'justify-center' : ''}`}
-  >
-    <div className="w-8 h-8 bg-[#F3F4F6] rounded-full flex items-center justify-center flex-shrink-0">
-      <span className="text-[#111827] font-semibold text-sm">
-        {user?.full_name?.charAt(0)?.toUpperCase() || 'U'}
-      </span>
-    </div>
-    {!isCollapsed && (
-      <div className="flex-1 min-w-0 text-left">
-        <p className="font-medium text-[#111827] text-[14px] truncate">
+          <button
+          onClick={() => navigate(createPageUrl("UserProfile"))}
+          className={`w-full flex items-center gap-3 px-3 py-2.5 hover:bg-[#F3F4F6] rounded-lg transition-colors ${isCollapsed ? 'justify-center' : ''}`}
+          >
+          <div className="w-8 h-8 bg-[#F3F4F6] rounded-full flex items-center justify-center flex-shrink-0">
+          <span className="text-[#111827] font-semibold text-sm">
+          {user?.full_name?.charAt(0)?.toUpperCase() || 'U'}
+          </span>
+          </div>
+          {!isCollapsed && (
+          <div className="flex-1 min-w-0 text-left">
+          <p className="font-medium text-[#111827] text-[14px] truncate">
           {user?.full_name || 'User'}
-        </p>
-        <p className="text-[12px] text-[#4B5563] truncate">{user?.email}</p>
-      </div>
-    )}
-  </button>
-  {!isCollapsed && (
-    <button
-      onClick={handleLogout}
-      className="w-full mt-2 flex items-center gap-2 px-3 py-2.5 text-[#4B5563] hover:text-[#DC2626] hover:bg-red-50 rounded-lg transition-colors text-[14px]"
-    >
-      <LogOut className="w-4 h-4" />
-      Logout
-    </button>
-  )}
-</div>
+          </p>
+          <p className="text-[12px] text-[#4B5563] truncate">{user?.email}</p>
+          </div>
+          )}
+          </button>
+          {!isCollapsed && (
+          <div className="flex items-center gap-2 mt-2">
+          <button
+          onClick={handleLogout}
+          className="flex-1 flex items-center gap-2 px-3 py-2.5 text-[#4B5563] hover:text-[#DC2626] hover:bg-red-50 rounded-lg transition-colors text-[14px]"
+          >
+          <LogOut className="w-4 h-4" />
+          Logout
+          </button>
+          {user && user.email === 'admin@kangaroogd.com.au' && (
+          <button
+          onClick={handleTestModeToggle}
+          className="p-2.5 hover:bg-[#FEF3C7] rounded-lg transition-colors text-[#D97706] relative"
+          title={`Test Mode: ${getTestModeLabel()}`}
+          >
+          <TestTube2 className="w-4 h-4" />
+          <span className="absolute -top-1 -right-1 bg-[#D97706] text-white text-[9px] font-bold rounded-full w-4 h-4 flex items-center justify-center">
+            {getTestModeLabel().charAt(0)}
+          </span>
+          </button>
+          )}
+          </div>
+          )}
+          </div>
         </div>
       </aside>
 
