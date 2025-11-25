@@ -36,6 +36,7 @@ export default function Schedule() {
   const [showConflictModal, setShowConflictModal] = useState(false);
   const [showConfirmModal, setShowConfirmModal] = useState(false);
   const [notifyTechnician, setNotifyTechnician] = useState(true);
+  const [modalJob, setModalJob] = useState(null);
 
   React.useEffect(() => {
     const loadUser = async () => {
