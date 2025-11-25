@@ -382,18 +382,18 @@ export default function Schedule() {
                     <div className="space-y-3">
                       {dayJobs.map((job, index) => (
                         <Draggable key={job.id} draggableId={job.id} index={index}>
-                          {(provided, snapshot) => (
+                          {(dragProvided, dragSnapshot) => (
                             <div
-                              ref={provided.innerRef}
-                              {...provided.draggableProps}
+                              ref={dragProvided.innerRef}
+                              {...dragProvided.draggableProps}
+                              {...dragProvided.dragHandleProps}
                             >
                               <DraggableJobCard
                                 job={job}
                                 onClick={() => setSelectedJob(job)}
                                 onAddressClick={handleAddressClick}
                                 onProjectClick={handleProjectClick}
-                                isDragging={snapshot.isDragging}
-                                dragHandleProps={provided.dragHandleProps}
+                                isDragging={dragSnapshot.isDragging}
                               />
                             </div>
                           )}
