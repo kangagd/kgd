@@ -325,6 +325,51 @@ export default function CustomerForm({ customer, onSubmit, onCancel, isSubmittin
               </Select>
             </div>
 
+            <div className="space-y-2">
+              <Label htmlFor="source">Source</Label>
+              <Select value={formData.source || ""} onValueChange={(val) => setFormData({ ...formData, source: val, source_details: "" })}>
+                <SelectTrigger>
+                  <SelectValue placeholder="How did they find us?" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="Word of mouth">Word of mouth</SelectItem>
+                  <SelectItem value="Google">Google</SelectItem>
+                  <SelectItem value="Socials">Socials</SelectItem>
+                  <SelectItem value="Car/Trailer">Car/Trailer</SelectItem>
+                  <SelectItem value="Builder">Builder</SelectItem>
+                  <SelectItem value="Real Estate">Real Estate</SelectItem>
+                  <SelectItem value="Strata">Strata</SelectItem>
+                  <SelectItem value="Gliderol">Gliderol</SelectItem>
+                  <SelectItem value="4D">4D</SelectItem>
+                  <SelectItem value="Other">Other</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+
+            {formData.source === "Word of mouth" && (
+              <div className="space-y-2">
+                <Label htmlFor="source_details">Referring Customer</Label>
+                <Input
+                  id="source_details"
+                  value={formData.source_details || ""}
+                  onChange={(e) => setFormData({ ...formData, source_details: e.target.value })}
+                  placeholder="Referring customer"
+                />
+              </div>
+            )}
+
+            {formData.source === "Other" && (
+              <div className="space-y-2">
+                <Label htmlFor="source_details">Source Details</Label>
+                <Input
+                  id="source_details"
+                  value={formData.source_details || ""}
+                  onChange={(e) => setFormData({ ...formData, source_details: e.target.value })}
+                  placeholder="Please specify"
+                />
+              </div>
+            )}
+
             <div className="grid md:grid-cols-2 gap-6">
               <div className="space-y-2">
                 <Label htmlFor="phone">Primary Phone</Label>
