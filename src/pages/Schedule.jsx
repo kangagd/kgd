@@ -245,18 +245,32 @@ export default function Schedule() {
     setShowConfirmModal(true);
   };
 
-  // Render Day View
+  // Render Day View with Drag and Drop
   const renderDayView = () => {
     const dayJobs = getFilteredJobs((date) => isSameDay(date, selectedDate));
+    const dateStr = format(selectedDate, 'yyyy-MM-dd');
     
     if (dayJobs.length === 0) {
       return (
-        <div className="flex flex-col items-center justify-center py-16">
-          <div className="w-16 h-16 bg-[#F3F4F6] rounded-full flex items-center justify-center mb-4">
-            <CalendarIcon className="w-8 h-8 text-[#6B7280]" />
-          </div>
-          <p className="text-[#4B5563] text-center">No jobs scheduled for this day.</p>
-        </div>
+        <Droppable droppableId={`day-${dateStr}`}>
+          {(provided, snapshot) => (
+            <div
+              ref={provided.innerRef}
+              {...provided.droppableProps}
+              className={`flex flex-col items-center justify-center py-16 rounded-xl transition-colors ${
+                snapshot.isDraggingOver ? 'bg-[#FAE008]/10 border-2 border-dashed border-[#FAE008]' : ''
+              }`}
+            >
+              <div className="w-16 h-16 bg-[#F3F4F6] rounded-full flex items-center justify-center mb-4">
+                <CalendarIcon className="w-8 h-8 text-[#6B7280]" />
+              </div>
+              <p className="text-[#4B5563] text-center">
+                {snapshot.isDraggingOver ? 'Drop job here to schedule' : 'No jobs scheduled for this day.'}
+              </p>
+              {provided.placeholder}
+            </div>
+          )}
+        </Droppable>
       );
     }
 
@@ -269,26 +283,47 @@ export default function Schedule() {
     });
 
     return (
-      <div className="space-y-6">
-        {Object.entries(jobsByTech).map(([techName, jobs]) => (
-          <div key={techName}>
-            <h3 className="text-sm font-semibold text-[#4B5563] mb-3">
-              {techName}
-            </h3>
-            <div className="space-y-3">
-              {jobs.map(job => (
-                <ScheduleJobCard
-                  key={job.id}
-                  job={job}
-                  onClick={() => setSelectedJob(job)}
-                  onAddressClick={handleAddressClick}
-                  onProjectClick={handleProjectClick}
-                />
-              ))}
-            </div>
+      <Droppable droppableId={`day-${dateStr}`}>
+        {(provided, snapshot) => (
+          <div
+            ref={provided.innerRef}
+            {...provided.droppableProps}
+            className={`space-y-6 min-h-[200px] rounded-xl p-2 -m-2 transition-colors ${
+              snapshot.isDraggingOver ? 'bg-[#FAE008]/10 border-2 border-dashed border-[#FAE008]' : ''
+            }`}
+          >
+            {Object.entries(jobsByTech).map(([techName, jobs]) => (
+              <div key={techName}>
+                <h3 className="text-sm font-semibold text-[#4B5563] mb-3">
+                  {techName}
+                </h3>
+                <div className="space-y-3">
+                  {jobs.map((job, index) => (
+                    <Draggable key={job.id} draggableId={job.id} index={index}>
+                      {(provided, snapshot) => (
+                        <div
+                          ref={provided.innerRef}
+                          {...provided.draggableProps}
+                        >
+                          <DraggableJobCard
+                            job={job}
+                            onClick={() => setSelectedJob(job)}
+                            onAddressClick={handleAddressClick}
+                            onProjectClick={handleProjectClick}
+                            isDragging={snapshot.isDragging}
+                            dragHandleProps={provided.dragHandleProps}
+                          />
+                        </div>
+                      )}
+                    </Draggable>
+                  ))}
+                </div>
+              </div>
+            ))}
+            {provided.placeholder}
           </div>
-        ))}
-      </div>
+        )}
+      </Droppable>
     );
   };
 
