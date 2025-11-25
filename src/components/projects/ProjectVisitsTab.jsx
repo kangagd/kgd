@@ -32,12 +32,13 @@ export default function ProjectVisitsTab({ projectId, isReadOnly }) {
   const { data: jobs = [], isLoading: jobsLoading } = useQuery({
     queryKey: ['projectJobsVisits', projectId],
     queryFn: async () => {
-      // Fetch all jobs for this project
-      const allJobs = await base44.entities.Job.list('-scheduled_date');
-      // Filter to only jobs for this project that are not deleted
-      return allJobs.filter(job => job.project_id === projectId && !job.deleted_at);
+      // Fetch all jobs for this project using filter
+      const projectJobs = await base44.entities.Job.filter({ project_id: projectId }, '-scheduled_date');
+      // Filter out deleted jobs
+      return projectJobs.filter(job => !job.deleted_at);
     },
-    refetchInterval: 5000
+    refetchInterval: 5000,
+    enabled: !!projectId
   });
 
   // Fetch visit summaries (check-out records)
