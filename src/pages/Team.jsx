@@ -1,18 +1,59 @@
-import React from "react";
+import React, { useState } from "react";
 import { base44 } from "@/api/base44Client";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Users, Mail, Phone, Briefcase } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { Users, Mail, Phone, Briefcase, Shield, ChevronRight, X } from "lucide-react";
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { toast } from "sonner";
+import RolePermissionsEditor, { ROLE_LABELS } from "../components/team/RolePermissionsEditor";
+import { usePermissions } from "../components/common/usePermissions";
 
 export default function Team() {
+  const [selectedUser, setSelectedUser] = useState(null);
+  const queryClient = useQueryClient();
+  const { isAdmin } = usePermissions();
+
   const { data: users = [], isLoading } = useQuery({
     queryKey: ['users'],
     queryFn: () => base44.entities.User.list(),
   });
 
-  const technicians = users.filter(u => u.is_field_technician);
-  const admins = users.filter(u => u.role === 'admin');
+  const updateUserMutation = useMutation({
+    mutationFn: ({ id, data }) => base44.entities.User.update(id, data),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['users'] });
+      toast.success('User permissions updated');
+      setSelectedUser(null);
+    },
+    onError: (error) => {
+      toast.error('Failed to update permissions');
+      console.error(error);
+    }
+  });
+
+  const handleSavePermissions = (permData) => {
+    if (!selectedUser) return;
+    updateUserMutation.mutate({
+      id: selectedUser.id,
+      data: permData
+    });
+  };
+
+  const technicians = users.filter(u => u.is_field_technician || u.user_role === 'technician');
+  const admins = users.filter(u => u.role === 'admin' || u.user_role === 'administrator');
+  const managers = users.filter(u => u.user_role === 'manager');
+  const officeStaff = users.filter(u => u.user_role === 'office_staff');
+
+  const getRoleBadge = (user) => {
+    if (user.role === 'admin') {
+      return <Badge className="bg-red-100 text-red-700 border-0">Admin</Badge>;
+    }
+    const role = user.user_role || 'technician';
+    const roleInfo = ROLE_LABELS[role] || ROLE_LABELS.technician;
+    return <Badge className={`${roleInfo.color} border-0`}>{roleInfo.label}</Badge>;
+  };
 
   return (
     <div className="p-5 md:p-10 bg-[#ffffff] min-h-screen">
