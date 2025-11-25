@@ -40,6 +40,19 @@ export default function Organisations() {
     queryFn: () => base44.entities.Customer.filter({ deleted_at: { $exists: false } })
   });
 
+  // Handle URL params for direct navigation
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    const organisationId = params.get('organisationId');
+    
+    if (organisationId && organisations.length > 0 && !selectedOrganisation) {
+      const organisation = organisations.find((o) => o.id === organisationId);
+      if (organisation) {
+        setSelectedOrganisation(organisation);
+      }
+    }
+  }, [organisations, selectedOrganisation]);
+
   const createMutation = useMutation({
     mutationFn: (data) => base44.entities.Organisation.create(data),
     onSuccess: () => {
