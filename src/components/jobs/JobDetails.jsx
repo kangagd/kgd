@@ -850,6 +850,32 @@ export default function JobDetails({ job: initialJob, onClose, onStatusChange, o
               </CollapsibleTrigger>
               <CollapsibleContent>
                 <div className="px-3 pb-3 space-y-3">
+                  <div className="flex items-center justify-between mb-1">
+                    <span className="text-[11px] font-medium text-[#6B7280] uppercase tracking-wide">Visit 1</span>
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => {
+                        const newVisit = {
+                          id: `visit-${Date.now()}`,
+                          date: "",
+                          time: "",
+                          duration: null,
+                          assigned_to: Array.isArray(job.assigned_to) ? job.assigned_to : job.assigned_to ? [job.assigned_to] : [],
+                          assigned_to_name: Array.isArray(job.assigned_to_name) ? job.assigned_to_name : job.assigned_to_name ? [job.assigned_to_name] : [],
+                          status: "scheduled"
+                        };
+                        updateJobMutation.mutate({ 
+                          field: 'scheduled_visits', 
+                          value: [...(job.scheduled_visits || []), newVisit] 
+                        });
+                      }}
+                      className="h-7 text-xs font-medium text-[#6B7280] hover:text-[#111827]"
+                    >
+                      <Plus className="w-3.5 h-3.5 mr-1" />
+                      Add Visit
+                    </Button>
+                  </div>
                   <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
                     <div className="flex items-center gap-2.5">
                       <Calendar className="w-5 h-5 text-[#4B5563] flex-shrink-0" />
@@ -894,21 +920,87 @@ export default function JobDetails({ job: initialJob, onClose, onStatusChange, o
                     </div>
                   </div>
                   
-                  {/* Multiple Visits Manager */}
-                  <div className="pt-3 border-t border-[#E5E7EB]">
-                    <ScheduledVisitsManager
-                      visits={job.scheduled_visits || []}
-                      technicians={technicians}
-                      onVisitsChange={(visits) => {
-                        updateJobMutation.mutate({ field: 'scheduled_visits', value: visits });
-                      }}
-                      primaryDate={job.scheduled_date}
-                      primaryTime={job.scheduled_time}
-                      primaryDuration={job.expected_duration}
-                      primaryAssignedTo={Array.isArray(job.assigned_to) ? job.assigned_to : job.assigned_to ? [job.assigned_to] : []}
-                      primaryAssignedToName={Array.isArray(job.assigned_to_name) ? job.assigned_to_name : job.assigned_to_name ? [job.assigned_to_name] : []}
-                    />
-                  </div>
+                  {/* Additional Visits */}
+                  {job.scheduled_visits && job.scheduled_visits.length > 0 && (
+                    <div className="space-y-3 pt-3 border-t border-[#E5E7EB]">
+                      {job.scheduled_visits.map((visit, index) => (
+                        <div key={visit.id} className="space-y-2">
+                          <div className="flex items-center justify-between">
+                            <span className="text-[11px] font-medium text-[#6B7280] uppercase tracking-wide">Visit {index + 2}</span>
+                            <Button
+                              variant="ghost"
+                              size="icon"
+                              onClick={() => {
+                                const updatedVisits = job.scheduled_visits.filter(v => v.id !== visit.id);
+                                updateJobMutation.mutate({ field: 'scheduled_visits', value: updatedVisits });
+                              }}
+                              className="h-6 w-6 text-red-500 hover:text-red-700 hover:bg-red-50"
+                            >
+                              <Trash2 className="w-3.5 h-3.5" />
+                            </Button>
+                          </div>
+                          <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+                            <div className="flex items-center gap-2.5">
+                              <Calendar className="w-5 h-5 text-[#4B5563] flex-shrink-0" />
+                              <div className="flex-1 min-w-0">
+                                <div className="text-[12px] text-[#6B7280] font-normal leading-[1.35] mb-0.5">Date</div>
+                                <EditableField
+                                  value={visit.date}
+                                  onSave={(val) => {
+                                    const updatedVisits = job.scheduled_visits.map(v => 
+                                      v.id === visit.id ? { ...v, date: val } : v
+                                    );
+                                    updateJobMutation.mutate({ field: 'scheduled_visits', value: updatedVisits });
+                                  }}
+                                  type="date"
+                                  displayFormat={(val) => format(parseISO(val), 'MMM d, yyyy')}
+                                  placeholder="Set date"
+                                  className="text-[14px] font-medium text-[#111827] leading-[1.4]"
+                                />
+                              </div>
+                            </div>
+                            <div className="flex items-center gap-2.5">
+                              <Clock className="w-5 h-5 text-[#4B5563] flex-shrink-0" />
+                              <div className="flex-1 min-w-0">
+                                <div className="text-[12px] text-[#6B7280] font-normal leading-[1.35] mb-0.5">Time</div>
+                                <EditableField
+                                  value={visit.time}
+                                  onSave={(val) => {
+                                    const updatedVisits = job.scheduled_visits.map(v => 
+                                      v.id === visit.id ? { ...v, time: val } : v
+                                    );
+                                    updateJobMutation.mutate({ field: 'scheduled_visits', value: updatedVisits });
+                                  }}
+                                  type="time"
+                                  placeholder="Time"
+                                  className="text-[14px] font-medium text-[#111827] leading-[1.4]"
+                                />
+                              </div>
+                            </div>
+                            <div className="flex items-center gap-2.5">
+                              <Timer className="w-5 h-5 text-[#4B5563] flex-shrink-0" />
+                              <div className="flex-1 min-w-0">
+                                <div className="text-[12px] text-[#6B7280] font-normal leading-[1.35] mb-0.5">Duration (hours)</div>
+                                <EditableField
+                                  value={visit.duration}
+                                  onSave={(val) => {
+                                    const updatedVisits = job.scheduled_visits.map(v => 
+                                      v.id === visit.id ? { ...v, duration: parseFloat(val) || null } : v
+                                    );
+                                    updateJobMutation.mutate({ field: 'scheduled_visits', value: updatedVisits });
+                                  }}
+                                  type="text"
+                                  displayFormat={(val) => val ? `${val}h` : '-'}
+                                  placeholder="Duration"
+                                  className="text-[14px] font-medium text-[#111827] leading-[1.4]"
+                                />
+                              </div>
+                            </div>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  )}
                 </div>
               </CollapsibleContent>
             </Collapsible>
