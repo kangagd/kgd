@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { base44 } from "@/api/base44Client";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { Card, CardContent } from "@/components/ui/card";
@@ -25,6 +25,19 @@ export default function Customers() {
   const [editingCustomer, setEditingCustomer] = useState(null);
   const [modalCustomer, setModalCustomer] = useState(null);
   const queryClient = useQueryClient();
+
+  // Handle URL params for direct navigation
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    const customerId = params.get('customerId');
+    
+    if (customerId && customers.length > 0 && !selectedCustomer) {
+      const customer = customers.find((c) => c.id === customerId);
+      if (customer) {
+        setSelectedCustomer(customer);
+      }
+    }
+  }, [customers, selectedCustomer]);
 
   const { data: allCustomers = [], isLoading, refetch } = useQuery({
     queryKey: ['allCustomers'],
