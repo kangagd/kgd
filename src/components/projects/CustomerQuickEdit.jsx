@@ -149,6 +149,18 @@ export default function CustomerQuickEdit({ customerId, projectId, onCustomerUpd
           </div>
         )}
 
+        {customer.source && (
+          <div className="flex items-center gap-2 text-[14px] text-[#4B5563]">
+            <Users className="w-4 h-4" />
+            <span>
+              {customer.source}
+              {customer.source_details && (
+                <span className="text-[#6B7280]"> — {customer.source_details}</span>
+              )}
+            </span>
+          </div>
+        )}
+
         <div className="space-y-2 pt-2">
           {customer.phone && (
             <div className="flex items-center gap-2">
