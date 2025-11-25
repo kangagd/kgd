@@ -61,10 +61,11 @@ export default function Projects() {
 
   const createProjectMutation = useMutation({
     mutationFn: (data) => base44.entities.Project.create(data),
-    onSuccess: () => {
+    onSuccess: (newProject) => {
       queryClient.invalidateQueries({ queryKey: ['projects'] });
       setShowForm(false);
       setEditingProject(null);
+      setSelectedProject(newProject);
     }
   });
 
