@@ -10,6 +10,7 @@ import { Badge } from "@/components/ui/badge";
 import { JobStatusBadge, JobTypeBadge, ProductTypeBadge } from "../common/StatusBadge";
 import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
+import { DuplicateBadge } from "../common/DuplicateWarningCard";
 
 
 
@@ -111,6 +112,7 @@ export default function JobCard({ job, onClick, onViewDetails }) {
                 {job.status && (
                   <JobStatusBadge value={job.status} className="pointer-events-none" />
                 )}
+                <DuplicateBadge record={job} size="sm" />
               </div>
             </div>
             <div className="flex items-center gap-2">

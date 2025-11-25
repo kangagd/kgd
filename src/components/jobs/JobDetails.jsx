@@ -7,6 +7,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Label } from "@/components/ui/label";
 import { Separator } from "@/components/ui/separator";
 import { ArrowLeft, MapPin, Phone, Calendar, Clock, User, Briefcase, FileText, Image as ImageIcon, DollarSign, Sparkles, LogIn, FileCheck, History, Package, ClipboardCheck, LogOut, Timer, AlertCircle, ChevronDown, Mail, Navigation, Trash2, FolderKanban, Camera, Edit, ExternalLink, MessageCircle } from "lucide-react";
+import DuplicateWarningCard, { DuplicateBadge } from "../common/DuplicateWarningCard";
 import { format, parseISO } from "date-fns";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
@@ -724,6 +725,7 @@ export default function JobDetails({ job: initialJob, onClose, onStatusChange, o
                 <Badge className="bg-white text-[#6B7280] border border-[#E5E7EB] font-medium text-[12px] leading-[1.35] px-2.5 py-0.5 rounded-lg hover:bg-white">
                   #{job.job_number}
                 </Badge>
+                <DuplicateBadge record={job} />
               </div>
 
               {/* Middle Group: Job Type + Product + Customer Type Chips */}
@@ -982,6 +984,9 @@ export default function JobDetails({ job: initialJob, onClose, onStatusChange, o
               </TabsList>
 
             <TabsContent value="details" className="space-y-4 mt-3">
+              {/* Duplicate Warning */}
+              <DuplicateWarningCard entityType="Job" record={job} />
+
               {job.project_id && projectJobs.length > 0 &&
               <div className="bg-blue-50 border-2 border-blue-200 rounded-xl p-3 mb-4">
                   <h3 className="text-[14px] font-semibold text-blue-900 leading-[1.4] mb-2 flex items-center gap-1.5">

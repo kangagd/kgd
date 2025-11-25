@@ -4,6 +4,7 @@ import { Phone, Mail, MapPin, Building2, ChevronDown, Eye } from "lucide-react";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 import { CustomerTypeBadge } from "../common/StatusBadge";
 import { Button } from "@/components/ui/button";
+import { DuplicateBadge } from "../common/DuplicateWarningCard";
 
 
 
@@ -41,9 +42,12 @@ export default function CustomerCard({ customer, onClick, onViewDetails }) {
             {/* Header Row */}
             <div>
               <div className="flex items-center justify-between mb-2 pr-8">
-                <h3 className="text-[18px] font-semibold text-[#111827] leading-[1.2]">
-                  {customer.name}
-                </h3>
+                <div className="flex items-center gap-2">
+                  <h3 className="text-[18px] font-semibold text-[#111827] leading-[1.2]">
+                    {customer.name}
+                  </h3>
+                  <DuplicateBadge record={customer} size="sm" />
+                </div>
                 {customer.customer_type && (
                   <CustomerTypeBadge value={customer.customer_type} />
                 )}

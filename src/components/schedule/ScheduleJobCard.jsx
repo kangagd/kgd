@@ -4,6 +4,7 @@ import { Badge } from "@/components/ui/badge";
 import { MapPin, Briefcase, ExternalLink } from "lucide-react";
 import { JobStatusBadge, JobTypeBadge, ProductTypeBadge } from "../common/StatusBadge";
 import { TechnicianAvatarGroup } from "../common/TechnicianAvatar";
+import { DuplicateDot } from "../common/DuplicateWarningCard";
 
 export default function ScheduleJobCard({ job, onClick, onAddressClick, onProjectClick }) {
   return (
@@ -13,8 +14,11 @@ export default function ScheduleJobCard({ job, onClick, onAddressClick, onProjec
     >
       {/* Top Row: Time + Status */}
       <div className="flex items-center justify-between mb-3">
-        <div className="text-sm font-semibold text-[#111827]">
-          {job.scheduled_time || 'Time TBD'}
+        <div className="flex items-center gap-2">
+          <div className="text-sm font-semibold text-[#111827]">
+            {job.scheduled_time || 'Time TBD'}
+          </div>
+          <DuplicateDot record={job} />
         </div>
         <JobStatusBadge value={job.status} />
       </div>
