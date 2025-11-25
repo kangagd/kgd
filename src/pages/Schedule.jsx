@@ -196,6 +196,11 @@ export default function Schedule() {
     navigate(`${createPageUrl("Projects")}?projectId=${projectId}`);
   };
 
+  const handleOpenFullJob = (job) => {
+    setModalJob(null);
+    navigate(`${createPageUrl("Jobs")}?jobId=${job.id}`);
+  };
+
   // Handle drag end for rescheduling
   const handleDragEnd = (result) => {
     if (!result.destination) return;
