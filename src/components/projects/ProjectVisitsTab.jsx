@@ -28,10 +28,19 @@ const outcomeColors = {
 export default function ProjectVisitsTab({ projectId, isReadOnly }) {
   const navigate = useNavigate();
 
-  const { data: visits = [], isLoading } = useQuery({
+  // Fetch jobs linked to this project
+  const { data: jobs = [], isLoading: jobsLoading } = useQuery({
+    queryKey: ['projectJobs', projectId],
+    queryFn: () => base44.entities.Job.filter({ project_id: projectId, deleted_at: { $exists: false } }, '-scheduled_date')
+  });
+
+  // Fetch visit summaries (check-out records)
+  const { data: visits = [], isLoading: visitsLoading } = useQuery({
     queryKey: ['projectJobSummaries', projectId],
     queryFn: () => base44.entities.JobSummary.filter({ project_id: projectId }, '-check_out_time')
   });
+
+  const isLoading = jobsLoading || visitsLoading;
 
   const handleOpenJob = (jobId) => {
     navigate(createPageUrl("Jobs") + `?jobId=${jobId}`);
