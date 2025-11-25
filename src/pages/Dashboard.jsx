@@ -256,26 +256,28 @@ export default function Dashboard() {
             )}
           </div>
 
-          <div className="bg-white rounded-xl border border-[#E5E7EB] p-7 shadow-sm">
-            <h2 className="text-[22px] font-semibold text-[#111827] leading-[1.2] mb-6">Today's Schedule</h2>
-            {todayJobs.length === 0 ? (
-              <div className="text-center py-16">
-                <Clock className="w-14 h-14 mx-auto text-[#D1D5DB] mb-4" />
-                <p className="text-[14px] text-[#4B5563] leading-[1.4] font-normal">No jobs scheduled for today</p>
-              </div>
-            ) : (
-              <div className="space-y-3">
-                {todayJobs.map(job => (
-                  <JobCard
-                    key={job.id}
-                    job={job}
-                    onClick={() => navigate(createPageUrl("Jobs") + `?jobId=${job.id}`)}
-                    onViewDetails={() => {}}
-                  />
-                ))}
-              </div>
-            )}
-          </div>
+          {user?.is_field_technician && (
+            <div className="bg-white rounded-xl border border-[#E5E7EB] p-7 shadow-sm">
+              <h2 className="text-[22px] font-semibold text-[#111827] leading-[1.2] mb-6">Today's Schedule</h2>
+              {todayJobs.length === 0 ? (
+                <div className="text-center py-16">
+                  <Clock className="w-14 h-14 mx-auto text-[#D1D5DB] mb-4" />
+                  <p className="text-[14px] text-[#4B5563] leading-[1.4] font-normal">No jobs scheduled for today</p>
+                </div>
+              ) : (
+                <div className="space-y-3">
+                  {todayJobs.map(job => (
+                    <JobCard
+                      key={job.id}
+                      job={job}
+                      onClick={() => navigate(createPageUrl("Jobs") + `?jobId=${job.id}`)}
+                      onViewDetails={() => {}}
+                    />
+                  ))}
+                </div>
+              )}
+            </div>
+          )}
 
           <div className="bg-white rounded-xl border border-[#E5E7EB] p-7 shadow-sm">
             <h2 className="text-[22px] font-semibold text-[#111827] leading-[1.2] mb-6">Project Updates</h2>
