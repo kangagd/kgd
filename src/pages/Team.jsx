@@ -181,6 +181,25 @@ export default function Team() {
             Mark users as field technicians by updating their profile.
           </p>
         </div>
+
+        {/* Permissions Editor Modal */}
+        <Dialog open={!!selectedUser} onOpenChange={(open) => !open && setSelectedUser(null)}>
+          <DialogContent className="max-w-lg">
+            <DialogHeader>
+              <DialogTitle className="flex items-center gap-2">
+                <Shield className="w-5 h-5 text-[#FAE008]" />
+                Edit Permissions: {selectedUser?.full_name}
+              </DialogTitle>
+            </DialogHeader>
+            {selectedUser && (
+              <RolePermissionsEditor
+                user={selectedUser}
+                onSave={handleSavePermissions}
+                isSaving={updateUserMutation.isPending}
+              />
+            )}
+          </DialogContent>
+        </Dialog>
       </div>
     </div>
   );
