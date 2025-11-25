@@ -5,7 +5,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { ProjectStatusBadge } from "../components/common/StatusBadge";
-import { Plus, TrendingUp, Clock, Briefcase, Calendar, CheckCircle, FolderKanban } from "lucide-react";
+import { Plus, TrendingUp, Clock, Briefcase, Calendar, CheckCircle, FolderKanban, CheckSquare } from "lucide-react";
 import { format, parseISO } from "date-fns";
 import { useNavigate } from "react-router-dom";
 import { createPageUrl } from "@/utils";
@@ -49,6 +49,22 @@ export default function Dashboard() {
   });
 
   const recentProjects = allProjects.filter(p => !p.deleted_at).slice(0, 5);
+
+  const { data: allTasks = [] } = useQuery({
+    queryKey: ['myTasks', user?.email],
+    queryFn: () => base44.entities.Task.filter({ assigned_to_email: user?.email }),
+    enabled: !!user?.email,
+  });
+
+  const myTasks = allTasks
+    .filter(t => t.status !== 'Completed' && t.status !== 'Cancelled')
+    .sort((a, b) => {
+      if (!a.due_date && !b.due_date) return 0;
+      if (!a.due_date) return 1;
+      if (!b.due_date) return -1;
+      return new Date(a.due_date) - new Date(b.due_date);
+    })
+    .slice(0, 5);
 
   const today = new Date().toISOString().split('T')[0];
   const tomorrow = new Date(Date.now() + 86400000).toISOString().split('T')[0];
@@ -180,7 +196,66 @@ export default function Dashboard() {
           </div>
         </div>
 
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-6">
+          <div className="bg-white rounded-xl border border-[#E5E7EB] p-7 shadow-sm">
+            <div className="flex items-center justify-between mb-6">
+              <h2 className="text-[22px] font-semibold text-[#111827] leading-[1.2]">My Tasks</h2>
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={() => navigate(createPageUrl("Tasks"))}
+                className="text-[#6B7280] hover:text-[#111827] text-sm"
+              >
+                View All →
+              </Button>
+            </div>
+            {myTasks.length === 0 ? (
+              <div className="text-center py-16">
+                <CheckSquare className="w-14 h-14 mx-auto text-[#D1D5DB] mb-4" />
+                <p className="text-[14px] text-[#4B5563] leading-[1.4] font-normal">No tasks assigned to you</p>
+              </div>
+            ) : (
+              <div className="space-y-3">
+                {myTasks.map(task => {
+                  const isOverdue = task.due_date && new Date(task.due_date) < new Date() && task.status !== 'Completed';
+                  const isDueToday = task.due_date && new Date(task.due_date).toDateString() === new Date().toDateString();
+                  return (
+                    <div
+                      key={task.id}
+                      className="p-4 rounded-xl border border-[#E5E7EB] hover:bg-[#F9FAFB] hover:border-[#FAE008] transition-all cursor-pointer"
+                      onClick={() => navigate(createPageUrl("Tasks") + `?taskId=${task.id}`)}
+                    >
+                      <div className="flex items-start gap-3">
+                        <div className={`w-2 h-2 rounded-full mt-2 flex-shrink-0 ${
+                          task.priority === 'High' ? 'bg-red-500' : 
+                          task.priority === 'Medium' ? 'bg-yellow-500' : 'bg-blue-500'
+                        }`} />
+                        <div className="flex-1 min-w-0">
+                          <h4 className="text-[14px] font-medium text-[#111827] leading-[1.4] truncate">{task.title}</h4>
+                          {task.due_date && (
+                            <p className={`text-[12px] leading-[1.35] mt-1 ${
+                              isOverdue ? 'text-red-600 font-medium' : 
+                              isDueToday ? 'text-[#D97706] font-medium' : 'text-[#6B7280]'
+                            }`}>
+                              {isOverdue ? 'Overdue: ' : isDueToday ? 'Due today' : 'Due: '}
+                              {!isDueToday && format(new Date(task.due_date), 'MMM d')}
+                            </p>
+                          )}
+                          {task.project_name && (
+                            <p className="text-[12px] text-[#6B7280] leading-[1.35] truncate">{task.project_name}</p>
+                          )}
+                        </div>
+                        <Badge variant={task.status === 'In Progress' ? 'primary' : 'secondary'} className="text-[10px] flex-shrink-0">
+                          {task.status}
+                        </Badge>
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            )}
+          </div>
+
           <div className="bg-white rounded-xl border border-[#E5E7EB] p-7 shadow-sm">
             <h2 className="text-[22px] font-semibold text-[#111827] leading-[1.2] mb-6">Today's Schedule</h2>
             {todayJobs.length === 0 ? (
