@@ -11,20 +11,18 @@ export default function DraggableJobCard({
   onClick, 
   onAddressClick, 
   onProjectClick,
-  isDragging = false,
-  dragHandleProps = {}
+  isDragging = false
 }) {
   return (
     <Card
-      className={`p-4 shadow-sm hover:shadow-md transition-all cursor-pointer border border-[#E5E7EB] rounded-xl bg-white ${
-        isDragging ? 'opacity-50 shadow-lg ring-2 ring-[#FAE008]' : ''
+      className={`p-4 shadow-sm hover:shadow-md transition-all cursor-grab active:cursor-grabbing border border-[#E5E7EB] rounded-xl bg-white ${
+        isDragging ? 'opacity-70 shadow-lg ring-2 ring-[#FAE008] rotate-1' : ''
       }`}
     >
       {/* Drag Handle */}
       <div className="flex items-start gap-2">
         <div 
-          {...dragHandleProps}
-          className="flex-shrink-0 cursor-grab active:cursor-grabbing p-1 -ml-1 hover:bg-[#F3F4F6] rounded transition-colors"
+          className="flex-shrink-0 p-1 -ml-1 hover:bg-[#F3F4F6] rounded transition-colors"
         >
           <GripVertical className="w-4 h-4 text-[#9CA3AF]" />
         </div>
