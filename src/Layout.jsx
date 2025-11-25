@@ -538,24 +538,7 @@ export default function Layout({ children, currentPageName }) {
 
 
 
-          {/* Test Mode Toggle */}
-          {user && user.email === 'admin@kangaroogd.com.au' && (
-            <div className={`p-3 border-b border-[#E5E7EB] flex-shrink-0 ${isCollapsed ? 'flex justify-center' : ''}`}>
-              <button
-                onClick={handleTestModeToggle}
-                className={`flex items-center gap-3 px-3 py-2.5 hover:bg-[#FEF3C7] rounded-lg transition-colors text-[#D97706] ${isCollapsed ? 'justify-center' : 'w-full'}`}
-                title={isCollapsed ? `Test Mode: ${getTestModeLabel()}` : ''}
-              >
-                <TestTube2 className="w-5 h-5 flex-shrink-0" />
-                {!isCollapsed && (
-                  <div className="flex-1 text-left">
-                    <p className="font-medium text-[14px]">Test Mode</p>
-                    <p className="text-[12px] text-[#92400E]">{getTestModeLabel()}</p>
-                  </div>
-                )}
-              </button>
-            </div>
-          )}
+
 
           {/* Collapse Toggle */}
           <div className={`hidden lg:block p-3 border-b border-[#E5E7EB] flex-shrink-0 ${isCollapsed ? 'flex justify-center' : ''}`}>
