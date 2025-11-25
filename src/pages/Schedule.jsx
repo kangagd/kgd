@@ -1,14 +1,20 @@
 import React, { useState } from "react";
 import { base44 } from "@/api/base44Client";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { ChevronLeft, ChevronRight, Calendar as CalendarIcon } from "lucide-react";
 import { format, isSameDay, parseISO, startOfWeek, endOfWeek, eachDayOfInterval, startOfMonth, endOfMonth, addWeeks, subWeeks, addMonths, subMonths, addDays, subDays } from "date-fns";
+import { DragDropContext, Droppable, Draggable } from "@hello-pangea/dnd";
+import { toast } from "sonner";
 import JobDetails from "../components/jobs/JobDetails";
 import ScheduleJobCard from "../components/schedule/ScheduleJobCard";
+import DraggableJobCard from "../components/schedule/DraggableJobCard";
+import RescheduleConfirmModal from "../components/schedule/RescheduleConfirmModal";
+import ConflictWarningModal from "../components/schedule/ConflictWarningModal";
+import useScheduleConflicts from "../components/schedule/useScheduleConflicts";
 import { createPageUrl } from "@/utils";
 import { useNavigate } from "react-router-dom";
 
