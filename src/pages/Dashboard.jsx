@@ -297,7 +297,7 @@ export default function Dashboard() {
                     >
                       <div className="flex items-start justify-between mb-2">
                         <div className="flex-1">
-                          <h4 className="text-[16px] font-medium text-[#111827] leading-[1.4] mb-1 truncate">{project.title}</h4>
+                          <h4 className="text-[16px] font-medium text-[#111827] leading-[1.4] mb-1">{project.title}</h4>
                           <p className="text-[14px] text-[#4B5563] leading-[1.4]">{project.customer_name}</p>
                         </div>
                         <ProjectStatusBadge value={project.status} className="ml-2" />
