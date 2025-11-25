@@ -1,6 +1,4 @@
 import React, { useState, useEffect } from "react";
-import { usePermissions } from "../components/common/usePermissions";
-import PermissionGate from "../components/common/PermissionGate";
 import { base44 } from "@/api/base44Client";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { Card, CardContent } from "@/components/ui/card";

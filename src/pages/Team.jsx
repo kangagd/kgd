@@ -1,59 +1,18 @@
-import React, { useState } from "react";
+import React from "react";
 import { base44 } from "@/api/base44Client";
-import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { useQuery } from "@tanstack/react-query";
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
-import { Users, Mail, Phone, Briefcase, Shield, ChevronRight, X } from "lucide-react";
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
-import { toast } from "sonner";
-import RolePermissionsEditor, { ROLE_LABELS } from "../components/team/RolePermissionsEditor";
-import { usePermissions } from "../components/common/usePermissions";
+import { Users, Mail, Phone, Briefcase } from "lucide-react";
 
 export default function Team() {
-  const [selectedUser, setSelectedUser] = useState(null);
-  const queryClient = useQueryClient();
-  const { isAdmin } = usePermissions();
-
   const { data: users = [], isLoading } = useQuery({
     queryKey: ['users'],
     queryFn: () => base44.entities.User.list(),
   });
 
-  const updateUserMutation = useMutation({
-    mutationFn: ({ id, data }) => base44.entities.User.update(id, data),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['users'] });
-      toast.success('User permissions updated');
-      setSelectedUser(null);
-    },
-    onError: (error) => {
-      toast.error('Failed to update permissions');
-      console.error(error);
-    }
-  });
-
-  const handleSavePermissions = (permData) => {
-    if (!selectedUser) return;
-    updateUserMutation.mutate({
-      id: selectedUser.id,
-      data: permData
-    });
-  };
-
-  const technicians = users.filter(u => u.is_field_technician || u.user_role === 'technician');
-  const admins = users.filter(u => u.role === 'admin' || u.user_role === 'administrator');
-  const managers = users.filter(u => u.user_role === 'manager');
-  const officeStaff = users.filter(u => u.user_role === 'office_staff');
-
-  const getRoleBadge = (user) => {
-    if (user.role === 'admin') {
-      return <Badge className="bg-red-100 text-red-700 border-0">Admin</Badge>;
-    }
-    const role = user.user_role || 'technician';
-    const roleInfo = ROLE_LABELS[role] || ROLE_LABELS.technician;
-    return <Badge className={`${roleInfo.color} border-0`}>{roleInfo.label}</Badge>;
-  };
+  const technicians = users.filter(u => u.is_field_technician);
+  const admins = users.filter(u => u.role === 'admin');
 
   return (
     <div className="p-5 md:p-10 bg-[#ffffff] min-h-screen">
@@ -88,7 +47,12 @@ export default function Team() {
                             <p className="text-sm text-[hsl(25,8%,45%)] mt-1">{tech.job_title}</p>
                           )}
                         </div>
-{getRoleBadge(tech)}
+                        <Badge className={tech.status === 'active' ? 
+                          "bg-green-50 text-green-900 border-green-200 border-2 font-semibold" : 
+                          "bg-[hsl(32,25%,94%)] text-[hsl(25,10%,12%)] border-[hsl(32,15%,88%)] border-2 font-semibold"
+                        }>
+                          {tech.status || 'active'}
+                        </Badge>
                       </div>
                       <div className="space-y-2 text-sm text-[hsl(25,10%,25%)]">
                         <div className="flex items-center gap-2">
@@ -106,18 +70,6 @@ export default function Team() {
                           </div>
                         )}
                       </div>
-                      {isAdmin && (
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          onClick={() => setSelectedUser(tech)}
-                          className="mt-2 text-xs text-[#6B7280] hover:text-[#111827]"
-                        >
-                          <Shield className="w-3 h-3 mr-1" />
-                          Manage Permissions
-                          <ChevronRight className="w-3 h-3 ml-1" />
-                        </Button>
-                      )}
                     </div>
                   ))}
                 </div>
@@ -149,7 +101,9 @@ export default function Team() {
                             <p className="text-sm text-[hsl(25,8%,45%)] mt-1">{admin.job_title}</p>
                           )}
                         </div>
-{getRoleBadge(admin)}
+                        <Badge className="bg-purple-50 text-purple-900 border-purple-200 border-2 font-semibold">
+                          Admin
+                        </Badge>
                       </div>
                       <div className="space-y-2 text-sm text-[hsl(25,10%,25%)]">
                         <div className="flex items-center gap-2">
@@ -181,25 +135,6 @@ export default function Team() {
             Mark users as field technicians by updating their profile.
           </p>
         </div>
-
-        {/* Permissions Editor Modal */}
-        <Dialog open={!!selectedUser} onOpenChange={(open) => !open && setSelectedUser(null)}>
-          <DialogContent className="max-w-lg">
-            <DialogHeader>
-              <DialogTitle className="flex items-center gap-2">
-                <Shield className="w-5 h-5 text-[#FAE008]" />
-                Edit Permissions: {selectedUser?.full_name}
-              </DialogTitle>
-            </DialogHeader>
-            {selectedUser && (
-              <RolePermissionsEditor
-                user={selectedUser}
-                onSave={handleSavePermissions}
-                isSaving={updateUserMutation.isPending}
-              />
-            )}
-          </DialogContent>
-        </Dialog>
       </div>
     </div>
   );
