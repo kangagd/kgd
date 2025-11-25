@@ -142,15 +142,16 @@ export default function CustomerForm({ customer, onSubmit, onCancel, isSubmittin
       
       const newOrg = await base44.entities.Organisation.create(submitData);
       
-      // Invalidate queries to refresh the list
+      // Invalidate and refetch organisations
       await queryClient.invalidateQueries({ queryKey: ['organisations'] });
+      await queryClient.refetchQueries({ queryKey: ['organisations'] });
       
-      // Update form data with new organisation
-      setFormData({
-        ...formData,
+      // Update form data with new organisation immediately
+      setFormData(prev => ({
+        ...prev,
         organisation_id: newOrg.id,
         organisation_name: newOrg.name
-      });
+      }));
       
       setShowNewOrgDialog(false);
       setNewOrgData({
