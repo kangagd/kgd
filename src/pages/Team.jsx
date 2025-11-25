@@ -1,15 +1,89 @@
-import React from "react";
+import React, { useState } from "react";
 import { base44 } from "@/api/base44Client";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Users, Mail, Phone, Briefcase } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
+import { Users, Mail, Phone, Briefcase, Shield, Plus, Pencil, Trash2, Settings } from "lucide-react";
+import { toast } from "sonner";
+import RoleFormModal from "../components/rbac/RoleFormModal";
+import UserRoleAssignModal from "../components/rbac/UserRoleAssignModal";
+import { usePermissions } from "../components/rbac/usePermissions";
+import { ROLE_TEMPLATES } from "../components/rbac/permissionsConfig";
 
 export default function Team() {
+  const [activeTab, setActiveTab] = useState("members");
+  const [showRoleModal, setShowRoleModal] = useState(false);
+  const [editingRole, setEditingRole] = useState(null);
+  const [assigningUser, setAssigningUser] = useState(null);
+  const queryClient = useQueryClient();
+  const { can, isAdmin } = usePermissions();
+
   const { data: users = [], isLoading } = useQuery({
     queryKey: ['users'],
     queryFn: () => base44.entities.User.list(),
   });
+
+  const { data: roles = [], isLoading: rolesLoading } = useQuery({
+    queryKey: ['roles'],
+    queryFn: () => base44.entities.Role.list(),
+  });
+
+  const createRoleMutation = useMutation({
+    mutationFn: (data) => base44.entities.Role.create(data),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['roles'] });
+      setShowRoleModal(false);
+      toast.success('Role created successfully');
+    }
+  });
+
+  const updateRoleMutation = useMutation({
+    mutationFn: ({ id, data }) => base44.entities.Role.update(id, data),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['roles'] });
+      setShowRoleModal(false);
+      setEditingRole(null);
+      toast.success('Role updated successfully');
+    }
+  });
+
+  const deleteRoleMutation = useMutation({
+    mutationFn: (id) => base44.entities.Role.delete(id),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['roles'] });
+      toast.success('Role deleted successfully');
+    }
+  });
+
+  const assignRoleMutation = useMutation({
+    mutationFn: async ({ userId, roleId, roleName }) => {
+      await base44.entities.User.update(userId, {
+        custom_role_id: roleId,
+        custom_role_name: roleName
+      });
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['users'] });
+      setAssigningUser(null);
+      toast.success('Role assigned successfully');
+    }
+  });
+
+  const handleRoleSubmit = (data) => {
+    if (editingRole) {
+      updateRoleMutation.mutate({ id: editingRole.id, data });
+    } else {
+      createRoleMutation.mutate(data);
+    }
+  };
+
+  const handleDeleteRole = (role) => {
+    if (window.confirm(`Are you sure you want to delete the "${role.name}" role?`)) {
+      deleteRoleMutation.mutate(role.id);
+    }
+  };
 
   const technicians = users.filter(u => u.is_field_technician);
   const admins = users.filter(u => u.role === 'admin');
@@ -19,8 +93,18 @@ export default function Team() {
       <div className="max-w-6xl mx-auto">
         <div className="py-3 lg:py-4 mb-4 lg:mb-6">
           <h1 className="text-2xl font-bold text-[#111827] leading-tight">Team</h1>
-          <p className="text-sm text-[#4B5563] mt-1">Manage your team members</p>
+          <p className="text-sm text-[#4B5563] mt-1">Manage your team members and roles</p>
         </div>
+
+        <Tabs value={activeTab} onValueChange={setActiveTab} className="mb-6">
+          <TabsList>
+            <TabsTrigger value="members">Team Members</TabsTrigger>
+            {(isAdmin || can('team', 'manage_roles')) && (
+              <TabsTrigger value="roles">Roles & Permissions</TabsTrigger>
+            )}
+          </TabsList>
+
+          <TabsContent value="members" className="mt-6">
 
         <div className="grid lg:grid-cols-2 gap-6">
           <Card className="border-2 border-[hsl(32,15%,88%)] shadow-lg rounded-2xl">
