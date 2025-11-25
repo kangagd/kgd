@@ -630,7 +630,30 @@ export default function Layout({ children, currentPageName }) {
         {/* Desktop Sticky Header with Search and Notification */}
         <div className="hidden lg:flex sticky top-0 z-30 bg-[#ffffff] border-b border-[#E5E7EB] px-6 py-3 items-center justify-between gap-4">
           <GlobalSearchDropdown />
-          <NotificationBell user={user} />
+          <div className="flex items-center gap-1">
+            <Link
+              to={createPageUrl("Tasks")}
+              className={`p-2 rounded-lg transition-colors ${location.pathname === createPageUrl("Tasks") ? 'bg-[#FAE008]/20 text-[#111827]' : 'text-[#6B7280] hover:bg-[#F3F4F6] hover:text-[#111827]'}`}
+              title="Tasks"
+            >
+              <CheckSquare className="w-5 h-5" />
+            </Link>
+            <Link
+              to={createPageUrl("Inbox")}
+              className={`p-2 rounded-lg transition-colors ${location.pathname === createPageUrl("Inbox") ? 'bg-[#FAE008]/20 text-[#111827]' : 'text-[#6B7280] hover:bg-[#F3F4F6] hover:text-[#111827]'}`}
+              title="Inbox"
+            >
+              <Mail className="w-5 h-5" />
+            </Link>
+            <Link
+              to={createPageUrl("Schedule")}
+              className={`p-2 rounded-lg transition-colors ${location.pathname === createPageUrl("Schedule") ? 'bg-[#FAE008]/20 text-[#111827]' : 'text-[#6B7280] hover:bg-[#F3F4F6] hover:text-[#111827]'}`}
+              title="Schedule"
+            >
+              <Calendar className="w-5 h-5" />
+            </Link>
+            <NotificationBell user={user} />
+          </div>
         </div>
 
         {/* Page Content */}
