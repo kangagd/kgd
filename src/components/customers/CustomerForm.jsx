@@ -25,6 +25,8 @@ export default function CustomerForm({ customer, onSubmit, onCancel, isSubmittin
   const [formData, setFormData] = useState(customer || {
     name: "",
     customer_type: "",
+    source: "",
+    source_details: "",
     phone: "",
     email: "",
     secondary_phone: "",
