@@ -15,6 +15,8 @@ import DraggableJobCard from "../components/schedule/DraggableJobCard";
 import RescheduleConfirmModal from "../components/schedule/RescheduleConfirmModal";
 import ConflictWarningModal from "../components/schedule/ConflictWarningModal";
 import useScheduleConflicts from "../components/schedule/useScheduleConflicts";
+import EntityModal from "../components/common/EntityModal";
+import JobModalView from "../components/jobs/JobModalView";
 import { createPageUrl } from "@/utils";
 import { useNavigate } from "react-router-dom";
 
