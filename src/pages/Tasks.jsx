@@ -4,11 +4,12 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Plus, CheckSquare, Loader2, Filter, Calendar } from "lucide-react";
+import { Plus, CheckSquare, Loader2, Filter, Calendar, LayoutList, Columns } from "lucide-react";
 import { isPast, isToday, isThisWeek, startOfDay } from "date-fns";
 import TaskCard from "../components/tasks/TaskCard";
 import TaskFormModal from "../components/tasks/TaskFormModal";
 import TaskDetailModal from "../components/tasks/TaskDetailModal";
+import TaskKanbanView from "../components/tasks/TaskKanbanView";
 import { toast } from "sonner";
 
 export default function Tasks() {
@@ -17,6 +18,7 @@ export default function Tasks() {
   const [statusFilter, setStatusFilter] = useState("open");
   const [dueFilter, setDueFilter] = useState("all");
   const [assigneeFilter, setAssigneeFilter] = useState("all");
+  const [viewMode, setViewMode] = useState("list"); // "list" or "kanban"
   const [showCreateModal, setShowCreateModal] = useState(false);
   const [selectedTask, setSelectedTask] = useState(null);
 
@@ -294,7 +296,7 @@ export default function Tasks() {
         </div>
 
         {/* Filters */}
-        <div className="flex flex-col lg:flex-row gap-4 mb-6">
+        <div className="flex flex-col lg:flex-row lg:items-center gap-4 mb-6">
           {/* Status Tabs */}
           <Tabs value={statusFilter} onValueChange={setStatusFilter} className="w-full lg:w-auto">
             <TabsList className="bg-white w-full lg:w-auto">
@@ -306,7 +308,7 @@ export default function Tasks() {
           </Tabs>
 
           {/* Additional Filters */}
-          <div className="flex flex-wrap gap-3">
+          <div className="flex flex-wrap gap-3 flex-1">
             <Select value={dueFilter} onValueChange={setDueFilter}>
               <SelectTrigger className="w-full lg:w-[150px]">
                 <SelectValue placeholder="Due date" />
@@ -332,9 +334,29 @@ export default function Tasks() {
               </SelectContent>
             </Select>
           </div>
+
+          {/* View Toggle */}
+          <div className="flex items-center gap-1 bg-white rounded-lg border border-[#E5E7EB] p-1">
+            <Button
+              variant={viewMode === "list" ? "default" : "ghost"}
+              size="sm"
+              onClick={() => setViewMode("list")}
+              className={viewMode === "list" ? "bg-[#FAE008] text-[#111827] hover:bg-[#E5CF07]" : ""}
+            >
+              <LayoutList className="w-4 h-4" />
+            </Button>
+            <Button
+              variant={viewMode === "kanban" ? "default" : "ghost"}
+              size="sm"
+              onClick={() => setViewMode("kanban")}
+              className={viewMode === "kanban" ? "bg-[#FAE008] text-[#111827] hover:bg-[#E5CF07]" : ""}
+            >
+              <Columns className="w-4 h-4" />
+            </Button>
+          </div>
         </div>
 
-        {/* Task List */}
+        {/* Task Views */}
         {isLoading ? (
           <div className="flex items-center justify-center py-16">
             <Loader2 className="w-8 h-8 animate-spin text-[#6B7280]" />
@@ -351,6 +373,13 @@ export default function Tasks() {
               Create your first task
             </Button>
           </div>
+        ) : viewMode === "kanban" ? (
+          <TaskKanbanView
+            tasks={filteredTasks}
+            users={users}
+            onTaskClick={setSelectedTask}
+            onToggleComplete={handleToggleComplete}
+          />
         ) : (
           <div className="space-y-3">
             {filteredTasks.map(task => (
