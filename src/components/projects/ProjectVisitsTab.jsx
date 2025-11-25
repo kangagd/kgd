@@ -63,17 +63,91 @@ export default function ProjectVisitsTab({ projectId, isReadOnly }) {
     );
   }
 
-  if (visits.length === 0) {
+  if (jobs.length === 0 && visits.length === 0) {
     return (
       <div className="text-center py-12 bg-[#F8F9FA] rounded-lg border border-[#E5E7EB]">
         <p className="text-[14px] text-[#6B7280] mb-2">No visits recorded yet</p>
-        <p className="text-[12px] text-[#9CA3AF]">Visits will appear here after technicians check out</p>
+        <p className="text-[12px] text-[#9CA3AF]">Jobs will appear here once scheduled</p>
       </div>
     );
   }
 
+  // Create a combined list: jobs that don't have visit summaries + visit summaries
+  const jobsWithoutSummaries = jobs.filter(job => 
+    !visits.some(visit => visit.job_id === job.id)
+  );
+
   return (
     <div className="space-y-3">
+      {/* Jobs without visit summaries (scheduled/open jobs) */}
+      {jobsWithoutSummaries.map((job) => (
+        <Card key={job.id} className="border border-[#E5E7EB] shadow-sm hover:border-[#FAE008] transition-all">
+          <CardContent className="p-4">
+            <div className="space-y-3">
+              {/* Header Row */}
+              <div className="flex items-start justify-between gap-3">
+                <div className="flex-1 space-y-2">
+                  <div className="flex items-center gap-2 flex-wrap">
+                    <Badge className="bg-white text-[#6B7280] hover:bg-white border border-[#E5E7EB] font-medium text-xs px-2.5 py-0.5 rounded-lg">
+                      #{job.job_number}
+                    </Badge>
+                    {job.job_type_name && (
+                      <Badge className="bg-[#EDE9FE] text-[#6D28D9] hover:bg-[#EDE9FE] border-0 font-semibold text-xs px-3 py-1 rounded-lg">
+                        {job.job_type_name}
+                      </Badge>
+                    )}
+                    {job.status && (
+                      <Badge className={`${statusColors[job.status]} font-semibold text-xs px-3 py-1 rounded-lg border`}>
+                        {job.status}
+                      </Badge>
+                    )}
+                  </div>
+                </div>
+              </div>
+
+              {/* Meta Info Row */}
+              <div className="grid grid-cols-2 md:grid-cols-3 gap-3 text-sm">
+                {job.assigned_to_name && job.assigned_to_name.length > 0 && (
+                  <div className="flex items-center gap-2">
+                    <User className="w-4 h-4 text-[#6B7280] flex-shrink-0" />
+                    <span className="text-[#111827] font-medium truncate">{job.assigned_to_name.join(', ')}</span>
+                  </div>
+                )}
+                {job.scheduled_date && (
+                  <div className="flex items-center gap-2">
+                    <Calendar className="w-4 h-4 text-[#6B7280] flex-shrink-0" />
+                    <span className="text-[#4B5563]">
+                      {format(new Date(job.scheduled_date), 'MMM d, yyyy')}
+                      {job.scheduled_time && ` at ${job.scheduled_time}`}
+                    </span>
+                  </div>
+                )}
+                {job.expected_duration && (
+                  <div className="flex items-center gap-2">
+                    <Clock className="w-4 h-4 text-[#6B7280] flex-shrink-0" />
+                    <span className="text-[#4B5563] font-medium">{job.expected_duration}h expected</span>
+                  </div>
+                )}
+              </div>
+
+              {/* Footer with button */}
+              <div className="flex items-center justify-end pt-3 border-t border-[#E5E7EB]">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => handleOpenJob(job.id)}
+                  className="gap-2 hover:bg-[#FAE008] hover:text-[#111827] hover:border-[#FAE008] transition-all"
+                >
+                  Open Job
+                  <ExternalLink className="w-3 h-3" />
+                </Button>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+      ))}
+
+      {/* Completed visit summaries */}
       {visits.map((visit) => (
         <Card key={visit.id} className="border border-[#E5E7EB] shadow-sm hover:border-[#FAE008] transition-all">
           <CardContent className="p-4">
