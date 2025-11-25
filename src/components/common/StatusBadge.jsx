@@ -19,7 +19,7 @@ const BADGE_VARIANTS = {
     "Quote Approved": "bg-indigo-100 text-indigo-700 hover:bg-indigo-200",
     "Final Measure": "bg-cyan-100 text-cyan-700 hover:bg-cyan-200",
     "Parts Ordered": "bg-amber-100 text-amber-700 hover:bg-amber-200",
-    "Scheduled": "bg-[#FAE008]/20 text-[#92400E] hover:bg-[#FAE008]/30",
+    "Scheduled": "bg-blue-100 text-blue-700 hover:bg-blue-200",
     "Completed": "bg-emerald-100 text-emerald-700 hover:bg-emerald-200",
   },
   
@@ -52,7 +52,7 @@ const BADGE_VARIANTS = {
   // Job Statuses
   jobStatus: {
     "Open": "bg-slate-100 text-slate-700 hover:bg-slate-200",
-    "Scheduled": "bg-[#FAE008]/20 text-[#92400E] hover:bg-[#FAE008]/30",
+    "Scheduled": "bg-blue-100 text-blue-700 hover:bg-blue-200",
     "Completed": "bg-emerald-100 text-emerald-700 hover:bg-emerald-200",
     "Cancelled": "bg-slate-100 text-slate-700 hover:bg-slate-200",
   },
