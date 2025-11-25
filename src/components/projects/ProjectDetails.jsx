@@ -43,6 +43,7 @@ import CustomerQuickEdit from "./CustomerQuickEdit";
 import EntityModal from "../common/EntityModal";
 import JobModalView from "../jobs/JobModalView";
 import TasksPanel from "../tasks/TasksPanel";
+import ProjectEmailSection from "./ProjectEmailSection";
 
 const statusColors = {
   "Lead": "bg-slate-100 text-slate-700",
