@@ -151,7 +151,12 @@ export default function PushNotificationSetup() {
               <Button
                 variant="outline"
                 onClick={disableNotifications}
+                onTouchEnd={(e) => {
+                  e.preventDefault();
+                  if (!isLoading) disableNotifications();
+                }}
                 disabled={isLoading}
+                className="min-h-[44px] min-w-[100px] touch-manipulation"
               >
                 {isLoading && <Loader2 className="w-4 h-4 mr-2 animate-spin" />}
                 <BellOff className="w-4 h-4 mr-2" />
@@ -160,8 +165,12 @@ export default function PushNotificationSetup() {
             ) : (
               <Button
                 onClick={enableNotifications}
+                onTouchEnd={(e) => {
+                  e.preventDefault();
+                  if (!isLoading && permission !== 'denied') enableNotifications();
+                }}
                 disabled={isLoading || permission === 'denied'}
-                className="bg-[#FAE008] text-gray-900 hover:bg-[#E5CF07]"
+                className="bg-[#FAE008] text-gray-900 hover:bg-[#E5CF07] min-h-[44px] min-w-[100px] touch-manipulation"
               >
                 {isLoading && <Loader2 className="w-4 h-4 mr-2 animate-spin" />}
                 <Bell className="w-4 h-4 mr-2" />
