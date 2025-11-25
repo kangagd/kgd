@@ -543,7 +543,138 @@ export default function Schedule() {
     );
   }
 
-  // For mobile technicians - simple list view
+  // Render technician week view (simplified, no drag-drop)
+  const renderTechnicianWeekView = () => {
+    const weekStart = startOfWeek(selectedDate, { weekStartsOn: 1 });
+    const weekEnd = endOfWeek(selectedDate, { weekStartsOn: 1 });
+    const weekDays = eachDayOfInterval({ start: weekStart, end: weekEnd });
+
+    return (
+      <div className="space-y-4">
+        {weekDays.map(day => {
+          const dayJobs = getFilteredJobs((date) => isSameDay(date, day));
+          const isToday = isSameDay(day, new Date());
+
+          return (
+            <div
+              key={day.toISOString()}
+              className={`rounded-xl p-3 ${isToday ? 'bg-blue-50/50 border border-blue-200' : 'bg-white border border-[#E5E7EB]'}`}
+            >
+              <h3 className={`text-base font-semibold mb-3 ${isToday ? 'text-blue-600' : 'text-[#111827]'}`}>
+                {format(day, 'EEEE, MMM d')}
+                {isToday && <span className="ml-2 text-xs font-normal text-blue-500">(Today)</span>}
+              </h3>
+              {dayJobs.length === 0 ? (
+                <p className="text-sm text-[#9CA3AF] py-2">No jobs</p>
+              ) : (
+                <div className="space-y-2">
+                  {dayJobs.map(job => (
+                    <ScheduleJobCard
+                      key={job.id}
+                      job={job}
+                      onClick={() => setSelectedJob(job)}
+                      onAddressClick={handleAddressClick}
+                      onProjectClick={handleProjectClick}
+                    />
+                  ))}
+                </div>
+              )}
+            </div>
+          );
+        })}
+      </div>
+    );
+  };
+
+  // Render technician month view (simplified calendar)
+  const renderTechnicianMonthView = () => {
+    const monthStart = startOfMonth(selectedDate);
+    const monthEnd = endOfMonth(selectedDate);
+    const monthJobs = getFilteredJobs((date) => date >= monthStart && date <= monthEnd);
+
+    // Group jobs by date
+    const jobsByDate = {};
+    monthJobs.forEach(job => {
+      if (job.scheduled_date) {
+        const dateKey = format(parseISO(job.scheduled_date), 'yyyy-MM-dd');
+        if (!jobsByDate[dateKey]) jobsByDate[dateKey] = [];
+        jobsByDate[dateKey].push(job);
+      }
+    });
+
+    // Calculate calendar grid
+    const calendarStart = startOfWeek(monthStart, { weekStartsOn: 1 });
+    const calendarEnd = endOfWeek(monthEnd, { weekStartsOn: 1 });
+    const calendarDays = eachDayOfInterval({ start: calendarStart, end: calendarEnd });
+
+    const weekDayHeaders = ['M', 'T', 'W', 'T', 'F', 'S', 'S'];
+
+    return (
+      <div className="bg-white border border-[#E5E7EB] rounded-xl overflow-hidden">
+        {/* Week day headers */}
+        <div className="grid grid-cols-7 border-b border-[#E5E7EB]">
+          {weekDayHeaders.map((day, idx) => (
+            <div key={idx} className="p-2 text-center text-xs font-semibold text-[#6B7280] bg-[#F9FAFB]">
+              {day}
+            </div>
+          ))}
+        </div>
+
+        {/* Calendar grid */}
+        <div className="grid grid-cols-7">
+          {calendarDays.map((day, index) => {
+            const dateStr = format(day, 'yyyy-MM-dd');
+            const dayJobs = jobsByDate[dateStr] || [];
+            const isToday = isSameDay(day, new Date());
+            const isCurrentMonth = isSameMonth(day, selectedDate);
+
+            return (
+              <div
+                key={dateStr}
+                onClick={() => {
+                  setSelectedDate(day);
+                  setView("day");
+                }}
+                className={`min-h-[70px] border-b border-r border-[#E5E7EB] p-1 cursor-pointer hover:bg-[#FFFEF5] transition-colors ${
+                  isToday ? 'bg-blue-50' : !isCurrentMonth ? 'bg-[#F9FAFB]' : 'bg-white'
+                } ${index % 7 === 6 ? 'border-r-0' : ''}`}
+              >
+                {/* Date number */}
+                <div className={`text-right mb-1 ${
+                  isToday ? 'text-blue-600 font-bold' : !isCurrentMonth ? 'text-[#9CA3AF]' : 'text-[#111827]'
+                }`}>
+                  <span className={`text-xs ${isToday ? 'bg-blue-600 text-white rounded-full px-1.5 py-0.5' : ''}`}>
+                    {format(day, 'd')}
+                  </span>
+                </div>
+
+                {/* Job count indicator */}
+                {dayJobs.length > 0 && (
+                  <div className="flex flex-col gap-0.5">
+                    {dayJobs.slice(0, 2).map((job) => (
+                      <div
+                        key={job.id}
+                        className="text-[10px] bg-[#FAE008]/30 text-[#111827] px-1 py-0.5 rounded truncate"
+                      >
+                        {job.scheduled_time || ''} #{job.job_number}
+                      </div>
+                    ))}
+                    {dayJobs.length > 2 && (
+                      <div className="text-[10px] text-[#6B7280] px-1">
+                        +{dayJobs.length - 2} more
+                      </div>
+                    )}
+                  </div>
+                )}
+              </div>
+            );
+          })}
+        </div>
+      </div>
+    );
+  };
+
+  // For mobile technicians - with Day/Week/Month views
   if (isTechnician) {
     const dayJobs = getFilteredJobs((date) => isSameDay(date, selectedDate));
 
@@ -552,15 +683,37 @@ export default function Schedule() {
         <div className="max-w-7xl mx-auto">
           <div className="mb-4">
             <h1 className="text-xl font-bold text-[#111827] leading-tight">Schedule</h1>
+            <p className="text-sm text-[#4B5563] mt-1">{getDateRangeText()}</p>
           </div>
+
+          {/* View Tabs */}
+          <Tabs value={view} onValueChange={setView} className="mb-4">
+            <TabsList className="w-full bg-white shadow-sm">
+              <TabsTrigger value="day" className="flex-1 data-[state=active]:font-semibold">
+                Day
+              </TabsTrigger>
+              <TabsTrigger value="week" className="flex-1 data-[state=active]:font-semibold">
+                Week
+              </TabsTrigger>
+              <TabsTrigger value="month" className="flex-1 data-[state=active]:font-semibold">
+                Month
+              </TabsTrigger>
+            </TabsList>
+          </Tabs>
 
           <div className="flex items-center justify-between mb-4 bg-white border border-[#E5E7EB] rounded-2xl p-3">
             <Button variant="outline" size="icon" onClick={handlePrevious} className="h-8 w-8 border-none hover:bg-[#F3F4F6]">
               <ChevronLeft className="w-4 h-4" />
             </Button>
             <div className="text-center">
-              <div className="text-base font-bold text-[#111827]">{format(selectedDate, 'EEEE')}</div>
-              <div className="text-sm text-[#4B5563]">{format(selectedDate, 'MMM d, yyyy')}</div>
+              <div className="text-base font-bold text-[#111827]">
+                {view === "day" && format(selectedDate, 'EEEE')}
+                {view === "week" && `Week of ${format(startOfWeek(selectedDate, { weekStartsOn: 1 }), 'MMM d')}`}
+                {view === "month" && format(selectedDate, 'MMMM yyyy')}
+              </div>
+              {view === "day" && (
+                <div className="text-sm text-[#4B5563]">{format(selectedDate, 'MMM d, yyyy')}</div>
+              )}
             </div>
             <Button variant="outline" size="icon" onClick={handleNext} className="h-8 w-8 border-none hover:bg-[#F3F4F6]">
               <ChevronRight className="w-4 h-4" />
@@ -580,25 +733,33 @@ export default function Schedule() {
                 </Card>
               ))}
             </div>
-          ) : dayJobs.length === 0 ? (
-            <div className="flex flex-col items-center justify-center py-16">
-              <div className="w-16 h-16 bg-[#F3F4F6] rounded-full flex items-center justify-center mb-4">
-                <CalendarIcon className="w-8 h-8 text-[#6B7280]" />
-              </div>
-              <p className="text-[#4B5563] text-center">No jobs scheduled for this day.</p>
-            </div>
           ) : (
-            <div className="space-y-3">
-              {dayJobs.map(job => (
-                <ScheduleJobCard
-                  key={job.id}
-                  job={job}
-                  onClick={() => setSelectedJob(job)}
-                  onAddressClick={handleAddressClick}
-                  onProjectClick={handleProjectClick}
-                />
-              ))}
-            </div>
+            <>
+              {view === "day" && (
+                dayJobs.length === 0 ? (
+                  <div className="flex flex-col items-center justify-center py-16">
+                    <div className="w-16 h-16 bg-[#F3F4F6] rounded-full flex items-center justify-center mb-4">
+                      <CalendarIcon className="w-8 h-8 text-[#6B7280]" />
+                    </div>
+                    <p className="text-[#4B5563] text-center">No jobs scheduled for this day.</p>
+                  </div>
+                ) : (
+                  <div className="space-y-3">
+                    {dayJobs.map(job => (
+                      <ScheduleJobCard
+                        key={job.id}
+                        job={job}
+                        onClick={() => setSelectedJob(job)}
+                        onAddressClick={handleAddressClick}
+                        onProjectClick={handleProjectClick}
+                      />
+                    ))}
+                  </div>
+                )
+              )}
+              {view === "week" && renderTechnicianWeekView()}
+              {view === "month" && renderTechnicianMonthView()}
+            </>
           )}
         </div>
       </div>
