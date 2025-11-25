@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from "react";
+import React, { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Bell, BellOff, Loader2 } from "lucide-react";
@@ -10,7 +10,6 @@ export default function PushNotificationSetup() {
   const [permission, setPermission] = useState("default");
   const [isRegistered, setIsRegistered] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
-  const isProcessingRef = useRef(false);
 
   useEffect(() => {
     // Check if push notifications are supported
@@ -64,12 +63,7 @@ export default function PushNotificationSetup() {
   };
 
   const enableNotifications = async () => {
-    // Use ref to prevent concurrent executions (more reliable than state)
-    if (isProcessingRef.current) {
-      console.log('Already processing, skipping');
-      return;
-    }
-    isProcessingRef.current = true;
+    if (isLoading) return;
     setIsLoading(true);
     
     try {
@@ -121,7 +115,6 @@ export default function PushNotificationSetup() {
       toast.error(error.message || 'Failed to enable notifications');
     } finally {
       setIsLoading(false);
-      isProcessingRef.current = false;
     }
   };
 
@@ -193,11 +186,7 @@ export default function PushNotificationSetup() {
               </Button>
             ) : (
               <Button
-                onClick={(e) => {
-                  e.preventDefault();
-                  e.stopPropagation();
-                  enableNotifications();
-                }}
+                onClick={enableNotifications}
                 disabled={isLoading || permission === 'denied'}
                 className="bg-[#FAE008] text-gray-900 hover:bg-[#E5CF07] min-h-[44px] min-w-[100px]"
               >
