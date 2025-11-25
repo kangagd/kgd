@@ -728,6 +728,17 @@ export default function Schedule() {
           newTime={pendingReschedule?.newTime}
           isSubmitting={false}
         />
+
+        {/* Job Modal */}
+        <EntityModal
+          open={!!modalJob}
+          onClose={() => setModalJob(null)}
+          title={`Job #${modalJob?.job_number}`}
+          onOpenFullPage={() => handleOpenFullJob(modalJob)}
+          fullPageLabel="Open Full Job"
+        >
+          {modalJob && <JobModalView job={modalJob} />}
+        </EntityModal>
       </div>
     </div>
   );
