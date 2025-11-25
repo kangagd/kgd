@@ -188,6 +188,26 @@ export default function CustomerDetails({ customer, onClose, onEdit, onDelete })
             </div>
           </div>
 
+          {customer.source && (
+            <div className="bg-white rounded-lg border border-[#E5E7EB] p-4">
+              <h3 className="text-[14px] font-semibold text-[#111827] leading-[1.4] mb-4">Source</h3>
+              <div className="flex items-start gap-3">
+                <Users className="text-indigo-600 w-6 h-6 flex-shrink-0 mt-0.5" />
+                <div className="flex-1 min-w-0 flex flex-col gap-1">
+                  <div className="text-base text-[#111827] leading-normal">
+                    {customer.source}
+                  </div>
+                  {customer.source_details && (
+                    <div className="text-sm text-[#6B7280]">
+                      {customer.source === "Word of mouth" ? "Referred by: " : ""}
+                      {customer.source_details}
+                    </div>
+                  )}
+                </div>
+              </div>
+            </div>
+          )}
+
           {customer.notes && (
             <div>
               <h3 className="text-[14px] font-semibold text-[#111827] leading-[1.4] mb-2">Notes</h3>
