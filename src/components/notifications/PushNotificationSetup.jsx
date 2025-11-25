@@ -62,11 +62,16 @@ export default function PushNotificationSetup() {
       const registration = await navigator.serviceWorker.register('/sw.js');
       await navigator.serviceWorker.ready;
 
+      // Get VAPID public key from backend
+      const vapidResponse = await base44.functions.invoke('getVapidPublicKey');
+      if (!vapidResponse.data?.vapidPublicKey) {
+        throw new Error('Failed to get VAPID public key');
+      }
+      
       // Subscribe to push notifications
-      const vapidPublicKey = 'YOUR_VAPID_PUBLIC_KEY'; // This should come from your backend
       const subscription = await registration.pushManager.subscribe({
         userVisibleOnly: true,
-        applicationServerKey: urlBase64ToUint8Array(vapidPublicKey)
+        applicationServerKey: urlBase64ToUint8Array(vapidResponse.data.vapidPublicKey)
       });
 
       // Get user info
@@ -74,15 +79,15 @@ export default function PushNotificationSetup() {
 
       // Send subscription to backend
       const response = await base44.functions.invoke('registerNotificationDevice', {
-        device_token: JSON.stringify(subscription),
-        platform: 'web',
-        user_email: user.email,
-        user_name: user.full_name
+        push_token: JSON.stringify(subscription),
+        device_type: 'web'
       });
 
       if (response.data.success) {
         setIsRegistered(true);
         toast.success('Push notifications enabled!');
+      } else {
+        throw new Error(response.data.error || 'Registration failed');
       }
     } catch (error) {
       console.error('Error enabling notifications:', error);
