@@ -277,6 +277,55 @@ export default function CustomerQuickEdit({ customerId, projectId, onCustomerUpd
         </div>
 
         <div>
+          <Label className="text-[12px] text-[#6B7280]">Source</Label>
+          <Select
+            value={formData.source || "none"}
+            onValueChange={(val) => setFormData({ ...formData, source: val === "none" ? "" : val, source_details: "" })}
+          >
+            <SelectTrigger className="h-9 text-[14px]">
+              <SelectValue placeholder="How did they find us?" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="none">None</SelectItem>
+              <SelectItem value="Word of mouth">Word of mouth</SelectItem>
+              <SelectItem value="Google">Google</SelectItem>
+              <SelectItem value="Socials">Socials</SelectItem>
+              <SelectItem value="Car/Trailer">Car/Trailer</SelectItem>
+              <SelectItem value="Builder">Builder</SelectItem>
+              <SelectItem value="Real Estate">Real Estate</SelectItem>
+              <SelectItem value="Strata">Strata</SelectItem>
+              <SelectItem value="Gliderol">Gliderol</SelectItem>
+              <SelectItem value="4D">4D</SelectItem>
+              <SelectItem value="Other">Other</SelectItem>
+            </SelectContent>
+          </Select>
+        </div>
+
+        {formData.source === "Word of mouth" && (
+          <div>
+            <Label className="text-[12px] text-[#6B7280]">Referring Customer</Label>
+            <Input
+              value={formData.source_details}
+              onChange={(e) => setFormData({ ...formData, source_details: e.target.value })}
+              className="h-9 text-[14px]"
+              placeholder="Referring customer"
+            />
+          </div>
+        )}
+
+        {formData.source === "Other" && (
+          <div>
+            <Label className="text-[12px] text-[#6B7280]">Source Details</Label>
+            <Input
+              value={formData.source_details}
+              onChange={(e) => setFormData({ ...formData, source_details: e.target.value })}
+              className="h-9 text-[14px]"
+              placeholder="Please specify"
+            />
+          </div>
+        )}
+
+        <div>
           <Label className="text-[12px] text-[#6B7280]">Phone</Label>
           <Input
             type="tel"
