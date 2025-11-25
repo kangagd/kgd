@@ -3,11 +3,12 @@ import { base44 } from "@/api/base44Client";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Plus, Search, SlidersHorizontal, User, Filter, Eye } from "lucide-react";
+import { Plus, Search, SlidersHorizontal, User, Filter, Eye, AlertTriangle } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { ProjectStatusBadge, ProjectTypeBadge } from "../components/common/StatusBadge";
 import { Card, CardContent } from "@/components/ui/card";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Checkbox } from "@/components/ui/checkbox";
 import {
   Select,
   SelectContent,
@@ -21,6 +22,7 @@ import ProjectDetails from "../components/projects/ProjectDetails";
 import EntityModal from "../components/common/EntityModal.jsx";
 import ProjectModalView from "../components/projects/ProjectModalView";
 import { createPageUrl } from "@/utils";
+import { DuplicateBadge } from "../components/common/DuplicateWarningCard";
 
 
 
@@ -36,6 +38,7 @@ export default function Projects() {
   const [selectedProject, setSelectedProject] = useState(null);
   const [editingProject, setEditingProject] = useState(null);
   const [modalProject, setModalProject] = useState(null);
+  const [showDuplicatesOnly, setShowDuplicatesOnly] = useState(false);
   const queryClient = useQueryClient();
 
   const { data: allProjects = [], isLoading } = useQuery({
@@ -159,8 +162,10 @@ export default function Projects() {
         if (startDate && new Date(startDate) > projectDate) matchesDateRange = false;
         if (endDate && new Date(endDate) < projectDate) matchesDateRange = false;
       }
+
+      const matchesDuplicateFilter = !showDuplicatesOnly || project.is_potential_duplicate;
       
-      return matchesSearch && matchesStage && matchesPartsStatus && matchesDateRange;
+      return matchesSearch && matchesStage && matchesPartsStatus && matchesDateRange && matchesDuplicateFilter;
     })
     .sort((a, b) => {
       if (sortBy === "created_date") {
@@ -282,6 +287,21 @@ export default function Projects() {
                 <TabsTrigger value="Warranty" className="whitespace-nowrap flex-shrink-0">Warranty</TabsTrigger>
               </TabsList>
             </Tabs>
+          </div>
+
+          <div className="flex items-center gap-2">
+            <Checkbox
+              id="project-duplicates-filter"
+              checked={showDuplicatesOnly}
+              onCheckedChange={setShowDuplicatesOnly}
+            />
+            <label
+              htmlFor="project-duplicates-filter"
+              className="text-sm text-[#4B5563] cursor-pointer flex items-center gap-1.5"
+            >
+              <AlertTriangle className="w-3.5 h-3.5 text-[#D97706]" />
+              Show only potential duplicates
+            </label>
           </div>
 
           {showFilters && (
@@ -409,14 +429,17 @@ export default function Projects() {
                 <CardContent className="p-4">
                   {/* Top row */}
                   <div className="mb-3">
-                    <h3 className="text-[18px] font-semibold text-[#111827] leading-[1.2] mb-2 pr-8">{project.title}</h3>
+                    <div className="flex items-center gap-2 mb-2 pr-8">
+                      <h3 className="text-[18px] font-semibold text-[#111827] leading-[1.2]">{project.title}</h3>
+                      <DuplicateBadge record={project} size="sm" />
+                    </div>
                     <div className="flex items-center gap-2">
                       {project.project_type && (
                         <ProjectTypeBadge value={project.project_type} />
                       )}
                       <ProjectStatusBadge value={project.status} />
                     </div>
-                  </div>
+                    </div>
 
                   {/* Second row */}
                   <div className="flex items-center gap-4 mb-3 text-[#4B5563]">

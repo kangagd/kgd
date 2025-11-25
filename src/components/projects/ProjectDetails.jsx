@@ -38,6 +38,7 @@ import TakePaymentModal from "../invoices/TakePaymentModal";
 import WarrantyCard from "./WarrantyCard";
 import MaintenanceSection from "./MaintenanceSection";
 import AIEmailSuggestionsBanner from "./AIEmailSuggestionsBanner";
+import DuplicateWarningCard, { DuplicateBadge } from "../common/DuplicateWarningCard";
 
 const statusColors = {
   "Lead": "bg-slate-100 text-slate-700",
@@ -1065,9 +1066,12 @@ Format as HTML bullet points using <ul> and <li> tags. Include only the most cri
 
         <div className="space-y-3">
           <div className="flex items-center justify-between gap-3 flex-wrap">
-            <h2 className="text-[22px] font-semibold text-[#111827] leading-[1.2]">
-              {project.title}
-            </h2>
+            <div className="flex items-center gap-2">
+              <h2 className="text-[22px] font-semibold text-[#111827] leading-[1.2]">
+                {project.title}
+              </h2>
+              <DuplicateBadge record={project} />
+            </div>
             {project.project_type && (
               <EditableField
                 value={project.project_type}
@@ -1155,6 +1159,9 @@ Format as HTML bullet points using <ul> and <li> tags. Include only the most cri
             </div>
 
           <TabsContent value="overview" className="space-y-3 mt-3">
+            {/* Duplicate Warning */}
+            <DuplicateWarningCard entityType="Project" record={project} />
+
             <div>
               <RichTextField
                 label="Description"
