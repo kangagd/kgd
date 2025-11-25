@@ -234,6 +234,7 @@ export default function Customers() {
               <CustomerCard
                 key={customer.id}
                 customer={customer}
+                onClick={() => setSelectedCustomer(customer)}
                 onViewDetails={(c) => setModalCustomer(c)}
               />
             ))}
