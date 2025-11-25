@@ -35,10 +35,10 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import NotificationBell from "./components/notifications/NotificationBell";
+import GlobalSearchDropdown from "./components/common/GlobalSearchDropdown";
 
 const primaryNavigationItems = [
   { title: "Dashboard", url: createPageUrl("Dashboard"), icon: LayoutDashboard },
-  { title: "Search", url: createPageUrl("SearchResults"), icon: Search },
   { title: "Inbox", url: createPageUrl("Inbox"), icon: Mail },
   { title: "Tasks", url: createPageUrl("Tasks"), icon: CheckSquare },
   { title: "Schedule", url: createPageUrl("Schedule"), icon: Calendar },
@@ -60,7 +60,6 @@ const technicianNavigationItems = [
   { title: "Schedule", url: createPageUrl("Schedule"), icon: Calendar },
   { title: "Jobs", url: createPageUrl("Jobs"), icon: Briefcase },
   { title: "Tasks", url: createPageUrl("Tasks"), icon: CheckSquare },
-  { title: "Search", url: createPageUrl("SearchResults"), icon: Search },
   { title: "Price List", url: createPageUrl("PriceList"), icon: DollarSign },
 ];
 
@@ -630,19 +629,7 @@ export default function Layout({ children, currentPageName }) {
 
         {/* Desktop Sticky Header with Search and Notification */}
         <div className="hidden lg:flex sticky top-0 z-30 bg-[#ffffff] border-b border-[#E5E7EB] px-6 py-3 items-center justify-between gap-4">
-          <div className="flex-1 max-w-md">
-            <div 
-              className="relative cursor-pointer"
-              onClick={() => navigate(createPageUrl("SearchResults"))}
-            >
-              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-[#6B7280]" />
-              <Input
-                placeholder="Search jobs, projects, customers..."
-                className="pl-9 pr-3 border border-[#E5E7EB] focus:border-[#111827] focus:ring-1 focus:ring-[#111827] transition-all h-10 text-sm rounded-lg w-full cursor-pointer"
-                readOnly
-              />
-            </div>
-          </div>
+          <GlobalSearchDropdown />
           <NotificationBell user={user} />
         </div>
 
