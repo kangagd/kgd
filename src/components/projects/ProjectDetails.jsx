@@ -651,9 +651,9 @@ Format as HTML bullet points using <ul> and <li> tags. Include only the most cri
   }, [project.status]);
 
   return (
-    <div className="relative flex flex-col lg:flex-row gap-4 overflow-x-hidden">
+    <div className="relative flex flex-col lg:flex-row gap-4 overflow-x-hidden items-start">
       {/* Customer Sidebar */}
-      <aside className="w-full lg:w-72 flex-shrink-0 lg:sticky lg:top-4 lg:self-start">
+      <aside className="w-full lg:w-72 flex-shrink-0 lg:sticky lg:top-4">
         <Card className="border border-[#E5E7EB] shadow-sm rounded-lg overflow-hidden">
           <CardHeader className="bg-white px-4 py-3 border-b border-[#E5E7EB]">
             <h3 className="text-[16px] font-semibold text-[#111827] leading-[1.2]">Customer</h3>
