@@ -408,11 +408,12 @@ export default function Inbox() {
             <div className="flex gap-3">
               <div className="chip-container -mx-4 px-4 md:mx-0 md:px-0 flex-1">
                 <Tabs value={statusFilter} onValueChange={setStatusFilter} className="w-full">
-                  <TabsList className="w-full grid grid-cols-4 gap-1 min-w-max md:min-w-0">
+                  <TabsList className="w-full grid grid-cols-5 gap-1 min-w-max md:min-w-0">
                     <TabsTrigger value="all" className="whitespace-nowrap">All</TabsTrigger>
                     <TabsTrigger value="Open" className="whitespace-nowrap">Open</TabsTrigger>
                     <TabsTrigger value="In Progress" className="whitespace-nowrap">Active</TabsTrigger>
                     <TabsTrigger value="Closed" className="whitespace-nowrap">Closed</TabsTrigger>
+                    <TabsTrigger value="sent" className="whitespace-nowrap">Sent</TabsTrigger>
                   </TabsList>
                 </Tabs>
               </div>
