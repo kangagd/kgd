@@ -149,9 +149,7 @@ export default function Team() {
                             <p className="text-sm text-[hsl(25,8%,45%)] mt-1">{admin.job_title}</p>
                           )}
                         </div>
-                        <Badge className="bg-purple-50 text-purple-900 border-purple-200 border-2 font-semibold">
-                          Admin
-                        </Badge>
+{getRoleBadge(admin)}
                       </div>
                       <div className="space-y-2 text-sm text-[hsl(25,10%,25%)]">
                         <div className="flex items-center gap-2">
