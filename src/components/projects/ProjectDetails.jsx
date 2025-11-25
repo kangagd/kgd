@@ -42,6 +42,7 @@ import DuplicateWarningCard, { DuplicateBadge } from "../common/DuplicateWarning
 import CustomerQuickEdit from "./CustomerQuickEdit";
 import EntityModal from "../common/EntityModal";
 import JobModalView from "../jobs/JobModalView";
+import TasksPanel from "../tasks/TasksPanel";
 
 const statusColors = {
   "Lead": "bg-slate-100 text-slate-700",
@@ -1150,6 +1151,15 @@ Format as HTML bullet points using <ul> and <li> tags. Include only the most cri
           <TabsContent value="overview" className="space-y-3 mt-3">
             {/* Duplicate Warning */}
             <DuplicateWarningCard entityType="Project" record={project} />
+
+            {/* Tasks Panel */}
+            <Card className="border border-[#E5E7EB] shadow-sm rounded-lg p-4">
+              <TasksPanel
+                entityType="project"
+                entityId={project.id}
+                entityName={project.title}
+              />
+            </Card>
 
             <div>
               <RichTextField

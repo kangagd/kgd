@@ -48,6 +48,7 @@ import {
   AlertDialogHeader,
   AlertDialogTitle } from
 "@/components/ui/alert-dialog";
+import TasksPanel from "../tasks/TasksPanel";
 
 const statusColors = {
   "Open": "bg-slate-100 text-slate-700 border-slate-200",
@@ -986,6 +987,16 @@ export default function JobDetails({ job: initialJob, onClose, onStatusChange, o
             <TabsContent value="details" className="space-y-4 mt-3">
               {/* Duplicate Warning */}
               <DuplicateWarningCard entityType="Job" record={job} />
+
+              {/* Tasks Panel */}
+              <Card className="border border-[#E5E7EB] shadow-sm rounded-lg p-4">
+                <TasksPanel
+                  entityType="job"
+                  entityId={job.id}
+                  entityName={`Job #${job.job_number}`}
+                  entityNumber={job.job_number}
+                />
+              </Card>
 
               {job.project_id && projectJobs.length > 0 &&
               <div className="bg-blue-50 border-2 border-blue-200 rounded-xl p-3 mb-4">

@@ -19,6 +19,8 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
+import TasksPanel from "../tasks/TasksPanel";
+import { Badge } from "@/components/ui/badge";
 
 
 
@@ -92,6 +94,15 @@ export default function CustomerDetails({ customer, onClose, onEdit, onDelete })
         <CardContent className="p-4 md:p-6 space-y-6">
           {/* Duplicate Warning */}
           <DuplicateWarningCard entityType="Customer" record={customer} />
+
+          {/* Tasks Panel */}
+          <div className="bg-white rounded-xl border-2 border-slate-200 p-4">
+            <TasksPanel
+              entityType="customer"
+              entityId={customer.id}
+              entityName={customer.name}
+            />
+          </div>
 
           {organisation && (
             <div className="bg-blue-50 border-2 border-blue-200 rounded-xl p-4">

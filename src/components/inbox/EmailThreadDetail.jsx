@@ -17,6 +17,7 @@ import EmailMessageView from "./EmailMessageView";
 import EmailComposer from "./EmailComposer";
 import AttachmentCard from "./AttachmentCard";
 import { createPageUrl } from "@/utils";
+import TasksPanel from "../tasks/TasksPanel";
 
 const statusColors = {
   "Open": "bg-blue-100 text-blue-800 border-blue-200",
@@ -216,6 +217,15 @@ export default function EmailThreadDetail({
 
       {/* Messages Timeline */}
       <div className="flex-1 overflow-y-auto p-5 space-y-4">
+        {/* Tasks Panel */}
+        <div className="bg-white rounded-lg border border-[#E5E7EB] p-4 mb-4">
+          <TasksPanel
+            entityType="email_thread"
+            entityId={thread.id}
+            entityName={thread.subject}
+          />
+        </div>
+
         {/* Attachments Preview */}
         {messages.some(m => m.attachments?.length > 0) && (
           <div className="group bg-gradient-to-br from-purple-50 to-blue-50 rounded-lg border border-purple-200/50 p-3 hover:shadow-md transition-all relative">
