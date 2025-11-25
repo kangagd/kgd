@@ -51,7 +51,17 @@ export default function Customers() {
   };
 
   const createCustomerMutation = useMutation({
-    mutationFn: (data) => base44.entities.Customer.create(data),
+    mutationFn: async (data) => {
+      const newCustomer = await base44.entities.Customer.create(data);
+      // Run duplicate check and update the record with flags
+      await base44.functions.invoke('checkDuplicates', {
+        entity_type: 'Customer',
+        record: newCustomer,
+        exclude_id: newCustomer.id,
+        auto_update: true
+      });
+      return newCustomer;
+    },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['allCustomers'] });
       refetch();
@@ -61,7 +71,17 @@ export default function Customers() {
   });
 
   const updateCustomerMutation = useMutation({
-    mutationFn: ({ id, data }) => base44.entities.Customer.update(id, data),
+    mutationFn: async ({ id, data }) => {
+      const updated = await base44.entities.Customer.update(id, data);
+      // Run duplicate check and update the record with flags
+      await base44.functions.invoke('checkDuplicates', {
+        entity_type: 'Customer',
+        record: { ...data, id },
+        exclude_id: id,
+        auto_update: true
+      });
+      return updated;
+    },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['allCustomers'] });
       refetch();
