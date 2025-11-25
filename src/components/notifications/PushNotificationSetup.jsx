@@ -64,7 +64,12 @@ export default function PushNotificationSetup() {
   };
 
   const enableNotifications = async () => {
-    if (isLoading) return;
+    // Use ref to prevent concurrent executions (more reliable than state)
+    if (isProcessingRef.current) {
+      console.log('Already processing, skipping');
+      return;
+    }
+    isProcessingRef.current = true;
     setIsLoading(true);
     
     try {
@@ -116,6 +121,7 @@ export default function PushNotificationSetup() {
       toast.error(error.message || 'Failed to enable notifications');
     } finally {
       setIsLoading(false);
+      isProcessingRef.current = false;
     }
   };
 
