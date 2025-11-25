@@ -193,6 +193,58 @@ export default function Schedule() {
     navigate(`${createPageUrl("Projects")}?projectId=${projectId}`);
   };
 
+  // Handle drag end for rescheduling
+  const handleDragEnd = (result) => {
+    if (!result.destination) return;
+    
+    const { draggableId, destination } = result;
+    const job = allJobs.find(j => j.id === draggableId);
+    if (!job) return;
+    
+    // Parse destination ID to get new date/time
+    // Format: "day-YYYY-MM-DD" or "day-YYYY-MM-DD-HH:MM"
+    const destParts = destination.droppableId.split('-');
+    let newDate = null;
+    let newTime = null;
+    
+    if (destParts[0] === 'day' && destParts.length >= 4) {
+      newDate = `${destParts[1]}-${destParts[2]}-${destParts[3]}`;
+      if (destParts.length >= 6) {
+        newTime = `${destParts[4]}:${destParts[5]}:00`;
+      }
+    }
+    
+    if (!newDate) return;
+    
+    // Check for conflicts
+    const conflicts = checkConflicts(job, newDate, newTime);
+    
+    setPendingReschedule({ job, newDate, newTime });
+    
+    if (conflicts.length > 0) {
+      setConflictingJobs(conflicts);
+      setShowConflictModal(true);
+    } else {
+      setShowConfirmModal(true);
+    }
+  };
+
+  const handleConfirmReschedule = () => {
+    if (!pendingReschedule) return;
+    
+    rescheduleMutation.mutate({
+      jobId: pendingReschedule.job.id,
+      newDate: pendingReschedule.newDate,
+      newTime: pendingReschedule.newTime,
+      notify: notifyTechnician
+    });
+  };
+
+  const handleConflictProceed = () => {
+    setShowConflictModal(false);
+    setShowConfirmModal(true);
+  };
+
   // Render Day View
   const renderDayView = () => {
     const dayJobs = getFilteredJobs((date) => isSameDay(date, selectedDate));
