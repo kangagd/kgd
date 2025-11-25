@@ -715,7 +715,7 @@ export default function JobDetails({ job: initialJob, onClose, onStatusChange, o
           <div className="space-y-3">
             {/* New Horizontal Layout: Left | Middle */}
             <div className="flex items-center justify-between gap-4 flex-wrap">
-              {/* Left Group: Customer Name + Job Number */}
+              {/* Left Group: Customer Name + Job Number + Customer Type */}
               <div className="flex items-center gap-2 flex-wrap">
                 <CardTitle
                   className="text-[22px] font-semibold text-[#111827] leading-[1.2] cursor-pointer hover:text-[#FAE008] transition-colors"
@@ -725,6 +725,11 @@ export default function JobDetails({ job: initialJob, onClose, onStatusChange, o
                 <Badge className="bg-white text-[#6B7280] border border-[#E5E7EB] font-medium text-[12px] leading-[1.35] px-2.5 py-0.5 rounded-lg hover:bg-white">
                   #{job.job_number}
                 </Badge>
+                {job.customer_type && (
+                  <Badge className={`${customerTypeColors[job.customer_type] || 'bg-gray-100 text-gray-700'} border-0 font-medium text-[12px] leading-[1.35] px-2.5 py-0.5 rounded-lg hover:opacity-100`}>
+                    {job.customer_type}
+                  </Badge>
+                )}
                 <DuplicateBadge record={job} />
               </div>
 
