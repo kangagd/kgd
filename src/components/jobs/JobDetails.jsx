@@ -32,7 +32,7 @@ import JobMapView from "./JobMapView";
 import XeroInvoiceCard from "../invoices/XeroInvoiceCard";
 import CreateInvoiceModal from "../invoices/CreateInvoiceModal";
 import TakePaymentModal from "../invoices/TakePaymentModal";
-import ScheduledVisitsManager from "./ScheduledVisitsManager";
+import { Trash2 as Trash2Icon } from "lucide-react";
 import {
   Dialog,
   DialogContent,
