@@ -42,8 +42,9 @@ export default function FilePreviewModal({
 
   if (!isOpen || !file) return null;
 
-  const isImage = file.url?.match(/\.(jpg|jpeg|png|gif|webp)$/i) || file.type === 'image';
-  const isPDF = file.url?.match(/\.pdf$/i) || file.type === 'pdf';
+  const fileUrl = typeof file.url === 'string' ? file.url : '';
+  const isImage = fileUrl.match(/\.(jpg|jpeg|png|gif|webp)$/i) || file.type === 'image';
+  const isPDF = fileUrl.match(/\.pdf$/i) || file.type === 'pdf';
   
   const handleDownload = () => {
     const link = document.createElement('a');
