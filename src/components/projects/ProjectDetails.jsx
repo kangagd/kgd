@@ -1131,13 +1131,13 @@ Format as HTML bullet points using <ul> and <li> tags. Include only the most cri
                 <TabsTrigger value="overview" className="flex-1 whitespace-nowrap">
                   Overview
                 </TabsTrigger>
+                <TabsTrigger value="emails" className="flex-1 whitespace-nowrap">Emails</TabsTrigger>
                 <TabsTrigger value="quoting" className="flex-1 whitespace-nowrap">Quoting</TabsTrigger>
                 <TabsTrigger value="parts" className="flex-1 whitespace-nowrap">Parts</TabsTrigger>
                 <TabsTrigger value="invoices" className="flex-1 whitespace-nowrap">Invoices</TabsTrigger>
                 {user?.role === 'admin' && (
                   <TabsTrigger value="financials" className="flex-1 whitespace-nowrap">Financials</TabsTrigger>
                 )}
-                <TabsTrigger value="emails" className="flex-1 whitespace-nowrap">Emails</TabsTrigger>
                 <TabsTrigger value="summary" className="flex-1 whitespace-nowrap">
                   Summary
                 </TabsTrigger>
