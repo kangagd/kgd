@@ -62,12 +62,50 @@ export default function CustomerForm({ customer, onSubmit, onCancel, isSubmittin
   });
   const [isCreatingOrg, setIsCreatingOrg] = useState(false);
   const [orgTypeFilter, setOrgTypeFilter] = useState("all");
+  const [duplicateWarning, setDuplicateWarning] = useState(null);
+  const [isCheckingDuplicates, setIsCheckingDuplicates] = useState(false);
   const queryClient = useQueryClient();
 
   const { data: organisations = [] } = useQuery({
     queryKey: ['organisations'],
     queryFn: () => base44.entities.Organisation.filter({ status: 'active', deleted_at: { $exists: false } })
   });
+
+  // Debounced duplicate check
+  const checkDuplicates = useCallback(
+    _.debounce(async (data) => {
+      if (!data.name && !data.email && !data.phone) {
+        setDuplicateWarning(null);
+        return;
+      }
+      
+      setIsCheckingDuplicates(true);
+      try {
+        const result = await base44.functions.invoke('checkDuplicates', {
+          entity_type: 'Customer',
+          record: data,
+          exclude_id: customer?.id
+        });
+        
+        if (result.data?.is_potential_duplicate && result.data?.matches?.length > 0) {
+          setDuplicateWarning(result.data);
+        } else {
+          setDuplicateWarning(null);
+        }
+      } catch (error) {
+        console.error('Error checking duplicates:', error);
+      } finally {
+        setIsCheckingDuplicates(false);
+      }
+    }, 500),
+    [customer?.id]
+  );
+
+  // Check for duplicates when key fields change
+  useEffect(() => {
+    checkDuplicates(formData);
+    return () => checkDuplicates.cancel();
+  }, [formData.name, formData.email, formData.phone, checkDuplicates]);
 
   const filteredOrganisations = organisations.filter(org => 
     orgTypeFilter === "all" || org.organisation_type === orgTypeFilter
