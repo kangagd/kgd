@@ -20,12 +20,20 @@ import { useNavigate } from "react-router-dom";
 
 export default function Schedule() {
   const navigate = useNavigate();
+  const queryClient = useQueryClient();
   const [view, setView] = useState("day");
   const [selectedDate, setSelectedDate] = useState(new Date());
   const [selectedJob, setSelectedJob] = useState(null);
   const [technicianFilter, setTechnicianFilter] = useState("all");
   const [statusFilter, setStatusFilter] = useState("all");
   const [user, setUser] = useState(null);
+  
+  // Drag and drop state
+  const [pendingReschedule, setPendingReschedule] = useState(null);
+  const [conflictingJobs, setConflictingJobs] = useState([]);
+  const [showConflictModal, setShowConflictModal] = useState(false);
+  const [showConfirmModal, setShowConfirmModal] = useState(false);
+  const [notifyTechnician, setNotifyTechnician] = useState(true);
 
   React.useEffect(() => {
     const loadUser = async () => {
@@ -48,7 +56,60 @@ export default function Schedule() {
     queryFn: () => base44.entities.User.filter({ is_field_technician: true })
   });
 
+  const { checkConflicts } = useScheduleConflicts(allJobs);
+
   const isTechnician = user?.is_field_technician && user?.role !== 'admin';
+  
+  // Reschedule mutation
+  const rescheduleMutation = useMutation({
+    mutationFn: async ({ jobId, newDate, newTime, notify }) => {
+      const updates = {};
+      if (newDate) updates.scheduled_date = typeof newDate === 'string' ? newDate : format(newDate, 'yyyy-MM-dd');
+      if (newTime) updates.scheduled_time = newTime;
+      
+      // Update job status to Scheduled if moving to future date
+      const job = allJobs.find(j => j.id === jobId);
+      if (job && job.status === 'Open' && newDate) {
+        const scheduledDate = new Date(newDate);
+        const today = new Date();
+        today.setHours(0, 0, 0, 0);
+        if (scheduledDate >= today) {
+          updates.status = 'Scheduled';
+        }
+      }
+      
+      await base44.entities.Job.update(jobId, updates);
+      
+      // Log the change
+      if (user) {
+        await base44.entities.ChangeHistory.create({
+          job_id: jobId,
+          field_name: 'rescheduled',
+          old_value: `${job?.scheduled_date || 'none'} ${job?.scheduled_time || ''}`.trim(),
+          new_value: `${updates.scheduled_date || job?.scheduled_date || ''} ${updates.scheduled_time || job?.scheduled_time || ''}`.trim(),
+          changed_by: user.email,
+          changed_by_name: user.full_name
+        });
+      }
+      
+      return { jobId, updates, notify };
+    },
+    onSuccess: (data) => {
+      queryClient.invalidateQueries({ queryKey: ['jobs'] });
+      queryClient.invalidateQueries({ queryKey: ['allJobs'] });
+      toast.success('Job rescheduled successfully');
+      
+      // Reset state
+      setPendingReschedule(null);
+      setConflictingJobs([]);
+      setShowConflictModal(false);
+      setShowConfirmModal(false);
+    },
+    onError: (error) => {
+      toast.error('Failed to reschedule job');
+      console.error('Reschedule error:', error);
+    }
+  });
 
   // Date navigation handlers
   const handlePrevious = () => {
