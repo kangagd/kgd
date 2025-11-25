@@ -122,10 +122,7 @@ export default function ProjectDetails({ project: initialProject, onClose, onEdi
 
   const { data: jobs = [] } = useQuery({
     queryKey: ['projectJobs', project.id],
-    queryFn: async () => {
-      const allJobs = await base44.entities.Job.filter({ project_id: project.id }, '-scheduled_date');
-      return allJobs.filter(job => !job.deleted_at);
-    },
+    queryFn: () => base44.entities.Job.filter({ project_id: project.id, deleted_at: { $exists: false } }),
     refetchInterval: 5000
   });
 
