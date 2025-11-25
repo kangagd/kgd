@@ -179,6 +179,56 @@ Deno.serve(async (req) => {
       return Response.json({ error: 'No messages found in thread' }, { status: 400 });
     }
 
+    // Check if this is a Wix form email - use specialized parsing
+    if (isWixFormEmail(thread.from_address, thread.subject)) {
+      const wixResult = await handleWixFormEmail(base44, thread, messages);
+      
+      if (wixResult) {
+        const now = new Date().toISOString();
+
+        // Update the EmailThread with parsed data
+        await base44.asServiceRole.entities.EmailThread.update(email_thread_id, {
+          ai_summary: wixResult.summary,
+          ai_key_points: wixResult.key_points,
+          ai_suggested_project_fields: wixResult.suggested_project_fields,
+          ai_analyzed_at: now
+        });
+
+        // Create/update AIEmailInsight entity
+        const existingInsights = await base44.asServiceRole.entities.AIEmailInsight.filter({
+          email_thread_id: email_thread_id
+        });
+
+        let insight;
+        if (existingInsights.length > 0) {
+          insight = await base44.asServiceRole.entities.AIEmailInsight.update(existingInsights[0].id, {
+            summary: wixResult.summary,
+            key_points: wixResult.key_points,
+            suggested_project_fields: wixResult.suggested_project_fields
+          });
+        } else {
+          insight = await base44.asServiceRole.entities.AIEmailInsight.create({
+            email_thread_id: email_thread_id,
+            summary: wixResult.summary,
+            key_points: wixResult.key_points,
+            suggested_project_fields: wixResult.suggested_project_fields,
+            applied_to_project: false
+          });
+        }
+
+        return Response.json({
+          success: true,
+          insight_id: insight.id,
+          summary: wixResult.summary,
+          key_points: wixResult.key_points,
+          suggested_project_fields: wixResult.suggested_project_fields,
+          analyzed_at: now,
+          source: 'wix_form_parser'
+        });
+      }
+      // If Wix parsing fails, fall through to AI analysis
+    }
+
     // Build the full conversation context
     const conversationText = messages.map(m => {
       const date = m.sent_at ? new Date(m.sent_at).toLocaleString() : 'Unknown date';
