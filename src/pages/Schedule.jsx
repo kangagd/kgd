@@ -499,7 +499,7 @@ export default function Schedule() {
                               ref={dragProvided.innerRef}
                               {...dragProvided.draggableProps}
                               {...dragProvided.dragHandleProps}
-                              onClick={() => setSelectedJob(job)}
+                              onClick={() => setModalJob(job)}
                               className={`text-xs p-1.5 rounded cursor-grab active:cursor-grabbing transition-all ${
                                 dragSnapshot.isDragging 
                                   ? 'bg-[#FAE008] shadow-lg ring-2 ring-[#FAE008] rotate-1 opacity-90' 
