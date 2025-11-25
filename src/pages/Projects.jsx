@@ -63,9 +63,10 @@ export default function Projects() {
     mutationFn: (data) => base44.entities.Project.create(data),
     onSuccess: (newProject) => {
       queryClient.invalidateQueries({ queryKey: ['projects'] });
-      setShowForm(false);
       setEditingProject(null);
-      setSelectedProject(newProject);
+      setShowForm(false);
+      // Navigate to the new project page
+      window.location.href = `${createPageUrl("Projects")}?projectId=${newProject.id}`;
     }
   });
 
