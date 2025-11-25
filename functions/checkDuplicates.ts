@@ -50,23 +50,22 @@ async function checkCustomerDuplicates(base44, record, excludeId) {
     let matchScore = 0;
     const matchReasons = [];
     
-    // Rule 1: Same normalized email
+    // Rule 1: Same normalized name
+    if (normalizedName && otherNormalizedName && normalizedName === otherNormalizedName) {
+      matchScore++;
+      matchReasons.push('name');
+    }
+    
+    // Rule 2: Same normalized email
     if (normalizedEmail && otherNormalizedEmail && normalizedEmail === otherNormalizedEmail) {
       matchScore++;
       matchReasons.push('email');
     }
     
-    // Rule 2: Same normalized phone
+    // Rule 3: Same normalized phone
     if (normalizedPhone && otherNormalizedPhone && normalizedPhone === otherNormalizedPhone) {
       matchScore++;
       matchReasons.push('phone');
-    }
-    
-    // Rule 3: Same name AND same address
-    if (normalizedName && otherNormalizedName && normalizedName === otherNormalizedName &&
-        normalizedAddress && otherNormalizedAddress && normalizedAddress === otherNormalizedAddress) {
-      matchScore++;
-      matchReasons.push('name+address');
     }
     
     if (matchScore > 0) {
