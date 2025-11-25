@@ -266,12 +266,12 @@ export default function CustomerForm({ customer, onSubmit, onCancel, isSubmittin
                 </Select>
               </div>
               <div className="flex gap-2">
-                <Select value={formData.organisation_id} onValueChange={handleOrganisationChange}>
+                <Select value={formData.organisation_id || "none"} onValueChange={handleOrganisationChange}>
                   <SelectTrigger className="flex-1">
                     <SelectValue placeholder="Select organisation" />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value={null}>None</SelectItem>
+                    <SelectItem value="none">None</SelectItem>
                     {filteredOrganisations.map((org) => (
                       <SelectItem key={org.id} value={org.id}>
                         {org.name}{org.organisation_type ? ` (${org.organisation_type})` : ''}
