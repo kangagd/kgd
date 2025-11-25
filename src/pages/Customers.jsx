@@ -26,6 +26,14 @@ export default function Customers() {
   const [modalCustomer, setModalCustomer] = useState(null);
   const queryClient = useQueryClient();
 
+  const { data: allCustomers = [], isLoading, refetch } = useQuery({
+    queryKey: ['allCustomers'],
+    queryFn: () => base44.entities.Customer.list(),
+    refetchInterval: 15000,
+  });
+
+  const customers = allCustomers.filter(customer => !customer.deleted_at && customer.status === 'active');
+
   // Handle URL params for direct navigation
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
@@ -38,14 +46,6 @@ export default function Customers() {
       }
     }
   }, [customers, selectedCustomer]);
-
-  const { data: allCustomers = [], isLoading, refetch } = useQuery({
-    queryKey: ['allCustomers'],
-    queryFn: () => base44.entities.Customer.list(),
-    refetchInterval: 15000,
-  });
-
-  const customers = allCustomers.filter(customer => !customer.deleted_at && customer.status === 'active');
 
   const { data: allJobs = [] } = useQuery({
     queryKey: ['allJobs'],
