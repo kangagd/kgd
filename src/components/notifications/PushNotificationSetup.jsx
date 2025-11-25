@@ -53,60 +53,56 @@ export default function PushNotificationSetup() {
   };
 
   const enableNotifications = async () => {
-    if (isLoading) return; // Prevent double-clicks
+    if (isLoading) return;
     setIsLoading(true);
     
     try {
-      // Request permission
+      // Step 1: Request permission
       const perm = await Notification.requestPermission();
       setPermission(perm);
 
       if (perm !== 'granted') {
         toast.error('Notification permission denied');
-        setIsLoading(false);
         return;
       }
 
-      // Get VAPID public key from backend first
+      // Step 2: Get VAPID public key
       const vapidResponse = await base44.functions.invoke('getVapidPublicKey');
-      if (!vapidResponse.data?.vapidPublicKey) {
-        throw new Error('Failed to get VAPID public key');
-      }
-      const vapidPublicKey = vapidResponse.data.vapidPublicKey;
-
-      // Get or wait for existing service worker
-      let registration = await navigator.serviceWorker.getRegistration();
-      if (!registration) {
-        // Wait for the platform's service worker to be ready
-        registration = await navigator.serviceWorker.ready;
+      const vapidPublicKey = vapidResponse.data?.vapidPublicKey;
+      if (!vapidPublicKey) {
+        throw new Error('VAPID key not configured');
       }
 
-      // Subscribe to push notifications
-      let subscription = await registration.pushManager.getSubscription();
+      // Step 3: Wait for service worker
+      const registration = await navigator.serviceWorker.ready;
       
-      // If no subscription or different key, create new subscription
-      if (!subscription) {
-        subscription = await registration.pushManager.subscribe({
-          userVisibleOnly: true,
-          applicationServerKey: urlBase64ToUint8Array(vapidPublicKey)
-        });
+      // Step 4: Unsubscribe existing if any (to avoid key mismatch)
+      const existingSub = await registration.pushManager.getSubscription();
+      if (existingSub) {
+        await existingSub.unsubscribe();
       }
 
-      // Send subscription to backend
+      // Step 5: Create new subscription
+      const subscription = await registration.pushManager.subscribe({
+        userVisibleOnly: true,
+        applicationServerKey: urlBase64ToUint8Array(vapidPublicKey)
+      });
+
+      // Step 6: Register with backend
       const response = await base44.functions.invoke('registerNotificationDevice', {
         push_token: JSON.stringify(subscription),
         device_type: 'web'
       });
 
-      if (response.data.success) {
+      if (response.data?.success) {
         setIsRegistered(true);
         toast.success('Push notifications enabled!');
       } else {
-        throw new Error(response.data.error || 'Registration failed');
+        throw new Error(response.data?.error || 'Registration failed');
       }
     } catch (error) {
-      console.error('Error enabling notifications:', error);
-      toast.error(`Failed: ${error.message}`);
+      console.error('Push notification error:', error);
+      toast.error(error.message || 'Failed to enable notifications');
     } finally {
       setIsLoading(false);
     }
