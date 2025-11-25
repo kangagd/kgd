@@ -274,12 +274,28 @@ export default function Schedule() {
       );
     }
 
-    // Group by technician
+    // Group by technician for display, but keep flat index for drag
     const jobsByTech = {};
     dayJobs.forEach(job => {
       const techName = job.assigned_to_name?.[0] || 'Unassigned';
       if (!jobsByTech[techName]) jobsByTech[techName] = [];
       jobsByTech[techName].push(job);
+    });
+
+    // Calculate global indices
+    let globalIndex = 0;
+    const jobsWithIndices = [];
+    Object.entries(jobsByTech).forEach(([techName, jobs]) => {
+      jobs.forEach(job => {
+        jobsWithIndices.push({ job, techName, index: globalIndex++ });
+      });
+    });
+
+    // Group back by tech name with global indices
+    const groupedWithIndices = {};
+    jobsWithIndices.forEach(item => {
+      if (!groupedWithIndices[item.techName]) groupedWithIndices[item.techName] = [];
+      groupedWithIndices[item.techName].push(item);
     });
 
     return (
@@ -292,26 +308,26 @@ export default function Schedule() {
               snapshot.isDraggingOver ? 'bg-[#FAE008]/10 border-2 border-dashed border-[#FAE008]' : ''
             }`}
           >
-            {Object.entries(jobsByTech).map(([techName, jobs]) => (
+            {Object.entries(groupedWithIndices).map(([techName, items]) => (
               <div key={techName}>
                 <h3 className="text-sm font-semibold text-[#4B5563] mb-3">
                   {techName}
                 </h3>
                 <div className="space-y-3">
-                  {jobs.map((job, index) => (
+                  {items.map(({ job, index }) => (
                     <Draggable key={job.id} draggableId={job.id} index={index}>
-                      {(provided, snapshot) => (
+                      {(dragProvided, dragSnapshot) => (
                         <div
-                          ref={provided.innerRef}
-                          {...provided.draggableProps}
+                          ref={dragProvided.innerRef}
+                          {...dragProvided.draggableProps}
+                          {...dragProvided.dragHandleProps}
                         >
                           <DraggableJobCard
                             job={job}
                             onClick={() => setSelectedJob(job)}
                             onAddressClick={handleAddressClick}
                             onProjectClick={handleProjectClick}
-                            isDragging={snapshot.isDragging}
-                            dragHandleProps={provided.dragHandleProps}
+                            isDragging={dragSnapshot.isDragging}
                           />
                         </div>
                       )}
