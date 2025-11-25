@@ -737,34 +737,32 @@ Format as HTML bullet points using <ul> and <li> tags. Include only the most cri
                       <Eye className="w-4 h-4 text-[#6B7280]" />
                     </button>
                     <div 
-                      className="flex items-start gap-3"
+                      className="flex flex-col gap-2"
                       onClick={() => handleJobClick(job.id)}
                     >
-                      <div className="flex-1 min-w-0 space-y-2">
-                        <div className="flex items-center gap-2 flex-wrap pr-8">
-                          <Badge className="bg-white text-[#6B7280] border border-[#E5E7EB] font-medium text-xs px-2.5 py-0.5 rounded-lg hover:bg-white">
-                                    #{job.job_number}
-                                  </Badge>
-                          <Badge className={`${jobStatusColors[job.status]} border-0 font-semibold text-xs px-3 py-1 rounded-lg hover:opacity-100`}>
-                            {job.status}
+                      <div className="flex items-center gap-2 flex-wrap pr-8">
+                        <Badge className="bg-white text-[#6B7280] border border-[#E5E7EB] font-medium text-xs px-2.5 py-0.5 rounded-lg hover:bg-white">
+                                  #{job.job_number}
+                                </Badge>
+                        <Badge className={`${jobStatusColors[job.status]} border-0 font-semibold text-xs px-3 py-1 rounded-lg hover:opacity-100`}>
+                          {job.status}
+                        </Badge>
+                        {job.job_type_name && (
+                          <Badge className="bg-[#EDE9FE] text-[#6D28D9] border-0 font-semibold text-xs px-3 py-1 rounded-lg hover:bg-[#EDE9FE]">
+                            {job.job_type_name}
                           </Badge>
-                          {job.job_type_name && (
-                            <Badge className="bg-[#EDE9FE] text-[#6D28D9] border-0 font-semibold text-xs px-3 py-1 rounded-lg hover:bg-[#EDE9FE]">
-                              {job.job_type_name}
-                            </Badge>
-                          )}
-                        </div>
+                        )}
+                      </div>
 
+                      <div className="flex items-center justify-between">
                         {job.scheduled_date && (
                           <p className="text-sm text-[#4B5563]">
                             {new Date(job.scheduled_date).toLocaleDateString()}
                             {job.scheduled_time && ` • ${job.scheduled_time}`}
                           </p>
                         )}
-                      </div>
 
-                      {job.assigned_to && job.assigned_to.length > 0 && (
-                        <div className="flex-shrink-0">
+                        {job.assigned_to && job.assigned_to.length > 0 && (
                           <TechnicianAvatarGroup
                             technicians={job.assigned_to.map((email, idx) => ({
                               email,
@@ -772,10 +770,10 @@ Format as HTML bullet points using <ul> and <li> tags. Include only the most cri
                               id: email
                             }))}
                             maxDisplay={3}
-                            size="md"
+                            size="sm"
                           />
-                        </div>
-                      )}
+                        )}
+                      </div>
                     </div>
                   </div>
                 ))}
