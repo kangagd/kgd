@@ -49,9 +49,12 @@ export default function Projects() {
 
   const projects = allProjects.filter(p => !p.deleted_at);
 
-  const { data: allJobs = [] } = useQuery({
+  const { data: allJobs = [], isLoading: isJobsLoading } = useQuery({
     queryKey: ['allJobs'],
-    queryFn: () => base44.entities.Job.filter({ deleted_at: { $exists: false } })
+    queryFn: async () => {
+      const jobs = await base44.entities.Job.list();
+      return jobs.filter(j => !j.deleted_at);
+    }
   });
 
   const { data: allParts = [] } = useQuery({
@@ -472,7 +475,7 @@ export default function Projects() {
                   {/* Bottom row */}
                   <div className="flex items-center justify-between text-[14px] leading-[1.4] pt-3 border-t border-[#E5E7EB]">
                     <span className="text-[#4B5563] font-medium">
-                      Jobs: <span className="text-[#111827] font-semibold">{jobCount}</span>
+                      Jobs: <span className="text-[#111827] font-semibold">{isJobsLoading ? '...' : jobCount}</span>
                     </span>
                     {nextJob && (
                       <div className="text-[#4B5563]">
