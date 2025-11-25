@@ -134,25 +134,39 @@ export default function CustomerForm({ customer, onSubmit, onCancel, isSubmittin
   };
 
   const handleCreateNewOrg = async () => {
+    if (!newOrgData.name?.trim()) return;
+    
     setIsCreatingOrg(true);
     try {
-      // Filter out empty/undefined fields
-      const submitData = { ...newOrgData };
-      if (!submitData.organisation_type) {
-        delete submitData.organisation_type;
+      // Build clean submit data
+      const submitData = {
+        name: newOrgData.name.trim(),
+        status: 'active'
+      };
+      
+      if (newOrgData.organisation_type) {
+        submitData.organisation_type = newOrgData.organisation_type;
       }
-      if (!submitData.sp_number) {
-        delete submitData.sp_number;
+      if (newOrgData.sp_number?.trim()) {
+        submitData.sp_number = newOrgData.sp_number.trim();
       }
-      if (!submitData.address) {
-        delete submitData.address;
+      if (newOrgData.address_full) {
+        submitData.address_full = newOrgData.address_full;
+        submitData.address = newOrgData.address_full;
+        submitData.address_street = newOrgData.address_street;
+        submitData.address_suburb = newOrgData.address_suburb;
+        submitData.address_state = newOrgData.address_state;
+        submitData.address_postcode = newOrgData.address_postcode;
+        submitData.address_country = newOrgData.address_country || "Australia";
+        submitData.google_place_id = newOrgData.google_place_id;
+        submitData.latitude = newOrgData.latitude;
+        submitData.longitude = newOrgData.longitude;
       }
       
       const newOrg = await base44.entities.Organisation.create(submitData);
       
-      // Invalidate and refetch organisations
-      await queryClient.invalidateQueries({ queryKey: ['organisations'] });
-      await queryClient.refetchQueries({ queryKey: ['organisations'] });
+      // Close dialog first
+      setShowNewOrgDialog(false);
       
       // Update form data with new organisation immediately
       setFormData(prev => ({
@@ -161,7 +175,7 @@ export default function CustomerForm({ customer, onSubmit, onCancel, isSubmittin
         organisation_name: newOrg.name
       }));
       
-      setShowNewOrgDialog(false);
+      // Reset org form
       setNewOrgData({
         name: "",
         organisation_type: undefined,
@@ -177,8 +191,13 @@ export default function CustomerForm({ customer, onSubmit, onCancel, isSubmittin
         latitude: null,
         longitude: null,
       });
+      
+      // Invalidate queries to refresh list in background
+      queryClient.invalidateQueries({ queryKey: ['organisations'] });
+      
     } catch (error) {
       console.error("Error creating organisation:", error);
+      alert("Failed to create organisation. Please try again.");
     } finally {
       setIsCreatingOrg(false);
     }
