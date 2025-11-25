@@ -95,15 +95,6 @@ export default function CustomerDetails({ customer, onClose, onEdit, onDelete })
           {/* Duplicate Warning */}
           <DuplicateWarningCard entityType="Customer" record={customer} />
 
-          {/* Tasks Panel */}
-          <div className="bg-white rounded-xl border-2 border-slate-200 p-4">
-            <TasksPanel
-              entityType="customer"
-              entityId={customer.id}
-              entityName={customer.name}
-            />
-          </div>
-
           {organisation && (
             <div className="bg-blue-50 border-2 border-blue-200 rounded-xl p-4">
               <div className="flex items-start justify-between">
@@ -216,6 +207,15 @@ export default function CustomerDetails({ customer, onClose, onEdit, onDelete })
               </p>
             </div>
           )}
+
+          {/* Tasks Panel */}
+          <div className="bg-white rounded-xl border-2 border-slate-200 p-4">
+            <TasksPanel
+              entityType="customer"
+              entityId={customer.id}
+              entityName={customer.name}
+            />
+          </div>
 
           <div className="pt-4 border-t-2 border-slate-200">
             <div className="flex items-center justify-between mb-4">
