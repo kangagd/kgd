@@ -238,13 +238,20 @@ export default function Inbox() {
     // Advanced status filter (from search filters)
     const matchesAdvancedStatus = searchFilters.statusFilter === "all" || thread.status === searchFilters.statusFilter;
 
-    const matchesStatus = statusFilter === "all" || thread.status === statusFilter;
+    // "Sent" tab filter - show threads where first message was outbound
+    const matchesSentFilter = statusFilter !== "sent" || (() => {
+      const threadMessages = messages.filter(m => m.thread_id === thread.id);
+      // Check if there are any outbound messages in this thread
+      return threadMessages.some(m => m.is_outbound === true);
+    })();
+
+    const matchesStatus = statusFilter === "all" || statusFilter === "sent" || thread.status === statusFilter;
     const matchesPriority = priorityFilter === "all" || thread.priority === priorityFilter;
 
     return matchesSearch && matchesSender && matchesRecipient && 
            matchesDateFrom && matchesDateTo && matchesAttachment && 
            matchesAttachmentName && matchesAdvancedStatus &&
-           matchesStatus && matchesPriority;
+           matchesStatus && matchesPriority && matchesSentFilter;
   }).sort((a, b) => {
     switch(sortBy) {
       case "date":
