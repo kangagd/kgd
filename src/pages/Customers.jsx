@@ -6,17 +6,20 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Plus, Search, User } from "lucide-react";
+import { Checkbox } from "@/components/ui/checkbox";
+import { Plus, Search, User, AlertTriangle } from "lucide-react";
 import CustomerForm from "../components/customers/CustomerForm";
 import CustomerDetails from "../components/customers/CustomerDetails";
 import CustomerCard from "../components/customers/CustomerCard";
 import EntityModal from "../components/common/EntityModal.jsx";
 import CustomerModalView from "../components/customers/CustomerModalView";
 import { createPageUrl } from "@/utils";
+import { DuplicateBadge } from "../components/common/DuplicateWarningCard";
 
 export default function Customers() {
   const [searchTerm, setSearchTerm] = useState("");
   const [customerTypeFilter, setCustomerTypeFilter] = useState("all");
+  const [showDuplicatesOnly, setShowDuplicatesOnly] = useState(false);
   const [showForm, setShowForm] = useState(false);
   const [selectedCustomer, setSelectedCustomer] = useState(null);
   const [editingCustomer, setEditingCustomer] = useState(null);
@@ -113,7 +116,9 @@ export default function Customers() {
     
     const matchesType = customerTypeFilter === "all" || customer.customer_type === customerTypeFilter;
     
-    return matchesSearch && matchesType;
+    const matchesDuplicateFilter = !showDuplicatesOnly || customer.is_potential_duplicate;
+    
+    return matchesSearch && matchesType && matchesDuplicateFilter;
   });
 
   if (showForm) {
@@ -187,6 +192,21 @@ export default function Customers() {
                 <TabsTrigger value="Strata - Owner" className="flex-1 whitespace-nowrap">Strata</TabsTrigger>
               </TabsList>
             </Tabs>
+          </div>
+
+          <div className="flex items-center gap-2">
+            <Checkbox
+              id="duplicates-filter"
+              checked={showDuplicatesOnly}
+              onCheckedChange={setShowDuplicatesOnly}
+            />
+            <label
+              htmlFor="duplicates-filter"
+              className="text-sm text-[#4B5563] cursor-pointer flex items-center gap-1.5"
+            >
+              <AlertTriangle className="w-3.5 h-3.5 text-[#D97706]" />
+              Show only potential duplicates
+            </label>
           </div>
         </div>
 

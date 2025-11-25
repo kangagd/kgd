@@ -8,6 +8,7 @@ import { base44 } from "@/api/base44Client";
 import { Link, useNavigate } from "react-router-dom";
 import { createPageUrl } from "@/utils";
 import { format, parseISO } from "date-fns";
+import DuplicateWarningCard, { DuplicateBadge } from "../common/DuplicateWarningCard";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -51,7 +52,10 @@ export default function CustomerDetails({ customer, onClose, onEdit, onDelete })
                 <ArrowLeft className="w-4 h-4" />
               </Button>
               <div className="flex-1 min-w-0">
-                <CardTitle className="text-[22px] font-semibold text-[#111827] leading-[1.2]">{customer.name}</CardTitle>
+                <div className="flex items-center gap-2 flex-wrap">
+                  <CardTitle className="text-[22px] font-semibold text-[#111827] leading-[1.2]">{customer.name}</CardTitle>
+                  <DuplicateBadge record={customer} />
+                </div>
                 <div className="flex gap-2 mt-2 flex-wrap">
                   <StatusBadge type="status" value={customer.status} />
                   {customer.customer_type && (
@@ -83,6 +87,9 @@ export default function CustomerDetails({ customer, onClose, onEdit, onDelete })
           </div>
         </CardHeader>
         <CardContent className="p-4 md:p-6 space-y-6">
+          {/* Duplicate Warning */}
+          <DuplicateWarningCard entityType="Customer" record={customer} />
+
           {organisation && (
             <div className="bg-blue-50 border-2 border-blue-200 rounded-xl p-4">
               <div className="flex items-start justify-between">
