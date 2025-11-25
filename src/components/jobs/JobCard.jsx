@@ -99,11 +99,6 @@ export default function JobCard({ job, onClick, onViewDetails }) {
                 <h3 className="text-[18px] font-semibold text-[#111827] leading-[1.2]">
                   {job.customer_name}
                 </h3>
-                {job.project_name && (
-                  <Badge className="bg-[#FAE008]/20 text-[#92400E] border-0 font-medium px-2.5 py-0.5 rounded-lg pointer-events-none">
-                    {job.project_name}
-                  </Badge>
-                )}
               </div>
               <div className="flex items-center gap-2">
                 <Badge variant="secondary" className="pointer-events-none">
