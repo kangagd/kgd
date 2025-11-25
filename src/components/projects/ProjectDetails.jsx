@@ -4,7 +4,7 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
-import { ArrowLeft, Plus, Edit, Trash2, MapPin, Phone, Mail, FileText, Image as ImageIcon, User, Upload, X, Briefcase, History, ExternalLink, DollarSign } from "lucide-react";
+import { ArrowLeft, Plus, Edit, Trash2, MapPin, Phone, Mail, FileText, Image as ImageIcon, User, Upload, X, Briefcase, History, ExternalLink, DollarSign, Eye } from "lucide-react";
 import { base44 } from "@/api/base44Client";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useNavigate, Link } from "react-router-dom";
@@ -40,6 +40,8 @@ import MaintenanceSection from "./MaintenanceSection";
 import AIEmailSuggestionsBanner from "./AIEmailSuggestionsBanner";
 import DuplicateWarningCard, { DuplicateBadge } from "../common/DuplicateWarningCard";
 import CustomerQuickEdit from "./CustomerQuickEdit";
+import EntityModal from "../common/EntityModal";
+import JobModalView from "../jobs/JobModalView";
 
 const statusColors = {
   "Lead": "bg-slate-100 text-slate-700",
@@ -89,6 +91,7 @@ export default function ProjectDetails({ project: initialProject, onClose, onEdi
   const [showInvoiceModal, setShowInvoiceModal] = useState(false);
   const [showPaymentModal, setShowPaymentModal] = useState(false);
   const [selectedInvoice, setSelectedInvoice] = useState(null);
+  const [previewJob, setPreviewJob] = useState(null);
   
   // Get email thread ID from props, URL params, or project's source
   const urlParams = new URLSearchParams(window.location.search);
@@ -721,12 +724,24 @@ Format as HTML bullet points using <ul> and <li> tags. Include only the most cri
                 {jobs.map((job) => (
                   <div
                     key={job.id}
-                    onClick={() => handleJobClick(job.id)}
-                    className="bg-white border border-[#E5E7EB] rounded-lg p-3 hover:border-[#FAE008] hover:shadow-sm transition-all cursor-pointer"
+                    className="bg-white border border-[#E5E7EB] rounded-lg p-3 hover:border-[#FAE008] hover:shadow-sm transition-all cursor-pointer relative group"
                   >
-                    <div className="flex items-start gap-3">
+                    <button
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        setPreviewJob(job);
+                      }}
+                      className="absolute top-2 right-2 h-7 w-7 rounded-md hover:bg-[#F3F4F6] flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity z-10"
+                      title="Preview"
+                    >
+                      <Eye className="w-4 h-4 text-[#6B7280]" />
+                    </button>
+                    <div 
+                      className="flex items-start gap-3"
+                      onClick={() => handleJobClick(job.id)}
+                    >
                       <div className="flex-1 min-w-0 space-y-2">
-                        <div className="flex items-center gap-2 flex-wrap">
+                        <div className="flex items-center gap-2 flex-wrap pr-8">
                           <Badge className="bg-white text-[#6B7280] border border-[#E5E7EB] font-medium text-xs px-2.5 py-0.5 rounded-lg hover:bg-white">
                                     #{job.job_number}
                                   </Badge>
@@ -1511,6 +1526,19 @@ Format as HTML bullet points using <ul> and <li> tags. Include only the most cri
           paymentUrl={project.xero_payment_url}
         />
       )}
+
+      <EntityModal
+        open={!!previewJob}
+        onClose={() => setPreviewJob(null)}
+        title={`Job #${previewJob?.job_number}`}
+        onOpenFullPage={() => {
+          handleJobClick(previewJob.id);
+          setPreviewJob(null);
+        }}
+        fullPageLabel="Open Full Job"
+      >
+        {previewJob && <JobModalView job={previewJob} />}
+      </EntityModal>
     </div>
   );
 }
