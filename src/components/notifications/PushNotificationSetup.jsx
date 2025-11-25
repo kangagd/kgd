@@ -22,18 +22,28 @@ export default function PushNotificationSetup() {
 
   const checkRegistration = async () => {
     try {
-      // Check if we have a registered device in the backend
-      const user = await base44.auth.me();
-      if (user) {
-        const devices = await base44.entities.NotificationDevice.filter({
-          user_id: user.id,
-          is_active: true,
-          device_type: 'web'
-        });
-        setIsRegistered(devices.length > 0);
+      // Check if there's an active push subscription in the browser
+      const registration = await navigator.serviceWorker.getRegistration();
+      if (registration) {
+        const subscription = await registration.pushManager.getSubscription();
+        if (subscription) {
+          // Verify it's also registered in backend
+          const user = await base44.auth.me();
+          if (user) {
+            const devices = await base44.entities.NotificationDevice.filter({
+              user_id: user.id,
+              is_active: true,
+              device_type: 'web'
+            });
+            setIsRegistered(devices.length > 0 && !!subscription);
+            return;
+          }
+        }
       }
+      setIsRegistered(false);
     } catch (error) {
       console.error('Error checking registration:', error);
+      setIsRegistered(false);
     }
   };
 
