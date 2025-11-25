@@ -1140,6 +1140,7 @@ Format as HTML bullet points using <ul> and <li> tags. Include only the most cri
                 {user?.role === 'admin' && (
                   <TabsTrigger value="financials" className="flex-1 whitespace-nowrap">Financials</TabsTrigger>
                 )}
+                <TabsTrigger value="emails" className="flex-1 whitespace-nowrap">Emails</TabsTrigger>
                 <TabsTrigger value="summary" className="flex-1 whitespace-nowrap">
                   Summary
                 </TabsTrigger>
@@ -1414,6 +1415,15 @@ Format as HTML bullet points using <ul> and <li> tags. Include only the most cri
             <PartsSection 
               projectId={project.id} 
               autoExpand={project.status === "Parts Ordered"} 
+            />
+          </TabsContent>
+
+          <TabsContent value="emails" className="mt-3">
+            <ProjectEmailSection 
+              project={project}
+              onThreadLinked={() => {
+                queryClient.invalidateQueries({ queryKey: ['project', project.id] });
+              }}
             />
           </TabsContent>
 
