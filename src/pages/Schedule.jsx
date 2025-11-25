@@ -395,22 +395,12 @@ export default function Schedule() {
     );
   };
 
-  // Render Month View
+  // Render Month View with Drag and Drop
   const renderMonthView = () => {
     const monthStart = startOfMonth(selectedDate);
     const monthEnd = endOfMonth(selectedDate);
+    const monthDays = eachDayOfInterval({ start: monthStart, end: monthEnd });
     const monthJobs = getFilteredJobs((date) => date >= monthStart && date <= monthEnd);
-
-    if (monthJobs.length === 0) {
-      return (
-        <div className="flex flex-col items-center justify-center py-16">
-          <div className="w-16 h-16 bg-[#F3F4F6] rounded-full flex items-center justify-center mb-4">
-            <CalendarIcon className="w-8 h-8 text-[#6B7280]" />
-          </div>
-          <p className="text-[#4B5563] text-center">No jobs scheduled for this month.</p>
-        </div>
-      );
-    }
 
     // Group by date
     const jobsByDate = {};
@@ -422,28 +412,71 @@ export default function Schedule() {
       }
     });
 
+    // Get dates with jobs + some empty dates for drop targets
+    const datesWithJobs = Object.keys(jobsByDate).sort();
+    
+    if (datesWithJobs.length === 0) {
+      return (
+        <div className="flex flex-col items-center justify-center py-16">
+          <div className="w-16 h-16 bg-[#F3F4F6] rounded-full flex items-center justify-center mb-4">
+            <CalendarIcon className="w-8 h-8 text-[#6B7280]" />
+          </div>
+          <p className="text-[#4B5563] text-center">No jobs scheduled for this month.</p>
+        </div>
+      );
+    }
+
     return (
-      <div className="space-y-6">
-        {Object.entries(jobsByDate)
-          .sort(([a], [b]) => a.localeCompare(b))
-          .map(([dateKey, jobs]) => (
-            <div key={dateKey}>
-              <h3 className="text-lg font-semibold text-[#111827] mb-3">
-                {format(parseISO(dateKey), 'EEEE, MMM d, yyyy')}
-              </h3>
-              <div className="space-y-3">
-                {jobs.map(job => (
-                  <ScheduleJobCard
-                    key={job.id}
-                    job={job}
-                    onClick={() => setSelectedJob(job)}
-                    onAddressClick={handleAddressClick}
-                    onProjectClick={handleProjectClick}
-                  />
-                ))}
-              </div>
-            </div>
-          ))}
+      <div className="space-y-4">
+        {datesWithJobs.map(dateKey => {
+          const jobs = jobsByDate[dateKey] || [];
+          const isToday = isSameDay(parseISO(dateKey), new Date());
+
+          return (
+            <Droppable key={dateKey} droppableId={`day-${dateKey}`}>
+              {(provided, snapshot) => (
+                <div
+                  ref={provided.innerRef}
+                  {...provided.droppableProps}
+                  className={`rounded-xl p-3 min-h-[80px] transition-colors ${
+                    snapshot.isDraggingOver 
+                      ? 'bg-[#FAE008]/10 border-2 border-dashed border-[#FAE008]' 
+                      : isToday 
+                        ? 'bg-blue-50/50' 
+                        : ''
+                  }`}
+                >
+                  <h3 className={`text-lg font-semibold mb-3 ${isToday ? 'text-blue-600' : 'text-[#111827]'}`}>
+                    {format(parseISO(dateKey), 'EEEE, MMM d, yyyy')}
+                    {isToday && <span className="ml-2 text-xs font-normal text-blue-500">(Today)</span>}
+                  </h3>
+                  <div className="space-y-3">
+                    {jobs.map((job, index) => (
+                      <Draggable key={job.id} draggableId={job.id} index={index}>
+                        {(provided, snapshot) => (
+                          <div
+                            ref={provided.innerRef}
+                            {...provided.draggableProps}
+                          >
+                            <DraggableJobCard
+                              job={job}
+                              onClick={() => setSelectedJob(job)}
+                              onAddressClick={handleAddressClick}
+                              onProjectClick={handleProjectClick}
+                              isDragging={snapshot.isDragging}
+                              dragHandleProps={provided.dragHandleProps}
+                            />
+                          </div>
+                        )}
+                      </Draggable>
+                    ))}
+                  </div>
+                  {provided.placeholder}
+                </div>
+              )}
+            </Droppable>
+          );
+        })}
       </div>
     );
   };
