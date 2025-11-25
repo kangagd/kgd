@@ -193,7 +193,11 @@ export default function PushNotificationSetup() {
               </Button>
             ) : (
               <Button
-                onClick={enableNotifications}
+                onClick={(e) => {
+                  e.preventDefault();
+                  e.stopPropagation();
+                  enableNotifications();
+                }}
                 disabled={isLoading || permission === 'denied'}
                 className="bg-[#FAE008] text-gray-900 hover:bg-[#E5CF07] min-h-[44px] min-w-[100px]"
               >
