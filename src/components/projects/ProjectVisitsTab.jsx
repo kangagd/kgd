@@ -31,7 +31,11 @@ export default function ProjectVisitsTab({ projectId, isReadOnly }) {
   // Fetch jobs linked to this project
   const { data: jobs = [], isLoading: jobsLoading } = useQuery({
     queryKey: ['projectJobs', projectId],
-    queryFn: () => base44.entities.Job.filter({ project_id: projectId, deleted_at: { $exists: false } }, '-scheduled_date')
+    queryFn: async () => {
+      const allJobs = await base44.entities.Job.filter({ project_id: projectId }, '-scheduled_date');
+      // Filter out deleted jobs (deleted_at is null, undefined, or empty string means not deleted)
+      return allJobs.filter(job => !job.deleted_at);
+    }
   });
 
   // Fetch visit summaries (check-out records)
