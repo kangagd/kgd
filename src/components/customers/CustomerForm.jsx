@@ -200,6 +200,46 @@ export default function CustomerForm({ customer, onSubmit, onCancel, isSubmittin
               />
             </div>
 
+            {/* Duplicate Warning */}
+            {duplicateWarning && duplicateWarning.matches?.length > 0 && (
+              <div className="bg-amber-50 border border-amber-200 rounded-lg p-4">
+                <div className="flex items-start gap-3">
+                  <AlertTriangle className="w-5 h-5 text-amber-600 flex-shrink-0 mt-0.5" />
+                  <div className="flex-1">
+                    <h4 className="font-semibold text-amber-800 text-sm mb-2">
+                      Potential duplicate{duplicateWarning.matches.length > 1 ? 's' : ''} found
+                    </h4>
+                    <div className="space-y-2">
+                      {duplicateWarning.matches.slice(0, 3).map((match) => (
+                        <div key={match.id} className="flex items-center justify-between bg-white rounded-md p-2 border border-amber-100">
+                          <div className="text-sm">
+                            <span className="font-medium text-[#111827]">{match.name}</span>
+                            {match.email && <span className="text-[#6B7280] ml-2">• {match.email}</span>}
+                            {match.phone && <span className="text-[#6B7280] ml-2">• {match.phone}</span>}
+                            <span className="text-amber-600 ml-2 text-xs">
+                              (Match: {match.match_reasons?.join(', ')})
+                            </span>
+                          </div>
+                          <Link
+                            to={`${createPageUrl('Customers')}?customerId=${match.id}`}
+                            className="text-xs text-amber-700 hover:text-amber-900 underline ml-2"
+                            target="_blank"
+                          >
+                            View
+                          </Link>
+                        </div>
+                      ))}
+                      {duplicateWarning.matches.length > 3 && (
+                        <p className="text-xs text-amber-600">
+                          +{duplicateWarning.matches.length - 3} more potential match{duplicateWarning.matches.length - 3 > 1 ? 'es' : ''}
+                        </p>
+                      )}
+                    </div>
+                  </div>
+                </div>
+              </div>
+            )}
+
             <div className="space-y-2">
               <Label htmlFor="organisation_id">Organisation (Optional)</Label>
               <div className="flex gap-2 mb-2">
