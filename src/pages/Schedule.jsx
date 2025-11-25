@@ -411,13 +411,13 @@ export default function Schedule() {
     );
   };
 
-  // Render Month View with Drag and Drop
+  // Render Month View as Calendar Grid with Drag and Drop
   const renderMonthView = () => {
     const monthStart = startOfMonth(selectedDate);
     const monthEnd = endOfMonth(selectedDate);
     const monthJobs = getFilteredJobs((date) => date >= monthStart && date <= monthEnd);
 
-    // Group by date
+    // Group jobs by date
     const jobsByDate = {};
     monthJobs.forEach(job => {
       if (job.scheduled_date) {
@@ -427,71 +427,95 @@ export default function Schedule() {
       }
     });
 
-    // Get dates with jobs + some empty dates for drop targets
-    const datesWithJobs = Object.keys(jobsByDate).sort();
-    
-    if (datesWithJobs.length === 0) {
-      return (
-        <div className="flex flex-col items-center justify-center py-16">
-          <div className="w-16 h-16 bg-[#F3F4F6] rounded-full flex items-center justify-center mb-4">
-            <CalendarIcon className="w-8 h-8 text-[#6B7280]" />
-          </div>
-          <p className="text-[#4B5563] text-center">No jobs scheduled for this month.</p>
-        </div>
-      );
-    }
+    // Calculate calendar grid
+    const calendarStart = startOfWeek(monthStart, { weekStartsOn: 1 });
+    const calendarEnd = endOfWeek(monthEnd, { weekStartsOn: 1 });
+    const calendarDays = eachDayOfInterval({ start: calendarStart, end: calendarEnd });
+
+    const weekDayHeaders = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
 
     return (
-      <div className="space-y-4">
-        {datesWithJobs.map(dateKey => {
-          const jobs = jobsByDate[dateKey] || [];
-          const isToday = isSameDay(parseISO(dateKey), new Date());
+      <div className="bg-white border border-[#E5E7EB] rounded-xl overflow-hidden">
+        {/* Week day headers */}
+        <div className="grid grid-cols-7 border-b border-[#E5E7EB]">
+          {weekDayHeaders.map(day => (
+            <div key={day} className="p-2 text-center text-xs font-semibold text-[#6B7280] bg-[#F9FAFB]">
+              {day}
+            </div>
+          ))}
+        </div>
 
-          return (
-            <Droppable key={dateKey} droppableId={`day-${dateKey}`}>
-              {(provided, snapshot) => (
-                <div
-                  ref={provided.innerRef}
-                  {...provided.droppableProps}
-                  className={`rounded-xl p-3 min-h-[80px] transition-colors ${
-                    snapshot.isDraggingOver 
-                      ? 'bg-[#FAE008]/10 border-2 border-dashed border-[#FAE008]' 
-                      : isToday 
-                        ? 'bg-blue-50/50' 
-                        : ''
-                  }`}
-                >
-                  <h3 className={`text-lg font-semibold mb-3 ${isToday ? 'text-blue-600' : 'text-[#111827]'}`}>
-                    {format(parseISO(dateKey), 'EEEE, MMM d, yyyy')}
-                    {isToday && <span className="ml-2 text-xs font-normal text-blue-500">(Today)</span>}
-                  </h3>
-                  <div className="space-y-3">
-                    {jobs.map((job, index) => (
-                      <Draggable key={job.id} draggableId={job.id} index={index}>
-                        {(dragProvided, dragSnapshot) => (
-                          <div
-                            ref={dragProvided.innerRef}
-                            {...dragProvided.draggableProps}
-                            {...dragProvided.dragHandleProps}
-                          >
-                            <DraggableJobCard
-                              job={job}
+        {/* Calendar grid */}
+        <div className="grid grid-cols-7">
+          {calendarDays.map((day, index) => {
+            const dateStr = format(day, 'yyyy-MM-dd');
+            const dayJobs = jobsByDate[dateStr] || [];
+            const isToday = isSameDay(day, new Date());
+            const isCurrentMonth = isSameMonth(day, selectedDate);
+
+            return (
+              <Droppable key={dateStr} droppableId={`day-${dateStr}`}>
+                {(provided, snapshot) => (
+                  <div
+                    ref={provided.innerRef}
+                    {...provided.droppableProps}
+                    className={`min-h-[120px] border-b border-r border-[#E5E7EB] p-1.5 transition-colors ${
+                      snapshot.isDraggingOver 
+                        ? 'bg-[#FAE008]/20' 
+                        : isToday 
+                          ? 'bg-blue-50' 
+                          : !isCurrentMonth 
+                            ? 'bg-[#F9FAFB]' 
+                            : 'bg-white'
+                    } ${index % 7 === 6 ? 'border-r-0' : ''}`}
+                  >
+                    {/* Date number */}
+                    <div className={`text-right mb-1 ${
+                      isToday 
+                        ? 'text-blue-600 font-bold' 
+                        : !isCurrentMonth 
+                          ? 'text-[#9CA3AF]' 
+                          : 'text-[#111827]'
+                    }`}>
+                      <span className={`text-sm ${isToday ? 'bg-blue-600 text-white rounded-full px-1.5 py-0.5' : ''}`}>
+                        {format(day, 'd')}
+                      </span>
+                    </div>
+
+                    {/* Jobs */}
+                    <div className="space-y-1 overflow-y-auto max-h-[90px]">
+                      {dayJobs.map((job, jobIndex) => (
+                        <Draggable key={job.id} draggableId={job.id} index={jobIndex}>
+                          {(dragProvided, dragSnapshot) => (
+                            <div
+                              ref={dragProvided.innerRef}
+                              {...dragProvided.draggableProps}
+                              {...dragProvided.dragHandleProps}
                               onClick={() => setSelectedJob(job)}
-                              onAddressClick={handleAddressClick}
-                              onProjectClick={handleProjectClick}
-                              isDragging={dragSnapshot.isDragging}
-                            />
-                          </div>
-                        )}
-                      </Draggable>
-                    ))}
+                              className={`text-xs p-1.5 rounded cursor-grab active:cursor-grabbing transition-all ${
+                                dragSnapshot.isDragging 
+                                  ? 'bg-[#FAE008] shadow-lg ring-2 ring-[#FAE008] rotate-1 opacity-90' 
+                                  : 'bg-[#F3F4F6] hover:bg-[#E5E7EB]'
+                              }`}
+                            >
+                              <div className="font-medium text-[#111827] truncate">
+                                {job.scheduled_time || ''} #{job.job_number}
+                              </div>
+                              <div className="text-[#6B7280] truncate">
+                                {job.customer_name}
+                              </div>
+                            </div>
+                          )}
+                        </Draggable>
+                      ))}
+                    </div>
+                    {provided.placeholder}
                   </div>
-                  {provided.placeholder}
-                </div>
-              )}
-            </Droppable>
-          );
-        })}
+                )}
+              </Droppable>
+            );
+          })}
+        </div>
       </div>
     );
   };
