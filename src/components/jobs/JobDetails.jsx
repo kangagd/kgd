@@ -733,7 +733,7 @@ export default function JobDetails({ job: initialJob, onClose, onStatusChange, o
                 <DuplicateBadge record={job} />
               </div>
 
-              {/* Middle Group: Job Type + Product + Customer Type Chips */}
+              {/* Middle Group: Job Type + Product Chips */}
               <div className="flex items-center gap-2 flex-wrap">
                 <EditableField
                   value={job.job_type_id}
@@ -768,11 +768,6 @@ export default function JobDetails({ job: initialJob, onClose, onStatusChange, o
                   )}
                   placeholder="Product"
                 />
-                {job.customer_type && (
-                  <Badge className={`${customerTypeColors[job.customer_type] || 'bg-gray-100 text-gray-700'} border-0 font-medium text-[12px] leading-[1.35] px-3 py-1 rounded-lg hover:opacity-100`}>
-                    {job.customer_type}
-                  </Badge>
-                )}
               </div>
             </div>
 
