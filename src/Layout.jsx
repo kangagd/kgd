@@ -536,12 +536,7 @@ export default function Layout({ children, currentPageName }) {
             </div>
           </nav>
 
-          {/* Notification Bell */}
-          {!isCollapsed && (
-            <div className="px-3 pb-3 border-b border-[#E5E7EB] flex-shrink-0">
-              <NotificationBell user={user} />
-            </div>
-          )}
+
 
           {/* Test Mode Toggle */}
           {user && user.email === 'admin@kangaroogd.com.au' && (
