@@ -1131,9 +1131,6 @@ Format as HTML bullet points using <ul> and <li> tags. Include only the most cri
                 <TabsTrigger value="overview" className="flex-1 whitespace-nowrap">
                   Overview
                 </TabsTrigger>
-                <TabsTrigger value="visits" className="flex-1 whitespace-nowrap">
-                  Visits
-                </TabsTrigger>
                 <TabsTrigger value="quoting" className="flex-1 whitespace-nowrap">Quoting</TabsTrigger>
                 <TabsTrigger value="parts" className="flex-1 whitespace-nowrap">Parts</TabsTrigger>
                 <TabsTrigger value="invoices" className="flex-1 whitespace-nowrap">Invoices</TabsTrigger>
@@ -1269,10 +1266,6 @@ Format as HTML bullet points using <ul> and <li> tags. Include only the most cri
                 </div>
               </div>
             )}
-          </TabsContent>
-
-          <TabsContent value="visits" className="mt-3">
-            <ProjectVisitsTab projectId={project.id} isReadOnly={false} />
           </TabsContent>
 
           <TabsContent value="summary" className="mt-3">
