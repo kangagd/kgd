@@ -32,6 +32,7 @@ import JobMapView from "./JobMapView";
 import XeroInvoiceCard from "../invoices/XeroInvoiceCard";
 import CreateInvoiceModal from "../invoices/CreateInvoiceModal";
 import TakePaymentModal from "../invoices/TakePaymentModal";
+import ScheduledVisitsManager from "./ScheduledVisitsManager";
 import {
   Dialog,
   DialogContent,
@@ -891,6 +892,22 @@ export default function JobDetails({ job: initialJob, onClose, onStatusChange, o
                         />
                       </div>
                     </div>
+                  </div>
+                  
+                  {/* Multiple Visits Manager */}
+                  <div className="pt-3 border-t border-[#E5E7EB]">
+                    <ScheduledVisitsManager
+                      visits={job.scheduled_visits || []}
+                      technicians={technicians}
+                      onVisitsChange={(visits) => {
+                        updateJobMutation.mutate({ field: 'scheduled_visits', value: visits });
+                      }}
+                      primaryDate={job.scheduled_date}
+                      primaryTime={job.scheduled_time}
+                      primaryDuration={job.expected_duration}
+                      primaryAssignedTo={Array.isArray(job.assigned_to) ? job.assigned_to : job.assigned_to ? [job.assigned_to] : []}
+                      primaryAssignedToName={Array.isArray(job.assigned_to_name) ? job.assigned_to_name : job.assigned_to_name ? [job.assigned_to_name] : []}
+                    />
                   </div>
                 </div>
               </CollapsibleContent>
