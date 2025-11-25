@@ -132,25 +132,33 @@ Deno.serve(async (req) => {
           continue;
         }
 
-      // Check if thread already exists
+      // Use Gmail's threadId to group messages into threads
+      const gmailThreadId = detail.threadId;
+      
+      // Check if thread already exists by Gmail thread ID
       const existingThreads = await base44.asServiceRole.entities.EmailThread.filter({
-       subject: subject,
-       from_address: parseEmailAddress(from)
+        gmail_thread_id: gmailThreadId
       });
 
       let threadId;
 
       if (existingThreads.length > 0) {
         threadId = existingThreads[0].id;
-        // Update last message date
-        await base44.asServiceRole.entities.EmailThread.update(threadId, {
-          last_message_date: new Date(date).toISOString(),
+        // Update last message date and message count
+        const messageDate = new Date(date).toISOString();
+        const updateData = {
           last_message_snippet: detail.snippet
-        });
+        };
+        // Only update last_message_date if this message is newer
+        if (!existingThreads[0].last_message_date || new Date(messageDate) > new Date(existingThreads[0].last_message_date)) {
+          updateData.last_message_date = messageDate;
+        }
+        await base44.asServiceRole.entities.EmailThread.update(threadId, updateData);
       } else {
-        // Create new thread
+        // Create new thread with Gmail thread ID
         const newThread = await base44.asServiceRole.entities.EmailThread.create({
           subject,
+          gmail_thread_id: gmailThreadId,
           from_address: parseEmailAddress(from),
           to_addresses: to.split(',').map(e => parseEmailAddress(e.trim())),
           last_message_date: new Date(date).toISOString(),
