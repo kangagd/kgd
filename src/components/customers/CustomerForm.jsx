@@ -1,11 +1,11 @@
-import React, { useState } from "react";
+import React, { useState, useEffect, useCallback } from "react";
 import { Card, CardHeader, CardTitle, CardContent, CardFooter } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 // Removed Textarea import as it's replaced by RichTextEditor for notes
 import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { ArrowLeft, Plus } from "lucide-react";
+import { ArrowLeft, Plus, AlertTriangle } from "lucide-react";
 import RichTextField from "../common/RichTextField";
 import AddressAutocomplete from "../common/AddressAutocomplete";
 import { base44 } from "@/api/base44Client";
@@ -17,6 +17,9 @@ import {
   DialogTitle,
   DialogFooter,
 } from "@/components/ui/dialog";
+import { createPageUrl } from "@/utils";
+import { Link } from "react-router-dom";
+import _ from "lodash";
 
 export default function CustomerForm({ customer, onSubmit, onCancel, isSubmitting }) {
   const [formData, setFormData] = useState(customer || {
