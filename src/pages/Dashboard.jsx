@@ -279,36 +279,38 @@ export default function Dashboard() {
             </div>
           )}
 
-          <div className="bg-white rounded-xl border border-[#E5E7EB] p-7 shadow-sm">
-            <h2 className="text-[22px] font-semibold text-[#111827] leading-[1.2] mb-6">Project Updates</h2>
-            {recentProjects.length === 0 ? (
-              <div className="text-center py-16">
-                <Briefcase className="w-14 h-14 mx-auto text-[#D1D5DB] mb-4" />
-                <p className="text-[14px] text-[#4B5563] leading-[1.4] font-normal">No recent project updates</p>
-              </div>
-            ) : (
-              <div className="space-y-3">
-                {recentProjects.map(project => (
-                  <div 
-                    key={project.id} 
-                    className="p-5 rounded-xl border border-[#E5E7EB] hover:bg-[#F9FAFB] hover:border-[#FAE008] transition-all cursor-pointer"
-                    onClick={() => navigate(createPageUrl("Projects") + `?projectId=${project.id}`)}
-                  >
-                    <div className="flex items-start justify-between mb-2">
-                      <div className="flex-1">
-                        <h4 className="text-[16px] font-medium text-[#111827] leading-[1.4] mb-1">{project.title}</h4>
-                        <p className="text-[14px] text-[#4B5563] leading-[1.4]">{project.customer_name}</p>
+          {!(user?.is_field_technician && user?.role !== 'admin') && (
+            <div className="bg-white rounded-xl border border-[#E5E7EB] p-7 shadow-sm">
+              <h2 className="text-[22px] font-semibold text-[#111827] leading-[1.2] mb-6">Project Updates</h2>
+              {recentProjects.length === 0 ? (
+                <div className="text-center py-16">
+                  <Briefcase className="w-14 h-14 mx-auto text-[#D1D5DB] mb-4" />
+                  <p className="text-[14px] text-[#4B5563] leading-[1.4] font-normal">No recent project updates</p>
+                </div>
+              ) : (
+                <div className="space-y-3">
+                  {recentProjects.map(project => (
+                    <div 
+                      key={project.id} 
+                      className="p-5 rounded-xl border border-[#E5E7EB] hover:bg-[#F9FAFB] hover:border-[#FAE008] transition-all cursor-pointer"
+                      onClick={() => navigate(createPageUrl("Projects") + `?projectId=${project.id}`)}
+                    >
+                      <div className="flex items-start justify-between mb-2">
+                        <div className="flex-1">
+                          <h4 className="text-[16px] font-medium text-[#111827] leading-[1.4] mb-1">{project.title}</h4>
+                          <p className="text-[14px] text-[#4B5563] leading-[1.4]">{project.customer_name}</p>
+                        </div>
+                        <ProjectStatusBadge value={project.status} className="ml-2" />
                       </div>
-                      <ProjectStatusBadge value={project.status} className="ml-2" />
+                      <p className="text-[12px] text-[#6B7280] leading-[1.35]">
+                        Updated {format(parseISO(project.updated_date), 'MMM d, h:mm a')}
+                      </p>
                     </div>
-                    <p className="text-[12px] text-[#6B7280] leading-[1.35]">
-                      Updated {format(parseISO(project.updated_date), 'MMM d, h:mm a')}
-                    </p>
-                  </div>
-                ))}
-              </div>
-            )}
-          </div>
+                  ))}
+                </div>
+              )}
+            </div>
+          )}
         </div>
 
         {user?.role === 'admin' && (
