@@ -30,6 +30,8 @@ export default function CustomerQuickEdit({ customerId, projectId, onCustomerUpd
       setFormData({
         name: customer.name || "",
         customer_type: customer.customer_type || "",
+        source: customer.source || "",
+        source_details: customer.source_details || "",
         phone: customer.phone || "",
         secondary_phone: customer.secondary_phone || "",
         email: customer.email || "",
