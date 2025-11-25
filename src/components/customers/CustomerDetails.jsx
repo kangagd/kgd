@@ -28,7 +28,10 @@ export default function CustomerDetails({ customer, onClose, onEdit, onDelete })
 
   const { data: jobs = [] } = useQuery({
     queryKey: ['customerJobs', customer.id],
-    queryFn: () => base44.entities.Job.filter({ customer_id: customer.id, deleted_at: { $exists: false } }, '-scheduled_date'),
+    queryFn: async () => {
+      const allJobs = await base44.entities.Job.filter({ customer_id: customer.id }, '-scheduled_date');
+      return allJobs.filter(job => !job.deleted_at);
+    },
   });
 
   const { data: organisation } = useQuery({
