@@ -106,6 +106,18 @@ export default function Team() {
                           </div>
                         )}
                       </div>
+                      {isAdmin && (
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => setSelectedUser(tech)}
+                          className="mt-2 text-xs text-[#6B7280] hover:text-[#111827]"
+                        >
+                          <Shield className="w-3 h-3 mr-1" />
+                          Manage Permissions
+                          <ChevronRight className="w-3 h-3 ml-1" />
+                        </Button>
+                      )}
                     </div>
                   ))}
                 </div>
