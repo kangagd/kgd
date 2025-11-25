@@ -117,12 +117,20 @@ export default function CustomerForm({ customer, onSubmit, onCancel, isSubmittin
   };
 
   const handleOrganisationChange = (orgId) => {
-    const org = organisations.find(o => o.id === orgId);
-    setFormData({
-      ...formData,
-      organisation_id: orgId,
-      organisation_name: org?.name || ""
-    });
+    if (orgId === "none") {
+      setFormData({
+        ...formData,
+        organisation_id: "",
+        organisation_name: ""
+      });
+    } else {
+      const org = organisations.find(o => o.id === orgId);
+      setFormData({
+        ...formData,
+        organisation_id: orgId,
+        organisation_name: org?.name || ""
+      });
+    }
   };
 
   const handleCreateNewOrg = async () => {
