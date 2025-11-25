@@ -14,7 +14,15 @@ import {
   Loader2,
   X
 } from "lucide-react";
-import { useDebounce } from "@/hooks/useDebounce";
+// Custom debounce hook
+function useDebounce(value, delay) {
+  const [debouncedValue, setDebouncedValue] = useState(value);
+  useEffect(() => {
+    const handler = setTimeout(() => setDebouncedValue(value), delay);
+    return () => clearTimeout(handler);
+  }, [value, delay]);
+  return debouncedValue;
+}
 
 export default function GlobalSearchDropdown() {
   const navigate = useNavigate();
