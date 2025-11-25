@@ -623,9 +623,14 @@ export default function Layout({ children, currentPageName }) {
             <h1 className="font-semibold text-[#111827] text-[14px] truncate px-2 flex-1 text-center">
               {[...primaryNavigationItems, ...secondaryNavigationItems].find(item => item.url === location.pathname)?.title || 'FieldScheduler'}
             </h1>
-            <div className="w-[44px]" />
+            <NotificationBell user={user} />
           </div>
         </header>
+
+        {/* Desktop Sticky Notification Header */}
+        <div className="hidden lg:flex sticky top-0 z-30 bg-[#ffffff] border-b border-[#E5E7EB] px-6 py-3 justify-end">
+          <NotificationBell user={user} />
+        </div>
 
         {/* Page Content */}
         <main className="flex-1 overflow-y-auto overflow-x-hidden bg-[#ffffff] relative">
