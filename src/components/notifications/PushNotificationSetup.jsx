@@ -53,7 +53,9 @@ export default function PushNotificationSetup() {
   };
 
   const enableNotifications = async () => {
+    if (isLoading) return; // Prevent double-clicks
     setIsLoading(true);
+    
     try {
       // Request permission
       const perm = await Notification.requestPermission();
@@ -65,54 +67,30 @@ export default function PushNotificationSetup() {
         return;
       }
 
-      // Register service worker - use inline service worker via blob
-      const swCode = `
-        self.addEventListener('push', function(event) {
-          const data = event.data ? event.data.json() : {};
-          const title = data.title || 'New Notification';
-          const options = {
-            body: data.body || '',
-            icon: data.icon || '/favicon.ico',
-            badge: data.badge || '/favicon.ico',
-            data: data.data || {}
-          };
-          event.waitUntil(self.registration.showNotification(title, options));
-        });
-
-        self.addEventListener('notificationclick', function(event) {
-          event.notification.close();
-          event.waitUntil(clients.openWindow('/'));
-        });
-      `;
-      
-      const blob = new Blob([swCode], { type: 'application/javascript' });
-      const swUrl = URL.createObjectURL(blob);
-      
-      let registration;
-      try {
-        registration = await navigator.serviceWorker.register(swUrl, { scope: '/' });
-      } catch (swError) {
-        // Fallback: try to use existing service worker if blob registration fails
-        console.log('Blob SW failed, checking for existing SW:', swError);
-        registration = await navigator.serviceWorker.ready;
-      }
-      
-      await navigator.serviceWorker.ready;
-
-      // Get VAPID public key from backend
+      // Get VAPID public key from backend first
       const vapidResponse = await base44.functions.invoke('getVapidPublicKey');
       if (!vapidResponse.data?.vapidPublicKey) {
         throw new Error('Failed to get VAPID public key');
       }
-      
-      // Subscribe to push notifications
-      const subscription = await registration.pushManager.subscribe({
-        userVisibleOnly: true,
-        applicationServerKey: urlBase64ToUint8Array(vapidResponse.data.vapidPublicKey)
-      });
+      const vapidPublicKey = vapidResponse.data.vapidPublicKey;
 
-      // Get user info
-      const user = await base44.auth.me();
+      // Get or wait for existing service worker
+      let registration = await navigator.serviceWorker.getRegistration();
+      if (!registration) {
+        // Wait for the platform's service worker to be ready
+        registration = await navigator.serviceWorker.ready;
+      }
+
+      // Subscribe to push notifications
+      let subscription = await registration.pushManager.getSubscription();
+      
+      // If no subscription or different key, create new subscription
+      if (!subscription) {
+        subscription = await registration.pushManager.subscribe({
+          userVisibleOnly: true,
+          applicationServerKey: urlBase64ToUint8Array(vapidPublicKey)
+        });
+      }
 
       // Send subscription to backend
       const response = await base44.functions.invoke('registerNotificationDevice', {
@@ -128,7 +106,7 @@ export default function PushNotificationSetup() {
       }
     } catch (error) {
       console.error('Error enabling notifications:', error);
-      toast.error('Failed to enable notifications');
+      toast.error(`Failed: ${error.message}`);
     } finally {
       setIsLoading(false);
     }
