@@ -631,22 +631,56 @@ export default function Schedule() {
             </div>
 
         {/* Content */}
-        {isLoading ? (
-          <div className="space-y-3">
-            {[1, 2, 3].map((i) => (
-              <Card key={i} className="p-4 animate-pulse">
-                <div className="h-4 bg-[#F3F4F6] rounded w-1/3 mb-2"></div>
-                <div className="h-3 bg-[#F3F4F6] rounded w-1/2"></div>
-              </Card>
-            ))}
-          </div>
-        ) : (
-          <>
-            {view === "day" && renderDayView()}
-            {view === "week" && renderWeekView()}
-            {view === "month" && renderMonthView()}
-          </>
-        )}
+        <DragDropContext onDragEnd={handleDragEnd}>
+          {isLoading ? (
+            <div className="space-y-3">
+              {[1, 2, 3].map((i) => (
+                <Card key={i} className="p-4 animate-pulse">
+                  <div className="h-4 bg-[#F3F4F6] rounded w-1/3 mb-2"></div>
+                  <div className="h-3 bg-[#F3F4F6] rounded w-1/2"></div>
+                </Card>
+              ))}
+            </div>
+          ) : (
+            <>
+              {view === "day" && renderDayView()}
+              {view === "week" && renderWeekView()}
+              {view === "month" && renderMonthView()}
+            </>
+          )}
+        </DragDropContext>
+
+        {/* Reschedule Confirmation Modal */}
+        <RescheduleConfirmModal
+          open={showConfirmModal}
+          onClose={() => {
+            setShowConfirmModal(false);
+            setPendingReschedule(null);
+          }}
+          onConfirm={handleConfirmReschedule}
+          job={pendingReschedule?.job}
+          newDate={pendingReschedule?.newDate}
+          newTime={pendingReschedule?.newTime}
+          notifyTechnician={notifyTechnician}
+          setNotifyTechnician={setNotifyTechnician}
+          isSubmitting={rescheduleMutation.isPending}
+        />
+
+        {/* Conflict Warning Modal */}
+        <ConflictWarningModal
+          open={showConflictModal}
+          onClose={() => {
+            setShowConflictModal(false);
+            setPendingReschedule(null);
+            setConflictingJobs([]);
+          }}
+          onConfirm={handleConflictProceed}
+          draggedJob={pendingReschedule?.job}
+          conflictingJobs={conflictingJobs}
+          newDate={pendingReschedule?.newDate}
+          newTime={pendingReschedule?.newTime}
+          isSubmitting={false}
+        />
       </div>
     </div>
   );
