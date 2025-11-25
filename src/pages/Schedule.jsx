@@ -327,7 +327,7 @@ export default function Schedule() {
     );
   };
 
-  // Render Week View
+  // Render Week View with Drag and Drop
   const renderWeekView = () => {
     const weekStart = startOfWeek(selectedDate, { weekStartsOn: 1 });
     const weekEnd = endOfWeek(selectedDate, { weekStartsOn: 1 });
@@ -337,26 +337,58 @@ export default function Schedule() {
       <div className="space-y-6">
         {weekDays.map(day => {
           const dayJobs = getFilteredJobs((date) => isSameDay(date, day));
-          
-          if (dayJobs.length === 0) return null;
+          const dateStr = format(day, 'yyyy-MM-dd');
+          const isToday = isSameDay(day, new Date());
 
           return (
-            <div key={day.toISOString()}>
-              <h3 className="text-lg font-semibold text-[#111827] mb-3">
-                {format(day, 'EEEE, MMM d')}
-              </h3>
-              <div className="space-y-3">
-                {dayJobs.map(job => (
-                  <ScheduleJobCard
-                    key={job.id}
-                    job={job}
-                    onClick={() => setSelectedJob(job)}
-                    onAddressClick={handleAddressClick}
-                    onProjectClick={handleProjectClick}
-                  />
-                ))}
-              </div>
-            </div>
+            <Droppable key={day.toISOString()} droppableId={`day-${dateStr}`}>
+              {(provided, snapshot) => (
+                <div
+                  ref={provided.innerRef}
+                  {...provided.droppableProps}
+                  className={`rounded-xl p-3 -m-1 min-h-[80px] transition-colors ${
+                    snapshot.isDraggingOver 
+                      ? 'bg-[#FAE008]/10 border-2 border-dashed border-[#FAE008]' 
+                      : isToday 
+                        ? 'bg-blue-50/50' 
+                        : ''
+                  }`}
+                >
+                  <h3 className={`text-lg font-semibold mb-3 ${isToday ? 'text-blue-600' : 'text-[#111827]'}`}>
+                    {format(day, 'EEEE, MMM d')}
+                    {isToday && <span className="ml-2 text-xs font-normal text-blue-500">(Today)</span>}
+                  </h3>
+                  {dayJobs.length === 0 ? (
+                    <p className="text-sm text-[#9CA3AF] py-4 text-center">
+                      {snapshot.isDraggingOver ? 'Drop here to schedule' : 'No jobs'}
+                    </p>
+                  ) : (
+                    <div className="space-y-3">
+                      {dayJobs.map((job, index) => (
+                        <Draggable key={job.id} draggableId={job.id} index={index}>
+                          {(provided, snapshot) => (
+                            <div
+                              ref={provided.innerRef}
+                              {...provided.draggableProps}
+                            >
+                              <DraggableJobCard
+                                job={job}
+                                onClick={() => setSelectedJob(job)}
+                                onAddressClick={handleAddressClick}
+                                onProjectClick={handleProjectClick}
+                                isDragging={snapshot.isDragging}
+                                dragHandleProps={provided.dragHandleProps}
+                              />
+                            </div>
+                          )}
+                        </Draggable>
+                      ))}
+                    </div>
+                  )}
+                  {provided.placeholder}
+                </div>
+              )}
+            </Droppable>
           );
         })}
       </div>
