@@ -219,10 +219,12 @@ export default function Customers() {
             <Tabs value={customerTypeFilter} onValueChange={setCustomerTypeFilter} className="w-full">
               <TabsList className="w-full justify-start min-w-max md:min-w-0">
                 <TabsTrigger value="all" className="flex-1 whitespace-nowrap">All</TabsTrigger>
-                <TabsTrigger value="Owner" className="flex-1 whitespace-nowrap">Owner</TabsTrigger>
-                <TabsTrigger value="Builder" className="flex-1 whitespace-nowrap">Builder</TabsTrigger>
-                <TabsTrigger value="Real Estate - Tenant" className="flex-1 whitespace-nowrap">Real Estate</TabsTrigger>
-                <TabsTrigger value="Strata - Owner" className="flex-1 whitespace-nowrap">Strata</TabsTrigger>
+                  <TabsTrigger value="Owner" className="flex-1 whitespace-nowrap">Owner</TabsTrigger>
+                  <TabsTrigger value="Builder" className="flex-1 whitespace-nowrap">Builder</TabsTrigger>
+                  <TabsTrigger value="Real Estate - Tenant" className="flex-1 whitespace-nowrap">RE Tenant</TabsTrigger>
+                  <TabsTrigger value="Real Estate - Agent" className="flex-1 whitespace-nowrap">RE Agent</TabsTrigger>
+                  <TabsTrigger value="Strata - Owner" className="flex-1 whitespace-nowrap">Strata Owner</TabsTrigger>
+                  <TabsTrigger value="Strata - Agent" className="flex-1 whitespace-nowrap">Strata Agent</TabsTrigger>
               </TabsList>
             </Tabs>
           </div>
