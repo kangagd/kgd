@@ -651,20 +651,15 @@ Format as HTML bullet points using <ul> and <li> tags. Include only the most cri
             <h3 className="text-[16px] font-semibold text-[#111827] leading-[1.2]">Customer</h3>
           </CardHeader>
           <CardContent className="p-4 space-y-4">
-            <div 
-              className="cursor-pointer hover:text-[#FAE008] transition-colors"
-              onClick={handleCustomerClick}
-            >
-              <h2 className="text-[22px] font-semibold text-[#111827] leading-[1.2]">{project.customer_name}</h2>
-            </div>
+            <CustomerQuickEdit
+              customerId={project.customer_id}
+              projectId={project.id}
+              onCustomerUpdate={(updatedData) => {
+                queryClient.invalidateQueries({ queryKey: ['project', project.id] });
+              }}
+            />
 
-            {customer?.customer_type && (
-              <Badge className="bg-[#EDE9FE] text-[#6D28D9] hover:bg-[#EDE9FE] border-0 font-medium px-2.5 py-0.5 rounded-lg text-[12px] leading-[1.35]">
-                {customer.customer_type}
-              </Badge>
-            )}
-
-            <div className="space-y-3">
+            <div className="pt-3 border-t border-[#E5E7EB]">
               <div className="flex items-start gap-2.5">
                 <MapPin className="w-5 h-5 text-[#4B5563] flex-shrink-0 mt-1" />
                 <div className="flex-1 min-w-0">
@@ -694,30 +689,6 @@ Format as HTML bullet points using <ul> and <li> tags. Include only the most cri
                   />
                 </div>
               </div>
-
-              {project.customer_phone && (
-                <div className="flex items-start gap-2.5">
-                  <a href={`tel:${project.customer_phone}`} className="hover:bg-[#F3F4F6] p-1 rounded transition-colors">
-                    <Phone className="w-5 h-5 text-[#4B5563]" />
-                  </a>
-                  <div className="flex-1 min-w-0">
-                    <div className="text-[14px] text-[#6B7280] font-normal leading-[1.4] mb-0.5">Phone</div>
-                    <span className="text-[14px] font-normal text-[#111827] leading-[1.4]">{project.customer_phone}</span>
-                  </div>
-                </div>
-              )}
-
-              {project.customer_email && (
-                <div className="flex items-start gap-2.5">
-                  <a href={`mailto:${project.customer_email}`} className="hover:bg-[#F3F4F6] p-1 rounded transition-colors">
-                    <Mail className="w-5 h-5 text-[#4B5563]" />
-                  </a>
-                  <div className="flex-1 min-w-0">
-                    <div className="text-[14px] text-[#6B7280] font-normal leading-[1.4] mb-0.5">Email</div>
-                    <span className="text-[14px] font-normal text-[#111827] leading-[1.4]">{project.customer_email}</span>
-                  </div>
-                </div>
-              )}
             </div>
             </CardContent>
             </Card>
