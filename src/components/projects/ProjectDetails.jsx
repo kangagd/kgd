@@ -39,6 +39,7 @@ import WarrantyCard from "./WarrantyCard";
 import MaintenanceSection from "./MaintenanceSection";
 import AIEmailSuggestionsBanner from "./AIEmailSuggestionsBanner";
 import DuplicateWarningCard, { DuplicateBadge } from "../common/DuplicateWarningCard";
+import CustomerQuickEdit from "./CustomerQuickEdit";
 
 const statusColors = {
   "Lead": "bg-slate-100 text-slate-700",
