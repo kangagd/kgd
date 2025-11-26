@@ -17,6 +17,7 @@ export default function AIEmailSuggestionsBanner({
   const [suggestions, setSuggestions] = useState(null);
   const [emailThread, setEmailThread] = useState(null);
   const [dismissed, setDismissed] = useState(false);
+  const [minimized, setMinimized] = useState(false);
 
   useEffect(() => {
     if (emailThreadId) {
@@ -110,6 +111,31 @@ export default function AIEmailSuggestionsBanner({
 
   if (!suggestions) return null;
 
+  // Minimized view
+  if (minimized) {
+    return (
+      <>
+        <button
+          onClick={() => setMinimized(false)}
+          className="flex items-center gap-2 px-3 py-2 mb-4 rounded-lg border border-[#E0E7FF] bg-gradient-to-r from-[#EEF2FF] to-[#F5F3FF] hover:shadow-sm transition-all cursor-pointer"
+        >
+          <Sparkles className="w-4 h-4 text-[#6366F1]" />
+          <span className="text-[13px] font-medium text-[#4338CA]">AI Suggestions</span>
+          <span className="px-1.5 py-0.5 rounded text-[10px] font-medium bg-[#6366F1]/10 text-[#4338CA]">Click to expand</span>
+        </button>
+
+        <AIEmailSuggestionsModal
+          open={showModal}
+          onClose={() => setShowModal(false)}
+          emailThread={emailThread}
+          project={project}
+          suggestions={suggestions}
+          onApply={onApplySuggestions}
+        />
+      </>
+    );
+  }
+
   return (
     <>
       <Card className="border border-[#E0E7FF] bg-gradient-to-r from-[#EEF2FF] to-[#F5F3FF] shadow-sm mb-4">
@@ -140,8 +166,9 @@ export default function AIEmailSuggestionsBanner({
               </div>
             </div>
             <button
-              onClick={() => setDismissed(true)}
+              onClick={() => setMinimized(true)}
               className="p-1 hover:bg-[#6366F1]/10 rounded transition-colors"
+              title="Minimize"
             >
               <X className="w-4 h-4 text-[#6B7280]" />
             </button>
