@@ -25,6 +25,7 @@ export default function PushNotificationSetup({ user }) {
   const [subscriptions, setSubscriptions] = useState([]);
   const [isLoading, setIsLoading] = useState(false);
   const [isEnabling, setIsEnabling] = useState(false);
+  const [isTesting, setIsTesting] = useState(false);
 
   useEffect(() => {
     // Check browser support
@@ -136,6 +137,22 @@ export default function PushNotificationSetup({ user }) {
     } catch (error) {
       toast.error('Failed to remove device');
     }
+  };
+
+  const sendTestNotification = async () => {
+    setIsTesting(true);
+    try {
+      const response = await base44.functions.invoke('testPushNotification', {});
+      if (response.data.success) {
+        toast.success(response.data.message || 'Test notification sent!');
+      } else {
+        toast.error(response.data.message || 'Failed to send test notification');
+      }
+    } catch (error) {
+      console.error('Test notification error:', error);
+      toast.error('Failed to send test notification');
+    }
+    setIsTesting(false);
   };
 
   const getDeviceName = (deviceInfo) => {
@@ -250,6 +267,28 @@ export default function PushNotificationSetup({ user }) {
               Notifications are blocked. Please enable them in your browser settings and reload the page.
             </p>
           </div>
+        )}
+
+        {/* Test Button */}
+        {subscriptions.length > 0 && (
+          <Button 
+            onClick={sendTestNotification} 
+            disabled={isTesting}
+            variant="outline"
+            className="w-full"
+          >
+            {isTesting ? (
+              <>
+                <RefreshCw className="w-4 h-4 mr-2 animate-spin" />
+                Sending Test...
+              </>
+            ) : (
+              <>
+                <Bell className="w-4 h-4 mr-2" />
+                Send Test Notification
+              </>
+            )}
+          </Button>
         )}
 
         {/* Registered Devices */}
