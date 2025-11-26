@@ -56,6 +56,7 @@ const secondaryNavigationItems = [
   { title: "Price List", url: createPageUrl("PriceList"), icon: DollarSign },
   { title: "Reports", url: createPageUrl("Reports"), icon: TrendingUp },
   { title: "Team", url: createPageUrl("Team"), icon: Users },
+  { title: "Role Settings", url: createPageUrl("RoleSettings"), icon: Shield },
   { title: "Archive", url: createPageUrl("Archive"), icon: ArchiveIcon },
 ];
 
