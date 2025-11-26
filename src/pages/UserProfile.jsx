@@ -9,6 +9,7 @@ import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { ArrowLeft, User, Mail, Shield, Lock } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import NotificationPreferences from "@/components/notifications/NotificationPreferences";
+import PushNotificationSetup from "@/components/notifications/PushNotificationSetup";
 
 export default function UserProfile() {
   const [user, setUser] = useState(null);
