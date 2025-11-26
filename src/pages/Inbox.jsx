@@ -242,11 +242,17 @@ export default function Inbox() {
     // Advanced status filter (from search filters)
     const matchesAdvancedStatus = searchFilters.statusFilter === "all" || thread.status === searchFilters.statusFilter;
 
-    // "Sent" tab filter - show threads where first message was outbound
+    // "Sent" tab filter - show threads where user sent an email (has outbound messages)
     const matchesSentFilter = statusFilter !== "sent" || (() => {
+      // First check if the from_address matches the user (thread was initiated by user)
+      const userEmail = user?.gmail_email || user?.email;
+      const isFromUser = thread.from_address === userEmail;
+
+      // Also check messages for outbound flag
       const threadMessages = messages.filter(m => m.thread_id === thread.id);
-      // Check if there are any outbound messages in this thread
-      return threadMessages.some(m => m.is_outbound === true);
+      const hasOutboundMessage = threadMessages.some(m => m.is_outbound === true);
+
+      return isFromUser || hasOutboundMessage;
     })();
 
     const matchesStatus = statusFilter === "all" || statusFilter === "sent" || thread.status === statusFilter;
