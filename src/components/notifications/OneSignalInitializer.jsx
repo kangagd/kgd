@@ -1,18 +1,21 @@
-import { useEffect, useState } from "react";
-import { initializeOneSignal, setExternalUserId, setUserTags } from "./oneSignalUtils";
+import { useEffect, useRef } from "react";
 
 const ONESIGNAL_APP_ID = "50b86e27-3335-48dc-877c-4e4f3d223620";
 
 /**
  * OneSignal Initializer Component
- * Loads the OneSignal SDK and initializes it with the app ID
+ * Uses the exact initialization code from OneSignal dashboard
  * Should be placed in the Layout component
  */
 export default function OneSignalInitializer({ user }) {
-  const [initialized, setInitialized] = useState(false);
+  const initialized = useRef(false);
 
   useEffect(() => {
-    const loadAndInitOneSignal = async () => {
+    // Only initialize once
+    if (initialized.current) return;
+    initialized.current = true;
+
+    const initOneSignal = async () => {
       try {
         // Load OneSignal SDK script if not already loaded
         if (!document.getElementById('onesignal-sdk')) {
@@ -29,28 +32,45 @@ export default function OneSignalInitializer({ user }) {
           });
         }
 
-        // Initialize OneSignal
-        const success = await initializeOneSignal(ONESIGNAL_APP_ID);
-        setInitialized(success);
+        // Initialize using OneSignal's recommended pattern
+        window.OneSignalDeferred = window.OneSignalDeferred || [];
+        window.OneSignalDeferred.push(async function(OneSignal) {
+          try {
+            await OneSignal.init({
+              appId: ONESIGNAL_APP_ID,
+            });
+            console.log('[OneSignal] Initialized successfully');
 
-        // If user is logged in, link their account
-        if (success && user) {
-          await setExternalUserId(user.id, user.email);
-          
-          // Set user tags for targeting
-          await setUserTags({
-            role: user.role || 'user',
-            is_technician: user.is_field_technician ? 'true' : 'false'
-          });
-        }
+            // If user is logged in, link their account
+            if (user?.id) {
+              try {
+                await OneSignal.login(user.id);
+                console.log('[OneSignal] User logged in:', user.id);
+                
+                if (user.email) {
+                  await OneSignal.User.addEmail(user.email);
+                }
+                
+                await OneSignal.User.addTags({
+                  email: user.email || '',
+                  role: user.role || 'user',
+                  is_technician: user.is_field_technician ? 'true' : 'false'
+                });
+              } catch (loginError) {
+                console.error('[OneSignal] Login error:', loginError);
+              }
+            }
+          } catch (initError) {
+            console.error('[OneSignal] Init error:', initError);
+          }
+        });
       } catch (error) {
-        console.error('[OneSignal] Failed to initialize:', error);
+        console.error('[OneSignal] Failed to load SDK:', error);
       }
     };
 
-    loadAndInitOneSignal();
-  }, [user?.id]);
+    initOneSignal();
+  }, [user?.id, user?.email, user?.role, user?.is_field_technician]);
 
-  // This component doesn't render anything visible
   return null;
 }
