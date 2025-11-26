@@ -200,91 +200,6 @@ export default function ProjectEmailSection({ project, onThreadLinked }) {
 
   return (
     <div className="space-y-4">
-      {/* Thread Header */}
-      <Card className="border border-[#E5E7EB] shadow-sm rounded-lg">
-        <CardHeader className="bg-white px-4 py-3 border-b border-[#E5E7EB]">
-          <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
-            <div className="flex-1 min-w-0">
-              <div className="flex items-center gap-2 flex-wrap">
-                <Mail className="w-5 h-5 text-[#FAE008]" />
-                <CardTitle className="text-[16px] font-semibold text-[#111827] leading-[1.2] truncate">
-                  {emailThread?.subject || 'Email Thread'}
-                </CardTitle>
-                <Badge variant="outline" className="text-[11px]">
-                  {messages.length} message{messages.length !== 1 ? 's' : ''}
-                </Badge>
-              </div>
-              {emailThread?.from_address && (
-                <p className="text-[13px] text-[#6B7280] mt-1">
-                  From: {emailThread.from_address}
-                </p>
-              )}
-            </div>
-            <div className="flex items-center gap-2 flex-shrink-0">
-              <Button
-                variant="ghost"
-                size="sm"
-                onClick={handleRefresh}
-                className="h-8 text-[#6B7280] hover:text-[#111827]"
-              >
-                <RefreshCw className="w-4 h-4" />
-              </Button>
-              <Button
-                variant="ghost"
-                size="sm"
-                onClick={() => window.open(createPageUrl('Inbox') + `?threadId=${project.source_email_thread_id}`, '_blank')}
-                className="h-8 text-[#6B7280] hover:text-[#111827]"
-              >
-                <ExternalLink className="w-4 h-4" />
-              </Button>
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={() => unlinkThreadMutation.mutate()}
-                className="h-8 text-red-600 hover:text-red-700 hover:bg-red-50 border-red-200"
-                disabled={unlinkThreadMutation.isPending}
-              >
-                Unlink
-              </Button>
-            </div>
-          </div>
-        </CardHeader>
-        <CardContent className="p-3">
-          <div className="flex flex-wrap gap-2">
-            <Button
-              onClick={handleCompose}
-              size="sm"
-              className="bg-[#FAE008] text-[#111827] hover:bg-[#E5CF07] font-semibold h-9"
-            >
-              <Plus className="w-4 h-4 mr-1" />
-              New Email
-            </Button>
-            {sortedMessages.length > 0 && (
-              <>
-                <Button
-                  onClick={() => handleReply(sortedMessages[sortedMessages.length - 1])}
-                  variant="outline"
-                  size="sm"
-                  className="h-9"
-                >
-                  <Reply className="w-4 h-4 mr-1" />
-                  Reply
-                </Button>
-                <Button
-                  onClick={() => handleForward(sortedMessages[sortedMessages.length - 1])}
-                  variant="outline"
-                  size="sm"
-                  className="h-9"
-                >
-                  <Forward className="w-4 h-4 mr-1" />
-                  Forward
-                </Button>
-              </>
-            )}
-          </div>
-        </CardContent>
-      </Card>
-
       {/* Email Composer */}
       {composerMode && (
         <EmailComposer
@@ -301,7 +216,7 @@ export default function ProjectEmailSection({ project, onThreadLinked }) {
         />
       )}
 
-      {/* Messages List */}
+      {/* Loading State */}
       {isLoading ? (
         <div className="space-y-3">
           {[1, 2].map((i) => (
@@ -314,47 +229,160 @@ export default function ProjectEmailSection({ project, onThreadLinked }) {
             </Card>
           ))}
         </div>
-      ) : sortedMessages.length === 0 ? (
-        <Card className="border border-[#E5E7EB] shadow-sm">
-          <CardContent className="p-6 text-center">
-            <p className="text-[14px] text-[#6B7280]">No messages in this thread yet.</p>
-          </CardContent>
-        </Card>
       ) : (
-        <div className="space-y-3">
-          {sortedMessages.map((message, index) => (
-            <div key={message.id} className="relative">
-              <EmailMessageView
-                message={message}
-                isFirst={index === sortedMessages.length - 1}
-                linkedProjectId={project.id}
-                threadSubject={emailThread?.subject}
-              />
-              {/* Quick actions */}
-              <div className="absolute top-3 right-12 flex gap-1 opacity-0 hover:opacity-100 transition-opacity">
-                <Button
-                  variant="ghost"
-                  size="icon"
-                  onClick={() => handleReply(message)}
-                  className="h-7 w-7 hover:bg-[#F3F4F6]"
-                  title="Reply"
-                >
-                  <Reply className="w-4 h-4" />
-                </Button>
-                <Button
-                  variant="ghost"
-                  size="icon"
-                  onClick={() => handleForward(message)}
-                  className="h-7 w-7 hover:bg-[#F3F4F6]"
-                  title="Forward"
-                >
-                  <Forward className="w-4 h-4" />
-                </Button>
-              </div>
-            </div>
-          ))}
-        </div>
+        <>
+          {/* Show each linked thread */}
+          {linkedThreads.map((thread) => {
+            const threadMessages = messages
+              .filter(m => m.thread_id === thread.id)
+              .sort((a, b) => new Date(a.sent_at) - new Date(b.sent_at));
+            
+            return (
+              <Card key={thread.id} className="border border-[#E5E7EB] shadow-sm rounded-lg">
+                <CardHeader className="bg-white px-4 py-3 border-b border-[#E5E7EB]">
+                  <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
+                    <div className="flex-1 min-w-0">
+                      <div className="flex items-center gap-2 flex-wrap">
+                        <Mail className="w-5 h-5 text-[#FAE008]" />
+                        <CardTitle className="text-[16px] font-semibold text-[#111827] leading-[1.2] truncate">
+                          {thread.subject || 'Email Thread'}
+                        </CardTitle>
+                        <Badge variant="outline" className="text-[11px]">
+                          {threadMessages.length} message{threadMessages.length !== 1 ? 's' : ''}
+                        </Badge>
+                      </div>
+                      {thread.from_address && (
+                        <p className="text-[13px] text-[#6B7280] mt-1">
+                          From: {thread.from_address}
+                        </p>
+                      )}
+                    </div>
+                    <div className="flex items-center gap-2 flex-shrink-0">
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={handleRefresh}
+                        className="h-8 text-[#6B7280] hover:text-[#111827]"
+                      >
+                        <RefreshCw className="w-4 h-4" />
+                      </Button>
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => window.open(createPageUrl('Inbox') + `?threadId=${thread.id}`, '_blank')}
+                        className="h-8 text-[#6B7280] hover:text-[#111827]"
+                      >
+                        <ExternalLink className="w-4 h-4" />
+                      </Button>
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => unlinkThreadMutation.mutate()}
+                        className="h-8 text-red-600 hover:text-red-700 hover:bg-red-50 border-red-200"
+                        disabled={unlinkThreadMutation.isPending}
+                      >
+                        Unlink
+                      </Button>
+                    </div>
+                  </div>
+                </CardHeader>
+                <CardContent className="p-3">
+                  <div className="flex flex-wrap gap-2 mb-4">
+                    <Button
+                      onClick={handleCompose}
+                      size="sm"
+                      className="bg-[#FAE008] text-[#111827] hover:bg-[#E5CF07] font-semibold h-9"
+                    >
+                      <Plus className="w-4 h-4 mr-1" />
+                      New Email
+                    </Button>
+                    {threadMessages.length > 0 && (
+                      <>
+                        <Button
+                          onClick={() => handleReply(threadMessages[threadMessages.length - 1])}
+                          variant="outline"
+                          size="sm"
+                          className="h-9"
+                        >
+                          <Reply className="w-4 h-4 mr-1" />
+                          Reply
+                        </Button>
+                        <Button
+                          onClick={() => handleForward(threadMessages[threadMessages.length - 1])}
+                          variant="outline"
+                          size="sm"
+                          className="h-9"
+                        >
+                          <Forward className="w-4 h-4 mr-1" />
+                          Forward
+                        </Button>
+                      </>
+                    )}
+                  </div>
+
+                  {/* Messages for this thread */}
+                  {threadMessages.length === 0 ? (
+                    <p className="text-[14px] text-[#6B7280] text-center py-4">No messages in this thread yet.</p>
+                  ) : (
+                    <div className="space-y-3">
+                      {threadMessages.map((message, index) => (
+                        <div key={message.id} className="relative">
+                          <EmailMessageView
+                            message={message}
+                            isFirst={index === threadMessages.length - 1}
+                            linkedProjectId={project.id}
+                            threadSubject={thread.subject}
+                          />
+                          {/* Quick actions */}
+                          <div className="absolute top-3 right-12 flex gap-1 opacity-0 hover:opacity-100 transition-opacity">
+                            <Button
+                              variant="ghost"
+                              size="icon"
+                              onClick={() => handleReply(message)}
+                              className="h-7 w-7 hover:bg-[#F3F4F6]"
+                              title="Reply"
+                            >
+                              <Reply className="w-4 h-4" />
+                            </Button>
+                            <Button
+                              variant="ghost"
+                              size="icon"
+                              onClick={() => handleForward(message)}
+                              className="h-7 w-7 hover:bg-[#F3F4F6]"
+                              title="Forward"
+                            >
+                              <Forward className="w-4 h-4" />
+                            </Button>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </CardContent>
+              </Card>
+            );
+          })}
+
+          {/* Button to link more threads */}
+          <Button
+            variant="outline"
+            onClick={() => setShowLinkModal(true)}
+            className="w-full border-dashed border-[#E5E7EB] hover:border-[#FAE008] hover:bg-[#FFFEF5]"
+          >
+            <LinkIcon className="w-4 h-4 mr-2" />
+            Link Another Email Thread
+          </Button>
+        </>
       )}
+
+      {/* Link Thread Modal */}
+      <LinkEmailThreadModal
+        open={showLinkModal}
+        onClose={() => setShowLinkModal(false)}
+        threads={availableThreads}
+        onSelect={(threadId) => linkThreadMutation.mutate(threadId)}
+        isLinking={linkThreadMutation.isPending}
+      />
     </div>
   );
 }
