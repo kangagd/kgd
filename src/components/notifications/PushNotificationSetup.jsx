@@ -125,25 +125,20 @@ export default function PushNotificationSetup({ user }) {
     }
   };
 
-  // Handle test notification
+  // Handle test notification - uses VAPID-based push (testPushNotification)
   const handleTestNotification = async () => {
     console.log('[PushSetup] handleTestNotification called');
-    console.log('[PushSetup] User ID:', user.id);
     setIsTesting(true);
     
     try {
-      const response = await base44.functions.invoke('sendOneSignalNotification', {
-        title: 'Test Notification',
-        message: 'This is a test notification from your app!',
-        userIds: [user.id]
-      });
+      const response = await base44.functions.invoke('testPushNotification', {});
       
       console.log('[PushSetup] Response:', response.data);
       
       if (response.data?.success) {
-        toast.success(`Test sent! Recipients: ${response.data.recipients || 0}`);
+        toast.success(response.data.message || 'Test notification sent!');
       } else {
-        toast.error(response.data?.error || 'Failed to send test notification');
+        toast.error(response.data?.message || 'Failed to send test notification');
       }
     } catch (error) {
       console.error('[PushSetup] Test notification error:', error);
