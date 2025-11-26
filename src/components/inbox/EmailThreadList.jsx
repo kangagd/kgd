@@ -4,6 +4,7 @@ import { format, parseISO } from "date-fns";
 import { Mail, Link as LinkIcon, Trash2, Sparkles, AlertTriangle } from "lucide-react";
 import { EmailStatusBadge, EmailPriorityBadge } from "../common/StatusBadge";
 import { Badge } from "@/components/ui/badge";
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 
 export default function EmailThreadList({ 
   threads, 
@@ -157,12 +158,28 @@ export default function EmailThreadList({
                     </Badge>
                   ))}
                   {thread.ai_tags.length > 2 && (
-                    <span 
-                      className="text-[10px] text-[#6B7280] cursor-help"
-                      title={thread.ai_tags.slice(2).join(', ')}
-                    >
-                      +{thread.ai_tags.length - 2}
-                    </span>
+                    <TooltipProvider>
+                      <Tooltip>
+                        <TooltipTrigger asChild>
+                          <span className="text-[10px] text-[#6B7280] cursor-help bg-gray-100 px-1.5 py-0.5 rounded">
+                            +{thread.ai_tags.length - 2}
+                          </span>
+                        </TooltipTrigger>
+                        <TooltipContent side="top" className="max-w-xs">
+                          <div className="flex flex-wrap gap-1">
+                            {thread.ai_tags.slice(2).map((tag, idx) => (
+                              <Badge 
+                                key={idx}
+                                variant="outline"
+                                className="text-[10px] px-1.5 py-0 bg-purple-50 text-purple-700 border-purple-200"
+                              >
+                                {tag}
+                              </Badge>
+                            ))}
+                          </div>
+                        </TooltipContent>
+                      </Tooltip>
+                    </TooltipProvider>
                   )}
                 </>
               )}
