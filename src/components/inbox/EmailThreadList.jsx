@@ -165,7 +165,7 @@ export default function EmailThreadList({
                             +{thread.ai_tags.length - 2}
                           </span>
                         </TooltipTrigger>
-                        <TooltipContent side="top" className="max-w-xs">
+                        <TooltipContent side="top" className="max-w-xs bg-white border shadow-lg">
                           <div className="flex flex-wrap gap-1">
                             {thread.ai_tags.slice(2).map((tag, idx) => (
                               <Badge 
