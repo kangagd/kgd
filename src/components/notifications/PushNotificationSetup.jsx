@@ -28,11 +28,13 @@ export default function PushNotificationSetup({ user }) {
   const [isRegistering, setIsRegistering] = useState(false);
   const [isTesting, setIsTesting] = useState(false);
 
-  // Load initial state from backend
+  // Load initial state from backend - runs once on mount
   const loadState = useCallback(async () => {
-    if (!user) return;
+    if (!user) {
+      setIsLoading(false);
+      return;
+    }
     
-    setIsLoading(true);
     try {
       // Check browser support and permission
       const supported = isPushSupported();
@@ -58,7 +60,7 @@ export default function PushNotificationSetup({ user }) {
     } finally {
       setIsLoading(false);
     }
-  }, [user]);
+  }, [user?.id]);
 
   useEffect(() => {
     loadState();
