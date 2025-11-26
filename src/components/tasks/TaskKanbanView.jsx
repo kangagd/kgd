@@ -126,43 +126,44 @@ export default function TaskKanbanView({
 
   return (
     <DragDropContext onDragEnd={handleDragEnd}>
-      <div className="space-y-0">
-        {/* Status Column Headers */}
-        <div className="flex sticky top-0 z-10 bg-white pb-2">
-          {/* Spacer for user column */}
-          <div className="w-[180px] lg:w-[200px] flex-shrink-0" />
-          
-          {/* Status headers */}
-          <div className="flex-1 flex gap-3 overflow-x-auto">
-            {STATUS_ORDER.map(status => {
-              const config = STATUS_CONFIG[status];
-              const Icon = config.icon;
-              const count = rows.reduce((sum, [, row]) => sum + (row.tasksByStatus[status]?.length || 0), 0);
-              
-              return (
-                <div 
-                  key={status} 
-                  className={`flex-1 min-w-[200px] lg:min-w-[240px] px-3 py-2 rounded-lg ${config.bg} border ${config.borderColor}`}
-                >
-                  <div className="flex items-center justify-between">
-                    <div className="flex items-center gap-2">
-                      <Icon className={`w-4 h-4 ${config.color}`} />
-                      <span className={`text-sm font-semibold ${config.color}`}>
-                        {status}
-                      </span>
-                    </div>
-                    <Badge variant="secondary" className="bg-white/80 text-[#4B5563] text-xs">
-                      {count}
-                    </Badge>
-                  </div>
-                </div>
-              );
-            })}
-          </div>
-        </div>
+      <div className="overflow-x-auto">
+        <div className="min-w-max">
+          {/* Status Column Headers */}
+          <div className="flex sticky top-0 z-10 bg-white pb-2">
+            {/* Spacer for user column */}
+            <div className="w-[180px] lg:w-[200px] flex-shrink-0" />
 
-        {/* Horizontal Lanes per Assignee */}
-        <div className="space-y-3">
+            {/* Status headers */}
+            <div className="flex gap-3">
+              {STATUS_ORDER.map(status => {
+                const config = STATUS_CONFIG[status];
+                const Icon = config.icon;
+                const count = rows.reduce((sum, [, row]) => sum + (row.tasksByStatus[status]?.length || 0), 0);
+
+                return (
+                  <div 
+                    key={status} 
+                    className={`w-[200px] lg:w-[240px] px-3 py-2 rounded-lg ${config.bg} border ${config.borderColor}`}
+                  >
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center gap-2">
+                        <Icon className={`w-4 h-4 ${config.color}`} />
+                        <span className={`text-sm font-semibold ${config.color}`}>
+                          {status}
+                        </span>
+                      </div>
+                      <Badge variant="secondary" className="bg-white/80 text-[#4B5563] text-xs">
+                        {count}
+                      </Badge>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+
+          {/* Horizontal Lanes per Assignee */}
+          <div className="space-y-3">
           {rows.map(([userId, row]) => {
             const isCollapsed = collapsedLanes[userId];
             
@@ -222,18 +223,18 @@ export default function TaskKanbanView({
                 
                 {/* Status Columns */}
                 {!isCollapsed && (
-                  <div className="flex-1 flex gap-3 p-3 overflow-x-auto">
+                  <div className="flex gap-3 p-3">
                     {STATUS_ORDER.map(status => {
                       const statusTasks = row.tasksByStatus[status] || [];
                       const droppableId = `${userId}__${status}`;
-                      
+
                       return (
                         <Droppable key={droppableId} droppableId={droppableId}>
                           {(provided, snapshot) => (
                             <div 
                               ref={provided.innerRef}
                               {...provided.droppableProps}
-                              className={`flex-1 min-w-[200px] lg:min-w-[240px] space-y-2 rounded-lg p-1 transition-colors ${
+                              className={`w-[200px] lg:w-[240px] flex-shrink-0 space-y-2 rounded-lg p-1 transition-colors ${
                                 snapshot.isDraggingOver ? 'bg-[#FAE008]/20 ring-2 ring-[#FAE008]/50' : ''
                               }`}
                             >
