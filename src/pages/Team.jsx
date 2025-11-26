@@ -1,57 +1,18 @@
-import React, { useState, useEffect } from "react";
+import React from "react";
 import { base44 } from "@/api/base44Client";
-import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { useQuery } from "@tanstack/react-query";
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
-import { Switch } from "@/components/ui/switch";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
-import { Users, Mail, Phone, Briefcase, Settings, Shield, Wrench } from "lucide-react";
-import { toast } from "sonner";
+import { Users, Mail, Phone, Briefcase } from "lucide-react";
 
 export default function Team() {
-  const queryClient = useQueryClient();
-  const [currentUser, setCurrentUser] = useState(null);
-  const [editingUser, setEditingUser] = useState(null);
-  
-  useEffect(() => {
-    const loadCurrentUser = async () => {
-      try {
-        const user = await base44.auth.me();
-        setCurrentUser(user);
-      } catch (error) {
-        console.error("Error loading user:", error);
-      }
-    };
-    loadCurrentUser();
-  }, []);
-  
-  const isAdmin = currentUser?.role === 'admin';
-
   const { data: users = [], isLoading } = useQuery({
     queryKey: ['users'],
     queryFn: () => base44.entities.User.list(),
   });
 
-  const updateUserMutation = useMutation({
-    mutationFn: ({ userId, data }) => base44.entities.User.update(userId, data),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['users'] });
-      toast.success("User updated successfully");
-      setEditingUser(null);
-    },
-    onError: (error) => {
-      toast.error(`Failed to update user: ${error.message}`);
-    }
-  });
-
   const technicians = users.filter(u => u.is_field_technician);
   const admins = users.filter(u => u.role === 'admin');
-
-  const handleSaveUser = (userId, updates) => {
-    updateUserMutation.mutate({ userId, data: updates });
-  };
 
   return (
     <div className="p-5 md:p-10 bg-[#ffffff] min-h-screen">
@@ -86,24 +47,12 @@ export default function Team() {
                             <p className="text-sm text-[hsl(25,8%,45%)] mt-1">{tech.job_title}</p>
                           )}
                         </div>
-                        <div className="flex items-center gap-2">
-                          <Badge className={tech.status === 'active' ? 
-                            "bg-green-50 text-green-900 border-green-200 border-2 font-semibold" : 
-                            "bg-[hsl(32,25%,94%)] text-[hsl(25,10%,12%)] border-[hsl(32,15%,88%)] border-2 font-semibold"
-                          }>
-                            {tech.status || 'active'}
-                          </Badge>
-                          {isAdmin && (
-                            <Button
-                              variant="ghost"
-                              size="icon"
-                              onClick={() => setEditingUser(tech)}
-                              className="h-8 w-8"
-                            >
-                              <Settings className="w-4 h-4" />
-                            </Button>
-                          )}
-                        </div>
+                        <Badge className={tech.status === 'active' ? 
+                          "bg-green-50 text-green-900 border-green-200 border-2 font-semibold" : 
+                          "bg-[hsl(32,25%,94%)] text-[hsl(25,10%,12%)] border-[hsl(32,15%,88%)] border-2 font-semibold"
+                        }>
+                          {tech.status || 'active'}
+                        </Badge>
                       </div>
                       <div className="space-y-2 text-sm text-[hsl(25,10%,25%)]">
                         <div className="flex items-center gap-2">
@@ -152,21 +101,9 @@ export default function Team() {
                             <p className="text-sm text-[hsl(25,8%,45%)] mt-1">{admin.job_title}</p>
                           )}
                         </div>
-                        <div className="flex items-center gap-2">
-                          <Badge className="bg-purple-50 text-purple-900 border-purple-200 border-2 font-semibold">
-                            Admin
-                          </Badge>
-                          {isAdmin && admin.id !== currentUser?.id && (
-                            <Button
-                              variant="ghost"
-                              size="icon"
-                              onClick={() => setEditingUser(admin)}
-                              className="h-8 w-8"
-                            >
-                              <Settings className="w-4 h-4" />
-                            </Button>
-                          )}
-                        </div>
+                        <Badge className="bg-purple-50 text-purple-900 border-purple-200 border-2 font-semibold">
+                          Admin
+                        </Badge>
                       </div>
                       <div className="space-y-2 text-sm text-[hsl(25,10%,25%)]">
                         <div className="flex items-center gap-2">
@@ -192,71 +129,12 @@ export default function Team() {
           </Card>
         </div>
 
-        {isAdmin && (
-          <div className="mt-6 p-5 bg-amber-50 border-2 border-amber-200 rounded-2xl">
-            <p className="text-sm text-[hsl(25,10%,12%)] leading-relaxed">
-              <strong className="font-bold">Note:</strong> To add new team members, use the user management section in your dashboard settings. 
-              Click the settings icon next to any user to manage their role and permissions.
-            </p>
-          </div>
-        )}
-
-        {/* Role Management Modal */}
-        <Dialog open={!!editingUser} onOpenChange={(open) => !open && setEditingUser(null)}>
-          <DialogContent className="sm:max-w-md">
-            <DialogHeader>
-              <DialogTitle className="flex items-center gap-2">
-                <Shield className="w-5 h-5 text-[#FAE008]" />
-                Manage Role: {editingUser?.full_name}
-              </DialogTitle>
-            </DialogHeader>
-            {editingUser && (
-              <div className="space-y-6 py-4">
-                <div className="space-y-4">
-                  <div className="flex items-center justify-between p-4 bg-[#F9FAFB] rounded-lg">
-                    <div className="flex items-center gap-3">
-                      <Shield className="w-5 h-5 text-purple-600" />
-                      <div>
-                        <p className="font-medium text-[#111827]">Administrator</p>
-                        <p className="text-[12px] text-[#6B7280]">Full access to all features</p>
-                      </div>
-                    </div>
-                    <Switch
-                      checked={editingUser.role === 'admin'}
-                      onCheckedChange={(checked) => {
-                        handleSaveUser(editingUser.id, { role: checked ? 'admin' : 'user' });
-                        setEditingUser({ ...editingUser, role: checked ? 'admin' : 'user' });
-                      }}
-                    />
-                  </div>
-
-                  <div className="flex items-center justify-between p-4 bg-[#F9FAFB] rounded-lg">
-                    <div className="flex items-center gap-3">
-                      <Wrench className="w-5 h-5 text-[#FAE008]" />
-                      <div>
-                        <p className="font-medium text-[#111827]">Field Technician</p>
-                        <p className="text-[12px] text-[#6B7280]">Can be assigned to jobs</p>
-                      </div>
-                    </div>
-                    <Switch
-                      checked={editingUser.is_field_technician}
-                      onCheckedChange={(checked) => {
-                        handleSaveUser(editingUser.id, { is_field_technician: checked });
-                        setEditingUser({ ...editingUser, is_field_technician: checked });
-                      }}
-                    />
-                  </div>
-                </div>
-
-                <div className="pt-4 border-t border-[#E5E7EB]">
-                  <p className="text-[12px] text-[#6B7280]">
-                    <strong>Email:</strong> {editingUser.email}
-                  </p>
-                </div>
-              </div>
-            )}
-          </DialogContent>
-        </Dialog>
+        <div className="mt-6 p-5 bg-amber-50 border-2 border-amber-200 rounded-2xl">
+          <p className="text-sm text-[hsl(25,10%,12%)] leading-relaxed">
+            <strong className="font-bold">Note:</strong> To add or manage team members, use the user management section in your dashboard settings. 
+            Mark users as field technicians by updating their profile.
+          </p>
+        </div>
       </div>
     </div>
   );
