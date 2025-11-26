@@ -87,7 +87,7 @@ Deno.serve(async (req) => {
     const recipientToUse = pandaDocRecipient;
     console.log('Using recipient:', recipientToUse);
 
-    // Try to get sharing link first (works more reliably)
+    // Try to get existing sharing links first
     try {
       const sharingResponse = await fetch(`${PANDADOC_API_URL}/documents/${documentId}/links`, {
         headers: {
@@ -110,7 +110,39 @@ Deno.serve(async (req) => {
         }
       }
     } catch (linkError) {
-      console.log('Sharing links not available, trying session:', linkError.message);
+      console.log('Sharing links not available:', linkError.message);
+    }
+
+    // Try to CREATE a sharing link (this often works better than sessions)
+    try {
+      const createLinkResponse = await fetch(`${PANDADOC_API_URL}/documents/${documentId}/links`, {
+        method: 'POST',
+        headers: {
+          'Authorization': `API-Key ${PANDADOC_API_KEY}`,
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+          recipient: recipientToUse,
+          lifetime: 86400 // 24 hours
+        })
+      });
+      
+      if (createLinkResponse.ok) {
+        const linkData = await createLinkResponse.json();
+        console.log('Created sharing link:', JSON.stringify(linkData));
+        if (linkData.link) {
+          return Response.json({
+            success: true,
+            public_url: linkData.link,
+            method: 'created_sharing_link'
+          });
+        }
+      } else {
+        const linkError = await createLinkResponse.text();
+        console.log('Create sharing link failed:', linkError);
+      }
+    } catch (createLinkError) {
+      console.log('Create sharing link error:', createLinkError.message);
     }
 
     // Fallback: Try session API with exact PandaDoc recipient
