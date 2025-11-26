@@ -45,6 +45,7 @@ import JobModalView from "../jobs/JobModalView";
 import TasksPanel from "../tasks/TasksPanel";
 import ProjectEmailSection from "./ProjectEmailSection";
 import QuotesSection from "../quotes/QuotesSection";
+import InitialVisitSummary from "./InitialVisitSummary";
 
 const statusColors = {
   "Lead": "bg-slate-100 text-slate-700",
@@ -1151,6 +1152,9 @@ Format as HTML bullet points using <ul> and <li> tags. Include only the most cri
           <TabsContent value="overview" className="space-y-3 mt-3">
             {/* Duplicate Warning */}
             <DuplicateWarningCard entityType="Project" record={project} />
+
+            {/* Initial Visit Summary */}
+            <InitialVisitSummary project={project} />
 
             {/* Tasks Panel */}
             <Card className="border border-[#E5E7EB] shadow-sm rounded-lg p-4">

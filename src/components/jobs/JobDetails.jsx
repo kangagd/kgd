@@ -298,6 +298,16 @@ export default function JobDetails({ job: initialJob, onClose, onStatusChange, o
         outcome: outcome,
         status: newStatus
       });
+
+      // Sync job data to project if this is an Initial Site Visit
+      if (!isMistake && job.project_id) {
+        try {
+          await base44.functions.invoke('syncJobToProject', { job_id: job.id });
+        } catch (syncError) {
+          console.error('Failed to sync job to project:', syncError);
+          // Don't fail the checkout, just log the error
+        }
+      }
     },
     onSuccess: () => {
       setValidationError("");
@@ -305,6 +315,8 @@ export default function JobDetails({ job: initialJob, onClose, onStatusChange, o
       queryClient.invalidateQueries({ queryKey: ['jobSummaries', job.id] });
       queryClient.invalidateQueries({ queryKey: ['projectJobSummaries'] });
       queryClient.invalidateQueries({ queryKey: ['jobs'] });
+      queryClient.invalidateQueries({ queryKey: ['projects'] });
+      queryClient.invalidateQueries({ queryKey: ['project', job.project_id] });
     },
     onError: (error) => {
       setValidationError(error.message);
