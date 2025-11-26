@@ -49,13 +49,20 @@ export default function QuotesSection({
     queryClient.invalidateQueries({ queryKey: filterKey });
   };
 
-  // Function to get a fresh link from PandaDoc
+  // Function to get a fresh link from PandaDoc using Session API
   const getRefreshLink = useCallback(async (quote) => {
     if (!quote.pandadoc_document_id) return null;
     
+    const recipientEmail = quote.customer_email || customer?.email || project?.customer_email || job?.customer_email;
+    if (!recipientEmail) {
+      toast.error('No customer email found for this quote');
+      return null;
+    }
+    
     try {
       const response = await base44.functions.invoke('getPandaDocSessionLink', {
-        documentId: quote.pandadoc_document_id
+        documentId: quote.pandadoc_document_id,
+        recipientEmail: recipientEmail
       });
       
       if (response.data?.error) {
@@ -69,7 +76,7 @@ export default function QuotesSection({
       toast.error('Failed to get link');
       return null;
     }
-  }, []);
+  }, [customer, project, job]);
 
   // For technicians, only show accepted quotes
   const visibleQuotes = isAdmin 
