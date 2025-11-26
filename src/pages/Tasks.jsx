@@ -379,6 +379,7 @@ export default function Tasks() {
             users={users}
             onTaskClick={setSelectedTask}
             onToggleComplete={handleToggleComplete}
+            onTaskUpdate={(id, data) => updateMutation.mutate({ id, data })}
           />
         ) : (
           <div className="space-y-3">
