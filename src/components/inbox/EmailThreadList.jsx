@@ -157,7 +157,12 @@ export default function EmailThreadList({
                     </Badge>
                   ))}
                   {thread.ai_tags.length > 2 && (
-                    <span className="text-[10px] text-[#6B7280]">+{thread.ai_tags.length - 2}</span>
+                    <span 
+                      className="text-[10px] text-[#6B7280] cursor-help"
+                      title={thread.ai_tags.slice(2).join(', ')}
+                    >
+                      +{thread.ai_tags.length - 2}
+                    </span>
                   )}
                 </>
               )}
