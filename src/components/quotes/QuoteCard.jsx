@@ -93,16 +93,45 @@ export default function QuoteCard({ quote, onUpdate, onSelect, isAdmin = false, 
     }
   };
 
-  const openPublicUrl = (e) => {
+  const openPublicUrl = async (e) => {
     e?.stopPropagation();
-    if (quote.pandadoc_public_url) {
+    if (quote.pandadoc_document_id && onRefreshLink) {
+      setIsLoadingLink(true);
+      try {
+        const freshUrl = await onRefreshLink(quote);
+        if (freshUrl) {
+          window.open(freshUrl, '_blank');
+        } else {
+          toast.error('Could not generate client link');
+        }
+      } catch (error) {
+        toast.error('Failed to open client view');
+      } finally {
+        setIsLoadingLink(false);
+      }
+    } else if (quote.pandadoc_public_url) {
       window.open(quote.pandadoc_public_url, '_blank');
     }
   };
 
   const copyClientLink = async (e) => {
     e?.stopPropagation();
-    if (quote.pandadoc_public_url) {
+    if (quote.pandadoc_document_id && onRefreshLink) {
+      setIsLoadingLink(true);
+      try {
+        const freshUrl = await onRefreshLink(quote);
+        if (freshUrl) {
+          await navigator.clipboard.writeText(freshUrl);
+          toast.success('Client link copied to clipboard');
+        } else {
+          toast.error('Could not generate client link');
+        }
+      } catch (error) {
+        toast.error('Failed to copy link');
+      } finally {
+        setIsLoadingLink(false);
+      }
+    } else if (quote.pandadoc_public_url) {
       await navigator.clipboard.writeText(quote.pandadoc_public_url);
       toast.success('Client link copied to clipboard');
     } else {
