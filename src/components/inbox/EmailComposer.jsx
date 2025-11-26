@@ -100,6 +100,37 @@ export default function EmailComposer({ mode = "compose", thread, message, onClo
   const [lastSaved, setLastSaved] = useState(null);
   const fileInputRef = useRef(null);
   const textareaRef = useRef(null);
+  const toInputRef = useRef(null);
+
+  // Fetch customers for email autocomplete
+  const { data: customers = [] } = useQuery({
+    queryKey: ['customersForEmail'],
+    queryFn: () => base44.entities.Customer.filter({ status: 'active' }),
+    staleTime: 60000
+  });
+
+  // Filter customers based on search term
+  const filteredCustomers = customers.filter(customer => {
+    if (!toSearchTerm || toSearchTerm.length < 2) return false;
+    const searchLower = toSearchTerm.toLowerCase();
+    return (
+      customer.email?.toLowerCase().includes(searchLower) ||
+      customer.name?.toLowerCase().includes(searchLower)
+    );
+  }).slice(0, 8);
+
+  const handleToInputChange = (e) => {
+    const value = e.target.value;
+    setTo(value);
+    setToSearchTerm(value);
+    setShowToDropdown(value.length >= 2);
+  };
+
+  const handleSelectCustomer = (customer) => {
+    setTo(customer.email);
+    setToSearchTerm("");
+    setShowToDropdown(false);
+  };
 
   // Auto-save draft function
   const saveDraft = useCallback(async (draftData) => {
