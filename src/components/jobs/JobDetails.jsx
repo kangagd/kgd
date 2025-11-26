@@ -299,8 +299,8 @@ export default function JobDetails({ job: initialJob, onClose, onStatusChange, o
         status: newStatus
       });
 
-      // Sync job data to project if this is an Initial Site Visit
-      if (!isMistake && job.project_id) {
+      // Sync job data to project if job is linked to a project
+      if (job.project_id) {
         try {
           await base44.functions.invoke('syncJobToProject', { job_id: job.id });
         } catch (syncError) {
