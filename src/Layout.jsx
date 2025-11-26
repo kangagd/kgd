@@ -369,6 +369,7 @@ export default function Layout({ children, currentPageName }) {
   return (
     <div className="min-h-screen flex bg-[#ffffff]">
       <Toaster position="top-right" richColors />
+      <PushNotificationRegistrar user={user} />
       {/* Mobile Overlay */}
       {isMobileMenuOpen && (
         <div 
