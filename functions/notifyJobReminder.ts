@@ -1,49 +1,54 @@
 import { createClientFromRequest } from 'npm:@base44/sdk@0.8.4';
-import webpush from 'npm:web-push@3.6.7';
 
-const VAPID_PUBLIC_KEY = Deno.env.get('VAPID_PUBLIC_KEY');
-const VAPID_PRIVATE_KEY = Deno.env.get('VAPID_PRIVATE_KEY');
+const ONESIGNAL_APP_ID = Deno.env.get('ONESIGNAL_APP_ID');
+const ONESIGNAL_API_KEY = Deno.env.get('ONESIGNAL_REST_API_KEY');
 
-webpush.setVapidDetails(
-  'mailto:admin@kangaroogd.com.au',
-  VAPID_PUBLIC_KEY,
-  VAPID_PRIVATE_KEY
-);
-
-async function sendPushToUser(base44, userEmail, title, body, url, data = {}) {
-  const subscriptions = await base44.asServiceRole.entities.PushSubscription.filter({
-    user_email: userEmail,
-    active: true
-  });
-
-  let sent = 0;
-  for (const sub of subscriptions) {
-    try {
-      if (sub.platform === 'web' && sub.subscription_json) {
-        const pushSubscription = JSON.parse(sub.subscription_json);
-        const payload = JSON.stringify({
-          title,
-          body,
-          icon: '/icon-192.png',
-          data: { url, ...data }
-        });
-
-        await webpush.sendNotification(pushSubscription, payload);
-        console.log(`[JobReminder] SUCCESS: Sent to ${userEmail} (sub: ${sub.id})`);
-        sent++;
-
-        await base44.asServiceRole.entities.PushSubscription.update(sub.id, {
-          last_seen: new Date().toISOString()
-        });
-      }
-    } catch (error) {
-      console.error(`[JobReminder] FAILED for ${userEmail} (sub: ${sub.id}):`, error.message);
-      if (error.statusCode === 410 || error.statusCode === 404) {
-        await base44.asServiceRole.entities.PushSubscription.update(sub.id, { active: false });
-      }
-    }
+async function sendOneSignalPush(userIds, title, message, url, data = {}) {
+  if (!ONESIGNAL_APP_ID || !ONESIGNAL_API_KEY) {
+    console.log('[JobReminder] OneSignal not configured');
+    return { success: false, error: 'OneSignal not configured' };
   }
-  return sent;
+
+  if (!userIds || userIds.length === 0) {
+    return { success: false, error: 'No user IDs provided' };
+  }
+
+  const payload = {
+    app_id: ONESIGNAL_APP_ID,
+    headings: { en: title },
+    contents: { en: message },
+    include_aliases: { external_id: userIds },
+    target_channel: 'push',
+    data: { url, ...data }
+  };
+
+  if (url) {
+    payload.url = url;
+  }
+
+  try {
+    const response = await fetch('https://onesignal.com/api/v1/notifications', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Basic ${ONESIGNAL_API_KEY}`
+      },
+      body: JSON.stringify(payload)
+    });
+
+    const result = await response.json();
+    
+    if (!response.ok) {
+      console.error('[JobReminder] OneSignal error:', result);
+      return { success: false, error: result.errors?.[0] || 'Failed to send' };
+    }
+
+    console.log(`[JobReminder] OneSignal sent: ${result.recipients} recipients`);
+    return { success: true, recipients: result.recipients };
+  } catch (error) {
+    console.error('[JobReminder] OneSignal error:', error.message);
+    return { success: false, error: error.message };
+  }
 }
 
 Deno.serve(async (req) => {
@@ -51,7 +56,6 @@ Deno.serve(async (req) => {
     const base44 = createClientFromRequest(req);
     
     // This can be called without user auth (e.g., from a cron job)
-    // but validate with a secret header for security
     const cronSecret = req.headers.get('x-cron-secret');
     const expectedSecret = Deno.env.get('CRON_SECRET');
     
@@ -63,18 +67,13 @@ Deno.serve(async (req) => {
     } catch {}
     
     if (!isAuthorized && cronSecret !== expectedSecret) {
-      // For now, allow the call to proceed if called internally
       console.log('[JobReminder] Running without explicit auth (internal call)');
     }
 
     const now = new Date();
-    const tenMinutesFromNow = new Date(now.getTime() + 10 * 60 * 1000);
-    const fiveMinutesFromNow = new Date(now.getTime() + 5 * 60 * 1000);
-
-    // Get today's date string
     const todayStr = now.toISOString().split('T')[0];
 
-    console.log(`[JobReminder] Checking for jobs starting around ${tenMinutesFromNow.toISOString()}`);
+    console.log(`[JobReminder] Checking for jobs starting soon`);
 
     // Fetch scheduled jobs for today
     const jobs = await base44.asServiceRole.entities.Job.filter({
@@ -83,6 +82,9 @@ Deno.serve(async (req) => {
     });
 
     console.log(`[JobReminder] Found ${jobs.length} scheduled jobs for today`);
+
+    // Get all users for ID lookup
+    const allUsers = await base44.asServiceRole.entities.User.list();
 
     let remindersSent = 0;
 
@@ -118,15 +120,22 @@ Deno.serve(async (req) => {
 
         console.log(`[JobReminder] Sending reminder for job ${job.job_number} (starts in ${Math.round(minutesUntilJob)} minutes)`);
 
+        // Get user IDs for assigned technicians
+        const assignedUsers = allUsers.filter(u => job.assigned_to.includes(u.email));
+        const userIds = assignedUsers.map(u => u.id);
+
+        const title = `⏰ Job Starting Soon: #${job.job_number}`;
+        const body = `${job.customer_name || 'Customer'} @ ${job.scheduled_time}${job.address_suburb ? ` • ${job.address_suburb}` : ''}`;
+        const url = `/Jobs?jobId=${job.id}`;
+
+        // Send via OneSignal
+        const pushResult = await sendOneSignalPush(userIds, title, body, url, { job_id: job.id });
+        if (pushResult.success) {
+          remindersSent++;
+        }
+
+        // Create in-app notifications
         for (const techEmail of job.assigned_to) {
-          const title = `⏰ Job Starting Soon: #${job.job_number}`;
-          const body = `${job.customer_name || 'Customer'} @ ${job.scheduled_time}${job.address_suburb ? ` • ${job.address_suburb}` : ''}`;
-          const url = `/Jobs?jobId=${job.id}`;
-
-          const sent = await sendPushToUser(base44, techEmail, title, body, url, { job_id: job.id });
-          remindersSent += sent;
-
-          // Create in-app notification
           await base44.asServiceRole.entities.Notification.create({
             user_email: techEmail,
             type: 'job_reminder',

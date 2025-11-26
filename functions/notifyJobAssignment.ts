@@ -1,51 +1,54 @@
 import { createClientFromRequest } from 'npm:@base44/sdk@0.8.4';
-import webpush from 'npm:web-push@3.6.7';
 
-const VAPID_PUBLIC_KEY = Deno.env.get('VAPID_PUBLIC_KEY');
-const VAPID_PRIVATE_KEY = Deno.env.get('VAPID_PRIVATE_KEY');
+const ONESIGNAL_APP_ID = Deno.env.get('ONESIGNAL_APP_ID');
+const ONESIGNAL_API_KEY = Deno.env.get('ONESIGNAL_REST_API_KEY');
 
-webpush.setVapidDetails(
-  'mailto:admin@kangaroogd.com.au',
-  VAPID_PUBLIC_KEY,
-  VAPID_PRIVATE_KEY
-);
-
-async function sendPushToUser(base44, userEmail, title, body, url, data = {}) {
-  const subscriptions = await base44.asServiceRole.entities.PushSubscription.filter({
-    user_email: userEmail,
-    active: true
-  });
-
-  console.log(`[JobAssign] Found ${subscriptions.length} subscriptions for ${userEmail}`);
-
-  let sent = 0;
-  for (const sub of subscriptions) {
-    try {
-      if (sub.platform === 'web' && sub.subscription_json) {
-        const pushSubscription = JSON.parse(sub.subscription_json);
-        const payload = JSON.stringify({
-          title,
-          body,
-          icon: '/icon-192.png',
-          data: { url, ...data }
-        });
-
-        await webpush.sendNotification(pushSubscription, payload);
-        console.log(`[JobAssign] SUCCESS: Sent to ${userEmail} (sub: ${sub.id})`);
-        sent++;
-
-        await base44.asServiceRole.entities.PushSubscription.update(sub.id, {
-          last_seen: new Date().toISOString()
-        });
-      }
-    } catch (error) {
-      console.error(`[JobAssign] FAILED for ${userEmail} (sub: ${sub.id}):`, error.message);
-      if (error.statusCode === 410 || error.statusCode === 404) {
-        await base44.asServiceRole.entities.PushSubscription.update(sub.id, { active: false });
-      }
-    }
+async function sendOneSignalPush(userIds, title, message, url, data = {}) {
+  if (!ONESIGNAL_APP_ID || !ONESIGNAL_API_KEY) {
+    console.log('[JobAssign] OneSignal not configured');
+    return { success: false, error: 'OneSignal not configured' };
   }
-  return sent;
+
+  if (!userIds || userIds.length === 0) {
+    return { success: false, error: 'No user IDs provided' };
+  }
+
+  const payload = {
+    app_id: ONESIGNAL_APP_ID,
+    headings: { en: title },
+    contents: { en: message },
+    include_aliases: { external_id: userIds },
+    target_channel: 'push',
+    data: { url, ...data }
+  };
+
+  if (url) {
+    payload.url = url;
+  }
+
+  try {
+    const response = await fetch('https://onesignal.com/api/v1/notifications', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Basic ${ONESIGNAL_API_KEY}`
+      },
+      body: JSON.stringify(payload)
+    });
+
+    const result = await response.json();
+    
+    if (!response.ok) {
+      console.error('[JobAssign] OneSignal error:', result);
+      return { success: false, error: result.errors?.[0] || 'Failed to send' };
+    }
+
+    console.log(`[JobAssign] OneSignal sent: ${result.recipients} recipients`);
+    return { success: true, recipients: result.recipients };
+  } catch (error) {
+    console.error('[JobAssign] OneSignal error:', error.message);
+    return { success: false, error: error.message };
+  }
 }
 
 Deno.serve(async (req) => {
@@ -65,8 +68,7 @@ Deno.serve(async (req) => {
 
     console.log(`[JobAssign] Processing job ${job_id} assignment to ${assigned_to_emails.join(', ')}`);
 
-    // Check if we've already sent notifications for this assignment
-    // Using a simple approach: check Notification entity for recent duplicates
+    // Check for duplicate notifications (within last 5 minutes)
     const recentNotifications = await base44.asServiceRole.entities.Notification.filter({
       reference_id: job_id,
       type: 'job_assignment'
@@ -84,19 +86,23 @@ Deno.serve(async (req) => {
       });
     }
 
-    let totalSent = 0;
+    // Get user IDs for assigned technicians
+    const allUsers = await base44.asServiceRole.entities.User.list();
+    const assignedUsers = allUsers.filter(u => assigned_to_emails.includes(u.email));
+    const userIds = assignedUsers.map(u => u.id);
+
     const dateStr = scheduled_date ? new Date(scheduled_date).toLocaleDateString('en-AU', { weekday: 'short', month: 'short', day: 'numeric' }) : '';
     const timeStr = scheduled_time || '';
 
+    const title = `New Job Assigned: #${job_number || 'N/A'}`;
+    const body = `${customer_name || 'Customer'}${dateStr ? ` • ${dateStr}` : ''}${timeStr ? ` @ ${timeStr}` : ''}`;
+    const url = `/Jobs?jobId=${job_id}`;
+
+    // Send via OneSignal
+    const pushResult = await sendOneSignalPush(userIds, title, body, url, { job_id });
+
+    // Create in-app notification records
     for (const email of assigned_to_emails) {
-      const title = `New Job Assigned: #${job_number || 'N/A'}`;
-      const body = `${customer_name || 'Customer'}${dateStr ? ` • ${dateStr}` : ''}${timeStr ? ` @ ${timeStr}` : ''}`;
-      const url = `/Jobs?jobId=${job_id}`;
-
-      const sent = await sendPushToUser(base44, email, title, body, url, { job_id });
-      totalSent += sent;
-
-      // Create in-app notification record
       await base44.asServiceRole.entities.Notification.create({
         user_email: email,
         type: 'job_assignment',
@@ -108,11 +114,11 @@ Deno.serve(async (req) => {
       });
     }
 
-    console.log(`[JobAssign] Completed: ${totalSent} push notifications sent for job ${job_id}`);
+    console.log(`[JobAssign] Completed for job ${job_id}`);
 
     return Response.json({
       success: true,
-      sent: totalSent,
+      pushResult,
       recipients: assigned_to_emails.length
     });
   } catch (error) {

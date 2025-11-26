@@ -1,16 +1,20 @@
 import { createClientFromRequest } from 'npm:@base44/sdk@0.8.4';
-import webpush from 'npm:web-push@3.6.7';
 
-// Initialize web-push with VAPID keys
-const VAPID_PUBLIC_KEY = Deno.env.get('VAPID_PUBLIC_KEY');
-const VAPID_PRIVATE_KEY = Deno.env.get('VAPID_PRIVATE_KEY');
+const ONESIGNAL_APP_ID = Deno.env.get('ONESIGNAL_APP_ID');
+const ONESIGNAL_API_KEY = Deno.env.get('ONESIGNAL_REST_API_KEY');
 
-webpush.setVapidDetails(
-  'mailto:admin@kangaroogd.com.au',
-  VAPID_PUBLIC_KEY,
-  VAPID_PRIVATE_KEY
-);
-
+/**
+ * Generic push notification function using OneSignal
+ * 
+ * Parameters:
+ * - user_id: Single user ID to send to
+ * - user_email: User email (will lookup user ID)
+ * - user_ids: Array of user IDs to send to
+ * - title: Notification title
+ * - body: Notification message
+ * - url: URL to open when clicked
+ * - data: Additional data payload
+ */
 Deno.serve(async (req) => {
   try {
     const base44 = createClientFromRequest(req);
@@ -20,89 +24,80 @@ Deno.serve(async (req) => {
       return Response.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
-    const { user_id, user_email, title, body, data, icon, url } = await req.json();
+    const { user_id, user_email, user_ids, title, body, url, data } = await req.json();
 
-    if (!user_id && !user_email) {
-      return Response.json({ error: 'user_id or user_email required' }, { status: 400 });
+    if (!title || !body) {
+      return Response.json({ error: 'title and body required' }, { status: 400 });
     }
 
-    // Find active push subscriptions for the target user
-    let subscriptions = [];
-    if (user_id) {
-      subscriptions = await base44.asServiceRole.entities.PushSubscription.filter({ 
-        user_id: user_id, 
-        active: true 
-      });
+    if (!ONESIGNAL_APP_ID || !ONESIGNAL_API_KEY) {
+      return Response.json({ error: 'OneSignal not configured' }, { status: 500 });
+    }
+
+    // Resolve user IDs
+    let targetUserIds = [];
+
+    if (user_ids && user_ids.length > 0) {
+      targetUserIds = user_ids;
+    } else if (user_id) {
+      targetUserIds = [user_id];
     } else if (user_email) {
-      subscriptions = await base44.asServiceRole.entities.PushSubscription.filter({ 
-        user_email: user_email, 
-        active: true 
-      });
+      // Look up user ID from email
+      const users = await base44.asServiceRole.entities.User.filter({ email: user_email });
+      if (users.length > 0) {
+        targetUserIds = [users[0].id];
+      }
     }
 
-    console.log(`[Push] Found ${subscriptions.length} active subscriptions for user ${user_id || user_email}`);
-
-    if (subscriptions.length === 0) {
-      console.log(`[Push] No active subscriptions found for user ${user_id || user_email}`);
+    if (targetUserIds.length === 0) {
+      console.log(`[Push] No user IDs resolved`);
       return Response.json({ 
         success: true, 
         sent: 0, 
-        message: 'No active subscriptions found' 
+        message: 'No users found' 
       });
     }
 
-    const payload = JSON.stringify({
-      title: title || 'Notification',
-      body: body || '',
-      icon: icon || '/icon-192.png',
-      data: {
-        url: url || '/',
-        ...data
-      }
-    });
+    console.log(`[Push] Sending to ${targetUserIds.length} users via OneSignal`);
 
-    const results = [];
-    for (const sub of subscriptions) {
-      try {
-        if (sub.platform === 'web' && sub.subscription_json) {
-          const pushSubscription = JSON.parse(sub.subscription_json);
-          
-          await webpush.sendNotification(pushSubscription, payload);
-          
-          console.log(`[Push] SUCCESS: Sent to subscription ${sub.id} (${sub.platform})`);
-          results.push({ id: sub.id, success: true });
+    const payload = {
+      app_id: ONESIGNAL_APP_ID,
+      headings: { en: title },
+      contents: { en: body },
+      include_aliases: { external_id: targetUserIds },
+      target_channel: 'push',
+      data: { url: url || '/', ...data }
+    };
 
-          // Update last_seen
-          await base44.asServiceRole.entities.PushSubscription.update(sub.id, {
-            last_seen: new Date().toISOString()
-          });
-        } else if (sub.token) {
-          // For FCM tokens (mobile apps) - placeholder for future implementation
-          console.log(`[Push] SKIP: FCM not implemented for subscription ${sub.id}`);
-          results.push({ id: sub.id, success: false, reason: 'FCM not implemented' });
-        }
-      } catch (error) {
-        console.error(`[Push] FAILED: Subscription ${sub.id}:`, error.message);
-        results.push({ id: sub.id, success: false, error: error.message });
-
-        // If subscription is expired or invalid, mark it inactive
-        if (error.statusCode === 410 || error.statusCode === 404) {
-          console.log(`[Push] Marking subscription ${sub.id} as inactive (expired/invalid)`);
-          await base44.asServiceRole.entities.PushSubscription.update(sub.id, {
-            active: false
-          });
-        }
-      }
+    if (url) {
+      payload.url = url;
     }
 
-    const successCount = results.filter(r => r.success).length;
-    console.log(`[Push] Completed: ${successCount}/${results.length} notifications sent`);
+    const response = await fetch('https://onesignal.com/api/v1/notifications', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Basic ${ONESIGNAL_API_KEY}`
+      },
+      body: JSON.stringify(payload)
+    });
+
+    const result = await response.json();
+
+    if (!response.ok) {
+      console.error('[Push] OneSignal error:', result);
+      return Response.json({ 
+        success: false, 
+        error: result.errors?.[0] || 'Failed to send' 
+      }, { status: response.status });
+    }
+
+    console.log(`[Push] Completed: ${result.recipients} recipients`);
 
     return Response.json({
       success: true,
-      sent: successCount,
-      total: results.length,
-      results
+      sent: result.recipients || 0,
+      notificationId: result.id
     });
   } catch (error) {
     console.error('[Push] Error:', error);

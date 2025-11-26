@@ -1,49 +1,54 @@
 import { createClientFromRequest } from 'npm:@base44/sdk@0.8.4';
-import webpush from 'npm:web-push@3.6.7';
 
-const VAPID_PUBLIC_KEY = Deno.env.get('VAPID_PUBLIC_KEY');
-const VAPID_PRIVATE_KEY = Deno.env.get('VAPID_PRIVATE_KEY');
+const ONESIGNAL_APP_ID = Deno.env.get('ONESIGNAL_APP_ID');
+const ONESIGNAL_API_KEY = Deno.env.get('ONESIGNAL_REST_API_KEY');
 
-webpush.setVapidDetails(
-  'mailto:admin@kangaroogd.com.au',
-  VAPID_PUBLIC_KEY,
-  VAPID_PRIVATE_KEY
-);
-
-async function sendPushToUser(base44, userEmail, title, body, url, data = {}) {
-  const subscriptions = await base44.asServiceRole.entities.PushSubscription.filter({
-    user_email: userEmail,
-    active: true
-  });
-
-  let sent = 0;
-  for (const sub of subscriptions) {
-    try {
-      if (sub.platform === 'web' && sub.subscription_json) {
-        const pushSubscription = JSON.parse(sub.subscription_json);
-        const payload = JSON.stringify({
-          title,
-          body,
-          icon: '/icon-192.png',
-          data: { url, ...data }
-        });
-
-        await webpush.sendNotification(pushSubscription, payload);
-        console.log(`[CheckInOut] SUCCESS: Sent to ${userEmail} (sub: ${sub.id})`);
-        sent++;
-
-        await base44.asServiceRole.entities.PushSubscription.update(sub.id, {
-          last_seen: new Date().toISOString()
-        });
-      }
-    } catch (error) {
-      console.error(`[CheckInOut] FAILED for ${userEmail} (sub: ${sub.id}):`, error.message);
-      if (error.statusCode === 410 || error.statusCode === 404) {
-        await base44.asServiceRole.entities.PushSubscription.update(sub.id, { active: false });
-      }
-    }
+async function sendOneSignalPush(userIds, title, message, url, data = {}) {
+  if (!ONESIGNAL_APP_ID || !ONESIGNAL_API_KEY) {
+    console.log('[CheckInOut] OneSignal not configured');
+    return { success: false, error: 'OneSignal not configured' };
   }
-  return sent;
+
+  if (!userIds || userIds.length === 0) {
+    return { success: false, error: 'No user IDs provided' };
+  }
+
+  const payload = {
+    app_id: ONESIGNAL_APP_ID,
+    headings: { en: title },
+    contents: { en: message },
+    include_aliases: { external_id: userIds },
+    target_channel: 'push',
+    data: { url, ...data }
+  };
+
+  if (url) {
+    payload.url = url;
+  }
+
+  try {
+    const response = await fetch('https://onesignal.com/api/v1/notifications', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Basic ${ONESIGNAL_API_KEY}`
+      },
+      body: JSON.stringify(payload)
+    });
+
+    const result = await response.json();
+    
+    if (!response.ok) {
+      console.error('[CheckInOut] OneSignal error:', result);
+      return { success: false, error: result.errors?.[0] || 'Failed to send' };
+    }
+
+    console.log(`[CheckInOut] OneSignal sent: ${result.recipients} recipients`);
+    return { success: true, recipients: result.recipients };
+  } catch (error) {
+    console.error('[CheckInOut] OneSignal error:', error.message);
+    return { success: false, error: error.message };
+  }
 }
 
 Deno.serve(async (req) => {
@@ -96,8 +101,6 @@ Deno.serve(async (req) => {
 
     console.log(`[CheckInOut] Notifying ${adminUsers.length} admins`);
 
-    let totalSent = 0;
-
     const isCheckIn = event_type === 'check_in';
     const title = isCheckIn 
       ? `✅ ${technician_name} checked in`
@@ -106,30 +109,35 @@ Deno.serve(async (req) => {
     const body = `Job #${job_number || 'N/A'}${customer_name ? ` • ${customer_name}` : ''}${notes ? ` • ${notes}` : ''}`;
     const url = job_id ? `/Jobs?jobId=${job_id}` : '/Schedule';
 
+    // Filter admins based on notification preferences
+    const adminsToNotify = [];
     for (const admin of adminUsers) {
-      // Check admin's notification preferences
       const prefs = await base44.asServiceRole.entities.NotificationPreference.filter({
         user_email: admin.email
       });
       
       const pref = prefs[0];
-      
-      // Default to sending if no preference set, or if preference allows
       const shouldSend = !pref || pref.tech_check_in_out !== false;
       
-      if (!shouldSend) {
+      if (shouldSend) {
+        adminsToNotify.push(admin);
+      } else {
         console.log(`[CheckInOut] SKIP: ${admin.email} has disabled check-in/out notifications`);
-        continue;
       }
+    }
 
-      const sent = await sendPushToUser(base44, admin.email, title, body, url, { 
-        job_id, 
-        check_in_out_id,
-        event_type 
-      });
-      totalSent += sent;
+    // Get user IDs for admins to notify
+    const userIds = adminsToNotify.map(u => u.id);
 
-      // Create in-app notification
+    // Send via OneSignal
+    const pushResult = await sendOneSignalPush(userIds, title, body, url, { 
+      job_id, 
+      check_in_out_id,
+      event_type 
+    });
+
+    // Create in-app notifications
+    for (const admin of adminsToNotify) {
       await base44.asServiceRole.entities.Notification.create({
         user_email: admin.email,
         type: `tech_${event_type}`,
@@ -141,12 +149,12 @@ Deno.serve(async (req) => {
       });
     }
 
-    console.log(`[CheckInOut] Completed: ${totalSent} push notifications sent`);
+    console.log(`[CheckInOut] Completed`);
 
     return Response.json({
       success: true,
-      sent: totalSent,
-      adminsNotified: adminUsers.length
+      pushResult,
+      adminsNotified: adminsToNotify.length
     });
   } catch (error) {
     console.error('[CheckInOut] Error:', error);
