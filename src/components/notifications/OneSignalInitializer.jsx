@@ -1,6 +1,6 @@
 import { useEffect, useRef } from "react";
 
-const ONESIGNAL_APP_ID = "4w5y6ihb5embnqieuijbvtji7";
+const ONESIGNAL_APP_ID = "50b86e27-3335-48dc-877c-4e4f3d223620";
 
 /**
  * OneSignal Initializer Component
