@@ -247,6 +247,7 @@ export default function Layout({ children, currentPageName }) {
   if (isTechnician) {
     return (
       <div className="min-h-screen flex flex-col bg-[#ffffff]">
+        <PushNotificationRegistrar user={user} />
         {/* Mobile Overlay */}
         {techMobileMenuOpen && (
           <div 
