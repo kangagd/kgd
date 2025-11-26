@@ -26,7 +26,9 @@ const statusConfig = {
   Expired: { color: 'bg-orange-100 text-orange-700 border-orange-200', icon: Clock, label: 'Expired' }
 };
 
-export default function QuoteSummaryModal({ quote, isOpen, onClose, isAdmin = false }) {
+export default function QuoteSummaryModal({ quote, isOpen, onClose, isAdmin = false, onRefreshLink }) {
+  const [isLoadingLink, setIsLoadingLink] = React.useState(false);
+  
   if (!quote) return null;
 
   const config = statusConfig[quote.status] || statusConfig.Draft;
@@ -38,14 +40,44 @@ export default function QuoteSummaryModal({ quote, isOpen, onClose, isAdmin = fa
     }
   };
 
-  const openPublicUrl = () => {
-    if (quote.pandadoc_public_url) {
+  const openPublicUrl = async () => {
+    // Always fetch a fresh session link
+    if (quote.pandadoc_document_id && onRefreshLink) {
+      setIsLoadingLink(true);
+      try {
+        const freshUrl = await onRefreshLink(quote);
+        if (freshUrl) {
+          window.open(freshUrl, '_blank');
+        } else {
+          toast.error('Could not generate client link');
+        }
+      } catch (error) {
+        toast.error('Failed to open client view');
+      } finally {
+        setIsLoadingLink(false);
+      }
+    } else if (quote.pandadoc_public_url) {
       window.open(quote.pandadoc_public_url, '_blank');
     }
   };
 
   const copyClientLink = async () => {
-    if (quote.pandadoc_public_url) {
+    if (quote.pandadoc_document_id && onRefreshLink) {
+      setIsLoadingLink(true);
+      try {
+        const freshUrl = await onRefreshLink(quote);
+        if (freshUrl) {
+          await navigator.clipboard.writeText(freshUrl);
+          toast.success('Client link copied to clipboard');
+        } else {
+          toast.error('Could not generate client link');
+        }
+      } catch (error) {
+        toast.error('Failed to copy link');
+      } finally {
+        setIsLoadingLink(false);
+      }
+    } else if (quote.pandadoc_public_url) {
       await navigator.clipboard.writeText(quote.pandadoc_public_url);
       toast.success('Client link copied to clipboard');
     }
