@@ -186,6 +186,7 @@ export default function QuotesSection({
         isOpen={!!selectedQuote}
         onClose={() => setSelectedQuote(null)}
         isAdmin={true}
+        onRefreshLink={getRefreshLink}
       />
     </div>
   );
