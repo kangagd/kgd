@@ -1,115 +1,60 @@
 import { useEffect, useRef } from "react";
-import { base44 } from "@/api/base44Client";
+import { 
+  isPushSupported, 
+  getPermissionStatus, 
+  registerForPushNotifications,
+  getActiveSubscriptionForDevice 
+} from "./pushUtils";
 
-// VAPID public key from environment
-const VAPID_PUBLIC_KEY = "BLBx-hf5h3SAQ5fvT2xMZHy4iNxKbEQKLX8BYWvP4xJPqGLw3Ns-Ks6kZ6nPZKBwLK9nP5ZwXPPkPmz7_P5PQAQ";
-
-function urlBase64ToUint8Array(base64String) {
-  const padding = '='.repeat((4 - base64String.length % 4) % 4);
-  const base64 = (base64String + padding)
-    .replace(/-/g, '+')
-    .replace(/_/g, '/');
-  const rawData = window.atob(base64);
-  const outputArray = new Uint8Array(rawData.length);
-  for (let i = 0; i < rawData.length; ++i) {
-    outputArray[i] = rawData.charCodeAt(i);
-  }
-  return outputArray;
-}
-
+/**
+ * Silent background component that auto-registers push notifications
+ * when user is logged in and has already granted permission.
+ * 
+ * Does NOT prompt for permission - only registers if already granted.
+ * The PushNotificationSetup component handles explicit user interaction.
+ */
 export default function PushNotificationRegistrar({ user }) {
-  const hasRegistered = useRef(false);
+  const hasAttempted = useRef(false);
 
   useEffect(() => {
-    if (!user || hasRegistered.current) return;
-    
-    const registerPushSubscription = async () => {
-      // Check if browser supports notifications and service workers
-      if (!('Notification' in window) || !('serviceWorker' in navigator) || !('PushManager' in window)) {
-        console.log('Push notifications not supported in this browser');
+    if (!user || hasAttempted.current) return;
+
+    const silentRegister = async () => {
+      // Only proceed if push is supported
+      if (!isPushSupported()) {
+        console.log('[PushRegistrar] Push not supported');
         return;
       }
 
-      // Check current permission
-      if (Notification.permission === 'denied') {
-        console.log('Push notifications denied by user');
+      // Only auto-register if permission is ALREADY granted
+      // Never prompt for permission in background
+      if (getPermissionStatus() !== 'granted') {
+        console.log('[PushRegistrar] Permission not granted, skipping auto-register');
         return;
       }
 
-      try {
-        // Request permission if not granted
-        if (Notification.permission === 'default') {
-          const permission = await Notification.requestPermission();
-          if (permission !== 'granted') {
-            console.log('Push notification permission not granted');
-            return;
-          }
-        }
+      // Check if already registered for this device
+      const existingSub = await getActiveSubscriptionForDevice(user.id);
+      if (existingSub) {
+        console.log('[PushRegistrar] Device already registered');
+        return;
+      }
 
-        // Get service worker registration
-        const registration = await navigator.serviceWorker.ready;
+      // Auto-register since permission is granted but device not registered
+      console.log('[PushRegistrar] Auto-registering device...');
+      hasAttempted.current = true;
 
-        // Check for existing subscription
-        let subscription = await registration.pushManager.getSubscription();
-
-        // If no subscription, create one
-        if (!subscription) {
-          subscription = await registration.pushManager.subscribe({
-            userVisibleOnly: true,
-            applicationServerKey: urlBase64ToUint8Array(VAPID_PUBLIC_KEY)
-          });
-        }
-
-        // Convert subscription to JSON string
-        const subscriptionJson = JSON.stringify(subscription.toJSON());
-        const deviceInfo = navigator.userAgent;
-
-        // Check if we already have a subscription for this user/endpoint
-        const existingSubscriptions = await base44.entities.PushSubscription.filter({
-          user_id: user.id,
-          platform: 'web'
-        });
-
-        const existingWithSameEndpoint = existingSubscriptions.find(s => {
-          try {
-            const parsed = JSON.parse(s.subscription_json || '{}');
-            return parsed.endpoint === subscription.endpoint;
-          } catch {
-            return false;
-          }
-        });
-
-        if (existingWithSameEndpoint) {
-          // Update last_seen
-          await base44.entities.PushSubscription.update(existingWithSameEndpoint.id, {
-            active: true,
-            last_seen: new Date().toISOString(),
-            subscription_json: subscriptionJson,
-            device_info: deviceInfo
-          });
-        } else {
-          // Create new subscription record
-          await base44.entities.PushSubscription.create({
-            user_id: user.id,
-            user_email: user.email,
-            platform: 'web',
-            subscription_json: subscriptionJson,
-            active: true,
-            last_seen: new Date().toISOString(),
-            device_info: deviceInfo
-          });
-        }
-
-        hasRegistered.current = true;
-        console.log('Push subscription registered successfully');
-      } catch (error) {
-        console.error('Failed to register push subscription:', error);
+      const result = await registerForPushNotifications(user);
+      if (result.success) {
+        console.log('[PushRegistrar] Auto-registration successful');
+      } else {
+        console.log('[PushRegistrar] Auto-registration failed:', result.message);
       }
     };
 
-    registerPushSubscription();
+    silentRegister();
   }, [user]);
 
-  // This component renders nothing - it just handles registration
+  // This component renders nothing
   return null;
 }
