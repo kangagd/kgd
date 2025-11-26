@@ -142,8 +142,8 @@ export default function ProjectEmailSection({ project, onThreadLinked }) {
 
   const isLoading = threadLoading || messagesLoading;
 
-  // No linked thread - show option to link
-  if (!project.source_email_thread_id) {
+  // No linked threads - show option to link
+  if (linkedThreads.length === 0 && !project.source_email_thread_id) {
     return (
       <Card className="border border-[#E5E7EB] shadow-sm rounded-lg">
         <CardContent className="p-8 text-center">
