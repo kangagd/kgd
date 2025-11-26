@@ -23,8 +23,6 @@ import { createPageUrl } from "@/utils";
 import { useNavigate } from "react-router-dom";
 import EmailComposer from "./EmailComposer";
 import EmailAISummaryCard from "./EmailAISummaryCard";
-import LinkedThreadsSection from "./LinkedThreadsSection";
-import LinkThreadToThreadModal from "./LinkThreadToThreadModal";
 import {
   DropdownMenu,
   DropdownMenuContent,
