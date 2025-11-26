@@ -170,15 +170,15 @@ export default function QuoteSummaryModal({ quote, isOpen, onClose, isAdmin = fa
           )}
         </div>
 
-        <DialogFooter className="gap-2">
+        <DialogFooter className="flex-wrap gap-2">
           {quote.pandadoc_public_url && (
             <>
-              <Button variant="outline" onClick={openPublicUrl}>
+              <Button variant="outline" onClick={openPublicUrl} className="flex-1 min-w-[120px]">
                 <Eye className="w-4 h-4 mr-2" />
                 View as Client
               </Button>
               {isAdmin && (
-                <Button variant="outline" onClick={copyClientLink}>
+                <Button variant="outline" onClick={copyClientLink} className="flex-1 min-w-[120px]">
                   <Copy className="w-4 h-4 mr-2" />
                   Copy Link
                 </Button>
@@ -186,7 +186,7 @@ export default function QuoteSummaryModal({ quote, isOpen, onClose, isAdmin = fa
             </>
           )}
           {isAdmin && quote.pandadoc_internal_url && (
-            <Button onClick={openInPandaDoc} className="bg-[#FAE008] hover:bg-[#E5CF07] text-[#111827]">
+            <Button onClick={openInPandaDoc} className="bg-[#FAE008] hover:bg-[#E5CF07] text-[#111827] flex-1 min-w-[120px]">
               <ExternalLink className="w-4 h-4 mr-2" />
               Open in PandaDoc
             </Button>
