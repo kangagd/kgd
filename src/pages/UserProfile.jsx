@@ -8,6 +8,7 @@ import { base44 } from "@/api/base44Client";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { ArrowLeft, User, Mail, Shield, Lock } from "lucide-react";
 import { useNavigate } from "react-router-dom";
+import { toast } from "sonner";
 
 export default function UserProfile() {
   const [user, setUser] = useState(null);
@@ -49,11 +50,23 @@ export default function UserProfile() {
   const updateProfileMutation = useMutation({
     mutationFn: async (data) => {
       await base44.auth.updateMe(data);
+      // Refetch the updated user data
+      const updatedUser = await base44.auth.me();
+      return updatedUser;
     },
-    onSuccess: () => {
+    onSuccess: (updatedUser) => {
       queryClient.invalidateQueries({ queryKey: ['user'] });
-      const updatedUser = { ...user, ...formData };
       setUser(updatedUser);
+      setFormData({
+        full_name: updatedUser.full_name || "",
+        email: updatedUser.email || "",
+        role: updatedUser.role || "",
+        is_field_technician: updatedUser.is_field_technician || false
+      });
+      toast.success("Profile updated successfully");
+    },
+    onError: (error) => {
+      toast.error("Failed to update profile: " + (error.message || "Unknown error"));
     }
   });
 
