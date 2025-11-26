@@ -325,7 +325,7 @@ export default function ProjectEmailSection({ project, onThreadLinked }) {
                         <div key={message.id} className="relative">
                           <EmailMessageView
                             message={message}
-                            isFirst={index === threadMessages.length - 1}
+                            isFirst={index === 0}
                             linkedProjectId={project.id}
                             threadSubject={thread.subject}
                           />
