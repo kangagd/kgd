@@ -30,7 +30,10 @@ export default function PushNotificationSetup({ user }) {
 
   // Load initial state from backend - runs once on mount
   const loadState = useCallback(async () => {
+    console.log('[PushSetup] loadState called, user:', user?.id);
+    
     if (!user) {
+      console.log('[PushSetup] No user, setting isLoading false');
       setIsLoading(false);
       return;
     }
@@ -38,26 +41,35 @@ export default function PushNotificationSetup({ user }) {
     try {
       // Check browser support and permission
       const supported = isPushSupported();
+      console.log('[PushSetup] isPushSupported:', supported);
       setIsSupported(supported);
       
       if (supported) {
-        setPermissionStatus(getPermissionStatus());
+        const permission = getPermissionStatus();
+        console.log('[PushSetup] Permission status:', permission);
+        setPermissionStatus(permission);
       }
       
       // Load subscriptions from backend
+      console.log('[PushSetup] Fetching subscriptions for user:', user.id);
       const subs = await getAllSubscriptionsForUser(user.id);
+      console.log('[PushSetup] Subscriptions from backend:', subs);
       setSubscriptions(subs);
       
       // Check if current device is registered
       if (supported && getPermissionStatus() === 'granted') {
+        console.log('[PushSetup] Permission granted, checking for active subscription...');
         const activeSub = await getActiveSubscriptionForDevice(user.id);
+        console.log('[PushSetup] Active subscription for this device:', activeSub);
         setCurrentDeviceRegistered(!!activeSub);
       } else {
+        console.log('[PushSetup] Permission not granted or not supported, device not registered');
         setCurrentDeviceRegistered(false);
       }
     } catch (error) {
       console.error('[PushSetup] Error loading state:', error);
     } finally {
+      console.log('[PushSetup] loadState complete, setting isLoading false');
       setIsLoading(false);
     }
   }, [user?.id]);

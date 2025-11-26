@@ -38,33 +38,52 @@ export function getPermissionStatus() {
  * Check if the current device has an active push subscription on the backend
  */
 export async function getActiveSubscriptionForDevice(userId) {
-  if (!userId || !isPushSupported()) return null;
+  console.log('[PushUtils] getActiveSubscriptionForDevice called, userId:', userId);
+  
+  if (!userId || !isPushSupported()) {
+    console.log('[PushUtils] Early return - userId:', userId, 'isPushSupported:', isPushSupported());
+    return null;
+  }
   
   try {
     // Get current browser's push subscription endpoint
+    console.log('[PushUtils] Waiting for service worker ready...');
     const registration = await navigator.serviceWorker.ready;
-    const currentSubscription = await registration.pushManager.getSubscription();
+    console.log('[PushUtils] Service worker ready, getting subscription...');
     
-    if (!currentSubscription) return null;
+    const currentSubscription = await registration.pushManager.getSubscription();
+    console.log('[PushUtils] Current push subscription:', currentSubscription);
+    
+    if (!currentSubscription) {
+      console.log('[PushUtils] No current push subscription in browser');
+      return null;
+    }
     
     const currentEndpoint = currentSubscription.endpoint;
+    console.log('[PushUtils] Current endpoint:', currentEndpoint);
     
     // Check backend for matching subscription
+    console.log('[PushUtils] Fetching backend subscriptions...');
     const subscriptions = await base44.entities.PushSubscription.filter({
       user_id: userId,
       platform: 'web',
       active: true
     });
+    console.log('[PushUtils] Backend subscriptions:', subscriptions);
     
     const matchingSub = subscriptions.find(s => {
       try {
         const parsed = JSON.parse(s.subscription_json || '{}');
-        return parsed.endpoint === currentEndpoint;
-      } catch {
+        const matches = parsed.endpoint === currentEndpoint;
+        console.log('[PushUtils] Comparing endpoints:', { backend: parsed.endpoint, current: currentEndpoint, matches });
+        return matches;
+      } catch (e) {
+        console.log('[PushUtils] Error parsing subscription_json:', e);
         return false;
       }
     });
     
+    console.log('[PushUtils] Matching subscription found:', matchingSub);
     return matchingSub || null;
   } catch (error) {
     console.error('[PushUtils] Error checking active subscription:', error);
