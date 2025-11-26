@@ -95,7 +95,7 @@ export default function Inbox() {
     queryKey: ['emailThreads'],
     queryFn: () => base44.entities.EmailThread.list('-last_message_date'),
     enabled: !!userPermissions?.can_view,
-    refetchInterval: 30000 // Auto-refresh every 30 seconds
+    refetchInterval: 60000 // Auto-refresh every 60 seconds
   });
   
   // Sync selectedThread with URL parameter
