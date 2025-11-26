@@ -170,6 +170,7 @@ Deno.serve(async (req) => {
       name: pandadocDoc.name,
       value: value,
       currency: pandadocDoc.grand_total?.currency || 'AUD',
+      line_items: lineItems,
       pandadoc_document_id: pandadocDoc.id,
       pandadoc_public_url: publicUrl,
       pandadoc_internal_url: `https://app.pandadoc.com/a/#/documents/${pandadocDoc.id}`,
