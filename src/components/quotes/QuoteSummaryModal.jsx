@@ -53,7 +53,7 @@ export default function QuoteSummaryModal({ quote, isOpen, onClose, isAdmin = fa
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="max-w-md">
+      <DialogContent className="max-w-lg">
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
             <FileText className="w-5 h-5 text-[#FAE008]" />
