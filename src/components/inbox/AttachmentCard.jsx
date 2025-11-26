@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Download, Save, FileText, Image as ImageIcon, FileSpreadsheet, FileArchive, Loader2 } from "lucide-react";
 import { base44 } from "@/api/base44Client";
@@ -25,6 +25,8 @@ export default function AttachmentCard({
   onSaveComplete 
 }) {
   const [saving, setSaving] = useState(false);
+  const [downloading, setDownloading] = useState(false);
+  const [resolvedUrl, setResolvedUrl] = useState(attachment.url || null);
 
   const formatFileSize = (bytes) => {
     if (bytes === 0) return '0 Bytes';
