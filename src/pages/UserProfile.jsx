@@ -9,6 +9,7 @@ import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { ArrowLeft, User, Mail, Shield, Lock } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { toast } from "sonner";
+import { Toaster } from "@/components/ui/sonner";
 
 export default function UserProfile() {
   const [user, setUser] = useState(null);
@@ -116,6 +117,7 @@ export default function UserProfile() {
 
   return (
     <div className="min-h-screen bg-[#ffffff] p-2 md:p-8">
+      <Toaster position="top-right" richColors />
       <div className="max-w-4xl mx-auto space-y-6">
         <div className="flex items-center gap-4 mb-6">
           <Button variant="ghost" size="icon" onClick={() => navigate(-1)}>
