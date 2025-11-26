@@ -46,7 +46,9 @@ Deno.serve(async (req) => {
     }
 
     const sessionData = await sessionResponse.json();
-    const publicUrl = sessionData.id ? `https://app.pandadoc.com/s/${sessionData.id}` : '';
+    // PandaDoc returns session_id which is used as token in the URL
+    const token = sessionData.id || sessionData.session_id;
+    const publicUrl = token ? `https://app.pandadoc.com/document/v2?token=${token}` : '';
 
     return Response.json({
       success: true,
