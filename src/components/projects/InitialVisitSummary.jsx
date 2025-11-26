@@ -137,47 +137,184 @@ export default function InitialVisitSummary({ project, onViewJob }) {
               <Ruler className="w-4 h-4 text-[#6B7280]" />
               Measurements
             </h4>
-            <div className="bg-white rounded-lg p-3 border border-blue-100">
-              <div className="grid grid-cols-2 md:grid-cols-3 gap-3 text-[13px]">
-                {project.initial_visit_measurements.width && (
-                  <div>
-                    <span className="text-[#6B7280]">Width:</span>
-                    <span className="ml-1 font-medium text-[#111827]">{project.initial_visit_measurements.width}</span>
+            <div className="bg-white rounded-lg p-3 border border-blue-100 space-y-4">
+              {/* New Door Measurements */}
+              {project.initial_visit_measurements.new_door && Object.keys(project.initial_visit_measurements.new_door).some(k => project.initial_visit_measurements.new_door[k]) && (
+                <div>
+                  <h5 className="text-[12px] font-semibold text-[#4B5563] mb-2">New Door</h5>
+                  <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3 text-[13px]">
+                    {project.initial_visit_measurements.new_door.height_left && (
+                      <div>
+                        <span className="text-[#6B7280]">Height L:</span>
+                        <span className="ml-1 font-medium text-[#111827]">{project.initial_visit_measurements.new_door.height_left}mm</span>
+                      </div>
+                    )}
+                    {project.initial_visit_measurements.new_door.height_mid && (
+                      <div>
+                        <span className="text-[#6B7280]">Height M:</span>
+                        <span className="ml-1 font-medium text-[#111827]">{project.initial_visit_measurements.new_door.height_mid}mm</span>
+                      </div>
+                    )}
+                    {project.initial_visit_measurements.new_door.height_right && (
+                      <div>
+                        <span className="text-[#6B7280]">Height R:</span>
+                        <span className="ml-1 font-medium text-[#111827]">{project.initial_visit_measurements.new_door.height_right}mm</span>
+                      </div>
+                    )}
+                    {project.initial_visit_measurements.new_door.width_top && (
+                      <div>
+                        <span className="text-[#6B7280]">Width T:</span>
+                        <span className="ml-1 font-medium text-[#111827]">{project.initial_visit_measurements.new_door.width_top}mm</span>
+                      </div>
+                    )}
+                    {project.initial_visit_measurements.new_door.width_mid && (
+                      <div>
+                        <span className="text-[#6B7280]">Width M:</span>
+                        <span className="ml-1 font-medium text-[#111827]">{project.initial_visit_measurements.new_door.width_mid}mm</span>
+                      </div>
+                    )}
+                    {project.initial_visit_measurements.new_door.width_bottom && (
+                      <div>
+                        <span className="text-[#6B7280]">Width B:</span>
+                        <span className="ml-1 font-medium text-[#111827]">{project.initial_visit_measurements.new_door.width_bottom}mm</span>
+                      </div>
+                    )}
+                    {project.initial_visit_measurements.new_door.headroom && (
+                      <div>
+                        <span className="text-[#6B7280]">Headroom:</span>
+                        <span className="ml-1 font-medium text-[#111827]">{project.initial_visit_measurements.new_door.headroom}mm</span>
+                      </div>
+                    )}
+                    {project.initial_visit_measurements.new_door.sideroom_left && (
+                      <div>
+                        <span className="text-[#6B7280]">Sideroom L:</span>
+                        <span className="ml-1 font-medium text-[#111827]">{project.initial_visit_measurements.new_door.sideroom_left}mm</span>
+                      </div>
+                    )}
+                    {project.initial_visit_measurements.new_door.sideroom_right && (
+                      <div>
+                        <span className="text-[#6B7280]">Sideroom R:</span>
+                        <span className="ml-1 font-medium text-[#111827]">{project.initial_visit_measurements.new_door.sideroom_right}mm</span>
+                      </div>
+                    )}
+                    {project.initial_visit_measurements.new_door.type && (
+                      <div>
+                        <span className="text-[#6B7280]">Type:</span>
+                        <span className="ml-1 font-medium text-[#111827]">{project.initial_visit_measurements.new_door.type}</span>
+                      </div>
+                    )}
+                    {project.initial_visit_measurements.new_door.finish && (
+                      <div>
+                        <span className="text-[#6B7280]">Finish:</span>
+                        <span className="ml-1 font-medium text-[#111827]">{project.initial_visit_measurements.new_door.finish}</span>
+                      </div>
+                    )}
+                    {project.initial_visit_measurements.new_door.colour && (
+                      <div>
+                        <span className="text-[#6B7280]">Colour:</span>
+                        <span className="ml-1 font-medium text-[#111827]">{project.initial_visit_measurements.new_door.colour}</span>
+                      </div>
+                    )}
                   </div>
-                )}
-                {project.initial_visit_measurements.height && (
-                  <div>
-                    <span className="text-[#6B7280]">Height:</span>
-                    <span className="ml-1 font-medium text-[#111827]">{project.initial_visit_measurements.height}</span>
+                </div>
+              )}
+
+              {/* Existing Door Measurements */}
+              {project.initial_visit_measurements.existing_door && project.initial_visit_measurements.existing_door.removal_required === "Y" && (
+                <div className="pt-3 border-t border-blue-100">
+                  <h5 className="text-[12px] font-semibold text-[#4B5563] mb-2">Existing Door (Removal Required)</h5>
+                  <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3 text-[13px]">
+                    {project.initial_visit_measurements.existing_door.height_left && (
+                      <div>
+                        <span className="text-[#6B7280]">Height L:</span>
+                        <span className="ml-1 font-medium text-[#111827]">{project.initial_visit_measurements.existing_door.height_left}mm</span>
+                      </div>
+                    )}
+                    {project.initial_visit_measurements.existing_door.height_right && (
+                      <div>
+                        <span className="text-[#6B7280]">Height R:</span>
+                        <span className="ml-1 font-medium text-[#111827]">{project.initial_visit_measurements.existing_door.height_right}mm</span>
+                      </div>
+                    )}
+                    {project.initial_visit_measurements.existing_door.width && (
+                      <div>
+                        <span className="text-[#6B7280]">Width:</span>
+                        <span className="ml-1 font-medium text-[#111827]">{project.initial_visit_measurements.existing_door.width}mm</span>
+                      </div>
+                    )}
+                    {project.initial_visit_measurements.existing_door.type && (
+                      <div>
+                        <span className="text-[#6B7280]">Type:</span>
+                        <span className="ml-1 font-medium text-[#111827]">{project.initial_visit_measurements.existing_door.type}</span>
+                      </div>
+                    )}
+                    {project.initial_visit_measurements.existing_door.finish && (
+                      <div>
+                        <span className="text-[#6B7280]">Finish:</span>
+                        <span className="ml-1 font-medium text-[#111827]">{project.initial_visit_measurements.existing_door.finish}</span>
+                      </div>
+                    )}
+                    {project.initial_visit_measurements.existing_door.colour && (
+                      <div>
+                        <span className="text-[#6B7280]">Colour:</span>
+                        <span className="ml-1 font-medium text-[#111827]">{project.initial_visit_measurements.existing_door.colour}</span>
+                      </div>
+                    )}
                   </div>
-                )}
-                {project.initial_visit_measurements.headroom && (
-                  <div>
-                    <span className="text-[#6B7280]">Headroom:</span>
-                    <span className="ml-1 font-medium text-[#111827]">{project.initial_visit_measurements.headroom}</span>
-                  </div>
-                )}
-                {project.initial_visit_measurements.sideroom_left && (
-                  <div>
-                    <span className="text-[#6B7280]">Sideroom L:</span>
-                    <span className="ml-1 font-medium text-[#111827]">{project.initial_visit_measurements.sideroom_left}</span>
-                  </div>
-                )}
-                {project.initial_visit_measurements.sideroom_right && (
-                  <div>
-                    <span className="text-[#6B7280]">Sideroom R:</span>
-                    <span className="ml-1 font-medium text-[#111827]">{project.initial_visit_measurements.sideroom_right}</span>
-                  </div>
-                )}
-                {project.initial_visit_measurements.depth && (
-                  <div>
-                    <span className="text-[#6B7280]">Depth:</span>
-                    <span className="ml-1 font-medium text-[#111827]">{project.initial_visit_measurements.depth}</span>
-                  </div>
-                )}
-              </div>
+                </div>
+              )}
+
+              {/* Legacy flat measurements (backward compatibility) */}
+              {!project.initial_visit_measurements.new_door && (
+                <div className="grid grid-cols-2 md:grid-cols-3 gap-3 text-[13px]">
+                  {project.initial_visit_measurements.width && (
+                    <div>
+                      <span className="text-[#6B7280]">Width:</span>
+                      <span className="ml-1 font-medium text-[#111827]">{project.initial_visit_measurements.width}</span>
+                    </div>
+                  )}
+                  {project.initial_visit_measurements.height && (
+                    <div>
+                      <span className="text-[#6B7280]">Height:</span>
+                      <span className="ml-1 font-medium text-[#111827]">{project.initial_visit_measurements.height}</span>
+                    </div>
+                  )}
+                  {project.initial_visit_measurements.headroom && (
+                    <div>
+                      <span className="text-[#6B7280]">Headroom:</span>
+                      <span className="ml-1 font-medium text-[#111827]">{project.initial_visit_measurements.headroom}</span>
+                    </div>
+                  )}
+                  {project.initial_visit_measurements.sideroom_left && (
+                    <div>
+                      <span className="text-[#6B7280]">Sideroom L:</span>
+                      <span className="ml-1 font-medium text-[#111827]">{project.initial_visit_measurements.sideroom_left}</span>
+                    </div>
+                  )}
+                  {project.initial_visit_measurements.sideroom_right && (
+                    <div>
+                      <span className="text-[#6B7280]">Sideroom R:</span>
+                      <span className="ml-1 font-medium text-[#111827]">{project.initial_visit_measurements.sideroom_right}</span>
+                    </div>
+                  )}
+                  {project.initial_visit_measurements.depth && (
+                    <div>
+                      <span className="text-[#6B7280]">Depth:</span>
+                      <span className="ml-1 font-medium text-[#111827]">{project.initial_visit_measurements.depth}</span>
+                    </div>
+                  )}
+                </div>
+              )}
+
+              {/* Additional Info */}
+              {project.initial_visit_measurements.additional_info && (
+                <div className="pt-3 border-t border-blue-100">
+                  <span className="text-[#6B7280] text-[12px]">Additional Info:</span>
+                  <p className="text-[13px] text-[#111827] mt-0.5">{project.initial_visit_measurements.additional_info}</p>
+                </div>
+              )}
               {project.initial_visit_measurements.notes && (
-                <div className="mt-2 pt-2 border-t border-blue-100">
+                <div className="pt-3 border-t border-blue-100">
                   <span className="text-[#6B7280] text-[12px]">Notes:</span>
                   <p className="text-[13px] text-[#111827] mt-0.5">{project.initial_visit_measurements.notes}</p>
                 </div>
