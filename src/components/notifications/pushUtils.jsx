@@ -131,17 +131,26 @@ export async function registerForPushNotifications(user) {
     }
   }
   
-  // Step 3: Get service worker registration with timeout
+  // Step 3: Ensure service worker registration
   let registration;
   try {
-    console.log('[PushUtils] Waiting for service worker...');
-    const timeoutMs = 10000;
-    registration = await Promise.race([
-      navigator.serviceWorker.ready,
-      new Promise((_, reject) => 
-        setTimeout(() => reject(new Error('Service worker timeout')), timeoutMs)
-      )
-    ]);
+    console.log('[PushUtils] Checking for existing service worker...');
+    
+    // First try to get existing registrations
+    const registrations = await navigator.serviceWorker.getRegistrations();
+    
+    if (registrations.length > 0) {
+      console.log('[PushUtils] Found existing service worker registration');
+      registration = registrations[0];
+    } else {
+      // No existing registration, try to register one
+      console.log('[PushUtils] No service worker found, attempting to register...');
+      registration = await navigator.serviceWorker.register('/sw.js');
+      console.log('[PushUtils] Service worker registered');
+    }
+    
+    // Wait for it to be ready
+    await navigator.serviceWorker.ready;
     console.log('[PushUtils] Service worker ready');
   } catch (error) {
     console.error('[PushUtils] Service worker error:', error);
