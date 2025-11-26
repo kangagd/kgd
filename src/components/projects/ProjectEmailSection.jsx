@@ -110,7 +110,7 @@ export default function ProjectEmailSection({ project, onThreadLinked }) {
   });
 
   const handleRefresh = async () => {
-    await refetchThread();
+    await refetchThreads();
     await refetchMessages();
     toast.success('Emails refreshed');
   };
