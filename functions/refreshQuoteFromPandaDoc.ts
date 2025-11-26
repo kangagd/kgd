@@ -47,17 +47,19 @@ Deno.serve(async (req) => {
     });
 
     if (!detailsResponse.ok) {
+      const errorText = await detailsResponse.text();
+      console.error('PandaDoc API error:', errorText);
       return Response.json({ error: 'Failed to fetch document details from PandaDoc' }, { status: 500 });
     }
 
     const detailsData = await detailsResponse.json();
 
+    // Log the structure for debugging
+    console.log('PandaDoc details structure:', JSON.stringify(detailsData, null, 2));
+
     // Extract line items from pricing tables
     let lineItems = [];
     let totalValue = 0;
-
-    // Log the structure for debugging
-    console.log('PandaDoc details structure:', JSON.stringify(detailsData, null, 2));
 
     if (detailsData.pricing_tables && detailsData.pricing_tables.length > 0) {
       for (const table of detailsData.pricing_tables) {
@@ -66,10 +68,11 @@ Deno.serve(async (req) => {
           for (const section of table.sections) {
             if (section.rows) {
               for (const row of section.rows) {
-                const qty = row.data?.qty || row.data?.QTY || row.qty || 1;
-                const price = row.data?.price || row.data?.Price || row.price || 0;
-                const name = row.data?.name || row.data?.Name || row.data?.sku || row.name || 'Item';
-                const description = row.data?.description || row.data?.Description || row.description || '';
+                const data = row.data || row;
+                const qty = data.qty || data.QTY || data.quantity || 1;
+                const price = data.price || data.Price || data.cost || 0;
+                const name = data.name || data.Name || data.sku || 'Item';
+                const description = data.description || data.Description || '';
                 
                 lineItems.push({
                   name: name,
@@ -122,7 +125,7 @@ Deno.serve(async (req) => {
       }
     }
 
-    // Also check for pricing field directly on the document
+    // Check for pricing field directly on the document
     if (lineItems.length === 0 && detailsData.pricing) {
       const pricing = detailsData.pricing;
       if (Array.isArray(pricing)) {
@@ -137,12 +140,7 @@ Deno.serve(async (req) => {
       }
     }
 
-    // Check content_fields for pricing info
-    if (lineItems.length === 0 && detailsData.fields) {
-      console.log('Checking fields:', JSON.stringify(detailsData.fields, null, 2));
-    }
-
-    console.log('Extracted line items:', lineItems.length);
+    console.log('Extracted line items:', lineItems.length, lineItems);
 
     // Also fetch the main document for grand total
     const docResponse = await fetch(`${PANDADOC_API_URL}/documents/${quote.pandadoc_document_id}`, {
@@ -171,7 +169,11 @@ Deno.serve(async (req) => {
     return Response.json({
       success: true,
       quote: updatedQuotes[0],
-      line_items_count: lineItems.length
+      line_items_count: lineItems.length,
+      debug: {
+        has_pricing_tables: !!detailsData.pricing_tables,
+        pricing_tables_count: detailsData.pricing_tables?.length || 0
+      }
     });
 
   } catch (error) {
