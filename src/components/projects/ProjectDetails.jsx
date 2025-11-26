@@ -541,11 +541,35 @@ Format as HTML bullet points using <ul> and <li> tags. Include only the most cri
         base44.entities.Job.update(job.id, { status: "Cancelled" })
       ));
 
+      // Cancel all open tasks related to this project
+      const projectTasks = await base44.entities.Task.filter({ 
+        linked_project_id: project.id 
+      });
+      const openProjectTasks = projectTasks.filter(t => t.status !== "Completed" && t.status !== "Cancelled");
+      
+      // Cancel all open tasks related to jobs in this project
+      const jobIds = jobs.map(j => j.id);
+      let jobTasks = [];
+      if (jobIds.length > 0) {
+        const allJobTasks = await Promise.all(
+          jobIds.map(jobId => base44.entities.Task.filter({ linked_job_id: jobId }))
+        );
+        jobTasks = allJobTasks.flat().filter(t => t.status !== "Completed" && t.status !== "Cancelled");
+      }
+
+      // Cancel all found open tasks
+      const allOpenTasks = [...openProjectTasks, ...jobTasks];
+      await Promise.all(allOpenTasks.map(task => 
+        base44.entities.Task.update(task.id, { status: "Cancelled" })
+      ));
+
       queryClient.invalidateQueries({ queryKey: ['project', project.id] });
       queryClient.invalidateQueries({ queryKey: ['projects'] });
       queryClient.invalidateQueries({ queryKey: ['projectJobs', project.id] });
+      queryClient.invalidateQueries({ queryKey: ['tasks'] });
       
-      toast.success(`Project marked as lost. ${openJobs.length} job${openJobs.length !== 1 ? 's' : ''} cancelled.`);
+      const cancelledCount = openJobs.length + allOpenTasks.length;
+      toast.success(`Project marked as lost. ${openJobs.length} job${openJobs.length !== 1 ? 's' : ''} and ${allOpenTasks.length} task${allOpenTasks.length !== 1 ? 's' : ''} cancelled.`);
       setShowLostModal(false);
     } catch (error) {
       console.error('Error marking project as lost:', error);
