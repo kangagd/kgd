@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useState } from "react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -12,10 +12,12 @@ import {
   Mail,
   Copy,
   Calendar,
-  DollarSign
+  DollarSign,
+  RefreshCw
 } from "lucide-react";
 import { toast } from "sonner";
 import moment from "moment";
+import { base44 } from "@/api/base44Client";
 
 const statusConfig = {
   Draft: { color: 'bg-gray-100 text-gray-700 border-gray-200', icon: FileText, label: 'Draft' },
