@@ -91,7 +91,15 @@ export default function Layout({ children, currentPageName }) {
     localStorage.getItem('moreMenuOpen') === 'true'
   );
   const [collapsedMoreOpen, setCollapsedMoreOpen] = useState(false);
-  const [techMobileMenuOpen, setTechMobileMenuOpen] = useState(false);
+      const [techMobileMenuOpen, setTechMobileMenuOpen] = useState(false);
+      const [recentPages, setRecentPages] = useState(() => {
+        try {
+          return JSON.parse(localStorage.getItem('recentPages') || '[]');
+        } catch {
+          return [];
+        }
+      });
+      const [recentPagesOpen, setRecentPagesOpen] = useState(false);
   const [pullDistance, setPullDistance] = useState(0);
   const [isPulling, setIsPulling] = useState(false);
   const [isRefreshing, setIsRefreshing] = useState(false);
@@ -235,7 +243,22 @@ export default function Layout({ children, currentPageName }) {
   useEffect(() => { localStorage.setItem('moreMenuOpen', isMoreMenuOpen); }, [isMoreMenuOpen]);
 
   // Close mobile menu on route change or ESC key
-  useEffect(() => { setIsMobileMenuOpen(false); }, [location.pathname]);
+      useEffect(() => { setIsMobileMenuOpen(false); }, [location.pathname]);
+
+      // Track recent pages
+      useEffect(() => {
+        const allNavItems = [...primaryNavigationItems, ...secondaryNavigationItems, ...technicianNavigationItems];
+        const currentItem = allNavItems.find(item => item.url === location.pathname);
+
+        if (currentItem) {
+          setRecentPages(prev => {
+            const filtered = prev.filter(p => p.url !== currentItem.url);
+            const updated = [{ title: currentItem.title, url: currentItem.url, timestamp: Date.now() }, ...filtered].slice(0, 5);
+            localStorage.setItem('recentPages', JSON.stringify(updated));
+            return updated;
+          });
+        }
+      }, [location.pathname]);
   useEffect(() => {
     const handleEscape = (e) => e.key === 'Escape' && isMobileMenuOpen && setIsMobileMenuOpen(false);
     window.addEventListener('keydown', handleEscape);
@@ -635,8 +658,39 @@ export default function Layout({ children, currentPageName }) {
 
         {/* Desktop Sticky Header with Search and Notification */}
         <div className="hidden lg:flex sticky top-0 z-30 bg-[#ffffff] border-b border-[#E5E7EB] px-6 py-3 items-center justify-between gap-4">
-          <GlobalSearchDropdown />
-          <div className="flex items-center gap-1">
+                        <GlobalSearchDropdown />
+                        <div className="flex items-center gap-1">
+                          {/* Recent Pages Dropdown */}
+                          <Popover open={recentPagesOpen} onOpenChange={setRecentPagesOpen}>
+                            <PopoverTrigger asChild>
+                              <button
+                                className={`p-2 rounded-lg transition-colors ${recentPagesOpen ? 'bg-[#FAE008]/20 text-[#111827]' : 'text-[#6B7280] hover:bg-[#F3F4F6] hover:text-[#111827]'}`}
+                                title="Recent Pages"
+                              >
+                                <History className="w-5 h-5" />
+                              </button>
+                            </PopoverTrigger>
+                            <PopoverContent align="end" className="w-56 p-2">
+                              <div className="text-[12px] font-medium text-[#6B7280] px-2 py-1 mb-1">Recent Pages</div>
+                              {recentPages.length === 0 ? (
+                                <div className="text-[13px] text-[#9CA3AF] px-2 py-2">No recent pages</div>
+                              ) : (
+                                <div className="space-y-0.5">
+                                  {recentPages.map((page, idx) => (
+                                    <Link
+                                      key={idx}
+                                      to={page.url}
+                                      onClick={() => setRecentPagesOpen(false)}
+                                      className="flex items-center gap-2 px-2 py-2 rounded-lg text-[#111827] hover:bg-[#F3F4F6] transition-colors no-underline"
+                                    >
+                                      <Clock className="w-3.5 h-3.5 text-[#9CA3AF]" />
+                                      <span className="text-[13px]">{page.title}</span>
+                                    </Link>
+                                  ))}
+                                </div>
+                              )}
+                            </PopoverContent>
+                          </Popover>
             <Link
               to={createPageUrl("Tasks")}
               className={`p-2 rounded-lg transition-colors ${location.pathname === createPageUrl("Tasks") ? 'bg-[#FAE008]/20 text-[#111827]' : 'text-[#6B7280] hover:bg-[#F3F4F6] hover:text-[#111827]'}`}
