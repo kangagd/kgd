@@ -58,9 +58,19 @@ export default function QuotesSection({
         documentId: quote.pandadoc_document_id,
         recipientEmail: quote.customer_email || ''
       });
+      
+      // Check if the response contains an error from the backend
+      if (response.data?.error) {
+        const errorMsg = response.data.details || response.data.error;
+        console.error('PandaDoc session error:', errorMsg);
+        toast.error(`PandaDoc Error: ${errorMsg}`);
+        return null;
+      }
+      
       return response.data?.public_url || null;
     } catch (error) {
       console.error('Failed to get session link:', error);
+      toast.error(`Failed to get link: ${error.message}`);
       return null;
     }
   }, []);
