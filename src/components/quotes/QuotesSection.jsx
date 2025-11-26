@@ -1,8 +1,9 @@
-import React, { useState } from "react";
+import React, { useState, useCallback } from "react";
 import { Button } from "@/components/ui/button";
 import { Plus, FileText, Loader2, Link2 } from "lucide-react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { base44 } from "@/api/base44Client";
+import { toast } from "sonner";
 import QuoteCard from "./QuoteCard";
 import CreateQuoteModal from "./CreateQuoteModal";
 import LinkQuoteModal from "./LinkQuoteModal";
