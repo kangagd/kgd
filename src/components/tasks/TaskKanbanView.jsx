@@ -277,6 +277,7 @@ export default function TaskKanbanView({
               </div>
             );
           })}
+          </div>
         </div>
       </div>
     </DragDropContext>
