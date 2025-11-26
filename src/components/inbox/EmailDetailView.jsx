@@ -23,6 +23,8 @@ import { createPageUrl } from "@/utils";
 import { useNavigate } from "react-router-dom";
 import EmailComposer from "./EmailComposer";
 import EmailAISummaryCard from "./EmailAISummaryCard";
+import LinkedThreadsSection from "./LinkedThreadsSection";
+import LinkThreadToThreadModal from "./LinkThreadToThreadModal";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -79,11 +81,25 @@ export default function EmailDetailView({
   const [previewAttachment, setPreviewAttachment] = useState(null);
   const [attachmentsExpanded, setAttachmentsExpanded] = useState(false);
   const [updatingPriority, setUpdatingPriority] = useState(false);
+  const [linkThreadModalOpen, setLinkThreadModalOpen] = useState(false);
 
   const { data: messages = [], refetch } = useQuery({
     queryKey: ['emailMessages', thread.id],
     queryFn: () => base44.entities.EmailMessage.filter({ thread_id: thread.id }, 'sent_at'),
     refetchInterval: 30000
+  });
+
+  // Fetch linked threads
+  const { data: linkedThreads = [], refetch: refetchLinkedThreads } = useQuery({
+    queryKey: ['linkedThreads', thread.id, thread.linked_thread_ids],
+    queryFn: async () => {
+      if (!thread.linked_thread_ids || thread.linked_thread_ids.length === 0) {
+        return [];
+      }
+      const allThreads = await base44.entities.EmailThread.list();
+      return allThreads.filter(t => thread.linked_thread_ids.includes(t.id) && !t.is_deleted);
+    },
+    enabled: !!thread.linked_thread_ids?.length
   });
 
   const latestMessage = messages[messages.length - 1];
@@ -125,9 +141,61 @@ export default function EmailDetailView({
 
   const handleThreadUpdate = () => {
     queryClient.invalidateQueries({ queryKey: ['emailThreads'] });
+    refetchLinkedThreads();
     if (onThreadUpdate) {
       onThreadUpdate();
     }
+  };
+
+  const handleLinkThread = async (linkedThread) => {
+    const currentLinkedIds = thread.linked_thread_ids || [];
+    const newLinkedIds = [...currentLinkedIds, linkedThread.id];
+    
+    try {
+      // Update current thread
+      await base44.entities.EmailThread.update(thread.id, { linked_thread_ids: newLinkedIds });
+      
+      // Also add bidirectional link
+      const otherLinkedIds = linkedThread.linked_thread_ids || [];
+      if (!otherLinkedIds.includes(thread.id)) {
+        await base44.entities.EmailThread.update(linkedThread.id, { 
+          linked_thread_ids: [...otherLinkedIds, thread.id] 
+        });
+      }
+      
+      toast.success("Thread linked successfully");
+      handleThreadUpdate();
+      setLinkThreadModalOpen(false);
+    } catch (error) {
+      toast.error("Failed to link thread");
+    }
+  };
+
+  const handleUnlinkThread = async (threadIdToUnlink) => {
+    const currentLinkedIds = thread.linked_thread_ids || [];
+    const newLinkedIds = currentLinkedIds.filter(id => id !== threadIdToUnlink);
+    
+    try {
+      // Update current thread
+      await base44.entities.EmailThread.update(thread.id, { linked_thread_ids: newLinkedIds });
+      
+      // Also remove bidirectional link
+      const otherThread = linkedThreads.find(t => t.id === threadIdToUnlink);
+      if (otherThread && otherThread.linked_thread_ids?.includes(thread.id)) {
+        await base44.entities.EmailThread.update(threadIdToUnlink, { 
+          linked_thread_ids: otherThread.linked_thread_ids.filter(id => id !== thread.id) 
+        });
+      }
+      
+      toast.success("Thread unlinked");
+      handleThreadUpdate();
+    } catch (error) {
+      toast.error("Failed to unlink thread");
+    }
+  };
+
+  const handleNavigateToThread = (threadId) => {
+    navigate(`?threadId=${threadId}`, { replace: true });
   };
 
   const handleCreateProjectFromAI = () => {
@@ -153,6 +221,17 @@ export default function EmailDetailView({
             onThreadUpdate={handleThreadUpdate}
             onCreateProject={userPermissions?.can_create_project_from_email ? handleCreateProjectFromAI : null}
           />
+
+          {/* Linked Threads Section */}
+          <div className="mb-4">
+            <LinkedThreadsSection
+              linkedThreads={linkedThreads}
+              onAddLink={() => setLinkThreadModalOpen(true)}
+              onRemoveLink={handleUnlinkThread}
+              onNavigateToThread={handleNavigateToThread}
+              canEdit={userPermissions?.can_link_to_project || userPermissions?.can_link_to_job}
+            />
+          </div>
 
           {/* Main Email Card */}
           <div className="bg-white rounded-xl shadow-sm border border-[#E5E7EB] overflow-hidden mb-6">
@@ -456,6 +535,15 @@ export default function EmailDetailView({
           </div>
         </div>
       </div>
+
+      {/* Link Thread Modal */}
+      <LinkThreadToThreadModal
+        open={linkThreadModalOpen}
+        onClose={() => setLinkThreadModalOpen(false)}
+        currentThreadId={thread.id}
+        existingLinkedIds={thread.linked_thread_ids || []}
+        onLink={handleLinkThread}
+      />
 
       {/* Attachment Preview Modal */}
       <Dialog open={!!previewAttachment} onOpenChange={() => setPreviewAttachment(null)}>
