@@ -183,6 +183,8 @@ export default function Inbox() {
   });
 
   const filteredThreads = threads.filter(thread => {
+    // Skip deleted threads
+    if (thread.is_deleted) return false;
     // Text search
     let matchesSearch = true;
     if (searchFilters.searchText) {
@@ -343,8 +345,9 @@ export default function Inbox() {
 
   const handleBulkDelete = async () => {
     if (!confirm(`Delete ${selectedThreadIds.length} email thread(s)?`)) return;
+    // Soft delete - mark as deleted instead of actually deleting
     await Promise.all(
-      selectedThreadIds.map(id => base44.entities.EmailThread.delete(id))
+      selectedThreadIds.map(id => base44.entities.EmailThread.update(id, { is_deleted: true }))
     );
     queryClient.invalidateQueries({ queryKey: ['emailThreads'] });
     setSelectedThreadIds([]);
@@ -613,7 +616,8 @@ export default function Inbox() {
           onSelectAll={handleSelectAll}
           onBulkDelete={handleBulkDelete}
           onDeleteThread={async (threadId) => {
-            await base44.entities.EmailThread.delete(threadId);
+            // Soft delete - mark as deleted instead of actually deleting
+            await base44.entities.EmailThread.update(threadId, { is_deleted: true });
             queryClient.invalidateQueries({ queryKey: ['emailThreads'] });
             if (selectedThread?.id === threadId) {
               navigate('', { replace: true });
@@ -644,7 +648,8 @@ export default function Inbox() {
             onUnlinkJob={handleUnlinkJob}
             userPermissions={userPermissions}
             onDelete={async (threadId) => {
-              await base44.entities.EmailThread.delete(threadId);
+              // Soft delete - mark as deleted instead of actually deleting
+              await base44.entities.EmailThread.update(threadId, { is_deleted: true });
               queryClient.invalidateQueries({ queryKey: ['emailThreads'] });
               setSelectedThread(null);
             }}
