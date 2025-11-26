@@ -1,10 +1,11 @@
 import React, { useState } from "react";
 import { Button } from "@/components/ui/button";
-import { Plus, FileText, Loader2 } from "lucide-react";
+import { Plus, FileText, Loader2, Link2 } from "lucide-react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { base44 } from "@/api/base44Client";
 import QuoteCard from "./QuoteCard";
 import CreateQuoteModal from "./CreateQuoteModal";
+import LinkQuoteModal from "./LinkQuoteModal";
 
 export default function QuotesSection({ 
   project = null, 
@@ -13,6 +14,7 @@ export default function QuotesSection({
   isAdmin = false 
 }) {
   const [showCreateModal, setShowCreateModal] = useState(false);
+  const [showLinkModal, setShowLinkModal] = useState(false);
   const queryClient = useQueryClient();
 
   // Build filter based on project or job
@@ -60,14 +62,24 @@ export default function QuotesSection({
           Quotes
         </h3>
         {isAdmin && (
-          <Button
-            size="sm"
-            onClick={() => setShowCreateModal(true)}
-            className="bg-[#FAE008] hover:bg-[#E5CF07] text-[#111827]"
-          >
-            <Plus className="w-4 h-4 mr-1" />
-            Create Quote
-          </Button>
+          <div className="flex gap-2">
+            <Button
+              size="sm"
+              variant="outline"
+              onClick={() => setShowLinkModal(true)}
+            >
+              <Link2 className="w-4 h-4 mr-1" />
+              Link Existing
+            </Button>
+            <Button
+              size="sm"
+              onClick={() => setShowCreateModal(true)}
+              className="bg-[#FAE008] hover:bg-[#E5CF07] text-[#111827]"
+            >
+              <Plus className="w-4 h-4 mr-1" />
+              Create Quote
+            </Button>
+          </div>
         )}
       </div>
 
@@ -102,6 +114,14 @@ export default function QuotesSection({
         job={job}
         customer={customer}
         onQuoteCreated={handleQuoteCreated}
+      />
+
+      <LinkQuoteModal
+        isOpen={showLinkModal}
+        onClose={() => setShowLinkModal(false)}
+        project={project}
+        job={job}
+        onQuoteLinked={handleQuoteCreated}
       />
     </div>
   );
