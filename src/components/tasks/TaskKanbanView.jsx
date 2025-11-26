@@ -254,10 +254,10 @@ export default function TaskKanbanView({
                                         <TaskCard
                                           task={task}
                                           onClick={() => onTaskClick(task)}
-                                          onToggleComplete={onToggleComplete}
                                           showLinkedEntities={true}
                                           hideAssignee={true}
                                           hideStatus={true}
+                                          hideCheckbox={true}
                                           compact
                                         />
                                       </div>

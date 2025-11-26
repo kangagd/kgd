@@ -13,7 +13,8 @@ export default function TaskCard({
   showLinkedEntities = true,
   compact = false,
   hideAssignee = false,
-  hideStatus = false 
+  hideStatus = false,
+  hideCheckbox = false 
 }) {
   const isOverdue = task.due_date && isPast(new Date(task.due_date)) && task.status !== "Completed";
   const isDueToday = task.due_date && isToday(new Date(task.due_date));
@@ -32,15 +33,17 @@ export default function TaskCard({
     >
       <div className="flex items-start gap-3">
         {/* Checkbox */}
-        <div className="pt-0.5" onClick={handleCheckboxClick}>
-          <Checkbox
-            checked={task.status === "Completed"}
-            onCheckedChange={(checked) => {
-              onToggleComplete?.(task);
-            }}
-            className="h-5 w-5 border-2 data-[state=checked]:bg-[#16A34A] data-[state=checked]:border-[#16A34A]"
-          />
-        </div>
+        {!hideCheckbox && (
+          <div className="pt-0.5" onClick={handleCheckboxClick}>
+            <Checkbox
+              checked={task.status === "Completed"}
+              onCheckedChange={(checked) => {
+                onToggleComplete?.(task);
+              }}
+              className="h-5 w-5 border-2 data-[state=checked]:bg-[#16A34A] data-[state=checked]:border-[#16A34A]"
+            />
+          </div>
+        )}
 
         {/* Content */}
         <div className="flex-1 min-w-0">
