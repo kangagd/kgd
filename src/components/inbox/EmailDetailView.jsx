@@ -453,15 +453,6 @@ export default function EmailDetailView({
         </div>
       </div>
 
-      {/* Link Thread Modal */}
-      <LinkThreadToThreadModal
-        open={linkThreadModalOpen}
-        onClose={() => setLinkThreadModalOpen(false)}
-        currentThreadId={thread.id}
-        existingLinkedIds={thread.linked_thread_ids || []}
-        onLink={handleLinkThread}
-      />
-
       {/* Attachment Preview Modal */}
       <Dialog open={!!previewAttachment} onOpenChange={() => setPreviewAttachment(null)}>
         <DialogContent className="max-w-4xl max-h-[90vh] overflow-auto">
