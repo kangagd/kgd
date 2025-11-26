@@ -543,7 +543,7 @@ Format as HTML bullet points using <ul> and <li> tags. Include only the most cri
 
       // Cancel all open tasks related to this project
       const projectTasks = await base44.entities.Task.filter({ 
-        linked_project_id: project.id 
+        project_id: project.id 
       });
       const openProjectTasks = projectTasks.filter(t => t.status !== "Completed" && t.status !== "Cancelled");
       
@@ -552,7 +552,7 @@ Format as HTML bullet points using <ul> and <li> tags. Include only the most cri
       let jobTasks = [];
       if (jobIds.length > 0) {
         const allJobTasks = await Promise.all(
-          jobIds.map(jobId => base44.entities.Task.filter({ linked_job_id: jobId }))
+          jobIds.map(jobId => base44.entities.Task.filter({ job_id: jobId }))
         );
         jobTasks = allJobTasks.flat().filter(t => t.status !== "Completed" && t.status !== "Cancelled");
       }
