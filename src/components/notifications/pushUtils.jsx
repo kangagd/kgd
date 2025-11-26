@@ -35,58 +35,99 @@ export function getPermissionStatus() {
 }
 
 /**
+ * Get a service worker registration with timeout protection
+ */
+async function getServiceWorkerRegistration(timeoutMs = 5000) {
+  return new Promise(async (resolve, reject) => {
+    const timeout = setTimeout(() => {
+      reject(new Error('Service worker timeout'));
+    }, timeoutMs);
+
+    try {
+      // Check for existing registrations first
+      const registrations = await navigator.serviceWorker.getRegistrations();
+      
+      if (registrations.length > 0) {
+        console.log('[PushUtils] Found existing service worker');
+        clearTimeout(timeout);
+        resolve(registrations[0]);
+        return;
+      }
+
+      // Try to register a new one
+      console.log('[PushUtils] Registering new service worker...');
+      const registration = await navigator.serviceWorker.register('/sw.js');
+      
+      // Wait for it to be ready
+      await navigator.serviceWorker.ready;
+      
+      clearTimeout(timeout);
+      resolve(registration);
+    } catch (error) {
+      clearTimeout(timeout);
+      reject(error);
+    }
+  });
+}
+
+/**
  * Check if the current device has an active push subscription on the backend
+ * Returns the subscription object if found, null otherwise
  */
 export async function getActiveSubscriptionForDevice(userId) {
   console.log('[PushUtils] getActiveSubscriptionForDevice called, userId:', userId);
   
-  if (!userId || !isPushSupported()) {
-    console.log('[PushUtils] Early return - userId:', userId, 'isPushSupported:', isPushSupported());
+  if (!userId) {
+    console.log('[PushUtils] No userId provided');
     return null;
   }
   
+  if (!isPushSupported()) {
+    console.log('[PushUtils] Push not supported');
+    return null;
+  }
+
   try {
-    // Get current browser's push subscription endpoint
-    console.log('[PushUtils] Waiting for service worker ready...');
-    const registration = await navigator.serviceWorker.ready;
-    console.log('[PushUtils] Service worker ready, getting subscription...');
-    
+    // Get service worker with timeout
+    let registration;
+    try {
+      registration = await getServiceWorkerRegistration(5000);
+    } catch (swError) {
+      console.log('[PushUtils] Service worker not available:', swError.message);
+      return null;
+    }
+
+    // Get current browser subscription
     const currentSubscription = await registration.pushManager.getSubscription();
-    console.log('[PushUtils] Current push subscription:', currentSubscription);
+    console.log('[PushUtils] Browser subscription:', currentSubscription ? 'exists' : 'none');
     
     if (!currentSubscription) {
-      console.log('[PushUtils] No current push subscription in browser');
       return null;
     }
     
     const currentEndpoint = currentSubscription.endpoint;
-    console.log('[PushUtils] Current endpoint:', currentEndpoint);
     
     // Check backend for matching subscription
-    console.log('[PushUtils] Fetching backend subscriptions...');
     const subscriptions = await base44.entities.PushSubscription.filter({
       user_id: userId,
       platform: 'web',
       active: true
     });
-    console.log('[PushUtils] Backend subscriptions:', subscriptions);
+    console.log('[PushUtils] Backend subscriptions count:', subscriptions.length);
     
     const matchingSub = subscriptions.find(s => {
       try {
         const parsed = JSON.parse(s.subscription_json || '{}');
-        const matches = parsed.endpoint === currentEndpoint;
-        console.log('[PushUtils] Comparing endpoints:', { backend: parsed.endpoint, current: currentEndpoint, matches });
-        return matches;
-      } catch (e) {
-        console.log('[PushUtils] Error parsing subscription_json:', e);
+        return parsed.endpoint === currentEndpoint;
+      } catch {
         return false;
       }
     });
     
-    console.log('[PushUtils] Matching subscription found:', matchingSub);
+    console.log('[PushUtils] Matching subscription:', matchingSub ? 'found' : 'not found');
     return matchingSub || null;
   } catch (error) {
-    console.error('[PushUtils] Error checking active subscription:', error);
+    console.error('[PushUtils] Error in getActiveSubscriptionForDevice:', error);
     return null;
   }
 }
@@ -114,11 +155,10 @@ export async function getAllSubscriptionsForUser(userId) {
  * Returns: { success: boolean, message: string, subscription?: object }
  */
 export async function registerForPushNotifications(user) {
-  console.log('[PushUtils] Starting push notification registration...');
+  console.log('[PushUtils] Starting registration for user:', user?.id);
   
   // Step 1: Check browser support
   if (!isPushSupported()) {
-    console.log('[PushUtils] Push not supported in this browser');
     return { 
       success: false, 
       message: 'Push notifications are not supported in this browser.' 
@@ -130,17 +170,24 @@ export async function registerForPushNotifications(user) {
   console.log('[PushUtils] Current permission:', permission);
   
   if (permission === 'denied') {
-    console.log('[PushUtils] Permission denied by user');
     return { 
       success: false, 
-      message: 'Notifications are blocked. Please enable them in your browser/device settings and reload the page.' 
+      message: 'Notifications are blocked. Please enable them in your browser settings and reload the page.' 
     };
   }
   
   if (permission === 'default') {
     console.log('[PushUtils] Requesting permission...');
-    permission = await Notification.requestPermission();
-    console.log('[PushUtils] Permission result:', permission);
+    try {
+      permission = await Notification.requestPermission();
+      console.log('[PushUtils] Permission result:', permission);
+    } catch (error) {
+      console.error('[PushUtils] Permission request error:', error);
+      return { 
+        success: false, 
+        message: 'Failed to request notification permission.' 
+      };
+    }
     
     if (permission !== 'granted') {
       return { 
@@ -150,26 +197,10 @@ export async function registerForPushNotifications(user) {
     }
   }
   
-  // Step 3: Ensure service worker registration
+  // Step 3: Get service worker registration with timeout
   let registration;
   try {
-    console.log('[PushUtils] Checking for existing service worker...');
-    
-    // First try to get existing registrations
-    const registrations = await navigator.serviceWorker.getRegistrations();
-    
-    if (registrations.length > 0) {
-      console.log('[PushUtils] Found existing service worker registration');
-      registration = registrations[0];
-    } else {
-      // No existing registration, try to register one
-      console.log('[PushUtils] No service worker found, attempting to register...');
-      registration = await navigator.serviceWorker.register('/sw.js');
-      console.log('[PushUtils] Service worker registered');
-    }
-    
-    // Wait for it to be ready
-    await navigator.serviceWorker.ready;
+    registration = await getServiceWorkerRegistration(10000);
     console.log('[PushUtils] Service worker ready');
   } catch (error) {
     console.error('[PushUtils] Service worker error:', error);
@@ -193,10 +224,10 @@ export async function registerForPushNotifications(user) {
     }
     console.log('[PushUtils] Push subscription obtained');
   } catch (error) {
-    console.error('[PushUtils] PushManager subscription error:', error);
+    console.error('[PushUtils] PushManager error:', error);
     return { 
       success: false, 
-      message: 'Failed to subscribe to push notifications: ' + (error.message || 'Unknown error') 
+      message: 'Failed to create push subscription: ' + (error.message || 'Unknown error') 
     };
   }
   
@@ -223,7 +254,7 @@ export async function registerForPushNotifications(user) {
     
     let savedSubscription;
     if (existingWithSameEndpoint) {
-      console.log('[PushUtils] Updating existing subscription:', existingWithSameEndpoint.id);
+      console.log('[PushUtils] Updating existing subscription');
       await base44.entities.PushSubscription.update(existingWithSameEndpoint.id, {
         active: true,
         last_seen: now,
@@ -232,7 +263,7 @@ export async function registerForPushNotifications(user) {
       });
       savedSubscription = { ...existingWithSameEndpoint, active: true, last_seen: now };
     } else {
-      console.log('[PushUtils] Creating new subscription record...');
+      console.log('[PushUtils] Creating new subscription record');
       savedSubscription = await base44.entities.PushSubscription.create({
         user_id: user.id,
         user_email: user.email,
@@ -244,10 +275,10 @@ export async function registerForPushNotifications(user) {
       });
     }
     
-    console.log('[PushUtils] Registration successful');
+    console.log('[PushUtils] Registration complete');
     return { 
       success: true, 
-      message: 'Push notifications enabled successfully!',
+      message: 'Push notifications enabled!',
       subscription: savedSubscription
     };
   } catch (error) {
@@ -265,7 +296,6 @@ export async function registerForPushNotifications(user) {
 export async function disableSubscription(subscriptionId) {
   try {
     await base44.entities.PushSubscription.update(subscriptionId, { active: false });
-    console.log('[PushUtils] Subscription disabled:', subscriptionId);
     return { success: true };
   } catch (error) {
     console.error('[PushUtils] Failed to disable subscription:', error);

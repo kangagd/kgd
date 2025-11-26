@@ -11,7 +11,6 @@ import {
  * when user is logged in and has already granted permission.
  * 
  * Does NOT prompt for permission - only registers if already granted.
- * The PushNotificationSetup component handles explicit user interaction.
  */
 export default function PushNotificationRegistrar({ user }) {
   const hasAttempted = useRef(false);
@@ -20,41 +19,39 @@ export default function PushNotificationRegistrar({ user }) {
     if (!user || hasAttempted.current) return;
 
     const silentRegister = async () => {
-      // Only proceed if push is supported
-      if (!isPushSupported()) {
-        console.log('[PushRegistrar] Push not supported');
-        return;
-      }
+      try {
+        // Only proceed if push is supported
+        if (!isPushSupported()) {
+          console.log('[PushRegistrar] Push not supported');
+          return;
+        }
 
-      // Only auto-register if permission is ALREADY granted
-      // Never prompt for permission in background
-      if (getPermissionStatus() !== 'granted') {
-        console.log('[PushRegistrar] Permission not granted, skipping auto-register');
-        return;
-      }
+        // Only auto-register if permission is ALREADY granted
+        if (getPermissionStatus() !== 'granted') {
+          console.log('[PushRegistrar] Permission not granted, skipping');
+          return;
+        }
 
-      // Check if already registered for this device
-      const existingSub = await getActiveSubscriptionForDevice(user.id);
-      if (existingSub) {
-        console.log('[PushRegistrar] Device already registered');
-        return;
-      }
+        // Check if already registered
+        const existingSub = await getActiveSubscriptionForDevice(user.id);
+        if (existingSub) {
+          console.log('[PushRegistrar] Already registered');
+          return;
+        }
 
-      // Auto-register since permission is granted but device not registered
-      console.log('[PushRegistrar] Auto-registering device...');
-      hasAttempted.current = true;
+        // Auto-register
+        console.log('[PushRegistrar] Auto-registering...');
+        hasAttempted.current = true;
 
-      const result = await registerForPushNotifications(user);
-      if (result.success) {
-        console.log('[PushRegistrar] Auto-registration successful');
-      } else {
-        console.log('[PushRegistrar] Auto-registration failed:', result.message);
+        const result = await registerForPushNotifications(user);
+        console.log('[PushRegistrar] Result:', result.success ? 'success' : result.message);
+      } catch (error) {
+        console.error('[PushRegistrar] Error:', error);
       }
     };
 
     silentRegister();
-  }, [user]);
+  }, [user?.id]);
 
-  // This component renders nothing
   return null;
 }
