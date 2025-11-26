@@ -79,25 +79,11 @@ export default function EmailDetailView({
   const [previewAttachment, setPreviewAttachment] = useState(null);
   const [attachmentsExpanded, setAttachmentsExpanded] = useState(false);
   const [updatingPriority, setUpdatingPriority] = useState(false);
-  const [linkThreadModalOpen, setLinkThreadModalOpen] = useState(false);
 
   const { data: messages = [], refetch } = useQuery({
     queryKey: ['emailMessages', thread.id],
     queryFn: () => base44.entities.EmailMessage.filter({ thread_id: thread.id }, 'sent_at'),
     refetchInterval: 30000
-  });
-
-  // Fetch linked threads
-  const { data: linkedThreads = [], refetch: refetchLinkedThreads } = useQuery({
-    queryKey: ['linkedThreads', thread.id, thread.linked_thread_ids],
-    queryFn: async () => {
-      if (!thread.linked_thread_ids || thread.linked_thread_ids.length === 0) {
-        return [];
-      }
-      const allThreads = await base44.entities.EmailThread.list();
-      return allThreads.filter(t => thread.linked_thread_ids.includes(t.id) && !t.is_deleted);
-    },
-    enabled: !!thread.linked_thread_ids?.length
   });
 
   const latestMessage = messages[messages.length - 1];
