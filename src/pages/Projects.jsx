@@ -47,7 +47,7 @@ export default function Projects() {
     refetchInterval: 15000, // Refetch every 15 seconds
   });
 
-  const projects = allProjects.filter(p => !p.deleted_at);
+  const projects = allProjects.filter(p => !p.deleted_at && p.status !== "Lost");
 
   const { data: allJobs = [], isLoading: isJobsLoading } = useQuery({
     queryKey: ['allJobs'],

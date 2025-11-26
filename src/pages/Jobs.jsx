@@ -63,11 +63,11 @@ export default function Jobs() {
         const allJobs = await base44.entities.Job.list();
         console.log('[Jobs Debug] ✅ Total jobs fetched:', allJobs.length);
         console.log('[Jobs Debug] All jobs:', allJobs);
-        
-        // Filter out deleted jobs in the frontend
-        const activeJobs = allJobs.filter(job => !job.deleted_at);
-        console.log('[Jobs Debug] Active jobs (not deleted):', activeJobs.length);
-        
+
+        // Filter out deleted and cancelled jobs in the frontend
+        const activeJobs = allJobs.filter(job => !job.deleted_at && job.status !== "Cancelled");
+        console.log('[Jobs Debug] Active jobs (not deleted/cancelled):', activeJobs.length);
+
         return activeJobs;
       } catch (error) {
         console.error('[Jobs Debug] ❌ Error fetching jobs:', error);
