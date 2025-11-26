@@ -246,14 +246,14 @@ export default function QuoteCard({ quote, onUpdate, onSelect, isAdmin = false, 
                       Open in PandaDoc
                     </DropdownMenuItem>
                   )}
-                  {quote.pandadoc_public_url && (
+                  {quote.pandadoc_document_id && (
                     <>
-                      <DropdownMenuItem onClick={openPublicUrl}>
-                        <Eye className="w-4 h-4 mr-2" />
+                      <DropdownMenuItem onClick={openPublicUrl} disabled={isLoadingLink}>
+                        {isLoadingLink ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : <Eye className="w-4 h-4 mr-2" />}
                         View as Client
                       </DropdownMenuItem>
-                      <DropdownMenuItem onClick={copyClientLink}>
-                        <Copy className="w-4 h-4 mr-2" />
+                      <DropdownMenuItem onClick={copyClientLink} disabled={isLoadingLink}>
+                        {isLoadingLink ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : <Copy className="w-4 h-4 mr-2" />}
                         Copy Client Link
                       </DropdownMenuItem>
                     </>
