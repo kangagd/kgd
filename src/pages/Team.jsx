@@ -248,7 +248,7 @@ export default function Team() {
                             </span>
                           </div>
                           <div className="min-w-0">
-                            <h3 className="font-semibold text-[#111827] truncate">{user.full_name || 'Unnamed User'}</h3>
+                            <h3 className="font-semibold text-[#111827] truncate">{user.display_name || user.full_name || 'Unnamed User'}</h3>
                             <p className="text-[13px] text-[#6B7280] truncate">{user.email}</p>
                           </div>
                         </div>
