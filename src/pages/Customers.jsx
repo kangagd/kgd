@@ -17,6 +17,7 @@ import { createPageUrl } from "@/utils";
 import { DuplicateBadge } from "../components/common/DuplicateWarningCard";
 
 export default function Customers() {
+  const [user, setUser] = useState(null);
   const [searchTerm, setSearchTerm] = useState("");
   const [customerTypeFilter, setCustomerTypeFilter] = useState("all");
   const [showDuplicatesOnly, setShowDuplicatesOnly] = useState(false);
@@ -25,6 +26,24 @@ export default function Customers() {
   const [editingCustomer, setEditingCustomer] = useState(null);
   const [modalCustomer, setModalCustomer] = useState(null);
   const queryClient = useQueryClient();
+
+  useEffect(() => {
+    const loadUser = async () => {
+      try {
+        const currentUser = await base44.auth.me();
+        setUser(currentUser);
+      } catch (error) {
+        console.error("Error loading user:", error);
+      }
+    };
+    loadUser();
+  }, []);
+
+  const isAdmin = user?.role === 'admin';
+  const isManager = user?.role === 'manager';
+  const isAdminOrManager = isAdmin || isManager;
+  const isViewer = user?.role === 'viewer';
+  const canEditCustomers = isAdminOrManager;
 
   const { data: allCustomers = [], isLoading, refetch } = useQuery({
     queryKey: ['allCustomers'],
@@ -195,13 +214,15 @@ export default function Customers() {
             <h1 className="text-2xl font-bold text-[#111827] leading-tight">Customers</h1>
             <p className="text-sm text-[#4B5563] mt-1">Manage customer information</p>
           </div>
-          <Button
-            onClick={() => setShowForm(true)}
-            className="bg-[#FAE008] text-[#111827] hover:bg-[#E5CF07] font-semibold shadow-sm hover:shadow-md transition w-full md:w-auto h-10 px-4 text-sm rounded-xl"
-          >
-            <Plus className="w-4 h-4 mr-2" />
-            New Customer
-          </Button>
+          {canEditCustomers && (
+            <Button
+              onClick={() => setShowForm(true)}
+              className="bg-[#FAE008] text-[#111827] hover:bg-[#E5CF07] font-semibold shadow-sm hover:shadow-md transition w-full md:w-auto h-10 px-4 text-sm rounded-xl"
+            >
+              <Plus className="w-4 h-4 mr-2" />
+              New Customer
+            </Button>
+          )}
         </div>
 
         <div className="flex flex-col gap-4 mb-6">
