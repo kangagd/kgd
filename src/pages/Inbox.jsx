@@ -5,7 +5,7 @@ import { useNavigate, useSearchParams } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent } from "@/components/ui/card";
-import { Search, Filter, Mail, Link as LinkIcon, Check, Archive, Trash2, ArrowUpDown, SlidersHorizontal, Plus, Sparkles, Loader2 } from "lucide-react";
+import { Search, Filter, Mail, Link as LinkIcon, Check, Archive, Trash2, ArrowUpDown, SlidersHorizontal, Plus, Sparkles, Loader2, LogOut } from "lucide-react";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import {
@@ -419,6 +419,10 @@ export default function Inbox() {
     }
   };
 
+  const handleLogout = () => {
+    base44.auth.logout();
+  };
+
   if (!userPermissions?.can_view) {
     return (
       <div className="p-5 md:p-10 bg-[#ffffff] min-h-screen">
@@ -428,6 +432,14 @@ export default function Inbox() {
           <p className="text-[14px] text-[#4B5563]">
             You don't have permission to view the inbox. Please contact an administrator.
           </p>
+          <Button
+            variant="outline"
+            onClick={handleLogout}
+            className="mt-4"
+          >
+            <LogOut className="w-4 h-4 mr-2" />
+            Logout
+          </Button>
         </div>
       </div>
     );
