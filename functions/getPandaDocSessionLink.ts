@@ -23,22 +23,34 @@ Deno.serve(async (req) => {
       return Response.json({ error: 'documentId is required' }, { status: 400 });
     }
 
-    // First get document details to find recipient email
-    let recipientToUse = recipientEmail;
+    // First get document details to find recipient email (required by PandaDoc API)
+    const docResponse = await fetch(`${PANDADOC_API_URL}/documents/${documentId}`, {
+      headers: {
+        'Authorization': `API-Key ${PANDADOC_API_KEY}`
+      }
+    });
+    
+    if (!docResponse.ok) {
+      const errorText = await docResponse.text();
+      console.error('PandaDoc document fetch error:', errorText);
+      return Response.json({ 
+        error: 'Failed to fetch document details', 
+        details: errorText 
+      }, { status: docResponse.status });
+    }
+    
+    const docData = await docResponse.json();
+    // Get first recipient's email - this is REQUIRED for session creation
+    const recipientToUse = recipientEmail || docData.recipients?.[0]?.email;
     
     if (!recipientToUse) {
-      const docResponse = await fetch(`${PANDADOC_API_URL}/documents/${documentId}`, {
-        headers: {
-          'Authorization': `API-Key ${PANDADOC_API_KEY}`
-        }
-      });
-      
-      if (docResponse.ok) {
-        const docData = await docResponse.json();
-        // Get first recipient's email
-        recipientToUse = docData.recipients?.[0]?.email || '';
-      }
+      console.error('No recipient email found for document:', documentId, 'doc data:', JSON.stringify(docData));
+      return Response.json({ 
+        error: 'No recipient email found for this document' 
+      }, { status: 400 });
     }
+
+    console.log('Creating session for document:', documentId, 'recipient:', recipientToUse);
 
     // Create a new session link
     const sessionResponse = await fetch(`${PANDADOC_API_URL}/documents/${documentId}/session`, {
@@ -55,7 +67,7 @@ Deno.serve(async (req) => {
 
     if (!sessionResponse.ok) {
       const errorText = await sessionResponse.text();
-      console.error('PandaDoc session error:', errorText, 'for document:', documentId);
+      console.error('PandaDoc session error:', errorText, 'for document:', documentId, 'recipient:', recipientToUse);
       return Response.json({ 
         error: 'Failed to create session link', 
         details: errorText 
@@ -65,9 +77,16 @@ Deno.serve(async (req) => {
     const sessionData = await sessionResponse.json();
     console.log('PandaDoc session response:', JSON.stringify(sessionData));
     
-    // PandaDoc returns session_id which is used as token in the URL
-    const token = sessionData.id || sessionData.session_id;
-    const publicUrl = token ? `https://app.pandadoc.com/document/v2?token=${token}` : '';
+    // PandaDoc returns id which is used as token in the URL
+    const token = sessionData.id;
+    if (!token) {
+      console.error('No session ID in response:', JSON.stringify(sessionData));
+      return Response.json({ 
+        error: 'No session ID returned from PandaDoc' 
+      }, { status: 500 });
+    }
+    
+    const publicUrl = `https://app.pandadoc.com/document/v2?token=${token}`;
 
     return Response.json({
       success: true,
