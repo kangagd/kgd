@@ -12,7 +12,7 @@ Deno.serve(async (req) => {
       return Response.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
-    console.log(`[TestPush] Sending test notification to user: ${user.id}`);
+    console.log(`[TestPush] Sending test notification to user: ${user.id}, email: ${user.email}`);
 
     const appId = Deno.env.get('ONESIGNAL_APP_ID') || '50b86e27-3335-48dc-877c-4e4f3d223620';
     const apiKey = Deno.env.get('ONESIGNAL_REST_API_KEY');
@@ -25,15 +25,12 @@ Deno.serve(async (req) => {
       }, { status: 500 });
     }
 
-    // Build notification payload targeting the user by external_id
+    // Try sending to all subscribed users (for testing)
     const notificationPayload = {
       app_id: appId,
       headings: { en: '🔔 Test Notification' },
-      contents: { en: `This is a test push notification sent at ${new Date().toLocaleTimeString()}` },
-      include_aliases: {
-        external_id: [user.id]
-      },
-      target_channel: 'push'
+      contents: { en: `Test notification for ${user.full_name || user.email} at ${new Date().toLocaleTimeString()}` },
+      included_segments: ['Subscribed Users']
     };
 
     console.log('[TestPush] Sending to OneSignal:', JSON.stringify(notificationPayload));
