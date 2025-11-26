@@ -140,10 +140,33 @@ async function handleWixFormEmail(base44, thread, messages) {
   if (parsedData.how_can_we_help) keyPoints.push(`Request: ${parsedData.how_can_we_help}`);
   if (parsedData.how_did_you_hear) keyPoints.push(`Source: ${parsedData.how_did_you_hear}`);
 
+  // Generate tags based on parsed content
+  const tags = ['Website Enquiry'];
+  if (suggestedFields.suggested_project_type) {
+    tags.push(suggestedFields.suggested_project_type);
+  }
+  if (parsedData.how_can_we_help) {
+    const desc = parsedData.how_can_we_help.toLowerCase();
+    if (desc.includes('quote') || desc.includes('price')) tags.push('Quote Request');
+    if (desc.includes('urgent') || desc.includes('emergency')) tags.push('Urgent');
+    if (desc.includes('garage')) tags.push('Garage Door');
+    if (desc.includes('gate')) tags.push('Gate');
+    if (desc.includes('motor') || desc.includes('opener')) tags.push('Motor');
+    if (desc.includes('remote')) tags.push('Remote');
+  }
+
+  // Determine AI priority
+  let aiPriority = 'Normal';
+  if (suggestedFields.suggested_priority === 'High') {
+    aiPriority = 'High';
+  }
+
   return {
     summary,
     key_points: keyPoints,
     suggested_project_fields: suggestedFields,
+    tags: [...new Set(tags)],
+    ai_priority: aiPriority,
     is_wix_form: true
   };
 }
@@ -191,6 +214,8 @@ Deno.serve(async (req) => {
           ai_summary: wixResult.summary,
           ai_key_points: wixResult.key_points,
           ai_suggested_project_fields: wixResult.suggested_project_fields,
+          ai_tags: wixResult.tags || [],
+          ai_priority: wixResult.ai_priority || 'Normal',
           ai_analyzed_at: now
         });
 
@@ -204,7 +229,9 @@ Deno.serve(async (req) => {
           insight = await base44.asServiceRole.entities.AIEmailInsight.update(existingInsights[0].id, {
             summary: wixResult.summary,
             key_points: wixResult.key_points,
-            suggested_project_fields: wixResult.suggested_project_fields
+            suggested_project_fields: wixResult.suggested_project_fields,
+            tags: wixResult.tags || [],
+            ai_priority: wixResult.ai_priority || 'Normal'
           });
         } else {
           insight = await base44.asServiceRole.entities.AIEmailInsight.create({
@@ -212,6 +239,8 @@ Deno.serve(async (req) => {
             summary: wixResult.summary,
             key_points: wixResult.key_points,
             suggested_project_fields: wixResult.suggested_project_fields,
+            tags: wixResult.tags || [],
+            ai_priority: wixResult.ai_priority || 'Normal',
             applied_to_project: false
           });
         }
@@ -222,6 +251,8 @@ Deno.serve(async (req) => {
           summary: wixResult.summary,
           key_points: wixResult.key_points,
           suggested_project_fields: wixResult.suggested_project_fields,
+          tags: wixResult.tags || [],
+          ai_priority: wixResult.ai_priority || 'Normal',
           analyzed_at: now,
           source: 'wix_form_parser'
         });
@@ -257,7 +288,20 @@ TASKS:
 
 2. Extract 3-7 key points as bullet items (facts, requests, decisions, or important details).
 
-3. Suggest project fields if this thread could become a project:
+3. Generate 2-5 relevant tags to categorize this email. Choose from or create tags like:
+   - Type: "Quote Request", "Service Call", "Complaint", "Follow-up", "New Enquiry", "Warranty Claim"
+   - Product: "Garage Door", "Gate", "Roller Shutter", "Motor", "Remote", "Accessories"
+   - Source: "Website Enquiry", "Referral", "Builder", "Real Estate", "Strata"
+   - Urgency: "Urgent", "Emergency"
+   - Other relevant descriptive tags
+
+4. Determine the AI-suggested priority level:
+   - "Urgent": Emergency situations, safety issues, immediate attention needed
+   - "High": Time-sensitive requests, frustrated customers, urgent repairs
+   - "Normal": Standard enquiries and requests
+   - "Low": General information, future planning, non-urgent follow-ups
+
+5. Suggest project fields if this thread could become a project:
    - suggested_title: A clear project title
    - suggested_description: What work needs to be done
    - suggested_project_type: One of "Garage Door Install", "Gate Install", "Roller Shutter Install", "Multiple", "Motor/Accessory", "Repair", "Maintenance"
@@ -268,7 +312,7 @@ TASKS:
    - suggested_products: Array of products mentioned (e.g., ["Garage Door", "Motor", "Remote"])
    - suggested_priority: "Low", "Normal", or "High" based on urgency
 
-Return JSON with: summary (string), key_points (array of strings), suggested_project_fields (object with the fields above, use null for unknown fields)`,
+Return JSON with: summary (string), key_points (array of strings), tags (array of strings), ai_priority (string), suggested_project_fields (object with the fields above, use null for unknown fields)`,
       response_json_schema: {
         type: "object",
         properties: {
@@ -277,6 +321,11 @@ Return JSON with: summary (string), key_points (array of strings), suggested_pro
             type: "array", 
             items: { type: "string" } 
           },
+          tags: {
+            type: "array",
+            items: { type: "string" }
+          },
+          ai_priority: { type: "string" },
           suggested_project_fields: {
             type: "object",
             properties: {
@@ -302,6 +351,8 @@ Return JSON with: summary (string), key_points (array of strings), suggested_pro
       ai_summary: aiResponse.summary,
       ai_key_points: aiResponse.key_points || [],
       ai_suggested_project_fields: aiResponse.suggested_project_fields || {},
+      ai_tags: aiResponse.tags || [],
+      ai_priority: aiResponse.ai_priority || 'Normal',
       ai_analyzed_at: now
     });
 
@@ -316,7 +367,9 @@ Return JSON with: summary (string), key_points (array of strings), suggested_pro
       insight = await base44.asServiceRole.entities.AIEmailInsight.update(existingInsights[0].id, {
         summary: aiResponse.summary,
         key_points: aiResponse.key_points || [],
-        suggested_project_fields: aiResponse.suggested_project_fields || {}
+        suggested_project_fields: aiResponse.suggested_project_fields || {},
+        tags: aiResponse.tags || [],
+        ai_priority: aiResponse.ai_priority || 'Normal'
       });
     } else {
       // Create new insight
@@ -325,6 +378,8 @@ Return JSON with: summary (string), key_points (array of strings), suggested_pro
         summary: aiResponse.summary,
         key_points: aiResponse.key_points || [],
         suggested_project_fields: aiResponse.suggested_project_fields || {},
+        tags: aiResponse.tags || [],
+        ai_priority: aiResponse.ai_priority || 'Normal',
         applied_to_project: false
       });
     }
@@ -335,6 +390,8 @@ Return JSON with: summary (string), key_points (array of strings), suggested_pro
       summary: aiResponse.summary,
       key_points: aiResponse.key_points,
       suggested_project_fields: aiResponse.suggested_project_fields,
+      tags: aiResponse.tags || [],
+      ai_priority: aiResponse.ai_priority || 'Normal',
       analyzed_at: now
     });
 

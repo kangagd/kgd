@@ -1,8 +1,9 @@
 import React from "react";
 import { Checkbox } from "@/components/ui/checkbox";
 import { format, parseISO } from "date-fns";
-import { Mail, Link as LinkIcon, Trash2 } from "lucide-react";
+import { Mail, Link as LinkIcon, Trash2, Sparkles, AlertTriangle } from "lucide-react";
 import { EmailStatusBadge, EmailPriorityBadge } from "../common/StatusBadge";
+import { Badge } from "@/components/ui/badge";
 
 export default function EmailThreadList({ 
   threads, 
@@ -125,6 +126,40 @@ export default function EmailThreadList({
               
               {thread.priority !== 'Normal' && (
                 <EmailPriorityBadge value={thread.priority} />
+              )}
+
+              {/* AI Priority indicator */}
+              {thread.ai_priority && thread.ai_priority !== 'Normal' && (
+                <Badge 
+                  className={`text-[10px] px-1.5 py-0 h-5 ${
+                    thread.ai_priority === 'Urgent' 
+                      ? 'bg-red-100 text-red-700 border border-red-200' 
+                      : thread.ai_priority === 'High'
+                        ? 'bg-orange-100 text-orange-700 border border-orange-200'
+                        : 'bg-blue-100 text-blue-700 border border-blue-200'
+                  }`}
+                >
+                  <Sparkles className="w-2.5 h-2.5 mr-0.5" />
+                  {thread.ai_priority}
+                </Badge>
+              )}
+
+              {/* AI Tags - show first 2 */}
+              {thread.ai_tags && thread.ai_tags.length > 0 && (
+                <>
+                  {thread.ai_tags.slice(0, 2).map((tag, idx) => (
+                    <Badge 
+                      key={idx}
+                      variant="outline"
+                      className="text-[10px] px-1.5 py-0 h-5 bg-purple-50 text-purple-700 border-purple-200"
+                    >
+                      {tag}
+                    </Badge>
+                  ))}
+                  {thread.ai_tags.length > 2 && (
+                    <span className="text-[10px] text-[#6B7280]">+{thread.ai_tags.length - 2}</span>
+                  )}
+                </>
               )}
 
               {(thread.linked_project_id || thread.linked_job_id) && (
