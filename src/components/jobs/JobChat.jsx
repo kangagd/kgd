@@ -70,21 +70,6 @@ export default function JobChat({ jobId }) {
         mentioned_users: mentionedUsers
       });
 
-      // Send notifications to mentioned users
-      if (mentionedUsers.length > 0) {
-        try {
-          await base44.functions.invoke('sendChatMentionNotification', {
-            mentioned_user_emails: mentionedUsers,
-            sender_name: user.full_name,
-            job_id: jobId,
-            job_number: job?.job_number,
-            message_preview: messageText.substring(0, 100)
-          });
-        } catch (error) {
-          console.error('Failed to send mention notifications:', error);
-        }
-      }
-
       return newMessage;
     },
     onSuccess: () => {
