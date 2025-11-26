@@ -36,10 +36,7 @@ import { Toaster } from "@/components/ui/sonner";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
-import NotificationBell from "./components/notifications/NotificationBell";
 import GlobalSearchDropdown from "./components/common/GlobalSearchDropdown";
-import PushNotificationRegistrar from "./components/notifications/PushNotificationRegistrar";
-import OneSignalInitializer from "./components/notifications/OneSignalInitializer";
 
 const primaryNavigationItems = [
   { title: "Dashboard", url: createPageUrl("Dashboard"), icon: LayoutDashboard },
@@ -273,8 +270,6 @@ export default function Layout({ children, currentPageName }) {
           if (isTechnician) {
             return (
               <div className="min-h-screen flex flex-col bg-[#ffffff]">
-                <OneSignalInitializer user={user} />
-                <PushNotificationRegistrar user={user} />
         {/* Mobile Overlay */}
         {techMobileMenuOpen && (
           <div 
@@ -397,8 +392,6 @@ export default function Layout({ children, currentPageName }) {
   return (
     <div className="min-h-screen flex bg-[#ffffff]">
       <Toaster position="top-right" richColors />
-                  <OneSignalInitializer user={user} />
-                  <PushNotificationRegistrar user={user} />
       {/* Mobile Overlay */}
       {isMobileMenuOpen && (
         <div 
@@ -654,7 +647,7 @@ export default function Layout({ children, currentPageName }) {
             <h1 className="font-semibold text-[#111827] text-[14px] truncate px-2 flex-1 text-center">
               {[...primaryNavigationItems, ...secondaryNavigationItems].find(item => item.url === location.pathname)?.title || 'FieldScheduler'}
             </h1>
-            <NotificationBell user={user} />
+
           </div>
         </header>
 
@@ -714,7 +707,7 @@ export default function Layout({ children, currentPageName }) {
             >
               <Calendar className="w-5 h-5" />
             </Link>
-            <NotificationBell user={user} />
+
           </div>
         </div>
 
