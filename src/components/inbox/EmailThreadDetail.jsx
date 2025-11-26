@@ -10,7 +10,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { X, Link as LinkIcon, Plus, ExternalLink, Reply, Forward, Mail, Paperclip } from "lucide-react";
+import { X, Link as LinkIcon, Plus, ExternalLink, Reply, Forward, Mail, Paperclip, Sparkles, Tag } from "lucide-react";
 import { toast } from "sonner";
 import { format, parseISO } from "date-fns";
 import EmailMessageView from "./EmailMessageView";
@@ -211,6 +211,41 @@ export default function EmailThreadDetail({
                 )}
               </div>
             )}
+          </div>
+        )}
+
+        {/* AI Tags and Priority */}
+        {(thread.ai_tags?.length > 0 || (thread.ai_priority && thread.ai_priority !== 'Normal')) && (
+          <div className="flex flex-wrap items-center gap-2 mt-3 pt-3 border-t border-[#E5E7EB]">
+            <div className="flex items-center gap-1.5 text-[12px] text-[#6B7280]">
+              <Sparkles className="w-3.5 h-3.5 text-purple-500" />
+              <span className="font-medium">AI Analysis:</span>
+            </div>
+            
+            {thread.ai_priority && thread.ai_priority !== 'Normal' && (
+              <Badge 
+                className={`text-[11px] ${
+                  thread.ai_priority === 'Urgent' 
+                    ? 'bg-red-100 text-red-700 border border-red-200' 
+                    : thread.ai_priority === 'High'
+                      ? 'bg-orange-100 text-orange-700 border border-orange-200'
+                      : 'bg-blue-100 text-blue-700 border border-blue-200'
+                }`}
+              >
+                {thread.ai_priority} Priority
+              </Badge>
+            )}
+
+            {thread.ai_tags?.map((tag, idx) => (
+              <Badge 
+                key={idx}
+                variant="outline"
+                className="text-[11px] bg-purple-50 text-purple-700 border-purple-200"
+              >
+                <Tag className="w-3 h-3 mr-1" />
+                {tag}
+              </Badge>
+            ))}
           </div>
         )}
       </div>
