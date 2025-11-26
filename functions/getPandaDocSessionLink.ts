@@ -17,233 +17,72 @@ Deno.serve(async (req) => {
     }
 
     const body = await req.json();
-    const { documentId, recipientEmail } = body;
+    const { documentId } = body;
 
     if (!documentId) {
       return Response.json({ error: 'documentId is required' }, { status: 400 });
     }
 
-    // First get document details
+    // Step 1: Get document details to check status
     const docResponse = await fetch(`${PANDADOC_API_URL}/documents/${documentId}`, {
-      headers: {
-        'Authorization': `API-Key ${PANDADOC_API_KEY}`
-      }
+      headers: { 'Authorization': `API-Key ${PANDADOC_API_KEY}` }
     });
     
     if (!docResponse.ok) {
       const errorText = await docResponse.text();
       console.error('PandaDoc document fetch error:', errorText);
-      return Response.json({ 
-        error: 'Failed to fetch document details', 
-        details: errorText 
-      }, { status: docResponse.status });
+      return Response.json({ error: 'Failed to fetch document details', details: errorText }, { status: docResponse.status });
     }
     
     const docData = await docResponse.json();
-    console.log('Document status:', docData.status, 'Document ID:', documentId);
-    console.log('Full document data:', JSON.stringify(docData));
-    
-    // Try multiple ways to find recipient email from PandaDoc
-    // PandaDoc can store recipients in different places depending on document type
-    let pandaDocRecipient = null;
-    
-    // Try recipients array first
-    if (docData.recipients && docData.recipients.length > 0) {
-      pandaDocRecipient = docData.recipients[0].email;
-    }
-    // Try roles array (some document types use this)
-    else if (docData.roles && docData.roles.length > 0) {
-      const roleWithEmail = docData.roles.find(r => r.email);
-      if (roleWithEmail) {
-        pandaDocRecipient = roleWithEmail.email;
-      }
-    }
-    // Try linked_objects for contact info
-    else if (docData.linked_objects && docData.linked_objects.length > 0) {
-      const contact = docData.linked_objects.find(o => o.entity_type === 'contact');
-      if (contact && contact.email) {
-        pandaDocRecipient = contact.email;
-      }
-    }
-    
-    // Fallback to the email passed from our database
-    if (!pandaDocRecipient && recipientEmail) {
-      console.log('Using fallback recipientEmail from database:', recipientEmail);
-      pandaDocRecipient = recipientEmail;
-    }
-    
-    if (!pandaDocRecipient) {
-      console.error('No recipient email found anywhere for document:', documentId);
-      return Response.json({ 
-        error: 'No recipient email found. Please add a recipient to the document in PandaDoc.',
-        debug: {
-          recipients: docData.recipients,
-          roles: docData.roles,
-          status: docData.status
-        }
-      }, { status: 400 });
-    }
-    
-    const recipientToUse = pandaDocRecipient;
-    console.log('Using recipient:', recipientToUse);
+    console.log('Document status:', docData.status, 'ID:', documentId);
 
-    // Try to get existing sharing links first
-    try {
-      const sharingResponse = await fetch(`${PANDADOC_API_URL}/documents/${documentId}/links`, {
-        headers: {
-          'Authorization': `API-Key ${PANDADOC_API_KEY}`
-        }
-      });
-      
-      if (sharingResponse.ok) {
-        const links = await sharingResponse.json();
-        console.log('Sharing links response:', JSON.stringify(links));
-        
-        // Find a link for the recipient or the first available link
-        const recipientLink = links.find(l => l.recipient === recipientToUse) || links[0];
-        if (recipientLink && recipientLink.link) {
-          return Response.json({
-            success: true,
-            public_url: recipientLink.link,
-            method: 'sharing_link'
-          });
-        }
-      }
-    } catch (linkError) {
-      console.log('Sharing links not available:', linkError.message);
-    }
-
-    // Try to CREATE a sharing link WITHOUT recipient (public link)
-    try {
-      const createLinkResponse = await fetch(`${PANDADOC_API_URL}/documents/${documentId}/links`, {
-        method: 'POST',
-        headers: {
-          'Authorization': `API-Key ${PANDADOC_API_KEY}`,
-          'Content-Type': 'application/json'
-        },
-        body: JSON.stringify({
-          lifetime: 86400 // 24 hours - no recipient = public link
-        })
-      });
-      
-      if (createLinkResponse.ok) {
-        const linkData = await createLinkResponse.json();
-        console.log('Created public sharing link:', JSON.stringify(linkData));
-        if (linkData.link) {
-          return Response.json({
-            success: true,
-            public_url: linkData.link,
-            method: 'created_public_link'
-          });
-        }
-      } else {
-        const linkError = await createLinkResponse.text();
-        console.log('Create public link failed:', linkError);
-        
-        // Try with recipient as fallback
-        const createLinkResponse2 = await fetch(`${PANDADOC_API_URL}/documents/${documentId}/links`, {
-          method: 'POST',
-          headers: {
-            'Authorization': `API-Key ${PANDADOC_API_KEY}`,
-            'Content-Type': 'application/json'
-          },
-          body: JSON.stringify({
-            recipient: recipientToUse,
-            lifetime: 86400
-          })
-        });
-        
-        if (createLinkResponse2.ok) {
-          const linkData2 = await createLinkResponse2.json();
-          console.log('Created recipient sharing link:', JSON.stringify(linkData2));
-          if (linkData2.link) {
-            return Response.json({
-              success: true,
-              public_url: linkData2.link,
-              method: 'created_recipient_link'
-            });
-          }
-        }
-      }
-    } catch (createLinkError) {
-      console.log('Create sharing link error:', createLinkError.message);
-    }
-
-    // Fallback: Try session API with exact PandaDoc recipient
-    console.log('Creating session for document:', documentId, 'recipient:', recipientToUse);
-
-    const sessionResponse = await fetch(`${PANDADOC_API_URL}/documents/${documentId}/session`, {
-      method: 'POST',
-      headers: {
-        'Authorization': `API-Key ${PANDADOC_API_KEY}`,
-        'Content-Type': 'application/json'
-      },
-      body: JSON.stringify({
-        recipient: recipientToUse,
-        lifetime: 86400
-      })
+    // Step 2: Try to get existing sharing links
+    const existingLinksResponse = await fetch(`${PANDADOC_API_URL}/documents/${documentId}/links`, {
+      headers: { 'Authorization': `API-Key ${PANDADOC_API_KEY}` }
     });
-
-    if (!sessionResponse.ok) {
-      const errorText = await sessionResponse.text();
-      console.error('PandaDoc session error:', errorText, 'Status:', sessionResponse.status);
+    
+    if (existingLinksResponse.ok) {
+      const links = await existingLinksResponse.json();
+      console.log('Existing links:', JSON.stringify(links));
       
-      // If session fails, try to create a sharing link
-      try {
-        const createLinkResponse = await fetch(`${PANDADOC_API_URL}/documents/${documentId}/links`, {
-          method: 'POST',
-          headers: {
-            'Authorization': `API-Key ${PANDADOC_API_KEY}`,
-            'Content-Type': 'application/json'
-          },
-          body: JSON.stringify({
-            recipient: recipientToUse,
-            lifetime: 86400
-          })
-        });
-        
-        if (createLinkResponse.ok) {
-          const linkData = await createLinkResponse.json();
-          console.log('Created sharing link:', JSON.stringify(linkData));
-          if (linkData.link) {
-            return Response.json({
-              success: true,
-              public_url: linkData.link,
-              method: 'created_sharing_link'
-            });
-          }
-        } else {
-          const createLinkError = await createLinkResponse.text();
-          console.error('Failed to create sharing link:', createLinkError);
-        }
-      } catch (createLinkErr) {
-        console.error('Error creating sharing link:', createLinkErr.message);
+      if (links && links.length > 0 && links[0].link) {
+        console.log('Using existing link');
+        return Response.json({ success: true, public_url: links[0].link, method: 'existing_link' });
       }
-      
-      return Response.json({ 
-        error: 'Failed to create client link', 
-        details: `Session API error: ${errorText}. Document status: ${docData.status}. Make sure the document has been sent to recipients.`
-      }, { status: sessionResponse.status });
     }
 
-    const sessionData = await sessionResponse.json();
-    console.log('PandaDoc session response:', JSON.stringify(sessionData));
+    // Step 3: Create a new sharing link (public, no recipient required)
+    const createLinkResponse = await fetch(`${PANDADOC_API_URL}/documents/${documentId}/links`, {
+      method: 'POST',
+      headers: { 
+        'Authorization': `API-Key ${PANDADOC_API_KEY}`, 
+        'Content-Type': 'application/json' 
+      },
+      body: JSON.stringify({ lifetime: 86400 })
+    });
     
-    const token = sessionData.id;
-    if (!token) {
-      console.error('No session ID in response:', JSON.stringify(sessionData));
-      return Response.json({ 
-        error: 'No session ID returned from PandaDoc' 
-      }, { status: 500 });
+    if (createLinkResponse.ok) {
+      const linkData = await createLinkResponse.json();
+      console.log('Created link:', JSON.stringify(linkData));
+      if (linkData.link) {
+        return Response.json({ success: true, public_url: linkData.link, method: 'created_link' });
+      }
     }
-    
-    const publicUrl = `https://app.pandadoc.com/document/v2?token=${token}`;
 
-    return Response.json({
-      success: true,
-      public_url: publicUrl,
-      method: 'session',
-      expires_in: 86400
+    const createLinkError = await createLinkResponse.text();
+    console.error('Failed to create sharing link:', createLinkError);
+
+    // Step 4: If sharing links don't work, construct the direct PandaDoc URL
+    // This is a fallback that opens the document in PandaDoc's viewer
+    const directUrl = `https://app.pandadoc.com/a/#/documents/${documentId}`;
+    console.log('Using direct PandaDoc URL as fallback');
+    
+    return Response.json({ 
+      success: true, 
+      public_url: directUrl, 
+      method: 'direct_url',
+      note: 'Using direct PandaDoc link - recipient may need to log in'
     });
 
   } catch (error) {
