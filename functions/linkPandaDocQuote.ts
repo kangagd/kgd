@@ -56,6 +56,29 @@ Deno.serve(async (req) => {
 
     const pandadocDoc = await docResponse.json();
 
+    // Fetch the public sharing link
+    let publicUrl = '';
+    try {
+      const linksResponse = await fetch(`${PANDADOC_API_URL}/documents/${pandadocDocumentId}/session`, {
+        method: 'POST',
+        headers: {
+          'Authorization': `API-Key ${PANDADOC_API_KEY}`,
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+          recipient: pandadocDoc.recipients?.[0]?.email || '',
+          lifetime: 31536000 // 1 year in seconds
+        })
+      });
+      
+      if (linksResponse.ok) {
+        const linksData = await linksResponse.json();
+        publicUrl = linksData.id ? `https://app.pandadoc.com/s/${linksData.id}` : '';
+      }
+    } catch (linkError) {
+      console.error('Failed to fetch public link:', linkError);
+    }
+
     // Map PandaDoc status to our status
     const statusMap = {
       'document.draft': 'Draft',
@@ -113,7 +136,7 @@ Deno.serve(async (req) => {
       value: value,
       currency: pandadocDoc.grand_total?.currency || 'AUD',
       pandadoc_document_id: pandadocDoc.id,
-      pandadoc_public_url: '',
+      pandadoc_public_url: publicUrl,
       pandadoc_internal_url: `https://app.pandadoc.com/a/#/documents/${pandadocDoc.id}`,
       status: quoteStatus,
       sent_at: pandadocDoc.date_sent || null,
