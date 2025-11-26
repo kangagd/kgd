@@ -197,15 +197,19 @@ Deno.serve(async (req) => {
                   if (decoded) bodyText = decoded;
                 }
                 
-                // Check for attachments
-                if (part.filename && part.filename.length > 0 && part.body?.attachmentId) {
-                  attachments.push({
-                    filename: part.filename,
-                    mime_type: part.mimeType,
-                    size: parseInt(part.body.size) || 0,
-                    attachment_id: part.body.attachmentId,
-                    gmail_message_id: message.id
-                  });
+                // Check for attachments - include both attachmentId and inline attachments
+                if (part.filename && part.filename.length > 0) {
+                  const attachmentId = part.body?.attachmentId;
+                  if (attachmentId) {
+                    attachments.push({
+                      filename: part.filename,
+                      mime_type: part.mimeType,
+                      size: parseInt(part.body.size) || 0,
+                      attachment_id: attachmentId,
+                      gmail_message_id: message.id
+                    });
+                    console.log(`Found attachment: ${part.filename}, ID: ${attachmentId}`);
+                  }
                 }
                 
                 if (part.parts) {
