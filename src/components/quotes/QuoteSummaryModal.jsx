@@ -203,15 +203,33 @@ export default function QuoteSummaryModal({ quote, isOpen, onClose, isAdmin = fa
         </div>
 
         <DialogFooter className="flex-wrap gap-2">
-          {quote.pandadoc_public_url && (
+          {quote.pandadoc_document_id && (
             <>
-              <Button variant="outline" onClick={openPublicUrl} className="flex-1 min-w-[120px]">
-                <Eye className="w-4 h-4 mr-2" />
+              <Button 
+                variant="outline" 
+                onClick={openPublicUrl} 
+                className="flex-1 min-w-[120px]"
+                disabled={isLoadingLink}
+              >
+                {isLoadingLink ? (
+                  <span className="animate-spin mr-2">⏳</span>
+                ) : (
+                  <Eye className="w-4 h-4 mr-2" />
+                )}
                 View as Client
               </Button>
               {isAdmin && (
-                <Button variant="outline" onClick={copyClientLink} className="flex-1 min-w-[120px]">
-                  <Copy className="w-4 h-4 mr-2" />
+                <Button 
+                  variant="outline" 
+                  onClick={copyClientLink} 
+                  className="flex-1 min-w-[120px]"
+                  disabled={isLoadingLink}
+                >
+                  {isLoadingLink ? (
+                    <span className="animate-spin mr-2">⏳</span>
+                  ) : (
+                    <Copy className="w-4 h-4 mr-2" />
+                  )}
                   Copy Link
                 </Button>
               )}
