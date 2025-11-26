@@ -181,7 +181,12 @@ export default function Jobs() {
     window.location.href = `${createPageUrl("Jobs")}?jobId=${job.id}`;
   };
 
-  const isTechnician = user?.is_field_technician && user?.role !== 'admin';
+  const isAdmin = user?.role === 'admin';
+  const isManager = user?.role === 'manager';
+  const isAdminOrManager = isAdmin || isManager;
+  const isTechnician = user?.is_field_technician && !isAdminOrManager;
+  const isViewer = user?.role === 'viewer';
+  const canCreateJobs = isAdminOrManager;
 
   const filteredJobs = jobs.filter((job) => {
     // Technician filtering: only filter if user is explicitly a technician
@@ -316,15 +321,17 @@ export default function Jobs() {
           <div className="flex flex-col md:flex-row justify-between items-start md:items-center py-3 lg:py-4 mb-4 lg:mb-6 gap-3">
             <div>
               <h1 className="text-2xl font-bold text-[#111827] leading-tight">Jobs</h1>
-              <p className="text-sm text-[#4B5563] mt-1">Manage all scheduled jobs</p>
+              <p className="text-sm text-[#4B5563] mt-1">{isViewer ? 'View all scheduled jobs' : 'Manage all scheduled jobs'}</p>
             </div>
-            <Button
-              onClick={() => setShowForm(true)}
-              className="bg-[#FAE008] text-[#111827] hover:bg-[#E5CF07] font-semibold shadow-sm hover:shadow-md transition w-full md:w-auto h-10 px-4 text-sm rounded-xl"
-            >
-              <Plus className="w-4 h-4 mr-2" />
-              New Job
-            </Button>
+            {canCreateJobs && (
+              <Button
+                onClick={() => setShowForm(true)}
+                className="bg-[#FAE008] text-[#111827] hover:bg-[#E5CF07] font-semibold shadow-sm hover:shadow-md transition w-full md:w-auto h-10 px-4 text-sm rounded-xl"
+              >
+                <Plus className="w-4 h-4 mr-2" />
+                New Job
+              </Button>
+            )}
           </div>
         )}
 
