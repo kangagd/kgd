@@ -1,12 +1,13 @@
-import React, { useState, useRef } from "react";
+import React, { useState, useRef, useEffect, useCallback } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { X, Send, Paperclip } from "lucide-react";
+import { X, Send, Paperclip, Save } from "lucide-react";
 import { base44 } from "@/api/base44Client";
 import { toast } from "sonner";
 import { format, parseISO } from "date-fns";
+import debounce from "lodash/debounce";
 
 const sanitizeBodyHtml = (html) => {
   if (!html) return html;
@@ -37,13 +38,14 @@ const sanitizeBodyHtml = (html) => {
   return sanitized.trim();
 };
 
-export default function EmailComposer({ mode = "compose", thread, message, onClose, onSent }) {
-  const [to, setTo] = useState(mode === "reply" ? message?.from_address : "");
-  const [cc, setCc] = useState("");
-  const [bcc, setBcc] = useState("");
+export default function EmailComposer({ mode = "compose", thread, message, onClose, onSent, existingDraft = null }) {
+  const [to, setTo] = useState(existingDraft?.to || (mode === "reply" ? message?.from_address : ""));
+  const [cc, setCc] = useState(existingDraft?.cc || "");
+  const [bcc, setBcc] = useState(existingDraft?.bcc || "");
   const [subject, setSubject] = useState(
-    mode === "reply" ? `Re: ${thread?.subject || ""}` : 
-    mode === "forward" ? `Fwd: ${thread?.subject || ""}` : ""
+    existingDraft?.subject || 
+    (mode === "reply" ? `Re: ${thread?.subject || ""}` : 
+    mode === "forward" ? `Fwd: ${thread?.subject || ""}` : "")
   );
   
   const getInitialBody = () => {
@@ -85,13 +87,71 @@ export default function EmailComposer({ mode = "compose", thread, message, onClo
     return "";
   };
   
-  const [body, setBody] = useState(getInitialBody());
+  const [body, setBody] = useState(existingDraft?.body || getInitialBody());
   const [attachments, setAttachments] = useState([]);
   const [isSending, setIsSending] = useState(false);
-  const [showCc, setShowCc] = useState(false);
-  const [showBcc, setShowBcc] = useState(false);
+  const [showCc, setShowCc] = useState(!!existingDraft?.cc);
+  const [showBcc, setShowBcc] = useState(!!existingDraft?.bcc);
+  const [draftId, setDraftId] = useState(existingDraft?.id || null);
+  const [isSavingDraft, setIsSavingDraft] = useState(false);
+  const [lastSaved, setLastSaved] = useState(null);
   const fileInputRef = useRef(null);
   const textareaRef = useRef(null);
+
+  // Auto-save draft function
+  const saveDraft = useCallback(async (draftData) => {
+    // Don't save empty drafts
+    if (!draftData.to && !draftData.subject && !draftData.body) return;
+    
+    setIsSavingDraft(true);
+    try {
+      const draft = {
+        to: draftData.to,
+        cc: draftData.cc,
+        bcc: draftData.bcc,
+        subject: draftData.subject,
+        body: draftData.body,
+        thread_id: thread?.id || null,
+        reply_to_message_id: message?.message_id || null,
+        mode: mode
+      };
+
+      if (draftId) {
+        await base44.entities.EmailDraft.update(draftId, draft);
+      } else {
+        const newDraft = await base44.entities.EmailDraft.create(draft);
+        setDraftId(newDraft.id);
+      }
+      setLastSaved(new Date());
+    } catch (error) {
+      console.error("Failed to save draft:", error);
+    } finally {
+      setIsSavingDraft(false);
+    }
+  }, [draftId, thread?.id, message?.message_id, mode]);
+
+  // Debounced auto-save (save after 2 seconds of inactivity)
+  const debouncedSave = useCallback(
+    debounce((data) => saveDraft(data), 2000),
+    [saveDraft]
+  );
+
+  // Auto-save when content changes
+  useEffect(() => {
+    debouncedSave({ to, cc, bcc, subject, body });
+    return () => debouncedSave.cancel();
+  }, [to, cc, bcc, subject, body, debouncedSave]);
+
+  // Delete draft on successful send
+  const deleteDraft = async () => {
+    if (draftId) {
+      try {
+        await base44.entities.EmailDraft.delete(draftId);
+      } catch (error) {
+        console.error("Failed to delete draft:", error);
+      }
+    }
+  };
 
   const handleFileSelect = async (e) => {
     const files = Array.from(e.target.files);
@@ -140,6 +200,7 @@ export default function EmailComposer({ mode = "compose", thread, message, onClo
       });
 
       toast.success("Email sent successfully");
+      await deleteDraft();
       if (onSent) onSent();
       onClose();
     } catch (error) {
@@ -284,18 +345,34 @@ export default function EmailComposer({ mode = "compose", thread, message, onClo
           </div>
         )}
 
-        <div className="flex justify-end gap-2 pt-2">
-          <Button variant="outline" onClick={onClose}>
-            Cancel
-          </Button>
-          <Button
-            onClick={handleSend}
-            disabled={isSending || !to || !subject || !body}
-            className="bg-[#FAE008] text-[#111827] hover:bg-[#E5CF07] gap-2"
-          >
-            <Send className="w-4 h-4" />
-            {isSending ? "Sending..." : "Send"}
-          </Button>
+        <div className="flex items-center justify-between pt-2">
+          <div className="text-[12px] text-[#9CA3AF] flex items-center gap-1">
+            {isSavingDraft && (
+              <>
+                <Save className="w-3 h-3 animate-pulse" />
+                Saving...
+              </>
+            )}
+            {!isSavingDraft && lastSaved && (
+              <>
+                <Save className="w-3 h-3" />
+                Draft saved
+              </>
+            )}
+          </div>
+          <div className="flex gap-2">
+            <Button variant="outline" onClick={onClose}>
+              Cancel
+            </Button>
+            <Button
+              onClick={handleSend}
+              disabled={isSending || !to || !subject || !body}
+              className="bg-[#FAE008] text-[#111827] hover:bg-[#E5CF07] gap-2"
+            >
+              <Send className="w-4 h-4" />
+              {isSending ? "Sending..." : "Send"}
+            </Button>
+          </div>
         </div>
       </CardContent>
     </Card>
