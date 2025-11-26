@@ -136,10 +136,6 @@ export default function ProjectEmailSection({ project, onThreadLinked }) {
     refetchMessages();
   };
 
-  const sortedMessages = [...messages].sort((a, b) => 
-    new Date(a.sent_at) - new Date(b.sent_at)
-  );
-
   const isLoading = threadLoading || messagesLoading;
 
   // No linked threads - show option to link
