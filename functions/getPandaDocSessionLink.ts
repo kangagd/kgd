@@ -17,13 +17,17 @@ Deno.serve(async (req) => {
     }
 
     const body = await req.json();
-    const { documentId } = body;
+    const { documentId, recipientEmail } = body;
 
     if (!documentId) {
       return Response.json({ error: 'documentId is required' }, { status: 400 });
     }
 
-    // Step 1: Get document details to check status
+    if (!recipientEmail) {
+      return Response.json({ error: 'recipientEmail is required' }, { status: 400 });
+    }
+
+    // Step 1: Get document details to check status and recipients
     const docResponse = await fetch(`${PANDADOC_API_URL}/documents/${documentId}`, {
       headers: { 'Authorization': `API-Key ${PANDADOC_API_KEY}` }
     });
@@ -36,54 +40,38 @@ Deno.serve(async (req) => {
     
     const docData = await docResponse.json();
     console.log('Document status:', docData.status, 'ID:', documentId);
+    console.log('Document recipients:', JSON.stringify(docData.recipients));
 
-    // Step 2: Try to get existing sharing links
-    const existingLinksResponse = await fetch(`${PANDADOC_API_URL}/documents/${documentId}/links`, {
-      headers: { 'Authorization': `API-Key ${PANDADOC_API_KEY}` }
-    });
-    
-    if (existingLinksResponse.ok) {
-      const links = await existingLinksResponse.json();
-      console.log('Existing links:', JSON.stringify(links));
-      
-      if (links && links.length > 0 && links[0].link) {
-        console.log('Using existing link');
-        return Response.json({ success: true, public_url: links[0].link, method: 'existing_link' });
-      }
-    }
-
-    // Step 3: Create a new sharing link (public, no recipient required)
-    const createLinkResponse = await fetch(`${PANDADOC_API_URL}/documents/${documentId}/links`, {
+    // Step 2: Create a session for the recipient using the Session API
+    const sessionResponse = await fetch(`${PANDADOC_API_URL}/documents/${documentId}/session`, {
       method: 'POST',
       headers: { 
-        'Authorization': `API-Key ${PANDADOC_API_KEY}`, 
-        'Content-Type': 'application/json' 
+        'Authorization': `API-Key ${PANDADOC_API_KEY}`,
+        'Content-Type': 'application/json'
       },
-      body: JSON.stringify({ lifetime: 86400 })
+      body: JSON.stringify({
+        recipient: recipientEmail,
+        lifetime: 86400 // 24 hours
+      })
     });
-    
-    if (createLinkResponse.ok) {
-      const linkData = await createLinkResponse.json();
-      console.log('Created link:', JSON.stringify(linkData));
-      if (linkData.link) {
-        return Response.json({ success: true, public_url: linkData.link, method: 'created_link' });
+
+    if (sessionResponse.ok) {
+      const sessionData = await sessionResponse.json();
+      console.log('Session created:', JSON.stringify(sessionData));
+      
+      if (sessionData.id) {
+        const publicUrl = `https://app.pandadoc.com/document/v2?token=${sessionData.id}`;
+        return Response.json({ success: true, public_url: publicUrl, method: 'session_api' });
       }
     }
 
-    const createLinkError = await createLinkResponse.text();
-    console.error('Failed to create sharing link:', createLinkError);
-
-    // Step 4: If sharing links don't work, construct the direct PandaDoc URL
-    // This is a fallback that opens the document in PandaDoc's viewer
-    const directUrl = `https://app.pandadoc.com/a/#/documents/${documentId}`;
-    console.log('Using direct PandaDoc URL as fallback');
-    
+    const sessionError = await sessionResponse.text();
+    console.error('Session API error:', sessionError);
     return Response.json({ 
-      success: true, 
-      public_url: directUrl, 
-      method: 'direct_url',
-      note: 'Using direct PandaDoc link - recipient may need to log in'
-    });
+      error: 'Failed to create session link', 
+      details: sessionError,
+      hint: 'Ensure the recipient email matches exactly what is in PandaDoc'
+    }, { status: 400 });
 
   } catch (error) {
     console.error('getPandaDocSessionLink error:', error);
