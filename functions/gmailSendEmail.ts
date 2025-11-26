@@ -1,12 +1,21 @@
 import { createClientFromRequest } from 'npm:@base44/sdk@0.8.4';
 
 async function refreshTokenIfNeeded(base44, user) {
-  const expiryTime = new Date(user.gmail_token_expiry).getTime();
+  // If no token expiry set or token is expired/close to expiring
+  const expiryTime = user.gmail_token_expiry ? new Date(user.gmail_token_expiry).getTime() : 0;
   const now = Date.now();
+  
+  if (!user.gmail_refresh_token) {
+    throw new Error('Gmail refresh token not found. Please reconnect Gmail.');
+  }
   
   if (expiryTime - now < 5 * 60 * 1000) {
     const clientId = Deno.env.get('GMAIL_CLIENT_ID');
     const clientSecret = Deno.env.get('GMAIL_CLIENT_SECRET');
+    
+    if (!clientId || !clientSecret) {
+      throw new Error('Gmail credentials not configured');
+    }
     
     const response = await fetch('https://oauth2.googleapis.com/token', {
       method: 'POST',
@@ -20,6 +29,10 @@ async function refreshTokenIfNeeded(base44, user) {
     });
     
     const tokens = await response.json();
+    
+    if (!response.ok || tokens.error) {
+      throw new Error(`Token refresh failed: ${tokens.error_description || tokens.error || 'Unknown error'}`);
+    }
     
     await base44.asServiceRole.entities.User.update(user.id, {
       gmail_access_token: tokens.access_token,
@@ -76,8 +89,12 @@ Deno.serve(async (req) => {
     const base44 = createClientFromRequest(req);
     const user = await base44.auth.me();
     
-    if (!user || !user.gmail_access_token) {
-      return Response.json({ error: 'Gmail not connected' }, { status: 401 });
+    if (!user) {
+      return Response.json({ error: 'User not authenticated' }, { status: 401 });
+    }
+    
+    if (!user.gmail_access_token) {
+      return Response.json({ error: 'Gmail not connected. Please connect Gmail first.' }, { status: 401 });
     }
     
     const { to, cc, bcc, subject, body, threadId, inReplyTo, references, attachments } = await req.json();
