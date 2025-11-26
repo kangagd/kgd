@@ -14,7 +14,7 @@ Deno.serve(async (req) => {
 
     console.log(`[TestPush] Sending test notification to user: ${user.id}`);
 
-    const appId = Deno.env.get('ONESIGNAL_APP_ID');
+    const appId = Deno.env.get('ONESIGNAL_APP_ID') || '50b86e27-3335-48dc-877c-4e4f3d223620';
     const apiKey = Deno.env.get('ONESIGNAL_REST_API_KEY');
 
     if (!appId || !apiKey) {
