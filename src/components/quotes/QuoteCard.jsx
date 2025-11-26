@@ -37,9 +37,10 @@ const statusConfig = {
   Expired: { color: 'bg-orange-100 text-orange-700 border-orange-200', icon: Clock }
 };
 
-export default function QuoteCard({ quote, onUpdate, onSelect, isAdmin = false, isCompact = false }) {
+export default function QuoteCard({ quote, onUpdate, onSelect, isAdmin = false, isCompact = false, onRefreshLink }) {
   const [isSending, setIsSending] = useState(false);
   const [isRefreshing, setIsRefreshing] = useState(false);
+  const [isLoadingLink, setIsLoadingLink] = useState(false);
 
   const config = statusConfig[quote.status] || statusConfig.Draft;
   const StatusIcon = config.icon;
