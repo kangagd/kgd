@@ -28,11 +28,33 @@ const statusConfig = {
   Expired: { color: 'bg-orange-100 text-orange-700 border-orange-200', icon: Clock, label: 'Expired' }
 };
 
-export default function QuoteSummaryModal({ quote, isOpen, onClose, isAdmin = false }) {
+export default function QuoteSummaryModal({ quote, isOpen, onClose, isAdmin = false, onQuoteUpdated }) {
+  const [isRefreshing, setIsRefreshing] = useState(false);
+
   if (!quote) return null;
 
   const config = statusConfig[quote.status] || statusConfig.Draft;
   const StatusIcon = config.icon;
+
+  const refreshFromPandaDoc = async () => {
+    setIsRefreshing(true);
+    try {
+      const response = await base44.functions.invoke('refreshQuoteFromPandaDoc', { quoteId: quote.id });
+      if (response.data.success) {
+        toast.success(`Refreshed quote with ${response.data.line_items_count} line items`);
+        if (onQuoteUpdated) {
+          onQuoteUpdated(response.data.quote);
+        }
+      } else {
+        toast.error(response.data.error || 'Failed to refresh quote');
+      }
+    } catch (error) {
+      toast.error('Failed to refresh from PandaDoc');
+      console.error(error);
+    } finally {
+      setIsRefreshing(false);
+    }
+  };
 
   const openInPandaDoc = () => {
     if (quote.pandadoc_internal_url) {
