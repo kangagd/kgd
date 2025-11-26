@@ -1,13 +1,13 @@
 import React, { useState, useRef, useEffect, useCallback } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Textarea } from "@/components/ui/textarea";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { X, Send, Paperclip, Save } from "lucide-react";
 import { base44 } from "@/api/base44Client";
 import { toast } from "sonner";
 import { format, parseISO } from "date-fns";
 import debounce from "lodash/debounce";
+import ReactQuill from "react-quill";
 
 const sanitizeBodyHtml = (html) => {
   if (!html) return html;
@@ -309,12 +309,23 @@ export default function EmailComposer({ mode = "compose", thread, message, onClo
             />
           </div>
 
-          <Textarea
-            ref={textareaRef}
+          <ReactQuill
+            theme="snow"
             value={body}
-            onChange={(e) => setBody(e.target.value)}
+            onChange={setBody}
             placeholder="Write your message here..."
-            className="min-h-[250px] resize-y"
+            className="bg-white rounded-lg [&_.ql-container]:min-h-[200px] [&_.ql-editor]:min-h-[200px]"
+            modules={{
+              toolbar: [
+                [{ 'header': [1, 2, 3, false] }],
+                ['bold', 'italic', 'underline', 'strike'],
+                [{ 'color': [] }, { 'background': [] }],
+                [{ 'list': 'ordered'}, { 'list': 'bullet' }],
+                [{ 'indent': '-1'}, { 'indent': '+1' }],
+                ['link'],
+                ['clean']
+              ]
+            }}
           />
         </div>
 
