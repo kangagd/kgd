@@ -1,15 +1,8 @@
 import { createClientFromRequest } from 'npm:@base44/sdk@0.8.4';
-import webpush from 'npm:web-push@3.6.7';
 
-const VAPID_PUBLIC_KEY = Deno.env.get('VAPID_PUBLIC_KEY');
-const VAPID_PRIVATE_KEY = Deno.env.get('VAPID_PRIVATE_KEY');
-
-webpush.setVapidDetails(
-  'mailto:admin@kangaroogd.com.au',
-  VAPID_PUBLIC_KEY,
-  VAPID_PRIVATE_KEY
-);
-
+/**
+ * Send a test push notification via OneSignal REST API
+ */
 Deno.serve(async (req) => {
   try {
     const base44 = createClientFromRequest(req);
@@ -19,93 +12,59 @@ Deno.serve(async (req) => {
       return Response.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
-    console.log(`[TestPush] Sending test notification to ${user.email}`);
+    console.log(`[TestPush] Sending test notification to user: ${user.id}`);
 
-    // Get user's active subscriptions
-    const subscriptions = await base44.asServiceRole.entities.PushSubscription.filter({
-      user_email: user.email,
-      active: true
+    const appId = Deno.env.get('ONESIGNAL_APP_ID');
+    const apiKey = Deno.env.get('ONESIGNAL_REST_API_KEY');
+
+    if (!appId || !apiKey) {
+      console.error('[TestPush] OneSignal not configured');
+      return Response.json({ 
+        success: false, 
+        message: 'OneSignal not configured. Please set ONESIGNAL_APP_ID and ONESIGNAL_REST_API_KEY.' 
+      }, { status: 500 });
+    }
+
+    // Build notification payload targeting the user by external_id
+    const notificationPayload = {
+      app_id: appId,
+      headings: { en: '🔔 Test Notification' },
+      contents: { en: `This is a test push notification sent at ${new Date().toLocaleTimeString()}` },
+      include_aliases: {
+        external_id: [user.id]
+      },
+      target_channel: 'push'
+    };
+
+    console.log('[TestPush] Sending to OneSignal:', JSON.stringify(notificationPayload));
+
+    // Send notification via OneSignal API
+    const response = await fetch('https://onesignal.com/api/v1/notifications', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Basic ${apiKey}`
+      },
+      body: JSON.stringify(notificationPayload)
     });
 
-    console.log(`[TestPush] Found ${subscriptions.length} active subscriptions`);
+    const result = await response.json();
+    console.log('[TestPush] OneSignal response:', JSON.stringify(result));
 
-    if (subscriptions.length === 0) {
-      return Response.json({
-        success: false,
-        message: 'No active push subscriptions found. Please enable push notifications first.',
-        subscriptionCount: 0
+    if (!response.ok) {
+      console.error('[TestPush] OneSignal API error:', result);
+      return Response.json({ 
+        success: false, 
+        message: result.errors?.[0] || 'Failed to send notification',
+        details: result
       });
     }
 
-    const payload = JSON.stringify({
-      title: '🔔 Test Notification',
-      body: `This is a test push notification sent at ${new Date().toLocaleTimeString()}`,
-      icon: '/icon-192.png',
-      data: {
-        url: '/UserProfile',
-        test: true
-      }
-    });
-
-    const results = [];
-
-    for (const sub of subscriptions) {
-      try {
-        if (sub.platform === 'web' && sub.subscription_json) {
-          const pushSubscription = JSON.parse(sub.subscription_json);
-          
-          await webpush.sendNotification(pushSubscription, payload);
-          
-          console.log(`[TestPush] SUCCESS: Sent to subscription ${sub.id}`);
-          results.push({ 
-            id: sub.id, 
-            platform: sub.platform,
-            success: true 
-          });
-
-          await base44.asServiceRole.entities.PushSubscription.update(sub.id, {
-            last_seen: new Date().toISOString()
-          });
-        } else {
-          console.log(`[TestPush] SKIP: Non-web subscription ${sub.id}`);
-          results.push({ 
-            id: sub.id, 
-            platform: sub.platform,
-            success: false, 
-            reason: 'Non-web subscription' 
-          });
-        }
-      } catch (error) {
-        console.error(`[TestPush] FAILED: Subscription ${sub.id}:`, error.message);
-        results.push({ 
-          id: sub.id, 
-          platform: sub.platform,
-          success: false, 
-          error: error.message,
-          statusCode: error.statusCode
-        });
-
-        // Mark expired subscriptions as inactive
-        if (error.statusCode === 410 || error.statusCode === 404) {
-          console.log(`[TestPush] Marking subscription ${sub.id} as inactive`);
-          await base44.asServiceRole.entities.PushSubscription.update(sub.id, {
-            active: false
-          });
-        }
-      }
-    }
-
-    const successCount = results.filter(r => r.success).length;
-    console.log(`[TestPush] Completed: ${successCount}/${results.length} sent successfully`);
-
-    return Response.json({
-      success: successCount > 0,
-      message: successCount > 0 
-        ? `Test notification sent to ${successCount} device(s)` 
-        : 'Failed to send to any devices',
-      sent: successCount,
-      total: results.length,
-      results
+    return Response.json({ 
+      success: true, 
+      message: 'Notification sent!',
+      notificationId: result.id,
+      recipients: result.recipients
     });
   } catch (error) {
     console.error('[TestPush] Error:', error);
