@@ -245,10 +245,11 @@ export default function Layout({ children, currentPageName }) {
   const handleLogout = () => base44.auth.logout();
 
   // Mobile layout for technicians
-  if (isTechnician) {
-    return (
-      <div className="min-h-screen flex flex-col bg-[#ffffff]">
-        <PushNotificationRegistrar user={user} />
+          if (isTechnician) {
+            return (
+              <div className="min-h-screen flex flex-col bg-[#ffffff]">
+                <OneSignalInitializer user={user} />
+                <PushNotificationRegistrar user={user} />
         {/* Mobile Overlay */}
         {techMobileMenuOpen && (
           <div 
@@ -371,7 +372,8 @@ export default function Layout({ children, currentPageName }) {
   return (
     <div className="min-h-screen flex bg-[#ffffff]">
       <Toaster position="top-right" richColors />
-      <PushNotificationRegistrar user={user} />
+                  <OneSignalInitializer user={user} />
+                  <PushNotificationRegistrar user={user} />
       {/* Mobile Overlay */}
       {isMobileMenuOpen && (
         <div 
