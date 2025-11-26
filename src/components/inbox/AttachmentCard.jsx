@@ -39,14 +39,34 @@ export default function AttachmentCard({
   const handleSave = async () => {
     setSaving(true);
     try {
+      // First resolve the URL if needed
+      let urlToSave = resolvedUrl;
+      if (!urlToSave && attachment.attachment_id && attachment.gmail_message_id) {
+        const result = await base44.functions.invoke('getGmailAttachment', {
+          gmail_message_id: attachment.gmail_message_id,
+          attachment_id: attachment.attachment_id,
+          filename: attachment.filename,
+          mime_type: attachment.mime_type
+        });
+        if (result.data?.url) {
+          urlToSave = result.data.url;
+          setResolvedUrl(urlToSave);
+        }
+      }
+      
+      if (!urlToSave) {
+        toast.error('Could not resolve attachment URL');
+        return;
+      }
+
       if (linkedJobId) {
         const job = await base44.entities.Job.get(linkedJobId);
-        const updatedImageUrls = [...(job.image_urls || []), attachment.url];
+        const updatedImageUrls = [...(job.image_urls || []), urlToSave];
         await base44.entities.Job.update(linkedJobId, { image_urls: updatedImageUrls });
         toast.success('Attachment saved to job');
       } else if (linkedProjectId) {
         const project = await base44.entities.Project.get(linkedProjectId);
-        const updatedImageUrls = [...(project.image_urls || []), attachment.url];
+        const updatedImageUrls = [...(project.image_urls || []), urlToSave];
         await base44.entities.Project.update(linkedProjectId, { image_urls: updatedImageUrls });
         toast.success('Attachment saved to project');
       }
