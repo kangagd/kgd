@@ -168,11 +168,16 @@ export async function unsubscribeFromNotifications() {
  * Set external user ID (to link OneSignal subscription to your user)
  */
 export async function setExternalUserId(userId, email) {
-  if (!isOneSignalLoaded()) return false;
+  if (!isOneSignalLoaded()) {
+    console.log('[OneSignal] SDK not loaded, cannot set external user ID');
+    return false;
+  }
   
   return new Promise((resolve) => {
     window.OneSignalDeferred.push(async function(OneSignal) {
       try {
+        console.log('[OneSignal] Setting external user ID:', userId);
+        
         // Set external user ID
         await OneSignal.login(userId);
         
@@ -182,7 +187,11 @@ export async function setExternalUserId(userId, email) {
           await OneSignal.User.addTag('email', email);
         }
         
-        console.log('[OneSignal] External user ID set:', userId);
+        // Log the subscription status after login
+        const subId = await OneSignal.User.PushSubscription.id;
+        const optedIn = await OneSignal.User.PushSubscription.optedIn;
+        console.log('[OneSignal] After login - Subscription ID:', subId, 'OptedIn:', optedIn);
+        
         resolve(true);
       } catch (error) {
         console.error('[OneSignal] Error setting external user ID:', error);

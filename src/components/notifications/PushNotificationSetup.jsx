@@ -128,6 +128,7 @@ export default function PushNotificationSetup({ user }) {
   // Handle test notification
   const handleTestNotification = async () => {
     console.log('[PushSetup] handleTestNotification called');
+    console.log('[PushSetup] User ID:', user.id);
     setIsTesting(true);
     
     try {
@@ -137,8 +138,10 @@ export default function PushNotificationSetup({ user }) {
         userIds: [user.id]
       });
       
+      console.log('[PushSetup] Response:', response.data);
+      
       if (response.data?.success) {
-        toast.success('Test notification sent!');
+        toast.success(`Test sent! Recipients: ${response.data.recipients || 0}`);
       } else {
         toast.error(response.data?.error || 'Failed to send test notification');
       }
