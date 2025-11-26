@@ -171,12 +171,6 @@ export default function QuoteSummaryModal({ quote, isOpen, onClose, isAdmin = fa
         </div>
 
         <DialogFooter className="gap-2">
-          {isAdmin && quote.pandadoc_internal_url && (
-            <Button onClick={openInPandaDoc} className="bg-[#FAE008] hover:bg-[#E5CF07] text-[#111827]">
-              <ExternalLink className="w-4 h-4 mr-2" />
-              Open in PandaDoc
-            </Button>
-          )}
           {quote.pandadoc_public_url && (
             <>
               <Button variant="outline" onClick={openPublicUrl}>
@@ -190,6 +184,12 @@ export default function QuoteSummaryModal({ quote, isOpen, onClose, isAdmin = fa
                 </Button>
               )}
             </>
+          )}
+          {isAdmin && quote.pandadoc_internal_url && (
+            <Button onClick={openInPandaDoc} className="bg-[#FAE008] hover:bg-[#E5CF07] text-[#111827]">
+              <ExternalLink className="w-4 h-4 mr-2" />
+              Open in PandaDoc
+            </Button>
           )}
         </DialogFooter>
       </DialogContent>
