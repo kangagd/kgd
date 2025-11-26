@@ -154,17 +154,6 @@ export default function EmailDetailView({
             onCreateProject={userPermissions?.can_create_project_from_email ? handleCreateProjectFromAI : null}
           />
 
-          {/* Linked Threads Section */}
-          <div className="mb-4">
-            <LinkedThreadsSection
-              linkedThreads={linkedThreads}
-              onAddLink={() => setLinkThreadModalOpen(true)}
-              onRemoveLink={handleUnlinkThread}
-              onNavigateToThread={handleNavigateToThread}
-              canEdit={userPermissions?.can_link_to_project || userPermissions?.can_link_to_job}
-            />
-          </div>
-
           {/* Main Email Card */}
           <div className="bg-white rounded-xl shadow-sm border border-[#E5E7EB] overflow-hidden mb-6">
             {/* Header - Subject & Actions */}
