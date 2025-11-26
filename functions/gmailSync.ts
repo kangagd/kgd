@@ -180,9 +180,10 @@ Deno.serve(async (req) => {
       });
 
         if (existingMessages.length === 0) {
-          // Extract body
+          // Extract body and attachments
           let bodyHtml = '';
           let bodyText = detail.snippet || '';
+          const attachments = [];
 
           const processParts = (parts) => {
             if (!parts || !Array.isArray(parts)) return;
@@ -195,6 +196,18 @@ Deno.serve(async (req) => {
                   const decoded = atob(part.body.data.replace(/-/g, '+').replace(/_/g, '/'));
                   if (decoded) bodyText = decoded;
                 }
+                
+                // Check for attachments
+                if (part.filename && part.filename.length > 0 && part.body?.attachmentId) {
+                  attachments.push({
+                    filename: part.filename,
+                    mime_type: part.mimeType,
+                    size: parseInt(part.body.size) || 0,
+                    attachment_id: part.body.attachmentId,
+                    gmail_message_id: message.id
+                  });
+                }
+                
                 if (part.parts) {
                   processParts(part.parts);
                 }
@@ -217,6 +230,44 @@ Deno.serve(async (req) => {
             processParts(detail.payload.parts);
           }
 
+          // Fetch actual attachment URLs for each attachment
+          const processedAttachments = [];
+          for (const att of attachments) {
+            try {
+              // Fetch the attachment data from Gmail
+              const attResponse = await fetch(
+                `https://gmail.googleapis.com/gmail/v1/users/me/messages/${att.gmail_message_id}/attachments/${att.attachment_id}`,
+                { headers: { 'Authorization': `Bearer ${accessToken}` } }
+              );
+              
+              if (attResponse.ok) {
+                const attData = await attResponse.json();
+                if (attData.data) {
+                  // Convert base64url to regular base64
+                  const base64Data = attData.data.replace(/-/g, '+').replace(/_/g, '/');
+                  // Create a data URL for the attachment
+                  const dataUrl = `data:${att.mime_type};base64,${base64Data}`;
+                  
+                  processedAttachments.push({
+                    filename: att.filename,
+                    mime_type: att.mime_type,
+                    size: att.size,
+                    url: dataUrl
+                  });
+                }
+              }
+            } catch (attErr) {
+              console.error('Error fetching attachment:', attErr);
+              // Still include the attachment metadata even if we couldn't fetch content
+              processedAttachments.push({
+                filename: att.filename,
+                mime_type: att.mime_type,
+                size: att.size,
+                url: null
+              });
+            }
+          }
+
           // Parse addresses safely
           const toAddresses = to ? to.split(',').map(e => parseEmailAddress(e.trim())).filter(e => e) : [];
           const fromAddress = parseEmailAddress(from) || 'unknown@unknown.com';
@@ -231,7 +282,8 @@ Deno.serve(async (req) => {
             body_html: bodyHtml,
             body_text: bodyText,
             message_id: messageId,
-            is_outbound: message.isOutbound
+            is_outbound: message.isOutbound,
+            attachments: processedAttachments.length > 0 ? processedAttachments : undefined
           };
           
           if (inReplyTo) {
