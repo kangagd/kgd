@@ -1151,6 +1151,22 @@ Format as HTML bullet points using <ul> and <li> tags. Include only the most cri
               onStageChange={handleStageChange}
               onMarkAsLost={() => setShowLostModal(true)}
             />
+            {project.status === "Lost" && (
+              <div className="mt-3 p-3 bg-red-50 border border-red-200 rounded-lg">
+                <div className="flex items-start gap-2">
+                  <span className="text-[13px] font-medium text-red-700">Lost Reason:</span>
+                  <span className="text-[13px] text-red-600">
+                    {project.lost_reason}
+                    {project.lost_reason_notes && ` - ${project.lost_reason_notes}`}
+                  </span>
+                </div>
+                {project.lost_date && (
+                  <div className="text-[12px] text-red-500 mt-1">
+                    Lost on {new Date(project.lost_date).toLocaleDateString('en-AU', { day: 'numeric', month: 'short', year: 'numeric' })}
+                  </div>
+                )}
+              </div>
+            )}
           </div>
           {project.financial_status && (
             <div className="mt-2">
