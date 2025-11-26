@@ -263,31 +263,52 @@ export default function EmailComposer({ mode = "compose", thread, message, onClo
       <CardContent className="p-4 space-y-3">
         <div className="space-y-2">
           <div className="flex items-center gap-2">
-            <label className="text-[14px] font-medium w-12">To:</label>
-            <Input
-              value={to}
-              onChange={(e) => setTo(e.target.value)}
-              placeholder="recipient@example.com"
-              disabled={mode === "reply"}
-              className="flex-1"
-            />
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={() => setShowCc(!showCc)}
-              className="text-[12px]"
-            >
-              Cc
-            </Button>
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={() => setShowBcc(!showBcc)}
-              className="text-[12px]"
-            >
-              Bcc
-            </Button>
-          </div>
+                <label className="text-[14px] font-medium w-12">To:</label>
+                <div className="flex-1 relative">
+                  <Input
+                    ref={toInputRef}
+                    value={to}
+                    onChange={handleToInputChange}
+                    onFocus={() => toSearchTerm.length >= 2 && setShowToDropdown(true)}
+                    onBlur={() => setTimeout(() => setShowToDropdown(false), 200)}
+                    placeholder="recipient@example.com"
+                    disabled={mode === "reply"}
+                  />
+                  {showToDropdown && filteredCustomers.length > 0 && (
+                    <div className="absolute top-full left-0 right-0 mt-1 bg-white border border-[#E5E7EB] rounded-lg shadow-lg z-50 max-h-[200px] overflow-y-auto">
+                      {filteredCustomers.map(customer => (
+                        <div
+                          key={customer.id}
+                          onClick={() => handleSelectCustomer(customer)}
+                          className="flex items-center gap-2 px-3 py-2 hover:bg-[#F3F4F6] cursor-pointer"
+                        >
+                          <User className="w-4 h-4 text-[#6B7280]" />
+                          <div className="flex-1 min-w-0">
+                            <div className="text-[13px] font-medium text-[#111827] truncate">{customer.name}</div>
+                            <div className="text-[12px] text-[#6B7280] truncate">{customer.email}</div>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </div>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => setShowCc(!showCc)}
+                  className="text-[12px]"
+                >
+                  Cc
+                </Button>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => setShowBcc(!showBcc)}
+                  className="text-[12px]"
+                >
+                  Bcc
+                </Button>
+              </div>
 
           {showCc && (
             <div className="flex items-center gap-2">
