@@ -186,6 +186,21 @@ export default function QuoteSummaryModal({ quote, isOpen, onClose, isAdmin = fa
           )}
 
           {/* Line Items / Products */}
+          {isAdmin && quote.pandadoc_document_id && (!quote.line_items || quote.line_items.length === 0) && (
+            <div className="flex items-center justify-between p-3 bg-[#FEF3C7] rounded-lg">
+              <p className="text-[13px] text-[#92400E]">No line items stored. Refresh from PandaDoc to load them.</p>
+              <Button 
+                variant="outline" 
+                size="sm" 
+                onClick={refreshFromPandaDoc}
+                disabled={isRefreshing}
+                className="text-[#92400E] border-[#92400E] hover:bg-[#FEF3C7]"
+              >
+                <RefreshCw className={`w-3.5 h-3.5 mr-1.5 ${isRefreshing ? 'animate-spin' : ''}`} />
+                {isRefreshing ? 'Refreshing...' : 'Refresh'}
+              </Button>
+            </div>
+          )}
           {quote.line_items && quote.line_items.length > 0 && (
             <div>
               <p className="text-[12px] text-[#6B7280] mb-2">Products & Services</p>
