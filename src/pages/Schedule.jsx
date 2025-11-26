@@ -134,6 +134,7 @@ export default function Schedule() {
     return allJobs
       .filter(job => {
         if (job.deleted_at) return false;
+        if (job.status === "Cancelled") return false;
         
         // Technician access filter
         if (isTechnician && user) {
