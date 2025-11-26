@@ -375,7 +375,7 @@ export default function Tasks() {
           </div>
         ) : viewMode === "kanban" ? (
           <TaskKanbanView
-            tasks={filteredTasks}
+            tasks={tasks}
             users={users}
             onTaskClick={setSelectedTask}
             onToggleComplete={handleToggleComplete}
