@@ -49,32 +49,24 @@ export default function QuotesSection({
     queryClient.invalidateQueries({ queryKey: filterKey });
   };
 
-  // Function to get a fresh session link from PandaDoc
+  // Function to get a fresh link from PandaDoc
   const getRefreshLink = useCallback(async (quote) => {
     if (!quote.pandadoc_document_id) return null;
     
     try {
       const response = await base44.functions.invoke('getPandaDocSessionLink', {
-        documentId: quote.pandadoc_document_id,
-        recipientEmail: quote.customer_email || ''
+        documentId: quote.pandadoc_document_id
       });
       
-      console.log('getPandaDocSessionLink response:', response.data);
-      
-      // Check if the response contains an error from the backend
       if (response.data?.error) {
-        const errorMsg = response.data.details || response.data.error;
-        console.error('PandaDoc session error:', errorMsg);
-        toast.error(errorMsg, { duration: 8000 });
+        toast.error(response.data.error);
         return null;
       }
       
       return response.data?.public_url || null;
     } catch (error) {
-      console.error('Failed to get session link:', error);
-      // Try to extract more details from the error
-      const errorDetails = error.response?.data?.details || error.response?.data?.error || error.message;
-      toast.error(`Failed to get link: ${errorDetails}`, { duration: 8000 });
+      console.error('Failed to get link:', error);
+      toast.error('Failed to get link');
       return null;
     }
   }, []);
