@@ -41,21 +41,51 @@ Deno.serve(async (req) => {
     
     const docData = await docResponse.json();
     console.log('Document status:', docData.status, 'Document ID:', documentId);
-    console.log('Document recipients:', JSON.stringify(docData.recipients));
+    console.log('Full document data:', JSON.stringify(docData));
     
-    // ALWAYS use the recipient from the PandaDoc document, not from our database
-    // This ensures we use the exact email that PandaDoc knows about
-    const pandaDocRecipient = docData.recipients?.[0]?.email;
+    // Try multiple ways to find recipient email from PandaDoc
+    // PandaDoc can store recipients in different places depending on document type
+    let pandaDocRecipient = null;
+    
+    // Try recipients array first
+    if (docData.recipients && docData.recipients.length > 0) {
+      pandaDocRecipient = docData.recipients[0].email;
+    }
+    // Try roles array (some document types use this)
+    else if (docData.roles && docData.roles.length > 0) {
+      const roleWithEmail = docData.roles.find(r => r.email);
+      if (roleWithEmail) {
+        pandaDocRecipient = roleWithEmail.email;
+      }
+    }
+    // Try linked_objects for contact info
+    else if (docData.linked_objects && docData.linked_objects.length > 0) {
+      const contact = docData.linked_objects.find(o => o.entity_type === 'contact');
+      if (contact && contact.email) {
+        pandaDocRecipient = contact.email;
+      }
+    }
+    
+    // Fallback to the email passed from our database
+    if (!pandaDocRecipient && recipientEmail) {
+      console.log('Using fallback recipientEmail from database:', recipientEmail);
+      pandaDocRecipient = recipientEmail;
+    }
     
     if (!pandaDocRecipient) {
-      console.error('No recipient email found in PandaDoc document:', documentId);
+      console.error('No recipient email found anywhere for document:', documentId);
       return Response.json({ 
-        error: 'No recipient email found in PandaDoc document. Please check the document in PandaDoc.' 
+        error: 'No recipient email found. Please add a recipient to the document in PandaDoc.',
+        debug: {
+          recipients: docData.recipients,
+          roles: docData.roles,
+          status: docData.status
+        }
       }, { status: 400 });
     }
     
     const recipientToUse = pandaDocRecipient;
-    console.log('Using recipient from PandaDoc:', recipientToUse);
+    console.log('Using recipient:', recipientToUse);
 
     // Try to get sharing link first (works more reliably)
     try {
