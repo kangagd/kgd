@@ -1,7 +1,7 @@
-import React from "react";
+import React, { useState } from "react";
 import { Badge } from "@/components/ui/badge";
 import TaskCard from "./TaskCard";
-import { User, Circle, ArrowUpCircle, CheckCircle2, XCircle } from "lucide-react";
+import { User, Circle, ArrowUpCircle, CheckCircle2, XCircle, ChevronDown, ChevronRight } from "lucide-react";
 
 const STATUS_ORDER = ["Open", "In Progress", "Completed", "Cancelled"];
 
@@ -18,6 +18,15 @@ export default function TaskKanbanView({
   onTaskClick, 
   onToggleComplete 
 }) {
+  const [collapsedLanes, setCollapsedLanes] = useState({});
+
+  const toggleLane = (userId) => {
+    setCollapsedLanes(prev => ({
+      ...prev,
+      [userId]: !prev[userId]
+    }));
+  };
+
   // Group tasks by assigned user, then by status
   const tasksByUser = {};
   
@@ -108,14 +117,24 @@ export default function TaskKanbanView({
 
       {/* Horizontal Lanes per Assignee */}
       <div className="space-y-3">
-        {rows.map(([userId, row]) => (
-          <div 
-            key={userId} 
-            className="flex bg-[#F9FAFB] rounded-xl border border-[#E5E7EB] overflow-hidden"
-          >
-            {/* User Info - Fixed Left Column */}
-            <div className="w-[180px] lg:w-[200px] flex-shrink-0 bg-[#F3F4F6] p-3 border-r border-[#E5E7EB]">
-              <div className="flex items-center gap-2">
+        {rows.map(([userId, row]) => {
+          const isCollapsed = collapsedLanes[userId];
+          
+          return (
+            <div 
+              key={userId} 
+              className="bg-[#F9FAFB] rounded-xl border border-[#E5E7EB] overflow-hidden"
+            >
+              {/* User Info - Clickable Header */}
+              <div 
+                onClick={() => toggleLane(userId)}
+                className={`flex items-center gap-2 bg-[#F3F4F6] p-3 cursor-pointer hover:bg-[#EBEDF0] transition-colors ${!isCollapsed ? 'border-b border-[#E5E7EB]' : ''}`}
+              >
+                {isCollapsed ? (
+                  <ChevronRight className="w-4 h-4 text-[#6B7280] flex-shrink-0" />
+                ) : (
+                  <ChevronDown className="w-4 h-4 text-[#6B7280] flex-shrink-0" />
+                )}
                 {userId === "unassigned" ? (
                   <div className="w-8 h-8 rounded-full bg-[#E5E7EB] flex items-center justify-center flex-shrink-0">
                     <User className="w-4 h-4 text-[#6B7280]" />
@@ -131,49 +150,63 @@ export default function TaskKanbanView({
                   <h3 className="font-semibold text-[#111827] text-sm truncate">
                     {row.name}
                   </h3>
-                  <div className="flex items-center gap-1">
-                    <Badge variant="secondary" className="bg-white text-[#4B5563] text-[10px] px-1.5 py-0 h-5">
-                      {row.totalTasks} tasks
-                    </Badge>
-                  </div>
                 </div>
-              </div>
-            </div>
-            
-            {/* Status Columns */}
-            <div className="flex-1 flex gap-3 p-3 overflow-x-auto">
-              {STATUS_ORDER.map(status => {
-                const statusTasks = row.tasksByStatus[status] || [];
-                
-                return (
-                  <div 
-                    key={status} 
-                    className="flex-1 min-w-[200px] lg:min-w-[240px] space-y-2"
-                  >
-                    {statusTasks.length === 0 ? (
-                      <div className="h-full min-h-[60px] flex items-center justify-center rounded-lg border border-dashed border-[#E5E7EB] bg-white/50">
-                        <span className="text-xs text-[#9CA3AF]">No tasks</span>
-                      </div>
-                    ) : (
-                      statusTasks.map(task => (
-                        <TaskCard
-                          key={task.id}
-                          task={task}
-                          onClick={() => onTaskClick(task)}
-                          onToggleComplete={onToggleComplete}
-                          showLinkedEntities={true}
-                          hideAssignee={true}
-                          hideStatus={true}
-                          compact
-                        />
-                      ))
-                    )}
+                <Badge variant="secondary" className="bg-white text-[#4B5563] text-[10px] px-1.5 py-0 h-5">
+                  {row.totalTasks} tasks
+                </Badge>
+                {isCollapsed && (
+                  <div className="flex gap-1 ml-2">
+                    {STATUS_ORDER.map(status => {
+                      const count = row.tasksByStatus[status]?.length || 0;
+                      if (count === 0) return null;
+                      const config = STATUS_CONFIG[status];
+                      return (
+                        <Badge key={status} className={`${config.bg} ${config.color} text-[10px] px-1.5 py-0 h-5 border ${config.borderColor}`}>
+                          {count}
+                        </Badge>
+                      );
+                    })}
                   </div>
-                );
-              })}
+                )}
+              </div>
+              
+              {/* Status Columns - Collapsible */}
+              {!isCollapsed && (
+                <div className="flex gap-3 p-3 overflow-x-auto">
+                  {STATUS_ORDER.map(status => {
+                    const statusTasks = row.tasksByStatus[status] || [];
+                    
+                    return (
+                      <div 
+                        key={status} 
+                        className="flex-1 min-w-[200px] lg:min-w-[240px] space-y-2"
+                      >
+                        {statusTasks.length === 0 ? (
+                          <div className="h-full min-h-[60px] flex items-center justify-center rounded-lg border border-dashed border-[#E5E7EB] bg-white/50">
+                            <span className="text-xs text-[#9CA3AF]">No tasks</span>
+                          </div>
+                        ) : (
+                          statusTasks.map(task => (
+                            <TaskCard
+                              key={task.id}
+                              task={task}
+                              onClick={() => onTaskClick(task)}
+                              onToggleComplete={onToggleComplete}
+                              showLinkedEntities={true}
+                              hideAssignee={true}
+                              hideStatus={true}
+                              compact
+                            />
+                          ))
+                        )}
+                      </div>
+                    );
+                  })}
+                </div>
+              )}
             </div>
-          </div>
-        ))}
+          );
+        })}
       </div>
     </div>
   );
