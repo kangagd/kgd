@@ -83,7 +83,7 @@ Deno.serve(async (req) => {
       console.log('Sharing links not available, trying session:', linkError.message);
     }
 
-    // Fallback: Try session API
+    // Fallback: Try session API with exact PandaDoc recipient
     console.log('Creating session for document:', documentId, 'recipient:', recipientToUse);
 
     const sessionResponse = await fetch(`${PANDADOC_API_URL}/documents/${documentId}/session`, {
