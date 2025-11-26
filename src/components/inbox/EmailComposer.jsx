@@ -38,7 +38,7 @@ const sanitizeBodyHtml = (html) => {
   return sanitized.trim();
 };
 
-export default function EmailComposer({ mode = "compose", thread, message, onClose, onSent, existingDraft = null }) {
+export default function EmailComposer({ mode = "compose", thread, message, onClose, onSent, existingDraft = null, projectId = null, jobId = null }) {
   const [to, setTo] = useState(existingDraft?.to || (mode === "reply" ? message?.from_address : ""));
   const [cc, setCc] = useState(existingDraft?.cc || "");
   const [bcc, setBcc] = useState(existingDraft?.bcc || "");
@@ -196,7 +196,9 @@ export default function EmailComposer({ mode = "compose", thread, message, onClo
         threadId: mode === "reply" ? thread?.id : undefined,
         inReplyTo: mode === "reply" ? message?.message_id : undefined,
         references: mode === "reply" ? message?.message_id : undefined,
-        attachments: attachments.length > 0 ? attachments : undefined
+        attachments: attachments.length > 0 ? attachments : undefined,
+        projectId: projectId || thread?.linked_project_id || undefined,
+        jobId: jobId || thread?.linked_job_id || undefined
       });
 
       toast.success("Email sent successfully");

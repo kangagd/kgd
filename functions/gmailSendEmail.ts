@@ -97,7 +97,7 @@ Deno.serve(async (req) => {
       return Response.json({ error: 'Gmail not connected. Please connect Gmail first.' }, { status: 401 });
     }
     
-    const { to, cc, bcc, subject, body, threadId, inReplyTo, references, attachments } = await req.json();
+    const { to, cc, bcc, subject, body, threadId, inReplyTo, references, attachments, projectId, jobId } = await req.json();
     
     if (!to || !subject || !body) {
       return Response.json({ error: 'Missing required fields' }, { status: 400 });
@@ -130,14 +130,42 @@ Deno.serve(async (req) => {
     
     const result = await response.json();
     
+    // Get or create email thread
+    let emailThreadId = threadId;
+    
+    if (!emailThreadId) {
+      // Create new thread for this sent email
+      const newThread = await base44.entities.EmailThread.create({
+        subject: subject,
+        gmail_thread_id: result.threadId,
+        from_address: user.gmail_email || user.email,
+        to_addresses: to.split(',').map(e => e.trim()),
+        last_message_date: new Date().toISOString(),
+        last_message_snippet: body.replace(/<[^>]*>/g, '').substring(0, 100),
+        status: 'Open',
+        priority: 'Normal',
+        is_read: true,
+        message_count: 1,
+        linked_project_id: projectId || null,
+        linked_job_id: jobId || null
+      });
+      emailThreadId = newThread.id;
+    } else {
+      // Update existing thread
+      await base44.asServiceRole.entities.EmailThread.update(emailThreadId, {
+        last_message_date: new Date().toISOString(),
+        last_message_snippet: body.replace(/<[^>]*>/g, '').substring(0, 100)
+      });
+    }
+    
     // Store sent message in EmailMessage entity
     await base44.entities.EmailMessage.create({
-      thread_id: threadId || result.threadId,
+      thread_id: emailThreadId,
       from_address: user.gmail_email || user.email,
       from_name: user.full_name,
-      to_addresses: [to],
-      cc_addresses: cc ? [cc] : [],
-      bcc_addresses: bcc ? [bcc] : [],
+      to_addresses: to.split(',').map(e => e.trim()),
+      cc_addresses: cc ? cc.split(',').map(e => e.trim()) : [],
+      bcc_addresses: bcc ? bcc.split(',').map(e => e.trim()) : [],
       subject: subject,
       body_html: body,
       is_outbound: true,
@@ -145,7 +173,7 @@ Deno.serve(async (req) => {
       message_id: result.id
     });
     
-    return Response.json({ success: true, messageId: result.id });
+    return Response.json({ success: true, messageId: result.id, threadId: emailThreadId });
   } catch (error) {
     return Response.json({ error: error.message }, { status: 500 });
   }
