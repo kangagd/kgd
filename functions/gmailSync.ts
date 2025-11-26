@@ -230,7 +230,7 @@ Deno.serve(async (req) => {
             processParts(detail.payload.parts);
           }
 
-          // Fetch actual attachment URLs for each attachment
+          // Fetch and upload attachments to file storage
           const processedAttachments = [];
           for (const att of attachments) {
             try {
@@ -243,28 +243,31 @@ Deno.serve(async (req) => {
               if (attResponse.ok) {
                 const attData = await attResponse.json();
                 if (attData.data) {
-                  // Convert base64url to regular base64
+                  // Convert base64url to regular base64 and decode to binary
                   const base64Data = attData.data.replace(/-/g, '+').replace(/_/g, '/');
-                  // Create a data URL for the attachment
-                  const dataUrl = `data:${att.mime_type};base64,${base64Data}`;
+                  const binaryString = atob(base64Data);
+                  const bytes = new Uint8Array(binaryString.length);
+                  for (let i = 0; i < binaryString.length; i++) {
+                    bytes[i] = binaryString.charCodeAt(i);
+                  }
                   
-                  processedAttachments.push({
-                    filename: att.filename,
-                    mime_type: att.mime_type,
-                    size: att.size,
-                    url: dataUrl
-                  });
+                  // Create a File object and upload it
+                  const file = new File([bytes], att.filename, { type: att.mime_type });
+                  const uploadResult = await base44.asServiceRole.integrations.Core.UploadFile({ file });
+                  
+                  if (uploadResult?.file_url) {
+                    processedAttachments.push({
+                      filename: att.filename,
+                      mime_type: att.mime_type,
+                      size: att.size,
+                      url: uploadResult.file_url
+                    });
+                    console.log(`Uploaded attachment: ${att.filename}`);
+                  }
                 }
               }
             } catch (attErr) {
-              console.error('Error fetching attachment:', attErr);
-              // Still include the attachment metadata even if we couldn't fetch content
-              processedAttachments.push({
-                filename: att.filename,
-                mime_type: att.mime_type,
-                size: att.size,
-                url: null
-              });
+              console.error('Error fetching/uploading attachment:', attErr.message);
             }
           }
 
