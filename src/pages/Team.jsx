@@ -11,13 +11,47 @@ import { Users, Mail, Phone, Briefcase, Settings, Shield, Wrench } from "lucide-
 import { toast } from "sonner";
 
 export default function Team() {
+  const queryClient = useQueryClient();
+  const [currentUser, setCurrentUser] = useState(null);
+  const [editingUser, setEditingUser] = useState(null);
+  
+  useEffect(() => {
+    const loadCurrentUser = async () => {
+      try {
+        const user = await base44.auth.me();
+        setCurrentUser(user);
+      } catch (error) {
+        console.error("Error loading user:", error);
+      }
+    };
+    loadCurrentUser();
+  }, []);
+  
+  const isAdmin = currentUser?.role === 'admin';
+
   const { data: users = [], isLoading } = useQuery({
     queryKey: ['users'],
     queryFn: () => base44.entities.User.list(),
   });
 
+  const updateUserMutation = useMutation({
+    mutationFn: ({ userId, data }) => base44.entities.User.update(userId, data),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['users'] });
+      toast.success("User updated successfully");
+      setEditingUser(null);
+    },
+    onError: (error) => {
+      toast.error(`Failed to update user: ${error.message}`);
+    }
+  });
+
   const technicians = users.filter(u => u.is_field_technician);
   const admins = users.filter(u => u.role === 'admin');
+
+  const handleSaveUser = (userId, updates) => {
+    updateUserMutation.mutate({ userId, data: updates });
+  };
 
   return (
     <div className="p-5 md:p-10 bg-[#ffffff] min-h-screen">
