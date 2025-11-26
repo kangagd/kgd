@@ -14,7 +14,6 @@ import Photos from './pages/Photos';
 import Reports from './pages/Reports';
 import Inbox from './pages/Inbox';
 import Tasks from './pages/Tasks';
-import RolesManagement from './pages/RolesManagement';
 import __Layout from './Layout.jsx';
 
 
@@ -35,7 +34,6 @@ export const PAGES = {
     "Reports": Reports,
     "Inbox": Inbox,
     "Tasks": Tasks,
-    "RolesManagement": RolesManagement,
 }
 
 export const pagesConfig = {

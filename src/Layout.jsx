@@ -26,8 +26,7 @@ import {
   Search,
   MoreHorizontal,
   FileText,
-  CheckSquare,
-  Shield
+  CheckSquare
 } from "lucide-react";
 import { base44 } from "@/api/base44Client";
 import { toast } from "sonner";
@@ -56,7 +55,6 @@ const secondaryNavigationItems = [
   { title: "Price List", url: createPageUrl("PriceList"), icon: DollarSign },
   { title: "Reports", url: createPageUrl("Reports"), icon: TrendingUp },
   { title: "Team", url: createPageUrl("Team"), icon: Users },
-  { title: "Roles", url: createPageUrl("RolesManagement"), icon: Shield },
   { title: "Archive", url: createPageUrl("Archive"), icon: ArchiveIcon },
 ];
 
