@@ -192,12 +192,71 @@ export default function Team() {
           </Card>
         </div>
 
-        <div className="mt-6 p-5 bg-amber-50 border-2 border-amber-200 rounded-2xl">
-          <p className="text-sm text-[hsl(25,10%,12%)] leading-relaxed">
-            <strong className="font-bold">Note:</strong> To add or manage team members, use the user management section in your dashboard settings. 
-            Mark users as field technicians by updating their profile.
-          </p>
-        </div>
+        {isAdmin && (
+          <div className="mt-6 p-5 bg-amber-50 border-2 border-amber-200 rounded-2xl">
+            <p className="text-sm text-[hsl(25,10%,12%)] leading-relaxed">
+              <strong className="font-bold">Note:</strong> To add new team members, use the user management section in your dashboard settings. 
+              Click the settings icon next to any user to manage their role and permissions.
+            </p>
+          </div>
+        )}
+
+        {/* Role Management Modal */}
+        <Dialog open={!!editingUser} onOpenChange={(open) => !open && setEditingUser(null)}>
+          <DialogContent className="sm:max-w-md">
+            <DialogHeader>
+              <DialogTitle className="flex items-center gap-2">
+                <Shield className="w-5 h-5 text-[#FAE008]" />
+                Manage Role: {editingUser?.full_name}
+              </DialogTitle>
+            </DialogHeader>
+            {editingUser && (
+              <div className="space-y-6 py-4">
+                <div className="space-y-4">
+                  <div className="flex items-center justify-between p-4 bg-[#F9FAFB] rounded-lg">
+                    <div className="flex items-center gap-3">
+                      <Shield className="w-5 h-5 text-purple-600" />
+                      <div>
+                        <p className="font-medium text-[#111827]">Administrator</p>
+                        <p className="text-[12px] text-[#6B7280]">Full access to all features</p>
+                      </div>
+                    </div>
+                    <Switch
+                      checked={editingUser.role === 'admin'}
+                      onCheckedChange={(checked) => {
+                        handleSaveUser(editingUser.id, { role: checked ? 'admin' : 'user' });
+                        setEditingUser({ ...editingUser, role: checked ? 'admin' : 'user' });
+                      }}
+                    />
+                  </div>
+
+                  <div className="flex items-center justify-between p-4 bg-[#F9FAFB] rounded-lg">
+                    <div className="flex items-center gap-3">
+                      <Wrench className="w-5 h-5 text-[#FAE008]" />
+                      <div>
+                        <p className="font-medium text-[#111827]">Field Technician</p>
+                        <p className="text-[12px] text-[#6B7280]">Can be assigned to jobs</p>
+                      </div>
+                    </div>
+                    <Switch
+                      checked={editingUser.is_field_technician}
+                      onCheckedChange={(checked) => {
+                        handleSaveUser(editingUser.id, { is_field_technician: checked });
+                        setEditingUser({ ...editingUser, is_field_technician: checked });
+                      }}
+                    />
+                  </div>
+                </div>
+
+                <div className="pt-4 border-t border-[#E5E7EB]">
+                  <p className="text-[12px] text-[#6B7280]">
+                    <strong>Email:</strong> {editingUser.email}
+                  </p>
+                </div>
+              </div>
+            )}
+          </DialogContent>
+        </Dialog>
       </div>
     </div>
   );
