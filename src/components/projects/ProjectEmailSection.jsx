@@ -282,6 +282,8 @@ export default function ProjectEmailSection({ project, onThreadLinked }) {
             setSelectedMessage(null);
           }}
           onSent={handleEmailSent}
+          defaultTo={composerMode === 'compose' ? project.customer_email : undefined}
+          projectId={project.id}
         />
       )}
 
