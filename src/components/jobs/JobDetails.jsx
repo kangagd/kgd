@@ -50,6 +50,7 @@ import {
   AlertDialogTitle } from
 "@/components/ui/alert-dialog";
 import TasksPanel from "../tasks/TasksPanel";
+import QuotesSection from "../quotes/QuotesSection";
 
 const statusColors = {
   "Open": "bg-slate-100 text-slate-700 border-slate-200",
@@ -1592,8 +1593,15 @@ export default function JobDetails({ job: initialJob, onClose, onStatusChange, o
             </TabsContent>
 
             <TabsContent value="invoicing" className="mt-2">
-              <div className="space-y-3">
+              <div className="space-y-4">
                 <h3 className="text-[16px] font-semibold text-[#111827] leading-[1.2]">Quotes & Invoicing</h3>
+
+                {/* PandaDoc Quotes */}
+                <QuotesSection 
+                  job={job}
+                  customer={customer}
+                  isAdmin={isAdmin}
+                />
 
                 <Card className="border border-[#E5E7EB] shadow-sm rounded-lg">
                   <CardHeader className="bg-white px-4 py-3 border-b border-[#E5E7EB]">
