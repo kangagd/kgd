@@ -23,48 +23,45 @@ export default function Team() {
         </div>
 
         <div className="grid lg:grid-cols-2 gap-6">
-          <Card className="border-2 border-[hsl(32,15%,88%)] shadow-lg rounded-2xl">
-            <CardHeader className="border-b-2 border-[hsl(32,15%,88%)] bg-gradient-to-r from-[hsl(32,25%,96%)] to-white p-6">
-              <CardTitle className="flex items-center gap-3 text-xl font-bold text-[hsl(25,10%,12%)] tracking-tight">
-                <Users className="w-6 h-6 text-[#fae008]" />
+          <Card className="border border-[#E5E7EB] shadow-sm rounded-xl">
+            <CardHeader className="border-b border-[#E5E7EB] bg-[#F9FAFB] p-5">
+              <CardTitle className="flex items-center gap-3 text-[18px] font-semibold text-[#111827]">
+                <Users className="w-5 h-5 text-[#FAE008]" />
                 Field Technicians ({technicians.length})
               </CardTitle>
             </CardHeader>
             <CardContent className="p-0">
               {technicians.length === 0 ? (
-                <div className="p-12 text-center text-[hsl(25,8%,45%)]">
-                  <Users className="w-12 h-12 mx-auto text-[hsl(32,15%,88%)] mb-3" />
+                <div className="p-12 text-center text-[#6B7280]">
+                  <Users className="w-12 h-12 mx-auto text-[#D1D5DB] mb-3" />
                   <p className="font-medium">No field technicians yet</p>
                 </div>
               ) : (
-                <div className="divide-y-2 divide-[hsl(32,15%,88%)]">
+                <div className="divide-y divide-[#E5E7EB]">
                   {technicians.map((tech) => (
-                    <div key={tech.id} className="p-5 hover:bg-[hsl(32,25%,96%)] transition-colors">
+                    <div key={tech.id} className="p-4 hover:bg-[#F9FAFB] transition-colors">
                       <div className="flex items-start justify-between mb-2">
                         <div>
-                          <h3 className="font-bold text-[hsl(25,10%,12%)]">{tech.full_name}</h3>
+                          <h3 className="font-semibold text-[#111827]">{tech.full_name}</h3>
                           {tech.job_title && (
-                            <p className="text-sm text-[hsl(25,8%,45%)] mt-1">{tech.job_title}</p>
+                            <p className="text-[13px] text-[#6B7280] mt-0.5">{tech.job_title}</p>
                           )}
                         </div>
-                        <Badge className={tech.status === 'active' ? 
-                          "bg-green-50 text-green-900 border-green-200 border-2 font-semibold" : 
-                          "bg-[hsl(32,25%,94%)] text-[hsl(25,10%,12%)] border-[hsl(32,15%,88%)] border-2 font-semibold"
-                        }>
+                        <Badge variant={tech.status === 'active' ? 'success' : 'secondary'}>
                           {tech.status || 'active'}
                         </Badge>
                       </div>
-                      <div className="space-y-2 text-sm text-[hsl(25,10%,25%)]">
+                      <div className="space-y-1.5 text-[13px] text-[#4B5563]">
                         <div className="flex items-center gap-2">
-                          <Mail className="w-4 h-4 text-[hsl(25,8%,55%)]" />
-                          <a href={`mailto:${tech.email}`} className="hover:text-[#fae008] font-medium transition-colors">
+                          <Mail className="w-4 h-4 text-[#9CA3AF]" />
+                          <a href={`mailto:${tech.email}`} className="hover:text-[#111827] transition-colors">
                             {tech.email}
                           </a>
                         </div>
                         {tech.phone && (
                           <div className="flex items-center gap-2">
-                            <Phone className="w-4 h-4 text-[hsl(25,8%,55%)]" />
-                            <a href={`tel:${tech.phone}`} className="hover:text-[#fae008] font-medium transition-colors">
+                            <Phone className="w-4 h-4 text-[#9CA3AF]" />
+                            <a href={`tel:${tech.phone}`} className="hover:text-[#111827] transition-colors">
                               {tech.phone}
                             </a>
                           </div>
@@ -77,45 +74,45 @@ export default function Team() {
             </CardContent>
           </Card>
 
-          <Card className="border-2 border-[hsl(32,15%,88%)] shadow-lg rounded-2xl">
-            <CardHeader className="border-b-2 border-[hsl(32,15%,88%)] bg-gradient-to-r from-[hsl(32,25%,96%)] to-white p-6">
-              <CardTitle className="flex items-center gap-3 text-xl font-bold text-[hsl(25,10%,12%)] tracking-tight">
-                <Briefcase className="w-6 h-6 text-purple-600" />
+          <Card className="border border-[#E5E7EB] shadow-sm rounded-xl">
+            <CardHeader className="border-b border-[#E5E7EB] bg-[#F9FAFB] p-5">
+              <CardTitle className="flex items-center gap-3 text-[18px] font-semibold text-[#111827]">
+                <Briefcase className="w-5 h-5 text-purple-600" />
                 Administrators ({admins.length})
               </CardTitle>
             </CardHeader>
             <CardContent className="p-0">
               {admins.length === 0 ? (
-                <div className="p-12 text-center text-[hsl(25,8%,45%)]">
-                  <Briefcase className="w-12 h-12 mx-auto text-[hsl(32,15%,88%)] mb-3" />
+                <div className="p-12 text-center text-[#6B7280]">
+                  <Briefcase className="w-12 h-12 mx-auto text-[#D1D5DB] mb-3" />
                   <p className="font-medium">No administrators</p>
                 </div>
               ) : (
-                <div className="divide-y-2 divide-[hsl(32,15%,88%)]">
+                <div className="divide-y divide-[#E5E7EB]">
                   {admins.map((admin) => (
-                    <div key={admin.id} className="p-5 hover:bg-[hsl(32,25%,96%)] transition-colors">
+                    <div key={admin.id} className="p-4 hover:bg-[#F9FAFB] transition-colors">
                       <div className="flex items-start justify-between mb-2">
                         <div>
-                          <h3 className="font-bold text-[hsl(25,10%,12%)]">{admin.full_name}</h3>
+                          <h3 className="font-semibold text-[#111827]">{admin.full_name}</h3>
                           {admin.job_title && (
-                            <p className="text-sm text-[hsl(25,8%,45%)] mt-1">{admin.job_title}</p>
+                            <p className="text-[13px] text-[#6B7280] mt-0.5">{admin.job_title}</p>
                           )}
                         </div>
-                        <Badge className="bg-purple-50 text-purple-900 border-purple-200 border-2 font-semibold">
+                        <Badge className="bg-purple-100 text-purple-800">
                           Admin
                         </Badge>
                       </div>
-                      <div className="space-y-2 text-sm text-[hsl(25,10%,25%)]">
+                      <div className="space-y-1.5 text-[13px] text-[#4B5563]">
                         <div className="flex items-center gap-2">
-                          <Mail className="w-4 h-4 text-[hsl(25,8%,55%)]" />
-                          <a href={`mailto:${admin.email}`} className="hover:text-[#fae008] font-medium transition-colors">
+                          <Mail className="w-4 h-4 text-[#9CA3AF]" />
+                          <a href={`mailto:${admin.email}`} className="hover:text-[#111827] transition-colors">
                             {admin.email}
                           </a>
                         </div>
                         {admin.phone && (
                           <div className="flex items-center gap-2">
-                            <Phone className="w-4 h-4 text-[hsl(25,8%,55%)]" />
-                            <a href={`tel:${admin.phone}`} className="hover:text-[#fae008] font-medium transition-colors">
+                            <Phone className="w-4 h-4 text-[#9CA3AF]" />
+                            <a href={`tel:${admin.phone}`} className="hover:text-[#111827] transition-colors">
                               {admin.phone}
                             </a>
                           </div>
@@ -129,7 +126,7 @@ export default function Team() {
           </Card>
         </div>
 
-        <div className="mt-6 p-5 bg-amber-50 border-2 border-amber-200 rounded-2xl">
+        <div className="mt-6 p-4 bg-[#FFFBEB] border border-[#FCD34D] rounded-xl">
           <p className="text-sm text-[hsl(25,10%,12%)] leading-relaxed">
             <strong className="font-bold">Note:</strong> To add or manage team members, use the user management section in your dashboard settings. 
             Mark users as field technicians by updating their profile.
