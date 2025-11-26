@@ -2,29 +2,27 @@ import React, { useState, useEffect, useCallback } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Bell, BellOff, Smartphone, Monitor, RefreshCw, CheckCircle, AlertCircle } from "lucide-react";
+import { Bell, BellOff, RefreshCw, CheckCircle, AlertCircle } from "lucide-react";
 import { base44 } from "@/api/base44Client";
 import { toast } from "sonner";
 import {
   isPushSupported,
   getPermissionStatus,
-  registerForPushNotifications,
-  getAllSubscriptionsForUser,
-  getActiveSubscriptionForDevice,
-  disableSubscription,
+  isUserSubscribed,
+  subscribeToNotifications,
+  unsubscribeFromNotifications,
   getDeviceName,
-  isCurrentDevice
-} from "./pushUtils";
+  getDeviceInfo
+} from "./oneSignalUtils";
 
 export default function PushNotificationSetup({ user }) {
   // Core state
   const [isSupported, setIsSupported] = useState(false);
   const [permissionStatus, setPermissionStatus] = useState('default');
-  const [subscriptions, setSubscriptions] = useState([]);
-  const [currentDeviceRegistered, setCurrentDeviceRegistered] = useState(false);
+  const [isSubscribed, setIsSubscribed] = useState(false);
   const [errorMessage, setErrorMessage] = useState('');
   
-  // Loading states - always set to false in finally blocks
+  // Loading states
   const [isLoading, setIsLoading] = useState(true);
   const [isRegistering, setIsRegistering] = useState(false);
   const [isTesting, setIsTesting] = useState(false);
@@ -55,34 +53,28 @@ export default function PushNotificationSetup({ user }) {
       console.log('[PushSetup] Permission:', permission);
       setPermissionStatus(permission);
 
-      // Fetch all subscriptions for this user
-      const subs = await getAllSubscriptionsForUser(user.id);
-      console.log('[PushSetup] Subscriptions:', subs.length);
-      setSubscriptions(subs);
-
-      // Check if current device is registered (only if permission granted)
-      if (permission === 'granted') {
-        const activeSub = await getActiveSubscriptionForDevice(user.id);
-        console.log('[PushSetup] Current device registered:', !!activeSub);
-        setCurrentDeviceRegistered(!!activeSub);
-      } else {
-        setCurrentDeviceRegistered(false);
-      }
+      // Check if subscribed via OneSignal
+      const subscribed = await isUserSubscribed();
+      console.log('[PushSetup] Subscribed:', subscribed);
+      setIsSubscribed(subscribed);
     } catch (error) {
       console.error('[PushSetup] checkStatus error:', error);
       setErrorMessage('Failed to check notification status');
     } finally {
-      // ALWAYS stop loading
       console.log('[PushSetup] checkStatus complete');
       setIsLoading(false);
     }
   }, [user?.id]);
 
   useEffect(() => {
-    checkStatus();
+    // Small delay to allow OneSignal to initialize
+    const timer = setTimeout(() => {
+      checkStatus();
+    }, 1000);
+    return () => clearTimeout(timer);
   }, [checkStatus]);
 
-  // Handle enable/register button click
+  // Handle enable/subscribe button click
   const handleEnableNotifications = async () => {
     if (!user) return;
     
@@ -91,46 +83,45 @@ export default function PushNotificationSetup({ user }) {
     setErrorMessage('');
     
     try {
-      const result = await registerForPushNotifications(user);
-      console.log('[PushSetup] Registration result:', result);
+      const result = await subscribeToNotifications();
+      console.log('[PushSetup] Subscription result:', result);
       
-      // Update permission status
+      // Update states
       setPermissionStatus(getPermissionStatus());
       
       if (result.success) {
         toast.success(result.message);
-        setCurrentDeviceRegistered(true);
-        // Refresh subscription list
-        const subs = await getAllSubscriptionsForUser(user.id);
-        setSubscriptions(subs);
+        setIsSubscribed(true);
       } else {
         toast.error(result.message);
         setErrorMessage(result.message);
       }
     } catch (error) {
-      console.error('[PushSetup] Registration error:', error);
-      const msg = 'Registration failed. Please try again.';
+      console.error('[PushSetup] Subscription error:', error);
+      const msg = 'Subscription failed. Please try again.';
       toast.error(msg);
       setErrorMessage(msg);
     } finally {
-      // ALWAYS stop registering
       console.log('[PushSetup] handleEnableNotifications complete');
       setIsRegistering(false);
     }
   };
 
-  // Handle remove device
-  const handleRemoveDevice = async (subId) => {
+  // Handle unsubscribe
+  const handleDisableNotifications = async () => {
+    setIsRegistering(true);
     try {
-      const result = await disableSubscription(subId);
+      const result = await unsubscribeFromNotifications();
       if (result.success) {
-        toast.success('Device removed');
-        await checkStatus();
+        toast.success('Notifications disabled');
+        setIsSubscribed(false);
       } else {
-        toast.error(result.message || 'Failed to remove device');
+        toast.error(result.message || 'Failed to disable notifications');
       }
     } catch (error) {
-      toast.error('Failed to remove device');
+      toast.error('Failed to disable notifications');
+    } finally {
+      setIsRegistering(false);
     }
   };
 
@@ -140,17 +131,21 @@ export default function PushNotificationSetup({ user }) {
     setIsTesting(true);
     
     try {
-      const response = await base44.functions.invoke('testPushNotification', {});
+      const response = await base44.functions.invoke('sendOneSignalNotification', {
+        title: 'Test Notification',
+        message: 'This is a test notification from your app!',
+        userIds: [user.id]
+      });
+      
       if (response.data?.success) {
-        toast.success(response.data.message || 'Test notification sent!');
+        toast.success('Test notification sent!');
       } else {
-        toast.error(response.data?.message || 'Failed to send test notification');
+        toast.error(response.data?.error || 'Failed to send test notification');
       }
     } catch (error) {
       console.error('[PushSetup] Test notification error:', error);
       toast.error('Failed to send test notification');
     } finally {
-      // ALWAYS stop testing
       console.log('[PushSetup] handleTestNotification complete');
       setIsTesting(false);
     }
@@ -176,9 +171,8 @@ export default function PushNotificationSetup({ user }) {
   }
 
   // Determine what to show
-  const showEnableButton = permissionStatus === 'default';
-  const showRegisterButton = permissionStatus === 'granted' && !currentDeviceRegistered;
-  const showEnabledState = permissionStatus === 'granted' && currentDeviceRegistered;
+  const showEnableButton = !isSubscribed && permissionStatus !== 'denied';
+  const showEnabledState = isSubscribed;
 
   return (
     <Card className="border border-[#E5E7EB]">
@@ -210,8 +204,11 @@ export default function PushNotificationSetup({ user }) {
                   {permissionStatus === 'denied' 
                     ? 'Notifications blocked in browser settings'
                     : showEnabledState 
-                      ? 'Registered and receiving notifications'
-                      : 'Not registered for notifications'}
+                      ? 'Subscribed and receiving notifications'
+                      : 'Not subscribed to notifications'}
+                </p>
+                <p className="text-[11px] text-[#9CA3AF] mt-1">
+                  {getDeviceName(getDeviceInfo())}
                 </p>
               </div>
               <Badge variant={showEnabledState ? 'success' : permissionStatus === 'denied' ? 'error' : 'secondary'}>
@@ -227,7 +224,7 @@ export default function PushNotificationSetup({ user }) {
               </div>
             )}
 
-            {/* Enable Button - Permission not yet requested */}
+            {/* Enable Button */}
             {showEnableButton && (
               <Button 
                 onClick={handleEnableNotifications} 
@@ -248,35 +245,53 @@ export default function PushNotificationSetup({ user }) {
               </Button>
             )}
 
-            {/* Register Button - Permission granted but device not registered */}
-            {showRegisterButton && !isLoading && (
-              <Button 
-                onClick={handleEnableNotifications} 
-                disabled={isRegistering}
-                className="w-full bg-[#FAE008] hover:bg-[#E5CF07] text-[#111827]"
-              >
-                {isRegistering ? (
-                  <>
-                    <RefreshCw className="w-4 h-4 mr-2 animate-spin" />
-                    Registering...
-                  </>
-                ) : (
-                  <>
-                    <Smartphone className="w-4 h-4 mr-2" />
-                    Register This Device
-                  </>
-                )}
-              </Button>
-            )}
-
             {/* Enabled State */}
             {showEnabledState && (
-              <div className="flex items-center gap-2 py-3 px-4 bg-green-50 border border-green-200 rounded-lg">
-                <CheckCircle className="w-5 h-5 text-green-600" />
-                <span className="text-[14px] text-green-700 font-medium">
-                  Push notifications are enabled
-                </span>
-              </div>
+              <>
+                <div className="flex items-center gap-2 py-3 px-4 bg-green-50 border border-green-200 rounded-lg">
+                  <CheckCircle className="w-5 h-5 text-green-600" />
+                  <span className="text-[14px] text-green-700 font-medium">
+                    Push notifications are enabled
+                  </span>
+                </div>
+                
+                {/* Test Button */}
+                <Button 
+                  onClick={handleTestNotification} 
+                  disabled={isTesting}
+                  variant="outline"
+                  className="w-full"
+                >
+                  {isTesting ? (
+                    <>
+                      <RefreshCw className="w-4 h-4 mr-2 animate-spin" />
+                      Sending...
+                    </>
+                  ) : (
+                    <>
+                      <Bell className="w-4 h-4 mr-2" />
+                      Send Test Notification
+                    </>
+                  )}
+                </Button>
+
+                {/* Disable Button */}
+                <Button 
+                  onClick={handleDisableNotifications} 
+                  disabled={isRegistering}
+                  variant="ghost"
+                  className="w-full text-red-600 hover:text-red-700 hover:bg-red-50"
+                >
+                  {isRegistering ? (
+                    <>
+                      <RefreshCw className="w-4 h-4 mr-2 animate-spin" />
+                      Disabling...
+                    </>
+                  ) : (
+                    'Disable Notifications'
+                  )}
+                </Button>
+              </>
             )}
 
             {/* Blocked State */}
@@ -285,61 +300,6 @@ export default function PushNotificationSetup({ user }) {
                 <p className="text-[13px] text-red-700">
                   Notifications are blocked. Enable them in your browser settings and reload the page.
                 </p>
-              </div>
-            )}
-
-            {/* Test Button */}
-            {showEnabledState && (
-              <Button 
-                onClick={handleTestNotification} 
-                disabled={isTesting}
-                variant="outline"
-                className="w-full"
-              >
-                {isTesting ? (
-                  <>
-                    <RefreshCw className="w-4 h-4 mr-2 animate-spin" />
-                    Sending...
-                  </>
-                ) : (
-                  <>
-                    <Bell className="w-4 h-4 mr-2" />
-                    Send Test Notification
-                  </>
-                )}
-              </Button>
-            )}
-
-            {/* Registered Devices List */}
-            {subscriptions.length > 0 && (
-              <div className="space-y-2 pt-2">
-                <p className="text-[14px] font-medium text-[#111827]">All Registered Devices</p>
-                {subscriptions.map((sub) => (
-                  <div key={sub.id} className="flex items-center justify-between p-3 bg-[#F9FAFB] rounded-lg">
-                    <div className="flex items-center gap-3">
-                      <Monitor className="w-4 h-4 text-[#6B7280]" />
-                      <div>
-                        <p className="text-[14px] font-medium text-[#111827]">
-                          {getDeviceName(sub.device_info)}
-                          {isCurrentDevice(sub) && (
-                            <Badge variant="secondary" className="ml-2 text-[10px]">This device</Badge>
-                          )}
-                        </p>
-                        <p className="text-[12px] text-[#6B7280]">
-                          Last active: {sub.last_seen ? new Date(sub.last_seen).toLocaleDateString() : 'Unknown'}
-                        </p>
-                      </div>
-                    </div>
-                    <Button 
-                      variant="ghost" 
-                      size="sm"
-                      onClick={() => handleRemoveDevice(sub.id)}
-                      className="text-red-600 hover:text-red-700 hover:bg-red-50"
-                    >
-                      Remove
-                    </Button>
-                  </div>
-                ))}
               </div>
             )}
 

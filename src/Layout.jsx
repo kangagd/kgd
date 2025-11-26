@@ -37,6 +37,7 @@ import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover
 import NotificationBell from "./components/notifications/NotificationBell";
 import GlobalSearchDropdown from "./components/common/GlobalSearchDropdown";
 import PushNotificationRegistrar from "./components/notifications/PushNotificationRegistrar";
+import OneSignalInitializer from "./components/notifications/OneSignalInitializer";
 
 const primaryNavigationItems = [
   { title: "Dashboard", url: createPageUrl("Dashboard"), icon: LayoutDashboard },

@@ -2,15 +2,16 @@ import { useEffect, useRef } from "react";
 import { 
   isPushSupported, 
   getPermissionStatus, 
-  registerForPushNotifications,
-  getActiveSubscriptionForDevice 
-} from "./pushUtils";
+  isUserSubscribed,
+  subscribeToNotifications,
+  setExternalUserId
+} from "./oneSignalUtils";
 
 /**
  * Silent background component that auto-registers push notifications
  * when user is logged in and has already granted permission.
  * 
- * Does NOT prompt for permission - only registers if already granted.
+ * Does NOT prompt for permission - only subscribes if already granted.
  */
 export default function PushNotificationRegistrar({ user }) {
   const hasAttempted = useRef(false);
@@ -26,31 +27,39 @@ export default function PushNotificationRegistrar({ user }) {
           return;
         }
 
-        // Only auto-register if permission is ALREADY granted
+        // Only auto-subscribe if permission is ALREADY granted
         if (getPermissionStatus() !== 'granted') {
           console.log('[PushRegistrar] Permission not granted, skipping');
           return;
         }
 
-        // Check if already registered
-        const existingSub = await getActiveSubscriptionForDevice(user.id);
-        if (existingSub) {
-          console.log('[PushRegistrar] Already registered');
+        // Check if already subscribed
+        const alreadySubscribed = await isUserSubscribed();
+        if (alreadySubscribed) {
+          console.log('[PushRegistrar] Already subscribed');
+          // Still link user ID in case it wasn't set
+          await setExternalUserId(user.id, user.email);
           return;
         }
 
-        // Auto-register
-        console.log('[PushRegistrar] Auto-registering...');
+        // Auto-subscribe
+        console.log('[PushRegistrar] Auto-subscribing...');
         hasAttempted.current = true;
 
-        const result = await registerForPushNotifications(user);
+        const result = await subscribeToNotifications();
+        if (result.success) {
+          // Link the user ID
+          await setExternalUserId(user.id, user.email);
+        }
         console.log('[PushRegistrar] Result:', result.success ? 'success' : result.message);
       } catch (error) {
         console.error('[PushRegistrar] Error:', error);
       }
     };
 
-    silentRegister();
+    // Delay to allow OneSignal to initialize first
+    const timer = setTimeout(silentRegister, 2000);
+    return () => clearTimeout(timer);
   }, [user?.id]);
 
   return null;
