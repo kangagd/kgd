@@ -163,6 +163,7 @@ export default function TaskKanbanView({
                           onToggleComplete={onToggleComplete}
                           showLinkedEntities={true}
                           hideAssignee={true}
+                          hideStatus={true}
                           compact
                         />
                       ))

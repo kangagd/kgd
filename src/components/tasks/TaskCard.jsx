@@ -12,7 +12,8 @@ export default function TaskCard({
   onToggleComplete,
   showLinkedEntities = true,
   compact = false,
-  hideAssignee = false 
+  hideAssignee = false,
+  hideStatus = false 
 }) {
   const isOverdue = task.due_date && isPast(new Date(task.due_date)) && task.status !== "Completed";
   const isDueToday = task.due_date && isToday(new Date(task.due_date));
@@ -50,7 +51,7 @@ export default function TaskCard({
 
           {/* Chips Row */}
           <div className="flex flex-wrap gap-1.5 mb-2">
-            <TaskStatusBadge status={task.status} />
+            {!hideStatus && <TaskStatusBadge status={task.status} />}
             {task.priority && task.priority !== "Medium" && (
               <TaskPriorityBadge priority={task.priority} />
             )}
