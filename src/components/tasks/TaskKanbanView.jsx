@@ -131,7 +131,7 @@ export default function TaskKanbanView({
           {/* Status Column Headers */}
           <div className="flex sticky top-0 z-10 bg-white pb-2">
             {/* Spacer for user column */}
-            <div className="w-[180px] lg:w-[200px] flex-shrink-0" />
+            <div className="w-[180px] lg:w-[200px] flex-shrink-0 mr-3" />
 
             {/* Status headers */}
             <div className="flex gap-3">
