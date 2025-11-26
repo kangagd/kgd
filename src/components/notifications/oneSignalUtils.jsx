@@ -31,9 +31,12 @@ export async function initializeOneSignal(appId) {
           notifyButton: {
             enable: false, // We'll use our own UI
           },
+          // Use OneSignal's hosted service worker to avoid hosting issues
           serviceWorkerParam: {
-            scope: '/'
-          }
+            scope: '/push/onesignal/'
+          },
+          serviceWorkerPath: 'https://cdn.onesignal.com/sdks/web/v16/OneSignalSDK.sw.js',
+          serviceWorkerUpdaterPath: 'https://cdn.onesignal.com/sdks/web/v16/OneSignalSDK.sw.js'
         });
         console.log('[OneSignal] Initialized successfully');
         resolve(true);
