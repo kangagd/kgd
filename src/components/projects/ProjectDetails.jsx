@@ -117,6 +117,18 @@ export default function ProjectDetails({ project: initialProject, onClose, onEdi
     loadUser();
   }, []);
 
+  // Permission checks
+  const isAdmin = user?.role === 'admin';
+  const isManager = user?.role === 'manager';
+  const isAdminOrManager = isAdmin || isManager;
+  const isTechnician = user?.is_field_technician && !isAdminOrManager;
+  const isViewer = user?.role === 'viewer';
+  const canEdit = isAdminOrManager;
+  const canDelete = isAdminOrManager;
+  const canChangeStage = isAdminOrManager;
+  const canCreateJobs = isAdminOrManager;
+  const canViewFinancials = isAdminOrManager;
+
   const { data: project = initialProject } = useQuery({
     queryKey: ['project', initialProject.id],
     queryFn: () => base44.entities.Project.get(initialProject.id),
@@ -780,13 +792,15 @@ Format as HTML bullet points using <ul> and <li> tags. Include only the most cri
             <CardHeader className="bg-white px-4 py-3 border-b border-[#E5E7EB]">
             <div className="flex items-center justify-between">
               <h3 className="text-[16px] font-semibold text-[#111827] leading-[1.2]">Visits ({jobs.length})</h3>
-              <Button
-                onClick={handleAddJob}
-                className="bg-[#FAE008] text-[#111827] hover:bg-[#E5CF07] font-semibold h-9 text-sm"
-              >
-                <Plus className="w-4 h-4 mr-1" />
-                Add
-              </Button>
+              {canCreateJobs && (
+                <Button
+                  onClick={handleAddJob}
+                  className="bg-[#FAE008] text-[#111827] hover:bg-[#E5CF07] font-semibold h-9 text-sm"
+                >
+                  <Plus className="w-4 h-4 mr-1" />
+                  Add
+                </Button>
+              )}
             </div>
             </CardHeader>
             <CardContent className="p-3">
@@ -1089,14 +1103,17 @@ Format as HTML bullet points using <ul> and <li> tags. Include only the most cri
             >
               <History className="w-4 h-4" />
             </Button>
-            <Button
-              variant="ghost"
-              size="icon"
-              onClick={() => onEdit(project)}
-              className="h-9 w-9 hover:bg-[#F3F4F6] text-[#6B7280] hover:text-[#111827] transition-all rounded-lg"
-            >
-              <Edit className="w-4 h-4" />
-            </Button>
+            {canEdit && (
+              <Button
+                variant="ghost"
+                size="icon"
+                onClick={() => onEdit(project)}
+                className="h-9 w-9 hover:bg-[#F3F4F6] text-[#6B7280] hover:text-[#111827] transition-all rounded-lg"
+              >
+                <Edit className="w-4 h-4" />
+              </Button>
+            )}
+            {canDelete && (
             <AlertDialog>
               <AlertDialogTrigger asChild>
                 <Button
@@ -1125,6 +1142,7 @@ Format as HTML bullet points using <ul> and <li> tags. Include only the most cri
                 </AlertDialogFooter>
               </AlertDialogContent>
             </AlertDialog>
+            )}
           </div>
         </div>
 
@@ -1172,8 +1190,9 @@ Format as HTML bullet points using <ul> and <li> tags. Include only the most cri
             <div className="text-[12px] font-medium text-[#4B5563] leading-[1.35] mb-2 uppercase tracking-wide">Project Stage</div>
             <ProjectStageSelector
               currentStage={project.status}
-              onStageChange={handleStageChange}
-              onMarkAsLost={() => setShowLostModal(true)}
+              onStageChange={canChangeStage ? handleStageChange : undefined}
+              onMarkAsLost={canChangeStage ? () => setShowLostModal(true) : undefined}
+              disabled={!canChangeStage}
             />
             {project.status === "Lost" && (
               <div className="mt-3 p-3 bg-red-50 border border-red-200 rounded-lg">
