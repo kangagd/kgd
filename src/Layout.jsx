@@ -28,7 +28,8 @@ import {
     FileText,
     CheckSquare,
     History,
-    Clock
+    Clock,
+    Shield
   } from "lucide-react";
 import { base44 } from "@/api/base44Client";
 import { toast } from "sonner";
@@ -37,6 +38,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import GlobalSearchDropdown from "./components/common/GlobalSearchDropdown";
+import { RoleBadge } from "./components/common/PermissionsContext";
 
 const primaryNavigationItems = [
   { title: "Dashboard", url: createPageUrl("Dashboard"), icon: LayoutDashboard },
@@ -63,6 +65,24 @@ const technicianNavigationItems = [
   { title: "Tasks", url: createPageUrl("Tasks"), icon: CheckSquare },
   { title: "Price List", url: createPageUrl("PriceList"), icon: DollarSign },
 ];
+
+const viewerNavigationItems = [
+  { title: "Dashboard", url: createPageUrl("Dashboard"), icon: LayoutDashboard },
+  { title: "Schedule", url: createPageUrl("Schedule"), icon: Calendar },
+  { title: "Projects", url: createPageUrl("Projects"), icon: FolderKanban },
+  { title: "Jobs", url: createPageUrl("Jobs"), icon: Briefcase },
+  { title: "Customers", url: createPageUrl("Customers"), icon: UserCircle },
+];
+
+// Get effective role for user
+const getEffectiveRole = (user) => {
+  if (!user) return 'viewer';
+  if (user.role === 'admin') return 'admin';
+  if (user.role === 'manager') return 'manager';
+  if (user.is_field_technician) return 'technician';
+  if (user.role === 'viewer') return 'viewer';
+  return 'user';
+};
 
 export default function Layout({ children, currentPageName }) {
   const location = useLocation();
@@ -125,13 +145,21 @@ export default function Layout({ children, currentPageName }) {
   const getTestModeLabel = () => 
     testMode === 'admin' ? 'Admin' : testMode === 'technician' ? 'Tech' : 'Off';
 
-  const isTechnician = testMode === 'technician' 
-    ? true 
+  const effectiveRole = testMode === 'technician' 
+    ? 'technician' 
     : testMode === 'admin' 
-      ? false 
-      : user?.is_field_technician && user?.role !== 'admin';
-  
-  const navigationItems = isTechnician ? technicianNavigationItems : primaryNavigationItems;
+      ? 'admin' 
+      : getEffectiveRole(user);
+
+  const isTechnician = effectiveRole === 'technician';
+  const isViewer = effectiveRole === 'viewer';
+  const isAdminOrManager = effectiveRole === 'admin' || effectiveRole === 'manager';
+
+  const navigationItems = isTechnician 
+    ? technicianNavigationItems 
+    : isViewer 
+      ? viewerNavigationItems 
+      : primaryNavigationItems;
 
   // Pull to refresh and swipe to open menu
   useEffect(() => {
@@ -289,27 +317,31 @@ export default function Layout({ children, currentPageName }) {
               </div>
               <h3 className="font-semibold text-[#111827] text-[14px]">KGD</h3>
             </button>
-            <button
-              onClick={() => navigate(createPageUrl("UserProfile"))}
-              className="flex items-center hover:bg-[#F3F4F6] rounded-lg p-2 transition-colors min-h-[44px] min-w-[44px] justify-center"
-            >
-              <div className="w-8 h-8 bg-[#F3F4F6] rounded-full flex items-center justify-center">
-                <span className="text-[#111827] font-semibold text-sm">
-                  {user?.full_name?.charAt(0)?.toUpperCase() || 'U'}
-                </span>
-              </div>
-            </button>
+            <div className="flex items-center gap-2">
+              <RoleBadge role={effectiveRole} />
+              <button
+                onClick={() => navigate(createPageUrl("UserProfile"))}
+                className="flex items-center hover:bg-[#F3F4F6] rounded-lg p-2 transition-colors min-h-[44px] min-w-[44px] justify-center"
+              >
+                <div className="w-8 h-8 bg-[#F3F4F6] rounded-full flex items-center justify-center">
+                  <span className="text-[#111827] font-semibold text-sm">
+                    {user?.full_name?.charAt(0)?.toUpperCase() || 'U'}
+                  </span>
+                </div>
+              </button>
+            </div>
           </div>
         </header>
 
         {/* Dropdown Menu */}
         <div 
-          className={`fixed top-[60px] left-0 right-0 bg-white border-b border-[#E5E7EB] shadow-lg z-40 transition-all duration-300 ${
-            techMobileMenuOpen ? 'translate-y-0 opacity-100' : '-translate-y-full opacity-0 pointer-events-none'
-          }`}
+        className={`fixed top-[60px] left-0 right-0 bg-white border-b border-[#E5E7EB] shadow-lg z-40 transition-all duration-300 ${
+          techMobileMenuOpen ? 'translate-y-0 opacity-100' : '-translate-y-full opacity-0 pointer-events-none'
+        }`}
         >
-          <nav className="p-2">
-            {/* Create Buttons */}
+        <nav className="p-2">
+          {/* Create Buttons - Only for non-viewers */}
+          {!isViewer && (
             <div className="grid grid-cols-2 gap-2 mb-3 pb-3 border-b border-[#E5E7EB]">
               <Button
                 onClick={() => {
@@ -332,6 +364,7 @@ export default function Layout({ children, currentPageName }) {
                 Project
               </Button>
             </div>
+          )}
 
             {navigationItems.map((item) => {
             const isActive = location.pathname === item.url;
@@ -427,37 +460,39 @@ export default function Layout({ children, currentPageName }) {
           {/* Navigation */}
           <nav className="flex-1 overflow-y-auto overflow-x-hidden p-3 min-h-0">
             <div className="space-y-1 min-w-0">
-              {/* Create Buttons */}
-              <div className={`grid ${isCollapsed ? 'grid-cols-1' : 'grid-cols-2'} gap-2 mb-4 pb-4 border-b border-[#E5E7EB]`}>
-                <Button
-                  onClick={() => navigate(createPageUrl("Jobs") + "?action=create")}
-                  className={`bg-[#FAE008] hover:bg-[#E5CF07] text-[#111827] font-semibold shadow-sm ${isCollapsed ? 'w-full px-2' : ''}`}
-                  title={isCollapsed ? "Create Job" : ""}
-                >
-                  {isCollapsed ? (
-                    <Briefcase className="w-4 h-4" />
-                  ) : (
-                    <>
-                      <Plus className="w-4 h-4 mr-2" />
-                      Job
-                    </>
-                  )}
-                </Button>
-                <Button
-                  onClick={() => navigate(createPageUrl("Projects") + "?action=create")}
-                  className={`bg-[#FAE008] hover:bg-[#E5CF07] text-[#111827] font-semibold shadow-sm ${isCollapsed ? 'w-full px-2' : ''}`}
-                  title={isCollapsed ? "Create Project" : ""}
-                >
-                  {isCollapsed ? (
-                    <FolderKanban className="w-4 h-4" />
-                  ) : (
-                    <>
-                      <Plus className="w-4 h-4 mr-2" />
-                      Project
-                    </>
-                  )}
-                </Button>
-              </div>
+              {/* Create Buttons - Only for admin/manager */}
+              {isAdminOrManager && (
+                <div className={`grid ${isCollapsed ? 'grid-cols-1' : 'grid-cols-2'} gap-2 mb-4 pb-4 border-b border-[#E5E7EB]`}>
+                  <Button
+                    onClick={() => navigate(createPageUrl("Jobs") + "?action=create")}
+                    className={`bg-[#FAE008] hover:bg-[#E5CF07] text-[#111827] font-semibold shadow-sm ${isCollapsed ? 'w-full px-2' : ''}`}
+                    title={isCollapsed ? "Create Job" : ""}
+                  >
+                    {isCollapsed ? (
+                      <Briefcase className="w-4 h-4" />
+                    ) : (
+                      <>
+                        <Plus className="w-4 h-4 mr-2" />
+                        Job
+                      </>
+                    )}
+                  </Button>
+                  <Button
+                    onClick={() => navigate(createPageUrl("Projects") + "?action=create")}
+                    className={`bg-[#FAE008] hover:bg-[#E5CF07] text-[#111827] font-semibold shadow-sm ${isCollapsed ? 'w-full px-2' : ''}`}
+                    title={isCollapsed ? "Create Project" : ""}
+                  >
+                    {isCollapsed ? (
+                      <FolderKanban className="w-4 h-4" />
+                    ) : (
+                      <>
+                        <Plus className="w-4 h-4 mr-2" />
+                        Project
+                      </>
+                    )}
+                  </Button>
+                </div>
+              )}
 
               {/* Primary Navigation */}
               {primaryNavigationItems.map((item) => {
@@ -484,8 +519,8 @@ export default function Layout({ children, currentPageName }) {
               );
               })}
 
-              {/* More Menu */}
-              {!isCollapsed && (
+              {/* More Menu - Only for admin/manager */}
+              {!isCollapsed && isAdminOrManager && (
                 <div className="mt-2">
                   <button
                     onClick={() => setIsMoreMenuOpen(!isMoreMenuOpen)}
@@ -522,8 +557,8 @@ export default function Layout({ children, currentPageName }) {
                 </div>
               )}
 
-              {/* Collapsed More Menu */}
-              {isCollapsed && (
+              {/* Collapsed More Menu - Only for admin/manager */}
+              {isCollapsed && isAdminOrManager && (
                 <Popover open={collapsedMoreOpen} onOpenChange={setCollapsedMoreOpen}>
                   <PopoverTrigger asChild>
                     <button
@@ -587,6 +622,12 @@ export default function Layout({ children, currentPageName }) {
 
           {/* User Profile & Logout */}
           <div className="p-3 border-t border-[#E5E7EB] flex-shrink-0">
+          {/* Role Badge */}
+          {!isCollapsed && (
+            <div className="mb-2 px-3">
+              <RoleBadge role={effectiveRole} className="text-[11px]" />
+            </div>
+          )}
           <button
           onClick={() => navigate(createPageUrl("UserProfile"))}
           className={`w-full flex items-center gap-3 px-3 py-2.5 hover:bg-[#F3F4F6] rounded-lg transition-colors ${isCollapsed ? 'justify-center' : ''}`}
