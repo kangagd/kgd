@@ -18,9 +18,9 @@ export default function TaskCard({
   const isOverdue = task.due_date && isPast(new Date(task.due_date)) && task.status !== "Completed";
   const isDueToday = task.due_date && isToday(new Date(task.due_date));
 
-  const handleCheckboxChange = (e) => {
+  const handleCheckboxClick = (e) => {
     e.stopPropagation();
-    onToggleComplete?.(task);
+    e.preventDefault();
   };
 
   return (
@@ -32,10 +32,12 @@ export default function TaskCard({
     >
       <div className="flex items-start gap-3">
         {/* Checkbox */}
-        <div className="pt-0.5" onClick={(e) => e.stopPropagation()}>
+        <div className="pt-0.5" onClick={handleCheckboxClick}>
           <Checkbox
             checked={task.status === "Completed"}
-            onCheckedChange={() => onToggleComplete?.(task)}
+            onCheckedChange={(checked) => {
+              onToggleComplete?.(task);
+            }}
             className="h-5 w-5 border-2 data-[state=checked]:bg-[#16A34A] data-[state=checked]:border-[#16A34A]"
           />
         </div>
