@@ -41,16 +41,21 @@ Deno.serve(async (req) => {
     
     const docData = await docResponse.json();
     console.log('Document status:', docData.status, 'Document ID:', documentId);
+    console.log('Document recipients:', JSON.stringify(docData.recipients));
     
-    // Get recipient email
-    const recipientToUse = recipientEmail || docData.recipients?.[0]?.email;
+    // ALWAYS use the recipient from the PandaDoc document, not from our database
+    // This ensures we use the exact email that PandaDoc knows about
+    const pandaDocRecipient = docData.recipients?.[0]?.email;
     
-    if (!recipientToUse) {
-      console.error('No recipient email found for document:', documentId);
+    if (!pandaDocRecipient) {
+      console.error('No recipient email found in PandaDoc document:', documentId);
       return Response.json({ 
-        error: 'No recipient email found for this document' 
+        error: 'No recipient email found in PandaDoc document. Please check the document in PandaDoc.' 
       }, { status: 400 });
     }
+    
+    const recipientToUse = pandaDocRecipient;
+    console.log('Using recipient from PandaDoc:', recipientToUse);
 
     // Try to get sharing link first (works more reliably)
     try {
