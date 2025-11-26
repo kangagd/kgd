@@ -10,7 +10,8 @@ import {
   MessageCircle,
   ArrowRight,
   FileText,
-  ExternalLink
+  ExternalLink,
+  ChevronDown
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Link } from "react-router-dom";
@@ -34,6 +35,8 @@ const outcomeColors = {
 };
 
 export default function InitialVisitSummary({ project, onViewJob }) {
+  const [isMinimized, setIsMinimized] = React.useState(false);
+
   if (!project.initial_visit_job_id) {
     return null;
   }
@@ -50,12 +53,18 @@ export default function InitialVisitSummary({ project, onViewJob }) {
 
   return (
     <Card className="border-2 border-blue-200 bg-blue-50/50 shadow-sm rounded-xl overflow-hidden">
-      <CardHeader className="pb-3 bg-blue-100/50">
+      <CardHeader className={`bg-blue-100/50 ${isMinimized ? 'pb-3' : 'pb-3'}`}>
         <div className="flex items-center justify-between">
-          <CardTitle className="text-[16px] font-semibold text-blue-900 flex items-center gap-2">
-            <ClipboardCheck className="w-5 h-5 text-blue-600" />
-            Initial Site Visit Summary
-          </CardTitle>
+          <button 
+            onClick={() => setIsMinimized(!isMinimized)}
+            className="flex items-center gap-2 hover:opacity-80 transition-opacity"
+          >
+            <CardTitle className="text-[16px] font-semibold text-blue-900 flex items-center gap-2">
+              <ClipboardCheck className="w-5 h-5 text-blue-600" />
+              Initial Site Visit Summary
+              <ChevronDown className={`w-4 h-4 text-blue-600 transition-transform ${isMinimized ? '-rotate-90' : ''}`} />
+            </CardTitle>
+          </button>
           <Link 
             to={`${createPageUrl("Jobs")}?jobId=${project.initial_visit_job_id}`}
             className="text-[12px] text-blue-600 hover:text-blue-800 font-medium flex items-center gap-1"
@@ -87,7 +96,7 @@ export default function InitialVisitSummary({ project, onViewJob }) {
         </div>
       </CardHeader>
 
-      <CardContent className="p-4 space-y-4">
+      {!isMinimized && <CardContent className="p-4 space-y-4">
         {/* Overview */}
         {project.initial_visit_overview && (
           <div>
@@ -354,7 +363,7 @@ export default function InitialVisitSummary({ project, onViewJob }) {
             </div>
           </div>
         )}
-      </CardContent>
+      </CardContent>}
     </Card>
   );
 }
