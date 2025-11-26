@@ -123,39 +123,43 @@ export default function TaskKanbanView({
           return (
             <div 
               key={userId} 
-              className="bg-[#F9FAFB] rounded-xl border border-[#E5E7EB] overflow-hidden"
+              className="flex bg-[#F9FAFB] rounded-xl border border-[#E5E7EB] overflow-hidden"
             >
-              {/* User Info - Clickable Header */}
+              {/* User Info - Fixed Left Column */}
               <div 
                 onClick={() => toggleLane(userId)}
-                className={`flex items-center gap-2 bg-[#F3F4F6] p-3 cursor-pointer hover:bg-[#EBEDF0] transition-colors ${!isCollapsed ? 'border-b border-[#E5E7EB]' : ''}`}
+                className="w-[180px] lg:w-[200px] flex-shrink-0 bg-[#F3F4F6] p-3 border-r border-[#E5E7EB] cursor-pointer hover:bg-[#EBEDF0] transition-colors"
               >
-                {isCollapsed ? (
-                  <ChevronRight className="w-4 h-4 text-[#6B7280] flex-shrink-0" />
-                ) : (
-                  <ChevronDown className="w-4 h-4 text-[#6B7280] flex-shrink-0" />
-                )}
-                {userId === "unassigned" ? (
-                  <div className="w-8 h-8 rounded-full bg-[#E5E7EB] flex items-center justify-center flex-shrink-0">
-                    <User className="w-4 h-4 text-[#6B7280]" />
+                <div className="flex items-center gap-2">
+                  {isCollapsed ? (
+                    <ChevronRight className="w-4 h-4 text-[#6B7280] flex-shrink-0" />
+                  ) : (
+                    <ChevronDown className="w-4 h-4 text-[#6B7280] flex-shrink-0" />
+                  )}
+                  {userId === "unassigned" ? (
+                    <div className="w-8 h-8 rounded-full bg-[#E5E7EB] flex items-center justify-center flex-shrink-0">
+                      <User className="w-4 h-4 text-[#6B7280]" />
+                    </div>
+                  ) : (
+                    <div className="w-8 h-8 rounded-full bg-[#FAE008] flex items-center justify-center flex-shrink-0">
+                      <span className="text-[#111827] font-semibold text-sm">
+                        {row.name?.charAt(0)?.toUpperCase() || "?"}
+                      </span>
+                    </div>
+                  )}
+                  <div className="min-w-0 flex-1">
+                    <h3 className="font-semibold text-[#111827] text-sm truncate">
+                      {row.name}
+                    </h3>
+                    <div className="flex items-center gap-1">
+                      <Badge variant="secondary" className="bg-white text-[#4B5563] text-[10px] px-1.5 py-0 h-5">
+                        {row.totalTasks} tasks
+                      </Badge>
+                    </div>
                   </div>
-                ) : (
-                  <div className="w-8 h-8 rounded-full bg-[#FAE008] flex items-center justify-center flex-shrink-0">
-                    <span className="text-[#111827] font-semibold text-sm">
-                      {row.name?.charAt(0)?.toUpperCase() || "?"}
-                    </span>
-                  </div>
-                )}
-                <div className="min-w-0 flex-1">
-                  <h3 className="font-semibold text-[#111827] text-sm truncate">
-                    {row.name}
-                  </h3>
                 </div>
-                <Badge variant="secondary" className="bg-white text-[#4B5563] text-[10px] px-1.5 py-0 h-5">
-                  {row.totalTasks} tasks
-                </Badge>
                 {isCollapsed && (
-                  <div className="flex gap-1 ml-2">
+                  <div className="flex gap-1 mt-2 ml-6">
                     {STATUS_ORDER.map(status => {
                       const count = row.tasksByStatus[status]?.length || 0;
                       if (count === 0) return null;
@@ -170,9 +174,9 @@ export default function TaskKanbanView({
                 )}
               </div>
               
-              {/* Status Columns - Collapsible */}
+              {/* Status Columns */}
               {!isCollapsed && (
-                <div className="flex gap-3 p-3 overflow-x-auto">
+                <div className="flex-1 flex gap-3 p-3 overflow-x-auto">
                   {STATUS_ORDER.map(status => {
                     const statusTasks = row.tasksByStatus[status] || [];
                     
