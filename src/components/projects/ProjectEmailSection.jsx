@@ -17,19 +17,33 @@ export default function ProjectEmailSection({ project, onThreadLinked }) {
   const [composerMode, setComposerMode] = useState(null); // null | 'compose' | 'reply' | 'forward'
   const [selectedMessage, setSelectedMessage] = useState(null);
 
-  // Fetch linked email thread
-  const { data: emailThread, isLoading: threadLoading, refetch: refetchThread } = useQuery({
-    queryKey: ['emailThread', project.source_email_thread_id],
-    queryFn: () => base44.entities.EmailThread.get(project.source_email_thread_id),
-    enabled: !!project.source_email_thread_id
+  // Fetch ALL email threads linked to this project
+  const { data: linkedThreads = [], isLoading: threadLoading, refetch: refetchThreads } = useQuery({
+    queryKey: ['projectEmailThreads', project.id],
+    queryFn: async () => {
+      const allThreads = await base44.entities.EmailThread.list('-last_message_date');
+      return allThreads.filter(t => 
+        t.linked_project_id === project.id || 
+        t.id === project.source_email_thread_id
+      );
+    },
+    enabled: !!project.id
   });
 
-  // Fetch messages for the thread
+  // Fetch messages for all linked threads
   const { data: messages = [], isLoading: messagesLoading, refetch: refetchMessages } = useQuery({
-    queryKey: ['emailMessages', project.source_email_thread_id],
-    queryFn: () => base44.entities.EmailMessage.filter({ thread_id: project.source_email_thread_id }),
-    enabled: !!project.source_email_thread_id
+    queryKey: ['projectEmailMessages', project.id, linkedThreads.map(t => t.id)],
+    queryFn: async () => {
+      if (linkedThreads.length === 0) return [];
+      const threadIds = linkedThreads.map(t => t.id);
+      const allMessages = await base44.entities.EmailMessage.list();
+      return allMessages.filter(m => threadIds.includes(m.thread_id));
+    },
+    enabled: linkedThreads.length > 0
   });
+
+  // For backward compatibility - use first thread as "emailThread"
+  const emailThread = linkedThreads[0];
 
   // Fetch unlinked email threads for linking
   const { data: availableThreads = [] } = useQuery({
