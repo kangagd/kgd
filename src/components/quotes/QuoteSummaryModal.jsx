@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React from "react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -12,12 +12,10 @@ import {
   Mail,
   Copy,
   Calendar,
-  DollarSign,
-  RefreshCw
+  DollarSign
 } from "lucide-react";
 import { toast } from "sonner";
 import moment from "moment";
-import { base44 } from "@/api/base44Client";
 
 const statusConfig = {
   Draft: { color: 'bg-gray-100 text-gray-700 border-gray-200', icon: FileText, label: 'Draft' },
@@ -28,33 +26,11 @@ const statusConfig = {
   Expired: { color: 'bg-orange-100 text-orange-700 border-orange-200', icon: Clock, label: 'Expired' }
 };
 
-export default function QuoteSummaryModal({ quote, isOpen, onClose, isAdmin = false, onQuoteUpdated }) {
-  const [isRefreshing, setIsRefreshing] = useState(false);
-
+export default function QuoteSummaryModal({ quote, isOpen, onClose, isAdmin = false }) {
   if (!quote) return null;
 
   const config = statusConfig[quote.status] || statusConfig.Draft;
   const StatusIcon = config.icon;
-
-  const refreshFromPandaDoc = async () => {
-    setIsRefreshing(true);
-    try {
-      const response = await base44.functions.invoke('refreshQuoteFromPandaDoc', { quoteId: quote.id });
-      if (response.data.success) {
-        toast.success(`Refreshed quote with ${response.data.line_items_count} line items`);
-        if (onQuoteUpdated) {
-          onQuoteUpdated(response.data.quote);
-        }
-      } else {
-        toast.error(response.data.error || 'Failed to refresh quote');
-      }
-    } catch (error) {
-      toast.error('Failed to refresh from PandaDoc');
-      console.error(error);
-    } finally {
-      setIsRefreshing(false);
-    }
-  };
 
   const openInPandaDoc = () => {
     if (quote.pandadoc_internal_url) {
@@ -182,53 +158,6 @@ export default function QuoteSummaryModal({ quote, isOpen, onClose, isAdmin = fa
               {quote.customer_email && (
                 <p className="text-[13px] text-[#6B7280]">{quote.customer_email}</p>
               )}
-            </div>
-          )}
-
-          {/* Line Items / Products */}
-          {isAdmin && quote.pandadoc_document_id && (!quote.line_items || quote.line_items.length === 0) && (
-            <div className="flex items-center justify-between p-3 bg-[#FEF3C7] rounded-lg">
-              <p className="text-[13px] text-[#92400E]">No line items stored. Refresh from PandaDoc to load them.</p>
-              <Button 
-                variant="outline" 
-                size="sm" 
-                onClick={refreshFromPandaDoc}
-                disabled={isRefreshing}
-                className="text-[#92400E] border-[#92400E] hover:bg-[#FEF3C7]"
-              >
-                <RefreshCw className={`w-3.5 h-3.5 mr-1.5 ${isRefreshing ? 'animate-spin' : ''}`} />
-                {isRefreshing ? 'Refreshing...' : 'Refresh'}
-              </Button>
-            </div>
-          )}
-          {quote.line_items && quote.line_items.length > 0 && (
-            <div>
-              <p className="text-[12px] text-[#6B7280] mb-2">Products & Services</p>
-              <div className="bg-[#F9FAFB] rounded-lg overflow-hidden">
-                <table className="w-full text-[13px]">
-                  <thead>
-                    <tr className="border-b border-[#E5E7EB]">
-                      <th className="text-left py-2 px-3 font-medium text-[#6B7280]">Item</th>
-                      <th className="text-right py-2 px-3 font-medium text-[#6B7280] w-16">Qty</th>
-                      <th className="text-right py-2 px-3 font-medium text-[#6B7280] w-24">Price</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {quote.line_items.map((item, index) => (
-                      <tr key={index} className="border-b border-[#E5E7EB] last:border-b-0">
-                        <td className="py-2 px-3">
-                          <p className="font-medium text-[#111827]">{item.name}</p>
-                          {item.description && (
-                            <p className="text-[11px] text-[#6B7280]">{item.description}</p>
-                          )}
-                        </td>
-                        <td className="text-right py-2 px-3 text-[#111827]">{item.quantity || 1}</td>
-                        <td className="text-right py-2 px-3 text-[#111827]">${(item.price || 0).toFixed(2)}</td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
             </div>
           )}
 

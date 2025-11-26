@@ -169,10 +169,6 @@ export default function QuotesSection({
         isOpen={!!selectedQuote}
         onClose={() => setSelectedQuote(null)}
         isAdmin={true}
-        onQuoteUpdated={(updatedQuote) => {
-          setSelectedQuote(updatedQuote);
-          handleQuoteUpdate();
-        }}
       />
     </div>
   );
