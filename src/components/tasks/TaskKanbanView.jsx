@@ -162,6 +162,7 @@ export default function TaskKanbanView({
                           onClick={() => onTaskClick(task)}
                           onToggleComplete={onToggleComplete}
                           showLinkedEntities={true}
+                          hideAssignee={true}
                           compact
                         />
                       ))

@@ -11,7 +11,8 @@ export default function TaskCard({
   onClick, 
   onToggleComplete,
   showLinkedEntities = true,
-  compact = false 
+  compact = false,
+  hideAssignee = false 
 }) {
   const isOverdue = task.due_date && isPast(new Date(task.due_date)) && task.status !== "Completed";
   const isDueToday = task.due_date && isToday(new Date(task.due_date));
@@ -56,63 +57,66 @@ export default function TaskCard({
             {task.type && <TaskTypeBadge type={task.type} />}
           </div>
 
-          {/* Linked Entities */}
-          {showLinkedEntities && (
-            <div className="flex flex-wrap gap-2 text-xs text-[#6B7280]">
-              {task.project_id && (
-                <span className="flex items-center gap-1">
-                  <FolderKanban className="w-3 h-3" />
-                  {task.project_name || "Project"}
-                </span>
-              )}
-              {task.job_id && (
-                <span className="flex items-center gap-1">
-                  <Briefcase className="w-3 h-3" />
-                  #{task.job_number || "Job"}
-                </span>
-              )}
-              {task.customer_id && (
-                <span className="flex items-center gap-1">
-                  <User className="w-3 h-3" />
-                  {task.customer_name || "Customer"}
-                </span>
-              )}
-              {task.email_thread_id && (
-                <span className="flex items-center gap-1">
-                  <Mail className="w-3 h-3" />
-                  Email
-                </span>
-              )}
-            </div>
-          )}
+          {/* Linked Entities & Due Date Row */}
+          <div className="flex items-center justify-between gap-2">
+            {showLinkedEntities && (
+              <div className="flex flex-wrap gap-2 text-xs text-[#6B7280]">
+                {task.project_id && (
+                  <span className="flex items-center gap-1">
+                    <FolderKanban className="w-3 h-3" />
+                    {task.project_name || "Project"}
+                  </span>
+                )}
+                {task.job_id && (
+                  <span className="flex items-center gap-1">
+                    <Briefcase className="w-3 h-3" />
+                    #{task.job_number || "Job"}
+                  </span>
+                )}
+                {task.customer_id && (
+                  <span className="flex items-center gap-1">
+                    <User className="w-3 h-3" />
+                    {task.customer_name || "Customer"}
+                  </span>
+                )}
+                {task.email_thread_id && (
+                  <span className="flex items-center gap-1">
+                    <Mail className="w-3 h-3" />
+                    Email
+                  </span>
+                )}
+              </div>
+            )}
+            
+            {/* Due Date - Bottom Right */}
+            {task.due_date && (
+              <Badge 
+                className={`text-xs flex-shrink-0 ${
+                  isOverdue 
+                    ? "bg-[#DC2626]/10 text-[#DC2626]" 
+                    : isDueToday 
+                      ? "bg-[#D97706]/10 text-[#D97706]" 
+                      : "bg-[#F3F4F6] text-[#4B5563]"
+                }`}
+              >
+                <Calendar className="w-3 h-3 mr-1" />
+                {isOverdue ? "Overdue" : isDueToday ? "Today" : format(new Date(task.due_date), "MMM d")}
+              </Badge>
+            )}
+          </div>
         </div>
 
-        {/* Right Side: Due Date & Assignee */}
-        <div className="flex flex-col items-end gap-2 flex-shrink-0">
-          {task.due_date && (
-            <Badge 
-              className={`text-xs ${
-                isOverdue 
-                  ? "bg-[#DC2626]/10 text-[#DC2626]" 
-                  : isDueToday 
-                    ? "bg-[#D97706]/10 text-[#D97706]" 
-                    : "bg-[#F3F4F6] text-[#4B5563]"
-              }`}
-            >
-              <Calendar className="w-3 h-3 mr-1" />
-              {isOverdue ? "Overdue" : isDueToday ? "Today" : format(new Date(task.due_date), "MMM d")}
-            </Badge>
-          )}
-          
-          {task.assigned_to_name && (
+        {/* Right Side: Assignee (only if not hidden) */}
+        {!hideAssignee && task.assigned_to_name && (
+          <div className="flex flex-col items-end gap-2 flex-shrink-0">
             <div 
               className="w-7 h-7 rounded-full bg-[#FAE008] flex items-center justify-center text-xs font-semibold text-[#111827]"
               title={task.assigned_to_name}
             >
               {task.assigned_to_name.split(" ").map(n => n[0]).join("").slice(0, 2).toUpperCase()}
             </div>
-          )}
-        </div>
+          </div>
+        )}
       </div>
     </Card>
   );
