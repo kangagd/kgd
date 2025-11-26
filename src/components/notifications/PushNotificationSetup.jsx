@@ -71,16 +71,44 @@ export default function PushNotificationSetup({ user }) {
         return;
       }
 
-      // Get service worker registration
-      const registration = await navigator.serviceWorker.ready;
+      // Check if service worker is available
+      if (!navigator.serviceWorker.controller) {
+        // Try to register service worker if not available
+        console.log('No service worker controller, waiting for registration...');
+        toast.info('Setting up push notifications...');
+      }
+
+      // Get service worker registration with timeout
+      const registrationPromise = navigator.serviceWorker.ready;
+      const timeoutPromise = new Promise((_, reject) => 
+        setTimeout(() => reject(new Error('Service worker timeout')), 10000)
+      );
+
+      let registration;
+      try {
+        registration = await Promise.race([registrationPromise, timeoutPromise]);
+      } catch (err) {
+        console.error('Service worker not ready:', err);
+        toast.error('Push notifications require a service worker. Please reload the page.');
+        setIsEnabling(false);
+        return;
+      }
 
       // Subscribe to push
-      let subscription = await registration.pushManager.getSubscription();
-      if (!subscription) {
-        subscription = await registration.pushManager.subscribe({
-          userVisibleOnly: true,
-          applicationServerKey: urlBase64ToUint8Array(VAPID_PUBLIC_KEY)
-        });
+      let subscription;
+      try {
+        subscription = await registration.pushManager.getSubscription();
+        if (!subscription) {
+          subscription = await registration.pushManager.subscribe({
+            userVisibleOnly: true,
+            applicationServerKey: urlBase64ToUint8Array(VAPID_PUBLIC_KEY)
+          });
+        }
+      } catch (err) {
+        console.error('Push subscription failed:', err);
+        toast.error('Failed to subscribe to push notifications. ' + (err.message || ''));
+        setIsEnabling(false);
+        return;
       }
 
       const subscriptionJson = JSON.stringify(subscription.toJSON());
@@ -124,7 +152,7 @@ export default function PushNotificationSetup({ user }) {
       await loadSubscriptions();
     } catch (error) {
       console.error('Failed to enable push notifications:', error);
-      toast.error('Failed to enable push notifications');
+      toast.error('Failed to enable push notifications: ' + (error.message || 'Unknown error'));
     }
     setIsEnabling(false);
   };
@@ -241,7 +269,7 @@ export default function PushNotificationSetup({ user }) {
           </Button>
         )}
 
-        {permissionStatus === 'granted' && subscriptions.length === 0 && (
+        {permissionStatus === 'granted' && subscriptions.length === 0 && !isLoading && (
           <Button 
             onClick={enablePushNotifications} 
             disabled={isEnabling}
@@ -259,6 +287,13 @@ export default function PushNotificationSetup({ user }) {
               </>
             )}
           </Button>
+        )}
+
+        {isLoading && (
+          <div className="flex items-center justify-center py-4">
+            <RefreshCw className="w-5 h-5 animate-spin text-[#6B7280]" />
+            <span className="ml-2 text-[14px] text-[#6B7280]">Loading...</span>
+          </div>
         )}
 
         {permissionStatus === 'denied' && (
