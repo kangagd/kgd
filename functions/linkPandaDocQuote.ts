@@ -127,6 +127,41 @@ Deno.serve(async (req) => {
     // Extract value from PandaDoc
     const value = pandadocDoc.grand_total?.amount || 0;
 
+    // Extract line items from PandaDoc pricing tables
+    let lineItems = [];
+    try {
+      const detailsResponse = await fetch(`${PANDADOC_API_URL}/documents/${pandadocDocumentId}/details`, {
+        headers: {
+          'Authorization': `API-Key ${PANDADOC_API_KEY}`
+        }
+      });
+      
+      if (detailsResponse.ok) {
+        const detailsData = await detailsResponse.json();
+        // Extract items from pricing tables
+        if (detailsData.pricing_tables && detailsData.pricing_tables.length > 0) {
+          for (const table of detailsData.pricing_tables) {
+            if (table.sections) {
+              for (const section of table.sections) {
+                if (section.rows) {
+                  for (const row of section.rows) {
+                    lineItems.push({
+                      name: row.data?.name || row.name || 'Item',
+                      description: row.data?.description || row.description || '',
+                      quantity: row.data?.qty || row.qty || 1,
+                      price: row.data?.price || row.price || 0
+                    });
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    } catch (itemsError) {
+      console.error('Failed to fetch line items:', itemsError);
+    }
+
     // Create Quote record
     const quote = await base44.entities.Quote.create({
       project_id: projectId || null,
