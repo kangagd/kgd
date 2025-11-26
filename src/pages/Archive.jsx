@@ -1,6 +1,7 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { base44 } from "@/api/base44Client";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import AccessDenied from "@/components/common/AccessDenied";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -19,8 +20,42 @@ import {
 } from "@/components/ui/alert-dialog";
 
 export default function Archive() {
+  const [user, setUser] = useState(null);
+  const [loading, setLoading] = useState(true);
   const [confirmDelete, setConfirmDelete] = useState(null);
   const queryClient = useQueryClient();
+
+  useEffect(() => {
+    const loadUser = async () => {
+      try {
+        const currentUser = await base44.auth.me();
+        setUser(currentUser);
+      } catch (error) {
+        console.error("Error loading user:", error);
+      } finally {
+        setLoading(false);
+      }
+    };
+    loadUser();
+  }, []);
+
+  // Check permissions
+  const hasAccess = user?.role === 'admin' || user?.role === 'manager';
+
+  if (loading) {
+    return (
+      <div className="p-5 md:p-10 bg-[#ffffff] min-h-screen">
+        <div className="animate-pulse space-y-4">
+          <div className="h-8 bg-gray-200 rounded w-1/4"></div>
+          <div className="h-64 bg-gray-200 rounded"></div>
+        </div>
+      </div>
+    );
+  }
+
+  if (!hasAccess) {
+    return <AccessDenied message="Only administrators and managers can access the Archive." />;
+  }
 
   const { data: allJobs = [], isLoading: jobsLoading } = useQuery({
     queryKey: ['allJobs'],

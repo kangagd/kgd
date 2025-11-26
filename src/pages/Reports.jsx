@@ -1,6 +1,7 @@
-import React, { useState, useMemo } from "react";
+import React, { useState, useMemo, useEffect } from "react";
 import { base44 } from "@/api/base44Client";
 import { useQuery } from "@tanstack/react-query";
+import AccessDenied from "@/components/common/AccessDenied";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -35,6 +36,8 @@ import {
 const COLORS = ['#FAE008', '#3B82F6', '#10B981', '#F59E0B', '#EF4444', '#8B5CF6', '#EC4899'];
 
 export default function Reports() {
+  const [user, setUser] = useState(null);
+  const [loading, setLoading] = useState(true);
   const [dateFrom, setDateFrom] = useState(() => {
     const date = new Date();
     date.setMonth(date.getMonth() - 3);
@@ -42,6 +45,38 @@ export default function Reports() {
   });
   const [dateTo, setDateTo] = useState(() => new Date().toISOString().split('T')[0]);
   const [projectStatusFilter, setProjectStatusFilter] = useState("all");
+
+  useEffect(() => {
+    const loadUser = async () => {
+      try {
+        const currentUser = await base44.auth.me();
+        setUser(currentUser);
+      } catch (error) {
+        console.error("Error loading user:", error);
+      } finally {
+        setLoading(false);
+      }
+    };
+    loadUser();
+  }, []);
+
+  // Check permissions
+  const hasAccess = user?.role === 'admin' || user?.role === 'manager';
+
+  if (loading) {
+    return (
+      <div className="p-5 md:p-10 bg-[#ffffff] min-h-screen">
+        <div className="animate-pulse space-y-4">
+          <div className="h-8 bg-gray-200 rounded w-1/4"></div>
+          <div className="h-64 bg-gray-200 rounded"></div>
+        </div>
+      </div>
+    );
+  }
+
+  if (!hasAccess) {
+    return <AccessDenied message="Only administrators and managers can access Reports." />;
+  }
 
   const { data: allProjects = [] } = useQuery({
     queryKey: ['projects'],
