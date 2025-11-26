@@ -36,7 +36,6 @@ import { Input } from "@/components/ui/input";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import NotificationBell from "./components/notifications/NotificationBell";
 import GlobalSearchDropdown from "./components/common/GlobalSearchDropdown";
-import PushNotificationAutoRegister from "./components/notifications/PushNotificationAutoRegister";
 
 const primaryNavigationItems = [
   { title: "Dashboard", url: createPageUrl("Dashboard"), icon: LayoutDashboard },
@@ -247,7 +246,6 @@ export default function Layout({ children, currentPageName }) {
   if (isTechnician) {
     return (
       <div className="min-h-screen flex flex-col bg-[#ffffff]">
-        <PushNotificationAutoRegister />
         {/* Mobile Overlay */}
         {techMobileMenuOpen && (
           <div 
@@ -370,7 +368,6 @@ export default function Layout({ children, currentPageName }) {
   return (
     <div className="min-h-screen flex bg-[#ffffff]">
       <Toaster position="top-right" richColors />
-      <PushNotificationAutoRegister />
       {/* Mobile Overlay */}
       {isMobileMenuOpen && (
         <div 
