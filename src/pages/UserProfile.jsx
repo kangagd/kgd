@@ -74,7 +74,6 @@ export default function UserProfile() {
   const handleProfileSubmit = (e) => {
     e.preventDefault();
     updateProfileMutation.mutate({
-      full_name: formData.full_name,
       is_field_technician: formData.is_field_technician
     });
   };
@@ -143,9 +142,10 @@ export default function UserProfile() {
                 <Input
                   id="full_name"
                   value={formData.full_name}
-                  onChange={(e) => setFormData({ ...formData, full_name: e.target.value })}
-                  placeholder="Enter your full name"
+                  disabled
+                  className="bg-slate-50"
                 />
+                <p className="text-xs text-slate-500">Name is managed by your account settings and cannot be changed here</p>
               </div>
 
               <div className="space-y-2">
