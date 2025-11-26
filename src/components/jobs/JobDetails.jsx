@@ -1593,9 +1593,7 @@ export default function JobDetails({ job: initialJob, onClose, onStatusChange, o
             </TabsContent>
 
             <TabsContent value="invoicing" className="mt-2">
-              <div className="space-y-4">
-                <h3 className="text-[16px] font-semibold text-[#111827] leading-[1.2]">Quotes & Invoicing</h3>
-
+              <div className="space-y-6">
                 {/* PandaDoc Quotes */}
                 <QuotesSection 
                   job={job}
@@ -1603,6 +1601,7 @@ export default function JobDetails({ job: initialJob, onClose, onStatusChange, o
                   isAdmin={isAdmin}
                 />
 
+                {/* Xero Invoicing Section */}
                 <Card className="border border-[#E5E7EB] shadow-sm rounded-lg">
                   <CardHeader className="bg-white px-4 py-3 border-b border-[#E5E7EB]">
                     <CardTitle className="text-[16px] font-semibold text-[#111827] leading-[1.2]">

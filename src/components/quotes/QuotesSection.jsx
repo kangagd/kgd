@@ -6,6 +6,7 @@ import { base44 } from "@/api/base44Client";
 import QuoteCard from "./QuoteCard";
 import CreateQuoteModal from "./CreateQuoteModal";
 import LinkQuoteModal from "./LinkQuoteModal";
+import QuoteSummaryModal from "./QuoteSummaryModal";
 
 export default function QuotesSection({ 
   project = null, 
@@ -15,6 +16,7 @@ export default function QuotesSection({
 }) {
   const [showCreateModal, setShowCreateModal] = useState(false);
   const [showLinkModal, setShowLinkModal] = useState(false);
+  const [selectedQuote, setSelectedQuote] = useState(null);
   const queryClient = useQueryClient();
 
   // Build filter based on project or job
@@ -34,7 +36,8 @@ export default function QuotesSection({
       }
       return [];
     },
-    enabled: !!(project?.id || job?.id)
+    enabled: !!(project?.id || job?.id),
+    refetchInterval: 30000 // Refresh every 30s to catch webhook updates
   });
 
   const handleQuoteCreated = () => {
@@ -54,54 +57,91 @@ export default function QuotesSection({
     return null;
   }
 
+  // Technician view - compact read-only
+  if (!isAdmin) {
+    if (visibleQuotes.length === 0) {
+      return null; // Don't show section at all for technicians if no accepted quotes
+    }
+
+    return (
+      <div className="space-y-3">
+        <h3 className="text-[16px] font-semibold text-[#111827] flex items-center gap-2">
+          <FileText className="w-5 h-5 text-[#FAE008]" />
+          Accepted Quotes
+        </h3>
+        <div className="space-y-2">
+          {visibleQuotes.map((quote) => (
+            <QuoteCard 
+              key={quote.id} 
+              quote={quote}
+              isAdmin={false}
+              isCompact={true}
+            />
+          ))}
+        </div>
+      </div>
+    );
+  }
+
+  // Admin view - full functionality
   return (
     <div className="space-y-4">
-      <div className="flex items-center justify-between">
+      <div className="flex items-center justify-between flex-wrap gap-2">
         <h3 className="text-[16px] font-semibold text-[#111827] flex items-center gap-2">
           <FileText className="w-5 h-5 text-[#FAE008]" />
           Quotes
+          {quotes.length > 0 && (
+            <span className="text-[12px] font-normal text-[#6B7280]">({quotes.length})</span>
+          )}
         </h3>
-        {isAdmin && (
-          <div className="flex gap-2">
-            <Button
-              size="sm"
-              variant="outline"
-              onClick={() => setShowLinkModal(true)}
-            >
-              <Link2 className="w-4 h-4 mr-1" />
-              Link Existing
-            </Button>
-            <Button
-              size="sm"
-              onClick={() => setShowCreateModal(true)}
-              className="bg-[#FAE008] hover:bg-[#E5CF07] text-[#111827]"
-            >
-              <Plus className="w-4 h-4 mr-1" />
-              Create Quote
-            </Button>
-          </div>
-        )}
+        <div className="flex gap-2">
+          <Button
+            size="sm"
+            variant="outline"
+            onClick={() => setShowLinkModal(true)}
+            className="h-8 text-[13px]"
+          >
+            <Link2 className="w-3.5 h-3.5 mr-1" />
+            Link Existing
+          </Button>
+          <Button
+            size="sm"
+            onClick={() => setShowCreateModal(true)}
+            className="bg-[#FAE008] hover:bg-[#E5CF07] text-[#111827] h-8 text-[13px]"
+          >
+            <Plus className="w-3.5 h-3.5 mr-1" />
+            Create Quote in PandaDoc
+          </Button>
+        </div>
       </div>
 
       {isLoading ? (
         <div className="flex items-center justify-center py-8">
           <Loader2 className="w-5 h-5 animate-spin text-[#6B7280]" />
         </div>
-      ) : visibleQuotes.length === 0 ? (
-        <div className="text-center py-8 bg-[#F9FAFB] rounded-lg border border-dashed border-[#E5E7EB]">
-          <FileText className="w-8 h-8 mx-auto text-[#9CA3AF] mb-2" />
-          <p className="text-[14px] text-[#6B7280]">
-            {isAdmin ? 'No quotes yet. Create one using PandaDoc.' : 'No accepted quotes.'}
+      ) : quotes.length === 0 ? (
+        <div className="text-center py-10 bg-[#F9FAFB] rounded-lg border border-dashed border-[#E5E7EB]">
+          <FileText className="w-10 h-10 mx-auto text-[#D1D5DB] mb-3" />
+          <p className="text-[14px] text-[#6B7280] mb-4">
+            No quotes yet for this {project ? 'project' : 'job'}.
           </p>
+          <Button
+            onClick={() => setShowCreateModal(true)}
+            className="bg-[#FAE008] hover:bg-[#E5CF07] text-[#111827]"
+          >
+            <Plus className="w-4 h-4 mr-2" />
+            Create Quote in PandaDoc
+          </Button>
         </div>
       ) : (
         <div className="space-y-3">
-          {visibleQuotes.map((quote) => (
+          {quotes.map((quote) => (
             <QuoteCard 
               key={quote.id} 
               quote={quote} 
               onUpdate={handleQuoteUpdate}
-              isAdmin={isAdmin}
+              onSelect={setSelectedQuote}
+              isAdmin={true}
             />
           ))}
         </div>
@@ -122,6 +162,13 @@ export default function QuotesSection({
         project={project}
         job={job}
         onQuoteLinked={handleQuoteCreated}
+      />
+
+      <QuoteSummaryModal
+        quote={selectedQuote}
+        isOpen={!!selectedQuote}
+        onClose={() => setSelectedQuote(null)}
+        isAdmin={true}
       />
     </div>
   );

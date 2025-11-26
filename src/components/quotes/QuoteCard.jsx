@@ -13,12 +13,15 @@ import {
   CheckCircle,
   XCircle,
   Clock,
-  Mail
+  Mail,
+  Copy,
+  RotateCw
 } from "lucide-react";
 import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
+  DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { base44 } from "@/api/base44Client";
@@ -26,22 +29,23 @@ import { toast } from "sonner";
 import moment from "moment";
 
 const statusConfig = {
-  Draft: { color: 'bg-gray-100 text-gray-700', icon: FileText },
-  Sent: { color: 'bg-blue-100 text-blue-700', icon: Mail },
-  Viewed: { color: 'bg-purple-100 text-purple-700', icon: Eye },
-  Accepted: { color: 'bg-green-100 text-green-700', icon: CheckCircle },
-  Declined: { color: 'bg-red-100 text-red-700', icon: XCircle },
-  Expired: { color: 'bg-orange-100 text-orange-700', icon: Clock }
+  Draft: { color: 'bg-gray-100 text-gray-700 border-gray-200', icon: FileText },
+  Sent: { color: 'bg-blue-100 text-blue-700 border-blue-200', icon: Mail },
+  Viewed: { color: 'bg-purple-100 text-purple-700 border-purple-200', icon: Eye },
+  Accepted: { color: 'bg-green-100 text-green-700 border-green-200', icon: CheckCircle },
+  Declined: { color: 'bg-red-100 text-red-700 border-red-200', icon: XCircle },
+  Expired: { color: 'bg-orange-100 text-orange-700 border-orange-200', icon: Clock }
 };
 
-export default function QuoteCard({ quote, onUpdate, isAdmin = false }) {
+export default function QuoteCard({ quote, onUpdate, onSelect, isAdmin = false, isCompact = false }) {
   const [isSending, setIsSending] = useState(false);
   const [isRefreshing, setIsRefreshing] = useState(false);
 
   const config = statusConfig[quote.status] || statusConfig.Draft;
   const StatusIcon = config.icon;
 
-  const handleSend = async () => {
+  const handleSend = async (e) => {
+    e?.stopPropagation();
     setIsSending(true);
     try {
       const response = await base44.functions.invoke('sendPandaDocQuote', {
@@ -62,7 +66,8 @@ export default function QuoteCard({ quote, onUpdate, isAdmin = false }) {
     }
   };
 
-  const handleRefreshStatus = async () => {
+  const handleRefreshStatus = async (e) => {
+    e?.stopPropagation();
     setIsRefreshing(true);
     try {
       const response = await base44.functions.invoke('getPandaDocQuoteStatus', {
@@ -80,114 +85,163 @@ export default function QuoteCard({ quote, onUpdate, isAdmin = false }) {
     }
   };
 
-  const openInPandaDoc = () => {
+  const openInPandaDoc = (e) => {
+    e?.stopPropagation();
     if (quote.pandadoc_internal_url) {
       window.open(quote.pandadoc_internal_url, '_blank');
     }
   };
 
-  const openPublicUrl = () => {
+  const openPublicUrl = (e) => {
+    e?.stopPropagation();
     if (quote.pandadoc_public_url) {
       window.open(quote.pandadoc_public_url, '_blank');
     }
   };
 
+  const copyClientLink = async (e) => {
+    e?.stopPropagation();
+    if (quote.pandadoc_public_url) {
+      await navigator.clipboard.writeText(quote.pandadoc_public_url);
+      toast.success('Client link copied to clipboard');
+    } else {
+      toast.error('No client link available');
+    }
+  };
+
+  // Compact view for technicians
+  if (isCompact) {
+    return (
+      <div className="p-3 bg-white border border-[#E5E7EB] rounded-lg">
+        <div className="flex items-center justify-between gap-3">
+          <div className="flex-1 min-w-0">
+            <div className="flex items-center gap-2 mb-1">
+              <h4 className="text-[14px] font-medium text-[#111827] truncate">
+                {quote.name}
+              </h4>
+              <Badge className={`${config.color} border text-[11px]`}>
+                {quote.status}
+              </Badge>
+            </div>
+            <p className="text-[13px] font-semibold text-[#111827]">
+              ${quote.value?.toFixed(2) || '0.00'} {quote.currency || 'AUD'}
+            </p>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
   return (
-    <Card className="border border-[#E5E7EB] hover:border-[#D1D5DB] transition-colors">
+    <Card 
+      className={`border border-[#E5E7EB] hover:border-[#D1D5DB] transition-all hover:shadow-sm ${onSelect ? 'cursor-pointer' : ''}`}
+      onClick={() => onSelect?.(quote)}
+    >
       <CardContent className="p-4">
         <div className="flex items-start justify-between gap-4">
           <div className="flex-1 min-w-0">
-            <div className="flex items-center gap-2 mb-1">
-              <h4 className="text-[14px] font-semibold text-[#111827] truncate">
+            <div className="flex items-center gap-2 mb-1.5 flex-wrap">
+              <h4 className="text-[14px] font-semibold text-[#111827]">
                 {quote.name}
               </h4>
-              <Badge className={config.color}>
+              {quote.number && (
+                <span className="text-[12px] text-[#6B7280]">#{quote.number}</span>
+              )}
+              <Badge className={`${config.color} border`}>
                 <StatusIcon className="w-3 h-3 mr-1" />
                 {quote.status}
               </Badge>
             </div>
 
-            {quote.number && (
-              <p className="text-[12px] text-[#6B7280] mb-1">
-                #{quote.number}
-              </p>
-            )}
-
-            <div className="flex items-center gap-4 text-[12px] text-[#6B7280]">
-              <span className="font-medium text-[#111827]">
+            <div className="flex items-center gap-4 text-[13px] mb-2">
+              <span className="font-semibold text-[#111827]">
                 ${quote.value?.toFixed(2) || '0.00'} {quote.currency || 'AUD'}
               </span>
-              <span>
+              <span className="text-[#6B7280]">
                 Created {moment(quote.created_date).format('D MMM YYYY')}
               </span>
-              {quote.expires_at && (
-                <span className={moment(quote.expires_at).isBefore(moment()) ? 'text-red-600' : ''}>
+            </div>
+
+            <div className="flex flex-wrap gap-x-4 gap-y-1 text-[11px] text-[#9CA3AF]">
+              {quote.sent_at && (
+                <span>Sent {moment(quote.sent_at).format('D MMM h:mm A')}</span>
+              )}
+              {quote.viewed_at && (
+                <span className="text-purple-600">Viewed {moment(quote.viewed_at).format('D MMM h:mm A')}</span>
+              )}
+              {quote.accepted_at && (
+                <span className="text-green-600 font-medium">Accepted {moment(quote.accepted_at).format('D MMM h:mm A')}</span>
+              )}
+              {quote.declined_at && (
+                <span className="text-red-600">Declined {moment(quote.declined_at).format('D MMM h:mm A')}</span>
+              )}
+              {quote.expires_at && !quote.accepted_at && (
+                <span className={moment(quote.expires_at).isBefore(moment()) ? 'text-red-600' : 'text-[#9CA3AF]'}>
                   {moment(quote.expires_at).isBefore(moment()) ? 'Expired' : 'Expires'} {moment(quote.expires_at).format('D MMM')}
                 </span>
               )}
             </div>
-
-            {quote.sent_at && (
-              <p className="text-[11px] text-[#9CA3AF] mt-1">
-                Sent {moment(quote.sent_at).format('D MMM YYYY h:mm A')}
-              </p>
-            )}
-            {quote.viewed_at && (
-              <p className="text-[11px] text-[#9CA3AF]">
-                Viewed {moment(quote.viewed_at).format('D MMM YYYY h:mm A')}
-              </p>
-            )}
-            {quote.accepted_at && (
-              <p className="text-[11px] text-green-600">
-                Accepted {moment(quote.accepted_at).format('D MMM YYYY h:mm A')}
-              </p>
-            )}
           </div>
 
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-2 flex-shrink-0">
             {isAdmin && quote.status === 'Draft' && (
               <Button
                 size="sm"
                 onClick={handleSend}
                 disabled={isSending}
-                className="bg-[#FAE008] hover:bg-[#E5CF07] text-[#111827]"
+                className="bg-[#FAE008] hover:bg-[#E5CF07] text-[#111827] h-8"
               >
                 {isSending ? (
                   <Loader2 className="w-4 h-4 animate-spin" />
                 ) : (
                   <>
-                    <Send className="w-4 h-4 mr-1" />
+                    <Send className="w-3.5 h-3.5 mr-1" />
                     Send
                   </>
                 )}
               </Button>
             )}
 
-            <DropdownMenu>
-              <DropdownMenuTrigger asChild>
-                <Button variant="ghost" size="icon">
-                  <MoreHorizontal className="w-4 h-4" />
-                </Button>
-              </DropdownMenuTrigger>
-              <DropdownMenuContent align="end">
-                {isAdmin && quote.pandadoc_internal_url && (
-                  <DropdownMenuItem onClick={openInPandaDoc}>
-                    <ExternalLink className="w-4 h-4 mr-2" />
-                    Open in PandaDoc
+            {isAdmin && (
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <Button variant="ghost" size="icon" className="h-8 w-8" onClick={(e) => e.stopPropagation()}>
+                    <MoreHorizontal className="w-4 h-4" />
+                  </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="end">
+                  {quote.pandadoc_internal_url && (
+                    <DropdownMenuItem onClick={openInPandaDoc}>
+                      <ExternalLink className="w-4 h-4 mr-2" />
+                      Open in PandaDoc
+                    </DropdownMenuItem>
+                  )}
+                  {quote.pandadoc_public_url && (
+                    <>
+                      <DropdownMenuItem onClick={openPublicUrl}>
+                        <Eye className="w-4 h-4 mr-2" />
+                        View as Client
+                      </DropdownMenuItem>
+                      <DropdownMenuItem onClick={copyClientLink}>
+                        <Copy className="w-4 h-4 mr-2" />
+                        Copy Client Link
+                      </DropdownMenuItem>
+                    </>
+                  )}
+                  <DropdownMenuSeparator />
+                  <DropdownMenuItem onClick={handleRefreshStatus} disabled={isRefreshing}>
+                    <RefreshCw className={`w-4 h-4 mr-2 ${isRefreshing ? 'animate-spin' : ''}`} />
+                    Refresh Status
                   </DropdownMenuItem>
-                )}
-                {quote.pandadoc_public_url && (
-                  <DropdownMenuItem onClick={openPublicUrl}>
-                    <Eye className="w-4 h-4 mr-2" />
-                    View Customer Link
-                  </DropdownMenuItem>
-                )}
-                <DropdownMenuItem onClick={handleRefreshStatus} disabled={isRefreshing}>
-                  <RefreshCw className={`w-4 h-4 mr-2 ${isRefreshing ? 'animate-spin' : ''}`} />
-                  Refresh Status
-                </DropdownMenuItem>
-              </DropdownMenuContent>
-            </DropdownMenu>
+                  {quote.status === 'Sent' && (
+                    <DropdownMenuItem onClick={openInPandaDoc}>
+                      <RotateCw className="w-4 h-4 mr-2" />
+                      Resend (via PandaDoc)
+                    </DropdownMenuItem>
+                  )}
+                </DropdownMenuContent>
+              </DropdownMenu>
+            )}
           </div>
         </div>
       </CardContent>
