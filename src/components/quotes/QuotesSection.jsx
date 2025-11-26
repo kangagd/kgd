@@ -159,6 +159,7 @@ export default function QuotesSection({
               onUpdate={handleQuoteUpdate}
               onSelect={setSelectedQuote}
               isAdmin={true}
+              onRefreshLink={getRefreshLink}
             />
           ))}
         </div>
