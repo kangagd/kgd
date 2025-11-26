@@ -15,6 +15,7 @@ export default function UserProfile() {
   const [user, setUser] = useState(null);
   const [formData, setFormData] = useState({
     full_name: "",
+    display_name: "",
     email: "",
     role: "",
     is_field_technician: false
@@ -37,6 +38,7 @@ export default function UserProfile() {
         setUser(currentUser);
         setFormData({
           full_name: currentUser.full_name || "",
+          display_name: currentUser.display_name || currentUser.full_name || "",
           email: currentUser.email || "",
           role: currentUser.role || "",
           is_field_technician: currentUser.is_field_technician || false
@@ -57,9 +59,11 @@ export default function UserProfile() {
     },
     onSuccess: (updatedUser) => {
       queryClient.invalidateQueries({ queryKey: ['user'] });
+      queryClient.invalidateQueries({ queryKey: ['users'] });
       setUser(updatedUser);
       setFormData({
         full_name: updatedUser.full_name || "",
+        display_name: updatedUser.display_name || updatedUser.full_name || "",
         email: updatedUser.email || "",
         role: updatedUser.role || "",
         is_field_technician: updatedUser.is_field_technician || false
@@ -74,6 +78,7 @@ export default function UserProfile() {
   const handleProfileSubmit = (e) => {
     e.preventDefault();
     updateProfileMutation.mutate({
+      display_name: formData.display_name,
       is_field_technician: formData.is_field_technician
     });
   };
@@ -138,14 +143,14 @@ export default function UserProfile() {
           <CardContent className="p-6">
             <form onSubmit={handleProfileSubmit} className="space-y-6">
               <div className="space-y-2">
-                <Label htmlFor="full_name">Full Name</Label>
+                <Label htmlFor="display_name">Display Name</Label>
                 <Input
-                  id="full_name"
-                  value={formData.full_name}
-                  disabled
-                  className="bg-slate-50"
+                  id="display_name"
+                  value={formData.display_name}
+                  onChange={(e) => setFormData({ ...formData, display_name: e.target.value })}
+                  placeholder="Enter your display name"
                 />
-                <p className="text-xs text-slate-500">Name is managed by your account settings and cannot be changed here</p>
+                <p className="text-xs text-slate-500">This is how your name will appear throughout the app</p>
               </div>
 
               <div className="space-y-2">
