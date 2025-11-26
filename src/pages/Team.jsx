@@ -86,12 +86,24 @@ export default function Team() {
                             <p className="text-sm text-[hsl(25,8%,45%)] mt-1">{tech.job_title}</p>
                           )}
                         </div>
-                        <Badge className={tech.status === 'active' ? 
-                          "bg-green-50 text-green-900 border-green-200 border-2 font-semibold" : 
-                          "bg-[hsl(32,25%,94%)] text-[hsl(25,10%,12%)] border-[hsl(32,15%,88%)] border-2 font-semibold"
-                        }>
-                          {tech.status || 'active'}
-                        </Badge>
+                        <div className="flex items-center gap-2">
+                          <Badge className={tech.status === 'active' ? 
+                            "bg-green-50 text-green-900 border-green-200 border-2 font-semibold" : 
+                            "bg-[hsl(32,25%,94%)] text-[hsl(25,10%,12%)] border-[hsl(32,15%,88%)] border-2 font-semibold"
+                          }>
+                            {tech.status || 'active'}
+                          </Badge>
+                          {isAdmin && (
+                            <Button
+                              variant="ghost"
+                              size="icon"
+                              onClick={() => setEditingUser(tech)}
+                              className="h-8 w-8"
+                            >
+                              <Settings className="w-4 h-4" />
+                            </Button>
+                          )}
+                        </div>
                       </div>
                       <div className="space-y-2 text-sm text-[hsl(25,10%,25%)]">
                         <div className="flex items-center gap-2">
