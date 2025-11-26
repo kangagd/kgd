@@ -127,8 +127,8 @@ export default function Team() {
         </div>
 
         <div className="mt-6 p-4 bg-[#FFFBEB] border border-[#FCD34D] rounded-xl">
-          <p className="text-sm text-[hsl(25,10%,12%)] leading-relaxed">
-            <strong className="font-bold">Note:</strong> To add or manage team members, use the user management section in your dashboard settings. 
+          <p className="text-[14px] text-[#92400E] leading-relaxed">
+            <strong className="font-semibold">Note:</strong> To add or manage team members, use the user management section in your dashboard settings. 
             Mark users as field technicians by updating their profile.
           </p>
         </div>
