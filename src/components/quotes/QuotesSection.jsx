@@ -49,6 +49,22 @@ export default function QuotesSection({
     queryClient.invalidateQueries({ queryKey: filterKey });
   };
 
+  // Function to get a fresh session link from PandaDoc
+  const getRefreshLink = useCallback(async (quote) => {
+    if (!quote.pandadoc_document_id) return null;
+    
+    try {
+      const response = await base44.functions.invoke('getPandaDocSessionLink', {
+        documentId: quote.pandadoc_document_id,
+        recipientEmail: quote.customer_email || ''
+      });
+      return response.data?.public_url || null;
+    } catch (error) {
+      console.error('Failed to get session link:', error);
+      return null;
+    }
+  }, []);
+
   // For technicians, only show accepted quotes
   const visibleQuotes = isAdmin 
     ? quotes 
