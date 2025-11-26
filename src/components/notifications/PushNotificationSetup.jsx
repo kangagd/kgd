@@ -8,12 +8,11 @@ import { toast } from "sonner";
 import {
   isPushSupported,
   getPermissionStatus,
-  isUserSubscribed,
-  subscribeToNotifications,
-  unsubscribeFromNotifications,
-  getDeviceName,
-  getDeviceInfo
-} from "./oneSignalUtils";
+  registerForPushNotifications,
+  getActiveSubscriptionForDevice,
+  disableSubscription,
+  getDeviceName
+} from "./pushUtils";
 
 export default function PushNotificationSetup({ user }) {
   // Core state
