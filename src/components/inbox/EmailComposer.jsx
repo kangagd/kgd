@@ -38,8 +38,8 @@ const sanitizeBodyHtml = (html) => {
   return sanitized.trim();
 };
 
-export default function EmailComposer({ mode = "compose", thread, message, onClose, onSent, existingDraft = null, projectId = null, jobId = null }) {
-  const [to, setTo] = useState(existingDraft?.to || (mode === "reply" ? message?.from_address : ""));
+export default function EmailComposer({ mode = "compose", thread, message, onClose, onSent, existingDraft = null, projectId = null, jobId = null, defaultTo = null }) {
+  const [to, setTo] = useState(existingDraft?.to || (mode === "reply" ? message?.from_address : (defaultTo || "")));
   const [cc, setCc] = useState(existingDraft?.cc || "");
   const [bcc, setBcc] = useState(existingDraft?.bcc || "");
   const [subject, setSubject] = useState(
