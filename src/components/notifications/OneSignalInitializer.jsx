@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
-import { base44 } from "@/api/base44Client";
 import { initializeOneSignal, setExternalUserId, setUserTags } from "./oneSignalUtils";
+
+const ONESIGNAL_APP_ID = "50b86e27-3335-48dc-877c-4e4f3d223620";
 
 /**
  * OneSignal Initializer Component
@@ -13,15 +14,6 @@ export default function OneSignalInitializer({ user }) {
   useEffect(() => {
     const loadAndInitOneSignal = async () => {
       try {
-        // Fetch the OneSignal App ID from backend
-        const response = await base44.functions.invoke('getOneSignalConfig', {});
-        const appId = response.data?.appId;
-        
-        if (!appId) {
-          console.error('[OneSignal] No App ID configured');
-          return;
-        }
-
         // Load OneSignal SDK script if not already loaded
         if (!document.getElementById('onesignal-sdk')) {
           const script = document.createElement('script');
@@ -38,7 +30,7 @@ export default function OneSignalInitializer({ user }) {
         }
 
         // Initialize OneSignal
-        const success = await initializeOneSignal(appId);
+        const success = await initializeOneSignal(ONESIGNAL_APP_ID);
         setInitialized(success);
 
         // If user is logged in, link their account
