@@ -178,6 +178,12 @@ Deno.serve(async (req) => {
       name: finalQuoteName,
       value: totalValue,
       currency: 'AUD',
+      line_items: lineItems.map(item => ({
+        name: item.name || item.label || 'Item',
+        description: item.description || '',
+        quantity: item.quantity || 1,
+        price: item.price || 0
+      })),
       pandadoc_document_id: pandadocDoc.id,
       pandadoc_public_url: '', // Will be set when document is sent
       pandadoc_internal_url: `https://app.pandadoc.com/a/#/documents/${pandadocDoc.id}`,

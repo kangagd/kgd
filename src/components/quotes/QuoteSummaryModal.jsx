@@ -161,6 +161,38 @@ export default function QuoteSummaryModal({ quote, isOpen, onClose, isAdmin = fa
             </div>
           )}
 
+          {/* Line Items / Products */}
+          {quote.line_items && quote.line_items.length > 0 && (
+            <div>
+              <p className="text-[12px] text-[#6B7280] mb-2">Products & Services</p>
+              <div className="bg-[#F9FAFB] rounded-lg overflow-hidden">
+                <table className="w-full text-[13px]">
+                  <thead>
+                    <tr className="border-b border-[#E5E7EB]">
+                      <th className="text-left py-2 px-3 font-medium text-[#6B7280]">Item</th>
+                      <th className="text-right py-2 px-3 font-medium text-[#6B7280] w-16">Qty</th>
+                      <th className="text-right py-2 px-3 font-medium text-[#6B7280] w-24">Price</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {quote.line_items.map((item, index) => (
+                      <tr key={index} className="border-b border-[#E5E7EB] last:border-b-0">
+                        <td className="py-2 px-3">
+                          <p className="font-medium text-[#111827]">{item.name}</p>
+                          {item.description && (
+                            <p className="text-[11px] text-[#6B7280]">{item.description}</p>
+                          )}
+                        </td>
+                        <td className="text-right py-2 px-3 text-[#111827]">{item.quantity || 1}</td>
+                        <td className="text-right py-2 px-3 text-[#111827]">${(item.price || 0).toFixed(2)}</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          )}
+
           {/* Internal Notes */}
           {quote.notes_internal && (
             <div>
