@@ -249,28 +249,24 @@ export default function EmailDetailView({
                           <div className="flex items-center gap-1">
                             <LinkIcon className="w-3 h-3" />
                             <span>Project:</span>
-                            <a
-                              href={createPageUrl("Projects") + `?projectId=${thread.linked_project_id}`}
-                              target="_blank"
-                              rel="noopener noreferrer"
+                            <button
+                              onClick={() => navigate(createPageUrl("Projects") + `?projectId=${thread.linked_project_id}`)}
                               className="text-[#111827] font-medium hover:underline"
                             >
                               {thread.linked_project_title}
-                            </a>
+                            </button>
                           </div>
                         )}
                         {thread.linked_job_id && (
                           <div className="flex items-center gap-1">
                             <LinkIcon className="w-3 h-3" />
                             <span>Job:</span>
-                            <a
-                              href={createPageUrl("Jobs") + `?jobId=${thread.linked_job_id}`}
-                              target="_blank"
-                              rel="noopener noreferrer"
+                            <button
+                              onClick={() => navigate(createPageUrl("Jobs") + `?jobId=${thread.linked_job_id}`)}
                               className="text-[#111827] font-medium hover:underline"
                             >
                               #{thread.linked_job_number}
-                            </a>
+                            </button>
                           </div>
                         )}
                       </>
