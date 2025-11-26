@@ -93,18 +93,47 @@ export default function AttachmentCard({
               {saving ? <Loader2 className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4" />}
             </Button>
           )}
-          {attachment.url && (
-            <Button
-              variant="ghost"
-              size="sm"
-              asChild
-              className="h-8 w-8 p-0"
-            >
-              <a href={attachment.url} download target="_blank" rel="noopener noreferrer">
-                <Download className="w-4 h-4" />
-              </a>
-            </Button>
-          )}
+          <Button
+            variant="ghost"
+            size="sm"
+            disabled={downloading}
+            onClick={async () => {
+              // If we already have a URL, use it
+              if (resolvedUrl) {
+                window.open(resolvedUrl, '_blank');
+                return;
+              }
+              
+              // If we have attachment_id and gmail_message_id, fetch from Gmail
+              if (attachment.attachment_id && attachment.gmail_message_id) {
+                setDownloading(true);
+                try {
+                  const result = await base44.functions.invoke('getGmailAttachment', {
+                    gmail_message_id: attachment.gmail_message_id,
+                    attachment_id: attachment.attachment_id,
+                    filename: attachment.filename,
+                    mime_type: attachment.mime_type
+                  });
+                  if (result.data?.url) {
+                    setResolvedUrl(result.data.url);
+                    window.open(result.data.url, '_blank');
+                  } else {
+                    toast.error('Failed to download attachment');
+                  }
+                } catch (err) {
+                  console.error('Download error:', err);
+                  toast.error('Failed to download attachment');
+                } finally {
+                  setDownloading(false);
+                }
+              } else {
+                toast.error('Attachment not available');
+              }
+            }}
+            className="h-8 w-8 p-0"
+          >
+            {downloading ? <Loader2 className="w-4 h-4 animate-spin" /> : <Download className="w-4 h-4" />}
+          </Button>
         </div>
       </div>
     </div>
