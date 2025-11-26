@@ -234,45 +234,17 @@ Deno.serve(async (req) => {
             processParts(detail.payload.parts);
           }
 
-          // Fetch and upload attachments to file storage
-          const processedAttachments = [];
-          for (const att of attachments) {
-            try {
-              // Fetch the attachment data from Gmail
-              const attResponse = await fetch(
-                `https://gmail.googleapis.com/gmail/v1/users/me/messages/${att.gmail_message_id}/attachments/${att.attachment_id}`,
-                { headers: { 'Authorization': `Bearer ${accessToken}` } }
-              );
-              
-              if (attResponse.ok) {
-                const attData = await attResponse.json();
-                if (attData.data) {
-                  // Convert base64url to regular base64 and decode to binary
-                  const base64Data = attData.data.replace(/-/g, '+').replace(/_/g, '/');
-                  const binaryString = atob(base64Data);
-                  const bytes = new Uint8Array(binaryString.length);
-                  for (let i = 0; i < binaryString.length; i++) {
-                    bytes[i] = binaryString.charCodeAt(i);
-                  }
-                  
-                  // Create a File object and upload it
-                  const file = new File([bytes], att.filename, { type: att.mime_type });
-                  const uploadResult = await base44.asServiceRole.integrations.Core.UploadFile({ file });
-                  
-                  if (uploadResult?.file_url) {
-                    processedAttachments.push({
-                      filename: att.filename,
-                      mime_type: att.mime_type,
-                      size: att.size,
-                      url: uploadResult.file_url
-                    });
-                    console.log(`Uploaded attachment: ${att.filename}`);
-                  }
-                }
-              }
-            } catch (attErr) {
-              console.error('Error fetching/uploading attachment:', attErr.message);
-            }
+          // Store attachment metadata (without downloading content to avoid timeouts)
+          const processedAttachments = attachments.map(att => ({
+            filename: att.filename,
+            mime_type: att.mime_type,
+            size: att.size,
+            attachment_id: att.attachment_id,
+            gmail_message_id: att.gmail_message_id
+          }));
+          
+          if (processedAttachments.length > 0) {
+            console.log(`Found ${processedAttachments.length} attachments for message`);
           }
 
           // Parse addresses safely
