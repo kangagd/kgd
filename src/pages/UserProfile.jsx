@@ -255,6 +255,8 @@ export default function UserProfile() {
         </Card>
 
         <NotificationPreferences user={user} />
+        
+        <PushNotificationSetup user={user} />
       </div>
     </div>
   );
