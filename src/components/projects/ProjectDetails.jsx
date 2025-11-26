@@ -98,6 +98,8 @@ export default function ProjectDetails({ project: initialProject, onClose, onEdi
   const [showPaymentModal, setShowPaymentModal] = useState(false);
   const [selectedInvoice, setSelectedInvoice] = useState(null);
   const [previewJob, setPreviewJob] = useState(null);
+  const [showLostModal, setShowLostModal] = useState(false);
+  const [isMarkingLost, setIsMarkingLost] = useState(false);
   
   // Get email thread ID from props, URL params, or project's source
   const urlParams = new URLSearchParams(window.location.search);
@@ -507,6 +509,49 @@ Format as HTML bullet points using <ul> and <li> tags. Include only the most cri
       await autoCreateJob("Final Measure");
     } else if (newStage === "Scheduled") {
       await autoCreateJob("Installation");
+    }
+  };
+
+  const handleMarkAsLost = async (lostData) => {
+    setIsMarkingLost(true);
+    try {
+      const currentUser = await base44.auth.me();
+      
+      // Update project status to Lost with reason
+      await base44.entities.Project.update(project.id, {
+        status: "Lost",
+        lost_reason: lostData.lost_reason,
+        lost_reason_notes: lostData.lost_reason_notes,
+        lost_date: lostData.lost_date
+      });
+
+      // Log the change
+      await base44.entities.ChangeHistory.create({
+        project_id: project.id,
+        field_name: 'status',
+        old_value: project.status,
+        new_value: `Lost - ${lostData.lost_reason}${lostData.lost_reason_notes ? ` (${lostData.lost_reason_notes})` : ''}`,
+        changed_by: currentUser.email,
+        changed_by_name: currentUser.full_name
+      });
+
+      // Cancel all open/scheduled jobs
+      const openJobs = jobs.filter(j => j.status === "Open" || j.status === "Scheduled");
+      await Promise.all(openJobs.map(job => 
+        base44.entities.Job.update(job.id, { status: "Cancelled" })
+      ));
+
+      queryClient.invalidateQueries({ queryKey: ['project', project.id] });
+      queryClient.invalidateQueries({ queryKey: ['projects'] });
+      queryClient.invalidateQueries({ queryKey: ['projectJobs', project.id] });
+      
+      toast.success(`Project marked as lost. ${openJobs.length} job${openJobs.length !== 1 ? 's' : ''} cancelled.`);
+      setShowLostModal(false);
+    } catch (error) {
+      console.error('Error marking project as lost:', error);
+      toast.error('Failed to mark project as lost');
+    } finally {
+      setIsMarkingLost(false);
     }
   };
 
@@ -1104,6 +1149,7 @@ Format as HTML bullet points using <ul> and <li> tags. Include only the most cri
             <ProjectStageSelector
               currentStage={project.status}
               onStageChange={handleStageChange}
+              onMarkAsLost={() => setShowLostModal(true)}
             />
           </div>
           {project.financial_status && (
@@ -1451,6 +1497,14 @@ Format as HTML bullet points using <ul> and <li> tags. Include only the most cri
       >
         {previewJob && <JobModalView job={previewJob} />}
       </EntityModal>
+
+      <MarkAsLostModal
+        open={showLostModal}
+        onClose={() => setShowLostModal(false)}
+        onConfirm={handleMarkAsLost}
+        openJobsCount={jobs.filter(j => j.status === "Open" || j.status === "Scheduled").length}
+        isSubmitting={isMarkingLost}
+      />
     </div>
   );
 }
