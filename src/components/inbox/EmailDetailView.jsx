@@ -125,61 +125,9 @@ export default function EmailDetailView({
 
   const handleThreadUpdate = () => {
     queryClient.invalidateQueries({ queryKey: ['emailThreads'] });
-    refetchLinkedThreads();
     if (onThreadUpdate) {
       onThreadUpdate();
     }
-  };
-
-  const handleLinkThread = async (linkedThread) => {
-    const currentLinkedIds = thread.linked_thread_ids || [];
-    const newLinkedIds = [...currentLinkedIds, linkedThread.id];
-    
-    try {
-      // Update current thread
-      await base44.entities.EmailThread.update(thread.id, { linked_thread_ids: newLinkedIds });
-      
-      // Also add bidirectional link
-      const otherLinkedIds = linkedThread.linked_thread_ids || [];
-      if (!otherLinkedIds.includes(thread.id)) {
-        await base44.entities.EmailThread.update(linkedThread.id, { 
-          linked_thread_ids: [...otherLinkedIds, thread.id] 
-        });
-      }
-      
-      toast.success("Thread linked successfully");
-      handleThreadUpdate();
-      setLinkThreadModalOpen(false);
-    } catch (error) {
-      toast.error("Failed to link thread");
-    }
-  };
-
-  const handleUnlinkThread = async (threadIdToUnlink) => {
-    const currentLinkedIds = thread.linked_thread_ids || [];
-    const newLinkedIds = currentLinkedIds.filter(id => id !== threadIdToUnlink);
-    
-    try {
-      // Update current thread
-      await base44.entities.EmailThread.update(thread.id, { linked_thread_ids: newLinkedIds });
-      
-      // Also remove bidirectional link
-      const otherThread = linkedThreads.find(t => t.id === threadIdToUnlink);
-      if (otherThread && otherThread.linked_thread_ids?.includes(thread.id)) {
-        await base44.entities.EmailThread.update(threadIdToUnlink, { 
-          linked_thread_ids: otherThread.linked_thread_ids.filter(id => id !== thread.id) 
-        });
-      }
-      
-      toast.success("Thread unlinked");
-      handleThreadUpdate();
-    } catch (error) {
-      toast.error("Failed to unlink thread");
-    }
-  };
-
-  const handleNavigateToThread = (threadId) => {
-    navigate(`?threadId=${threadId}`, { replace: true });
   };
 
   const handleCreateProjectFromAI = () => {
