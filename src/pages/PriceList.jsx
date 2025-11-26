@@ -84,8 +84,11 @@ export default function PriceList() {
 
   const categories = ["Service", "Motor", "Remotes/Accessories"];
   const isAdmin = user?.role === 'admin';
-  const isTechnician = user?.is_field_technician;
-  const canModifyStock = isAdmin || isTechnician;
+  const isManager = user?.role === 'manager';
+  const isAdminOrManager = isAdmin || isManager;
+  const isTechnician = user?.is_field_technician && !isAdminOrManager;
+  const canModifyStock = isAdminOrManager || isTechnician;
+  const canEditPriceList = isAdminOrManager;
   const lowStockCount = priceItems.filter((item) => item.stock_level <= item.min_stock_level && item.stock_level > 0).length;
   const outOfStockCount = priceItems.filter((item) => item.stock_level === 0).length;
 
@@ -134,7 +137,7 @@ export default function PriceList() {
             <h1 className="text-2xl font-bold text-[#111827] leading-tight">Price List</h1>
             <p className="text-sm text-[#4B5563] mt-1">Manage inventory and pricing</p>
           </div>
-          {isAdmin && (
+          {canEditPriceList && (
             <Button
               onClick={() => setShowForm(true)}
               className="bg-[#FAE008] text-[#111827] hover:bg-[#E5CF07] font-semibold shadow-sm hover:shadow-md transition w-full md:w-auto h-10 px-4 text-sm rounded-xl"
@@ -214,7 +217,7 @@ export default function PriceList() {
               <PriceListCard
                 key={item.id}
                 item={item}
-                isAdmin={isAdmin}
+                isAdmin={canEditPriceList}
                 canModifyStock={canModifyStock}
                 onEdit={handleEdit}
                 onDelete={handleDelete}

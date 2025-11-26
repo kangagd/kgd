@@ -1225,13 +1225,13 @@ Format as HTML bullet points using <ul> and <li> tags. Include only the most cri
                 <TabsTrigger value="quoting" className="flex-1 whitespace-nowrap">Quoting</TabsTrigger>
                 <TabsTrigger value="parts" className="flex-1 whitespace-nowrap">Parts</TabsTrigger>
                 <TabsTrigger value="invoices" className="flex-1 whitespace-nowrap">Invoices</TabsTrigger>
-                {user?.role === 'admin' && (
+                {(user?.role === 'admin' || user?.role === 'manager') && (
                   <TabsTrigger value="financials" className="flex-1 whitespace-nowrap">Financials</TabsTrigger>
                 )}
                 <TabsTrigger value="summary" className="flex-1 whitespace-nowrap">
                   Summary
                 </TabsTrigger>
-                {user?.role === 'admin' && (
+                {(user?.role === 'admin' || user?.role === 'manager') && (
                   <TabsTrigger value="warranty" className="flex-1 whitespace-nowrap">Warranty</TabsTrigger>
                 )}
               </TabsList>
@@ -1369,7 +1369,7 @@ Format as HTML bullet points using <ul> and <li> tags. Include only the most cri
             />
           </TabsContent>
 
-          {user?.role === 'admin' && (
+          {(user?.role === 'admin' || user?.role === 'manager') && (
             <TabsContent value="financials" className="mt-3">
               <FinancialsTab 
                 project={project}
@@ -1465,7 +1465,7 @@ Format as HTML bullet points using <ul> and <li> tags. Include only the most cri
             </Card>
           </TabsContent>
 
-          {user?.role === 'admin' && (
+          {(user?.role === 'admin' || user?.role === 'manager') && (
             <TabsContent value="warranty" className="mt-3">
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <WarrantyCard project={project} />
