@@ -23,7 +23,7 @@ Deno.serve(async (req) => {
       return Response.json({ error: 'documentId is required' }, { status: 400 });
     }
 
-    // First get document details to find recipient email (required by PandaDoc API)
+    // First get document details
     const docResponse = await fetch(`${PANDADOC_API_URL}/documents/${documentId}`, {
       headers: {
         'Authorization': `API-Key ${PANDADOC_API_KEY}`
@@ -40,19 +40,47 @@ Deno.serve(async (req) => {
     }
     
     const docData = await docResponse.json();
-    // Get first recipient's email - this is REQUIRED for session creation
+    console.log('Document status:', docData.status, 'Document ID:', documentId);
+    
+    // Get recipient email
     const recipientToUse = recipientEmail || docData.recipients?.[0]?.email;
     
     if (!recipientToUse) {
-      console.error('No recipient email found for document:', documentId, 'doc data:', JSON.stringify(docData));
+      console.error('No recipient email found for document:', documentId);
       return Response.json({ 
         error: 'No recipient email found for this document' 
       }, { status: 400 });
     }
 
+    // Try to get sharing link first (works more reliably)
+    try {
+      const sharingResponse = await fetch(`${PANDADOC_API_URL}/documents/${documentId}/links`, {
+        headers: {
+          'Authorization': `API-Key ${PANDADOC_API_KEY}`
+        }
+      });
+      
+      if (sharingResponse.ok) {
+        const links = await sharingResponse.json();
+        console.log('Sharing links response:', JSON.stringify(links));
+        
+        // Find a link for the recipient or the first available link
+        const recipientLink = links.find(l => l.recipient === recipientToUse) || links[0];
+        if (recipientLink && recipientLink.link) {
+          return Response.json({
+            success: true,
+            public_url: recipientLink.link,
+            method: 'sharing_link'
+          });
+        }
+      }
+    } catch (linkError) {
+      console.log('Sharing links not available, trying session:', linkError.message);
+    }
+
+    // Fallback: Try session API
     console.log('Creating session for document:', documentId, 'recipient:', recipientToUse);
 
-    // Create a new session link
     const sessionResponse = await fetch(`${PANDADOC_API_URL}/documents/${documentId}/session`, {
       method: 'POST',
       headers: {
@@ -61,23 +89,55 @@ Deno.serve(async (req) => {
       },
       body: JSON.stringify({
         recipient: recipientToUse,
-        lifetime: 86400 // 24 hours in seconds
+        lifetime: 86400
       })
     });
 
     if (!sessionResponse.ok) {
       const errorText = await sessionResponse.text();
-      console.error('PandaDoc session error:', errorText, 'for document:', documentId, 'recipient:', recipientToUse);
+      console.error('PandaDoc session error:', errorText, 'Status:', sessionResponse.status);
+      
+      // If session fails, try to create a sharing link
+      try {
+        const createLinkResponse = await fetch(`${PANDADOC_API_URL}/documents/${documentId}/links`, {
+          method: 'POST',
+          headers: {
+            'Authorization': `API-Key ${PANDADOC_API_KEY}`,
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify({
+            recipient: recipientToUse,
+            lifetime: 86400
+          })
+        });
+        
+        if (createLinkResponse.ok) {
+          const linkData = await createLinkResponse.json();
+          console.log('Created sharing link:', JSON.stringify(linkData));
+          if (linkData.link) {
+            return Response.json({
+              success: true,
+              public_url: linkData.link,
+              method: 'created_sharing_link'
+            });
+          }
+        } else {
+          const createLinkError = await createLinkResponse.text();
+          console.error('Failed to create sharing link:', createLinkError);
+        }
+      } catch (createLinkErr) {
+        console.error('Error creating sharing link:', createLinkErr.message);
+      }
+      
       return Response.json({ 
-        error: 'Failed to create session link', 
-        details: errorText 
+        error: 'Failed to create client link', 
+        details: `Session API error: ${errorText}. Document status: ${docData.status}. Make sure the document has been sent to recipients.`
       }, { status: sessionResponse.status });
     }
 
     const sessionData = await sessionResponse.json();
     console.log('PandaDoc session response:', JSON.stringify(sessionData));
     
-    // PandaDoc returns id which is used as token in the URL
     const token = sessionData.id;
     if (!token) {
       console.error('No session ID in response:', JSON.stringify(sessionData));
@@ -91,6 +151,7 @@ Deno.serve(async (req) => {
     return Response.json({
       success: true,
       public_url: publicUrl,
+      method: 'session',
       expires_in: 86400
     });
 
