@@ -59,9 +59,11 @@ Deno.serve(async (req) => {
       const sessionData = await sessionResponse.json();
       console.log('Session created:', JSON.stringify(sessionData));
       
-      if (sessionData.id) {
-        const publicUrl = `https://app.pandadoc.com/document/v2?token=${sessionData.id}`;
-        return Response.json({ success: true, public_url: publicUrl, method: 'session_api' });
+      // PandaDoc returns different fields - check for the actual token/link
+      if (sessionData.expires_at && sessionData.id) {
+        // The session endpoint returns a view_url or we construct from the session id
+        const publicUrl = sessionData.view_url || `https://app.pandadoc.com/s/${sessionData.id}`;
+        return Response.json({ success: true, public_url: publicUrl, method: 'session_api', session_data: sessionData });
       }
     }
 
