@@ -113,7 +113,7 @@ Deno.serve(async (req) => {
       console.log('Sharing links not available:', linkError.message);
     }
 
-    // Try to CREATE a sharing link (this often works better than sessions)
+    // Try to CREATE a sharing link WITHOUT recipient (public link)
     try {
       const createLinkResponse = await fetch(`${PANDADOC_API_URL}/documents/${documentId}/links`, {
         method: 'POST',
@@ -122,24 +122,48 @@ Deno.serve(async (req) => {
           'Content-Type': 'application/json'
         },
         body: JSON.stringify({
-          recipient: recipientToUse,
-          lifetime: 86400 // 24 hours
+          lifetime: 86400 // 24 hours - no recipient = public link
         })
       });
       
       if (createLinkResponse.ok) {
         const linkData = await createLinkResponse.json();
-        console.log('Created sharing link:', JSON.stringify(linkData));
+        console.log('Created public sharing link:', JSON.stringify(linkData));
         if (linkData.link) {
           return Response.json({
             success: true,
             public_url: linkData.link,
-            method: 'created_sharing_link'
+            method: 'created_public_link'
           });
         }
       } else {
         const linkError = await createLinkResponse.text();
-        console.log('Create sharing link failed:', linkError);
+        console.log('Create public link failed:', linkError);
+        
+        // Try with recipient as fallback
+        const createLinkResponse2 = await fetch(`${PANDADOC_API_URL}/documents/${documentId}/links`, {
+          method: 'POST',
+          headers: {
+            'Authorization': `API-Key ${PANDADOC_API_KEY}`,
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify({
+            recipient: recipientToUse,
+            lifetime: 86400
+          })
+        });
+        
+        if (createLinkResponse2.ok) {
+          const linkData2 = await createLinkResponse2.json();
+          console.log('Created recipient sharing link:', JSON.stringify(linkData2));
+          if (linkData2.link) {
+            return Response.json({
+              success: true,
+              public_url: linkData2.link,
+              method: 'created_recipient_link'
+            });
+          }
+        }
       }
     } catch (createLinkError) {
       console.log('Create sharing link error:', createLinkError.message);
