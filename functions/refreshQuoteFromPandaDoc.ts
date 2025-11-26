@@ -56,27 +56,93 @@ Deno.serve(async (req) => {
     let lineItems = [];
     let totalValue = 0;
 
+    // Log the structure for debugging
+    console.log('PandaDoc details structure:', JSON.stringify(detailsData, null, 2));
+
     if (detailsData.pricing_tables && detailsData.pricing_tables.length > 0) {
       for (const table of detailsData.pricing_tables) {
+        // Try sections first (newer API structure)
         if (table.sections) {
           for (const section of table.sections) {
             if (section.rows) {
               for (const row of section.rows) {
-                const qty = row.data?.qty || row.qty || 1;
-                const price = row.data?.price || row.price || 0;
+                const qty = row.data?.qty || row.data?.QTY || row.qty || 1;
+                const price = row.data?.price || row.data?.Price || row.price || 0;
+                const name = row.data?.name || row.data?.Name || row.data?.sku || row.name || 'Item';
+                const description = row.data?.description || row.data?.Description || row.description || '';
+                
                 lineItems.push({
-                  name: row.data?.name || row.name || 'Item',
-                  description: row.data?.description || row.description || '',
-                  quantity: qty,
-                  price: price
+                  name: name,
+                  description: description,
+                  quantity: parseFloat(qty) || 1,
+                  price: parseFloat(price) || 0
                 });
-                totalValue += qty * price;
+                totalValue += (parseFloat(qty) || 1) * (parseFloat(price) || 0);
               }
             }
           }
         }
+        
+        // Also try items directly on table (older API structure)
+        if (table.items && table.items.length > 0) {
+          for (const item of table.items) {
+            const qty = item.qty || item.quantity || 1;
+            const price = item.price || item.cost || 0;
+            const name = item.name || item.sku || item.title || 'Item';
+            const description = item.description || '';
+            
+            lineItems.push({
+              name: name,
+              description: description,
+              quantity: parseFloat(qty) || 1,
+              price: parseFloat(price) || 0
+            });
+            totalValue += (parseFloat(qty) || 1) * (parseFloat(price) || 0);
+          }
+        }
+
+        // Try rows directly on table
+        if (table.rows && table.rows.length > 0) {
+          for (const row of table.rows) {
+            const data = row.data || row;
+            const qty = data.qty || data.QTY || data.quantity || 1;
+            const price = data.price || data.Price || data.cost || 0;
+            const name = data.name || data.Name || data.sku || 'Item';
+            const description = data.description || data.Description || '';
+            
+            lineItems.push({
+              name: name,
+              description: description,
+              quantity: parseFloat(qty) || 1,
+              price: parseFloat(price) || 0
+            });
+            totalValue += (parseFloat(qty) || 1) * (parseFloat(price) || 0);
+          }
+        }
       }
     }
+
+    // Also check for pricing field directly on the document
+    if (lineItems.length === 0 && detailsData.pricing) {
+      const pricing = detailsData.pricing;
+      if (Array.isArray(pricing)) {
+        for (const item of pricing) {
+          lineItems.push({
+            name: item.name || item.title || 'Item',
+            description: item.description || '',
+            quantity: parseFloat(item.qty || item.quantity || 1),
+            price: parseFloat(item.price || item.cost || 0)
+          });
+        }
+      }
+    }
+
+    // Check content_fields for pricing info
+    if (lineItems.length === 0 && detailsData.fields) {
+      console.log('Checking fields:', JSON.stringify(detailsData.fields, null, 2));
+    }
+
+    console.log('Extracted line items:', lineItems.length);
 
     // Also fetch the main document for grand total
     const docResponse = await fetch(`${PANDADOC_API_URL}/documents/${quote.pandadoc_document_id}`, {
