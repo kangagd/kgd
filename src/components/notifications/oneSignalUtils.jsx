@@ -27,16 +27,27 @@ export async function initializeOneSignal(appId) {
       try {
         await OneSignal.init({
           appId: appId,
-          allowLocalhostAsSecureOrigin: true, // For development
+          allowLocalhostAsSecureOrigin: true,
           notifyButton: {
-            enable: false, // We'll use our own UI
+            enable: false,
           },
-          // Use OneSignal's hosted service worker to avoid hosting issues
-          serviceWorkerParam: {
-            scope: '/push/onesignal/'
-          },
-          serviceWorkerPath: 'https://cdn.onesignal.com/sdks/web/v16/OneSignalSDK.sw.js',
-          serviceWorkerUpdaterPath: 'https://cdn.onesignal.com/sdks/web/v16/OneSignalSDK.sw.js'
+          // Disable service worker - use HTTP fallback mode
+          autoResubscribe: true,
+          promptOptions: {
+            slidedown: {
+              prompts: [
+                {
+                  type: "push",
+                  autoPrompt: false,
+                  text: {
+                    actionMessage: "Enable notifications to get updates on your jobs and projects.",
+                    acceptButton: "Allow",
+                    cancelButton: "No Thanks"
+                  }
+                }
+              ]
+            }
+          }
         });
         console.log('[OneSignal] Initialized successfully');
         resolve(true);
