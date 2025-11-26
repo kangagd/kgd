@@ -188,7 +188,7 @@ export default function QuoteSummaryModal({ quote, isOpen, onClose, isAdmin = fa
           {isAdmin && quote.pandadoc_internal_url && (
             <Button onClick={openInPandaDoc} className="bg-[#FAE008] hover:bg-[#E5CF07] text-[#111827] flex-1 min-w-[120px]">
               <ExternalLink className="w-4 h-4 mr-2" />
-              Open in PandaDoc
+              PandaDoc
             </Button>
           )}
         </DialogFooter>
