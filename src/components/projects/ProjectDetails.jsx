@@ -940,36 +940,49 @@ Format as HTML bullet points using <ul> and <li> tags. Include only the most cri
             </CardContent>
             </Card>
 
-            {/* Images Section */}
+            {/* Images & Videos Section */}
             <Card className="border border-[#E5E7EB] shadow-sm rounded-lg overflow-hidden mt-4">
               <CardHeader className="bg-white px-4 py-3 border-b border-[#E5E7EB]">
-                <h3 className="text-[16px] font-semibold text-[#111827] leading-[1.2]">Images</h3>
+                <h3 className="text-[16px] font-semibold text-[#111827] leading-[1.2]">Media</h3>
               </CardHeader>
               <CardContent className="p-3 space-y-3">
                 {project.image_urls && project.image_urls.length > 0 && (
                   <div className="grid grid-cols-2 gap-2">
-                    {project.image_urls.slice(0, 4).map((url, index) => (
-                      <div key={index} className="relative group">
-                        <button
-                          onClick={() => setPreviewFile({
-                            url,
-                            name: `Project Image ${index + 1}`,
-                            type: 'image',
-                            projectName: project.title,
-                            address: project.address,
-                            index,
-                            allImages: project.image_urls
-                          })}
-                          className="block w-full"
-                        >
-                          <img 
-                            src={url} 
-                            alt={`Project image ${index + 1}`} 
-                            className="w-full h-20 object-cover rounded-lg border border-[#E5E7EB] hover:border-[#FAE008] transition-all cursor-pointer"
-                          />
-                        </button>
-                      </div>
-                    ))}
+                    {project.image_urls.slice(0, 4).map((url, index) => {
+                      const isVideo = url.match(/\.(mp4|mov|webm|avi|mkv)$/i) || url.includes('video');
+                      return (
+                        <div key={index} className="relative group">
+                          <button
+                            onClick={() => setPreviewFile({
+                              url,
+                              name: isVideo ? `Project Video ${index + 1}` : `Project Image ${index + 1}`,
+                              type: isVideo ? 'video' : 'image',
+                              projectName: project.title,
+                              address: project.address,
+                              index,
+                              allImages: project.image_urls
+                            })}
+                            className="block w-full"
+                          >
+                            {isVideo ? (
+                              <div className="w-full h-20 bg-slate-100 rounded-lg border border-[#E5E7EB] hover:border-[#FAE008] transition-all cursor-pointer flex items-center justify-center">
+                                <div className="w-8 h-8 bg-[#111827]/70 rounded-full flex items-center justify-center">
+                                  <svg className="w-4 h-4 text-white ml-0.5" fill="currentColor" viewBox="0 0 24 24">
+                                    <path d="M8 5v14l11-7z"/>
+                                  </svg>
+                                </div>
+                              </div>
+                            ) : (
+                              <img 
+                                src={url} 
+                                alt={`Project image ${index + 1}`} 
+                                className="w-full h-20 object-cover rounded-lg border border-[#E5E7EB] hover:border-[#FAE008] transition-all cursor-pointer"
+                              />
+                            )}
+                          </button>
+                        </div>
+                      );
+                    })}
                   </div>
                 )}
 
@@ -977,8 +990,8 @@ Format as HTML bullet points using <ul> and <li> tags. Include only the most cri
                   <button
                     onClick={() => setPreviewFile({
                       url: project.image_urls[4],
-                      name: `Project Image 5`,
-                      type: 'image',
+                      name: `Project Media 5`,
+                      type: project.image_urls[4].match(/\.(mp4|mov|webm|avi|mkv)$/i) ? 'video' : 'image',
                       projectName: project.title,
                       address: project.address,
                       index: 4,
@@ -986,7 +999,7 @@ Format as HTML bullet points using <ul> and <li> tags. Include only the most cri
                     })}
                     className="text-[12px] text-[#6B7280] text-center w-full hover:text-[#111827] transition-colors"
                   >
-                    +{project.image_urls.length - 4} more images
+                    +{project.image_urls.length - 4} more
                   </button>
                 )}
 
@@ -1000,12 +1013,12 @@ Format as HTML bullet points using <ul> and <li> tags. Include only the most cri
                   >
                     <span>
                       <Upload className="w-4 h-4 mr-2" />
-                      {uploading ? 'Uploading...' : 'Add Image'}
+                      {uploading ? 'Uploading...' : 'Add Image/Video'}
                     </span>
                   </Button>
                   <input
                     type="file"
-                    accept="image/*"
+                    accept="image/*,video/*"
                     className="hidden"
                     onChange={(e) => handleFileUpload(e, 'image')}
                   />
