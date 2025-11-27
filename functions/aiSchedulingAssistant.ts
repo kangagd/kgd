@@ -190,66 +190,283 @@ Deno.serve(async (req) => {
       }))
     };
 
+    // Helper to format time from minutes
+    const formatTime = (minutes) => {
+      const h = Math.floor(minutes / 60);
+      const m = minutes % 60;
+      return `${String(h).padStart(2, '0')}:${String(m).padStart(2, '0')}`;
+    };
+
+    // Helper to parse time string to minutes
+    const parseTime = (timeStr) => {
+      if (!timeStr) return null;
+      const [h, m] = timeStr.split(':').map(Number);
+      return h * 60 + m;
+    };
+
+    // Find available technicians for reassignment
+    const findAvailableTechnicians = (excludeEmail, date) => {
+      return analysisContext.technicians
+        .filter(t => t.email !== excludeEmail && t.currentJobCount < t.maxJobs)
+        .map(t => ({
+          email: t.email,
+          name: t.name,
+          availableSlots: t.maxJobs - t.currentJobCount,
+          currentJobs: t.currentJobCount
+        }))
+        .sort((a, b) => b.availableSlots - a.availableSlots);
+    };
+
     // Detect scheduling conflicts
     const conflicts = [];
+    
     for (const tech of analysisContext.technicians) {
       const techJobs = dateJobs
         .filter(j => j.assigned_to?.includes(tech.email))
         .sort((a, b) => (a.scheduled_time || '').localeCompare(b.scheduled_time || ''));
       
-      for (let i = 0; i < techJobs.length - 1; i++) {
-        const currentJob = techJobs[i];
-        const nextJob = techJobs[i + 1];
-        
-        if (!currentJob.scheduled_time || !nextJob.scheduled_time) continue;
+      // Check for jobs without scheduled times
+      const unscheduledJobs = techJobs.filter(j => !j.scheduled_time);
+      if (unscheduledJobs.length > 0) {
+        for (const job of unscheduledJobs) {
+          conflicts.push({
+            type: 'missing_time',
+            severity: 'medium',
+            technician: tech.name,
+            technicianEmail: tech.email,
+            job: { 
+              id: job.id, 
+              jobNumber: job.job_number, 
+              customer: job.customer_name,
+              address: job.address_suburb || job.address_full
+            },
+            message: `Job #${job.job_number} (${job.customer_name}) is scheduled for ${targetDate} but has no specific time assigned.`,
+            suggestedFix: `Set a specific time for Job #${job.job_number} to enable route optimization.`,
+            suggestedAction: {
+              type: 'set_time',
+              jobId: job.id,
+              recommendedTimes: ['08:00', '10:00', '13:00', '15:00']
+            }
+          });
+        }
+      }
+
+      // Check sequential jobs for conflicts
+      const scheduledJobs = techJobs.filter(j => j.scheduled_time);
+      
+      for (let i = 0; i < scheduledJobs.length - 1; i++) {
+        const currentJob = scheduledJobs[i];
+        const nextJob = scheduledJobs[i + 1];
         
         const currentDuration = currentJob.expected_duration || 1;
-        const [currentHours, currentMins] = currentJob.scheduled_time.split(':').map(Number);
-        const currentEndTime = currentHours * 60 + currentMins + (currentDuration * 60);
+        const currentStartTime = parseTime(currentJob.scheduled_time);
+        const currentEndTime = currentStartTime + (currentDuration * 60);
+        const nextStartTime = parseTime(nextJob.scheduled_time);
         
-        const [nextHours, nextMins] = nextJob.scheduled_time.split(':').map(Number);
-        const nextStartTime = nextHours * 60 + nextMins;
-        
-        // Calculate travel time if coordinates available
+        // Calculate travel time and distance
         let travelTime = 15; // Default 15 min buffer
+        let distanceKm = null;
+        
         if (currentJob.latitude && currentJob.longitude && nextJob.latitude && nextJob.longitude) {
-          const distance = calculateDistance(
+          distanceKm = calculateDistance(
             currentJob.latitude, currentJob.longitude,
             nextJob.latitude, nextJob.longitude
           );
-          travelTime = estimateTravelTime(distance);
+          travelTime = Math.max(estimateTravelTime(distanceKm), 10); // Minimum 10 min buffer
         }
         
         const gapMinutes = nextStartTime - currentEndTime;
+        const requiredGap = travelTime;
         
-        if (gapMinutes < travelTime) {
+        // Direct time overlap (high severity)
+        if (nextStartTime < currentEndTime) {
+          const overlapMinutes = currentEndTime - nextStartTime;
+          const suggestedNewTime = formatTime(currentEndTime + travelTime);
+          
           conflicts.push({
-            type: 'travel_time',
-            severity: gapMinutes < 0 ? 'high' : 'medium',
+            type: 'overlap',
+            severity: 'high',
             technician: tech.name,
             technicianEmail: tech.email,
-            job1: { id: currentJob.id, jobNumber: currentJob.job_number, time: currentJob.scheduled_time },
-            job2: { id: nextJob.id, jobNumber: nextJob.job_number, time: nextJob.scheduled_time },
-            message: gapMinutes < 0 
-              ? `Jobs overlap! Job #${currentJob.job_number} ends after Job #${nextJob.job_number} starts.`
-              : `Only ${gapMinutes} min gap between jobs, but ${travelTime} min travel time needed.`,
-            suggestedFix: `Consider rescheduling Job #${nextJob.job_number} to start at least ${travelTime} minutes after Job #${currentJob.job_number} ends.`
+            job1: { 
+              id: currentJob.id, 
+              jobNumber: currentJob.job_number, 
+              customer: currentJob.customer_name,
+              time: currentJob.scheduled_time,
+              endTime: formatTime(currentEndTime),
+              duration: currentDuration,
+              address: currentJob.address_suburb || currentJob.address_full
+            },
+            job2: { 
+              id: nextJob.id, 
+              jobNumber: nextJob.job_number, 
+              customer: nextJob.customer_name,
+              time: nextJob.scheduled_time,
+              address: nextJob.address_suburb || nextJob.address_full
+            },
+            overlapMinutes,
+            message: `⚠️ OVERLAP: Job #${currentJob.job_number} ends at ${formatTime(currentEndTime)} but Job #${nextJob.job_number} starts at ${nextJob.scheduled_time} (${overlapMinutes} min overlap).`,
+            suggestedFix: `Reschedule Job #${nextJob.job_number} to ${suggestedNewTime} or later.`,
+            suggestedAction: {
+              type: 'reschedule',
+              jobId: nextJob.id,
+              currentTime: nextJob.scheduled_time,
+              suggestedTime: suggestedNewTime,
+              reason: `Allows ${tech.name} to complete Job #${currentJob.job_number} and travel ${distanceKm ? `${Math.round(distanceKm)}km` : ''} to the next location.`
+            }
+          });
+        }
+        // Insufficient travel time (medium severity)
+        else if (gapMinutes < requiredGap) {
+          const shortfall = requiredGap - gapMinutes;
+          const suggestedNewTime = formatTime(currentEndTime + requiredGap);
+          
+          conflicts.push({
+            type: 'insufficient_travel',
+            severity: 'medium',
+            technician: tech.name,
+            technicianEmail: tech.email,
+            job1: { 
+              id: currentJob.id, 
+              jobNumber: currentJob.job_number, 
+              customer: currentJob.customer_name,
+              time: currentJob.scheduled_time,
+              endTime: formatTime(currentEndTime),
+              address: currentJob.address_suburb || currentJob.address_full
+            },
+            job2: { 
+              id: nextJob.id, 
+              jobNumber: nextJob.job_number, 
+              customer: nextJob.customer_name,
+              time: nextJob.scheduled_time,
+              address: nextJob.address_suburb || nextJob.address_full
+            },
+            gapMinutes,
+            requiredGap,
+            distanceKm: distanceKm ? Math.round(distanceKm * 10) / 10 : null,
+            message: `⏱️ TIGHT SCHEDULE: Only ${gapMinutes} min between jobs, but ${requiredGap} min needed${distanceKm ? ` (${Math.round(distanceKm)}km travel)` : ''}.`,
+            suggestedFix: `Move Job #${nextJob.job_number} to ${suggestedNewTime} (+${shortfall} min) to allow adequate travel time.`,
+            suggestedAction: {
+              type: 'reschedule',
+              jobId: nextJob.id,
+              currentTime: nextJob.scheduled_time,
+              suggestedTime: suggestedNewTime,
+              minutesNeeded: shortfall,
+              reason: `Need ${shortfall} more minutes for travel${distanceKm ? ` (${Math.round(distanceKm)}km)` : ''} between ${currentJob.address_suburb || 'job 1'} and ${nextJob.address_suburb || 'job 2'}.`
+            }
           });
         }
       }
       
       // Check for overloaded technicians
       if (tech.currentJobCount > tech.maxJobs) {
+        const excessJobs = tech.currentJobCount - tech.maxJobs;
+        const availableTechs = findAvailableTechnicians(tech.email, targetDate);
+        
+        // Find jobs that could be reassigned (prefer unscheduled or end-of-day jobs)
+        const reassignCandidates = techJobs
+          .sort((a, b) => {
+            // Prioritize jobs without times for reassignment
+            if (!a.scheduled_time && b.scheduled_time) return -1;
+            if (a.scheduled_time && !b.scheduled_time) return 1;
+            // Then by time (later jobs first)
+            return (b.scheduled_time || '').localeCompare(a.scheduled_time || '');
+          })
+          .slice(0, excessJobs)
+          .map(j => ({
+            id: j.id,
+            jobNumber: j.job_number,
+            customer: j.customer_name,
+            time: j.scheduled_time,
+            address: j.address_suburb || j.address_full
+          }));
+
         conflicts.push({
           type: 'overloaded',
-          severity: 'medium',
+          severity: tech.currentJobCount > tech.maxJobs + 2 ? 'high' : 'medium',
           technician: tech.name,
           technicianEmail: tech.email,
-          message: `${tech.name} has ${tech.currentJobCount} jobs assigned but max is ${tech.maxJobs}.`,
-          suggestedFix: `Reassign some jobs to other available technicians.`
+          currentJobs: tech.currentJobCount,
+          maxJobs: tech.maxJobs,
+          excessJobs,
+          message: `🔴 OVERLOADED: ${tech.name} has ${tech.currentJobCount} jobs but daily max is ${tech.maxJobs} (${excessJobs} over capacity).`,
+          suggestedFix: availableTechs.length > 0 
+            ? `Reassign ${excessJobs} job(s) to ${availableTechs.slice(0, 2).map(t => t.name).join(' or ')}.`
+            : `Reschedule ${excessJobs} job(s) to another day - no other technicians available.`,
+          suggestedAction: {
+            type: 'reassign',
+            jobsToReassign: reassignCandidates,
+            availableTechnicians: availableTechs.slice(0, 3),
+            reason: `${tech.name} is at ${Math.round((tech.currentJobCount / tech.maxJobs) * 100)}% capacity.`
+          }
         });
       }
+      
+      // Check for very long workday (more than 10 hours of scheduled work)
+      if (scheduledJobs.length >= 2) {
+        const firstJob = scheduledJobs[0];
+        const lastJob = scheduledJobs[scheduledJobs.length - 1];
+        const lastJobDuration = lastJob.expected_duration || 1;
+        
+        const dayStart = parseTime(firstJob.scheduled_time);
+        const dayEnd = parseTime(lastJob.scheduled_time) + (lastJobDuration * 60);
+        const workdayHours = (dayEnd - dayStart) / 60;
+        
+        if (workdayHours > 10) {
+          conflicts.push({
+            type: 'long_workday',
+            severity: workdayHours > 12 ? 'high' : 'low',
+            technician: tech.name,
+            technicianEmail: tech.email,
+            workdayHours: Math.round(workdayHours * 10) / 10,
+            startTime: firstJob.scheduled_time,
+            endTime: formatTime(dayEnd),
+            message: `📅 LONG DAY: ${tech.name}'s workday spans ${Math.round(workdayHours * 10) / 10} hours (${firstJob.scheduled_time} - ${formatTime(dayEnd)}).`,
+            suggestedFix: `Consider moving later jobs to another day or reassigning to balance workload.`,
+            suggestedAction: {
+              type: 'review',
+              reason: `Workday exceeds 10 hours which may impact quality and technician wellbeing.`
+            }
+          });
+        }
+      }
     }
+    
+    // Check for double-booked jobs (same job assigned to multiple technicians at same time)
+    const jobAssignments = {};
+    for (const job of dateJobs) {
+      if (job.assigned_to && job.assigned_to.length > 1 && job.scheduled_time) {
+        // This might be intentional (team jobs), but flag if job type doesn't typically need multiple techs
+        const jobType = (job.job_type_name || job.job_type || '').toLowerCase();
+        const teamJobTypes = ['installation', 'install', 'large repair'];
+        const isLikelyTeamJob = teamJobTypes.some(t => jobType.includes(t));
+        
+        if (!isLikelyTeamJob) {
+          conflicts.push({
+            type: 'multiple_assignment',
+            severity: 'low',
+            job: {
+              id: job.id,
+              jobNumber: job.job_number,
+              customer: job.customer_name,
+              time: job.scheduled_time,
+              jobType: job.job_type_name || job.job_type
+            },
+            assignedTo: job.assigned_to_name || job.assigned_to,
+            message: `ℹ️ INFO: Job #${job.job_number} (${job.job_type_name || job.job_type}) has ${job.assigned_to.length} technicians assigned. Verify if this is intentional.`,
+            suggestedFix: `If only one technician is needed, remove extra assignments to free up capacity.`,
+            suggestedAction: {
+              type: 'review',
+              reason: `${job.job_type_name || job.job_type} jobs typically only need one technician.`
+            }
+          });
+        }
+      }
+    }
+    
+    // Sort conflicts by severity
+    const severityOrder = { high: 0, medium: 1, low: 2 };
+    conflicts.sort((a, b) => severityOrder[a.severity] - severityOrder[b.severity]);
 
     // Generate job assignment suggestions
     const assignmentSuggestions = [];
