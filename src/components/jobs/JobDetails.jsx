@@ -1814,6 +1814,14 @@ export default function JobDetails({ job: initialJob, onClose, onStatusChange, o
         />
       )}
 
+      <LinkInvoiceModal
+        open={showLinkInvoiceModal}
+        onClose={() => setShowLinkInvoiceModal(false)}
+        onSelect={(invoice) => linkInvoiceMutation.mutate(invoice)}
+        isSubmitting={linkInvoiceMutation.isPending}
+        currentInvoiceId={job.xero_invoice_id}
+      />
+
       </>);
 
 }
