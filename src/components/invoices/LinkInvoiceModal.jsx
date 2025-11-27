@@ -119,10 +119,10 @@ export default function LinkInvoiceModal({ open, onClose, onSelect, isSubmitting
             ) : (
               availableInvoices.map((invoice) => (
                 <div
-                  key={invoice.id}
+                  key={invoice.xero_invoice_id}
                   onClick={() => handleSelect(invoice)}
                   className={`p-3 border rounded-lg cursor-pointer transition-all hover:border-[#FAE008] hover:bg-[#FFFEF5] ${
-                    invoice.id === currentInvoiceId ? 'border-[#FAE008] bg-[#FFFEF5]' : 'border-[#E5E7EB]'
+                    invoice.xero_invoice_id === currentInvoiceId ? 'border-[#FAE008] bg-[#FFFEF5]' : 'border-[#E5E7EB]'
                   }`}
                 >
                   <div className="flex items-start justify-between gap-3">
@@ -134,7 +134,7 @@ export default function LinkInvoiceModal({ open, onClose, onSelect, isSubmitting
                         <Badge className={`${statusColors[invoice.status] || 'bg-slate-100 text-slate-700'} text-[10px] font-medium`}>
                           {invoice.status}
                         </Badge>
-                        {invoice.id === currentInvoiceId && (
+                        {invoice.xero_invoice_id === currentInvoiceId && (
                           <Badge className="bg-green-100 text-green-700 text-[10px] font-medium">
                             Currently Linked
                           </Badge>
