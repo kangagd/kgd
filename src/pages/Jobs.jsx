@@ -60,7 +60,9 @@ export default function Jobs() {
     queryFn: async () => {
       try {
         console.log('[Jobs Debug] Fetching jobs...');
-        const allJobs = await base44.entities.Job.list();
+        // Use backend function to fetch jobs with robust permission handling
+        const response = await base44.functions.invoke('getMyJobs');
+        const allJobs = response.data || [];
         console.log('[Jobs Debug] ✅ Total jobs fetched:', allJobs.length);
         console.log('[Jobs Debug] All jobs:', allJobs);
 

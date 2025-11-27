@@ -131,7 +131,16 @@ export default function JobDetails({ job: initialJob, onClose, onStatusChange, o
   const navigate = useNavigate();
   const { data: job = initialJob } = useQuery({
     queryKey: ['job', initialJob.id],
-    queryFn: () => base44.entities.Job.get(initialJob.id),
+    queryFn: async () => {
+      try {
+        // Try standard fetch first
+        return await base44.entities.Job.get(initialJob.id);
+      } catch (error) {
+        // Fallback to backend function if RLS fails
+        const response = await base44.functions.invoke('getJob', { jobId: initialJob.id });
+        return response.data;
+      }
+    },
     initialData: initialJob
   });
   const [showPriceList, setShowPriceList] = useState(false);

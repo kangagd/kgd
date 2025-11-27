@@ -55,7 +55,13 @@ export default function Schedule() {
 
   const { data: allJobs = [], isLoading } = useQuery({
     queryKey: ['jobs'],
-    queryFn: () => base44.entities.Job.list('-scheduled_date'),
+    queryFn: async () => {
+      // Use backend function for robust permission handling
+      const response = await base44.functions.invoke('getMyJobs');
+      const jobs = response.data || [];
+      // Sort manually since backend function might not sort
+      return jobs.sort((a, b) => (b.scheduled_date || '').localeCompare(a.scheduled_date || ''));
+    },
   });
 
   const { data: technicians = [] } = useQuery({
