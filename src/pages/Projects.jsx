@@ -439,7 +439,10 @@ export default function Projects() {
               <Card
                 key={project.id}
                 className="hover:shadow-lg transition-all duration-200 cursor-pointer hover:border-[#FAE008] border border-[#E5E7EB] rounded-xl relative"
-                onClick={() => setSelectedProject(project)}
+                onClick={() => {
+                  setSelectedProject(project);
+                  window.history.pushState({}, '', `${createPageUrl("Projects")}?projectId=${project.id}`);
+                }}
               >
                 <Button
                   variant="ghost"
