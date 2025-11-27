@@ -24,7 +24,7 @@ import AdvancedSearch from "../components/inbox/AdvancedSearch";
 import EmailComposer from "../components/inbox/EmailComposer";
 import { toast } from "sonner";
 import { Badge } from "@/components/ui/badge";
-import { FileEdit } from "lucide-react";
+import { FileEdit, Trash2 } from "lucide-react";
 
 export default function Inbox() {
   const navigate = useNavigate();
@@ -545,9 +545,24 @@ export default function Inbox() {
                         To: {draft.to_addresses?.join(', ') || '(No recipient)'}
                       </p>
                     </div>
-                    <Badge variant="outline" className="text-[10px] ml-2 flex-shrink-0">
-                      Draft
-                    </Badge>
+                    <div className="flex items-center gap-1 ml-2 flex-shrink-0">
+                      <Badge variant="outline" className="text-[10px]">
+                        Draft
+                      </Badge>
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        onClick={async (e) => {
+                          e.stopPropagation();
+                          await base44.entities.EmailDraft.delete(draft.id);
+                          queryClient.invalidateQueries({ queryKey: ['emailDrafts'] });
+                          toast.success('Draft deleted');
+                        }}
+                        className="h-6 w-6 text-red-500 hover:text-red-700 hover:bg-red-50"
+                      >
+                        <Trash2 className="w-3 h-3" />
+                      </Button>
+                    </div>
                   </div>
                 ))}
                 {drafts.length > 3 && (
