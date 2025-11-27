@@ -89,6 +89,7 @@ export default function Team() {
   // Filter users
   const filteredUsers = users.filter(user => {
     const matchesSearch = 
+      (user.display_name?.toLowerCase() || '').includes(searchTerm.toLowerCase()) ||
       (user.full_name?.toLowerCase() || '').includes(searchTerm.toLowerCase()) ||
       (user.email?.toLowerCase() || '').includes(searchTerm.toLowerCase());
     
