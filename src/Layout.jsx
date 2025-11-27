@@ -238,73 +238,92 @@ export default function Layout({ children, currentPageName }) {
 
       // Track recent pages including specific entities
       useEffect(() => {
-        const allNavItems = [...primaryNavigationItems, ...secondaryNavigationItems, ...technicianNavigationItems];
-        const currentItem = allNavItems.find(item => item.url === location.pathname);
-        const params = new URLSearchParams(location.search);
+        const trackRecentPage = async () => {
+          const allNavItems = [...primaryNavigationItems, ...secondaryNavigationItems, ...technicianNavigationItems];
+          const currentItem = allNavItems.find(item => item.url === location.pathname);
+          const params = new URLSearchParams(location.search);
 
-        let pageEntry = null;
-        const fullUrl = location.pathname + location.search;
+          let pageEntry = null;
+          const fullUrl = location.pathname + location.search;
 
-        // Check for specific entity pages
-        if (location.pathname === createPageUrl("Projects") && params.get('projectId')) {
-          pageEntry = { 
-            title: `Project`, 
-            url: fullUrl, 
-            timestamp: Date.now(),
-            type: 'project'
-          };
-        } else if (location.pathname === createPageUrl("Jobs") && params.get('jobId')) {
-          pageEntry = { 
-            title: `Job`, 
-            url: fullUrl, 
-            timestamp: Date.now(),
-            type: 'job'
-          };
-        } else if (location.pathname === createPageUrl("Jobs") && params.get('action') === 'create') {
-          pageEntry = { 
-            title: `New Job`, 
-            url: fullUrl, 
-            timestamp: Date.now(),
-            type: 'form'
-          };
-        } else if (location.pathname === createPageUrl("Projects") && params.get('action') === 'create') {
-          pageEntry = { 
-            title: `New Project`, 
-            url: fullUrl, 
-            timestamp: Date.now(),
-            type: 'form'
-          };
-        } else if (location.pathname === createPageUrl("Customers") && params.get('customerId')) {
-          pageEntry = { 
-            title: `Customer`, 
-            url: fullUrl, 
-            timestamp: Date.now(),
-            type: 'customer'
-          };
-        } else if (location.pathname === createPageUrl("Inbox") && params.get('threadId')) {
-          pageEntry = { 
-            title: `Email Thread`, 
-            url: fullUrl, 
-            timestamp: Date.now(),
-            type: 'email'
-          };
-        } else if (currentItem) {
-          pageEntry = { 
-            title: currentItem.title, 
-            url: location.pathname, 
-            timestamp: Date.now(),
-            type: 'page'
-          };
-        }
+          // Check for specific entity pages
+          if (location.pathname === createPageUrl("Projects") && params.get('projectId')) {
+            try {
+              const project = await base44.entities.Project.get(params.get('projectId'));
+              pageEntry = { 
+                title: project?.title || 'Project', 
+                url: fullUrl, 
+                timestamp: Date.now(),
+                type: 'project'
+              };
+            } catch {
+              pageEntry = { title: 'Project', url: fullUrl, timestamp: Date.now(), type: 'project' };
+            }
+          } else if (location.pathname === createPageUrl("Jobs") && params.get('jobId')) {
+            try {
+              const job = await base44.entities.Job.get(params.get('jobId'));
+              pageEntry = { 
+                title: `#${job?.job_number || ''} ${job?.customer_name || 'Job'}`.trim(), 
+                url: fullUrl, 
+                timestamp: Date.now(),
+                type: 'job'
+              };
+            } catch {
+              pageEntry = { title: 'Job', url: fullUrl, timestamp: Date.now(), type: 'job' };
+            }
+          } else if (location.pathname === createPageUrl("Jobs") && params.get('action') === 'create') {
+            pageEntry = { 
+              title: `New Job`, 
+              url: fullUrl, 
+              timestamp: Date.now(),
+              type: 'form'
+            };
+          } else if (location.pathname === createPageUrl("Projects") && params.get('action') === 'create') {
+            pageEntry = { 
+              title: `New Project`, 
+              url: fullUrl, 
+              timestamp: Date.now(),
+              type: 'form'
+            };
+          } else if (location.pathname === createPageUrl("Customers") && params.get('customerId')) {
+            try {
+              const customer = await base44.entities.Customer.get(params.get('customerId'));
+              pageEntry = { 
+                title: customer?.name || 'Customer', 
+                url: fullUrl, 
+                timestamp: Date.now(),
+                type: 'customer'
+              };
+            } catch {
+              pageEntry = { title: 'Customer', url: fullUrl, timestamp: Date.now(), type: 'customer' };
+            }
+          } else if (location.pathname === createPageUrl("Inbox") && params.get('threadId')) {
+            pageEntry = { 
+              title: `Email Thread`, 
+              url: fullUrl, 
+              timestamp: Date.now(),
+              type: 'email'
+            };
+          } else if (currentItem) {
+            pageEntry = { 
+              title: currentItem.title, 
+              url: location.pathname, 
+              timestamp: Date.now(),
+              type: 'page'
+            };
+          }
 
-        if (pageEntry) {
-          setRecentPages(prev => {
-            const filtered = prev.filter(p => p.url !== pageEntry.url);
-            const updated = [pageEntry, ...filtered].slice(0, 8);
-            localStorage.setItem('recentPages', JSON.stringify(updated));
-            return updated;
-          });
-        }
+          if (pageEntry) {
+            setRecentPages(prev => {
+              const filtered = prev.filter(p => p.url !== pageEntry.url);
+              const updated = [pageEntry, ...filtered].slice(0, 8);
+              localStorage.setItem('recentPages', JSON.stringify(updated));
+              return updated;
+            });
+          }
+        };
+
+        trackRecentPage();
       }, [location.pathname, location.search]);
   useEffect(() => {
     const handleEscape = (e) => e.key === 'Escape' && isMobileMenuOpen && setIsMobileMenuOpen(false);
