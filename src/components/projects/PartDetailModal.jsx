@@ -23,7 +23,6 @@ import { base44 } from "@/api/base44Client";
 import { useQuery } from "@tanstack/react-query";
 import TextField from "../common/TextField";
 import { format } from "date-fns";
-import { ScrollArea } from "@/components/ui/scroll-area";
 
 const CATEGORIES = [
   "Motor", "Door", "Track", "Small Parts", "Control System", "Hardware", "Other"
