@@ -58,6 +58,7 @@ export default function Inbox() {
   const [isResizing, setIsResizing] = useState(false);
   const [showComposer, setShowComposer] = useState(false);
   const [isAnalyzingAll, setIsAnalyzingAll] = useState(false);
+  const [editingDraft, setEditingDraft] = useState(null);
   const queryClient = useQueryClient();
 
   useEffect(() => {
