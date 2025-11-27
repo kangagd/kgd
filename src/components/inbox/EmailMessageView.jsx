@@ -1,8 +1,40 @@
 import React, { useState } from "react";
 import { format, parseISO } from "date-fns";
-import { ChevronDown, ChevronUp, Paperclip } from "lucide-react";
+import { ChevronDown, ChevronUp, Paperclip, ChevronRight } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import AttachmentCard from "./AttachmentCard";
+
+function AttachmentsSection({ attachments, linkedJobId, linkedProjectId, threadSubject, gmailMessageId }) {
+  const [isExpanded, setIsExpanded] = useState(false);
+  
+  return (
+    <div className="mt-3 pt-3 border-t border-[#F3F4F6]">
+      <button
+        onClick={() => setIsExpanded(!isExpanded)}
+        className="flex items-center gap-2 text-[13px] text-[#6B7280] hover:text-[#111827] transition-colors w-full"
+      >
+        <ChevronRight className={`w-4 h-4 transition-transform ${isExpanded ? 'rotate-90' : ''}`} />
+        <Paperclip className="w-4 h-4" />
+        <span className="font-medium">{attachments.length} Attachment{attachments.length !== 1 ? 's' : ''}</span>
+      </button>
+      
+      {isExpanded && (
+        <div className="mt-3 grid grid-cols-1 sm:grid-cols-2 gap-2">
+          {attachments.map((attachment, idx) => (
+            <AttachmentCard
+              key={idx}
+              attachment={attachment}
+              linkedJobId={linkedJobId}
+              linkedProjectId={linkedProjectId}
+              threadSubject={threadSubject}
+              gmailMessageId={attachment.gmail_message_id || gmailMessageId}
+            />
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}
 
 export default function EmailMessageView({ message, isFirst, linkedJobId, linkedProjectId, threadSubject, gmailMessageId }) {
   const [expanded, setExpanded] = useState(isFirst);
@@ -117,6 +149,17 @@ export default function EmailMessageView({ message, isFirst, linkedJobId, linked
                 <span className="text-[13px] text-[#111827] font-medium">{message.subject}</span>
               </div>
             )}
+
+            {/* Attachments - Collapsible */}
+            {message.attachments?.length > 0 && (
+              <AttachmentsSection 
+                attachments={message.attachments}
+                linkedJobId={linkedJobId}
+                linkedProjectId={linkedProjectId}
+                threadSubject={threadSubject}
+                gmailMessageId={gmailMessageId || message.gmail_message_id}
+              />
+            )}
           </div>
 
           {/* Email Body - Gmail-style rendering */}
@@ -140,27 +183,6 @@ export default function EmailMessageView({ message, isFirst, linkedJobId, linked
             )}
           </div>
 
-          {/* Attachments with AI Suggestions */}
-          {message.attachments?.length > 0 && (
-            <div className="border-t border-[#F3F4F6] pt-5">
-              <div className="text-[13px] text-[#6B7280] font-semibold mb-3 flex items-center gap-2">
-                <Paperclip className="w-4 h-4" />
-                Attachments ({message.attachments.length})
-              </div>
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                {message.attachments.map((attachment, idx) => (
-                  <AttachmentCard
-                    key={idx}
-                    attachment={attachment}
-                    linkedJobId={linkedJobId}
-                    linkedProjectId={linkedProjectId}
-                    threadSubject={threadSubject}
-                    gmailMessageId={attachment.gmail_message_id || gmailMessageId || message.gmail_message_id}
-                  />
-                ))}
-              </div>
-            </div>
-          )}
           </div>
           )}
     </div>
