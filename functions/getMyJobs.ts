@@ -35,7 +35,7 @@ Deno.serve(async (req) => {
             
             // Technicians might need to see ALL jobs if configured so, but usually strictly assigned.
             // If we want to replicate "view all jobs" for technicians (like in the previous RLS attempt), uncomment below:
-            // if (isTechnician) return true;
+            if (isTechnician) return true;
             
             return false;
         });

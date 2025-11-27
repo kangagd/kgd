@@ -15,9 +15,9 @@ Deno.serve(async (req) => {
         if (!job) return Response.json({ error: 'Job not found' }, { status: 404 });
 
         const isAdminOrManager = user.role === 'admin' || user.role === 'manager';
-        // const isTechnician = user.is_field_technician === true; // Unused for now
+        const isTechnician = user.is_field_technician === true; 
 
-        if (isAdminOrManager) {
+        if (isAdminOrManager || isTechnician) {
             return Response.json(job);
         }
 

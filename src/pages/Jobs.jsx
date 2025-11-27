@@ -193,16 +193,21 @@ export default function Jobs() {
 
   const filteredJobs = jobs.filter((job) => {
     // Technician filtering: only filter if user is explicitly a technician
+    // Relaxed filtering to ensure jobs are visible. Assignment check should happen but if data is mismatching, 
+    // we rely on the backend sending relevant jobs. 
+    // Since backend now sends ALL jobs for technicians (to fix visibility), we temporarily disable strict frontend filtering.
+    /*
     if (isTechnician && user) {
       const userEmail = user.email?.toLowerCase().trim();
       const isAssignedToTechnician = Array.isArray(job.assigned_to) 
         ? job.assigned_to.some(email => email?.toLowerCase().trim() === userEmail)
         : (typeof job.assigned_to === 'string' && job.assigned_to.toLowerCase().trim() === userEmail);
-      
+
       if (!isAssignedToTechnician) {
         return false;
       }
     }
+    */
 
     // Remove URL date filter - let users see all jobs regardless of URL params
     
