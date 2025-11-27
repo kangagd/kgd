@@ -458,20 +458,54 @@ export default function JobDetails({ job: initialJob, onClose, onStatusChange, o
 
   const linkInvoiceMutation = useMutation({
     mutationFn: async (invoice) => {
+      // Check if this invoice already exists in our database
+      const existingInvoices = await base44.entities.XeroInvoice.filter({ 
+        xero_invoice_id: invoice.xero_invoice_id 
+      });
+      
+      let invoiceRecord;
+      if (existingInvoices.length > 0) {
+        // Update existing record
+        invoiceRecord = existingInvoices[0];
+        await base44.entities.XeroInvoice.update(invoiceRecord.id, {
+          job_id: job.id,
+          job_number: job.job_number,
+          customer_id: job.customer_id,
+          customer_name: job.customer_name
+        });
+      } else {
+        // Create new XeroInvoice record from Xero data
+        invoiceRecord = await base44.entities.XeroInvoice.create({
+          xero_invoice_id: invoice.xero_invoice_id,
+          xero_invoice_number: invoice.xero_invoice_number,
+          job_id: job.id,
+          job_number: job.job_number,
+          customer_id: job.customer_id,
+          customer_name: job.customer_name,
+          contact_name: invoice.contact_name,
+          reference: invoice.reference,
+          status: invoice.status,
+          total: invoice.total,
+          total_amount: invoice.total,
+          amount_due: invoice.amount_due,
+          amount_paid: invoice.amount_paid,
+          date: invoice.date,
+          due_date: invoice.due_date
+        });
+      }
+      
       // Update the job to link to this invoice
       await base44.entities.Job.update(job.id, {
-        xero_invoice_id: invoice.id,
-        xero_payment_url: invoice.online_invoice_url || null
+        xero_invoice_id: invoiceRecord.id
       });
-      // Optionally update the XeroInvoice to track which job it's linked to
-      await base44.entities.XeroInvoice.update(invoice.id, {
-        job_id: job.id,
-        job_number: job.job_number
-      });
+      
+      return invoiceRecord;
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['xeroInvoice'] });
       queryClient.invalidateQueries({ queryKey: ['xeroInvoices'] });
+      queryClient.invalidateQueries({ queryKey: ['xeroInvoicesSearch'] });
+      queryClient.invalidateQueries({ queryKey: ['linkedXeroInvoices'] });
       queryClient.invalidateQueries({ queryKey: ['job', job.id] });
       queryClient.invalidateQueries({ queryKey: ['jobs'] });
       setShowLinkInvoiceModal(false);
