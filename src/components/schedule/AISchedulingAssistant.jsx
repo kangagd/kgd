@@ -322,8 +322,8 @@ export default function AISchedulingAssistant({ selectedDate, onApplySuggestion 
                   <TabsTrigger value="reassign" className="text-xs px-2">
                     <Shuffle className="w-3 h-3 mr-1" />
                     <span className="hidden sm:inline">Optimize</span>
-                    {data?.reassignmentSuggestions?.length > 0 && (
-                      <Badge className="ml-1 bg-blue-500 text-white text-[9px] px-1 py-0">{data.reassignmentSuggestions.length}</Badge>
+                    {(data?.reassignmentSuggestions?.length || 0) > 0 && (
+                      <Badge className="ml-1 bg-blue-500 text-white text-[9px] px-1 py-0">{data?.reassignmentSuggestions?.length || 0}</Badge>
                     )}
                   </TabsTrigger>
                   <TabsTrigger value="routes" className="text-xs px-2">
