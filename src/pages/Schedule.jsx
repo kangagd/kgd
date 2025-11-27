@@ -167,9 +167,10 @@ export default function Schedule() {
         
         // Technician access filter
         if (isTechnician && user) {
+          const userEmail = user.email?.toLowerCase().trim();
           const isAssigned = Array.isArray(job.assigned_to) 
-            ? job.assigned_to.includes(user.email)
-            : job.assigned_to === user.email;
+            ? job.assigned_to.some(email => email?.toLowerCase().trim() === userEmail)
+            : (typeof job.assigned_to === 'string' && job.assigned_to.toLowerCase().trim() === userEmail);
           if (!isAssigned) return false;
         }
 
