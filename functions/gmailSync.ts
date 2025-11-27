@@ -198,7 +198,12 @@ Deno.serve(async (req) => {
       
       console.log(`Message ${message.id}: existing=${existingMessages.length}, threadId=${threadId}, messageId=${messageId}`);
 
-        if (existingMessages.length === 0) {
+        if (existingMessages.length > 0) {
+          console.log(`Skipping existing message ${message.id}`);
+          continue;
+        }
+        
+        {
           // Extract body and attachments
           let bodyHtml = '';
           let bodyText = detail.snippet || '';
