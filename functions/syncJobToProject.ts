@@ -52,27 +52,23 @@ Deno.serve(async (req) => {
     const jobImages = job.image_urls || latestSummary?.photo_urls || [];
     const mergedImages = [...new Set([...existingImages, ...jobImages])];
 
-    // Base project update - always merge images
+    // Build project update with all job data
     const projectUpdate = {
-      image_urls: mergedImages
+      image_urls: mergedImages,
+      initial_visit_job_id: job.id,
+      initial_visit_overview: job.overview || latestSummary?.overview || null,
+      initial_visit_next_steps: job.next_steps || latestSummary?.next_steps || null,
+      initial_visit_customer_communication: job.communication_with_client || latestSummary?.communication_with_client || null,
+      initial_visit_measurements: job.measurements || latestSummary?.measurements || null,
+      initial_visit_image_urls: jobImages,
+      initial_visit_outcome: job.outcome || latestSummary?.outcome || null,
+      initial_visit_completed_at: latestSummary?.check_out_time || new Date().toISOString(),
+      initial_visit_technician_name: latestSummary?.technician_name || null
     };
 
-    // If it's an Initial Site Visit, sync the ISV-specific fields
-    if (isInitialSiteVisit) {
-      projectUpdate.initial_visit_job_id = job.id;
-      projectUpdate.initial_visit_overview = job.overview || latestSummary?.overview || null;
-      projectUpdate.initial_visit_next_steps = job.next_steps || latestSummary?.next_steps || null;
-      projectUpdate.initial_visit_customer_communication = job.communication_with_client || latestSummary?.communication_with_client || null;
-      projectUpdate.initial_visit_measurements = job.measurements || latestSummary?.measurements || null;
-      projectUpdate.initial_visit_image_urls = jobImages;
-      projectUpdate.initial_visit_outcome = job.outcome || latestSummary?.outcome || null;
-      projectUpdate.initial_visit_completed_at = latestSummary?.check_out_time || new Date().toISOString();
-      projectUpdate.initial_visit_technician_name = latestSummary?.technician_name || null;
-
-      // If project status is still "Initial Site Visit", advance to next stage
-      if (project.status === 'Initial Site Visit') {
-        projectUpdate.status = 'Quote Sent';
-      }
+    // If it's an Initial Site Visit and project status is still "Initial Site Visit", advance to next stage
+    if (isInitialSiteVisit && project.status === 'Initial Site Visit') {
+      projectUpdate.status = 'Quote Sent';
     }
 
     // Update the project
