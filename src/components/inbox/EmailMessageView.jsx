@@ -255,9 +255,15 @@ export default function EmailMessageView({ message, isFirst, linkedJobId, linked
             )}
           </div>
 
-          {/* Email Body - Gmail-style rendering */}
+          {/* Email Body - Gmail-style rendering with inline images */}
           <div className="mb-5">
-            {message.body_html ? (
+            {loadingInlineImages && inlineAttachments.length > 0 && (
+              <div className="text-[12px] text-[#6B7280] mb-2 flex items-center gap-2">
+                <div className="w-3 h-3 border-2 border-[#FAE008] border-t-transparent rounded-full animate-spin" />
+                Loading images...
+              </div>
+            )}
+            {processedBodyHtml ? (
               <div 
                 className="gmail-email-body"
                 style={{
@@ -267,7 +273,7 @@ export default function EmailMessageView({ message, isFirst, linkedJobId, linked
                   wordWrap: 'break-word',
                   overflowWrap: 'anywhere'
                 }}
-                dangerouslySetInnerHTML={{ __html: sanitizeBodyHtml(message.body_html) }} 
+                dangerouslySetInnerHTML={{ __html: sanitizeBodyHtml(processedBodyHtml) }} 
               />
             ) : (
               <div className="whitespace-pre-wrap text-[14px] text-[#111827] leading-[1.6] break-words overflow-wrap-anywhere">
