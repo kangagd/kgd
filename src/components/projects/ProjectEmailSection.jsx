@@ -1,10 +1,10 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { base44 } from "@/api/base44Client";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Mail, Link as LinkIcon, Plus, Send, RefreshCw, ExternalLink, Reply, Forward } from "lucide-react";
+import { Mail, Link as LinkIcon, Plus, Send, RefreshCw, ExternalLink, Reply, Forward, FileEdit } from "lucide-react";
 import { toast } from "sonner";
 import { createPageUrl } from "@/utils";
 import EmailMessageView from "../inbox/EmailMessageView";
@@ -17,6 +17,7 @@ export default function ProjectEmailSection({ project, onThreadLinked }) {
   const [composerMode, setComposerMode] = useState(null); // null | 'compose' | 'reply' | 'forward'
   const [selectedMessage, setSelectedMessage] = useState(null);
   const [refreshKey, setRefreshKey] = useState(0);
+  const [editingDraft, setEditingDraft] = useState(null);
 
   // Fetch ALL email threads linked to this project
   const { data: linkedThreads = [], isLoading: threadLoading, refetch: refetchThreads } = useQuery({
