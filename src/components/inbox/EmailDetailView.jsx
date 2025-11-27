@@ -74,7 +74,17 @@ export default function EmailDetailView({
 
   const { data: messages = [], refetch } = useQuery({
     queryKey: ['emailMessages', thread.id],
-    queryFn: () => base44.entities.EmailMessage.filter({ thread_id: thread.id }, 'sent_at'),
+    queryFn: async () => {
+      // Try fetching by Base44 thread ID first
+      let msgs = await base44.entities.EmailMessage.filter({ thread_id: thread.id }, 'sent_at');
+      
+      // If no messages found and we have a gmail_thread_id, try that instead
+      if (msgs.length === 0 && thread.gmail_thread_id) {
+        msgs = await base44.entities.EmailMessage.filter({ thread_id: thread.gmail_thread_id }, 'sent_at');
+      }
+      
+      return msgs;
+    },
     refetchInterval: 30000
   });
 
