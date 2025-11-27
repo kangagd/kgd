@@ -101,16 +101,28 @@ export default function AttachmentCard({
         
         if (!urlToSave) return;
         
+        // Re-fetch project to get latest state (prevents race condition with multiple attachments)
+        const freshProject = await base44.entities.Project.get(linkedProjectId);
+        const freshImages = freshProject.image_urls || [];
+        const freshDocs = freshProject.other_documents || [];
+        
+        // Double-check it wasn't saved by another attachment card in the meantime
+        const freshAllUrls = [...freshImages, ...freshDocs];
+        if (freshAllUrls.some(url => url.includes(attachment.filename))) {
+          setSaved(true);
+          return;
+        }
+        
         // Categorize and save
         const isImage = isImageFile(attachment.mime_type, attachment.filename);
         
         if (isImage) {
           await base44.entities.Project.update(linkedProjectId, {
-            image_urls: [...existingImages, urlToSave]
+            image_urls: [...freshImages, urlToSave]
           });
         } else {
           await base44.entities.Project.update(linkedProjectId, {
-            other_documents: [...existingDocs, urlToSave]
+            other_documents: [...freshDocs, urlToSave]
           });
         }
         
