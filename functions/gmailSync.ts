@@ -314,7 +314,7 @@ Deno.serve(async (req) => {
             subject: subject || '(No Subject)',
             body_html: bodyHtml,
             body_text: bodyText,
-            message_id: messageId,
+            message_id: effectiveMessageId,
             is_outbound: isOutbound,
             attachments: processedAttachments.length > 0 ? processedAttachments : undefined
           };
