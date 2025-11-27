@@ -29,7 +29,8 @@ import {
     CheckSquare,
     History,
     Clock,
-    Shield
+    Shield,
+    Truck
   } from "lucide-react";
 import { base44 } from "@/api/base44Client";
 import { toast } from "sonner";
@@ -59,6 +60,7 @@ const secondaryNavigationItems = [
   { title: "Team", url: createPageUrl("Team"), icon: Users },
   { title: "Role Settings", url: createPageUrl("RoleSettings"), icon: Shield },
   { title: "Archive", url: createPageUrl("Archive"), icon: ArchiveIcon },
+  { title: "Logistics", url: createPageUrl("Logistics"), icon: Truck },
 ];
 
 const technicianNavigationItems = [
