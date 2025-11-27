@@ -368,7 +368,40 @@ export default function PartDetailModal({ open, part, onClose, onSave, isSubmitt
               <h3 className="text-[15px] font-semibold text-[#111827] uppercase tracking-wide">Notes & Attachments</h3>
               
               <div className="space-y-2">
-                <Label>Notes</Label>
+                <div className="flex items-center justify-between">
+                  <Label>Notes</Label>
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    size="sm"
+                    onClick={async () => {
+                      if (!formData.category) {
+                        alert("Please select a category first.");
+                        return;
+                      }
+                      try {
+                        const res = await base44.functions.invoke('generatePartDescription', {
+                          category: formData.category,
+                          supplier_name: formData.supplier_name,
+                          source_type: formData.source_type,
+                          status: formData.status,
+                          order_reference: formData.order_reference
+                        });
+                        if (res.data.description) {
+                          setFormData(prev => ({
+                            ...prev,
+                            notes: prev.notes ? prev.notes + '\n\n' + res.data.description : res.data.description
+                          }));
+                        }
+                      } catch (err) {
+                        console.error("Error generating description:", err);
+                      }
+                    }}
+                    className="h-6 px-2 text-xs text-[#FAE008] hover:text-[#E5CF07] hover:bg-[#FFFBE6]"
+                  >
+                    ✨ AI Generate
+                  </Button>
+                </div>
                 <TextField
                   multiline
                   value={formData.notes || ""}
