@@ -84,6 +84,22 @@ Deno.serve(async (req) => {
       );
     }
 
+    // Helper to parse Xero date format (can be /Date(1234567890000)/ or ISO format)
+    const parseXeroDate = (dateStr) => {
+      if (!dateStr) return null;
+      // Handle /Date(milliseconds)/ format
+      const msMatch = dateStr.match(/\/Date\((\d+)\)/);
+      if (msMatch) {
+        const ms = parseInt(msMatch[1], 10);
+        return new Date(ms).toISOString().split('T')[0];
+      }
+      // Handle ISO format
+      if (dateStr.includes('T')) {
+        return dateStr.split('T')[0];
+      }
+      return dateStr;
+    };
+
     // Map to simplified format
     const mappedInvoices = invoices.map(inv => ({
       xero_invoice_id: inv.InvoiceID,
@@ -95,8 +111,8 @@ Deno.serve(async (req) => {
       total: inv.Total,
       amount_due: inv.AmountDue,
       amount_paid: inv.AmountPaid,
-      date: inv.Date ? inv.Date.split('T')[0] : null,
-      due_date: inv.DueDate ? inv.DueDate.split('T')[0] : null
+      date: parseXeroDate(inv.Date),
+      due_date: parseXeroDate(inv.DueDate)
     }));
 
     return Response.json({
