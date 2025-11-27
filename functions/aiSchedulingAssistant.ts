@@ -1000,10 +1000,14 @@ Provide a brief 2-3 sentence summary of the scheduling situation and top priorit
         totalTechnicians: analysisContext.technicians.length,
         scheduledJobs: dateJobs.length,
         unassignedJobs: unassignedJobs.length,
-        conflictsDetected: conflicts.length
+        conflictsDetected: conflicts.length,
+        reassignmentOpportunities: reassignmentSuggestions.length,
+        autoDispatchReady: autoDispatchRecommendations.length
       },
       conflicts,
       assignmentSuggestions,
+      reassignmentSuggestions,
+      autoDispatchRecommendations,
       optimizedRoutes
     });
 
