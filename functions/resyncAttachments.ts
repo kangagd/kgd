@@ -76,12 +76,21 @@ Deno.serve(async (req) => {
     let updatedCount = 0;
     let checkedCount = 0;
     let skippedCount = 0;
+    let attachmentFixedCount = 0;
 
     for (const emailMsg of allMessages) {
-      // Skip if message already has gmail_message_id set directly on it
-      if (emailMsg.gmail_message_id) {
+      // Check if attachments need fixing (missing gmail_message_id on attachment objects)
+      const needsAttachmentFix = emailMsg.gmail_message_id && emailMsg.attachments?.some(att => !att.gmail_message_id || !att.attachment_id);
+      
+      // Skip if message already has gmail_message_id AND all attachments have required IDs
+      if (emailMsg.gmail_message_id && !needsAttachmentFix) {
         skippedCount++;
         continue;
+      }
+      
+      // If we have gmail_message_id but attachments need fixing, refetch from Gmail
+      if (needsAttachmentFix) {
+        console.log(`Fixing attachments for message: ${emailMsg.subject} (already has gmail_message_id: ${emailMsg.gmail_message_id})`);
       }
 
       checkedCount++;
