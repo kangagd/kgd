@@ -243,10 +243,10 @@ export default function EmailMessageView({ message, isFirst, linkedJobId, linked
               </div>
             )}
 
-            {/* Attachments - Collapsible */}
-            {message.attachments?.length > 0 && (
+            {/* Attachments - Collapsible (only non-inline attachments) */}
+            {regularAttachments.length > 0 && (
               <AttachmentsSection 
-                attachments={message.attachments}
+                attachments={regularAttachments}
                 linkedJobId={linkedJobId}
                 linkedProjectId={linkedProjectId}
                 threadSubject={threadSubject}
