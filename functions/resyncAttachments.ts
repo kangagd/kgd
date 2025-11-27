@@ -70,10 +70,20 @@ Deno.serve(async (req) => {
 
       checkedCount++;
       
-      // We need to find the Gmail message ID from the message_id header
-      // Search Gmail for this message
       const messageId = emailMsg.message_id;
-      if (!messageId) continue;
+      const isTargetMessage = emailMsg.subject?.includes("Quote Request #Brian");
+      
+      if (!messageId) {
+        if (isTargetMessage) {
+          console.log(`TARGET: No message_id for: ${emailMsg.subject}`);
+        }
+        continue;
+      }
+
+      if (isTargetMessage) {
+        console.log(`--- Processing target message: ${emailMsg.subject} ---`);
+        console.log(`message_id: ${messageId}`);
+      }
 
       try {
         // Search for message by Message-ID header
@@ -83,12 +93,25 @@ Deno.serve(async (req) => {
           { headers: { 'Authorization': `Bearer ${accessToken}` } }
         );
 
-        if (!searchResponse.ok) continue;
+        if (!searchResponse.ok) {
+          if (isTargetMessage) {
+            console.log(`TARGET: Search failed: ${await searchResponse.text()}`);
+          }
+          continue;
+        }
 
         const searchData = await searchResponse.json();
-        if (!searchData.messages?.length) continue;
+        if (!searchData.messages?.length) {
+          if (isTargetMessage) {
+            console.log(`TARGET: No Gmail message found for message_id`);
+          }
+          continue;
+        }
 
         const gmailMessageId = searchData.messages[0].id;
+        if (isTargetMessage) {
+          console.log(`TARGET: Found Gmail message ID: ${gmailMessageId}`);
+        }
 
         // Fetch full message details
         const detailResponse = await fetch(
@@ -96,9 +119,18 @@ Deno.serve(async (req) => {
           { headers: { 'Authorization': `Bearer ${accessToken}` } }
         );
 
-        if (!detailResponse.ok) continue;
+        if (!detailResponse.ok) {
+          if (isTargetMessage) {
+            console.log(`TARGET: Detail fetch failed: ${await detailResponse.text()}`);
+          }
+          continue;
+        }
 
         const detail = await detailResponse.json();
+        
+        if (isTargetMessage) {
+          console.log(`TARGET: Full payload structure:`, JSON.stringify(detail.payload, null, 2));
+        }
         
         // Extract attachments
         const attachments = [];
@@ -106,6 +138,9 @@ Deno.serve(async (req) => {
         const processParts = (parts) => {
           if (!parts || !Array.isArray(parts)) return;
           for (const part of parts) {
+            if (isTargetMessage) {
+              console.log(`TARGET: Processing part - mimeType: ${part.mimeType}, filename: ${part.filename || 'none'}, hasAttachmentId: ${!!part.body?.attachmentId}`);
+            }
             if (part.filename && part.filename.length > 0) {
               const attachmentId = part.body?.attachmentId;
               if (attachmentId) {
@@ -116,6 +151,7 @@ Deno.serve(async (req) => {
                   attachment_id: attachmentId,
                   gmail_message_id: gmailMessageId
                 });
+                console.log(`Found attachment: ${part.filename}`);
               }
             }
             if (part.parts) {
@@ -126,6 +162,10 @@ Deno.serve(async (req) => {
 
         if (detail.payload?.parts) {
           processParts(detail.payload.parts);
+        }
+
+        if (isTargetMessage) {
+          console.log(`TARGET: Total attachments found: ${attachments.length}`);
         }
 
         if (attachments.length > 0) {
@@ -141,6 +181,9 @@ Deno.serve(async (req) => {
 
       } catch (err) {
         console.error(`Error processing message ${emailMsg.id}:`, err.message);
+        if (isTargetMessage) {
+          console.log(`TARGET: Error details:`, err);
+        }
       }
     }
 
