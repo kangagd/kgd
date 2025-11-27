@@ -20,7 +20,8 @@ import JobModalView from "../components/jobs/JobModalView";
 import AISchedulingAssistant from "../components/schedule/AISchedulingAssistant";
 import { createPageUrl } from "@/utils";
 import { useNavigate } from "react-router-dom";
-import { Sparkles } from "lucide-react";
+import { Sparkles, Settings } from "lucide-react";
+import AvailabilityManager from "../components/schedule/AvailabilityManager";
 
 export default function Schedule() {
   const navigate = useNavigate();
@@ -39,6 +40,7 @@ export default function Schedule() {
   const [showConfirmModal, setShowConfirmModal] = useState(false);
   const [notifyTechnician, setNotifyTechnician] = useState(true);
   const [modalJob, setModalJob] = useState(null);
+  const [showAvailabilityManager, setShowAvailabilityManager] = useState(false);
 
   React.useEffect(() => {
     const loadUser = async () => {
@@ -66,6 +68,16 @@ export default function Schedule() {
     queryFn: () => base44.entities.JobType.list()
   });
 
+  const { data: leaves = [] } = useQuery({
+    queryKey: ['technicianLeaves'],
+    queryFn: () => base44.entities.TechnicianLeave.list('-start_time')
+  });
+
+  const { data: closedDays = [] } = useQuery({
+    queryKey: ['businessClosedDays'],
+    queryFn: () => base44.entities.BusinessClosedDay.list('-start_time')
+  });
+
   // Create a map of job type id to color
   const jobTypeColorMap = React.useMemo(() => {
     const map = {};
@@ -75,9 +87,10 @@ export default function Schedule() {
     return map;
   }, [jobTypes]);
 
-  const { checkConflicts } = useScheduleConflicts(allJobs);
+  const { checkConflicts } = useScheduleConflicts(allJobs, leaves, closedDays);
 
   const isTechnician = user?.is_field_technician && user?.role !== 'admin';
+  const isAdminOrManager = user?.role === 'admin' || user?.role === 'manager';
   
   // Reschedule mutation
   const rescheduleMutation = useMutation({
@@ -822,6 +835,16 @@ export default function Schedule() {
               <p className="text-sm text-[#4B5563] mt-1">{getDateRangeText()}</p>
             </div>
             <div className="flex items-center gap-3">
+              {isAdminOrManager && (
+                <Button
+                  variant="outline"
+                  onClick={() => setShowAvailabilityManager(true)}
+                  className="h-10 px-3 rounded-xl border border-[#E5E7EB] hover:border-[#FAE008] hover:bg-[#FFFEF5]"
+                  title="Manage Availability"
+                >
+                  <Settings className="w-4 h-4" />
+                </Button>
+              )}
               <AISchedulingAssistant 
                 selectedDate={selectedDate} 
                 onApplySuggestion={() => queryClient.invalidateQueries({ queryKey: ['jobs'] })}
@@ -948,6 +971,14 @@ export default function Schedule() {
         >
           {modalJob && <JobModalView job={modalJob} />}
         </EntityModal>
+
+        {showAvailabilityManager && (
+          <AvailabilityManager
+            open={showAvailabilityManager}
+            onClose={() => setShowAvailabilityManager(false)}
+            technicians={technicians}
+          />
+        )}
       </div>
     </div>
   );
