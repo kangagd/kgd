@@ -171,10 +171,10 @@ export default function EmailMessageView({ message, isFirst, linkedJobId, linked
                   Sent
                 </Badge>
               )}
-              {message.attachments?.length > 0 && (
+              {regularAttachments.length > 0 && (
                 <Badge variant="outline" className="text-[11px] h-5 flex items-center gap-1">
                   <Paperclip className="w-3 h-3" />
-                  {message.attachments.length}
+                  {regularAttachments.length}
                 </Badge>
               )}
               <span className="text-[12px] text-[#9CA3AF] ml-auto">
