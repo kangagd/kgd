@@ -234,160 +234,159 @@ export default function Logistics() {
           </Select>
         </div>
 
-        {/* Parts List */}
-        <div className="space-y-3">
-          {partsLoading ? (
-            <div className="text-center py-10 text-[#6B7280]">Loading parts data...</div>
-          ) : filteredParts.length === 0 ? (
-             <Card className="border border-[#E5E7EB] shadow-sm">
-               <CardContent className="p-10 text-center">
-                 <div className="flex flex-col items-center justify-center">
-                   <div className="w-12 h-12 bg-[#F3F4F6] rounded-full flex items-center justify-center mb-3">
-                     <Search className="w-6 h-6 text-[#9CA3AF]" />
-                   </div>
-                   <p className="text-[#111827] font-medium">No parts found</p>
-                   <p className="text-[#6B7280] text-sm mt-1">Try adjusting your search or filters</p>
-                 </div>
-               </CardContent>
-             </Card>
-          ) : (
-            filteredParts.map((part) => {
-              const project = projectMap[part.project_id];
-              const linkedJobs = (part.linked_logistics_jobs || []).map(id => jobMap[id]).filter(Boolean);
-              
-              return (
-                <Card 
-                  key={part.id}
-                  className="border border-[#E5E7EB] hover:border-[#FAE008] hover:shadow-md transition-all group"
-                >
-                  <CardContent className="p-4">
-                    <div className="flex flex-col md:flex-row gap-4">
-                      {/* Main Info */}
-                      <div className="flex-1 min-w-0 cursor-pointer" onClick={() => setSelectedPart(part)}>
-                        <div className="flex items-start justify-between md:hidden mb-2">
-                           <div className="font-semibold text-[#111827] text-[15px]">{part.category}</div>
-                           {part.order_reference && (
-                             <span className="text-xs bg-slate-100 px-2 py-0.5 rounded text-slate-600">
-                               {part.order_reference}
-                             </span>
-                           )}
+        {/* Parts Table */}
+        <div className="bg-white border border-[#E5E7EB] rounded-xl shadow-sm overflow-hidden">
+          <div className="overflow-x-auto">
+            <table className="w-full">
+              <thead className="bg-[#F9FAFB] border-b border-[#E5E7EB]">
+                <tr>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-[#6B7280] uppercase tracking-wider">Part Details</th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-[#6B7280] uppercase tracking-wider">Project & Customer</th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-[#6B7280] uppercase tracking-wider">Dates</th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-[#6B7280] uppercase tracking-wider">Status</th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-[#6B7280] uppercase tracking-wider">Location</th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-[#6B7280] uppercase tracking-wider">Logistics</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-[#E5E7EB]">
+                {partsLoading ? (
+                  <tr>
+                    <td colSpan="6" className="px-6 py-10 text-center text-[#6B7280]">
+                      Loading parts data...
+                    </td>
+                  </tr>
+                ) : filteredParts.length === 0 ? (
+                  <tr>
+                    <td colSpan="6" className="px-6 py-10 text-center">
+                      <div className="flex flex-col items-center justify-center">
+                        <div className="w-12 h-12 bg-[#F3F4F6] rounded-full flex items-center justify-center mb-3">
+                          <Search className="w-6 h-6 text-[#9CA3AF]" />
                         </div>
-                        
-                        <div className="hidden md:flex items-center gap-2 mb-1">
-                          <span className="font-semibold text-[#111827] text-[15px] group-hover:text-blue-600 transition-colors">
-                            {part.category}
-                          </span>
-                          {part.order_reference && (
-                            <span className="text-xs bg-slate-100 px-2 py-0.5 rounded text-slate-600 border border-slate-200">
-                              {part.order_reference}
-                            </span>
+                        <p className="text-[#111827] font-medium">No parts found</p>
+                        <p className="text-[#6B7280] text-sm mt-1">Try adjusting your search or filters</p>
+                      </div>
+                    </td>
+                  </tr>
+                ) : (
+                  filteredParts.map((part) => {
+                    const project = projectMap[part.project_id];
+                    const linkedJobs = (part.linked_logistics_jobs || []).map(id => jobMap[id]).filter(Boolean);
+                    
+                    return (
+                      <tr key={part.id} className="hover:bg-[#F9FAFB] transition-colors group">
+                        <td className="px-6 py-4">
+                          <button 
+                            onClick={() => setSelectedPart(part)}
+                            className="text-left group-hover:text-blue-600 transition-colors w-full"
+                          >
+                            <div className="font-medium text-[#111827] text-[15px]">{part.category}</div>
+                            <div className="text-sm text-[#6B7280] mt-0.5">{part.supplier_name || "No Supplier"}</div>
+                            {part.order_reference && (
+                                <div className="text-xs text-[#9CA3AF] mt-0.5">Ref: {part.order_reference}</div>
+                            )}
+                          </button>
+                        </td>
+                        <td className="px-6 py-4">
+                          {project ? (
+                            <Link 
+                              to={`${createPageUrl("Projects")}?projectId=${project.id}`}
+                              className="block hover:underline"
+                            >
+                              <div className="text-sm font-medium text-[#111827] truncate max-w-[200px]">
+                                {project.title}
+                              </div>
+                              <div className="text-sm text-[#6B7280]">{project.customer_name}</div>
+                            </Link>
+                          ) : (
+                            <span className="text-sm text-[#9CA3AF] italic">Unassigned Project</span>
                           )}
-                        </div>
-
-                        <div className="text-sm text-[#4B5563] mb-2">
-                          {part.supplier_name || "No Supplier"}
-                        </div>
-
-                        <div className="flex flex-wrap items-center gap-x-4 gap-y-2 text-sm text-[#6B7280]">
-                           {project ? (
-                             <Link 
-                               to={`${createPageUrl("Projects")}?projectId=${project.id}`}
-                               onClick={(e) => e.stopPropagation()}
-                               className="flex items-center gap-1.5 hover:text-blue-600 transition-colors"
-                             >
-                               <Package className="w-3.5 h-3.5" />
-                               <span className="font-medium truncate max-w-[150px]">{project.title}</span>
-                             </Link>
-                           ) : (
-                             <span className="flex items-center gap-1.5 italic">
-                               <Package className="w-3.5 h-3.5" />
-                               Unassigned Project
-                             </span>
-                           )}
-
-                           {(part.eta || part.order_date) && (
-                             <div className="flex items-center gap-1.5">
-                               <Clock className="w-3.5 h-3.5" />
-                               <span>
-                                 {part.eta ? (
-                                   <>ETA: <span className={new Date(part.eta) < new Date() && part.status !== 'Delivered' ? "text-red-600 font-medium" : "font-medium text-[#111827]"}>{format(new Date(part.eta), 'MMM d')}</span></>
-                                 ) : (
-                                   <>Ord: <span className="font-medium text-[#111827]">{format(new Date(part.order_date), 'MMM d')}</span></>
-                                 )}
-                               </span>
-                             </div>
-                           )}
-                        </div>
-                      </div>
-
-                      {/* Controls */}
-                      <div className="flex flex-col sm:flex-row items-start sm:items-center gap-3 md:border-l md:border-[#E5E7EB] md:pl-4 md:w-[40%]">
-                        <div className="w-full space-y-2">
-                          <div className="flex items-center justify-between sm:justify-start gap-2">
-                            <span className="text-xs font-medium text-[#6B7280] w-16 md:hidden">Status:</span>
-                            <Select 
-                              value={part.status} 
-                              onValueChange={(val) => handleStatusChange(part.id, val)}
-                            >
-                              <SelectTrigger className={`h-8 flex-1 text-xs font-medium border-0 ${STATUS_COLORS[part.status] || 'bg-gray-100'}`}>
+                        </td>
+                        <td className="px-6 py-4">
+                          <div className="text-sm space-y-1">
+                            {part.order_date && (
+                              <div className="text-[#6B7280]">
+                                Ord: <span className="text-[#111827]">{format(new Date(part.order_date), 'MMM d')}</span>
+                              </div>
+                            )}
+                            {part.eta && (
+                              <div className="flex items-center gap-1.5">
+                                <span className="text-[#6B7280]">ETA:</span>
+                                <span className={`font-medium ${
+                                  new Date(part.eta) < new Date() && part.status !== 'Delivered' 
+                                    ? 'text-red-600' 
+                                    : 'text-[#111827]'
+                                }`}>
+                                  {format(new Date(part.eta), 'MMM d')}
+                                </span>
+                                {new Date(part.eta) < new Date() && part.status !== 'Delivered' && (
+                                  <AlertCircle className="w-3 h-3 text-red-500" />
+                                )}
+                              </div>
+                            )}
+                          </div>
+                        </td>
+                        <td className="px-6 py-4">
+                          <Select 
+                            value={part.status} 
+                            onValueChange={(val) => handleStatusChange(part.id, val)}
+                          >
+                            <SelectTrigger className={`h-8 w-[140px] text-xs font-medium border-0 ${STATUS_COLORS[part.status] || 'bg-gray-100'}`}>
+                              <SelectValue />
+                            </SelectTrigger>
+                            <SelectContent>
+                              {Object.keys(STATUS_COLORS).map(status => (
+                                <SelectItem key={status} value={status}>
+                                  {status}
+                                </SelectItem>
+                              ))}
+                            </SelectContent>
+                          </Select>
+                        </td>
+                        <td className="px-6 py-4">
+                          <Select 
+                            value={part.location} 
+                            onValueChange={(val) => handleLocationChange(part.id, val)}
+                          >
+                            <SelectTrigger className={`h-8 w-[160px] text-xs border-0 ${LOCATION_COLORS[part.location] || 'bg-gray-50'}`}>
+                              <div className="flex items-center gap-2 truncate">
+                                <MapPin className="w-3 h-3 opacity-50 flex-shrink-0" />
                                 <SelectValue />
-                              </SelectTrigger>
-                              <SelectContent>
-                                {Object.keys(STATUS_COLORS).map(status => (
-                                  <SelectItem key={status} value={status}>
-                                    {status}
-                                  </SelectItem>
-                                ))}
-                              </SelectContent>
-                            </Select>
-                          </div>
-
-                          <div className="flex items-center justify-between sm:justify-start gap-2">
-                            <span className="text-xs font-medium text-[#6B7280] w-16 md:hidden">Location:</span>
-                            <Select 
-                              value={part.location} 
-                              onValueChange={(val) => handleLocationChange(part.id, val)}
-                            >
-                              <SelectTrigger className={`h-8 flex-1 text-xs border-0 ${LOCATION_COLORS[part.location] || 'bg-gray-50'}`}>
-                                <div className="flex items-center gap-2 truncate">
-                                  <MapPin className="w-3 h-3 opacity-50 flex-shrink-0" />
-                                  <SelectValue />
-                                </div>
-                              </SelectTrigger>
-                              <SelectContent>
-                                {Object.keys(LOCATION_COLORS).map(loc => (
-                                  <SelectItem key={loc} value={loc}>
-                                    {loc}
-                                  </SelectItem>
-                                ))}
-                              </SelectContent>
-                            </Select>
-                          </div>
-                        </div>
-                        
-                        {/* Linked Jobs */}
-                        {linkedJobs.length > 0 && (
-                           <div className="flex flex-wrap gap-1.5 w-full">
-                             {linkedJobs.map(job => (
-                               <Link 
-                                 key={job.id}
-                                 to={`${createPageUrl("Jobs")}?jobId=${job.id}`}
-                                 onClick={(e) => e.stopPropagation()}
-                                 className="inline-flex items-center gap-1 text-[10px] bg-slate-50 hover:bg-slate-100 text-slate-700 px-1.5 py-0.5 rounded border border-slate-200 transition-colors"
-                               >
-                                 <LinkIcon className="w-2.5 h-2.5 text-slate-400" />
-                                 #{job.job_number}
-                               </Link>
-                             ))}
-                           </div>
-                        )}
-                      </div>
-                    </div>
-                  </CardContent>
-                </Card>
-              );
-            })
-          )}
+                              </div>
+                            </SelectTrigger>
+                            <SelectContent>
+                              {Object.keys(LOCATION_COLORS).map(loc => (
+                                <SelectItem key={loc} value={loc}>
+                                  {loc}
+                                </SelectItem>
+                              ))}
+                            </SelectContent>
+                          </Select>
+                        </td>
+                        <td className="px-6 py-4">
+                          {linkedJobs.length > 0 ? (
+                            <div className="flex flex-col gap-1">
+                              {linkedJobs.map(job => (
+                                <Link 
+                                  key={job.id}
+                                  to={`${createPageUrl("Jobs")}?jobId=${job.id}`}
+                                  className="inline-flex items-center gap-1.5 text-xs bg-slate-50 hover:bg-slate-100 text-slate-700 px-2 py-1 rounded border border-slate-200 transition-colors w-fit"
+                                >
+                                  <LinkIcon className="w-3 h-3 text-slate-400" />
+                                  #{job.job_number}
+                                </Link>
+                              ))}
+                            </div>
+                          ) : (
+                            <span className="text-xs text-[#9CA3AF]">-</span>
+                          )}
+                        </td>
+                      </tr>
+                    );
+                  })
+                )}
+              </tbody>
+            </table>
+          </div>
         </div>
       </div>
 
