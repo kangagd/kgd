@@ -265,12 +265,13 @@ Deno.serve(async (req) => {
       }
     }
 
-    console.log(`=== Resync Complete: ${updatedCount} messages updated, ${skippedCount} skipped (already have gmail_message_id) ===`);
+    console.log(`=== Resync Complete: ${updatedCount} messages updated, ${skippedCount} skipped (already complete) ===`);
     return Response.json({ 
       checked: checkedCount, 
       updated: updatedCount,
       skipped: skippedCount,
-      total: allMessages.length 
+      total: allMessages.length,
+      message: `Processed ${checkedCount} messages, updated ${updatedCount}, skipped ${skippedCount} (already complete)`
     });
 
   } catch (error) {
