@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
-import { Sparkles, RefreshCw, Eye, Loader2, X, Mail } from "lucide-react";
+import { Sparkles, RefreshCw, Eye, Loader2, X } from "lucide-react";
 import { base44 } from "@/api/base44Client";
 import { toast } from "sonner";
 import AIEmailSuggestionsModal from "./AIEmailSuggestionsModal";
@@ -159,7 +159,6 @@ export default function AIEmailSuggestionsBanner({
                 </p>
                 {emailThread?.subject && (
                   <div className="flex items-center gap-1.5 mt-2 text-[12px] text-[#6B7280]">
-                    <Mail className="w-3.5 h-3.5" />
                     <span className="truncate">{emailThread.subject}</span>
                   </div>
                 )}
