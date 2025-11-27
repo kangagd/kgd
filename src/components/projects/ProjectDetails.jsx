@@ -4,7 +4,7 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
-import { ArrowLeft, Plus, Edit, Trash2, MapPin, Phone, Mail, FileText, Image as ImageIcon, User, Upload, X, Briefcase, History, ExternalLink, DollarSign, Eye } from "lucide-react";
+import { ArrowLeft, Plus, Edit, Trash2, MapPin, Phone, Mail, FileText, Image as ImageIcon, User, Upload, X, Briefcase, History, ExternalLink, DollarSign, Eye, Link } from "lucide-react";
 import { base44 } from "@/api/base44Client";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useNavigate, Link } from "react-router-dom";
@@ -47,6 +47,7 @@ import ProjectEmailSection from "./ProjectEmailSection";
 import QuotesSection from "../quotes/QuotesSection";
 import InitialVisitSummary from "./InitialVisitSummary";
 import MarkAsLostModal from "./MarkAsLostModal";
+import LinkInvoiceModal from "../invoices/LinkInvoiceModal";
 
 const statusColors = {
   "Lead": "bg-slate-100 text-slate-700",
@@ -101,6 +102,8 @@ export default function ProjectDetails({ project: initialProject, onClose, onEdi
   const [previewJob, setPreviewJob] = useState(null);
   const [showLostModal, setShowLostModal] = useState(false);
   const [isMarkingLost, setIsMarkingLost] = useState(false);
+  const [showLinkInvoiceModal, setShowLinkInvoiceModal] = useState(false);
+  const [isLinkingInvoice, setIsLinkingInvoice] = useState(false);
   
   // Get email thread ID from props, URL params, or project's source
   const urlParams = new URLSearchParams(window.location.search);
@@ -276,6 +279,43 @@ export default function ProjectDetails({ project: initialProject, onClose, onEdi
       }
     }
   });
+
+  const handleLinkExistingInvoice = async (invoice) => {
+    setIsLinkingInvoice(true);
+    try {
+      // Create XeroInvoice record linking to this project
+      const xeroInvoice = await base44.entities.XeroInvoice.create({
+        xero_invoice_id: invoice.xero_invoice_id,
+        xero_invoice_number: invoice.xero_invoice_number,
+        status: invoice.status,
+        total: invoice.total,
+        amount_due: invoice.amount_due,
+        amount_paid: invoice.amount_paid,
+        date: invoice.date,
+        due_date: invoice.due_date,
+        contact_name: invoice.contact_name,
+        contact_id: invoice.contact_id,
+        pdf_url: invoice.pdf_url,
+        project_id: project.id
+      });
+
+      // Link to project
+      const currentXeroInvoices = project.xero_invoices || [];
+      await base44.entities.Project.update(project.id, {
+        xero_invoices: [...currentXeroInvoices, xeroInvoice.id]
+      });
+
+      queryClient.invalidateQueries({ queryKey: ['projectXeroInvoices', project.id] });
+      queryClient.invalidateQueries({ queryKey: ['project', project.id] });
+      toast.success(`Invoice #${invoice.xero_invoice_number} linked to project`);
+      setShowLinkInvoiceModal(false);
+    } catch (error) {
+      console.error('Error linking invoice:', error);
+      toast.error('Failed to link invoice');
+    } finally {
+      setIsLinkingInvoice(false);
+    }
+  };
 
 
 
@@ -1452,14 +1492,25 @@ Format as HTML bullet points using <ul> and <li> tags. Include only the most cri
                     Xero Invoices ({xeroInvoices.length})
                   </CardTitle>
                   {user?.role === 'admin' && (
-                    <Button
-                      onClick={() => setShowInvoiceModal(true)}
-                      size="sm"
-                      className="bg-[#FAE008] text-[#111827] hover:bg-[#E5CF07] font-semibold h-8 w-full sm:w-auto"
-                    >
-                      <Plus className="w-4 h-4 mr-1" />
-                      Create Invoice
-                    </Button>
+                    <div className="flex gap-2 w-full sm:w-auto">
+                      <Button
+                        onClick={() => setShowLinkInvoiceModal(true)}
+                        size="sm"
+                        variant="outline"
+                        className="font-semibold h-8 flex-1 sm:flex-initial"
+                      >
+                        <Link className="w-4 h-4 mr-1" />
+                        Link Existing
+                      </Button>
+                      <Button
+                        onClick={() => setShowInvoiceModal(true)}
+                        size="sm"
+                        className="bg-[#FAE008] text-[#111827] hover:bg-[#E5CF07] font-semibold h-8 flex-1 sm:flex-initial"
+                      >
+                        <Plus className="w-4 h-4 mr-1" />
+                        Create Invoice
+                      </Button>
+                    </div>
                   )}
                 </div>
               </CardHeader>
@@ -1582,6 +1633,13 @@ Format as HTML bullet points using <ul> and <li> tags. Include only the most cri
         onConfirm={handleMarkAsLost}
         openJobsCount={jobs.filter(j => j.status === "Open" || j.status === "Scheduled").length}
         isSubmitting={isMarkingLost}
+      />
+
+      <LinkInvoiceModal
+        open={showLinkInvoiceModal}
+        onClose={() => setShowLinkInvoiceModal(false)}
+        onSelect={handleLinkExistingInvoice}
+        isSubmitting={isLinkingInvoice}
       />
     </div>
   );
