@@ -1278,15 +1278,6 @@ Format as HTML bullet points using <ul> and <li> tags. Include only the most cri
             {/* Initial Visit Summary */}
             <InitialVisitSummary project={project} />
 
-            {/* Tasks Panel */}
-            <Card className="border border-[#E5E7EB] shadow-sm rounded-lg p-4">
-              <TasksPanel
-                entityType="project"
-                entityId={project.id}
-                entityName={project.title}
-              />
-            </Card>
-
             <div>
               <RichTextField
                 label="Description"
