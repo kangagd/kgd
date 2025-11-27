@@ -148,6 +148,7 @@ export default function JobCard({ job, onClick, onViewDetails }) {
               <TechnicianAvatarGroup
                 technicians={job.assigned_to.map((email, idx) => ({
                   email,
+                  display_name: job.assigned_to_name?.[idx] || email,
                   full_name: job.assigned_to_name?.[idx] || email,
                   id: email
                 }))}
