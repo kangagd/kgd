@@ -186,13 +186,26 @@ export default function ProjectDetails({ project: initialProject, onClose, onEdi
   const { data: xeroInvoices = [] } = useQuery({
     queryKey: ['projectXeroInvoices', project.id],
     queryFn: async () => {
-      if (!project.xero_invoices || project.xero_invoices.length === 0) return [];
-      const invoices = await Promise.all(
-        project.xero_invoices.map(id => base44.entities.XeroInvoice.get(id))
-      );
-      return invoices.filter(Boolean);
+      // Fetch invoices linked via xero_invoices array
+      const invoicesFromArray = project.xero_invoices && project.xero_invoices.length > 0
+        ? await Promise.all(project.xero_invoices.map(id => base44.entities.XeroInvoice.get(id).catch(() => null)))
+        : [];
+      
+      // Also fetch invoices linked directly via project_id field
+      const invoicesFromProjectId = await base44.entities.XeroInvoice.filter({ project_id: project.id });
+      
+      // Combine and deduplicate
+      const allInvoices = [...invoicesFromArray.filter(Boolean), ...invoicesFromProjectId];
+      const uniqueInvoices = allInvoices.reduce((acc, inv) => {
+        if (!acc.find(i => i.id === inv.id)) {
+          acc.push(inv);
+        }
+        return acc;
+      }, []);
+      
+      return uniqueInvoices;
     },
-    enabled: !!project.xero_invoices && project.xero_invoices.length > 0
+    enabled: !!project.id
   });
 
   React.useEffect(() => {
