@@ -56,45 +56,97 @@ export default function ConflictWarningModal({
                 </div>
               </div>
 
-              {/* Conflicting Jobs */}
+              {/* Conflicting Items */}
               {conflictingJobs.length > 0 && (
                 <div className="space-y-2">
                   <div className="text-sm font-semibold text-[#111827]">
-                    Overlapping Jobs ({conflictingJobs.length})
+                    Conflicts ({conflictingJobs.length})
                   </div>
                   <div className="space-y-2 max-h-48 overflow-y-auto">
-                    {conflictingJobs.map((job) => (
-                      <div
-                        key={job.id}
-                        className="bg-red-50 border border-red-200 rounded-lg p-3"
-                      >
-                        <div className="flex items-start justify-between gap-2">
-                          <div>
-                            <div className="font-semibold text-[#111827] text-sm">
-                              Job #{job.job_number} - {job.customer_name}
-                            </div>
-                            <div className="flex items-center gap-3 text-xs text-[#6B7280] mt-1">
-                              <span className="flex items-center gap-1">
-                                <Clock className="w-3 h-3" />
-                                {job.scheduled_time || 'No time'}
-                              </span>
-                              {job.expected_duration && (
-                                <span>{job.expected_duration}h duration</span>
-                              )}
+                    {conflictingJobs.map((conflict, idx) => {
+                      // Handle different conflict types
+                      if (conflict.type === 'leave') {
+                        return (
+                          <div key={conflict.id || idx} className="bg-orange-50 border border-orange-200 rounded-lg p-3">
+                            <div className="flex items-start justify-between gap-2">
+                              <div>
+                                <div className="font-semibold text-[#111827] text-sm">
+                                  Technician on Leave
+                                </div>
+                                <div className="text-xs text-[#6B7280] mt-1">
+                                  {conflict.technician_name} is unavailable ({conflict.leave_type})
+                                </div>
+                                <div className="flex items-center gap-1 text-xs text-[#6B7280] mt-1">
+                                  <Clock className="w-3 h-3" />
+                                  {format(parseISO(conflict.start_time), 'h:mm a')} - {format(parseISO(conflict.end_time), 'h:mm a')}
+                                </div>
+                              </div>
+                              <Badge className="bg-orange-100 text-orange-800 border-0 text-xs">
+                                Leave
+                              </Badge>
                             </div>
                           </div>
-                          <Badge className="bg-red-100 text-red-700 border-0 text-xs">
-                            Conflict
-                          </Badge>
+                        );
+                      }
+                      
+                      if (conflict.type === 'closed') {
+                        return (
+                          <div key={conflict.id || idx} className="bg-red-50 border border-red-200 rounded-lg p-3">
+                            <div className="flex items-start justify-between gap-2">
+                              <div>
+                                <div className="font-semibold text-[#111827] text-sm">
+                                  Business Closed
+                                </div>
+                                <div className="text-xs text-[#6B7280] mt-1">
+                                  {conflict.name}
+                                </div>
+                                <div className="flex items-center gap-1 text-xs text-[#6B7280] mt-1">
+                                  <Clock className="w-3 h-3" />
+                                  {format(parseISO(conflict.start_time), 'MMM d')} - {format(parseISO(conflict.end_time), 'MMM d')}
+                                </div>
+                              </div>
+                              <Badge className="bg-red-100 text-red-700 border-0 text-xs">
+                                Closed
+                              </Badge>
+                            </div>
+                          </div>
+                        );
+                      }
+
+                      // Default Job Conflict
+                      return (
+                        <div
+                          key={conflict.id || idx}
+                          className="bg-red-50 border border-red-200 rounded-lg p-3"
+                        >
+                          <div className="flex items-start justify-between gap-2">
+                            <div>
+                              <div className="font-semibold text-[#111827] text-sm">
+                                Job #{conflict.job_number} - {conflict.customer_name}
+                              </div>
+                              <div className="flex items-center gap-3 text-xs text-[#6B7280] mt-1">
+                                <span className="flex items-center gap-1">
+                                  <Clock className="w-3 h-3" />
+                                  {conflict.scheduled_time || 'No time'}
+                                </span>
+                                {conflict.expected_duration && (
+                                  <span>{conflict.expected_duration}h duration</span>
+                                )}
+                              </div>
+                            </div>
+                            <Badge className="bg-red-100 text-red-700 border-0 text-xs">
+                              Conflict
+                            </Badge>
+                          </div>
+                          {conflict.assigned_to_name && conflict.assigned_to_name.length > 0 && (
+                            <div className="flex items-center gap-1 text-xs text-[#6B7280] mt-2">
+                              <User className="w-3 h-3" />
+                              {conflict.assigned_to_name.join(', ')}
+                            </div>
+                          )}
                         </div>
-                        {job.assigned_to_name && job.assigned_to_name.length > 0 && (
-                          <div className="flex items-center gap-1 text-xs text-[#6B7280] mt-2">
-                            <User className="w-3 h-3" />
-                            {job.assigned_to_name.join(', ')}
-                          </div>
-                        )}
-                      </div>
-                    ))}
+                      );
+                    })}
                   </div>
                 </div>
               )}
