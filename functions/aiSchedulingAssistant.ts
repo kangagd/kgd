@@ -662,57 +662,238 @@ Deno.serve(async (req) => {
     const severityOrder = { high: 0, medium: 1, low: 2 };
     conflicts.sort((a, b) => severityOrder[a.severity] - severityOrder[b.severity]);
 
-    // Generate job assignment suggestions
+    // Generate comprehensive job assignment suggestions with auto-dispatch capability
     const assignmentSuggestions = [];
-    for (const job of analysisContext.unassignedJobs.slice(0, 10)) {
+    const autoDispatchRecommendations = [];
+    
+    for (const job of analysisContext.unassignedJobs.slice(0, 15)) {
       const candidates = [];
+      const fullJob = unassignedJobs.find(j => j.id === job.id);
       
       for (const tech of analysisContext.technicians) {
-        if (tech.currentJobCount >= tech.maxJobs) continue;
+        const fullTech = allTechnicians.find(t => t.email === tech.email);
+        const fitness = calculateTechnicianFitness(
+          fullJob || job, 
+          { ...tech, ...fullTech },
+          allJobs,
+          targetDate
+        );
         
-        const skillScore = calculateSkillMatch(job, { skills: tech.skills });
+        if (!fitness.isAvailable) continue;
         
-        // Calculate distance score if coordinates available
-        let distanceScore = 0.5;
-        if (job.lat && job.lng && tech.homeLat && tech.homeLng) {
-          const distance = calculateDistance(tech.homeLat, tech.homeLng, job.lat, job.lng);
-          distanceScore = Math.max(0, 1 - (distance / 50)); // Closer = higher score
-        }
-        
-        // Availability score (fewer jobs = higher score)
-        const availabilityScore = 1 - (tech.currentJobCount / tech.maxJobs);
-        
-        const totalScore = (skillScore * 0.4) + (distanceScore * 0.3) + (availabilityScore * 0.3);
+        // Find optimal time slot for this job with this technician
+        const timeSlot = findOptimalTimeSlot(fullJob || job, tech, allJobs, targetDate);
         
         candidates.push({
           email: tech.email,
           name: tech.name,
-          score: totalScore,
-          skillMatch: Math.round(skillScore * 100),
-          proximity: Math.round(distanceScore * 100),
-          availability: Math.round(availabilityScore * 100),
-          currentJobs: tech.currentJobCount,
-          maxJobs: tech.maxJobs
+          score: Math.round(fitness.totalScore * 100),
+          breakdown: {
+            skill: Math.round(fitness.scores.skill * 100),
+            proximity: Math.round(fitness.scores.proximity * 100),
+            availability: Math.round(fitness.scores.availability * 100),
+            workload: Math.round(fitness.scores.workload * 100),
+            routeEfficiency: Math.round(fitness.scores.routeEfficiency * 100)
+          },
+          skillMatch: fitness.skillMatch,
+          currentJobs: fitness.currentJobCount,
+          maxJobs: fitness.maxJobs,
+          suggestedTimeSlot: timeSlot,
+          capacityRemaining: fitness.maxJobs - fitness.currentJobCount
         });
       }
       
       candidates.sort((a, b) => b.score - a.score);
       
       if (candidates.length > 0) {
-        assignmentSuggestions.push({
+        const bestCandidate = candidates[0];
+        const isStrongMatch = bestCandidate.score >= 70;
+        const hasTimeSlot = !!bestCandidate.suggestedTimeSlot;
+        
+        const suggestion = {
           job: {
             id: job.id,
             jobNumber: job.jobNumber,
             customer: job.customer,
             address: job.suburb || job.address,
             jobType: job.jobType,
-            product: job.product
+            product: job.product,
+            expectedDuration: job.expectedDuration
           },
-          recommendedTechnician: candidates[0],
+          recommendedTechnician: bestCandidate,
           alternatives: candidates.slice(1, 3),
-          reason: `Best match based on ${candidates[0].skillMatch}% skill match, ${candidates[0].proximity}% proximity, and ${candidates[0].availability}% availability.`
+          confidence: bestCandidate.score >= 80 ? 'high' : bestCandidate.score >= 60 ? 'medium' : 'low',
+          reason: buildAssignmentReason(bestCandidate),
+          canAutoDispatch: isStrongMatch && hasTimeSlot,
+          suggestedAction: {
+            type: 'assign',
+            technicianEmail: bestCandidate.email,
+            technicianName: bestCandidate.name,
+            suggestedDate: targetDate,
+            suggestedTime: bestCandidate.suggestedTimeSlot?.suggestedTime || null,
+            timeSlotReason: bestCandidate.suggestedTimeSlot?.reason || null
+          }
+        };
+        
+        assignmentSuggestions.push(suggestion);
+        
+        // Track high-confidence auto-dispatch candidates
+        if (isStrongMatch && hasTimeSlot) {
+          autoDispatchRecommendations.push({
+            jobId: job.id,
+            jobNumber: job.jobNumber,
+            technicianEmail: bestCandidate.email,
+            technicianName: bestCandidate.name,
+            suggestedDate: targetDate,
+            suggestedTime: bestCandidate.suggestedTimeSlot.suggestedTime,
+            confidence: bestCandidate.score,
+            reason: suggestion.reason
+          });
+        }
+      }
+    }
+    
+    // Check for better reassignment opportunities for existing jobs
+    const reassignmentSuggestions = [];
+    
+    for (const job of dateJobs) {
+      if (!job.assigned_to || job.assigned_to.length === 0) continue;
+      
+      const currentTechEmail = job.assigned_to[0];
+      const currentTech = analysisContext.technicians.find(t => t.email === currentTechEmail);
+      
+      if (!currentTech) continue;
+      
+      // Calculate current assignment fitness
+      const fullTech = allTechnicians.find(t => t.email === currentTechEmail);
+      const currentFitness = calculateTechnicianFitness(
+        job,
+        { ...currentTech, ...fullTech },
+        allJobs,
+        targetDate
+      );
+      
+      // Check if another technician would be significantly better
+      let bestAlternative = null;
+      let bestAlternativeScore = currentFitness.totalScore;
+      
+      for (const tech of analysisContext.technicians) {
+        if (tech.email === currentTechEmail) continue;
+        if (tech.currentJobCount >= tech.maxJobs) continue;
+        
+        const altFullTech = allTechnicians.find(t => t.email === tech.email);
+        const altFitness = calculateTechnicianFitness(
+          job,
+          { ...tech, ...altFullTech },
+          allJobs,
+          targetDate
+        );
+        
+        // Only suggest if significantly better (20%+ improvement)
+        if (altFitness.totalScore > bestAlternativeScore + 0.20) {
+          bestAlternative = {
+            technician: tech,
+            fitness: altFitness,
+            improvement: Math.round((altFitness.totalScore - currentFitness.totalScore) * 100)
+          };
+          bestAlternativeScore = altFitness.totalScore;
+        }
+      }
+      
+      if (bestAlternative) {
+        const timeSlot = findOptimalTimeSlot(job, bestAlternative.technician, allJobs, targetDate);
+        
+        reassignmentSuggestions.push({
+          type: 'better_fit_available',
+          severity: bestAlternative.improvement >= 40 ? 'high' : 'medium',
+          job: {
+            id: job.id,
+            jobNumber: job.job_number,
+            customer: job.customer_name,
+            jobType: job.job_type_name || job.job_type,
+            currentTime: job.scheduled_time
+          },
+          currentAssignment: {
+            email: currentTechEmail,
+            name: currentTech.name,
+            score: Math.round(currentFitness.totalScore * 100)
+          },
+          suggestedReassignment: {
+            email: bestAlternative.technician.email,
+            name: bestAlternative.technician.name,
+            score: Math.round(bestAlternative.fitness.totalScore * 100),
+            improvement: bestAlternative.improvement,
+            suggestedTime: timeSlot?.suggestedTime || job.scheduled_time
+          },
+          message: `🔄 Job #${job.job_number} could be ${bestAlternative.improvement}% better matched with ${bestAlternative.technician.name}.`,
+          reason: buildReassignmentReason(currentTech, bestAlternative, job),
+          suggestedAction: {
+            type: 'reassign',
+            jobId: job.id,
+            fromTechnician: currentTechEmail,
+            toTechnician: bestAlternative.technician.email,
+            suggestedTime: timeSlot?.suggestedTime
+          }
         });
       }
+    }
+    
+    // Helper function to build assignment reason
+    function buildAssignmentReason(candidate) {
+      const reasons = [];
+      
+      if (candidate.breakdown.skill >= 70) {
+        reasons.push(`strong skill match (${candidate.breakdown.skill}%)`);
+      } else if (candidate.breakdown.skill >= 40) {
+        reasons.push(`moderate skill match (${candidate.breakdown.skill}%)`);
+      }
+      
+      if (candidate.breakdown.proximity >= 70) {
+        reasons.push('close proximity to job location');
+      }
+      
+      if (candidate.breakdown.availability >= 80) {
+        reasons.push(`light workload (${candidate.currentJobs}/${candidate.maxJobs} jobs)`);
+      } else if (candidate.breakdown.availability >= 50) {
+        reasons.push(`available capacity (${candidate.currentJobs}/${candidate.maxJobs} jobs)`);
+      }
+      
+      if (candidate.breakdown.routeEfficiency >= 60) {
+        reasons.push('fits well with existing route');
+      }
+      
+      if (candidate.skillMatch?.matchedSkills?.length > 0) {
+        reasons.push(`skills: ${candidate.skillMatch.matchedSkills.map(m => m.skill).slice(0, 2).join(', ')}`);
+      }
+      
+      return reasons.length > 0 
+        ? `Best fit: ${reasons.join(', ')}.`
+        : `Best available option with ${candidate.score}% overall score.`;
+    }
+    
+    // Helper function to build reassignment reason  
+    function buildReassignmentReason(currentTech, alternative, job) {
+      const reasons = [];
+      
+      if (alternative.fitness.skillMatch?.matchedSkills?.length > 0) {
+        reasons.push(`${alternative.technician.name} has matching skills`);
+      }
+      
+      if (alternative.fitness.scores.proximity > 0.7) {
+        reasons.push('closer to job location');
+      }
+      
+      if (currentTech.currentJobCount > currentTech.maxJobs * 0.8) {
+        reasons.push(`${currentTech.name} is at high capacity`);
+      }
+      
+      if (alternative.fitness.scores.routeEfficiency > 0.5) {
+        reasons.push('better route efficiency');
+      }
+      
+      return reasons.length > 0
+        ? reasons.join('; ') + '.'
+        : `${alternative.improvement}% better overall match.`;
     }
 
     // Generate optimized routes for each technician
