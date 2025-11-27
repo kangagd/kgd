@@ -569,7 +569,7 @@ export default function JobDetails({ job: initialJob, onClose, onStatusChange, o
     
     const techNames = newAssignedEmails.map((email) => {
       const tech = technicians.find((t) => t.email === email);
-      return tech?.full_name;
+      return tech?.display_name || tech?.full_name;
     }).filter(Boolean);
     
     const updates = {
@@ -823,7 +823,7 @@ export default function JobDetails({ job: initialJob, onClose, onStatusChange, o
                     value={Array.isArray(job.assigned_to) ? job.assigned_to : job.assigned_to ? [job.assigned_to] : []}
                     onSave={handleAssignedToChange}
                     type="multi-select"
-                    options={technicians.map((t) => ({ value: t.email, label: t.full_name }))}
+                    options={technicians.map((t) => ({ value: t.email, label: t.display_name || t.full_name }))}
                     displayFormat={(val) => {
                       const emailsToDisplay = Array.isArray(val) ? val : val ? [val] : [];
                       const namesToDisplay = Array.isArray(job.assigned_to_name) ? job.assigned_to_name : job.assigned_to_name ? [job.assigned_to_name] : [];
@@ -842,6 +842,7 @@ export default function JobDetails({ job: initialJob, onClose, onStatusChange, o
                         <TechnicianAvatarGroup
                           technicians={emailsToDisplay.map((email, idx) => ({
                             email,
+                            display_name: namesToDisplay[idx] || email,
                             full_name: namesToDisplay[idx] || email,
                             id: email
                           }))}
