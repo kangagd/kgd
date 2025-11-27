@@ -4,7 +4,7 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Mail, Link as LinkIcon, Plus, Send, RefreshCw, ExternalLink, Reply, Forward, FileEdit } from "lucide-react";
+import { Mail, Link as LinkIcon, Plus, Send, RefreshCw, ExternalLink, Reply, Forward, FileEdit, Trash2 } from "lucide-react";
 import { toast } from "sonner";
 import { createPageUrl } from "@/utils";
 import EmailMessageView from "../inbox/EmailMessageView";
@@ -192,6 +192,17 @@ export default function ProjectEmailSection({ project, onThreadLinked }) {
     setComposerMode(draft.mode || 'compose');
   };
 
+  const handleDeleteDraft = async (e, draftId) => {
+    e.stopPropagation();
+    try {
+      await base44.entities.EmailDraft.delete(draftId);
+      refetchDrafts();
+      toast.success('Draft deleted');
+    } catch (error) {
+      toast.error('Failed to delete draft');
+    }
+  };
+
   const isLoading = threadLoading || messagesLoading;
 
   // No linked threads - show option to link
@@ -277,9 +288,19 @@ export default function ProjectEmailSection({ project, onThreadLinked }) {
                       To: {draft.to_addresses?.join(', ') || '(No recipient)'}
                     </p>
                   </div>
-                  <Badge variant="outline" className="text-[10px] ml-2 flex-shrink-0">
-                    {draft.mode === 'reply' ? 'Reply' : draft.mode === 'forward' ? 'Forward' : 'Draft'}
-                  </Badge>
+                  <div className="flex items-center gap-1 ml-2 flex-shrink-0">
+                    <Badge variant="outline" className="text-[10px]">
+                      {draft.mode === 'reply' ? 'Reply' : draft.mode === 'forward' ? 'Forward' : 'Draft'}
+                    </Badge>
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      onClick={(e) => handleDeleteDraft(e, draft.id)}
+                      className="h-6 w-6 text-red-500 hover:text-red-700 hover:bg-red-50"
+                    >
+                      <Trash2 className="w-3 h-3" />
+                    </Button>
+                  </div>
                 </div>
               ))}
               {drafts.length > 3 && (
