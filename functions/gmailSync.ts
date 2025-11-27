@@ -85,8 +85,9 @@ Deno.serve(async (req) => {
     const inboxData = await inboxResponse.json();
     const sentData = await sentResponse.json();
 
-    console.log('Gmail API response - Inbox messages:', inboxData.messages?.length || 0);
-    console.log('Gmail API response - Sent messages:', sentData.messages?.length || 0);
+    console.log('=== Gmail Sync Started ===');
+    console.log('Inbox messages:', inboxData.messages?.length || 0);
+    console.log('Sent messages:', sentData.messages?.length || 0);
 
     const allMessages = [
       ...(inboxData.messages || []).map(m => ({ ...m, isOutbound: false })),
