@@ -12,21 +12,21 @@ export const determineJobStatus = (scheduledDate, outcome, hasActiveCheckIn, cur
   today.setHours(0, 0, 0, 0);
   scheduled.setHours(0, 0, 0, 0);
   
-  // Rule 1: Future dates ALWAYS return scheduled (highest priority, automatic)
+  // Rule 1: Future dates ALWAYS return Scheduled (highest priority, automatic)
   if (scheduled > today) {
-    return 'scheduled';
+    return 'Scheduled';
   }
   
-  // If manually cancelled, keep it cancelled
-  if (currentStatus === 'cancelled') {
-    return 'cancelled';
+  // If manually cancelled, keep it Cancelled
+  if (currentStatus === 'Cancelled') {
+    return 'Cancelled';
   }
   
   // Rule 2: Completed outcomes
   if (outcome === 'completed' || outcome === 'send_invoice') {
-    return 'completed';
+    return 'Completed';
   }
   
-  // Rule 3: Default to open
-  return 'open';
+  // Rule 3: Default to Open
+  return 'Open';
 };

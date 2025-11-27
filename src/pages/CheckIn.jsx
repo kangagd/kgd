@@ -31,7 +31,7 @@ export default function CheckIn() {
     queryKey: ['myJobs', user?.email],
     queryFn: () => base44.entities.Job.filter({ 
       assigned_to: user?.email,
-      status: ['scheduled', 'in_progress']
+      status: ['Scheduled', 'Open']
     }),
     enabled: !!user?.email,
   });
@@ -49,7 +49,8 @@ export default function CheckIn() {
   const checkInMutation = useMutation({
     mutationFn: async (data) => {
       const checkIn = await base44.entities.CheckInOut.create(data);
-      await base44.entities.Job.update(data.job_id, { status: 'in_progress' });
+      // Keep status as Scheduled or Open when checking in, as In Progress is not a valid status
+      // The active check-in record itself indicates the job is in progress
       return checkIn;
     },
     onSuccess: () => {
@@ -73,7 +74,7 @@ export default function CheckIn() {
       });
       
       await base44.entities.Job.update(jobId, { 
-        status: 'completed',
+        status: 'Completed',
         completion_notes: notes
       });
     },
