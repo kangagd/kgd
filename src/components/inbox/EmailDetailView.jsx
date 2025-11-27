@@ -23,6 +23,7 @@ import { createPageUrl } from "@/utils";
 import { useNavigate } from "react-router-dom";
 import EmailComposer from "./EmailComposer";
 import EmailAISummaryCard from "./EmailAISummaryCard";
+import AttachmentCard from "./AttachmentCard";
 import {
   DropdownMenu,
   DropdownMenuContent,
