@@ -135,8 +135,8 @@ export default function JobCard({ job, onClick, onViewDetails }) {
           {/* Type badges and Technicians */}
           <div className="flex items-center justify-between gap-2 flex-wrap">
             <div className="flex items-center gap-2 flex-wrap">
-              {job.job_type_name && (
-                <JobTypeBadge value={job.job_type_name} className="pointer-events-none" />
+              {(job.job_type_name || job.job_type) && (
+                <JobTypeBadge value={job.job_type_name || job.job_type} className="pointer-events-none" />
               )}
               {job.product && (
                 <ProductTypeBadge value={job.product} className="pointer-events-none" />
