@@ -59,6 +59,78 @@ export default function EmailMessageView({ message, isFirst, linkedJobId, linked
   // Use message's own gmail_message_id first, then fall back to prop
   const gmailMessageId = message.gmail_message_id || propGmailMessageId;
   const [expanded, setExpanded] = useState(isFirst);
+  const [inlineImageUrls, setInlineImageUrls] = useState({});
+  const [loadingInlineImages, setLoadingInlineImages] = useState(false);
+
+  // Separate inline images from regular attachments
+  const { inlineAttachments, regularAttachments } = useMemo(() => {
+    const attachments = message.attachments || [];
+    const inline = [];
+    const regular = [];
+    
+    for (const att of attachments) {
+      if (isInlineImageInHtml(att, message.body_html)) {
+        inline.push(att);
+      } else {
+        regular.push(att);
+      }
+    }
+    
+    return { inlineAttachments: inline, regularAttachments: regular };
+  }, [message.attachments, message.body_html]);
+
+  // Load inline images when expanded
+  useEffect(() => {
+    if (!expanded || inlineAttachments.length === 0 || loadingInlineImages) return;
+    if (Object.keys(inlineImageUrls).length > 0) return; // Already loaded
+    
+    const loadInlineImages = async () => {
+      setLoadingInlineImages(true);
+      const urls = {};
+      
+      for (const att of inlineAttachments) {
+        if (att.content_id && att.attachment_id) {
+          try {
+            const effectiveMsgId = att.gmail_message_id || gmailMessageId;
+            if (!effectiveMsgId) continue;
+            
+            const result = await base44.functions.invoke('getGmailAttachment', {
+              gmail_message_id: effectiveMsgId,
+              attachment_id: att.attachment_id,
+              filename: att.filename,
+              mime_type: att.mime_type
+            });
+            
+            if (result.data?.url) {
+              urls[att.content_id] = result.data.url;
+            }
+          } catch (err) {
+            console.error('Failed to load inline image:', att.filename, err);
+          }
+        }
+      }
+      
+      setInlineImageUrls(urls);
+      setLoadingInlineImages(false);
+    };
+    
+    loadInlineImages();
+  }, [expanded, inlineAttachments, gmailMessageId, inlineImageUrls, loadingInlineImages]);
+
+  // Process HTML to replace cid: references with actual URLs
+  const processedBodyHtml = useMemo(() => {
+    if (!message.body_html) return '';
+    
+    let html = message.body_html;
+    
+    // Replace cid: references with resolved URLs
+    for (const [contentId, url] of Object.entries(inlineImageUrls)) {
+      const cidPattern = new RegExp(`cid:${contentId.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}`, 'gi');
+      html = html.replace(cidPattern, url);
+    }
+    
+    return html;
+  }, [message.body_html, inlineImageUrls]);
 
   // Minimal sanitization - preserve Gmail layout and styling
   const sanitizeBodyHtml = (html) => {
