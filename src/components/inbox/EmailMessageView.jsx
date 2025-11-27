@@ -36,7 +36,9 @@ function AttachmentsSection({ attachments, linkedJobId, linkedProjectId, threadS
   );
 }
 
-export default function EmailMessageView({ message, isFirst, linkedJobId, linkedProjectId, threadSubject, gmailMessageId }) {
+export default function EmailMessageView({ message, isFirst, linkedJobId, linkedProjectId, threadSubject, gmailMessageId: propGmailMessageId }) {
+  // Use message's own gmail_message_id first, then fall back to prop
+  const gmailMessageId = message.gmail_message_id || propGmailMessageId;
   const [expanded, setExpanded] = useState(isFirst);
 
   // Minimal sanitization - preserve Gmail layout and styling
