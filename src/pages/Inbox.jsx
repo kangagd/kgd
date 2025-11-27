@@ -23,6 +23,8 @@ import GmailConnect from "../components/inbox/GmailConnect";
 import AdvancedSearch from "../components/inbox/AdvancedSearch";
 import EmailComposer from "../components/inbox/EmailComposer";
 import { toast } from "sonner";
+import { Badge } from "@/components/ui/badge";
+import { FileEdit } from "lucide-react";
 
 export default function Inbox() {
   const navigate = useNavigate();
