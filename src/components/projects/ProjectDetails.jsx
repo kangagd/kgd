@@ -698,7 +698,9 @@ Format as HTML bullet points using <ul> and <li> tags. Include only the most cri
   };
 
   const handleFileUpload = async (event, type) => {
-    const files = type === 'other' ? Array.from(event.target.files || []) : [event.target.files?.[0]];
+    const files = (type === 'other' || type === 'image') 
+      ? Array.from(event.target.files || []) 
+      : [event.target.files?.[0]];
     if (files.length === 0 || !files[0]) return;
 
     setUploading(true);
@@ -712,21 +714,23 @@ Format as HTML bullet points using <ul> and <li> tags. Include only the most cri
           field: 'other_documents', 
           value: [...currentDocs, ...newUrls] 
         });
-      } else {
-        const { file_url } = await base44.integrations.Core.UploadFile({ file: files[0] });
+      } else if (type === 'image') {
+        // Upload multiple images/videos
+        const uploadPromises = files.map(file => base44.integrations.Core.UploadFile({ file }));
+        const results = await Promise.all(uploadPromises);
+        const newUrls = results.map(r => r.file_url);
         
-        if (type === 'image') {
-          const currentImages = project.image_urls || [];
-          const newImages = [...currentImages, file_url];
-          updateProjectMutation.mutate({ 
-            field: 'image_urls', 
-            value: newImages 
-          });
+        const currentImages = project.image_urls || [];
+        updateProjectMutation.mutate({ 
+          field: 'image_urls', 
+          value: [...currentImages, ...newUrls] 
+        });
 
-          // Create Photo record
-          const user = await base44.auth.me();
+        // Create Photo records for each uploaded file
+        const user = await base44.auth.me();
+        for (const url of newUrls) {
           await base44.entities.Photo.create({
-            image_url: file_url,
+            image_url: url,
             project_id: project.id,
             project_name: project.title,
             customer_id: project.customer_id,
@@ -736,8 +740,12 @@ Format as HTML bullet points using <ul> and <li> tags. Include only the most cri
             technician_email: user.email,
             technician_name: user.full_name
           });
-          queryClient.invalidateQueries({ queryKey: ['photos'] });
-        } else if (type === 'quote') {
+        }
+        queryClient.invalidateQueries({ queryKey: ['photos'] });
+      } else {
+        const { file_url } = await base44.integrations.Core.UploadFile({ file: files[0] });
+        
+        if (type === 'quote') {
           updateProjectMutation.mutate({ field: 'quote_url', value: file_url });
         } else if (type === 'invoice') {
           updateProjectMutation.mutate({ field: 'invoice_url', value: file_url });
@@ -1013,12 +1021,13 @@ Format as HTML bullet points using <ul> and <li> tags. Include only the most cri
                   >
                     <span>
                       <Upload className="w-4 h-4 mr-2" />
-                      {uploading ? 'Uploading...' : 'Add Image/Video'}
+                      {uploading ? 'Uploading...' : 'Add Media'}
                     </span>
                   </Button>
                   <input
                     type="file"
                     accept="image/*,video/*"
+                    multiple
                     className="hidden"
                     onChange={(e) => handleFileUpload(e, 'image')}
                   />
