@@ -25,7 +25,7 @@ import TextField from "../common/TextField";
 import { format } from "date-fns";
 
 const CATEGORIES = [
-  "Motor", "Door", "Track", "Small Parts", "Control System", "Hardware", "Other"
+  "Door", "Motor", "Posts", "Tracks", "Small Parts", "Hardware", "Other"
 ];
 
 const STATUSES = [
