@@ -10,6 +10,7 @@ import { User, Mail, Phone, Shield } from "lucide-react";
 export default function UserEditModal({ user, open, onClose, onSave, isSaving }) {
   const [formData, setFormData] = useState({
     full_name: "",
+    display_name: "",
     email: "",
     role: "user",
     is_field_technician: false,
@@ -22,6 +23,7 @@ export default function UserEditModal({ user, open, onClose, onSave, isSaving })
     if (user) {
       setFormData({
         full_name: user.full_name || "",
+        display_name: user.display_name || "",
         email: user.email || "",
         role: user.role || "user",
         is_field_technician: user.is_field_technician || false,
@@ -36,6 +38,7 @@ export default function UserEditModal({ user, open, onClose, onSave, isSaving })
     e.preventDefault();
     onSave(user.id, {
       full_name: formData.full_name,
+      display_name: formData.display_name,
       role: formData.role,
       is_field_technician: formData.is_field_technician,
       phone: formData.phone,
@@ -65,6 +68,17 @@ export default function UserEditModal({ user, open, onClose, onSave, isSaving })
               onChange={(e) => setFormData({ ...formData, full_name: e.target.value })}
               placeholder="Enter full name"
             />
+          </div>
+
+          <div className="space-y-2">
+            <Label htmlFor="display_name">Display Name</Label>
+            <Input
+              id="display_name"
+              value={formData.display_name}
+              onChange={(e) => setFormData({ ...formData, display_name: e.target.value })}
+              placeholder="e.g. John D. or JD"
+            />
+            <p className="text-[12px] text-[#6B7280]">Short name shown in the app (optional)</p>
           </div>
 
           <div className="space-y-2">
