@@ -32,6 +32,7 @@ import JobMapView from "./JobMapView";
 import XeroInvoiceCard from "../invoices/XeroInvoiceCard";
 import CreateInvoiceModal from "../invoices/CreateInvoiceModal";
 import TakePaymentModal from "../invoices/TakePaymentModal";
+import LinkInvoiceModal from "../invoices/LinkInvoiceModal";
 
 import {
   Dialog,
