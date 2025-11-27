@@ -32,15 +32,6 @@ export default function AttachmentCard({
   // Use gmail_message_id from attachment or from prop
   // Prioritize attachment's own gmail_message_id, then fall back to prop
   const effectiveGmailMessageId = attachment.gmail_message_id || gmailMessageId;
-  
-  // Debug log to help troubleshoot
-  console.log('AttachmentCard:', {
-    filename: attachment.filename,
-    attachment_id: attachment.attachment_id,
-    gmail_message_id: attachment.gmail_message_id,
-    gmailMessageIdProp: gmailMessageId,
-    effectiveGmailMessageId
-  });
 
   const formatFileSize = (bytes) => {
     if (bytes === 0) return '0 Bytes';
