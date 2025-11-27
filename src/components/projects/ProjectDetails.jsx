@@ -904,7 +904,8 @@ Format as HTML bullet points using <ul> and <li> tags. Include only the most cri
                             type: 'image',
                             projectName: project.title,
                             address: project.address,
-                            index
+                            index,
+                            allImages: project.image_urls
                           })}
                           className="block w-full"
                         >
@@ -920,9 +921,20 @@ Format as HTML bullet points using <ul> and <li> tags. Include only the most cri
                 )}
 
                 {project.image_urls && project.image_urls.length > 4 && (
-                  <div className="text-[12px] text-[#6B7280] text-center">
+                  <button
+                    onClick={() => setPreviewFile({
+                      url: project.image_urls[4],
+                      name: `Project Image 5`,
+                      type: 'image',
+                      projectName: project.title,
+                      address: project.address,
+                      index: 4,
+                      allImages: project.image_urls
+                    })}
+                    className="text-[12px] text-[#6B7280] text-center w-full hover:text-[#111827] transition-colors"
+                  >
                     +{project.image_urls.length - 4} more images
-                  </div>
+                  </button>
                 )}
 
                 <label className="block">
