@@ -66,6 +66,18 @@ Deno.serve(async (req) => {
       initial_visit_technician_name: latestSummary?.technician_name || null
     };
 
+    // Sync Xero invoice to project if job has one
+    if (job.xero_invoice_id) {
+      const existingXeroInvoices = project.xero_invoices || [];
+      if (!existingXeroInvoices.includes(job.xero_invoice_id)) {
+        projectUpdate.xero_invoices = [...existingXeroInvoices, job.xero_invoice_id];
+      }
+      // Also sync the payment URL if available
+      if (job.xero_payment_url && !project.xero_payment_url) {
+        projectUpdate.xero_payment_url = job.xero_payment_url;
+      }
+    }
+
     // If it's an Initial Site Visit and project status is still "Initial Site Visit", advance to next stage
     if (isInitialSiteVisit && project.status === 'Initial Site Visit') {
       projectUpdate.status = 'Quote Sent';
