@@ -161,8 +161,15 @@ export default function Schedule() {
         }
 
         // Date filter
-        if (dateFilter && job.scheduled_date && !dateFilter(parseISO(job.scheduled_date))) {
-          return false;
+        if (dateFilter && job.scheduled_date) {
+          try {
+            const parsedDate = parseISO(job.scheduled_date);
+            if (isNaN(parsedDate.getTime()) || !dateFilter(parsedDate)) {
+              return false;
+            }
+          } catch {
+            return false;
+          }
         }
 
         // Technician filter
