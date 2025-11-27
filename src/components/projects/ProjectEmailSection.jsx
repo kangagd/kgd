@@ -141,8 +141,8 @@ export default function ProjectEmailSection({ project, onThreadLinked }) {
   });
 
   const handleRefresh = async () => {
-    await refetchThreads();
-    await refetchMessages();
+    // Force complete refresh by incrementing key
+    setRefreshKey(k => k + 1);
     toast.success('Emails refreshed');
   };
 
