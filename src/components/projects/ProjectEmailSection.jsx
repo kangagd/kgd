@@ -32,14 +32,16 @@ export default function ProjectEmailSection({ project, onThreadLinked }) {
 
   // Fetch messages for all linked threads
   const { data: messages = [], isLoading: messagesLoading, refetch: refetchMessages } = useQuery({
-    queryKey: ['projectEmailMessages', project.id, linkedThreads.map(t => t.id)],
+    queryKey: ['projectEmailMessages', project.id, linkedThreads.map(t => t.id).join(',')],
     queryFn: async () => {
       if (linkedThreads.length === 0) return [];
       const threadIds = linkedThreads.map(t => t.id);
       const allMessages = await base44.entities.EmailMessage.list();
       return allMessages.filter(m => threadIds.includes(m.thread_id));
     },
-    enabled: linkedThreads.length > 0
+    enabled: linkedThreads.length > 0,
+    staleTime: 0,
+    refetchOnMount: 'always'
   });
 
   // For backward compatibility - use first thread as "emailThread"
