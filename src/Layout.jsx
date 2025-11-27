@@ -236,20 +236,76 @@ export default function Layout({ children, currentPageName }) {
   // Close mobile menu on route change or ESC key
       useEffect(() => { setIsMobileMenuOpen(false); }, [location.pathname]);
 
-      // Track recent pages
+      // Track recent pages including specific entities
       useEffect(() => {
         const allNavItems = [...primaryNavigationItems, ...secondaryNavigationItems, ...technicianNavigationItems];
         const currentItem = allNavItems.find(item => item.url === location.pathname);
+        const params = new URLSearchParams(location.search);
 
-        if (currentItem) {
+        let pageEntry = null;
+        const fullUrl = location.pathname + location.search;
+
+        // Check for specific entity pages
+        if (location.pathname === createPageUrl("Projects") && params.get('projectId')) {
+          pageEntry = { 
+            title: `Project`, 
+            url: fullUrl, 
+            timestamp: Date.now(),
+            type: 'project'
+          };
+        } else if (location.pathname === createPageUrl("Jobs") && params.get('jobId')) {
+          pageEntry = { 
+            title: `Job`, 
+            url: fullUrl, 
+            timestamp: Date.now(),
+            type: 'job'
+          };
+        } else if (location.pathname === createPageUrl("Jobs") && params.get('action') === 'create') {
+          pageEntry = { 
+            title: `New Job`, 
+            url: fullUrl, 
+            timestamp: Date.now(),
+            type: 'form'
+          };
+        } else if (location.pathname === createPageUrl("Projects") && params.get('action') === 'create') {
+          pageEntry = { 
+            title: `New Project`, 
+            url: fullUrl, 
+            timestamp: Date.now(),
+            type: 'form'
+          };
+        } else if (location.pathname === createPageUrl("Customers") && params.get('customerId')) {
+          pageEntry = { 
+            title: `Customer`, 
+            url: fullUrl, 
+            timestamp: Date.now(),
+            type: 'customer'
+          };
+        } else if (location.pathname === createPageUrl("Inbox") && params.get('threadId')) {
+          pageEntry = { 
+            title: `Email Thread`, 
+            url: fullUrl, 
+            timestamp: Date.now(),
+            type: 'email'
+          };
+        } else if (currentItem) {
+          pageEntry = { 
+            title: currentItem.title, 
+            url: location.pathname, 
+            timestamp: Date.now(),
+            type: 'page'
+          };
+        }
+
+        if (pageEntry) {
           setRecentPages(prev => {
-            const filtered = prev.filter(p => p.url !== currentItem.url);
-            const updated = [{ title: currentItem.title, url: currentItem.url, timestamp: Date.now() }, ...filtered].slice(0, 5);
+            const filtered = prev.filter(p => p.url !== pageEntry.url);
+            const updated = [pageEntry, ...filtered].slice(0, 8);
             localStorage.setItem('recentPages', JSON.stringify(updated));
             return updated;
           });
         }
-      }, [location.pathname]);
+      }, [location.pathname, location.search]);
   useEffect(() => {
     const handleEscape = (e) => e.key === 'Escape' && isMobileMenuOpen && setIsMobileMenuOpen(false);
     window.addEventListener('keydown', handleEscape);
@@ -673,23 +729,35 @@ export default function Layout({ children, currentPageName }) {
                                 <History className="w-5 h-5" />
                               </button>
                             </PopoverTrigger>
-                            <PopoverContent align="end" className="w-56 p-2">
+                            <PopoverContent align="end" className="w-64 p-2">
                               <div className="text-[12px] font-medium text-[#6B7280] px-2 py-1 mb-1">Recent Pages</div>
                               {recentPages.length === 0 ? (
                                 <div className="text-[13px] text-[#9CA3AF] px-2 py-2">No recent pages</div>
                               ) : (
                                 <div className="space-y-0.5">
-                                  {recentPages.map((page, idx) => (
-                                    <Link
-                                      key={idx}
-                                      to={page.url}
-                                      onClick={() => setRecentPagesOpen(false)}
-                                      className="flex items-center gap-2 px-2 py-2 rounded-lg text-[#111827] hover:bg-[#F3F4F6] transition-colors no-underline"
-                                    >
-                                      <Clock className="w-3.5 h-3.5 text-[#9CA3AF]" />
-                                      <span className="text-[13px]">{page.title}</span>
-                                    </Link>
-                                  ))}
+                                  {recentPages.map((page, idx) => {
+                                    const getIcon = () => {
+                                      switch(page.type) {
+                                        case 'project': return <FolderKanban className="w-3.5 h-3.5 text-[#6D28D9]" />;
+                                        case 'job': return <Briefcase className="w-3.5 h-3.5 text-[#2563EB]" />;
+                                        case 'customer': return <UserCircle className="w-3.5 h-3.5 text-[#16A34A]" />;
+                                        case 'email': return <Mail className="w-3.5 h-3.5 text-[#D97706]" />;
+                                        case 'form': return <Plus className="w-3.5 h-3.5 text-[#111827]" />;
+                                        default: return <Clock className="w-3.5 h-3.5 text-[#9CA3AF]" />;
+                                      }
+                                    };
+                                    return (
+                                      <Link
+                                        key={idx}
+                                        to={page.url}
+                                        onClick={() => setRecentPagesOpen(false)}
+                                        className="flex items-center gap-2 px-2 py-2 rounded-lg text-[#111827] hover:bg-[#F3F4F6] transition-colors no-underline"
+                                      >
+                                        {getIcon()}
+                                        <span className="text-[13px] truncate">{page.title}</span>
+                                      </Link>
+                                    );
+                                  })}
                                 </div>
                               )}
                             </PopoverContent>
