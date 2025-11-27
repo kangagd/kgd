@@ -156,21 +156,29 @@ export default function EmailAISummaryCard({ thread, onThreadUpdate, onCreatePro
   return (
     <Card className="border border-[#E0E7FF] bg-gradient-to-r from-[#EEF2FF] to-[#F5F3FF] shadow-sm mb-4">
       <CardContent className="p-4">
-        <div className="flex items-start justify-between gap-3 mb-3">
+        <div 
+          className="flex items-start justify-between gap-3 cursor-pointer"
+          onClick={() => setIsExpanded(!isExpanded)}
+        >
           <div className="flex items-center gap-2">
             <div className="w-7 h-7 rounded-lg bg-[#6366F1]/10 flex items-center justify-center">
               <Sparkles className="w-4 h-4 text-[#6366F1]" />
             </div>
-            <div>
+            <div className="flex items-center gap-2">
               <span className="text-[13px] font-semibold text-[#4338CA]">AI Summary</span>
               {thread.ai_analyzed_at && (
-                <span className="text-[11px] text-[#6B7280] ml-2">
+                <span className="text-[11px] text-[#6B7280]">
                   • {format(parseISO(thread.ai_analyzed_at), 'MMM d, h:mm a')}
                 </span>
               )}
+              {isExpanded ? (
+                <ChevronUp className="w-4 h-4 text-[#6366F1]" />
+              ) : (
+                <ChevronDown className="w-4 h-4 text-[#6366F1]" />
+              )}
             </div>
           </div>
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-2" onClick={(e) => e.stopPropagation()}>
             {hasInsights && onCreateProject && (
               <Button
                 variant="outline"
