@@ -158,9 +158,25 @@ Deno.serve(async (req) => {
       });
     }
     
+    // Fetch the sent message to get its proper Message-ID header
+    const sentMessageResponse = await fetch(
+      `https://gmail.googleapis.com/gmail/v1/users/me/messages/${result.id}?format=metadata&metadataHeaders=Message-ID`,
+      { headers: { 'Authorization': `Bearer ${accessToken}` } }
+    );
+    
+    let gmailMessageId = result.id;
+    if (sentMessageResponse.ok) {
+      const sentMessageData = await sentMessageResponse.json();
+      const messageIdHeader = sentMessageData.payload?.headers?.find(h => h.name === 'Message-ID');
+      if (messageIdHeader?.value) {
+        gmailMessageId = messageIdHeader.value;
+      }
+    }
+
     // Store sent message in EmailMessage entity
     await base44.entities.EmailMessage.create({
       thread_id: emailThreadId,
+      gmail_message_id: result.id,
       from_address: user.gmail_email || user.email,
       from_name: user.full_name,
       to_addresses: to.split(',').map(e => e.trim()),
@@ -170,7 +186,7 @@ Deno.serve(async (req) => {
       body_html: body,
       is_outbound: true,
       sent_at: new Date().toISOString(),
-      message_id: result.id
+      message_id: gmailMessageId
     });
     
     return Response.json({ success: true, messageId: result.id, threadId: emailThreadId });
