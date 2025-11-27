@@ -155,7 +155,7 @@ export default function EmailMessageView({ message, isFirst, linkedJobId, linked
                     linkedJobId={linkedJobId}
                     linkedProjectId={linkedProjectId}
                     threadSubject={threadSubject}
-                    gmailMessageId={attachment.gmail_message_id || gmailMessageId}
+                    gmailMessageId={attachment.gmail_message_id || gmailMessageId || message.gmail_message_id}
                   />
                 ))}
               </div>
