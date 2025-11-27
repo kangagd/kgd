@@ -185,6 +185,7 @@ Deno.serve(async (req) => {
           let bodyHtml = '';
           let bodyText = detail.snippet || '';
           const attachments = [];
+          const inlineImages = []; // Track inline images with Content-ID
 
           const processParts = (parts) => {
             if (!parts || !Array.isArray(parts)) return;
@@ -202,14 +203,29 @@ Deno.serve(async (req) => {
                 if (part.filename && part.filename.length > 0) {
                   const attachmentId = part.body?.attachmentId;
                   if (attachmentId) {
-                    attachments.push({
+                    // Get Content-ID header for inline images
+                    const contentIdHeader = part.headers?.find(h => h.name.toLowerCase() === 'content-id');
+                    const contentDisposition = part.headers?.find(h => h.name.toLowerCase() === 'content-disposition');
+                    const contentId = contentIdHeader?.value?.replace(/[<>]/g, ''); // Remove < > brackets
+                    const isInline = contentDisposition?.value?.toLowerCase().includes('inline') || !!contentId;
+                    
+                    const attachmentData = {
                       filename: part.filename,
                       mime_type: part.mimeType,
                       size: parseInt(part.body.size) || 0,
                       attachment_id: attachmentId,
-                      gmail_message_id: message.id
-                    });
-                    console.log(`Found attachment: ${part.filename}, ID: ${attachmentId}`);
+                      gmail_message_id: message.id,
+                      content_id: contentId || null,
+                      is_inline: isInline
+                    };
+                    
+                    attachments.push(attachmentData);
+                    
+                    if (isInline && contentId) {
+                      inlineImages.push(attachmentData);
+                    }
+                    
+                    console.log(`Found attachment: ${part.filename}, ID: ${attachmentId}, ContentID: ${contentId || 'none'}, Inline: ${isInline}`);
                   }
                 }
                 
