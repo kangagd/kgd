@@ -159,7 +159,7 @@ export default function EmailMessageView({ message, isFirst, linkedJobId, linked
                 linkedJobId={linkedJobId}
                 linkedProjectId={linkedProjectId}
                 threadSubject={threadSubject}
-                gmailMessageId={gmailMessageId || message.gmail_message_id}
+                gmailMessageId={gmailMessageId}
               />
             )}
           </div>
