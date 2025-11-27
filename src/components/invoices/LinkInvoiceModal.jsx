@@ -158,10 +158,18 @@ export default function LinkInvoiceModal({ open, onClose, onSelect, isSubmitting
                           <Calendar className="w-3 h-3" />
                           {(() => {
                             try {
-                              const dateStr = invoice.date.split('T')[0];
-                              return format(parseISO(dateStr), 'MMM d, yyyy');
+                              if (!invoice.date) return '-';
+                              // Handle various date formats
+                              let dateStr = invoice.date;
+                              if (dateStr.includes('T')) {
+                                dateStr = dateStr.split('T')[0];
+                              }
+                              // Validate date before parsing
+                              const parsed = parseISO(dateStr);
+                              if (isNaN(parsed.getTime())) return invoice.date;
+                              return format(parsed, 'MMM d, yyyy');
                             } catch {
-                              return invoice.date;
+                              return invoice.date || '-';
                             }
                           })()}
                         </div>
