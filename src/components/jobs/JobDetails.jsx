@@ -305,6 +305,38 @@ export default function JobDetails({ job: initialJob, onClose, onStatusChange, o
       if (job.project_id) {
         try {
           await base44.functions.invoke('syncJobToProject', { job_id: job.id });
+          
+          // Auto-advance project stage based on outcome
+          const outcomeToStageMap = {
+            'new_quote': 'Create Quote',
+            'update_quote': 'Create Quote',
+            'send_invoice': 'Completed',
+            'completed': 'Completed',
+            'return_visit_required': 'Scheduled'
+          };
+          
+          const newProjectStage = outcomeToStageMap[outcome];
+          if (newProjectStage) {
+            const project = await base44.entities.Project.get(job.project_id);
+            // Only advance if the new stage is different
+            if (project && project.status !== newProjectStage) {
+              await base44.entities.Project.update(job.project_id, { status: newProjectStage });
+              
+              // Handle project completion if moving to Completed
+              if (newProjectStage === 'Completed') {
+                try {
+                  await base44.functions.invoke('handleProjectCompletion', {
+                    project_id: job.project_id,
+                    new_status: 'Completed',
+                    old_status: project.status,
+                    completed_date: new Date().toISOString().split('T')[0]
+                  });
+                } catch (completionError) {
+                  console.error('Failed to handle project completion:', completionError);
+                }
+              }
+            }
+          }
         } catch (syncError) {
           console.error('Failed to sync job to project:', syncError);
           // Don't fail the checkout, just log the error
