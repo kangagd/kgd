@@ -313,6 +313,7 @@ export default function EmailThreadDetail({
                 linkedJobId={thread.linked_job_id}
                 linkedProjectId={thread.linked_project_id}
                 threadSubject={thread.subject}
+                gmailMessageId={message.attachments?.[0]?.gmail_message_id}
               />
               {userPermissions?.can_reply && (
                 <div className="flex gap-2 mt-2 ml-4">
