@@ -366,13 +366,21 @@ export default function AISchedulingAssistant({ selectedDate, onApplySuggestion 
                     </div>
                   ) : (
                     data?.assignmentSuggestions?.map((suggestion, i) => (
-                      <Card key={i} className="border border-[#E5E7EB]">
+                      <Card key={i} className={`border ${suggestion.confidence === 'high' ? 'border-green-200 bg-green-50/30' : 'border-[#E5E7EB]'}`}>
                         <CardContent className="p-3">
                           <div className="flex items-start justify-between gap-2 mb-2">
                             <div>
-                              <p className="text-sm font-medium">Job #{suggestion.job.jobNumber}</p>
+                              <div className="flex items-center gap-2">
+                                <p className="text-sm font-medium">Job #{suggestion.job.jobNumber}</p>
+                                {suggestion.confidence === 'high' && (
+                                  <Badge className="bg-green-100 text-green-700 text-[9px]">
+                                    <Zap className="w-2.5 h-2.5 mr-0.5" />
+                                    Best Match
+                                  </Badge>
+                                )}
+                              </div>
                               <p className="text-xs text-[#6B7280]">{suggestion.job.customer}</p>
-                              <div className="flex items-center gap-2 mt-1">
+                              <div className="flex items-center gap-2 mt-1 flex-wrap">
                                 <Badge variant="outline" className="text-[10px]">
                                   <Wrench className="w-2.5 h-2.5 mr-1" />
                                   {suggestion.job.jobType || 'General'}
@@ -381,55 +389,195 @@ export default function AISchedulingAssistant({ selectedDate, onApplySuggestion 
                                   <MapPin className="w-2.5 h-2.5 mr-1" />
                                   {suggestion.job.address}
                                 </Badge>
+                                {suggestion.job.expectedDuration && (
+                                  <Badge variant="outline" className="text-[10px]">
+                                    <Clock className="w-2.5 h-2.5 mr-1" />
+                                    {suggestion.job.expectedDuration}h
+                                  </Badge>
+                                )}
                               </div>
                             </div>
                           </div>
                           
-                          <div className="flex items-center gap-2 mt-3 p-2 bg-[#F9FAFB] rounded-lg">
-                            <div className="flex-1">
-                              <p className="text-xs text-[#6B7280]">Recommended</p>
-                              <p className="text-sm font-medium">{suggestion.recommendedTechnician.name}</p>
-                              <div className="flex gap-2 mt-1">
-                                <span className="text-[10px] text-[#6B7280]">
-                                  Skill: {suggestion.recommendedTechnician.skillMatch}%
-                                </span>
-                                <span className="text-[10px] text-[#6B7280]">
-                                  Proximity: {suggestion.recommendedTechnician.proximity}%
-                                </span>
+                          <div className="mt-3 p-2 bg-[#F9FAFB] rounded-lg">
+                            <div className="flex items-center justify-between gap-2">
+                              <div className="flex-1">
+                                <div className="flex items-center gap-2">
+                                  <p className="text-xs text-[#6B7280]">Recommended</p>
+                                  <span className="text-[10px] font-medium px-1.5 py-0.5 rounded bg-[#FAE008]/30 text-[#111827]">
+                                    {suggestion.recommendedTechnician.score}% match
+                                  </span>
+                                </div>
+                                <p className="text-sm font-medium">{suggestion.recommendedTechnician.name}</p>
+                                <div className="flex flex-wrap gap-x-3 gap-y-1 mt-1">
+                                  <span className="text-[10px] text-[#6B7280]">
+                                    🎯 Skill: {suggestion.recommendedTechnician.breakdown?.skill || 0}%
+                                  </span>
+                                  <span className="text-[10px] text-[#6B7280]">
+                                    📍 Proximity: {suggestion.recommendedTechnician.breakdown?.proximity || 0}%
+                                  </span>
+                                  <span className="text-[10px] text-[#6B7280]">
+                                    📊 Load: {suggestion.recommendedTechnician.currentJobs}/{suggestion.recommendedTechnician.maxJobs}
+                                  </span>
+                                </div>
+                                {suggestion.recommendedTechnician.suggestedTimeSlot && (
+                                  <div className="flex items-center gap-1 mt-1.5">
+                                    <Calendar className="w-3 h-3 text-green-600" />
+                                    <span className="text-xs text-green-700 font-medium">
+                                      {suggestion.recommendedTechnician.suggestedTimeSlot.suggestedTime}
+                                    </span>
+                                    <span className="text-[10px] text-[#6B7280]">
+                                      - {suggestion.recommendedTechnician.suggestedTimeSlot.reason}
+                                    </span>
+                                  </div>
+                                )}
                               </div>
+                              <Button
+                                size="sm"
+                                onClick={() => assignJobMutation.mutate({
+                                  jobId: suggestion.job.id,
+                                  technicianEmail: suggestion.recommendedTechnician.email,
+                                  technicianName: suggestion.recommendedTechnician.name,
+                                  scheduledTime: suggestion.recommendedTechnician.suggestedTimeSlot?.suggestedTime
+                                })}
+                                disabled={assignJobMutation.isPending}
+                                className="bg-[#FAE008] text-[#111827] hover:bg-[#E5CF07] h-8"
+                              >
+                                {assignJobMutation.isPending ? (
+                                  <Loader2 className="w-3 h-3 animate-spin" />
+                                ) : (
+                                  <>Assign</>
+                                )}
+                              </Button>
                             </div>
-                            <Button
-                              size="sm"
-                              onClick={() => assignJobMutation.mutate({
-                                jobId: suggestion.job.id,
-                                technicianEmail: suggestion.recommendedTechnician.email,
-                                technicianName: suggestion.recommendedTechnician.name
-                              })}
-                              disabled={assignJobMutation.isPending}
-                              className="bg-[#FAE008] text-[#111827] hover:bg-[#E5CF07] h-8"
-                            >
-                              {assignJobMutation.isPending ? (
-                                <Loader2 className="w-3 h-3 animate-spin" />
-                              ) : (
-                                <>Assign</>
-                              )}
-                            </Button>
+                            
+                            <p className="text-[10px] text-[#6B7280] mt-2 italic">{suggestion.reason}</p>
                           </div>
 
                           {suggestion.alternatives?.length > 0 && (
-                            <div className="mt-2 text-xs text-[#6B7280]">
-                              <span>Also available: </span>
-                              {suggestion.alternatives.map((alt, j) => (
-                                <span key={j}>
-                                  {alt.name} ({alt.skillMatch}%)
-                                  {j < suggestion.alternatives.length - 1 ? ', ' : ''}
-                                </span>
-                              ))}
+                            <div className="mt-2 pt-2 border-t border-[#E5E7EB]">
+                              <p className="text-[10px] text-[#6B7280] mb-1">Alternative options:</p>
+                              <div className="flex flex-wrap gap-1">
+                                {suggestion.alternatives.map((alt, j) => (
+                                  <Button
+                                    key={j}
+                                    variant="ghost"
+                                    size="sm"
+                                    className="h-6 text-[10px] px-2 bg-[#F3F4F6] hover:bg-[#E5E7EB]"
+                                    onClick={() => assignJobMutation.mutate({
+                                      jobId: suggestion.job.id,
+                                      technicianEmail: alt.email,
+                                      technicianName: alt.name,
+                                      scheduledTime: alt.suggestedTimeSlot?.suggestedTime
+                                    })}
+                                    disabled={assignJobMutation.isPending}
+                                  >
+                                    {alt.name} ({alt.score}%)
+                                  </Button>
+                                ))}
+                              </div>
                             </div>
                           )}
                         </CardContent>
                       </Card>
                     ))
+                  )}
+                </TabsContent>
+
+                {/* Reassignment Suggestions Tab */}
+                <TabsContent value="reassign" className="mt-4 space-y-3">
+                  {data?.reassignmentSuggestions?.length === 0 ? (
+                    <div className="text-center py-8">
+                      <CheckCircle className="w-10 h-10 text-green-400 mx-auto mb-2" />
+                      <p className="text-sm text-[#6B7280]">All assignments are optimized</p>
+                      <p className="text-xs text-[#9CA3AF] mt-1">No better technician matches found</p>
+                    </div>
+                  ) : (
+                    <>
+                      <div className="p-3 bg-blue-50 rounded-lg border border-blue-200">
+                        <div className="flex items-start gap-2">
+                          <TrendingUp className="w-4 h-4 text-blue-600 mt-0.5" />
+                          <div>
+                            <p className="text-sm font-medium text-blue-700">Optimization Opportunities</p>
+                            <p className="text-xs text-blue-600">
+                              {data.reassignmentSuggestions.length} job(s) could be better matched with different technicians
+                            </p>
+                          </div>
+                        </div>
+                      </div>
+                      
+                      {data?.reassignmentSuggestions?.map((suggestion, i) => (
+                        <Card key={i} className={`border ${suggestion.severity === 'high' ? 'border-blue-300 bg-blue-50/30' : 'border-[#E5E7EB]'}`}>
+                          <CardContent className="p-3">
+                            <div className="flex items-start justify-between gap-2 mb-3">
+                              <div>
+                                <div className="flex items-center gap-2">
+                                  <p className="text-sm font-medium">Job #{suggestion.job.jobNumber}</p>
+                                  <Badge className={`text-[9px] ${suggestion.severity === 'high' ? 'bg-blue-100 text-blue-700' : 'bg-gray-100 text-gray-700'}`}>
+                                    +{suggestion.suggestedReassignment.improvement}% better
+                                  </Badge>
+                                </div>
+                                <p className="text-xs text-[#6B7280]">{suggestion.job.customer}</p>
+                                {suggestion.job.jobType && (
+                                  <Badge variant="outline" className="text-[10px] mt-1">
+                                    <Wrench className="w-2.5 h-2.5 mr-1" />
+                                    {suggestion.job.jobType}
+                                  </Badge>
+                                )}
+                              </div>
+                            </div>
+                            
+                            <div className="flex items-center gap-2 p-2 bg-white rounded-lg border border-[#E5E7EB]">
+                              <div className="flex-1 text-center px-2">
+                                <p className="text-[10px] text-[#9CA3AF]">Current</p>
+                                <div className="flex items-center justify-center gap-1 mt-1">
+                                  <User className="w-3 h-3 text-[#6B7280]" />
+                                  <p className="text-xs font-medium text-[#6B7280]">{suggestion.currentAssignment.name}</p>
+                                </div>
+                                <p className="text-[10px] text-[#9CA3AF]">{suggestion.currentAssignment.score}% match</p>
+                              </div>
+                              
+                              <ArrowRight className="w-4 h-4 text-blue-500 flex-shrink-0" />
+                              
+                              <div className="flex-1 text-center px-2">
+                                <p className="text-[10px] text-blue-600">Suggested</p>
+                                <div className="flex items-center justify-center gap-1 mt-1">
+                                  <User className="w-3 h-3 text-blue-600" />
+                                  <p className="text-xs font-medium text-blue-700">{suggestion.suggestedReassignment.name}</p>
+                                </div>
+                                <p className="text-[10px] text-blue-600">{suggestion.suggestedReassignment.score}% match</p>
+                              </div>
+                            </div>
+                            
+                            <p className="text-[10px] text-[#6B7280] mt-2 italic">{suggestion.reason}</p>
+                            
+                            <div className="flex gap-2 mt-3">
+                              <Button
+                                size="sm"
+                                onClick={() => reassignJobMutation.mutate({
+                                  jobId: suggestion.job.id,
+                                  fromTechnician: suggestion.currentAssignment.email,
+                                  toTechnician: suggestion.suggestedReassignment.email,
+                                  toTechnicianName: suggestion.suggestedReassignment.name,
+                                  scheduledTime: suggestion.suggestedReassignment.suggestedTime
+                                })}
+                                disabled={reassignJobMutation.isPending}
+                                className="flex-1 bg-blue-600 text-white hover:bg-blue-700 h-8"
+                              >
+                                {reassignJobMutation.isPending ? (
+                                  <Loader2 className="w-3 h-3 animate-spin" />
+                                ) : (
+                                  <>
+                                    <Shuffle className="w-3 h-3 mr-1" />
+                                    Reassign
+                                  </>
+                                )}
+                              </Button>
+                            </div>
+                          </CardContent>
+                        </Card>
+                      ))}
+                    </>
                   )}
                 </TabsContent>
 
