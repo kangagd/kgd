@@ -281,6 +281,7 @@ Deno.serve(async (req) => {
       }
     }
 
+    console.log(`=== Gmail Sync Complete: ${syncedCount} synced of ${allMessages.length} total ===`);
     return Response.json({ synced: syncedCount, total: allMessages.length });
   } catch (error) {
     console.error('Gmail sync error:', error);
