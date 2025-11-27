@@ -222,18 +222,15 @@ export default function JobDetails({ job: initialJob, onClose, onStatusChange, o
 
   const checkInMutation = useMutation({
     mutationFn: async () => {
-      const checkIn = await base44.entities.CheckInOut.create({
-        job_id: job.id,
-        technician_email: user.email,
-        technician_name: user.full_name,
-        check_in_time: new Date().toISOString()
-      });
-
-      // Update status based on date and check-in
       const newStatus = determineJobStatus(job.scheduled_date, job.outcome, true, job.status);
-      await base44.entities.Job.update(job.id, { status: newStatus });
-
-      return checkIn;
+      
+      // Use backend function for check-in to bypass RLS issues
+      const response = await base44.functions.invoke('performCheckIn', {
+        jobId: job.id,
+        newStatus
+      });
+      
+      return response.data;
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['checkIns', job.id] });
@@ -265,93 +262,23 @@ export default function JobDetails({ job: initialJob, onClose, onStatusChange, o
       // Determine new status
       const newStatus = isMistake ? job.status : determineJobStatus(job.scheduled_date, outcome, false, job.status);
 
-      // Only create job summary if this is not a mistake check-in
-      if (!isMistake) {
-        // Build scheduled datetime
-        let scheduledDatetime = null;
-        if (job.scheduled_date) {
-          const dateStr = job.scheduled_date;
-          const timeStr = job.scheduled_time || '09:00';
-          scheduledDatetime = `${dateStr}T${timeStr}:00.000Z`;
-        }
-
-        // Create job summary
-        await base44.entities.JobSummary.create({
-          job_id: job.id,
-          project_id: job.project_id || null,
-          job_number: job.job_number,
-          job_type: job.job_type_name || null,
-          scheduled_datetime: scheduledDatetime,
-          technician_email: user.email,
-          technician_name: user.full_name,
-          check_in_time: activeCheckIn.check_in_time,
-          check_out_time: checkOutTime,
-          duration_minutes: durationMinutes,
-          overview,
-          next_steps: nextSteps,
-          communication_with_client: communicationWithClient,
-          outcome,
-          status_at_checkout: newStatus,
-          photo_urls: job.image_urls || [],
-          measurements: job.measurements || null
-        });
-      }
-
-      await base44.entities.CheckInOut.update(activeCheckIn.id, {
-        check_out_time: checkOutTime,
-        duration_hours: Math.round(durationHours * 10) / 10
+      // Use backend function for check-out
+      const response = await base44.functions.invoke('performCheckOut', {
+        jobId: job.id,
+        checkInId: activeCheckIn.id,
+        newStatus,
+        overview: isMistake ? "" : overview,
+        nextSteps: isMistake ? "" : nextSteps,
+        communicationWithClient: isMistake ? "" : communicationWithClient,
+        outcome: isMistake ? "" : outcome,
+        imageUrls: job.image_urls,
+        measurements: job.measurements,
+        checkOutTime,
+        durationMinutes,
+        durationHours: Math.round(durationHours * 10) / 10
       });
-
-      // Update job status and save the visit details
-      await base44.entities.Job.update(job.id, {
-        overview: overview,
-        next_steps: nextSteps,
-        communication_with_client: communicationWithClient,
-        outcome: outcome,
-        status: newStatus
-      });
-
-      // Sync job data to project if job is linked to a project
-      if (job.project_id) {
-        try {
-          await base44.functions.invoke('syncJobToProject', { job_id: job.id });
-          
-          // Auto-advance project stage based on outcome
-          const outcomeToStageMap = {
-            'new_quote': 'Create Quote',
-            'update_quote': 'Create Quote',
-            'send_invoice': 'Completed',
-            'completed': 'Completed',
-            'return_visit_required': 'Scheduled'
-          };
-          
-          const newProjectStage = outcomeToStageMap[outcome];
-          if (newProjectStage) {
-            const project = await base44.entities.Project.get(job.project_id);
-            // Only advance if the new stage is different
-            if (project && project.status !== newProjectStage) {
-              await base44.entities.Project.update(job.project_id, { status: newProjectStage });
-              
-              // Handle project completion if moving to Completed
-              if (newProjectStage === 'Completed') {
-                try {
-                  await base44.functions.invoke('handleProjectCompletion', {
-                    project_id: job.project_id,
-                    new_status: 'Completed',
-                    old_status: project.status,
-                    completed_date: new Date().toISOString().split('T')[0]
-                  });
-                } catch (completionError) {
-                  console.error('Failed to handle project completion:', completionError);
-                }
-              }
-            }
-          }
-        } catch (syncError) {
-          console.error('Failed to sync job to project:', syncError);
-          // Don't fail the checkout, just log the error
-        }
-      }
+      
+      return response.data;
     },
     onSuccess: () => {
       setValidationError("");
