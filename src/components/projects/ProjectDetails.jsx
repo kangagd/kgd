@@ -787,6 +787,21 @@ Format as HTML bullet points using <ul> and <li> tags. Include only the most cri
             </CardContent>
             </Card>
 
+            {/* Tasks Section */}
+            <Card className="border border-[#E5E7EB] shadow-sm rounded-lg overflow-hidden mt-4">
+              <CardHeader className="bg-white px-4 py-3 border-b border-[#E5E7EB]">
+                <h3 className="text-[16px] font-semibold text-[#111827] leading-[1.2]">Tasks</h3>
+              </CardHeader>
+              <CardContent className="p-3">
+                <TasksPanel
+                  entityType="project"
+                  entityId={project.id}
+                  entityName={project.title}
+                  compact={true}
+                />
+              </CardContent>
+            </Card>
+
             {/* Visits Section */}
             <Card className="border border-[#E5E7EB] shadow-sm rounded-lg overflow-hidden mt-4">
             <CardHeader className="bg-white px-4 py-3 border-b border-[#E5E7EB]">
