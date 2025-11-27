@@ -286,6 +286,12 @@ Deno.serve(async (req) => {
           // Parse addresses safely
           const toAddresses = to ? to.split(',').map(e => parseEmailAddress(e.trim())).filter(e => e) : [];
           const fromAddress = parseEmailAddress(from) || 'unknown@unknown.com';
+          
+          // Determine if outbound by checking if from address matches user's email
+          const userEmail = user.gmail_email || user.email;
+          const isOutbound = message.isOutbound || 
+            fromAddress.toLowerCase() === userEmail.toLowerCase() ||
+            detail.labelIds?.includes('SENT');
 
           // Create message
           const messageData = {
@@ -298,7 +304,7 @@ Deno.serve(async (req) => {
             body_html: bodyHtml,
             body_text: bodyText,
             message_id: messageId,
-            is_outbound: message.isOutbound,
+            is_outbound: isOutbound,
             attachments: processedAttachments.length > 0 ? processedAttachments : undefined
           };
           
