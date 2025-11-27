@@ -352,7 +352,17 @@ export default function ProjectEmailSection({ project, onThreadLinked }) {
                     <p className="text-[14px] text-[#6B7280] text-center py-4">No messages in this thread yet.</p>
                   ) : (
                     <div className="space-y-3">
-                      {threadMessages.map((message, index) => (
+                      {threadMessages.map((message, index) => {
+                        // Debug: Log attachment data
+                        if (message.attachments?.length > 0) {
+                          console.log(`Message ${message.id} attachments:`, message.attachments.map(a => ({
+                            filename: a.filename,
+                            has_attachment_id: !!a.attachment_id,
+                            has_gmail_message_id: !!a.gmail_message_id,
+                            message_gmail_id: message.gmail_message_id
+                          })));
+                        }
+                        return (
                         <div key={message.id} className="relative">
                           <EmailMessageView
                             message={message}
@@ -383,7 +393,7 @@ export default function ProjectEmailSection({ project, onThreadLinked }) {
                             </Button>
                           </div>
                         </div>
-                      ))}
+                      );})}
                     </div>
                   )}
                 </CardContent>
