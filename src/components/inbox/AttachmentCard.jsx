@@ -130,11 +130,11 @@ export default function AttachmentCard({
               }
               
               // If we have attachment_id and gmail_message_id, fetch from Gmail
-              if (attachment.attachment_id && attachment.gmail_message_id) {
+              if (attachment.attachment_id && effectiveGmailMessageId) {
                 setDownloading(true);
                 try {
                   const result = await base44.functions.invoke('getGmailAttachment', {
-                    gmail_message_id: attachment.gmail_message_id,
+                    gmail_message_id: effectiveGmailMessageId,
                     attachment_id: attachment.attachment_id,
                     filename: attachment.filename,
                     mime_type: attachment.mime_type
@@ -152,7 +152,8 @@ export default function AttachmentCard({
                   setDownloading(false);
                 }
               } else {
-                toast.error('Attachment not available');
+                toast.error('Attachment not available - missing Gmail message ID or attachment ID');
+                console.error('Missing attachment data:', { attachment, effectiveGmailMessageId });
               }
             }}
             className="h-8 w-8 p-0"
