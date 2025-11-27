@@ -277,6 +277,7 @@ export default function EmailThreadDetail({
                     linkedJobId={thread.linked_job_id}
                     linkedProjectId={thread.linked_project_id}
                     threadSubject={thread.subject}
+                    gmailMessageId={attachment.gmail_message_id}
                   />
                 ))
               )}
