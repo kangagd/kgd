@@ -1,12 +1,16 @@
 import { createClientFromRequest } from 'npm:@base44/sdk@0.8.4';
 
 async function refreshTokenIfNeeded(user, base44) {
-  const expiry = new Date(user.gmail_token_expiry);
+  const expiry = user.gmail_token_expiry ? new Date(user.gmail_token_expiry) : new Date(0);
   const now = new Date();
   
   if (expiry - now < 5 * 60 * 1000) {
     const clientId = Deno.env.get('GMAIL_CLIENT_ID');
     const clientSecret = Deno.env.get('GMAIL_CLIENT_SECRET');
+    
+    if (!user.gmail_refresh_token) {
+      throw new Error('Gmail refresh token not available - please reconnect Gmail');
+    }
     
     const tokenResponse = await fetch('https://oauth2.googleapis.com/token', {
       method: 'POST',
@@ -20,6 +24,10 @@ async function refreshTokenIfNeeded(user, base44) {
     });
     
     const tokens = await tokenResponse.json();
+    
+    if (tokens.error) {
+      throw new Error(`Token refresh failed: ${tokens.error_description || tokens.error}`);
+    }
     
     await base44.asServiceRole.entities.User.update(user.id, {
       gmail_access_token: tokens.access_token,
