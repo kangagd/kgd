@@ -242,7 +242,7 @@ Deno.serve(async (req) => {
         console.log(`Updated message ${emailMsg.id} with gmail_message_id: ${gmailMessageId}`);
 
         // Small delay to avoid rate limiting
-        await new Promise(resolve => setTimeout(resolve, 100));
+        await new Promise(resolve => setTimeout(resolve, 50));
 
       } catch (err) {
         console.error(`Error processing message ${emailMsg.id}:`, err.message);
@@ -252,10 +252,11 @@ Deno.serve(async (req) => {
       }
     }
 
-    console.log(`=== Resync Complete: ${updatedCount} messages updated with attachments ===`);
+    console.log(`=== Resync Complete: ${updatedCount} messages updated, ${skippedCount} skipped (already have gmail_message_id) ===`);
     return Response.json({ 
       checked: checkedCount, 
       updated: updatedCount,
+      skipped: skippedCount,
       total: allMessages.length 
     });
 
