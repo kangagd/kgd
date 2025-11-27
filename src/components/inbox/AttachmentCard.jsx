@@ -193,16 +193,22 @@ export default function AttachmentCard({
         </div>
         <div className="flex items-center gap-1 flex-shrink-0 ml-2">
           {(linkedJobId || linkedProjectId) && (
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={handleSave}
-              disabled={saving}
-              title={`Save to ${linkedJobId ? 'Job' : 'Project'}`}
-              className="h-8 w-8 p-0"
-            >
-              {saving ? <Loader2 className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4" />}
-            </Button>
+            saved ? (
+              <div className="h-8 w-8 flex items-center justify-center text-green-600" title="Saved to project">
+                <Check className="w-4 h-4" />
+              </div>
+            ) : (
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={handleSave}
+                disabled={saving}
+                title={`Save to ${linkedJobId ? 'Job' : 'Project'}`}
+                className="h-8 w-8 p-0"
+              >
+                {saving ? <Loader2 className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4" />}
+              </Button>
+            )
           )}
           <Button
             variant="ghost"
