@@ -51,6 +51,7 @@ import MarkAsLostModal from "./MarkAsLostModal";
 const statusColors = {
   "Lead": "bg-slate-100 text-slate-700",
   "Initial Site Visit": "bg-blue-100 text-blue-700",
+  "Create Quote": "bg-violet-100 text-violet-700",
   "Quote Sent": "bg-purple-100 text-purple-700",
   "Quote Approved": "bg-indigo-100 text-indigo-700",
   "Final Measure": "bg-cyan-100 text-cyan-700",
@@ -727,7 +728,7 @@ Format as HTML bullet points using <ul> and <li> tags. Include only the most cri
       setActiveTab("summary");
     } else if (project.status === "Lead" || project.status === "Initial Site Visit") {
       setActiveTab("overview");
-    } else if (project.status === "Quote Sent" || project.status === "Quote Approved") {
+    } else if (project.status === "Create Quote" || project.status === "Quote Sent" || project.status === "Quote Approved") {
       setActiveTab("quoting");
     } else if (project.status === "Parts Ordered") {
       setActiveTab("parts");
