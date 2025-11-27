@@ -225,46 +225,8 @@ export default function Layout({ children, currentPageName }) {
     };
   }, [pullDistance, isRefreshing, isTechnician, isMobileMenuOpen, techMobileMenuOpen, setIsMobileMenuOpen, setTechMobileMenuOpen]);
 
-  // Admin check-in/out notifications
-  useEffect(() => {
-    if (!user || user.role !== 'admin') return;
-
-    const shownNotifications = new Set();
-    
-    const pollCheckInOuts = async () => {
-      try {
-        const recentCheckInOuts = await base44.entities.CheckInOut.list('-updated_date', 10);
-        const now = Date.now();
-        
-        recentCheckInOuts.forEach((checkInOut) => {
-          const lastUpdate = new Date(checkInOut.updated_date).getTime();
-          const isRecent = (now - lastUpdate) < 60000;
-          
-          if (isRecent && !shownNotifications.has(checkInOut.id)) {
-            shownNotifications.add(checkInOut.id);
-            
-            if (checkInOut.check_out_time) {
-              toast.success(`${checkInOut.technician_name} checked out`, {
-                description: `Job #${checkInOut.job_id}${checkInOut.check_out_notes ? ` • ${checkInOut.check_out_notes}` : ''}`,
-                duration: 5000,
-              });
-            } else if (checkInOut.check_in_time) {
-              toast.info(`${checkInOut.technician_name} checked in`, {
-                description: `Job #${checkInOut.job_id}`,
-                duration: 4000,
-              });
-            }
-          }
-        });
-      } catch (error) {
-        console.error('Error polling check-ins/outs:', error);
-      }
-    };
-
-    pollCheckInOuts();
-    const interval = setInterval(pollCheckInOuts, 15000);
-    return () => clearInterval(interval);
-  }, [user]);
+  // Check-in/out notifications are now handled via the unified notification system
+  // The NotificationBell component polls for new notifications and shows toasts
 
   // Persist state
   useEffect(() => { localStorage.setItem('testMode', testMode); }, [testMode]);
@@ -320,7 +282,7 @@ export default function Layout({ children, currentPageName }) {
               <h3 className="font-semibold text-[#111827] text-[14px]">KGD</h3>
             </button>
             <div className="flex items-center gap-2">
-                <NotificationBell />
+                <NotificationBell isMobile={true} />
                 <RoleBadge role={effectiveRole} />
                 <button
                   onClick={() => navigate(createPageUrl("UserProfile"))}
