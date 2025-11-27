@@ -266,6 +266,42 @@ export default function AISchedulingAssistant({ selectedDate, onApplySuggestion 
                 </div>
               </div>
 
+              {/* Auto-Dispatch Banner */}
+              {data?.autoDispatchRecommendations?.length > 0 && (
+                <div className="mx-4 mb-4 p-3 bg-gradient-to-r from-[#FAE008]/20 to-[#FAE008]/5 border border-[#FAE008] rounded-xl">
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-2">
+                      <div className="p-1.5 bg-[#FAE008] rounded-lg">
+                        <Zap className="w-4 h-4 text-[#111827]" />
+                      </div>
+                      <div>
+                        <p className="text-sm font-medium text-[#111827]">
+                          {data.autoDispatchRecommendations.length} jobs ready for auto-dispatch
+                        </p>
+                        <p className="text-xs text-[#6B7280]">
+                          High-confidence matches with optimal time slots
+                        </p>
+                      </div>
+                    </div>
+                    <Button
+                      size="sm"
+                      onClick={() => autoDispatchMutation.mutate(data.autoDispatchRecommendations)}
+                      disabled={autoDispatchMutation.isPending}
+                      className="bg-[#FAE008] text-[#111827] hover:bg-[#E5CF07]"
+                    >
+                      {autoDispatchMutation.isPending ? (
+                        <Loader2 className="w-4 h-4 animate-spin" />
+                      ) : (
+                        <>
+                          <Zap className="w-4 h-4 mr-1" />
+                          Auto-Dispatch All
+                        </>
+                      )}
+                    </Button>
+                  </div>
+                </div>
+              )}
+
               {/* Tabs */}
               <Tabs value={activeTab} onValueChange={setActiveTab} className="px-4">
                 <TabsList className="w-full">
