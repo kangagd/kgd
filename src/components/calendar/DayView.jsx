@@ -181,7 +181,7 @@ export default function DayView({ jobs, currentDate, onJobClick, onQuickBook }) 
     const technician = technicians.find(t => t.email === technicianEmail);
     if (technicianIndex === -1 && technician) {
       newAssignedTo = [technicianEmail];
-      newAssignedToName = [technician.full_name];
+      newAssignedToName = [technician.display_name || technician.full_name];
     }
 
     const oldTech = assignedToName.length > 0 ? assignedToName[0] : 'Unassigned';
@@ -359,7 +359,7 @@ export default function DayView({ jobs, currentDate, onJobClick, onQuickBook }) 
                         size={compactMode ? "sm" : "md"}
                       />
                       <span className={`${compactMode ? 'text-xs' : 'text-sm'} font-bold text-[#111827] truncate`}>
-                        {technician.full_name}
+                        {technician.display_name || technician.full_name}
                       </span>
                     </div>
                     <div className={`flex-1 relative ${compactMode ? 'h-20' : 'h-28'}`}>
