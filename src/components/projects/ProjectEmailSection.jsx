@@ -231,7 +231,7 @@ export default function ProjectEmailSection({ project, onThreadLinked }) {
           {linkedThreads.map((thread) => {
             const threadMessages = messages
               .filter(m => m.thread_id === thread.id)
-              .sort((a, b) => new Date(a.sent_at) - new Date(b.sent_at));
+              .sort((a, b) => new Date(b.sent_at) - new Date(a.sent_at));
             
             return (
               <Card key={thread.id} className="border border-[#E5E7EB] shadow-sm rounded-lg">
@@ -325,7 +325,7 @@ export default function ProjectEmailSection({ project, onThreadLinked }) {
                         <div key={message.id} className="relative">
                           <EmailMessageView
                             message={message}
-                            isFirst={index === 0}
+                            isFirst={true}
                             linkedProjectId={project.id}
                             threadSubject={thread.subject}
                             gmailMessageId={message.attachments?.[0]?.gmail_message_id}
