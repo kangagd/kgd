@@ -85,7 +85,7 @@ function calculateSkillMatch(job, technician) {
 }
 
 // Calculate comprehensive technician fitness score for a job
-function calculateTechnicianFitness(job, technician, allJobs, targetDate) {
+function calculateTechnicianFitness(job, technician, allJobs, targetDate, leaves = [], closedDays = []) {
   const scores = {
     skill: 0,
     proximity: 0,
@@ -93,6 +93,33 @@ function calculateTechnicianFitness(job, technician, allJobs, targetDate) {
     workload: 0,
     routeEfficiency: 0
   };
+
+  // Check for full day leave or closed day
+  const techLeaves = leaves.filter(l => 
+    (l.technician_email === technician.email) &&
+    l.start_time.startsWith(targetDate) // Simple check for same day start
+  );
+
+  // Check business closed days
+  const isClosed = closedDays.some(d => d.start_time.startsWith(targetDate) && d.is_full_day);
+  
+  // If business closed, mark unavailable unless exempted (AI should generally avoid)
+  if (isClosed) {
+    return {
+      totalScore: 0,
+      scores,
+      skillMatch: calculateSkillMatch(job, technician), // Still calc skill
+      currentJobCount: 0,
+      maxJobs: technician.max_jobs_per_day || 6,
+      isAvailable: false,
+      reason: "Business is closed on this day"
+    };
+  }
+
+  // If technician has leave covering the whole working day (e.g. > 8 hours or spanning 9-5)
+  // For simplicity, if any leave record exists for the day, we might want to be careful
+  // But let's just check if available slots exist later
+
   
   // 1. Skill Match (40% weight)
   const skillMatch = calculateSkillMatch(job, technician);
@@ -154,7 +181,7 @@ function calculateTechnicianFitness(job, technician, allJobs, targetDate) {
 }
 
 // Find optimal time slot for a job with a specific technician
-function findOptimalTimeSlot(job, technician, existingJobs, targetDate) {
+function findOptimalTimeSlot(job, technician, existingJobs, targetDate, leaves = [], closedDays = []) {
   const techJobs = existingJobs
     .filter(j => 
       j.scheduled_date === targetDate && 
@@ -168,6 +195,32 @@ function findOptimalTimeSlot(job, technician, existingJobs, targetDate) {
   const workdayEnd = 17 * 60; // 5:00 PM
   
   const slots = [];
+
+  // Helper to check if a time slot overlaps with leave or closed periods
+  const isSlotBlocked = (startMin, durationMin) => {
+    const endMin = startMin + durationMin;
+    const slotStartISO = `${targetDate}T${Math.floor(startMin/60).toString().padStart(2,'0')}:${(startMin%60).toString().padStart(2,'0')}:00`;
+    const slotEndISO = `${targetDate}T${Math.floor(endMin/60).toString().padStart(2,'0')}:${(endMin%60).toString().padStart(2,'0')}:00`;
+    const slotStart = new Date(slotStartISO);
+    const slotEnd = new Date(slotEndISO);
+
+    // Check Technician Leave
+    const techLeaves = leaves.filter(l => l.technician_email === technician.email);
+    for (const leave of techLeaves) {
+      const leaveStart = new Date(leave.start_time);
+      const leaveEnd = new Date(leave.end_time);
+      if (slotStart < leaveEnd && slotEnd > leaveStart) return true;
+    }
+
+    // Check Closed Days
+    for (const closed of closedDays) {
+      const closedStart = new Date(closed.start_time);
+      const closedEnd = new Date(closed.end_time);
+      if (slotStart < closedEnd && slotEnd > closedStart) return true;
+    }
+
+    return false;
+  };
   
   // If no existing jobs, suggest morning start
   if (techJobs.length === 0) {
@@ -182,11 +235,13 @@ function findOptimalTimeSlot(job, technician, existingJobs, targetDate) {
   const firstJob = techJobs[0];
   const firstJobStart = parseTimeToMinutes(firstJob.scheduled_time);
   if (firstJobStart - workdayStart >= jobDuration + 30) {
-    slots.push({
-      time: workdayStart,
-      reason: 'Before first scheduled job',
-      score: 0.8
-    });
+    if (!isSlotBlocked(workdayStart, jobDuration)) {
+      slots.push({
+        time: workdayStart,
+        reason: 'Before first scheduled job',
+        score: 0.8
+      });
+    }
   }
   
   // Check gaps between jobs
@@ -208,12 +263,14 @@ function findOptimalTimeSlot(job, technician, existingJobs, targetDate) {
     const availableGap = nextStart - currentEnd;
     
     if (availableGap >= gapNeeded) {
-      slots.push({
-        time: currentEnd + travelTime,
-        reason: `Between Job #${currentJob.job_number} and Job #${nextJob.job_number}`,
-        score: 0.9,
-        travelTime
-      });
+      if (!isSlotBlocked(currentEnd + travelTime, jobDuration)) {
+        slots.push({
+          time: currentEnd + travelTime,
+          reason: `Between Job #${currentJob.job_number} and Job #${nextJob.job_number}`,
+          score: 0.9,
+          travelTime
+        });
+      }
     }
   }
   
@@ -226,12 +283,15 @@ function findOptimalTimeSlot(job, technician, existingJobs, targetDate) {
       const distance = calculateDistance(lastJob.latitude, lastJob.longitude, job.latitude, job.longitude);
       travelTime = Math.max(estimateTravelTime(distance), 10);
     }
-    slots.push({
-      time: lastJobEnd + travelTime,
-      reason: 'After last scheduled job',
-      score: 0.7,
-      travelTime
-    });
+    const potentialStart = lastJobEnd + travelTime;
+    if (!isSlotBlocked(potentialStart, jobDuration)) {
+      slots.push({
+        time: potentialStart,
+        reason: 'After last scheduled job',
+        score: 0.7,
+        travelTime
+      });
+    }
   }
   
   if (slots.length === 0) {
@@ -318,11 +378,13 @@ Deno.serve(async (req) => {
     const { action, date, technicianEmail } = body;
     
     // Fetch all necessary data
-    const [allJobs, allTechnicians, allCheckIns, jobTypes] = await Promise.all([
+    const [allJobs, allTechnicians, allCheckIns, jobTypes, leaves, closedDays] = await Promise.all([
       base44.asServiceRole.entities.Job.filter({ deleted_at: null }),
       base44.asServiceRole.entities.User.filter({ is_field_technician: true, status: 'active' }),
       base44.asServiceRole.entities.CheckInOut.list('-created_date', 100),
-      base44.asServiceRole.entities.JobType.filter({ is_active: true })
+      base44.asServiceRole.entities.JobType.filter({ is_active: true }),
+      base44.asServiceRole.entities.TechnicianLeave.list(),
+      base44.asServiceRole.entities.BusinessClosedDay.list()
     ]);
 
     const targetDate = date || new Date().toISOString().split('T')[0];
@@ -676,13 +738,15 @@ Deno.serve(async (req) => {
           fullJob || job, 
           { ...tech, ...fullTech },
           allJobs,
-          targetDate
+          targetDate,
+          leaves,
+          closedDays
         );
         
         if (!fitness.isAvailable) continue;
         
         // Find optimal time slot for this job with this technician
-        const timeSlot = findOptimalTimeSlot(fullJob || job, tech, allJobs, targetDate);
+        const timeSlot = findOptimalTimeSlot(fullJob || job, tech, allJobs, targetDate, leaves, closedDays);
         
         candidates.push({
           email: tech.email,
@@ -770,7 +834,9 @@ Deno.serve(async (req) => {
         job,
         { ...currentTech, ...fullTech },
         allJobs,
-        targetDate
+        targetDate,
+        leaves,
+        closedDays
       );
       
       // Check if another technician would be significantly better
@@ -786,7 +852,9 @@ Deno.serve(async (req) => {
           job,
           { ...tech, ...altFullTech },
           allJobs,
-          targetDate
+          targetDate,
+          leaves,
+          closedDays
         );
         
         // Only suggest if significantly better (20%+ improvement)
@@ -801,7 +869,7 @@ Deno.serve(async (req) => {
       }
       
       if (bestAlternative) {
-        const timeSlot = findOptimalTimeSlot(job, bestAlternative.technician, allJobs, targetDate);
+        const timeSlot = findOptimalTimeSlot(job, bestAlternative.technician, allJobs, targetDate, leaves, closedDays);
         
         reassignmentSuggestions.push({
           type: 'better_fit_available',
