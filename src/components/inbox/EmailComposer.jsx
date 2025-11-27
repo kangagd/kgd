@@ -39,12 +39,12 @@ const sanitizeBodyHtml = (html) => {
   return sanitized.trim();
 };
 
-export default function EmailComposer({ mode = "compose", thread, message, onClose, onSent, existingDraft = null, projectId = null, jobId = null, defaultTo = null }) {
-  const [to, setTo] = useState(existingDraft?.to || (mode === "reply" ? message?.from_address : (defaultTo || "")));
+export default function EmailComposer({ mode = "compose", thread, message, onClose, onSent, onDraftSaved, existingDraft = null, projectId = null, jobId = null, defaultTo = null }) {
+  const [to, setTo] = useState(existingDraft?.to_addresses?.join(', ') || existingDraft?.to || (mode === "reply" ? message?.from_address : (defaultTo || "")));
   const [toSearchTerm, setToSearchTerm] = useState("");
   const [showToDropdown, setShowToDropdown] = useState(false);
-  const [cc, setCc] = useState(existingDraft?.cc || "");
-  const [bcc, setBcc] = useState(existingDraft?.bcc || "");
+  const [cc, setCc] = useState(existingDraft?.cc_addresses?.join(', ') || existingDraft?.cc || "");
+  const [bcc, setBcc] = useState(existingDraft?.bcc_addresses?.join(', ') || existingDraft?.bcc || "");
   const [subject, setSubject] = useState(
     existingDraft?.subject || 
     (mode === "reply" ? `Re: ${thread?.subject || ""}` : 
