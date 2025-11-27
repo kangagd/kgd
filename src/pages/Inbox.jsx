@@ -469,6 +469,26 @@ export default function Inbox() {
                 {isAnalyzingAll ? 'Analyzing...' : 'AI Analyze All'}
               </Button>
               <Button
+                onClick={async () => {
+                  toast.info('Resyncing attachments for all emails...');
+                  try {
+                    const result = await base44.functions.invoke('resyncAttachments', {});
+                    toast.success(`Resynced attachments: ${result.data?.updated || 0} emails updated`);
+                    queryClient.invalidateQueries({ queryKey: ['allEmailMessages'] });
+                  } catch (error) {
+                    toast.error('Failed to resync attachments');
+                    console.error(error);
+                  }
+                }}
+                size="sm"
+                variant="outline"
+                className="h-9"
+                title="Resync attachments for existing emails"
+              >
+                <Paperclip className="w-4 h-4 mr-1" />
+                Resync Attachments
+              </Button>
+              <Button
                 onClick={() => setShowComposer(true)}
                 size="sm"
                 className="bg-[#FAE008] text-[#111827] hover:bg-[#E5CF07] font-semibold h-9"
