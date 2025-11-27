@@ -22,11 +22,15 @@ export default function AttachmentCard({
   linkedJobId, 
   linkedProjectId, 
   threadSubject,
-  onSaveComplete 
+  onSaveComplete,
+  gmailMessageId // Pass from parent if needed
 }) {
   const [saving, setSaving] = useState(false);
   const [downloading, setDownloading] = useState(false);
   const [resolvedUrl, setResolvedUrl] = useState(attachment.url || null);
+  
+  // Use gmail_message_id from attachment or from prop
+  const effectiveGmailMessageId = attachment.gmail_message_id || gmailMessageId;
 
   const formatFileSize = (bytes) => {
     if (bytes === 0) return '0 Bytes';
