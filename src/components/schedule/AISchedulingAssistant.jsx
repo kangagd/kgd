@@ -500,7 +500,7 @@ export default function AISchedulingAssistant({ selectedDate, onApplySuggestion 
                           <div>
                             <p className="text-sm font-medium text-blue-700">Optimization Opportunities</p>
                             <p className="text-xs text-blue-600">
-                              {data.reassignmentSuggestions.length} job(s) could be better matched with different technicians
+                              {data?.reassignmentSuggestions?.length || 0} job(s) could be better matched with different technicians
                             </p>
                           </div>
                         </div>
