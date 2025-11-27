@@ -174,6 +174,7 @@ Deno.serve(async (req) => {
           updateData.last_message_date = messageDate;
         }
         await base44.asServiceRole.entities.EmailThread.update(threadId, updateData);
+        console.log(`Using existing thread ${threadId} for gmail thread ${gmailThreadId}`);
       } else {
         // Create new thread with Gmail thread ID
         const newThread = await base44.asServiceRole.entities.EmailThread.create({
