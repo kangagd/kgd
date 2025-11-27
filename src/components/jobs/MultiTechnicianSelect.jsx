@@ -34,7 +34,7 @@ export default function MultiTechnicianSelect({ selectedEmails = [], technicians
         {selectedTechs.length > 0 ? (
           selectedTechs.map((tech) => (
             <Badge key={tech.email} variant="secondary" className="flex items-center gap-1 pr-1">
-              {tech.full_name}
+              {tech.display_name || tech.full_name}
               <button
                 type="button"
                 onClick={(e) => {
@@ -79,7 +79,7 @@ export default function MultiTechnicianSelect({ selectedEmails = [], technicians
                       toggleTechnician(tech.email);
                     }}
                   >
-                    {tech.full_name}
+                    {tech.display_name || tech.full_name}
                   </label>
                 </div>
               ))}

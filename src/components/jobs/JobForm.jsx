@@ -403,7 +403,7 @@ export default function JobForm({ job, technicians, onSubmit, onCancel, isSubmit
     const emailsArray = Array.isArray(techEmails) ? techEmails : [];
     const techNames = emailsArray.map(email => {
       const tech = technicians.find(t => t.email === email);
-      return tech?.full_name || "";
+      return tech?.display_name || tech?.full_name || "";
     }).filter(Boolean);
     setFormData({
       ...formData,
@@ -604,7 +604,7 @@ export default function JobForm({ job, technicians, onSubmit, onCancel, isSubmit
                   <div className="flex items-center gap-2 mt-2">
                     {formData.assigned_to.map((email, idx) => {
                       const tech = technicians.find(t => t.email === email);
-                      const name = tech?.full_name || formData.assigned_to_name[idx] || email;
+                      const name = tech?.display_name || tech?.full_name || formData.assigned_to_name[idx] || email;
                       const getInitials = (name) => {
                         if (!name) return "?";
                         return name.split(" ").map(n => n[0]).join("").toUpperCase().slice(0, 2);
