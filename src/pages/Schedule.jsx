@@ -61,6 +61,20 @@ export default function Schedule() {
     queryFn: () => base44.entities.User.filter({ is_field_technician: true })
   });
 
+  const { data: jobTypes = [] } = useQuery({
+    queryKey: ['jobTypes'],
+    queryFn: () => base44.entities.JobType.list()
+  });
+
+  // Create a map of job type id to color
+  const jobTypeColorMap = React.useMemo(() => {
+    const map = {};
+    jobTypes.forEach(jt => {
+      map[jt.id] = jt.color || '#6B7280';
+    });
+    return map;
+  }, [jobTypes]);
+
   const { checkConflicts } = useScheduleConflicts(allJobs);
 
   const isTechnician = user?.is_field_technician && user?.role !== 'admin';
