@@ -153,7 +153,7 @@ Deno.serve(async (req) => {
       date: targetDate,
       technicians: allTechnicians.map(t => ({
         email: t.email,
-        name: t.full_name || t.display_name,
+        name: t.display_name || t.full_name,
         skills: t.skills || [],
         homeAddress: t.home_address,
         homeLat: t.home_latitude,
