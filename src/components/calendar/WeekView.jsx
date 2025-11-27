@@ -167,7 +167,8 @@ export default function WeekView({ jobs, currentDate, onJobClick, onQuickBook })
     const oldAssignedTo = Array.isArray(draggedJob.assigned_to) ? draggedJob.assigned_to : [];
     const newAssignedTo = [technicianEmail];
     const oldAssignedToName = Array.isArray(draggedJob.assigned_to_name) ? draggedJob.assigned_to_name : [];
-    const newAssignedToName = [technicians.find(t => t.email === technicianEmail)?.full_name || ''];
+    const tech = technicians.find(t => t.email === technicianEmail);
+    const newAssignedToName = [tech?.display_name || tech?.full_name || ''];
 
     const dateChanged = newDate !== oldDate;
     const technicianChanged = oldAssignedTo[0] !== newAssignedTo[0];
@@ -353,7 +354,7 @@ export default function WeekView({ jobs, currentDate, onJobClick, onQuickBook })
                         size={compactMode ? "sm" : "md"}
                       />
                       <span className={`${compactMode ? 'text-xs' : 'text-sm'} font-bold text-[#111827] truncate`}>
-                        {technician.full_name}
+                        {technician.display_name || technician.full_name}
                       </span>
                     </div>
 
