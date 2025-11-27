@@ -92,7 +92,10 @@ export default function EmailMessageView({ message, isFirst, linkedJobId, linked
         if (att.content_id && att.attachment_id) {
           try {
             const effectiveMsgId = att.gmail_message_id || gmailMessageId;
-            if (!effectiveMsgId) continue;
+            if (!effectiveMsgId) {
+              console.warn('No gmail_message_id for inline image:', att.filename);
+              continue;
+            }
             
             const result = await base44.functions.invoke('getGmailAttachment', {
               gmail_message_id: effectiveMsgId,
@@ -105,7 +108,8 @@ export default function EmailMessageView({ message, isFirst, linkedJobId, linked
               urls[att.content_id] = result.data.url;
             }
           } catch (err) {
-            console.error('Failed to load inline image:', att.filename, err);
+            // Silently fail for inline images - don't break the email view
+            console.warn('Failed to load inline image:', att.filename);
           }
         }
       }
