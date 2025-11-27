@@ -320,7 +320,18 @@ Deno.serve(async (req) => {
             messageData.in_reply_to = inReplyTo;
           }
           
+          console.log(`Creating message for thread ${threadId}, gmail_message_id: ${message.id}`);
           await base44.asServiceRole.entities.EmailMessage.create(messageData);
+          
+          // Update thread message count
+          try {
+            const currentThread = await base44.asServiceRole.entities.EmailThread.get(threadId);
+            await base44.asServiceRole.entities.EmailThread.update(threadId, {
+              message_count: (currentThread.message_count || 0) + 1
+            });
+          } catch (e) {
+            console.log('Could not update message count:', e.message);
+          }
 
           syncedCount++;
         }
