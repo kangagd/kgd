@@ -4,7 +4,7 @@ import { ChevronDown, ChevronUp, Paperclip } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import AttachmentCard from "./AttachmentCard";
 
-export default function EmailMessageView({ message, isFirst, linkedJobId, linkedProjectId, threadSubject }) {
+export default function EmailMessageView({ message, isFirst, linkedJobId, linkedProjectId, threadSubject, gmailMessageId }) {
   const [expanded, setExpanded] = useState(isFirst);
 
   // Minimal sanitization - preserve Gmail layout and styling
