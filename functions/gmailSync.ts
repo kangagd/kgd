@@ -143,10 +143,13 @@ Deno.serve(async (req) => {
         const messageId = headers.find(h => h.name === 'Message-ID')?.value;
         const inReplyTo = headers.find(h => h.name === 'In-Reply-To')?.value;
 
-        if (!date || !messageId) {
-          console.error(`Missing required fields for message ${message.id}`);
+        if (!date) {
+          console.error(`Missing date for message ${message.id}`);
           continue;
         }
+        
+        // Use gmail message ID as fallback if Message-ID header is missing
+        const effectiveMessageId = messageId || message.id;
 
       // Use Gmail's threadId to group messages into threads
       const gmailThreadId = detail.threadId;
