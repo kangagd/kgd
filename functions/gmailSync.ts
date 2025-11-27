@@ -304,9 +304,9 @@ Deno.serve(async (req) => {
             fromAddress.toLowerCase() === userEmail.toLowerCase() ||
             detail.labelIds?.includes('SENT');
 
-          // Create message
+          // Create message - use Base44 thread ID (not Gmail thread ID)
           const messageData = {
-            thread_id: threadId,
+            thread_id: threadId, // This is the Base44 entity ID
             gmail_message_id: message.id,
             from_address: fromAddress,
             to_addresses: toAddresses.length > 0 ? toAddresses : [fromAddress],
