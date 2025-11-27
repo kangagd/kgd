@@ -6,7 +6,8 @@ import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
 import { base44 } from "@/api/base44Client";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
-import { ArrowLeft, User, Mail, Shield, Lock } from "lucide-react";
+import { ArrowLeft, User, Mail, Shield, Lock, Bell } from "lucide-react";
+import { Switch } from "@/components/ui/switch";
 import { useNavigate } from "react-router-dom";
 import { toast } from "sonner";
 import { Toaster } from "@/components/ui/sonner";
@@ -19,6 +20,15 @@ export default function UserProfile() {
     email: "",
     role: "",
     is_field_technician: false
+  });
+  const [notificationSettings, setNotificationSettings] = useState({
+    job_assigned: true,
+    job_rescheduled: true,
+    technician_check_in: true,
+    technician_check_out: true,
+    project_stage_changed: true,
+    task_assigned: true,
+    email_linked: true
   });
   const [passwords, setPasswords] = useState({
     current: "",
@@ -42,6 +52,15 @@ export default function UserProfile() {
           email: currentUser.email || "",
           role: currentUser.role || "",
           is_field_technician: currentUser.is_field_technician || false
+        });
+        setNotificationSettings({
+          job_assigned: currentUser.notification_settings?.job_assigned ?? true,
+          job_rescheduled: currentUser.notification_settings?.job_rescheduled ?? true,
+          technician_check_in: currentUser.notification_settings?.technician_check_in ?? true,
+          technician_check_out: currentUser.notification_settings?.technician_check_out ?? true,
+          project_stage_changed: currentUser.notification_settings?.project_stage_changed ?? true,
+          task_assigned: currentUser.notification_settings?.task_assigned ?? true,
+          email_linked: currentUser.notification_settings?.email_linked ?? true
         });
       } catch (error) {
         console.error("Error loading user:", error);
@@ -68,6 +87,15 @@ export default function UserProfile() {
         role: updatedUser.role || "",
         is_field_technician: updatedUser.is_field_technician || false
       });
+      setNotificationSettings({
+        job_assigned: updatedUser.notification_settings?.job_assigned ?? true,
+        job_rescheduled: updatedUser.notification_settings?.job_rescheduled ?? true,
+        technician_check_in: updatedUser.notification_settings?.technician_check_in ?? true,
+        technician_check_out: updatedUser.notification_settings?.technician_check_out ?? true,
+        project_stage_changed: updatedUser.notification_settings?.project_stage_changed ?? true,
+        task_assigned: updatedUser.notification_settings?.task_assigned ?? true,
+        email_linked: updatedUser.notification_settings?.email_linked ?? true
+      });
       toast.success("Profile updated successfully");
     },
     onError: (error) => {
@@ -81,6 +109,12 @@ export default function UserProfile() {
       display_name: formData.display_name,
       is_field_technician: formData.is_field_technician
     });
+  };
+
+  const handleNotificationToggle = (key) => {
+    const newSettings = { ...notificationSettings, [key]: !notificationSettings[key] };
+    setNotificationSettings(newSettings);
+    updateProfileMutation.mutate({ notification_settings: newSettings });
   };
 
   const handlePasswordChange = async (e) => {
@@ -203,6 +237,94 @@ export default function UserProfile() {
                 </Button>
               </div>
             </form>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader className="border-b border-slate-100">
+            <CardTitle className="flex items-center gap-2">
+              <Bell className="w-5 h-5 text-[#fae008]" />
+              Notification Settings
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="p-6">
+            <p className="text-sm text-slate-500 mb-4">Choose which notifications you want to receive in the app.</p>
+            <div className="space-y-4">
+              <div className="flex items-center justify-between py-2 border-b border-slate-100">
+                <div>
+                  <p className="text-sm font-medium text-slate-900">Job Assigned</p>
+                  <p className="text-xs text-slate-500">When a job is assigned to you</p>
+                </div>
+                <Switch
+                  checked={notificationSettings.job_assigned}
+                  onCheckedChange={() => handleNotificationToggle('job_assigned')}
+                />
+              </div>
+              <div className="flex items-center justify-between py-2 border-b border-slate-100">
+                <div>
+                  <p className="text-sm font-medium text-slate-900">Job Rescheduled</p>
+                  <p className="text-xs text-slate-500">When a job you're assigned to is rescheduled</p>
+                </div>
+                <Switch
+                  checked={notificationSettings.job_rescheduled}
+                  onCheckedChange={() => handleNotificationToggle('job_rescheduled')}
+                />
+              </div>
+              {isAdmin && (
+                <>
+                  <div className="flex items-center justify-between py-2 border-b border-slate-100">
+                    <div>
+                      <p className="text-sm font-medium text-slate-900">Technician Check-in</p>
+                      <p className="text-xs text-slate-500">When a technician checks into a job</p>
+                    </div>
+                    <Switch
+                      checked={notificationSettings.technician_check_in}
+                      onCheckedChange={() => handleNotificationToggle('technician_check_in')}
+                    />
+                  </div>
+                  <div className="flex items-center justify-between py-2 border-b border-slate-100">
+                    <div>
+                      <p className="text-sm font-medium text-slate-900">Technician Check-out</p>
+                      <p className="text-xs text-slate-500">When a technician checks out of a job</p>
+                    </div>
+                    <Switch
+                      checked={notificationSettings.technician_check_out}
+                      onCheckedChange={() => handleNotificationToggle('technician_check_out')}
+                    />
+                  </div>
+                </>
+              )}
+              <div className="flex items-center justify-between py-2 border-b border-slate-100">
+                <div>
+                  <p className="text-sm font-medium text-slate-900">Project Stage Changed</p>
+                  <p className="text-xs text-slate-500">When a project moves to a new stage</p>
+                </div>
+                <Switch
+                  checked={notificationSettings.project_stage_changed}
+                  onCheckedChange={() => handleNotificationToggle('project_stage_changed')}
+                />
+              </div>
+              <div className="flex items-center justify-between py-2 border-b border-slate-100">
+                <div>
+                  <p className="text-sm font-medium text-slate-900">Task Assigned</p>
+                  <p className="text-xs text-slate-500">When a task is assigned to you</p>
+                </div>
+                <Switch
+                  checked={notificationSettings.task_assigned}
+                  onCheckedChange={() => handleNotificationToggle('task_assigned')}
+                />
+              </div>
+              <div className="flex items-center justify-between py-2">
+                <div>
+                  <p className="text-sm font-medium text-slate-900">Email Linked</p>
+                  <p className="text-xs text-slate-500">When an email is linked to a project or job</p>
+                </div>
+                <Switch
+                  checked={notificationSettings.email_linked}
+                  onCheckedChange={() => handleNotificationToggle('email_linked')}
+                />
+              </div>
+            </div>
           </CardContent>
         </Card>
 
