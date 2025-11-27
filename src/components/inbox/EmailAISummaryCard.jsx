@@ -8,6 +8,7 @@ import { format, parseISO } from "date-fns";
 
 export default function EmailAISummaryCard({ thread, onThreadUpdate, onCreateProject }) {
   const [showKeyPoints, setShowKeyPoints] = useState(false);
+  const [isExpanded, setIsExpanded] = useState(false);
   const [isGenerating, setIsGenerating] = useState(false);
   const [isCreatingProject, setIsCreatingProject] = useState(false);
 
