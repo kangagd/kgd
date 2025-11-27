@@ -328,6 +328,7 @@ export default function ProjectEmailSection({ project, onThreadLinked }) {
                             isFirst={index === 0}
                             linkedProjectId={project.id}
                             threadSubject={thread.subject}
+                            gmailMessageId={message.attachments?.[0]?.gmail_message_id}
                           />
                           {/* Quick actions */}
                           <div className="absolute top-3 right-12 flex gap-1 opacity-0 hover:opacity-100 transition-opacity">
