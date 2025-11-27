@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import { base44 } from "@/api/base44Client";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useNavigate, useSearchParams } from "react-router-dom";
@@ -56,6 +56,7 @@ export default function Inbox() {
   const [userPermissions, setUserPermissions] = useState(null);
   const [sidebarWidth, setSidebarWidth] = useState(400);
   const [isResizing, setIsResizing] = useState(false);
+  const sidebarRef = useRef(null);
   const [showComposer, setShowComposer] = useState(false);
   const [isAnalyzingAll, setIsAnalyzingAll] = useState(false);
   const [editingDraft, setEditingDraft] = useState(null);
@@ -158,7 +159,14 @@ export default function Inbox() {
   useEffect(() => {
     const handleMouseMove = (e) => {
       if (!isResizing) return;
-      const newWidth = Math.max(200, Math.min(600, e.clientX));
+      
+      let offsetLeft = 0;
+      if (sidebarRef.current) {
+        offsetLeft = sidebarRef.current.getBoundingClientRect().left;
+      }
+      
+      const relativeX = e.clientX - offsetLeft;
+      const newWidth = Math.max(250, Math.min(800, relativeX));
       setSidebarWidth(newWidth);
     };
 
@@ -453,6 +461,7 @@ export default function Inbox() {
     <div className="flex h-[calc(100vh-60px)] lg:h-screen bg-[#ffffff] overflow-hidden">
       {/* Thread List - Left Side */}
       <div 
+        ref={sidebarRef}
         className={`${selectedThread ? 'hidden lg:flex' : 'flex'} flex-col border-r border-[#E5E7EB] bg-white overflow-x-hidden`}
         style={{ width: selectedThread ? `${sidebarWidth}px` : '100%' }}
       >
