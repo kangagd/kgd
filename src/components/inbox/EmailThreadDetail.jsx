@@ -261,34 +261,46 @@ export default function EmailThreadDetail({
           />
         </div>
 
-        {/* Attachments Preview */}
-        {messages.some(m => m.attachments?.length > 0) && (
-          <div className="group bg-gradient-to-br from-purple-50 to-blue-50 rounded-lg border border-purple-200/50 p-3 hover:shadow-md transition-all relative">
-            <div className="text-[12px] text-[#6B7280] font-semibold mb-2 flex items-center gap-2">
-              <Paperclip className="w-3.5 h-3.5" />
-              Attachments ({messages.reduce((acc, m) => acc + (m.attachments?.length || 0), 0)})
-            </div>
-            <div className="space-y-2 max-h-20 overflow-hidden group-hover:max-h-[500px] transition-all duration-300">
-              {messages.flatMap(message => 
-                (message.attachments || []).map((attachment, idx) => (
+        {/* Attachments Preview - Only non-inline attachments */}
+        {(() => {
+          // Filter out inline images
+          const allRegularAttachments = messages.flatMap(message => 
+            (message.attachments || []).filter(att => {
+              // Skip if it's an inline image
+              if (att.is_inline) return false;
+              if (att.content_id && message.body_html?.includes(`cid:${att.content_id}`)) return false;
+              return true;
+            }).map(att => ({ ...att, messageId: message.id, messageGmailId: message.gmail_message_id }))
+          );
+          
+          if (allRegularAttachments.length === 0) return null;
+          
+          return (
+            <div className="group bg-gradient-to-br from-purple-50 to-blue-50 rounded-lg border border-purple-200/50 p-3 hover:shadow-md transition-all relative">
+              <div className="text-[12px] text-[#6B7280] font-semibold mb-2 flex items-center gap-2">
+                <Paperclip className="w-3.5 h-3.5" />
+                Attachments ({allRegularAttachments.length})
+              </div>
+              <div className="space-y-2 max-h-20 overflow-hidden group-hover:max-h-[500px] transition-all duration-300">
+                {allRegularAttachments.map((attachment, idx) => (
                   <AttachmentCard
-                    key={`${message.id}-${idx}`}
+                    key={`${attachment.messageId}-${idx}`}
                     attachment={attachment}
                     linkedJobId={thread.linked_job_id}
                     linkedProjectId={thread.linked_project_id}
                     threadSubject={thread.subject}
-                    gmailMessageId={attachment.gmail_message_id || message.gmail_message_id}
+                    gmailMessageId={attachment.gmail_message_id || attachment.messageGmailId}
                   />
-                ))
+                ))}
+              </div>
+              {allRegularAttachments.length > 1 && (
+                <div className="text-[11px] text-[#6B7280] mt-2 group-hover:hidden">
+                  Hover to see all
+                </div>
               )}
             </div>
-            {messages.reduce((acc, m) => acc + (m.attachments?.length || 0), 0) > 1 && (
-              <div className="text-[11px] text-[#6B7280] mt-2 group-hover:hidden">
-                Hover to see all
-              </div>
-            )}
-          </div>
-        )}
+          );
+        })()}
 
         {composerMode && (
           <EmailComposer
