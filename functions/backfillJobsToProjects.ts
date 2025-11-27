@@ -9,11 +9,13 @@ Deno.serve(async (req) => {
       return Response.json({ error: 'Admin access required' }, { status: 403 });
     }
 
-    // Get all completed jobs that have a project_id
-    const completedJobs = await base44.entities.Job.filter({
-      status: 'Completed',
-      project_id: { $exists: true, $ne: null }
+    // Get all jobs that have a project_id (regardless of status)
+    const allJobs = await base44.entities.Job.filter({
+      project_id: { $exists: true, $ne: null, $ne: '' }
     });
+    
+    // Filter out jobs with empty project_id
+    const completedJobs = allJobs.filter(j => j.project_id && j.project_id.trim() !== '');
 
     const results = {
       total: completedJobs.length,
