@@ -154,11 +154,29 @@ css
     color: #1E40AF;
   }
 
-  /* Images should be responsive but not break layout */
+  /* Images should be responsive - inline images render in place */
   .gmail-email-body img {
     max-width: 100%;
     height: auto;
     vertical-align: middle;
+    display: inline-block;
+  }
+
+  /* Inline images in email body */
+  .gmail-email-body img[src^="http"],
+  .gmail-email-body img[src^="https"],
+  .gmail-email-body img[src^="data:"] {
+    max-width: 100%;
+    height: auto;
+    border-radius: 4px;
+  }
+
+  /* Mobile responsive images */
+  @media (max-width: 768px) {
+    .gmail-email-body img {
+      max-width: 100% !important;
+      height: auto !important;
+    }
   }
 
   /* Preserve paragraph spacing */
