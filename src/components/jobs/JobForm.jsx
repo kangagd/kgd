@@ -924,6 +924,18 @@ export default function JobForm({ job, technicians, onSubmit, onCancel, isSubmit
                 className="border-2 border-slate-300 focus:border-[#fae008] focus:ring-2 focus:ring-[#fae008]/20"
               />
             </div>
+            <div className="space-y-2">
+              <Label htmlFor="new_customer_address" className="text-[14px] font-medium text-[#111827] leading-[1.4]">Address</Label>
+              <AddressAutocomplete
+                id="new_customer_address"
+                value={newCustomerData.address_full || ""}
+                onChange={(addressData) => setNewCustomerData({ 
+                  ...newCustomerData, 
+                  ...addressData
+                })}
+                className="border-2 border-slate-300 focus:border-[#fae008] focus:ring-2 focus:ring-[#fae008]/20"
+              />
+            </div>
           </div>
           <DialogFooter>
             <Button 
