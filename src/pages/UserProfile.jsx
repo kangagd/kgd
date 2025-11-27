@@ -28,7 +28,9 @@ export default function UserProfile() {
     technician_check_out: true,
     project_stage_changed: true,
     task_assigned: true,
-    email_linked: true
+    email_linked: true,
+    job_starting_soon: true,
+    technician_at_other_job: true
   });
   const [passwords, setPasswords] = useState({
     current: "",
@@ -60,7 +62,9 @@ export default function UserProfile() {
           technician_check_out: currentUser.notification_settings?.technician_check_out ?? true,
           project_stage_changed: currentUser.notification_settings?.project_stage_changed ?? true,
           task_assigned: currentUser.notification_settings?.task_assigned ?? true,
-          email_linked: currentUser.notification_settings?.email_linked ?? true
+          email_linked: currentUser.notification_settings?.email_linked ?? true,
+          job_starting_soon: currentUser.notification_settings?.job_starting_soon ?? true,
+          technician_at_other_job: currentUser.notification_settings?.technician_at_other_job ?? true
         });
       } catch (error) {
         console.error("Error loading user:", error);
@@ -94,7 +98,9 @@ export default function UserProfile() {
         technician_check_out: updatedUser.notification_settings?.technician_check_out ?? true,
         project_stage_changed: updatedUser.notification_settings?.project_stage_changed ?? true,
         task_assigned: updatedUser.notification_settings?.task_assigned ?? true,
-        email_linked: updatedUser.notification_settings?.email_linked ?? true
+        email_linked: updatedUser.notification_settings?.email_linked ?? true,
+        job_starting_soon: updatedUser.notification_settings?.job_starting_soon ?? true,
+        technician_at_other_job: updatedUser.notification_settings?.technician_at_other_job ?? true
       });
       toast.success("Profile updated successfully");
     },
@@ -268,6 +274,26 @@ export default function UserProfile() {
                 <Switch
                   checked={notificationSettings.job_rescheduled}
                   onCheckedChange={() => handleNotificationToggle('job_rescheduled')}
+                />
+              </div>
+              <div className="flex items-center justify-between py-2 border-b border-slate-100">
+                <div>
+                  <p className="text-sm font-medium text-slate-900">Job Starting Soon</p>
+                  <p className="text-xs text-slate-500">Reminder 10 minutes before a job starts</p>
+                </div>
+                <Switch
+                  checked={notificationSettings.job_starting_soon}
+                  onCheckedChange={() => handleNotificationToggle('job_starting_soon')}
+                />
+              </div>
+              <div className="flex items-center justify-between py-2 border-b border-slate-100">
+                <div>
+                  <p className="text-sm font-medium text-slate-900">Still at Another Job</p>
+                  <p className="text-xs text-slate-500">Warning when next job starts but you're still checked in elsewhere</p>
+                </div>
+                <Switch
+                  checked={notificationSettings.technician_at_other_job}
+                  onCheckedChange={() => handleNotificationToggle('technician_at_other_job')}
                 />
               </div>
               {isAdmin && (
