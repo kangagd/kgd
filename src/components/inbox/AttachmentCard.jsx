@@ -1,6 +1,6 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import { Button } from "@/components/ui/button";
-import { Download, Save, FileText, Image as ImageIcon, FileSpreadsheet, FileArchive, Loader2 } from "lucide-react";
+import { Download, Save, FileText, Image as ImageIcon, FileSpreadsheet, FileArchive, Loader2, Check } from "lucide-react";
 import { base44 } from "@/api/base44Client";
 import { toast } from "sonner";
 
@@ -17,17 +17,26 @@ const getAttachmentIcon = (mimeType, filename) => {
   return FileText;
 };
 
+const isImageFile = (mimeType, filename) => {
+  const name = filename?.toLowerCase() || '';
+  const type = mimeType?.toLowerCase() || '';
+  return type.startsWith('image/') || /\.(jpg|jpeg|png|gif|bmp|svg|webp)$/.test(name);
+};
+
 export default function AttachmentCard({ 
   attachment, 
   linkedJobId, 
   linkedProjectId, 
   threadSubject,
   onSaveComplete,
-  gmailMessageId // Pass from parent if needed
+  gmailMessageId, // Pass from parent if needed
+  autoSave = true // Auto-save to project when rendered
 }) {
   const [saving, setSaving] = useState(false);
   const [downloading, setDownloading] = useState(false);
   const [resolvedUrl, setResolvedUrl] = useState(attachment.url || null);
+  const [saved, setSaved] = useState(false);
+  const autoSaveAttempted = useRef(false);
   
   // Use gmail_message_id from attachment or from prop
   // Prioritize attachment's own gmail_message_id, then fall back to prop
@@ -45,6 +54,69 @@ export default function AttachmentCard({
       });
     }
   }, [attachment, gmailMessageId, effectiveGmailMessageId, effectiveAttachmentId]);
+
+  // Auto-save attachment to project when component mounts
+  useEffect(() => {
+    if (!autoSave || !linkedProjectId || autoSaveAttempted.current) return;
+    if (!effectiveGmailMessageId || !effectiveAttachmentId) return;
+    
+    const autoSaveAttachment = async () => {
+      autoSaveAttempted.current = true;
+      
+      try {
+        // Fetch project to check if already saved
+        const project = await base44.entities.Project.get(linkedProjectId);
+        const existingImages = project.image_urls || [];
+        const existingDocs = project.other_documents || [];
+        
+        // Check if this attachment filename is already in the project
+        const allUrls = [...existingImages, ...existingDocs];
+        const alreadySaved = allUrls.some(url => url.includes(attachment.filename));
+        
+        if (alreadySaved) {
+          setSaved(true);
+          return;
+        }
+        
+        // Resolve the URL
+        let urlToSave = resolvedUrl;
+        if (!urlToSave) {
+          const result = await base44.functions.invoke('getGmailAttachment', {
+            gmail_message_id: effectiveGmailMessageId,
+            attachment_id: effectiveAttachmentId,
+            filename: attachment.filename,
+            mime_type: attachment.mime_type
+          });
+          if (result.data?.url) {
+            urlToSave = result.data.url;
+            setResolvedUrl(urlToSave);
+          }
+        }
+        
+        if (!urlToSave) return;
+        
+        // Categorize and save
+        const isImage = isImageFile(attachment.mime_type, attachment.filename);
+        
+        if (isImage) {
+          await base44.entities.Project.update(linkedProjectId, {
+            image_urls: [...existingImages, urlToSave]
+          });
+        } else {
+          await base44.entities.Project.update(linkedProjectId, {
+            other_documents: [...existingDocs, urlToSave]
+          });
+        }
+        
+        setSaved(true);
+        console.log(`Auto-saved ${attachment.filename} to project as ${isImage ? 'image' : 'document'}`);
+      } catch (error) {
+        console.error('Auto-save failed:', error);
+      }
+    };
+    
+    autoSaveAttachment();
+  }, [linkedProjectId, autoSave, effectiveGmailMessageId, effectiveAttachmentId, attachment, resolvedUrl]);
 
   const formatFileSize = (bytes) => {
     if (bytes === 0) return '0 Bytes';
