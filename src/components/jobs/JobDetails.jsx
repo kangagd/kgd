@@ -1682,28 +1682,62 @@ export default function JobDetails({ job: initialJob, onClose, onStatusChange, o
                       <div className="text-center py-6">
                         <DollarSign className="w-12 h-12 text-[#E5E7EB] mx-auto mb-3" />
                         <p className="text-[14px] text-[#6B7280] mb-4">
-                          No invoice has been created for this job yet.
+                          No invoice has been linked to this job yet.
                         </p>
                         {isAdmin && (
-                          <Button
-                            onClick={() => setShowInvoiceModal(true)}
-                            className="bg-[#FAE008] text-[#111827] hover:bg-[#E5CF07] font-semibold shadow-sm h-10 px-6"
-                          >
-                            <DollarSign className="w-4 h-4 mr-2" />
-                            Create Invoice
-                          </Button>
+                          <div className="flex flex-col sm:flex-row gap-2 justify-center">
+                            <Button
+                              onClick={() => setShowInvoiceModal(true)}
+                              className="bg-[#FAE008] text-[#111827] hover:bg-[#E5CF07] font-semibold shadow-sm h-10 px-6"
+                            >
+                              <DollarSign className="w-4 h-4 mr-2" />
+                              Create Invoice
+                            </Button>
+                            <Button
+                              variant="outline"
+                              onClick={() => setShowLinkInvoiceModal(true)}
+                              className="border-[#E5E7EB] hover:border-[#FAE008] hover:bg-[#FFFEF5] font-semibold h-10 px-6"
+                            >
+                              <FileText className="w-4 h-4 mr-2" />
+                              Link Existing
+                            </Button>
+                          </div>
                         )}
                       </div>
                     ) : (
-                      <XeroInvoiceCard
-                        invoice={xeroInvoice}
-                        onRefreshStatus={() => syncInvoiceMutation.mutate()}
-                        onViewInXero={() => window.open(xeroInvoice.pdf_url, '_blank')}
-                        onDownloadPdf={() => downloadPdfMutation.mutate()}
-                        onTakePayment={() => setShowPaymentModal(true)}
-                        isRefreshing={syncInvoiceMutation.isPending}
-                        isDownloading={downloadPdfMutation.isPending}
-                      />
+                      <>
+                        <XeroInvoiceCard
+                          invoice={xeroInvoice}
+                          onRefreshStatus={() => syncInvoiceMutation.mutate()}
+                          onViewInXero={() => window.open(xeroInvoice.pdf_url, '_blank')}
+                          onDownloadPdf={() => downloadPdfMutation.mutate()}
+                          onTakePayment={() => setShowPaymentModal(true)}
+                          isRefreshing={syncInvoiceMutation.isPending}
+                          isDownloading={downloadPdfMutation.isPending}
+                        />
+                        {isAdmin && (
+                          <div className="mt-3 pt-3 border-t border-[#E5E7EB] flex gap-2">
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              onClick={() => setShowLinkInvoiceModal(true)}
+                              className="text-[#6B7280] hover:text-[#111827] text-xs"
+                            >
+                              <FileText className="w-3.5 h-3.5 mr-1" />
+                              Change Invoice
+                            </Button>
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              onClick={() => unlinkInvoiceMutation.mutate()}
+                              disabled={unlinkInvoiceMutation.isPending}
+                              className="text-red-600 hover:text-red-700 hover:bg-red-50 text-xs"
+                            >
+                              {unlinkInvoiceMutation.isPending ? 'Unlinking...' : 'Unlink Invoice'}
+                            </Button>
+                          </div>
+                        )}
+                      </>
                     )}
                   </CardContent>
                 </Card>
