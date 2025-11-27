@@ -252,6 +252,26 @@ export default function ProjectEmailSection({ project, onThreadLinked }) {
                           From: {thread.from_address}
                         </p>
                       )}
+                      {/* Attachments summary */}
+                      {(() => {
+                        const allAttachments = threadMessages.flatMap(m => 
+                          (m.attachments || []).map(att => ({ ...att, messageId: m.id, gmail_message_id: att.gmail_message_id }))
+                        );
+                        if (allAttachments.length === 0) return null;
+                        return (
+                          <div className="mt-2 flex flex-wrap gap-2">
+                            {allAttachments.map((attachment, idx) => (
+                              <AttachmentCard
+                                key={`${attachment.messageId}-${idx}`}
+                                attachment={attachment}
+                                linkedProjectId={project.id}
+                                threadSubject={thread.subject}
+                                gmailMessageId={attachment.gmail_message_id}
+                              />
+                            ))}
+                          </div>
+                        );
+                      })()}
                     </div>
                     <div className="flex items-center gap-2 flex-shrink-0">
                       <Button
