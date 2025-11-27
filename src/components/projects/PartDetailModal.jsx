@@ -156,7 +156,7 @@ export default function PartDetailModal({ open, part, onClose, onSave, isSubmitt
           </DialogTitle>
         </DialogHeader>
 
-        <ScrollArea className="flex-1">
+        <div className="flex-1 overflow-y-auto">
           <form id="part-form" onSubmit={handleSubmit} className="p-6 space-y-8">
             
             {/* Part Overview */}
