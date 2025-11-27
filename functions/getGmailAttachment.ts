@@ -48,16 +48,28 @@ Deno.serve(async (req) => {
       return Response.json({ error: 'Missing gmail_message_id or attachment_id' }, { status: 400 });
     }
 
-    // Fetch full user record with gmail tokens
-    const users = await base44.asServiceRole.entities.User.filter({ email: currentUser.email });
-    if (users.length === 0) {
-      return Response.json({ error: 'User record not found' }, { status: 404 });
+    // First try current user, then find any user with Gmail connected (admin account)
+    let user = null;
+    
+    // Try current user first
+    const currentUsers = await base44.asServiceRole.entities.User.filter({ email: currentUser.email });
+    if (currentUsers.length > 0 && currentUsers[0].gmail_access_token) {
+      user = currentUsers[0];
     }
     
-    const user = users[0];
-
-    if (!user.gmail_access_token) {
-      return Response.json({ error: 'Gmail not connected' }, { status: 400 });
+    // If current user doesn't have Gmail, find admin with Gmail connected
+    if (!user) {
+      const adminUsers = await base44.asServiceRole.entities.User.filter({ role: 'admin' });
+      for (const adminUser of adminUsers) {
+        if (adminUser.gmail_access_token) {
+          user = adminUser;
+          break;
+        }
+      }
+    }
+    
+    if (!user || !user.gmail_access_token) {
+      return Response.json({ error: 'No Gmail account connected. Please connect Gmail in settings.' }, { status: 400 });
     }
 
     const accessToken = await refreshTokenIfNeeded(user, base44);
