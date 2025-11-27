@@ -178,7 +178,18 @@ export default function ProjectEmailSection({ project, onThreadLinked }) {
   const handleEmailSent = () => {
     setComposerMode(null);
     setSelectedMessage(null);
+    setEditingDraft(null);
     refetchMessages();
+    refetchDrafts();
+  };
+
+  const handleDraftSaved = () => {
+    refetchDrafts();
+  };
+
+  const handleOpenDraft = (draft) => {
+    setEditingDraft(draft);
+    setComposerMode(draft.mode || 'compose');
   };
 
   const isLoading = threadLoading || messagesLoading;
