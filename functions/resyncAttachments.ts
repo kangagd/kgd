@@ -63,8 +63,10 @@ Deno.serve(async (req) => {
     let checkedCount = 0;
 
     for (const emailMsg of allMessages) {
-      // Skip if already has attachments with attachment_id
-      if (emailMsg.attachments?.length > 0 && emailMsg.attachments[0]?.attachment_id) {
+      // Skip if already has attachments with BOTH attachment_id AND gmail_message_id
+      if (emailMsg.attachments?.length > 0 && 
+          emailMsg.attachments[0]?.attachment_id && 
+          emailMsg.attachments[0]?.gmail_message_id) {
         continue;
       }
 
