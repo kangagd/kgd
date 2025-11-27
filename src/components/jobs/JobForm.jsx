@@ -62,7 +62,7 @@ export default function JobForm({ job, technicians, onSubmit, onCancel, isSubmit
   const [uploadingInvoice, setUploadingInvoice] = useState(false);
   const [showNewCustomerDialog, setShowNewCustomerDialog] = useState(false);
   const [showDuplicateDialog, setShowDuplicateDialog] = useState(false);
-  const [newCustomerData, setNewCustomerData] = useState({ name: "", phone: "", email: "" });
+  const [newCustomerData, setNewCustomerData] = useState({ name: "", phone: "", email: "", address_full: "", address_street: "", address_suburb: "", address_state: "", address_postcode: "", address_country: "Australia", google_place_id: "", latitude: null, longitude: null });
   const [potentialDuplicates, setPotentialDuplicates] = useState([]);
   const [liveDuplicates, setLiveDuplicates] = useState([]);
 
