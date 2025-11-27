@@ -103,10 +103,11 @@ Deno.serve(async (req) => {
       }
 
       try {
-        let gmailMessageId = null;
+        // Use existing gmail_message_id if available (for attachment fix case)
+        let gmailMessageId = emailMsg.gmail_message_id || null;
         
-        // Try to find Gmail message using message_id if available
-        if (emailMsg.message_id) {
+        // Try to find Gmail message using message_id if we don't have gmail_message_id
+        if (!gmailMessageId && emailMsg.message_id) {
           const searchQuery = encodeURIComponent(`rfc822msgid:${emailMsg.message_id}`);
           const searchResponse = await fetch(
             `https://gmail.googleapis.com/gmail/v1/users/me/messages?q=${searchQuery}`,
