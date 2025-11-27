@@ -73,13 +73,17 @@ export default function AISchedulingAssistant({ selectedDate, onApplySuggestion 
   });
 
   const assignJobMutation = useMutation({
-    mutationFn: async ({ jobId, technicianEmail, technicianName }) => {
-      await base44.entities.Job.update(jobId, {
+    mutationFn: async ({ jobId, technicianEmail, technicianName, scheduledTime }) => {
+      const updateData = {
         assigned_to: [technicianEmail],
         assigned_to_name: [technicianName],
         scheduled_date: dateStr,
         status: 'Scheduled'
-      });
+      };
+      if (scheduledTime) {
+        updateData.scheduled_time = scheduledTime;
+      }
+      await base44.entities.Job.update(jobId, updateData);
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['aiScheduling'] });
@@ -89,6 +93,51 @@ export default function AISchedulingAssistant({ selectedDate, onApplySuggestion 
     },
     onError: (error) => {
       toast.error("Failed to assign job: " + error.message);
+    }
+  });
+
+  const reassignJobMutation = useMutation({
+    mutationFn: async ({ jobId, fromTechnician, toTechnician, toTechnicianName, scheduledTime }) => {
+      const updateData = {
+        assigned_to: [toTechnician],
+        assigned_to_name: [toTechnicianName]
+      };
+      if (scheduledTime) {
+        updateData.scheduled_time = scheduledTime;
+      }
+      await base44.entities.Job.update(jobId, updateData);
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['aiScheduling'] });
+      queryClient.invalidateQueries({ queryKey: ['allJobs'] });
+      toast.success("Job reassigned successfully");
+      if (onApplySuggestion) onApplySuggestion();
+    },
+    onError: (error) => {
+      toast.error("Failed to reassign job: " + error.message);
+    }
+  });
+
+  const autoDispatchMutation = useMutation({
+    mutationFn: async (recommendations) => {
+      for (const rec of recommendations) {
+        await base44.entities.Job.update(rec.jobId, {
+          assigned_to: [rec.technicianEmail],
+          assigned_to_name: [rec.technicianName],
+          scheduled_date: rec.suggestedDate,
+          scheduled_time: rec.suggestedTime,
+          status: 'Scheduled'
+        });
+      }
+    },
+    onSuccess: (_, variables) => {
+      queryClient.invalidateQueries({ queryKey: ['aiScheduling'] });
+      queryClient.invalidateQueries({ queryKey: ['allJobs'] });
+      toast.success(`${variables.length} jobs auto-dispatched successfully`);
+      if (onApplySuggestion) onApplySuggestion();
+    },
+    onError: (error) => {
+      toast.error("Failed to auto-dispatch: " + error.message);
     }
   });
 
