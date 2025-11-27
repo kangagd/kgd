@@ -4,8 +4,7 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Mail, Link as LinkIcon, Plus, Send, RefreshCw, ExternalLink, Reply, Forward, Paperclip } from "lucide-react";
-import AttachmentCard from "../inbox/AttachmentCard";
+import { Mail, Link as LinkIcon, Plus, Send, RefreshCw, ExternalLink, Reply, Forward } from "lucide-react";
 import { toast } from "sonner";
 import { createPageUrl } from "@/utils";
 import EmailMessageView from "../inbox/EmailMessageView";
@@ -253,26 +252,6 @@ export default function ProjectEmailSection({ project, onThreadLinked }) {
                           From: {thread.from_address}
                         </p>
                       )}
-                      {/* Attachments summary */}
-                      {(() => {
-                        const allAttachments = threadMessages.flatMap(m => 
-                          (m.attachments || []).map(att => ({ ...att, messageId: m.id, gmail_message_id: att.gmail_message_id }))
-                        );
-                        if (allAttachments.length === 0) return null;
-                        return (
-                          <div className="mt-2 flex flex-wrap gap-2">
-                            {allAttachments.map((attachment, idx) => (
-                              <AttachmentCard
-                                key={`${attachment.messageId}-${idx}`}
-                                attachment={attachment}
-                                linkedProjectId={project.id}
-                                threadSubject={thread.subject}
-                                gmailMessageId={attachment.gmail_message_id}
-                              />
-                            ))}
-                          </div>
-                        );
-                      })()}
                     </div>
                     <div className="flex items-center gap-2 flex-shrink-0">
                       <Button
