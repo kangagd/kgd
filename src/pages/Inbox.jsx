@@ -787,10 +787,19 @@ export default function Inbox() {
           <div className="w-full max-w-2xl">
             <EmailComposer
               mode="compose"
-              onClose={() => setShowComposer(false)}
+              existingDraft={editingDraft}
+              onClose={() => {
+                setShowComposer(false);
+                setEditingDraft(null);
+              }}
               onSent={() => {
                 queryClient.invalidateQueries({ queryKey: ['emailThreads'] });
+                queryClient.invalidateQueries({ queryKey: ['emailDrafts'] });
                 setShowComposer(false);
+                setEditingDraft(null);
+              }}
+              onDraftSaved={() => {
+                queryClient.invalidateQueries({ queryKey: ['emailDrafts'] });
               }}
             />
           </div>
