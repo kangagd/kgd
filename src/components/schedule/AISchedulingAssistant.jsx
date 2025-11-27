@@ -304,24 +304,31 @@ export default function AISchedulingAssistant({ selectedDate, onApplySuggestion 
 
               {/* Tabs */}
               <Tabs value={activeTab} onValueChange={setActiveTab} className="px-4">
-                <TabsList className="w-full">
-                  <TabsTrigger value="overview" className="flex-1 text-xs">
+                <TabsList className="w-full grid grid-cols-4">
+                  <TabsTrigger value="overview" className="text-xs px-2">
                     <AlertTriangle className="w-3 h-3 mr-1" />
-                    Conflicts
+                    <span className="hidden sm:inline">Conflicts</span>
                     {data?.conflicts?.length > 0 && (
                       <Badge className="ml-1 bg-red-500 text-white text-[9px] px-1 py-0">{data.conflicts.length}</Badge>
                     )}
                   </TabsTrigger>
-                  <TabsTrigger value="assignments" className="flex-1 text-xs">
+                  <TabsTrigger value="assignments" className="text-xs px-2">
                     <UserPlus className="w-3 h-3 mr-1" />
-                    Assign
+                    <span className="hidden sm:inline">Assign</span>
                     {data?.assignmentSuggestions?.length > 0 && (
                       <Badge className="ml-1 bg-amber-500 text-white text-[9px] px-1 py-0">{data.assignmentSuggestions.length}</Badge>
                     )}
                   </TabsTrigger>
-                  <TabsTrigger value="routes" className="flex-1 text-xs">
+                  <TabsTrigger value="reassign" className="text-xs px-2">
+                    <Shuffle className="w-3 h-3 mr-1" />
+                    <span className="hidden sm:inline">Optimize</span>
+                    {data?.reassignmentSuggestions?.length > 0 && (
+                      <Badge className="ml-1 bg-blue-500 text-white text-[9px] px-1 py-0">{data.reassignmentSuggestions.length}</Badge>
+                    )}
+                  </TabsTrigger>
+                  <TabsTrigger value="routes" className="text-xs px-2">
                     <Route className="w-3 h-3 mr-1" />
-                    Routes
+                    <span className="hidden sm:inline">Routes</span>
                   </TabsTrigger>
                 </TabsList>
 
