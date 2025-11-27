@@ -89,6 +89,19 @@ export default function ProjectEmailSection({ project, onThreadLinked }) {
     enabled: showLinkModal
   });
 
+  // Fetch drafts related to this project's threads
+  const { data: drafts = [], refetch: refetchDrafts } = useQuery({
+    queryKey: ['projectEmailDrafts', project.id, linkedThreads.map(t => t.id).join(',')],
+    queryFn: async () => {
+      const user = await base44.auth.me();
+      const allDrafts = await base44.entities.EmailDraft.filter({ created_by: user.email }, '-updated_date');
+      // Filter to only drafts that are replies to this project's threads
+      const threadIds = linkedThreads.map(t => t.id);
+      return allDrafts.filter(d => threadIds.includes(d.thread_id));
+    },
+    enabled: linkedThreads.length > 0
+  });
+
   // Link thread mutation
   const linkThreadMutation = useMutation({
     mutationFn: async (threadId) => {
