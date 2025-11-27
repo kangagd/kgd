@@ -470,18 +470,23 @@ export default function Inbox() {
               </Button>
               <Button
                 onClick={async () => {
-                  toast.info('Resyncing attachments for all emails...');
+                  const btn = document.activeElement;
+                  if (btn) btn.disabled = true;
+                  toast.info('Resyncing attachments...');
                   try {
                     const result = await base44.functions.invoke('resyncAttachments', {});
                     if (result.data?.error) {
                       toast.error(`Resync failed: ${result.data.error}`);
                     } else {
-                      toast.success(`Resynced attachments: ${result.data?.updated || 0} emails updated`);
+                      toast.success(`Resynced: ${result.data?.updated || 0} updated, ${result.data?.skipped || 0} skipped`);
                       queryClient.invalidateQueries({ queryKey: ['allEmailMessages'] });
                     }
                   } catch (error) {
-                    toast.error(`Failed to resync: ${error?.response?.data?.error || error.message || 'Unknown error'}`);
+                    const errMsg = error?.response?.data?.error || error?.message || 'Unknown error';
+                    toast.error(`Failed to resync: ${errMsg}`);
                     console.error('Resync error:', error);
+                  } finally {
+                    if (btn) btn.disabled = false;
                   }
                 }}
                 size="sm"
