@@ -243,8 +243,9 @@ Deno.serve(async (req) => {
             gmail_message_id: att.gmail_message_id
           }));
           
+          console.log(`Message ${message.id}: Subject="${subject}", Attachments=${processedAttachments.length}`);
           if (processedAttachments.length > 0) {
-            console.log(`Found ${processedAttachments.length} attachments for message`);
+            console.log('Attachment details:', JSON.stringify(processedAttachments));
           }
 
           // Parse addresses safely
