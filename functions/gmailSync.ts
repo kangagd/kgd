@@ -252,12 +252,15 @@ Deno.serve(async (req) => {
           }
 
           // Store attachment metadata (without downloading content to avoid timeouts)
+          // CRITICAL: Include all fields needed for download and inline rendering
           const processedAttachments = attachments.map(att => ({
             filename: att.filename,
             mime_type: att.mime_type,
             size: att.size,
             attachment_id: att.attachment_id,
-            gmail_message_id: att.gmail_message_id
+            gmail_message_id: att.gmail_message_id,
+            content_id: att.content_id || null,
+            is_inline: att.is_inline || false
           }));
           
           console.log(`Message ${message.id}: Subject="${subject}", Attachments=${processedAttachments.length}`);
