@@ -453,9 +453,16 @@ export default function Schedule() {
     const jobsByDate = {};
     monthJobs.forEach(job => {
       if (job.scheduled_date) {
-        const dateKey = format(parseISO(job.scheduled_date), 'yyyy-MM-dd');
-        if (!jobsByDate[dateKey]) jobsByDate[dateKey] = [];
-        jobsByDate[dateKey].push(job);
+        try {
+          const parsed = parseISO(job.scheduled_date);
+          if (!isNaN(parsed.getTime())) {
+            const dateKey = format(parsed, 'yyyy-MM-dd');
+            if (!jobsByDate[dateKey]) jobsByDate[dateKey] = [];
+            jobsByDate[dateKey].push(job);
+          }
+        } catch {
+          // Skip invalid dates
+        }
       }
     });
 
