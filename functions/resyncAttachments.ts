@@ -54,10 +54,10 @@ Deno.serve(async (req) => {
 
     const accessToken = await refreshTokenIfNeeded(user, base44);
 
-    // Get all email messages that don't have attachments or have empty attachments
-    const allMessages = await base44.asServiceRole.entities.EmailMessage.filter({});
+    // Get only recent email messages (limit to avoid timeout)
+    const allMessages = await base44.asServiceRole.entities.EmailMessage.list('-created_date', 50);
     
-    console.log(`Found ${allMessages.length} total messages to check`);
+    console.log(`Processing ${allMessages.length} most recent messages`);
     
     let updatedCount = 0;
     let checkedCount = 0;
