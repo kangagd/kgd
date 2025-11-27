@@ -12,7 +12,8 @@ export default function TasksPanel({
   entityType, // 'project' | 'job' | 'customer' | 'email_thread'
   entityId,
   entityName,
-  entityNumber // for jobs
+  entityNumber, // for jobs
+  compact = false // for sidebar compact view
 }) {
   const queryClient = useQueryClient();
   const [showCreateModal, setShowCreateModal] = useState(false);
@@ -110,6 +111,111 @@ export default function TasksPanel({
 
   const openTasks = tasks.filter(t => t.status !== "Completed" && t.status !== "Cancelled");
   const completedTasks = tasks.filter(t => t.status === "Completed" || t.status === "Cancelled");
+
+  // Compact view for sidebar
+  if (compact) {
+    return (
+      <div className="space-y-2">
+        {/* Compact Header */}
+        <div className="flex items-center justify-between">
+          {tasks.length > 0 && (
+            <span className="text-[12px] text-[#6B7280]">
+              {openTasks.length} open
+            </span>
+          )}
+          <Button
+            size="sm"
+            variant="ghost"
+            onClick={() => setShowCreateModal(true)}
+            className="h-7 px-2 text-[#6B7280] hover:text-[#111827] hover:bg-[#F3F4F6]"
+          >
+            <Plus className="w-3.5 h-3.5" />
+          </Button>
+        </div>
+
+        {/* Compact Task List */}
+        {isLoading ? (
+          <div className="flex items-center justify-center py-4">
+            <Loader2 className="w-4 h-4 animate-spin text-[#6B7280]" />
+          </div>
+        ) : tasks.length === 0 ? (
+          <div className="text-center py-4 text-[#9CA3AF]">
+            <p className="text-[13px]">No tasks yet</p>
+          </div>
+        ) : (
+          <div className="space-y-1.5">
+            {openTasks.slice(0, 5).map(task => (
+              <div
+                key={task.id}
+                onClick={() => setSelectedTask(task)}
+                className="flex items-start gap-2 p-2 bg-white border border-[#E5E7EB] rounded-lg hover:border-[#FAE008] cursor-pointer transition-colors"
+              >
+                <button
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    handleToggleComplete(task);
+                  }}
+                  className={`w-4 h-4 mt-0.5 rounded border flex-shrink-0 flex items-center justify-center transition-colors ${
+                    task.status === "Completed"
+                      ? "bg-green-500 border-green-500 text-white"
+                      : "border-[#D1D5DB] hover:border-[#FAE008]"
+                  }`}
+                >
+                  {task.status === "Completed" && (
+                    <CheckSquare className="w-3 h-3" />
+                  )}
+                </button>
+                <div className="flex-1 min-w-0">
+                  <p className={`text-[13px] font-medium truncate ${
+                    task.status === "Completed" ? "text-[#9CA3AF] line-through" : "text-[#111827]"
+                  }`}>
+                    {task.title}
+                  </p>
+                  {task.due_date && (
+                    <p className={`text-[11px] ${
+                      new Date(task.due_date) < new Date() && task.status !== "Completed"
+                        ? "text-red-500"
+                        : "text-[#9CA3AF]"
+                    }`}>
+                      Due {new Date(task.due_date).toLocaleDateString('en-AU', { day: 'numeric', month: 'short' })}
+                    </p>
+                  )}
+                </div>
+              </div>
+            ))}
+            {openTasks.length > 5 && (
+              <p className="text-[11px] text-[#6B7280] text-center pt-1">
+                +{openTasks.length - 5} more
+              </p>
+            )}
+            {completedTasks.length > 0 && (
+              <p className="text-[11px] text-[#9CA3AF] text-center pt-1">
+                {completedTasks.length} completed
+              </p>
+            )}
+          </div>
+        )}
+
+        {/* Modals */}
+        <TaskFormModal
+          open={showCreateModal}
+          onClose={() => setShowCreateModal(false)}
+          onSubmit={handleCreate}
+          preLinkedEntity={preLinkedEntity}
+          isSubmitting={createMutation.isPending}
+        />
+        <TaskDetailModal
+          open={!!selectedTask}
+          onClose={() => setSelectedTask(null)}
+          task={selectedTask}
+          onUpdate={handleUpdate}
+          onDelete={handleDelete}
+          onMarkComplete={handleMarkComplete}
+          isUpdating={updateMutation.isPending}
+        />
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-4">
