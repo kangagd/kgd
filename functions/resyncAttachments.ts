@@ -183,7 +183,7 @@ Deno.serve(async (req) => {
           console.log(`TARGET: Payload parts count: ${detail.payload?.parts?.length || 0}`);
         }
         
-        // Extract attachments
+        // Extract attachments - ALWAYS include gmail_message_id on each attachment
         const attachments = [];
         
         const processParts = (parts) => {
@@ -201,16 +201,19 @@ Deno.serve(async (req) => {
                 const contentId = contentIdHeader?.value?.replace(/[<>]/g, ''); // Remove < > brackets
                 const isInline = contentDisposition?.value?.toLowerCase().includes('inline') || !!contentId;
                 
-                attachments.push({
+                const attachmentObj = {
                   filename: part.filename,
                   mime_type: part.mimeType,
                   size: parseInt(part.body.size) || 0,
                   attachment_id: attachmentId,
-                  gmail_message_id: gmailMessageId,
+                  gmail_message_id: gmailMessageId, // CRITICAL: Always set this
                   content_id: contentId || null,
                   is_inline: isInline
-                });
-                console.log(`Found attachment: ${part.filename}, ContentID: ${contentId || 'none'}, Inline: ${isInline}`);
+                };
+                attachments.push(attachmentObj);
+                console.log(`Found attachment: ${part.filename}, AttachmentID: ${attachmentId}, GmailMsgID: ${gmailMessageId}, ContentID: ${contentId || 'none'}, Inline: ${isInline}`);
+              } else {
+                console.log(`Skipping attachment without attachmentId: ${part.filename}`);
               }
             }
             if (part.parts) {
