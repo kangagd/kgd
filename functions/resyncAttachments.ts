@@ -63,10 +63,8 @@ Deno.serve(async (req) => {
     let checkedCount = 0;
 
     for (const emailMsg of allMessages) {
-      // Skip if already has attachments with BOTH attachment_id AND gmail_message_id
-      if (emailMsg.attachments?.length > 0 && 
-          emailMsg.attachments[0]?.attachment_id && 
-          emailMsg.attachments[0]?.gmail_message_id) {
+      // Skip if message already has gmail_message_id set directly on it
+      if (emailMsg.gmail_message_id) {
         continue;
       }
 
@@ -205,13 +203,19 @@ Deno.serve(async (req) => {
           console.log(`TARGET: Total attachments found: ${attachments.length}`);
         }
 
+        // Always update gmail_message_id on the message itself if we found it
+        const updateData = {
+          gmail_message_id: gmailMessageId
+        };
+        
         if (attachments.length > 0) {
           console.log(`Found ${attachments.length} attachments for message: ${emailMsg.subject}`);
-          await base44.asServiceRole.entities.EmailMessage.update(emailMsg.id, {
-            attachments: attachments
-          });
-          updatedCount++;
+          updateData.attachments = attachments;
         }
+        
+        await base44.asServiceRole.entities.EmailMessage.update(emailMsg.id, updateData);
+        updatedCount++;
+        console.log(`Updated message ${emailMsg.id} with gmail_message_id: ${gmailMessageId}`);
 
         // Small delay to avoid rate limiting
         await new Promise(resolve => setTimeout(resolve, 100));
