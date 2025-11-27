@@ -152,14 +152,27 @@ export default function AttachmentCard({
 
       if (linkedJobId) {
         const job = await base44.entities.Job.get(linkedJobId);
-        const updatedImageUrls = [...(job.image_urls || []), urlToSave];
-        await base44.entities.Job.update(linkedJobId, { image_urls: updatedImageUrls });
-        toast.success('Attachment saved to job');
+        const isImage = isImageFile(attachment.mime_type, attachment.filename);
+        if (isImage) {
+          const updatedImageUrls = [...(job.image_urls || []), urlToSave];
+          await base44.entities.Job.update(linkedJobId, { image_urls: updatedImageUrls });
+        } else {
+          const updatedDocs = [...(job.other_documents || []), urlToSave];
+          await base44.entities.Job.update(linkedJobId, { other_documents: updatedDocs });
+        }
+        toast.success(`${isImage ? 'Image' : 'Document'} saved to job`);
       } else if (linkedProjectId) {
         const project = await base44.entities.Project.get(linkedProjectId);
-        const updatedImageUrls = [...(project.image_urls || []), urlToSave];
-        await base44.entities.Project.update(linkedProjectId, { image_urls: updatedImageUrls });
-        toast.success('Attachment saved to project');
+        const isImage = isImageFile(attachment.mime_type, attachment.filename);
+        if (isImage) {
+          const updatedImageUrls = [...(project.image_urls || []), urlToSave];
+          await base44.entities.Project.update(linkedProjectId, { image_urls: updatedImageUrls });
+        } else {
+          const updatedDocs = [...(project.other_documents || []), urlToSave];
+          await base44.entities.Project.update(linkedProjectId, { other_documents: updatedDocs });
+        }
+        toast.success(`${isImage ? 'Image' : 'Document'} saved to project`);
+        setSaved(true);
       }
       if (onSaveComplete) onSaveComplete();
     } catch (error) {
