@@ -17,8 +17,10 @@ import ConflictWarningModal from "../components/schedule/ConflictWarningModal";
 import useScheduleConflicts from "../components/schedule/useScheduleConflicts";
 import EntityModal from "../components/common/EntityModal";
 import JobModalView from "../components/jobs/JobModalView";
+import AISchedulingAssistant from "../components/schedule/AISchedulingAssistant";
 import { createPageUrl } from "@/utils";
 import { useNavigate } from "react-router-dom";
+import { Sparkles } from "lucide-react";
 
 export default function Schedule() {
   const navigate = useNavigate();
@@ -779,6 +781,10 @@ export default function Schedule() {
               <p className="text-sm text-[#4B5563] mt-1">{getDateRangeText()}</p>
             </div>
             <div className="flex items-center gap-3">
+              <AISchedulingAssistant 
+                selectedDate={selectedDate} 
+                onApplySuggestion={() => queryClient.invalidateQueries({ queryKey: ['jobs'] })}
+              />
               <Button variant="outline" onClick={handlePrevious} className="h-10 w-10 p-0 rounded-xl border border-[#E5E7EB] hover:border-[#FAE008] hover:bg-[#FFFEF5]">
                 <ChevronLeft className="w-4 h-4" />
               </Button>
