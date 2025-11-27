@@ -10,7 +10,8 @@ import { format, parseISO } from "date-fns";
 import { useNavigate } from "react-router-dom";
 import { createPageUrl } from "@/utils";
 import JobCard from "../components/jobs/JobCard";
-
+import XeroConnectButton from "../components/xero/XeroConnectButton";
+import MaintenanceRemindersCard from "../components/dashboard/MaintenanceRemindersCard";
 
 
 
@@ -110,7 +111,7 @@ export default function Dashboard() {
             </h1>
             <p className="text-sm text-[#4B5563] mt-1">Here's what's happening today</p>
           </div>
-
+          {user?.role === 'admin' && <XeroConnectButton />}
           <div className="flex flex-col md:flex-row gap-2 w-full md:w-auto">
             <Button
               onClick={() => window.location.href = '/Jobs?action=new'}
@@ -312,7 +313,9 @@ export default function Dashboard() {
           )}
         </div>
 
-
+        {user?.role === 'admin' && (
+          <MaintenanceRemindersCard user={user} />
+        )}
       </div>
     </div>
   );

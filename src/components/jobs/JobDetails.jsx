@@ -17,7 +17,7 @@ import { Link, useNavigate } from "react-router-dom";
 import { createPageUrl } from "@/utils";
 import { toast } from "sonner";
 import PriceListModal from "./PriceListModal";
-
+import TechnicianAssistant from "./TechnicianAssistant";
 import MeasurementsForm from "./MeasurementsForm";
 import ChangeHistoryModal from "./ChangeHistoryModal";
 import EditableField from "./EditableField";
@@ -26,7 +26,9 @@ import CustomerEditModal from "../customers/CustomerEditModal";
 import RichTextField from "../common/RichTextField";
 import { determineJobStatus } from "./jobStatusHelper";
 import TechnicianAvatar, { TechnicianAvatarGroup } from "../common/TechnicianAvatar";
-
+import JobActivityLog from "./JobActivityLog";
+import JobChat from "./JobChat";
+import JobMapView from "./JobMapView";
 import XeroInvoiceCard from "../invoices/XeroInvoiceCard";
 import CreateInvoiceModal from "../invoices/CreateInvoiceModal";
 import TakePaymentModal from "../invoices/TakePaymentModal";
@@ -703,7 +705,15 @@ export default function JobDetails({ job: initialJob, onClose, onStatusChange, o
 
                   <DollarSign className="w-4 h-4" />
                 </Button>
+                <Button
+                variant="ghost"
+                size="icon"
+                onClick={() => setShowAssistant(true)}
+                className="h-9 w-9 hover:bg-[#FAE008]/10 text-[#6B7280] hover:text-[#111827] transition-all rounded-lg"
+                title="AI Assistant">
 
+                  <Sparkles className="w-4 h-4" />
+                </Button>
                 <Button
                 variant="ghost"
                 size="icon"
@@ -1569,7 +1579,30 @@ export default function JobDetails({ job: initialJob, onClose, onStatusChange, o
               </div>
             </TabsContent>
 
+            <TabsContent value="chat" className="mt-2">
+              <div className="space-y-3">
+                <h3 className="text-[16px] font-semibold text-[#111827] leading-[1.2]">Team Chat</h3>
+                <p className="text-sm text-gray-600">Real-time messaging with assigned technicians and supervisors</p>
+                <JobChat jobId={job.id} />
+              </div>
+            </TabsContent>
 
+            <TabsContent value="map" className="mt-2">
+              <div className="space-y-3">
+                <h3 className="text-[16px] font-semibold text-[#111827] leading-[1.2]">Job Location</h3>
+                <JobMapView job={job} />
+                <div className="flex gap-2">
+                  <Button
+                    variant="outline"
+                    onClick={() => window.open(`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(job.address)}`, '_blank')}
+                    className="flex-1"
+                  >
+                    <Navigation className="w-4 h-4 mr-2" />
+                    Open in Google Maps
+                  </Button>
+                </div>
+              </div>
+            </TabsContent>
 
             <TabsContent value="invoicing" className="mt-2">
               <div className="space-y-6">
@@ -1642,7 +1675,10 @@ export default function JobDetails({ job: initialJob, onClose, onStatusChange, o
         isSubmitting={updateCustomerMutation.isPending} />
 
 
-
+      <TechnicianAssistant
+        open={showAssistant}
+        onClose={() => setShowAssistant(false)}
+        job={job} />
 
       <AlertDialog open={showDeleteConfirm} onOpenChange={setShowDeleteConfirm}>
         <AlertDialogContent className="rounded-2xl border-2 border-slate-200">
