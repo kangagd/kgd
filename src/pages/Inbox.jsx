@@ -100,6 +100,13 @@ export default function Inbox() {
     enabled: !!userPermissions?.can_view,
     refetchInterval: 60000 // Auto-refresh every 60 seconds
   });
+
+  // Fetch email drafts
+  const { data: drafts = [] } = useQuery({
+    queryKey: ['emailDrafts'],
+    queryFn: () => base44.entities.EmailDraft.filter({ created_by: user?.email }, '-updated_date'),
+    enabled: !!user?.email && !!userPermissions?.can_view
+  });
   
   // Sync selectedThread with URL parameter
   useEffect(() => {
