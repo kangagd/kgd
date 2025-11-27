@@ -39,27 +39,221 @@ async function geocodeAddress(address) {
   return null;
 }
 
-// Match job requirements to technician skills
+// Match job requirements to technician skills with detailed breakdown
 function calculateSkillMatch(job, technician) {
-  const techSkills = technician.skills || [];
-  if (techSkills.length === 0) return 0.5; // No skills defined, neutral score
+  const techSkills = (technician.skills || []).map(s => s.toLowerCase());
+  if (techSkills.length === 0) return { score: 0.5, matchedSkills: [], reason: 'No skills defined' };
   
-  const jobType = job.job_type_name || job.job_type || '';
-  const product = job.product || '';
+  const jobType = (job.job_type_name || job.job_type || '').toLowerCase();
+  const product = (job.product || '').toLowerCase();
+  const jobTypeId = job.job_type_id || '';
   
+  const matchedSkills = [];
   let matchScore = 0;
-  const relevantTerms = [jobType, product].filter(Boolean).map(t => t.toLowerCase());
   
+  // Check for exact job type matches
   for (const skill of techSkills) {
-    const skillLower = skill.toLowerCase();
-    for (const term of relevantTerms) {
-      if (skillLower.includes(term) || term.includes(skillLower)) {
-        matchScore += 1;
+    if (jobType && (skill.includes(jobType) || jobType.includes(skill))) {
+      matchScore += 2;
+      matchedSkills.push({ skill, matchType: 'job_type' });
+    }
+    if (product && (skill.includes(product) || product.includes(skill))) {
+      matchScore += 1.5;
+      matchedSkills.push({ skill, matchType: 'product' });
+    }
+    // Check for related skills (service, repair, install, etc.)
+    const relatedTerms = ['service', 'repair', 'install', 'maintenance', 'gate', 'door', 'motor', 'roller'];
+    for (const term of relatedTerms) {
+      if (skill.includes(term) && (jobType.includes(term) || product.includes(term))) {
+        matchScore += 0.5;
+        if (!matchedSkills.find(m => m.skill === skill)) {
+          matchedSkills.push({ skill, matchType: 'related' });
+        }
       }
     }
   }
   
-  return Math.min(matchScore / Math.max(relevantTerms.length, 1), 1);
+  const normalizedScore = Math.min(matchScore / 4, 1); // Normalize to 0-1
+  
+  return { 
+    score: normalizedScore, 
+    matchedSkills,
+    reason: matchedSkills.length > 0 
+      ? `Matched: ${matchedSkills.map(m => m.skill).join(', ')}`
+      : 'No skill matches found'
+  };
+}
+
+// Calculate comprehensive technician fitness score for a job
+function calculateTechnicianFitness(job, technician, allJobs, targetDate) {
+  const scores = {
+    skill: 0,
+    proximity: 0,
+    availability: 0,
+    workload: 0,
+    routeEfficiency: 0
+  };
+  
+  // 1. Skill Match (40% weight)
+  const skillMatch = calculateSkillMatch(job, technician);
+  scores.skill = skillMatch.score;
+  
+  // 2. Proximity Score (25% weight)
+  if (job.latitude && job.longitude) {
+    // Check distance from technician's home
+    if (technician.homeLat && technician.homeLng) {
+      const homeDistance = calculateDistance(technician.homeLat, technician.homeLng, job.latitude, job.longitude);
+      scores.proximity = Math.max(0, 1 - (homeDistance / 60)); // 60km = 0 score
+    }
+    
+    // Also check if job is near technician's other jobs for the day (route efficiency)
+    const techDayJobs = allJobs.filter(j => 
+      j.scheduled_date === targetDate && 
+      j.assigned_to?.includes(technician.email) &&
+      j.latitude && j.longitude
+    );
+    
+    if (techDayJobs.length > 0) {
+      const avgDistance = techDayJobs.reduce((sum, j) => {
+        return sum + calculateDistance(j.latitude, j.longitude, job.latitude, job.longitude);
+      }, 0) / techDayJobs.length;
+      
+      scores.routeEfficiency = Math.max(0, 1 - (avgDistance / 30)); // Jobs within 30km of route = good
+    }
+  }
+  
+  // 3. Availability Score (20% weight)
+  const currentJobCount = allJobs.filter(j => 
+    j.scheduled_date === targetDate && 
+    j.assigned_to?.includes(technician.email) &&
+    j.status !== 'Cancelled' && j.status !== 'Completed'
+  ).length;
+  const maxJobs = technician.max_jobs_per_day || 6;
+  scores.availability = currentJobCount < maxJobs ? 1 - (currentJobCount / maxJobs) : 0;
+  
+  // 4. Workload Balance (15% weight) - Prefer technicians with lighter loads
+  scores.workload = Math.max(0, 1 - (currentJobCount / maxJobs));
+  
+  // Calculate weighted total
+  const totalScore = (
+    (scores.skill * 0.40) +
+    (scores.proximity * 0.25) +
+    (scores.availability * 0.20) +
+    (scores.workload * 0.10) +
+    (scores.routeEfficiency * 0.05)
+  );
+  
+  return {
+    totalScore,
+    scores,
+    skillMatch,
+    currentJobCount,
+    maxJobs,
+    isAvailable: currentJobCount < maxJobs
+  };
+}
+
+// Find optimal time slot for a job with a specific technician
+function findOptimalTimeSlot(job, technician, existingJobs, targetDate) {
+  const techJobs = existingJobs
+    .filter(j => 
+      j.scheduled_date === targetDate && 
+      j.assigned_to?.includes(technician.email) &&
+      j.scheduled_time
+    )
+    .sort((a, b) => a.scheduled_time.localeCompare(b.scheduled_time));
+  
+  const jobDuration = (job.expected_duration || 1) * 60; // in minutes
+  const workdayStart = 7 * 60; // 7:00 AM
+  const workdayEnd = 17 * 60; // 5:00 PM
+  
+  const slots = [];
+  
+  // If no existing jobs, suggest morning start
+  if (techJobs.length === 0) {
+    return {
+      suggestedTime: '08:00',
+      reason: 'First job of the day',
+      travelTime: null
+    };
+  }
+  
+  // Check slot before first job
+  const firstJob = techJobs[0];
+  const firstJobStart = parseTimeToMinutes(firstJob.scheduled_time);
+  if (firstJobStart - workdayStart >= jobDuration + 30) {
+    slots.push({
+      time: workdayStart,
+      reason: 'Before first scheduled job',
+      score: 0.8
+    });
+  }
+  
+  // Check gaps between jobs
+  for (let i = 0; i < techJobs.length - 1; i++) {
+    const currentJob = techJobs[i];
+    const nextJob = techJobs[i + 1];
+    
+    const currentEnd = parseTimeToMinutes(currentJob.scheduled_time) + ((currentJob.expected_duration || 1) * 60);
+    const nextStart = parseTimeToMinutes(nextJob.scheduled_time);
+    
+    // Calculate travel time if coordinates available
+    let travelTime = 15;
+    if (job.latitude && job.longitude && currentJob.latitude && currentJob.longitude) {
+      const distance = calculateDistance(currentJob.latitude, currentJob.longitude, job.latitude, job.longitude);
+      travelTime = Math.max(estimateTravelTime(distance), 10);
+    }
+    
+    const gapNeeded = jobDuration + travelTime + 15; // Job + travel + buffer
+    const availableGap = nextStart - currentEnd;
+    
+    if (availableGap >= gapNeeded) {
+      slots.push({
+        time: currentEnd + travelTime,
+        reason: `Between Job #${currentJob.job_number} and Job #${nextJob.job_number}`,
+        score: 0.9,
+        travelTime
+      });
+    }
+  }
+  
+  // Check slot after last job
+  const lastJob = techJobs[techJobs.length - 1];
+  const lastJobEnd = parseTimeToMinutes(lastJob.scheduled_time) + ((lastJob.expected_duration || 1) * 60);
+  if (workdayEnd - lastJobEnd >= jobDuration + 30) {
+    let travelTime = 15;
+    if (job.latitude && job.longitude && lastJob.latitude && lastJob.longitude) {
+      const distance = calculateDistance(lastJob.latitude, lastJob.longitude, job.latitude, job.longitude);
+      travelTime = Math.max(estimateTravelTime(distance), 10);
+    }
+    slots.push({
+      time: lastJobEnd + travelTime,
+      reason: 'After last scheduled job',
+      score: 0.7,
+      travelTime
+    });
+  }
+  
+  if (slots.length === 0) {
+    return null; // No available slots
+  }
+  
+  // Return best slot
+  const bestSlot = slots.sort((a, b) => b.score - a.score)[0];
+  const hours = Math.floor(bestSlot.time / 60);
+  const mins = bestSlot.time % 60;
+  
+  return {
+    suggestedTime: `${String(hours).padStart(2, '0')}:${String(mins).padStart(2, '0')}`,
+    reason: bestSlot.reason,
+    travelTime: bestSlot.travelTime
+  };
+}
+
+function parseTimeToMinutes(timeStr) {
+  if (!timeStr) return 0;
+  const [h, m] = timeStr.split(':').map(Number);
+  return h * 60 + m;
 }
 
 // Calculate technician workload for a given date
