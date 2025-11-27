@@ -60,19 +60,27 @@ Deno.serve(async (req) => {
       return Response.json({ error: 'Gmail not connected' }, { status: 400 });
     }
 
-    const accessToken = await refreshTokenIfNeeded(user, base44);
+    let accessToken;
+    try {
+      accessToken = await refreshTokenIfNeeded(user, base44);
+    } catch (tokenError) {
+      console.error('Token refresh error:', tokenError);
+      return Response.json({ error: `Token refresh failed: ${tokenError.message}` }, { status: 401 });
+    }
 
-    // Get ALL email messages that have attachments
-    const allMessages = await base44.asServiceRole.entities.EmailMessage.list('-created_date', 200);
+    // Get recent email messages (limit to 50 to avoid timeout)
+    const allMessages = await base44.asServiceRole.entities.EmailMessage.list('-created_date', 50);
     
     console.log(`Processing ${allMessages.length} most recent messages`);
     
     let updatedCount = 0;
     let checkedCount = 0;
+    let skippedCount = 0;
 
     for (const emailMsg of allMessages) {
       // Skip if message already has gmail_message_id set directly on it
       if (emailMsg.gmail_message_id) {
+        skippedCount++;
         continue;
       }
 
