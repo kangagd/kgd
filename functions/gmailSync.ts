@@ -199,7 +199,7 @@ Deno.serve(async (req) => {
         gmail_message_id: message.id
       });
       
-      console.log(`Message ${message.id}: existing=${existingMessages.length}, threadId=${threadId}, messageId=${messageId}`);
+      console.log(`Message ${message.id}: existing=${existingMessages.length}, threadId=${threadId}, messageId=${effectiveMessageId}`);
 
         if (existingMessages.length > 0) {
           console.log(`Skipping existing message ${message.id}`);
