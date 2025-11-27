@@ -1,11 +1,14 @@
-import React, { useState } from "react";
+import React, { useState, useEffect, useMemo } from "react";
 import { format, parseISO } from "date-fns";
 import { ChevronDown, ChevronUp, Paperclip, ChevronRight } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
+import { base44 } from "@/api/base44Client";
 import AttachmentCard from "./AttachmentCard";
 
 function AttachmentsSection({ attachments, linkedJobId, linkedProjectId, threadSubject, gmailMessageId }) {
   const [isExpanded, setIsExpanded] = useState(false);
+  
+  if (attachments.length === 0) return null;
   
   return (
     <div className="mt-3 pt-3 border-t border-[#F3F4F6]">
@@ -34,6 +37,22 @@ function AttachmentsSection({ attachments, linkedJobId, linkedProjectId, threadS
       )}
     </div>
   );
+}
+
+// Helper to check if an attachment is referenced as inline in the HTML
+function isInlineImageInHtml(attachment, bodyHtml) {
+  if (!bodyHtml || !attachment) return false;
+  
+  // Check if it's marked as inline
+  if (attachment.is_inline) return true;
+  
+  // Check if content_id is referenced in HTML as cid:
+  if (attachment.content_id) {
+    const cidPattern = new RegExp(`cid:${attachment.content_id.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}`, 'i');
+    return cidPattern.test(bodyHtml);
+  }
+  
+  return false;
 }
 
 export default function EmailMessageView({ message, isFirst, linkedJobId, linkedProjectId, threadSubject, gmailMessageId: propGmailMessageId }) {
