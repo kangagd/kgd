@@ -90,11 +90,11 @@ export default function EmailComposer({ mode = "compose", thread, message, onClo
     return "";
   };
   
-  const [body, setBody] = useState(existingDraft?.body || getInitialBody());
+  const [body, setBody] = useState(existingDraft?.body_html || existingDraft?.body || getInitialBody());
   const [attachments, setAttachments] = useState([]);
   const [isSending, setIsSending] = useState(false);
-  const [showCc, setShowCc] = useState(!!existingDraft?.cc);
-  const [showBcc, setShowBcc] = useState(!!existingDraft?.bcc);
+  const [showCc, setShowCc] = useState(!!(existingDraft?.cc_addresses?.length || existingDraft?.cc));
+  const [showBcc, setShowBcc] = useState(!!(existingDraft?.bcc_addresses?.length || existingDraft?.bcc));
   const [draftId, setDraftId] = useState(existingDraft?.id || null);
   const [isSavingDraft, setIsSavingDraft] = useState(false);
   const [lastSaved, setLastSaved] = useState(null);
