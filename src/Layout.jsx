@@ -247,16 +247,18 @@ export default function Layout({ children, currentPageName }) {
           const fullUrl = location.pathname + location.search;
 
           // Check for specific entity pages
-          if (location.pathname === createPageUrl("Projects") && params.get('projectId')) {
+          const projectId = params.get('projectId');
+          if (location.pathname === createPageUrl("Projects") && projectId) {
             try {
-              const project = await base44.entities.Project.get(params.get('projectId'));
+              const project = await base44.entities.Project.get(projectId);
               pageEntry = { 
                 title: project?.title || 'Project', 
                 url: fullUrl, 
                 timestamp: Date.now(),
                 type: 'project'
               };
-            } catch {
+            } catch (err) {
+              console.error('Error fetching project for recent pages:', err);
               pageEntry = { title: 'Project', url: fullUrl, timestamp: Date.now(), type: 'project' };
             }
           } else if (location.pathname === createPageUrl("Jobs") && params.get('jobId')) {
