@@ -156,7 +156,14 @@ export default function LinkInvoiceModal({ open, onClose, onSelect, isSubmitting
                       {invoice.date && (
                         <div className="text-[11px] text-[#6B7280] flex items-center gap-1 justify-end mt-0.5">
                           <Calendar className="w-3 h-3" />
-                          {format(parseISO(invoice.date), 'MMM d, yyyy')}
+                          {(() => {
+                            try {
+                              const dateStr = invoice.date.split('T')[0];
+                              return format(parseISO(dateStr), 'MMM d, yyyy');
+                            } catch {
+                              return invoice.date;
+                            }
+                          })()}
                         </div>
                       )}
                     </div>
