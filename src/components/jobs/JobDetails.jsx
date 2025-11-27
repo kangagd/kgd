@@ -51,7 +51,6 @@ import {
 "@/components/ui/alert-dialog";
 import TasksPanel from "../tasks/TasksPanel";
 import QuotesSection from "../quotes/QuotesSection";
-import AIScheduleOptimizer from "../scheduling/AIScheduleOptimizer";
 
 const statusColors = {
   "Open": "bg-slate-100 text-slate-700 border-slate-200",
@@ -932,29 +931,6 @@ export default function JobDetails({ job: initialJob, onClose, onStatusChange, o
                         />
                       </div>
                     </div>
-                  </div>
-                  
-                  {/* AI Schedule Optimizer */}
-                  <div className="mt-3 pt-3 border-t border-[#E5E7EB]">
-                    <AIScheduleOptimizer
-                      jobId={job.id}
-                      projectId={job.project_id}
-                      onApplySchedule={(schedule) => {
-                        if (schedule.date) {
-                          handleFieldSave('scheduled_date', job.scheduled_date, schedule.date);
-                        }
-                        if (schedule.time) {
-                          handleFieldSave('scheduled_time', job.scheduled_time, schedule.time);
-                        }
-                        if (schedule.technicians?.length > 0) {
-                          handleAssignedToChange(schedule.technicians);
-                        }
-                      }}
-                      onApplyTechnician={(email) => {
-                        handleAssignedToChange([email]);
-                      }}
-                      compact={true}
-                    />
                   </div>
                   
                   {/* Additional Visits */}
