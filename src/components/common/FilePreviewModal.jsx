@@ -70,6 +70,7 @@ export default function FilePreviewModal({
 
   const fileUrl = typeof currentUrl === 'string' ? currentUrl : '';
   const isImage = fileUrl.match(/\.(jpg|jpeg|png|gif|webp)$/i) || file.type === 'image';
+  const isVideo = fileUrl.match(/\.(mp4|mov|webm|avi|mkv)$/i) || file.type === 'video';
   const isPDF = fileUrl.match(/\.pdf$/i) || file.type === 'pdf';
   
   const handleDownload = () => {
@@ -143,7 +144,7 @@ export default function FilePreviewModal({
           </div>
 
           {/* Navigation Arrows */}
-          {hasMultipleImages && isImage && (
+          {hasMultipleImages && (isImage || isVideo) && (
             <>
               <button
                 onClick={goToPrevious}
@@ -162,8 +163,8 @@ export default function FilePreviewModal({
             </>
           )}
 
-          {/* Image Counter */}
-          {hasMultipleImages && isImage && (
+          {/* Image/Video Counter */}
+          {hasMultipleImages && (isImage || isVideo) && (
             <div className="absolute bottom-4 left-1/2 -translate-x-1/2 bg-black/60 text-white px-4 py-2 rounded-full text-sm font-medium backdrop-blur-sm z-20">
               {currentIndex + 1} / {allImages.length}
             </div>
@@ -176,6 +177,13 @@ export default function FilePreviewModal({
                 src={currentUrl} 
                 alt={file.name || "Preview"} 
                 className="max-w-full max-h-[95vh] object-contain"
+              />
+            ) : isVideo ? (
+              <video
+                src={currentUrl}
+                controls
+                autoPlay
+                className="max-w-full max-h-[95vh] object-contain rounded-lg"
               />
             ) : isPDF ? (
               <div className="w-full h-[95vh] bg-white rounded-lg overflow-hidden shadow-2xl">
