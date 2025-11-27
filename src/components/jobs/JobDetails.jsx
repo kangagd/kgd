@@ -456,6 +456,60 @@ export default function JobDetails({ job: initialJob, onClose, onStatusChange, o
     }
   });
 
+  const linkInvoiceMutation = useMutation({
+    mutationFn: async (invoice) => {
+      // Update the job to link to this invoice
+      await base44.entities.Job.update(job.id, {
+        xero_invoice_id: invoice.id,
+        xero_payment_url: invoice.online_invoice_url || null
+      });
+      // Optionally update the XeroInvoice to track which job it's linked to
+      await base44.entities.XeroInvoice.update(invoice.id, {
+        job_id: job.id,
+        job_number: job.job_number
+      });
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['xeroInvoice'] });
+      queryClient.invalidateQueries({ queryKey: ['xeroInvoices'] });
+      queryClient.invalidateQueries({ queryKey: ['job', job.id] });
+      queryClient.invalidateQueries({ queryKey: ['jobs'] });
+      setShowLinkInvoiceModal(false);
+      toast.success('Invoice linked successfully');
+    },
+    onError: (error) => {
+      toast.error(error.message || 'Failed to link invoice');
+    }
+  });
+
+  const unlinkInvoiceMutation = useMutation({
+    mutationFn: async () => {
+      const currentInvoiceId = job.xero_invoice_id;
+      // Remove link from job
+      await base44.entities.Job.update(job.id, {
+        xero_invoice_id: null,
+        xero_payment_url: null
+      });
+      // Remove job reference from invoice
+      if (currentInvoiceId) {
+        await base44.entities.XeroInvoice.update(currentInvoiceId, {
+          job_id: null,
+          job_number: null
+        });
+      }
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['xeroInvoice'] });
+      queryClient.invalidateQueries({ queryKey: ['xeroInvoices'] });
+      queryClient.invalidateQueries({ queryKey: ['job', job.id] });
+      queryClient.invalidateQueries({ queryKey: ['jobs'] });
+      toast.success('Invoice unlinked from job');
+    },
+    onError: (error) => {
+      toast.error(error.message || 'Failed to unlink invoice');
+    }
+  });
+
   const handleCheckIn = () => {
     checkInMutation.mutate();
   };
