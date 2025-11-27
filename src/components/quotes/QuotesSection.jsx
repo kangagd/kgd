@@ -21,23 +21,42 @@ export default function QuotesSection({
   const queryClient = useQueryClient();
 
   // Build filter based on project or job
-  const filterKey = project?.id 
-    ? ['quotes', 'project', project.id] 
-    : job?.id 
-      ? ['quotes', 'job', job.id] 
+  // For jobs linked to projects, we want to show both job quotes AND project quotes
+  const projectId = project?.id || job?.project_id;
+  const jobId = job?.id;
+  
+  const filterKey = projectId 
+    ? ['quotes', 'project', projectId, 'job', jobId || 'none'] 
+    : jobId 
+      ? ['quotes', 'job', jobId] 
       : ['quotes', 'none'];
 
   const { data: quotes = [], isLoading } = useQuery({
     queryKey: filterKey,
     queryFn: async () => {
-      if (project?.id) {
-        return await base44.entities.Quote.filter({ project_id: project.id }, '-created_date');
-      } else if (job?.id) {
-        return await base44.entities.Quote.filter({ job_id: job.id }, '-created_date');
+      let allQuotes = [];
+      
+      // If we have a project (either direct or via job), fetch project quotes
+      if (projectId) {
+        const projectQuotes = await base44.entities.Quote.filter({ project_id: projectId }, '-created_date');
+        allQuotes = [...projectQuotes];
       }
-      return [];
+      
+      // If we have a job, also fetch job-specific quotes
+      if (jobId) {
+        const jobQuotes = await base44.entities.Quote.filter({ job_id: jobId }, '-created_date');
+        // Add job quotes that aren't already in the list (avoid duplicates)
+        jobQuotes.forEach(jq => {
+          if (!allQuotes.find(q => q.id === jq.id)) {
+            allQuotes.push(jq);
+          }
+        });
+      }
+      
+      // Sort by created_date descending
+      return allQuotes.sort((a, b) => new Date(b.created_date) - new Date(a.created_date));
     },
-    enabled: !!(project?.id || job?.id),
+    enabled: !!(projectId || jobId),
     refetchInterval: 30000 // Refresh every 30s to catch webhook updates
   });
 
@@ -83,7 +102,7 @@ export default function QuotesSection({
     ? quotes 
     : quotes.filter(q => q.status === 'Accepted');
 
-  if (!project?.id && !job?.id) {
+  if (!projectId && !jobId) {
     return null;
   }
 
