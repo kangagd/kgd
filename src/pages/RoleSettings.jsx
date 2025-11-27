@@ -252,9 +252,19 @@ export default function RoleSettings() {
       <Toaster position="top-right" richColors />
       <div className="max-w-5xl mx-auto">
         {/* Header */}
-        <div className="py-3 lg:py-4 mb-6">
-          <h1 className="text-2xl font-bold text-[#111827] leading-tight">Role Permissions</h1>
-          <p className="text-sm text-[#4B5563] mt-1">Configure what each role can do in the system</p>
+        <div className="py-3 lg:py-4 mb-6 flex items-center justify-between">
+          <div>
+            <h1 className="text-2xl font-bold text-[#111827] leading-tight">Role Permissions</h1>
+            <p className="text-sm text-[#4B5563] mt-1">Configure what each role can do in the system</p>
+          </div>
+          <Button
+            variant="outline"
+            onClick={runBackfill}
+            disabled={backfillRunning}
+            className="gap-2"
+          >
+            {backfillRunning ? "Running..." : "Backfill Jobs → Projects"}
+          </Button>
         </div>
 
         {/* Role Tabs */}
