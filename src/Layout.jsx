@@ -39,6 +39,7 @@ import { Input } from "@/components/ui/input";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import GlobalSearchDropdown from "./components/common/GlobalSearchDropdown";
 import { RoleBadge } from "./components/common/PermissionsContext";
+import NotificationBell from "./components/notifications/NotificationBell";
 
 const primaryNavigationItems = [
   { title: "Dashboard", url: createPageUrl("Dashboard"), icon: LayoutDashboard },
@@ -319,18 +320,19 @@ export default function Layout({ children, currentPageName }) {
               <h3 className="font-semibold text-[#111827] text-[14px]">KGD</h3>
             </button>
             <div className="flex items-center gap-2">
-              <RoleBadge role={effectiveRole} />
-              <button
-                onClick={() => navigate(createPageUrl("UserProfile"))}
-                className="flex items-center hover:bg-[#F3F4F6] rounded-lg p-2 transition-colors min-h-[44px] min-w-[44px] justify-center"
-              >
-                <div className="w-8 h-8 bg-[#F3F4F6] rounded-full flex items-center justify-center">
-                        <span className="text-[#111827] font-semibold text-sm">
-                          {(user?.display_name || user?.full_name)?.charAt(0)?.toUpperCase() || 'U'}
-                        </span>
-                      </div>
-              </button>
-            </div>
+                <NotificationBell />
+                <RoleBadge role={effectiveRole} />
+                <button
+                  onClick={() => navigate(createPageUrl("UserProfile"))}
+                  className="flex items-center hover:bg-[#F3F4F6] rounded-lg p-2 transition-colors min-h-[44px] min-w-[44px] justify-center"
+                >
+                  <div className="w-8 h-8 bg-[#F3F4F6] rounded-full flex items-center justify-center">
+                          <span className="text-[#111827] font-semibold text-sm">
+                            {(user?.display_name || user?.full_name)?.charAt(0)?.toUpperCase() || 'U'}
+                          </span>
+                        </div>
+                </button>
+              </div>
           </div>
         </header>
 
@@ -697,6 +699,8 @@ export default function Layout({ children, currentPageName }) {
         <div className="hidden lg:flex sticky top-0 z-30 bg-[#ffffff] border-b border-[#E5E7EB] px-6 py-3 items-center justify-between gap-4">
                         <GlobalSearchDropdown />
                         <div className="flex items-center gap-1">
+                          {/* Notifications */}
+                          <NotificationBell />
                           {/* Recent Pages Dropdown */}
                           <Popover open={recentPagesOpen} onOpenChange={setRecentPagesOpen}>
                             <PopoverTrigger asChild>
