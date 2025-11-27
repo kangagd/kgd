@@ -517,6 +517,47 @@ export default function Inbox() {
               </Button>
             </div>
           </div>
+
+          {/* Drafts Banner */}
+          {drafts.length > 0 && (
+            <div className="mt-3 p-3 bg-amber-50 border border-amber-200 rounded-lg">
+              <div className="flex items-center gap-2 mb-2">
+                <FileEdit className="w-4 h-4 text-amber-600" />
+                <span className="text-[13px] font-medium text-amber-800">
+                  {drafts.length} Draft{drafts.length !== 1 ? 's' : ''}
+                </span>
+              </div>
+              <div className="space-y-2">
+                {drafts.slice(0, 3).map(draft => (
+                  <div 
+                    key={draft.id}
+                    onClick={() => {
+                      setEditingDraft(draft);
+                      setShowComposer(true);
+                    }}
+                    className="flex items-center justify-between p-2 bg-white rounded border border-amber-100 cursor-pointer hover:border-amber-300 transition-colors"
+                  >
+                    <div className="min-w-0 flex-1">
+                      <p className="text-[13px] font-medium text-[#111827] truncate">
+                        {draft.subject || '(No subject)'}
+                      </p>
+                      <p className="text-[12px] text-[#6B7280] truncate">
+                        To: {draft.to_addresses?.join(', ') || '(No recipient)'}
+                      </p>
+                    </div>
+                    <Badge variant="outline" className="text-[10px] ml-2 flex-shrink-0">
+                      Draft
+                    </Badge>
+                  </div>
+                ))}
+                {drafts.length > 3 && (
+                  <p className="text-[12px] text-amber-600 text-center">
+                    +{drafts.length - 3} more draft{drafts.length - 3 !== 1 ? 's' : ''}
+                  </p>
+                )}
+              </div>
+            </div>
+          )}
           
           <div className="mt-3">
             <AdvancedSearch
