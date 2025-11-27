@@ -7,28 +7,25 @@ import { Badge } from "@/components/ui/badge";
 import { Plus, Edit, Trash2, Upload, X, FileText } from "lucide-react";
 import { base44 } from "@/api/base44Client";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-  DialogFooter,
-} from "@/components/ui/dialog";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
-import TextField from "../common/TextField";
+import PartDetailModal from "./PartDetailModal";
+import { Link as LinkIcon, MapPin, Truck } from "lucide-react";
 
 const statusColors = {
   "Pending": "bg-slate-100 text-slate-800 border-slate-200",
   "Ordered": "bg-blue-100 text-blue-800 border-blue-200",
   "Back-ordered": "bg-amber-100 text-amber-800 border-amber-200",
   "Delivered": "bg-green-100 text-green-800 border-green-200",
+  "Returned": "bg-orange-100 text-orange-800 border-orange-200",
   "Cancelled": "bg-red-100 text-red-800 border-red-200"
+};
+
+const locationColors = {
+  "On Order": "bg-slate-50 text-slate-600",
+  "At Supplier": "bg-indigo-50 text-indigo-600",
+  "At Delivery Bay": "bg-blue-50 text-blue-600",
+  "In Warehouse Storage": "bg-purple-50 text-purple-600",
+  "With Technician": "bg-amber-50 text-amber-600",
+  "At Client Site": "bg-green-50 text-green-600"
 };
 
 export default function PartsSection({ projectId, autoExpand = false }) {
