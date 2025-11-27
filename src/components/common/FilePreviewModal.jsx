@@ -1,5 +1,5 @@
-import React, { useEffect } from "react";
-import { X, Download, Trash2, FileText, File, ExternalLink } from "lucide-react";
+import React, { useEffect, useState } from "react";
+import { X, Download, Trash2, FileText, File, ExternalLink, ChevronLeft, ChevronRight } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import {
@@ -20,35 +20,61 @@ export default function FilePreviewModal({
   onDelete,
   canDelete = true
 }) {
-  const [showDeleteConfirm, setShowDeleteConfirm] = React.useState(false);
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
+  const [currentIndex, setCurrentIndex] = useState(file?.index || 0);
+
+  // Update currentIndex when file changes
+  useEffect(() => {
+    if (file?.index !== undefined) {
+      setCurrentIndex(file.index);
+    }
+  }, [file?.index]);
+
+  const allImages = file?.allImages || [];
+  const hasMultipleImages = allImages.length > 1;
+  const currentUrl = hasMultipleImages ? allImages[currentIndex] : file?.url;
+
+  const goToPrevious = (e) => {
+    e.stopPropagation();
+    setCurrentIndex((prev) => (prev > 0 ? prev - 1 : allImages.length - 1));
+  };
+
+  const goToNext = (e) => {
+    e.stopPropagation();
+    setCurrentIndex((prev) => (prev < allImages.length - 1 ? prev + 1 : 0));
+  };
 
   useEffect(() => {
     if (!isOpen) return;
 
-    const handleEscape = (e) => {
+    const handleKeyDown = (e) => {
       if (e.key === 'Escape') {
         onClose();
+      } else if (e.key === 'ArrowLeft' && hasMultipleImages) {
+        setCurrentIndex((prev) => (prev > 0 ? prev - 1 : allImages.length - 1));
+      } else if (e.key === 'ArrowRight' && hasMultipleImages) {
+        setCurrentIndex((prev) => (prev < allImages.length - 1 ? prev + 1 : 0));
       }
     };
 
-    document.addEventListener('keydown', handleEscape);
+    document.addEventListener('keydown', handleKeyDown);
     document.body.style.overflow = 'hidden';
 
     return () => {
-      document.removeEventListener('keydown', handleEscape);
+      document.removeEventListener('keydown', handleKeyDown);
       document.body.style.overflow = 'unset';
     };
-  }, [isOpen, onClose]);
+  }, [isOpen, onClose, hasMultipleImages, allImages.length]);
 
   if (!isOpen || !file) return null;
 
-  const fileUrl = typeof file.url === 'string' ? file.url : '';
+  const fileUrl = typeof currentUrl === 'string' ? currentUrl : '';
   const isImage = fileUrl.match(/\.(jpg|jpeg|png|gif|webp)$/i) || file.type === 'image';
   const isPDF = fileUrl.match(/\.pdf$/i) || file.type === 'pdf';
   
   const handleDownload = () => {
     const link = document.createElement('a');
-    link.href = file.url;
+    link.href = currentUrl;
     link.download = file.name || `file-${Date.now()}`;
     link.target = '_blank';
     document.body.appendChild(link);
@@ -57,7 +83,7 @@ export default function FilePreviewModal({
   };
 
   const handleOpenInNewTab = () => {
-    window.open(file.url, '_blank', 'noopener,noreferrer');
+    window.open(currentUrl, '_blank', 'noopener,noreferrer');
   };
 
   const handleDelete = () => {
@@ -116,11 +142,38 @@ export default function FilePreviewModal({
             </Button>
           </div>
 
+          {/* Navigation Arrows */}
+          {hasMultipleImages && isImage && (
+            <>
+              <button
+                onClick={goToPrevious}
+                className="absolute left-4 top-1/2 -translate-y-1/2 w-12 h-12 bg-white/90 hover:bg-white text-[#111827] rounded-full shadow-lg backdrop-blur-sm flex items-center justify-center z-20 transition-all hover:scale-110"
+                title="Previous image"
+              >
+                <ChevronLeft className="w-6 h-6" />
+              </button>
+              <button
+                onClick={goToNext}
+                className="absolute right-4 top-1/2 -translate-y-1/2 w-12 h-12 bg-white/90 hover:bg-white text-[#111827] rounded-full shadow-lg backdrop-blur-sm flex items-center justify-center z-20 transition-all hover:scale-110"
+                title="Next image"
+              >
+                <ChevronRight className="w-6 h-6" />
+              </button>
+            </>
+          )}
+
+          {/* Image Counter */}
+          {hasMultipleImages && isImage && (
+            <div className="absolute bottom-4 left-1/2 -translate-x-1/2 bg-black/60 text-white px-4 py-2 rounded-full text-sm font-medium backdrop-blur-sm z-20">
+              {currentIndex + 1} / {allImages.length}
+            </div>
+          )}
+
           {/* Content */}
           <div className="w-full h-full flex items-center justify-center">
             {isImage ? (
               <img 
-                src={file.url} 
+                src={currentUrl} 
                 alt={file.name || "Preview"} 
                 className="max-w-full max-h-[95vh] object-contain"
               />
