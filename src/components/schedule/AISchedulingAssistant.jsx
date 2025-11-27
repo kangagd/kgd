@@ -31,7 +31,12 @@ import {
   CheckCircle,
   XCircle,
   ArrowRight,
-  Loader2
+  Loader2,
+  Shuffle,
+  Zap,
+  TrendingUp,
+  Calendar,
+  User
 } from "lucide-react";
 import { toast } from "sonner";
 import { format } from "date-fns";
