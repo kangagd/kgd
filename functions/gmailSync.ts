@@ -83,16 +83,31 @@ Deno.serve(async (req) => {
     );
 
     const inboxData = await inboxResponse.json();
-    const sentData = await sentResponse.json();
+    const sentData = sentResponse.ok ? await sentResponse.json() : { messages: [] };
 
     console.log('=== Gmail Sync Started ===');
     console.log('Inbox messages:', inboxData.messages?.length || 0);
     console.log('Sent messages:', sentData.messages?.length || 0);
 
-    const allMessages = [
-      ...(inboxData.messages || []).map(m => ({ ...m, isOutbound: false })),
-      ...(sentData.messages || []).map(m => ({ ...m, isOutbound: true }))
-    ];
+    // Deduplicate messages (a sent reply might appear in both INBOX and SENT)
+    const messageMap = new Map();
+    
+    // Add inbox messages first
+    for (const m of (inboxData.messages || [])) {
+      messageMap.set(m.id, { ...m, isOutbound: false });
+    }
+    
+    // Add sent messages - these take priority for isOutbound flag
+    for (const m of (sentData.messages || [])) {
+      if (messageMap.has(m.id)) {
+        // Message exists in both - mark as outbound
+        messageMap.set(m.id, { ...m, isOutbound: true });
+      } else {
+        messageMap.set(m.id, { ...m, isOutbound: true });
+      }
+    }
+    
+    const allMessages = Array.from(messageMap.values());
 
     if (allMessages.length === 0) {
       return Response.json({ synced: 0, message: 'No messages to sync' });
