@@ -191,16 +191,12 @@ Deno.serve(async (req) => {
         threadId = newThread.id;
       }
 
-      // Check if message already exists by message_id or gmail_message_id
-      const existingByMessageId = await base44.asServiceRole.entities.EmailMessage.filter({
-        message_id: messageId
-      });
-      const existingByGmailId = await base44.asServiceRole.entities.EmailMessage.filter({
+      // Check if message already exists by gmail_message_id only (most reliable)
+      const existingMessages = await base44.asServiceRole.entities.EmailMessage.filter({
         gmail_message_id: message.id
       });
-      const existingMessages = existingByMessageId.length > 0 ? existingByMessageId : existingByGmailId;
       
-      console.log(`Message ${message.id}: existing=${existingMessages.length}, threadId=${threadId}`);
+      console.log(`Message ${message.id}: existing=${existingMessages.length}, threadId=${threadId}, messageId=${messageId}`);
 
         if (existingMessages.length === 0) {
           // Extract body and attachments
