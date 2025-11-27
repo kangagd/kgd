@@ -151,10 +151,12 @@ Deno.serve(async (req) => {
       });
       emailThreadId = newThread.id;
     } else {
-      // Update existing thread
+      // Update existing thread - increment message count
+      const existingThread = await base44.asServiceRole.entities.EmailThread.get(emailThreadId);
       await base44.asServiceRole.entities.EmailThread.update(emailThreadId, {
         last_message_date: new Date().toISOString(),
-        last_message_snippet: body.replace(/<[^>]*>/g, '').substring(0, 100)
+        last_message_snippet: body.replace(/<[^>]*>/g, '').substring(0, 100),
+        message_count: (existingThread?.message_count || 0) + 1
       });
     }
     
