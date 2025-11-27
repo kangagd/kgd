@@ -138,7 +138,24 @@ export default function RoleSettings() {
   const [selectedRole, setSelectedRole] = useState("admin");
   const [localPermissions, setLocalPermissions] = useState({});
   const [hasChanges, setHasChanges] = useState(false);
+  const [backfillRunning, setBackfillRunning] = useState(false);
   const queryClient = useQueryClient();
+
+  const runBackfill = async () => {
+    setBackfillRunning(true);
+    try {
+      const response = await base44.functions.invoke('backfillJobsToProjects');
+      const results = response.data.results;
+      toast.success(`Synced ${results.synced}/${results.total} jobs to projects`);
+      if (results.errors.length > 0) {
+        console.log('Backfill errors:', results.errors);
+      }
+    } catch (error) {
+      toast.error('Failed: ' + error.message);
+    } finally {
+      setBackfillRunning(false);
+    }
+  };
 
   useEffect(() => {
     const loadUser = async () => {
