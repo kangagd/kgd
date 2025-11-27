@@ -5,7 +5,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { ProjectStatusBadge } from "../components/common/StatusBadge";
-import { Plus, TrendingUp, Clock, Briefcase, Calendar, CheckCircle, FolderKanban, CheckSquare } from "lucide-react";
+import { Plus, Clock, Briefcase, Calendar, CheckCircle, FolderKanban, CheckSquare } from "lucide-react";
 import { format, parseISO } from "date-fns";
 import { useNavigate } from "react-router-dom";
 import { createPageUrl } from "@/utils";
