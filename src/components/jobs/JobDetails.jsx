@@ -26,7 +26,7 @@ import CustomerEditModal from "../customers/CustomerEditModal";
 import RichTextField from "../common/RichTextField";
 import { determineJobStatus } from "./jobStatusHelper";
 import TechnicianAvatar, { TechnicianAvatarGroup } from "../common/TechnicianAvatar";
-import JobActivityLog from "./JobActivityLog";
+
 import JobChat from "./JobChat";
 import JobMapView from "./JobMapView";
 import XeroInvoiceCard from "../invoices/XeroInvoiceCard";
