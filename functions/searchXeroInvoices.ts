@@ -87,17 +87,27 @@ Deno.serve(async (req) => {
     // Helper to parse Xero date format (can be /Date(1234567890000)/ or ISO format)
     const parseXeroDate = (dateStr) => {
       if (!dateStr) return null;
-      // Handle /Date(milliseconds)/ format
-      const msMatch = dateStr.match(/\/Date\((\d+)\)/);
-      if (msMatch) {
-        const ms = parseInt(msMatch[1], 10);
-        return new Date(ms).toISOString().split('T')[0];
+      try {
+        // Handle /Date(milliseconds)/ format
+        const msMatch = dateStr.match(/\/Date\((\d+)\)/);
+        if (msMatch) {
+          const ms = parseInt(msMatch[1], 10);
+          if (isNaN(ms)) return null;
+          const date = new Date(ms);
+          if (isNaN(date.getTime())) return null;
+          return date.toISOString().split('T')[0];
+        }
+        // Handle ISO format
+        if (dateStr.includes('T')) {
+          return dateStr.split('T')[0];
+        }
+        // Validate it's a valid date string
+        const testDate = new Date(dateStr);
+        if (isNaN(testDate.getTime())) return null;
+        return dateStr;
+      } catch {
+        return null;
       }
-      // Handle ISO format
-      if (dateStr.includes('T')) {
-        return dateStr.split('T')[0];
-      }
-      return dateStr;
     };
 
     // Map to simplified format
