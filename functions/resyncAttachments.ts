@@ -70,47 +70,67 @@ Deno.serve(async (req) => {
 
       checkedCount++;
       
-      const messageId = emailMsg.message_id;
       const isTargetMessage = emailMsg.subject?.includes("Quote Request #Brian");
       
-      if (!messageId) {
-        if (isTargetMessage) {
-          console.log(`TARGET: No message_id for: ${emailMsg.subject}`);
-        }
-        continue;
-      }
-
       if (isTargetMessage) {
         console.log(`--- Processing target message: ${emailMsg.subject} ---`);
-        console.log(`message_id: ${messageId}`);
+        console.log(`Has message_id: ${!!emailMsg.message_id}`);
       }
 
       try {
-        // Search for message by Message-ID header
-        const searchQuery = encodeURIComponent(`rfc822msgid:${messageId}`);
-        const searchResponse = await fetch(
-          `https://gmail.googleapis.com/gmail/v1/users/me/messages?q=${searchQuery}`,
-          { headers: { 'Authorization': `Bearer ${accessToken}` } }
-        );
+        let gmailMessageId = null;
+        
+        // Try to find Gmail message using message_id if available
+        if (emailMsg.message_id) {
+          const searchQuery = encodeURIComponent(`rfc822msgid:${emailMsg.message_id}`);
+          const searchResponse = await fetch(
+            `https://gmail.googleapis.com/gmail/v1/users/me/messages?q=${searchQuery}`,
+            { headers: { 'Authorization': `Bearer ${accessToken}` } }
+          );
 
-        if (!searchResponse.ok) {
+          if (searchResponse.ok) {
+            const searchData = await searchResponse.json();
+            if (searchData.messages?.length) {
+              gmailMessageId = searchData.messages[0].id;
+            }
+          }
+        }
+        
+        // If no message_id or search failed, try searching by subject and sender
+        if (!gmailMessageId) {
+          const subject = emailMsg.subject?.replace(/['"<>]/g, '').substring(0, 100);
+          const from = emailMsg.from_address;
+          const searchQuery = encodeURIComponent(`from:${from} subject:"${subject}"`);
+          
           if (isTargetMessage) {
-            console.log(`TARGET: Search failed: ${await searchResponse.text()}`);
+            console.log(`TARGET: Searching by subject/sender: ${searchQuery}`);
+          }
+          
+          const searchResponse = await fetch(
+            `https://gmail.googleapis.com/gmail/v1/users/me/messages?q=${searchQuery}&maxResults=5`,
+            { headers: { 'Authorization': `Bearer ${accessToken}` } }
+          );
+
+          if (searchResponse.ok) {
+            const searchData = await searchResponse.json();
+            if (searchData.messages?.length) {
+              gmailMessageId = searchData.messages[0].id;
+              if (isTargetMessage) {
+                console.log(`TARGET: Found via subject/sender search: ${gmailMessageId}`);
+              }
+            }
+          }
+        }
+        
+        if (!gmailMessageId) {
+          if (isTargetMessage) {
+            console.log(`TARGET: Could not find Gmail message`);
           }
           continue;
         }
 
-        const searchData = await searchResponse.json();
-        if (!searchData.messages?.length) {
-          if (isTargetMessage) {
-            console.log(`TARGET: No Gmail message found for message_id`);
-          }
-          continue;
-        }
-
-        const gmailMessageId = searchData.messages[0].id;
         if (isTargetMessage) {
-          console.log(`TARGET: Found Gmail message ID: ${gmailMessageId}`);
+          console.log(`TARGET: Gmail message ID: ${gmailMessageId}`);
         }
 
         // Fetch full message details
@@ -128,8 +148,23 @@ Deno.serve(async (req) => {
 
         const detail = await detailResponse.json();
         
+        // Extract message_id from headers if missing
+        if (!emailMsg.message_id) {
+          const headers = detail.payload?.headers || [];
+          const msgIdHeader = headers.find(h => h.name === 'Message-ID');
+          if (msgIdHeader) {
+            // Update the email message with the message_id
+            await base44.asServiceRole.entities.EmailMessage.update(emailMsg.id, {
+              message_id: msgIdHeader.value
+            });
+            if (isTargetMessage) {
+              console.log(`TARGET: Updated message_id: ${msgIdHeader.value}`);
+            }
+          }
+        }
+        
         if (isTargetMessage) {
-          console.log(`TARGET: Full payload structure:`, JSON.stringify(detail.payload, null, 2));
+          console.log(`TARGET: Payload parts count: ${detail.payload?.parts?.length || 0}`);
         }
         
         // Extract attachments
@@ -139,7 +174,7 @@ Deno.serve(async (req) => {
           if (!parts || !Array.isArray(parts)) return;
           for (const part of parts) {
             if (isTargetMessage) {
-              console.log(`TARGET: Processing part - mimeType: ${part.mimeType}, filename: ${part.filename || 'none'}, hasAttachmentId: ${!!part.body?.attachmentId}`);
+              console.log(`TARGET: Part - mimeType: ${part.mimeType}, filename: ${part.filename || 'none'}, hasAttachmentId: ${!!part.body?.attachmentId}`);
             }
             if (part.filename && part.filename.length > 0) {
               const attachmentId = part.body?.attachmentId;
