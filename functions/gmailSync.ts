@@ -256,6 +256,7 @@ Deno.serve(async (req) => {
           // Create message
           const messageData = {
             thread_id: threadId,
+            gmail_message_id: message.id,
             from_address: fromAddress,
             to_addresses: toAddresses.length > 0 ? toAddresses : [fromAddress],
             sent_at: new Date(date).toISOString(),
