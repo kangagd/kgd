@@ -15,6 +15,7 @@ import Reports from './pages/Reports';
 import Inbox from './pages/Inbox';
 import Tasks from './pages/Tasks';
 import RoleSettings from './pages/RoleSettings';
+import Notifications from './pages/Notifications';
 import __Layout from './Layout.jsx';
 
 
@@ -36,6 +37,7 @@ export const PAGES = {
     "Inbox": Inbox,
     "Tasks": Tasks,
     "RoleSettings": RoleSettings,
+    "Notifications": Notifications,
 }
 
 export const pagesConfig = {
