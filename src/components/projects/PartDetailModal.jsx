@@ -430,7 +430,7 @@ export default function PartDetailModal({ open, part, onClose, onSave, isSubmitt
               </div>
             </section>
           </form>
-        </ScrollArea>
+        </div>
 
         <DialogFooter className="p-6 pt-4 border-t border-[#E5E7EB] bg-[#F9FAFB]">
           <Button type="button" variant="outline" onClick={onClose} className="bg-white">
