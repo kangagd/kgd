@@ -54,8 +54,8 @@ Deno.serve(async (req) => {
 
     const accessToken = await refreshTokenIfNeeded(user, base44);
 
-    // Get only recent email messages (limit to avoid timeout)
-    const allMessages = await base44.asServiceRole.entities.EmailMessage.list('-created_date', 50);
+    // Get ALL email messages that have attachments
+    const allMessages = await base44.asServiceRole.entities.EmailMessage.list('-created_date', 200);
     
     console.log(`Processing ${allMessages.length} most recent messages`);
     
