@@ -212,89 +212,93 @@ export default function EmailAISummaryCard({ thread, onThreadUpdate, onCreatePro
           </div>
         </div>
 
-        {isGenerating && !hasInsights && (
-          <div className="flex items-center gap-3 py-4">
-            <Loader2 className="w-5 h-5 text-[#6366F1] animate-spin" />
-            <span className="text-[14px] text-[#4B5563]">Analyzing email thread...</span>
-          </div>
-        )}
-
-        {hasInsights && (
+        {isExpanded && (
           <>
-            {/* Summary as bullet points */}
-            <ul className="space-y-1.5 pl-1">
-              {thread.ai_summary?.split(/[.!?]+/).filter(s => s.trim()).map((sentence, idx) => (
-                <li key={idx} className="flex items-start gap-2 text-[14px] text-[#374151]">
-                  <span className="text-[#6366F1] mt-1">•</span>
-                  <span>{sentence.trim()}</span>
-                </li>
-              ))}
-            </ul>
+            {isGenerating && !hasInsights && (
+              <div className="flex items-center gap-3 py-4 mt-3">
+                <Loader2 className="w-5 h-5 text-[#6366F1] animate-spin" />
+                <span className="text-[14px] text-[#4B5563]">Analyzing email thread...</span>
+              </div>
+            )}
 
-            {thread.ai_key_points && thread.ai_key_points.length > 0 && (
+            {hasInsights && (
               <div className="mt-3">
-                <button
-                  onClick={() => setShowKeyPoints(!showKeyPoints)}
-                  className="flex items-center gap-1.5 text-[13px] font-medium text-[#4338CA] hover:text-[#3730A3] transition-colors"
-                >
-                  {showKeyPoints ? (
-                    <ChevronUp className="w-4 h-4" />
-                  ) : (
-                    <ChevronDown className="w-4 h-4" />
-                  )}
-                  View key points ({thread.ai_key_points.length})
-                </button>
+                {/* Summary as bullet points */}
+                <ul className="space-y-1.5 pl-1">
+                  {thread.ai_summary?.split(/[.!?]+/).filter(s => s.trim()).map((sentence, idx) => (
+                    <li key={idx} className="flex items-start gap-2 text-[14px] text-[#374151]">
+                      <span className="text-[#6366F1] mt-1">•</span>
+                      <span>{sentence.trim()}</span>
+                    </li>
+                  ))}
+                </ul>
 
-                {showKeyPoints && (
-                  <ul className="mt-2 space-y-1.5 pl-1">
-                    {thread.ai_key_points.map((point, idx) => (
-                      <li key={idx} className="flex items-start gap-2 text-[13px] text-[#4B5563]">
-                        <span className="text-[#6366F1] mt-1">•</span>
-                        <span>{point}</span>
-                      </li>
-                    ))}
-                  </ul>
+                {thread.ai_key_points && thread.ai_key_points.length > 0 && (
+                  <div className="mt-3">
+                    <button
+                      onClick={(e) => { e.stopPropagation(); setShowKeyPoints(!showKeyPoints); }}
+                      className="flex items-center gap-1.5 text-[13px] font-medium text-[#4338CA] hover:text-[#3730A3] transition-colors"
+                    >
+                      {showKeyPoints ? (
+                        <ChevronUp className="w-4 h-4" />
+                      ) : (
+                        <ChevronDown className="w-4 h-4" />
+                      )}
+                      View key points ({thread.ai_key_points.length})
+                    </button>
+
+                    {showKeyPoints && (
+                      <ul className="mt-2 space-y-1.5 pl-1">
+                        {thread.ai_key_points.map((point, idx) => (
+                          <li key={idx} className="flex items-start gap-2 text-[13px] text-[#4B5563]">
+                            <span className="text-[#6366F1] mt-1">•</span>
+                            <span>{point}</span>
+                          </li>
+                        ))}
+                      </ul>
+                    )}
+                  </div>
+                )}
+
+                {thread.ai_suggested_project_fields && (
+                  <div className="mt-3 pt-3 border-t border-[#E0E7FF]">
+                    <ul className="space-y-1 pl-1">
+                      {thread.ai_suggested_project_fields.suggested_title && (
+                        <li className="flex items-start gap-2 text-[12px] text-[#6B7280]">
+                          <span className="text-[#4338CA]">•</span>
+                          <span><span className="font-medium">Title:</span> {thread.ai_suggested_project_fields.suggested_title}</span>
+                        </li>
+                      )}
+                      {thread.ai_suggested_project_fields.suggested_project_type && (
+                        <li className="flex items-start gap-2 text-[12px] text-[#6B7280]">
+                          <span className="text-[#4338CA]">•</span>
+                          <span><span className="font-medium">Type:</span> {thread.ai_suggested_project_fields.suggested_project_type}</span>
+                        </li>
+                      )}
+                      {thread.ai_suggested_project_fields.suggested_customer_name && (
+                        <li className="flex items-start gap-2 text-[12px] text-[#6B7280]">
+                          <span className="text-[#4338CA]">•</span>
+                          <span><span className="font-medium">Customer:</span> {thread.ai_suggested_project_fields.suggested_customer_name}</span>
+                        </li>
+                      )}
+                      {thread.ai_suggested_project_fields.suggested_address && (
+                        <li className="flex items-start gap-2 text-[12px] text-[#6B7280]">
+                          <span className="text-[#4338CA]">•</span>
+                          <span><span className="font-medium">Address:</span> {thread.ai_suggested_project_fields.suggested_address}</span>
+                        </li>
+                      )}
+                    </ul>
+                  </div>
                 )}
               </div>
             )}
 
-            {thread.ai_suggested_project_fields && (
-              <div className="mt-3 pt-3 border-t border-[#E0E7FF]">
-                <ul className="space-y-1 pl-1">
-                  {thread.ai_suggested_project_fields.suggested_title && (
-                    <li className="flex items-start gap-2 text-[12px] text-[#6B7280]">
-                      <span className="text-[#4338CA]">•</span>
-                      <span><span className="font-medium">Title:</span> {thread.ai_suggested_project_fields.suggested_title}</span>
-                    </li>
-                  )}
-                  {thread.ai_suggested_project_fields.suggested_project_type && (
-                    <li className="flex items-start gap-2 text-[12px] text-[#6B7280]">
-                      <span className="text-[#4338CA]">•</span>
-                      <span><span className="font-medium">Type:</span> {thread.ai_suggested_project_fields.suggested_project_type}</span>
-                    </li>
-                  )}
-                  {thread.ai_suggested_project_fields.suggested_customer_name && (
-                    <li className="flex items-start gap-2 text-[12px] text-[#6B7280]">
-                      <span className="text-[#4338CA]">•</span>
-                      <span><span className="font-medium">Customer:</span> {thread.ai_suggested_project_fields.suggested_customer_name}</span>
-                    </li>
-                  )}
-                  {thread.ai_suggested_project_fields.suggested_address && (
-                    <li className="flex items-start gap-2 text-[12px] text-[#6B7280]">
-                      <span className="text-[#4338CA]">•</span>
-                      <span><span className="font-medium">Address:</span> {thread.ai_suggested_project_fields.suggested_address}</span>
-                    </li>
-                  )}
-                </ul>
-              </div>
+            {!hasInsights && !isGenerating && (
+              <p className="text-[14px] text-[#6B7280] mt-3">
+                Click "Generate" to create an AI summary of this email thread.
+              </p>
             )}
           </>
-        )}
-
-        {!hasInsights && !isGenerating && (
-          <p className="text-[14px] text-[#6B7280]">
-            Click "Generate" to create an AI summary of this email thread.
-          </p>
         )}
       </CardContent>
     </Card>
