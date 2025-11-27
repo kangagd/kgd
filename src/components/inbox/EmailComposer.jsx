@@ -140,11 +140,11 @@ export default function EmailComposer({ mode = "compose", thread, message, onClo
     setIsSavingDraft(true);
     try {
       const draft = {
-        to: draftData.to,
-        cc: draftData.cc,
-        bcc: draftData.bcc,
+        to_addresses: draftData.to ? draftData.to.split(',').map(e => e.trim()).filter(Boolean) : [],
+        cc_addresses: draftData.cc ? draftData.cc.split(',').map(e => e.trim()).filter(Boolean) : [],
+        bcc_addresses: draftData.bcc ? draftData.bcc.split(',').map(e => e.trim()).filter(Boolean) : [],
         subject: draftData.subject,
-        body: draftData.body,
+        body_html: draftData.body,
         thread_id: thread?.id || null,
         reply_to_message_id: message?.message_id || null,
         mode: mode
@@ -157,12 +157,13 @@ export default function EmailComposer({ mode = "compose", thread, message, onClo
         setDraftId(newDraft.id);
       }
       setLastSaved(new Date());
+      if (onDraftSaved) onDraftSaved();
     } catch (error) {
       console.error("Failed to save draft:", error);
     } finally {
       setIsSavingDraft(false);
     }
-  }, [draftId, thread?.id, message?.message_id, mode]);
+  }, [draftId, thread?.id, message?.message_id, mode, onDraftSaved]);
 
   // Debounced auto-save (save after 2 seconds of inactivity)
   const debouncedSave = useCallback(
