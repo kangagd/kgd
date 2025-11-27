@@ -96,14 +96,14 @@ export default function Layout({ children, currentPageName }) {
   
   // Auto-collapse sidebar when on Inbox page with email open
   useEffect(() => {
-    const isInboxPage = location.pathname === createPageUrl("Inbox");
+    const isInboxPage = (currentPageName === "Inbox") || location.pathname.includes("Inbox");
     const params = new URLSearchParams(location.search);
-    const hasEmailOpen = params.has('threadId') || window.location.href.includes('threadId');
-    
+    const hasEmailOpen = params.has('threadId');
+
     if (isInboxPage && hasEmailOpen && !isCollapsed) {
       setIsCollapsed(true);
     }
-  }, [location.pathname, location.search]);
+  }, [location.pathname, location.search, currentPageName]);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [testMode, setTestMode] = useState(() => 
     localStorage.getItem('testMode') || 'off'
