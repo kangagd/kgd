@@ -80,7 +80,7 @@ Deno.serve(async (req) => {
 
     // If it's an Initial Site Visit and project status is still "Initial Site Visit", advance to next stage
     if (isInitialSiteVisit && project.status === 'Initial Site Visit') {
-      projectUpdate.status = 'Quote Sent';
+      projectUpdate.status = 'Create Quote';
     }
 
     // Update the project

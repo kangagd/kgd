@@ -4,6 +4,7 @@ import { Check, XCircle } from "lucide-react";
 const PROJECT_STAGES = [
   "Lead",
   "Initial Site Visit",
+  "Create Quote",
   "Quote Sent",
   "Quote Approved",
   "Final Measure",
