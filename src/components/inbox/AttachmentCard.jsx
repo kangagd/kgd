@@ -45,9 +45,9 @@ export default function AttachmentCard({
     try {
       // First resolve the URL if needed
       let urlToSave = resolvedUrl;
-      if (!urlToSave && attachment.attachment_id && attachment.gmail_message_id) {
+      if (!urlToSave && attachment.attachment_id && effectiveGmailMessageId) {
         const result = await base44.functions.invoke('getGmailAttachment', {
-          gmail_message_id: attachment.gmail_message_id,
+          gmail_message_id: effectiveGmailMessageId,
           attachment_id: attachment.attachment_id,
           filename: attachment.filename,
           mime_type: attachment.mime_type
@@ -59,7 +59,8 @@ export default function AttachmentCard({
       }
       
       if (!urlToSave) {
-        toast.error('Could not resolve attachment URL');
+        toast.error('Attachment not available - missing Gmail message ID or attachment ID');
+        console.error('Missing attachment data:', { attachment, effectiveGmailMessageId });
         return;
       }
 
