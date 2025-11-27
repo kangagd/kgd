@@ -16,32 +16,61 @@ export default function ProjectEmailSection({ project, onThreadLinked }) {
   const [showLinkModal, setShowLinkModal] = useState(false);
   const [composerMode, setComposerMode] = useState(null); // null | 'compose' | 'reply' | 'forward'
   const [selectedMessage, setSelectedMessage] = useState(null);
+  const [refreshKey, setRefreshKey] = useState(0);
 
   // Fetch ALL email threads linked to this project
   const { data: linkedThreads = [], isLoading: threadLoading, refetch: refetchThreads } = useQuery({
-    queryKey: ['projectEmailThreads', project.id],
+    queryKey: ['projectEmailThreads', project.id, refreshKey],
     queryFn: async () => {
-      const allThreads = await base44.entities.EmailThread.list('-last_message_date');
-      return allThreads.filter(t => 
-        t.linked_project_id === project.id || 
-        t.id === project.source_email_thread_id
+      // Fetch threads linked via linked_project_id
+      const linkedByProject = await base44.entities.EmailThread.filter({ 
+        linked_project_id: project.id 
+      });
+      
+      // Also fetch by source_email_thread_id if set
+      let sourceThread = null;
+      if (project.source_email_thread_id) {
+        try {
+          sourceThread = await base44.entities.EmailThread.get(project.source_email_thread_id);
+        } catch (e) {
+          console.warn('Source thread not found:', project.source_email_thread_id);
+        }
+      }
+      
+      // Combine and dedupe
+      const allThreads = [...linkedByProject];
+      if (sourceThread && !allThreads.find(t => t.id === sourceThread.id)) {
+        allThreads.push(sourceThread);
+      }
+      
+      return allThreads.sort((a, b) => 
+        new Date(b.last_message_date) - new Date(a.last_message_date)
       );
     },
-    enabled: !!project.id
+    enabled: !!project.id,
+    staleTime: 0
   });
 
-  // Fetch messages for all linked threads
+  // Fetch messages for all linked threads - direct fetch, no caching issues
   const { data: messages = [], isLoading: messagesLoading, refetch: refetchMessages } = useQuery({
-    queryKey: ['projectEmailMessages', project.id, linkedThreads.map(t => t.id).join(',')],
+    queryKey: ['projectEmailMessages', project.id, linkedThreads.map(t => t.id).join(','), refreshKey],
     queryFn: async () => {
       if (linkedThreads.length === 0) return [];
-      const threadIds = linkedThreads.map(t => t.id);
-      const allMessages = await base44.entities.EmailMessage.list();
-      return allMessages.filter(m => threadIds.includes(m.thread_id));
+      
+      // Fetch messages for each thread directly
+      const allMessages = [];
+      for (const thread of linkedThreads) {
+        const threadMessages = await base44.entities.EmailMessage.filter({ 
+          thread_id: thread.id 
+        });
+        allMessages.push(...threadMessages);
+      }
+      
+      return allMessages;
     },
     enabled: linkedThreads.length > 0,
     staleTime: 0,
-    refetchOnMount: 'always'
+    cacheTime: 0
   });
 
   // For backward compatibility - use first thread as "emailThread"
