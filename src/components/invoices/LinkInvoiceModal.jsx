@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import {
   Dialog,
   DialogContent,
@@ -9,7 +9,7 @@ import {
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
-import { Link2, Search, DollarSign, FileText, Calendar, Loader2 } from "lucide-react";
+import { Link2, Search, DollarSign, FileText, Calendar, Loader2, RefreshCw } from "lucide-react";
 import { base44 } from "@/api/base44Client";
 import { useQuery } from "@tanstack/react-query";
 import { format, parseISO } from "date-fns";
@@ -24,23 +24,42 @@ const statusColors = {
 
 export default function LinkInvoiceModal({ open, onClose, onSelect, isSubmitting, currentInvoiceId }) {
   const [searchTerm, setSearchTerm] = useState("");
+  const [debouncedSearch, setDebouncedSearch] = useState("");
 
-  const { data: invoices = [], isLoading } = useQuery({
-    queryKey: ['xeroInvoices'],
-    queryFn: () => base44.entities.XeroInvoice.list('-created_date'),
+  // Debounce search term
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      setDebouncedSearch(searchTerm);
+    }, 300);
+    return () => clearTimeout(timer);
+  }, [searchTerm]);
+
+  // Fetch invoices directly from Xero
+  const { data: xeroData, isLoading, refetch, isFetching } = useQuery({
+    queryKey: ['xeroInvoicesSearch', debouncedSearch],
+    queryFn: async () => {
+      const response = await base44.functions.invoke('searchXeroInvoices', { 
+        search: debouncedSearch 
+      });
+      return response.data;
+    },
     enabled: open
   });
 
-  // Filter out voided and already linked (unless it's linked to current job)
-  const availableInvoices = invoices.filter(inv => 
-    inv.status !== 'VOIDED' && 
-    (inv.id === currentInvoiceId || !inv.job_id)
-  );
+  const invoices = xeroData?.invoices || [];
 
-  const filteredInvoices = availableInvoices.filter(inv =>
-    inv.xero_invoice_number?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    inv.contact_name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    inv.reference?.toLowerCase().includes(searchTerm.toLowerCase())
+  // Also fetch linked invoices from our DB to check which are already linked
+  const { data: linkedInvoices = [] } = useQuery({
+    queryKey: ['linkedXeroInvoices'],
+    queryFn: () => base44.entities.XeroInvoice.filter({ job_id: { $ne: null } }),
+    enabled: open
+  });
+
+  const linkedInvoiceIds = new Set(linkedInvoices.map(inv => inv.xero_invoice_id));
+
+  // Filter out already linked invoices (unless it's the current one)
+  const availableInvoices = invoices.filter(inv => 
+    !linkedInvoiceIds.has(inv.xero_invoice_id) || inv.xero_invoice_id === currentInvoiceId
   );
 
   const handleSelect = (invoice) => {
