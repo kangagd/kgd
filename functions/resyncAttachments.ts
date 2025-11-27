@@ -187,14 +187,22 @@ Deno.serve(async (req) => {
             if (part.filename && part.filename.length > 0) {
               const attachmentId = part.body?.attachmentId;
               if (attachmentId) {
+                // Get Content-ID header for inline images
+                const contentIdHeader = part.headers?.find(h => h.name.toLowerCase() === 'content-id');
+                const contentDisposition = part.headers?.find(h => h.name.toLowerCase() === 'content-disposition');
+                const contentId = contentIdHeader?.value?.replace(/[<>]/g, ''); // Remove < > brackets
+                const isInline = contentDisposition?.value?.toLowerCase().includes('inline') || !!contentId;
+                
                 attachments.push({
                   filename: part.filename,
                   mime_type: part.mimeType,
                   size: parseInt(part.body.size) || 0,
                   attachment_id: attachmentId,
-                  gmail_message_id: gmailMessageId
+                  gmail_message_id: gmailMessageId,
+                  content_id: contentId || null,
+                  is_inline: isInline
                 });
-                console.log(`Found attachment: ${part.filename}`);
+                console.log(`Found attachment: ${part.filename}, ContentID: ${contentId || 'none'}, Inline: ${isInline}`);
               }
             }
             if (part.parts) {
