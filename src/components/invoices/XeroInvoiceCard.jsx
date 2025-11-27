@@ -83,8 +83,25 @@ export default function XeroInvoiceCard({ invoice, onRefreshStatus, onViewInXero
         <div className="flex items-center gap-2 text-[12px] text-[#6B7280] mb-3">
           <Calendar className="w-3 h-3" />
           <span>
-            Issued {invoice.issue_date && format(new Date(invoice.issue_date), 'MMM d, yyyy')}
-            {invoice.due_date && ` • Due ${format(new Date(invoice.due_date), 'MMM d, yyyy')}`}
+            {(() => {
+              try {
+                const issueDate = invoice.issue_date ? new Date(invoice.issue_date) : null;
+                const dueDate = invoice.due_date ? new Date(invoice.due_date) : null;
+                const issueDateValid = issueDate && !isNaN(issueDate.getTime());
+                const dueDateValid = dueDate && !isNaN(dueDate.getTime());
+                
+                let text = '';
+                if (issueDateValid) {
+                  text = `Issued ${format(issueDate, 'MMM d, yyyy')}`;
+                }
+                if (dueDateValid) {
+                  text += issueDateValid ? ` • Due ${format(dueDate, 'MMM d, yyyy')}` : `Due ${format(dueDate, 'MMM d, yyyy')}`;
+                }
+                return text || 'No date available';
+              } catch {
+                return 'Date unavailable';
+              }
+            })()}
           </span>
         </div>
 
