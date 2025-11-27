@@ -84,7 +84,9 @@ export default function EditableFileUpload({
     return url && /\.(mp4|webm|ogg|mov|avi)$/i.test(url);
   };
 
-  const displayFiles = multiple ? files : (files ? [files] : []);
+  // Filter out empty, null, undefined, or invalid URLs
+  const validFiles = (multiple ? files : (files ? [files] : [])).filter(url => url && typeof url === 'string' && url.trim() !== '');
+  const displayFiles = validFiles;
   const isMediaUpload = accept.includes('image') || accept.includes('video');
 
   return (
