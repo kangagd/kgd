@@ -83,16 +83,33 @@ export default function LinkInvoiceModal({ open, onClose, onSelect, isSubmitting
               placeholder="Search by invoice number, customer, or reference..."
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
-              className="pl-9 h-10 border-[#E5E7EB]"
+              className="pl-9 pr-10 h-10 border-[#E5E7EB]"
             />
+            {isFetching && (
+              <Loader2 className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 animate-spin text-[#6B7280]" />
+            )}
           </div>
+
+          <p className="text-[12px] text-[#6B7280] flex-shrink-0">
+            Searching invoices directly from Xero
+          </p>
 
           <div className="flex-1 overflow-y-auto space-y-2 min-h-0">
             {isLoading ? (
               <div className="flex items-center justify-center py-8">
                 <Loader2 className="w-6 h-6 animate-spin text-[#6B7280]" />
+                <span className="ml-2 text-[14px] text-[#6B7280]">Loading from Xero...</span>
               </div>
-            ) : filteredInvoices.length === 0 ? (
+            ) : xeroData?.error ? (
+              <div className="text-center py-8">
+                <FileText className="w-10 h-10 text-red-300 mx-auto mb-2" />
+                <p className="text-[14px] text-red-600 mb-2">Failed to load invoices from Xero</p>
+                <Button variant="outline" size="sm" onClick={() => refetch()}>
+                  <RefreshCw className="w-4 h-4 mr-1" />
+                  Retry
+                </Button>
+              </div>
+            ) : availableInvoices.length === 0 ? (
               <div className="text-center py-8">
                 <FileText className="w-10 h-10 text-[#E5E7EB] mx-auto mb-2" />
                 <p className="text-[14px] text-[#6B7280]">
@@ -100,7 +117,7 @@ export default function LinkInvoiceModal({ open, onClose, onSelect, isSubmitting
                 </p>
               </div>
             ) : (
-              filteredInvoices.map((invoice) => (
+              availableInvoices.map((invoice) => (
                 <div
                   key={invoice.id}
                   onClick={() => handleSelect(invoice)}
