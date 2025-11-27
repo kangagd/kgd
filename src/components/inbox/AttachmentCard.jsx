@@ -81,15 +81,21 @@ export default function AttachmentCard({
         // Resolve the URL
         let urlToSave = resolvedUrl;
         if (!urlToSave) {
-          const result = await base44.functions.invoke('getGmailAttachment', {
-            gmail_message_id: effectiveGmailMessageId,
-            attachment_id: effectiveAttachmentId,
-            filename: attachment.filename,
-            mime_type: attachment.mime_type
-          });
-          if (result.data?.url) {
-            urlToSave = result.data.url;
-            setResolvedUrl(urlToSave);
+          try {
+            const result = await base44.functions.invoke('getGmailAttachment', {
+              gmail_message_id: effectiveGmailMessageId,
+              attachment_id: effectiveAttachmentId,
+              filename: attachment.filename,
+              mime_type: attachment.mime_type
+            });
+            if (result.data?.url) {
+              urlToSave = result.data.url;
+              setResolvedUrl(urlToSave);
+            }
+          } catch (fetchError) {
+            // Silently fail - don't break the UI
+            console.warn('Auto-save: Could not fetch attachment:', attachment.filename);
+            return;
           }
         }
         
@@ -111,7 +117,8 @@ export default function AttachmentCard({
         setSaved(true);
         console.log(`Auto-saved ${attachment.filename} to project as ${isImage ? 'image' : 'document'}`);
       } catch (error) {
-        console.error('Auto-save failed:', error);
+        // Silently fail for auto-save - don't show errors to user
+        console.warn('Auto-save failed:', error.message);
       }
     };
     
