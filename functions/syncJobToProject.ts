@@ -80,8 +80,9 @@ Deno.serve(async (req) => {
 
     return Response.json({
       success: true,
-      message: 'Project updated with Initial Site Visit data',
-      project_id: job.project_id
+      message: isInitialSiteVisit ? 'Project updated with Initial Site Visit data' : 'Project images synced from job',
+      project_id: job.project_id,
+      isInitialSiteVisit
     });
 
   } catch (error) {
