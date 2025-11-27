@@ -12,7 +12,6 @@ import {
   Paperclip,
   Download,
   FileText,
-  Image as ImageIcon,
   Link as LinkIcon,
   X,
   Trash2
@@ -38,14 +37,6 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
-
-const getFileIcon = (mimeType, filename) => {
-  const name = filename?.toLowerCase() || '';
-  const type = mimeType?.toLowerCase() || '';
-  
-  if (type.startsWith('image/') || /\.(jpg|jpeg|png|gif|bmp|svg)$/.test(name)) return ImageIcon;
-  return FileText;
-};
 
 const sanitizeBodyHtml = (html) => {
   if (!html) return html;
