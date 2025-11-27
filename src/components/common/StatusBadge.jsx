@@ -34,19 +34,26 @@ const BADGE_VARIANTS = {
     "Maintenance": "bg-indigo-100 text-indigo-700 hover:bg-indigo-200",
   },
   
-  // Job Types
+  // Job Types - fallback colors when entity color not available
   jobType: {
     "Initial Site Visit": "bg-blue-100 text-blue-700 hover:bg-blue-200",
+    "Initial Site Measure": "bg-blue-100 text-blue-700 hover:bg-blue-200",
     "Investigation / Diagnostics": "bg-slate-100 text-slate-700 hover:bg-slate-200",
     "Repair": "bg-orange-100 text-orange-700 hover:bg-orange-200",
     "Service / Maintenance": "bg-emerald-100 text-emerald-700 hover:bg-emerald-200",
+    "Service": "bg-emerald-100 text-emerald-700 hover:bg-emerald-200",
+    "Maintenance": "bg-emerald-100 text-emerald-700 hover:bg-emerald-200",
     "Final Measure": "bg-cyan-100 text-cyan-700 hover:bg-cyan-200",
     "Installation": "bg-indigo-100 text-indigo-700 hover:bg-indigo-200",
+    "Install": "bg-indigo-100 text-indigo-700 hover:bg-indigo-200",
     "Motor Installation": "bg-purple-100 text-purple-700 hover:bg-purple-200",
     "Remote Programming": "bg-pink-100 text-pink-700 hover:bg-pink-200",
     "Accessory Installation": "bg-amber-100 text-amber-700 hover:bg-amber-200",
     "Call Back": "bg-rose-100 text-rose-700 hover:bg-rose-200",
+    "Callback": "bg-rose-100 text-rose-700 hover:bg-rose-200",
     "Warranty": "bg-zinc-100 text-zinc-700 hover:bg-zinc-200",
+    "Quote Follow-up": "bg-violet-100 text-violet-700 hover:bg-violet-200",
+    "Inspection": "bg-teal-100 text-teal-700 hover:bg-teal-200",
   },
   
   // Job Statuses
