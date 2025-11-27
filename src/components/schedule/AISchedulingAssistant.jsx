@@ -486,7 +486,7 @@ export default function AISchedulingAssistant({ selectedDate, onApplySuggestion 
 
                 {/* Reassignment Suggestions Tab */}
                 <TabsContent value="reassign" className="mt-4 space-y-3">
-                  {data?.reassignmentSuggestions?.length === 0 ? (
+                  {!data?.reassignmentSuggestions || data?.reassignmentSuggestions?.length === 0 ? (
                     <div className="text-center py-8">
                       <CheckCircle className="w-10 h-10 text-green-400 mx-auto mb-2" />
                       <p className="text-sm text-[#6B7280]">All assignments are optimized</p>
