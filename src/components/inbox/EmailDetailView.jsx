@@ -390,42 +390,17 @@ export default function EmailDetailView({
                   <ChevronDown className={`w-4 h-4 text-[#6B7280] transition-transform ${attachmentsExpanded ? 'rotate-180' : ''}`} />
                 </button>
                 {attachmentsExpanded && (
-                  <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
-                    {allAttachments.map((attachment, idx) => {
-                      const FileIcon = getFileIcon(attachment.mime_type, attachment.filename);
-                      const isImage = attachment.mime_type?.startsWith('image/');
-                      
-                      return (
-                        <div
-                          key={idx}
-                          className="flex items-center gap-3 p-3 border border-[#E5E7EB] rounded-lg hover:border-[#FAE008] hover:shadow-sm transition-all cursor-pointer group"
-                          onClick={() => isImage && setPreviewAttachment(attachment)}
-                        >
-                          <div className="w-10 h-10 rounded-lg bg-[#F3F4F6] flex items-center justify-center flex-shrink-0">
-                            <FileIcon className="w-5 h-5 text-[#6B7280]" />
-                          </div>
-                          <div className="flex-1 min-w-0">
-                            <p className="text-[13px] font-medium text-[#111827] truncate">
-                              {attachment.filename}
-                            </p>
-                            <p className="text-[11px] text-[#6B7280]">
-                              {attachment.size ? `${(attachment.size / 1024).toFixed(1)} KB` : ''}
-                            </p>
-                          </div>
-                          <Button
-                            variant="ghost"
-                            size="icon"
-                            asChild
-                            className="h-8 w-8 opacity-0 group-hover:opacity-100 transition-opacity"
-                            onClick={(e) => e.stopPropagation()}
-                          >
-                            <a href={attachment.url} download target="_blank" rel="noopener noreferrer">
-                              <Download className="w-4 h-4" />
-                            </a>
-                          </Button>
-                        </div>
-                      );
-                    })}
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                    {allAttachments.map((attachment, idx) => (
+                      <AttachmentCard
+                        key={idx}
+                        attachment={attachment}
+                        linkedJobId={thread.linked_job_id}
+                        linkedProjectId={thread.linked_project_id}
+                        threadSubject={thread.subject}
+                        gmailMessageId={attachment.gmail_message_id}
+                      />
+                    ))}
                   </div>
                 )}
               </div>
