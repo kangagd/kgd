@@ -133,8 +133,8 @@ export default function Logistics() {
   }, [parts]);
 
   return (
-    <div className="p-6 bg-[#ffffff] min-h-screen">
-      <div className="max-w-7xl mx-auto space-y-6">
+    <div className="p-4 md:p-5 lg:p-10 bg-[#ffffff] min-h-screen">
+      <div className="max-w-7xl mx-auto w-full space-y-6">
         
         {/* Header */}
         <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
@@ -146,10 +146,10 @@ export default function Logistics() {
 
         {/* Stats Cards */}
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-          <Card>
+          <Card className="border border-[#E5E7EB] shadow-sm hover:shadow-md transition-shadow duration-200">
             <CardContent className="p-5 flex items-center gap-4">
-              <div className="w-10 h-10 rounded-lg bg-blue-50 flex items-center justify-center text-blue-600">
-                <Package className="w-5 h-5" />
+              <div className="w-12 h-12 rounded-xl bg-blue-50 flex items-center justify-center text-blue-600">
+                <Package className="w-6 h-6" />
               </div>
               <div>
                 <p className="text-sm font-medium text-[#6B7280]">Active Parts</p>
@@ -158,10 +158,10 @@ export default function Logistics() {
             </CardContent>
           </Card>
           
-          <Card>
+          <Card className="border border-[#E5E7EB] shadow-sm hover:shadow-md transition-shadow duration-200">
             <CardContent className="p-5 flex items-center gap-4">
-              <div className="w-10 h-10 rounded-lg bg-amber-50 flex items-center justify-center text-amber-600">
-                <MapPin className="w-5 h-5" />
+              <div className="w-12 h-12 rounded-xl bg-amber-50 flex items-center justify-center text-amber-600">
+                <MapPin className="w-6 h-6" />
               </div>
               <div>
                 <p className="text-sm font-medium text-[#6B7280]">Delivery Bay</p>
@@ -170,10 +170,10 @@ export default function Logistics() {
             </CardContent>
           </Card>
 
-          <Card>
+          <Card className="border border-[#E5E7EB] shadow-sm hover:shadow-md transition-shadow duration-200">
             <CardContent className="p-5 flex items-center gap-4">
-              <div className="w-10 h-10 rounded-lg bg-purple-50 flex items-center justify-center text-purple-600">
-                <Truck className="w-5 h-5" />
+              <div className="w-12 h-12 rounded-xl bg-purple-50 flex items-center justify-center text-purple-600">
+                <Truck className="w-6 h-6" />
               </div>
               <div>
                 <p className="text-sm font-medium text-[#6B7280]">With Technician</p>
@@ -182,10 +182,10 @@ export default function Logistics() {
             </CardContent>
           </Card>
 
-          <Card>
+          <Card className="border border-[#E5E7EB] shadow-sm hover:shadow-md transition-shadow duration-200">
             <CardContent className="p-5 flex items-center gap-4">
-              <div className="w-10 h-10 rounded-lg bg-red-50 flex items-center justify-center text-red-600">
-                <Clock className="w-5 h-5" />
+              <div className="w-12 h-12 rounded-xl bg-red-50 flex items-center justify-center text-red-600">
+                <Clock className="w-6 h-6" />
               </div>
               <div>
                 <p className="text-sm font-medium text-[#6B7280]">Overdue ETA</p>
@@ -196,42 +196,44 @@ export default function Logistics() {
         </div>
 
         {/* Filters */}
-        <div className="flex flex-col md:flex-row gap-4 bg-white p-4 rounded-xl border border-[#E5E7EB] shadow-sm">
+        <div className="flex flex-col md:flex-row gap-3">
           <div className="relative flex-1">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-[#9CA3AF]" />
+            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-[#6B7280]" />
             <Input
               placeholder="Search by part, project, supplier, or order ref..."
-              className="pl-9 border-[#E5E7EB] bg-[#F9FAFB]"
+              className="pl-9 pr-3 border border-[#E5E7EB] focus:border-[#111827] focus:ring-1 focus:ring-[#111827] transition-all h-10 text-sm rounded-lg w-full bg-white"
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
             />
           </div>
           
-          <Select value={statusFilter} onValueChange={setStatusFilter}>
-            <SelectTrigger className="w-full md:w-[180px] bg-[#F9FAFB]">
-              <SelectValue placeholder="Filter Status" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="active">Active Only</SelectItem>
-              <SelectItem value="all">All Statuses</SelectItem>
-              <SelectItem value="Pending">Pending</SelectItem>
-              <SelectItem value="Ordered">Ordered</SelectItem>
-              <SelectItem value="Back-ordered">Back-ordered</SelectItem>
-              <SelectItem value="Delivered">Delivered</SelectItem>
-            </SelectContent>
-          </Select>
+          <div className="flex gap-3">
+            <Select value={statusFilter} onValueChange={setStatusFilter}>
+              <SelectTrigger className="w-full md:w-[180px] h-10 rounded-lg border border-[#E5E7EB] focus:border-[#111827] focus:ring-1 focus:ring-[#111827]">
+                <SelectValue placeholder="Filter Status" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="active">Active Only</SelectItem>
+                <SelectItem value="all">All Statuses</SelectItem>
+                <SelectItem value="Pending">Pending</SelectItem>
+                <SelectItem value="Ordered">Ordered</SelectItem>
+                <SelectItem value="Back-ordered">Back-ordered</SelectItem>
+                <SelectItem value="Delivered">Delivered</SelectItem>
+              </SelectContent>
+            </Select>
 
-          <Select value={locationFilter} onValueChange={setLocationFilter}>
-            <SelectTrigger className="w-full md:w-[180px] bg-[#F9FAFB]">
-              <SelectValue placeholder="Filter Location" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="all">All Locations</SelectItem>
-              {Object.keys(LOCATION_COLORS).map(loc => (
-                <SelectItem key={loc} value={loc}>{loc}</SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
+            <Select value={locationFilter} onValueChange={setLocationFilter}>
+              <SelectTrigger className="w-full md:w-[180px] h-10 rounded-lg border border-[#E5E7EB] focus:border-[#111827] focus:ring-1 focus:ring-[#111827]">
+                <SelectValue placeholder="Filter Location" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">All Locations</SelectItem>
+                {Object.keys(LOCATION_COLORS).map(loc => (
+                  <SelectItem key={loc} value={loc}>{loc}</SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
         </div>
 
         {/* Parts Table */}
