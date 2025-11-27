@@ -473,11 +473,15 @@ export default function Inbox() {
                   toast.info('Resyncing attachments for all emails...');
                   try {
                     const result = await base44.functions.invoke('resyncAttachments', {});
-                    toast.success(`Resynced attachments: ${result.data?.updated || 0} emails updated`);
-                    queryClient.invalidateQueries({ queryKey: ['allEmailMessages'] });
+                    if (result.data?.error) {
+                      toast.error(`Resync failed: ${result.data.error}`);
+                    } else {
+                      toast.success(`Resynced attachments: ${result.data?.updated || 0} emails updated`);
+                      queryClient.invalidateQueries({ queryKey: ['allEmailMessages'] });
+                    }
                   } catch (error) {
-                    toast.error('Failed to resync attachments');
-                    console.error(error);
+                    toast.error(`Failed to resync: ${error?.response?.data?.error || error.message || 'Unknown error'}`);
+                    console.error('Resync error:', error);
                   }
                 }}
                 size="sm"
