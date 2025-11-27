@@ -331,7 +331,13 @@ Deno.serve(async (req) => {
           }
           
           console.log(`Creating message for thread ${threadId}, gmail_message_id: ${message.id}`);
-          await base44.asServiceRole.entities.EmailMessage.create(messageData);
+          try {
+            const createdMessage = await base44.asServiceRole.entities.EmailMessage.create(messageData);
+            console.log(`>>> MESSAGE CREATED: ${createdMessage.id}`);
+          } catch (createError) {
+            console.error(`>>> FAILED TO CREATE MESSAGE: ${createError.message}`);
+            throw createError;
+          }
           
           // Update thread message count
           try {
