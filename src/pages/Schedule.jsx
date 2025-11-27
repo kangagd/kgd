@@ -519,9 +519,15 @@ export default function Schedule() {
                               onClick={() => setModalJob(job)}
                               className={`text-xs p-1.5 rounded cursor-grab active:cursor-grabbing transition-all ${
                                 dragSnapshot.isDragging 
-                                  ? 'bg-[#FAE008] shadow-lg ring-2 ring-[#FAE008] rotate-1 opacity-90' 
-                                  : 'bg-[#F3F4F6] hover:bg-[#E5E7EB]'
+                                  ? 'shadow-lg ring-2 ring-[#FAE008] rotate-1 opacity-90' 
+                                  : 'hover:opacity-80'
                               }`}
+                              style={{
+                                backgroundColor: dragSnapshot.isDragging 
+                                  ? '#FAE008' 
+                                  : (jobTypeColorMap[job.job_type_id] ? `${jobTypeColorMap[job.job_type_id]}20` : '#F3F4F6'),
+                                borderLeft: `3px solid ${jobTypeColorMap[job.job_type_id] || '#6B7280'}`
+                              }}
                             >
                               <div className="font-medium text-[#111827] truncate">
                                 {job.scheduled_time || ''} #{job.job_number}
