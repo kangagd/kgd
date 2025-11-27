@@ -17,7 +17,7 @@ export default function AIEmailSuggestionsBanner({
   const [suggestions, setSuggestions] = useState(null);
   const [emailThread, setEmailThread] = useState(null);
   const [dismissed, setDismissed] = useState(false);
-  const [minimized, setMinimized] = useState(false);
+  const [minimized, setMinimized] = useState(true);
 
   useEffect(() => {
     if (emailThreadId) {
