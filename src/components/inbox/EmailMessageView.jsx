@@ -6,27 +6,35 @@ import { base44 } from "@/api/base44Client";
 import AttachmentCard from "./AttachmentCard";
 
 function AttachmentsSection({ attachments, linkedJobId, linkedProjectId, threadSubject, gmailMessageId }) {
+  const [isExpanded, setIsExpanded] = useState(false);
+  
   if (attachments.length === 0) return null;
   
   return (
     <div className="mt-3 pt-3 border-t border-[#F3F4F6]">
-      <div className="flex items-center gap-2 text-[13px] text-[#6B7280] mb-2">
+      <button
+        onClick={() => setIsExpanded(!isExpanded)}
+        className="flex items-center gap-2 text-[13px] text-[#6B7280] hover:text-[#111827] transition-colors w-full"
+      >
+        <ChevronRight className={`w-4 h-4 transition-transform ${isExpanded ? 'rotate-90' : ''}`} />
         <Paperclip className="w-4 h-4" />
         <span className="font-medium">{attachments.length} Attachment{attachments.length !== 1 ? 's' : ''}</span>
-      </div>
+      </button>
       
-      <div className="mt-2 grid grid-cols-1 sm:grid-cols-2 gap-2">
-        {attachments.map((attachment, idx) => (
-          <AttachmentCard
-            key={idx}
-            attachment={attachment}
-            linkedJobId={linkedJobId}
-            linkedProjectId={linkedProjectId}
-            threadSubject={threadSubject}
-            gmailMessageId={attachment.gmail_message_id || gmailMessageId}
-          />
-        ))}
-      </div>
+      {isExpanded && (
+        <div className="mt-3 grid grid-cols-1 sm:grid-cols-2 gap-2">
+          {attachments.map((attachment, idx) => (
+            <AttachmentCard
+              key={idx}
+              attachment={attachment}
+              linkedJobId={linkedJobId}
+              linkedProjectId={linkedProjectId}
+              threadSubject={threadSubject}
+              gmailMessageId={attachment.gmail_message_id || gmailMessageId}
+            />
+          ))}
+        </div>
+      )}
     </div>
   );
 }
