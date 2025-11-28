@@ -127,11 +127,11 @@ Deno.serve(async (req) => {
             job = await base44.asServiceRole.entities.Job.get(jobId);
         } catch (e) {
             console.error(`Failed to get Job ${jobId}:`, e);
-            return Response.json({ error: 'Job not found or error retrieving it' }, { status: 404 });
+            return Response.json({ error: `Job with ID ${jobId} not found` }, { status: 404 });
         }
 
         if (!job) {
-            return Response.json({ error: 'Job not found' }, { status: 404 });
+            return Response.json({ error: `Job with ID ${jobId} returned null` }, { status: 404 });
         }
 
         // 3. Update CheckInOut record

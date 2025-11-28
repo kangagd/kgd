@@ -319,9 +319,11 @@ export default function JobDetails({ job: initialJob, onClose, onStatusChange, o
       queryClient.invalidateQueries({ queryKey: ['project', job.project_id] });
     },
     onError: (error) => {
-      setValidationError(error.message);
+      const errorMsg = error?.response?.data?.error || error?.message || 'Failed to check out';
+      setValidationError(errorMsg);
+      toast.error(errorMsg);
     }
-  });
+    });
 
   const updateJobMutation = useMutation({
     mutationFn: ({ field, value }) => base44.entities.Job.update(job.id, { [field]: value }),
