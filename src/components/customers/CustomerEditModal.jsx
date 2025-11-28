@@ -14,10 +14,15 @@ import JobModalView from "../jobs/JobModalView";
 import { createPageUrl } from "@/utils";
 
 const statusColors = {
-  scheduled: "bg-blue-100 text-blue-800",
-  in_progress: "bg-orange-100 text-orange-800",
-  completed: "bg-green-100 text-green-800",
-  cancelled: "bg-slate-100 text-slate-800"
+  "Open": "bg-slate-100 text-slate-700 border-slate-200",
+  "Scheduled": "bg-blue-100 text-blue-700 border-blue-200",
+  "Completed": "bg-emerald-100 text-emerald-700 border-emerald-200",
+  "Cancelled": "bg-red-100 text-red-700 border-red-200",
+  // Legacy support
+  "open": "bg-slate-100 text-slate-700 border-slate-200",
+  "scheduled": "bg-blue-100 text-blue-700 border-blue-200",
+  "completed": "bg-emerald-100 text-emerald-700 border-emerald-200",
+  "cancelled": "bg-red-100 text-red-700 border-red-200"
 };
 
 export default function CustomerEditModal({ customer, open, onClose, onSubmit, isSubmitting }) {
