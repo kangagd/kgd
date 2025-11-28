@@ -51,28 +51,33 @@ Deno.serve(async (req) => {
         if (job.scheduled_date) {
             const dateStr = job.scheduled_date;
             const timeStr = job.scheduled_time || '09:00';
-            scheduledDatetime = `${dateStr}T${timeStr}:00.000Z`;
+            // Simple date parsing to avoid issues
+            scheduledDatetime = new Date(`${dateStr}T${timeStr}:00`).toISOString();
         }
 
-        const jobSummary = await base44.asServiceRole.entities.JobSummary.create({
+        const summaryData = {
             job_id: jobId,
             project_id: job.project_id || null,
             job_number: job.job_number,
             job_type: job.job_type_name || null,
             scheduled_datetime: scheduledDatetime,
-            technician_email: user.email,
-            technician_name: user.full_name,
+            technician_email: user.email || "",
+            technician_name: user.full_name || user.email || "Unknown Technician",
             check_in_time: checkIn.check_in_time,
             check_out_time: checkOutTime,
-            duration_minutes: durationMinutes,
+            duration_minutes: durationMinutes || 0,
             overview: overview || "",
             next_steps: nextSteps || "",
             communication_with_client: communicationWithClient || "",
             outcome: outcome || "",
             status_at_checkout: newStatus,
             photo_urls: imageUrls || [],
-            measurements: measurements || null
-        });
+            measurements: measurements || {}
+        };
+
+        console.log("Creating JobSummary with data:", JSON.stringify(summaryData));
+
+        const jobSummary = await base44.asServiceRole.entities.JobSummary.create(summaryData);
 
         // Update Job
         await base44.asServiceRole.entities.Job.update(jobId, {

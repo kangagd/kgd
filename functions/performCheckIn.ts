@@ -45,12 +45,18 @@ Deno.serve(async (req) => {
 
         // Perform Check In
         const checkInTime = new Date().toISOString();
-        const checkIn = await base44.asServiceRole.entities.CheckInOut.create({
+        
+        // Ensure fields are defined
+        const checkInData = {
             job_id: jobId,
-            technician_email: user.email,
-            technician_name: user.full_name,
+            technician_email: user.email || "",
+            technician_name: user.full_name || user.email || "Unknown Technician",
             check_in_time: checkInTime
-        });
+        };
+
+        console.log("Creating CheckInOut with data:", JSON.stringify(checkInData));
+
+        const checkIn = await base44.asServiceRole.entities.CheckInOut.create(checkInData);
 
         // Update Job Status
         if (newStatus) {
