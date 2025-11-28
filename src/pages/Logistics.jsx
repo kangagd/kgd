@@ -239,33 +239,38 @@ export default function Logistics() {
         {/* Parts Table */}
         <div className="bg-white border border-[#E5E7EB] rounded-xl shadow-sm overflow-hidden">
           <div className="overflow-x-auto">
-            <table className="w-full">
-              <thead className="bg-[#F9FAFB] border-b border-[#E5E7EB]">
+            <table className="w-full text-left text-sm">
+              <thead className="bg-gray-50/50 border-b border-gray-200">
                 <tr>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-[#6B7280] uppercase tracking-wider">Part Details</th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-[#6B7280] uppercase tracking-wider">Project & Customer</th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-[#6B7280] uppercase tracking-wider">Dates</th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-[#6B7280] uppercase tracking-wider">Status</th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-[#6B7280] uppercase tracking-wider">Location</th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-[#6B7280] uppercase tracking-wider">Logistics</th>
+                  <th className="px-6 py-4 font-semibold text-gray-900">Part Details</th>
+                  <th className="px-6 py-4 font-semibold text-gray-900">Project & Customer</th>
+                  <th className="px-6 py-4 font-semibold text-gray-900">Dates</th>
+                  <th className="px-6 py-4 font-semibold text-gray-900">Status</th>
+                  <th className="px-6 py-4 font-semibold text-gray-900">Location</th>
+                  <th className="px-6 py-4 font-semibold text-gray-900">Logistics</th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-[#E5E7EB]">
+              <tbody className="divide-y divide-gray-200">
                 {partsLoading ? (
                   <tr>
-                    <td colSpan="6" className="px-6 py-10 text-center text-[#6B7280]">
-                      Loading parts data...
+                    <td colSpan="6" className="px-6 py-12 text-center text-gray-500">
+                      <div className="flex flex-col items-center justify-center gap-2">
+                        <div className="w-8 h-8 border-2 border-gray-200 border-t-blue-600 rounded-full animate-spin" />
+                        <p>Loading parts data...</p>
+                      </div>
                     </td>
                   </tr>
                 ) : filteredParts.length === 0 ? (
                   <tr>
-                    <td colSpan="6" className="px-6 py-10 text-center">
-                      <div className="flex flex-col items-center justify-center">
-                        <div className="w-12 h-12 bg-[#F3F4F6] rounded-full flex items-center justify-center mb-3">
-                          <Search className="w-6 h-6 text-[#9CA3AF]" />
+                    <td colSpan="6" className="px-6 py-12 text-center">
+                      <div className="flex flex-col items-center justify-center max-w-sm mx-auto">
+                        <div className="w-12 h-12 bg-gray-100 rounded-full flex items-center justify-center mb-4">
+                          <Search className="w-6 h-6 text-gray-400" />
                         </div>
-                        <p className="text-[#111827] font-medium">No parts found</p>
-                        <p className="text-[#6B7280] text-sm mt-1">Try adjusting your search or filters</p>
+                        <h3 className="text-gray-900 font-medium mb-1">No parts found</h3>
+                        <p className="text-gray-500 text-sm">
+                          No parts match your current search filters. Try adjusting your search terms or clearing filters.
+                        </p>
                       </div>
                     </td>
                   </tr>
@@ -275,64 +280,78 @@ export default function Logistics() {
                     const linkedJobs = (part.linked_logistics_jobs || []).map(id => jobMap[id]).filter(Boolean);
                     
                     return (
-                      <tr key={part.id} className="hover:bg-[#F9FAFB] transition-colors group">
-                        <td className="px-6 py-4">
+                      <tr key={part.id} className="hover:bg-gray-50/50 transition-colors group">
+                        <td className="px-6 py-4 align-top">
                           <button 
                             onClick={() => setSelectedPart(part)}
-                            className="text-left group-hover:text-blue-600 transition-colors w-full"
+                            className="text-left w-full group/btn"
                           >
-                            <div className="font-medium text-[#111827] text-[15px]">{part.category}</div>
-                            <div className="text-sm text-[#6B7280] mt-0.5">{part.supplier_name || "No Supplier"}</div>
-                            {part.order_reference && (
-                                <div className="text-xs text-[#9CA3AF] mt-0.5">Ref: {part.order_reference}</div>
-                            )}
+                            <div className="font-medium text-gray-900 group-hover/btn:text-blue-600 transition-colors text-base">
+                              {part.category}
+                            </div>
+                            <div className="text-sm text-gray-500 mt-1 flex items-center gap-2">
+                              <span className="truncate max-w-[200px]">{part.supplier_name || "No Supplier"}</span>
+                              {part.order_reference && (
+                                <>
+                                  <span className="text-gray-300">•</span>
+                                  <span className="font-mono text-xs bg-gray-100 px-1.5 py-0.5 rounded text-gray-600">
+                                    {part.order_reference}
+                                  </span>
+                                </>
+                              )}
+                            </div>
                           </button>
                         </td>
-                        <td className="px-6 py-4">
+                        <td className="px-6 py-4 align-top">
                           {project ? (
                             <Link 
                               to={`${createPageUrl("Projects")}?projectId=${project.id}`}
-                              className="block hover:underline"
+                              className="block group/link"
                             >
-                              <div className="text-sm font-medium text-[#111827] truncate max-w-[200px]">
+                              <div className="font-medium text-gray-900 group-hover/link:text-blue-600 transition-colors truncate max-w-[200px]">
                                 {project.title}
                               </div>
-                              <div className="text-sm text-[#6B7280]">{project.customer_name}</div>
+                              <div className="text-sm text-gray-500 mt-0.5">
+                                {project.customer_name}
+                              </div>
                             </Link>
                           ) : (
-                            <span className="text-sm text-[#9CA3AF] italic">Unassigned Project</span>
+                            <span className="text-sm text-gray-400 italic">Unassigned Project</span>
                           )}
                         </td>
-                        <td className="px-6 py-4">
-                          <div className="text-sm space-y-1">
+                        <td className="px-6 py-4 align-top">
+                          <div className="flex flex-col gap-1.5">
                             {part.order_date && (
-                              <div className="text-[#6B7280]">
-                                Ord: <span className="text-[#111827]">{format(new Date(part.order_date), 'MMM d')}</span>
+                              <div className="text-sm text-gray-600 flex justify-between gap-4">
+                                <span className="text-gray-400 text-xs uppercase tracking-wide font-medium">Ordered</span>
+                                <span className="font-medium">{format(new Date(part.order_date), 'MMM d')}</span>
                               </div>
                             )}
                             {part.eta && (
-                              <div className="flex items-center gap-1.5">
-                                <span className="text-[#6B7280]">ETA:</span>
-                                <span className={`font-medium ${
-                                  new Date(part.eta) < new Date() && part.status !== 'Delivered' 
-                                    ? 'text-red-600' 
-                                    : 'text-[#111827]'
-                                }`}>
-                                  {format(new Date(part.eta), 'MMM d')}
-                                </span>
-                                {new Date(part.eta) < new Date() && part.status !== 'Delivered' && (
-                                  <AlertCircle className="w-3 h-3 text-red-500" />
-                                )}
+                              <div className="text-sm flex justify-between gap-4">
+                                <span className="text-gray-400 text-xs uppercase tracking-wide font-medium">ETA</span>
+                                <div className="flex items-center gap-1.5">
+                                  <span className={`font-medium ${
+                                    new Date(part.eta) < new Date() && part.status !== 'Delivered' 
+                                      ? 'text-red-600' 
+                                      : 'text-gray-900'
+                                  }`}>
+                                    {format(new Date(part.eta), 'MMM d')}
+                                  </span>
+                                  {new Date(part.eta) < new Date() && part.status !== 'Delivered' && (
+                                    <AlertCircle className="w-3.5 h-3.5 text-red-500" />
+                                  )}
+                                </div>
                               </div>
                             )}
                           </div>
                         </td>
-                        <td className="px-6 py-4">
+                        <td className="px-6 py-4 align-top">
                           <Select 
                             value={part.status} 
                             onValueChange={(val) => handleStatusChange(part.id, val)}
                           >
-                            <SelectTrigger className={`h-8 w-[140px] text-xs font-medium border-0 ${STATUS_COLORS[part.status] || 'bg-gray-100'}`}>
+                            <SelectTrigger className={`h-9 border-0 font-medium text-xs w-[140px] ${STATUS_COLORS[part.status] || 'bg-gray-100'} shadow-sm`}>
                               <SelectValue />
                             </SelectTrigger>
                             <SelectContent>
@@ -344,14 +363,14 @@ export default function Logistics() {
                             </SelectContent>
                           </Select>
                         </td>
-                        <td className="px-6 py-4">
+                        <td className="px-6 py-4 align-top">
                           <Select 
                             value={part.location} 
                             onValueChange={(val) => handleLocationChange(part.id, val)}
                           >
-                            <SelectTrigger className={`h-8 w-[160px] text-xs border-0 ${LOCATION_COLORS[part.location] || 'bg-gray-50'}`}>
+                            <SelectTrigger className={`h-9 border-0 text-xs w-[170px] ${LOCATION_COLORS[part.location] || 'bg-gray-50'} shadow-sm`}>
                               <div className="flex items-center gap-2 truncate">
-                                <MapPin className="w-3 h-3 opacity-50 flex-shrink-0" />
+                                <MapPin className="w-3.5 h-3.5 opacity-50 flex-shrink-0" />
                                 <SelectValue />
                               </div>
                             </SelectTrigger>
@@ -364,22 +383,22 @@ export default function Logistics() {
                             </SelectContent>
                           </Select>
                         </td>
-                        <td className="px-6 py-4">
+                        <td className="px-6 py-4 align-top">
                           {linkedJobs.length > 0 ? (
-                            <div className="flex flex-col gap-1">
+                            <div className="flex flex-col gap-1.5">
                               {linkedJobs.map(job => (
                                 <Link 
                                   key={job.id}
                                   to={`${createPageUrl("Jobs")}?jobId=${job.id}`}
-                                  className="inline-flex items-center gap-1.5 text-xs bg-slate-50 hover:bg-slate-100 text-slate-700 px-2 py-1 rounded border border-slate-200 transition-colors w-fit"
+                                  className="inline-flex items-center gap-2 text-xs bg-white hover:bg-gray-50 text-gray-700 px-2.5 py-1.5 rounded-md border border-gray-200 transition-all hover:border-blue-300 hover:text-blue-600 w-fit shadow-sm"
                                 >
-                                  <LinkIcon className="w-3 h-3 text-slate-400" />
-                                  #{job.job_number}
+                                  <LinkIcon className="w-3 h-3 opacity-50" />
+                                  <span className="font-medium">#{job.job_number}</span>
                                 </Link>
                               ))}
                             </div>
                           ) : (
-                            <span className="text-xs text-[#9CA3AF]">-</span>
+                            <span className="text-xs text-gray-400 font-medium">-</span>
                           )}
                         </td>
                       </tr>
