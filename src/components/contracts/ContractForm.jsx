@@ -250,6 +250,7 @@ export default function ContractForm({ contract, onSubmit, onCancel, isSubmittin
                   <SelectItem value="Builder">Builder</SelectItem>
                   <SelectItem value="Real Estate">Real Estate</SelectItem>
                   <SelectItem value="Supplier">Supplier</SelectItem>
+                  <SelectItem value="Other">Other</SelectItem>
                 </SelectContent>
               </Select>
             </div>

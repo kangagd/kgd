@@ -26,6 +26,7 @@ const organisationTypeColors = {
   "Builder": "bg-blue-100 text-blue-700 border-blue-200",
   "Real Estate": "bg-green-100 text-green-700 border-green-200",
   "Supplier": "bg-orange-100 text-orange-700 border-orange-200",
+  "Other": "bg-slate-100 text-slate-700 border-slate-200",
 };
 
 export default function OrganisationDetails({ organisation, onClose, onEdit, onDelete }) {
