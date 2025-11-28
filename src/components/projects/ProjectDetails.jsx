@@ -11,6 +11,7 @@ import { useNavigate, Link } from "react-router-dom";
 import { createPageUrl } from "@/utils";
 import { toast } from "sonner";
 import EditableField from "../jobs/EditableField";
+import EditableFileUpload from "../jobs/EditableFileUpload";
 import RichTextField from "../common/RichTextField";
 import { TechnicianAvatarGroup } from "../common/TechnicianAvatar";
 import AddressAutocomplete from "../common/AddressAutocomplete";
@@ -746,34 +747,6 @@ Format as HTML bullet points using <ul> and <li> tags. Include only the most cri
           field: 'other_documents', 
           value: [...currentDocs, ...newUrls] 
         });
-      } else if (type === 'image') {
-        // Upload multiple images/videos
-        const uploadPromises = files.map(file => base44.integrations.Core.UploadFile({ file }));
-        const results = await Promise.all(uploadPromises);
-        const newUrls = results.map(r => r.file_url);
-        
-        const currentImages = project.image_urls || [];
-        updateProjectMutation.mutate({ 
-          field: 'image_urls', 
-          value: [...currentImages, ...newUrls] 
-        });
-
-        // Create Photo records for each uploaded file
-        const user = await base44.auth.me();
-        for (const url of newUrls) {
-          await base44.entities.Photo.create({
-            image_url: url,
-            project_id: project.id,
-            project_name: project.title,
-            customer_id: project.customer_id,
-            customer_name: project.customer_name,
-            address: project.address,
-            uploaded_at: new Date().toISOString(),
-            technician_email: user.email,
-            technician_name: user.full_name
-          });
-        }
-        queryClient.invalidateQueries({ queryKey: ['photos'] });
       } else {
         const { file_url } = await base44.integrations.Core.UploadFile({ file: files[0] });
         
@@ -790,10 +763,54 @@ Format as HTML bullet points using <ul> and <li> tags. Include only the most cri
     }
   };
 
-  const handleRemoveImage = (indexToRemove) => {
-    const updatedImages = project.image_urls.filter((_, index) => index !== indexToRemove);
-    updateProjectMutation.mutate({ field: 'image_urls', value: updatedImages });
-    setSelectedImage(null);
+  const handleImagesChange = async (urls) => {
+    // Find removed images and delete corresponding Photo records
+    const currentUrls = project.image_urls || [];
+    const removedUrls = currentUrls.filter(url => !urls.includes(url));
+
+    if (removedUrls.length > 0) {
+      try {
+        const photos = await base44.entities.Photo.filter({ project_id: project.id });
+        const photosToDelete = photos.filter(p => removedUrls.includes(p.image_url));
+        
+        if (photosToDelete.length > 0) {
+          await Promise.all(photosToDelete.map(p => base44.entities.Photo.delete(p.id)));
+          queryClient.invalidateQueries({ queryKey: ['photos'] });
+          toast.success(`Deleted ${photosToDelete.length} photo(s)`);
+        }
+      } catch (error) {
+        console.error("Error deleting photo records:", error);
+      }
+    }
+
+    // Update project with new images
+    updateProjectMutation.mutate({ field: 'image_urls', value: urls });
+    
+    // Create Photo records for any new images
+    const existingUrls = project.image_urls || [];
+    const newUrls = Array.isArray(urls) ? urls.filter(url => !existingUrls.includes(url)) : [];
+    
+    if (newUrls.length > 0) {
+      const user = await base44.auth.me();
+      for (const url of newUrls) {
+        try {
+          await base44.entities.Photo.create({
+            image_url: url,
+            project_id: project.id,
+            project_name: project.title,
+            customer_id: project.customer_id,
+            customer_name: project.customer_name,
+            address: project.address,
+            uploaded_at: new Date().toISOString(),
+            technician_email: user.email,
+            technician_name: user.full_name
+          });
+        } catch (error) {
+          console.error('Failed to create photo record:', error);
+        }
+      }
+      queryClient.invalidateQueries({ queryKey: ['photos'] });
+    }
   };
 
   const handleAddDoor = () => {
@@ -1021,85 +1038,16 @@ Format as HTML bullet points using <ul> and <li> tags. Include only the most cri
               <CardHeader className="bg-white px-4 py-3 border-b border-[#E5E7EB]">
                 <h3 className="text-[16px] font-semibold text-[#111827] leading-[1.2]">Media</h3>
               </CardHeader>
-              <CardContent className="p-3 space-y-3">
-                {project.image_urls && project.image_urls.length > 0 && (
-                  <div className="grid grid-cols-2 gap-2">
-                    {project.image_urls.slice(0, 4).map((url, index) => {
-                      const isVideo = url.match(/\.(mp4|mov|webm|avi|mkv)$/i) || url.includes('video');
-                      return (
-                        <div key={index} className="relative group">
-                          <button
-                            onClick={() => setPreviewFile({
-                              url,
-                              name: isVideo ? `Project Video ${index + 1}` : `Project Image ${index + 1}`,
-                              type: isVideo ? 'video' : 'image',
-                              projectName: project.title,
-                              address: project.address,
-                              index,
-                              allImages: project.image_urls
-                            })}
-                            className="block w-full"
-                          >
-                            {isVideo ? (
-                              <div className="w-full h-20 bg-slate-100 rounded-lg border border-[#E5E7EB] hover:border-[#FAE008] transition-all cursor-pointer flex items-center justify-center">
-                                <div className="w-8 h-8 bg-[#111827]/70 rounded-full flex items-center justify-center">
-                                  <svg className="w-4 h-4 text-white ml-0.5" fill="currentColor" viewBox="0 0 24 24">
-                                    <path d="M8 5v14l11-7z"/>
-                                  </svg>
-                                </div>
-                              </div>
-                            ) : (
-                              <img 
-                                src={url} 
-                                alt={`Project image ${index + 1}`} 
-                                className="w-full h-20 object-cover rounded-lg border border-[#E5E7EB] hover:border-[#FAE008] transition-all cursor-pointer"
-                              />
-                            )}
-                          </button>
-                        </div>
-                      );
-                    })}
-                  </div>
-                )}
-
-                {project.image_urls && project.image_urls.length > 4 && (
-                  <button
-                    onClick={() => setPreviewFile({
-                      url: project.image_urls[4],
-                      name: `Project Media 5`,
-                      type: project.image_urls[4].match(/\.(mp4|mov|webm|avi|mkv)$/i) ? 'video' : 'image',
-                      projectName: project.title,
-                      address: project.address,
-                      index: 4,
-                      allImages: project.image_urls
-                    })}
-                    className="text-[12px] text-[#6B7280] text-center w-full hover:text-[#111827] transition-colors"
-                  >
-                    +{project.image_urls.length - 4} more
-                  </button>
-                )}
-
-                <label className="block">
-                  <Button
-                    type="button"
-                    variant="outline"
-                    className="w-full h-9 text-sm"
-                    disabled={uploading}
-                    asChild
-                  >
-                    <span>
-                      <Upload className="w-4 h-4 mr-2" />
-                      {uploading ? 'Uploading...' : 'Add Media'}
-                    </span>
-                  </Button>
-                  <input
-                    type="file"
-                    accept="image/*,video/*"
-                    multiple
-                    className="hidden"
-                    onChange={(e) => handleFileUpload(e, 'image')}
-                  />
-                </label>
+              <CardContent className="p-3">
+                <EditableFileUpload
+                  files={project.image_urls || []}
+                  onFilesChange={handleImagesChange}
+                  accept="image/*,video/*"
+                  multiple={true}
+                  icon={ImageIcon}
+                  label=""
+                  emptyText="Upload media" 
+                />
               </CardContent>
             </Card>
 
@@ -1690,7 +1638,7 @@ Format as HTML bullet points using <ul> and <li> tags. Include only the most cri
         file={previewFile}
         canDelete={user?.role === 'admin'}
         onDelete={previewFile?.index !== undefined 
-          ? () => handleRemoveImage(previewFile.index)
+          ? () => handleImagesChange(project.image_urls.filter((_, i) => i !== previewFile.index))
           : previewFile?.name === 'Quote'
             ? () => updateProjectMutation.mutate({ field: 'quote_url', value: null })
             : previewFile?.name === 'Invoice'
