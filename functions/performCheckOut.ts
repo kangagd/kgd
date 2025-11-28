@@ -180,15 +180,21 @@ Deno.serve(async (req) => {
             return Response.json({ error: `Job with ID ${jobId} returned null` }, { status: 404 });
         }
 
-        // 3. Update CheckInOut record
-        try {
-            await base44.asServiceRole.entities.CheckInOut.update(checkInId, {
-                check_out_time: checkOutTime,
-                duration_hours: Number(durationHours) || 0
-            });
-        } catch (e) {
-            console.error("Failed to update CheckInOut:", e);
-            return Response.json({ error: `Failed to update check-in record: ${e.message}` }, { status: 500 });
+        // 3. Update CheckInOut record (Skip if ghost)
+        if (checkInId) {
+            try {
+                await base44.asServiceRole.entities.CheckInOut.update(checkInId, {
+                    check_out_time: checkOutTime,
+                    duration_hours: Number(durationHours) || 0
+                });
+            } catch (e) {
+                console.error("Failed to update CheckInOut:", e);
+                // If update fails here, we should probably STILL continue to Summary creation 
+                // since we want to ensure the job status gets updated.
+                console.warn("Continuing with checkout despite CheckInOut update failure...");
+            }
+        } else {
+            console.log("Skipping CheckInOut record update (Ghost Checkout)");
         }
 
         // 4. Create JobSummary
