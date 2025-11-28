@@ -69,7 +69,7 @@ export default function Dashboard() {
   const today = new Date().toISOString().split('T')[0];
   const tomorrow = new Date(Date.now() + 86400000).toISOString().split('T')[0];
 
-  const todayJobs = jobs.filter(j => j.scheduled_date === today && !j.deleted_at);
+  const todayJobs = jobs.filter(j => j.scheduled_date === today && !j.deleted_at && j.status !== 'Cancelled');
   const tomorrowJobs = jobs.filter(j => j.scheduled_date === tomorrow && !j.deleted_at);
   const upcomingJobs = jobs.filter(j => {
     const scheduledDate = j.scheduled_date;
