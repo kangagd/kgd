@@ -52,6 +52,7 @@ import {
 "@/components/ui/alert-dialog";
 import TasksPanel from "../tasks/TasksPanel";
 import QuotesSection from "../quotes/QuotesSection";
+import LinkedPartsCard from "./LinkedPartsCard";
 
 const statusColors = {
   "Open": "bg-slate-100 text-slate-700 border-slate-200",
@@ -1189,6 +1190,9 @@ export default function JobDetails({ job: initialJob, onClose, onStatusChange, o
             <TabsContent value="details" className="space-y-4 mt-3">
               {/* Duplicate Warning */}
               <DuplicateWarningCard entityType="Job" record={job} />
+
+              {/* Linked Parts Card - Logistics */}
+              <LinkedPartsCard job={job} />
 
               {/* Tasks Panel */}
               <Card className="border border-[#E5E7EB] shadow-sm rounded-lg p-4">

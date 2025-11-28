@@ -1,6 +1,6 @@
 import React, { useState } from "react";
 import { Card, CardContent } from "@/components/ui/card";
-import { MapPin, Calendar, Clock, ChevronDown, Eye, Bookmark, BookmarkCheck } from "lucide-react";
+import { MapPin, Calendar, Clock, ChevronDown, Eye, Bookmark, BookmarkCheck, Truck } from "lucide-react";
 import { format, parseISO } from "date-fns";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
@@ -135,6 +135,13 @@ export default function JobCard({ job, onClick, onViewDetails }) {
           {/* Type badges and Technicians */}
           <div className="flex items-center justify-between gap-2 flex-wrap">
             <div className="flex items-center gap-2 flex-wrap">
+              {/* Logistics Badge */}
+              {(job.job_type_name || job.job_type || "").match(/(Delivery|Pickup|Return)/i) && (
+                <Badge className="bg-slate-800 text-white border-0 flex items-center gap-1 px-2 pointer-events-none">
+                  <Truck className="w-3 h-3" />
+                  Logistics
+                </Badge>
+              )}
               {(job.job_type_name || job.job_type) && (
                 <JobTypeBadge value={job.job_type_name || job.job_type} className="pointer-events-none" />
               )}

@@ -1,14 +1,13 @@
-import React, { useState, useEffect, useRef } from "react";
+import React, { useState, useEffect } from "react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
-import { Plus, Edit, Trash2, Upload, X, FileText } from "lucide-react";
+import { Plus, Edit, Trash2, Link as LinkIcon, MapPin, Truck, CheckCircle2, AlertTriangle } from "lucide-react";
 import { base44 } from "@/api/base44Client";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import PartDetailModal from "./PartDetailModal";
-import { Link as LinkIcon, MapPin, Truck } from "lucide-react";
+import { format, isPast, parseISO } from "date-fns";
+import { toast } from "sonner";
 
 const statusColors = {
   "Pending": "bg-slate-100 text-slate-800 border-slate-200",
@@ -28,6 +27,9 @@ const locationColors = {
   "At Client Site": "bg-green-50 text-green-600"
 };
 
+// Flow steps for progress bar
+const FLOW_STEPS = ["On Order", "At Delivery Bay", "In Warehouse Storage", "With Technician", "At Client Site"];
+
 export default function PartsSection({ projectId, autoExpand = false }) {
   const [showModal, setShowModal] = useState(false);
   const [editingPart, setEditingPart] = useState(null);
@@ -44,6 +46,7 @@ export default function PartsSection({ projectId, autoExpand = false }) {
       queryClient.invalidateQueries({ queryKey: ['parts', projectId] });
       setShowModal(false);
       setEditingPart(null);
+      toast.success("Part added successfully");
     }
   });
 
@@ -53,6 +56,7 @@ export default function PartsSection({ projectId, autoExpand = false }) {
       queryClient.invalidateQueries({ queryKey: ['parts', projectId] });
       setShowModal(false);
       setEditingPart(null);
+      toast.success("Part updated");
     }
   });
 
@@ -61,6 +65,7 @@ export default function PartsSection({ projectId, autoExpand = false }) {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['parts', projectId] });
       setShowModal(false); 
+      toast.success("Part deleted");
     }
   });
 
@@ -88,108 +93,191 @@ export default function PartsSection({ projectId, autoExpand = false }) {
     }
   };
 
+  // Quick Action: Mark Delivered
+  const markDelivered = (e, part) => {
+    e.stopPropagation();
+    updatePartMutation.mutate({ 
+      id: part.id, 
+      data: { 
+        status: "Delivered", 
+        location: "At Delivery Bay" 
+      } 
+    });
+  };
+
+  // Quick Action: Update Location
+  const advanceLocation = (e, part) => {
+    e.stopPropagation();
+    const currentIndex = FLOW_STEPS.indexOf(part.location);
+    if (currentIndex !== -1 && currentIndex < FLOW_STEPS.length - 1) {
+      const nextLocation = FLOW_STEPS[currentIndex + 1];
+      updatePartMutation.mutate({ 
+        id: part.id, 
+        data: { location: nextLocation } 
+      });
+    }
+  };
+
   return (
-    <div>
-      <div className="flex items-center justify-between mb-3">
-        <label className="block text-[14px] font-medium text-[#111827]">
-          Parts
-        </label>
-        <button
+    <div className="space-y-4">
+      <div className="flex items-center justify-between">
+        <h3 className="text-[16px] font-semibold text-[#111827]">Parts & Materials</h3>
+        <Button
           onClick={handleAddPart}
-          className="w-8 h-8 bg-[#FAE008] hover:bg-[#E5CF07] rounded-lg flex items-center justify-center transition-colors"
+          size="sm"
+          className="bg-[#FAE008] text-[#111827] hover:bg-[#E5CF07] font-semibold"
         >
-          <Plus className="w-4 h-4 text-[#111827]" />
-        </button>
+          <Plus className="w-4 h-4 mr-1" />
+          Add Part
+        </Button>
       </div>
 
-      <div className="space-y-2">
-        {parts.length === 0 ? (
-          <Card className="border border-[#E5E7EB] shadow-sm">
-            <CardContent className="p-6 text-center">
-              <p className="text-[14px] text-[#6B7280] mb-3">No parts ordered yet</p>
-              <Button onClick={handleAddPart} className="bg-[#FAE008] text-[#111827] hover:bg-[#E5CF07] font-semibold">
-                <Plus className="w-4 h-4 mr-2" />
-                Order Part
-              </Button>
-            </CardContent>
-          </Card>
-        ) : (
-          parts.map((part) => (
-            <Card 
-              key={part.id} 
-              className="border border-[#E5E7EB] hover:border-[#FAE008] hover:shadow-md transition-all cursor-pointer group"
-              onClick={() => handleEditPart(part)}
-            >
-              <CardContent className="p-3 flex flex-col sm:flex-row sm:items-center gap-3">
-                {/* Left: Category & Supplier */}
-                <div className="flex-1 min-w-0">
-                  <div className="flex items-center gap-2 mb-1">
-                    <span className="font-semibold text-[#111827] text-[15px]">
-                      {part.category || "Part"}
-                    </span>
-                    {part.supplier_name && (
-                      <>
-                        <span className="text-[#9CA3AF]">•</span>
-                        <span className="text-[#4B5563] text-[14px] truncate">{part.supplier_name}</span>
-                      </>
-                    )}
-                  </div>
-                  <div className="flex items-center gap-2 text-[13px] text-[#6B7280]">
-                    {part.source_type && (
-                      <span className="bg-slate-100 px-1.5 py-0.5 rounded text-slate-600 text-[11px] font-medium border border-slate-200">
-                        {part.source_type === "In Stock (KGD)" ? "In Stock" : part.source_type.split(' – ')[0]}
-                      </span>
-                    )}
-                    {(part.eta || part.estimated_arrival_date) && (
-                      <span className="flex items-center gap-1">
-                        <span className="text-[#9CA3AF]">ETA:</span>
-                        <span className="font-medium text-[#111827]">
-                          {new Date(part.eta || part.estimated_arrival_date).toLocaleDateString(undefined, { month: 'short', day: 'numeric' })}
-                        </span>
-                      </span>
-                    )}
-                  </div>
-                </div>
+      {parts.length === 0 ? (
+        <div className="text-center py-12 bg-slate-50 rounded-xl border border-dashed border-slate-200">
+          <div className="bg-white p-3 rounded-full inline-block mb-3 shadow-sm">
+            <Truck className="w-6 h-6 text-slate-400" />
+          </div>
+          <p className="text-slate-600 mb-4">No parts tracked for this project yet.</p>
+          <Button variant="outline" onClick={handleAddPart}>Order First Part</Button>
+        </div>
+      ) : (
+        <div className="border border-[#E5E7EB] rounded-xl overflow-hidden bg-white shadow-sm">
+          {/* Desktop Table Header */}
+          <div className="hidden md:grid grid-cols-12 gap-4 p-3 bg-slate-50 border-b border-[#E5E7EB] text-xs font-medium text-slate-500 uppercase tracking-wider">
+            <div className="col-span-3">Part / Category</div>
+            <div className="col-span-2">Status</div>
+            <div className="col-span-2">Location</div>
+            <div className="col-span-2">Supplier / Source</div>
+            <div className="col-span-2">Logistics Links</div>
+            <div className="col-span-1 text-right">Actions</div>
+          </div>
 
-                {/* Right: Status & Location */}
-                <div className="flex items-center gap-2 sm:justify-end flex-wrap">
-                  {(part.linked_logistics_jobs || []).length > 0 && (
-                    <div className="flex items-center gap-1 text-[12px] text-[#6B7280] bg-slate-50 px-2 py-1 rounded-full border border-slate-200" title={`${part.linked_logistics_jobs.length} logistics jobs linked`}>
-                      <LinkIcon className="w-3 h-3" />
-                      <span className="font-medium">{part.linked_logistics_jobs.length}</span>
+          {/* Parts List */}
+          <div className="divide-y divide-[#E5E7EB]">
+            {parts.map((part) => {
+              const isOverdue = (part.status === 'Ordered' || part.status === 'Back-ordered') && 
+                                part.eta && isPast(parseISO(part.eta));
+              
+              // Determine progress index
+              const progressIndex = FLOW_STEPS.indexOf(part.location);
+              const progressPercent = progressIndex === -1 ? 0 : ((progressIndex + 1) / FLOW_STEPS.length) * 100;
+
+              return (
+                <div 
+                  key={part.id} 
+                  onClick={() => handleEditPart(part)}
+                  className={`group hover:bg-blue-50/50 transition-colors cursor-pointer ${isOverdue ? 'bg-amber-50/30' : ''}`}
+                >
+                  <div className="md:grid grid-cols-12 gap-4 p-4 items-center">
+                    
+                    {/* Col 1: Part Info */}
+                    <div className="col-span-12 md:col-span-3 mb-2 md:mb-0">
+                      <div className="flex items-center gap-3">
+                        <div className="bg-slate-100 p-2 rounded-lg text-slate-500">
+                          <Truck className="w-5 h-5" />
+                        </div>
+                        <div>
+                          <div className="font-semibold text-slate-900">{part.category}</div>
+                          {isOverdue && (
+                            <div className="flex items-center text-xs text-amber-600 font-medium mt-0.5">
+                              <AlertTriangle className="w-3 h-3 mr-1" />
+                              Overdue
+                            </div>
+                          )}
+                          {/* Progress Bar (Mobile Only) */}
+                          <div className="md:hidden mt-2 w-24 h-1 bg-slate-100 rounded-full overflow-hidden">
+                            <div className="h-full bg-green-500" style={{ width: `${progressPercent}%` }}></div>
+                          </div>
+                        </div>
+                      </div>
                     </div>
-                  )}
-                  
-                  {part.location && (
-                    <Badge className={`${locationColors[part.location] || 'bg-slate-50 text-slate-600'} border-0 font-normal`}>
-                      <MapPin className="w-3 h-3 mr-1 opacity-70" />
-                      {part.location}
-                    </Badge>
-                  )}
 
-                  <Badge className={`${statusColors[part.status] || statusColors['Pending']} font-medium border px-2.5 py-1`}>
-                    {part.status || 'Pending'}
-                  </Badge>
+                    {/* Col 2: Status */}
+                    <div className="col-span-6 md:col-span-2 mb-2 md:mb-0">
+                      <Badge className={`${statusColors[part.status]} font-medium border px-2.5 py-0.5`}>
+                        {part.status}
+                      </Badge>
+                      {part.eta && (
+                        <div className="text-xs text-slate-500 mt-1">
+                          ETA: {format(parseISO(part.eta), 'MMM d')}
+                        </div>
+                      )}
+                    </div>
 
-                  <Button
-                    variant="ghost"
-                    size="icon"
-                    onClick={(e) => {
-                      e.stopPropagation(); // Prevent opening modal
-                      if (confirm('Are you sure you want to delete this part?')) {
-                        deletePartMutation.mutate(part.id);
-                      }
-                    }}
-                    className="h-8 w-8 opacity-0 group-hover:opacity-100 transition-opacity hover:bg-red-50 hover:text-red-600 -mr-2"
-                  >
-                    <Trash2 className="w-4 h-4" />
-                  </Button>
+                    {/* Col 3: Location + Progress */}
+                    <div className="col-span-6 md:col-span-2 mb-2 md:mb-0">
+                      <Badge className={`${locationColors[part.location] || 'bg-slate-100 text-slate-600'} border-0 font-normal`}>
+                        <MapPin className="w-3 h-3 mr-1 opacity-70" />
+                        {part.location}
+                      </Badge>
+                      
+                      {/* Progress Trail (Desktop) */}
+                      <div className="hidden md:flex items-center gap-1 mt-1.5">
+                        {FLOW_STEPS.map((step, idx) => (
+                          <div 
+                            key={step}
+                            className={`h-1 flex-1 rounded-full ${idx <= progressIndex ? 'bg-green-500' : 'bg-slate-200'}`}
+                            title={step}
+                          />
+                        ))}
+                      </div>
+                    </div>
+
+                    {/* Col 4: Supplier */}
+                    <div className="col-span-6 md:col-span-2 text-sm text-slate-600">
+                      <div className="font-medium">{part.supplier_name || "Unknown Supplier"}</div>
+                      <div className="text-xs opacity-80">{part.source_type?.split(' – ')[0]}</div>
+                    </div>
+
+                    {/* Col 5: Logistics Chips */}
+                    <div className="col-span-6 md:col-span-2">
+                      <div className="flex flex-wrap gap-1">
+                        {(part.linked_logistics_jobs || []).length > 0 ? (
+                          part.linked_logistics_jobs.map((jobId, idx) => (
+                            <Badge key={jobId} variant="secondary" className="text-[10px] px-1.5 h-5 bg-slate-100 text-slate-600 border-slate-200">
+                              <LinkIcon className="w-2 h-2 mr-1" />
+                              Job {idx + 1}
+                            </Badge>
+                          ))
+                        ) : (
+                          <span className="text-xs text-slate-400 italic">No linked jobs</span>
+                        )}
+                      </div>
+                    </div>
+
+                    {/* Col 6: Actions */}
+                    <div className="col-span-12 md:col-span-1 flex items-center justify-end gap-2 mt-2 md:mt-0">
+                      {part.status === 'Ordered' && (
+                        <Button 
+                          size="sm" 
+                          variant="ghost" 
+                          className="h-8 w-8 p-0 text-green-600 hover:bg-green-50"
+                          title="Mark Delivered"
+                          onClick={(e) => markDelivered(e, part)}
+                        >
+                          <CheckCircle2 className="w-4 h-4" />
+                        </Button>
+                      )}
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          if (confirm('Delete this part?')) deletePartMutation.mutate(part.id);
+                        }}
+                        className="h-8 w-8 text-slate-400 hover:text-red-600 hover:bg-red-50"
+                      >
+                        <Trash2 className="w-4 h-4" />
+                      </Button>
+                    </div>
+
+                  </div>
                 </div>
-              </CardContent>
-            </Card>
-          ))
-        )}
-      </div>
+              );
+            })}
+          </div>
+        </div>
+      )}
 
       {showModal && (
         <PartDetailModal

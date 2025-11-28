@@ -28,6 +28,7 @@ import {
 import ProjectChangeHistoryModal from "./ProjectChangeHistoryModal";
 import ProjectStageSelector from "./ProjectStageSelector";
 import PartsSection from "./PartsSection";
+import LogisticsTimeline from "./LogisticsTimeline";
 import ProjectSummary from "./ProjectSummary";
 import ProjectVisitsTab from "./ProjectVisitsTab";
 import FinancialsTab from "./FinancialsTab";
@@ -1508,11 +1509,12 @@ Format as HTML bullet points using <ul> and <li> tags. Include only the most cri
             />
           </TabsContent>
 
-          <TabsContent value="parts" className="mt-3">
+          <TabsContent value="parts" className="mt-3 space-y-6">
             <PartsSection 
               projectId={project.id} 
               autoExpand={project.status === "Parts Ordered"} 
             />
+            <LogisticsTimeline project={project} />
           </TabsContent>
 
           <TabsContent value="emails" className="mt-3">

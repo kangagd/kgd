@@ -3,6 +3,7 @@ import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { MapPin, Briefcase, ExternalLink } from "lucide-react";
 import { JobStatusBadge, JobTypeBadge, ProductTypeBadge } from "../common/StatusBadge";
+import { Truck, Package } from "lucide-react";
 import { TechnicianAvatarGroup } from "../common/TechnicianAvatar";
 import { DuplicateDot } from "../common/DuplicateWarningCard";
 
@@ -55,6 +56,13 @@ export default function ScheduleJobCard({ job, onClick, onAddressClick, onProjec
 
         {/* Job Type + Product Chips */}
         <div className="flex flex-wrap gap-2 ml-6">
+          {/* Logistics Badge */}
+          {(job.job_type_name || "").match(/(Delivery|Pickup|Return)/i) && (
+            <Badge className="bg-slate-800 text-white border-0 flex items-center gap-1 px-2">
+              <Truck className="w-3 h-3" />
+              Logistics
+            </Badge>
+          )}
           {job.job_type_name && (
             <JobTypeBadge value={job.job_type_name} />
           )}
