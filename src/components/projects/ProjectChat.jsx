@@ -40,31 +40,17 @@ export default function ProjectChat({ projectId }) {
 
   const sendMessageMutation = useMutation({
     mutationFn: async (messageText) => {
-      // Extract mentioned users from message
-      const mentionedUsers = [];
-      const mentionRegex = /@(\w+(?:\s+\w+)?)/g;
-      let match;
-      
-      while ((match = mentionRegex.exec(messageText)) !== null) {
-        const mentionedName = match[1];
-        const mentionedUser = allUsers.find(u => 
-          (u.display_name || u.full_name)?.toLowerCase() === mentionedName.toLowerCase()
-        );
-        if (mentionedUser && !mentionedUsers.includes(mentionedUser.email)) {
-          mentionedUsers.push(mentionedUser.email);
-        }
-      }
-
-      // Create the message
-      const newMessage = await base44.entities.ProjectMessage.create({
-        project_id: projectId,
-        sender_email: user.email,
-        sender_name: user.display_name || user.full_name,
-        message: messageText,
-        mentioned_users: mentionedUsers
+      const response = await base44.functions.invoke('sendMessage', {
+        type: 'project',
+        entityId: projectId,
+        message: messageText
       });
-
-      return newMessage;
+      
+      if (response.data?.error) {
+        throw new Error(response.data.error);
+      }
+      
+      return response.data.message;
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['projectMessages', projectId] });

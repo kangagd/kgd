@@ -68,10 +68,10 @@ Deno.serve(async (req) => {
       return Response.json({ error: 'Customer not found' }, { status: 404 });
     }
 
-    // Calculate total value from line items
+    // Calculate total value from line items (including 10% tax to match PandaDoc pricing table)
     const totalValue = lineItems.reduce((sum, item) => {
       return sum + (item.quantity || 1) * (item.price || 0);
-    }, 0);
+    }, 0) * 1.1;
 
     // Build quote name
     const finalQuoteName = quoteName || 
