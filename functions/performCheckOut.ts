@@ -35,26 +35,63 @@ Deno.serve(async (req) => {
             return Response.json({ error: 'Job ID and CheckIn ID are required' }, { status: 400 });
         }
 
-        // 1. Verify CheckIn ownership
+        // 1. Verify/Find CheckIn
         let checkIn;
-        try {
-            checkIn = await base44.asServiceRole.entities.CheckInOut.get(checkInId);
-        } catch (e) {
-            console.error(`Failed to get CheckIn ${checkInId}:`, e);
-            return Response.json({ error: 'Check-in record not found or error retrieving it' }, { status: 404 });
+        const userEmail = (user.email || "").toLowerCase().trim();
+
+        // Strategy A: Try getting by ID if provided
+        if (checkInId) {
+            try {
+                checkIn = await base44.asServiceRole.entities.CheckInOut.get(checkInId);
+            } catch (e) {
+                console.warn(`Failed to get CheckIn by ID ${checkInId}, attempting fallback search...`);
+            }
+        }
+
+        // Strategy B: Search for active check-in for this job and user if not found by ID
+        if (!checkIn) {
+            console.log(`Searching for active check-in for job ${jobId} and user ${userEmail}`);
+            try {
+                // We need to find a record where check_out_time is missing/null
+                // Note: Filtering for null/missing fields might depend on the SDK capabilities, 
+                // so we'll filter for the job and user, then find the open one in memory if needed.
+                // Assuming filter supports basic equality.
+                const userCheckIns = await base44.asServiceRole.entities.CheckInOut.filter({
+                    job_id: jobId,
+                    technician_email: userEmail
+                });
+                
+                // Find the one with no check_out_time
+                checkIn = userCheckIns.find(c => !c.check_out_time);
+                
+                // Fallback: try finding by created_by if technician_email didn't match (rare edge case)
+                if (!checkIn) {
+                     const createdCheckIns = await base44.asServiceRole.entities.CheckInOut.filter({
+                        job_id: jobId,
+                        created_by: userEmail
+                    });
+                    checkIn = createdCheckIns.find(c => !c.check_out_time);
+                }
+
+            } catch (e) {
+                console.error("Error searching for check-in:", e);
+            }
         }
 
         if (!checkIn) {
-            return Response.json({ error: 'Check-in record not found' }, { status: 404 });
+            return Response.json({ error: 'No active check-in found for this job' }, { status: 404 });
         }
 
-        const userEmail = (user.email || "").toLowerCase().trim();
         const checkInEmail = (checkIn.technician_email || "").toLowerCase().trim();
-
+        
+        // Double check ownership (though search already filtered by email, the ID fetch might not have)
         if (checkInEmail !== userEmail && user.role !== 'admin' && user.role !== 'manager') {
              console.warn(`Unauthorized checkout attempt. User: ${userEmail}, CheckIn Tech: ${checkInEmail}`);
              return Response.json({ error: 'Unauthorized to check out this session' }, { status: 403 });
         }
+        
+        // Update checkInId to the one we found, in case we found it via search
+        checkInId = checkIn.id;
 
         // 2. Get Job
         let job;
