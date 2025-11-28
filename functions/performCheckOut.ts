@@ -140,15 +140,24 @@ Deno.serve(async (req) => {
         if (checkInId) {
             try {
                 console.log(`Updating CheckInOut ${checkInId} with checkout time ${checkOutTime}`);
-                await base44.asServiceRole.entities.CheckInOut.update(checkInId, {
+                // Try User Scope update first
+                await base44.entities.CheckInOut.update(checkInId, {
                     check_out_time: checkOutTime,
                     duration_hours: Number(durationHours) || 0
                 });
             } catch (e) {
-                console.error(`CRITICAL: Failed to update CheckInOut ${checkInId}:`, e);
-                return Response.json({ 
-                    error: `Failed to close check-in session: ${e.message}. Please try again.` 
-                }, { status: 500 });
+                console.warn(`User-scope update failed for ${checkInId}, trying service role:`, e);
+                try {
+                    await base44.asServiceRole.entities.CheckInOut.update(checkInId, {
+                        check_out_time: checkOutTime,
+                        duration_hours: Number(durationHours) || 0
+                    });
+                } catch (serviceErr) {
+                    console.error(`CRITICAL: Failed to update CheckInOut ${checkInId} (Service Role):`, serviceErr);
+                    return Response.json({ 
+                        error: `Failed to close check-in session: ${serviceErr.message}. Please try again.` 
+                    }, { status: 500 });
+                }
             }
         }
 
