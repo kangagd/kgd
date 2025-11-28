@@ -66,6 +66,11 @@ export default function CustomerDetails({ customer, onClose, onEdit, onDelete })
                 <div className="flex items-center gap-2 flex-wrap">
                   <CardTitle className="text-[22px] font-semibold text-[#111827] leading-[1.2]">{customer.name}</CardTitle>
                   <DuplicateBadge record={customer} />
+                  {customer.is_station && (
+                    <Badge className="bg-purple-100 text-purple-700 border-purple-200 border font-medium text-[12px] leading-[1.35]">
+                      Station
+                    </Badge>
+                  )}
                 </div>
                 <div className="flex gap-2 mt-2 flex-wrap">
                   <StatusBadge type="status" value={customer.status} />
