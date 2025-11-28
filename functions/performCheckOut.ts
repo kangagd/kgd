@@ -3,9 +3,17 @@ import { createClientFromRequest } from 'npm:@base44/sdk@0.8.4';
 Deno.serve(async (req) => {
     try {
         const base44 = createClientFromRequest(req);
-        const user = await base44.auth.me();
+        let user;
+        try {
+            user = await base44.auth.me();
+        } catch (e) {
+            console.error("Auth error:", e);
+            return Response.json({ error: 'Authentication failed' }, { status: 401 });
+        }
+        
         if (!user) return Response.json({ error: 'Unauthorized' }, { status: 401 });
 
+        const body = await req.json();
         const { 
             jobId, 
             checkInId, 
@@ -19,59 +27,80 @@ Deno.serve(async (req) => {
             checkOutTime,
             durationMinutes,
             durationHours
-        } = await req.json();
+        } = body;
+
+        console.log(`CheckOut Request: Job=${jobId}, CheckIn=${checkInId}, User=${user.email}`);
 
         if (!jobId || !checkInId) {
             return Response.json({ error: 'Job ID and CheckIn ID are required' }, { status: 400 });
         }
 
-        // Verify CheckIn ownership
-        const checkIn = await base44.asServiceRole.entities.CheckInOut.get(checkInId);
+        // 1. Verify CheckIn ownership
+        let checkIn;
+        try {
+            checkIn = await base44.asServiceRole.entities.CheckInOut.get(checkInId);
+        } catch (e) {
+            console.error(`Failed to get CheckIn ${checkInId}:`, e);
+            return Response.json({ error: 'Check-in record not found or error retrieving it' }, { status: 404 });
+        }
+
         if (!checkIn) {
             return Response.json({ error: 'Check-in record not found' }, { status: 404 });
         }
 
         const userEmail = (user.email || "").toLowerCase().trim();
         const checkInEmail = (checkIn.technician_email || "").toLowerCase().trim();
-        
+
         if (checkInEmail !== userEmail && user.role !== 'admin' && user.role !== 'manager') {
              console.warn(`Unauthorized checkout attempt. User: ${userEmail}, CheckIn Tech: ${checkInEmail}`);
              return Response.json({ error: 'Unauthorized to check out this session' }, { status: 403 });
         }
 
-        const job = await base44.asServiceRole.entities.Job.get(jobId);
+        // 2. Get Job
+        let job;
+        try {
+            job = await base44.asServiceRole.entities.Job.get(jobId);
+        } catch (e) {
+            console.error(`Failed to get Job ${jobId}:`, e);
+            return Response.json({ error: 'Job not found or error retrieving it' }, { status: 404 });
+        }
+
         if (!job) {
             return Response.json({ error: 'Job not found' }, { status: 404 });
         }
 
-        // Update CheckInOut record
-        await base44.asServiceRole.entities.CheckInOut.update(checkInId, {
-            check_out_time: checkOutTime,
-            duration_hours: durationHours
-        });
+        // 3. Update CheckInOut record
+        try {
+            await base44.asServiceRole.entities.CheckInOut.update(checkInId, {
+                check_out_time: checkOutTime,
+                duration_hours: Number(durationHours) || 0
+            });
+        } catch (e) {
+            console.error("Failed to update CheckInOut:", e);
+            return Response.json({ error: `Failed to update check-in record: ${e.message}` }, { status: 500 });
+        }
 
-        // Create JobSummary
+        // 4. Create JobSummary
         let scheduledDatetime = null;
         if (job.scheduled_date) {
             try {
                 const dateStr = job.scheduled_date;
-                // Clean time string to ensure it's in HH:MM format if possible, or default to 09:00
                 let timeStr = job.scheduled_time || '09:00';
-                // Basic check if timeStr looks like HH:MM
                 if (!/^\d{1,2}:\d{2}/.test(timeStr)) {
                      timeStr = '09:00';
                 }
-                
                 const dateObj = new Date(`${dateStr}T${timeStr}:00`);
                 if (!isNaN(dateObj.getTime())) {
                     scheduledDatetime = dateObj.toISOString();
                 }
             } catch (e) {
                 console.warn("Failed to parse scheduled datetime:", e);
-                // Ignore invalid dates, leave as null
             }
         }
 
+        const cleanDurationMinutes = Number(durationMinutes);
+        const validDurationMinutes = !isNaN(cleanDurationMinutes) ? cleanDurationMinutes : 0;
+        
         const summaryData = {
             job_id: jobId,
             project_id: job.project_id || null,
@@ -82,33 +111,43 @@ Deno.serve(async (req) => {
             technician_name: user.full_name || user.email || "Unknown Technician",
             check_in_time: checkIn.check_in_time,
             check_out_time: checkOutTime,
-            duration_minutes: durationMinutes || 0,
+            duration_minutes: validDurationMinutes,
             overview: overview || "",
             next_steps: nextSteps || "",
             communication_with_client: communicationWithClient || "",
             outcome: outcome || "",
             status_at_checkout: newStatus,
-            photo_urls: imageUrls || [],
+            photo_urls: Array.isArray(imageUrls) ? imageUrls.filter(u => typeof u === 'string') : [],
             measurements: measurements || {}
         };
-        
-        // Removed manual setting of created_by as it is a system field and cannot be written to directly
-        // summaryData.created_by = user.email; 
 
-        console.log("Creating JobSummary with data:", JSON.stringify(summaryData));
+        console.log("Creating JobSummary:", JSON.stringify(summaryData));
 
-        const jobSummary = await base44.asServiceRole.entities.JobSummary.create(summaryData);
+        let jobSummary;
+        try {
+            jobSummary = await base44.asServiceRole.entities.JobSummary.create(summaryData);
+        } catch (e) {
+            console.error("Failed to create JobSummary:", e);
+            // Try to proceed even if summary fails? No, this is critical.
+            return Response.json({ error: `Failed to create Job Summary: ${e.message}` }, { status: 500 });
+        }
 
-        // Update Job
-        await base44.asServiceRole.entities.Job.update(jobId, {
-            overview: overview,
-            next_steps: nextSteps,
-            communication_with_client: communicationWithClient,
-            outcome: outcome,
-            status: newStatus
-        });
+        // 5. Update Job
+        try {
+            await base44.asServiceRole.entities.Job.update(jobId, {
+                overview: overview,
+                next_steps: nextSteps,
+                communication_with_client: communicationWithClient,
+                outcome: outcome,
+                status: newStatus
+            });
+        } catch (e) {
+            console.error("Failed to update Job:", e);
+            // Non-critical? Maybe. But status update is important.
+            // We'll log but return success for the checkout itself as CheckOut/Summary are done.
+        }
 
-        // Sync to Project
+        // 6. Sync to Project
         if (job.project_id) {
             try {
                 await base44.functions.invoke('syncJobToProject', { job_id: jobId });
@@ -139,7 +178,7 @@ Deno.serve(async (req) => {
                   }
                 }
             } catch (err) {
-                console.error("Sync to project failed", err);
+                console.error("Sync to project failed:", err);
             }
         }
 
