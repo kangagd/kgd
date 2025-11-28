@@ -170,7 +170,11 @@ export default function Schedule() {
     return allJobs
       .filter(job => {
         if (job.deleted_at) return false;
-        if (job.status === "Cancelled") return false;
+        
+        // Filter out cancelled and lost jobs
+        const status = job.status?.toLowerCase();
+        const outcome = job.outcome?.toLowerCase();
+        if (status === 'cancelled' || status === 'lost' || outcome === 'lost') return false;
         
         // Technician access filter
         if (isTechnician && user) {
