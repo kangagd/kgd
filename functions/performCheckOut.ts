@@ -188,7 +188,7 @@ Deno.serve(async (req) => {
             job_number: job.job_number,
             job_type: job.job_type_name || null,
             scheduled_datetime: scheduledDatetime,
-            technician_email: userEmail, // Use normalized email for consistency
+            technician_email: user.email, // Use raw email to match RLS {{user.email}} check
             technician_name: user.full_name || user.email || "Unknown Technician",
             check_in_time: checkIn.check_in_time,
             check_out_time: checkOutTime,
