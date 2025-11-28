@@ -52,25 +52,41 @@ Deno.serve(async (req) => {
         if (!checkIn) {
             console.log(`Searching for active check-in for job ${jobId} and user ${userEmail}`);
             try {
-                // We need to find a record where check_out_time is missing/null
-                // Note: Filtering for null/missing fields might depend on the SDK capabilities, 
-                // so we'll filter for the job and user, then find the open one in memory if needed.
-                // Assuming filter supports basic equality.
-                const userCheckIns = await base44.asServiceRole.entities.CheckInOut.filter({
-                    job_id: jobId,
-                    technician_email: userEmail
+                // Fetch ALL check-ins for this job to ensure we see everything (bypassing potential filter nuances)
+                const allJobCheckIns = await base44.asServiceRole.entities.CheckInOut.filter({
+                    job_id: jobId
                 });
                 
-                // Find the one with no check_out_time
-                checkIn = userCheckIns.find(c => !c.check_out_time);
+                console.log(`Found ${allJobCheckIns.length} total check-ins for job ${jobId}`);
+
+                // In-memory find: Active AND (technician_email matches OR created_by matches)
+                checkIn = allJobCheckIns.find(c => {
+                    // Active check-ins have no check_out_time (null, undefined, or empty string)
+                    const isActive = !c.check_out_time;
+                    
+                    const techEmail = (c.technician_email || "").toLowerCase().trim();
+                    const creatorEmail = (c.created_by || "").toLowerCase().trim();
+                    
+                    const isOwner = techEmail === userEmail || creatorEmail === userEmail;
+                    
+                    // If user is admin/manager, they might be checking out for someone else? 
+                    // But the requirement says "Unauthorized" if not owner/admin.
+                    // Here we try to find the SPECIFIC check-in for this user first.
+                    return isActive && isOwner;
+                });
+
+                // If still not found, and user is admin, maybe find ANY active check-in? 
+                // No, let's stick to finding "their" check-in or the one specified by ID.
                 
-                // Fallback: try finding by created_by if technician_email didn't match (rare edge case)
-                if (!checkIn) {
-                     const createdCheckIns = await base44.asServiceRole.entities.CheckInOut.filter({
-                        job_id: jobId,
-                        created_by: userEmail
-                    });
-                    checkIn = createdCheckIns.find(c => !c.check_out_time);
+                if (checkIn) {
+                    console.log(`Found active check-in via broader search: ${checkIn.id}`);
+                } else {
+                    console.log("No matching active check-in found in job list for this user.");
+                    // Log for debugging
+                    const activeOthers = allJobCheckIns.filter(c => !c.check_out_time);
+                    if (activeOthers.length > 0) {
+                        console.log(`Found ${activeOthers.length} active check-ins for OTHER users:`, activeOthers.map(c => c.technician_email));
+                    }
                 }
 
             } catch (e) {
