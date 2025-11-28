@@ -116,12 +116,15 @@ Deno.serve(async (req) => {
       if (!message.attachments || message.attachments.length === 0) continue;
 
       for (const attachment of message.attachments) {
-        // Skip if inline (unless we want to save inline images too? Usually just attachments)
-        // The prompt says "attachments from linked email threads... categorized correctly"
-        // Inline images might be signatures, better skip if explicitly inline?
-        // AttachmentCard logic usually skips inline if it's not "regular".
-        // But here we rely on is_inline flag if available.
-        if (attachment.is_inline) continue; 
+        // Skip small inline images (likely signatures/icons)
+        // But keep larger inline images (> 30KB) as they might be photos pasted in body
+        if (attachment.is_inline) {
+          const isImage = isImageFile(attachment.mime_type, attachment.filename);
+          if (!isImage || attachment.size < 30 * 1024) {
+            continue;
+          }
+          console.log(`Processing inline image ${attachment.filename} (size: ${attachment.size})`);
+        } 
 
         // Check if already saved by filename
         const isImage = isImageFile(attachment.mime_type, attachment.filename);

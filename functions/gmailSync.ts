@@ -339,14 +339,34 @@ Deno.serve(async (req) => {
             throw createError;
           }
           
-          // Update thread message count
+          // Update thread message count and auto-save attachments if linked
           try {
             const currentThread = await base44.asServiceRole.entities.EmailThread.get(threadId);
             await base44.asServiceRole.entities.EmailThread.update(threadId, {
               message_count: (currentThread.message_count || 0) + 1
             });
+
+            // Auto-save attachments if thread is linked to Project or Job
+            if (processedAttachments.length > 0) {
+              if (currentThread.linked_project_id) {
+                console.log(`Auto-saving attachments for thread ${threadId} to Project ${currentThread.linked_project_id}`);
+                // We invoke the function but don't await it to avoid blocking sync
+                base44.functions.invoke('saveThreadAttachments', {
+                  thread_id: threadId,
+                  target_type: 'project',
+                  target_id: currentThread.linked_project_id
+                }).catch(err => console.error('Auto-save attachments failed:', err));
+              } else if (currentThread.linked_job_id) {
+                console.log(`Auto-saving attachments for thread ${threadId} to Job ${currentThread.linked_job_id}`);
+                base44.functions.invoke('saveThreadAttachments', {
+                  thread_id: threadId,
+                  target_type: 'job',
+                  target_id: currentThread.linked_job_id
+                }).catch(err => console.error('Auto-save attachments failed:', err));
+              }
+            }
           } catch (e) {
-            console.log('Could not update message count:', e.message);
+            console.log('Error updating thread or auto-saving:', e.message);
           }
 
           syncedCount++;
