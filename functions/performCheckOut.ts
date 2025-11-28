@@ -154,8 +154,7 @@ Deno.serve(async (req) => {
              return Response.json({ error: 'Unauthorized to check out this session' }, { status: 403 });
         }
         
-        // Update checkInId to the one we found, in case we found it via search
-        checkInId = checkIn.id;
+        // Using checkIn.id directly since checkInId is const
 
         // 2. Get Job
         let job;
@@ -172,7 +171,7 @@ Deno.serve(async (req) => {
 
         // 3. Update CheckInOut record
         try {
-            await base44.asServiceRole.entities.CheckInOut.update(checkInId, {
+            await base44.asServiceRole.entities.CheckInOut.update(checkIn.id, {
                 check_out_time: checkOutTime,
                 duration_hours: Number(durationHours) || 0
             });
