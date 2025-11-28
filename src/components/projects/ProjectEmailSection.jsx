@@ -120,12 +120,28 @@ export default function ProjectEmailSection({ project, onThreadLinked }) {
       
       return thread;
     },
-    onSuccess: async () => {
+    onSuccess: async (data, variables) => {
       // Run resync to ensure all attachments have IDs before rendering
       try {
         await base44.functions.invoke('resyncAttachments');
       } catch (e) {
         console.warn('Resync failed, continuing anyway', e);
+      }
+
+      // Auto-save attachments to project
+      try {
+        toast.info('Processing attachments...');
+        const threadId = variables; // mutationFn takes threadId as argument
+        const res = await base44.functions.invoke('saveThreadAttachments', {
+          thread_id: threadId,
+          target_type: 'project',
+          target_id: project.id
+        });
+        if (res.data?.saved_count > 0) {
+          toast.success(`Saved ${res.data.saved_count} attachments to project`);
+        }
+      } catch (e) {
+        console.error('Auto-save attachments failed', e);
       }
       
       queryClient.invalidateQueries({ queryKey: ['emailThread'] });

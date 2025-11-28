@@ -306,6 +306,20 @@ export default function Inbox() {
     updateThreadMutation.mutate({
       id: selectedThread.id,
       data: { linked_project_id: projectId, linked_project_title: projectTitle }
+    }, {
+      onSuccess: () => {
+        // Auto-save attachments
+        toast.info('Processing attachments...');
+        base44.functions.invoke('saveThreadAttachments', {
+          thread_id: selectedThread.id,
+          target_type: 'project',
+          target_id: projectId
+        }).then(res => {
+          if (res.data?.saved_count > 0) {
+            toast.success(`Saved ${res.data.saved_count} attachments to project`);
+          }
+        }).catch(console.error);
+      }
     });
     setLinkModalOpen(false);
   };
@@ -314,6 +328,20 @@ export default function Inbox() {
     updateThreadMutation.mutate({
       id: selectedThread.id,
       data: { linked_job_id: jobId, linked_job_number: jobNumber }
+    }, {
+      onSuccess: () => {
+        // Auto-save attachments
+        toast.info('Processing attachments...');
+        base44.functions.invoke('saveThreadAttachments', {
+          thread_id: selectedThread.id,
+          target_type: 'job',
+          target_id: jobId
+        }).then(res => {
+          if (res.data?.saved_count > 0) {
+            toast.success(`Saved ${res.data.saved_count} attachments to job`);
+          }
+        }).catch(console.error);
+      }
     });
     setLinkModalOpen(false);
   };
