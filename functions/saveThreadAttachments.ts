@@ -113,31 +113,45 @@ Deno.serve(async (req) => {
 
     // Process attachments
     for (const message of messages) {
-      if (!message.attachments || message.attachments.length === 0) continue;
+      if (!message.attachments || message.attachments.length === 0) {
+        console.log(`Message ${message.id} has no attachments`);
+        continue;
+      }
+
+      console.log(`Processing ${message.attachments.length} attachments for message ${message.id}`);
 
       for (const attachment of message.attachments) {
+        const isImage = isImageFile(attachment.mime_type, attachment.filename);
+        console.log(`Examining attachment: ${attachment.filename}, Size: ${attachment.size}, Inline: ${attachment.is_inline}, Type: ${attachment.mime_type}`);
+
         // Skip small inline images (likely signatures/icons)
-        // But keep larger inline images (> 30KB) as they might be photos pasted in body
+        // Lower threshold to 5KB to catch smaller screenshots but skip tiny icons
         if (attachment.is_inline) {
-          const isImage = isImageFile(attachment.mime_type, attachment.filename);
-          if (!isImage || attachment.size < 30 * 1024) {
+          if (isImage && (!attachment.size || attachment.size < 5 * 1024)) {
+            console.log(`Skipping small inline image: ${attachment.filename} (${attachment.size} bytes)`);
             continue;
           }
           console.log(`Processing inline image ${attachment.filename} (size: ${attachment.size})`);
         } 
 
         // Check if already saved by filename
-        const isImage = isImageFile(attachment.mime_type, attachment.filename);
+        // IMPROVED CHECK: Check if filename is contained in any existing URL
+        // But sometimes filenames are generic like "image.png". 
+        // Let's try to be smarter - if we have very few existing images, maybe just save it?
+        // Or rely on the fact that unique URLs are generated.
+        // For now, stick to filename check but log it.
         const allUrls = [...existingImages, ...existingDocs];
-        if (allUrls.some(url => url.includes(attachment.filename))) {
-          console.log(`Skipping ${attachment.filename}, already saved.`);
-          continue;
+        if (allUrls.some(url => url.includes(encodeURIComponent(attachment.filename)))) {
+           // decode filename just in case
+           // Actually, the url might have the filename at the end.
+           console.log(`Skipping ${attachment.filename}, appears to be already saved.`);
+           continue;
         }
 
         // Ensure we have IDs
         const gmailMessageId = attachment.gmail_message_id || message.gmail_message_id;
         if (!gmailMessageId || !attachment.attachment_id) {
-          console.log(`Skipping ${attachment.filename}, missing IDs.`);
+          console.log(`Skipping ${attachment.filename}, missing IDs. gmail_message_id=${gmailMessageId}, attachment_id=${attachment.attachment_id}`);
           continue;
         }
 
