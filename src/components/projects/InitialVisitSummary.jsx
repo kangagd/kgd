@@ -41,10 +41,13 @@ export default function InitialVisitSummary({ project, onViewJob }) {
     return null;
   }
 
+  const hasMeasurements = project.initial_visit_measurements && 
+    Object.keys(project.initial_visit_measurements).length > 0;
+
   const hasContent = project.initial_visit_overview || 
                      project.initial_visit_next_steps || 
                      project.initial_visit_customer_communication ||
-                     project.initial_visit_measurements ||
+                     hasMeasurements ||
                      (project.initial_visit_image_urls && project.initial_visit_image_urls.length > 0);
 
   if (!hasContent) {
