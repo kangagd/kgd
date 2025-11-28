@@ -9,6 +9,9 @@ import CustomerForm from "./CustomerForm";
 import { Badge } from "@/components/ui/badge";
 import { Calendar, MapPin } from "lucide-react";
 import { format, parseISO } from "date-fns";
+import EntityModal from "../common/EntityModal";
+import JobModalView from "../jobs/JobModalView";
+import { createPageUrl } from "@/utils";
 
 const statusColors = {
   scheduled: "bg-blue-100 text-blue-800",
@@ -18,13 +21,21 @@ const statusColors = {
 };
 
 export default function CustomerEditModal({ customer, open, onClose, onSubmit, isSubmitting }) {
+  const [modalJob, setModalJob] = React.useState(null);
+
   const { data: jobs = [] } = useQuery({
     queryKey: ['customerJobs', customer?.id],
     queryFn: () => base44.entities.Job.filter({ customer_id: customer.id }),
     enabled: !!customer?.id && open
   });
 
+  const handleOpenFullJob = (job) => {
+    setModalJob(null);
+    window.location.href = `${createPageUrl("Jobs")}?jobId=${job.id}`;
+  };
+
   return (
+    <>
     <Dialog open={open} onOpenChange={onClose}>
       <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto p-0">
         <div className="grid md:grid-cols-2 divide-x">
@@ -44,7 +55,11 @@ export default function CustomerEditModal({ customer, open, onClose, onSubmit, i
             ) : (
               <div className="space-y-3">
                 {jobs.map(job => (
-                  <div key={job.id} className="bg-white rounded-lg border border-slate-200 p-3 hover:shadow-md transition-shadow">
+                  <div 
+                    key={job.id} 
+                    className="bg-white rounded-lg border border-slate-200 p-3 hover:shadow-md transition-shadow cursor-pointer"
+                    onClick={() => setModalJob(job)}
+                  >
                     <div className="flex items-start justify-between mb-2">
                       <span className="font-medium text-sm">#{job.job_number}</span>
                       <Badge className={statusColors[job.status]}>
@@ -71,5 +86,16 @@ export default function CustomerEditModal({ customer, open, onClose, onSubmit, i
         </div>
       </DialogContent>
     </Dialog>
+
+    <EntityModal
+      open={!!modalJob}
+      onClose={() => setModalJob(null)}
+      title={`Job #${modalJob?.job_number}`}
+      onOpenFullPage={() => handleOpenFullJob(modalJob)}
+      fullPageLabel="Open Full Job"
+    >
+      {modalJob && <JobModalView job={modalJob} />}
+    </EntityModal>
+    </>
   );
 }
