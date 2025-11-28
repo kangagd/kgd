@@ -120,9 +120,18 @@ export default function ProjectEmailSection({ project, onThreadLinked }) {
       
       return thread;
     },
-    onSuccess: () => {
+    onSuccess: async () => {
+      // Run resync to ensure all attachments have IDs before rendering
+      try {
+        await base44.functions.invoke('resyncAttachments');
+      } catch (e) {
+        console.warn('Resync failed, continuing anyway', e);
+      }
+      
       queryClient.invalidateQueries({ queryKey: ['emailThread'] });
       queryClient.invalidateQueries({ queryKey: ['emailMessages'] });
+      queryClient.invalidateQueries({ queryKey: ['projectEmailThreads'] });
+      queryClient.invalidateQueries({ queryKey: ['projectEmailMessages'] });
       queryClient.invalidateQueries({ queryKey: ['project', project.id] });
       setShowLinkModal(false);
       toast.success('Email thread linked to project');
