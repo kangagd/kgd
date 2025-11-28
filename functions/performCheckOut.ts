@@ -109,6 +109,15 @@ Deno.serve(async (req) => {
                  
                  checkIn = allUserCheckIns.find(c => !c.check_out_time);
                  
+                 // If not found by technician_email, try created_by
+                 if (!checkIn) {
+                     console.log(`Emergency: Searching by created_by for ${userEmail}`);
+                     const createdCheckIns = await base44.asServiceRole.entities.CheckInOut.filter({
+                         created_by: userEmail
+                     }, '-created_date', 20);
+                     checkIn = createdCheckIns.find(c => !c.check_out_time);
+                 }
+                 
                  if (checkIn) {
                      console.log(`Found orphaned active check-in ${checkIn.id} for job ${checkIn.job_id} (Requested job: ${jobId})`);
                      // If the user is trying to check out of Job A, but their active check-in is Job B...
@@ -128,13 +137,13 @@ Deno.serve(async (req) => {
         // Handle "Already Checked Out" case gracefully (Idempotency)
         if (checkIn && checkIn.check_out_time) {
             console.log(`Check-in ${checkIn.id} is already checked out. Returning success.`);
-            // We can return early here to prevent 404 or double-update
-            // But we need to make sure we return the summary if possible, or just success
             return Response.json({ success: true, message: "Already checked out", checkIn });
         }
 
         if (!checkIn) {
-            return Response.json({ error: 'No active check-in found for this job' }, { status: 404 });
+            return Response.json({ 
+                error: `No active check-in found for user ${userEmail} (Job: ${jobId}, CheckInId: ${checkInId}). Please contact support.` 
+            }, { status: 404 });
         }
 
         const checkInEmail = (checkIn.technician_email || "").toLowerCase().trim();
