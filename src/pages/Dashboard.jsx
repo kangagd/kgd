@@ -92,7 +92,7 @@ export default function Dashboard() {
   const handleCardClick = (filterType) => {
     let url = createPageUrl("Jobs");
     if (filterType === 'today') {
-      url += `?date=${today}`;
+      url += `?dateFrom=${today}&dateTo=${today}`;
     } else if (filterType === 'upcoming') {
       url += `?status=Scheduled`;
     } else if (filterType === 'completed') {
