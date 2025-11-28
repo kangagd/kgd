@@ -2,6 +2,7 @@ import React from "react";
 import JobCard from "./JobCard";
 import { Card, CardContent } from "@/components/ui/card";
 import { Timer } from "lucide-react";
+import { isPast, parseISO, addHours } from "date-fns";
 
 export default function JobList({ jobs, isLoading, onSelectJob, onViewDetails }) {
 
@@ -33,14 +34,33 @@ export default function JobList({ jobs, isLoading, onSelectJob, onViewDetails })
 
   return (
     <div className="grid gap-3">
-      {jobs.map((job) => (
-        <JobCard 
-          key={job.id}
-          job={job}
-          onClick={() => onSelectJob(job)}
-          onViewDetails={onViewDetails}
-        />
-      ))}
+      {jobs.map((job) => {
+        // Determine if SLA Highlight needed
+        let slaStyle = "";
+        if (job.sla_due_at && job.status !== 'Completed') {
+          const due = parseISO(job.sla_due_at);
+          const now = new Date();
+          if (isPast(due)) {
+            slaStyle = "ring-2 ring-red-500 bg-red-50";
+          } else if (isPast(addHours(now, -1))) { // Logic check: if (due < now + 1h) => isPast(due - 1h)? No.
+             // If due is within 1 hour: due < now + 1 hour.
+             // due < addHours(now, 1)
+             if (due < addHours(now, 1)) {
+                slaStyle = "ring-2 ring-yellow-500 bg-yellow-50";
+             }
+          }
+        }
+
+        return (
+          <div key={job.id} className={`rounded-xl transition-all ${slaStyle}`}>
+            <JobCard 
+              job={job}
+              onClick={() => onSelectJob(job)}
+              onViewDetails={onViewDetails}
+            />
+          </div>
+        );
+      })}
     </div>
   );
 }

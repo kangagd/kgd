@@ -2,7 +2,9 @@ import React from "react";
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { ArrowLeft, Edit2, Trash2, MapPin, Phone, Mail, User, Hash } from "lucide-react";
+import { ArrowLeft, Edit2, Trash2, MapPin, Phone, Mail, User, Hash, FileText } from "lucide-react";
+import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
+import JobList from "../jobs/JobList";
 import { base44 } from "@/api/base44Client";
 import { useQuery } from "@tanstack/react-query";
 import { useNavigate } from "react-router-dom";
@@ -32,6 +34,17 @@ export default function OrganisationDetails({ organisation, onClose, onEdit, onD
   const { data: customers = [] } = useQuery({
     queryKey: ['organisationCustomers', organisation.id],
     queryFn: () => base44.entities.Customer.filter({ organisation_id: organisation.id, deleted_at: { $exists: false } })
+  });
+
+  const { data: contracts = [] } = useQuery({
+    queryKey: ['organisationContracts', organisation.id],
+    queryFn: () => base44.entities.Contract.filter({ organisation_id: organisation.id })
+  });
+
+  // Fetch all jobs for this org (optional, might be heavy if not paginated, but asked for "Jobs" tab)
+  const { data: orgJobs = [] } = useQuery({
+    queryKey: ['organisationJobs', organisation.id],
+    queryFn: () => base44.entities.Job.filter({ organisation_id: organisation.id })
   });
 
   return (
@@ -165,45 +178,112 @@ export default function OrganisationDetails({ organisation, onClose, onEdit, onD
           )}
 
           <div className="pt-4 border-t-2 border-slate-200">
-            <div className="flex items-center justify-between mb-4">
-              <h3 className="text-lg font-bold text-[#000000] tracking-tight">
-                Linked Customers ({customers.length})
-              </h3>
-            </div>
-
-            {customers.length === 0 ? (
-              <div className="text-center py-8 bg-slate-50 rounded-xl border-2 border-slate-200">
-                <User className="w-12 h-12 mx-auto text-slate-300 mb-3" />
-                <p className="text-slate-600">No customers linked to this organisation</p>
-              </div>
-            ) : (
-              <div className="grid gap-3">
-                {customers.map((customer) => (
-                  <Card
-                    key={customer.id}
-                    className="hover:shadow-md transition-all cursor-pointer border-2 border-slate-200 rounded-xl"
-                    onClick={() => navigate(createPageUrl('Customers') + `?customerId=${customer.id}`)}
-                  >
-                    <CardContent className="p-4">
-                      <div className="flex items-center justify-between">
+            {/* Contracts Section */}
+            {contracts.length > 0 && (
+              <div className="mb-6">
+                <h3 className="text-lg font-bold text-[#000000] tracking-tight mb-3">Contracts</h3>
+                <div className="grid gap-3">
+                  {contracts.map(contract => (
+                    <Card key={contract.id} className="border-2 border-blue-100 bg-blue-50">
+                      <CardContent className="p-4 flex justify-between items-center">
                         <div>
-                          <h4 className="font-bold text-[#000000]">{customer.name}</h4>
-                          <div className="text-sm text-slate-600 mt-1 space-y-0.5">
-                            {customer.phone && <p>Phone: {customer.phone}</p>}
-                            {customer.email && <p>Email: {customer.email}</p>}
+                          <div className="font-bold text-blue-900 text-lg">{contract.name}</div>
+                          <div className="text-sm text-blue-700 mt-1">
+                            {contract.status} • {contract.start_date} - {contract.end_date || 'Ongoing'}
                           </div>
                         </div>
-                        {customer.status === 'inactive' && (
-                          <Badge variant="outline" className="bg-slate-100 text-slate-600">
-                            Inactive
-                          </Badge>
-                        )}
-                      </div>
-                    </CardContent>
-                  </Card>
-                ))}
+                        <Button onClick={() => navigate(createPageUrl('Contracts'))} variant="outline" className="bg-white border-blue-200 text-blue-700 hover:bg-blue-100">
+                          View Dashboard
+                        </Button>
+                      </CardContent>
+                    </Card>
+                  ))}
+                </div>
               </div>
             )}
+
+            <Tabs defaultValue="customers">
+              <TabsList className="mb-4">
+                <TabsTrigger value="customers">Linked Customers ({customers.length})</TabsTrigger>
+                <TabsTrigger value="stations">Stations ({customers.filter(c => c.is_station).length})</TabsTrigger>
+                <TabsTrigger value="jobs">All Jobs ({orgJobs.length})</TabsTrigger>
+              </TabsList>
+
+              <TabsContent value="customers">
+                {customers.length === 0 ? (
+                  <div className="text-center py-8 bg-slate-50 rounded-xl border-2 border-slate-200">
+                    <User className="w-12 h-12 mx-auto text-slate-300 mb-3" />
+                    <p className="text-slate-600">No customers linked to this organisation</p>
+                  </div>
+                ) : (
+                  <div className="grid gap-3">
+                    {customers.map((customer) => (
+                      <Card
+                        key={customer.id}
+                        className="hover:shadow-md transition-all cursor-pointer border-2 border-slate-200 rounded-xl"
+                        onClick={() => navigate(createPageUrl('Customers') + `?customerId=${customer.id}`)}
+                      >
+                        <CardContent className="p-4">
+                          <div className="flex items-center justify-between">
+                            <div>
+                              <h4 className="font-bold text-[#000000]">{customer.name}</h4>
+                              <div className="text-sm text-slate-600 mt-1 space-y-0.5">
+                                {customer.phone && <p>Phone: {customer.phone}</p>}
+                                {customer.email && <p>Email: {customer.email}</p>}
+                              </div>
+                            </div>
+                            <div className="flex gap-2">
+                              {customer.is_station && <Badge className="bg-purple-100 text-purple-700">Station</Badge>}
+                              {customer.status === 'inactive' && (
+                                <Badge variant="outline" className="bg-slate-100 text-slate-600">
+                                  Inactive
+                                </Badge>
+                              )}
+                            </div>
+                          </div>
+                        </CardContent>
+                      </Card>
+                    ))}
+                  </div>
+                )}
+              </TabsContent>
+
+              <TabsContent value="stations">
+                <div className="grid gap-3">
+                  {customers.filter(c => c.is_station).map((customer) => (
+                    <Card
+                      key={customer.id}
+                      className="hover:shadow-md transition-all cursor-pointer border-2 border-slate-200 rounded-xl"
+                      onClick={() => navigate(createPageUrl('Customers') + `?customerId=${customer.id}`)}
+                    >
+                      <CardContent className="p-4">
+                        <div className="flex items-center justify-between">
+                          <div>
+                            <h4 className="font-bold text-[#000000]">{customer.name}</h4>
+                            <div className="text-sm text-slate-600 mt-1">
+                              Station / Site
+                            </div>
+                          </div>
+                          <Badge className="bg-purple-100 text-purple-700">Station</Badge>
+                        </div>
+                      </CardContent>
+                    </Card>
+                  ))}
+                  {customers.filter(c => c.is_station).length === 0 && (
+                    <p className="text-gray-500">No stations found.</p>
+                  )}
+                </div>
+              </TabsContent>
+
+              <TabsContent value="jobs">
+                <JobList 
+                  jobs={orgJobs} 
+                  isLoading={false} 
+                  onSelectJob={() => {}} 
+                  onViewDetails={(job) => navigate(createPageUrl('Jobs') + `?jobId=${job.id}`)}
+                />
+              </TabsContent>
+            </Tabs>
           </div>
         </CardContent>
       </Card>

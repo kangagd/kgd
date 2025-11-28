@@ -17,6 +17,7 @@ import Tasks from './pages/Tasks';
 import RoleSettings from './pages/RoleSettings';
 import Notifications from './pages/Notifications';
 import Logistics from './pages/Logistics';
+import Contracts from './pages/Contracts';
 import __Layout from './Layout.jsx';
 
 
@@ -40,6 +41,7 @@ export const PAGES = {
     "RoleSettings": RoleSettings,
     "Notifications": Notifications,
     "Logistics": Logistics,
+    "Contracts": Contracts,
 }
 
 export const pagesConfig = {

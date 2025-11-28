@@ -42,6 +42,12 @@ export default function CustomerDetails({ customer, onClose, onEdit, onDelete })
     enabled: !!customer.organisation_id
   });
 
+  const { data: contract } = useQuery({
+    queryKey: ['contract', customer.contract_id],
+    queryFn: () => base44.entities.Contract.get(customer.contract_id),
+    enabled: !!customer.contract_id
+  });
+
   const handleDelete = () => {
     onDelete(customer.id);
     setShowDeleteConfirm(false);
@@ -94,6 +100,22 @@ export default function CustomerDetails({ customer, onClose, onEdit, onDelete })
         <CardContent className="p-4 md:p-6 space-y-6">
           {/* Duplicate Warning */}
           <DuplicateWarningCard entityType="Customer" record={customer} />
+
+          {/* Contract Banner */}
+          {contract && (
+            <div className="bg-purple-50 border-2 border-purple-200 rounded-xl p-4 flex justify-between items-center">
+              <div>
+                <div className="text-sm font-bold text-purple-700 uppercase tracking-wide mb-1">Under Contract</div>
+                <h3 className="text-lg font-bold text-purple-900">{contract.name}</h3>
+                <p className="text-sm text-purple-800">{contract.contract_type}</p>
+              </div>
+              <Link to={createPageUrl("Contracts")}>
+                <Button variant="outline" className="bg-white text-purple-700 border-purple-200 hover:bg-purple-50">
+                  View Contract
+                </Button>
+              </Link>
+            </div>
+          )}
 
           {organisation && (
             <div className="bg-blue-50 border-2 border-blue-200 rounded-xl p-4">

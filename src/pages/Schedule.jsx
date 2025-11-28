@@ -31,6 +31,7 @@ export default function Schedule() {
   const [selectedJob, setSelectedJob] = useState(null);
   const [technicianFilter, setTechnicianFilter] = useState("all");
   const [statusFilter, setStatusFilter] = useState("all");
+  const [contractFilter, setContractFilter] = useState(false);
   const [user, setUser] = useState(null);
   
   // Drag and drop state
@@ -207,6 +208,11 @@ export default function Schedule() {
 
         // Status filter
         if (statusFilter !== "all" && job.status !== statusFilter) {
+          return false;
+        }
+
+        // Contract Filter
+        if (contractFilter && !job.is_contract_job) {
           return false;
         }
 
@@ -917,6 +923,14 @@ export default function Schedule() {
                 <SelectItem value="Cancelled">Cancelled</SelectItem>
               </SelectContent>
             </Select>
+
+            <Button 
+              variant={contractFilter ? "default" : "outline"}
+              onClick={() => setContractFilter(!contractFilter)}
+              className={`h-10 px-3 rounded-xl border ${contractFilter ? "bg-purple-600 hover:bg-purple-700 text-white" : "border-[#E5E7EB] hover:border-[#FAE008] hover:bg-[#FFFEF5]"}`}
+            >
+              Contract Jobs Only
+            </Button>
             </div>
             </div>
             </div>

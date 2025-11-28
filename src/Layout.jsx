@@ -50,6 +50,7 @@ const primaryNavigationItems = [
   { title: "Projects", url: createPageUrl("Projects"), icon: FolderKanban },
   { title: "Jobs", url: createPageUrl("Jobs"), icon: Briefcase },
   { title: "Customers", url: createPageUrl("Customers"), icon: UserCircle },
+  { title: "Contracts", url: createPageUrl("Contracts"), icon: FileText },
 ];
 
 const secondaryNavigationItems = [

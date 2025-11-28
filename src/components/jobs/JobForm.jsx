@@ -487,6 +487,32 @@ export default function JobForm({ job, technicians, onSubmit, onCancel, isSubmit
         </CardHeader>
         <form onSubmit={handleSubmit}>
           <CardContent className="p-6 space-y-6">
+            {/* Contract Banner */}
+            {/* We don't have contract data fetched directly here, but if customer has contract_id we can infer. 
+                However, JobForm doesn't query full customer details for all dropdown items deeply. 
+                But `customers` list is fetched. We can check selected customer. 
+            */}
+            {(() => {
+               const selectedCustomer = customers.find(c => c.id === formData.customer_id);
+               if (selectedCustomer && selectedCustomer.contract_id) {
+                 return (
+                   <div className="bg-purple-50 border-l-4 border-purple-500 p-4 mb-4 rounded-r">
+                     <div className="flex items-center">
+                       <div className="flex-shrink-0">
+                         <FileText className="h-5 w-5 text-purple-500" />
+                       </div>
+                       <div className="ml-3">
+                         <p className="text-sm text-purple-700">
+                           <span className="font-bold">Contract Job:</span> This job will be linked to the customer's active contract.
+                         </p>
+                       </div>
+                     </div>
+                   </div>
+                 );
+               }
+               return null;
+            })()}
+
             {!preselectedProjectId && (
               <div className="space-y-2">
                 <Label htmlFor="project_id" className="text-[14px] font-medium text-[#111827] leading-[1.4]">Project (Optional)</Label>

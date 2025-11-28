@@ -108,6 +108,11 @@ export default function Reports() {
     queryFn: () => base44.entities.PriceListItem.list()
   });
 
+  const { data: contracts = [] } = useQuery({
+    queryKey: ['contracts'],
+    queryFn: () => base44.entities.Contract.list()
+  });
+
   const filteredProjects = useMemo(() => {
     return allProjects.filter(p => {
       if (p.deleted_at) return false;
@@ -253,6 +258,27 @@ export default function Reports() {
       count
     }));
   }, [allParts]);
+
+  // Contract Metrics
+  const contractMetrics = useMemo(() => {
+    const totalContractJobs = allJobs.filter(j => j.is_contract_job).length;
+    const completedContractJobs = allJobs.filter(j => j.is_contract_job && j.status === 'Completed').length;
+    const slaBreaches = allJobs.filter(j => j.is_contract_job && j.sla_due_at && new Date(j.sla_due_at) < new Date() && j.status !== 'Completed').length;
+    
+    const slaCompliance = totalContractJobs > 0 
+      ? (((totalContractJobs - slaBreaches) / totalContractJobs) * 100).toFixed(1)
+      : 100;
+
+    const jobsByType = { Service: 0, Repair: 0, Installation: 0 };
+    allJobs.filter(j => j.is_contract_job).forEach(j => {
+        const type = j.job_type_name || "";
+        if (type.includes("Service")) jobsByType.Service++;
+        else if (type.includes("Install")) jobsByType.Installation++;
+        else jobsByType.Repair++;
+    });
+
+    return { totalContractJobs, completedContractJobs, slaBreaches, slaCompliance, jobsByType };
+  }, [allJobs]);
 
   return (
     <div className="p-4 md:p-5 lg:p-10 bg-[#ffffff] min-h-screen overflow-x-hidden">
@@ -462,6 +488,47 @@ export default function Reports() {
             ) : (
               <p className="text-center text-[#4B5563] py-8">No technician data available</p>
             )}
+          </CardContent>
+        </Card>
+
+        {/* Contract Reports */}
+        <Card className="border border-[#E5E7EB] mb-6 bg-purple-50">
+          <CardHeader>
+            <CardTitle className="text-[18px] font-semibold text-purple-900">Contract Performance</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+              <div className="p-4 bg-white rounded-lg border border-purple-100">
+                <div className="text-sm text-purple-600 mb-1">Active Contracts</div>
+                <div className="text-2xl font-bold text-purple-900">{contracts.length}</div>
+              </div>
+              <div className="p-4 bg-white rounded-lg border border-purple-100">
+                <div className="text-sm text-purple-600 mb-1">Total Contract Jobs</div>
+                <div className="text-2xl font-bold text-purple-900">{contractMetrics.totalContractJobs}</div>
+              </div>
+              <div className="p-4 bg-white rounded-lg border border-purple-100">
+                <div className="text-sm text-purple-600 mb-1">SLA Compliance</div>
+                <div className="text-2xl font-bold text-purple-900">{contractMetrics.slaCompliance}%</div>
+              </div>
+              <div className="p-4 bg-white rounded-lg border border-purple-100">
+                <div className="text-sm text-purple-600 mb-1">SLA Breaches</div>
+                <div className="text-2xl font-bold text-red-600">{contractMetrics.slaBreaches}</div>
+              </div>
+            </div>
+            <div className="mt-4 grid grid-cols-1 md:grid-cols-3 gap-4">
+               <div className="text-center p-2">
+                 <div className="text-lg font-bold">{contractMetrics.jobsByType.Service}</div>
+                 <div className="text-xs text-gray-500">Service Jobs</div>
+               </div>
+               <div className="text-center p-2">
+                 <div className="text-lg font-bold">{contractMetrics.jobsByType.Repair}</div>
+                 <div className="text-xs text-gray-500">Repair Jobs</div>
+               </div>
+               <div className="text-center p-2">
+                 <div className="text-lg font-bold">{contractMetrics.jobsByType.Installation}</div>
+                 <div className="text-xs text-gray-500">Install Jobs</div>
+               </div>
+            </div>
           </CardContent>
         </Card>
 
