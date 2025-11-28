@@ -510,6 +510,7 @@ export default function Schedule() {
                                 onAddressClick={handleAddressClick}
                                 onProjectClick={handleProjectClick}
                                 isDragging={dragSnapshot.isDragging}
+                                techniciansLookup={techniciansLookup}
                               />
                             </div>
                           )}
