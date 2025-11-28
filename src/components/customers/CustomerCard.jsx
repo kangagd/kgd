@@ -5,6 +5,7 @@ import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/component
 import { CustomerTypeBadge } from "../common/StatusBadge";
 import { Button } from "@/components/ui/button";
 import { DuplicateBadge } from "../common/DuplicateWarningCard";
+import { Badge } from "@/components/ui/badge";
 
 
 
@@ -48,9 +49,16 @@ export default function CustomerCard({ customer, onClick, onViewDetails }) {
                   </h3>
                   <DuplicateBadge record={customer} size="sm" />
                 </div>
-                {customer.customer_type && (
-                  <CustomerTypeBadge value={customer.customer_type} />
-                )}
+                <div className="flex gap-1 flex-wrap justify-end">
+                  {customer.is_station && (
+                    <Badge className="bg-purple-100 text-purple-700 border-purple-200 border font-medium text-[12px] leading-[1.35]">
+                      Station
+                    </Badge>
+                  )}
+                  {customer.customer_type && (
+                    <CustomerTypeBadge value={customer.customer_type} />
+                  )}
+                </div>
               </div>
             </div>
 
