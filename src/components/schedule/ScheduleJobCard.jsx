@@ -7,7 +7,7 @@ import { Truck, Package } from "lucide-react";
 import { TechnicianAvatarGroup } from "../common/TechnicianAvatar";
 import { DuplicateDot } from "../common/DuplicateWarningCard";
 
-export default function ScheduleJobCard({ job, onClick, onAddressClick, onProjectClick }) {
+export default function ScheduleJobCard({ job, onClick, onAddressClick, onProjectClick, techniciansLookup = {} }) {
   return (
     <Card
       onClick={onClick}
@@ -42,12 +42,16 @@ export default function ScheduleJobCard({ job, onClick, onAddressClick, onProjec
         {job.assigned_to && job.assigned_to.length > 0 && (
           <div className="flex items-center gap-2 ml-6">
             <TechnicianAvatarGroup
-              technicians={job.assigned_to.map((email, idx) => ({
-                email,
-                display_name: job.assigned_to_name?.[idx] || email,
-                full_name: job.assigned_to_name?.[idx] || email,
-                id: email
-              }))}
+              technicians={job.assigned_to.map((email, idx) => {
+                const normalized = email.toLowerCase();
+                const tech = techniciansLookup?.[normalized];
+                return {
+                  email,
+                  display_name: tech?.display_name || tech?.full_name || job.assigned_to_name?.[idx] || email,
+                  full_name: tech?.full_name || job.assigned_to_name?.[idx] || email,
+                  id: email
+                };
+              })}
               maxDisplay={3}
               size="xs"
             />

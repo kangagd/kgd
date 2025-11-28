@@ -95,6 +95,14 @@ export default function Schedule() {
     return map;
   }, [jobTypes]);
 
+  const techniciansLookup = React.useMemo(() => {
+    const map = {};
+    technicians.forEach(t => {
+      if (t.email) map[t.email.toLowerCase()] = t;
+    });
+    return map;
+  }, [technicians]);
+
   const { checkConflicts } = useScheduleConflicts(allJobs, leaves, closedDays);
 
   const isTechnician = user?.is_field_technician && user?.role !== 'admin';
@@ -435,6 +443,7 @@ export default function Schedule() {
                             onAddressClick={handleAddressClick}
                             onProjectClick={handleProjectClick}
                             isDragging={dragSnapshot.isDragging}
+                            techniciansLookup={techniciansLookup}
                           />
                         </div>
                       )}
@@ -687,6 +696,7 @@ export default function Schedule() {
                       onClick={() => setSelectedJob(job)}
                       onAddressClick={handleAddressClick}
                       onProjectClick={handleProjectClick}
+                      techniciansLookup={techniciansLookup}
                     />
                   ))}
                 </div>
@@ -871,6 +881,7 @@ export default function Schedule() {
                         onClick={() => setSelectedJob(job)}
                         onAddressClick={handleAddressClick}
                         onProjectClick={handleProjectClick}
+                        techniciansLookup={techniciansLookup}
                       />
                     ))}
                   </div>
