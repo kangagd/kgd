@@ -10,9 +10,11 @@ Deno.serve(async (req) => {
         // Removed limit param to ensure default behavior if param is causing issues
         const allJobs = await base44.asServiceRole.entities.Job.list(); 
 
-        // TEMPORARY: Return all jobs for ALL authenticated users to diagnose visibility issues
-        // This bypasses all backend filtering to ensure data reaches the frontend
-        return Response.json(allJobs);
+        // Filter out deleted and cancelled jobs on the backend
+        // This ensures we don't send unnecessary data and fixes the "duplication" issue (deleted vs active)
+        const activeJobs = allJobs.filter(job => !job.deleted_at && job.status !== "Cancelled");
+
+        return Response.json(activeJobs);
 
     } catch (error) {
         return Response.json({ error: error.message }, { status: 500 });
