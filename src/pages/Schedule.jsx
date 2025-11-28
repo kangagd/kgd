@@ -337,29 +337,70 @@ export default function Schedule() {
       );
     }
 
-    // Group by technician for display, but keep flat index for drag
-    const jobsByTech = {};
+    // Group by technician using email to handle name changes/duplicates
+    const jobsByTechEmail = {};
+    const techDisplayNames = {};
+
+    // Initialize with known technicians
+    technicians.forEach(tech => {
+      jobsByTechEmail[tech.email] = [];
+      techDisplayNames[tech.email] = tech.display_name || tech.full_name;
+    });
+    
+    // Initialize unassigned
+    const UNASSIGNED_KEY = 'unassigned';
+    jobsByTechEmail[UNASSIGNED_KEY] = [];
+    techDisplayNames[UNASSIGNED_KEY] = 'Unassigned';
+
+    // Distribute jobs
     dayJobs.forEach(job => {
-      const techName = job.assigned_to_name?.[0] || 'Unassigned';
-      if (!jobsByTech[techName]) jobsByTech[techName] = [];
-      jobsByTech[techName].push(job);
+      const primaryEmail = job.assigned_to?.[0];
+      
+      if (primaryEmail && jobsByTechEmail[primaryEmail] !== undefined) {
+        // Known technician
+        jobsByTechEmail[primaryEmail].push(job);
+      } else if (primaryEmail) {
+        // Unknown technician (maybe deleted or not in fetched list)
+        if (!jobsByTechEmail[primaryEmail]) {
+          jobsByTechEmail[primaryEmail] = [];
+          techDisplayNames[primaryEmail] = job.assigned_to_name?.[0] || primaryEmail;
+        }
+        jobsByTechEmail[primaryEmail].push(job);
+      } else {
+        // Unassigned
+        jobsByTechEmail[UNASSIGNED_KEY].push(job);
+      }
     });
 
-    // Calculate global indices
+    // Prepare render groups with global indices for drag-drop
     let globalIndex = 0;
-    const jobsWithIndices = [];
-    Object.entries(jobsByTech).forEach(([techName, jobs]) => {
-      jobs.forEach(job => {
-        jobsWithIndices.push({ job, techName, index: globalIndex++ });
-      });
+    const groupsToRender = [];
+
+    // Helper to add group
+    const addGroup = (email, displayName) => {
+      const jobs = jobsByTechEmail[email];
+      if (jobs && jobs.length > 0) {
+        groupsToRender.push({
+          techName: displayName,
+          items: jobs.map(job => ({ job, index: globalIndex++ }))
+        });
+      }
+    };
+
+    // 1. Add active technicians in order
+    technicians.forEach(tech => {
+      addGroup(tech.email, techDisplayNames[tech.email]);
     });
 
-    // Group back by tech name with global indices
-    const groupedWithIndices = {};
-    jobsWithIndices.forEach(item => {
-      if (!groupedWithIndices[item.techName]) groupedWithIndices[item.techName] = [];
-      groupedWithIndices[item.techName].push(item);
+    // 2. Add other groups (unknown techs and unassigned)
+    Object.keys(jobsByTechEmail).forEach(email => {
+      if (email === UNASSIGNED_KEY) return; // Handle last
+      if (technicians.some(t => t.email === email)) return; // Already handled
+      addGroup(email, techDisplayNames[email]);
     });
+
+    // 3. Add unassigned last
+    addGroup(UNASSIGNED_KEY, techDisplayNames[UNASSIGNED_KEY]);
 
     return (
       <Droppable droppableId={`day-${dateStr}`}>
@@ -371,7 +412,7 @@ export default function Schedule() {
               snapshot.isDraggingOver ? 'bg-[#FAE008]/10 border-2 border-dashed border-[#FAE008]' : ''
             }`}
           >
-            {Object.entries(groupedWithIndices).map(([techName, items]) => (
+            {groupsToRender.map(({ techName, items }) => (
               <div key={techName}>
                 <h3 className="text-sm font-semibold text-[#4B5563] mb-3">
                   {techName}
