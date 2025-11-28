@@ -160,7 +160,7 @@ The summary should be a single paragraph, professional, and capture the key work
             try {
                 // Use service role to invoke functions to ensure permissions
                 await base44.asServiceRole.functions.invoke('syncJobToProject', { job_id: jobId });
-                
+
                 // Auto-advance project stage
                 const outcomeToStageMap = {
                   'new_quote': 'Create Quote',
@@ -169,13 +169,13 @@ The summary should be a single paragraph, professional, and capture the key work
                   'completed': 'Completed',
                   'return_visit_required': 'Scheduled'
                 };
-                
+
                 const newProjectStage = outcomeToStageMap[outcome];
                 if (newProjectStage) {
                   const project = await base44.asServiceRole.entities.Project.get(job.project_id);
                   if (project && project.status !== newProjectStage) {
                     await base44.asServiceRole.entities.Project.update(job.project_id, { status: newProjectStage });
-                    
+
                     if (newProjectStage === 'Completed') {
                         await base44.asServiceRole.functions.invoke('handleProjectCompletion', {
                           project_id: job.project_id,
@@ -189,6 +189,60 @@ The summary should be a single paragraph, professional, and capture the key work
             } catch (err) {
                 console.error("Sync to project failed", err);
             }
+        }
+
+        // LOGISTICS AUTOMATION (Triggers C, E, F)
+        try {
+            const jobType = job.job_type_name || job.job_type;
+            if (jobType && newStatus === 'Completed') {
+                // Find linked parts for this job
+                // Part entity has linked_logistics_jobs array containing job IDs
+                // We need to find parts where linked_logistics_jobs contains jobId
+                // No direct array contains query in filter usually, so we might need to fetch project parts and filter in memory
+                // Or if your DB supports it. Base44 filter might support array contains? 
+                // Usually filter: { linked_logistics_jobs: jobId } works if it's an array field in mongo-like.
+
+                const linkedParts = await base44.asServiceRole.entities.Part.filter({
+                    project_id: job.project_id // Optimization: scope to project
+                });
+
+                const relevantParts = linkedParts.filter(p => 
+                    p.linked_logistics_jobs && p.linked_logistics_jobs.includes(jobId)
+                );
+
+                if (relevantParts.length > 0) {
+                    let updates = {};
+
+                    // C. When warehouse logistics job is completed → update Part location
+                    if (jobType === "Delivery – At Warehouse") {
+                        updates.location = "In Warehouse Storage";
+                    }
+                    // E. When Material Pickup – Warehouse job completes → update Part location
+                    else if (jobType === "Material Pickup – Warehouse") {
+                        updates.location = "With Technician";
+                    }
+                    // F. Delivery – To Client & Return to Supplier
+                    else if (jobType === "Delivery – To Client") {
+                        updates.location = "At Client Site";
+                    }
+                    else if (jobType === "Return to Supplier") {
+                        updates.status = "Returned";
+                        updates.location = "At Supplier";
+                    }
+
+                    if (Object.keys(updates).length > 0) {
+                        for (const part of relevantParts) {
+                            // Avoid overwriting if already set? Prompt says "if not already set" for C.
+                            // We'll apply updates.
+                            if (jobType === "Delivery – At Warehouse" && part.location === "In Warehouse Storage") continue;
+
+                            await base44.asServiceRole.entities.Part.update(part.id, updates);
+                        }
+                    }
+                }
+            }
+        } catch (logisticsErr) {
+            console.error("Logistics automation failed", logisticsErr);
         }
 
         return Response.json({ success: true, jobSummary });
