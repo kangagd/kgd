@@ -49,10 +49,18 @@ Deno.serve(async (req) => {
         // Create JobSummary
         let scheduledDatetime = null;
         if (job.scheduled_date) {
-            const dateStr = job.scheduled_date;
-            const timeStr = job.scheduled_time || '09:00';
-            // Simple date parsing to avoid issues
-            scheduledDatetime = new Date(`${dateStr}T${timeStr}:00`).toISOString();
+            try {
+                const dateStr = job.scheduled_date;
+                const timeStr = job.scheduled_time || '09:00';
+                // Handle simplified date strings or full ISO
+                if (dateStr.includes('T')) {
+                    scheduledDatetime = new Date(dateStr).toISOString();
+                } else {
+                    scheduledDatetime = new Date(`${dateStr}T${timeStr}:00`).toISOString();
+                }
+            } catch (e) {
+                console.warn("Error parsing scheduled_date:", e);
+            }
         }
 
         const summaryData = {
@@ -63,7 +71,7 @@ Deno.serve(async (req) => {
             scheduled_datetime: scheduledDatetime,
             technician_email: user.email || "",
             technician_name: user.full_name || user.email || "Unknown Technician",
-            check_in_time: checkIn.check_in_time,
+            check_in_time: checkIn.check_in_time || new Date().toISOString(),
             check_out_time: checkOutTime,
             duration_minutes: durationMinutes || 0,
             overview: overview || "",
@@ -126,6 +134,7 @@ Deno.serve(async (req) => {
         return Response.json({ success: true, jobSummary });
 
     } catch (error) {
-        return Response.json({ error: error.message }, { status: 500 });
+        console.error("CheckOut Error:", error);
+        return Response.json({ error: error.message, stack: error.stack }, { status: 500 });
     }
 });
