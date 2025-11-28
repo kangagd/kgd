@@ -98,6 +98,33 @@ Deno.serve(async (req) => {
             }
         }
 
+        // EMERGENCY FALLBACK: If still no check-in, search for ANY active check-in for this user globally
+        if (!checkIn) {
+             try {
+                 console.log(`Emergency: Searching for ANY active check-in for user ${userEmail} globally`);
+                 // We can't filter by active status directly usually, so we filter by user
+                 const allUserCheckIns = await base44.asServiceRole.entities.CheckInOut.filter({
+                     technician_email: userEmail
+                 }, '-created_date', 20); // Last 20 checkins
+                 
+                 checkIn = allUserCheckIns.find(c => !c.check_out_time);
+                 
+                 if (checkIn) {
+                     console.log(`Found orphaned active check-in ${checkIn.id} for job ${checkIn.job_id} (Requested job: ${jobId})`);
+                     // If the user is trying to check out of Job A, but their active check-in is Job B...
+                     // We should probably allow it if it's the ONLY active check-in they have? 
+                     // Or at least inform them.
+                     // For now, if it matches the requested jobId, GREAT. 
+                     // If not, we use it anyway because they are trying to stop their clock.
+                     if (checkIn.job_id !== jobId) {
+                         console.warn(`MISMATCH: User checking out of job ${jobId} but active check-in is for ${checkIn.job_id}. Using it anyway to stop clock.`);
+                     }
+                 }
+             } catch (e) {
+                 console.error("Global fallback search failed:", e);
+             }
+        }
+
         // Handle "Already Checked Out" case gracefully (Idempotency)
         if (checkIn && checkIn.check_out_time) {
             console.log(`Check-in ${checkIn.id} is already checked out. Returning success.`);
