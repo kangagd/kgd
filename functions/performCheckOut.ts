@@ -31,7 +31,11 @@ Deno.serve(async (req) => {
             return Response.json({ error: 'Check-in record not found' }, { status: 404 });
         }
 
-        if (checkIn.technician_email !== user.email && user.role !== 'admin' && user.role !== 'manager') {
+        const userEmail = (user.email || "").toLowerCase().trim();
+        const checkInEmail = (checkIn.technician_email || "").toLowerCase().trim();
+        
+        if (checkInEmail !== userEmail && user.role !== 'admin' && user.role !== 'manager') {
+             console.warn(`Unauthorized checkout attempt. User: ${userEmail}, CheckIn Tech: ${checkInEmail}`);
              return Response.json({ error: 'Unauthorized to check out this session' }, { status: 403 });
         }
 
@@ -88,8 +92,8 @@ Deno.serve(async (req) => {
             measurements: measurements || {}
         };
         
-        // Explicitly set created_by to ensure RLS consistency for the user
-        summaryData.created_by = user.email;
+        // Removed manual setting of created_by as it is a system field and cannot be written to directly
+        // summaryData.created_by = user.email; 
 
         console.log("Creating JobSummary with data:", JSON.stringify(summaryData));
 
