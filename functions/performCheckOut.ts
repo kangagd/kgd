@@ -21,6 +21,11 @@ Deno.serve(async (req) => {
             durationHours
         } = await req.json();
 
+        // Sanitize inputs
+        const safeDurationHours = (typeof durationHours === 'number' && !isNaN(durationHours)) ? durationHours : 0;
+        const safeDurationMinutes = (typeof durationMinutes === 'number' && !isNaN(durationMinutes)) ? durationMinutes : 0;
+        const safeCheckOutTime = checkOutTime || new Date().toISOString();
+
         if (!jobId || !checkInId) {
             return Response.json({ error: 'Job ID and CheckIn ID are required' }, { status: 400 });
         }
@@ -42,8 +47,8 @@ Deno.serve(async (req) => {
 
         // Update CheckInOut record
         await base44.asServiceRole.entities.CheckInOut.update(checkInId, {
-            check_out_time: checkOutTime,
-            duration_hours: durationHours
+            check_out_time: safeCheckOutTime,
+            duration_hours: safeDurationHours
         });
 
         // Create JobSummary
@@ -72,8 +77,8 @@ Deno.serve(async (req) => {
             technician_email: user.email || "",
             technician_name: user.full_name || user.email || "Unknown Technician",
             check_in_time: checkIn.check_in_time || new Date().toISOString(),
-            check_out_time: checkOutTime,
-            duration_minutes: durationMinutes || 0,
+            check_out_time: safeCheckOutTime,
+            duration_minutes: safeDurationMinutes,
             overview: overview || "",
             next_steps: nextSteps || "",
             communication_with_client: communicationWithClient || "",

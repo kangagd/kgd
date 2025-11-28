@@ -247,9 +247,18 @@ export default function JobDetails({ job: initialJob, onClose, onStatusChange, o
   const checkOutMutation = useMutation({
     mutationFn: async () => {
       const checkOutTime = new Date().toISOString();
-      const checkInTime = new Date(activeCheckIn.check_in_time);
-      const durationHours = (new Date(checkOutTime) - checkInTime) / (1000 * 60 * 60);
-      const durationMinutes = Math.round(durationHours * 60);
+
+      let durationHours = 0;
+      let durationMinutes = 0;
+
+      if (activeCheckIn && activeCheckIn.check_in_time) {
+          const checkInTime = new Date(activeCheckIn.check_in_time);
+          if (!isNaN(checkInTime.getTime())) {
+              durationHours = (new Date(checkOutTime) - checkInTime) / (1000 * 60 * 60);
+              if (isNaN(durationHours)) durationHours = 0;
+              durationMinutes = Math.round(durationHours * 60);
+          }
+      }
 
       // Check if this is a mistake check-in (less than 1 minute)
       const isMistake = durationMinutes < 1;
@@ -281,10 +290,10 @@ export default function JobDetails({ job: initialJob, onClose, onStatusChange, o
         measurements: job.measurements,
         checkOutTime,
         durationMinutes,
-        durationHours: Math.round(durationHours * 10) / 10
-      });
-      
-      return response.data;
+        durationHours: Math.round((durationHours || 0) * 10) / 10
+        });
+
+        return response.data;
     },
     onSuccess: () => {
       setValidationError("");
