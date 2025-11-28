@@ -317,7 +317,10 @@ export default function JobDetails({ job: initialJob, onClose, onStatusChange, o
   });
 
   const updateJobMutation = useMutation({
-    mutationFn: ({ field, value }) => base44.entities.Job.update(job.id, { [field]: value }),
+    mutationFn: async ({ field, value }) => {
+      const res = await base44.functions.invoke('updateJob', { id: job.id, data: { [field]: value } });
+      return res.data.job;
+    },
     onSuccess: (updatedJob) => {
       queryClient.invalidateQueries({ queryKey: ['jobs'] });
       queryClient.setQueryData(['job', job.id], (oldData) => ({
@@ -564,18 +567,19 @@ export default function JobDetails({ job: initialJob, onClose, onStatusChange, o
           status: 'Scheduled'
         };
         
-        base44.entities.Job.update(job.id, updates).then(() => {
+        base44.functions.invoke('updateJob', { id: job.id, data: updates }).then((res) => {
+          const updatedJob = res.data.job;
           queryClient.invalidateQueries({ queryKey: ['jobs'] });
           queryClient.setQueryData(['job', job.id], (oldData) => ({
             ...oldData,
-            ...updates
+            ...updatedJob
           }));
         });
         return;
-      }
-    }
-    
-    updateJobMutation.mutate({ field: fieldName, value: newValue });
+        }
+        }
+
+        updateJobMutation.mutate({ field: fieldName, value: newValue });
   };
 
   const handleNotesBlur = () => {

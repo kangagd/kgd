@@ -39,7 +39,7 @@ export default function PartsSection({ projectId, autoExpand = false }) {
   });
 
   const createPartMutation = useMutation({
-    mutationFn: (data) => base44.entities.Part.create(data),
+    mutationFn: (data) => base44.functions.invoke('managePart', { action: 'create', data }),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['parts', projectId] });
       setShowModal(false);
@@ -48,7 +48,7 @@ export default function PartsSection({ projectId, autoExpand = false }) {
   });
 
   const updatePartMutation = useMutation({
-    mutationFn: ({ id, data }) => base44.entities.Part.update(id, data),
+    mutationFn: ({ id, data }) => base44.functions.invoke('managePart', { action: 'update', id, data }),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['parts', projectId] });
       setShowModal(false);
@@ -57,10 +57,10 @@ export default function PartsSection({ projectId, autoExpand = false }) {
   });
 
   const deletePartMutation = useMutation({
-    mutationFn: (id) => base44.entities.Part.delete(id),
+    mutationFn: (id) => base44.functions.invoke('managePart', { action: 'delete', id }),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['parts', projectId] });
-      setShowModal(false); // Close if deleting the currently edited one (though usually we delete from list)
+      setShowModal(false); 
     }
   });
 
