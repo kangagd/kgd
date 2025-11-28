@@ -188,7 +188,7 @@ Deno.serve(async (req) => {
             job_number: job.job_number,
             job_type: job.job_type_name || null,
             scheduled_datetime: scheduledDatetime,
-            technician_email: user.email || "",
+            technician_email: userEmail, // Use normalized email for consistency
             technician_name: user.full_name || user.email || "Unknown Technician",
             check_in_time: checkIn.check_in_time,
             check_out_time: checkOutTime,
@@ -207,6 +207,7 @@ Deno.serve(async (req) => {
         let jobSummary;
         try {
             jobSummary = await base44.asServiceRole.entities.JobSummary.create(summaryData);
+            console.log("JobSummary created successfully:", jobSummary.id);
         } catch (e) {
             console.error("Failed to create JobSummary:", e);
             return Response.json({ error: `Failed to create Job Summary: ${e.message}` }, { status: 500 });
