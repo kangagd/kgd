@@ -275,7 +275,7 @@ export default function JobDetails({ job: initialJob, onClose, onStatusChange, o
       }
 
       // Determine new status
-      const newStatus = isMistake ? job.status : determineJobStatus(job.scheduled_date, outcome, false, job.status);
+      const newStatus = isMistake ? job.status : "Completed";
 
       // Use backend function for check-out
       const response = await base44.functions.invoke('performCheckOut', {
@@ -625,19 +625,13 @@ export default function JobDetails({ job: initialJob, onClose, onStatusChange, o
     logChange('outcome', job.outcome, value);
     updateJobMutation.mutate({ field: 'outcome', value });
 
-    // Auto-update status to Completed for specific outcomes
-    if (value === "send_invoice" || value === "completed") {
+    // Auto-update status to Completed for ALL outcomes (except empty)
+    if (value) {
       updateJobMutation.mutate({ field: 'status', value: "Completed" });
       return;
     }
 
-    // Auto-update status to Open for specific outcomes
-    if (value === "new_quote" || value === "update_quote" || value === "return_visit_required") {
-      updateJobMutation.mutate({ field: 'status', value: "Open" });
-      return;
-    }
-
-    // Update status based on centralized logic - check if there's an active check-in
+    // Update status based on centralized logic - check if there's an active check-in (handles clearing outcome)
     const newStatus = determineJobStatus(job.scheduled_date, value, !!activeCheckIn, job.status);
     if (newStatus !== job.status) {
       updateJobMutation.mutate({ field: 'status', value: newStatus });
