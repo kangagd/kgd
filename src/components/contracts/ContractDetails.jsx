@@ -8,6 +8,7 @@ import { Badge } from "@/components/ui/badge";
 import { ArrowLeft, Edit, MapPin, Calendar, Clock, AlertTriangle, CheckCircle2, Building2 } from "lucide-react";
 import { format, parseISO, isPast } from "date-fns";
 import JobList from "../jobs/JobList";
+import JobCard from "../jobs/JobCard";
 import { createPageUrl } from "@/utils";
 import { Link } from "react-router-dom";
 
@@ -160,30 +161,31 @@ export default function ContractDetails({ contract, onClose, onEdit }) {
 
           {/* Recent Work */}
           <Card className="border-2 border-slate-200">
-            <CardHeader>
-              <CardTitle className="text-lg flex items-center gap-2">
-                <CheckCircle2 className="w-5 h-5 text-green-500" />
-                Recent Completed Jobs
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              {recentCompleted.length === 0 ? (
-                <p className="text-gray-500 text-sm">No recently completed jobs.</p>
-              ) : (
-                <div className="space-y-2">
-                  {recentCompleted.map(job => (
-                    <div key={job.id} className="flex justify-between items-center p-2 hover:bg-gray-50 rounded border-b last:border-0">
-                      <Link to={createPageUrl('Jobs') + `?jobId=${job.id}`} className="font-medium text-blue-600 hover:underline">
-                        Job #{job.job_number}
-                      </Link>
-                      <div className="text-sm text-gray-600">
-                        {format(parseISO(job.completed_date), 'MMM d, yyyy')}
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              )}
-            </CardContent>
+          <CardHeader>
+            <CardTitle className="text-lg flex items-center gap-2">
+              <CheckCircle2 className="w-5 h-5 text-green-500" />
+              Recent Completed Jobs
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            {recentCompleted.length === 0 ? (
+              <p className="text-gray-500 text-sm">No recently completed jobs.</p>
+            ) : (
+              <div className="grid gap-4">
+                {recentCompleted.map(simpleJob => {
+                  const fullJob = jobs.find(j => j.id === simpleJob.id) || simpleJob;
+                  return (
+                    <JobCard 
+                      key={fullJob.id} 
+                      job={fullJob} 
+                      onClick={() => window.location.href = createPageUrl('Jobs') + `?jobId=${fullJob.id}`}
+                      onViewDetails={() => window.location.href = createPageUrl('Jobs') + `?jobId=${fullJob.id}`}
+                    />
+                  );
+                })}
+              </div>
+            )}
+          </CardContent>
           </Card>
         </TabsContent>
 
