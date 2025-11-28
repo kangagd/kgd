@@ -1370,7 +1370,7 @@ Format as HTML bullet points using <ul> and <li> tags. Include only the most cri
             <DuplicateWarningCard entityType="Project" record={project} />
 
             {/* Initial Visit Summary */}
-            <InitialVisitSummary project={project} />
+            <InitialVisitSummary project={project} jobs={jobs} />
 
             <div>
               <RichTextField

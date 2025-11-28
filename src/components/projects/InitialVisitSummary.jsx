@@ -34,10 +34,13 @@ const outcomeColors = {
   return_visit_required: "bg-amber-100 text-amber-800"
 };
 
-export default function InitialVisitSummary({ project, onViewJob }) {
+export default function InitialVisitSummary({ project, jobs, onViewJob }) {
   const [isMinimized, setIsMinimized] = React.useState(false);
 
-  if (!project.initial_visit_job_id) {
+  // If jobs list is provided, check if the linked job still exists (wasn't deleted)
+  const jobExists = !jobs || jobs.some(j => j.id === project.initial_visit_job_id);
+
+  if (!project.initial_visit_job_id || !jobExists) {
     return null;
   }
 
