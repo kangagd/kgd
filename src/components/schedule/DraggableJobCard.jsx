@@ -1,8 +1,8 @@
 import React from "react";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { MapPin, Briefcase, ExternalLink, GripVertical } from "lucide-react";
-import { JobStatusBadge, JobTypeBadge } from "../common/StatusBadge";
+import { MapPin, Briefcase, ExternalLink, GripVertical, Truck } from "lucide-react";
+import { JobStatusBadge, JobTypeBadge, ProductTypeBadge } from "../common/StatusBadge";
 import { TechnicianAvatarGroup } from "../common/TechnicianAvatar";
 import { DuplicateDot } from "../common/DuplicateWarningCard";
 
@@ -29,15 +29,29 @@ export default function DraggableJobCard({
         </div>
 
         <div className="flex-1 min-w-0" onClick={onClick}>
-          {/* Top Row: Time + Status */}
-          <div className="flex items-center justify-between mb-3">
+          {/* Top Row: Time + Status + Badges */}
+          <div className="flex items-start justify-between mb-3 gap-2">
             <div className="flex items-center gap-2">
               <div className="text-sm font-semibold text-[#111827]">
                 {job.scheduled_time || 'Time TBD'}
               </div>
               <DuplicateDot record={job} />
             </div>
-            <JobStatusBadge value={job.status} />
+            <div className="flex flex-wrap justify-end gap-2">
+              {(job.job_type_name || "").match(/(Delivery|Pickup|Return)/i) && (
+                <Badge className="bg-slate-800 text-white border-0 flex items-center gap-1 px-2">
+                  <Truck className="w-3 h-3" />
+                  Logistics
+                </Badge>
+              )}
+              {job.job_type_name && (
+                <JobTypeBadge value={job.job_type_name} />
+              )}
+              {job.product && (
+                <ProductTypeBadge value={job.product} />
+              )}
+              <JobStatusBadge value={job.status} />
+            </div>
           </div>
 
           {/* Middle Section: Job Info */}
@@ -53,10 +67,44 @@ export default function DraggableJobCard({
                 </div>
               </div>
             </div>
+          </div>
 
-            {/* Technicians */}
+          {/* Bottom Row: Address + Project + Technicians */}
+          <div className="flex items-end justify-between mt-3">
+            <div className="space-y-2 text-xs text-[#6B7280] flex-1 min-w-0 mr-2">
+              {job.address_full && (
+                <div className="flex items-start gap-2">
+                  <MapPin className="w-3.5 h-3.5 mt-0.5 flex-shrink-0" />
+                  <button
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      onAddressClick(job);
+                    }}
+                    className="text-[#2563EB] hover:underline text-left truncate"
+                  >
+                    {job.address_full}
+                  </button>
+                </div>
+              )}
+              {job.project_id && job.project_name && (
+                <div className="flex items-start gap-2 ml-5">
+                  <button
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      onProjectClick(job.project_id);
+                    }}
+                    className="text-[#2563EB] hover:underline flex items-center gap-1 truncate"
+                  >
+                    <ExternalLink className="w-3 h-3" />
+                    Project: {job.project_name}
+                  </button>
+                </div>
+              )}
+            </div>
+
+            {/* Technicians in bottom right */}
             {job.assigned_to && job.assigned_to.length > 0 && (
-              <div className="flex items-center gap-2 ml-6">
+              <div className="flex-shrink-0">
                 <TechnicianAvatarGroup
                   technicians={job.assigned_to.map((email, idx) => {
                     const normalized = email.toLowerCase();
@@ -71,45 +119,6 @@ export default function DraggableJobCard({
                   maxDisplay={3}
                   size="xs"
                 />
-              </div>
-            )}
-
-            {/* Job Type Chips */}
-            <div className="flex flex-wrap gap-2 ml-6">
-              {job.job_type_name && (
-                <JobTypeBadge value={job.job_type_name} />
-              )}
-            </div>
-          </div>
-
-          {/* Bottom Row: Address + Project */}
-          <div className="space-y-2 text-xs text-[#6B7280]">
-            {job.address_full && (
-              <div className="flex items-start gap-2">
-                <MapPin className="w-3.5 h-3.5 mt-0.5 flex-shrink-0" />
-                <button
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    onAddressClick(job);
-                  }}
-                  className="text-[#2563EB] hover:underline text-left"
-                >
-                  {job.address_full}
-                </button>
-              </div>
-            )}
-            {job.project_id && job.project_name && (
-              <div className="flex items-start gap-2 ml-5">
-                <button
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    onProjectClick(job.project_id);
-                  }}
-                  className="text-[#2563EB] hover:underline flex items-center gap-1"
-                >
-                  <ExternalLink className="w-3 h-3" />
-                  Project: {job.project_name}
-                </button>
               </div>
             )}
           </div>
