@@ -68,12 +68,24 @@ Deno.serve(async (req) => {
       };
 
       const mappedStatus = statusMap[pandadocStatus];
+      const updates = {};
+
       if (mappedStatus && mappedStatus !== quote.status) {
-        // Update local status to match PandaDoc
-        await base44.entities.Quote.update(quote.id, {
-          status: mappedStatus
-        });
+        updates.status = mappedStatus;
         quote.status = mappedStatus;
+      }
+
+      // Update value if available from PandaDoc
+      if (pandadocDetails.grand_total?.amount) {
+        const newValue = parseFloat(pandadocDetails.grand_total.amount);
+        if (!isNaN(newValue) && newValue !== quote.value) {
+          updates.value = newValue;
+          quote.value = newValue;
+        }
+      }
+
+      if (Object.keys(updates).length > 0) {
+        await base44.entities.Quote.update(quote.id, updates);
       }
     }
 

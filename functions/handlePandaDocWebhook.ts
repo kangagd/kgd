@@ -112,8 +112,12 @@ Deno.serve(async (req) => {
       }
 
       // Update value if provided
-      if (event.data?.grand_total?.amount) {
-        updates.value = event.data.grand_total.amount;
+      const grandTotalAmount = event.data?.grand_total?.amount || event.document?.grand_total?.amount;
+      if (grandTotalAmount) {
+        const newValue = parseFloat(grandTotalAmount);
+        if (!isNaN(newValue)) {
+          updates.value = newValue;
+        }
       }
 
       // Apply updates if any
