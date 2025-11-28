@@ -4,7 +4,7 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
-import { ArrowLeft, Plus, Edit, Trash2, MapPin, Phone, Mail, FileText, Image as ImageIcon, User, Upload, X, Briefcase, History, ExternalLink, DollarSign, Eye, Link2 } from "lucide-react";
+import { ArrowLeft, Plus, Edit, Trash2, MapPin, Phone, Mail, FileText, Image as ImageIcon, User, Upload, X, Briefcase, History, ExternalLink, DollarSign, Eye, Link2, MessageCircle } from "lucide-react";
 import { base44 } from "@/api/base44Client";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useNavigate, Link } from "react-router-dom";
@@ -108,7 +108,9 @@ export default function ProjectDetails({ project: initialProject, onClose, onEdi
   const [isMarkingLost, setIsMarkingLost] = useState(false);
   const [showLinkInvoiceModal, setShowLinkInvoiceModal] = useState(false);
   const [isLinkingInvoice, setIsLinkingInvoice] = useState(false);
-  
+  const [isChatOpen, setIsChatOpen] = useState(false);
+  const [lastReadChat, setLastReadChat] = useState(() => localStorage.getItem(`lastReadChat-${initialProject.id}`) || new Date().toISOString());
+
   // Get email thread ID from props, URL params, or project's source
   const urlParams = new URLSearchParams(window.location.search);
   const emailThreadId = propsEmailThreadId || urlParams.get('fromEmail') || initialProject?.source_email_thread_id;
@@ -186,6 +188,27 @@ export default function ProjectDetails({ project: initialProject, onClose, onEdi
     },
     refetchInterval: 10000
   });
+
+  const { data: chatMessages = [] } = useQuery({
+    queryKey: ['projectMessages', project.id],
+    queryFn: () => base44.entities.ProjectMessage?.filter({ project_id: project.id }, 'created_date') || [],
+    refetchInterval: 10000,
+    enabled: !!project.id
+  });
+
+  const hasNewMessages = chatMessages.some(m => 
+    new Date(m.created_date) > new Date(lastReadChat) && 
+    m.sender_email !== user?.email
+  );
+
+  const handleChatOpenChange = (open) => {
+    setIsChatOpen(open);
+    if (open) {
+      const now = new Date().toISOString();
+      setLastReadChat(now);
+      localStorage.setItem(`lastReadChat-${project.id}`, now);
+    }
+  };
 
   const { data: xeroInvoices = [] } = useQuery({
     queryKey: ['projectXeroInvoices', project.id],
@@ -881,17 +904,22 @@ Format as HTML bullet points using <ul> and <li> tags. Include only the most cri
             </Collapsible>
 
             {/* Chat Section */}
-            <Collapsible defaultOpen={true}>
+            <Collapsible open={isChatOpen} onOpenChange={handleChatOpenChange}>
               <Card className="border border-[#E5E7EB] shadow-sm rounded-lg overflow-hidden mt-4">
                 <CollapsibleTrigger className="w-full">
                   <CardHeader className="bg-white px-4 py-3 border-b border-[#E5E7EB] flex flex-row items-center justify-between">
-                    <h3 className="text-[16px] font-semibold text-[#111827] leading-[1.2]">Project Chat</h3>
-                    <ChevronDown className="w-4 h-4 text-[#6B7280]" />
+                    <div className="flex items-center gap-2">
+                      <h3 className="text-[16px] font-semibold text-[#111827] leading-[1.2]">Project Chat</h3>
+                      {!isChatOpen && hasNewMessages && (
+                        <span className="flex h-2.5 w-2.5 rounded-full bg-red-500" />
+                      )}
+                    </div>
+                    <ChevronDown className={`w-4 h-4 text-[#6B7280] transition-transform ${isChatOpen ? 'transform rotate-180' : ''}`} />
                   </CardHeader>
                 </CollapsibleTrigger>
                 <CollapsibleContent>
                   <CardContent className="p-3">
-                    <ProjectChat projectId={project.id} />
+                    {isChatOpen && <ProjectChat projectId={project.id} />}
                   </CardContent>
                 </CollapsibleContent>
               </Card>
