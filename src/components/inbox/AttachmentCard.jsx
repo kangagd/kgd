@@ -12,16 +12,23 @@ const addToSaveQueue = (id, task) => {
   if (!projectSaveQueues[id]) {
     projectSaveQueues[id] = Promise.resolve();
   }
+  
   // Chain the task
-  const next = projectSaveQueues[id].then(async () => {
+  // We create a promise that executes the task and propagates errors
+  const taskPromise = projectSaveQueues[id].then(async () => {
     try {
       await task();
     } catch (e) {
       console.error("Queue task failed", e);
+      throw e; // Re-throw to allow caller to handle error
     }
   });
-  projectSaveQueues[id] = next;
-  return next;
+  
+  // We update the queue pointer to a promise that ALWAYS resolves (so the queue doesn't get stuck on error)
+  projectSaveQueues[id] = taskPromise.catch(() => {});
+  
+  // Return the task promise so the caller can await it and catch errors
+  return taskPromise;
 };
 
 const getAttachmentIcon = (mimeType, filename) => {
@@ -183,16 +190,29 @@ export default function AttachmentCard({
       }
 
       if (linkedJobId) {
-        const job = await base44.entities.Job.get(linkedJobId);
-        const isImage = isImageFile(attachment.mime_type, attachment.filename);
-        if (isImage) {
-          const updatedImageUrls = [...(job.image_urls || []), urlToSave];
-          await base44.entities.Job.update(linkedJobId, { image_urls: updatedImageUrls });
-        } else {
-          const updatedDocs = [...(job.other_documents || []), urlToSave];
-          await base44.entities.Job.update(linkedJobId, { other_documents: updatedDocs });
-        }
-        toast.success(`${isImage ? 'Image' : 'Document'} saved to job`);
+        await addToSaveQueue(linkedJobId, async () => {
+          const job = await base44.entities.Job.get(linkedJobId);
+          const isImage = isImageFile(attachment.mime_type, attachment.filename);
+          
+          // Check if already saved
+          const existingImages = job.image_urls || [];
+          const existingDocs = job.other_documents || [];
+          const allUrls = [...existingImages, ...existingDocs];
+          
+          if (!allUrls.some(url => url.includes(attachment.filename))) {
+            if (isImage) {
+              const updatedImageUrls = [...existingImages, urlToSave];
+              await base44.entities.Job.update(linkedJobId, { image_urls: updatedImageUrls });
+            } else {
+              const updatedDocs = [...existingDocs, urlToSave];
+              await base44.entities.Job.update(linkedJobId, { other_documents: updatedDocs });
+            }
+          }
+          
+          toast.success(`${isImage ? 'Image' : 'Document'} saved to job`);
+          await queryClient.invalidateQueries({ queryKey: ['job', linkedJobId] });
+          await queryClient.refetchQueries({ queryKey: ['job', linkedJobId] });
+        });
       } else if (linkedProjectId) {
         // Use queue for manual save as well
         await addToSaveQueue(linkedProjectId, async () => {
