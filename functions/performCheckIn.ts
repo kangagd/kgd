@@ -37,10 +37,16 @@ Deno.serve(async (req) => {
         // 4. Fetch Job
         let job;
         try {
-            job = await base44.asServiceRole.entities.Job.get(jobId);
+            // Use user-scoped entity access since RLS allows technicians to read jobs
+            job = await base44.entities.Job.get(jobId);
         } catch (e) {
             console.error(`Failed to fetch job ${jobId}:`, e);
-            return Response.json({ error: `Job retrieval failed: ${e.message}` }, { status: 404 });
+            // Fallback to service role if user access fails (e.g. not assigned but needs access)
+            try {
+                job = await base44.asServiceRole.entities.Job.get(jobId);
+            } catch (serviceError) {
+                 return Response.json({ error: `Job retrieval failed: ${e.message}` }, { status: 404 });
+            }
         }
 
         if (!job) {
@@ -82,22 +88,33 @@ Deno.serve(async (req) => {
 
         let checkIn;
         try {
-            // Use service role to bypass RLS and ensure creation
-            checkIn = await base44.asServiceRole.entities.CheckInOut.create(checkInData);
+            // Use user-scoped entity access - RLS has been updated to allow this
+            checkIn = await base44.entities.CheckInOut.create(checkInData);
         } catch (e) {
-            console.error("Failed to create CheckInOut entity:", e);
-            // Try to provide detailed error
-            return Response.json({ 
-                error: `Failed to create check-in record. DB Error: ${e.message || JSON.stringify(e)}` 
-            }, { status: 500 });
+            console.error("Failed to create CheckInOut entity (user scope):", e);
+            // Fallback to service role if user scope fails
+             try {
+                 console.log("Retrying with service role...");
+                 checkIn = await base44.asServiceRole.entities.CheckInOut.create(checkInData);
+             } catch (serviceError) {
+                console.error("Failed to create CheckInOut entity (service role):", serviceError);
+                return Response.json({ 
+                    error: `Failed to create check-in record. DB Error: ${serviceError.message || JSON.stringify(serviceError)}` 
+                }, { status: 500 });
+             }
         }
 
         // 7. Update Job Status (Optional)
         if (newStatus && newStatus !== job.status) {
             try {
-                await base44.asServiceRole.entities.Job.update(jobId, { status: newStatus });
+                await base44.entities.Job.update(jobId, { status: newStatus });
             } catch (e) {
-                console.error("Failed to update job status (non-fatal):", e);
+                console.error("Failed to update job status (user scope):", e);
+                 try {
+                    await base44.asServiceRole.entities.Job.update(jobId, { status: newStatus });
+                 } catch (serviceError) {
+                     console.error("Failed to update job status (service role):", serviceError);
+                 }
             }
         }
 
