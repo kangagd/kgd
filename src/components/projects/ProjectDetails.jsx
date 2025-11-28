@@ -49,6 +49,7 @@ import QuotesSection from "../quotes/QuotesSection";
 import InitialVisitSummary from "./InitialVisitSummary";
 import MarkAsLostModal from "./MarkAsLostModal";
 import LinkInvoiceModal from "../invoices/LinkInvoiceModal";
+import ProjectChat from "./ProjectChat";
 
 const statusColors = {
   "Lead": "bg-slate-100 text-slate-700",
@@ -1349,6 +1350,7 @@ Format as HTML bullet points using <ul> and <li> tags. Include only the most cri
                 <TabsTrigger value="overview" className="flex-1 whitespace-nowrap">
                   Overview
                 </TabsTrigger>
+                <TabsTrigger value="chat" className="flex-1 whitespace-nowrap">Chat</TabsTrigger>
                 <TabsTrigger value="emails" className="flex-1 whitespace-nowrap">Emails</TabsTrigger>
                 <TabsTrigger value="quoting" className="flex-1 whitespace-nowrap">Quoting</TabsTrigger>
                 <TabsTrigger value="parts" className="flex-1 whitespace-nowrap">Parts</TabsTrigger>
@@ -1515,6 +1517,19 @@ Format as HTML bullet points using <ul> and <li> tags. Include only the most cri
               autoExpand={project.status === "Parts Ordered"} 
             />
             <LogisticsTimeline project={project} />
+          </TabsContent>
+
+          <TabsContent value="chat" className="mt-3">
+            <Card className="border border-[#E5E7EB] shadow-sm rounded-lg">
+              <CardHeader className="bg-white px-4 py-3 border-b border-[#E5E7EB]">
+                <CardTitle className="text-[16px] font-semibold text-[#111827] leading-[1.2]">
+                  Project Chat
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="p-4">
+                <ProjectChat projectId={project.id} />
+              </CardContent>
+            </Card>
           </TabsContent>
 
           <TabsContent value="emails" className="mt-3">
