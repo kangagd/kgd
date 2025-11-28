@@ -79,7 +79,7 @@ Deno.serve(async (req) => {
         const checkInTime = new Date().toISOString();
         const checkInData = {
             job_id: jobId,
-            technician_email: (user.email || "unknown@example.com").toLowerCase(),
+            technician_email: user.email || "unknown@example.com",
             technician_name: user.full_name || user.display_name || user.email || "Unknown Technician",
             check_in_time: checkInTime
         };

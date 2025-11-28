@@ -199,22 +199,10 @@ export default function JobDetails({ job: initialJob, onClose, onStatusChange, o
     loadUser();
   }, []);
 
-  const { data: checkIns = [], refetch: refetchCheckIns } = useQuery({
+  const { data: checkIns = [] } = useQuery({
     queryKey: ['checkIns', job.id],
     queryFn: () => base44.entities.CheckInOut.filter({ job_id: job.id })
   });
-
-  // Debug logging for check-in status
-  useEffect(() => {
-    if (user && checkIns) {
-        console.log('[JobDetails] Debug Check-In:', {
-            userEmail: user.email,
-            checkInsCount: checkIns.length,
-            checkIns: checkIns,
-            activeCheckIn: checkIns.find((c) => !c.check_out_time && c.technician_email?.toLowerCase() === user?.email?.toLowerCase())
-        });
-    }
-  }, [user, checkIns]);
 
   const { data: customer } = useQuery({
     queryKey: ['customer', job.customer_id],
@@ -244,20 +232,9 @@ export default function JobDetails({ job: initialJob, onClose, onStatusChange, o
       
       return response.data;
     },
-    onSuccess: (newCheckIn) => {
-      console.log("Check-in success, invalidating queries. New record:", newCheckIn);
+    onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['checkIns', job.id] });
       queryClient.invalidateQueries({ queryKey: ['jobs'] });
-      // Force immediate refetch
-      refetchCheckIns();
-
-      // Optimistic update if we have the new record
-      if (newCheckIn) {
-          queryClient.setQueryData(['checkIns', job.id], (oldData = []) => {
-              return [...oldData, newCheckIn];
-          });
-      }
-
       toast.success("Checked in successfully");
     },
     onError: (error) => {
