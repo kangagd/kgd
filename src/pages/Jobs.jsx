@@ -23,7 +23,7 @@ import { useNavigate, useSearchParams } from "react-router-dom";
 
 export default function Jobs() {
   const navigate = useNavigate();
-  const [searchParams] = useSearchParams();
+  const [searchParams, setSearchParams] = useSearchParams();
   const [searchTerm, setSearchTerm] = useState("");
   const [statusFilter, setStatusFilter] = useState("all");
   const [technicianFilter, setTechnicianFilter] = useState("all");
@@ -105,6 +105,7 @@ export default function Jobs() {
       setEditingJob(null);
       setPreselectedCustomerId(null);
       setPreselectedProjectId(null);
+      setSearchParams({}); 
     }
   });
 
@@ -136,11 +137,10 @@ export default function Jobs() {
   });
 
   useEffect(() => {
-    const params = new URLSearchParams(window.location.search);
-    const action = params.get('action');
-    const customerId = params.get('customerId');
-    const projectId = params.get('projectId');
-    const status = params.get('status');
+    const action = searchParams.get('action');
+    const customerId = searchParams.get('customerId');
+    const projectId = searchParams.get('projectId');
+    const status = searchParams.get('status');
 
     if (action === 'new' || action === 'create' || customerId || projectId) {
       setShowForm(true);
@@ -151,7 +151,7 @@ export default function Jobs() {
     if (status) {
       setStatusFilter(status);
     }
-  }, []);
+  }, [searchParams]);
 
   useEffect(() => {
     if (jobIdFromUrl && directJob) {
@@ -288,6 +288,7 @@ export default function Jobs() {
               setEditingJob(null);
               setPreselectedCustomerId(null);
               setPreselectedProjectId(null);
+              setSearchParams({});
             }}
             isSubmitting={createJobMutation.isPending || updateJobMutation.isPending}
             preselectedCustomerId={preselectedCustomerId}
