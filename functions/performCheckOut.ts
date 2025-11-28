@@ -42,10 +42,19 @@ Deno.serve(async (req) => {
 
         // Strategy A: Try getting by ID if provided
         if (checkInId) {
+            // Try User Scope first (consistent with frontend visibility)
             try {
-                checkIn = await base44.asServiceRole.entities.CheckInOut.get(checkInId);
+                checkIn = await base44.entities.CheckInOut.get(checkInId);
+                console.log("Found CheckIn via User Scope");
             } catch (e) {
-                console.warn(`Failed to get CheckIn by ID ${checkInId}, attempting fallback search...`);
+                console.warn(`User-scope get failed for ${checkInId}, trying service role...`);
+                // Fallback to Service Role
+                try {
+                    checkIn = await base44.asServiceRole.entities.CheckInOut.get(checkInId);
+                    console.log("Found CheckIn via Service Role");
+                } catch (serviceErr) {
+                    console.warn(`Service-role get failed for ${checkInId}, attempting fallback search...`);
+                }
             }
         }
 
