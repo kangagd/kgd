@@ -5,6 +5,25 @@ import { base44 } from "@/api/base44Client";
 import { useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
 
+// Global queue to serialize saves per project to prevent race conditions
+const projectSaveQueues = {};
+
+const addToSaveQueue = (id, task) => {
+  if (!projectSaveQueues[id]) {
+    projectSaveQueues[id] = Promise.resolve();
+  }
+  // Chain the task
+  const next = projectSaveQueues[id].then(async () => {
+    try {
+      await task();
+    } catch (e) {
+      console.error("Queue task failed", e);
+    }
+  });
+  projectSaveQueues[id] = next;
+  return next;
+};
+
 const getAttachmentIcon = (mimeType, filename) => {
   if (!mimeType && !filename) return FileText;
   
@@ -65,82 +84,71 @@ export default function AttachmentCard({
     const autoSaveAttachment = async () => {
       autoSaveAttempted.current = true;
       
-      try {
-        // Fetch project to check if already saved
-        const project = await base44.entities.Project.get(linkedProjectId);
-        const existingImages = project.image_urls || [];
-        const existingDocs = project.other_documents || [];
-        
-        // Check if this attachment filename is already in the project
-        const allUrls = [...existingImages, ...existingDocs];
-        const alreadySaved = allUrls.some(url => url.includes(attachment.filename));
-        
-        if (alreadySaved) {
-          setSaved(true);
-          return;
-        }
-        
-        // Resolve the URL
-        let urlToSave = resolvedUrl;
-        if (!urlToSave) {
-          try {
-            const result = await base44.functions.invoke('getGmailAttachment', {
-              gmail_message_id: effectiveGmailMessageId,
-              attachment_id: effectiveAttachmentId,
-              filename: attachment.filename,
-              mime_type: attachment.mime_type
-            });
-            if (result.data?.url) {
-              urlToSave = result.data.url;
-              setResolvedUrl(urlToSave);
+      // Use queue to prevent race conditions
+      addToSaveQueue(linkedProjectId, async () => {
+        try {
+          // Resolve the URL first (independent of queue)
+          let urlToSave = resolvedUrl;
+          if (!urlToSave) {
+            try {
+              const result = await base44.functions.invoke('getGmailAttachment', {
+                gmail_message_id: effectiveGmailMessageId,
+                attachment_id: effectiveAttachmentId,
+                filename: attachment.filename,
+                mime_type: attachment.mime_type
+              });
+              if (result.data?.url) {
+                urlToSave = result.data.url;
+                setResolvedUrl(urlToSave);
+              }
+            } catch (fetchError) {
+              console.warn('Auto-save: Could not fetch attachment:', attachment.filename);
+              return;
             }
-          } catch (fetchError) {
-            // Silently fail - don't break the UI
-            console.warn('Auto-save: Could not fetch attachment:', attachment.filename);
+          }
+          
+          if (!urlToSave) return;
+
+          // Fetch fresh project data INSIDE the queue task
+          const freshProject = await base44.entities.Project.get(linkedProjectId);
+          const freshImages = freshProject.image_urls || [];
+          const freshDocs = freshProject.other_documents || [];
+          
+          // Check if already saved
+          const freshAllUrls = [...freshImages, ...freshDocs];
+          if (freshAllUrls.some(url => url.includes(attachment.filename))) {
+            setSaved(true);
             return;
           }
-        }
-        
-        if (!urlToSave) return;
-        
-        // Re-fetch project to get latest state (prevents race condition with multiple attachments)
-        const freshProject = await base44.entities.Project.get(linkedProjectId);
-        const freshImages = freshProject.image_urls || [];
-        const freshDocs = freshProject.other_documents || [];
-        
-        // Double-check it wasn't saved by another attachment card in the meantime
-        const freshAllUrls = [...freshImages, ...freshDocs];
-        if (freshAllUrls.some(url => url.includes(attachment.filename))) {
+          
+          // Categorize and save
+          const isImage = isImageFile(attachment.mime_type, attachment.filename);
+          
+          if (isImage) {
+            await base44.entities.Project.update(linkedProjectId, {
+              image_urls: [...freshImages, urlToSave]
+            });
+          } else {
+            await base44.entities.Project.update(linkedProjectId, {
+              other_documents: [...freshDocs, urlToSave]
+            });
+          }
+          
           setSaved(true);
-          return;
-        }
-        
-        // Categorize and save
-        const isImage = isImageFile(attachment.mime_type, attachment.filename);
-        
-        if (isImage) {
-          await base44.entities.Project.update(linkedProjectId, {
-            image_urls: [...freshImages, urlToSave]
-          });
-        } else {
-          await base44.entities.Project.update(linkedProjectId, {
-            other_documents: [...freshDocs, urlToSave]
-          });
-        }
-        
-        setSaved(true);
-        if (linkedProjectId) {
-          queryClient.invalidateQueries({ queryKey: ['project', linkedProjectId] });
-        }
-        console.log(`Auto-saved ${attachment.filename} to project as ${isImage ? 'image' : 'document'}`);
+          if (linkedProjectId) {
+            await queryClient.invalidateQueries({ queryKey: ['project', linkedProjectId] });
+            // Force refetch to ensure UI updates
+            await queryClient.refetchQueries({ queryKey: ['project', linkedProjectId] });
+          }
+          console.log(`Auto-saved ${attachment.filename} to project as ${isImage ? 'image' : 'document'}`);
         } catch (error) {
-        // Silently fail for auto-save - don't show errors to user
-        console.warn('Auto-save failed:', error.message);
-      }
+          console.warn('Auto-save failed:', error.message);
+        }
+      });
     };
     
     autoSaveAttachment();
-  }, [linkedProjectId, autoSave, effectiveGmailMessageId, effectiveAttachmentId, attachment, resolvedUrl]);
+  }, [linkedProjectId, autoSave, effectiveGmailMessageId, effectiveAttachmentId, attachment]);
 
   const formatFileSize = (bytes) => {
     if (bytes === 0) return '0 Bytes';
@@ -186,18 +194,31 @@ export default function AttachmentCard({
         }
         toast.success(`${isImage ? 'Image' : 'Document'} saved to job`);
       } else if (linkedProjectId) {
-        const project = await base44.entities.Project.get(linkedProjectId);
-        const isImage = isImageFile(attachment.mime_type, attachment.filename);
-        if (isImage) {
-          const updatedImageUrls = [...(project.image_urls || []), urlToSave];
-          await base44.entities.Project.update(linkedProjectId, { image_urls: updatedImageUrls });
-        } else {
-          const updatedDocs = [...(project.other_documents || []), urlToSave];
-          await base44.entities.Project.update(linkedProjectId, { other_documents: updatedDocs });
-        }
-        toast.success(`${isImage ? 'Image' : 'Document'} saved to project`);
-        setSaved(true);
-        queryClient.invalidateQueries({ queryKey: ['project', linkedProjectId] });
+        // Use queue for manual save as well
+        await addToSaveQueue(linkedProjectId, async () => {
+          const project = await base44.entities.Project.get(linkedProjectId);
+          const isImage = isImageFile(attachment.mime_type, attachment.filename);
+          
+          // Check if already saved (to avoid duplicates on manual click if auto-save just finished)
+          const existingImages = project.image_urls || [];
+          const existingDocs = project.other_documents || [];
+          const allUrls = [...existingImages, ...existingDocs];
+          
+          if (!allUrls.some(url => url.includes(attachment.filename))) {
+            if (isImage) {
+              const updatedImageUrls = [...existingImages, urlToSave];
+              await base44.entities.Project.update(linkedProjectId, { image_urls: updatedImageUrls });
+            } else {
+              const updatedDocs = [...existingDocs, urlToSave];
+              await base44.entities.Project.update(linkedProjectId, { other_documents: updatedDocs });
+            }
+          }
+          
+          toast.success(`${isImage ? 'Image' : 'Document'} saved to project`);
+          setSaved(true);
+          await queryClient.invalidateQueries({ queryKey: ['project', linkedProjectId] });
+          await queryClient.refetchQueries({ queryKey: ['project', linkedProjectId] });
+        });
       }
       if (onSaveComplete) onSaveComplete();
     } catch (error) {
