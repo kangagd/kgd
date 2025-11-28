@@ -4,6 +4,9 @@ Deno.serve(async (req) => {
     try {
         const base44 = createClientFromRequest(req);
         const user = await base44.auth.me();
+        
+        console.log("performCheckOut: user", user?.email, "role", user?.role);
+
         if (!user) return Response.json({ error: 'Unauthorized' }, { status: 401 });
 
         const { 
@@ -139,7 +142,7 @@ Deno.serve(async (req) => {
         return Response.json({ success: true, jobSummary });
 
     } catch (error) {
-        console.error("CheckOut Error:", error);
-        return Response.json({ error: error.message, stack: error.stack }, { status: 500 });
+        console.error("performCheckOut ERROR:", error, error?.stack);
+        return Response.json({ error: error.message || 'Unknown error in performCheckOut' }, { status: 500 });
     }
 });
