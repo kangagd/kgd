@@ -96,7 +96,7 @@ export default function Jobs() {
   });
 
   const createJobMutation = useMutation({
-    mutationFn: (data) => base44.entities.Job.create(data),
+    mutationFn: (data) => base44.functions.invoke('manageJob', { action: 'create', data }),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['allJobs'] });
       queryClient.invalidateQueries({ queryKey: ['projects'] });
@@ -110,7 +110,7 @@ export default function Jobs() {
   });
 
   const updateJobMutation = useMutation({
-    mutationFn: ({ id, data }) => base44.entities.Job.update(id, data),
+    mutationFn: ({ id, data }) => base44.functions.invoke('manageJob', { action: 'update', id, data }),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['allJobs'] });
       refetch();
@@ -122,7 +122,7 @@ export default function Jobs() {
 
   const deleteJobMutation = useMutation({
     mutationFn: async (jobId) => {
-      const result = await base44.entities.Job.update(jobId, { deleted_at: new Date().toISOString() });
+      const result = await base44.functions.invoke('manageJob', { action: 'delete', id: jobId });
       return result;
     },
     onSuccess: () => {

@@ -318,7 +318,7 @@ export default function JobDetails({ job: initialJob, onClose, onStatusChange, o
 
   const updateJobMutation = useMutation({
     mutationFn: async ({ field, value }) => {
-      const res = await base44.functions.invoke('updateJob', { id: job.id, data: { [field]: value } });
+      const res = await base44.functions.invoke('manageJob', { action: 'update', id: job.id, data: { [field]: value } });
       return res.data.job;
     },
     onSuccess: (updatedJob) => {
@@ -567,7 +567,7 @@ export default function JobDetails({ job: initialJob, onClose, onStatusChange, o
           status: 'Scheduled'
         };
         
-        base44.functions.invoke('updateJob', { id: job.id, data: updates }).then((res) => {
+        base44.functions.invoke('manageJob', { action: 'update', id: job.id, data: updates }).then((res) => {
           const updatedJob = res.data.job;
           queryClient.invalidateQueries({ queryKey: ['jobs'] });
           queryClient.setQueryData(['job', job.id], (oldData) => ({
