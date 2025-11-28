@@ -67,10 +67,11 @@ export default function Jobs() {
         console.log('[Jobs Debug] All jobs:', allJobs);
 
         // Filter out deleted and cancelled jobs in the frontend
-        const activeJobs = allJobs.filter(job => !job.deleted_at && job.status !== "Cancelled");
-        console.log('[Jobs Debug] Active jobs (not deleted/cancelled):', activeJobs.length);
+        // TEMPORARY: showing all jobs including deleted/cancelled to verify data flow
+        // const activeJobs = allJobs.filter(job => !job.deleted_at && job.status !== "Cancelled");
+        console.log('[Jobs Debug] Returning ALL fetched jobs (no frontend filtering)');
 
-        return activeJobs;
+        return allJobs;
       } catch (error) {
         console.error('[Jobs Debug] ❌ Error fetching jobs:', error);
         return [];
