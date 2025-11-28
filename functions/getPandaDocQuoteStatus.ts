@@ -76,8 +76,38 @@ Deno.serve(async (req) => {
       }
 
       // Update value if available from PandaDoc
-      if (pandadocDetails.grand_total?.amount) {
-        const newValue = parseFloat(pandadocDetails.grand_total.amount);
+      let grandTotal = pandadocDetails.grand_total?.amount;
+
+      // Fallback: fetch details if grand_total is missing or zero
+      if (!grandTotal || parseFloat(grandTotal) === 0) {
+        try {
+          const detailsResponse = await fetch(
+            `${PANDADOC_API_URL}/documents/${quote.pandadoc_document_id}/details`,
+            {
+              headers: { 'Authorization': `API-Key ${PANDADOC_API_KEY}` }
+            }
+          );
+          if (detailsResponse.ok) {
+            const details = await detailsResponse.json();
+            // Try to get total from details (pricing tables)
+            if (details.grand_total?.amount) {
+              grandTotal = details.grand_total.amount;
+            } else if (details.pricing_tables) {
+              // Sum up all pricing tables
+              let sum = 0;
+              details.pricing_tables.forEach(pt => {
+                if (pt.total) sum += parseFloat(pt.total) || 0;
+              });
+              if (sum > 0) grandTotal = sum;
+            }
+          }
+        } catch (e) {
+          console.error('Failed to fetch document details:', e);
+        }
+      }
+
+      if (grandTotal) {
+        const newValue = parseFloat(grandTotal);
         if (!isNaN(newValue) && newValue !== quote.value) {
           updates.value = newValue;
           quote.value = newValue;
