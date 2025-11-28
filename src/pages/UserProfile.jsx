@@ -6,7 +6,7 @@ import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
 import { base44 } from "@/api/base44Client";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
-import { ArrowLeft, User, Mail, Shield, Lock, Bell } from "lucide-react";
+import { ArrowLeft, User, Mail, Shield, Lock, Bell, LogOut } from "lucide-react";
 import { Switch } from "@/components/ui/switch";
 import { useNavigate } from "react-router-dom";
 import { toast } from "sonner";
@@ -417,6 +417,19 @@ export default function UserProfile() {
                 </Button>
               </div>
             </form>
+          </CardContent>
+        </Card>
+
+        <Card className="border-red-100">
+          <CardContent className="p-6">
+            <Button 
+              variant="destructive" 
+              className="w-full" 
+              onClick={() => base44.auth.logout()}
+            >
+              <LogOut className="w-4 h-4 mr-2" />
+              Log Out
+            </Button>
           </CardContent>
         </Card>
 
