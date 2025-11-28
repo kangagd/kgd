@@ -105,18 +105,39 @@ Deno.serve(async (req) => {
       }
     }));
 
+    // Fetch template details to determine correct role
+    let recipientRole = "Client";
+    try {
+      const detailsRes = await fetch(`${PANDADOC_API_URL}/templates/${templateId}/details`, {
+        headers: { 'Authorization': `API-Key ${PANDADOC_API_KEY}` }
+      });
+      if (detailsRes.ok) {
+        const details = await detailsRes.json();
+        if (details.roles && details.roles.length > 0) {
+          // Try to find common role names
+          const names = details.roles.map(r => r.name);
+          const preferred = ['Client', 'Customer', 'Signer', 'Recipient'];
+          recipientRole = preferred.find(p => names.includes(p)) || names[0];
+        } else {
+          recipientRole = null; // No roles defined in template
+        }
+      }
+    } catch (e) {
+      console.error("Failed to fetch template roles:", e);
+    }
+
+    const recipient = {
+      email: customer.email,
+      first_name: customer.name?.split(' ')[0] || '',
+      last_name: customer.name?.split(' ').slice(1).join(' ') || ''
+    };
+    if (recipientRole) recipient.role = recipientRole;
+
     // Create document from template in PandaDoc
     const createDocPayload = {
       name: finalQuoteName,
       template_uuid: templateId,
-      recipients: [
-        {
-          email: customer.email,
-          first_name: customer.name?.split(' ')[0] || '',
-          last_name: customer.name?.split(' ').slice(1).join(' ') || '',
-          role: "Client"
-        }
-      ],
+      recipients: [recipient],
       tokens: tokens,
       metadata: {
         project_id: projectId || '',
