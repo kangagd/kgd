@@ -177,7 +177,7 @@ export default function JobDetails({ job: initialJob, onClose, onStatusChange, o
 
   const { data: jobSummaries = [] } = useQuery({
     queryKey: ['jobSummaries', job.id],
-    queryFn: () => base44.entities.JobSummary.filter({ job_id: job.id }, '-checkout_time')
+    queryFn: () => base44.entities.JobSummary.filter({ job_id: job.id }, '-check_out_time')
   });
 
   const { data: allProjectJobs = [] } = useQuery({
