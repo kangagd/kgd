@@ -50,48 +50,60 @@ Deno.serve(async (req) => {
 
         // Strategy B: Search for active check-in for this job and user if not found by ID
         if (!checkIn) {
-            console.log(`Searching for active check-in for job ${jobId} and user ${userEmail}`);
+            console.log(`Strategy B: Searching all check-ins for job ${jobId} (User: ${userEmail})`);
             try {
-                // Fetch ALL check-ins for this job to ensure we see everything (bypassing potential filter nuances)
+                // Fetch ALL check-ins for this job
                 const allJobCheckIns = await base44.asServiceRole.entities.CheckInOut.filter({
                     job_id: jobId
                 });
                 
                 console.log(`Found ${allJobCheckIns.length} total check-ins for job ${jobId}`);
+                // Debug log summary of check-ins
+                console.log("Check-ins:", allJobCheckIns.map(c => ({ 
+                    id: c.id, 
+                    tech: c.technician_email, 
+                    active: !c.check_out_time 
+                })));
 
-                // In-memory find: Active AND (technician_email matches OR created_by matches)
-                checkIn = allJobCheckIns.find(c => {
-                    // Active check-ins have no check_out_time (null, undefined, or empty string)
-                    const isActive = !c.check_out_time;
-                    
-                    const techEmail = (c.technician_email || "").toLowerCase().trim();
-                    const creatorEmail = (c.created_by || "").toLowerCase().trim();
-                    
-                    const isOwner = techEmail === userEmail || creatorEmail === userEmail;
-                    
-                    // If user is admin/manager, they might be checking out for someone else? 
-                    // But the requirement says "Unauthorized" if not owner/admin.
-                    // Here we try to find the SPECIFIC check-in for this user first.
-                    return isActive && isOwner;
-                });
-
-                // If still not found, and user is admin, maybe find ANY active check-in? 
-                // No, let's stick to finding "their" check-in or the one specified by ID.
-                
-                if (checkIn) {
-                    console.log(`Found active check-in via broader search: ${checkIn.id}`);
-                } else {
-                    console.log("No matching active check-in found in job list for this user.");
-                    // Log for debugging
-                    const activeOthers = allJobCheckIns.filter(c => !c.check_out_time);
-                    if (activeOthers.length > 0) {
-                        console.log(`Found ${activeOthers.length} active check-ins for OTHER users:`, activeOthers.map(c => c.technician_email));
+                // 1. Try to find by ID within this list (maybe direct fetch failed but list fetch works?)
+                if (checkInId) {
+                    checkIn = allJobCheckIns.find(c => c.id === checkInId);
+                    if (checkIn) {
+                        console.log(`Found check-in by ID in list: ${checkIn.id} (Active: ${!checkIn.check_out_time})`);
+                        // If it's already checked out, we handle that later
                     }
+                }
+
+                // 2. If still not found (or ID was bad), find active check-in for THIS user
+                if (!checkIn) {
+                    checkIn = allJobCheckIns.find(c => {
+                        const isActive = !c.check_out_time;
+                        const techEmail = (c.technician_email || "").toLowerCase().trim();
+                        const creatorEmail = (c.created_by || "").toLowerCase().trim();
+                        const isOwner = techEmail === userEmail || creatorEmail === userEmail;
+                        return isActive && isOwner;
+                    });
+                    if (checkIn) console.log(`Found active check-in for user: ${checkIn.id}`);
+                }
+
+                // 3. If still not found AND user is Admin/Manager, find ANY active check-in
+                // This allows managers to close stuck sessions for other techs
+                if (!checkIn && (user.role === 'admin' || user.role === 'manager')) {
+                    checkIn = allJobCheckIns.find(c => !c.check_out_time);
+                    if (checkIn) console.log(`Admin/Manager found active check-in for ${checkIn.technician_email}: ${checkIn.id}`);
                 }
 
             } catch (e) {
                 console.error("Error searching for check-in:", e);
             }
+        }
+
+        // Handle "Already Checked Out" case gracefully (Idempotency)
+        if (checkIn && checkIn.check_out_time) {
+            console.log(`Check-in ${checkIn.id} is already checked out. Returning success.`);
+            // We can return early here to prevent 404 or double-update
+            // But we need to make sure we return the summary if possible, or just success
+            return Response.json({ success: true, message: "Already checked out", checkIn });
         }
 
         if (!checkIn) {
