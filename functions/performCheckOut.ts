@@ -141,9 +141,19 @@ Deno.serve(async (req) => {
         }
 
         if (!checkIn) {
-            return Response.json({ 
-                error: `No active check-in found for user ${userEmail} (Job: ${jobId}, CheckInId: ${checkInId}). Please contact support.` 
-            }, { status: 404 });
+            console.warn(`Ghost Checkout: Proceeding without active check-in record for Job ${jobId}`);
+            // Create a mock checkIn object to allow flow to continue
+            // We infer check_in_time from checkout time and duration
+            const calculatedCheckInTime = checkOutTime && durationMinutes 
+                ? new Date(new Date(checkOutTime).getTime() - (Number(durationMinutes) * 60000)).toISOString()
+                : new Date().toISOString();
+
+            checkIn = {
+                id: null, // Signal that there is no DB record
+                technician_email: userEmail,
+                check_in_time: calculatedCheckInTime,
+                is_ghost: true
+            };
         }
 
         const checkInEmail = (checkIn.technician_email || "").toLowerCase().trim();
@@ -154,7 +164,7 @@ Deno.serve(async (req) => {
              return Response.json({ error: 'Unauthorized to check out this session' }, { status: 403 });
         }
         
-        // Update checkInId to the one we found, in case we found it via search
+        // Update checkInId to the one we found (or null if ghost)
         checkInId = checkIn.id;
 
         // 2. Get Job
