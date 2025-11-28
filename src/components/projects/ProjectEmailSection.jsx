@@ -81,10 +81,12 @@ export default function ProjectEmailSection({ project, onThreadLinked }) {
   const { data: availableThreads = [] } = useQuery({
     queryKey: ['unlinkedEmailThreads'],
     queryFn: async () => {
+      // Fetch threads where linked_project_id is null
+      // Fetching up to 500 most recent unlinked threads
       const threads = await base44.entities.EmailThread.filter({ 
-        linked_project_id: { $exists: false }
-      });
-      return threads.filter(t => !t.linked_project_id);
+        linked_project_id: null 
+      }, '-last_message_date', 500);
+      return threads;
     },
     enabled: showLinkModal
   });
