@@ -44,13 +44,45 @@ export default function PhotoUploadModal({ open, onClose, onUploadComplete, pres
     }
   }, [preselectedJobId, jobs]);
 
-  const handleFileChange = (e) => {
+  const [duplicates, setDuplicates] = useState({});
+
+  const computeFileHash = async (file) => {
+    const buffer = await file.arrayBuffer();
+    const hashBuffer = await crypto.subtle.digest('SHA-256', buffer);
+    const hashArray = Array.from(new Uint8Array(hashBuffer));
+    const hashHex = hashArray.map(b => b.toString(16).padStart(2, '0')).join('');
+    return hashHex;
+  };
+
+  const handleFileChange = async (e) => {
     const newFiles = Array.from(e.target.files);
-    setFiles([...files, ...newFiles]);
+    setFiles(prev => [...prev, ...newFiles]);
+    
+    // Check duplicates
+    const newDuplicates = { ...duplicates };
+    for (const file of newFiles) {
+      try {
+        const hash = await computeFileHash(file);
+        // Check if hash exists in DB
+        const existing = await base44.entities.Photo.filter({ file_hash: hash });
+        if (existing.length > 0) {
+          newDuplicates[file.name] = true;
+        }
+      } catch (err) {
+        console.error("Error computing hash", err);
+      }
+    }
+    setDuplicates(newDuplicates);
   };
 
   const handleRemoveFile = (index) => {
+    const fileToRemove = files[index];
     setFiles(files.filter((_, i) => i !== index));
+    if (fileToRemove) {
+      const newDuplicates = { ...duplicates };
+      delete newDuplicates[fileToRemove.name];
+      setDuplicates(newDuplicates);
+    }
   };
 
   const toggleTag = (tag) => {
@@ -64,10 +96,21 @@ export default function PhotoUploadModal({ open, onClose, onUploadComplete, pres
     try {
       const user = await base44.auth.me();
       const uploadPromises = files.map(async (file) => {
+        // Skip duplicates if needed? For now we just flag them but allow upload if user insists.
+        // But user asked for duplicate check, usually implies prevention or at least knowledge.
+        // We upload anyway but store hash.
+        
+        let hash = null;
+        try {
+          hash = await computeFileHash(file);
+        } catch (e) { console.error(e); }
+
         const { file_url } = await base44.integrations.Core.UploadFile({ file });
         
         const photoData = {
           image_url: file_url,
+          file_hash: hash,
+          file_size: file.size,
           uploaded_at: new Date().toISOString(),
           tags: tags.length > 0 ? tags : undefined,
           product_type: productType || undefined,
@@ -149,14 +192,23 @@ export default function PhotoUploadModal({ open, onClose, onUploadComplete, pres
             {files.length > 0 && (
               <div className="mt-3 space-y-2">
                 {files.map((file, index) => (
-                  <div key={index} className="flex items-center justify-between p-2 bg-[#F8F9FA] rounded-lg border border-[#E5E7EB]">
-                    <span className="text-sm text-[#111827] truncate flex-1">{file.name}</span>
+                  <div key={index} className={`flex items-center justify-between p-2 rounded-lg border ${duplicates[file.name] ? 'bg-red-50 border-red-200' : 'bg-[#F8F9FA] border-[#E5E7EB]'}`}>
+                    <div className="flex flex-col flex-1 min-w-0 mr-2">
+                      <span className={`text-sm truncate ${duplicates[file.name] ? 'text-red-700 font-medium' : 'text-[#111827]'}`}>
+                        {file.name}
+                      </span>
+                      {duplicates[file.name] && (
+                        <span className="text-[10px] text-red-600 font-semibold">
+                          Duplicate detected
+                        </span>
+                      )}
+                    </div>
                     <Button
                       type="button"
                       variant="ghost"
                       size="sm"
                       onClick={() => handleRemoveFile(index)}
-                      className="h-8 w-8 p-0"
+                      className={`h-8 w-8 p-0 ${duplicates[file.name] ? 'text-red-600 hover:bg-red-100' : ''}`}
                     >
                       <X className="w-4 h-4" />
                     </Button>

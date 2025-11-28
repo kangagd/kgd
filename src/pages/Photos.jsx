@@ -5,7 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent } from "@/components/ui/card";
-import { Plus, Search, Filter, X, Image as ImageIcon } from "lucide-react";
+import { Plus, Search, Filter, X, Image as ImageIcon, Trash2 } from "lucide-react";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import PhotoUploadModal from "../components/photos/PhotoUploadModal";
 import FilePreviewModal from "../components/common/FilePreviewModal";
@@ -25,7 +25,34 @@ export default function Photos() {
   const [marketingOnly, setMarketingOnly] = useState(false);
   const [preselectedJobId, setPreselectedJobId] = useState(null);
   const [preselectedProjectId, setPreselectedProjectId] = useState(null);
+  const [isSelectionMode, setIsSelectionMode] = useState(false);
+  const [selectedPhotoIds, setSelectedPhotoIds] = useState(new Set());
   const queryClient = useQueryClient();
+
+  const toggleSelection = (id) => {
+    const newSelected = new Set(selectedPhotoIds);
+    if (newSelected.has(id)) {
+      newSelected.delete(id);
+    } else {
+      newSelected.add(id);
+    }
+    setSelectedPhotoIds(newSelected);
+  };
+
+  const handleBulkDelete = async () => {
+    if (selectedPhotoIds.size === 0) return;
+    if (!window.confirm(`Are you sure you want to delete ${selectedPhotoIds.size} photo(s)?`)) return;
+
+    try {
+      await Promise.all(Array.from(selectedPhotoIds).map(id => base44.entities.Photo.delete(id)));
+      queryClient.invalidateQueries({ queryKey: ['photos'] });
+      setSelectedPhotoIds(new Set());
+      setIsSelectionMode(false);
+    } catch (error) {
+      console.error("Error deleting photos:", error);
+      alert("Failed to delete some photos.");
+    }
+  };
 
   React.useEffect(() => {
     const params = new URLSearchParams(window.location.search);
@@ -93,13 +120,47 @@ export default function Photos() {
               Central media library for all job and project photos
             </p>
           </div>
-          <Button
-            onClick={() => setShowUploadModal(true)}
-            className="bg-[#FAE008] text-[#111827] hover:bg-[#E5CF07] font-semibold shadow-sm hover:shadow-md transition w-full md:w-auto h-10 px-4 text-sm rounded-xl"
-          >
-            <Plus className="w-4 h-4 mr-2" />
-            Upload Photos
-          </Button>
+          <div className="flex gap-2 w-full md:w-auto">
+            {isSelectionMode ? (
+              <>
+                <Button
+                  onClick={handleBulkDelete}
+                  disabled={selectedPhotoIds.size === 0}
+                  className="bg-red-600 text-white hover:bg-red-700 font-semibold shadow-sm transition h-10 px-4 text-sm rounded-xl"
+                >
+                  <Trash2 className="w-4 h-4 mr-2" />
+                  Delete ({selectedPhotoIds.size})
+                </Button>
+                <Button
+                  variant="outline"
+                  onClick={() => {
+                    setIsSelectionMode(false);
+                    setSelectedPhotoIds(new Set());
+                  }}
+                  className="bg-white text-[#111827] border border-[#E5E7EB] font-semibold shadow-sm transition h-10 px-4 text-sm rounded-xl"
+                >
+                  Cancel
+                </Button>
+              </>
+            ) : (
+              <>
+                <Button
+                  variant="outline"
+                  onClick={() => setIsSelectionMode(true)}
+                  className="bg-white text-[#111827] border border-[#E5E7EB] font-semibold shadow-sm transition h-10 px-4 text-sm rounded-xl hidden md:flex"
+                >
+                  Select Photos
+                </Button>
+                <Button
+                  onClick={() => setShowUploadModal(true)}
+                  className="bg-[#FAE008] text-[#111827] hover:bg-[#E5CF07] font-semibold shadow-sm hover:shadow-md transition h-10 px-4 text-sm rounded-xl flex-1 md:flex-none"
+                >
+                  <Plus className="w-4 h-4 mr-2" />
+                  Upload Photos
+                </Button>
+              </>
+            )}
+          </div>
         </div>
 
         {/* Search and Filters */}
@@ -274,14 +335,25 @@ export default function Photos() {
             {filteredPhotos.map(photo => (
               <Card
                 key={photo.id}
-                className="border border-[#E5E7EB] shadow-sm hover:border-[#FAE008] hover:shadow-md transition-all cursor-pointer group overflow-hidden"
-                onClick={() => setSelectedPhoto(photo)}
+                className={`border shadow-sm transition-all cursor-pointer group overflow-hidden relative ${
+                  isSelectionMode && selectedPhotoIds.has(photo.id)
+                    ? 'border-[#FAE008] ring-2 ring-[#FAE008]'
+                    : 'border-[#E5E7EB] hover:border-[#FAE008] hover:shadow-md'
+                }`}
+                onClick={() => isSelectionMode ? toggleSelection(photo.id) : setSelectedPhoto(photo)}
               >
+                {isSelectionMode && (
+                  <div className={`absolute top-2 right-2 w-6 h-6 rounded border z-10 flex items-center justify-center ${
+                    selectedPhotoIds.has(photo.id) ? 'bg-[#FAE008] border-[#FAE008]' : 'bg-white border-slate-300'
+                  }`}>
+                    {selectedPhotoIds.has(photo.id) && <div className="w-3 h-3 bg-[#111827] rounded-sm" />}
+                  </div>
+                )}
                 <div className="aspect-square overflow-hidden bg-[#F8F9FA]">
                   <img
                     src={photo.image_url}
                     alt={photo.notes || 'Photo'}
-                    className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
+                    className={`w-full h-full object-cover transition-transform duration-300 ${!isSelectionMode && 'group-hover:scale-105'}`}
                   />
                 </div>
                 <CardContent className="p-3 space-y-2">
