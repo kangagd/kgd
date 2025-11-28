@@ -75,60 +75,33 @@ Deno.serve(async (req) => {
             }
         }
 
-        // 6. Check for Existing Active Check-in (Idempotency)
-        const userEmail = (user.email || "").toLowerCase().trim();
-        let checkIn;
-        
-        try {
-            const existingCheckIns = await base44.asServiceRole.entities.CheckInOut.filter({
-                job_id: jobId,
-                technician_email: userEmail
-            });
-            
-            const activeCheckIn = existingCheckIns.find(c => !c.check_out_time);
-            
-            if (activeCheckIn) {
-                console.log(`User ${userEmail} already checked in to job ${jobId}. Returning existing record.`);
-                // If status update is requested, we'll still do that below, but we won't create a new check-in
-                checkIn = activeCheckIn;
-            }
-        } catch (e) {
-            console.warn("Failed to check for existing check-ins:", e);
-            // Proceed to creation if check fails (safer to duplicate than block?)
-            // Actually, let's just proceed.
-        }
+        // 6. Create Check-in Record
+        const checkInTime = new Date().toISOString();
+        const checkInData = {
+            job_id: jobId,
+            technician_email: (user.email || "unknown@example.com").toLowerCase(),
+            technician_name: user.full_name || user.display_name || user.email || "Unknown Technician",
+            check_in_time: checkInTime
+        };
 
-        if (!checkIn) {
-            // 7. Create Check-in Record
-            const checkInTime = new Date().toISOString();
-            const checkInData = {
-                job_id: jobId,
-                technician_email: userEmail,
-                technician_name: user.full_name || user.display_name || user.email || "Unknown Technician",
-                check_in_time: checkInTime
-            };
-            
-            // Explicitly set created_by if we end up using service role fallback
-            checkInData.created_by = user.email;
-    
-            console.log("Attempting to create CheckInOut record:", JSON.stringify(checkInData));
-    
-            try {
-                // Use user-scoped entity access - RLS has been updated to allow this
-                checkIn = await base44.entities.CheckInOut.create(checkInData);
-            } catch (e) {
-                console.error("Failed to create CheckInOut entity (user scope):", e);
-                // Fallback to service role if user scope fails
-                 try {
-                     console.log("Retrying with service role...");
-                     checkIn = await base44.asServiceRole.entities.CheckInOut.create(checkInData);
-                 } catch (serviceError) {
-                    console.error("Failed to create CheckInOut entity (service role):", serviceError);
-                    return Response.json({ 
-                        error: `Failed to create check-in record. DB Error: ${serviceError.message || JSON.stringify(serviceError)}` 
-                    }, { status: 500 });
-                 }
-            }
+        console.log("Attempting to create CheckInOut record:", JSON.stringify(checkInData));
+
+        let checkIn;
+        try {
+            // Use user-scoped entity access - RLS has been updated to allow this
+            checkIn = await base44.entities.CheckInOut.create(checkInData);
+        } catch (e) {
+            console.error("Failed to create CheckInOut entity (user scope):", e);
+            // Fallback to service role if user scope fails
+             try {
+                 console.log("Retrying with service role...");
+                 checkIn = await base44.asServiceRole.entities.CheckInOut.create(checkInData);
+             } catch (serviceError) {
+                console.error("Failed to create CheckInOut entity (service role):", serviceError);
+                return Response.json({ 
+                    error: `Failed to create check-in record. DB Error: ${serviceError.message || JSON.stringify(serviceError)}` 
+                }, { status: 500 });
+             }
         }
 
         // 7. Update Job Status (Optional)

@@ -161,7 +161,6 @@ export default function JobDetails({ job: initialJob, onClose, onStatusChange, o
   const [communicationWithClient, setCommunicationWithClient] = useState(job.communication_with_client || "");
   const [outcome, setOutcome] = useState(job.outcome || "");
   const [validationError, setValidationError] = useState("");
-  const [activeTab, setActiveTab] = useState("details");
   const queryClient = useQueryClient();
 
   const { data: jobTypes = [] } = useQuery({
@@ -177,7 +176,7 @@ export default function JobDetails({ job: initialJob, onClose, onStatusChange, o
 
   const { data: jobSummaries = [] } = useQuery({
     queryKey: ['jobSummaries', job.id],
-    queryFn: () => base44.entities.JobSummary.filter({ job_id: job.id }, '-created_date')
+    queryFn: () => base44.entities.JobSummary.filter({ job_id: job.id }, '-checkout_time')
   });
 
   const { data: allProjectJobs = [] } = useQuery({
@@ -312,30 +311,17 @@ export default function JobDetails({ job: initialJob, onClose, onStatusChange, o
     },
     onSuccess: () => {
       setValidationError("");
-      setOverview("");
-      setNextSteps("");
-      setCommunicationWithClient("");
-      setOutcome("");
-      
-      toast.success("Checked out successfully!");
-      
       queryClient.invalidateQueries({ queryKey: ['checkIns', job.id] });
       queryClient.invalidateQueries({ queryKey: ['jobSummaries', job.id] });
       queryClient.invalidateQueries({ queryKey: ['projectJobSummaries'] });
       queryClient.invalidateQueries({ queryKey: ['jobs'] });
       queryClient.invalidateQueries({ queryKey: ['projects'] });
       queryClient.invalidateQueries({ queryKey: ['project', job.project_id] });
-      // Force refetch of summaries to ensure UI updates immediately
-      queryClient.refetchQueries({ queryKey: ['jobSummaries', job.id] });
     },
     onError: (error) => {
-      console.error("Check-out error:", error);
-      const errorMsg = error?.response?.data?.error || error?.message || 'Failed to check out';
-      setValidationError(errorMsg);
-      toast.error(errorMsg);
-      setActiveTab("visit");
+      setValidationError(error.message);
     }
-    });
+  });
 
   const updateJobMutation = useMutation({
     mutationFn: ({ field, value }) => base44.entities.Job.update(job.id, { [field]: value }),
@@ -560,16 +546,9 @@ export default function JobDetails({ job: initialJob, onClose, onStatusChange, o
     checkInMutation.mutate();
   };
 
-  const handleCheckOut = async () => {
-    console.log("Check Out Button Clicked");
+  const handleCheckOut = () => {
     setValidationError("");
-    try {
-      await checkOutMutation.mutateAsync();
-      console.log("Check Out Mutation Completed");
-    } catch (e) {
-      console.error("Check Out Mutation Failed:", e);
-      // Error handled in onError of mutation
-    }
+    checkOutMutation.mutate();
   };
 
   const handleMeasurementsChange = (data) => {
@@ -1186,7 +1165,7 @@ export default function JobDetails({ job: initialJob, onClose, onStatusChange, o
         }
         
         <CardContent className={`p-3 md:p-4 space-y-3 ${isTechnician ? 'pb-32' : ''}`}>
-          <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
+          <Tabs defaultValue="details" className="w-full">
             <TabsList className="w-full justify-start mb-3 overflow-x-auto flex-nowrap">
               <TabsTrigger value="details" className="flex-1">Details</TabsTrigger>
               <TabsTrigger value="visit" className="flex-1">
