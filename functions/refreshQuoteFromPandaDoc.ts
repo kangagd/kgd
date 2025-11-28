@@ -70,9 +70,16 @@ Deno.serve(async (req) => {
     // Build update object
     const updateData = {
       status: newStatus,
-      name: pandadocDoc.name || quote.name,
-      value: pandadocDoc.grand_total?.amount || quote.value
+      name: pandadocDoc.name || quote.name
     };
+
+    // Update value if available
+    if (pandadocDoc.grand_total?.amount) {
+      const newValue = parseFloat(pandadocDoc.grand_total.amount);
+      if (!isNaN(newValue)) {
+        updateData.value = newValue;
+      }
+    }
 
     // Update timestamps based on status
     if (pandadocDoc.date_sent && !quote.sent_at) {

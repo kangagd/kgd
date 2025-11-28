@@ -125,7 +125,13 @@ Deno.serve(async (req) => {
     }
 
     // Extract value from PandaDoc
-    const value = pandadocDoc.grand_total?.amount || 0;
+    let value = 0;
+    if (pandadocDoc.grand_total?.amount) {
+      const parsed = parseFloat(pandadocDoc.grand_total.amount);
+      if (!isNaN(parsed)) {
+        value = parsed;
+      }
+    }
 
     // Create Quote record
     const quote = await base44.entities.Quote.create({
