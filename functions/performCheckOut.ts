@@ -16,7 +16,7 @@ Deno.serve(async (req) => {
         const body = await req.json();
         const { 
             jobId, 
-            checkInId, 
+            checkInId: providedCheckInId, 
             newStatus, 
             overview, 
             nextSteps, 
@@ -29,15 +29,16 @@ Deno.serve(async (req) => {
             durationHours
         } = body;
 
-        console.log(`CheckOut Request: Job=${jobId}, CheckIn=${checkInId}, User=${user.email}`);
+        console.log(`CheckOut Request: Job=${jobId}, CheckIn=${providedCheckInId}, User=${user.email}`);
 
-        if (!jobId || !checkInId) {
-            return Response.json({ error: 'Job ID and CheckIn ID are required' }, { status: 400 });
+        if (!jobId) {
+            return Response.json({ error: 'Job ID is required' }, { status: 400 });
         }
 
         // 1. Verify/Find CheckIn
-        let checkIn;
+        let checkIn = null;
         const userEmail = (user.email || "").toLowerCase().trim();
+        let checkInId = providedCheckInId;
 
         // Strategy A: Try getting by ID if provided
         if (checkInId) {
@@ -52,109 +53,66 @@ Deno.serve(async (req) => {
         if (!checkIn) {
             console.log(`Strategy B: Searching all check-ins for job ${jobId} (User: ${userEmail})`);
             try {
-                // Fetch ALL check-ins for this job
-                const allJobCheckIns = await base44.asServiceRole.entities.CheckInOut.filter({
+                // Fetch active check-ins for this job
+                const jobCheckIns = await base44.asServiceRole.entities.CheckInOut.filter({
                     job_id: jobId
                 });
                 
-                console.log(`Found ${allJobCheckIns.length} total check-ins for job ${jobId}`);
-                // Debug log summary of check-ins
-                console.log("Check-ins:", allJobCheckIns.map(c => ({ 
-                    id: c.id, 
-                    tech: c.technician_email, 
-                    active: !c.check_out_time 
-                })));
-
-                // 1. Try to find by ID within this list (maybe direct fetch failed but list fetch works?)
-                if (checkInId) {
-                    checkIn = allJobCheckIns.find(c => c.id === checkInId);
+                // Find active check-in owned by this user
+                checkIn = jobCheckIns.find(c => {
+                    if (c.check_out_time) return false; // Skip closed sessions
+                    
+                    const techEmail = (c.technician_email || "").toLowerCase().trim();
+                    const creatorEmail = (c.created_by || "").toLowerCase().trim();
+                    return techEmail === userEmail || creatorEmail === userEmail;
+                });
+                
+                if (checkIn) {
+                    console.log(`Found active check-in for user: ${checkIn.id}`);
+                    checkInId = checkIn.id;
+                } else if (user.role === 'admin' || user.role === 'manager') {
+                    // Admin Override: Find ANY active check-in for this job
+                    checkIn = jobCheckIns.find(c => !c.check_out_time);
                     if (checkIn) {
-                        console.log(`Found check-in by ID in list: ${checkIn.id} (Active: ${!checkIn.check_out_time})`);
-                        // If it's already checked out, we handle that later
+                        console.log(`Admin/Manager found active check-in for ${checkIn.technician_email}: ${checkIn.id}`);
+                        checkInId = checkIn.id;
                     }
                 }
-
-                // 2. If still not found (or ID was bad), find active check-in for THIS user
-                if (!checkIn) {
-                    checkIn = allJobCheckIns.find(c => {
-                        const isActive = !c.check_out_time;
-                        const techEmail = (c.technician_email || "").toLowerCase().trim();
-                        const creatorEmail = (c.created_by || "").toLowerCase().trim();
-                        const isOwner = techEmail === userEmail || creatorEmail === userEmail;
-                        return isActive && isOwner;
-                    });
-                    if (checkIn) console.log(`Found active check-in for user: ${checkIn.id}`);
-                }
-
-                // 3. If still not found AND user is Admin/Manager, find ANY active check-in
-                // This allows managers to close stuck sessions for other techs
-                if (!checkIn && (user.role === 'admin' || user.role === 'manager')) {
-                    checkIn = allJobCheckIns.find(c => !c.check_out_time);
-                    if (checkIn) console.log(`Admin/Manager found active check-in for ${checkIn.technician_email}: ${checkIn.id}`);
-                }
-
             } catch (e) {
                 console.error("Error searching for check-in:", e);
             }
         }
 
-        // EMERGENCY FALLBACK: If still no check-in, search for ANY active check-in for this user globally
+        // GHOST CHECKOUT LOGIC
+        // If we STILL don't have a check-in record, we proceed anyway but mark it as a "ghost" checkout
+        // This means we won't update any CheckInOut record, but we WILL create the JobSummary and update the Job status
         if (!checkIn) {
-             try {
-                 console.log(`Emergency: Searching for ANY active check-in for user ${userEmail} globally`);
-                 // We can't filter by active status directly usually, so we filter by user
-                 const allUserCheckIns = await base44.asServiceRole.entities.CheckInOut.filter({
-                     technician_email: userEmail
-                 }, '-created_date', 20); // Last 20 checkins
-                 
-                 checkIn = allUserCheckIns.find(c => !c.check_out_time);
-                 
-                 // If not found by technician_email, try created_by
-                 if (!checkIn) {
-                     console.log(`Emergency: Searching by created_by for ${userEmail}`);
-                     const createdCheckIns = await base44.asServiceRole.entities.CheckInOut.filter({
-                         created_by: userEmail
-                     }, '-created_date', 20);
-                     checkIn = createdCheckIns.find(c => !c.check_out_time);
-                 }
-                 
-                 if (checkIn) {
-                     console.log(`Found orphaned active check-in ${checkIn.id} for job ${checkIn.job_id} (Requested job: ${jobId})`);
-                     // If the user is trying to check out of Job A, but their active check-in is Job B...
-                     // We should probably allow it if it's the ONLY active check-in they have? 
-                     // Or at least inform them.
-                     // For now, if it matches the requested jobId, GREAT. 
-                     // If not, we use it anyway because they are trying to stop their clock.
-                     if (checkIn.job_id !== jobId) {
-                         console.warn(`MISMATCH: User checking out of job ${jobId} but active check-in is for ${checkIn.job_id}. Using it anyway to stop clock.`);
-                     }
-                 }
-             } catch (e) {
-                 console.error("Global fallback search failed:", e);
-             }
+             console.warn(`GHOST CHECKOUT: No active check-in found for Job ${jobId} User ${userEmail}. Creating summary anyway.`);
+             // Mock a check-in object for the rest of the logic to use
+             // We assume check-in happened 1 hour ago if we don't know
+             const simulatedCheckInTime = new Date(new Date(checkOutTime).getTime() - (Number(durationMinutes || 60) * 60 * 1000)).toISOString();
+             
+             checkIn = {
+                id: null, // Indicates no record to update
+                check_in_time: simulatedCheckInTime,
+                technician_email: userEmail,
+                technician_name: user.full_name || user.email
+             };
+             checkInId = null;
+        } else {
+            // Validate ownership for non-admins if it's a real record
+            const checkInEmail = (checkIn.technician_email || "").toLowerCase().trim();
+            if (checkInEmail !== userEmail && user.role !== 'admin' && user.role !== 'manager') {
+                 console.warn(`Unauthorized checkout attempt. User: ${userEmail}, CheckIn Tech: ${checkInEmail}`);
+                 return Response.json({ error: 'Unauthorized to check out this session' }, { status: 403 });
+            }
+            
+            // Check idempotency
+            if (checkIn.check_out_time) {
+                console.log(`Check-in ${checkIn.id} is already checked out. Returning success.`);
+                return Response.json({ success: true, message: "Already checked out", checkIn });
+            }
         }
-
-        // Handle "Already Checked Out" case gracefully (Idempotency)
-        if (checkIn && checkIn.check_out_time) {
-            console.log(`Check-in ${checkIn.id} is already checked out. Returning success.`);
-            return Response.json({ success: true, message: "Already checked out", checkIn });
-        }
-
-        if (!checkIn) {
-            return Response.json({ 
-                error: `No active check-in found for user ${userEmail} (Job: ${jobId}, CheckInId: ${checkInId}). Please contact support.` 
-            }, { status: 404 });
-        }
-
-        const checkInEmail = (checkIn.technician_email || "").toLowerCase().trim();
-        
-        // Double check ownership (though search already filtered by email, the ID fetch might not have)
-        if (checkInEmail !== userEmail && user.role !== 'admin' && user.role !== 'manager') {
-             console.warn(`Unauthorized checkout attempt. User: ${userEmail}, CheckIn Tech: ${checkInEmail}`);
-             return Response.json({ error: 'Unauthorized to check out this session' }, { status: 403 });
-        }
-        
-        // Using checkIn.id directly since checkInId is const
 
         // 2. Get Job
         let job;
@@ -169,15 +127,17 @@ Deno.serve(async (req) => {
             return Response.json({ error: `Job with ID ${jobId} returned null` }, { status: 404 });
         }
 
-        // 3. Update CheckInOut record
-        try {
-            await base44.asServiceRole.entities.CheckInOut.update(checkIn.id, {
-                check_out_time: checkOutTime,
-                duration_hours: Number(durationHours) || 0
-            });
-        } catch (e) {
-            console.error("Failed to update CheckInOut:", e);
-            return Response.json({ error: `Failed to update check-in record: ${e.message}` }, { status: 500 });
+        // 3. Update CheckInOut record (Skip if ghost)
+        if (checkInId) {
+            try {
+                await base44.asServiceRole.entities.CheckInOut.update(checkInId, {
+                    check_out_time: checkOutTime,
+                    duration_hours: Number(durationHours) || 0
+                });
+            } catch (e) {
+                console.error("Failed to update CheckInOut:", e);
+                // Continue anyway to ensure job status updates
+            }
         }
 
         // 4. Create JobSummary
@@ -228,7 +188,6 @@ Deno.serve(async (req) => {
             jobSummary = await base44.asServiceRole.entities.JobSummary.create(summaryData);
         } catch (e) {
             console.error("Failed to create JobSummary:", e);
-            // Try to proceed even if summary fails? No, this is critical.
             return Response.json({ error: `Failed to create Job Summary: ${e.message}` }, { status: 500 });
         }
 
@@ -243,8 +202,6 @@ Deno.serve(async (req) => {
             });
         } catch (e) {
             console.error("Failed to update Job:", e);
-            // Non-critical? Maybe. But status update is important.
-            // We'll log but return success for the checkout itself as CheckOut/Summary are done.
         }
 
         // 6. Sync to Project
