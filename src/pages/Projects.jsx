@@ -82,7 +82,11 @@ export default function Projects() {
   });
 
   const createProjectMutation = useMutation({
-    mutationFn: (data) => base44.entities.Project.create(data),
+    mutationFn: async (data) => {
+      const res = await base44.functions.invoke('manageProject', { action: 'create', data });
+      if (res.data?.error) throw new Error(res.data.error);
+      return res.data.project;
+    },
     onSuccess: (newProject) => {
       queryClient.invalidateQueries({ queryKey: ['projects'] });
       setEditingProject(null);
@@ -93,7 +97,11 @@ export default function Projects() {
   });
 
   const updateProjectMutation = useMutation({
-    mutationFn: ({ id, data }) => base44.entities.Project.update(id, data),
+    mutationFn: async ({ id, data }) => {
+      const res = await base44.functions.invoke('manageProject', { action: 'update', id, data });
+      if (res.data?.error) throw new Error(res.data.error);
+      return res.data.project;
+    },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['projects'] });
       setShowForm(false);
