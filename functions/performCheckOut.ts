@@ -71,6 +71,45 @@ Deno.serve(async (req) => {
             }
         }
 
+        // Fetch recent chat messages for context
+        let chatTranscript = "";
+        try {
+            const jobMessages = await base44.asServiceRole.entities.JobMessage.filter({ job_id: jobId }, '-created_date', 20);
+            if (jobMessages && jobMessages.length > 0) {
+                // Sort historically and format
+                chatTranscript = jobMessages.reverse().map(m => `${m.sender_name}: ${m.message}`).join('\n');
+            }
+        } catch (e) {
+            console.warn("Failed to fetch job messages for summary:", e);
+        }
+
+        // Generate AI Summary
+        let aiGeneratedSummary = "";
+        if (overview || nextSteps || communicationWithClient || chatTranscript) {
+             try {
+                const prompt = `
+You are a helpful assistant for a field service technician team.
+Please generate a concise summary of the job visit based on the following inputs:
+
+Overview: ${overview || 'N/A'}
+Next Steps: ${nextSteps || 'N/A'}
+Client Communication: ${communicationWithClient || 'N/A'}
+Recent Chat Log:
+${chatTranscript || 'No chat history'}
+
+The summary should be a single paragraph, professional, and capture the key work done, outcomes, and any important follow-ups.
+`;
+                const llmRes = await base44.asServiceRole.integrations.Core.InvokeLLM({
+                    prompt: prompt
+                });
+                if (llmRes && llmRes.data) {
+                    aiGeneratedSummary = llmRes.data;
+                }
+             } catch (e) {
+                 console.error("AI Summary generation failed:", e);
+             }
+        }
+
         const summaryData = {
             job_id: jobId,
             project_id: job.project_id || null,
@@ -88,7 +127,8 @@ Deno.serve(async (req) => {
             outcome: outcome || "",
             status_at_checkout: newStatus,
             photo_urls: imageUrls || [],
-            measurements: measurements || {}
+            measurements: measurements || {},
+            ai_generated_summary: aiGeneratedSummary
         };
 
         console.log("Creating JobSummary with data:", JSON.stringify(summaryData));
