@@ -49,10 +49,23 @@ Deno.serve(async (req) => {
         // Create JobSummary
         let scheduledDatetime = null;
         if (job.scheduled_date) {
-            const dateStr = job.scheduled_date;
-            const timeStr = job.scheduled_time || '09:00';
-            // Simple date parsing to avoid issues
-            scheduledDatetime = new Date(`${dateStr}T${timeStr}:00`).toISOString();
+            try {
+                const dateStr = job.scheduled_date;
+                // Clean time string to ensure it's in HH:MM format if possible, or default to 09:00
+                let timeStr = job.scheduled_time || '09:00';
+                // Basic check if timeStr looks like HH:MM
+                if (!/^\d{1,2}:\d{2}/.test(timeStr)) {
+                     timeStr = '09:00';
+                }
+                
+                const dateObj = new Date(`${dateStr}T${timeStr}:00`);
+                if (!isNaN(dateObj.getTime())) {
+                    scheduledDatetime = dateObj.toISOString();
+                }
+            } catch (e) {
+                console.warn("Failed to parse scheduled datetime:", e);
+                // Ignore invalid dates, leave as null
+            }
         }
 
         const summaryData = {
@@ -74,6 +87,9 @@ Deno.serve(async (req) => {
             photo_urls: imageUrls || [],
             measurements: measurements || {}
         };
+        
+        // Explicitly set created_by to ensure RLS consistency for the user
+        summaryData.created_by = user.email;
 
         console.log("Creating JobSummary with data:", JSON.stringify(summaryData));
 
@@ -126,6 +142,7 @@ Deno.serve(async (req) => {
         return Response.json({ success: true, jobSummary });
 
     } catch (error) {
-        return Response.json({ error: error.message }, { status: 500 });
+        console.error("CRITICAL ERROR in performCheckOut:", error);
+        return Response.json({ error: `Internal Server Error: ${error.message}` }, { status: 500 });
     }
 });
