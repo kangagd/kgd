@@ -141,6 +141,8 @@ export default function Jobs() {
     const customerId = searchParams.get('customerId');
     const projectId = searchParams.get('projectId');
     const status = searchParams.get('status');
+    const dateFromParam = searchParams.get('dateFrom');
+    const dateToParam = searchParams.get('dateTo');
 
     if (action === 'new' || action === 'create' || customerId || projectId) {
       setShowForm(true);
@@ -151,6 +153,9 @@ export default function Jobs() {
     if (status) {
       setStatusFilter(status);
     }
+
+    if (dateFromParam) setDateFrom(dateFromParam);
+    if (dateToParam) setDateTo(dateToParam);
   }, [searchParams]);
 
   useEffect(() => {
