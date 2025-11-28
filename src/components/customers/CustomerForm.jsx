@@ -7,6 +7,7 @@ import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { ArrowLeft, Plus, AlertTriangle } from "lucide-react";
 import RichTextField from "../common/RichTextField";
+import { Checkbox } from "@/components/ui/checkbox";
 import AddressAutocomplete from "../common/AddressAutocomplete";
 import { base44 } from "@/api/base44Client";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
@@ -43,7 +44,9 @@ export default function CustomerForm({ customer, onSubmit, onCancel, isSubmittin
     notes: "",
     status: "active",
     organisation_id: "",
-    organisation_name: ""
+    organisation_name: "",
+    is_station: false,
+    contract_id: ""
   });
 
   const [showNewOrgDialog, setShowNewOrgDialog] = useState(false);
@@ -71,6 +74,11 @@ export default function CustomerForm({ customer, onSubmit, onCancel, isSubmittin
   const { data: organisations = [] } = useQuery({
     queryKey: ['organisations'],
     queryFn: () => base44.entities.Organisation.filter({ status: 'active', deleted_at: { $exists: false } })
+  });
+
+  const { data: contracts = [] } = useQuery({
+    queryKey: ['contracts'],
+    queryFn: () => base44.entities.Contract.list()
   });
 
   // Debounced duplicate check
@@ -438,6 +446,36 @@ export default function CustomerForm({ customer, onSubmit, onCancel, isSubmittin
               placeholder="Add any notes about the customer…"
               helperText="Internal only"
             />
+
+            <div className="space-y-2">
+              <div className="flex items-center space-x-2">
+                <Checkbox
+                  id="is_station"
+                  checked={formData.is_station}
+                  onCheckedChange={(checked) => setFormData({ ...formData, is_station: checked, contract_id: checked ? formData.contract_id : "" })}
+                />
+                <Label htmlFor="is_station">This is a Station/Site</Label>
+              </div>
+              {formData.is_station && (
+                <div className="space-y-2 ml-7 mt-2">
+                  <Label htmlFor="contract_id">Linked Contract</Label>
+                  <Select 
+                    value={formData.contract_id || "none"}
+                    onValueChange={(val) => setFormData({ ...formData, contract_id: val === "none" ? "" : val })}
+                  >
+                    <SelectTrigger>
+                      <SelectValue placeholder="Select a contract (optional)" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="none">None</SelectItem>
+                      {contracts.map((contract) => (
+                        <SelectItem key={contract.id} value={contract.id}>{contract.name}</SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+              )}
+            </div>
           </CardContent>
           <CardFooter className="border-t border-slate-100 flex justify-end gap-3">
             <Button type="button" variant="outline" onClick={onCancel}>
