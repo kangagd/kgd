@@ -202,10 +202,20 @@ export default function AttachmentCard({
           if (!allUrls.some(url => url.includes(attachment.filename))) {
             if (isImage) {
               const updatedImageUrls = [...existingImages, urlToSave];
-              await base44.entities.Job.update(linkedJobId, { image_urls: updatedImageUrls });
+              // Use manageJob backend function for robust permission handling
+              await base44.functions.invoke('manageJob', { 
+                action: 'update', 
+                id: linkedJobId, 
+                data: { image_urls: updatedImageUrls } 
+              });
             } else {
               const updatedDocs = [...existingDocs, urlToSave];
-              await base44.entities.Job.update(linkedJobId, { other_documents: updatedDocs });
+              // Use manageJob backend function for robust permission handling
+              await base44.functions.invoke('manageJob', { 
+                action: 'update', 
+                id: linkedJobId, 
+                data: { other_documents: updatedDocs } 
+              });
             }
           }
           
