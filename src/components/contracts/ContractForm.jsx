@@ -43,6 +43,7 @@ export default function ContractForm({ contract, onSubmit, onCancel, isSubmittin
   const createOrgMutation = useMutation({
     mutationFn: (data) => base44.entities.Organisation.create(data),
     onSuccess: (newOrg) => {
+      queryClient.setQueryData(['organisations'], (oldData = []) => [...oldData, newOrg]);
       queryClient.invalidateQueries({ queryKey: ['organisations'] });
       setFormData({ ...formData, organisation_id: newOrg.id });
       setShowNewOrgDialog(false);
