@@ -61,6 +61,7 @@ export default function EmailMessageView({ message, isFirst, linkedJobId, linked
   const [expanded, setExpanded] = useState(isFirst);
   const [inlineImageUrls, setInlineImageUrls] = useState({});
   const [loadingInlineImages, setLoadingInlineImages] = useState(false);
+  const [inlineImagesAttempted, setInlineImagesAttempted] = useState(false);
 
   // Separate inline images from regular attachments
   const { inlineAttachments, regularAttachments } = useMemo(() => {
@@ -81,8 +82,7 @@ export default function EmailMessageView({ message, isFirst, linkedJobId, linked
 
   // Load inline images when expanded
   useEffect(() => {
-    if (!expanded || inlineAttachments.length === 0 || loadingInlineImages) return;
-    if (Object.keys(inlineImageUrls).length > 0) return; // Already loaded
+    if (!expanded || inlineAttachments.length === 0 || loadingInlineImages || inlineImagesAttempted) return;
     
     const loadInlineImages = async () => {
       setLoadingInlineImages(true);
@@ -116,10 +116,11 @@ export default function EmailMessageView({ message, isFirst, linkedJobId, linked
       
       setInlineImageUrls(urls);
       setLoadingInlineImages(false);
+      setInlineImagesAttempted(true);
     };
     
     loadInlineImages();
-  }, [expanded, inlineAttachments, gmailMessageId, inlineImageUrls, loadingInlineImages]);
+  }, [expanded, inlineAttachments, gmailMessageId, loadingInlineImages, inlineImagesAttempted]);
 
   // Process HTML to replace cid: references with actual URLs
   const processedBodyHtml = useMemo(() => {
