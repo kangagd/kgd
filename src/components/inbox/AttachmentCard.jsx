@@ -2,6 +2,7 @@ import React, { useState, useEffect, useRef } from "react";
 import { Button } from "@/components/ui/button";
 import { Download, Save, FileText, Image as ImageIcon, FileSpreadsheet, FileArchive, Loader2, Check } from "lucide-react";
 import { base44 } from "@/api/base44Client";
+import { useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
 
 const getAttachmentIcon = (mimeType, filename) => {
@@ -37,6 +38,7 @@ export default function AttachmentCard({
   const [resolvedUrl, setResolvedUrl] = useState(attachment.url || null);
   const [saved, setSaved] = useState(false);
   const autoSaveAttempted = useRef(false);
+  const queryClient = useQueryClient();
   
   // Use gmail_message_id from attachment or from prop
   // Prioritize attachment's own gmail_message_id, then fall back to prop
@@ -127,8 +129,11 @@ export default function AttachmentCard({
         }
         
         setSaved(true);
+        if (linkedProjectId) {
+          queryClient.invalidateQueries({ queryKey: ['project', linkedProjectId] });
+        }
         console.log(`Auto-saved ${attachment.filename} to project as ${isImage ? 'image' : 'document'}`);
-      } catch (error) {
+        } catch (error) {
         // Silently fail for auto-save - don't show errors to user
         console.warn('Auto-save failed:', error.message);
       }
@@ -192,6 +197,7 @@ export default function AttachmentCard({
         }
         toast.success(`${isImage ? 'Image' : 'Document'} saved to project`);
         setSaved(true);
+        queryClient.invalidateQueries({ queryKey: ['project', linkedProjectId] });
       }
       if (onSaveComplete) onSaveComplete();
     } catch (error) {

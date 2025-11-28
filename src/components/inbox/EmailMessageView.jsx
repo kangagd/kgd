@@ -6,7 +6,7 @@ import { base44 } from "@/api/base44Client";
 import AttachmentCard from "./AttachmentCard";
 
 function AttachmentsSection({ attachments, linkedJobId, linkedProjectId, threadSubject, gmailMessageId }) {
-  const [isExpanded, setIsExpanded] = useState(false);
+  const [isExpanded, setIsExpanded] = useState(true);
   
   if (attachments.length === 0) return null;
   
