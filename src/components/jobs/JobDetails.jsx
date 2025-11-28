@@ -694,6 +694,26 @@ export default function JobDetails({ job: initialJob, onClose, onStatusChange, o
   };
 
   const handleImagesChange = async (urls) => {
+    // Find removed images and delete corresponding Photo records
+    const currentUrls = job.image_urls || [];
+    const removedUrls = currentUrls.filter(url => !urls.includes(url));
+
+    if (removedUrls.length > 0) {
+      try {
+        // Fetch photos for this job to find IDs
+        const photos = await base44.entities.Photo.filter({ job_id: job.id });
+        const photosToDelete = photos.filter(p => removedUrls.includes(p.image_url));
+        
+        if (photosToDelete.length > 0) {
+          await Promise.all(photosToDelete.map(p => base44.entities.Photo.delete(p.id)));
+          queryClient.invalidateQueries({ queryKey: ['photos'] });
+          toast.success(`Deleted ${photosToDelete.length} photo(s)`);
+        }
+      } catch (error) {
+        console.error("Error deleting photo records:", error);
+      }
+    }
+
     // Update job with new images
     updateJobMutation.mutate({ field: 'image_urls', value: urls });
     
