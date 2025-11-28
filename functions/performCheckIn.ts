@@ -83,6 +83,10 @@ Deno.serve(async (req) => {
             technician_name: user.full_name || user.display_name || user.email || "Unknown Technician",
             check_in_time: checkInTime
         };
+        
+        // Explicitly set created_by if we end up using service role fallback (best effort)
+        // Note: This might be ignored by the DB if created_by is system-managed, but harmless to try for consistent data structure
+        checkInData.created_by = user.email;
 
         console.log("Attempting to create CheckInOut record:", JSON.stringify(checkInData));
 
