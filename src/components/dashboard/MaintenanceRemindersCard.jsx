@@ -2,7 +2,7 @@ import React from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Wrench, Calendar, AlertCircle, MapPin } from "lucide-react";
-import { format, parseISO, isPast, isFuture } from "date-fns";
+import { format, parseISO, isPast, isFuture, addDays, isBefore } from "date-fns";
 import { base44 } from "@/api/base44Client";
 import { useQuery } from "@tanstack/react-query";
 import { useNavigate } from "react-router-dom";
@@ -25,9 +25,15 @@ export default function MaintenanceRemindersCard({ user }) {
   });
 
   // Filter for upcoming and overdue reminders (exclude completed/skipped)
-  const activeReminders = allReminders.filter(r => 
-    r.status !== 'Completed' && r.status !== 'Skipped'
-  ).slice(0, 5);
+  const activeReminders = allReminders.filter(r => {
+    if (r.status === 'Completed' || r.status === 'Skipped') return false;
+    if (!r.due_date) return false;
+    
+    // Show only if due date is within the next 7 days (or overdue)
+    const dueDate = parseISO(r.due_date);
+    const sevenDaysFromNow = addDays(new Date(), 7);
+    return isBefore(dueDate, sevenDaysFromNow);
+  }).slice(0, 5);
 
   const overdueCount = activeReminders.filter(r => 
     r.due_date && isPast(parseISO(r.due_date)) && r.status === 'Pending'
