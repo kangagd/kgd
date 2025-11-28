@@ -6,9 +6,9 @@ import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Label } from "@/components/ui/label";
 import { Separator } from "@/components/ui/separator";
-import { ArrowLeft, MapPin, Phone, Calendar, Clock, User, Briefcase, FileText, Image as ImageIcon, DollarSign, Sparkles, LogIn, FileCheck, History, Package, ClipboardCheck, LogOut, Timer, AlertCircle, ChevronDown, Mail, Navigation, Trash2, FolderKanban, Camera, Edit, ExternalLink, MessageCircle, Plus } from "lucide-react";
+import { ArrowLeft, MapPin, Phone, Calendar, Clock, User, Briefcase, FileText, Image as ImageIcon, DollarSign, Sparkles, LogIn, FileCheck, History, Package, ClipboardCheck, LogOut, Timer, AlertCircle, ChevronDown, Mail, Navigation, Trash2, FolderKanban, Camera, Edit, ExternalLink, MessageCircle, Plus, AlertTriangle } from "lucide-react";
 import DuplicateWarningCard, { DuplicateBadge } from "../common/DuplicateWarningCard";
-import { format, parseISO } from "date-fns";
+import { format, parseISO, isPast } from "date-fns";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 import { base44 } from "@/api/base44Client";
@@ -209,6 +209,12 @@ export default function JobDetails({ job: initialJob, onClose, onStatusChange, o
     queryKey: ['customer', job.customer_id],
     queryFn: () => base44.entities.Customer.get(job.customer_id),
     enabled: !!job.customer_id
+  });
+
+  const { data: contract } = useQuery({
+    queryKey: ['contract', job.contract_id],
+    queryFn: () => base44.entities.Contract.get(job.contract_id),
+    enabled: !!job.contract_id
   });
 
   const { data: xeroInvoice } = useQuery({
@@ -746,6 +752,12 @@ export default function JobDetails({ job: initialJob, onClose, onStatusChange, o
     <>
       <Card className={`border border-[#E5E7EB] shadow-sm ${isTechnician ? 'rounded-none' : 'rounded-lg'} overflow-hidden`}>
         <CardHeader className="border-b border-[#E5E7EB] bg-white p-3 md:p-4 space-y-3">
+          {job.sla_due_at && isPast(parseISO(job.sla_due_at)) && job.status !== 'Completed' && (
+            <div className="bg-red-50 border border-red-200 text-red-800 p-2.5 rounded-lg flex items-center gap-2 text-sm font-bold">
+              <AlertTriangle className="w-4 h-4" />
+              SLA Breach — Response window exceeded
+            </div>
+          )}
           <div className="flex items-center justify-between gap-3">
             <div className="flex items-center gap-2">
               <Button
@@ -826,6 +838,13 @@ export default function JobDetails({ job: initialJob, onClose, onStatusChange, o
                   </Badge>
                 )}
                 <DuplicateBadge record={job} />
+                {contract && (
+                  <Link to={createPageUrl("Contracts")}>
+                    <Badge className="bg-purple-100 text-purple-800 border-purple-200 hover:bg-purple-200 cursor-pointer text-[12px] px-2.5 py-0.5 rounded-lg">
+                      Contract: {contract.name}
+                    </Badge>
+                  </Link>
+                )}
               </div>
 
               {/* Middle Group: Job Type + Product Chips */}

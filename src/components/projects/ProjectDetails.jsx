@@ -1325,6 +1325,13 @@ Format as HTML bullet points using <ul> and <li> tags. Include only the most cri
               </h2>
               <DuplicateBadge record={project} />
             </div>
+            {project.contract_id && (
+              <Link to={createPageUrl("Contracts")}>
+                <Badge className="bg-purple-100 text-purple-800 hover:bg-purple-200 cursor-pointer border-purple-200 font-medium text-[12px] leading-[1.35] px-2.5 py-0.5 rounded-lg">
+                  Contract Job
+                </Badge>
+              </Link>
+            )}
             {project.project_type && (
               <EditableField
                 value={project.project_type}
