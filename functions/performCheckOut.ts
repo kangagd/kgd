@@ -141,19 +141,9 @@ Deno.serve(async (req) => {
         }
 
         if (!checkIn) {
-            console.warn(`Ghost Checkout: Proceeding without active check-in record for Job ${jobId}`);
-            // Create a mock checkIn object to allow flow to continue
-            // We infer check_in_time from checkout time and duration
-            const calculatedCheckInTime = checkOutTime && durationMinutes 
-                ? new Date(new Date(checkOutTime).getTime() - (Number(durationMinutes) * 60000)).toISOString()
-                : new Date().toISOString();
-
-            checkIn = {
-                id: null, // Signal that there is no DB record
-                technician_email: userEmail,
-                check_in_time: calculatedCheckInTime,
-                is_ghost: true
-            };
+            return Response.json({ 
+                error: `No active check-in found for user ${userEmail} (Job: ${jobId}, CheckInId: ${checkInId}). Please contact support.` 
+            }, { status: 404 });
         }
 
         const checkInEmail = (checkIn.technician_email || "").toLowerCase().trim();
@@ -164,7 +154,7 @@ Deno.serve(async (req) => {
              return Response.json({ error: 'Unauthorized to check out this session' }, { status: 403 });
         }
         
-        // Update checkInId to the one we found (or null if ghost)
+        // Update checkInId to the one we found, in case we found it via search
         checkInId = checkIn.id;
 
         // 2. Get Job
@@ -180,21 +170,15 @@ Deno.serve(async (req) => {
             return Response.json({ error: `Job with ID ${jobId} returned null` }, { status: 404 });
         }
 
-        // 3. Update CheckInOut record (Skip if ghost)
-        if (checkInId) {
-            try {
-                await base44.asServiceRole.entities.CheckInOut.update(checkInId, {
-                    check_out_time: checkOutTime,
-                    duration_hours: Number(durationHours) || 0
-                });
-            } catch (e) {
-                console.error("Failed to update CheckInOut:", e);
-                // If update fails here, we should probably STILL continue to Summary creation 
-                // since we want to ensure the job status gets updated.
-                console.warn("Continuing with checkout despite CheckInOut update failure...");
-            }
-        } else {
-            console.log("Skipping CheckInOut record update (Ghost Checkout)");
+        // 3. Update CheckInOut record
+        try {
+            await base44.asServiceRole.entities.CheckInOut.update(checkInId, {
+                check_out_time: checkOutTime,
+                duration_hours: Number(durationHours) || 0
+            });
+        } catch (e) {
+            console.error("Failed to update CheckInOut:", e);
+            return Response.json({ error: `Failed to update check-in record: ${e.message}` }, { status: 500 });
         }
 
         // 4. Create JobSummary
