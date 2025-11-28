@@ -18,6 +18,25 @@ export default function EditableFileUpload({
   const [uploading, setUploading] = useState(false);
   const [isDragging, setIsDragging] = useState(false);
   const [previewFile, setPreviewFile] = useState(null);
+  const [selectedIndices, setSelectedIndices] = useState(new Set());
+  const [isSelectionMode, setIsSelectionMode] = useState(false);
+
+  const toggleSelection = (index) => {
+    const newSelected = new Set(selectedIndices);
+    if (newSelected.has(index)) {
+      newSelected.delete(index);
+    } else {
+      newSelected.add(index);
+    }
+    setSelectedIndices(newSelected);
+  };
+
+  const handleBulkDelete = () => {
+    const remainingFiles = files.filter((_, index) => !selectedIndices.has(index));
+    onFilesChange(remainingFiles);
+    setSelectedIndices(new Set());
+    setIsSelectionMode(false);
+  };
 
   const uploadFiles = async (selectedFiles) => {
     if (selectedFiles.length === 0) return;
@@ -97,33 +116,77 @@ export default function EditableFileUpload({
           {label}
         </h4>
         <div className="flex gap-2">
-          {accept.includes('image') && (
-            <Button
-              type="button"
-              size="sm"
-              variant="outline"
-              onClick={() => cameraInputRef.current?.click()}
-              disabled={uploading}
-              className="h-7 text-xs"
-            >
-              <Camera className="w-3 h-3 mr-1" />
-              <span className="hidden md:inline">Camera</span>
-            </Button>
+          {multiple && displayFiles.length > 0 && (
+            <>
+              {isSelectionMode ? (
+                <>
+                  <Button
+                    type="button"
+                    size="sm"
+                    variant="destructive"
+                    onClick={handleBulkDelete}
+                    disabled={selectedIndices.size === 0}
+                    className="h-7 text-xs"
+                  >
+                    Delete ({selectedIndices.size})
+                  </Button>
+                  <Button
+                    type="button"
+                    size="sm"
+                    variant="ghost"
+                    onClick={() => {
+                      setIsSelectionMode(false);
+                      setSelectedIndices(new Set());
+                    }}
+                    className="h-7 text-xs"
+                  >
+                    Cancel
+                  </Button>
+                </>
+              ) : (
+                <Button
+                  type="button"
+                  size="sm"
+                  variant="outline"
+                  onClick={() => setIsSelectionMode(true)}
+                  className="h-7 text-xs"
+                >
+                  Select
+                </Button>
+              )}
+            </>
           )}
-          <Button
-            type="button"
-            size="sm"
-            variant="outline"
-            onClick={() => fileInputRef.current?.click()}
-            disabled={uploading}
-            className="h-7 text-xs"
-          >
-            {uploading ? (
-              <>Uploading...</>
-            ) : (
-              <><Upload className="w-3 h-3 mr-1" />{multiple ? 'Add' : 'Upload'}</>
-            )}
-          </Button>
+          {(!isSelectionMode || !multiple) && (
+            <>
+              {accept.includes('image') && (
+                <Button
+                  type="button"
+                  size="sm"
+                  variant="outline"
+                  onClick={() => cameraInputRef.current?.click()}
+                  disabled={uploading}
+                  className="h-7 text-xs"
+                >
+                  <Camera className="w-3 h-3 mr-1" />
+                  <span className="hidden md:inline">Camera</span>
+                </Button>
+              )}
+              <Button
+                type="button"
+                size="sm"
+                variant="outline"
+                onClick={() => fileInputRef.current?.click()}
+                disabled={uploading}
+                className="h-7 text-xs"
+              >
+                {uploading ? (
+                  <>Uploading...</>
+                ) : (
+                  <><Upload className="w-3 h-3 mr-1" />{multiple ? 'Add' : 'Upload'}</>
+                )}
+              </Button>
+            </>
+          )}
         </div>
         <input
           ref={fileInputRef}
@@ -156,54 +219,83 @@ export default function EditableFileUpload({
           isMediaUpload && multiple ? (
             <div className="grid grid-cols-2 md:grid-cols-3 gap-2">
               {displayFiles.map((url, index) => (
-                <div key={index} className="relative group">
+                <div 
+                  key={index} 
+                  className={`relative group ${isSelectionMode ? 'cursor-pointer' : ''}`}
+                  onClick={isSelectionMode ? (e) => {
+                    e.preventDefault();
+                    toggleSelection(index);
+                  } : undefined}
+                >
                   {isImageFile(url) ? (
-                    <button
-                      onClick={() => setPreviewFile({
-                        url,
-                        name: `Image ${index + 1}`,
-                        type: 'image',
-                        index
-                      })}
-                      className="w-full"
-                    >
+                    <div className="w-full relative">
                       <img 
                         src={url} 
                         alt={`Upload ${index + 1}`} 
-                        className="w-full h-24 md:h-32 object-cover rounded border hover:opacity-80 cursor-pointer"
+                        className={`w-full h-24 md:h-32 object-cover rounded border transition-all ${
+                          isSelectionMode 
+                            ? (selectedIndices.has(index) ? 'ring-2 ring-[#FAE008] opacity-80' : 'opacity-50 hover:opacity-70') 
+                            : 'hover:opacity-80 cursor-pointer'
+                        }`}
+                        onClick={!isSelectionMode ? () => setPreviewFile({
+                          url,
+                          name: `Image ${index + 1}`,
+                          type: 'image',
+                          index
+                        }) : undefined}
                       />
-                    </button>
+                    </div>
                   ) : isVideoFile(url) ? (
-                    <div className="relative w-full h-24 md:h-32 rounded border bg-slate-900">
+                    <div className={`relative w-full h-24 md:h-32 rounded border bg-slate-900 ${
+                      isSelectionMode 
+                        ? (selectedIndices.has(index) ? 'ring-2 ring-[#FAE008] opacity-80' : 'opacity-50 hover:opacity-70') 
+                        : ''
+                    }`}>
                       <video 
                         src={url}
                         className="w-full h-full object-cover rounded"
-                        controls
+                        controls={!isSelectionMode}
                       />
                       <div className="absolute top-2 left-2 bg-black/70 rounded px-2 py-1">
                         <Video className="w-3 h-3 text-white" />
                       </div>
                     </div>
                   ) : (
-                    <button
-                      onClick={() => setPreviewFile({
+                    <div 
+                      className={`flex items-center justify-center w-full h-24 md:h-32 bg-slate-100 rounded border transition-all ${
+                        isSelectionMode 
+                          ? (selectedIndices.has(index) ? 'ring-2 ring-[#FAE008] opacity-80' : 'opacity-50 hover:opacity-70') 
+                          : 'hover:bg-slate-200 cursor-pointer'
+                      }`}
+                      onClick={!isSelectionMode ? () => setPreviewFile({
                         url,
                         name: `File ${index + 1}`,
                         type: 'pdf',
                         index
-                      })}
-                      className="flex items-center justify-center w-full h-24 md:h-32 bg-slate-100 rounded border hover:bg-slate-200 cursor-pointer"
+                      }) : undefined}
                     >
                       <Upload className="w-6 h-6 text-slate-400" />
+                    </div>
+                  )}
+                  
+                  {isSelectionMode && (
+                    <div className={`absolute top-2 right-2 w-5 h-5 rounded border bg-white flex items-center justify-center ${selectedIndices.has(index) ? 'border-[#FAE008] bg-[#FAE008]' : 'border-slate-300'}`}>
+                      {selectedIndices.has(index) && <div className="w-2.5 h-2.5 bg-[#111827] rounded-sm" />}
+                    </div>
+                  )}
+
+                  {!isSelectionMode && (
+                    <button
+                      type="button"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        handleRemove(index);
+                      }}
+                      className="absolute top-1 right-1 bg-red-500 text-white rounded-full p-1 opacity-0 group-hover:opacity-100 transition-opacity z-10"
+                    >
+                      <X className="w-3 h-3" />
                     </button>
                   )}
-                  <button
-                    type="button"
-                    onClick={() => handleRemove(index)}
-                    className="absolute top-1 right-1 bg-red-500 text-white rounded-full p-1 opacity-0 group-hover:opacity-100 transition-opacity"
-                  >
-                    <X className="w-3 h-3" />
-                  </button>
                 </div>
               ))}
             </div>
