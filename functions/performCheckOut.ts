@@ -74,7 +74,7 @@ Deno.serve(async (req) => {
         const summaryData = {
             job_id: jobId,
             project_id: job.project_id || null,
-            job_number: job.job_number,
+            job_number: String(job.job_number || ""),
             job_type: job.job_type_name || null,
             scheduled_datetime: scheduledDatetime,
             technician_email: user.email || "",
@@ -93,21 +93,33 @@ Deno.serve(async (req) => {
 
         console.log("Creating JobSummary with data:", JSON.stringify(summaryData));
 
-        const jobSummary = await base44.asServiceRole.entities.JobSummary.create(summaryData);
+        let jobSummary;
+        try {
+            jobSummary = await base44.asServiceRole.entities.JobSummary.create(summaryData);
+        } catch (e) {
+            console.error("Failed to create JobSummary:", e);
+            throw new Error(`JobSummary creation failed: ${e.message}`);
+        }
 
         // Update Job
-        await base44.asServiceRole.entities.Job.update(jobId, {
-            overview: overview,
-            next_steps: nextSteps,
-            communication_with_client: communicationWithClient,
-            outcome: outcome,
-            status: newStatus
-        });
+        try {
+            await base44.asServiceRole.entities.Job.update(jobId, {
+                overview: overview,
+                next_steps: nextSteps,
+                communication_with_client: communicationWithClient,
+                outcome: outcome,
+                status: newStatus
+            });
+        } catch (e) {
+             console.error("Failed to update Job:", e);
+             // We don't throw here to ensure we return the summary if created
+        }
 
         // Sync to Project
         if (job.project_id) {
             try {
-                await base44.functions.invoke('syncJobToProject', { job_id: jobId });
+                // Use service role to invoke functions to ensure permissions
+                await base44.asServiceRole.functions.invoke('syncJobToProject', { job_id: jobId });
                 
                 // Auto-advance project stage
                 const outcomeToStageMap = {
@@ -125,7 +137,7 @@ Deno.serve(async (req) => {
                     await base44.asServiceRole.entities.Project.update(job.project_id, { status: newProjectStage });
                     
                     if (newProjectStage === 'Completed') {
-                        await base44.functions.invoke('handleProjectCompletion', {
+                        await base44.asServiceRole.functions.invoke('handleProjectCompletion', {
                           project_id: job.project_id,
                           new_status: 'Completed',
                           old_status: project.status,
