@@ -343,8 +343,9 @@ export default function Schedule() {
 
     // Initialize with known technicians
     technicians.forEach(tech => {
-      jobsByTechEmail[tech.email] = [];
-      techDisplayNames[tech.email] = tech.display_name || tech.full_name;
+      const email = tech.email.toLowerCase();
+      jobsByTechEmail[email] = [];
+      techDisplayNames[email] = tech.display_name || tech.full_name;
     });
     
     // Initialize unassigned
@@ -354,7 +355,8 @@ export default function Schedule() {
 
     // Distribute jobs
     dayJobs.forEach(job => {
-      const primaryEmail = job.assigned_to?.[0];
+      const rawEmail = job.assigned_to?.[0];
+      const primaryEmail = rawEmail ? rawEmail.toLowerCase() : null;
       
       if (primaryEmail && jobsByTechEmail[primaryEmail] !== undefined) {
         // Known technician
@@ -389,13 +391,14 @@ export default function Schedule() {
 
     // 1. Add active technicians in order
     technicians.forEach(tech => {
-      addGroup(tech.email, techDisplayNames[tech.email]);
+      const email = tech.email.toLowerCase();
+      addGroup(email, techDisplayNames[email]);
     });
 
     // 2. Add other groups (unknown techs and unassigned)
     Object.keys(jobsByTechEmail).forEach(email => {
       if (email === UNASSIGNED_KEY) return; // Handle last
-      if (technicians.some(t => t.email === email)) return; // Already handled
+      if (technicians.some(t => t.email.toLowerCase() === email)) return; // Already handled
       addGroup(email, techDisplayNames[email]);
     });
 
