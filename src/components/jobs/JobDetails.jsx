@@ -312,7 +312,13 @@ export default function JobDetails({ job: initialJob, onClose, onStatusChange, o
     },
     onSuccess: () => {
       setValidationError("");
+      setOverview("");
+      setNextSteps("");
+      setCommunicationWithClient("");
+      setOutcome("");
+      
       toast.success("Checked out successfully!");
+      
       queryClient.invalidateQueries({ queryKey: ['checkIns', job.id] });
       queryClient.invalidateQueries({ queryKey: ['jobSummaries', job.id] });
       queryClient.invalidateQueries({ queryKey: ['projectJobSummaries'] });
