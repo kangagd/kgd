@@ -99,7 +99,7 @@ export default function TaskFormModal({
     setFormData(prev => ({
       ...prev,
       assigned_to_user_id: userId,
-      assigned_to_name: user?.full_name || "",
+      assigned_to_name: user ? (user.display_name || user.full_name) : "",
       assigned_to_email: user?.email || ""
     }));
   };
@@ -223,7 +223,7 @@ export default function TaskFormModal({
               </SelectTrigger>
               <SelectContent>
                 {users.map(user => (
-                  <SelectItem key={user.id} value={user.id}>{user.full_name}</SelectItem>
+                  <SelectItem key={user.id} value={user.id}>{user.display_name || user.full_name}</SelectItem>
                 ))}
               </SelectContent>
             </Select>

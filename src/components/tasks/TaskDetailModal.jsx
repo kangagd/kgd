@@ -69,7 +69,7 @@ export default function TaskDetailModal({
     setEditData(prev => ({
       ...prev,
       assigned_to_user_id: userId,
-      assigned_to_name: user?.full_name || "",
+      assigned_to_name: user ? (user.display_name || user.full_name) : "",
       assigned_to_email: user?.email || ""
     }));
   };
@@ -211,7 +211,7 @@ export default function TaskDetailModal({
                 <SelectTrigger><SelectValue placeholder="Select assignee" /></SelectTrigger>
                 <SelectContent>
                   {users.map(user => (
-                    <SelectItem key={user.id} value={user.id}>{user.full_name}</SelectItem>
+                    <SelectItem key={user.id} value={user.id}>{user.display_name || user.full_name}</SelectItem>
                   ))}
                 </SelectContent>
               </Select>
@@ -266,14 +266,19 @@ export default function TaskDetailModal({
                 </div>
               )}
 
-              {task.assigned_to_name && (
-                <div className="flex items-center gap-3">
-                  <div className="w-6 h-6 rounded-full bg-[#FAE008] flex items-center justify-center text-xs font-semibold">
-                    {task.assigned_to_name.split(" ").map(n => n[0]).join("").slice(0, 2).toUpperCase()}
+              {(() => {
+                const assignee = users.find(u => u.id === task.assigned_to_user_id);
+                const displayName = assignee ? (assignee.display_name || assignee.full_name) : task.assigned_to_name;
+                if (!displayName) return null;
+                return (
+                  <div className="flex items-center gap-3">
+                    <div className="w-6 h-6 rounded-full bg-[#FAE008] flex items-center justify-center text-xs font-semibold">
+                      {displayName.split(" ").map(n => n[0]).join("").slice(0, 2).toUpperCase()}
+                    </div>
+                    <span className="text-sm">Assigned to: {displayName}</span>
                   </div>
-                  <span className="text-sm">Assigned to: {task.assigned_to_name}</span>
-                </div>
-              )}
+                );
+              })()}
 
               {task.description && (
                 <div className="bg-[#F9FAFB] p-3 rounded-lg">

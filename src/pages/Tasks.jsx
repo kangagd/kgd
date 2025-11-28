@@ -168,15 +168,22 @@ export default function Tasks() {
                     Overdue ({groupedTasks.overdue.length})
                   </h3>
                   <div className="space-y-3">
-                    {groupedTasks.overdue.map(task => (
-                      <TaskCard
-                        key={task.id}
-                        task={task}
-                        onClick={setSelectedTask}
-                        onToggleComplete={handleToggleComplete}
-                        compact
-                      />
-                    ))}
+                    {groupedTasks.overdue.map(task => {
+                      const assignee = users.find(u => u.id === task.assigned_to_user_id);
+                      const displayTask = {
+                        ...task,
+                        assigned_to_name: assignee ? (assignee.display_name || assignee.full_name) : task.assigned_to_name
+                      };
+                      return (
+                        <TaskCard
+                          key={task.id}
+                          task={displayTask}
+                          onClick={setSelectedTask}
+                          onToggleComplete={handleToggleComplete}
+                          compact
+                        />
+                      );
+                    })}
                   </div>
                 </div>
               )}
@@ -189,15 +196,22 @@ export default function Tasks() {
                     Today ({groupedTasks.today.length})
                   </h3>
                   <div className="space-y-3">
-                    {groupedTasks.today.map(task => (
-                      <TaskCard
-                        key={task.id}
-                        task={task}
-                        onClick={setSelectedTask}
-                        onToggleComplete={handleToggleComplete}
-                        compact
-                      />
-                    ))}
+                    {groupedTasks.today.map(task => {
+                      const assignee = users.find(u => u.id === task.assigned_to_user_id);
+                      const displayTask = {
+                        ...task,
+                        assigned_to_name: assignee ? (assignee.display_name || assignee.full_name) : task.assigned_to_name
+                      };
+                      return (
+                        <TaskCard
+                          key={task.id}
+                          task={displayTask}
+                          onClick={setSelectedTask}
+                          onToggleComplete={handleToggleComplete}
+                          compact
+                        />
+                      );
+                    })}
                   </div>
                 </div>
               )}
@@ -210,15 +224,22 @@ export default function Tasks() {
                     Upcoming ({groupedTasks.upcoming.length})
                   </h3>
                   <div className="space-y-3">
-                    {groupedTasks.upcoming.map(task => (
-                      <TaskCard
-                        key={task.id}
-                        task={task}
-                        onClick={setSelectedTask}
-                        onToggleComplete={handleToggleComplete}
-                        compact
-                      />
-                    ))}
+                    {groupedTasks.upcoming.map(task => {
+                      const assignee = users.find(u => u.id === task.assigned_to_user_id);
+                      const displayTask = {
+                        ...task,
+                        assigned_to_name: assignee ? (assignee.display_name || assignee.full_name) : task.assigned_to_name
+                      };
+                      return (
+                        <TaskCard
+                          key={task.id}
+                          task={displayTask}
+                          onClick={setSelectedTask}
+                          onToggleComplete={handleToggleComplete}
+                          compact
+                        />
+                      );
+                    })}
                   </div>
                 </div>
               )}
@@ -230,15 +251,22 @@ export default function Tasks() {
                     No Due Date ({groupedTasks.noDue.length})
                   </h3>
                   <div className="space-y-3">
-                    {groupedTasks.noDue.map(task => (
-                      <TaskCard
-                        key={task.id}
-                        task={task}
-                        onClick={setSelectedTask}
-                        onToggleComplete={handleToggleComplete}
-                        compact
-                      />
-                    ))}
+                    {groupedTasks.noDue.map(task => {
+                      const assignee = users.find(u => u.id === task.assigned_to_user_id);
+                      const displayTask = {
+                        ...task,
+                        assigned_to_name: assignee ? (assignee.display_name || assignee.full_name) : task.assigned_to_name
+                      };
+                      return (
+                        <TaskCard
+                          key={task.id}
+                          task={displayTask}
+                          onClick={setSelectedTask}
+                          onToggleComplete={handleToggleComplete}
+                          compact
+                        />
+                      );
+                    })}
                   </div>
                 </div>
               )}
@@ -329,7 +357,7 @@ export default function Tasks() {
                 <SelectItem value="all">All Assignees</SelectItem>
                 <SelectItem value="me">Assigned to Me</SelectItem>
                 {users.map(u => (
-                  <SelectItem key={u.id} value={u.id}>{u.full_name}</SelectItem>
+                  <SelectItem key={u.id} value={u.id}>{u.display_name || u.full_name}</SelectItem>
                 ))}
               </SelectContent>
             </Select>
@@ -375,7 +403,13 @@ export default function Tasks() {
           </div>
         ) : viewMode === "kanban" ? (
           <TaskKanbanView
-            tasks={tasks}
+            tasks={tasks.map(t => {
+              const assignee = users.find(u => u.id === t.assigned_to_user_id);
+              return {
+                ...t,
+                assigned_to_name: assignee ? (assignee.display_name || assignee.full_name) : t.assigned_to_name
+              };
+            })}
             users={users}
             onTaskClick={setSelectedTask}
             onToggleComplete={handleToggleComplete}
@@ -383,14 +417,21 @@ export default function Tasks() {
           />
         ) : (
           <div className="space-y-3">
-            {filteredTasks.map(task => (
-              <TaskCard
-                key={task.id}
-                task={task}
-                onClick={setSelectedTask}
-                onToggleComplete={handleToggleComplete}
-              />
-            ))}
+            {filteredTasks.map(task => {
+              const assignee = users.find(u => u.id === task.assigned_to_user_id);
+              const displayTask = {
+                ...task,
+                assigned_to_name: assignee ? (assignee.display_name || assignee.full_name) : task.assigned_to_name
+              };
+              return (
+                <TaskCard
+                  key={task.id}
+                  task={displayTask}
+                  onClick={setSelectedTask}
+                  onToggleComplete={handleToggleComplete}
+                />
+              );
+            })}
           </div>
         )}
 
