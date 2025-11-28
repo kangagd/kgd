@@ -130,13 +130,16 @@ Deno.serve(async (req) => {
         // 3. Update CheckInOut record (Skip if ghost)
         if (checkInId) {
             try {
+                console.log(`Updating CheckInOut ${checkInId} with checkout time ${checkOutTime}`);
                 await base44.asServiceRole.entities.CheckInOut.update(checkInId, {
                     check_out_time: checkOutTime,
                     duration_hours: Number(durationHours) || 0
                 });
             } catch (e) {
-                console.error("Failed to update CheckInOut:", e);
-                // Continue anyway to ensure job status updates
+                console.error(`CRITICAL: Failed to update CheckInOut ${checkInId}:`, e);
+                return Response.json({ 
+                    error: `Failed to close check-in session: ${e.message}. Please try again.` 
+                }, { status: 500 });
             }
         }
 
