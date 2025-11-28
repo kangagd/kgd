@@ -525,26 +525,31 @@ Format as HTML bullet points using <ul> and <li> tags. Include only the most cri
         }
       }
 
-      // Create the job with project data
-      const newJob = await base44.entities.Job.create({
-        job_number: nextJobNumber,
-        project_id: project.id,
-        project_name: project.title,
-        customer_id: project.customer_id,
-        customer_name: project.customer_name,
-        customer_phone: project.customer_phone,
-        customer_email: project.customer_email,
-        address: project.address,
-        product: product,
-        job_type_id: jobType?.id || null,
-        job_type_name: jobTypeName,
-        status: jobTypeName === "Installation" && newStage === "Scheduled" ? "Scheduled" : "Open",
-        scheduled_date: new Date().toISOString().split('T')[0],
-        additional_info: additionalInfo,
-        image_urls: project.image_urls || [],
-        quote_url: project.quote_url || null,
-        invoice_url: project.invoice_url || null
+      // Create the job with project data using manageJob function to trigger automation
+      const createJobResponse = await base44.functions.invoke('manageJob', { 
+        action: 'create', 
+        data: {
+          job_number: nextJobNumber,
+          project_id: project.id,
+          project_name: project.title,
+          customer_id: project.customer_id,
+          customer_name: project.customer_name,
+          customer_phone: project.customer_phone,
+          customer_email: project.customer_email,
+          address: project.address,
+          product: product,
+          job_type_id: jobType?.id || null,
+          job_type_name: jobTypeName,
+          status: jobTypeName === "Installation" && newStage === "Scheduled" ? "Scheduled" : "Open",
+          scheduled_date: new Date().toISOString().split('T')[0],
+          additional_info: additionalInfo,
+          image_urls: project.image_urls || [],
+          quote_url: project.quote_url || null,
+          invoice_url: project.invoice_url || null
+        }
       });
+      
+      const newJob = createJobResponse.data.job;
 
       // Log the auto-creation in change history
       const user = await base44.auth.me();
