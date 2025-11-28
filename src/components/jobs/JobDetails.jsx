@@ -161,6 +161,7 @@ export default function JobDetails({ job: initialJob, onClose, onStatusChange, o
   const [communicationWithClient, setCommunicationWithClient] = useState(job.communication_with_client || "");
   const [outcome, setOutcome] = useState(job.outcome || "");
   const [validationError, setValidationError] = useState("");
+  const [activeTab, setActiveTab] = useState("details");
   const queryClient = useQueryClient();
 
   const { data: jobTypes = [] } = useQuery({
@@ -319,9 +320,11 @@ export default function JobDetails({ job: initialJob, onClose, onStatusChange, o
       queryClient.invalidateQueries({ queryKey: ['project', job.project_id] });
     },
     onError: (error) => {
+      console.error("Check-out error:", error);
       const errorMsg = error?.response?.data?.error || error?.message || 'Failed to check out';
       setValidationError(errorMsg);
       toast.error(errorMsg);
+      setActiveTab("visit");
     }
     });
 
@@ -1167,7 +1170,7 @@ export default function JobDetails({ job: initialJob, onClose, onStatusChange, o
         }
         
         <CardContent className={`p-3 md:p-4 space-y-3 ${isTechnician ? 'pb-32' : ''}`}>
-          <Tabs defaultValue="details" className="w-full">
+          <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
             <TabsList className="w-full justify-start mb-3 overflow-x-auto flex-nowrap">
               <TabsTrigger value="details" className="flex-1">Details</TabsTrigger>
               <TabsTrigger value="visit" className="flex-1">
