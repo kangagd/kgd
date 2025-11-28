@@ -11,7 +11,8 @@ export default function DraggableJobCard({
   onClick, 
   onAddressClick, 
   onProjectClick,
-  isDragging = false
+  isDragging = false,
+  techniciansLookup = {}
 }) {
   return (
     <Card
@@ -57,12 +58,16 @@ export default function DraggableJobCard({
             {job.assigned_to && job.assigned_to.length > 0 && (
               <div className="flex items-center gap-2 ml-6">
                 <TechnicianAvatarGroup
-                  technicians={job.assigned_to.map((email, idx) => ({
-                    email,
-                    display_name: job.assigned_to_name?.[idx] || email,
-                    full_name: job.assigned_to_name?.[idx] || email,
-                    id: email
-                  }))}
+                  technicians={job.assigned_to.map((email, idx) => {
+                    const normalized = email.toLowerCase();
+                    const tech = techniciansLookup?.[normalized];
+                    return {
+                      email,
+                      display_name: tech?.display_name || tech?.full_name || job.assigned_to_name?.[idx] || email,
+                      full_name: tech?.full_name || job.assigned_to_name?.[idx] || email,
+                      id: email
+                    };
+                  })}
                   maxDisplay={3}
                   size="xs"
                 />

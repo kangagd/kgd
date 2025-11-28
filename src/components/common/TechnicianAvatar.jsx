@@ -44,7 +44,7 @@ export default function TechnicianAvatar({
   }
 
   // Determine color based on technician.id or email
-  const identifier = technician.id || technician.email || technician.full_name || "";
+  const identifier = technician.id || (technician.email ? technician.email.toLowerCase() : "") || technician.full_name || "";
   const colorIndex = hashString(identifier) % AVATAR_COLORS.length;
   const backgroundColor = AVATAR_COLORS[colorIndex];
   
