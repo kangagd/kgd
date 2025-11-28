@@ -216,7 +216,7 @@ export default function JobDetails({ job: initialJob, onClose, onStatusChange, o
     enabled: !!job.xero_invoice_id
   });
 
-  const activeCheckIn = checkIns.find((c) => !c.check_out_time && c.technician_email === user?.email);
+  const activeCheckIn = checkIns.find((c) => !c.check_out_time && c.technician_email?.toLowerCase() === user?.email?.toLowerCase());
   const completedCheckIns = checkIns.filter((c) => c.check_out_time);
   const totalJobTime = completedCheckIns.reduce((sum, c) => sum + (c.duration_hours || 0), 0);
 
@@ -235,6 +235,12 @@ export default function JobDetails({ job: initialJob, onClose, onStatusChange, o
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['checkIns', job.id] });
       queryClient.invalidateQueries({ queryKey: ['jobs'] });
+      toast.success("Checked in successfully");
+    },
+    onError: (error) => {
+      console.error("Check-in error:", error);
+      const errorMsg = error?.response?.data?.error || error?.message || 'Failed to check in';
+      toast.error(errorMsg);
     }
   });
 

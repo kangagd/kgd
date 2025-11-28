@@ -32,11 +32,12 @@ Deno.serve(async (req) => {
             }
 
             if (!isAssigned && (!job.created_by || job.created_by.toLowerCase() !== userEmail)) {
-                 // Allow if user is field technician and job is assigned to them (already checked above)
-                 // If strict check fails, we might still proceed if we trust the frontend's intent for technicians,
-                 // but it's better to enforce assignment. 
-                 // However, given the "Check in issue not resolved" complaint, let's be slightly lenient if they are a technician.
-                 if (!user.is_field_technician) {
+                 // Allow if user is field technician even if not strictly assigned
+                 // This ensures technicians can always check in to jobs they can see
+                 // Handle both boolean and string 'true' for robustness
+                 const isTechnician = user.is_field_technician === true || user.is_field_technician === 'true';
+                 
+                 if (!isTechnician) {
                      return Response.json({ error: 'Not authorized to check in to this job' }, { status: 403 });
                  }
             }
