@@ -551,9 +551,16 @@ export default function JobDetails({ job: initialJob, onClose, onStatusChange, o
     checkInMutation.mutate();
   };
 
-  const handleCheckOut = () => {
+  const handleCheckOut = async () => {
+    console.log("Check Out Button Clicked");
     setValidationError("");
-    checkOutMutation.mutate();
+    try {
+      await checkOutMutation.mutateAsync();
+      console.log("Check Out Mutation Completed");
+    } catch (e) {
+      console.error("Check Out Mutation Failed:", e);
+      // Error handled in onError of mutation
+    }
   };
 
   const handleMeasurementsChange = (data) => {
