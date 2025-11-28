@@ -5,11 +5,15 @@ import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
-import { ArrowLeft } from "lucide-react";
+import { ArrowLeft, Plus } from "lucide-react";
 import { base44 } from "@/api/base44Client";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 
 export default function ContractForm({ contract, onSubmit, onCancel, isSubmitting }) {
+  const queryClient = useQueryClient();
+  const [showNewOrgDialog, setShowNewOrgDialog] = useState(false);
+  const [newOrgData, setNewOrgData] = useState({ name: "", organisation_type: "Strata" });
   const [formData, setFormData] = useState(contract || {
     name: "",
     organisation_id: "",
@@ -34,6 +38,22 @@ export default function ContractForm({ contract, onSubmit, onCancel, isSubmittin
       ...formData,
       sla_response_time_hours: formData.sla_response_time_hours ? Number(formData.sla_response_time_hours) : null
     });
+  };
+
+  const createOrgMutation = useMutation({
+    mutationFn: (data) => base44.entities.Organisation.create(data),
+    onSuccess: (newOrg) => {
+      queryClient.invalidateQueries({ queryKey: ['organisations'] });
+      setFormData({ ...formData, organisation_id: newOrg.id });
+      setShowNewOrgDialog(false);
+      setNewOrgData({ name: "", organisation_type: "Strata" });
+    }
+  });
+
+  const handleCreateOrg = (e) => {
+    e.preventDefault();
+    if (!newOrgData.name) return;
+    createOrgMutation.mutate(newOrgData);
   };
 
   return (
@@ -64,20 +84,30 @@ export default function ContractForm({ contract, onSubmit, onCancel, isSubmittin
 
           <div className="space-y-2">
             <Label htmlFor="organisation_id">Organisation *</Label>
-            <Select 
-              value={formData.organisation_id} 
-              onValueChange={(val) => setFormData({ ...formData, organisation_id: val })}
-              required
-            >
-              <SelectTrigger className="border-2 border-slate-300">
-                <SelectValue placeholder="Select Organisation" />
-              </SelectTrigger>
-              <SelectContent>
-                {organisations.map((org) => (
-                  <SelectItem key={org.id} value={org.id}>{org.name}</SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
+            <div className="flex gap-2">
+              <Select 
+                value={formData.organisation_id} 
+                onValueChange={(val) => setFormData({ ...formData, organisation_id: val })}
+                required
+              >
+                <SelectTrigger className="border-2 border-slate-300">
+                  <SelectValue placeholder="Select Organisation" />
+                </SelectTrigger>
+                <SelectContent>
+                  {organisations.map((org) => (
+                    <SelectItem key={org.id} value={org.id}>{org.name}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+              <Button
+                type="button"
+                variant="outline"
+                onClick={() => setShowNewOrgDialog(true)}
+                className="border-2"
+              >
+                <Plus className="w-4 h-4" />
+              </Button>
+            </div>
           </div>
 
           <div className="grid md:grid-cols-2 gap-6">
@@ -190,6 +220,52 @@ export default function ContractForm({ contract, onSubmit, onCancel, isSubmittin
           </Button>
         </CardFooter>
       </form>
+
+      <Dialog open={showNewOrgDialog} onOpenChange={setShowNewOrgDialog}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Create New Organisation</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4 py-4">
+            <div className="space-y-2">
+              <Label htmlFor="org_name">Name *</Label>
+              <Input
+                id="org_name"
+                value={newOrgData.name}
+                onChange={(e) => setNewOrgData({ ...newOrgData, name: e.target.value })}
+                placeholder="Organisation Name"
+              />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="org_type">Type</Label>
+              <Select 
+                value={newOrgData.organisation_type} 
+                onValueChange={(val) => setNewOrgData({ ...newOrgData, organisation_type: val })}
+              >
+                <SelectTrigger>
+                  <SelectValue placeholder="Select Type" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="Strata">Strata</SelectItem>
+                  <SelectItem value="Builder">Builder</SelectItem>
+                  <SelectItem value="Real Estate">Real Estate</SelectItem>
+                  <SelectItem value="Supplier">Supplier</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setShowNewOrgDialog(false)}>Cancel</Button>
+            <Button 
+              onClick={handleCreateOrg} 
+              disabled={!newOrgData.name || createOrgMutation.isPending}
+              className="bg-[#fae008] text-black hover:bg-[#e5d007]"
+            >
+              {createOrgMutation.isPending ? "Creating..." : "Create"}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </Card>
   );
 }
