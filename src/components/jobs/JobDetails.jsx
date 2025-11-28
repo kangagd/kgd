@@ -325,6 +325,8 @@ export default function JobDetails({ job: initialJob, onClose, onStatusChange, o
       queryClient.invalidateQueries({ queryKey: ['jobs'] });
       queryClient.invalidateQueries({ queryKey: ['projects'] });
       queryClient.invalidateQueries({ queryKey: ['project', job.project_id] });
+      // Force refetch of summaries to ensure UI updates immediately
+      queryClient.refetchQueries({ queryKey: ['jobSummaries', job.id] });
     },
     onError: (error) => {
       console.error("Check-out error:", error);
