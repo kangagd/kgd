@@ -30,7 +30,8 @@ import {
     History,
     Clock,
     Shield,
-    Truck
+    Truck,
+    Car
   } from "lucide-react";
 import { base44 } from "@/api/base44Client";
 import { toast } from "sonner";
@@ -59,12 +60,14 @@ const secondaryNavigationItems = [
   { title: "Price List", url: createPageUrl("PriceList"), icon: DollarSign },
   { title: "Reports", url: createPageUrl("Reports"), icon: TrendingUp },
   { title: "Team", url: createPageUrl("Team"), icon: Users },
+  { title: "Fleet", url: createPageUrl("Fleet"), icon: Car },
   { title: "Role Settings", url: createPageUrl("RoleSettings"), icon: Shield },
   { title: "Archive", url: createPageUrl("Archive"), icon: ArchiveIcon },
   { title: "Logistics", url: createPageUrl("Logistics"), icon: Truck },
 ];
 
 const technicianNavigationItems = [
+  { title: "My Vehicle", url: createPageUrl("MyVehicle"), icon: Car },
   { title: "Schedule", url: createPageUrl("Schedule"), icon: Calendar },
   { title: "Jobs", url: createPageUrl("Jobs"), icon: Briefcase },
   { title: "Tasks", url: createPageUrl("Tasks"), icon: CheckSquare },

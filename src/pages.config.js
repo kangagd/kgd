@@ -17,6 +17,8 @@ import RoleSettings from './pages/RoleSettings';
 import Notifications from './pages/Notifications';
 import Logistics from './pages/Logistics';
 import Contracts from './pages/Contracts';
+import MyVehicle from './pages/MyVehicle';
+import Fleet from './pages/Fleet';
 import __Layout from './Layout.jsx';
 
 
@@ -40,6 +42,8 @@ export const PAGES = {
     "Notifications": Notifications,
     "Logistics": Logistics,
     "Contracts": Contracts,
+    "MyVehicle": MyVehicle,
+    "Fleet": Fleet,
 }
 
 export const pagesConfig = {
