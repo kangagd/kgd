@@ -29,6 +29,42 @@ Deno.serve(async (req) => {
             project = await base44.asServiceRole.entities.Project.create(projectData);
         } else if (action === 'update') {
             project = await base44.asServiceRole.entities.Project.update(id, data);
+
+            // Auto-decline quotes if project is lost
+            if (data.status === 'Lost') {
+                try {
+                    const quotes = await base44.asServiceRole.entities.Quote.filter({ project_id: id });
+                    const PANDADOC_API_KEY = Deno.env.get("PANDADOC_API_KEY");
+                    
+                    for (const quote of quotes) {
+                        // Only decline if not already accepted or declined
+                        if (quote.status !== 'Declined' && quote.status !== 'Accepted') {
+                            await base44.asServiceRole.entities.Quote.update(quote.id, { 
+                                status: 'Declined',
+                                declined_at: new Date().toISOString()
+                            });
+
+                            if (quote.pandadoc_document_id && PANDADOC_API_KEY) {
+                                try {
+                                    // Status 12 = Declined, 11 = Expired/Voided
+                                    await fetch(`https://api.pandadoc.com/public/v1/documents/${quote.pandadoc_document_id}/status`, {
+                                        method: 'POST',
+                                        headers: {
+                                            'Authorization': `API-Key ${PANDADOC_API_KEY}`,
+                                            'Content-Type': 'application/json'
+                                        },
+                                        body: JSON.stringify({ status: 12 })
+                                    });
+                                } catch (pdError) {
+                                    console.error(`Error updating PandaDoc status for quote ${quote.id}:`, pdError);
+                                }
+                            }
+                        }
+                    }
+                } catch (e) {
+                    console.error("Error auto-declining quotes:", e);
+                }
+            }
         } else if (action === 'delete') {
             // Handle unlink email thread logic here if needed, or keep it in frontend/Project.js for now
             // But to be consistent, let's replicate it here if we want to fully move logic. 
