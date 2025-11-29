@@ -15,10 +15,12 @@ import {
   User
 } from "lucide-react";
 import VehicleDetail from "../components/fleet/VehicleDetail";
+import VehicleFormModal from "../components/fleet/VehicleFormModal";
 import { format } from "date-fns";
 
 export default function Fleet() {
   const [selectedVehicle, setSelectedVehicle] = useState(null);
+  const [showCreateModal, setShowCreateModal] = useState(false);
   const [filterStatus, setFilterStatus] = useState("all");
   const [search, setSearch] = useState("");
 
@@ -46,11 +48,19 @@ export default function Fleet() {
           <h1 className="text-3xl font-bold text-gray-900">Fleet Management</h1>
           <p className="text-gray-500 mt-1">Manage vehicles, assignments, and inventory</p>
         </div>
-        <Button className="bg-[#FAE008] hover:bg-[#E5CF07] text-black font-semibold">
+        <Button 
+          className="bg-[#FAE008] hover:bg-[#E5CF07] text-black font-semibold"
+          onClick={() => setShowCreateModal(true)}
+        >
           <Plus className="w-4 h-4 mr-2" />
           Add Vehicle
         </Button>
       </div>
+
+      <VehicleFormModal 
+        open={showCreateModal}
+        onClose={() => setShowCreateModal(false)}
+      />
 
       {/* Filters */}
       <div className="flex flex-col sm:flex-row gap-4 mb-6 bg-white p-4 rounded-xl border border-gray-200 shadow-sm">

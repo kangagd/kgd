@@ -10,12 +10,14 @@ import { format } from "date-fns";
 import StockAdjustmentModal from "./StockAdjustmentModal";
 import RestockRequestModal from "./RestockRequestModal";
 import AddVehicleStockModal from "./AddVehicleStockModal";
+import VehicleFormModal from "./VehicleFormModal";
 
 export default function VehicleDetail({ vehicle, onBack }) {
   const [activeTab, setActiveTab] = useState("stock");
   const [adjustmentItem, setAdjustmentItem] = useState(null);
   const [showRestockModal, setShowRestockModal] = useState(false);
   const [showAddStockModal, setShowAddStockModal] = useState(false);
+  const [showEditModal, setShowEditModal] = useState(false);
 
   const { data: stock = [], isLoading: isStockLoading } = useQuery({
     queryKey: ['vehicleStock', vehicle.id],
@@ -45,12 +47,18 @@ export default function VehicleDetail({ vehicle, onBack }) {
           </div>
         </div>
         <div className="flex gap-2">
-          <Button variant="outline">
+          <Button variant="outline" onClick={() => setShowEditModal(true)}>
             <Settings className="w-4 h-4 mr-2" />
             Edit Vehicle
           </Button>
         </div>
       </div>
+
+      <VehicleFormModal
+        open={showEditModal}
+        onClose={() => setShowEditModal(false)}
+        vehicle={vehicle}
+      />
 
       <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
         <TabsList className="bg-white border border-gray-200 p-1 h-auto">
