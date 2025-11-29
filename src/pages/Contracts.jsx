@@ -11,9 +11,6 @@ import EntityModal from "../components/common/EntityModal";
 import ContractDetails from "../components/contracts/ContractDetails";
 import ContractForm from "../components/contracts/ContractForm";
 import { createPageUrl } from "@/utils";
-import EntityPageLayout from "../components/common/EntityPageLayout";
-import EntityCard from "../components/common/EntityCard";
-import { ContractStatusBadge } from "../components/common/StatusBadge";
 
 export default function Contracts() {
   const [searchTerm, setSearchTerm] = useState("");
@@ -105,19 +102,22 @@ export default function Contracts() {
   }
 
   return (
-    <EntityPageLayout
-      title="Contracts"
-      subtitle="Manage service contracts and SLAs"
-      actions={
-        <Button
-          onClick={() => setShowForm(true)}
-          className="bg-[#FAE008] text-[#111827] hover:bg-[#E5CF07] font-semibold shadow-sm"
-        >
-          <Plus className="w-4 h-4 mr-2" />
-          New Contract
-        </Button>
-      }
-    >
+    <div className="p-4 md:p-5 lg:p-10 bg-[#ffffff] min-h-screen">
+      <div className="max-w-7xl mx-auto">
+        <div className="flex flex-col md:flex-row justify-between items-start md:items-center py-3 lg:py-4 mb-4 lg:mb-6 gap-3">
+          <div>
+            <h1 className="text-2xl font-bold text-[#111827] leading-tight">Contracts</h1>
+            <p className="text-sm text-[#4B5563] mt-1">Manage service contracts and SLAs</p>
+          </div>
+          <Button
+            onClick={() => setShowForm(true)}
+            className="bg-[#FAE008] text-[#111827] hover:bg-[#E5CF07] font-semibold shadow-sm"
+          >
+            <Plus className="w-4 h-4 mr-2" />
+            New Contract
+          </Button>
+        </div>
+
         <div className="relative mb-6">
           <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-[#6B7280]" />
           <Input
@@ -138,15 +138,23 @@ export default function Contracts() {
         ) : (
           <div className="grid gap-4">
             {filteredContracts.map((contract) => (
-              <EntityCard
-                key={contract.id}
+              <Card 
+                key={contract.id} 
+                className="hover:shadow-md transition-all cursor-pointer border border-[#E5E7EB]"
                 onClick={() => setSelectedContract(contract)}
               >
+                <CardContent className="p-5">
                   <div className="flex flex-col md:flex-row justify-between gap-4">
                     <div>
                       <div className="flex items-center gap-2 mb-1">
                         <h3 className="text-lg font-semibold text-[#111827]">{contract.name}</h3>
-                        <ContractStatusBadge value={contract.status} />
+                        <Badge variant="outline" className={
+                          contract.status === 'Active' ? 'bg-green-50 text-green-700 border-green-200' : 
+                          contract.status === 'Expired' ? 'bg-red-50 text-red-700 border-red-200' : 
+                          'bg-yellow-50 text-yellow-700 border-yellow-200'
+                        }>
+                          {contract.status}
+                        </Badge>
                       </div>
                       <div className="flex flex-wrap gap-4 text-sm text-[#6B7280] mt-2">
                         <div className="flex items-center gap-1">
@@ -182,10 +190,12 @@ export default function Contracts() {
                       )}
                     </div>
                   </div>
-              </EntityCard>
+                </CardContent>
+              </Card>
             ))}
           </div>
         )}
-    </EntityPageLayout>
+      </div>
+    </div>
   );
 }

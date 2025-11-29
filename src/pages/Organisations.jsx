@@ -12,9 +12,13 @@ import OrganisationDetails from "../components/organisations/OrganisationDetails
 import EntityModal from "../components/common/EntityModal.jsx";
 import OrganisationModalView from "../components/organisations/OrganisationModalView";
 import { createPageUrl } from "@/utils";
-import EntityPageLayout from "../components/common/EntityPageLayout";
-import EntityCard from "../components/common/EntityCard";
-import { OrganisationTypeBadge } from "../components/common/StatusBadge";
+
+const organisationTypeColors = {
+  "Strata": "bg-purple-100 text-purple-700 border-purple-200",
+  "Builder": "bg-blue-100 text-blue-700 border-blue-200",
+  "Real Estate": "bg-green-100 text-green-700 border-green-200",
+  "Supplier": "bg-orange-100 text-orange-700 border-orange-200",
+};
 
 export default function Organisations() {
   const [searchTerm, setSearchTerm] = useState("");
@@ -141,19 +145,22 @@ export default function Organisations() {
   }
 
   return (
-    <EntityPageLayout
-      title="Organisations"
-      subtitle="Manage all organisations"
-      actions={
-        <Button
-          onClick={() => setShowForm(true)}
-          className="bg-[#FAE008] text-[#111827] hover:bg-[#E5CF07] font-semibold shadow-sm hover:shadow-md transition w-full md:w-auto h-10 px-4 text-sm rounded-xl"
-        >
-          <Plus className="w-4 h-4 mr-2" />
-          New Organisation
-        </Button>
-      }
-    >
+    <div className="p-4 md:p-5 lg:p-10 bg-[#ffffff] min-h-screen overflow-x-hidden">
+      <div className="max-w-7xl mx-auto w-full">
+        <div className="flex flex-col md:flex-row justify-between items-center w-full py-3 lg:py-4 mb-4 lg:mb-6 gap-3">
+          <div>
+            <h1 className="text-2xl font-bold text-[#111827] leading-tight">Organisations</h1>
+            <p className="text-sm text-[#4B5563] mt-1">Manage all organisations</p>
+          </div>
+          <Button
+            onClick={() => setShowForm(true)}
+            className="bg-[#FAE008] text-[#111827] hover:bg-[#E5CF07] font-semibold shadow-sm hover:shadow-md transition w-full md:w-auto h-10 px-4 text-sm rounded-xl"
+          >
+            <Plus className="w-4 h-4 mr-2" />
+            New Organisation
+          </Button>
+        </div>
+
         <div className="flex flex-col gap-4 mb-6">
           <div className="relative">
             <Search className="absolute left-4 top-1/2 transform -translate-y-1/2 text-[#6B7280] w-5 h-5" />
@@ -209,11 +216,12 @@ export default function Organisations() {
       ) : (
         <div className="grid gap-4">
           {filteredOrganisations.map((org) => (
-            <EntityCard
+            <Card
               key={org.id}
+              className="hover:shadow-lg transition-all cursor-pointer border-2 border-[hsl(32,15%,88%)] rounded-2xl group"
               onClick={() => setModalOrganisation(org)}
-              onViewDetails={() => handleOpenFullOrganisation(org)}
             >
+              <CardContent className="p-6">
                 <div className="flex items-start justify-between">
                   <div className="flex-1">
                     <div className="flex items-center gap-3 mb-3">
@@ -221,10 +229,12 @@ export default function Organisations() {
                         {org.name}
                       </h3>
                       {org.organisation_type && (
-                        <OrganisationTypeBadge value={org.organisation_type} />
+                        <Badge className={`${organisationTypeColors[org.organisation_type]} font-medium text-[12px] leading-[1.35] border-2 hover:opacity-100`}>
+                          {org.organisation_type}
+                        </Badge>
                       )}
                       {org.status === 'inactive' && (
-                        <Badge variant="outline" className="bg-slate-100 text-slate-500 border-slate-200">
+                        <Badge variant="outline" className="bg-[hsl(32,25%,94%)] text-[hsl(25,8%,45%)] border-[hsl(32,15%,88%)]">
                           Inactive
                         </Badge>
                       )}
@@ -264,7 +274,8 @@ export default function Organisations() {
                     </div>
                   </div>
                 </div>
-            </EntityCard>
+              </CardContent>
+            </Card>
           ))}
         </div>
       )}
@@ -283,6 +294,7 @@ export default function Organisations() {
           />
         )}
       </EntityModal>
-    </EntityPageLayout>
+      </div>
+    </div>
   );
 }

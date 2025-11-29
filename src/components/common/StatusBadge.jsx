@@ -128,34 +128,6 @@ const BADGE_VARIANTS = {
     "Declined": "bg-red-100 text-red-700 hover:bg-red-200",
     "Expired": "bg-orange-100 text-orange-700 hover:bg-orange-200",
   },
-
-  // Contract Statuses
-  contractStatus: {
-    "Active": "bg-emerald-100 text-emerald-700 hover:bg-emerald-200",
-    "On-Hold": "bg-amber-100 text-amber-700 hover:bg-amber-200",
-    "Expired": "bg-red-100 text-red-700 hover:bg-red-200",
-    "Draft": "bg-slate-100 text-slate-700 hover:bg-slate-200",
-  },
-
-  // Vehicle Statuses
-  vehicleStatus: {
-    "Active": "bg-emerald-100 text-emerald-700 hover:bg-emerald-200",
-    "In Maintenance": "bg-orange-100 text-orange-700 hover:bg-orange-200",
-    "Inactive": "bg-slate-100 text-slate-700 hover:bg-slate-200",
-  },
-  
-  // Invoice Statuses
-  invoiceStatus: {
-    "Draft": "bg-slate-100 text-slate-700 hover:bg-slate-200",
-    "Submitted": "bg-blue-100 text-blue-700 hover:bg-blue-200",
-    "Authorised": "bg-indigo-100 text-indigo-700 hover:bg-indigo-200",
-    "Paid": "bg-emerald-100 text-emerald-700 hover:bg-emerald-200",
-    "Voided": "bg-red-100 text-red-700 hover:bg-red-200",
-    "Overdue": "bg-red-100 text-red-700 hover:bg-red-200",
-    "Approved": "bg-indigo-100 text-indigo-700 hover:bg-indigo-200",
-    "Sent": "bg-purple-100 text-purple-700 hover:bg-purple-200",
-    "Cancelled": "bg-slate-100 text-slate-700 hover:bg-slate-200",
-  },
 };
 
 // Global base badge styles (applied to all variants)
@@ -230,18 +202,6 @@ export function ProductTypeBadge({ value, ...props }) {
 
 export function QuoteStatusBadge({ value, ...props }) {
   return <StatusBadge type="quoteStatus" value={value} {...props} />;
-}
-
-export function ContractStatusBadge({ value, ...props }) {
-  return <StatusBadge type="contractStatus" value={value} {...props} />;
-}
-
-export function VehicleStatusBadge({ value, ...props }) {
-  return <StatusBadge type="vehicleStatus" value={value} {...props} />;
-}
-
-export function InvoiceStatusBadge({ value, ...props }) {
-  return <StatusBadge type="invoiceStatus" value={value} {...props} />;
 }
 
 export default StatusBadge;
