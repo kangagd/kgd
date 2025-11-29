@@ -1382,8 +1382,22 @@ export default function JobDetails({ job: initialJob, onClose, onStatusChange, o
                         <div className="space-y-2">
                           {summary.overview &&
                       <div>
-                              <div className="text-xs font-bold text-slate-500 mb-1">Overview:</div>
+                              <div className="text-xs font-bold text-slate-500 mb-1">Work Performed:</div>
                               <div className="text-sm text-slate-700" dangerouslySetInnerHTML={{ __html: summary.overview }} />
+                            </div>
+                      }
+
+                          {summary.issues_found &&
+                      <div>
+                              <div className="text-xs font-bold text-slate-500 mb-1">Issues Found:</div>
+                              <div className="text-sm text-slate-700" dangerouslySetInnerHTML={{ __html: summary.issues_found }} />
+                            </div>
+                      }
+
+                          {summary.resolution &&
+                      <div>
+                              <div className="text-xs font-bold text-slate-500 mb-1">Resolution:</div>
+                              <div className="text-sm text-slate-700" dangerouslySetInnerHTML={{ __html: summary.resolution }} />
                             </div>
                       }
                           
@@ -1613,8 +1627,22 @@ export default function JobDetails({ job: initialJob, onClose, onStatusChange, o
                         <div className="space-y-2">
                           {summary.overview &&
                       <div>
-                              <div className="text-xs font-bold text-slate-500 mb-1">Overview:</div>
+                              <div className="text-xs font-bold text-slate-500 mb-1">Work Performed:</div>
                               <div className="text-sm text-slate-700" dangerouslySetInnerHTML={{ __html: summary.overview }} />
+                            </div>
+                      }
+
+                          {summary.issues_found &&
+                      <div>
+                              <div className="text-xs font-bold text-slate-500 mb-1">Issues Found:</div>
+                              <div className="text-sm text-slate-700" dangerouslySetInnerHTML={{ __html: summary.issues_found }} />
+                            </div>
+                      }
+
+                          {summary.resolution &&
+                      <div>
+                              <div className="text-xs font-bold text-slate-500 mb-1">Resolution:</div>
+                              <div className="text-sm text-slate-700" dangerouslySetInnerHTML={{ __html: summary.resolution }} />
                             </div>
                       }
                           
@@ -1674,8 +1702,22 @@ export default function JobDetails({ job: initialJob, onClose, onStatusChange, o
                         <div className="space-y-2">
                           {summary.overview &&
                       <div>
-                              <div className="text-xs font-bold text-slate-500 mb-1">Overview:</div>
+                              <div className="text-xs font-bold text-slate-500 mb-1">Work Performed:</div>
                               <div className="text-sm text-slate-700" dangerouslySetInnerHTML={{ __html: summary.overview }} />
+                            </div>
+                      }
+
+                          {summary.issues_found &&
+                      <div>
+                              <div className="text-xs font-bold text-slate-500 mb-1">Issues Found:</div>
+                              <div className="text-sm text-slate-700" dangerouslySetInnerHTML={{ __html: summary.issues_found }} />
+                            </div>
+                      }
+
+                          {summary.resolution &&
+                      <div>
+                              <div className="text-xs font-bold text-slate-500 mb-1">Resolution:</div>
+                              <div className="text-sm text-slate-700" dangerouslySetInnerHTML={{ __html: summary.resolution }} />
                             </div>
                       }
                           
