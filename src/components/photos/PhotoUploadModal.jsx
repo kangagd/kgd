@@ -177,12 +177,12 @@ export default function PhotoUploadModal({ open, onClose, onUploadComplete, pres
                   Click to upload or drag and drop
                 </p>
                 <p className="text-xs text-[#6B7280] mt-1">
-                  PNG, JPG up to 10MB each
+                  Images (PNG, JPG) or Videos (MP4, MOV)
                 </p>
               </div>
               <input
                 type="file"
-                accept="image/*"
+                accept="image/*,video/*"
                 multiple
                 className="hidden"
                 onChange={handleFileChange}
