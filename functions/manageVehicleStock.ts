@@ -144,6 +144,69 @@ Deno.serve(async (req) => {
             return Response.json({ success: true, new_quantity: newQty });
         }
 
+        if (action === 'create_product_and_add') {
+            const { vehicle_id, product_details, initial_quantity } = data;
+            // product_details: { item, category, price, description }
+            
+            // Check if product with same name already exists
+            const existing = await base44.entities.PriceListItem.filter({ item: product_details.item });
+            let productId;
+            let product;
+
+            if (existing && existing.length > 0) {
+                // Use existing
+                product = existing[0];
+                productId = product.id;
+            } else {
+                // Create new product using service role (to bypass admin-only RLS)
+                product = await base44.asServiceRole.entities.PriceListItem.create({
+                    item: product_details.item,
+                    category: product_details.category || 'Other',
+                    price: product_details.price || 0,
+                    description: product_details.description || '',
+                    in_inventory: true,
+                    stock_level: 0
+                });
+                productId = product.id;
+            }
+
+            // Now add to vehicle stock (same logic as adjust/restock)
+            // Check if already in vehicle
+            const stockList = await base44.entities.VehicleStock.filter({ vehicle_id, product_id: productId });
+            let currentStock = stockList[0];
+            
+            if (!currentStock) {
+                currentStock = await base44.entities.VehicleStock.create({
+                    vehicle_id,
+                    product_id: productId,
+                    product_name: product.item,
+                    category: product.category,
+                    quantity_on_hand: 0
+                });
+            }
+
+            const qty = initial_quantity || 0;
+            const newQty = (currentStock.quantity_on_hand || 0) + qty;
+
+            if (qty > 0) {
+                 await base44.entities.VehicleStockMovement.create({
+                    vehicle_id,
+                    product_id: productId,
+                    movement_type: 'Adjustment', // Initial add
+                    quantity_change: qty,
+                    reason: 'Initial addition of custom item',
+                    performed_by_user_id: user.id,
+                    performed_by_user_name: user.full_name || user.email
+                });
+
+                await base44.entities.VehicleStock.update(currentStock.id, {
+                    quantity_on_hand: newQty
+                });
+            }
+
+            return Response.json({ success: true, product_id: productId, new_quantity: newQty });
+        }
+
         return Response.json({ error: 'Invalid action' }, { status: 400 });
 
     } catch (error) {
