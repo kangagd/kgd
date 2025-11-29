@@ -8,10 +8,14 @@ import { base44 } from "@/api/base44Client";
 import VehicleStockList from "./VehicleStockList";
 import { format } from "date-fns";
 import StockAdjustmentModal from "./StockAdjustmentModal";
+import RestockRequestModal from "./RestockRequestModal";
+import AddVehicleStockModal from "./AddVehicleStockModal";
 
 export default function VehicleDetail({ vehicle, onBack }) {
   const [activeTab, setActiveTab] = useState("stock");
   const [adjustmentItem, setAdjustmentItem] = useState(null);
+  const [showRestockModal, setShowRestockModal] = useState(false);
+  const [showAddStockModal, setShowAddStockModal] = useState(false);
 
   const { data: stock = [], isLoading: isStockLoading } = useQuery({
     queryKey: ['vehicleStock', vehicle.id],
@@ -60,11 +64,11 @@ export default function VehicleDetail({ vehicle, onBack }) {
             <CardHeader className="flex flex-row items-center justify-between">
               <CardTitle>Current Inventory</CardTitle>
               <div className="flex gap-2">
-                <Button variant="outline" size="sm">
-                  <Download className="w-4 h-4 mr-2" />
-                  Export
+                <Button variant="outline" size="sm" onClick={() => setShowAddStockModal(true)}>
+                  <Plus className="w-4 h-4 mr-2" />
+                  Add Item
                 </Button>
-                <Button variant="outline" size="sm">
+                <Button variant="outline" size="sm" onClick={() => setShowRestockModal(true)}>
                   <RefreshCw className="w-4 h-4 mr-2" />
                   Generate Restock List
                 </Button>
@@ -173,6 +177,19 @@ export default function VehicleDetail({ vehicle, onBack }) {
         open={!!adjustmentItem}
         onClose={() => setAdjustmentItem(null)}
         item={adjustmentItem}
+        vehicleId={vehicle.id}
+      />
+
+      <RestockRequestModal
+        open={showRestockModal}
+        onClose={() => setShowRestockModal(false)}
+        vehicle={vehicle}
+        stock={stock}
+      />
+
+      <AddVehicleStockModal
+        open={showAddStockModal}
+        onClose={() => setShowAddStockModal(false)}
         vehicleId={vehicle.id}
       />
     </div>
