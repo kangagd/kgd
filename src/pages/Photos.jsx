@@ -360,7 +360,7 @@ export default function Photos() {
         file={selectedPhoto ? {
           url: selectedPhoto.image_url,
           name: selectedPhoto.notes || `Photo - ${selectedPhoto.customer_name}`,
-          type: 'image',
+          type: /\.(mp4|webm|ogg|mov|avi|mkv)$/i.test(selectedPhoto.image_url) ? 'video' : 'image',
           jobNumber: selectedPhoto.job_number,
           projectName: selectedPhoto.project_name,
           address: selectedPhoto.address,
