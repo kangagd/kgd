@@ -15,6 +15,7 @@ import EntityModal from "../components/common/EntityModal.jsx";
 import CustomerModalView from "../components/customers/CustomerModalView";
 import { createPageUrl } from "@/utils";
 import { DuplicateBadge } from "../components/common/DuplicateWarningCard";
+import EntityPageLayout from "../components/common/EntityPageLayout";
 
 export default function Customers() {
   const [user, setUser] = useState(null);
@@ -207,24 +208,19 @@ export default function Customers() {
   }
 
   return (
-    <div className="p-4 md:p-5 lg:p-10 bg-[#ffffff] min-h-screen overflow-x-hidden">
-      <div className="max-w-7xl mx-auto w-full">
-        <div className="flex flex-col md:flex-row justify-between items-center w-full py-3 lg:py-4 mb-4 lg:mb-6 gap-3">
-          <div>
-            <h1 className="text-2xl font-bold text-[#111827] leading-tight">Customers</h1>
-            <p className="text-sm text-[#4B5563] mt-1">Manage customer information</p>
-          </div>
-          {canEditCustomers && (
-            <Button
-              onClick={() => setShowForm(true)}
-              className="bg-[#FAE008] text-[#111827] hover:bg-[#E5CF07] font-semibold shadow-sm hover:shadow-md transition w-full md:w-auto h-10 px-4 text-sm rounded-xl"
-            >
-              <Plus className="w-4 h-4 mr-2" />
-              New Customer
-            </Button>
-          )}
-        </div>
-
+    <EntityPageLayout
+      title="Customers"
+      subtitle="Manage customer information"
+      actions={canEditCustomers && (
+        <Button
+          onClick={() => setShowForm(true)}
+          className="bg-[#FAE008] text-[#111827] hover:bg-[#E5CF07] font-semibold shadow-sm hover:shadow-md transition w-full md:w-auto h-10 px-4 text-sm rounded-xl"
+        >
+          <Plus className="w-4 h-4 mr-2" />
+          New Customer
+        </Button>
+      )}
+    >
         <div className="flex flex-col gap-4 mb-6">
           <div className="relative">
             <Search className="absolute left-4 top-1/2 transform -translate-y-1/2 w-5 h-5 text-[#6B7280]" />
@@ -311,7 +307,6 @@ export default function Customers() {
             />
           )}
         </EntityModal>
-      </div>
-    </div>
+    </EntityPageLayout>
   );
 }
