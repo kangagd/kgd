@@ -23,8 +23,8 @@ import EntityModal from "../components/common/EntityModal.jsx";
 import ProjectModalView from "../components/projects/ProjectModalView";
 import { createPageUrl } from "@/utils";
 import { DuplicateBadge } from "../components/common/DuplicateWarningCard";
-
-
+import EntityPageLayout from "../components/common/EntityPageLayout";
+import EntityCard from "../components/common/EntityCard";
 
 export default function Projects() {
   const [user, setUser] = useState(null);
@@ -269,24 +269,19 @@ export default function Projects() {
   }
 
   return (
-    <div className="p-4 md:p-5 lg:p-10 bg-[#ffffff] min-h-screen overflow-x-hidden">
-      <div className="max-w-7xl mx-auto w-full">
-        <div className="flex flex-col md:flex-row justify-between items-center w-full py-3 lg:py-4 mb-4 lg:mb-6 gap-3">
-          <div>
-            <h1 className="text-2xl font-bold text-[#111827] leading-tight">Projects</h1>
-            <p className="text-sm text-[#4B5563] mt-1">Manage all projects and quotes</p>
-          </div>
-          {canCreateProjects && (
-            <Button
-              onClick={() => setShowForm(true)}
-              className="bg-[#FAE008] text-[#111827] hover:bg-[#E5CF07] font-semibold shadow-sm hover:shadow-md transition w-full md:w-auto h-10 px-4 text-sm rounded-xl"
-            >
-              <Plus className="w-4 h-4 mr-2" />
-              New Project
-            </Button>
-          )}
-        </div>
-
+    <EntityPageLayout
+      title="Projects"
+      subtitle="Manage all projects and quotes"
+      actions={canCreateProjects && (
+        <Button
+          onClick={() => setShowForm(true)}
+          className="bg-[#FAE008] text-[#111827] hover:bg-[#E5CF07] font-semibold shadow-sm hover:shadow-md transition w-full md:w-auto h-10 px-4 text-sm rounded-xl"
+        >
+          <Plus className="w-4 h-4 mr-2" />
+          New Project
+        </Button>
+      )}
+    >
         <div className="flex flex-col gap-3 mb-6">
           <div className="flex gap-3">
             <div className="relative flex-1">
@@ -444,26 +439,14 @@ export default function Projects() {
             const scopeSummary = buildScopeSummary(project);
 
             return (
-              <Card
+              <EntityCard
                 key={project.id}
-                className="hover:shadow-lg transition-all duration-200 cursor-pointer hover:border-[#FAE008] border border-[#E5E7EB] rounded-xl relative"
                 onClick={() => {
                   setSelectedProject(project);
                   window.history.pushState({}, '', `${createPageUrl("Projects")}?projectId=${project.id}`);
                 }}
+                onViewDetails={() => setModalProject(project)}
               >
-                <Button
-                  variant="ghost"
-                  size="icon"
-                  className="absolute top-2 right-2 h-8 w-8 rounded-lg hover:bg-[#F3F4F6] z-10"
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    setModalProject(project);
-                  }}
-                >
-                  <Eye className="w-4 h-4 text-[#6B7280]" />
-                </Button>
-                <CardContent className="p-4">
                   {/* Top row */}
                   <div className="mb-3">
                     <div className="flex items-center gap-2 mb-2 pr-8">
@@ -520,8 +503,7 @@ export default function Projects() {
                       </div>
                     )}
                   </div>
-                </CardContent>
-              </Card>
+              </EntityCard>
             );
           })}
         </div>
@@ -540,7 +522,6 @@ export default function Projects() {
             />
           )}
         </EntityModal>
-      </div>
-    </div>
+    </EntityPageLayout>
   );
 }
