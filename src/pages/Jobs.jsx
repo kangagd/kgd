@@ -20,6 +20,7 @@ import EntityModal from "../components/common/EntityModal.jsx";
 import JobModalView from "../components/jobs/JobModalView";
 import { createPageUrl } from "@/utils";
 import { useNavigate, useSearchParams } from "react-router-dom";
+import EntityPageLayout from "../components/common/EntityPageLayout";
 
 export default function Jobs() {
   const navigate = useNavigate();
@@ -329,32 +330,19 @@ export default function Jobs() {
   }
 
   return (
-    <div className="p-4 md:p-5 lg:p-10 bg-[#ffffff] min-h-screen overflow-x-hidden">
-      <div className="max-w-7xl mx-auto w-full">
-        {!isTechnician && (
-          <div className="flex flex-col md:flex-row justify-between items-start md:items-center py-3 lg:py-4 mb-4 lg:mb-6 gap-3">
-            <div>
-              <h1 className="text-2xl font-bold text-[#111827] leading-tight">Jobs</h1>
-              <p className="text-sm text-[#4B5563] mt-1">{isViewer ? 'View all scheduled jobs' : 'Manage all scheduled jobs'}</p>
-            </div>
-            {canCreateJobs && (
-              <Button
-                onClick={() => setShowForm(true)}
-                className="bg-[#FAE008] text-[#111827] hover:bg-[#E5CF07] font-semibold shadow-sm hover:shadow-md transition w-full md:w-auto h-10 px-4 text-sm rounded-xl"
-              >
-                <Plus className="w-4 h-4 mr-2" />
-                New Job
-              </Button>
-            )}
-          </div>
-        )}
-
-        {isTechnician && (
-          <div className="py-3 lg:py-4 mb-4 lg:mb-6">
-            <h1 className="text-xl md:text-2xl font-bold text-[#111827] leading-tight">My Jobs</h1>
-          </div>
-        )}
-
+    <EntityPageLayout
+      title={isTechnician ? "My Jobs" : "Jobs"}
+      subtitle={isTechnician ? undefined : (isViewer ? 'View all scheduled jobs' : 'Manage all scheduled jobs')}
+      actions={!isTechnician && canCreateJobs && (
+        <Button
+          onClick={() => setShowForm(true)}
+          className="bg-[#FAE008] text-[#111827] hover:bg-[#E5CF07] font-semibold shadow-sm hover:shadow-md transition w-full md:w-auto h-10 px-4 text-sm rounded-xl"
+        >
+          <Plus className="w-4 h-4 mr-2" />
+          New Job
+        </Button>
+      )}
+    >
         <div className="flex flex-col gap-3 mb-6">
           <div className="flex gap-3">
             <div className="relative flex-1">
@@ -507,7 +495,6 @@ export default function Jobs() {
         >
           {modalJob && <JobModalView job={modalJob} />}
         </EntityModal>
-      </div>
-    </div>
-  );
-}
+        </EntityPageLayout>
+        );
+        }
