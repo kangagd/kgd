@@ -6,7 +6,7 @@ import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Label } from "@/components/ui/label";
 import { Separator } from "@/components/ui/separator";
-import { ArrowLeft, MapPin, Phone, Calendar, Clock, User, Briefcase, FileText, Image as ImageIcon, DollarSign, Sparkles, LogIn, FileCheck, History, Package, ClipboardCheck, LogOut, Timer, AlertCircle, ChevronDown, Mail, Navigation, Trash2, FolderKanban, Camera, Edit, ExternalLink, MessageCircle, Plus, AlertTriangle } from "lucide-react";
+import { ArrowLeft, MapPin, Phone, Calendar, Clock, User, Briefcase, FileText, Image as ImageIcon, DollarSign, Sparkles, LogIn, FileCheck, History, Package, ClipboardCheck, LogOut, Timer, AlertCircle, ChevronDown, Mail, Navigation, Trash2, FolderKanban, Camera, Edit, ExternalLink, MessageCircle, Plus, AlertTriangle, Loader2 } from "lucide-react";
 import DuplicateWarningCard, { DuplicateBadge } from "../common/DuplicateWarningCard";
 import { format, parseISO, isPast } from "date-fns";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
@@ -156,12 +156,15 @@ export default function JobDetails({ job: initialJob, onClose, onStatusChange, o
   const [measurements, setMeasurements] = useState(job.measurements || null);
   const [notes, setNotes] = useState(job.notes || "");
   const [overview, setOverview] = useState(job.overview || "");
+  const [issuesFound, setIssuesFound] = useState("");
+  const [resolution, setResolution] = useState("");
   const [pricingProvided, setPricingProvided] = useState(job.pricing_provided || "");
   const [additionalInfo, setAdditionalInfo] = useState(job.additional_info || "");
   const [nextSteps, setNextSteps] = useState(job.next_steps || "");
   const [communicationWithClient, setCommunicationWithClient] = useState(job.communication_with_client || "");
   const [outcome, setOutcome] = useState(job.outcome || "");
   const [validationError, setValidationError] = useState("");
+  const [isGeneratingReport, setIsGeneratingReport] = useState(false);
   const queryClient = useQueryClient();
 
   const { data: jobTypes = [] } = useQuery({
@@ -290,6 +293,8 @@ export default function JobDetails({ job: initialJob, onClose, onStatusChange, o
         checkInId: activeCheckIn.id,
         newStatus,
         overview: isMistake ? "" : overview,
+        issuesFound: isMistake ? "" : issuesFound,
+        resolution: isMistake ? "" : resolution,
         nextSteps: isMistake ? "" : nextSteps,
         communicationWithClient: isMistake ? "" : communicationWithClient,
         outcome: isMistake ? "" : outcome,
@@ -306,6 +311,8 @@ export default function JobDetails({ job: initialJob, onClose, onStatusChange, o
       setValidationError("");
       // Clear form fields
       setOverview("");
+      setIssuesFound("");
+      setResolution("");
       setNextSteps("");
       setCommunicationWithClient("");
       setOutcome("");
@@ -1403,17 +1410,67 @@ export default function JobDetails({ job: initialJob, onClose, onStatusChange, o
 
             <TabsContent value="visit" className="space-y-3 mt-2">
               <div className="space-y-3">
+                <div className="flex justify-end">
+                  <Button
+                    onClick={async () => {
+                      if (!job.image_urls || job.image_urls.length === 0) {
+                        toast.error("Please upload photos first");
+                        return;
+                      }
+                      setIsGeneratingReport(true);
+                      try {
+                        const response = await base44.functions.invoke('generateServiceReport', { jobId: job.id });
+                        const data = response.data;
+                        setOverview(data.work_performed || "");
+                        setIssuesFound(data.issues_found || "");
+                        setResolution(data.resolution || "");
+                        setNextSteps(data.next_steps || "");
+                        toast.success("Report generated successfully");
+                      } catch (error) {
+                        console.error("Error generating report:", error);
+                        toast.error("Failed to generate report");
+                      } finally {
+                        setIsGeneratingReport(false);
+                      }
+                    }}
+                    disabled={isGeneratingReport}
+                    variant="outline"
+                    className="gap-2 border-indigo-200 bg-indigo-50 text-indigo-700 hover:bg-indigo-100 hover:text-indigo-800"
+                  >
+                    {isGeneratingReport ? (
+                      <Loader2 className="w-4 h-4 animate-spin" />
+                    ) : (
+                      <Sparkles className="w-4 h-4" />
+                    )}
+                    {isGeneratingReport ? "Generating Report..." : "Generate AI Report"}
+                  </Button>
+                </div>
+
                 <RichTextField
-                  label="Overview *"
+                  label="Work Performed (Overview) *"
                   value={overview}
                   onChange={setOverview}
                   onBlur={handleOverviewBlur}
-                  placeholder="Provide a brief summary of what was done during this visit…"
+                  placeholder="Detailed description of tasks completed..."
                   helperText="Required for checkout"
                 />
 
                 <RichTextField
-                  label="Next Steps *"
+                  label="Issues Found"
+                  value={issuesFound}
+                  onChange={setIssuesFound}
+                  placeholder="Diagnosis of problems identified..."
+                />
+
+                <RichTextField
+                  label="Resolution"
+                  value={resolution}
+                  onChange={setResolution}
+                  placeholder="How the issues were resolved..."
+                />
+
+                <RichTextField
+                  label="Next Steps / Recommendations *"
                   value={nextSteps}
                   onChange={setNextSteps}
                   onBlur={handleNextStepsBlur}

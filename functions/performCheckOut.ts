@@ -21,7 +21,9 @@ Deno.serve(async (req) => {
             measurements,
             checkOutTime,
             durationMinutes,
-            durationHours
+            durationHours,
+            issuesFound,
+            resolution
         } = await req.json();
 
         // Sanitize inputs
@@ -122,6 +124,8 @@ The summary should be a single paragraph, professional, and capture the key work
             check_out_time: safeCheckOutTime,
             duration_minutes: safeDurationMinutes,
             overview: overview || "",
+            issues_found: issuesFound || "",
+            resolution: resolution || "",
             next_steps: nextSteps || "",
             communication_with_client: communicationWithClient || "",
             outcome: outcome || "",
