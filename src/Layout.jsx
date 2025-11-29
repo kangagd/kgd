@@ -46,32 +46,29 @@ import NotificationBell from "./components/notifications/NotificationBell";
 const primaryNavigationItems = [
   { title: "Dashboard", url: createPageUrl("Dashboard"), icon: LayoutDashboard },
   { title: "Inbox", url: createPageUrl("Inbox"), icon: Mail },
-  { title: "Tasks", url: createPageUrl("Tasks"), icon: CheckSquare },
   { title: "Schedule", url: createPageUrl("Schedule"), icon: Calendar },
   { title: "Projects", url: createPageUrl("Projects"), icon: FolderKanban },
   { title: "Jobs", url: createPageUrl("Jobs"), icon: Briefcase },
   { title: "Customers", url: createPageUrl("Customers"), icon: UserCircle },
-  { title: "Contracts", url: createPageUrl("Contracts"), icon: FileText },
 ];
 
 const secondaryNavigationItems = [
   { title: "Organisations", url: createPageUrl("Organisations"), icon: Building2 },
+  { title: "Contracts", url: createPageUrl("Contracts"), icon: FileText },
+  { title: "Logistics", url: createPageUrl("Logistics"), icon: Truck },
   { title: "Photos", url: createPageUrl("Photos"), icon: ImageIcon },
   { title: "Price List", url: createPageUrl("PriceList"), icon: DollarSign },
-  { title: "Reports", url: createPageUrl("Reports"), icon: TrendingUp },
-  { title: "Team", url: createPageUrl("Team"), icon: Users },
   { title: "Fleet", url: createPageUrl("Fleet"), icon: Car },
-  { title: "Role Settings", url: createPageUrl("RoleSettings"), icon: Shield },
+  { title: "Reports", url: createPageUrl("Reports"), icon: TrendingUp },
   { title: "Archive", url: createPageUrl("Archive"), icon: ArchiveIcon },
-  { title: "Logistics", url: createPageUrl("Logistics"), icon: Truck },
+  { title: "Team", url: createPageUrl("Team"), icon: Users },
 ];
 
 const technicianNavigationItems = [
-  { title: "My Vehicle", url: createPageUrl("MyVehicle"), icon: Car },
   { title: "Schedule", url: createPageUrl("Schedule"), icon: Calendar },
   { title: "Jobs", url: createPageUrl("Jobs"), icon: Briefcase },
-  { title: "Tasks", url: createPageUrl("Tasks"), icon: CheckSquare },
   { title: "Price List", url: createPageUrl("PriceList"), icon: DollarSign },
+  { title: "Profile", url: createPageUrl("UserProfile"), icon: UserCircle },
 ];
 
 const viewerNavigationItems = [
@@ -345,95 +342,20 @@ export default function Layout({ children, currentPageName }) {
           if (isTechnician) {
             return (
               <div className="min-h-screen flex flex-col bg-[#ffffff]">
-        {/* Mobile Overlay */}
-        {techMobileMenuOpen && (
-          <div 
-            className="fixed inset-0 bg-black/50 z-40 transition-opacity"
-            onClick={() => setTechMobileMenuOpen(false)}
-          />
-        )}
-
         <header className="bg-white border-b border-[#E5E7EB] px-4 py-3 sticky top-0 z-50 shadow-sm safe-area-top">
           <div className="flex items-center justify-between min-h-[44px]">
-            <button
-              onClick={() => setTechMobileMenuOpen(!techMobileMenuOpen)}
-              className="flex items-center gap-2 hover:bg-[#F3F4F6] rounded-lg p-2 transition-colors min-h-[44px] min-w-[44px]"
-            >
+            <div className="flex items-center gap-2">
               <div className="w-8 h-8 bg-[#FAE008] rounded-lg flex items-center justify-center">
                 <Wrench className="w-4 h-4 text-[#111827]" />
               </div>
               <h3 className="font-semibold text-[#111827] text-[14px]">KGD</h3>
-            </button>
+            </div>
             <div className="flex items-center gap-2">
                 <NotificationBell isMobile={true} />
                 <RoleBadge role={effectiveRole} />
-                <button
-                  onClick={() => navigate(createPageUrl("UserProfile"))}
-                  className="flex items-center hover:bg-[#F3F4F6] rounded-lg p-2 transition-colors min-h-[44px] min-w-[44px] justify-center"
-                >
-                  <div className="w-8 h-8 bg-[#F3F4F6] rounded-full flex items-center justify-center">
-                          <span className="text-[#111827] font-semibold text-sm">
-                            {(user?.display_name || user?.full_name)?.charAt(0)?.toUpperCase() || 'U'}
-                          </span>
-                        </div>
-                </button>
-              </div>
+            </div>
           </div>
         </header>
-
-        {/* Dropdown Menu */}
-        <div 
-        className={`fixed top-[60px] left-0 right-0 bg-white border-b border-[#E5E7EB] shadow-lg z-40 transition-all duration-300 ${
-          techMobileMenuOpen ? 'translate-y-0 opacity-100' : '-translate-y-full opacity-0 pointer-events-none'
-        }`}
-        >
-        <nav className="p-2">
-          {/* Create Buttons - Only for non-viewers */}
-          {!isViewer && (
-            <div className="grid grid-cols-2 gap-2 mb-3 pb-3 border-b border-[#E5E7EB]">
-              <Button
-                onClick={() => {
-                  navigate(createPageUrl("Jobs") + "?action=create");
-                  setTechMobileMenuOpen(false);
-                }}
-                className="bg-[#FAE008] hover:bg-[#E5CF07] text-[#111827] font-semibold shadow-sm"
-              >
-                <Plus className="w-4 h-4 mr-1" />
-                Job
-              </Button>
-              <Button
-                onClick={() => {
-                  navigate(createPageUrl("Projects") + "?action=create");
-                  setTechMobileMenuOpen(false);
-                }}
-                className="bg-[#FAE008] hover:bg-[#E5CF07] text-[#111827] font-semibold shadow-sm"
-              >
-                <Plus className="w-4 h-4 mr-1" />
-                Project
-              </Button>
-            </div>
-          )}
-
-            {navigationItems.map((item) => {
-            const isActive = location.pathname === item.url;
-            return (
-              <Link
-                key={item.title}
-                to={item.url}
-                onClick={() => setTechMobileMenuOpen(false)}
-                className={`flex items-center gap-3 px-4 py-3 rounded-lg transition-colors no-underline ${
-                  isActive
-                    ? 'bg-[#FAE008] text-[#111827]'
-                    : 'text-[#4B5563] hover:text-[#111827] hover:bg-[#F3F4F6]'
-                }`}
-              >
-                  <item.icon className="w-5 h-5 flex-shrink-0" />
-                  <span className="text-[14px] font-medium">{item.title}</span>
-                </Link>
-              );
-            })}
-          </nav>
-        </div>
 
         <main className="flex-1 overflow-y-auto overflow-x-hidden pb-24 bg-[#ffffff] relative">
           {/* Pull to Refresh Indicator */}
@@ -465,6 +387,29 @@ export default function Layout({ children, currentPageName }) {
             </span>
           </button>
         )}
+
+        {/* Technician Bottom Navigation */}
+        <div className="fixed bottom-0 left-0 right-0 bg-white border-t border-[#E5E7EB] px-2 py-1 safe-area-bottom z-50 flex justify-around">
+          {navigationItems.map((item) => {
+            const isActive = location.pathname === item.url;
+            return (
+              <Link
+                key={item.title}
+                to={item.url}
+                className={`flex flex-col items-center justify-center w-full py-2 rounded-lg transition-colors no-underline ${
+                  isActive ? 'text-[#111827]' : 'text-[#9CA3AF] hover:text-[#4B5563]'
+                }`}
+              >
+                <div className={`p-1 rounded-full ${isActive ? 'bg-[#FAE008]' : 'bg-transparent'}`}>
+                  <item.icon className={`w-6 h-6 ${isActive ? 'text-[#111827]' : 'currentColor'}`} />
+                </div>
+                <span className={`text-[10px] mt-1 font-medium ${isActive ? 'text-[#111827]' : 'currentColor'}`}>
+                  {item.title}
+                </span>
+              </Link>
+            );
+          })}
+        </div>
       </div>
     );
   }
