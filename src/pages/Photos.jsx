@@ -9,6 +9,7 @@ import { Plus, Search, Filter, X, Image as ImageIcon, Trash2 } from "lucide-reac
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import PhotoUploadModal from "../components/photos/PhotoUploadModal";
 import FilePreviewModal from "../components/common/FilePreviewModal";
+import PhotoGridItem from "../components/photos/PhotoGridItem";
 import { useMutation } from "@tanstack/react-query";
 
 const TAGS = ["Before", "After", "Install", "Repair", "Service", "Maintenance", "Marketing", "Other"];
@@ -333,58 +334,14 @@ export default function Photos() {
         ) : (
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
             {filteredPhotos.map(photo => (
-              <Card
+              <PhotoGridItem
                 key={photo.id}
-                className={`border shadow-sm transition-all cursor-pointer group overflow-hidden relative ${
-                  isSelectionMode && selectedPhotoIds.has(photo.id)
-                    ? 'border-[#FAE008] ring-2 ring-[#FAE008]'
-                    : 'border-[#E5E7EB] hover:border-[#FAE008] hover:shadow-md'
-                }`}
-                onClick={() => isSelectionMode ? toggleSelection(photo.id) : setSelectedPhoto(photo)}
-              >
-                {isSelectionMode && (
-                  <div className={`absolute top-2 right-2 w-6 h-6 rounded border z-10 flex items-center justify-center ${
-                    selectedPhotoIds.has(photo.id) ? 'bg-[#FAE008] border-[#FAE008]' : 'bg-white border-slate-300'
-                  }`}>
-                    {selectedPhotoIds.has(photo.id) && <div className="w-3 h-3 bg-[#111827] rounded-sm" />}
-                  </div>
-                )}
-                <div className="aspect-square overflow-hidden bg-[#F8F9FA]">
-                  <img
-                    src={photo.image_url}
-                    alt={photo.notes || 'Photo'}
-                    className={`w-full h-full object-cover transition-transform duration-300 ${!isSelectionMode && 'group-hover:scale-105'}`}
-                  />
-                </div>
-                <CardContent className="p-3 space-y-2">
-                  <div className="text-sm font-bold text-[#111827] leading-tight truncate">
-                    {photo.job_number ? `#${photo.job_number}` : 'No Job'} - {photo.customer_name || 'Unknown'}
-                  </div>
-                  <div className="text-xs text-[#6B7280] truncate">
-                    {photo.project_name || photo.address || photo.product_type || 'No details'}
-                  </div>
-                  <div className="flex flex-wrap gap-1">
-                    {photo.tags?.slice(0, 2).map((tag, index) => (
-                      <Badge
-                        key={index}
-                        className="bg-[#F3F4F6] text-[#4B5563] hover:bg-[#F3F4F6] border-0 font-medium text-[10px] px-1.5 py-0"
-                      >
-                        {tag}
-                      </Badge>
-                    ))}
-                    {photo.product_type && (
-                      <Badge className="bg-[#EDE9FE] text-[#6D28D9] border-0 font-medium text-[10px] px-1.5 py-0 hover:bg-[#EDE9FE]">
-                        {photo.product_type}
-                      </Badge>
-                    )}
-                    {photo.is_marketing_approved && (
-                      <Badge className="bg-[#D1FAE5] text-[#065F46] border-0 font-medium text-[10px] px-1.5 py-0 hover:bg-[#D1FAE5]">
-                        ✓
-                      </Badge>
-                    )}
-                  </div>
-                </CardContent>
-              </Card>
+                photo={photo}
+                isSelectionMode={isSelectionMode}
+                isSelected={selectedPhotoIds.has(photo.id)}
+                onToggleSelection={toggleSelection}
+                onClick={setSelectedPhoto}
+              />
             ))}
           </div>
         )}
