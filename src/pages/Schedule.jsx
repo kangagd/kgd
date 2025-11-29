@@ -940,79 +940,69 @@ export default function Schedule() {
             </div>
           </div>
 
-          {/* View Tabs with Filters - Single row on desktop */}
-          <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4 mb-4">
-            <Tabs value={view} onValueChange={setView}>
-              <TabsList className="bg-white w-full lg:w-auto shadow-sm">
-                <TabsTrigger value="day" className="flex-1 lg:flex-initial data-[state=active]:font-semibold data-[state=active]:shadow-sm">
-                  Day
-                </TabsTrigger>
-                <TabsTrigger value="week" className="flex-1 lg:flex-initial data-[state=active]:font-semibold data-[state=active]:shadow-sm">
-                  Week
-                </TabsTrigger>
-                <TabsTrigger value="month" className="flex-1 lg:flex-initial data-[state=active]:font-semibold data-[state=active]:shadow-sm">
-                  Month
-                </TabsTrigger>
+          {/* Filters and Tabs Container */}
+          <div className="flex flex-col lg:flex-row lg:items-center gap-4 mb-6">
+            {/* View Period Tabs (Day/Week/Month) */}
+            <Tabs value={view} onValueChange={setView} className="w-full lg:w-auto">
+              <TabsList className="bg-white w-full lg:w-auto">
+                <TabsTrigger value="day" className="flex-1 lg:flex-initial">Day</TabsTrigger>
+                <TabsTrigger value="week" className="flex-1 lg:flex-initial">Week</TabsTrigger>
+                <TabsTrigger value="month" className="flex-1 lg:flex-initial">Month</TabsTrigger>
               </TabsList>
             </Tabs>
 
             {/* Filters */}
-            <div className="flex flex-wrap gap-3">
-            <Select value={technicianFilter} onValueChange={setTechnicianFilter}>
-              <SelectTrigger className="w-full lg:w-[200px] h-10 rounded-xl">
-                <SelectValue placeholder="All Technicians" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="all">All Technicians</SelectItem>
-                {technicians.map((tech) => (
-                  <SelectItem key={tech.email} value={tech.email}>
-                    {tech.full_name}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
+            <div className="flex flex-wrap gap-3 flex-1">
+              <Select value={technicianFilter} onValueChange={setTechnicianFilter}>
+                <SelectTrigger className="w-full lg:w-[200px]">
+                  <SelectValue placeholder="All Technicians" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">All Technicians</SelectItem>
+                  {technicians.map((tech) => (
+                    <SelectItem key={tech.email} value={tech.email}>
+                      {tech.full_name}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
 
-            <Select value={statusFilter} onValueChange={setStatusFilter}>
-              <SelectTrigger className="w-full lg:w-[180px] h-10 rounded-xl">
-                <SelectValue placeholder="All Statuses" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="all">All Statuses</SelectItem>
-                <SelectItem value="Open">Open</SelectItem>
-                <SelectItem value="Scheduled">Scheduled</SelectItem>
-                <SelectItem value="Completed">Completed</SelectItem>
-                <SelectItem value="Cancelled">Cancelled</SelectItem>
-              </SelectContent>
-            </Select>
+              <Select value={statusFilter} onValueChange={setStatusFilter}>
+                <SelectTrigger className="w-full lg:w-[180px]">
+                  <SelectValue placeholder="All Statuses" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">All Statuses</SelectItem>
+                  <SelectItem value="Open">Open</SelectItem>
+                  <SelectItem value="Scheduled">Scheduled</SelectItem>
+                  <SelectItem value="Completed">Completed</SelectItem>
+                  <SelectItem value="Cancelled">Cancelled</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
 
-
-
-            <div className="bg-white border border-[#E5E7EB] p-1 rounded-xl flex gap-1 h-10">
-              <button
+            {/* View Type Toggle (Resource/Calendar) */}
+            <div className="flex items-center gap-1 bg-white rounded-lg border border-[#E5E7EB] p-1">
+              <Button
+                variant={viewType === "resource" ? "default" : "ghost"}
+                size="sm"
                 onClick={() => setViewType("resource")}
-                className={`px-3 rounded-lg text-sm font-medium transition-all flex items-center gap-2 ${
-                  viewType === "resource" 
-                    ? "bg-[#FAE008] text-[#111827] shadow-sm" 
-                    : "text-[#6B7280] hover:text-[#111827]"
-                }`}
+                className={viewType === "resource" ? "bg-[#FAE008] text-[#111827] hover:bg-[#E5CF07]" : ""}
               >
-                <LayoutList className="w-4 h-4" />
+                <LayoutList className="w-4 h-4 mr-2" />
                 Resource
-              </button>
-              <button
+              </Button>
+              <Button
+                variant={viewType === "calendar" ? "default" : "ghost"}
+                size="sm"
                 onClick={() => setViewType("calendar")}
-                className={`px-3 rounded-lg text-sm font-medium transition-all flex items-center gap-2 ${
-                  viewType === "calendar" 
-                    ? "bg-[#FAE008] text-[#111827] shadow-sm" 
-                    : "text-[#6B7280] hover:text-[#111827]"
-                }`}
+                className={viewType === "calendar" ? "bg-[#FAE008] text-[#111827] hover:bg-[#E5CF07]" : ""}
               >
-                <CalendarIcon2 className="w-4 h-4" />
+                <CalendarIcon2 className="w-4 h-4 mr-2" />
                 Calendar
-              </button>
+              </Button>
             </div>
-            </div>
-            </div>
+          </div>
             </div>
 
         {/* Content */}
