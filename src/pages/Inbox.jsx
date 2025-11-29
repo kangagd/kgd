@@ -5,7 +5,7 @@ import { useNavigate, useSearchParams } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent } from "@/components/ui/card";
-import { Mail, Archive, Trash2, SlidersHorizontal, Plus, Paperclip } from "lucide-react";
+import { Mail, Archive, Trash2, SlidersHorizontal, Plus, Sparkles, Loader2, Paperclip } from "lucide-react";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import {
@@ -58,6 +58,7 @@ export default function Inbox() {
   const [isResizing, setIsResizing] = useState(false);
   const sidebarRef = useRef(null);
   const [showComposer, setShowComposer] = useState(false);
+  const [isAnalyzingAll, setIsAnalyzingAll] = useState(false);
   const [editingDraft, setEditingDraft] = useState(null);
   const queryClient = useQueryClient();
 
@@ -423,6 +424,53 @@ export default function Inbox() {
     }
   };
 
+  const handleAnalyzeAllEmails = async () => {
+    // Find threads without AI tags
+    const threadsToAnalyze = threads.filter(t => !t.ai_tags || t.ai_tags.length === 0);
+    
+    if (threadsToAnalyze.length === 0) {
+      toast.info('All emails have already been analyzed');
+      return;
+    }
+
+    setIsAnalyzingAll(true);
+    toast.info(`Analyzing ${threadsToAnalyze.length} emails...`);
+
+    let successCount = 0;
+    let errorCount = 0;
+
+    // Process in batches of 3 to avoid rate limits
+    for (let i = 0; i < threadsToAnalyze.length; i += 3) {
+      const batch = threadsToAnalyze.slice(i, i + 3);
+      
+      await Promise.all(batch.map(async (thread) => {
+        try {
+          await base44.functions.invoke('generateEmailThreadInsights', {
+            email_thread_id: thread.id
+          });
+          successCount++;
+        } catch (error) {
+          console.error(`Failed to analyze thread ${thread.id}:`, error);
+          errorCount++;
+        }
+      }));
+
+      // Update progress
+      if (i + 3 < threadsToAnalyze.length) {
+        toast.info(`Progress: ${Math.min(i + 3, threadsToAnalyze.length)}/${threadsToAnalyze.length} emails analyzed`);
+      }
+    }
+
+    setIsAnalyzingAll(false);
+    queryClient.invalidateQueries({ queryKey: ['emailThreads'] });
+    
+    if (errorCount === 0) {
+      toast.success(`Successfully analyzed ${successCount} emails with AI tagging and priority`);
+    } else {
+      toast.warning(`Analyzed ${successCount} emails. ${errorCount} failed.`);
+    }
+  };
+
   if (!userPermissions?.can_view) {
     return (
       <div className="p-5 md:p-10 bg-[#ffffff] min-h-screen">
@@ -452,6 +500,21 @@ export default function Inbox() {
               onSyncComplete={() => queryClient.invalidateQueries({ queryKey: ['emailThreads'] })} 
             />
             <div className="flex gap-2">
+              <Button
+                onClick={handleAnalyzeAllEmails}
+                size="sm"
+                variant="outline"
+                disabled={isAnalyzingAll}
+                className="h-9"
+                title="Analyze all emails with AI to add tags and priority"
+              >
+                {isAnalyzingAll ? (
+                  <Loader2 className="w-4 h-4 mr-1 animate-spin" />
+                ) : (
+                  <Sparkles className="w-4 h-4 mr-1 text-purple-500" />
+                )}
+                {isAnalyzingAll ? 'Analyzing...' : 'AI Analyze All'}
+              </Button>
               <Button
                 onClick={async () => {
                   const btn = document.activeElement;
@@ -794,6 +857,6 @@ export default function Inbox() {
           </div>
         </div>
       )}
-    </div>
-  );
+      </div>
+      );
 }

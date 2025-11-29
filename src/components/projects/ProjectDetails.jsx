@@ -41,6 +41,7 @@ import CreateInvoiceModal from "../invoices/CreateInvoiceModal";
 import TakePaymentModal from "../invoices/TakePaymentModal";
 import WarrantyCard from "./WarrantyCard";
 import MaintenanceSection from "./MaintenanceSection";
+import AIEmailSuggestionsBanner from "./AIEmailSuggestionsBanner";
 import DuplicateWarningCard, { DuplicateBadge } from "../common/DuplicateWarningCard";
 import CustomerQuickEdit from "./CustomerQuickEdit";
 import EntityModal from "../common/EntityModal";
@@ -386,6 +387,53 @@ export default function ProjectDetails({ project: initialProject, onClose, onEdi
       });
     }
     updateProjectMutation.mutate({ field: fieldName, value: newValue });
+  };
+
+  const handleApplyAISuggestions = async (fieldsToApply, sourceEmailThreadId) => {
+    try {
+      const currentUser = await base44.auth.me();
+      
+      // Update project with suggested fields
+      const updatePromises = Object.entries(fieldsToApply).map(([field, value]) => {
+        return base44.entities.Project.update(project.id, { [field]: value });
+      });
+      
+      await Promise.all(updatePromises);
+
+      // Log the AI update in change history
+      await base44.entities.ChangeHistory.create({
+        project_id: project.id,
+        field_name: 'ai_fields_applied',
+        old_value: '',
+        new_value: `Fields updated from AI analysis of Email Thread`,
+        changed_by: currentUser.email,
+        changed_by_name: currentUser.full_name
+      });
+
+      // Link the email thread to the project if not already linked
+      if (sourceEmailThreadId && !project.source_email_thread_id) {
+        await base44.entities.Project.update(project.id, {
+          source_email_thread_id: sourceEmailThreadId
+        });
+      }
+
+      // Mark the AI insight as applied
+      const insights = await base44.entities.AIEmailInsight.filter({ email_thread_id: sourceEmailThreadId });
+      if (insights.length > 0) {
+        await base44.entities.AIEmailInsight.update(insights[0].id, {
+          project_id: project.id,
+          applied_to_project: true,
+          applied_at: new Date().toISOString()
+        });
+      }
+
+      queryClient.invalidateQueries({ queryKey: ['project', project.id] });
+      queryClient.invalidateQueries({ queryKey: ['projects'] });
+      toast.success('AI suggestions applied to project');
+    } catch (error) {
+      console.error('Error applying AI suggestions:', error);
+      toast.error('Failed to apply AI suggestions');
+    }
   };
 
   const handleStageChange = async (newStage) => {
@@ -1254,6 +1302,15 @@ Format as HTML bullet points using <ul> and <li> tags. Include only the most cri
               />
             )}
           </div>
+
+          {/* AI Email Suggestions Banner */}
+          {emailThreadId && (
+            <AIEmailSuggestionsBanner
+              emailThreadId={emailThreadId}
+              project={project}
+              onApplySuggestions={handleApplyAISuggestions}
+            />
+          )}
 
           <div className="bg-white p-3 rounded-lg border border-[#E5E7EB] overflow-hidden">
             <div className="text-[12px] font-medium text-[#4B5563] leading-[1.35] mb-2 uppercase tracking-wide">Project Stage</div>
