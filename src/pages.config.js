@@ -6,7 +6,6 @@ import Schedule from './pages/Schedule';
 import Customers from './pages/Customers';
 import PriceList from './pages/PriceList';
 import UserProfile from './pages/UserProfile';
-import Calendar from './pages/Calendar';
 import Archive from './pages/Archive';
 import Organisations from './pages/Organisations';
 import Projects from './pages/Projects';
@@ -30,7 +29,6 @@ export const PAGES = {
     "Customers": Customers,
     "PriceList": PriceList,
     "UserProfile": UserProfile,
-    "Calendar": Calendar,
     "Archive": Archive,
     "Organisations": Organisations,
     "Projects": Projects,

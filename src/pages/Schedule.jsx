@@ -22,6 +22,10 @@ import { createPageUrl } from "@/utils";
 import { useNavigate } from "react-router-dom";
 import { Sparkles, Settings } from "lucide-react";
 import AvailabilityManager from "../components/schedule/AvailabilityManager";
+import DayView from "../components/calendar/DayView";
+import WeekView from "../components/calendar/WeekView";
+import MonthView from "../components/calendar/MonthView";
+import { LayoutList, Calendar as CalendarIcon2 } from "lucide-react";
 
 export default function Schedule() {
   const navigate = useNavigate();
@@ -32,6 +36,7 @@ export default function Schedule() {
   const [technicianFilter, setTechnicianFilter] = useState("all");
   const [statusFilter, setStatusFilter] = useState("all");
   const [contractFilter, setContractFilter] = useState(false);
+  const [viewType, setViewType] = useState("resource"); // 'resource' or 'calendar'
   const [user, setUser] = useState(null);
   
   // Drag and drop state
@@ -987,29 +992,60 @@ export default function Schedule() {
             >
               Contract Jobs Only
             </Button>
+
+            <div className="bg-white border border-[#E5E7EB] p-1 rounded-xl flex gap-1 h-10">
+              <button
+                onClick={() => setViewType("resource")}
+                className={`px-3 rounded-lg text-sm font-medium transition-all flex items-center gap-2 ${
+                  viewType === "resource" 
+                    ? "bg-[#FAE008] text-[#111827] shadow-sm" 
+                    : "text-[#6B7280] hover:text-[#111827]"
+                }`}
+              >
+                <LayoutList className="w-4 h-4" />
+                Resource
+              </button>
+              <button
+                onClick={() => setViewType("calendar")}
+                className={`px-3 rounded-lg text-sm font-medium transition-all flex items-center gap-2 ${
+                  viewType === "calendar" 
+                    ? "bg-[#FAE008] text-[#111827] shadow-sm" 
+                    : "text-[#6B7280] hover:text-[#111827]"
+                }`}
+              >
+                <CalendarIcon2 className="w-4 h-4" />
+                Calendar
+              </button>
+            </div>
             </div>
             </div>
             </div>
 
         {/* Content */}
-        <DragDropContext onDragEnd={handleDragEnd}>
-          {isLoading ? (
-            <div className="space-y-3">
-              {[1, 2, 3].map((i) => (
-                <Card key={i} className="p-4 animate-pulse">
-                  <div className="h-4 bg-[#F3F4F6] rounded w-1/3 mb-2"></div>
-                  <div className="h-3 bg-[#F3F4F6] rounded w-1/2"></div>
-                </Card>
-              ))}
-            </div>
-          ) : (
-            <>
+        {isLoading ? (
+          <div className="space-y-3">
+            {[1, 2, 3].map((i) => (
+              <Card key={i} className="p-4 animate-pulse">
+                <div className="h-4 bg-[#F3F4F6] rounded w-1/3 mb-2"></div>
+                <div className="h-3 bg-[#F3F4F6] rounded w-1/2"></div>
+              </Card>
+            ))}
+          </div>
+        ) : (
+          viewType === 'resource' ? (
+            <DragDropContext onDragEnd={handleDragEnd}>
               {view === "day" && renderDayView()}
               {view === "week" && renderWeekView()}
               {view === "month" && renderMonthView()}
+            </DragDropContext>
+          ) : (
+            <>
+              {view === "day" && <DayView jobs={getFilteredJobs()} currentDate={selectedDate} onJobClick={setModalJob} />}
+              {view === "week" && <WeekView jobs={getFilteredJobs()} currentDate={selectedDate} onJobClick={setModalJob} />}
+              {view === "month" && <MonthView jobs={getFilteredJobs()} currentDate={selectedDate} onJobClick={setModalJob} />}
             </>
-          )}
-        </DragDropContext>
+          )
+        )}
 
         {/* Reschedule Confirmation Modal */}
         <RescheduleConfirmModal
