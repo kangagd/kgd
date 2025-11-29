@@ -46,32 +46,29 @@ import NotificationBell from "./components/notifications/NotificationBell";
 const primaryNavigationItems = [
   { title: "Dashboard", url: createPageUrl("Dashboard"), icon: LayoutDashboard },
   { title: "Inbox", url: createPageUrl("Inbox"), icon: Mail },
-  { title: "Tasks", url: createPageUrl("Tasks"), icon: CheckSquare },
   { title: "Schedule", url: createPageUrl("Schedule"), icon: Calendar },
   { title: "Projects", url: createPageUrl("Projects"), icon: FolderKanban },
   { title: "Jobs", url: createPageUrl("Jobs"), icon: Briefcase },
   { title: "Customers", url: createPageUrl("Customers"), icon: UserCircle },
-  { title: "Contracts", url: createPageUrl("Contracts"), icon: FileText },
 ];
 
 const secondaryNavigationItems = [
   { title: "Organisations", url: createPageUrl("Organisations"), icon: Building2 },
+  { title: "Contracts", url: createPageUrl("Contracts"), icon: FileText },
   { title: "Photos", url: createPageUrl("Photos"), icon: ImageIcon },
   { title: "Price List", url: createPageUrl("PriceList"), icon: DollarSign },
+  { title: "Fleet", url: createPageUrl("Fleet"), icon: Car },
+  { title: "Archive", url: createPageUrl("Archive"), icon: ArchiveIcon },
   { title: "Reports", url: createPageUrl("Reports"), icon: TrendingUp },
   { title: "Team", url: createPageUrl("Team"), icon: Users },
-  { title: "Fleet", url: createPageUrl("Fleet"), icon: Car },
-  { title: "Role Settings", url: createPageUrl("RoleSettings"), icon: Shield },
-  { title: "Archive", url: createPageUrl("Archive"), icon: ArchiveIcon },
-  { title: "Logistics", url: createPageUrl("Logistics"), icon: Truck },
 ];
 
 const technicianNavigationItems = [
-  { title: "My Vehicle", url: createPageUrl("MyVehicle"), icon: Car },
+  { title: "Today", url: createPageUrl("Dashboard"), icon: LayoutDashboard },
   { title: "Schedule", url: createPageUrl("Schedule"), icon: Calendar },
-  { title: "Jobs", url: createPageUrl("Jobs"), icon: Briefcase },
-  { title: "Tasks", url: createPageUrl("Tasks"), icon: CheckSquare },
+  { title: "My Jobs", url: createPageUrl("Jobs"), icon: Briefcase },
   { title: "Price List", url: createPageUrl("PriceList"), icon: DollarSign },
+  { title: "Profile", url: createPageUrl("UserProfile"), icon: UserCircle },
 ];
 
 const viewerNavigationItems = [
