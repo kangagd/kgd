@@ -7,7 +7,7 @@ import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Checkbox } from "@/components/ui/checkbox";
-import { Upload, X, Search } from "lucide-react";
+import { Upload, X, Search, Sparkles, Loader2 } from "lucide-react";
 import { base44 } from "@/api/base44Client";
 import { useQuery } from "@tanstack/react-query";
 
@@ -23,6 +23,7 @@ export default function PhotoUploadModal({ open, onClose, onUploadComplete, pres
   const [productType, setProductType] = useState("");
   const [isMarketingApproved, setIsMarketingApproved] = useState(false);
   const [notes, setNotes] = useState("");
+  const [analyzing, setAnalyzing] = useState(false);
 
   const { data: jobs = [] } = useQuery({
     queryKey: ['allJobs'],
@@ -82,6 +83,54 @@ export default function PhotoUploadModal({ open, onClose, onUploadComplete, pres
       const newDuplicates = { ...duplicates };
       delete newDuplicates[fileToRemove.name];
       setDuplicates(newDuplicates);
+    }
+  };
+
+  const handleAutoTag = async () => {
+    if (files.length === 0) return;
+    setAnalyzing(true);
+    try {
+      const fileToAnalyze = files[0];
+      const { file_url } = await base44.integrations.Core.UploadFile({ file: fileToAnalyze });
+
+      const response = await base44.integrations.Core.InvokeLLM({
+        prompt: `Analyze this photo for a field service technician app.
+Identify the product type (Garage Door, Gate, Roller Shutter, Other) and suggest relevant tags (Before, After, Install, Repair, Service, Maintenance, Marketing, Other).
+Also provide a brief description of what is seen (e.g. "Damaged panel on sectional door" or "Completed installation of roller shutter").
+Check if the photo is high quality and good for marketing (is_marketing_worthy).
+
+Return ONLY a JSON object.`,
+        file_urls: [file_url],
+        response_json_schema: {
+          type: "object",
+          properties: {
+            product_type: { type: "string", enum: PRODUCT_TYPES },
+            tags: { type: "array", items: { type: "string", enum: TAGS } },
+            notes: { type: "string" },
+            is_marketing_worthy: { type: "boolean" }
+          }
+        }
+      });
+
+      if (response) {
+        if (response.product_type && PRODUCT_TYPES.includes(response.product_type)) {
+          setProductType(response.product_type);
+        }
+        if (response.tags && Array.isArray(response.tags)) {
+          const validTags = response.tags.filter(t => TAGS.includes(t));
+          setTags(prev => [...new Set([...prev, ...validTags])]);
+        }
+        if (response.notes) {
+          setNotes(prev => prev ? `${prev}\n${response.notes}` : response.notes);
+        }
+        if (response.is_marketing_worthy) {
+          setIsMarketingApproved(true);
+        }
+      }
+    } catch (error) {
+      console.error("Auto-tagging failed:", error);
+    } finally {
+      setAnalyzing(false);
     }
   };
 
@@ -214,6 +263,26 @@ export default function PhotoUploadModal({ open, onClose, onUploadComplete, pres
                     </Button>
                   </div>
                 ))}
+                
+                <Button
+                  type="button"
+                  variant="outline"
+                  onClick={handleAutoTag}
+                  disabled={analyzing}
+                  className="w-full mt-2 border-indigo-200 bg-indigo-50 text-indigo-700 hover:bg-indigo-100 hover:text-indigo-800"
+                >
+                  {analyzing ? (
+                    <>
+                      <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                      Analyzing photo...
+                    </>
+                  ) : (
+                    <>
+                      <Sparkles className="w-4 h-4 mr-2" />
+                      Auto-fill details with AI
+                    </>
+                  )}
+                </Button>
               </div>
             )}
           </div>
