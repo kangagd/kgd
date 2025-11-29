@@ -129,60 +129,7 @@ export default function EmailThreadList({
                 <EmailPriorityBadge value={thread.priority} />
               )}
 
-              {/* AI Priority indicator */}
-              {thread.ai_priority && thread.ai_priority !== 'Normal' && (
-                <Badge 
-                  className={`text-[10px] px-1.5 py-0 h-5 ${
-                    thread.ai_priority === 'Urgent' 
-                      ? 'bg-red-100 text-red-700 border border-red-200' 
-                      : thread.ai_priority === 'High'
-                        ? 'bg-orange-100 text-orange-700 border border-orange-200'
-                        : 'bg-blue-100 text-blue-700 border border-blue-200'
-                  }`}
-                >
-                  <Sparkles className="w-2.5 h-2.5 mr-0.5" />
-                  {thread.ai_priority}
-                </Badge>
-              )}
 
-              {/* AI Tags - show first 2 */}
-              {thread.ai_tags && thread.ai_tags.length > 0 && (
-                <>
-                  {thread.ai_tags.slice(0, 2).map((tag, idx) => (
-                    <Badge 
-                      key={idx}
-                      variant="outline"
-                      className="text-[10px] px-1.5 py-0 h-5 bg-purple-50 text-purple-700 border-purple-200"
-                    >
-                      {tag}
-                    </Badge>
-                  ))}
-                  {thread.ai_tags.length > 2 && (
-                    <TooltipProvider>
-                      <Tooltip>
-                        <TooltipTrigger asChild>
-                          <span className="text-[10px] text-[#6B7280] cursor-help bg-gray-100 px-1.5 py-0.5 rounded">
-                            +{thread.ai_tags.length - 2}
-                          </span>
-                        </TooltipTrigger>
-                        <TooltipContent side="top" className="max-w-xs bg-white border shadow-lg">
-                          <div className="flex flex-wrap gap-1">
-                            {thread.ai_tags.slice(2).map((tag, idx) => (
-                              <Badge 
-                                key={idx}
-                                variant="outline"
-                                className="text-[10px] px-1.5 py-0 bg-purple-50 text-purple-700 border-purple-200"
-                              >
-                                {tag}
-                              </Badge>
-                            ))}
-                          </div>
-                        </TooltipContent>
-                      </Tooltip>
-                    </TooltipProvider>
-                  )}
-                </>
-              )}
 
               {(thread.linked_project_id || thread.linked_job_id) && (
                 <LinkIcon className="w-3 h-3 text-[#4B5563]" />
