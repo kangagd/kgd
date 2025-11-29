@@ -985,13 +985,7 @@ export default function Schedule() {
               </SelectContent>
             </Select>
 
-            <Button 
-              variant={contractFilter ? "default" : "outline"}
-              onClick={() => setContractFilter(!contractFilter)}
-              className={`h-10 px-3 rounded-xl border ${contractFilter ? "bg-purple-600 hover:bg-purple-700 text-white" : "border-[#E5E7EB] hover:border-[#FAE008] hover:bg-[#FFFEF5]"}`}
-            >
-              Contract Jobs Only
-            </Button>
+
 
             <div className="bg-white border border-[#E5E7EB] p-1 rounded-xl flex gap-1 h-10">
               <button
