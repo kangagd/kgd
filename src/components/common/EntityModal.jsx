@@ -17,7 +17,14 @@ export default function EntityModal({
 }) {
   return (
     <Dialog open={open} onOpenChange={onClose}>
-      <DialogContent className="max-w-[720px] max-h-[90vh] overflow-y-auto p-0">
+      <DialogContent 
+        className="max-w-[720px] max-h-[90vh] overflow-y-auto p-0"
+        onInteractOutside={(e) => {
+          if (e.target.closest('.pac-container')) {
+            e.preventDefault();
+          }
+        }}
+      >
         <DialogHeader className="sticky top-0 z-10 bg-white border-b border-[#E5E7EB] px-6 py-4 flex flex-row items-center justify-between space-y-0">
           <h2 className="text-[22px] font-semibold text-[#111827] leading-[1.2]">
             {title}
