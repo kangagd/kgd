@@ -55,7 +55,10 @@ export default function Logistics() {
   });
 
   const logisticsJobs = useMemo(() => {
-    return jobs.filter(j => j.is_logistics_job || (j.job_type_name || "").match(/(Delivery|Pickup|Return|Logistics)/i));
+    return jobs.filter(j => {
+      if (j.status === 'Cancelled' || j.deleted_at) return false;
+      return j.is_logistics_job || (j.job_type_name || "").match(/(Delivery|Pickup|Return|Logistics)/i);
+    });
   }, [jobs]);
 
   // Maps for quick lookup
