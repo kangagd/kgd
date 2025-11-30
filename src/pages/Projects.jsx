@@ -86,12 +86,33 @@ export default function Projects() {
       if (res.data?.error) throw new Error(res.data.error);
       return res.data.project;
     },
-    onSuccess: (newProject) => {
+    onSuccess: async (newProject) => {
       queryClient.invalidateQueries({ queryKey: ['projects'] });
       setEditingProject(null);
       setShowForm(false);
-      // Navigate to the new project page
-      window.location.href = `${createPageUrl("Projects")}?projectId=${newProject.id}`;
+      
+      // Check for fromEmail param
+      const params = new URLSearchParams(window.location.search);
+      const fromEmail = params.get('fromEmail');
+      
+      if (fromEmail) {
+          // Trigger AI Context Extraction
+          try {
+              // We don't await this deeply to block UI, but since we want to show modal on next page...
+              // If we want the data to be there when modal shows, we should probably wait.
+              // Or rely on the modal fetching it or being passed in URL.
+              // Let's wait for it to ensure data is populated.
+              // We can show a toast "Analyzing email..." if it takes time.
+              // Actually, for better UX, let's fire and forget, but pass a param that tells ProjectDetails to poll/check?
+              // Or just wait. LLM calls can be 5-10s.
+              await base44.functions.invoke('aiProjectContextFromEmail', { email_id: fromEmail, project_id: newProject.id });
+          } catch (e) {
+              console.error("Failed to extract AI context", e);
+          }
+          window.location.href = `${createPageUrl("Projects")}?projectId=${newProject.id}&aiContext=true`;
+      } else {
+          window.location.href = `${createPageUrl("Projects")}?projectId=${newProject.id}`;
+      }
     }
   });
 

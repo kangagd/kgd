@@ -4,7 +4,7 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
-import { ArrowLeft, Plus, Edit, Trash2, MapPin, Phone, Mail, FileText, Image as ImageIcon, User, Upload, X, Briefcase, History, ExternalLink, DollarSign, Eye, Link2, MessageCircle, ClipboardCheck, Wrench, Target } from "lucide-react";
+import { ArrowLeft, Plus, Edit, Trash2, MapPin, Phone, Mail, FileText, Image as ImageIcon, User, Upload, X, Briefcase, History, ExternalLink, DollarSign, Eye, Link2, MessageCircle, ClipboardCheck, Wrench, Target, Sparkles } from "lucide-react";
 import { base44 } from "@/api/base44Client";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useNavigate, Link } from "react-router-dom";
@@ -26,6 +26,7 @@ import {
   AlertDialogTitle,
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 import { ChevronDown } from "lucide-react";
 import ProjectChangeHistoryModal from "./ProjectChangeHistoryModal";
@@ -115,10 +116,21 @@ export default function ProjectDetails({ project: initialProject, onClose, onEdi
   const [isChatOpen, setIsChatOpen] = useState(false);
   const [lastReadChat, setLastReadChat] = useState(() => localStorage.getItem(`lastReadChat-${initialProject.id}`) || new Date().toISOString());
   const [showPhotoModal, setShowPhotoModal] = useState(false);
+  const [showAIContextModal, setShowAIContextModal] = useState(false);
 
   // Get email thread ID from props, URL params, or project's source
   const urlParams = new URLSearchParams(window.location.search);
   const emailThreadId = propsEmailThreadId || urlParams.get('fromEmail') || initialProject?.source_email_thread_id;
+  const aiContextParam = urlParams.get('aiContext');
+
+  React.useEffect(() => {
+      if (aiContextParam === 'true') {
+          setShowAIContextModal(true);
+          // Clean URL
+          const newUrl = window.location.pathname + `?projectId=${initialProject.id}`;
+          window.history.replaceState({}, '', newUrl);
+      }
+  }, [aiContextParam, initialProject.id]);
 
   React.useEffect(() => {
     const loadUser = async () => {
@@ -640,6 +652,51 @@ export default function ProjectDetails({ project: initialProject, onClose, onEdi
         onClose={() => setShowHistory(false)}
         projectId={project.id}
       />
+
+      <Dialog open={showAIContextModal} onOpenChange={setShowAIContextModal}>
+        <DialogContent className="max-w-md">
+            <DialogHeader>
+                <DialogTitle className="flex items-center gap-2">
+                    <Sparkles className="w-5 h-5 text-indigo-600" />
+                    AI Context Extracted
+                </DialogTitle>
+            </DialogHeader>
+            <div className="space-y-4 py-2">
+                <p className="text-sm text-slate-600">
+                    We analyzed the email and populated some project details for you.
+                </p>
+                <div className="bg-indigo-50 p-3 rounded-lg space-y-2 border border-indigo-100">
+                    {project.issue_summary && (
+                        <div>
+                            <span className="text-xs font-semibold text-indigo-700 uppercase">Issue Summary</span>
+                            <p className="text-sm text-indigo-900">{project.issue_summary}</p>
+                        </div>
+                    )}
+                    {project.urgency && (
+                        <div>
+                            <span className="text-xs font-semibold text-indigo-700 uppercase">Urgency</span>
+                            <p className="text-sm text-indigo-900">{project.urgency}</p>
+                        </div>
+                    )}
+                    {project.address && (
+                        <div>
+                            <span className="text-xs font-semibold text-indigo-700 uppercase">Address</span>
+                            <p className="text-sm text-indigo-900">{project.address}</p>
+                        </div>
+                    )}
+                    {project.initial_notes && (
+                        <div>
+                            <span className="text-xs font-semibold text-indigo-700 uppercase">Notes</span>
+                            <p className="text-sm text-indigo-900">{project.initial_notes}</p>
+                        </div>
+                    )}
+                </div>
+            </div>
+            <DialogFooter>
+                <Button onClick={() => setShowAIContextModal(false)}>Done</Button>
+            </DialogFooter>
+        </DialogContent>
+      </Dialog>
       
       {/* ... other modals ... */}
     </div>
