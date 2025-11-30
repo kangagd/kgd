@@ -35,7 +35,7 @@ export default function Schedule() {
   const [selectedJob, setSelectedJob] = useState(null);
   const [technicianFilter, setTechnicianFilter] = useState("all");
   const [statusFilter, setStatusFilter] = useState("all");
-  const [organisationFilter, setOrganisationFilter] = useState("all");
+
   const [jobTypeFilter, setJobTypeFilter] = useState("all");
   const [viewType, setViewType] = useState("resource"); // 'resource' or 'calendar'
   const [user, setUser] = useState(null);
@@ -92,10 +92,7 @@ export default function Schedule() {
     queryFn: () => base44.entities.BusinessClosedDay.list('-start_time')
   });
 
-  const { data: organisations = [] } = useQuery({
-    queryKey: ['organisations'],
-    queryFn: () => base44.entities.Organisation.list('name')
-  });
+
 
   // Create a map of job type id to color
   const jobTypeColorMap = React.useMemo(() => {
@@ -230,10 +227,7 @@ export default function Schedule() {
           return false;
         }
 
-        // Organisation Filter
-        if (organisationFilter !== "all" && job.organisation_id !== organisationFilter) {
-          return false;
-        }
+
 
         // Job Type / Logistics Filter
         if (jobTypeFilter !== "all") {
@@ -1087,19 +1081,7 @@ export default function Schedule() {
                 </SelectContent>
               </Select>
 
-              <Select value={organisationFilter} onValueChange={setOrganisationFilter}>
-                <SelectTrigger className="w-full lg:w-[200px]">
-                  <SelectValue placeholder="Organisation" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="all">All Organisations</SelectItem>
-                  {organisations.map((org) => (
-                    <SelectItem key={org.id} value={org.id}>
-                      {org.name}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
+
 
               <Select value={jobTypeFilter} onValueChange={setJobTypeFilter}>
                 <SelectTrigger className="w-full lg:w-[180px]">
