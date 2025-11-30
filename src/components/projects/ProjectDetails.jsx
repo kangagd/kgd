@@ -555,6 +555,12 @@ export default function ProjectDetails({ project: initialProject, onClose, onEdi
                 </TabsContent>
 
                 <TabsContent value="overview" className="space-y-6">
+                <div className="flex justify-end">
+                    <Button variant="outline" onClick={() => setActiveTab("quotes")} className="text-slate-600">
+                        <FileText className="w-4 h-4 mr-2" />
+                        View Quotes
+                    </Button>
+                </div>
                 {/* Contract Banner */}
                 {project.contract_id && (
                     <div className="bg-purple-50 border border-purple-200 rounded-lg p-4 flex items-center justify-between">
