@@ -355,6 +355,12 @@ export default function Layout({ children, currentPageName }) {
           if (isTechnician) {
             return (
               <div className="min-h-screen flex flex-col bg-[#ffffff]">
+        <style>{`
+          .pac-container {
+            z-index: 100000 !important;
+            pointer-events: auto !important;
+          }
+        `}</style>
         <header className="bg-white border-b border-[#E5E7EB] px-4 py-3 sticky top-0 z-50 shadow-sm safe-area-top">
           <div className="flex items-center justify-between min-h-[44px]">
             <div className="flex items-center gap-2">
@@ -451,6 +457,12 @@ export default function Layout({ children, currentPageName }) {
   // Desktop/Admin layout
   return (
     <div className="min-h-screen flex bg-[#ffffff]">
+      <style>{`
+        .pac-container {
+          z-index: 100000 !important;
+          pointer-events: auto !important;
+        }
+      `}</style>
       <Toaster position="top-right" richColors />
       {/* Mobile Overlay */}
       {isMobileMenuOpen && (
