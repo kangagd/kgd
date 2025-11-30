@@ -196,14 +196,7 @@ export default function Schedule() {
         const outcome = job.outcome?.toLowerCase();
         if (status === 'cancelled' || status === 'lost' || outcome === 'lost') return false;
         
-        // Technician access filter
-        if (isTechnician && user) {
-          const userEmail = user.email?.toLowerCase().trim();
-          const isAssigned = Array.isArray(job.assigned_to) 
-            ? job.assigned_to.some(email => email?.toLowerCase().trim() === userEmail)
-            : (typeof job.assigned_to === 'string' && job.assigned_to.toLowerCase().trim() === userEmail);
-          if (!isAssigned) return false;
-        }
+        // Technician access filter removed to allow visibility of all jobs permitted by RLS
 
         // Date filter
         if (dateFilter && job.scheduled_date) {
@@ -1038,13 +1031,25 @@ export default function Schedule() {
           {/* Filters and Tabs Container */}
           <div className="flex flex-col lg:flex-row lg:items-center gap-4 mb-6">
             {/* View Period Tabs (Day/Week/Month) */}
-            <Tabs value={view} onValueChange={setView} className="w-full lg:w-auto">
-              <TabsList className="bg-white w-full lg:w-auto">
-                <TabsTrigger value="day" className="flex-1 lg:flex-initial">Day</TabsTrigger>
-                <TabsTrigger value="week" className="flex-1 lg:flex-initial">Week</TabsTrigger>
-                <TabsTrigger value="month" className="flex-1 lg:flex-initial">Month</TabsTrigger>
-              </TabsList>
-            </Tabs>
+            <div className="flex w-full lg:w-[300px] rounded-xl bg-[#F9FAFB] border border-[#E5E7EB] overflow-hidden p-1 gap-1">
+              {['Day', 'Week', 'Month'].map(viewOption => {
+                const value = viewOption.toLowerCase();
+                const isActive = view === value;
+                return (
+                  <button
+                    key={value}
+                    onClick={() => setView(value)}
+                    className={`flex-1 px-4 py-2 text-sm font-medium text-center transition-all rounded-lg focus:outline-none ${
+                      isActive
+                        ? "bg-white text-[#111827] shadow-sm border border-[#E5E7EB]"
+                        : "bg-transparent text-[#6B7280] hover:text-[#111827] hover:bg-white/50"
+                    }`}
+                  >
+                    {viewOption}
+                  </button>
+                );
+              })}
+            </div>
 
             {/* Filters */}
             <div className="flex flex-wrap gap-3 flex-1">
