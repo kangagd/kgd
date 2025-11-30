@@ -323,4 +323,6 @@ const TasksPanel = forwardRef(({
       />
     </div>
   );
-}
+});
+
+export default TasksPanel;
