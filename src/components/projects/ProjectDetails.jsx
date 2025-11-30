@@ -105,7 +105,7 @@ export default function ProjectDetails({ project: initialProject, onClose, onEdi
   const [newDoor, setNewDoor] = useState({ height: "", width: "", type: "", style: "" });
   const [showAddDoor, setShowAddDoor] = useState(false);
   const [showHistory, setShowHistory] = useState(false);
-  const [activeTab, setActiveTab] = useState("overview");
+  const [activeTab, setActiveTab] = useState("summary");
   const [user, setUser] = useState(null);
   const [previewFile, setPreviewFile] = useState(null);
   const [showInvoiceModal, setShowInvoiceModal] = useState(false);
@@ -476,11 +476,12 @@ export default function ProjectDetails({ project: initialProject, onClose, onEdi
             <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
                 <div className="overflow-x-auto -mx-3 px-3 md:mx-0 md:px-0 mb-4">
                 <TabsList className="w-full justify-start min-w-max md:min-w-0">
+                    <TabsTrigger value="summary" className="flex-1 whitespace-nowrap">Summary</TabsTrigger>
+                    <TabsTrigger value="overview" className="flex-1 whitespace-nowrap">Details</TabsTrigger>
                     <TabsTrigger value="ai_overview" className="flex-1 whitespace-nowrap gap-2">
                         <Sparkles className="w-3.5 h-3.5 text-indigo-500" />
                         AI Overview
                     </TabsTrigger>
-                    <TabsTrigger value="overview" className="flex-1 whitespace-nowrap">Overview</TabsTrigger>
                     <TabsTrigger value="parts" className="flex-1 whitespace-nowrap">
                     <Wrench className="w-4 h-4 mr-2" />
                     Parts
@@ -505,6 +506,36 @@ export default function ProjectDetails({ project: initialProject, onClose, onEdi
                     </TabsTrigger>
                 </TabsList>
                 </div>
+
+                <TabsContent value="summary" className="space-y-6">
+                    <ProjectSummary 
+                        project={project} 
+                        jobs={jobs} 
+                        onTabChange={(tab) => {
+                             if (tab === "visits") {
+                                 // Open the visits collapsible if needed, but currently it's always open in sidebar.
+                                 // Or scroll to it?
+                                 // The "Visits" tab isn't a tab in this Tabs component, it's a sidebar item or separate section.
+                                 // Wait, "Visits" is listed in the sidebar in ProjectDetails, not as a tab.
+                                 // But the prompt says "View all jobs" -> jumps to Jobs tab.
+                                 // Wait, does ProjectDetails HAVE a Jobs/Visits tab?
+                                 // The TabsList in ProjectDetails has: ai_overview, overview, parts, financials, photos, notes, activity.
+                                 // Visits are in the Sidebar (line 388).
+                                 // The prompt says "buttons: “View all jobs” → jumps to Jobs tab filtered for this project."
+                                 // "Jobs tab" likely means the main Jobs PAGE filtered for this project?
+                                 // OR did I miss a Jobs tab in ProjectDetails?
+                                 // Line 416: onClick={() => window.location.href = `${createPageUrl("Jobs")}?jobId=${job.id}`}
+                                 // So navigating to "Jobs" page seems correct for "View all jobs".
+                                 
+                                 if (tab === "visits") {
+                                     navigate(`${createPageUrl("Jobs")}?projectId=${project.id}`);
+                                 } else {
+                                     setActiveTab(tab);
+                                 }
+                            }
+                        }}
+                    />
+                </TabsContent>
 
                 <TabsContent value="ai_overview" className="space-y-6">
                     <AIProjectOverview 
@@ -541,7 +572,7 @@ export default function ProjectDetails({ project: initialProject, onClose, onEdi
                         <CardHeader className="pb-3">
                         <CardTitle className="text-lg font-semibold flex items-center gap-2">
                             <FileText className="w-5 h-5 text-slate-500" />
-                            Project Summary
+                            Project Details
                         </CardTitle>
                         </CardHeader>
                         <CardContent className="space-y-4">
