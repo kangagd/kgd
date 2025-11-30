@@ -15,6 +15,7 @@ import EditableFileUpload from "../jobs/EditableFileUpload";
 import RichTextField from "../common/RichTextField";
 import { TechnicianAvatarGroup } from "../common/TechnicianAvatar";
 import AddressAutocomplete from "../common/AddressAutocomplete";
+import { ProjectTypeBadge, ProductTypeBadge } from "../common/StatusBadge";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -397,6 +398,19 @@ export default function ProjectDetails({ project: initialProject, onClose, onEdi
                     </Button>
                     <h2 className="text-[22px] font-semibold text-[#111827]">{project.title}</h2>
                     <DuplicateBadge record={project} />
+                    <ProjectTypeBadge value={project.project_type} className="ml-2" />
+                    {project.project_type && (
+                        <ProductTypeBadge 
+                            value={(() => {
+                                if (project.project_type.includes("Garage Door")) return "Garage Door";
+                                if (project.project_type.includes("Gate")) return "Gate";
+                                if (project.project_type.includes("Roller Shutter")) return "Roller Shutter";
+                                if (project.project_type === "Multiple") return "Multiple";
+                                return null;
+                            })()} 
+                            className="ml-2" 
+                        />
+                    )}
                     {project.contract_id && (
                         <Link to={createPageUrl("Contracts") + `?contractId=${project.contract_id}`}>
                             <Badge variant="outline" className="bg-purple-50 text-purple-700 border-purple-200 hover:bg-purple-100 cursor-pointer gap-1 ml-2">
