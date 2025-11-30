@@ -139,6 +139,7 @@ export default function ContractDetails({ contract, onClose, onEdit }) {
              <Timer className="w-4 h-4 mr-2 text-red-500" />
              SLA Performance
           </TabsTrigger>
+          <TabsTrigger value="analytics">Analytics</TabsTrigger>
         </TabsList>
 
         <TabsContent value="insights" className="space-y-6">
@@ -463,6 +464,10 @@ export default function ContractDetails({ contract, onClose, onEdit }) {
 
         <TabsContent value="sla">
             <SLAPerformanceTab contract={contract} jobs={jobs} />
+        </TabsContent>
+
+        <TabsContent value="analytics" className="space-y-6">
+            <ContractAnalyticsTab contract={contract} />
         </TabsContent>
       </Tabs>
     </div>
