@@ -74,7 +74,7 @@ export default function ProjectSummary({ project }) {
             
             <div>
               <div className="text-[11px] font-bold text-[#6B7280] uppercase tracking-wider mb-1">STATUS</div>
-              <ProjectStatusBadge status={project.status} className="text-xs" />
+              <ProjectStatusBadge value={project.status} className="text-xs" />
             </div>
 
             <div>
