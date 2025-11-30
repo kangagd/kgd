@@ -505,7 +505,7 @@ export default function Schedule() {
       <div className="overflow-x-auto border border-[#E5E7EB] rounded-xl bg-white">
         <div className="min-w-[1000px]">
           {/* Header Row: Days */}
-          <div className="grid grid-cols-[200px_repeat(7,minmax(0,1fr))] border-b border-[#E5E7EB]">
+          <div className="grid grid-cols-[200px_repeat(7,1fr)] border-b border-[#E5E7EB]">
             <div className="p-3 bg-[#F9FAFB] font-semibold text-[#4B5563] sticky left-0 z-10 border-r border-[#E5E7EB] min-w-[200px]">
               Technician
             </div>
@@ -527,7 +527,7 @@ export default function Schedule() {
           {/* Technician Rows */}
           {activeTechs.map(tech => {
             return (
-              <div key={tech.id} className="grid grid-cols-[200px_repeat(7,minmax(0,1fr))] border-b border-[#E5E7EB] last:border-b-0">
+              <div key={tech.id} className="grid grid-cols-[200px_repeat(7,1fr)] border-b border-[#E5E7EB] last:border-b-0">
                 <div className="p-3 sticky left-0 bg-white z-10 border-r border-[#E5E7EB] flex items-center gap-2 min-w-[200px]">
                   <div className="w-8 h-8 rounded-full bg-[#F3F4F6] flex items-center justify-center text-sm font-bold text-[#6B7280]">
                     {(tech.full_name || tech.email).charAt(0).toUpperCase()}
@@ -566,7 +566,6 @@ export default function Schedule() {
                                     {...dragProvided.draggableProps}
                                     {...dragProvided.dragHandleProps}
                                     onClick={() => setModalJob(job)}
-                                    title={`${job.customer_name}${job.scheduled_time ? ` • ${job.scheduled_time}` : ''}`}
                                     className={`text-xs p-2 rounded border bg-white hover:border-[#FAE008] shadow-sm transition-all ${
                                       dragSnapshot.isDragging ? 'rotate-2 scale-105 z-50' : ''
                                     }`}
@@ -594,7 +593,7 @@ export default function Schedule() {
           
           {/* Unassigned Row */}
           {technicianFilter === 'all' && (
-            <div className="grid grid-cols-[200px_repeat(7,minmax(0,1fr))] border-b border-[#E5E7EB] last:border-b-0">
+            <div className="grid grid-cols-[200px_repeat(7,1fr)] border-b border-[#E5E7EB] last:border-b-0">
               <div className="p-3 sticky left-0 bg-white z-10 border-r border-[#E5E7EB] flex items-center gap-2 min-w-[200px]">
                 <div className="w-8 h-8 rounded-full bg-slate-100 flex items-center justify-center text-sm font-bold text-slate-500">
                   ?
@@ -627,7 +626,6 @@ export default function Schedule() {
                                   {...dragProvided.draggableProps}
                                   {...dragProvided.dragHandleProps}
                                   onClick={() => setModalJob(job)}
-                                  title={`${job.customer_name}${job.scheduled_time ? ` • ${job.scheduled_time}` : ''}`}
                                   className="text-xs p-2 rounded border bg-white hover:border-[#FAE008] shadow-sm"
                                   style={{
                                     ...dragProvided.draggableProps.style,
