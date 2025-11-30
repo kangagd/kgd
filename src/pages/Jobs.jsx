@@ -202,47 +202,11 @@ export default function Jobs() {
   const isViewer = user?.role === 'viewer';
   const canCreateJobs = isAdminOrManager;
 
-  const filteredJobs = jobs.filter((job) => {
-    // Technician filtering: only filter if user is explicitly a technician
-    // Relaxed filtering to ensure jobs are visible. Assignment check should happen but if data is mismatching, 
-    // we rely on the backend sending relevant jobs. 
-    // Since backend now sends ALL jobs for technicians (to fix visibility), we temporarily disable strict frontend filtering.
-    /*
-    if (isTechnician && user) {
-      const userEmail = user.email?.toLowerCase().trim();
-      const isAssignedToTechnician = Array.isArray(job.assigned_to) 
-        ? job.assigned_to.some(email => email?.toLowerCase().trim() === userEmail)
-        : (typeof job.assigned_to === 'string' && job.assigned_to.toLowerCase().trim() === userEmail);
-
-      if (!isAssignedToTechnician) {
-        return false;
-      }
-    }
-    */
-
-    // Remove URL date filter - let users see all jobs regardless of URL params
-    
-    const matchesSearch = !searchTerm || 
-      job.customer_name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      job.address?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      job.job_number?.toString().includes(searchTerm);
-
-    const matchesStatus = statusFilter === "all" ? true : 
-                          statusFilter === "Logistics" ? (job.job_category === 'Logistics' || (job.job_type_name || "").includes("Logistics") || (job.job_type || "").includes("Logistics")) :
-                          job.status === statusFilter;
-
-    const matchesTechnician = technicianFilter === "all" || 
-      (Array.isArray(job.assigned_to) 
-        ? job.assigned_to.includes(technicianFilter)
-        : job.assigned_to === technicianFilter);
-
-    const matchesDateRange = (!dateFrom || !job.scheduled_date || job.scheduled_date >= dateFrom) &&
-                             (!dateTo || !job.scheduled_date || job.scheduled_date <= dateTo);
-
-    return matchesSearch && matchesStatus && matchesTechnician && matchesDateRange;
-  }).sort((a, b) => {
+  // Server-side filtering is now in place. 
+  // Client-side sorting is still useful for the current page of results.
+  const filteredJobs = [...jobs].sort((a, b) => {
     let compareA, compareB;
-    
+
     switch(sortBy) {
       case 'scheduled_date':
         compareA = a.scheduled_date || '';
@@ -496,12 +460,31 @@ export default function Jobs() {
         </div>
 
         {viewMode === "list" ? (
-          <JobList
-            jobs={filteredJobs}
-            isLoading={isLoading}
-            onSelectJob={(job) => setSelectedJob(job)}
-            onViewDetails={(job) => setModalJob(job)}
-          />
+          <>
+              <JobList
+              jobs={filteredJobs}
+              isLoading={isLoading}
+              onSelectJob={(job) => setSelectedJob(job)}
+              onViewDetails={(job) => setModalJob(job)}
+              />
+              <div className="flex justify-center gap-4 mt-4 pb-8">
+                  <Button 
+                      variant="outline" 
+                      onClick={() => setPage(p => Math.max(1, p - 1))}
+                      disabled={page === 1 || isLoading}
+                  >
+                      Previous
+                  </Button>
+                  <span className="flex items-center text-sm text-gray-600">Page {page}</span>
+                  <Button 
+                      variant="outline" 
+                      onClick={() => setPage(p => p + 1)}
+                      disabled={!hasMore || isLoading}
+                  >
+                      Next
+                  </Button>
+              </div>
+          </>
         ) : (
           <CalendarView
             jobs={filteredJobs}

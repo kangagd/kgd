@@ -39,6 +39,7 @@ export default function Projects() {
   const [editingProject, setEditingProject] = useState(null);
   const [modalProject, setModalProject] = useState(null);
   const [showDuplicatesOnly, setShowDuplicatesOnly] = useState(false);
+  const [page, setPage] = useState(1);
   const queryClient = useQueryClient();
 
   useEffect(() => {
@@ -59,13 +60,29 @@ export default function Projects() {
   const isViewer = user?.role === 'viewer';
   const canCreateProjects = isAdminOrManager;
 
-  const { data: allProjects = [], isLoading } = useQuery({
-    queryKey: ['projects'],
-    queryFn: () => base44.entities.Project.list('-created_date'),
-    refetchInterval: 15000, // Refetch every 15 seconds
+  const { data: projectsResponse, isLoading } = useQuery({
+    queryKey: ['projects', page, searchTerm, stageFilter, startDate, endDate],
+    queryFn: async () => {
+        const response = await base44.functions.invoke('getProjects', {
+            page,
+            limit: 50,
+            search: searchTerm,
+            status: stageFilter,
+            date_from: startDate,
+            date_to: endDate
+        });
+        return response.data;
+    },
+    keepPreviousData: true
   });
 
-  const projects = allProjects.filter(p => !p.deleted_at && p.status !== "Lost");
+  const projects = projectsResponse?.data || [];
+  const hasMore = projectsResponse?.hasMore;
+
+  // Reset page when filters change
+  useEffect(() => {
+    setPage(1);
+  }, [searchTerm, stageFilter, startDate, endDate]);
 
   const { data: allJobs = [], isLoading: isJobsLoading } = useQuery({
     queryKey: ['allJobs'],
@@ -196,28 +213,23 @@ export default function Projects() {
     window.location.href = `${createPageUrl("Projects")}?projectId=${project.id}`;
   };
 
+  // Server side filtering used. 
+  // Client side filtering for things not on backend yet (parts status, duplicates)
   const filteredProjects = projects
     .filter((project) => {
-      const matchesSearch = 
-        project.title?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        project.customer_name?.toLowerCase().includes(searchTerm.toLowerCase());
-      
-      const matchesStage = stageFilter === "all" || project.status === stageFilter;
-      
+        // Basic filters are handled on backend.
+        // Parts status and Duplicates are handled here for now as they are more complex or rare
+        // Note: If backend limits to 50, client filtering only operates on those 50. 
+        // Ideally move all to backend, but "Duplicates" and "Parts" are specific.
+        // For now, this is a trade-off.
+
       const projectParts = allParts.filter(p => p.project_id === project.id);
       const matchesPartsStatus = partsStatusFilter === "all" || 
         projectParts.some(p => p.status === partsStatusFilter);
       
-      let matchesDateRange = true;
-      if (startDate || endDate) {
-        const projectDate = new Date(project.created_date);
-        if (startDate && new Date(startDate) > projectDate) matchesDateRange = false;
-        if (endDate && new Date(endDate) < projectDate) matchesDateRange = false;
-      }
-
       const matchesDuplicateFilter = !showDuplicatesOnly || project.is_potential_duplicate;
       
-      return matchesSearch && matchesStage && matchesPartsStatus && matchesDateRange && matchesDuplicateFilter;
+      return matchesPartsStatus && matchesDuplicateFilter;
     })
     .sort((a, b) => {
       if (sortBy === "created_date") {
@@ -443,6 +455,24 @@ export default function Projects() {
               onViewDetails={(p) => setModalProject(p)}
             />
           ))}
+        </div>
+
+        <div className="flex justify-center gap-4 mt-6 pb-8">
+            <Button 
+                variant="outline" 
+                onClick={() => setPage(p => Math.max(1, p - 1))}
+                disabled={page === 1 || isLoading}
+            >
+                Previous
+            </Button>
+            <span className="flex items-center text-sm text-gray-600">Page {page}</span>
+            <Button 
+                variant="outline" 
+                onClick={() => setPage(p => p + 1)}
+                disabled={!hasMore || isLoading}
+            >
+                Next
+            </Button>
         </div>
 
         <EntityModal
