@@ -110,15 +110,16 @@ export default function CustomerDetails({ customer, onClose, onEdit, onDelete })
           {contract && (
             <div className="bg-purple-50 border-2 border-purple-200 rounded-xl p-4 flex justify-between items-center">
               <div>
-                <div className="text-sm font-bold text-purple-700 uppercase tracking-wide mb-1">Linked Contract</div>
-                <h3 className="text-lg font-bold text-purple-900">{contract.name}</h3>
-                <p className="text-sm text-purple-800">{contract.contract_type}</p>
+                <div className="text-sm font-bold text-purple-700 uppercase tracking-wide mb-1">
+                  Under contract: {contract.name}
                 </div>
-                <Link to={createPageUrl("Contracts") + `?contractId=${contract.id}`}>
+                <div className="text-sm text-purple-800">{contract.contract_type}</div>
+              </div>
+              <Link to={createPageUrl("Contracts") + `?contractId=${contract.id}`}>
                 <Button variant="outline" className="bg-white text-purple-700 border-purple-200 hover:bg-purple-50">
                   View Contract
                 </Button>
-                </Link>
+              </Link>
             </div>
           )}
 

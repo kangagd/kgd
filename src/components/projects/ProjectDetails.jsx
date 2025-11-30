@@ -383,6 +383,14 @@ export default function ProjectDetails({ project: initialProject, onClose, onEdi
                     </Button>
                     <h2 className="text-[22px] font-semibold text-[#111827]">{project.title}</h2>
                     <DuplicateBadge record={project} />
+                    {project.contract_id && (
+                        <Link to={createPageUrl("Contracts") + `?contractId=${project.contract_id}`}>
+                            <Badge variant="outline" className="bg-purple-50 text-purple-700 border-purple-200 hover:bg-purple-100 cursor-pointer gap-1 ml-2">
+                                <FileText className="w-3 h-3" />
+                                Contract
+                            </Badge>
+                        </Link>
+                    )}
                 </div>
                 <div className="flex gap-1">
                     {canEdit && <Button variant="ghost" size="icon" onClick={() => onEdit(project)}><Edit className="w-4 h-4"/></Button>}

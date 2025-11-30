@@ -209,6 +209,14 @@ export default function JobDetails({ job: initialJob, onClose, onStatusChange, o
                 <div className="flex items-center gap-2">
                     <CardTitle className="text-[22px] font-semibold">{job.customer_name}</CardTitle>
                     <DuplicateBadge record={job} />
+                    {job.contract_id && (
+                        <Link to={createPageUrl("Contracts") + `?contractId=${job.contract_id}`}>
+                            <Badge variant="outline" className="bg-purple-50 text-purple-700 border-purple-200 hover:bg-purple-100 cursor-pointer gap-1 ml-2">
+                                <FileText className="w-3 h-3" />
+                                Contract
+                            </Badge>
+                        </Link>
+                    )}
                 </div>
                 <div className="flex gap-2">
                     {/* Chips */}
