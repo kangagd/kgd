@@ -125,11 +125,11 @@ export default function TasksPanel({
           )}
           <Button
             size="sm"
-            variant="ghost"
+            variant="outline"
             onClick={() => setShowCreateModal(true)}
-            className="h-7 px-2 text-[#6B7280] hover:text-[#111827] hover:bg-[#F3F4F6]"
+            className="h-7 text-xs"
           >
-            <Plus className="w-3.5 h-3.5" />
+            <Plus className="w-3 h-3 mr-1" /> Add
           </Button>
         </div>
 
