@@ -224,13 +224,18 @@ export default function Schedule() {
 
         // Date filter
         if (dateFilter && job.scheduled_date) {
-          try {
-            const parsedDate = parseISO(job.scheduled_date);
-            if (isNaN(parsedDate.getTime()) || !dateFilter(parsedDate)) {
+          // Check if dateFilter is a string (YYYY-MM-DD) for direct comparison
+          if (typeof dateFilter === 'string') {
+             if (!job.scheduled_date.startsWith(dateFilter)) return false;
+          } else {
+            try {
+              const parsedDate = parseISO(job.scheduled_date);
+              if (isNaN(parsedDate.getTime()) || !dateFilter(parsedDate)) {
+                return false;
+              }
+            } catch {
               return false;
             }
-          } catch {
-            return false;
           }
         }
 
@@ -366,8 +371,8 @@ export default function Schedule() {
 
   // Render Day View with Drag and Drop
   const renderDayView = () => {
-    const dayJobs = getFilteredJobs((date) => isSameDay(date, selectedDate));
     const dateStr = format(selectedDate, 'yyyy-MM-dd');
+    const dayJobs = getFilteredJobs(dateStr);
     
     if (dayJobs.length === 0) {
       return (
@@ -557,13 +562,22 @@ export default function Schedule() {
                 {weekDays.map(day => {
                   const dateStr = format(day, 'yyyy-MM-dd');
                   // Filter jobs for this tech and day
-                  const cellJobs = getFilteredJobs((date) => isSameDay(date, day))
+                  const cellJobs = getFilteredJobs(dateStr)
                     .filter(job => {
                       if (!job.assigned_to) return false;
                       const assigned = (Array.isArray(job.assigned_to) ? job.assigned_to : [job.assigned_to])
                         .map(e => e?.toLowerCase()?.trim());
+                      
                       const techEmail = tech.email?.toLowerCase()?.trim();
-                      return assigned.includes(techEmail);
+                      const techUsername = techEmail?.split('@')[0];
+                      const techName = (tech.full_name || tech.display_name || "").toLowerCase().trim();
+                      
+                      return assigned.some(a => 
+                        a === techEmail || 
+                        a === techUsername || 
+                        (a && techEmail && techEmail.includes(a)) ||
+                        (a && techName && (a === techName || techName.includes(a)))
+                      );
                     });
 
                   return (
@@ -624,19 +638,20 @@ export default function Schedule() {
               </div>
               {weekDays.map(day => {
                 const dateStr = format(day, 'yyyy-MM-dd');
-                const cellJobs = getFilteredJobs((date) => isSameDay(date, day))
+                const cellJobs = getFilteredJobs(dateStr)
                   .filter(job => {
                     // Include if unassigned
                     if (!job.assigned_to || job.assigned_to.length === 0) return true;
                     
-                    // Also include if assigned to someone NOT in the active technicians list (e.g. an admin or non-field user)
-                    // This ensures no jobs are hidden
+                    // Also include if assigned to someone NOT in the active technicians list
                     const assignedEmails = (Array.isArray(job.assigned_to) ? job.assigned_to : [job.assigned_to])
                       .map(e => e?.toLowerCase()?.trim());
                     
-                    const isAssignedToActiveTech = activeTechs.some(t => 
-                      assignedEmails.includes(t.email?.toLowerCase()?.trim())
-                    );
+                    const isAssignedToActiveTech = activeTechs.some(t => {
+                      const techEmail = t.email?.toLowerCase()?.trim();
+                      const techUsername = techEmail?.split('@')[0];
+                      return assignedEmails.some(a => a === techEmail || a === techUsername || (a && techEmail && techEmail.includes(a)));
+                    });
                     
                     return !isAssignedToActiveTech;
                   });
