@@ -43,6 +43,7 @@ export default function Jobs() {
   const [calendarDate, setCalendarDate] = useState(new Date());
   const [modalJob, setModalJob] = useState(null);
   const [showFilters, setShowFilters] = useState(false);
+  const [page, setPage] = useState(1);
   const queryClient = useQueryClient();
 
   useEffect(() => {
@@ -57,31 +58,48 @@ export default function Jobs() {
     loadUser();
   }, []);
 
-  const { data: jobs = [], isLoading, refetch } = useQuery({
-    queryKey: ['allJobs'],
+  const { data: jobsResponse, isLoading, refetch } = useQuery({
+    queryKey: ['allJobs', page, searchTerm, statusFilter, technicianFilter, dateFrom, dateTo, viewMode, calendarDate],
     queryFn: async () => {
       try {
-        console.log('[Jobs Debug] Fetching jobs...');
-        // Use backend function to fetch jobs with robust permission handling
-        const response = await base44.functions.invoke('getMyJobs');
-        const allJobs = response.data || [];
-        console.log('[Jobs Debug] ✅ Total jobs fetched:', allJobs.length);
-        console.log('[Jobs Debug] All jobs:', allJobs);
+        let finalDateFrom = dateFrom;
+        let finalDateTo = dateTo;
 
-        // Filter out deleted and cancelled jobs in the frontend
-        const activeJobs = allJobs.filter(job => !job.deleted_at && job.status !== "Cancelled");
-        console.log('[Jobs Debug] Active jobs (not deleted/cancelled):', activeJobs.length);
+        if (viewMode === 'calendar') {
+           const start = new Date(calendarDate);
+           start.setDate(start.getDate() - 45);
+           const end = new Date(calendarDate);
+           end.setDate(end.getDate() + 45);
+           finalDateFrom = start.toISOString().split('T')[0];
+           finalDateTo = end.toISOString().split('T')[0];
+        }
 
-        return activeJobs;
+        const response = await base44.functions.invoke('getMyJobs', {
+            page,
+            limit: 50,
+            search: searchTerm,
+            status: statusFilter,
+            technician: technicianFilter,
+            date_from: finalDateFrom,
+            date_to: finalDateTo,
+            view_mode: viewMode
+        });
+        return response.data;
       } catch (error) {
         console.error('[Jobs Debug] ❌ Error fetching jobs:', error);
-        return [];
+        return { data: [], hasMore: false };
       }
     },
-    refetchInterval: 5000,
-    refetchOnMount: 'always',
-    refetchOnWindowFocus: true
+    keepPreviousData: true
   });
+
+  const jobs = jobsResponse?.data || [];
+  const hasMore = jobsResponse?.hasMore;
+
+  // Reset page when filters change
+  useEffect(() => {
+    setPage(1);
+  }, [searchTerm, statusFilter, technicianFilter, dateFrom, dateTo, viewMode]);
 
   const jobIdFromUrl = searchParams.get('jobId');
 
