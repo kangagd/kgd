@@ -420,6 +420,7 @@ export default function WeekView({ jobs, currentDate, onJobClick, onQuickBook, j
                                           >
                                             <div className="w-1.5 h-1.5 rounded-full mr-1 flex-shrink-0" style={{ backgroundColor: typeInfo.color }} />
                                             <span className="truncate">{typeInfo.name}</span>
+                                            {typeInfo.isLogistics && <span className="ml-1 text-[8px] opacity-70 font-normal">LOG</span>}
                                           </Badge>
                                         );
                                       })()}

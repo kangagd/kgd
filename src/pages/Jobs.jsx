@@ -414,6 +414,25 @@ export default function Jobs() {
 
           {showFilters && viewMode === "list" && (
             <div className="flex flex-wrap gap-3">
+              <Select value={jobTypeFilter} onValueChange={setJobTypeFilter}>
+                <SelectTrigger className="w-full md:w-[200px] h-10">
+                  <SelectValue placeholder="All Job Types" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">All Job Types</SelectItem>
+                  <SelectItem value="Standard Only" className="font-medium border-b border-gray-100">Standard Only</SelectItem>
+                  <SelectItem value="Logistics Only" className="font-medium border-b border-gray-100">Logistics Only</SelectItem>
+                  {jobTypes.map((jt) => (
+                    <SelectItem key={jt.id} value={jt.id}>
+                      <div className="flex items-center gap-2">
+                        <div className="w-2 h-2 rounded-full" style={{ backgroundColor: jt.color }} />
+                        {jt.name}
+                      </div>
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+
               <Select value={technicianFilter} onValueChange={setTechnicianFilter}>
                 <SelectTrigger className="w-full md:w-[200px] h-10">
                   <SelectValue placeholder="All Technicians" />

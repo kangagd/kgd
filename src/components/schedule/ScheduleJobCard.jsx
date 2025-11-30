@@ -38,8 +38,18 @@ export default function ScheduleJobCard({ job, onClick, onAddressClick, onProjec
               {job.logistics_type || "Logistics"}
             </Badge>
           )}
-          {job.job_type_name && !(job.job_category === 'Logistics') && (
-            <JobTypeBadge value={job.job_type_name} color={jobType?.color} />
+          {(job.job_type_name || jobType?.name) && (
+            <div className="flex items-center gap-1 flex-wrap mt-1">
+              <JobTypeBadge 
+                value={jobType?.name || job.job_type_name} 
+                color={jobType?.color} 
+              />
+              {(jobType?.is_logistics || job.job_category === 'Logistics') && (
+                <span className="text-[9px] font-bold px-1 py-0.5 bg-slate-100 text-slate-600 rounded border border-slate-200">
+                  LOGISTICS
+                </span>
+              )}
+            </div>
           )}
           {job.product && (
             <ProductTypeBadge value={job.product} />

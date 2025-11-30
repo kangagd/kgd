@@ -197,7 +197,8 @@ export default function MonthView({ jobs, currentDate, onJobClick, onQuickBook, 
                                       color: typeInfo.color 
                                     }}
                                   >
-                                    {typeInfo.name}
+                                    <div className="w-1 h-1 rounded-full mr-1 flex-shrink-0" style={{ backgroundColor: typeInfo.color }} />
+                                    <span className="truncate">{typeInfo.name}</span>
                                   </Badge>
                                 );
                               })()}

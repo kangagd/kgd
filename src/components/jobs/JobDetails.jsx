@@ -230,16 +230,24 @@ export default function JobDetails({ job: initialJob, onClose, onStatusChange, o
                         const isLogistics = jt?.category === 'Logistics' || job.job_category === 'Logistics';
                         
                         return (
-                            <Badge 
-                                className="border-0 flex items-center gap-1.5"
-                                style={{ backgroundColor: `${color}20`, color: color }}
-                            >
-                                {isLogistics && <Truck className="w-3 h-3" />}
-                                {jt?.name || job.job_type_name || job.job_type}
-                            </Badge>
+                            <div className="flex items-center gap-2">
+                                <Badge 
+                                    className="border-0 flex items-center gap-1.5 px-2.5 py-1 text-sm"
+                                    style={{ backgroundColor: `${color}15`, color: color }}
+                                >
+                                    <div className="w-2 h-2 rounded-full" style={{ backgroundColor: color }} />
+                                    {jt?.name || job.job_type_name || job.job_type}
+                                </Badge>
+                                {isLogistics && (
+                                    <Badge variant="outline" className="bg-slate-50 text-slate-600 border-slate-200 gap-1">
+                                        <Truck className="w-3 h-3" />
+                                        Logistics
+                                    </Badge>
+                                )}
+                                <Badge className="bg-purple-50 text-purple-700 border-purple-100">{job.product}</Badge>
+                            </div>
                         );
                     })()}
-                    <Badge className="bg-purple-100 text-purple-800">{job.product}</Badge>
                 </div>
              </div>
              <div className="grid grid-cols-1 md:grid-cols-3 gap-3 text-sm text-gray-600">
