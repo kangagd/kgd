@@ -316,6 +316,8 @@ export default function Dashboard() {
             </div>
           )}
         </div>
+        </>
+        )}
 
         {user?.role === 'admin' && (
           <MaintenanceRemindersCard user={user} />
