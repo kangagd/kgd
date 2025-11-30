@@ -125,19 +125,38 @@ export default function ProjectSidebar({ project, jobs, onClose, onEdit, onDelet
       {/* Tasks */}
       <Collapsible defaultOpen={true}>
         <Card className="border border-[#E5E7EB] shadow-sm rounded-lg overflow-hidden">
-          <CollapsibleTrigger className="w-full">
-            <CardHeader className="bg-white px-4 py-3 border-b border-[#E5E7EB] flex flex-row items-center justify-between">
-              <h3 className="text-[16px] font-semibold text-[#111827]">Tasks</h3>
-              <ChevronDown className="w-4 h-4 text-[#6B7280]" />
-            </CardHeader>
-          </CollapsibleTrigger>
+          <CardHeader className="bg-white px-4 py-3 border-b border-[#E5E7EB] flex flex-row items-center justify-between">
+            <CollapsibleTrigger className="flex items-center gap-2 flex-1 text-left">
+                <h3 className="text-[16px] font-semibold text-[#111827]">Tasks</h3>
+            </CollapsibleTrigger>
+            <div className="flex items-center gap-2">
+                <Button 
+                    size="sm" 
+                    variant="outline" 
+                    className="h-7 text-xs"
+                    onClick={(e) => {
+                        e.stopPropagation();
+                        if (tasksPanelRef.current) {
+                            tasksPanelRef.current.openCreateModal();
+                        }
+                    }}
+                >
+                  <Plus className="w-3 h-3 mr-1" /> Add
+                </Button>
+                <CollapsibleTrigger>
+                    <ChevronDown className="w-4 h-4 text-[#6B7280]" />
+                </CollapsibleTrigger>
+            </div>
+          </CardHeader>
           <CollapsibleContent>
             <CardContent className="p-3">
               <TasksPanel
+                ref={tasksPanelRef}
                 entityType="project"
                 entityId={project.id}
                 entityName={project.title}
                 compact={true}
+                hideHeader={true}
               />
             </CardContent>
           </CollapsibleContent>
