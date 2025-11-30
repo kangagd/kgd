@@ -221,7 +221,9 @@ export default function Jobs() {
       job.address?.toLowerCase().includes(searchTerm.toLowerCase()) ||
       job.job_number?.toString().includes(searchTerm);
 
-    const matchesStatus = statusFilter === "all" || job.status === statusFilter;
+    const matchesStatus = statusFilter === "all" ? true : 
+                          statusFilter === "Logistics" ? (job.job_category === 'Logistics' || (job.job_type_name || "").includes("Logistics") || (job.job_type || "").includes("Logistics")) :
+                          job.status === statusFilter;
 
     const matchesTechnician = technicianFilter === "all" || 
       (Array.isArray(job.assigned_to) 
@@ -379,6 +381,7 @@ export default function Jobs() {
               <Tabs value={statusFilter} onValueChange={setStatusFilter} className="flex-1">
                 <TabsList className="w-full">
                   <TabsTrigger value="all" className="flex-1">All</TabsTrigger>
+                  <TabsTrigger value="Logistics" className="flex-1">Logistics</TabsTrigger>
                   <TabsTrigger value="Open" className="flex-1">Open</TabsTrigger>
                   <TabsTrigger value="Scheduled" className="flex-1">Scheduled</TabsTrigger>
                   <TabsTrigger value="Completed" className="flex-1">Completed</TabsTrigger>

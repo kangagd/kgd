@@ -128,6 +128,8 @@ Deno.serve(async (req) => {
                         job_type: pickupJobTypeName,
                         job_type_id: jobTypeId,
                         job_type_name: pickupJobTypeName,
+                        job_category: "Logistics",
+                        logistics_type: "Material Pickup – Warehouse",
                         project_id: job.project_id,
                         project_name: job.project_name,
                         customer_id: job.customer_id,
@@ -138,6 +140,7 @@ Deno.serve(async (req) => {
                         scheduled_date: scheduledDate,
                         scheduled_time: pickupTime,
                         expected_duration: 0.5,
+                        part_ids: parts.map(p => p.id),
                         notes: `Pickup for parts: ${parts.map(p => p.category).join(', ')}`
                     });
 

@@ -18,11 +18,13 @@ import {
 } from "@/components/ui/select";
 import { Badge } from "@/components/ui/badge";
 import { Textarea } from "@/components/ui/textarea";
-import { X, Upload, FileText, Link as LinkIcon, Plus, Search, Trash2 } from "lucide-react";
+import { X, Upload, FileText, Link as LinkIcon, Plus, Search, Trash2, Truck } from "lucide-react";
 import { base44 } from "@/api/base44Client";
 import { useQuery } from "@tanstack/react-query";
 import TextField from "../common/TextField";
 import { format } from "date-fns";
+import LogisticsTimeline from "./LogisticsTimeline";
+import { createPageUrl } from "@/utils";
 
 const CATEGORIES = [
   "Door", "Motor", "Posts", "Tracks", "Small Parts", "Hardware", "Other"
@@ -288,35 +290,27 @@ export default function PartDetailModal({ open, part, onClose, onSave, isSubmitt
 
             <hr className="border-[#E5E7EB]" />
 
-            {/* Logistics Links */}
+            {/* Logistics Timeline & Links */}
             <section className="space-y-4">
-              <h3 className="text-[15px] font-semibold text-[#111827] uppercase tracking-wide">Logistics Links</h3>
-              
-              {/* Linked Jobs List */}
-              {linkedJobsData.length > 0 && (
-                <div className="flex flex-wrap gap-2 mb-3">
-                  {linkedJobsData.map(job => (
-                    <div key={job.id} className="flex items-center gap-2 bg-[#F3F4F6] px-3 py-1.5 rounded-lg border border-[#E5E7EB]">
-                      <LinkIcon className="w-3.5 h-3.5 text-[#6B7280]" />
-                      <span className="text-[13px] font-medium text-[#111827]">
-                        #{job.job_number} {job.job_type_name || job.job_type}
-                      </span>
-                      <span className="text-[12px] text-[#6B7280]">
-                         • {job.scheduled_date ? format(new Date(job.scheduled_date), 'MMM d') : 'Unscheduled'}
-                      </span>
-                      <button
-                        type="button"
-                        onClick={() => toggleLogisticsJob(job.id)}
-                        className="ml-1 hover:bg-[#E5E7EB] p-0.5 rounded-full"
-                      >
-                        <X className="w-3.5 h-3.5 text-[#6B7280]" />
-                      </button>
-                    </div>
-                  ))}
-                </div>
-              )}
+              <div className="flex items-center justify-between">
+                <h3 className="text-[15px] font-semibold text-[#111827] uppercase tracking-wide">Logistics</h3>
+                {part && part.id && (
+                  <Button 
+                    type="button" 
+                    size="sm" 
+                    variant="outline"
+                    onClick={() => window.location.href = createPageUrl('Jobs') + `?action=create&jobCategory=Logistics&partId=${part.id}&projectId=${part.project_id}`}
+                    className="h-8"
+                  >
+                    <Truck className="w-3 h-3 mr-2" />
+                    Create Logistics Job
+                  </Button>
+                )}
+              </div>
 
-              <div className="relative max-w-md">
+              {part && <LogisticsTimeline part={part} />}
+              
+              <div className="relative max-w-md mt-4">
                 <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-[#9CA3AF]" />
                 <Input 
                   placeholder="Search jobs to link (e.g. 'Delivery', 'Pickup')..."

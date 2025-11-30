@@ -24,6 +24,51 @@ Deno.serve(async (req) => {
             return Response.json({ error: 'Invalid action' }, { status: 400 });
         }
 
+        // TRIGGER A: When Part is Ordered + Supplier Source → Create “Material Pickup – Supplier”
+        if (part.status === 'Ordered' && (part.source_type || "").includes('Supplier')) {
+             const wasTriggered = previousPart && previousPart.status === 'Ordered';
+             if (!wasTriggered) {
+                 const project = await base44.asServiceRole.entities.Project.get(part.project_id);
+                 if (project) {
+                     const jobTypeName = "Material Pickup – Supplier";
+                     let jobTypes = await base44.asServiceRole.entities.JobType.filter({ name: jobTypeName });
+                     let jobTypeId = jobTypes.length > 0 ? jobTypes[0].id : null;
+                     if (!jobTypeId) {
+                         const newJobType = await base44.asServiceRole.entities.JobType.create({
+                             name: jobTypeName,
+                             description: "Logistics: Pickup material from supplier",
+                             color: "#f59e0b", 
+                             estimated_duration: 1,
+                             is_active: true
+                         });
+                         jobTypeId = newJobType.id;
+                     }
+
+                     const logisticsJob = await base44.asServiceRole.entities.Job.create({
+                         job_type: jobTypeName,
+                         job_type_id: jobTypeId,
+                         job_type_name: jobTypeName,
+                         job_category: "Logistics",
+                         logistics_type: "Material Pickup – Supplier",
+                         project_id: part.project_id,
+                         project_name: project.title,
+                         customer_id: project.customer_id,
+                         customer_name: project.customer_name,
+                         address: "Supplier: " + (part.supplier_name || "Unknown"),
+                         address_full: "Supplier: " + (part.supplier_name || "Unknown"),
+                         status: "Open",
+                         part_ids: [part.id],
+                         notes: `Pickup for: ${part.category} (Order Ref: ${part.order_reference || 'N/A'})`
+                     });
+
+                     const currentLinks = part.linked_logistics_jobs || [];
+                     await base44.asServiceRole.entities.Part.update(part.id, {
+                         linked_logistics_jobs: [...currentLinks, logisticsJob.id]
+                     });
+                 }
+             }
+        }
+
         // TRIGGER B: When Part is marked Delivered at Delivery Bay → create “Delivery – At Warehouse” job
         if (part.status === 'Delivered' && part.location === 'At Delivery Bay') {
             const wasTriggered = previousPart && 
@@ -90,6 +135,8 @@ Deno.serve(async (req) => {
                             job_type: jobTypeName,
                             job_type_id: jobTypeId,
                             job_type_name: jobTypeName,
+                            job_category: "Logistics",
+                            logistics_type: "Delivery – At Warehouse",
                             project_id: part.project_id,
                             project_name: project.title,
                             customer_id: customerId,
@@ -97,6 +144,7 @@ Deno.serve(async (req) => {
                             address: warehouseAddress,
                             address_full: warehouseAddress,
                             status: "Open",
+                            part_ids: partIdsToUpdate,
                             notes: `Logistics job generated for parts: ${otherParts.map(p => p.category).join(', ')}`
                         });
                     }
