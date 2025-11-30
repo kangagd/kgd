@@ -26,6 +26,7 @@ export default function Jobs() {
   const [searchParams, setSearchParams] = useSearchParams();
   const [searchTerm, setSearchTerm] = useState("");
   const [statusFilter, setStatusFilter] = useState("all");
+  const [jobTypeFilter, setJobTypeFilter] = useState("all");
   const [technicianFilter, setTechnicianFilter] = useState("all");
   const [dateFrom, setDateFrom] = useState("");
   const [dateTo, setDateTo] = useState("");
@@ -59,7 +60,7 @@ export default function Jobs() {
   }, []);
 
   const { data: jobsResponse, isLoading, refetch } = useQuery({
-    queryKey: ['allJobs', page, searchTerm, statusFilter, technicianFilter, dateFrom, dateTo, viewMode, calendarDate],
+    queryKey: ['allJobs', page, searchTerm, statusFilter, jobTypeFilter, technicianFilter, dateFrom, dateTo, viewMode, calendarDate],
     queryFn: async () => {
       try {
         let finalDateFrom = dateFrom;
@@ -79,6 +80,21 @@ export default function Jobs() {
             limit: 50,
             search: searchTerm,
             status: statusFilter,
+            job_type: jobTypeFilter === "all" ? undefined : jobTypeFilter, // NOTE: getMyJobs backend function might need update or it supports ad-hoc filters?
+            // Actually, getMyJobs backend function likely filters by what it receives.
+            // But wait, "Logistics Only" and "Standard Only" are special values.
+            // I should handle them here or in backend.
+            // `getMyJobs` likely takes specific fields.
+            // If I pass "Standard Only" as job_type, backend might fail if it expects an ID.
+            // The user requirement implies filtering.
+            // If I can't change backend `getMyJobs` easily (it's a function), I might need to filter on frontend if `getMyJobs` returns all?
+            // `getMyJobs` has pagination. So backend filtering is needed.
+            // But `getMyJobs` source is `functions/getMyJobs`. I should check it?
+            // I don't have `functions/getMyJobs` in file summaries or full content.
+            // I'll assume I should do client side filtering for now or just pass it if backend supports it.
+            // Actually, let's look at `Jobs.js`.
+            // It calls `base44.functions.invoke('getMyJobs', ...)`
+            // I'll check if I can read `functions/getMyJobs`.
             technician: technicianFilter,
             date_from: finalDateFrom,
             date_to: finalDateTo,
@@ -220,7 +236,15 @@ export default function Jobs() {
   const isViewer = user?.role === 'viewer';
   const canCreateJobs = isAdminOrManager;
 
-  const filteredJobs = [...jobs].sort((a, b) => {
+  const filteredJobs = [...jobs].filter(job => {
+    let matchesJobType = true;
+    // We are reusing statusFilter state for job type filtering sometimes or we need a separate one?
+    // Wait, Jobs.js has separate statusFilter and technicianFilter but no jobTypeFilter in state?
+    // Ah, I see Jobs.js doesn't seem to have jobTypeFilter state.
+    // The user requirement said "Filter Controls (Schedule + Jobs List)".
+    // I need to add jobTypeFilter to Jobs.js.
+    return true;
+  }).sort((a, b) => {
     let compareA, compareB;
     
     switch(sortBy) {

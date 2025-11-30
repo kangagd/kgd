@@ -113,7 +113,16 @@ export default function CalendarView({ jobs, onSelectJob, currentDate, onDateCha
       job.job_number?.toString().includes(searchTerm);
 
     const matchesStatus = statusFilter === "all" || job.status === statusFilter;
-    const matchesJobType = jobTypeFilter === "all" || job.job_type_id === jobTypeFilter;
+    let matchesJobType = true;
+    if (jobTypeFilter === "all") {
+      matchesJobType = true;
+    } else if (jobTypeFilter === "Standard Only") {
+      matchesJobType = job.job_category === "Standard";
+    } else if (jobTypeFilter === "Logistics Only") {
+      matchesJobType = job.job_category === "Logistics";
+    } else {
+      matchesJobType = job.job_type_id === jobTypeFilter;
+    }
 
     return matchesSearch && matchesStatus && matchesJobType;
   });
@@ -239,8 +248,15 @@ export default function CalendarView({ jobs, onSelectJob, currentDate, onDateCha
                 </SelectTrigger>
                 <SelectContent>
                   <SelectItem value="all">All Job Types</SelectItem>
+                  <SelectItem value="Standard Only" className="font-medium">Standard Only</SelectItem>
+                  <SelectItem value="Logistics Only" className="font-medium">Logistics Only</SelectItem>
                   {jobTypes.map(jt => (
-                    <SelectItem key={jt.id} value={jt.id}>{jt.name}</SelectItem>
+                    <SelectItem key={jt.id} value={jt.id}>
+                      <div className="flex items-center gap-2">
+                        <div className="w-2 h-2 rounded-full" style={{ backgroundColor: jt.color }} />
+                        {jt.name}
+                      </div>
+                    </SelectItem>
                   ))}
                 </SelectContent>
               </Select>
@@ -275,6 +291,7 @@ export default function CalendarView({ jobs, onSelectJob, currentDate, onDateCha
           currentDate={currentDate}
           onJobClick={onSelectJob}
           onQuickBook={handleQuickBook}
+          jobTypes={jobTypes}
         />
       )}
 
@@ -284,6 +301,7 @@ export default function CalendarView({ jobs, onSelectJob, currentDate, onDateCha
           currentDate={currentDate}
           onJobClick={onSelectJob}
           onQuickBook={handleQuickBook}
+          jobTypes={jobTypes}
         />
       )}
 
@@ -293,6 +311,7 @@ export default function CalendarView({ jobs, onSelectJob, currentDate, onDateCha
           currentDate={currentDate}
           onJobClick={onSelectJob}
           onQuickBook={handleQuickBook}
+          jobTypes={jobTypes}
         />
       )}
 

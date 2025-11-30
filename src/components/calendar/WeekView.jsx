@@ -40,16 +40,9 @@ const statusColors = {
   completed: "bg-[#16A34A]",
 };
 
-const getJobTypeColor = (jobTypeName, allJobTypes) => {
-  if (!jobTypeName) return "bg-slate-500";
-  const index = allJobTypes.indexOf(jobTypeName);
-  return jobTypeColors[index % jobTypeColors.length];
-};
-
-const getJobTypeBgColor = (jobTypeName, allJobTypes) => {
-  if (!jobTypeName) return "bg-slate-50";
-  const index = allJobTypes.indexOf(jobTypeName);
-  return jobTypeColorsBg[index % jobTypeColorsBg.length];
+const getJobTypeColorInfo = (jobTypeId, jobTypes) => {
+  const jobType = jobTypes.find(jt => jt.id === jobTypeId);
+  return jobType ? { color: jobType.color, name: jobType.name, isLogistics: jobType.category === 'Logistics' } : { color: '#64748B', name: 'Unknown', isLogistics: false };
 };
 
 const getInitials = (name) => {
@@ -68,7 +61,7 @@ const getAvatarColor = (name) => {
   return avatarColors[index];
 };
 
-export default function WeekView({ jobs, currentDate, onJobClick, onQuickBook }) {
+export default function WeekView({ jobs, currentDate, onJobClick, onQuickBook, jobTypes = [] }) {
   const [draggedJob, setDraggedJob] = useState(null);
   const [dragOverCell, setDragOverCell] = useState(null);
   const [pendingUpdate, setPendingUpdate] = useState(null);
@@ -415,12 +408,21 @@ export default function WeekView({ jobs, currentDate, onJobClick, onQuickBook })
                                         </div>
                                       )}
 
-                                      {job.job_type_name && (
-                                        <Badge className="bg-[#EDE9FE] text-[#6D28D9] hover:bg-[#EDE9FE] border-0 font-semibold text-[9px] px-1.5 py-0.5 rounded truncate w-full justify-start">
-                                          <Briefcase className="w-2.5 h-2.5 mr-0.5 flex-shrink-0" />
-                                          <span className="truncate">{job.job_type_name}</span>
-                                        </Badge>
-                                      )}
+                                      {job.job_type_id && (() => {
+                                        const typeInfo = getJobTypeColorInfo(job.job_type_id, jobTypes);
+                                        return (
+                                          <Badge 
+                                            className="border-0 font-semibold text-[9px] px-1.5 py-0.5 rounded truncate w-full justify-start"
+                                            style={{ 
+                                              backgroundColor: `${typeInfo.color}20`, 
+                                              color: typeInfo.color 
+                                            }}
+                                          >
+                                            <div className="w-1.5 h-1.5 rounded-full mr-1 flex-shrink-0" style={{ backgroundColor: typeInfo.color }} />
+                                            <span className="truncate">{typeInfo.name}</span>
+                                          </Badge>
+                                        );
+                                      })()}
                                     </div>
                                   </div>
                                 </JobHoverCard>

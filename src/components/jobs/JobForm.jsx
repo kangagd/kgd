@@ -3,7 +3,7 @@ import { Card, CardHeader, CardTitle, CardContent, CardFooter } from "@/componen
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue, SelectGroup, SelectLabel } from "@/components/ui/select";
 import { ArrowLeft, Upload, X, FileText, Image as ImageIcon, Loader2, Plus, Sparkles } from "lucide-react";
 import { base44 } from "@/api/base44Client";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
@@ -664,11 +664,30 @@ export default function JobForm({ job, technicians, onSubmit, onCancel, isSubmit
                     <SelectValue placeholder="Select job type" />
                   </SelectTrigger>
                   <SelectContent>
-                    {jobTypes.map((jt) => (
-                      <SelectItem key={jt.id} value={jt.id}>
-                        {jt.name}
-                      </SelectItem>
-                    ))}
+                    <SelectGroup>
+                      <SelectLabel className="text-xs font-bold text-slate-500 uppercase tracking-wider px-2 py-1.5">Standard Job Types</SelectLabel>
+                      {jobTypes.filter(jt => jt.category === 'Standard').map((jt) => (
+                        <SelectItem key={jt.id} value={jt.id}>
+                          <div className="flex items-center gap-2">
+                            <div className="w-3 h-3 rounded-full" style={{ backgroundColor: jt.color }} />
+                            <span>{jt.name}</span>
+                          </div>
+                        </SelectItem>
+                      ))}
+                    </SelectGroup>
+                    <div className="my-1 border-t border-slate-100" />
+                    <SelectGroup>
+                      <SelectLabel className="text-xs font-bold text-slate-500 uppercase tracking-wider px-2 py-1.5">Logistics Job Types</SelectLabel>
+                      {jobTypes.filter(jt => jt.category === 'Logistics').map((jt) => (
+                        <SelectItem key={jt.id} value={jt.id}>
+                          <div className="flex items-center gap-2">
+                            <div className="w-3 h-3 rounded-full" style={{ backgroundColor: jt.color }} />
+                            <span>{jt.name}</span>
+                            <span className="text-[10px] px-1.5 py-0.5 bg-slate-100 text-slate-600 rounded-full">Logistics</span>
+                          </div>
+                        </SelectItem>
+                      ))}
+                    </SelectGroup>
                   </SelectContent>
                 </Select>
               </div>
