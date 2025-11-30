@@ -178,7 +178,7 @@ export default function ProjectDetails({ project: initialProject, onClose, onEdi
     queryKey: ['projectJobs', project.id],
     queryFn: async () => {
       const projectJobs = await base44.entities.Job.filter({ project_id: project.id });
-      return projectJobs.filter(job => !job.deleted_at);
+      return projectJobs.filter(job => !job.deleted_at && job.status !== 'Cancelled');
     },
     refetchInterval: 5000,
     enabled: !!project.id
