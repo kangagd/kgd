@@ -560,8 +560,10 @@ export default function Schedule() {
                   const cellJobs = getFilteredJobs((date) => isSameDay(date, day))
                     .filter(job => {
                       if (!job.assigned_to) return false;
-                      const assigned = Array.isArray(job.assigned_to) ? job.assigned_to : [job.assigned_to];
-                      return assigned.includes(tech.email);
+                      const assigned = (Array.isArray(job.assigned_to) ? job.assigned_to : [job.assigned_to])
+                        .map(e => e?.toLowerCase()?.trim());
+                      const techEmail = tech.email?.toLowerCase()?.trim();
+                      return assigned.includes(techEmail);
                     });
 
                   return (
@@ -609,7 +611,7 @@ export default function Schedule() {
             );
           })}
           
-          {/* Unassigned Row */}
+          {/* Unassigned / Other Row */}
           {technicianFilter === 'all' && (
             <div className="grid grid-cols-[200px_repeat(7,minmax(0,1fr))] border-b border-[#E5E7EB] last:border-b-0">
               <div className="p-3 sticky left-0 bg-white z-10 border-r border-[#E5E7EB] flex items-center gap-2 min-w-[200px]">
@@ -617,13 +619,27 @@ export default function Schedule() {
                   ?
                 </div>
                 <div className="truncate font-medium text-[#6B7280]">
-                  Unassigned
+                  Unassigned / Other
                 </div>
               </div>
               {weekDays.map(day => {
                 const dateStr = format(day, 'yyyy-MM-dd');
                 const cellJobs = getFilteredJobs((date) => isSameDay(date, day))
-                  .filter(job => !job.assigned_to || job.assigned_to.length === 0);
+                  .filter(job => {
+                    // Include if unassigned
+                    if (!job.assigned_to || job.assigned_to.length === 0) return true;
+                    
+                    // Also include if assigned to someone NOT in the active technicians list (e.g. an admin or non-field user)
+                    // This ensures no jobs are hidden
+                    const assignedEmails = (Array.isArray(job.assigned_to) ? job.assigned_to : [job.assigned_to])
+                      .map(e => e?.toLowerCase()?.trim());
+                    
+                    const isAssignedToActiveTech = activeTechs.some(t => 
+                      assignedEmails.includes(t.email?.toLowerCase()?.trim())
+                    );
+                    
+                    return !isAssignedToActiveTech;
+                  });
 
                 return (
                   <Droppable key={`unassigned-${dateStr}`} droppableId={`week-unassigned-${dateStr}`}>
