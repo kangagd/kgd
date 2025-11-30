@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useRef } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -17,6 +17,7 @@ import { toast } from "sonner";
 
 export default function ProjectSidebar({ project, jobs, onClose, onEdit, onDelete, canEdit, canDelete }) {
   const queryClient = useQueryClient();
+  const tasksPanelRef = useRef(null);
   const [uploadingMedia, setUploadingMedia] = useState(false);
 
   const updateProjectMutation = useMutation({
