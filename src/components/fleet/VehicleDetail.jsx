@@ -63,19 +63,60 @@ export default function VehicleDetail({ vehicle, onClose, onEdit }) {
         </div>
 
         <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
-          <TabsList>
+          <TabsList className="w-full justify-start overflow-x-auto">
+            <TabsTrigger value="overview">Overview</TabsTrigger>
             <TabsTrigger value="stock" className="gap-2">
               <Box className="w-4 h-4" />
-              Stock Inventory
+              Stock
             </TabsTrigger>
             <TabsTrigger value="requests" className="gap-2">
               <Truck className="w-4 h-4" />
-              Restock Requests
+              Requests
               {requests.filter(r => r.status === 'Pending').length > 0 && (
                 <Badge className="ml-1 h-5 px-1.5 bg-amber-500">{requests.filter(r => r.status === 'Pending').length}</Badge>
               )}
             </TabsTrigger>
+            <TabsTrigger value="activity">Activity</TabsTrigger>
           </TabsList>
+
+          <TabsContent value="overview">
+             <Card className="border-2 border-slate-200">
+               <CardHeader>
+                 <CardTitle>Vehicle Overview</CardTitle>
+               </CardHeader>
+               <CardContent className="space-y-4">
+                 <div className="grid grid-cols-2 gap-4">
+                    <div>
+                        <div className="text-sm text-slate-500">Name</div>
+                        <div className="font-medium">{vehicle.name}</div>
+                    </div>
+                    <div>
+                        <div className="text-sm text-slate-500">Registration</div>
+                        <div className="font-mono bg-slate-100 px-2 py-1 rounded inline-block">{vehicle.registration}</div>
+                    </div>
+                    <div>
+                        <div className="text-sm text-slate-500">Status</div>
+                        <Badge className={
+                            vehicle.status === 'Active' ? 'bg-green-100 text-green-800' : 
+                            vehicle.status === 'In Service' ? 'bg-amber-100 text-amber-800' : 'bg-red-100 text-red-800'
+                        }>
+                            {vehicle.status}
+                        </Badge>
+                    </div>
+                    <div>
+                        <div className="text-sm text-slate-500">Last Stock Audit</div>
+                        <div>{vehicle.last_stock_audit ? format(new Date(vehicle.last_stock_audit), 'MMM d, yyyy') : 'Never'}</div>
+                    </div>
+                 </div>
+                 <div>
+                    <div className="text-sm text-slate-500 mb-1">Notes</div>
+                    <div className="bg-slate-50 p-3 rounded-lg text-sm min-h-[100px]">
+                        {vehicle.notes || "No notes"}
+                    </div>
+                 </div>
+               </CardContent>
+             </Card>
+          </TabsContent>
 
           <TabsContent value="stock">
             <Card className="border-2 border-slate-200">
@@ -83,6 +124,12 @@ export default function VehicleDetail({ vehicle, onClose, onEdit }) {
                 <VehicleStockList vehicleId={vehicle.id} isTechnician={false} />
               </CardContent>
             </Card>
+          </TabsContent>
+
+          <TabsContent value="activity">
+             <div className="p-8 text-center bg-slate-50 border-2 border-dashed border-slate-200 rounded-xl">
+                <p className="text-slate-500">Recent vehicle activity logs will appear here.</p>
+             </div>
           </TabsContent>
 
           <TabsContent value="requests">

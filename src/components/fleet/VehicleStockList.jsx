@@ -87,7 +87,7 @@ export default function VehicleStockList({ vehicleId, isTechnician }) {
 
   const handleRestockClick = (item) => {
     setSelectedStock(item);
-    setRestockQuantity(Math.max(1, (item.minimum_target_quantity || 5) - item.quantity));
+    setRestockQuantity(Math.max(1, (item.ideal_quantity || 5) - item.quantity));
     setShowRestockModal(true);
   };
 
@@ -119,8 +119,17 @@ export default function VehicleStockList({ vehicleId, isTechnician }) {
       )}
 
       <div className="grid gap-3">
-        {filteredStock.map(item => {
-          const isLow = item.quantity <= (item.minimum_target_quantity || 0);
+        {filteredStock
+         .sort((a, b) => {
+             // Sort low stock to top for technicians, or always
+             const aLow = a.quantity < (a.ideal_quantity || 0);
+             const bLow = b.quantity < (b.ideal_quantity || 0);
+             if (aLow && !bLow) return -1;
+             if (!aLow && bLow) return 1;
+             return 0;
+         })
+         .map(item => {
+          const isLow = item.quantity < (item.ideal_quantity || 0);
           const pendingRequest = restockRequests.find(r => r.part_id === item.part_id);
 
           return (
@@ -134,42 +143,52 @@ export default function VehicleStockList({ vehicleId, isTechnician }) {
                   <div className="text-xs text-slate-500 mt-1 flex gap-3">
                     <span>SKU: {item.sku || '-'}</span>
                     <span>Loc: {item.location_in_vehicle || 'N/A'}</span>
-                    <span>Min: {item.minimum_target_quantity || 0}</span>
+                    <span className={isLow ? "text-red-600 font-medium" : ""}>Ideal: {item.ideal_quantity || 0}</span>
                   </div>
                 </div>
 
                 <div className="flex items-center gap-3">
-                  <div className="flex items-center bg-white rounded-lg border border-slate-200 h-9">
-                    <button 
-                      onClick={() => adjustStockMutation.mutate({ id: item.id, type: 'decrement' })}
-                      className="w-8 h-full flex items-center justify-center text-slate-500 hover:bg-slate-50 rounded-l-lg"
-                    >
-                      <Minus className="w-3 h-3" />
-                    </button>
-                    <div className="w-10 text-center font-semibold text-slate-900 text-sm">
-                      {item.quantity}
-                    </div>
-                    <button 
-                      onClick={() => adjustStockMutation.mutate({ id: item.id, type: 'increment' })}
-                      className="w-8 h-full flex items-center justify-center text-slate-500 hover:bg-slate-50 rounded-r-lg"
-                    >
-                      <Plus className="w-3 h-3" />
-                    </button>
+                  <div className="flex items-center bg-white rounded-lg border border-slate-200 h-9 overflow-hidden">
+                    {isTechnician ? (
+                        <div className="px-4 font-semibold text-slate-900 text-sm bg-slate-50 h-full flex items-center">
+                            {item.quantity}
+                        </div>
+                    ) : (
+                        <>
+                            <button 
+                            onClick={() => adjustStockMutation.mutate({ id: item.id, type: 'decrement' })}
+                            className="w-8 h-full flex items-center justify-center text-slate-500 hover:bg-slate-50 border-r border-slate-200"
+                            >
+                            <Minus className="w-3 h-3" />
+                            </button>
+                            <div className="w-10 text-center font-semibold text-slate-900 text-sm flex items-center justify-center">
+                            {item.quantity}
+                            </div>
+                            <button 
+                            onClick={() => adjustStockMutation.mutate({ id: item.id, type: 'increment' })}
+                            className="w-8 h-full flex items-center justify-center text-slate-500 hover:bg-slate-50 border-l border-slate-200"
+                            >
+                            <Plus className="w-3 h-3" />
+                            </button>
+                        </>
+                    )}
                   </div>
 
-                  <Button
-                    size="sm"
-                    variant={pendingRequest ? "outline" : "secondary"}
-                    disabled={!!pendingRequest}
-                    onClick={() => handleRestockClick(item)}
-                    className={pendingRequest ? "border-amber-200 text-amber-700 bg-amber-50" : ""}
-                  >
-                    {pendingRequest ? (
-                      <Truck className="w-4 h-4" />
-                    ) : (
-                      <RefreshCw className="w-4 h-4" />
-                    )}
-                  </Button>
+                  {isTechnician && (
+                      <Button
+                        size="sm"
+                        variant={pendingRequest ? "outline" : "secondary"}
+                        disabled={!!pendingRequest}
+                        onClick={() => handleRestockClick(item)}
+                        className={pendingRequest ? "border-amber-200 text-amber-700 bg-amber-50" : ""}
+                      >
+                        {pendingRequest ? (
+                          <Truck className="w-4 h-4" />
+                        ) : (
+                          <RefreshCw className="w-4 h-4" />
+                        )}
+                      </Button>
+                  )}
                 </div>
               </CardContent>
             </Card>
