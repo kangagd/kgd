@@ -268,6 +268,32 @@ export default function ProjectDetails({ project: initialProject, onClose, onEdi
                         </CardTitle>
                         </CardHeader>
                         <CardContent className="space-y-4">
+                        
+                        <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-4 p-3 bg-slate-50 rounded-lg border border-slate-100">
+                            <div>
+                                <span className="text-xs font-medium text-slate-500 uppercase">Current Stage</span>
+                                <div className="mt-1 font-medium text-slate-900">{project.status}</div>
+                            </div>
+                            <div>
+                                <span className="text-xs font-medium text-slate-500 uppercase">Changed At</span>
+                                <div className="mt-1 text-sm text-slate-700">
+                                    {project.stage_changed_at ? format(new Date(project.stage_changed_at), "MMM d, yyyy") : "-"}
+                                </div>
+                            </div>
+                            <div>
+                                <span className="text-xs font-medium text-slate-500 uppercase">Previous Stage</span>
+                                <div className="mt-1 text-sm text-slate-700">{project.previous_stage || "-"}</div>
+                            </div>
+                             <div>
+                                <span className="text-xs font-medium text-slate-500 uppercase">Time in Stage</span>
+                                <div className="mt-1 text-sm text-slate-700">
+                                    {project.stage_changed_at ? (() => {
+                                        const days = Math.floor((new Date() - new Date(project.stage_changed_at)) / (1000 * 60 * 60 * 24));
+                                        return `${days} day${days !== 1 ? 's' : ''}`;
+                                    })() : "-"}
+                                </div>
+                            </div>
+                        </div>
                         <RichTextField
                             label="Description"
                             value={description}
