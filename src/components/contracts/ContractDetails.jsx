@@ -5,7 +5,8 @@ import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { Badge } from "@/components/ui/badge";
-import { ArrowLeft, Edit, MapPin, Calendar, Clock, AlertTriangle, CheckCircle2, Building2, Sparkles, RefreshCw, Shield, Activity, Lightbulb } from "lucide-react";
+import { ArrowLeft, Edit, MapPin, Calendar, Clock, AlertTriangle, CheckCircle2, Building2, Sparkles, RefreshCw, Shield, Activity, Lightbulb, Timer } from "lucide-react";
+import SLAPerformanceTab from "./SLAPerformanceTab";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
 import { format, parseISO, isPast } from "date-fns";
@@ -133,6 +134,10 @@ export default function ContractDetails({ contract, onClose, onEdit }) {
           <TabsTrigger value="stations">Stations ({stations.length})</TabsTrigger>
           <TabsTrigger value="jobs">Jobs ({jobs.length})</TabsTrigger>
           <TabsTrigger value="projects">Projects ({projects.length})</TabsTrigger>
+          <TabsTrigger value="sla" className="data-[state=active]:bg-red-50 data-[state=active]:text-red-700">
+             <Timer className="w-4 h-4 mr-2 text-red-500" />
+             SLA Performance
+          </TabsTrigger>
         </TabsList>
 
         <TabsContent value="insights" className="space-y-6">
@@ -453,6 +458,10 @@ export default function ContractDetails({ contract, onClose, onEdit }) {
                     ))}
                 </div>
             )}
+        </TabsContent>
+
+        <TabsContent value="sla">
+            <SLAPerformanceTab contract={contract} jobs={jobs} />
         </TabsContent>
       </Tabs>
     </div>
