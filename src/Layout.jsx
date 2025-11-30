@@ -39,6 +39,7 @@ import { Toaster } from "@/components/ui/sonner";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { Dialog, DialogContent } from "@/components/ui/dialog";
 import GlobalSearchDropdown from "./components/common/GlobalSearchDropdown";
 import { RoleBadge } from "./components/common/PermissionsContext";
 import NotificationBell from "./components/notifications/NotificationBell";
