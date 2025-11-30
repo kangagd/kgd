@@ -60,16 +60,32 @@ export default function Schedule() {
     loadUser();
   }, []);
 
+  // Calculate fetch range (3 months centered on selected date) to ensure we have all jobs without overfetching
+  const fetchRange = React.useMemo(() => {
+    const start = subMonths(startOfMonth(selectedDate), 1);
+    const end = addMonths(endOfMonth(selectedDate), 1);
+    return {
+      start: format(start, 'yyyy-MM-dd'),
+      end: format(end, 'yyyy-MM-dd')
+    };
+  }, [selectedDate]);
+
   const { data: allJobs = [], isLoading } = useQuery({
-    queryKey: ['jobs'],
+    queryKey: ['jobs', fetchRange.start, fetchRange.end],
     queryFn: async () => {
       // Use backend function for robust permission handling
-      // Request 'calendar' mode to get more jobs (limit 1000) instead of default 50
-      const response = await base44.functions.invoke('getMyJobs', { view_mode: 'calendar' });
+      // Request 'calendar' mode with date range to ensure we get all relevant jobs
+      const response = await base44.functions.invoke('getMyJobs', { 
+        view_mode: 'calendar',
+        date_from: fetchRange.start,
+        date_to: fetchRange.end,
+        limit: 2000
+      });
       const jobs = response.data || [];
       // Sort manually since backend function might not sort
       return jobs.sort((a, b) => (b.scheduled_date || '').localeCompare(a.scheduled_date || ''));
     },
+    keepPreviousData: true
   });
 
   const { data: technicians = [] } = useQuery({
