@@ -238,7 +238,6 @@ export default function ProjectDetails({ project: initialProject, onClose, onEdi
                     <Card className="border-2 border-slate-100 shadow-sm">
                         <CardHeader className="pb-3">
                         <CardTitle className="text-lg font-semibold flex items-center gap-2">
-                            <FileText className="w-5 h-5 text-slate-500" />
                             Project Details
                         </CardTitle>
                         </CardHeader>
