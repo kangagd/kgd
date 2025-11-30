@@ -88,7 +88,7 @@ export default function Projects() {
     queryKey: ['allJobs'],
     queryFn: async () => {
       const jobs = await base44.entities.Job.list();
-      return jobs.filter(j => !j.deleted_at && j.status !== 'Cancelled');
+      return jobs.filter(j => !j.deleted_at);
     }
   });
 

@@ -64,11 +64,6 @@ export default function Archive() {
 
   const deletedJobs = allJobs.filter(job => job.deleted_at);
 
-  const { data: cancelledJobs = [], isLoading: cancelledJobsLoading } = useQuery({
-    queryKey: ['cancelledJobs'],
-    queryFn: () => base44.entities.Job.filter({ status: 'Cancelled', deleted_at: null }, '-updated_date')
-  });
-
   const { data: allCustomers = [], isLoading: customersLoading } = useQuery({
     queryKey: ['allCustomers'],
     queryFn: () => base44.entities.Customer.list('-deleted_at')
@@ -79,14 +74,6 @@ export default function Archive() {
   const restoreJobMutation = useMutation({
     mutationFn: (jobId) => base44.entities.Job.update(jobId, { deleted_at: null }),
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['allJobs'] });
-    }
-  });
-
-  const reopenJobMutation = useMutation({
-    mutationFn: (jobId) => base44.entities.Job.update(jobId, { status: 'Open' }),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['cancelledJobs'] });
       queryClient.invalidateQueries({ queryKey: ['allJobs'] });
     }
   });
@@ -121,8 +108,8 @@ export default function Archive() {
     return differenceInDays(expiryDate, new Date());
   };
 
-  const renderJobCard = (job, isCancelled = false) => {
-    const daysRemaining = isCancelled ? null : getDaysRemaining(job.deleted_at);
+  const renderJobCard = (job) => {
+    const daysRemaining = getDaysRemaining(job.deleted_at);
     const isExpiringSoon = daysRemaining <= 7;
 
     return (
@@ -147,43 +134,24 @@ export default function Archive() {
                 </div>
               )}
             </div>
-            {!isCancelled && (
-              <Badge 
-                variant="outline" 
-                className={`${isExpiringSoon ? 'bg-red-50 text-red-700 border-red-200' : 'bg-[hsl(32,25%,94%)] text-[hsl(25,10%,12%)] border-[hsl(32,15%,88%)]'} font-semibold border-2`}
-              >
-                {daysRemaining} days left
-              </Badge>
-            )}
-            {isCancelled && (
-              <Badge variant="outline" className="bg-red-50 text-red-700 border-red-200 font-semibold border-2">
-                Cancelled
-              </Badge>
-            )}
+            <Badge 
+              variant="outline" 
+              className={`${isExpiringSoon ? 'bg-red-50 text-red-700 border-red-200' : 'bg-[hsl(32,25%,94%)] text-[hsl(25,10%,12%)] border-[hsl(32,15%,88%)]'} font-semibold border-2`}
+            >
+              {daysRemaining} days left
+            </Badge>
           </div>
 
           <div className="flex gap-2 pt-3 border-t-2 border-[hsl(32,15%,88%)]">
-            {isCancelled ? (
-              <Button
-                onClick={() => reopenJobMutation.mutate(job.id)}
-                disabled={reopenJobMutation.isPending}
-                size="sm"
-                className="flex-1 bg-[#fae008] hover:bg-[#e5d007] text-[hsl(25,10%,12%)] font-semibold rounded-xl"
-              >
-                <RotateCcw className="w-4 h-4 mr-2" />
-                Reopen Job
-              </Button>
-            ) : (
-              <Button
-                onClick={() => restoreJobMutation.mutate(job.id)}
-                disabled={restoreJobMutation.isPending}
-                size="sm"
-                className="flex-1 bg-[#fae008] hover:bg-[#e5d007] text-[hsl(25,10%,12%)] font-semibold rounded-xl"
-              >
-                <RotateCcw className="w-4 h-4 mr-2" />
-                Restore
-              </Button>
-            )}
+            <Button
+              onClick={() => restoreJobMutation.mutate(job.id)}
+              disabled={restoreJobMutation.isPending}
+              size="sm"
+              className="flex-1 bg-[#fae008] hover:bg-[#e5d007] text-[hsl(25,10%,12%)] font-semibold rounded-xl"
+            >
+              <RotateCcw className="w-4 h-4 mr-2" />
+              Restore
+            </Button>
             <Button
               variant="destructive"
               size="sm"
@@ -271,10 +239,7 @@ export default function Archive() {
         <Tabs defaultValue="jobs" className="w-full">
           <TabsList className="mb-6">
             <TabsTrigger value="jobs">
-              Deleted Jobs ({deletedJobs.length})
-            </TabsTrigger>
-            <TabsTrigger value="cancelled">
-              Cancelled Jobs ({cancelledJobs.length})
+              Jobs ({deletedJobs.length})
             </TabsTrigger>
             <TabsTrigger value="customers">
               Customers ({deletedCustomers.length})
@@ -301,32 +266,7 @@ export default function Archive() {
               </Card>
             ) : (
               <div className="grid gap-4">
-                {deletedJobs.map(job => renderJobCard(job, false))}
-              </div>
-            )}
-          </TabsContent>
-
-          <TabsContent value="cancelled">
-            {cancelledJobsLoading ? (
-              <div className="grid gap-4">
-                {[1, 2, 3].map((i) => (
-                  <Card key={i} className="animate-pulse rounded-xl">
-                    <CardContent className="p-6">
-                      <div className="h-6 bg-[hsl(32,15%,88%)] rounded w-1/3 mb-4"></div>
-                      <div className="h-4 bg-[hsl(32,15%,88%)] rounded w-2/3"></div>
-                    </CardContent>
-                  </Card>
-                ))}
-              </div>
-            ) : cancelledJobs.length === 0 ? (
-              <Card className="p-12 text-center rounded-2xl border-2 border-[hsl(32,15%,88%)]">
-                <ArchiveIcon className="w-16 h-16 mx-auto text-[hsl(32,15%,88%)] mb-4" />
-                <h3 className="text-lg font-bold text-[hsl(25,10%,12%)] mb-2">No cancelled jobs</h3>
-                <p className="text-[hsl(25,8%,45%)]">Jobs with Cancelled status appear here</p>
-              </Card>
-            ) : (
-              <div className="grid gap-4">
-                {cancelledJobs.map(job => renderJobCard(job, true))}
+                {deletedJobs.map(renderJobCard)}
               </div>
             )}
           </TabsContent>

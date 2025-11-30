@@ -35,7 +35,7 @@ export default function Dashboard() {
     queryFn: () => base44.entities.Job.list('-scheduled_date'),
   });
 
-  const jobs = allJobs.filter(j => !j.deleted_at && j.status !== 'Cancelled');
+  const jobs = allJobs.filter(j => !j.deleted_at);
 
   const { data: checkIns = [] } = useQuery({
     queryKey: ['checkIns'],
