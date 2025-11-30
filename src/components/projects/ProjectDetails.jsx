@@ -583,31 +583,16 @@ export default function ProjectDetails({ project: initialProject, onClose, onEdi
                     }} />
                 </TabsContent>
 
-                <TabsContent value="photos" className="space-y-6">
-                <div className="flex justify-between items-center">
-                    <h3 className="text-lg font-semibold">Project Photos</h3>
+                <TabsContent value="photos" className="space-y-4">
                     <EditableFileUpload
                         files={project.image_urls || []}
                         onFilesChange={(urls) => updateProjectMutation.mutate({ field: 'image_urls', value: urls })}
                         accept="image/*"
                         multiple={true}
                         icon={ImageIcon}
-                        label="Upload Photos"
-                        emptyText="" 
+                        label="Project Photos"
+                        emptyText="No photos uploaded yet" 
                     />
-                </div>
-                <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-                    {images.map((url, idx) => (
-                    <div key={idx} className="relative group aspect-square bg-slate-100 rounded-lg overflow-hidden border">
-                        <img src={url} alt={`Project photo ${idx}`} className="w-full h-full object-cover" />
-                    </div>
-                    ))}
-                    {images.length === 0 && (
-                    <div className="col-span-full text-center py-12 text-slate-500">
-                        No photos uploaded yet
-                    </div>
-                    )}
-                </div>
                 </TabsContent>
 
                 <TabsContent value="notes" className="space-y-6">
