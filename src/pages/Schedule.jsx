@@ -506,7 +506,7 @@ export default function Schedule() {
         <div className="min-w-[1000px]">
           {/* Header Row: Days */}
           <div className="grid grid-cols-[200px_repeat(7,1fr)] border-b border-[#E5E7EB]">
-            <div className="p-3 bg-[#F9FAFB] font-semibold text-[#4B5563] sticky left-0 z-10 border-r border-[#E5E7EB]">
+            <div className="p-3 bg-[#F9FAFB] font-semibold text-[#4B5563] sticky left-0 z-10 border-r border-[#E5E7EB] min-w-[200px]">
               Technician
             </div>
             {weekDays.map(day => {
@@ -514,7 +514,7 @@ export default function Schedule() {
               return (
                 <div 
                   key={day.toISOString()} 
-                  className={`p-3 text-center font-medium border-r border-[#E5E7EB] last:border-r-0 ${
+                  className={`p-3 text-center font-medium border-r border-[#E5E7EB] last:border-r-0 whitespace-nowrap ${
                     isToday ? 'bg-blue-50 text-blue-700' : 'bg-[#F9FAFB] text-[#4B5563]'
                   }`}
                 >
@@ -528,7 +528,7 @@ export default function Schedule() {
           {activeTechs.map(tech => {
             return (
               <div key={tech.id} className="grid grid-cols-[200px_repeat(7,1fr)] border-b border-[#E5E7EB] last:border-b-0">
-                <div className="p-3 sticky left-0 bg-white z-10 border-r border-[#E5E7EB] flex items-center gap-2">
+                <div className="p-3 sticky left-0 bg-white z-10 border-r border-[#E5E7EB] flex items-center gap-2 min-w-[200px]">
                   <div className="w-8 h-8 rounded-full bg-[#F3F4F6] flex items-center justify-center text-sm font-bold text-[#6B7280]">
                     {(tech.full_name || tech.email).charAt(0).toUpperCase()}
                   </div>
@@ -594,7 +594,7 @@ export default function Schedule() {
           {/* Unassigned Row */}
           {technicianFilter === 'all' && (
             <div className="grid grid-cols-[200px_repeat(7,1fr)] border-b border-[#E5E7EB] last:border-b-0">
-              <div className="p-3 sticky left-0 bg-white z-10 border-r border-[#E5E7EB] flex items-center gap-2">
+              <div className="p-3 sticky left-0 bg-white z-10 border-r border-[#E5E7EB] flex items-center gap-2 min-w-[200px]">
                 <div className="w-8 h-8 rounded-full bg-slate-100 flex items-center justify-center text-sm font-bold text-slate-500">
                   ?
                 </div>
