@@ -31,7 +31,7 @@ export default function Organisations() {
 
   const { data: organisations = [], isLoading, refetch } = useQuery({
     queryKey: ['organisations'],
-    queryFn: () => base44.entities.Organisation.filter({ deleted_at: { $exists: false } }),
+    queryFn: () => base44.entities.Organisation.list(),
     refetchInterval: 15000, // Refetch every 15 seconds
   });
 
@@ -105,6 +105,8 @@ export default function Organisations() {
   };
 
   const filteredOrganisations = organisations.filter(org => {
+    if (org.deleted_at) return false;
+
     const matchesSearch = 
       org.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
       org.organisation_type?.toLowerCase().includes(searchTerm.toLowerCase()) ||
