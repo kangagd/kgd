@@ -232,6 +232,10 @@ export default function ProjectDetails({ project: initialProject, onClose, onEdi
                         <Clock className="w-4 h-4 mr-2" />
                         Warranty
                     </TabsTrigger>
+                    <TabsTrigger value="history" className="flex-1 whitespace-nowrap">
+                        <History className="w-4 h-4 mr-2" />
+                        Stage History
+                    </TabsTrigger>
                 </TabsList>
                 </div>
 
