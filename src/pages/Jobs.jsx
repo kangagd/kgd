@@ -356,7 +356,7 @@ export default function Jobs() {
             {canCreateJobs && (
               <Button
                 onClick={() => setShowForm(true)}
-                className="bg-[#FAE008] text-[#111827] hover:bg-[#E5CF07] font-semibold shadow-sm hover:shadow-md transition w-full md:w-auto h-10 px-4 text-sm rounded-xl"
+                className="w-full md:w-auto shadow-sm hover:shadow-md rounded-xl"
               >
                 <Plus className="w-4 h-4 mr-2" />
                 New Visit
@@ -404,7 +404,7 @@ export default function Jobs() {
               <Button
                 variant="outline"
                 onClick={() => setShowFilters(!showFilters)}
-                className="flex-shrink-0 h-10 px-3 border border-[#E5E7EB] hover:border-[#FAE008] hover:bg-[#FFFEF5] gap-2"
+                className="flex-shrink-0 gap-2"
               >
                 <Filter className="w-4 h-4" />
                 Filters

@@ -504,7 +504,7 @@ export default function Layout({ children, currentPageName }) {
                 <div className={`grid ${isCollapsed ? 'grid-cols-1' : 'grid-cols-2'} gap-2 mb-4 pb-4 border-b border-[#E5E7EB]`}>
                   <Button
                     onClick={() => navigate(createPageUrl("Jobs") + "?action=create")}
-                    className={`bg-[#FAE008] hover:bg-[#E5CF07] text-[#111827] font-semibold shadow-sm ${isCollapsed ? 'w-full px-2' : ''}`}
+                    className={`${isCollapsed ? 'w-full px-2' : ''}`}
                     title={isCollapsed ? "Create Job" : ""}
                   >
                     {isCollapsed ? (
@@ -518,7 +518,7 @@ export default function Layout({ children, currentPageName }) {
                   </Button>
                   <Button
                     onClick={() => navigate(createPageUrl("Projects") + "?action=create")}
-                    className={`bg-[#FAE008] hover:bg-[#E5CF07] text-[#111827] font-semibold shadow-sm ${isCollapsed ? 'w-full px-2' : ''}`}
+                    className={`${isCollapsed ? 'w-full px-2' : ''}`}
                     title={isCollapsed ? "Create Project" : ""}
                   >
                     {isCollapsed ? (
