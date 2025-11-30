@@ -125,6 +125,26 @@ export default function Customers() {
     }
   });
 
+  const detectDuplicatesMutation = useMutation({
+    mutationFn: async () => {
+       // This logic might need a backend function to iterate all customers if there are many.
+       // For now, let's iterate locally on the fetched customers if reasonable, or call backend.
+       // A backend function `detectAllDuplicates` would be better but I'll use the existing `checkDuplicates` iteratively on backend or just iterate here for now if list is small.
+       // Actually the user asked for "Backend function: detectDuplicates".
+       // I'll assume I should create/call a bulk detection or just trigger it for all.
+       // Let's add a backend function for bulk detection later if needed.
+       // For now, the create/update hooks handle it.
+       // I'll add a button to re-scan all if needed, but maybe not necessary if hooks work.
+       // Let's create a quick backend function to scan all.
+       await base44.functions.invoke('scanAllCustomerDuplicates');
+    },
+    onSuccess: () => {
+        queryClient.invalidateQueries({ queryKey: ['allCustomers'] });
+        refetch();
+        alert("Duplicate scan complete.");
+    }
+  });
+
   const deleteCustomerMutation = useMutation({
     mutationFn: (customerId) => base44.entities.Customer.update(customerId, { deleted_at: new Date().toISOString() }),
     onSuccess: () => {
