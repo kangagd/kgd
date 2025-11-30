@@ -125,21 +125,23 @@ const TasksPanel = forwardRef(({
     return (
       <div className="space-y-2">
         {/* Compact Header */}
-        <div className="flex items-center justify-between">
-          {tasks.length > 0 && (
-            <span className="text-[12px] text-[#6B7280]">
-              {openTasks.length} open
-            </span>
-          )}
-          <Button
-            size="sm"
-            variant="outline"
-            onClick={() => setShowCreateModal(true)}
-            className="h-7 text-xs"
-          >
-            <Plus className="w-3 h-3 mr-1" /> Add
-          </Button>
-        </div>
+        {!hideHeader && (
+          <div className="flex items-center justify-between">
+            {tasks.length > 0 && (
+              <span className="text-[12px] text-[#6B7280]">
+                {openTasks.length} open
+              </span>
+            )}
+            <Button
+              size="sm"
+              variant="outline"
+              onClick={() => setShowCreateModal(true)}
+              className="h-7 text-xs"
+            >
+              <Plus className="w-3 h-3 mr-1" /> Add
+            </Button>
+          </div>
+        )}
 
         {/* Compact Task List */}
         {isLoading ? (
