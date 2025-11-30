@@ -32,7 +32,6 @@ export default function Organisations() {
   const { data: organisations = [], isLoading, refetch } = useQuery({
     queryKey: ['organisations'],
     queryFn: () => base44.entities.Organisation.list(),
-    refetchInterval: 15000, // Refetch every 15 seconds
   });
 
   const { data: allCustomers = [] } = useQuery({
