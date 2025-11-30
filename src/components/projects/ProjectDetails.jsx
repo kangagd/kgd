@@ -523,47 +523,7 @@ export default function ProjectDetails({ project: initialProject, onClose, onEdi
                     </Card>
                     </div>
                     
-                    <div className="space-y-6">
-                    <Card className="border-2 border-slate-100 shadow-sm">
-                        <CardHeader className="pb-3">
-                        <CardTitle className="text-lg font-semibold flex items-center gap-2">
-                            <User className="w-5 h-5 text-slate-500" />
-                            Primary Contact
-                        </CardTitle>
-                        </CardHeader>
-                        <CardContent className="space-y-3">
-                        <div className="flex items-center gap-3">
-                            <div className="w-10 h-10 rounded-full bg-slate-100 flex items-center justify-center text-slate-500 font-bold text-lg">
-                            {getInitials(project.primary_contact_name || project.customer_name)}
-                            </div>
-                            <div>
-                            <div className="font-bold text-slate-900">{project.primary_contact_name || project.customer_name}</div>
-                            <div className="text-sm text-slate-500">Primary Contact</div>
-                            </div>
-                        </div>
-                        <div className="space-y-2 pt-2">
-                            {(project.primary_contact_phone || project.customer_phone) && (
-                            <a 
-                                href={`tel:${project.primary_contact_phone || project.customer_phone}`}
-                                className="flex items-center gap-2 text-sm text-slate-600 hover:text-blue-600 transition-colors p-2 hover:bg-slate-50 rounded-md"
-                            >
-                                <Phone className="w-4 h-4" />
-                                {project.primary_contact_phone || project.customer_phone}
-                            </a>
-                            )}
-                            {(project.primary_contact_email || project.customer_email) && (
-                            <a 
-                                href={`mailto:${project.primary_contact_email || project.customer_email}`}
-                                className="flex items-center gap-2 text-sm text-slate-600 hover:text-blue-600 transition-colors p-2 hover:bg-slate-50 rounded-md"
-                            >
-                                <Mail className="w-4 h-4" />
-                                {project.primary_contact_email || project.customer_email}
-                            </a>
-                            )}
-                        </div>
-                        </CardContent>
-                    </Card>
-                    </div>
+
                 </div>
                 </TabsContent>
 
