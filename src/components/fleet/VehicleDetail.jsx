@@ -1,205 +1,155 @@
 import React, { useState } from "react";
-import { Button } from "@/components/ui/button";
-import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { ArrowLeft, Download, RefreshCw, Plus, Settings, FileText } from "lucide-react";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { base44 } from "@/api/base44Client";
+import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
+import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
+import { ArrowLeft, User, Box, Truck, CheckCircle2, XCircle, AlertCircle } from "lucide-react";
 import VehicleStockList from "./VehicleStockList";
-import { format } from "date-fns";
-import StockAdjustmentModal from "./StockAdjustmentModal";
-import RestockRequestModal from "./RestockRequestModal";
-import AddVehicleStockModal from "./AddVehicleStockModal";
-import VehicleFormModal from "./VehicleFormModal";
+import { format, parseISO } from "date-fns";
+import { toast } from "sonner";
 
-export default function VehicleDetail({ vehicle, onBack }) {
+export default function VehicleDetail({ vehicle, onClose, onEdit }) {
   const [activeTab, setActiveTab] = useState("stock");
-  const [adjustmentItem, setAdjustmentItem] = useState(null);
-  const [showRestockModal, setShowRestockModal] = useState(false);
-  const [showAddStockModal, setShowAddStockModal] = useState(false);
-  const [showEditModal, setShowEditModal] = useState(false);
+  const queryClient = useQueryClient();
 
-  const { data: stock = [], isLoading: isStockLoading } = useQuery({
-    queryKey: ['vehicleStock', vehicle.id],
-    queryFn: () => base44.entities.VehicleStock.filter({ vehicle_id: vehicle.id })
+  const { data: requests = [] } = useQuery({
+    queryKey: ['vehicleRestockRequests', vehicle.id],
+    queryFn: () => base44.entities.RestockRequest.filter({ vehicle_id: vehicle.id }, '-created_at')
   });
 
-  const { data: movements = [], isLoading: isMovementsLoading } = useQuery({
-    queryKey: ['vehicleMovements', vehicle.id],
-    queryFn: () => base44.entities.VehicleStockMovement.filter({ vehicle_id: vehicle.id }, '-created_date', 50)
+  const handleRequestAction = useMutation({
+    mutationFn: async ({ id, status, logistics }) => {
+      // If logistics is true, we might create a job (simplified here just status update)
+      // In a real app, we'd call a backend function to create the logistics job
+      // Here we assume basic status update for UI demo
+      await base44.entities.RestockRequest.update(id, { status });
+      
+      if (status === 'Approved' && logistics) {
+        // Call backend to create job
+        await base44.functions.invoke('createRestockLogisticsJob', { requestId: id });
+      }
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['vehicleRestockRequests', vehicle.id] });
+      toast.success("Request updated");
+    }
   });
 
   return (
-    <div className="p-6 max-w-7xl mx-auto">
-      <Button variant="ghost" onClick={onBack} className="mb-4 pl-0 hover:bg-transparent hover:text-gray-600">
-        <ArrowLeft className="w-4 h-4 mr-2" /> Back to Fleet
-      </Button>
-
-      <div className="flex flex-col md:flex-row justify-between items-start gap-6 mb-8">
-        <div>
-          <h1 className="text-3xl font-bold text-gray-900">{vehicle.name}</h1>
-          <div className="flex items-center gap-3 mt-2 text-gray-600">
-            <span className="font-mono bg-gray-100 px-2 py-0.5 rounded">{vehicle.registration_plate}</span>
-            <span>•</span>
-            <span>{vehicle.status}</span>
-            <span>•</span>
-            <span>{vehicle.assigned_user_name || "Unassigned"}</span>
+    <div className="bg-white min-h-screen p-4 lg:p-10">
+      <div className="max-w-6xl mx-auto">
+        <div className="flex items-center gap-4 mb-6">
+          <Button variant="ghost" size="icon" onClick={onClose}>
+            <ArrowLeft className="w-5 h-5" />
+          </Button>
+          <div>
+            <h1 className="text-2xl font-bold text-slate-900">{vehicle.name}</h1>
+            <div className="flex items-center gap-3 mt-1 text-sm text-slate-500">
+              <Badge variant="outline" className="font-mono">{vehicle.registration}</Badge>
+              <span className="flex items-center gap-1">
+                <User className="w-3 h-3" />
+                {vehicle.assigned_to ? 'Assigned' : 'Unassigned'}
+              </span>
+              <Badge className={
+                vehicle.status === 'Active' ? 'bg-green-100 text-green-800' : 
+                vehicle.status === 'Maintenance' ? 'bg-amber-100 text-amber-800' : 'bg-slate-100 text-slate-800'
+              }>
+                {vehicle.status}
+              </Badge>
+            </div>
           </div>
         </div>
-        <div className="flex gap-2">
-          <Button variant="outline" onClick={() => setShowEditModal(true)}>
-            <Settings className="w-4 h-4 mr-2" />
-            Edit Vehicle
-          </Button>
-        </div>
-      </div>
 
-      <VehicleFormModal
-        open={showEditModal}
-        onClose={() => setShowEditModal(false)}
-        vehicle={vehicle}
-      />
+        <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
+          <TabsList>
+            <TabsTrigger value="stock" className="gap-2">
+              <Box className="w-4 h-4" />
+              Stock Inventory
+            </TabsTrigger>
+            <TabsTrigger value="requests" className="gap-2">
+              <Truck className="w-4 h-4" />
+              Restock Requests
+              {requests.filter(r => r.status === 'Pending').length > 0 && (
+                <Badge className="ml-1 h-5 px-1.5 bg-amber-500">{requests.filter(r => r.status === 'Pending').length}</Badge>
+              )}
+            </TabsTrigger>
+          </TabsList>
 
-      <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
-        <TabsList className="bg-white border border-gray-200 p-1 h-auto">
-          <TabsTrigger value="stock" className="px-6 py-2">Stock Inventory</TabsTrigger>
-          <TabsTrigger value="movements" className="px-6 py-2">History & Movements</TabsTrigger>
-          <TabsTrigger value="overview" className="px-6 py-2">Overview</TabsTrigger>
-        </TabsList>
-
-        <TabsContent value="stock">
-          <Card>
-            <CardHeader className="flex flex-row items-center justify-between">
-              <CardTitle>Current Inventory</CardTitle>
-              <div className="flex gap-2">
-                <Button variant="outline" size="sm" onClick={() => setShowAddStockModal(true)}>
-                  <Plus className="w-4 h-4 mr-2" />
-                  Add Item
-                </Button>
-                <Button variant="outline" size="sm" onClick={() => setShowRestockModal(true)}>
-                  <RefreshCw className="w-4 h-4 mr-2" />
-                  Generate Restock List
-                </Button>
-              </div>
-            </CardHeader>
-            <CardContent>
-              <VehicleStockList 
-                stock={stock} 
-                isLoading={isStockLoading}
-                onMarkUsed={() => {}} // Admin probably doesn't mark used often, or maybe they do
-                onAdjust={(item) => setAdjustmentItem(item)}
-              />
-            </CardContent>
-          </Card>
-        </TabsContent>
-
-        <TabsContent value="movements">
-          <Card>
-            <CardHeader>
-              <CardTitle>Stock History</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="rounded-md border">
-                <table className="w-full text-sm text-left">
-                  <thead className="bg-gray-50 text-gray-500 font-medium">
-                    <tr>
-                      <th className="p-3">Date</th>
-                      <th className="p-3">Item</th>
-                      <th className="p-3">Type</th>
-                      <th className="p-3 text-right">Change</th>
-                      <th className="p-3">User</th>
-                      <th className="p-3">Ref</th>
-                    </tr>
-                  </thead>
-                  <tbody className="divide-y">
-                    {movements.map((move) => (
-                      <tr key={move.id} className="hover:bg-gray-50">
-                        <td className="p-3 text-gray-600">
-                          {format(new Date(move.created_date), 'MMM d, HH:mm')}
-                        </td>
-                        <td className="p-3 font-medium text-gray-900">
-                          {/* We might need to join product name if not denormalized, but schema says it is linked via ID */}
-                          {/* Schema for movement doesn't have denormalized name, so we might need to fetch it or assume it's linked to price list item */}
-                          {/* Actually schema has product_id reference. For display we might need to fetch product details or join. */}
-                          {/* For now, display ID or handle gracefully. Wait, VehicleStock has name. */}
-                          {stock.find(s => s.product_id === move.product_id)?.product_name || "Item"}
-                        </td>
-                        <td className="p-3">
-                          <span className={`inline-flex items-center px-2 py-0.5 rounded text-xs font-medium ${
-                            move.movement_type === 'ConsumeOnJob' ? 'bg-red-100 text-red-800' :
-                            move.movement_type === 'RestockFromWarehouse' ? 'bg-green-100 text-green-800' :
-                            'bg-gray-100 text-gray-800'
-                          }`}>
-                            {move.movement_type.replace(/([A-Z])/g, ' $1').trim()}
-                          </span>
-                        </td>
-                        <td className={`p-3 text-right font-mono font-medium ${move.quantity_change > 0 ? 'text-green-600' : 'text-red-600'}`}>
-                          {move.quantity_change > 0 ? '+' : ''}{move.quantity_change}
-                        </td>
-                        <td className="p-3 text-gray-600">{move.performed_by_user_name}</td>
-                        <td className="p-3 text-gray-500 text-xs truncate max-w-[150px]">
-                          {move.reason}
-                        </td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-                {movements.length === 0 && (
-                  <div className="p-8 text-center text-gray-500">No history found</div>
-                )}
-              </div>
-            </CardContent>
-          </Card>
-        </TabsContent>
-
-        <TabsContent value="overview">
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            <Card>
-              <CardHeader>
-                <CardTitle>Vehicle Information</CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-4">
-                <div>
-                  <div className="text-sm text-gray-500">Name</div>
-                  <div className="font-medium">{vehicle.name}</div>
-                </div>
-                <div>
-                  <div className="text-sm text-gray-500">Internal Code</div>
-                  <div className="font-medium">{vehicle.internal_code || "-"}</div>
-                </div>
-                <div>
-                  <div className="text-sm text-gray-500">Primary Location</div>
-                  <div className="font-medium">{vehicle.primary_location || "-"}</div>
-                </div>
-                <div>
-                  <div className="text-sm text-gray-500">Notes</div>
-                  <div className="text-sm mt-1 bg-gray-50 p-3 rounded-lg">{vehicle.notes || "No notes"}</div>
-                </div>
+          <TabsContent value="stock">
+            <Card className="border-2 border-slate-200">
+              <CardContent className="p-6">
+                <VehicleStockList vehicleId={vehicle.id} isTechnician={false} />
               </CardContent>
             </Card>
-          </div>
-        </TabsContent>
-      </Tabs>
+          </TabsContent>
 
-      <StockAdjustmentModal
-        open={!!adjustmentItem}
-        onClose={() => setAdjustmentItem(null)}
-        item={adjustmentItem}
-        vehicleId={vehicle.id}
-      />
-
-      <RestockRequestModal
-        open={showRestockModal}
-        onClose={() => setShowRestockModal(false)}
-        vehicle={vehicle}
-        stock={stock}
-      />
-
-      <AddVehicleStockModal
-        open={showAddStockModal}
-        onClose={() => setShowAddStockModal(false)}
-        vehicleId={vehicle.id}
-      />
+          <TabsContent value="requests">
+            <Card className="border-2 border-slate-200">
+              <CardHeader>
+                <CardTitle className="text-lg">Restock Requests</CardTitle>
+              </CardHeader>
+              <CardContent className="p-0">
+                {requests.length === 0 ? (
+                  <div className="p-8 text-center text-slate-500">No requests found</div>
+                ) : (
+                  <div className="divide-y divide-slate-100">
+                    {requests.map(req => (
+                      <div key={req.id} className="p-4 flex items-center justify-between hover:bg-slate-50">
+                        <div className="flex items-start gap-3">
+                          <div className={`p-2 rounded-lg ${req.status === 'Pending' ? 'bg-amber-100 text-amber-600' : 'bg-slate-100 text-slate-500'}`}>
+                            <Box className="w-5 h-5" />
+                          </div>
+                          <div>
+                            <div className="font-medium text-slate-900">{req.part_name}</div>
+                            <div className="text-sm text-slate-600">
+                              Qty: {req.requested_quantity} • By {req.technician_name}
+                            </div>
+                            <div className="text-xs text-slate-400 mt-1">
+                              {format(parseISO(req.created_date || new Date().toISOString()), 'MMM d, h:mm a')}
+                            </div>
+                          </div>
+                        </div>
+                        
+                        <div className="flex items-center gap-3">
+                          {req.status === 'Pending' ? (
+                            <>
+                              <Button 
+                                size="sm" 
+                                onClick={() => handleRequestAction.mutate({ id: req.id, status: 'Approved', logistics: true })}
+                                className="bg-green-600 hover:bg-green-700 text-white"
+                              >
+                                Approve & Send
+                              </Button>
+                              <Button 
+                                size="sm" 
+                                variant="outline"
+                                onClick={() => handleRequestAction.mutate({ id: req.id, status: 'Rejected' })}
+                                className="text-red-600 hover:bg-red-50"
+                              >
+                                Reject
+                              </Button>
+                            </>
+                          ) : (
+                            <Badge variant="outline" className={
+                              req.status === 'Approved' ? 'bg-green-50 text-green-700 border-green-200' :
+                              req.status === 'Rejected' ? 'bg-red-50 text-red-700 border-red-200' :
+                              'bg-slate-50 text-slate-600'
+                            }>
+                              {req.status}
+                            </Badge>
+                          )}
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </CardContent>
+            </Card>
+          </TabsContent>
+        </Tabs>
+      </div>
     </div>
   );
 }

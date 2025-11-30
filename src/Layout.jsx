@@ -67,6 +67,7 @@ const secondaryNavigationItems = [
 const technicianNavigationItems = [
   { title: "Schedule", url: createPageUrl("Schedule"), icon: Calendar },
   { title: "Jobs", url: createPageUrl("Jobs"), icon: Briefcase },
+  { title: "My Vehicle", url: createPageUrl("MyVehicle"), icon: Truck },
   { title: "Price List", url: createPageUrl("PriceList"), icon: DollarSign },
   { title: "Profile", url: createPageUrl("UserProfile"), icon: UserCircle },
 ];
