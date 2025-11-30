@@ -64,7 +64,8 @@ export default function Schedule() {
     queryKey: ['jobs'],
     queryFn: async () => {
       // Use backend function for robust permission handling
-      const response = await base44.functions.invoke('getMyJobs');
+      // Request 'calendar' mode to get more jobs (limit 1000) instead of default 50
+      const response = await base44.functions.invoke('getMyJobs', { view_mode: 'calendar' });
       const jobs = response.data || [];
       // Sort manually since backend function might not sort
       return jobs.sort((a, b) => (b.scheduled_date || '').localeCompare(a.scheduled_date || ''));
