@@ -436,94 +436,15 @@ export default function Projects() {
           </div>
         )}
 
-        <div className="grid gap-4">
-          {filteredProjects.map((project) => {
-            const jobCount = getJobCount(project.id);
-            const nextJob = getNextJob(project.id);
-            const suburb = extractSuburb(project.address);
-            const scopeSummary = buildScopeSummary(project);
-
-            return (
-              <Card
-                key={project.id}
-                className="hover:shadow-lg transition-all duration-200 cursor-pointer hover:border-[#FAE008] border border-[#E5E7EB] rounded-xl relative"
-                onClick={() => {
-                  setSelectedProject(project);
-                  window.history.pushState({}, '', `${createPageUrl("Projects")}?projectId=${project.id}`);
-                }}
-              >
-                <Button
-                  variant="ghost"
-                  size="icon"
-                  className="absolute top-2 right-2 h-8 w-8 rounded-lg hover:bg-[#F3F4F6] z-10"
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    setModalProject(project);
-                  }}
-                >
-                  <Eye className="w-4 h-4 text-[#6B7280]" />
-                </Button>
-                <CardContent className="p-4">
-                  {/* Top row */}
-                  <div className="mb-3">
-                    <div className="flex items-center gap-2 mb-2 pr-8">
-                      <h3 className="text-[18px] font-semibold text-[#111827] leading-[1.2]">{project.title}</h3>
-                      <DuplicateBadge record={project} size="sm" />
-                    </div>
-                    <div className="flex items-center gap-2">
-                      {project.project_type && (
-                        <ProjectTypeBadge value={project.project_type} />
-                      )}
-                      <ProjectStatusBadge value={project.status} />
-                    </div>
-                    </div>
-
-                  {/* Second row */}
-                  <div className="flex items-center gap-4 mb-3 text-[#4B5563]">
-                    <div className="flex items-center gap-1.5">
-                      <User className="w-4 h-4" />
-                      <span className="text-[14px] leading-[1.4]">{project.customer_name}</span>
-                    </div>
-                    {suburb && (
-                      <div className="flex items-center gap-1.5">
-                        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
-                        </svg>
-                        <span className="text-[14px] leading-[1.4]">{suburb}</span>
-                      </div>
-                    )}
-                  </div>
-
-                  {/* Third row */}
-                  {project.stage && (
-                    <div className="flex items-center gap-3 mb-3">
-                      <Badge variant="outline" className="font-medium text-[12px] leading-[1.35] border-[#E5E7EB]">
-                        {project.stage.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase())}
-                      </Badge>
-                    </div>
-                  )}
-
-                  {/* Bottom row */}
-                  <div className="flex items-center justify-between text-[14px] leading-[1.4] pt-3 border-t border-[#E5E7EB]">
-                    <span className="text-[#4B5563] font-medium">
-                      Jobs: <span className="text-[#111827] font-semibold">{isJobsLoading ? '...' : jobCount}</span>
-                    </span>
-                    {nextJob && (
-                      <div className="text-[#4B5563]">
-                        <span className="font-medium">Next: </span>
-                        <span className="text-[#111827] font-medium">
-                          {new Date(nextJob.scheduled_date).toLocaleDateString('en-AU', { day: 'numeric', month: 'short' })}
-                          {nextJob.scheduled_time && ` · ${nextJob.scheduled_time}`}
-                          {nextJob.job_type_name && ` · ${nextJob.job_type_name}`}
-                        </span>
-                      </div>
-                    )}
-                  </div>
-                </CardContent>
-              </Card>
-            );
-          })}
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+          {filteredProjects.map((project) => (
+            <ProjectCard 
+              key={project.id} 
+              project={{ ...project, jobs: allJobs.filter(j => j.project_id === project.id && !j.deleted_at) }}
+              onClick={() => setModalProject(project)}
+              onViewDetails={(p) => setModalProject(p)}
+            />
+          ))}
         </div>
 
         <EntityModal

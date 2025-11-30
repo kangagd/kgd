@@ -1353,22 +1353,33 @@ Format as HTML bullet points using <ul> and <li> tags. Include only the most cri
         <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
             <div className="overflow-x-auto -mx-3 px-3 md:mx-0 md:px-0 mb-4">
               <TabsList className="w-full justify-start min-w-max md:min-w-0">
-                <TabsTrigger value="overview" className="flex-1 whitespace-nowrap">
-                  Overview
+                <TabsTrigger value="overview" className="flex-1 whitespace-nowrap">Overview</TabsTrigger>
+                <TabsTrigger value="jobs" className="flex-1 whitespace-nowrap">
+                  <Briefcase className="w-4 h-4 mr-2" />
+                  Jobs
                 </TabsTrigger>
-                <TabsTrigger value="emails" className="flex-1 whitespace-nowrap">Emails</TabsTrigger>
-                <TabsTrigger value="quoting" className="flex-1 whitespace-nowrap">Quoting</TabsTrigger>
-                <TabsTrigger value="parts" className="flex-1 whitespace-nowrap">Parts</TabsTrigger>
-                <TabsTrigger value="invoices" className="flex-1 whitespace-nowrap">Invoices</TabsTrigger>
-                {(user?.role === 'admin' || user?.role === 'manager') && (
-                  <TabsTrigger value="financials" className="flex-1 whitespace-nowrap">Financials</TabsTrigger>
-                )}
-                <TabsTrigger value="summary" className="flex-1 whitespace-nowrap">
-                  Summary
+                <TabsTrigger value="parts" className="flex-1 whitespace-nowrap">
+                  <Wrench className="w-4 h-4 mr-2" />
+                  Parts
                 </TabsTrigger>
                 {(user?.role === 'admin' || user?.role === 'manager') && (
-                  <TabsTrigger value="warranty" className="flex-1 whitespace-nowrap">Warranty</TabsTrigger>
+                  <TabsTrigger value="financials" className="flex-1 whitespace-nowrap">
+                    <DollarSign className="w-4 h-4 mr-2" />
+                    Financials
+                  </TabsTrigger>
                 )}
+                <TabsTrigger value="photos" className="flex-1 whitespace-nowrap">
+                  <ImageIcon className="w-4 h-4 mr-2" />
+                  Photos
+                </TabsTrigger>
+                <TabsTrigger value="notes" className="flex-1 whitespace-nowrap">
+                  <ClipboardCheck className="w-4 h-4 mr-2" />
+                  Notes
+                </TabsTrigger>
+                <TabsTrigger value="activity" className="flex-1 whitespace-nowrap">
+                  <History className="w-4 h-4 mr-2" />
+                  Activity
+                </TabsTrigger>
               </TabsList>
             </div>
 
