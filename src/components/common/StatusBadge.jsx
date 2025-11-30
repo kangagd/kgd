@@ -70,6 +70,14 @@ const BADGE_VARIANTS = {
     "Paid": "bg-emerald-100 text-emerald-700 hover:bg-emerald-200",
     "Overdue": "bg-red-100 text-red-700 hover:bg-red-200",
   },
+
+  // Project Financial Statuses
+  financialStatus: {
+    "50% payment made": "bg-yellow-100 text-yellow-800 hover:bg-yellow-200",
+    "30% payment made (install)": "bg-orange-100 text-orange-800 hover:bg-orange-200",
+    "Balance paid in full": "bg-green-100 text-green-800 hover:bg-green-200",
+    "No payments": "bg-slate-100 text-slate-700 hover:bg-slate-200",
+  },
   
   // Email Priority
   emailPriority: {
@@ -189,6 +197,10 @@ export function JobStatusBadge({ value, ...props }) {
 
 export function PaymentStatusBadge({ value, ...props }) {
   return <StatusBadge type="paymentStatus" value={value} {...props} />;
+}
+
+export function FinancialStatusBadge({ value, ...props }) {
+  return <StatusBadge type="financialStatus" value={value} {...props} />;
 }
 
 export function EmailPriorityBadge({ value, ...props }) {

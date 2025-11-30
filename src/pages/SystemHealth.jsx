@@ -111,7 +111,7 @@ export default function SystemHealth() {
                     </CardHeader>
                     <CardContent>
                         <div className="text-3xl font-bold text-amber-900">{health.staleProjects?.length || 0}</div>
-                        <p className="text-sm text-amber-700 mt-1">Projects inactive for > 60 days</p>
+                        <p className="text-sm text-amber-700 mt-1">Projects inactive for &gt; 60 days</p>
                     </CardContent>
                     <CardFooter>
                         <Button 
