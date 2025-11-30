@@ -48,24 +48,50 @@ Deno.serve(async (req) => {
             return Response.json({ success: true, project, message: 'Stage already set' });
         }
 
-        // 7. Load StageAutomationRules
-        // We assume one rule per stage name
+        // 7. Load StageAutomationRules for NEW stage
         const rules = await base44.asServiceRole.entities.StageAutomationRules.filter({ stage_name: new_stage });
         const rule = rules.length > 0 ? rules[0] : null;
 
-        // 12. Allow backward movement check
+        // 12. Check backward movement
         const oldIndex = STAGE_ORDER.indexOf(old_stage);
         const newIndex = STAGE_ORDER.indexOf(new_stage);
+        const isBackward = oldIndex !== -1 && newIndex !== -1 && newIndex < oldIndex;
         
-        // If stages are in the known list and we are moving backwards
-        if (oldIndex !== -1 && newIndex !== -1 && newIndex < oldIndex) {
-            // If rule exists and explicitly forbids backward movement
+        // If moving backwards
+        if (isBackward) {
+            // Check if target stage allows backward movement
             if (rule && rule.allow_backward_movement === false) {
                  return Response.json({ error: `Backward movement to '${new_stage}' is not allowed by automation rules.` }, { status: 400 });
             }
+
+            // Handle automation jobs from OLD stage (the one we are leaving)
+            // Find jobs created by the old stage's automation rule and put them on hold
+            const oldStageRules = await base44.asServiceRole.entities.StageAutomationRules.filter({ stage_name: old_stage });
+            const oldRule = oldStageRules.length > 0 ? oldStageRules[0] : null;
+
+            if (oldRule && oldRule.auto_create_job && oldRule.job_type_id) {
+                // Find open jobs of this type for this project
+                // We do this manually since filter might not support complex queries easily
+                const potentialJobs = await base44.asServiceRole.entities.Job.filter({
+                    project_id: project_id,
+                    job_type_id: oldRule.job_type_id
+                });
+
+                for (const job of potentialJobs) {
+                    if (job.status === 'Open' || job.status === 'Scheduled') {
+                        await base44.asServiceRole.entities.Job.update(job.id, { 
+                            status: 'On Hold', 
+                            notes: (job.notes || '') + `\n[System ${new Date().toISOString().split('T')[0]}] Placed On Hold due to stage regression from ${old_stage} to ${new_stage}.`
+                        });
+                    }
+                }
+            }
+            
+            // Note: We explicitly do NOT delete parts or logistics jobs as per requirement
         }
 
-        // 9. Validate Required Fields
+        // 9. Validate Required Fields (only for forward movement or generally?)
+        // Usually required fields are for *entering* a stage. We check it regardless of direction unless specified otherwise.
         if (rule && rule.auto_require_fields && rule.auto_require_fields.length > 0) {
             const missingFields = [];
             for (const field of rule.auto_require_fields) {
@@ -104,10 +130,40 @@ Deno.serve(async (req) => {
 
         let autoCreatedJobs = [];
 
-        // Automations
+        // Automations - Only run creation automations if NOT moving backward?
+        // Usually if you move backward, you don't want to re-trigger "forward" automations of the earlier stage 
+        // (e.g. re-create Initial Site Visit job when moving back to it).
+        // The requirement says: "When moving backward: ... Mark created automation jobs as 'on hold' instead of cancelling."
+        // It implies we handle the "cleanup" of the old stage.
+        // Does it imply we should run the "new stage" automations?
+        // If I move back to "Initial Site Visit" (which has auto_create_job=true), should I create a NEW job?
+        // Likely NOT, or check if one exists. 
+        // Common sense: Don't auto-create if moving backward, unless specifically desired. 
+        // But the prompt didn't explicitly say "Don't create jobs for the new stage".
+        // However, "Mark created automation jobs as 'on hold' instead of cancelling" refers to the OLD stage's jobs.
+        // Let's assume for safety we DON'T run creation automations on backward movement to avoid duplicates, 
+        // unless the user deleted the old ones.
+        // But if I move back to "Initial Site Visit", I probably want to do another visit.
+        // Let's look at the rule: "2. Initial Site Visit - auto_create_job: true".
+        // If I move back to it, I probably want a job.
+        // BUT, if I already have one (even completed), maybe I don't want another?
+        // Let's stick to: Run automations defined for the *new* stage (target), because that's what "entering a stage" implies.
+        // If the user moves back, they might want to re-do the step.
+        
+        // HOWEVER, the prompt says: "Mark created automation jobs as 'on hold' instead of cancelling." 
+        // This refers to the *abandoned* stage's jobs.
+        // So:
+        // 1. Handle old stage jobs (hold them).
+        // 2. Handle new stage jobs (create them if rule says so).
+        
         if (rule) {
             // 8. Auto Create Job
             if (rule.auto_create_job && rule.job_type_id) {
+                // Check if we should create it. 
+                // If moving backward, maybe we shouldn't? 
+                // The user didn't say "Don't create jobs when moving backward".
+                // So we will proceed with creation logic.
+                
                 // Fetch job type to get details if needed
                 const jobType = await base44.asServiceRole.entities.JobType.get(rule.job_type_id);
                 
@@ -150,9 +206,9 @@ Deno.serve(async (req) => {
 
             // 11. Auto Trigger Logistics
             if (rule.auto_trigger_logistics) {
-                // Example: Create a "Material Pickup" job if not exists
-                // We need a JobType for this, assume we find one or create a generic logistics job
-                // For this example, we'll look for a JobType named "Material Pickup" or similar
+                // Only trigger if we haven't done it already? 
+                // Or just create new ones?
+                // We'll create new ones as per standard logic.
                 
                 const logisticsJobTypes = await base44.asServiceRole.entities.JobType.filter({ category: "Logistics" });
                 // Prefer "Material Pickup" if available
