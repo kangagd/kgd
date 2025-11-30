@@ -116,6 +116,7 @@ export default function Layout({ children, currentPageName }) {
     }
   }, [location.pathname, location.search, currentPageName]);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+  const [isMobileSearchOpen, setIsMobileSearchOpen] = useState(false);
   const [testMode, setTestMode] = useState(() => 
     localStorage.getItem('testMode') || 'off'
   );
