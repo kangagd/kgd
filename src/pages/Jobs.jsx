@@ -36,6 +36,8 @@ export default function Jobs() {
   const [editingJob, setEditingJob] = useState(null);
   const [preselectedCustomerId, setPreselectedCustomerId] = useState(null);
   const [preselectedProjectId, setPreselectedProjectId] = useState(null);
+  const [preselectedPartId, setPreselectedPartId] = useState(null);
+  const [preselectedJobCategory, setPreselectedJobCategory] = useState(null);
   const [user, setUser] = useState(null);
   const [viewMode, setViewMode] = useState("list");
   const [calendarDate, setCalendarDate] = useState(new Date());
@@ -140,14 +142,18 @@ export default function Jobs() {
     const action = searchParams.get('action');
     const customerId = searchParams.get('customerId');
     const projectId = searchParams.get('projectId');
+    const partId = searchParams.get('partId');
+    const jobCategory = searchParams.get('jobCategory');
     const status = searchParams.get('status');
     const dateFromParam = searchParams.get('dateFrom');
     const dateToParam = searchParams.get('dateTo');
 
-    if (action === 'new' || action === 'create' || customerId || projectId) {
+    if (action === 'new' || action === 'create' || customerId || projectId || partId) {
       setShowForm(true);
       if (customerId) setPreselectedCustomerId(customerId);
       if (projectId) setPreselectedProjectId(projectId);
+      if (partId) setPreselectedPartId(partId);
+      if (jobCategory) setPreselectedJobCategory(jobCategory);
     }
 
     if (status) {
@@ -295,11 +301,15 @@ export default function Jobs() {
               setEditingJob(null);
               setPreselectedCustomerId(null);
               setPreselectedProjectId(null);
+              setPreselectedPartId(null);
+              setPreselectedJobCategory(null);
               setSearchParams({});
             }}
             isSubmitting={createJobMutation.isPending || updateJobMutation.isPending}
             preselectedCustomerId={preselectedCustomerId}
             preselectedProjectId={preselectedProjectId}
+            preselectedPartId={preselectedPartId}
+            preselectedJobCategory={preselectedJobCategory}
           />
         </div>
       </div>

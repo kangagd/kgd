@@ -16,6 +16,11 @@ Deno.serve(async (req) => {
             let jobData = { ...data };
 
             // Auto-link contract logic
+            // Link parts if provided
+            if (jobData.part_ids && jobData.part_ids.length > 0) {
+                // We will update parts after job creation to link them back
+            }
+
             if (jobData.customer_id) {
                 try {
                     const customer = await base44.asServiceRole.entities.Customer.get(jobData.customer_id);
@@ -51,6 +56,25 @@ Deno.serve(async (req) => {
             }
 
             job = await base44.asServiceRole.entities.Job.create(jobData);
+            
+            // Sync back to parts
+            if (jobData.part_ids && jobData.part_ids.length > 0) {
+                for (const partId of jobData.part_ids) {
+                    try {
+                        const part = await base44.asServiceRole.entities.Part.get(partId);
+                        if (part) {
+                            const currentLinks = part.linked_logistics_jobs || [];
+                            if (!currentLinks.includes(job.id)) {
+                                await base44.asServiceRole.entities.Part.update(partId, {
+                                    linked_logistics_jobs: [...currentLinks, job.id]
+                                });
+                            }
+                        }
+                    } catch (e) {
+                        console.error(`Failed to link part ${partId} to job ${job.id}`, e);
+                    }
+                }
+            }
         } else if (action === 'update') {
             previousJob = await base44.asServiceRole.entities.Job.get(id);
             if (!previousJob) return Response.json({ error: 'Job not found' }, { status: 404 });
