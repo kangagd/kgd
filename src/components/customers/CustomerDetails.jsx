@@ -71,6 +71,14 @@ export default function CustomerDetails({ customer, onClose, onEdit, onDelete })
                       Station
                     </Badge>
                   )}
+                  {contract && (
+                    <Link to={createPageUrl("Contracts") + `?contractId=${contract.id}`} onClick={(e) => e.stopPropagation()}>
+                         <Badge className="bg-indigo-50 text-indigo-700 border-indigo-200 border font-medium text-[12px] hover:bg-indigo-100 cursor-pointer flex items-center gap-1">
+                             <FileText className="w-3 h-3" />
+                             Contract: {contract.name}
+                         </Badge>
+                    </Link>
+                  )}
                 </div>
                 <div className="flex gap-2 mt-2 flex-wrap">
                   <StatusBadge type="status" value={customer.status} />

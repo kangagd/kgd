@@ -28,6 +28,11 @@ export default function ContractDetails({ contract, onClose, onEdit }) {
     queryFn: () => base44.entities.Job.filter({ contract_id: contract.id })
   });
 
+  const { data: projects = [] } = useQuery({
+    queryKey: ['contractProjects', contract.id],
+    queryFn: () => base44.entities.Project.filter({ contract_id: contract.id })
+  });
+
   const stations = dashboardData?.stations || [];
   const slaBreaches = dashboardData?.sla_breaches || [];
   const recentCompleted = dashboardData?.recent_completed || [];
@@ -48,16 +53,27 @@ export default function ContractDetails({ contract, onClose, onEdit }) {
               {contract.status}
             </Badge>
           </div>
-          <div className="flex gap-4 mt-2 text-sm text-gray-600">
+          <div className="flex flex-wrap gap-4 mt-2 text-sm text-gray-600 items-center">
+             {contract.organisation_name && (
+               <span className="flex items-center gap-1 font-medium text-gray-900">
+                 <Building2 className="w-4 h-4 text-gray-500" />
+                 {contract.organisation_name}
+               </span>
+             )}
             <span>Type: {contract.contract_type}</span>
             <span>•</span>
-            <span>Start: {contract.start_date}</span>
-            {contract.end_date && (
-              <>
-                <span>•</span>
-                <span>End: {contract.end_date}</span>
-              </>
-            )}
+            <div className="flex items-center gap-1">
+                <Calendar className="w-3.5 h-3.5" />
+                <span>{format(parseISO(contract.start_date), 'MMM d, yyyy')}</span>
+                {contract.end_date ? (
+                    <>
+                        <span>-</span>
+                        <span>{format(parseISO(contract.end_date), 'MMM d, yyyy')}</span>
+                    </>
+                ) : (
+                    <span className="italic ml-1">(Ongoing)</span>
+                )}
+            </div>
           </div>
         </div>
         <Button onClick={onEdit} variant="outline" className="border-2">
@@ -68,12 +84,38 @@ export default function ContractDetails({ contract, onClose, onEdit }) {
 
       <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
         <TabsList>
-          <TabsTrigger value="dashboard">Dashboard</TabsTrigger>
+          <TabsTrigger value="dashboard">Overview</TabsTrigger>
           <TabsTrigger value="stations">Stations ({stations.length})</TabsTrigger>
-          <TabsTrigger value="jobs">All Jobs ({jobs.length})</TabsTrigger>
+          <TabsTrigger value="jobs">Jobs ({jobs.length})</TabsTrigger>
+          <TabsTrigger value="projects">Projects ({projects.length})</TabsTrigger>
         </TabsList>
 
         <TabsContent value="dashboard" className="space-y-6">
+          <Card className="border-2 border-slate-200">
+             <CardHeader>
+               <CardTitle className="text-lg">Contract Details</CardTitle>
+             </CardHeader>
+             <CardContent className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div>
+                   <h4 className="text-sm font-medium text-gray-500 mb-1">SLA Response Time</h4>
+                   <p className="text-lg font-semibold text-gray-900">{contract.sla_response_time_hours ? `${contract.sla_response_time_hours} Hours` : 'N/A'}</p>
+                </div>
+                <div>
+                   <h4 className="text-sm font-medium text-gray-500 mb-1">Billing Model</h4>
+                   <p className="text-lg font-semibold text-gray-900">{contract.billing_model || 'N/A'}</p>
+                </div>
+                <div className="md:col-span-2">
+                   <h4 className="text-sm font-medium text-gray-500 mb-1">Service Coverage</h4>
+                   <p className="text-gray-900">{contract.service_coverage || 'No coverage details provided.'}</p>
+                </div>
+                {contract.notes && (
+                  <div className="md:col-span-2">
+                    <h4 className="text-sm font-medium text-gray-500 mb-1">Notes</h4>
+                    <p className="text-gray-700 whitespace-pre-wrap bg-slate-50 p-3 rounded-lg border">{contract.notes}</p>
+                  </div>
+                )}
+             </CardContent>
+          </Card>
           {/* KPI Cards */}
           <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
             <Card className="bg-blue-50 border-blue-200">
@@ -215,6 +257,35 @@ export default function ContractDetails({ contract, onClose, onEdit }) {
             onSelectJob={() => {}}
             onViewDetails={(job) => window.location.href = createPageUrl('Jobs') + `?jobId=${job.id}`}
           />
+        </TabsContent>
+        
+        <TabsContent value="projects">
+            {projects.length === 0 ? (
+                <div className="text-center py-12 bg-slate-50 rounded-xl border-2 border-dashed border-slate-200">
+                  <Building2 className="w-12 h-12 mx-auto text-slate-300 mb-3" />
+                  <p className="text-slate-500">No projects linked to this contract</p>
+                </div>
+            ) : (
+                <div className="grid gap-4">
+                    {projects.map(project => (
+                         <div 
+                            key={project.id} 
+                            className="bg-white border border-slate-200 rounded-xl p-4 hover:border-[#FAE008] hover:shadow-md transition-all cursor-pointer"
+                            onClick={() => window.location.href = createPageUrl('Projects') + `?projectId=${project.id}`}
+                         >
+                            <div className="flex justify-between items-start">
+                                <div>
+                                    <h3 className="font-semibold text-lg text-gray-900">{project.title}</h3>
+                                    <div className="text-sm text-gray-500 mt-1">
+                                        {project.project_type} • {project.status}
+                                    </div>
+                                </div>
+                                <Badge variant="outline">{project.status}</Badge>
+                            </div>
+                         </div>
+                    ))}
+                </div>
+            )}
         </TabsContent>
       </Tabs>
     </div>

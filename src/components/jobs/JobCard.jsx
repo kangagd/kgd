@@ -148,6 +148,11 @@ export default function JobCard({ job, onClick, onViewDetails }) {
               {job.product && (
                 <ProductTypeBadge value={job.product} className="pointer-events-none" />
               )}
+              {job.contract_id && (
+                 <Badge variant="outline" className="bg-purple-50 text-purple-700 border-purple-200 text-[10px] px-2 py-0.5 flex items-center gap-1">
+                     Contract
+                 </Badge>
+              )}
             </div>
             
             {/* Assigned Technicians */}
