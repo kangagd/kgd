@@ -346,6 +346,15 @@ export default function ProjectDetails({ project: initialProject, onClose, onEdi
         </Card>
       </div>
 
+      {/* Mark as Lost Modal */}
+      <MarkAsLostModal
+        open={showLostModal}
+        onClose={() => setShowLostModal(false)}
+        onConfirm={handleMarkAsLost}
+        openJobsCount={openJobsCount}
+        isSubmitting={updateProjectMutation.isPending}
+      />
+
       {/* AI Context Modal */}
       <Dialog open={showAIContextModal} onOpenChange={setShowAIContextModal}>
         <DialogContent className="max-w-md">
