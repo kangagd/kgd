@@ -7,7 +7,7 @@ import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Checkbox } from "@/components/ui/checkbox";
-import { Plus, Search, User, AlertTriangle } from "lucide-react";
+import { Plus, Search, User, AlertTriangle, GitMerge } from "lucide-react";
 import CustomerForm from "../components/customers/CustomerForm";
 import CustomerDetails from "../components/customers/CustomerDetails";
 import CustomerCard from "../components/customers/CustomerCard";
@@ -15,6 +15,7 @@ import EntityModal from "../components/common/EntityModal.jsx";
 import CustomerModalView from "../components/customers/CustomerModalView";
 import { createPageUrl } from "@/utils";
 import { DuplicateBadge } from "../components/common/DuplicateWarningCard";
+import DuplicateReviewModal from "../components/customers/DuplicateReviewModal";
 
 export default function Customers() {
   const [user, setUser] = useState(null);
