@@ -563,7 +563,14 @@ export default function ProjectForm({ project, onSubmit, onCancel, isSubmitting 
       </Card>
 
       <Dialog open={showNewCustomerDialog} onOpenChange={setShowNewCustomerDialog}>
-        <DialogContent className="rounded-2xl border-2 border-slate-200">
+        <DialogContent 
+          className="rounded-2xl border-2 border-slate-200"
+          onInteractOutside={(e) => {
+            if (e.target.closest('.pac-container')) {
+              e.preventDefault();
+            }
+          }}
+        >
           <DialogHeader>
             <DialogTitle className="text-[22px] font-semibold text-[#111827] leading-[1.2]">Add New Customer</DialogTitle>
           </DialogHeader>
