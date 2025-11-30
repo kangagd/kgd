@@ -96,6 +96,17 @@ Deno.serve(async (req) => {
                     }
                 }
             }
+
+            // Log creation
+            await base44.asServiceRole.entities.ActivityLog.create({
+                entity_type: 'Job',
+                entity_id: job.id,
+                action: 'create',
+                after_data: job,
+                user_email: user.email,
+                user_name: user.full_name,
+                details: `Created Job #${job.job_number}`
+            });
         } else if (action === 'update') {
             previousJob = await base44.asServiceRole.entities.Job.get(id);
             if (!previousJob) return Response.json({ error: 'Job not found' }, { status: 404 });
@@ -122,9 +133,34 @@ Deno.serve(async (req) => {
                     }
                  }
             }
+
+            // Log update
+            await base44.asServiceRole.entities.ActivityLog.create({
+                entity_type: 'Job',
+                entity_id: id,
+                action: 'update',
+                before_data: previousJob,
+                after_data: job,
+                user_email: user.email,
+                user_name: user.full_name,
+                details: `Updated Job #${job.job_number || previousJob.job_number}`
+            });
         } else if (action === 'delete') {
              // Soft delete usually
+             const beforeDelete = await base44.asServiceRole.entities.Job.get(id);
              await base44.asServiceRole.entities.Job.update(id, { deleted_at: new Date().toISOString() });
+             
+             // Log delete
+             await base44.asServiceRole.entities.ActivityLog.create({
+                entity_type: 'Job',
+                entity_id: id,
+                action: 'delete',
+                before_data: beforeDelete,
+                user_email: user.email,
+                user_name: user.full_name,
+                details: `Deleted Job #${beforeDelete.job_number}`
+            });
+
              return Response.json({ success: true });
         } else {
             return Response.json({ error: 'Invalid action' }, { status: 400 });
