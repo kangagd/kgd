@@ -480,7 +480,11 @@ export default function ProjectDetails({ project: initialProject, onClose, onEdi
                         <Sparkles className="w-3.5 h-3.5 text-indigo-500" />
                         AI Overview
                     </TabsTrigger>
-                    <TabsTrigger value="overview" className="flex-1 whitespace-nowrap">Summary</TabsTrigger>
+                    <TabsTrigger value="dashboard" className="flex-1 whitespace-nowrap gap-2">
+                        <Target className="w-3.5 h-3.5 text-emerald-500" />
+                        Dashboard
+                    </TabsTrigger>
+                    <TabsTrigger value="overview" className="flex-1 whitespace-nowrap">Overview</TabsTrigger>
                     <TabsTrigger value="parts" className="flex-1 whitespace-nowrap">
                     <Wrench className="w-4 h-4 mr-2" />
                     Parts
@@ -514,10 +518,19 @@ export default function ProjectDetails({ project: initialProject, onClose, onEdi
                     />
                 </TabsContent>
 
+                <TabsContent value="dashboard" className="space-y-6">
+                    <ProjectSummary 
+                        project={project} 
+                        onUpdate={() => {
+                            queryClient.invalidateQueries({ queryKey: ['project', project.id] });
+                        }} 
+                    />
+                </TabsContent>
+
                 <TabsContent value="overview" className="space-y-6">
                     {/* Contract Banner */}
                     {project.contract_id && (
-                        <div className="bg-purple-50 border border-purple-200 rounded-lg p-4 flex items-center justify-between mb-6">
+                        <div className="bg-purple-50 border border-purple-200 rounded-lg p-4 flex items-center justify-between">
                             <div className="flex items-center gap-3">
                                 <div className="bg-purple-100 p-2 rounded-full">
                                     <FileText className="w-5 h-5 text-purple-600" />
@@ -535,12 +548,34 @@ export default function ProjectDetails({ project: initialProject, onClose, onEdi
                         </div>
                     )}
 
-                    <ProjectSummary 
-                        project={project} 
-                        onUpdate={() => {
-                            queryClient.invalidateQueries({ queryKey: ['project', project.id] });
-                        }} 
-                    />
+                    <div className="w-full">
+                        <div className="space-y-6">
+                            <Card className="border-2 border-slate-100 shadow-sm">
+                                <CardHeader className="pb-3">
+                                    <CardTitle className="text-lg font-semibold flex items-center gap-2">
+                                        <FileText className="w-5 h-5 text-slate-500" />
+                                        Project Overview
+                                    </CardTitle>
+                                </CardHeader>
+                                <CardContent className="space-y-4">
+                                    <RichTextField
+                                        label="Description"
+                                        value={description}
+                                        onChange={setDescription}
+                                        onBlur={handleDescriptionBlur}
+                                        placeholder="Detailed description of the project..."
+                                    />
+                                    <RichTextField
+                                        label="Internal Notes"
+                                        value={summary}
+                                        onChange={setSummary}
+                                        onBlur={handleSummaryBlur}
+                                        placeholder="Internal notes or summary..."
+                                    />
+                                </CardContent>
+                            </Card>
+                        </div>
+                    </div>
                 </TabsContent>
 
 

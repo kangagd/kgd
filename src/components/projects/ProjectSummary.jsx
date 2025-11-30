@@ -53,35 +53,7 @@ export default function ProjectSummary({ project, onUpdate }) {
                 }} 
             />
 
-            <Collapsible defaultOpen className="border border-slate-200 rounded-lg bg-white shadow-sm">
-                <CollapsibleTrigger className="w-full">
-                    <CardHeader className="bg-slate-50 px-4 py-3 border-b border-slate-100 flex flex-row items-center justify-between">
-                        <div className="flex items-center gap-3">
-                            <FileText className="w-5 h-5 text-slate-500" />
-                            <CardTitle className="text-base font-semibold text-slate-800">Description & Notes</CardTitle>
-                        </div>
-                        <ChevronDown className="w-4 h-4 text-slate-400" />
-                    </CardHeader>
-                </CollapsibleTrigger>
-                <CollapsibleContent>
-                    <CardContent className="p-4 space-y-4">
-                        <RichTextField
-                            label="Project Description"
-                            value={data.project.description || ""}
-                            onChange={() => {}} // handled by blur
-                            onBlur={handleDescriptionUpdate}
-                            placeholder="Description..."
-                        />
-                        <RichTextField
-                            label="Internal Summary / Notes"
-                            value={data.project.summary || ""}
-                            onChange={() => {}} // handled by blur
-                            onBlur={handleNotesUpdate}
-                            placeholder="Internal notes..."
-                        />
-                    </CardContent>
-                </CollapsibleContent>
-            </Collapsible>
+
 
             <JobOverviewSection 
                 jobs={data.jobs} 
