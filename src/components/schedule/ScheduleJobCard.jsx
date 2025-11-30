@@ -59,15 +59,9 @@ export default function ScheduleJobCard({ job, onClick, onAddressClick, onProjec
           {job.address_full && (
             <div className="flex items-start gap-2">
               <MapPin className="w-3.5 h-3.5 mt-0.5 flex-shrink-0" />
-              <button
-                onClick={(e) => {
-                  e.stopPropagation();
-                  onAddressClick(job);
-                }}
-                className="text-[#2563EB] hover:underline text-left truncate"
-              >
+              <span className="text-[#4B5563] text-left truncate">
                 {job.address_full}
-              </button>
+              </span>
             </div>
           )}
           {job.project_id && job.project_name && (
@@ -105,6 +99,29 @@ export default function ScheduleJobCard({ job, onClick, onAddressClick, onProjec
             />
           </div>
         )}
+      </div>
+
+      {/* Quick Actions Footer */}
+      <div className="grid grid-cols-2 gap-2 mt-4 pt-3 border-t border-[#E5E7EB]">
+        <button
+          onClick={(e) => {
+            e.stopPropagation();
+            window.location.href = `tel:${job.customer_phone}`;
+          }}
+          className="flex items-center justify-center gap-2 py-2 text-sm font-medium text-[#111827] bg-[#F3F4F6] hover:bg-[#E5E7EB] rounded-lg transition-colors"
+          disabled={!job.customer_phone}
+        >
+          Call
+        </button>
+        <button
+          onClick={(e) => {
+            e.stopPropagation();
+            onAddressClick(job);
+          }}
+          className="flex items-center justify-center gap-2 py-2 text-sm font-medium text-white bg-[#111827] hover:bg-[#1F2937] rounded-lg transition-colors"
+        >
+          Navigate
+        </button>
       </div>
     </Card>
   );
