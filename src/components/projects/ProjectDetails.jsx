@@ -52,6 +52,7 @@ import InitialVisitSummary from "./InitialVisitSummary";
 import MarkAsLostModal from "./MarkAsLostModal";
 import LinkInvoiceModal from "../invoices/LinkInvoiceModal";
 import ProjectChat from "./ProjectChat";
+import ActivityTimeline from "../common/ActivityTimeline";
 import ProjectCard from "./ProjectCard";
 import AIProjectOverview from "./AIProjectOverview";
 import JobCard from "../jobs/JobCard";
@@ -652,7 +653,16 @@ export default function ProjectDetails({ project: initialProject, onClose, onEdi
                 </TabsContent>
 
                 <TabsContent value="activity" className="space-y-6">
-                <ProjectChangeHistoryModal projectId={project.id} inline={true} />
+                    <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                        <div>
+                            <h3 className="font-semibold text-lg mb-4">Activity Log</h3>
+                            <ActivityTimeline entityType="Project" entityId={project.id} />
+                        </div>
+                        <div>
+                            <h3 className="font-semibold text-lg mb-4">Team Chat</h3>
+                            <ProjectChat projectId={project.id} />
+                        </div>
+                    </div>
                 </TabsContent>
             </Tabs>
           </CardContent>

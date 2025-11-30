@@ -87,15 +87,9 @@ export default function Customers() {
 
   const createCustomerMutation = useMutation({
     mutationFn: async (data) => {
-      const newCustomer = await base44.entities.Customer.create(data);
-      // Run duplicate check and update the record with flags
-      await base44.functions.invoke('checkDuplicates', {
-        entity_type: 'Customer',
-        record: newCustomer,
-        exclude_id: newCustomer.id,
-        auto_update: true
-      });
-      return newCustomer;
+      const res = await base44.functions.invoke('manageCustomer', { action: 'create', data });
+      if (res.data?.error) throw new Error(res.data.error);
+      return res.data.customer;
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['allCustomers'] });
@@ -107,15 +101,9 @@ export default function Customers() {
 
   const updateCustomerMutation = useMutation({
     mutationFn: async ({ id, data }) => {
-      const updated = await base44.entities.Customer.update(id, data);
-      // Run duplicate check and update the record with flags
-      await base44.functions.invoke('checkDuplicates', {
-        entity_type: 'Customer',
-        record: { ...data, id },
-        exclude_id: id,
-        auto_update: true
-      });
-      return updated;
+      const res = await base44.functions.invoke('manageCustomer', { action: 'update', id, data });
+      if (res.data?.error) throw new Error(res.data.error);
+      return res.data.customer;
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['allCustomers'] });
@@ -141,7 +129,11 @@ export default function Customers() {
   });
 
   const deleteCustomerMutation = useMutation({
-    mutationFn: (customerId) => base44.entities.Customer.update(customerId, { deleted_at: new Date().toISOString() }),
+    mutationFn: async (customerId) => {
+        const res = await base44.functions.invoke('manageCustomer', { action: 'delete', id: customerId, data: { deleted_at: new Date().toISOString() } });
+        if (res.data?.error) throw new Error(res.data.error);
+        return res.data;
+    },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['allCustomers'] });
       refetch();

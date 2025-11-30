@@ -21,6 +21,9 @@ import {
 } from "@/components/ui/alert-dialog";
 import TasksPanel from "../tasks/TasksPanel";
 import { Badge } from "@/components/ui/badge";
+import ActivityTimeline from "../common/ActivityTimeline";
+import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
+import { History, ClipboardList } from "lucide-react";
 
 
 
@@ -245,55 +248,79 @@ export default function CustomerDetails({ customer, onClose, onEdit, onDelete })
             </div>
           )}
 
-          {/* Tasks Panel */}
-          <div className="bg-white rounded-xl border-2 border-slate-200 p-4">
-            <TasksPanel
-              entityType="customer"
-              entityId={customer.id}
-              entityName={customer.name}
-            />
-          </div>
+          <Tabs defaultValue="jobs" className="w-full">
+            <TabsList className="w-full justify-start mb-4">
+                <TabsTrigger value="jobs" className="flex-1">
+                    <Briefcase className="w-4 h-4 mr-2" />
+                    Jobs ({jobs.length})
+                </TabsTrigger>
+                <TabsTrigger value="tasks" className="flex-1">
+                    <ClipboardList className="w-4 h-4 mr-2" />
+                    Tasks
+                </TabsTrigger>
+                <TabsTrigger value="activity" className="flex-1">
+                    <History className="w-4 h-4 mr-2" />
+                    Activity
+                </TabsTrigger>
+            </TabsList>
 
-          <div className="pt-4 border-t-2 border-slate-200">
-            <div className="flex items-center justify-between mb-4">
-              <h3 className="text-[14px] font-semibold text-[#111827] leading-[1.4]">Job History ({jobs.length})</h3>
-              <Link to={createPageUrl("Jobs") + `?action=new&customer_id=${customer.id}`}>
-                <Button size="sm" variant="outline" className="border-2 font-semibold hover:bg-slate-100 rounded-xl">
-                  <Plus className="w-4 h-4 mr-2" />
-                  New Job
-                </Button>
-              </Link>
-            </div>
+            <TabsContent value="jobs">
+                <div className="flex items-center justify-end mb-4">
+                <Link to={createPageUrl("Jobs") + `?action=new&customer_id=${customer.id}`}>
+                    <Button size="sm" variant="outline" className="border-2 font-semibold hover:bg-slate-100 rounded-xl">
+                    <Plus className="w-4 h-4 mr-2" />
+                    New Job
+                    </Button>
+                </Link>
+                </div>
 
-            {jobs.length === 0 ? (
-              <div className="text-center py-12 text-slate-500">
-                <Briefcase className="w-12 h-12 mx-auto mb-3 text-slate-300" />
-                <p className="text-[14px] font-normal leading-[1.4]">No jobs yet</p>
-              </div>
-            ) : (
-              <div className="space-y-3">
-                {jobs.map((job) => (
-                  <Link 
-                    key={job.id} 
-                    to={createPageUrl("Jobs") + `?id=${job.id}`}
-                    className="block p-4 bg-white border-2 border-slate-200 rounded-xl hover:border-[#fae008] hover:shadow-md transition-all"
-                  >
-                    <div className="flex items-start justify-between mb-2">
-                      <div className="flex-1 min-w-0">
-                        <h4 className="text-[16px] font-medium text-[#111827] leading-[1.4]">Job #{job.job_number}</h4>
-                              <p className="text-[14px] text-slate-600 leading-[1.4] mt-1 font-normal">{job.address}</p>
-                            </div>
-                            <JobStatusBadge value={job.status} />
-                    </div>
-                    <div className="text-[12px] text-slate-600 leading-[1.35] font-normal">
-                      {job.scheduled_date && format(parseISO(job.scheduled_date), 'MMM d, yyyy')}
-                      {job.scheduled_time && ` at ${job.scheduled_time}`}
-                    </div>
-                  </Link>
-                ))}
-              </div>
-            )}
-          </div>
+                {jobs.length === 0 ? (
+                <div className="text-center py-12 text-slate-500">
+                    <Briefcase className="w-12 h-12 mx-auto mb-3 text-slate-300" />
+                    <p className="text-[14px] font-normal leading-[1.4]">No jobs yet</p>
+                </div>
+                ) : (
+                <div className="space-y-3">
+                    {jobs.map((job) => (
+                    <Link 
+                        key={job.id} 
+                        to={createPageUrl("Jobs") + `?id=${job.id}`}
+                        className="block p-4 bg-white border-2 border-slate-200 rounded-xl hover:border-[#fae008] hover:shadow-md transition-all"
+                    >
+                        <div className="flex items-start justify-between mb-2">
+                        <div className="flex-1 min-w-0">
+                            <h4 className="text-[16px] font-medium text-[#111827] leading-[1.4]">Job #{job.job_number}</h4>
+                                <p className="text-[14px] text-slate-600 leading-[1.4] mt-1 font-normal">{job.address}</p>
+                                </div>
+                                <JobStatusBadge value={job.status} />
+                        </div>
+                        <div className="text-[12px] text-slate-600 leading-[1.35] font-normal">
+                        {job.scheduled_date && format(parseISO(job.scheduled_date), 'MMM d, yyyy')}
+                        {job.scheduled_time && ` at ${job.scheduled_time}`}
+                        </div>
+                    </Link>
+                    ))}
+                </div>
+                )}
+            </TabsContent>
+
+            <TabsContent value="tasks">
+                {/* Tasks Panel */}
+                <div className="bg-white rounded-xl border-2 border-slate-200 p-4">
+                    <TasksPanel
+                    entityType="customer"
+                    entityId={customer.id}
+                    entityName={customer.name}
+                    />
+                </div>
+            </TabsContent>
+
+            <TabsContent value="activity">
+                <div className="bg-white rounded-xl border-2 border-slate-200 p-6">
+                    <ActivityTimeline entityType="Customer" entityId={customer.id} />
+                </div>
+            </TabsContent>
+          </Tabs>
         </CardContent>
       </Card>
 

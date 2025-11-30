@@ -28,6 +28,7 @@ import RichTextField from "../common/RichTextField";
 import { determineJobStatus } from "./jobStatusHelper";
 import TechnicianAvatar, { TechnicianAvatarGroup } from "../common/TechnicianAvatar";
 import JobChat from "./JobChat";
+import ActivityTimeline from "../common/ActivityTimeline";
 import JobMapView from "./JobMapView";
 import XeroInvoiceCard from "../invoices/XeroInvoiceCard";
 import CreateInvoiceModal from "../invoices/CreateInvoiceModal";
@@ -275,9 +276,9 @@ export default function JobDetails({ job: initialJob, onClose, onStatusChange, o
                 <FileText className="w-4 h-4 mr-1.5" />
                 Attachments
               </TabsTrigger>
-              <TabsTrigger value="history" className="flex-1 min-w-[100px]">
+              <TabsTrigger value="activity" className="flex-1 min-w-[100px]">
                 <History className="w-4 h-4 mr-1.5" />
-                History
+                Activity
               </TabsTrigger>
             </TabsList>
 
@@ -348,10 +349,11 @@ export default function JobDetails({ job: initialJob, onClose, onStatusChange, o
                {/* Invoices / Quotes could go here */}
             </TabsContent>
 
-            <TabsContent value="history" className="mt-2">
-               <JobChat jobId={job.id} />
-               <div className="mt-4 pt-4 border-t">
-                   <Button variant="outline" onClick={() => setShowHistory(true)}>View Full History</Button>
+            <TabsContent value="activity" className="mt-2">
+               <ActivityTimeline entityType="Job" entityId={job.id} />
+               <div className="mt-8 pt-4 border-t">
+                   <h3 className="text-sm font-semibold mb-3">Team Chat</h3>
+                   <JobChat jobId={job.id} />
                </div>
             </TabsContent>
           </Tabs>
