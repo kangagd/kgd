@@ -14,7 +14,9 @@ import { toast } from "sonner";
 import ProjectSidebar from "./ProjectSidebar";
 import ProjectStageSelector from "./ProjectStageSelector";
 import MarkAsLostModal from "./MarkAsLostModal";
+import StageHistoryTab from "./StageHistoryTab";
 import ProjectSummary from "./ProjectSummary";
+import { format } from "date-fns";
 import ProjectQuotesTab from "./ProjectQuotesTab";
 import ProjectInvoicesTab from "./ProjectInvoicesTab";
 import ProjectEmailSection from "./ProjectEmailSection";
@@ -183,9 +185,12 @@ export default function ProjectDetails({ project: initialProject, onClose, onEdi
              </div>
              <div className="pt-2">
                 <ProjectStageSelector 
+                    projectId={project.id}
                     currentStage={project.status} 
-                    onStageChange={handleStatusChange}
-                    onMarkAsLost={() => setShowLostModal(true)}
+                    canEdit={canEdit}
+                    onStageChange={() => {
+                        // Query invalidation handled in component
+                    }}
                 />
              </div>
           </CardHeader>
