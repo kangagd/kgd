@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from "react";
-import { Bell, CheckCheck, Briefcase, FolderKanban, Users, Mail, FileText, CheckSquare, Info, AlertTriangle, AlertCircle, CheckCircle, ExternalLink } from "lucide-react";
+import { Bell, CheckCheck, Briefcase, FolderKanban, Users, Mail, FileText, CheckSquare, Info, AlertTriangle, AlertCircle, CheckCircle, ExternalLink, Truck, Car } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import {
@@ -10,36 +10,23 @@ import {
 import {
   Sheet,
   SheetContent,
-  SheetHeader,
-  SheetTitle,
   SheetTrigger,
 } from "@/components/ui/sheet";
 import { base44 } from "@/api/base44Client";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useNavigate, Link } from "react-router-dom";
 import { createPageUrl } from "@/utils";
-import { formatDistanceToNow } from "date-fns";
+import { formatDistanceToNow, isToday, isYesterday } from "date-fns";
 import { toast } from "sonner";
 
-const typeIcons = {
-  info: Info,
-  success: CheckCircle,
-  warning: AlertTriangle,
-  error: AlertCircle
+const priorityIcons = {
+  normal: Info,
+  high: AlertTriangle
 };
 
-const typeColors = {
-  info: "text-blue-500",
-  success: "text-green-500",
-  warning: "text-amber-500",
-  error: "text-red-500"
-};
-
-const typeBgColors = {
-  info: "bg-blue-50",
-  success: "bg-green-50",
-  warning: "bg-amber-50",
-  error: "bg-red-50"
+const priorityStyles = {
+  normal: "bg-blue-50 text-blue-600",
+  high: "bg-amber-50 text-amber-600"
 };
 
 const entityIcons = {
@@ -49,6 +36,9 @@ const entityIcons = {
   Email: Mail,
   Quote: FileText,
   Task: CheckSquare,
+  Vehicle: Car,
+  Part: Truck,
+  Contract: FileText,
   Other: Info
 };
 
@@ -65,6 +55,12 @@ const getEntityUrl = (entityType, entityId) => {
       return `${createPageUrl("Inbox")}?threadId=${entityId}`;
     case 'Task':
       return createPageUrl("Tasks");
+    case 'Vehicle':
+      return createPageUrl("Fleet");
+    case 'Part':
+      return createPageUrl("Logistics");
+    case 'Contract':
+      return createPageUrl("Contracts");
     default:
       return null;
   }
@@ -73,16 +69,16 @@ const getEntityUrl = (entityType, entityId) => {
 // Notification Item Component
 function NotificationItem({ notification, onClose, onMarkRead }) {
   const navigate = useNavigate();
-  const TypeIcon = typeIcons[notification.type] || Info;
-  const EntityIcon = entityIcons[notification.related_entity_type] || Info;
+  const PriorityIcon = priorityIcons[notification.priority] || Info;
+  const EntityIcon = entityIcons[notification.entity_type] || Info;
 
   const handleClick = () => {
     if (!notification.is_read) {
       onMarkRead(notification.id);
     }
 
-    if (notification.related_entity_type && notification.related_entity_id) {
-      const url = getEntityUrl(notification.related_entity_type, notification.related_entity_id);
+    if (notification.entity_type && notification.entity_id) {
+      const url = getEntityUrl(notification.entity_type, notification.entity_id);
       if (url) {
         onClose();
         navigate(url);
@@ -93,13 +89,13 @@ function NotificationItem({ notification, onClose, onMarkRead }) {
   return (
     <button
       onClick={handleClick}
-      className={`w-full text-left px-4 py-3 hover:bg-[#F9FAFB] transition-colors ${
-        !notification.is_read ? 'bg-[#F3F4F6]' : 'bg-white'
+      className={`w-full text-left px-4 py-3 hover:bg-[#F9FAFB] transition-colors border-b border-[#E5E7EB] last:border-0 ${
+        !notification.is_read ? 'bg-[#F3F4F6]/50' : 'bg-white'
       }`}
     >
       <div className="flex gap-3">
-        <div className={`flex-shrink-0 w-8 h-8 rounded-lg ${typeBgColors[notification.type]} flex items-center justify-center`}>
-          <TypeIcon className={`w-4 h-4 ${typeColors[notification.type]}`} />
+        <div className={`flex-shrink-0 w-8 h-8 rounded-lg ${priorityStyles[notification.priority || 'normal']} flex items-center justify-center`}>
+          <PriorityIcon className="w-4 h-4" />
         </div>
 
         <div className="flex-1 min-w-0">
@@ -112,17 +108,17 @@ function NotificationItem({ notification, onClose, onMarkRead }) {
             )}
           </div>
           
-          {notification.body && (
-            <p className="text-[12px] text-[#6B7280] mt-0.5 line-clamp-2">
-              {notification.body}
+          {notification.message && (
+            <p className="text-[13px] text-[#6B7280] mt-1 line-clamp-2 leading-snug">
+              {notification.message}
             </p>
           )}
 
-          <div className="flex items-center gap-2 mt-1.5">
-            {notification.related_entity_type && (
-              <Badge variant="outline" className="text-[10px] px-1.5 py-0 h-5 border-[#E5E7EB] text-[#6B7280]">
+          <div className="flex items-center gap-2 mt-2">
+            {notification.entity_type && (
+              <Badge variant="outline" className="text-[10px] px-1.5 py-0 h-5 border-[#E5E7EB] text-[#6B7280] font-medium bg-white">
                 <EntityIcon className="w-3 h-3 mr-1" />
-                {notification.related_entity_type}
+                {notification.entity_type}
               </Badge>
             )}
             <span className="text-[11px] text-[#9CA3AF]">
@@ -135,13 +131,44 @@ function NotificationItem({ notification, onClose, onMarkRead }) {
   );
 }
 
-// Notification List Component (shared between popover and sheet)
+// Group notifications by date
+const groupNotifications = (notifications) => {
+  const groups = {
+    today: [],
+    yesterday: [],
+    older: []
+  };
+
+  notifications.forEach(n => {
+    const date = new Date(n.created_date);
+    if (isToday(date)) {
+      groups.today.push(n);
+    } else if (isYesterday(date)) {
+      groups.yesterday.push(n);
+    } else {
+      groups.older.push(n);
+    }
+  });
+
+  return groups;
+};
+
+// Notification List Component
 function NotificationList({ notifications, isLoading, onClose, onMarkRead, onMarkAllRead, unreadCount }) {
+  const grouped = groupNotifications(notifications);
+
   return (
-    <>
+    <div className="flex flex-col h-full">
       {/* Header */}
-      <div className="flex items-center justify-between px-4 py-3 border-b border-[#E5E7EB] bg-white flex-shrink-0">
-        <h3 className="text-[16px] font-semibold text-[#111827]">Notifications</h3>
+      <div className="flex items-center justify-between px-4 py-3 border-b border-[#E5E7EB] bg-white flex-shrink-0 sticky top-0 z-10">
+        <div className="flex items-center gap-2">
+          <h3 className="text-[16px] font-semibold text-[#111827]">Notifications</h3>
+          {unreadCount > 0 && (
+            <Badge className="bg-[#FAE008] text-[#111827] hover:bg-[#FAE008] h-5 px-1.5">
+              {unreadCount} new
+            </Badge>
+          )}
+        </div>
         {unreadCount > 0 && (
           <Button
             variant="ghost"
@@ -156,44 +183,57 @@ function NotificationList({ notifications, isLoading, onClose, onMarkRead, onMar
       </div>
 
       {/* List */}
-      <div className="overflow-y-auto flex-1">
+      <div className="overflow-y-auto flex-1 bg-white">
         {isLoading ? (
-          <div className="p-4 text-center text-[#6B7280] text-[14px]">
+          <div className="p-8 text-center text-[#6B7280] text-[14px]">
             Loading...
           </div>
         ) : notifications.length === 0 ? (
-          <div className="p-8 text-center">
-            <Bell className="w-10 h-10 text-[#E5E7EB] mx-auto mb-3" />
-            <p className="text-[14px] text-[#6B7280]">No notifications yet</p>
+          <div className="p-12 text-center">
+            <div className="w-12 h-12 bg-[#F3F4F6] rounded-full flex items-center justify-center mx-auto mb-3">
+              <Bell className="w-6 h-6 text-[#9CA3AF]" />
+            </div>
+            <h4 className="text-[14px] font-medium text-[#111827]">No notifications</h4>
+            <p className="text-[13px] text-[#6B7280] mt-1">You're all caught up!</p>
           </div>
         ) : (
-          <div className="divide-y divide-[#E5E7EB]">
-            {notifications.map((notification) => (
-              <NotificationItem
-                key={notification.id}
-                notification={notification}
-                onClose={onClose}
-                onMarkRead={onMarkRead}
-              />
-            ))}
+          <div className="pb-4">
+            {grouped.today.length > 0 && (
+              <div>
+                <div className="px-4 py-2 bg-[#F9FAFB] text-[11px] font-semibold text-[#6B7280] uppercase tracking-wider sticky top-0 border-b border-[#E5E7EB]">
+                  Today
+                </div>
+                {grouped.today.map(n => (
+                  <NotificationItem key={n.id} notification={n} onClose={onClose} onMarkRead={onMarkRead} />
+                ))}
+              </div>
+            )}
+            
+            {grouped.yesterday.length > 0 && (
+              <div>
+                <div className="px-4 py-2 bg-[#F9FAFB] text-[11px] font-semibold text-[#6B7280] uppercase tracking-wider sticky top-0 border-b border-[#E5E7EB] border-t">
+                  Yesterday
+                </div>
+                {grouped.yesterday.map(n => (
+                  <NotificationItem key={n.id} notification={n} onClose={onClose} onMarkRead={onMarkRead} />
+                ))}
+              </div>
+            )}
+
+            {grouped.older.length > 0 && (
+              <div>
+                <div className="px-4 py-2 bg-[#F9FAFB] text-[11px] font-semibold text-[#6B7280] uppercase tracking-wider sticky top-0 border-b border-[#E5E7EB] border-t">
+                  Older
+                </div>
+                {grouped.older.map(n => (
+                  <NotificationItem key={n.id} notification={n} onClose={onClose} onMarkRead={onMarkRead} />
+                ))}
+              </div>
+            )}
           </div>
         )}
       </div>
-
-      {/* Footer */}
-      {notifications.length > 0 && (
-        <div className="px-4 py-3 border-t border-[#E5E7EB] bg-white flex-shrink-0">
-          <Link
-            to={createPageUrl("Notifications")}
-            onClick={onClose}
-            className="flex items-center justify-center gap-2 text-[13px] font-medium text-[#4B5563] hover:text-[#111827] transition-colors no-underline"
-          >
-            View all notifications
-            <ExternalLink className="w-3.5 h-3.5" />
-          </Link>
-        </div>
-      )}
-    </>
+    </div>
   );
 }
 
@@ -207,7 +247,7 @@ export default function NotificationBell({ isMobile = false }) {
   const { data, isLoading } = useQuery({
     queryKey: ['notifications'],
     queryFn: async () => {
-      const response = await base44.functions.invoke('getNotifications', { limit: 20 });
+      const response = await base44.functions.invoke('getNotifications', { limit: 50 });
       return response.data;
     },
     refetchInterval: 30000
@@ -239,18 +279,13 @@ export default function NotificationBell({ isMobile = false }) {
     newNotifications.forEach(notification => {
       shownToastsRef.current.add(notification.id);
       
-      const toastFn = notification.type === 'error' ? toast.error 
-        : notification.type === 'warning' ? toast.warning 
-        : notification.type === 'success' ? toast.success 
-        : toast.info;
-
-      toastFn(notification.title, {
-        description: notification.body,
-        action: notification.related_entity_type && notification.related_entity_id ? {
+      toast(notification.title, {
+        description: notification.message,
+        action: notification.entity_type && notification.entity_id ? {
           label: "View",
           onClick: () => {
             markReadMutation.mutate({ notificationId: notification.id });
-            const url = getEntityUrl(notification.related_entity_type, notification.related_entity_id);
+            const url = getEntityUrl(notification.entity_type, notification.entity_id);
             if (url) navigate(url);
           }
         } : undefined,
@@ -282,12 +317,12 @@ export default function NotificationBell({ isMobile = false }) {
 
   const bellButton = (
     <button
-      className="relative p-2 rounded-lg text-[#6B7280] hover:bg-[#F3F4F6] hover:text-[#111827] transition-colors"
+      className={`relative p-2 rounded-lg transition-colors ${isMobile ? 'p-3' : 'hover:bg-[#F3F4F6] hover:text-[#111827] text-[#6B7280]'}`}
       title="Notifications"
     >
-      <Bell className="w-5 h-5" />
+      <Bell className={`${isMobile ? 'w-6 h-6 text-[#111827]' : 'w-5 h-5'}`} />
       {unreadCount > 0 && (
-        <span className="absolute -top-0.5 -right-0.5 bg-[#FAE008] text-[#111827] text-[10px] font-bold rounded-full min-w-[16px] h-[16px] flex items-center justify-center px-1">
+        <span className="absolute top-1 right-1 bg-[#DC2626] text-white text-[10px] font-bold rounded-full min-w-[16px] h-[16px] flex items-center justify-center px-0.5 border-2 border-white">
           {unreadCount > 99 ? '99+' : unreadCount}
         </span>
       )}
@@ -301,7 +336,7 @@ export default function NotificationBell({ isMobile = false }) {
         <SheetTrigger asChild>
           {bellButton}
         </SheetTrigger>
-        <SheetContent side="bottom" className="h-[85vh] p-0 rounded-t-2xl flex flex-col">
+        <SheetContent side="bottom" className="h-[85vh] p-0 rounded-t-2xl flex flex-col bg-white">
           <NotificationList
             notifications={notifications}
             isLoading={isLoading}
@@ -321,7 +356,7 @@ export default function NotificationBell({ isMobile = false }) {
       <PopoverTrigger asChild>
         {bellButton}
       </PopoverTrigger>
-      <PopoverContent align="end" className="w-80 md:w-96 p-0 max-h-[480px] overflow-hidden flex flex-col">
+      <PopoverContent align="end" className="w-96 p-0 max-h-[600px] overflow-hidden flex flex-col shadow-xl border-[#E5E7EB] rounded-xl">
         <NotificationList
           notifications={notifications}
           isLoading={isLoading}
