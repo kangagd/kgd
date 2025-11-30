@@ -376,6 +376,11 @@ export default function ProjectDetails({ project: initialProject, onClose, onEdi
                     </div>
                 </TabsContent>
 
+                {/* History Tab */}
+                <TabsContent value="history" className="space-y-6">
+                    <StageHistoryTab projectId={project.id} />
+                </TabsContent>
+
             </Tabs>
           </CardContent>
         </Card>
