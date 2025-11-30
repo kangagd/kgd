@@ -60,32 +60,15 @@ export default function Schedule() {
     loadUser();
   }, []);
 
-  // Calculate fetch range (3 months centered on selected date) to ensure we have all jobs without overfetching
-  const fetchRange = React.useMemo(() => {
-    const start = subMonths(startOfMonth(selectedDate), 1);
-    const end = addMonths(endOfMonth(selectedDate), 1);
-    return {
-      start: format(start, 'yyyy-MM-dd'),
-      end: format(end, 'yyyy-MM-dd')
-    };
-  }, [selectedDate]);
-
   const { data: allJobs = [], isLoading } = useQuery({
-    queryKey: ['jobs', fetchRange.start, fetchRange.end],
+    queryKey: ['jobs'],
     queryFn: async () => {
       // Use backend function for robust permission handling
-      // Request 'calendar' mode with date range to ensure we get all relevant jobs
-      const response = await base44.functions.invoke('getMyJobs', { 
-        view_mode: 'calendar',
-        date_from: fetchRange.start,
-        date_to: fetchRange.end,
-        limit: 2000
-      });
+      const response = await base44.functions.invoke('getMyJobs');
       const jobs = response.data || [];
       // Sort manually since backend function might not sort
       return jobs.sort((a, b) => (b.scheduled_date || '').localeCompare(a.scheduled_date || ''));
     },
-    keepPreviousData: true
   });
 
   const { data: technicians = [] } = useQuery({
@@ -224,18 +207,13 @@ export default function Schedule() {
 
         // Date filter
         if (dateFilter && job.scheduled_date) {
-          // Check if dateFilter is a string (YYYY-MM-DD) for direct comparison
-          if (typeof dateFilter === 'string') {
-             if (!job.scheduled_date.startsWith(dateFilter)) return false;
-          } else {
-            try {
-              const parsedDate = parseISO(job.scheduled_date);
-              if (isNaN(parsedDate.getTime()) || !dateFilter(parsedDate)) {
-                return false;
-              }
-            } catch {
+          try {
+            const parsedDate = parseISO(job.scheduled_date);
+            if (isNaN(parsedDate.getTime()) || !dateFilter(parsedDate)) {
               return false;
             }
+          } catch {
+            return false;
           }
         }
 
@@ -371,8 +349,8 @@ export default function Schedule() {
 
   // Render Day View with Drag and Drop
   const renderDayView = () => {
+    const dayJobs = getFilteredJobs((date) => isSameDay(date, selectedDate));
     const dateStr = format(selectedDate, 'yyyy-MM-dd');
-    const dayJobs = getFilteredJobs(dateStr);
     
     if (dayJobs.length === 0) {
       return (
@@ -562,22 +540,11 @@ export default function Schedule() {
                 {weekDays.map(day => {
                   const dateStr = format(day, 'yyyy-MM-dd');
                   // Filter jobs for this tech and day
-                  const cellJobs = getFilteredJobs(dateStr)
+                  const cellJobs = getFilteredJobs((date) => isSameDay(date, day))
                     .filter(job => {
                       if (!job.assigned_to) return false;
-                      const assigned = (Array.isArray(job.assigned_to) ? job.assigned_to : [job.assigned_to])
-                        .map(e => e?.toLowerCase()?.trim());
-                      
-                      const techEmail = tech.email?.toLowerCase()?.trim();
-                      const techUsername = techEmail?.split('@')[0];
-                      const techName = (tech.full_name || tech.display_name || "").toLowerCase().trim();
-                      
-                      return assigned.some(a => 
-                        a === techEmail || 
-                        a === techUsername || 
-                        (a && techEmail && techEmail.includes(a)) ||
-                        (a && techName && (a === techName || techName.includes(a)))
-                      );
+                      const assigned = Array.isArray(job.assigned_to) ? job.assigned_to : [job.assigned_to];
+                      return assigned.includes(tech.email);
                     });
 
                   return (
@@ -625,7 +592,7 @@ export default function Schedule() {
             );
           })}
           
-          {/* Unassigned / Other Row */}
+          {/* Unassigned Row */}
           {technicianFilter === 'all' && (
             <div className="grid grid-cols-[200px_repeat(7,minmax(0,1fr))] border-b border-[#E5E7EB] last:border-b-0">
               <div className="p-3 sticky left-0 bg-white z-10 border-r border-[#E5E7EB] flex items-center gap-2 min-w-[200px]">
@@ -633,28 +600,13 @@ export default function Schedule() {
                   ?
                 </div>
                 <div className="truncate font-medium text-[#6B7280]">
-                  Unassigned / Other
+                  Unassigned
                 </div>
               </div>
               {weekDays.map(day => {
                 const dateStr = format(day, 'yyyy-MM-dd');
-                const cellJobs = getFilteredJobs(dateStr)
-                  .filter(job => {
-                    // Include if unassigned
-                    if (!job.assigned_to || job.assigned_to.length === 0) return true;
-                    
-                    // Also include if assigned to someone NOT in the active technicians list
-                    const assignedEmails = (Array.isArray(job.assigned_to) ? job.assigned_to : [job.assigned_to])
-                      .map(e => e?.toLowerCase()?.trim());
-                    
-                    const isAssignedToActiveTech = activeTechs.some(t => {
-                      const techEmail = t.email?.toLowerCase()?.trim();
-                      const techUsername = techEmail?.split('@')[0];
-                      return assignedEmails.some(a => a === techEmail || a === techUsername || (a && techEmail && techEmail.includes(a)));
-                    });
-                    
-                    return !isAssignedToActiveTech;
-                  });
+                const cellJobs = getFilteredJobs((date) => isSameDay(date, day))
+                  .filter(job => !job.assigned_to || job.assigned_to.length === 0);
 
                 return (
                   <Droppable key={`unassigned-${dateStr}`} droppableId={`week-unassigned-${dateStr}`}>

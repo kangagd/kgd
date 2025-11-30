@@ -73,9 +73,8 @@ Deno.serve(async (req) => {
         }
 
         // Pagination
-        // For calendar view, we probably want ALL jobs in the range, so we increase limit
-        const defaultLimit = view_mode === 'calendar' ? 2000 : 50;
-        const finalLimit = limit && limit !== 50 ? parseInt(limit) : defaultLimit;
+        // For calendar view, we probably want ALL jobs in the range, so we might increase limit or ignore pagination
+        const finalLimit = view_mode === 'calendar' ? 1000 : parseInt(limit);
         const skip = (parseInt(page) - 1) * finalLimit;
 
         // Sort
