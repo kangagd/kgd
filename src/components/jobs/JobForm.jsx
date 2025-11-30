@@ -967,7 +967,14 @@ export default function JobForm({ job, technicians, onSubmit, onCancel, isSubmit
           setLiveDuplicates([]);
         }
       }}>
-        <DialogContent className="rounded-2xl max-w-lg">
+        <DialogContent 
+          className="rounded-2xl max-w-lg"
+          onInteractOutside={(e) => {
+            if (e.target.closest('.pac-container')) {
+              e.preventDefault();
+            }
+          }}
+        >
           <DialogHeader>
             <DialogTitle className="text-[22px] font-semibold text-[#111827] leading-[1.2]">New Customer</DialogTitle>
           </DialogHeader>
