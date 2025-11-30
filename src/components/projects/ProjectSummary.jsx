@@ -132,7 +132,7 @@ export default function ProjectSummary({ project, jobs, onTabChange }) {
                 {project.primary_quote_id && (
                     <>
                         <span className="text-slate-500 font-medium">Primary Quote</span>
-                        <Link to="#" onClick={(e) => { e.preventDefault(); onTabChange("financials"); }} className="text-blue-600 hover:underline flex items-center gap-1">
+                        <Link to="#" onClick={(e) => { e.preventDefault(); onTabChange("quotes"); }} className="text-blue-600 hover:underline flex items-center gap-1">
                             <FileText className="w-3.5 h-3.5" />
                             View Quote
                         </Link>
@@ -293,7 +293,7 @@ export default function ProjectSummary({ project, jobs, onTabChange }) {
                         ))
                     )}
                     {quotes.length > 0 && (
-                        <Button variant="link" className="p-0 h-auto text-blue-600 hover:underline text-sm block" onClick={() => onTabChange("financials")}>
+                        <Button variant="link" className="p-0 h-auto text-blue-600 hover:underline text-sm block" onClick={() => onTabChange("quotes")}>
                             View all quotes
                         </Button>
                     )}

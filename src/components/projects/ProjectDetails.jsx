@@ -32,6 +32,7 @@ import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/component
 import { ChevronDown } from "lucide-react";
 import ProjectChangeHistoryModal from "./ProjectChangeHistoryModal";
 import ProjectStageSelector from "./ProjectStageSelector";
+import ProjectQuotesTab from "./ProjectQuotesTab";
 import PartsSection from "./PartsSection";
 import LogisticsTimeline from "./LogisticsTimeline";
 import ProjectSummary from "./ProjectSummary";
@@ -478,6 +479,10 @@ export default function ProjectDetails({ project: initialProject, onClose, onEdi
                 <TabsList className="w-full justify-start min-w-max md:min-w-0">
                     <TabsTrigger value="summary" className="flex-1 whitespace-nowrap">Summary</TabsTrigger>
                     <TabsTrigger value="overview" className="flex-1 whitespace-nowrap">Details</TabsTrigger>
+                    <TabsTrigger value="quotes" className="flex-1 whitespace-nowrap">
+                        <FileText className="w-4 h-4 mr-2" />
+                        Quotes
+                    </TabsTrigger>
                     <TabsTrigger value="ai_overview" className="flex-1 whitespace-nowrap gap-2">
                         <Sparkles className="w-3.5 h-3.5 text-indigo-500" />
                         AI Overview
@@ -543,6 +548,10 @@ export default function ProjectDetails({ project: initialProject, onClose, onEdi
                         user={user} 
                         onGenerate={() => queryClient.invalidateQueries({ queryKey: ['project', project.id] })}
                     />
+                </TabsContent>
+
+                <TabsContent value="quotes" className="space-y-6">
+                    <ProjectQuotesTab project={project} user={user} />
                 </TabsContent>
 
                 <TabsContent value="overview" className="space-y-6">
