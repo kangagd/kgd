@@ -6,7 +6,7 @@ import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Label } from "@/components/ui/label";
 import { Separator } from "@/components/ui/separator";
-import { ArrowLeft, MapPin, Phone, Calendar, Clock, User, Briefcase, FileText, Image as ImageIcon, DollarSign, Sparkles, LogIn, FileCheck, History, Package, ClipboardCheck, LogOut, Timer, AlertCircle, ChevronDown, Mail, Navigation, Trash2, FolderKanban, Camera, Edit, ExternalLink, MessageCircle, Plus, AlertTriangle, Loader2, Truck } from "lucide-react";
+import { ArrowLeft, MapPin, Phone, Calendar, Clock, User, Briefcase, FileText, Image as ImageIcon, DollarSign, Sparkles, LogIn, FileCheck, History, Package, ClipboardCheck, LogOut, Timer, AlertCircle, ChevronDown, Mail, Navigation, Trash2, FolderKanban, Camera, Edit, ExternalLink, MessageCircle, Plus, AlertTriangle, Loader2, Truck, Bot } from "lucide-react";
 import DuplicateWarningCard, { DuplicateBadge } from "../common/DuplicateWarningCard";
 import { format, parseISO, isPast } from "date-fns";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
@@ -145,6 +145,21 @@ export default function JobDetails({ job: initialJob, onClose, onStatusChange, o
   const completedCheckIns = checkIns.filter((c) => c.check_out_time);
   const totalJobTime = completedCheckIns.reduce((sum, c) => sum + (c.duration_hours || 0), 0);
 
+  const generateAISummaryMutation = useMutation({
+      mutationFn: async () => {
+          const res = await base44.functions.invoke('generateJobAISummary', { job_id: job.id });
+          return res.data;
+      },
+      onSuccess: () => {
+          queryClient.invalidateQueries({ queryKey: ['job', job.id] });
+          toast.success("AI Summary generated");
+      },
+      onError: (err) => {
+          toast.error("Failed to generate AI summary");
+          console.error(err);
+      }
+  });
+
   // ... (keep mutations and handlers from original file) ...
   // I am assuming standard handlers like handleCheckIn, handleCheckOut, handleImagesChange, etc. are available.
   // Copying checkInMutation and checkOutMutation for context if needed, but for brevity in this call I assume they are defined.
@@ -274,12 +289,72 @@ export default function JobDetails({ job: initialJob, onClose, onStatusChange, o
             </TabsList>
 
             <TabsContent value="summary" className="space-y-4 mt-3">
+              {/* AI Overview Card - Only if active check-in or admin */}
+              {(activeCheckIn || !isTechnician) && (
+                  <Card className="border border-indigo-100 bg-indigo-50/50 shadow-sm rounded-lg overflow-hidden">
+                      <CardHeader className="pb-2 pt-4 px-4 flex flex-row items-center justify-between space-y-0">
+                          <div className="flex items-center gap-2">
+                              <Bot className="w-5 h-5 text-indigo-600" />
+                              <CardTitle className="text-base font-semibold text-indigo-900">AI Overview</CardTitle>
+                          </div>
+                          <Button 
+                              variant="ghost" 
+                              size="sm" 
+                              className="h-8 text-indigo-600 hover:bg-indigo-100 hover:text-indigo-700"
+                              onClick={() => generateAISummaryMutation.mutate()}
+                              disabled={generateAISummaryMutation.isPending}
+                          >
+                              {generateAISummaryMutation.isPending ? (
+                                  <Loader2 className="w-3 h-3 animate-spin mr-1" />
+                              ) : (
+                                  <Sparkles className="w-3 h-3 mr-1" />
+                              )}
+                              {job.ai_summary ? "Refresh" : "Generate"}
+                          </Button>
+                      </CardHeader>
+                      <CardContent className="px-4 pb-4">
+                          {generateAISummaryMutation.isPending && !job.ai_summary ? (
+                              <div className="flex items-center justify-center py-4 text-indigo-400">
+                                  <Loader2 className="w-5 h-5 animate-spin mr-2" />
+                                  Generating briefing...
+                              </div>
+                          ) : job.ai_summary ? (
+                              <div className="space-y-3">
+                                  <p className="text-sm text-indigo-900 leading-relaxed">
+                                      {job.ai_summary}
+                                  </p>
+                                  {job.ai_key_items && job.ai_key_items.length > 0 && (
+                                      <div className="bg-white/60 rounded-md p-3 border border-indigo-100">
+                                          <p className="text-xs font-semibold text-indigo-800 mb-2 uppercase tracking-wide">Key Items</p>
+                                          <ul className="space-y-1">
+                                              {job.ai_key_items.map((item, idx) => (
+                                                  <li key={idx} className="flex items-start gap-2 text-sm text-indigo-900">
+                                                      <span className="text-indigo-500 mt-1">•</span>
+                                                      {item}
+                                                  </li>
+                                              ))}
+                                          </ul>
+                                      </div>
+                                  )}
+                                  <div className="text-[10px] text-indigo-400 text-right">
+                                      Generated {job.ai_generated_at ? format(parseISO(job.ai_generated_at), "MMM d, h:mm a") : "Just now"}
+                                  </div>
+                              </div>
+                          ) : (
+                              <div className="text-center py-2 text-sm text-indigo-400 italic">
+                                  Click generate to get a technician briefing.
+                              </div>
+                          )}
+                      </CardContent>
+                  </Card>
+              )}
+
               <DuplicateWarningCard entityType="Job" record={job} />
               <LinkedPartsCard job={job} />
               <Card className="border border-[#E5E7EB] shadow-sm rounded-lg p-4">
                 <TasksPanel entityType="job" entityId={job.id} entityName={`Job #${job.job_number}`} />
               </Card>
-              
+
               {/* Related Parts (Logistics Only) */}
               {((job.job_category === 'Logistics') || (job.job_type_name || "").includes("Pickup") || (job.job_type_name || "").includes("Delivery") || (job.job_type || "").includes("Pickup") || (job.job_type || "").includes("Delivery")) && (
                   <LinkedPartsCard job={job} />
