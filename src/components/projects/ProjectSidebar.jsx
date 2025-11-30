@@ -239,18 +239,34 @@ export default function ProjectSidebar({ project, jobs, onClose, onEdit, onDelet
       {/* Media */}
       <Collapsible defaultOpen={false}>
         <Card className="border border-[#E5E7EB] shadow-sm rounded-lg overflow-hidden">
-          <CollapsibleTrigger className="w-full">
-            <CardHeader className="bg-white px-4 py-3 border-b border-[#E5E7EB] flex flex-row items-center justify-between">
-              <div className="flex items-center gap-2">
+          <CardHeader className="bg-white px-4 py-3 border-b border-[#E5E7EB] flex flex-row items-center justify-between">
+            <CollapsibleTrigger className="flex items-center gap-2 flex-1 text-left">
                 <ImageIcon className="w-4 h-4 text-[#6B7280]" />
                 <h3 className="text-[16px] font-semibold text-[#111827]">Media</h3>
-              </div>
-              <ChevronDown className="w-4 h-4 text-[#6B7280]" />
-            </CardHeader>
-          </CollapsibleTrigger>
+            </CollapsibleTrigger>
+            <div className="flex items-center gap-2">
+                <label className="cursor-pointer" onClick={(e) => e.stopPropagation()}>
+                    <Button 
+                        size="sm" 
+                        variant="outline" 
+                        className="h-7 text-xs"
+                        disabled={uploadingMedia} 
+                        asChild
+                    >
+                        <span>
+                            <Plus className="w-3 h-3 mr-1" /> {uploadingMedia ? "..." : "Add"}
+                        </span>
+                    </Button>
+                    <input type="file" multiple accept="image/*" className="hidden" onChange={handleMediaUpload} />
+                </label>
+                <CollapsibleTrigger>
+                    <ChevronDown className="w-4 h-4 text-[#6B7280]" />
+                </CollapsibleTrigger>
+            </div>
+          </CardHeader>
           <CollapsibleContent>
             <CardContent className="p-3">
-              <div className="grid grid-cols-3 gap-2 mb-3">
+              <div className="grid grid-cols-3 gap-2">
                 {(project.image_urls || []).slice(0, 9).map((url, i) => (
                     <div key={i} className="relative aspect-square group">
                         <img src={url} alt="" className="w-full h-full object-cover rounded-md border border-slate-200" />
@@ -270,17 +286,9 @@ export default function ProjectSidebar({ project, jobs, onClose, onEdit, onDelet
                         </button>
                     </div>
                 ))}
-              </div>
-              <div className="flex justify-center">
-                <label className="cursor-pointer">
-                    <Button variant="outline" size="sm" className="w-full" disabled={uploadingMedia} asChild>
-                        <span>
-                            <Upload className="w-3 h-3 mr-2" />
-                            {uploadingMedia ? "Uploading..." : "Add Media"}
-                        </span>
-                    </Button>
-                    <input type="file" multiple accept="image/*" className="hidden" onChange={handleMediaUpload} />
-                </label>
+                {(project.image_urls || []).length === 0 && (
+                    <p className="col-span-3 text-xs text-slate-500 text-center py-2">No media uploaded</p>
+                )}
               </div>
             </CardContent>
           </CollapsibleContent>
