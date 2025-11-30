@@ -23,9 +23,6 @@ const TasksPanel = forwardRef(({
   useImperativeHandle(ref, () => ({
     openCreateModal: () => setShowCreateModal(true)
   }));
-  const queryClient = useQueryClient();
-  const [showCreateModal, setShowCreateModal] = useState(false);
-  const [selectedTask, setSelectedTask] = useState(null);
 
   // Build filter based on entity type
   const getFilter = () => {
