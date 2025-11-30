@@ -313,9 +313,7 @@ export default function ProjectDetails({ project: initialProject, onClose, onEdi
                 {/* Summary Tab */}
                 <TabsContent value="summary" className="space-y-6">
                     <ProjectSummary 
-                        project={project} 
-                        jobs={jobs} 
-                        onTabChange={setActiveTab}
+                        project={project}
                     />
                 </TabsContent>
 
