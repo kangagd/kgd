@@ -220,11 +220,9 @@ export default function Jobs() {
   const isViewer = user?.role === 'viewer';
   const canCreateJobs = isAdminOrManager;
 
-  // Server-side filtering is now in place. 
-  // Client-side sorting is still useful for the current page of results.
   const filteredJobs = [...jobs].sort((a, b) => {
     let compareA, compareB;
-
+    
     switch(sortBy) {
       case 'scheduled_date':
         compareA = a.scheduled_date || '';
