@@ -362,11 +362,32 @@ export default function Layout({ children, currentPageName }) {
               <h3 className="font-semibold text-[#111827] text-[14px]">KGD</h3>
             </div>
             <div className="flex items-center gap-2">
+                <button
+                  onClick={() => setIsMobileSearchOpen(true)}
+                  className="p-2 hover:bg-[#F3F4F6] rounded-lg transition-colors min-w-[44px] min-h-[44px] flex items-center justify-center"
+                  aria-label="Search"
+                >
+                  <Search className="w-5 h-5 text-[#111827]" />
+                </button>
                 <NotificationBell isMobile={true} />
                 <RoleBadge role={effectiveRole} />
             </div>
           </div>
         </header>
+
+        <Dialog open={isMobileSearchOpen} onOpenChange={setIsMobileSearchOpen}>
+          <DialogContent className="w-full h-full max-w-none p-4 rounded-none sm:rounded-lg sm:h-[80vh] sm:max-w-lg flex flex-col gap-0">
+             <div className="flex items-center justify-between mb-4">
+                <h2 className="text-lg font-semibold">Search</h2>
+                <button onClick={() => setIsMobileSearchOpen(false)} className="p-2">
+                  <X className="w-5 h-5" />
+                </button>
+             </div>
+             <div className="flex-1 overflow-hidden flex flex-col">
+                <GlobalSearchDropdown autoFocus onCloseMobile={() => setIsMobileSearchOpen(false)} />
+             </div>
+          </DialogContent>
+        </Dialog>
 
         <main className="flex-1 overflow-y-auto overflow-x-hidden pb-24 bg-[#ffffff] relative">
           {/* Pull to Refresh Indicator */}
