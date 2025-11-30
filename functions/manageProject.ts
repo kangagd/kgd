@@ -72,6 +72,30 @@ Deno.serve(async (req) => {
                  updateData.status = 'Completed';
             }
 
+            // Project Stage Management Logic
+            if (data.status && data.status !== previousProject.status) {
+                // Permission check for stage change
+                const allowedRoles = ['admin', 'manager'];
+                if (!allowedRoles.includes(user.role)) {
+                    return Response.json({ error: 'Only admins and managers can change project stage' }, { status: 403 });
+                }
+
+                // Update stage tracking fields
+                updateData.previous_stage = previousProject.status;
+                updateData.stage_changed_at = new Date().toISOString();
+                
+                // Create stage history record
+                await base44.asServiceRole.entities.ProjectStageHistory.create({
+                    project_id: id,
+                    old_stage: previousProject.status,
+                    new_stage: data.status,
+                    changed_by: user.email,
+                    changed_at: new Date().toISOString(),
+                    automatic: false, // Manual change via API
+                    notes: data.stage_notes || data.lost_reason_notes || '' // Capture notes if provided
+                });
+            }
+
             project = await base44.asServiceRole.entities.Project.update(id, updateData);
 
             // Log update
