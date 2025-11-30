@@ -8,8 +8,7 @@ import { Plus, Upload, X, DollarSign, TrendingUp, FileText } from "lucide-react"
 import { base44 } from "@/api/base44Client";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import RichTextField from "../common/RichTextField";
-import CreateInvoiceModal from "../invoices/CreateInvoiceModal";
-import XeroInvoiceCard from "../invoices/XeroInvoiceCard";
+
 import { toast } from "sonner";
 
 const getFinancialStatusOptions = (projectType) => {
@@ -43,45 +42,7 @@ export default function FinancialsTab({ project, onUpdate }) {
     attachments: []
   });
   const [showAddPayment, setShowAddPayment] = useState(false);
-  const [showCreateInvoice, setShowCreateInvoice] = useState(false);
   const queryClient = useQueryClient();
-
-  const { data: invoices = [], isLoading: invoicesLoading } = useQuery({
-    queryKey: ['invoices', project.id],
-    queryFn: async () => {
-      // Fetch invoices for this project
-      return await base44.entities.XeroInvoice.filter({ project_id: project.id }, '-issued_at');
-    }
-  });
-
-  const createInvoiceMutation = useMutation({
-    mutationFn: (data) => base44.functions.invoke('createXeroInvoiceFromProjectOrJob', data),
-    onSuccess: (res) => {
-      if (res.data?.error) {
-        toast.error(res.data.error);
-      } else {
-        toast.success('Invoice created in Xero');
-        setShowCreateInvoice(false);
-        queryClient.invalidateQueries(['invoices', project.id]);
-      }
-    },
-    onError: (err) => toast.error('Failed to create invoice')
-  });
-
-  const syncInvoiceMutation = useMutation({
-    mutationFn: (id) => base44.functions.invoke('syncXeroInvoiceStatus', { xero_invoice_id: id }),
-    onSuccess: () => {
-      toast.success('Invoice synced');
-      queryClient.invalidateQueries(['invoices', project.id]);
-    }
-  });
-
-  const handleCreateInvoice = (data) => {
-    createInvoiceMutation.mutate({
-      projectId: project.id,
-      lineItems: data.lineItems
-    });
-  };
 
   const totalCost = (project.materials_cost || 0) + (project.labour_cost || 0) + (project.other_costs || 0);
   const profit = (project.total_project_value || 0) - totalCost;
@@ -493,50 +454,7 @@ export default function FinancialsTab({ project, onUpdate }) {
         </CardContent>
       </Card>
 
-      {/* Xero Invoices */}
-      <Card className="border border-[#E5E7EB] shadow-sm rounded-lg overflow-hidden">
-        <CardHeader className="bg-[#F8F9FA] border-b border-[#E5E7EB] p-4 flex flex-row justify-between items-center">
-          <CardTitle className="text-[18px] font-semibold text-[#111827] leading-[1.2] flex items-center gap-2">
-            <FileText className="w-5 h-5" />
-            Xero Invoices
-          </CardTitle>
-          <Button 
-            size="sm" 
-            className="bg-[#FAE008] text-[#111827] hover:bg-[#E5CF07]"
-            onClick={() => setShowCreateInvoice(true)}
-          >
-            <Plus className="w-4 h-4 mr-1" />
-            Create Invoice
-          </Button>
-        </CardHeader>
-        <CardContent className="p-3 md:p-4 space-y-3">
-          {invoices.length === 0 ? (
-            <div className="text-center py-8 text-[#6B7280] text-[14px]">
-              No invoices created yet.
-            </div>
-          ) : (
-            invoices.map(invoice => (
-              <XeroInvoiceCard
-                key={invoice.id}
-                invoice={invoice}
-                onRefreshStatus={() => syncInvoiceMutation.mutate(invoice.xero_invoice_id)}
-                isRefreshing={syncInvoiceMutation.isPending}
-                // PDF download deprecated in new flow (direct link preferred), but keeping prop safe
-                onDownloadPdf={() => window.open(invoice.xero_public_url, '_blank')} 
-              />
-            ))
-          )}
-        </CardContent>
-      </Card>
 
-      <CreateInvoiceModal
-        open={showCreateInvoice}
-        onClose={() => setShowCreateInvoice(false)}
-        onConfirm={handleCreateInvoice}
-        isSubmitting={createInvoiceMutation.isPending}
-        type="project"
-        data={project}
-      />
     </div>
   );
 }
