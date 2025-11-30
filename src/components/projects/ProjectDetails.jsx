@@ -73,7 +73,11 @@ export default function ProjectDetails({ project: initialProject, onClose, onEdi
 
   // Mutations
   const updateProjectMutation = useMutation({
-    mutationFn: ({ field, value }) => base44.entities.Project.update(project.id, { [field]: value }),
+    mutationFn: (payload) => {
+      // Support both { field, value } and direct object updates
+      const data = payload.field ? { [payload.field]: payload.value } : payload;
+      return base44.entities.Project.update(project.id, data);
+    },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['project', project.id] });
     }
