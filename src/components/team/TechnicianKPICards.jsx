@@ -31,7 +31,8 @@ export default function TechnicianKPICards({ user }) {
     const calculateMutation = useMutation({
         mutationFn: () => base44.functions.invoke('calculateTechnicianKPIs', { userId: user.id }),
         onSuccess: () => {
-            queryClient.invalidateQueries({ queryKey: ['user'] }); // Reload user to get new KPIs
+            queryClient.invalidateQueries({ queryKey: ['user'] });
+            queryClient.invalidateQueries({ queryKey: ['users'] });
             toast.success("KPIs updated");
         },
         onError: (err) => {
