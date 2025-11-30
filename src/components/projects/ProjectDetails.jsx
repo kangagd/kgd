@@ -384,6 +384,45 @@ export default function ProjectDetails({ project: initialProject, onClose, onEdi
             </CollapsibleContent>
             </Card>
         </Collapsible>
+
+        {/* Jobs Section */}
+        <Collapsible defaultOpen={true}>
+            <Card className="border border-[#E5E7EB] shadow-sm rounded-lg overflow-hidden mt-4">
+                <CollapsibleTrigger className="w-full">
+                    <CardHeader className="bg-white px-4 py-3 border-b border-[#E5E7EB] flex flex-row items-center justify-between">
+                        <h3 className="text-[16px] font-semibold text-[#111827] leading-[1.2]">Jobs</h3>
+                        <ChevronDown className="w-4 h-4 text-[#6B7280]" />
+                    </CardHeader>
+                </CollapsibleTrigger>
+                <CollapsibleContent>
+                    <CardContent className="p-3">
+                        <div className="flex justify-end mb-3">
+                            <Button onClick={() => handleCreateJob()} size="sm" variant="outline" className="h-8 text-xs">
+                                <Plus className="w-3.5 h-3.5 mr-1.5" />
+                                Add Job
+                            </Button>
+                        </div>
+                        {jobs.length === 0 ? (
+                            <div className="text-center py-8 bg-slate-50 rounded-lg border border-dashed border-slate-200">
+                                <Briefcase className="w-8 h-8 text-slate-300 mx-auto mb-2" />
+                                <p className="text-sm text-slate-500">No jobs yet</p>
+                            </div>
+                        ) : (
+                            <div className="grid gap-3">
+                                {jobs.map(job => (
+                                    <JobCard 
+                                        key={job.id} 
+                                        job={job} 
+                                        onClick={() => window.location.href = `${createPageUrl("Jobs")}?jobId=${job.id}`} 
+                                        compact={true} 
+                                    />
+                                ))}
+                            </div>
+                        )}
+                    </CardContent>
+                </CollapsibleContent>
+            </Card>
+        </Collapsible>
       </aside>
 
       {/* Main Content */}
@@ -442,10 +481,6 @@ export default function ProjectDetails({ project: initialProject, onClose, onEdi
                         AI Overview
                     </TabsTrigger>
                     <TabsTrigger value="overview" className="flex-1 whitespace-nowrap">Overview</TabsTrigger>
-                    <TabsTrigger value="jobs" className="flex-1 whitespace-nowrap">
-                    <Briefcase className="w-4 h-4 mr-2" />
-                    Jobs
-                    </TabsTrigger>
                     <TabsTrigger value="parts" className="flex-1 whitespace-nowrap">
                     <Wrench className="w-4 h-4 mr-2" />
                     Parts
@@ -534,34 +569,7 @@ export default function ProjectDetails({ project: initialProject, onClose, onEdi
                 </div>
                 </TabsContent>
 
-                <TabsContent value="jobs" className="space-y-6">
-                <div className="flex justify-end">
-                    <Button onClick={() => handleCreateJob()}>
-                    <Plus className="w-4 h-4 mr-2" />
-                    Add Job
-                    </Button>
-                </div>
-                {jobs.length === 0 ? (
-                    <div className="text-center py-12 bg-slate-50 rounded-lg border border-dashed border-slate-200">
-                    <Briefcase className="w-12 h-12 text-slate-300 mx-auto mb-3" />
-                    <h3 className="text-lg font-medium text-slate-900">No jobs yet</h3>
-                    <p className="text-slate-500 mb-4">Create the first job for this project</p>
-                    <Button onClick={() => handleCreateJob()} variant="outline">
-                        Create Job
-                    </Button>
-                    </div>
-                ) : (
-                    <div className="grid gap-4">
-                    {jobs.map(job => (
-                        <JobCard 
-                        key={job.id} 
-                        job={job} 
-                        onClick={() => window.location.href = `${createPageUrl("Jobs")}?jobId=${job.id}`} 
-                        />
-                    ))}
-                    </div>
-                )}
-                </TabsContent>
+
 
                 <TabsContent value="parts" className="space-y-6">
                     <PartsSection projectId={project.id} />

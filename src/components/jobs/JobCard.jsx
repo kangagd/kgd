@@ -14,7 +14,7 @@ import { DuplicateBadge } from "../common/DuplicateWarningCard";
 
 
 
-export default function JobCard({ job, onClick, onViewDetails }) {
+export default function JobCard({ job, onClick, onViewDetails, compact = false }) {
   const [user, setUser] = useState(null);
   const queryClient = useQueryClient();
 
@@ -188,7 +188,7 @@ export default function JobCard({ job, onClick, onViewDetails }) {
           </div>
 
           {/* Latest visit summary (collapsible) */}
-          {latestVisit && (
+          {latestVisit && !compact && (
             <Collapsible onClick={(e) => e.stopPropagation()}>
               <CollapsibleTrigger className="flex items-center gap-2 text-sm font-medium text-[#6B7280] hover:text-[#111827] transition-colors group w-full pt-2 border-t border-[#E5E7EB]">
                 <span>Latest Visit Summary</span>
