@@ -50,7 +50,7 @@ const primaryNavigationItems = [
   { title: "Inbox", url: createPageUrl("Inbox"), icon: Mail },
   { title: "Schedule", url: createPageUrl("Schedule"), icon: Calendar },
   { title: "Projects", url: createPageUrl("Projects"), icon: FolderKanban },
-  { title: "Jobs", url: createPageUrl("Jobs"), icon: Briefcase },
+  { title: "Visits", url: createPageUrl("Jobs"), icon: Briefcase },
   { title: "Customers", url: createPageUrl("Customers"), icon: UserCircle },
 ];
 
@@ -75,7 +75,7 @@ const secondaryNavigationItems = [
 
 const technicianNavigationItems = [
   { title: "Schedule", url: createPageUrl("Schedule"), icon: Calendar },
-  { title: "Jobs", url: createPageUrl("Jobs"), icon: Briefcase },
+  { title: "Visits", url: createPageUrl("Jobs"), icon: Briefcase },
   { title: "My Vehicle", url: createPageUrl("MyVehicle"), icon: Truck },
   { title: "Price List", url: createPageUrl("PriceList"), icon: DollarSign },
   { title: "Profile", url: createPageUrl("UserProfile"), icon: UserCircle },
@@ -85,7 +85,7 @@ const viewerNavigationItems = [
   { title: "Dashboard", url: createPageUrl("Dashboard"), icon: LayoutDashboard },
   { title: "Schedule", url: createPageUrl("Schedule"), icon: Calendar },
   { title: "Projects", url: createPageUrl("Projects"), icon: FolderKanban },
-  { title: "Jobs", url: createPageUrl("Jobs"), icon: Briefcase },
+  { title: "Visits", url: createPageUrl("Jobs"), icon: Briefcase },
   { title: "Customers", url: createPageUrl("Customers"), icon: UserCircle },
 ];
 

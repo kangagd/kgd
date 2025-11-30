@@ -350,8 +350,8 @@ export default function Jobs() {
         {!isTechnician && (
           <div className="flex flex-col md:flex-row justify-between items-start md:items-center py-3 lg:py-4 mb-4 lg:mb-6 gap-3">
             <div>
-              <h1 className="text-2xl font-bold text-[#111827] leading-tight">Jobs</h1>
-              <p className="text-sm text-[#4B5563] mt-1">{isViewer ? 'View all scheduled jobs' : 'Manage all scheduled jobs'}</p>
+              <h1 className="text-2xl font-bold text-[#111827] leading-tight">Visits</h1>
+              <p className="text-sm text-[#4B5563] mt-1">{isViewer ? 'View all scheduled visits' : 'Manage all scheduled visits'}</p>
             </div>
             {canCreateJobs && (
               <Button
@@ -359,7 +359,7 @@ export default function Jobs() {
                 className="bg-[#FAE008] text-[#111827] hover:bg-[#E5CF07] font-semibold shadow-sm hover:shadow-md transition w-full md:w-auto h-10 px-4 text-sm rounded-xl"
               >
                 <Plus className="w-4 h-4 mr-2" />
-                New Job
+                New Visit
               </Button>
             )}
           </div>
@@ -367,7 +367,7 @@ export default function Jobs() {
 
         {isTechnician && (
           <div className="py-3 lg:py-4 mb-4 lg:mb-6">
-            <h1 className="text-xl md:text-2xl font-bold text-[#111827] leading-tight">My Jobs</h1>
+            <h1 className="text-xl md:text-2xl font-bold text-[#111827] leading-tight">My Visits</h1>
           </div>
         )}
 
@@ -376,7 +376,7 @@ export default function Jobs() {
             <div className="relative flex-1">
               <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-[#6B7280]" />
               <Input
-                placeholder="Search jobs..."
+                placeholder="Search visits..."
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
                 className="pl-9 pr-3 border border-[#E5E7EB] focus:border-[#111827] focus:ring-1 focus:ring-[#111827] transition-all h-10 text-sm rounded-lg w-full"

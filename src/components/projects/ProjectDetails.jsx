@@ -390,7 +390,7 @@ export default function ProjectDetails({ project: initialProject, onClose, onEdi
             <Card className="border border-[#E5E7EB] shadow-sm rounded-lg overflow-hidden mt-4">
                 <CollapsibleTrigger className="w-full">
                     <CardHeader className="bg-white px-4 py-3 border-b border-[#E5E7EB] flex flex-row items-center justify-between">
-                        <h3 className="text-[16px] font-semibold text-[#111827] leading-[1.2]">Jobs</h3>
+                        <h3 className="text-[16px] font-semibold text-[#111827] leading-[1.2]">Visits</h3>
                         <ChevronDown className="w-4 h-4 text-[#6B7280]" />
                     </CardHeader>
                 </CollapsibleTrigger>
@@ -399,13 +399,13 @@ export default function ProjectDetails({ project: initialProject, onClose, onEdi
                         <div className="flex justify-end mb-3">
                             <Button onClick={() => handleCreateJob()} size="sm" variant="outline" className="h-8 text-xs">
                                 <Plus className="w-3.5 h-3.5 mr-1.5" />
-                                Add Job
+                                Add Visit
                             </Button>
                         </div>
                         {jobs.length === 0 ? (
                             <div className="text-center py-8 bg-slate-50 rounded-lg border border-dashed border-slate-200">
                                 <Briefcase className="w-8 h-8 text-slate-300 mx-auto mb-2" />
-                                <p className="text-sm text-slate-500">No jobs yet</p>
+                                <p className="text-sm text-slate-500">No visits yet</p>
                             </div>
                         ) : (
                             <div className="grid gap-3">
