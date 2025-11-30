@@ -30,8 +30,16 @@ import {
   Calendar,
   CheckCircle2,
   Clock,
-  AlertTriangle
+  AlertTriangle,
+  FileText,
+  List
 } from "lucide-react";
+import ReportList from "@/components/reports/ReportList";
+import ReportBuilder from "@/components/reports/ReportBuilder";
+import ReportResultView from "@/components/reports/ReportResultView";
+import ReportHistory from "@/components/reports/ReportHistory";
+import { useMutation, useQueryClient } from "@tanstack/react-query";
+import { toast } from "sonner";
 
 const COLORS = ['#FAE008', '#3B82F6', '#10B981', '#F59E0B', '#EF4444', '#8B5CF6', '#EC4899'];
 
@@ -112,6 +120,57 @@ export default function Reports() {
     queryKey: ['contracts'],
     queryFn: () => base44.entities.Contract.list()
   });
+
+  // Custom Reports Data
+  const { data: reportDefinitions = [] } = useQuery({
+    queryKey: ['reportDefinitions'],
+    queryFn: () => base44.entities.ReportDefinition.list()
+  });
+
+  const [activeReport, setActiveReport] = useState(null); // For running/editing
+  const [reportResult, setReportResult] = useState(null); // For viewing result
+  const [isBuilderOpen, setIsBuilderOpen] = useState(false);
+  const [isResultOpen, setIsResultOpen] = useState(false);
+  const [isHistoryOpen, setIsHistoryOpen] = useState(false);
+  const [isRunning, setIsRunning] = useState(false);
+  const [reportHistory, setReportHistory] = useState([]);
+
+  const runReportMutation = useMutation({
+    mutationFn: async (report) => {
+      setIsRunning(true);
+      setReportResult(null);
+      setIsResultOpen(true);
+      setActiveReport(report);
+      
+      const res = await base44.functions.invoke('runReport', { reportId: report.id });
+      if (res.data?.error) throw new Error(res.data.error);
+      
+      // Fetch the result record
+      const result = await base44.entities.ReportResult.get(res.data.resultId);
+      return result;
+    },
+    onSuccess: (data) => {
+      setReportResult(data);
+      setIsRunning(false);
+      toast.success("Report generated successfully");
+    },
+    onError: (e) => {
+      setIsRunning(false);
+      toast.error("Failed to run report: " + e.message);
+      setIsResultOpen(false);
+    }
+  });
+
+  const handleRunReport = (report) => {
+    runReportMutation.mutate(report);
+  };
+
+  const handleViewHistory = async (report) => {
+    setActiveReport(report);
+    const results = await base44.entities.ReportResult.filter({ report_id: report.id }, '-generated_at', 20);
+    setReportHistory(results);
+    setIsHistoryOpen(true);
+  };
 
   const filteredProjects = useMemo(() => {
     return allProjects.filter(p => {
@@ -290,6 +349,36 @@ export default function Reports() {
           </p>
         </div>
 
+        <Tabs defaultValue="dashboard" className="space-y-6">
+            <TabsList>
+                <TabsTrigger value="dashboard" className="gap-2">
+                    <TrendingUp className="w-4 h-4" />
+                    Dashboard
+                </TabsTrigger>
+                <TabsTrigger value="custom" className="gap-2">
+                    <List className="w-4 h-4" />
+                    Custom Reports
+                </TabsTrigger>
+            </TabsList>
+
+            <TabsContent value="custom">
+                <div className="space-y-6">
+                    <div className="flex justify-between items-center">
+                        <h2 className="text-lg font-semibold">Saved Reports</h2>
+                    </div>
+                    <ReportList 
+                        reports={reportDefinitions} 
+                        onRun={handleRunReport} 
+                        onEdit={(report) => {
+                            setActiveReport(report);
+                            setIsBuilderOpen(true);
+                        }}
+                        onViewHistory={handleViewHistory}
+                    />
+                </div>
+            </TabsContent>
+
+            <TabsContent value="dashboard">
         {/* Filters */}
         <Card className="mb-6 border border-[#E5E7EB]">
           <CardContent className="p-4">
@@ -586,6 +675,36 @@ export default function Reports() {
             </CardContent>
           </Card>
         </div>
+        </TabsContent>
+        </Tabs>
+
+        <ReportBuilder 
+            open={isBuilderOpen} 
+            onClose={() => {
+                setIsBuilderOpen(false);
+                setActiveReport(null);
+            }} 
+            report={activeReport} 
+        />
+
+        <ReportResultView 
+            open={isResultOpen} 
+            onClose={() => setIsResultOpen(false)} 
+            result={reportResult} 
+            isLoading={isRunning} 
+            reportName={activeReport?.name}
+        />
+
+        <ReportHistory
+            open={isHistoryOpen}
+            onClose={() => setIsHistoryOpen(false)}
+            report={activeReport}
+            results={reportHistory}
+            onViewResult={(res) => {
+                setReportResult(res);
+                setIsResultOpen(true);
+            }}
+        />
       </div>
     </div>
   );
