@@ -53,6 +53,7 @@ import MarkAsLostModal from "./MarkAsLostModal";
 import LinkInvoiceModal from "../invoices/LinkInvoiceModal";
 import ProjectChat from "./ProjectChat";
 import ProjectCard from "./ProjectCard";
+import AIProjectOverview from "./AIProjectOverview";
 import JobCard from "../jobs/JobCard";
 
 const statusColors = {
@@ -415,6 +416,10 @@ export default function ProjectDetails({ project: initialProject, onClose, onEdi
             <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
                 <div className="overflow-x-auto -mx-3 px-3 md:mx-0 md:px-0 mb-4">
                 <TabsList className="w-full justify-start min-w-max md:min-w-0">
+                    <TabsTrigger value="ai_overview" className="flex-1 whitespace-nowrap gap-2">
+                        <Sparkles className="w-3.5 h-3.5 text-indigo-500" />
+                        AI Overview
+                    </TabsTrigger>
                     <TabsTrigger value="overview" className="flex-1 whitespace-nowrap">Overview</TabsTrigger>
                     <TabsTrigger value="jobs" className="flex-1 whitespace-nowrap">
                     <Briefcase className="w-4 h-4 mr-2" />
@@ -444,6 +449,14 @@ export default function ProjectDetails({ project: initialProject, onClose, onEdi
                     </TabsTrigger>
                 </TabsList>
                 </div>
+
+                <TabsContent value="ai_overview" className="space-y-6">
+                    <AIProjectOverview 
+                        project={project} 
+                        user={user} 
+                        onGenerate={() => queryClient.invalidateQueries({ queryKey: ['project', project.id] })}
+                    />
+                </TabsContent>
 
                 <TabsContent value="overview" className="space-y-6">
                 {/* Contract Banner */}
