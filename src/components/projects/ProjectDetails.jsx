@@ -34,6 +34,7 @@ export default function ProjectDetails({ project: initialProject, onClose, onEdi
   const [activeTab, setActiveTab] = useState("overview");
   const [user, setUser] = useState(null);
   const [showAIContextModal, setShowAIContextModal] = useState(false);
+  const [showLostModal, setShowLostModal] = useState(false);
 
   // Permission checks
   const isAdmin = user?.role === 'admin';
