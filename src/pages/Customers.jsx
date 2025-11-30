@@ -26,6 +26,7 @@ export default function Customers() {
   const [selectedCustomer, setSelectedCustomer] = useState(null);
   const [editingCustomer, setEditingCustomer] = useState(null);
   const [modalCustomer, setModalCustomer] = useState(null);
+  const [duplicateReviewCustomer, setDuplicateReviewCustomer] = useState(null);
   const queryClient = useQueryClient();
 
   useEffect(() => {
