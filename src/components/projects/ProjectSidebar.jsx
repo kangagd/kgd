@@ -188,27 +188,30 @@ export default function ProjectSidebar({ project, jobs, onClose, onEdit, onDelet
       {/* Visits */}
       <Collapsible defaultOpen={true}>
         <Card className="border border-[#E5E7EB] shadow-sm rounded-lg overflow-hidden">
-          <CollapsibleTrigger className="w-full">
-            <CardHeader className="bg-white px-4 py-3 border-b border-[#E5E7EB] flex flex-row items-center justify-between">
-              <div className="flex items-center gap-2">
+          <CardHeader className="bg-white px-4 py-3 border-b border-[#E5E7EB] flex flex-row items-center justify-between">
+            <CollapsibleTrigger className="flex items-center gap-2 flex-1 text-left">
                 <Briefcase className="w-4 h-4 text-[#6B7280]" />
                 <h3 className="text-[16px] font-semibold text-[#111827]">Visits ({jobs.length})</h3>
-              </div>
-              <ChevronDown className="w-4 h-4 text-[#6B7280]" />
-            </CardHeader>
-          </CollapsibleTrigger>
-          <CollapsibleContent>
-            <CardContent className="p-3">
-              <div className="flex justify-end mb-3">
+            </CollapsibleTrigger>
+            <div className="flex items-center gap-2">
                 <Button 
-                    onClick={() => window.location.href = `${createPageUrl("Jobs")}?action=new&projectId=${project.id}`} 
+                    onClick={(e) => {
+                        e.stopPropagation();
+                        window.location.href = `${createPageUrl("Jobs")}?action=new&projectId=${project.id}`;
+                    }}
                     size="sm" 
                     variant="outline" 
                     className="h-7 text-xs"
                 >
                   <Plus className="w-3 h-3 mr-1" /> Add
                 </Button>
-              </div>
+                <CollapsibleTrigger>
+                    <ChevronDown className="w-4 h-4 text-[#6B7280]" />
+                </CollapsibleTrigger>
+            </div>
+          </CardHeader>
+          <CollapsibleContent>
+            <CardContent className="p-3">
               <div className="grid gap-2">
                 {jobs.length === 0 ? (
                     <p className="text-xs text-slate-500 text-center py-2">No visits yet</p>
