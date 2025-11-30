@@ -87,6 +87,16 @@ export default function ProjectDetails({ project: initialProject, onClose, onEdi
     updateProjectMutation.mutate({ field: 'status', value: newStatus });
   };
 
+  const handleMarkAsLost = (data) => {
+    updateProjectMutation.mutate({
+      ...data,
+      status: 'Lost'
+    });
+    setShowLostModal(false);
+  };
+
+  const openJobsCount = jobs.filter(j => j.status === 'Open' || j.status === 'Scheduled').length;
+
   // State for Description / Notes / Measurements
   const [description, setDescription] = useState(project.description || "");
   const [notes, setNotes] = useState(project.notes || "");
