@@ -317,18 +317,18 @@ export default function Projects() {
           </div>
 
           <div className="overflow-x-auto -mx-4 px-4 md:mx-0 md:px-0 scrollbar-hide">
-            <Tabs value={stageFilter} onValueChange={setStageFilter}>
-              <TabsList className="inline-flex w-auto justify-start">
-                <TabsTrigger value="all" className="whitespace-nowrap flex-shrink-0">All Projects</TabsTrigger>
-                <TabsTrigger value="Lead" className="whitespace-nowrap flex-shrink-0">Lead</TabsTrigger>
-                <TabsTrigger value="Initial Site Visit" className="whitespace-nowrap flex-shrink-0">Initial Site Visit</TabsTrigger>
-                <TabsTrigger value="Quote Sent" className="whitespace-nowrap flex-shrink-0">Quote Sent</TabsTrigger>
-                <TabsTrigger value="Quote Approved" className="whitespace-nowrap flex-shrink-0">Quote Approved</TabsTrigger>
-                <TabsTrigger value="Final Measure" className="whitespace-nowrap flex-shrink-0">Final Measure</TabsTrigger>
-                <TabsTrigger value="Parts Ordered" className="whitespace-nowrap flex-shrink-0">Parts Ordered</TabsTrigger>
-                <TabsTrigger value="Scheduled" className="whitespace-nowrap flex-shrink-0">Scheduled</TabsTrigger>
-                <TabsTrigger value="Completed" className="whitespace-nowrap flex-shrink-0">Completed</TabsTrigger>
-                <TabsTrigger value="Warranty" className="whitespace-nowrap flex-shrink-0">Warranty</TabsTrigger>
+            <Tabs value={stageFilter} onValueChange={setStageFilter} className="w-full">
+              <TabsList className="w-full justify-start min-w-max md:min-w-0">
+                <TabsTrigger value="all" className="flex-1 whitespace-nowrap">All Projects</TabsTrigger>
+                <TabsTrigger value="Lead" className="flex-1 whitespace-nowrap">Lead</TabsTrigger>
+                <TabsTrigger value="Initial Site Visit" className="flex-1 whitespace-nowrap">Initial Site Visit</TabsTrigger>
+                <TabsTrigger value="Quote Sent" className="flex-1 whitespace-nowrap">Quote Sent</TabsTrigger>
+                <TabsTrigger value="Quote Approved" className="flex-1 whitespace-nowrap">Quote Approved</TabsTrigger>
+                <TabsTrigger value="Final Measure" className="flex-1 whitespace-nowrap">Final Measure</TabsTrigger>
+                <TabsTrigger value="Parts Ordered" className="flex-1 whitespace-nowrap">Parts Ordered</TabsTrigger>
+                <TabsTrigger value="Scheduled" className="flex-1 whitespace-nowrap">Scheduled</TabsTrigger>
+                <TabsTrigger value="Completed" className="flex-1 whitespace-nowrap">Completed</TabsTrigger>
+                <TabsTrigger value="Warranty" className="flex-1 whitespace-nowrap">Warranty</TabsTrigger>
               </TabsList>
             </Tabs>
           </div>
