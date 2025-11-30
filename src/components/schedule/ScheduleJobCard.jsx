@@ -22,13 +22,14 @@ export default function ScheduleJobCard({ job, onClick, onAddressClick, onProjec
           <DuplicateDot record={job} />
         </div>
         <div className="flex flex-wrap justify-end gap-2">
-          {(job.job_type_name || "").match(/(Delivery|Pickup|Return)/i) && (
-            <Badge className="bg-slate-800 text-white border-0 flex items-center gap-1 px-2">
+          {/* Logistics Badge with Specific Type */}
+          {((job.job_category === 'Logistics') || (job.job_type_name || "").match(/(Delivery|Pickup|Return)/i) || (job.job_type || "").match(/(Delivery|Pickup|Return)/i)) && (
+            <Badge className="bg-amber-100 text-amber-800 border-amber-200 flex items-center gap-1 px-2 shadow-sm">
               <Truck className="w-3 h-3" />
-              Logistics
+              {job.logistics_type || "Logistics"}
             </Badge>
           )}
-          {job.job_type_name && (
+          {job.job_type_name && !(job.job_category === 'Logistics') && (
             <JobTypeBadge value={job.job_type_name} />
           )}
           {job.product && (

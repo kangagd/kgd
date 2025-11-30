@@ -137,7 +137,7 @@ export default function JobCard({ job, onClick, onViewDetails }) {
             <div className="flex items-center gap-2 flex-wrap">
               {/* Logistics Badge */}
               {(job.job_category === 'Logistics' || (job.job_type_name || job.job_type || "").match(/(Delivery|Pickup|Return)/i)) && (
-                <Badge className="bg-slate-800 text-white border-0 flex items-center gap-1 px-2 pointer-events-none">
+                <Badge className="bg-amber-100 text-amber-800 border-amber-200 flex items-center gap-1 px-2 pointer-events-none shadow-sm">
                   <Truck className="w-3 h-3" />
                   {job.logistics_type || "Logistics"}
                 </Badge>

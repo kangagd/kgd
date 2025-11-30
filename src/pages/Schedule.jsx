@@ -36,6 +36,7 @@ export default function Schedule() {
   const [technicianFilter, setTechnicianFilter] = useState("all");
   const [statusFilter, setStatusFilter] = useState("all");
   const [organisationFilter, setOrganisationFilter] = useState("all");
+  const [jobTypeFilter, setJobTypeFilter] = useState("all");
   const [viewType, setViewType] = useState("resource"); // 'resource' or 'calendar'
   const [user, setUser] = useState(null);
   
@@ -232,6 +233,16 @@ export default function Schedule() {
         // Organisation Filter
         if (organisationFilter !== "all" && job.organisation_id !== organisationFilter) {
           return false;
+        }
+
+        // Job Type / Logistics Filter
+        if (jobTypeFilter !== "all") {
+            const isLogistics = (job.job_category === 'Logistics' || 
+                                (job.job_type_name || "").match(/(Delivery|Pickup|Return)/i) ||
+                                (job.job_type || "").match(/(Delivery|Pickup|Return)/i));
+            
+            if (jobTypeFilter === "logistics_only" && !isLogistics) return false;
+            if (jobTypeFilter === "standard_only" && isLogistics) return false;
         }
 
         return true;
@@ -1075,6 +1086,17 @@ export default function Schedule() {
                       {org.name}
                     </SelectItem>
                   ))}
+                </SelectContent>
+              </Select>
+
+              <Select value={jobTypeFilter} onValueChange={setJobTypeFilter}>
+                <SelectTrigger className="w-full lg:w-[180px]">
+                  <SelectValue placeholder="Job Type" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">All Job Types</SelectItem>
+                  <SelectItem value="standard_only">Standard Jobs</SelectItem>
+                  <SelectItem value="logistics_only">Logistics Only</SelectItem>
                 </SelectContent>
               </Select>
             </div>

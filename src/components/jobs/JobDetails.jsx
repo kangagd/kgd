@@ -280,6 +280,11 @@ export default function JobDetails({ job: initialJob, onClose, onStatusChange, o
                 <TasksPanel entityType="job" entityId={job.id} entityName={`Job #${job.job_number}`} />
               </Card>
               
+              {/* Related Parts (Logistics Only) */}
+              {((job.job_category === 'Logistics') || (job.job_type_name || "").includes("Pickup") || (job.job_type_name || "").includes("Delivery") || (job.job_type || "").includes("Pickup") || (job.job_type || "").includes("Delivery")) && (
+                  <LinkedPartsCard job={job} />
+              )}
+
               {/* Job Info / Notes */}
               <div>
                 <RichTextField label="Job Info" value={additionalInfo} onChange={setAdditionalInfo} placeholder="Additional info..." />
