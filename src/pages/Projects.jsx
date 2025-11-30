@@ -25,8 +25,6 @@ import ProjectModalView from "../components/projects/ProjectModalView";
 import { createPageUrl } from "@/utils";
 import { DuplicateBadge } from "../components/common/DuplicateWarningCard";
 
-
-
 export default function Projects() {
   const [user, setUser] = useState(null);
   const [searchTerm, setSearchTerm] = useState("");
@@ -212,28 +210,6 @@ export default function Projects() {
 
   const getJobCount = (projectId) => {
     return allJobs.filter(j => j.project_id === projectId && !j.deleted_at).length;
-  };
-
-  const getNextJob = (projectId) => {
-    const projectJobs = allJobs.filter(j => j.project_id === projectId && !j.deleted_at && j.scheduled_date);
-    const futureJobs = projectJobs.filter(j => new Date(j.scheduled_date) >= new Date());
-    if (futureJobs.length === 0) return null;
-    return futureJobs.sort((a, b) => new Date(a.scheduled_date) - new Date(b.scheduled_date))[0];
-  };
-
-  const extractSuburb = (address) => {
-    if (!address) return null;
-    const parts = address.split(',').map(p => p.trim());
-    return parts.length > 1 ? parts[parts.length - 2] : null;
-  };
-
-  const buildScopeSummary = (project) => {
-    if (!project.doors || project.doors.length === 0) return null;
-    const doorCount = project.doors.length;
-    const firstDoor = project.doors[0];
-    const doorType = firstDoor.type || 'doors';
-    const dimensions = firstDoor.height && firstDoor.width ? `${firstDoor.height} x ${firstDoor.width}` : '';
-    return `${doorCount}x ${doorType}${dimensions ? ` • ${dimensions}` : ''}`;
   };
 
   if (showForm) {
