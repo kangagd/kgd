@@ -12,7 +12,7 @@ import { createPageUrl } from "@/utils";
 import JobCard from "../components/jobs/JobCard";
 import XeroConnectButton from "../components/xero/XeroConnectButton";
 import MaintenanceRemindersCard from "../components/dashboard/MaintenanceRemindersCard";
-
+import AdminDashboard from "../components/dashboard/AdminDashboard";
 
 
 export default function Dashboard() {
@@ -130,7 +130,11 @@ export default function Dashboard() {
           </div>
         </div>
 
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 md:gap-6 mb-6">
+        {user?.role === 'admin' ? (
+          <AdminDashboard />
+        ) : (
+          <>
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 md:gap-6 mb-6">
           <div
             onClick={() => handleCardClick('today')}
             className="bg-white rounded-xl border border-[#E5E7EB] p-7 cursor-pointer hover:shadow-xl hover:border-[#FAE008] hover:scale-[1.02] active:scale-[0.98] transition-all duration-200 group"
@@ -279,7 +283,7 @@ export default function Dashboard() {
             </div>
           )}
 
-          {!(user?.is_field_technician && user?.role !== 'admin') && (
+          {!(user?.is_field_technician) && (
             <div className="bg-white rounded-xl border border-[#E5E7EB] p-7 shadow-sm">
               <h2 className="text-[22px] font-semibold text-[#111827] leading-[1.2] mb-6">Project Updates</h2>
               {recentProjects.length === 0 ? (
