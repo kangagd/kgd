@@ -11,17 +11,33 @@ import { ProjectTypeBadge } from "../../common/StatusBadge";
 
 export default function ProjectSnapshot({ project, summary, onUpdate }) {
     const [isEditing, setIsEditing] = useState(false);
-    const [estimatedDate, setEstimatedDate] = useState(project.estimated_completion_date || "");
+    const [estimatedDate, setEstimatedDate] = useState(
+        project.status === 'Completed' 
+            ? (project.completed_date || "") 
+            : (project.estimated_completion_date || "")
+    );
     
     const handleSave = async () => {
         try {
-            await base44.entities.Project.update(project.id, {
-                estimated_completion_date: estimatedDate || null
-            });
+            const updateData = {};
+            if (project.status === 'Completed') {
+                updateData.completed_date = estimatedDate || null;
+            } else {
+                updateData.estimated_completion_date = estimatedDate || null;
+            }
+
+            await base44.entities.Project.update(project.id, updateData);
+            
+            // Recalculate warranty if completed date changed
+            if (project.status === 'Completed' && updateData.completed_date) {
+                await base44.functions.invoke('project_calculateWarranty', { projectId: project.id });
+            }
+
             setIsEditing(false);
             onUpdate?.();
             toast.success("Updated project details");
         } catch (err) {
+            console.error(err);
             toast.error("Failed to update");
         }
     };
@@ -59,7 +75,9 @@ export default function ProjectSnapshot({ project, summary, onUpdate }) {
                                 <Badge variant="outline" className="bg-white">{project.status}</Badge>
                              </div>
                              <div className="px-3 py-2 bg-slate-50 rounded border border-slate-100 relative group min-w-[140px]">
-                                <span className="text-xs text-slate-400 uppercase font-bold block mb-0.5">Est. Completion</span>
+                                <span className="text-xs text-slate-400 uppercase font-bold block mb-0.5">
+                                    {project.status === 'Completed' ? 'Completed Date' : 'Est. Completion'}
+                                </span>
                                 {isEditing ? (
                                     <div className="flex items-center gap-1">
                                         <Input 
@@ -74,7 +92,10 @@ export default function ProjectSnapshot({ project, summary, onUpdate }) {
                                 ) : (
                                     <div className="flex items-center gap-2 cursor-pointer" onClick={() => setIsEditing(true)}>
                                         <span className="text-sm font-medium text-slate-700">
-                                            {project.estimated_completion_date ? format(new Date(project.estimated_completion_date), 'MMM d, yyyy') : 'Set Date'}
+                                            {project.status === 'Completed' 
+                                                ? (project.completed_date ? format(new Date(project.completed_date), 'MMM d, yyyy') : 'Set Date')
+                                                : (project.estimated_completion_date ? format(new Date(project.estimated_completion_date), 'MMM d, yyyy') : 'Set Date')
+                                            }
                                         </span>
                                         <Edit2 className="w-3 h-3 text-slate-300 opacity-0 group-hover:opacity-100" />
                                     </div>
