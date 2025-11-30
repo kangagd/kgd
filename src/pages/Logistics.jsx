@@ -54,6 +54,10 @@ export default function Logistics() {
     queryFn: () => base44.entities.Job.list(),
   });
 
+  const logisticsJobs = useMemo(() => {
+    return jobs.filter(j => j.is_logistics_job || (j.job_type_name || "").match(/(Delivery|Pickup|Return|Logistics)/i));
+  }, [jobs]);
+
   // Maps for quick lookup
   const projectMap = useMemo(() => {
     return projects.reduce((acc, p) => ({ ...acc, [p.id]: p }), {});
@@ -140,7 +144,7 @@ export default function Logistics() {
         <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
           <div>
             <h1 className="text-2xl font-bold text-[#111827]">Logistics Dashboard</h1>
-            <p className="text-sm text-[#6B7280] mt-1">Manage parts, orders, and locations across all projects</p>
+            <p className="text-sm text-[#6B7280] mt-1">Manage parts, orders, and logistics jobs</p>
           </div>
         </div>
 
@@ -236,6 +240,46 @@ export default function Logistics() {
           </div>
         </div>
 
+        {/* Logistics Jobs Section */}
+        {logisticsJobs.length > 0 && (
+          <div className="space-y-4">
+            <h2 className="text-lg font-bold text-[#111827]">Active Logistics Jobs ({logisticsJobs.length})</h2>
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+              {logisticsJobs.map(job => (
+                <Card key={job.id} className="border border-[#E5E7EB] shadow-sm hover:shadow-md transition-all">
+                  <CardContent className="p-4">
+                    <div className="flex justify-between items-start mb-2">
+                      <Badge className="bg-slate-800 text-white border-0 flex items-center gap-1">
+                        <Truck className="w-3 h-3" />
+                        {job.job_type_name || "Logistics"}
+                      </Badge>
+                      <Badge variant="outline" className={STATUS_COLORS[job.status] || ""}>{job.status}</Badge>
+                    </div>
+                    <h3 className="font-semibold text-[#111827] truncate">{job.customer_name}</h3>
+                    <div className="text-sm text-[#6B7280] mt-1 flex items-center gap-1">
+                      <MapPin className="w-3 h-3" />
+                      <span className="truncate">{job.address_suburb || job.address}</span>
+                    </div>
+                    <div className="text-sm text-[#6B7280] mt-1 flex items-center gap-1">
+                      <Clock className="w-3 h-3" />
+                      <span>{job.scheduled_date ? format(new Date(job.scheduled_date), 'MMM d') : 'Unscheduled'}</span>
+                    </div>
+                    <Link 
+                      to={`${createPageUrl("Jobs")}?jobId=${job.id}`}
+                      className="block mt-3 text-sm text-blue-600 font-medium hover:underline"
+                    >
+                      View Job Details →
+                    </Link>
+                  </CardContent>
+                </Card>
+              ))}
+            </div>
+          </div>
+        )}
+
+        {/* Parts Table Title */}
+        <h2 className="text-lg font-bold text-[#111827] mt-8">Parts Inventory</h2>
+        
         {/* Parts Table */}
         <div className="bg-white border border-[#E5E7EB] rounded-xl shadow-sm overflow-hidden">
           <div className="overflow-x-auto">
