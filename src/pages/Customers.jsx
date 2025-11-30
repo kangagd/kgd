@@ -321,12 +321,29 @@ export default function Customers() {
         ) : (
           <div className="grid gap-3">
             {filteredCustomers.map((customer) => (
-              <CustomerCard
-                key={customer.id}
-                customer={customer}
-                onClick={() => setSelectedCustomer(customer)}
-                onViewDetails={(c) => setModalCustomer(c)}
-              />
+              <div key={customer.id} className="relative group">
+                  <CustomerCard
+                    customer={customer}
+                    onClick={() => setSelectedCustomer(customer)}
+                    onViewDetails={(c) => setModalCustomer(c)}
+                  />
+                  {customer.is_potential_duplicate && isAdminOrManager && (
+                      <div className="absolute top-4 right-14 z-10">
+                          <Button
+                             variant="destructive"
+                             size="sm"
+                             className="h-8 gap-1 bg-amber-100 text-amber-700 hover:bg-amber-200 border-amber-200 shadow-sm"
+                             onClick={(e) => {
+                                 e.stopPropagation();
+                                 setDuplicateReviewCustomer(customer);
+                             }}
+                          >
+                              <GitMerge className="w-4 h-4" />
+                              Review Duplicate
+                          </Button>
+                      </div>
+                  )}
+              </div>
             ))}
           </div>
         )}
