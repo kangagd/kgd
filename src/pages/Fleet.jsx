@@ -12,7 +12,9 @@ import {
   Plus, 
   AlertTriangle,
   Battery,
-  User
+  User,
+  Truck,
+  MapPin
 } from "lucide-react";
 import VehicleDetail from "../components/fleet/VehicleDetail";
 import VehicleFormModal from "../components/fleet/VehicleFormModal";
@@ -38,11 +40,11 @@ export default function Fleet() {
   });
 
   if (selectedVehicle) {
-    return <VehicleDetail vehicle={selectedVehicle} onBack={() => setSelectedVehicle(null)} />;
+    return <VehicleDetail vehicle={selectedVehicle} onClose={() => setSelectedVehicle(null)} />;
   }
 
   return (
-    <div className="p-6 max-w-7xl mx-auto">
+    <div className="p-6 max-w-7xl mx-auto bg-[#ffffff] min-h-screen">
       <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-8">
         <div>
           <h1 className="text-3xl font-bold text-gray-900">Fleet Management</h1>
@@ -98,7 +100,7 @@ export default function Fleet() {
               <div className="flex justify-between items-start mb-4">
                 <div className="flex items-center gap-3">
                   <div className="w-10 h-10 bg-gray-100 rounded-lg flex items-center justify-center group-hover:bg-[#FAE008]/20 transition-colors">
-                    <Car className="w-5 h-5 text-gray-600 group-hover:text-black" />
+                    <Truck className="w-5 h-5 text-gray-600 group-hover:text-black" />
                   </div>
                   <div>
                     <h3 className="font-bold text-gray-900">{vehicle.name}</h3>
@@ -116,7 +118,7 @@ export default function Fleet() {
                   {vehicle.assigned_user_name || "Unassigned"}
                 </div>
                 <div className="flex items-center text-sm text-gray-600">
-                  <div className="w-2 h-2 rounded-full bg-gray-400 mr-3 ml-1" />
+                  <MapPin className="w-4 h-4 mr-2 text-gray-400" />
                   {vehicle.primary_location || "No location set"}
                 </div>
               </div>
