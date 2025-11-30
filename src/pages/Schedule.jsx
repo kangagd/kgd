@@ -196,7 +196,14 @@ export default function Schedule() {
         const outcome = job.outcome?.toLowerCase();
         if (status === 'cancelled' || status === 'lost' || outcome === 'lost') return false;
         
-        // Technician access filter removed to allow visibility of all jobs permitted by RLS
+        // Technician access filter
+        if (isTechnician && user) {
+          const userEmail = user.email?.toLowerCase().trim();
+          const isAssigned = Array.isArray(job.assigned_to) 
+            ? job.assigned_to.some(email => email?.toLowerCase().trim() === userEmail)
+            : (typeof job.assigned_to === 'string' && job.assigned_to.toLowerCase().trim() === userEmail);
+          if (!isAssigned) return false;
+        }
 
         // Date filter
         if (dateFilter && job.scheduled_date) {
