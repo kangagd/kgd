@@ -40,7 +40,39 @@ Deno.serve(async (req) => {
             });
         } else if (action === 'update') {
             const previousProject = await base44.asServiceRole.entities.Project.get(id);
-            project = await base44.asServiceRole.entities.Project.update(id, data);
+            // Auto-populate warranty and completion details if status changes
+            let updateData = { ...data };
+            if (data.status === 'Completed' && previousProject.status !== 'Completed') {
+                const today = new Date().toISOString().split('T')[0];
+                if (!previousProject.completed_date) {
+                    updateData.completed_date = today;
+                }
+                
+                const startDate = previousProject.completed_date || today;
+                if (!previousProject.warranty_start_date) {
+                    updateData.warranty_start_date = startDate;
+                }
+                
+                if (!previousProject.warranty_end_date) {
+                    // Default 12 months
+                    const end = new Date(startDate);
+                    end.setFullYear(end.getFullYear() + 1);
+                    updateData.warranty_end_date = end.toISOString().split('T')[0];
+                }
+                
+                if (previousProject.warranty_status === 'Not Started' || !previousProject.warranty_status) {
+                    updateData.warranty_status = 'In Warranty';
+                }
+                updateData.is_in_warranty = true;
+            } else if (data.status === 'Warranty') {
+                updateData.warranty_status = 'In Warranty';
+                updateData.is_in_warranty = true;
+            } else if (data.warranty_status === 'Warranty Completed') {
+                 updateData.is_in_warranty = false;
+                 updateData.status = 'Completed';
+            }
+
+            project = await base44.asServiceRole.entities.Project.update(id, updateData);
 
             // Log update
             await base44.asServiceRole.entities.ActivityLog.create({
