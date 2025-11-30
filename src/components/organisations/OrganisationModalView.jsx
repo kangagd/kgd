@@ -4,9 +4,9 @@ import { Button } from "@/components/ui/button";
 import { MapPin, Phone, Mail, Users } from "lucide-react";
 
 const organisationTypeColors = {
-  "Strata": "bg-blue-100 text-blue-700",
-  "Builder": "bg-green-100 text-green-700",
-  "Real Estate": "bg-purple-100 text-purple-700",
+  "Strata": "bg-purple-100 text-purple-700",
+  "Builder": "bg-blue-100 text-blue-700",
+  "Real Estate": "bg-green-100 text-green-700",
   "Supplier": "bg-amber-100 text-amber-700"
 };
 

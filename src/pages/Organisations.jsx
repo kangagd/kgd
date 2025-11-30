@@ -21,6 +21,7 @@ const organisationTypeColors = {
 };
 
 export default function Organisations() {
+  // State for filters and navigation
   const [searchTerm, setSearchTerm] = useState("");
   const [organisationTypeFilter, setOrganisationTypeFilter] = useState("all");
   const [showForm, setShowForm] = useState(false);
