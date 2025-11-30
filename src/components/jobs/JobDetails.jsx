@@ -1203,37 +1203,32 @@ export default function JobDetails({ job: initialJob, onClose, onStatusChange, o
         }
         
         <CardContent className={`p-3 md:p-4 space-y-3 ${isTechnician ? 'pb-32' : ''}`}>
-          <Tabs defaultValue="details" className="w-full">
+          <Tabs defaultValue="summary" className="w-full">
             <TabsList className="w-full justify-start mb-3 overflow-x-auto flex-nowrap">
-              <TabsTrigger value="details" className="flex-1">Details</TabsTrigger>
-              <TabsTrigger value="visit" className="flex-1">
+              <TabsTrigger value="summary" className="flex-1 min-w-[100px]">Summary</TabsTrigger>
+              <TabsTrigger value="visit" className="flex-1 min-w-[100px]">
                 <ClipboardCheck className="w-4 h-4 mr-1.5" />
-                <span className="hidden md:inline">Visit</span>
+                Visit
               </TabsTrigger>
-              <TabsTrigger value="form" className="flex-1">
-                <FileCheck className="w-4 h-4 mr-1.5" />
-                <span className="hidden md:inline">Form</span>
-              </TabsTrigger>
-              <TabsTrigger value="files" className="flex-1">
+              <TabsTrigger value="photos" className="flex-1 min-w-[100px]">
                 <ImageIcon className="w-4 h-4 mr-1.5" />
-                <span className="hidden md:inline">Files</span>
+                Photos
               </TabsTrigger>
+              <TabsTrigger value="measurements" className="flex-1 min-w-[100px]">
+                <FileCheck className="w-4 h-4 mr-1.5" />
+                Measurements
+              </TabsTrigger>
+              <TabsTrigger value="attachments" className="flex-1 min-w-[100px]">
+                <FileText className="w-4 h-4 mr-1.5" />
+                Attachments
+              </TabsTrigger>
+              <TabsTrigger value="history" className="flex-1 min-w-[100px]">
+                <History className="w-4 h-4 mr-1.5" />
+                History
+              </TabsTrigger>
+            </TabsList>
 
-              <TabsTrigger value="chat" className="flex-1">
-                <MessageCircle className="w-4 h-4 mr-1.5" />
-                <span className="hidden md:inline">Chat</span>
-              </TabsTrigger>
-              <TabsTrigger value="map" className="flex-1">
-                <MapPin className="w-4 h-4 mr-1.5" />
-                <span className="hidden md:inline">Map</span>
-              </TabsTrigger>
-              <TabsTrigger value="invoicing" className="flex-1">
-                <DollarSign className="w-4 h-4 mr-1.5" />
-                <span className="hidden md:inline">Invoice</span>
-              </TabsTrigger>
-              </TabsList>
-
-            <TabsContent value="details" className="space-y-4 mt-3">
+            <TabsContent value="summary" className="space-y-4 mt-3">
               {/* Duplicate Warning */}
               <DuplicateWarningCard entityType="Job" record={job} />
 
@@ -1667,82 +1662,16 @@ export default function JobDetails({ job: initialJob, onClose, onStatusChange, o
               }
             </TabsContent>
 
-            <TabsContent value="form" className="mt-2">
+            <TabsContent value="measurements" className="mt-2">
               <div className="space-y-2.5">
                 <h3 className="text-[16px] font-semibold text-[#111827] leading-[1.2] mb-3">Measurements</h3>
                 <MeasurementsForm
                   measurements={measurements}
                   onChange={handleMeasurementsChange} />
-
               </div>
-
-              {jobSummaries.length > 0 &&
-              <Collapsible defaultOpen={true} className="pt-3 border-t-2 mt-3">
-                  <CollapsibleTrigger className="flex items-center justify-between w-full group bg-[#F9FAFB] border border-[#E5E7EB] rounded-xl p-3 hover:bg-[#F3F4F6] transition-colors">
-                    <h4 className="text-[14px] font-semibold text-[#111827] leading-[1.4]">Previous Visit Summaries ({jobSummaries.length})</h4>
-                    <ChevronDown className="w-4 h-4 text-slate-500 transition-transform group-data-[state=open]:rotate-180" />
-                  </CollapsibleTrigger>
-                  
-                  <CollapsibleContent className="pt-3 space-y-3">
-                    {jobSummaries.map((summary) =>
-                  <div key={summary.id} className="bg-white border-2 border-slate-200 rounded-xl p-3">
-                        <div className="flex items-center justify-between mb-3">
-                          <span className="font-bold text-[#000000]">{summary.technician_name}</span>
-                          <span className="text-xs text-slate-500 font-medium">
-                            {format(new Date(summary.check_out_time), 'MMM d, yyyy h:mm a')}
-                          </span>
-                        </div>
-                        
-                        {summary.outcome &&
-                    <Badge className={`${outcomeColors[summary.outcome]} mb-3 font-semibold border-2 hover:opacity-100`}>
-                            {summary.outcome?.replace(/_/g, ' ') || summary.outcome}
-                          </Badge>
-                    }
-
-                        <div className="space-y-2">
-                          {summary.overview &&
-                      <div>
-                              <div className="text-xs font-bold text-slate-500 mb-1">Work Performed:</div>
-                              <div className="text-sm text-slate-700" dangerouslySetInnerHTML={{ __html: summary.overview }} />
-                            </div>
-                      }
-
-                          {summary.issues_found &&
-                      <div>
-                              <div className="text-xs font-bold text-slate-500 mb-1">Issues Found:</div>
-                              <div className="text-sm text-slate-700" dangerouslySetInnerHTML={{ __html: summary.issues_found }} />
-                            </div>
-                      }
-
-                          {summary.resolution &&
-                      <div>
-                              <div className="text-xs font-bold text-slate-500 mb-1">Resolution:</div>
-                              <div className="text-sm text-slate-700" dangerouslySetInnerHTML={{ __html: summary.resolution }} />
-                            </div>
-                      }
-                          
-                          {summary.next_steps &&
-                      <div>
-                              <div className="text-xs font-bold text-slate-500 mb-1">Next Steps:</div>
-                              <div className="text-sm text-slate-700" dangerouslySetInnerHTML={{ __html: summary.next_steps }} />
-                            </div>
-                      }
-                          
-                          {summary.communication_with_client &&
-                      <div>
-                              <div className="text-xs font-bold text-slate-500 mb-1">Communication:</div>
-                              <div className="text-sm text-slate-700" dangerouslySetInnerHTML={{ __html: summary.communication_with_client }} />
-                            </div>
-                      }
-                        </div>
-                      </div>
-                  )}
-                  </CollapsibleContent>
-                </Collapsible>
-              }
             </TabsContent>
 
-            <TabsContent value="files" className="mt-2">
+            <TabsContent value="photos" className="mt-2">
               <div className="space-y-3">
                 <div className="flex items-center justify-between mb-2">
                   <h4 className="text-[16px] font-semibold text-[#111827] leading-[1.2]">Photos & Videos</h4>
@@ -1764,9 +1693,13 @@ export default function JobDetails({ job: initialJob, onClose, onStatusChange, o
                   icon={ImageIcon}
                   label=""
                   emptyText="Upload media" />
+              </div>
+            </TabsContent>
 
-
-                <div className="grid md:grid-cols-2 gap-2.5 pt-3 border-t-2">
+            <TabsContent value="attachments" className="mt-2">
+              <div className="space-y-3">
+                <h3 className="text-[16px] font-semibold text-[#111827] leading-[1.2]">Documents & Attachments</h3>
+                <div className="grid md:grid-cols-2 gap-2.5 pt-3">
                   <EditableFileUpload
                     files={job.quote_url}
                     onFilesChange={handleQuoteChange}
@@ -1776,7 +1709,6 @@ export default function JobDetails({ job: initialJob, onClose, onStatusChange, o
                     label="Quote"
                     emptyText="Upload quote" />
 
-
                   <EditableFileUpload
                     files={job.invoice_url}
                     onFilesChange={handleInvoiceChange}
@@ -1785,7 +1717,6 @@ export default function JobDetails({ job: initialJob, onClose, onStatusChange, o
                     icon={FileText}
                     label="Invoice"
                     emptyText="Upload invoice" />
-
                 </div>
 
                 <div className="pt-3 border-t-2">
@@ -1801,26 +1732,17 @@ export default function JobDetails({ job: initialJob, onClose, onStatusChange, o
               </div>
             </TabsContent>
 
-            <TabsContent value="chat" className="mt-2">
-              <div className="space-y-3">
-                <h3 className="text-[16px] font-semibold text-[#111827] leading-[1.2]">Team Chat</h3>
-                <p className="text-sm text-gray-600">Real-time messaging with assigned technicians and supervisors</p>
-                <JobChat jobId={job.id} />
-              </div>
-            </TabsContent>
+            <TabsContent value="history" className="mt-2">
+              <div className="space-y-6">
+                <div className="space-y-3">
+                   <h3 className="text-[16px] font-semibold text-[#111827]">Team Chat</h3>
+                   <JobChat jobId={job.id} />
+                </div>
 
-            <TabsContent value="map" className="mt-2">
-              <div className="space-y-3">
-                <h3 className="text-[16px] font-semibold text-[#111827] leading-[1.2]">Job Location</h3>
-                <JobMapView job={job} />
-                <div className="flex gap-2">
-                  <Button
-                    variant="outline"
-                    onClick={() => window.open(`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(job.address)}`, '_blank')}
-                    className="flex-1"
-                  >
-                    <Navigation className="w-4 h-4 mr-2" />
-                    Open in Google Maps
+                <div className="space-y-3 border-t pt-4">
+                  <h3 className="text-[16px] font-semibold text-[#111827]">Activity History</h3>
+                  <Button onClick={() => setShowHistory(true)} variant="outline" className="w-full">
+                    View Change Log
                   </Button>
                 </div>
               </div>
