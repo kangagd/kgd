@@ -16,7 +16,7 @@ const invoiceStatusColors = {
 const getPaymentStatus = (invoice) => {
   const amountDue = invoice.amount_due || 0;
   const amountPaid = invoice.amount_paid || 0;
-  const total = invoice.total_amount || 0;
+  const total = invoice.total || invoice.total_amount || 0;
 
   if (amountDue === 0 && amountPaid >= total) {
     return { label: 'Paid', color: 'bg-green-100 text-green-700 border-green-200', icon: CheckCircle2 };
@@ -56,7 +56,7 @@ export default function XeroInvoiceCard({ invoice, onRefreshStatus, onViewInXero
           <div className="text-right">
             <div className="text-[12px] text-[#6B7280] mb-1">Total</div>
             <div className="text-[18px] font-bold text-[#111827]">
-              ${invoice.total_amount?.toFixed(2) || '0.00'}
+              ${(invoice.total || invoice.total_amount || 0).toFixed(2)}
             </div>
           </div>
         </div>
@@ -85,7 +85,7 @@ export default function XeroInvoiceCard({ invoice, onRefreshStatus, onViewInXero
           <span>
             {(() => {
               try {
-                const issueDate = invoice.issue_date ? new Date(invoice.issue_date) : null;
+                const issueDate = (invoice.issued_at || invoice.date) ? new Date(invoice.issued_at || invoice.date) : null;
                 const dueDate = invoice.due_date ? new Date(invoice.due_date) : null;
                 const issueDateValid = issueDate && !isNaN(issueDate.getTime());
                 const dueDateValid = dueDate && !isNaN(dueDate.getTime());
@@ -106,33 +106,42 @@ export default function XeroInvoiceCard({ invoice, onRefreshStatus, onViewInXero
         </div>
 
         <div className="space-y-2">
-          {invoice.amount_due > 0 && onTakePayment && (
-            <>
-              <Button
-                onClick={onTakePayment}
-                disabled={!invoice.online_payment_url}
-                className="w-full bg-[#FAE008] text-[#111827] hover:bg-[#E5CF07] font-semibold h-9 text-sm disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:bg-[#FAE008]"
+          {invoice.xero_public_url && (
+            <Button
+              onClick={() => {
+                navigator.clipboard.writeText(invoice.xero_public_url);
+                // Simple toast notification logic usually handled by parent or context, 
+                // but assuming clipboard API works.
+              }}
+              variant="outline"
+              className="w-full h-9 text-sm border-[#E5E7EB] hover:border-[#FAE008] hover:bg-[#FFFEF5]"
+            >
+              <ExternalLink className="w-4 h-4 mr-1.5" />
+              Copy Public Payment Link
+            </Button>
+          )}
+          
+          {/* Legacy support for online_payment_url if needed */}
+          {!invoice.xero_public_url && invoice.online_payment_url && (
+             <Button
+                onClick={() => window.open(invoice.online_payment_url, '_blank')}
+                className="w-full bg-[#FAE008] text-[#111827] hover:bg-[#E5CF07] font-semibold h-9 text-sm"
               >
                 <CreditCard className="w-4 h-4 mr-1.5" />
-                {invoice.online_payment_url ? 'Pay Securely Online' : 'No Public Link'}
+                Pay Online
               </Button>
-              {!invoice.online_payment_url && (
-                <div className="text-xs text-amber-600 bg-amber-50 border border-amber-200 rounded-lg p-2">
-                  ⚠️ Public payment link not available. Try syncing the invoice status.
-                </div>
-              )}
-            </>
           )}
           <div className="flex gap-2">
             <Button
-              onClick={onViewInXero}
+              onClick={() => window.open(invoice.xero_internal_url || '#', '_blank')}
               variant="outline"
               size="sm"
               className="flex-1 h-9 text-sm border-[#E5E7EB] hover:border-[#FAE008] hover:bg-[#FFFEF5]"
+              disabled={!invoice.xero_internal_url}
               title="Admin view - opens in Xero dashboard"
             >
               <ExternalLink className="w-4 h-4 mr-1.5" />
-              View in Xero
+              Open in Xero
             </Button>
             <Button
               onClick={onDownloadPdf}
