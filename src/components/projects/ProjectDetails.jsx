@@ -185,6 +185,7 @@ export default function ProjectDetails({ project: initialProject, onClose, onEdi
                 <ProjectStageSelector 
                     currentStage={project.status} 
                     onStageChange={handleStatusChange}
+                    onMarkAsLost={() => setShowLostModal(true)}
                 />
              </div>
           </CardHeader>
