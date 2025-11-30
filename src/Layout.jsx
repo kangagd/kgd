@@ -55,6 +55,7 @@ const primaryNavigationItems = [
 // Insert Analytics for admins
 const adminNavigationItems = [
   { title: "Analytics", url: createPageUrl("Analytics"), icon: TrendingUp },
+  { title: "Tech Performance", url: createPageUrl("TechnicianPerformance"), icon: Wrench },
 ];
 
 const secondaryNavigationItems = [
