@@ -362,6 +362,22 @@ export default function Customers() {
             />
           )}
         </EntityModal>
+
+        <DuplicateReviewModal
+            isOpen={!!duplicateReviewCustomer}
+            onClose={() => setDuplicateReviewCustomer(null)}
+            duplicateCustomer={duplicateReviewCustomer}
+            onMerged={() => {
+                queryClient.invalidateQueries({ queryKey: ['allCustomers'] });
+                refetch();
+                setDuplicateReviewCustomer(null);
+            }}
+            onIgnored={() => {
+                queryClient.invalidateQueries({ queryKey: ['allCustomers'] });
+                refetch();
+                setDuplicateReviewCustomer(null);
+            }}
+        />
       </div>
     </div>
   );
