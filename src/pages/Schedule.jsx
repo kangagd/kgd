@@ -1038,16 +1038,18 @@ export default function Schedule() {
           {/* Filters and Tabs Container */}
           <div className="flex flex-col lg:flex-row lg:items-center gap-4 mb-6">
             {/* View Period Tabs (Day/Week/Month) */}
-            <TabbedSelector
-              value={view}
-              onValueChange={setView}
-              options={[
-                { value: 'day', label: 'Day' },
-                { value: 'week', label: 'Week' },
-                { value: 'month', label: 'Month' }
-              ]}
-              className="w-full lg:w-[300px]"
-            />
+            <div className="flex-shrink-0">
+              <TabbedSelector
+                value={view}
+                onValueChange={setView}
+                options={[
+                  { value: 'day', label: 'Day' },
+                  { value: 'week', label: 'Week' },
+                  { value: 'month', label: 'Month' }
+                ]}
+                className="w-full lg:w-[300px]"
+              />
+            </div>
 
             {/* Filters */}
             <div className="flex flex-wrap gap-3 flex-1">
@@ -1105,15 +1107,17 @@ export default function Schedule() {
             </div>
 
             {/* View Type Toggle (Resource/Calendar) */}
-            <TabbedSelector
-              value={viewType}
-              onValueChange={setViewType}
-              options={[
-                { value: 'resource', label: <><LayoutList className="w-4 h-4 mr-2" /> Resource</> },
-                { value: 'calendar', label: <><CalendarIcon2 className="w-4 h-4 mr-2" /> Calendar</> }
-              ]}
-              className="w-full lg:w-auto"
-            />
+            <div className="flex-shrink-0">
+              <TabbedSelector
+                value={viewType}
+                onValueChange={setViewType}
+                options={[
+                  { value: 'resource', label: <><LayoutList className="w-4 h-4 mr-2" /> Resource</> },
+                  { value: 'calendar', label: <><CalendarIcon2 className="w-4 h-4 mr-2" /> Calendar</> }
+                ]}
+                className="w-full lg:w-auto"
+              />
+            </div>
           </div>
             </div>
 
