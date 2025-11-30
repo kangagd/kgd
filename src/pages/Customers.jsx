@@ -285,6 +285,18 @@ export default function Customers() {
               <AlertTriangle className="w-3.5 h-3.5 text-[#D97706]" />
               Show only potential duplicates
             </label>
+            
+            {isAdminOrManager && (
+                <Button 
+                    variant="outline" 
+                    size="sm" 
+                    className="ml-auto"
+                    onClick={() => detectDuplicatesMutation.mutate()}
+                    disabled={detectDuplicatesMutation.isPending}
+                >
+                    {detectDuplicatesMutation.isPending ? 'Scanning...' : 'Scan for Duplicates'}
+                </Button>
+            )}
           </div>
         </div>
 
