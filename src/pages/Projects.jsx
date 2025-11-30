@@ -289,7 +289,7 @@ export default function Projects() {
           {canCreateProjects && (
             <Button
               onClick={() => setShowForm(true)}
-              className="bg-[#FAE008] text-[#111827] hover:bg-[#E5CF07] font-semibold shadow-sm hover:shadow-md transition w-full md:w-auto h-10 px-4 text-sm rounded-xl"
+              className="w-full md:w-auto shadow-sm hover:shadow-md rounded-xl"
             >
               <Plus className="w-4 h-4 mr-2" />
               New Project
@@ -440,7 +440,7 @@ export default function Projects() {
         {!isLoading && filteredProjects.length === 0 && (
           <div className="text-center py-12 bg-white rounded-2xl border-2 border-[hsl(32,15%,88%)]">
             <p className="text-[14px] text-[#4B5563] leading-[1.4] mb-4">No projects found</p>
-            <Button onClick={() => setShowForm(true)} className="bg-[#fae008] text-[#111827] font-semibold text-[14px] leading-[1.4]">
+            <Button onClick={() => setShowForm(true)} className="font-semibold text-[14px] leading-[1.4]">
               Create First Project
             </Button>
           </div>

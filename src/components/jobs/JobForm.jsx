@@ -953,7 +953,7 @@ export default function JobForm({ job, technicians, onSubmit, onCancel, isSubmit
             <Button 
               type="submit" 
               disabled={isSubmitting} 
-              className="bg-[#fae008] hover:bg-[#e5d007] active:bg-[#d4c006] text-[#000000] font-bold shadow-md hover:shadow-lg transition-all"
+              className="font-bold shadow-md hover:shadow-lg transition-all"
             >
               {isSubmitting ? 'Saving...' : job ? 'Update Job' : 'Create Job'}
             </Button>
@@ -1057,7 +1057,7 @@ export default function JobForm({ job, technicians, onSubmit, onCancel, isSubmit
             <Button 
               onClick={handleCreateNewCustomer}
               disabled={!newCustomerData.name}
-              className="bg-[#fae008] hover:bg-[#e5d007] text-[#000000] font-bold"
+              className="font-bold"
             >
               Create Customer
             </Button>
@@ -1134,7 +1134,7 @@ export default function JobForm({ job, technicians, onSubmit, onCancel, isSubmit
             </Button>
             <Button 
               onClick={handleForceCreateNew}
-              className="bg-[#fae008] hover:bg-[#e5d007] text-[#000000] font-bold"
+              className="font-bold"
             >
               Create New Anyway
             </Button>

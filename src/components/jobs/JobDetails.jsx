@@ -266,8 +266,8 @@ export default function JobDetails({ job: initialJob, onClose, onStatusChange, o
                 {/* Technician Actions */}
                 <div className="grid grid-cols-2 gap-2">
                     {!activeCheckIn ? 
-                        <Button onClick={() => checkInMutation.mutate()} className="bg-yellow-400 text-black hover:bg-yellow-500">Check In</Button> :
-                        <Button onClick={() => checkOutMutation.mutate()} className="bg-slate-900 text-white hover:bg-slate-800">Check Out</Button>
+                        <Button onClick={() => checkInMutation.mutate()} variant="default">Check In</Button> :
+                        <Button onClick={() => checkOutMutation.mutate()} variant="default">Check Out</Button>
                     }
                 </div>
             </div>
