@@ -250,16 +250,8 @@ export default function ProjectDetails({ project: initialProject, onClose, onEdi
                             onBlur={handleDescriptionBlur}
                             placeholder="Detailed description of the project..."
                         />
-                        <RichTextField
-                            label="Internal Notes"
-                            value={notes}
-                            onChange={setNotes}
-                            onBlur={handleNotesBlur}
-                            placeholder="Notes for internal reference..."
-                        />
-                        
                         {/* Measurements */}
-                        <div className="pt-4 border-t border-slate-100">
+                        <div className="pt-4 border-t border-slate-100 mb-4">
                             <h4 className="text-sm font-medium text-slate-700 mb-2">Measurements Provided</h4>
                             {(project.doors || []).length > 0 ? (
                                 <div className="flex flex-wrap gap-2">
@@ -274,6 +266,14 @@ export default function ProjectDetails({ project: initialProject, onClose, onEdi
                             )}
                             {/* Note: Editing measurements currently done in ProjectForm edit mode */}
                         </div>
+
+                        <RichTextField
+                            label="Internal Notes"
+                            value={notes}
+                            onChange={setNotes}
+                            onBlur={handleNotesBlur}
+                            placeholder="Notes for internal reference..."
+                        />
                         </CardContent>
                     </Card>
                 </TabsContent>
