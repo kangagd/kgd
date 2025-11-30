@@ -17,6 +17,7 @@ import { Link, useNavigate } from "react-router-dom";
 import { createPageUrl } from "@/utils";
 import { toast } from "sonner";
 import PriceListModal from "./PriceListModal";
+import AIJobOverview from "./AIJobOverview";
 import TechnicianAssistant from "./TechnicianAssistant";
 import MeasurementsForm from "./MeasurementsForm";
 import ChangeHistoryModal from "./ChangeHistoryModal";
@@ -145,20 +146,7 @@ export default function JobDetails({ job: initialJob, onClose, onStatusChange, o
   const completedCheckIns = checkIns.filter((c) => c.check_out_time);
   const totalJobTime = completedCheckIns.reduce((sum, c) => sum + (c.duration_hours || 0), 0);
 
-  const generateAISummaryMutation = useMutation({
-      mutationFn: async () => {
-          const res = await base44.functions.invoke('generateJobAISummary', { job_id: job.id });
-          return res.data;
-      },
-      onSuccess: () => {
-          queryClient.invalidateQueries({ queryKey: ['job', job.id] });
-          toast.success("AI Summary generated");
-      },
-      onError: (err) => {
-          toast.error("Failed to generate AI summary");
-          console.error(err);
-      }
-  });
+  // AI Summary generation is now handled in AIJobOverview component
 
   // ... (keep mutations and handlers from original file) ...
   // I am assuming standard handlers like handleCheckIn, handleCheckOut, handleImagesChange, etc. are available.
@@ -263,6 +251,11 @@ export default function JobDetails({ job: initialJob, onClose, onStatusChange, o
         )}
 
         <CardContent className={`p-3 md:p-4 space-y-3 ${isTechnician ? 'pb-32' : ''}`}>
+          <AIJobOverview 
+            job={job} 
+            user={user} 
+            onGenerate={() => queryClient.invalidateQueries({ queryKey: ['job', job.id] })} 
+          />
           <Tabs defaultValue="summary" className="w-full">
             <TabsList className="w-full justify-start mb-3 overflow-x-auto flex-nowrap">
               <TabsTrigger value="summary" className="flex-1 min-w-[100px]">Summary</TabsTrigger>
@@ -289,66 +282,6 @@ export default function JobDetails({ job: initialJob, onClose, onStatusChange, o
             </TabsList>
 
             <TabsContent value="summary" className="space-y-4 mt-3">
-              {/* AI Overview Card - Only if active check-in or admin */}
-              {(activeCheckIn || !isTechnician) && (
-                  <Card className="border border-indigo-100 bg-indigo-50/50 shadow-sm rounded-lg overflow-hidden">
-                      <CardHeader className="pb-2 pt-4 px-4 flex flex-row items-center justify-between space-y-0">
-                          <div className="flex items-center gap-2">
-                              <Bot className="w-5 h-5 text-indigo-600" />
-                              <CardTitle className="text-base font-semibold text-indigo-900">AI Overview</CardTitle>
-                          </div>
-                          <Button 
-                              variant="ghost" 
-                              size="sm" 
-                              className="h-8 text-indigo-600 hover:bg-indigo-100 hover:text-indigo-700"
-                              onClick={() => generateAISummaryMutation.mutate()}
-                              disabled={generateAISummaryMutation.isPending}
-                          >
-                              {generateAISummaryMutation.isPending ? (
-                                  <Loader2 className="w-3 h-3 animate-spin mr-1" />
-                              ) : (
-                                  <Sparkles className="w-3 h-3 mr-1" />
-                              )}
-                              {job.ai_summary ? "Refresh" : "Generate"}
-                          </Button>
-                      </CardHeader>
-                      <CardContent className="px-4 pb-4">
-                          {generateAISummaryMutation.isPending && !job.ai_summary ? (
-                              <div className="flex items-center justify-center py-4 text-indigo-400">
-                                  <Loader2 className="w-5 h-5 animate-spin mr-2" />
-                                  Generating briefing...
-                              </div>
-                          ) : job.ai_summary ? (
-                              <div className="space-y-3">
-                                  <p className="text-sm text-indigo-900 leading-relaxed">
-                                      {job.ai_summary}
-                                  </p>
-                                  {job.ai_key_items && job.ai_key_items.length > 0 && (
-                                      <div className="bg-white/60 rounded-md p-3 border border-indigo-100">
-                                          <p className="text-xs font-semibold text-indigo-800 mb-2 uppercase tracking-wide">Key Items</p>
-                                          <ul className="space-y-1">
-                                              {job.ai_key_items.map((item, idx) => (
-                                                  <li key={idx} className="flex items-start gap-2 text-sm text-indigo-900">
-                                                      <span className="text-indigo-500 mt-1">•</span>
-                                                      {item}
-                                                  </li>
-                                              ))}
-                                          </ul>
-                                      </div>
-                                  )}
-                                  <div className="text-[10px] text-indigo-400 text-right">
-                                      Generated {job.ai_generated_at ? format(parseISO(job.ai_generated_at), "MMM d, h:mm a") : "Just now"}
-                                  </div>
-                              </div>
-                          ) : (
-                              <div className="text-center py-2 text-sm text-indigo-400 italic">
-                                  Click generate to get a technician briefing.
-                              </div>
-                          )}
-                      </CardContent>
-                  </Card>
-              )}
-
               <DuplicateWarningCard entityType="Job" record={job} />
               <LinkedPartsCard job={job} />
               <Card className="border border-[#E5E7EB] shadow-sm rounded-lg p-4">
