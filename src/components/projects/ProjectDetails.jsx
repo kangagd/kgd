@@ -1,140 +1,45 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Input } from "@/components/ui/input";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
-import { ArrowLeft, Plus, Edit, Trash2, MapPin, Phone, Mail, FileText, Image as ImageIcon, User, Upload, X, Briefcase, History, ExternalLink, DollarSign, Eye, Link2, MessageCircle, ClipboardCheck, Wrench, Target, Sparkles } from "lucide-react";
+import { ArrowLeft, Edit, Trash2, FileText, DollarSign, Wrench, Mail, CheckSquare, Clock, Sparkles, ClipboardCheck, Image as ImageIcon, History } from "lucide-react";
 import { base44 } from "@/api/base44Client";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useNavigate, Link } from "react-router-dom";
 import { createPageUrl } from "@/utils";
 import { toast } from "sonner";
-import EditableField from "../jobs/EditableField";
-import EditableFileUpload from "../jobs/EditableFileUpload";
-import RichTextField from "../common/RichTextField";
-import { TechnicianAvatarGroup } from "../common/TechnicianAvatar";
-import AddressAutocomplete from "../common/AddressAutocomplete";
-import { ProjectTypeBadge, ProductTypeBadge } from "../common/StatusBadge";
-import {
-  AlertDialog,
-  AlertDialogAction,
-  AlertDialogCancel,
-  AlertDialogContent,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogTitle,
-  AlertDialogTrigger,
-} from "@/components/ui/alert-dialog";
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
-import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
-import { ChevronDown } from "lucide-react";
-import ProjectChangeHistoryModal from "./ProjectChangeHistoryModal";
+
+// Components
+import ProjectSidebar from "./ProjectSidebar";
 import ProjectStageSelector from "./ProjectStageSelector";
-import ProjectQuotesTab from "./ProjectQuotesTab";
-import PartsSection from "./PartsSection";
-import LogisticsTimeline from "./LogisticsTimeline";
 import ProjectSummary from "./ProjectSummary";
+import ProjectQuotesTab from "./ProjectQuotesTab";
+import ProjectInvoicesTab from "./ProjectInvoicesTab";
+import ProjectEmailSection from "./ProjectEmailSection";
+import PartsSection from "./PartsSection";
 import FinancialsTab from "./FinancialsTab";
-import FilePreviewModal from "../common/FilePreviewModal";
-import XeroInvoiceCard from "../invoices/XeroInvoiceCard";
-import CreateInvoiceModal from "../invoices/CreateInvoiceModal";
-import TakePaymentModal from "../invoices/TakePaymentModal";
 import WarrantyCard from "./WarrantyCard";
 import MaintenanceSection from "./MaintenanceSection";
-import DuplicateWarningCard, { DuplicateBadge } from "../common/DuplicateWarningCard";
-import CustomerQuickEdit from "./CustomerQuickEdit";
-import EntityModal from "../common/EntityModal";
-import JobModalView from "../jobs/JobModalView";
-import TasksPanel from "../tasks/TasksPanel";
-import ProjectEmailSection from "./ProjectEmailSection";
-import QuotesSection from "../quotes/QuotesSection";
-import InitialVisitSummary from "./InitialVisitSummary";
-import MarkAsLostModal from "./MarkAsLostModal";
-import LinkInvoiceModal from "../invoices/LinkInvoiceModal";
-import ProjectChat from "./ProjectChat";
+import RichTextField from "../common/RichTextField";
 import ActivityTimeline from "../common/ActivityTimeline";
-import ProjectCard from "./ProjectCard";
-import AIProjectOverview from "./AIProjectOverview";
-import JobCard from "../jobs/JobCard";
-
-const statusColors = {
-  "Lead": "bg-slate-100 text-slate-700",
-  "Initial Site Visit": "bg-blue-100 text-blue-700",
-  "Create Quote": "bg-violet-100 text-violet-700",
-  "Quote Sent": "bg-purple-100 text-purple-700",
-  "Quote Approved": "bg-indigo-100 text-indigo-700",
-  "Final Measure": "bg-cyan-100 text-cyan-700",
-  "Parts Ordered": "bg-amber-100 text-amber-700",
-  "Scheduled": "bg-blue-100 text-blue-700",
-  "Completed": "bg-emerald-100 text-emerald-700",
-  "Warranty": "bg-red-100 text-red-700",
-  "Lost": "bg-red-100 text-red-700"
-};
-
-const financialStatusColors = {
-  "50% payment made": "bg-yellow-100 text-yellow-800",
-  "30% payment made (install)": "bg-orange-100 text-orange-800",
-  "Balance paid in full": "bg-green-100 text-green-800"
-};
-
-const projectTypeColors = {
-  "Garage Door Install": "bg-blue-100 text-blue-700",
-  "Gate Install": "bg-green-100 text-green-700",
-  "Roller Shutter Install": "bg-purple-100 text-purple-700",
-  "Multiple": "bg-pink-100 text-pink-700",
-  "Motor/Accessory": "bg-cyan-100 text-cyan-700",
-  "Repair": "bg-orange-100 text-orange-700",
-  "Maintenance": "bg-indigo-100 text-indigo-700"
-};
-
-const getInitials = (name) => {
-  if (!name) return "?";
-  return name.
-  split(" ").
-  map((n) => n[0]).
-  join("").
-  toUpperCase().
-  slice(0, 2);
-};
+import { ProjectTypeBadge, ProductTypeBadge } from "../common/StatusBadge";
+import { DuplicateBadge } from "../common/DuplicateWarningCard";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 
 export default function ProjectDetails({ project: initialProject, onClose, onEdit, onDelete, emailThreadId: propsEmailThreadId }) {
   const navigate = useNavigate();
   const queryClient = useQueryClient();
-  const [uploading, setUploading] = useState(false);
-  const [newDoor, setNewDoor] = useState({ height: "", width: "", type: "", style: "" });
-  const [showAddDoor, setShowAddDoor] = useState(false);
-  const [showHistory, setShowHistory] = useState(false);
-  const [activeTab, setActiveTab] = useState("summary");
+  const [activeTab, setActiveTab] = useState("overview");
   const [user, setUser] = useState(null);
-  const [previewFile, setPreviewFile] = useState(null);
-  const [showInvoiceModal, setShowInvoiceModal] = useState(false);
-  const [showPaymentModal, setShowPaymentModal] = useState(false);
-  const [selectedInvoice, setSelectedInvoice] = useState(null);
-  const [previewJob, setPreviewJob] = useState(null);
-  const [showLostModal, setShowLostModal] = useState(false);
-  const [isMarkingLost, setIsMarkingLost] = useState(false);
-  const [showLinkInvoiceModal, setShowLinkInvoiceModal] = useState(false);
-  const [isLinkingInvoice, setIsLinkingInvoice] = useState(false);
-  const [isChatOpen, setIsChatOpen] = useState(false);
-  const [lastReadChat, setLastReadChat] = useState(() => localStorage.getItem(`lastReadChat-${initialProject.id}`) || new Date().toISOString());
-  const [showPhotoModal, setShowPhotoModal] = useState(false);
   const [showAIContextModal, setShowAIContextModal] = useState(false);
 
-  // Get email thread ID from props, URL params, or project's source
-  const urlParams = new URLSearchParams(window.location.search);
-  const emailThreadId = propsEmailThreadId || urlParams.get('fromEmail') || initialProject?.source_email_thread_id;
-  const aiContextParam = urlParams.get('aiContext');
-
-  React.useEffect(() => {
-      if (aiContextParam === 'true') {
-          setShowAIContextModal(true);
-          // Clean URL
-          const newUrl = window.location.pathname + `?projectId=${initialProject.id}`;
-          window.history.replaceState({}, '', newUrl);
-      }
-  }, [aiContextParam, initialProject.id]);
+  // Permission checks
+  const isAdmin = user?.role === 'admin';
+  const isManager = user?.role === 'manager';
+  const isAdminOrManager = isAdmin || isManager;
+  const canEdit = isAdminOrManager;
+  const canDelete = isAdminOrManager;
 
   React.useEffect(() => {
     const loadUser = async () => {
@@ -148,33 +53,11 @@ export default function ProjectDetails({ project: initialProject, onClose, onEdi
     loadUser();
   }, []);
 
-  // Permission checks
-  const isAdmin = user?.role === 'admin';
-  const isManager = user?.role === 'manager';
-  const isAdminOrManager = isAdmin || isManager;
-  const isTechnician = user?.is_field_technician && !isAdminOrManager;
-  const isViewer = user?.role === 'viewer';
-  const canEdit = isAdminOrManager;
-  const canDelete = isAdminOrManager;
-  const canChangeStage = isAdminOrManager;
-  const canCreateJobs = isAdminOrManager;
-  const canViewFinancials = isAdminOrManager;
-
   const { data: project = initialProject } = useQuery({
     queryKey: ['project', initialProject.id],
     queryFn: () => base44.entities.Project.get(initialProject.id),
     initialData: initialProject
   });
-
-  const [description, setDescription] = useState(project.description || "");
-  const [summary, setSummary] = useState(project.summary || ""); // Added summary state
-  const [notes, setNotes] = useState(project.notes || "");
-
-  React.useEffect(() => {
-    setDescription(project.description || "");
-    setSummary(project.summary || ""); // Sync summary
-    setNotes(project.notes || "");
-  }, [project.description, project.summary, project.notes]);
 
   const { data: jobs = [] } = useQuery({
     queryKey: ['projectJobs', project.id],
@@ -186,245 +69,62 @@ export default function ProjectDetails({ project: initialProject, onClose, onEdi
     enabled: !!project.id
   });
 
-  const { data: customer } = useQuery({
-    queryKey: ['customer', project.customer_id],
-    queryFn: () => base44.entities.Customer.get(project.customer_id),
-    enabled: !!project.customer_id
-  });
-
-  const { data: technicians = [] } = useQuery({
-    queryKey: ['technicians'],
-    queryFn: () => base44.entities.User.filter({ is_field_technician: true })
-  });
-
-  const { data: activeViewers = [] } = useQuery({
-    queryKey: ['projectViewers', project.id],
-    queryFn: async () => {
-      try {
-        const user = await base44.auth.me();
-        const viewers = await base44.entities.ProjectViewer.filter({ project_id: project.id });
-        const oneMinuteAgo = new Date(Date.now() - 60000).toISOString();
-        return viewers.filter(v => v.last_seen > oneMinuteAgo && v.user_email !== user.email);
-      } catch (error) {
-        return [];
-      }
-    },
-    refetchInterval: 10000
-  });
-
-  const { data: chatMessages = [] } = useQuery({
-    queryKey: ['projectMessages', project.id],
-    queryFn: () => base44.entities.ProjectMessage?.filter({ project_id: project.id }, 'created_date') || [],
-    refetchInterval: 10000,
-    enabled: !!project.id
-  });
-
-  const hasNewMessages = chatMessages.some(m => 
-    new Date(m.created_date) > new Date(lastReadChat) && 
-    m.sender_email !== user?.email
-  );
-
-  const handleChatOpenChange = (open) => {
-    setIsChatOpen(open);
-    if (open) {
-      const now = new Date().toISOString();
-      setLastReadChat(now);
-      localStorage.setItem(`lastReadChat-${project.id}`, now);
-    }
-  };
-
-  const images = project.image_urls || []; // Helper for images
-
-  const { data: xeroInvoices = [] } = useQuery({
-    queryKey: ['projectXeroInvoices', project.id],
-    queryFn: async () => {
-      const invoicesFromArray = project.xero_invoices && project.xero_invoices.length > 0
-        ? await Promise.all(project.xero_invoices.map(id => base44.entities.XeroInvoice.get(id).catch(() => null)))
-        : [];
-      const invoicesFromProjectId = await base44.entities.XeroInvoice.filter({ project_id: project.id });
-      const allInvoices = [...invoicesFromArray.filter(Boolean), ...invoicesFromProjectId];
-      const uniqueInvoices = allInvoices.reduce((acc, inv) => {
-        if (!acc.find(i => i.id === inv.id)) {
-          acc.push(inv);
-        }
-        return acc;
-      }, []);
-      return uniqueInvoices;
-    },
-    enabled: !!project.id
-  });
-
-  // ... (keep other effects and mutations) ...
-  // Need to include handleCreateJob logic for the "Add Job" button
-  const handleCreateJob = () => {
-      navigate(createPageUrl("Jobs") + `?action=new&projectId=${project.id}`);
-  };
-
-  // Need updateProjectMutation, etc. defined above or imported context.
-  // I will assume standard mutations are defined as in previous file content.
-  // For brevity in this thought block, I'm writing the full file content in the tool call.
-  // I will copy the mutations from the read file content.
-
+  // Mutations
   const updateProjectMutation = useMutation({
     mutationFn: ({ field, value }) => base44.entities.Project.update(project.id, { [field]: value }),
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['projects'] });
-      queryClient.invalidateQueries({ queryKey: ['allProjects'] });
       queryClient.invalidateQueries({ queryKey: ['project', project.id] });
     }
   });
 
-  // ... (other mutations: createProjectInvoiceMutation, syncProjectInvoiceMutation, handleLinkExistingInvoice, etc.) ...
-  // I'm copying them from the previous file content.
+  const handleStatusChange = (newStatus) => {
+    updateProjectMutation.mutate({ field: 'status', value: newStatus });
+  };
 
-  // ... (handler functions: handleFieldSave, handleStageChange, handleMarkAsLost, handleDescriptionBlur, etc.) ...
+  // State for Description / Notes / Measurements
+  const [description, setDescription] = useState(project.description || "");
+  const [notes, setNotes] = useState(project.notes || "");
+  // Measurements: assume stored in project.doors (array) or project.measurements (object)
+  // Project form uses `doors`. We'll assume `doors` is the main measurement data.
+  // If `doors` is undefined, we initialize it.
   
-  const handleDescriptionBlur = async () => {
+  React.useEffect(() => {
+    setDescription(project.description || "");
+    setNotes(project.notes || "");
+  }, [project.description, project.notes]);
+
+  const handleDescriptionBlur = () => {
     if (description !== project.description) {
-      const user = await base44.auth.me();
-      await base44.entities.ChangeHistory.create({
-        project_id: project.id,
-        field_name: 'description',
-        old_value: String(project.description || ''),
-        new_value: String(description),
-        changed_by: user.email,
-        changed_by_name: user.full_name
-      });
       updateProjectMutation.mutate({ field: 'description', value: description });
     }
   };
 
-  const handleSummaryBlur = async () => { // Added for summary
-    if (summary !== project.summary) {
-      updateProjectMutation.mutate({ field: 'summary', value: summary });
-    }
-  };
-
-  const handleNotesBlur = async () => {
+  const handleNotesBlur = () => {
     if (notes !== project.notes) {
-      const user = await base44.auth.me();
-      await base44.entities.ChangeHistory.create({
-        project_id: project.id,
-        field_name: 'notes',
-        old_value: String(project.notes || ''),
-        new_value: String(notes),
-        changed_by: user.email,
-        changed_by_name: user.full_name
-      });
       updateProjectMutation.mutate({ field: 'notes', value: notes });
     }
   };
 
-  const handleStatusChange = (newStatus) => {
-      // Placeholder for status change logic (simplified for write_file construction)
-      updateProjectMutation.mutate({ field: 'status', value: newStatus });
-  };
+  // Handle AI Context
+  const urlParams = new URLSearchParams(window.location.search);
+  const aiContextParam = urlParams.get('aiContext');
+  React.useEffect(() => {
+      if (aiContextParam === 'true') {
+          setShowAIContextModal(true);
+          const newUrl = window.location.pathname + `?projectId=${initialProject.id}`;
+          window.history.replaceState({}, '', newUrl);
+      }
+  }, [aiContextParam, initialProject.id]);
 
-  // ... (rest of the component logic) ...
-
-  // Main Return
   return (
     <div className="relative flex flex-col lg:flex-row gap-4 overflow-x-hidden items-start">
-      {/* Customer Sidebar - Kept same */}
-      <aside className="w-full lg:w-72 flex-shrink-0 lg:sticky lg:top-4">
-        <Card className="border border-[#E5E7EB] shadow-sm rounded-lg overflow-hidden">
-          <CardHeader className="bg-white px-4 py-3 border-b border-[#E5E7EB]">
-            <h3 className="text-[16px] font-semibold text-[#111827] leading-[1.2]">Customer</h3>
-          </CardHeader>
-          <CardContent className="p-4 space-y-4">
-            <CustomerQuickEdit
-              customerId={project.customer_id}
-              projectId={project.id}
-              onCustomerUpdate={(updatedData) => {
-                queryClient.invalidateQueries({ queryKey: ['project', project.id] });
-              }}
-            />
-            <div className="pt-3 border-t border-[#E5E7EB]">
-              <div className="flex items-start gap-2.5">
-                <MapPin className="w-5 h-5 text-[#4B5563] flex-shrink-0 mt-1" />
-                <div className="flex-1 min-w-0">
-                  <div className="text-[14px] text-[#6B7280] font-normal leading-[1.4] mb-0.5">Address</div>
-                  <AddressAutocomplete
-                    value={project.address_full || project.address}
-                    onChange={(addressData) => {
-                        base44.entities.Project.update(project.id, {
-                        address: addressData.address_full,
-                        address_full: addressData.address_full,
-                        // ... other address fields
-                        }).then(() => {
-                        queryClient.invalidateQueries({ queryKey: ['project', project.id] });
-                        });
-                    }}
-                    placeholder="Search for address..."
-                    className="text-[14px]"
-                  />
-                </div>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-        
-        {/* Tasks Section - Kept */}
-        <Collapsible defaultOpen={true}>
-            <Card className="border border-[#E5E7EB] shadow-sm rounded-lg overflow-hidden mt-4">
-            <CollapsibleTrigger className="w-full">
-                <CardHeader className="bg-white px-4 py-3 border-b border-[#E5E7EB] flex flex-row items-center justify-between">
-                <h3 className="text-[16px] font-semibold text-[#111827] leading-[1.2]">Tasks</h3>
-                <ChevronDown className="w-4 h-4 text-[#6B7280]" />
-                </CardHeader>
-            </CollapsibleTrigger>
-            <CollapsibleContent>
-                <CardContent className="p-3">
-                <TasksPanel
-                    entityType="project"
-                    entityId={project.id}
-                    entityName={project.title}
-                    compact={true}
-                />
-                </CardContent>
-            </CollapsibleContent>
-            </Card>
-        </Collapsible>
-
-        {/* Jobs Section */}
-        <Collapsible defaultOpen={true}>
-            <Card className="border border-[#E5E7EB] shadow-sm rounded-lg overflow-hidden mt-4">
-                <CollapsibleTrigger className="w-full">
-                    <CardHeader className="bg-white px-4 py-3 border-b border-[#E5E7EB] flex flex-row items-center justify-between">
-                        <h3 className="text-[16px] font-semibold text-[#111827] leading-[1.2]">Visits</h3>
-                        <ChevronDown className="w-4 h-4 text-[#6B7280]" />
-                    </CardHeader>
-                </CollapsibleTrigger>
-                <CollapsibleContent>
-                    <CardContent className="p-3">
-                        <div className="flex justify-end mb-3">
-                            <Button onClick={() => handleCreateJob()} size="sm" variant="outline" className="h-8 text-xs">
-                                <Plus className="w-3.5 h-3.5 mr-1.5" />
-                                Add Visit
-                            </Button>
-                        </div>
-                        {jobs.length === 0 ? (
-                            <div className="text-center py-8 bg-slate-50 rounded-lg border border-dashed border-slate-200">
-                                <Briefcase className="w-8 h-8 text-slate-300 mx-auto mb-2" />
-                                <p className="text-sm text-slate-500">No visits yet</p>
-                            </div>
-                        ) : (
-                            <div className="grid gap-3">
-                                {jobs.map(job => (
-                                    <JobCard 
-                                        key={job.id} 
-                                        job={job} 
-                                        onClick={() => window.location.href = `${createPageUrl("Jobs")}?jobId=${job.id}`} 
-                                        compact={true} 
-                                    />
-                                ))}
-                            </div>
-                        )}
-                    </CardContent>
-                </CollapsibleContent>
-            </Card>
-        </Collapsible>
-      </aside>
+      {/* Sidebar */}
+      <ProjectSidebar 
+        project={project} 
+        jobs={jobs} 
+        canEdit={canEdit} 
+        canDelete={canDelete}
+      />
 
       {/* Main Content */}
       <div className="flex-1 w-full lg:min-w-0">
@@ -477,112 +177,64 @@ export default function ProjectDetails({ project: initialProject, onClose, onEdi
             <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
                 <div className="overflow-x-auto -mx-3 px-3 md:mx-0 md:px-0 mb-4">
                 <TabsList className="w-full justify-start min-w-max md:min-w-0">
-                    <TabsTrigger value="summary" className="flex-1 whitespace-nowrap">Summary</TabsTrigger>
-                    <TabsTrigger value="overview" className="flex-1 whitespace-nowrap">Details</TabsTrigger>
+                    <TabsTrigger value="overview" className="flex-1 whitespace-nowrap">
+                        Overview
+                    </TabsTrigger>
+                    <TabsTrigger value="emails" className="flex-1 whitespace-nowrap">
+                        <Mail className="w-4 h-4 mr-2" />
+                        Emails
+                    </TabsTrigger>
                     <TabsTrigger value="quotes" className="flex-1 whitespace-nowrap">
                         <FileText className="w-4 h-4 mr-2" />
-                        Quotes
-                    </TabsTrigger>
-                    <TabsTrigger value="ai_overview" className="flex-1 whitespace-nowrap gap-2">
-                        <Sparkles className="w-3.5 h-3.5 text-indigo-500" />
-                        AI Overview
+                        Quoting
                     </TabsTrigger>
                     <TabsTrigger value="parts" className="flex-1 whitespace-nowrap">
-                    <Wrench className="w-4 h-4 mr-2" />
-                    Parts
+                        <Wrench className="w-4 h-4 mr-2" />
+                        Parts
                     </TabsTrigger>
-                    {(user?.role === 'admin' || user?.role === 'manager') && (
+                    <TabsTrigger value="invoices" className="flex-1 whitespace-nowrap">
+                        <FileText className="w-4 h-4 mr-2" />
+                        Invoices
+                    </TabsTrigger>
+                    {(isAdminOrManager) && (
                     <TabsTrigger value="financials" className="flex-1 whitespace-nowrap">
                         <DollarSign className="w-4 h-4 mr-2" />
                         Financials
                     </TabsTrigger>
                     )}
-                    <TabsTrigger value="photos" className="flex-1 whitespace-nowrap">
-                    <ImageIcon className="w-4 h-4 mr-2" />
-                    Photos
+                    <TabsTrigger value="summary" className="flex-1 whitespace-nowrap">
+                        <CheckSquare className="w-4 h-4 mr-2" />
+                        Summary
                     </TabsTrigger>
-                    <TabsTrigger value="notes" className="flex-1 whitespace-nowrap">
-                    <ClipboardCheck className="w-4 h-4 mr-2" />
-                    Notes
-                    </TabsTrigger>
-                    <TabsTrigger value="activity" className="flex-1 whitespace-nowrap">
-                    <History className="w-4 h-4 mr-2" />
-                    Activity
+                    <TabsTrigger value="warranty" className="flex-1 whitespace-nowrap">
+                        <Clock className="w-4 h-4 mr-2" />
+                        Warranty
                     </TabsTrigger>
                 </TabsList>
                 </div>
 
-                <TabsContent value="summary" className="space-y-6">
-                    <ProjectSummary 
-                        project={project} 
-                        jobs={jobs} 
-                        onTabChange={(tab) => {
-                             if (tab === "visits") {
-                                 // Open the visits collapsible if needed, but currently it's always open in sidebar.
-                                 // Or scroll to it?
-                                 // The "Visits" tab isn't a tab in this Tabs component, it's a sidebar item or separate section.
-                                 // Wait, "Visits" is listed in the sidebar in ProjectDetails, not as a tab.
-                                 // But the prompt says "View all jobs" -> jumps to Jobs tab.
-                                 // Wait, does ProjectDetails HAVE a Jobs/Visits tab?
-                                 // The TabsList in ProjectDetails has: ai_overview, overview, parts, financials, photos, notes, activity.
-                                 // Visits are in the Sidebar (line 388).
-                                 // The prompt says "buttons: “View all jobs” → jumps to Jobs tab filtered for this project."
-                                 // "Jobs tab" likely means the main Jobs PAGE filtered for this project?
-                                 // OR did I miss a Jobs tab in ProjectDetails?
-                                 // Line 416: onClick={() => window.location.href = `${createPageUrl("Jobs")}?jobId=${job.id}`}
-                                 // So navigating to "Jobs" page seems correct for "View all jobs".
-                                 
-                                 if (tab === "visits") {
-                                     navigate(`${createPageUrl("Jobs")}?projectId=${project.id}`);
-                                 } else {
-                                     setActiveTab(tab);
-                                 }
-                            }
-                        }}
-                    />
-                </TabsContent>
-
-                <TabsContent value="ai_overview" className="space-y-6">
-                    <AIProjectOverview 
-                        project={project} 
-                        user={user} 
-                        onGenerate={() => queryClient.invalidateQueries({ queryKey: ['project', project.id] })}
-                    />
-                </TabsContent>
-
-                <TabsContent value="quotes" className="space-y-6">
-                    <ProjectQuotesTab project={project} user={user} />
-                </TabsContent>
-
+                {/* Overview Tab */}
                 <TabsContent value="overview" className="space-y-6">
-                <div className="flex justify-end">
-                    <Button variant="outline" onClick={() => setActiveTab("quotes")} className="text-slate-600">
-                        <FileText className="w-4 h-4 mr-2" />
-                        View Quotes
-                    </Button>
-                </div>
-                {/* Contract Banner */}
-                {project.contract_id && (
-                    <div className="bg-purple-50 border border-purple-200 rounded-lg p-4 flex items-center justify-between">
-                    <div className="flex items-center gap-3">
-                        <div className="bg-purple-100 p-2 rounded-full">
-                        <FileText className="w-5 h-5 text-purple-600" />
+                    {/* Contract Banner */}
+                    {project.contract_id && (
+                        <div className="bg-purple-50 border border-purple-200 rounded-lg p-4 flex items-center justify-between">
+                        <div className="flex items-center gap-3">
+                            <div className="bg-purple-100 p-2 rounded-full">
+                            <FileText className="w-5 h-5 text-purple-600" />
+                            </div>
+                            <div>
+                            <div className="text-sm font-medium text-purple-900">Linked Contract</div>
+                            <div className="text-lg font-bold text-purple-900">Contract #{project.contract_id}</div>
+                            </div>
                         </div>
-                        <div>
-                        <div className="text-sm font-medium text-purple-900">Linked Contract</div>
-                        <div className="text-lg font-bold text-purple-900">Contract #{project.contract_id}</div>
+                        <Link to={createPageUrl("Contracts")}>
+                            <Button variant="outline" className="border-purple-200 text-purple-700 hover:bg-purple-100">
+                            View Contract
+                            </Button>
+                        </Link>
                         </div>
-                    </div>
-                    <Link to={createPageUrl("Contracts")}>
-                        <Button variant="outline" className="border-purple-200 text-purple-700 hover:bg-purple-100">
-                        View Contract
-                        </Button>
-                    </Link>
-                    </div>
-                )}
+                    )}
 
-                <div className="w-full">
-                    <div className="space-y-6">
                     <Card className="border-2 border-slate-100 shadow-sm">
                         <CardHeader className="pb-3">
                         <CardTitle className="text-lg font-semibold flex items-center gap-2">
@@ -600,27 +252,56 @@ export default function ProjectDetails({ project: initialProject, onClose, onEdi
                         />
                         <RichTextField
                             label="Internal Notes"
-                            value={summary}
-                            onChange={setSummary}
-                            onBlur={handleSummaryBlur}
-                            placeholder="Internal notes or summary..."
+                            value={notes}
+                            onChange={setNotes}
+                            onBlur={handleNotesBlur}
+                            placeholder="Notes for internal reference..."
                         />
+                        
+                        {/* Measurements */}
+                        <div className="pt-4 border-t border-slate-100">
+                            <h4 className="text-sm font-medium text-slate-700 mb-2">Measurements Provided</h4>
+                            {(project.doors || []).length > 0 ? (
+                                <div className="flex flex-wrap gap-2">
+                                    {project.doors.map((door, idx) => (
+                                        <Badge key={idx} variant="secondary" className="px-3 py-1.5 text-sm font-normal">
+                                            {door.width} x {door.height} • {door.type} • {door.style}
+                                        </Badge>
+                                    ))}
+                                </div>
+                            ) : (
+                                <p className="text-sm text-slate-400 italic">No measurements recorded</p>
+                            )}
+                            {/* Note: Editing measurements currently done in ProjectForm edit mode */}
+                        </div>
                         </CardContent>
                     </Card>
-
-
-                    </div>
-                    
-
-                </div>
                 </TabsContent>
 
+                {/* Emails Tab */}
+                <TabsContent value="emails" className="space-y-6">
+                    <ProjectEmailSection 
+                        project={project} 
+                        onThreadLinked={() => queryClient.invalidateQueries({ queryKey: ['project', project.id] })}
+                    />
+                </TabsContent>
 
+                {/* Quoting Tab */}
+                <TabsContent value="quotes" className="space-y-6">
+                    <ProjectQuotesTab project={project} user={user} />
+                </TabsContent>
 
+                {/* Parts Tab */}
                 <TabsContent value="parts" className="space-y-6">
                     <PartsSection projectId={project.id} />
                 </TabsContent>
 
+                {/* Invoices Tab */}
+                <TabsContent value="invoices" className="space-y-6">
+                    <ProjectInvoicesTab project={project} user={user} />
+                </TabsContent>
+
+                {/* Financials Tab */}
                 <TabsContent value="financials" className="space-y-6">
                     <FinancialsTab project={project} onUpdate={(fields) => {
                         Object.entries(fields).forEach(([field, value]) => {
@@ -629,59 +310,29 @@ export default function ProjectDetails({ project: initialProject, onClose, onEdi
                     }} />
                 </TabsContent>
 
-                <TabsContent value="photos" className="space-y-4">
-                    <EditableFileUpload
-                        files={project.image_urls || []}
-                        onFilesChange={(urls) => updateProjectMutation.mutate({ field: 'image_urls', value: urls })}
-                        accept="image/*"
-                        multiple={true}
-                        icon={ImageIcon}
-                        label="Project Photos"
-                        emptyText="No photos uploaded yet" 
+                {/* Summary Tab */}
+                <TabsContent value="summary" className="space-y-6">
+                    <ProjectSummary 
+                        project={project} 
+                        jobs={jobs} 
+                        onTabChange={setActiveTab}
                     />
                 </TabsContent>
 
-                <TabsContent value="notes" className="space-y-6">
-                <Card>
-                    <CardHeader>
-                    <CardTitle>Project Notes</CardTitle>
-                    </CardHeader>
-                    <CardContent>
-                        <RichTextField
-                        label="General Notes"
-                        value={notes}
-                        onChange={setNotes}
-                        onBlur={handleNotesBlur}
-                        placeholder="Internal notes..."
-                        />
-                    </CardContent>
-                </Card>
-                </TabsContent>
-
-                <TabsContent value="activity" className="space-y-6">
-                    <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-                        <div>
-                            <h3 className="font-semibold text-lg mb-4">Activity Log</h3>
-                            <ActivityTimeline entityType="Project" entityId={project.id} />
-                        </div>
-                        <div>
-                            <h3 className="font-semibold text-lg mb-4">Team Chat</h3>
-                            <ProjectChat projectId={project.id} />
-                        </div>
+                {/* Warranty Tab */}
+                <TabsContent value="warranty" className="space-y-6">
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                        <WarrantyCard project={project} />
+                        <MaintenanceSection projectId={project.id} />
                     </div>
                 </TabsContent>
+
             </Tabs>
           </CardContent>
         </Card>
       </div>
-      
-      {/* Modals - Kept same */}
-      <ProjectChangeHistoryModal
-        open={showHistory}
-        onClose={() => setShowHistory(false)}
-        projectId={project.id}
-      />
 
+      {/* AI Context Modal */}
       <Dialog open={showAIContextModal} onOpenChange={setShowAIContextModal}>
         <DialogContent className="max-w-md">
             <DialogHeader>
@@ -726,8 +377,6 @@ export default function ProjectDetails({ project: initialProject, onClose, onEdi
             </DialogFooter>
         </DialogContent>
       </Dialog>
-      
-      {/* ... other modals ... */}
     </div>
   );
 }
