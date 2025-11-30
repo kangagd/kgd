@@ -13,6 +13,7 @@ import { toast } from "sonner";
 // Components
 import ProjectSidebar from "./ProjectSidebar";
 import ProjectStageSelector from "./ProjectStageSelector";
+import MarkAsLostModal from "./MarkAsLostModal";
 import ProjectSummary from "./ProjectSummary";
 import ProjectQuotesTab from "./ProjectQuotesTab";
 import ProjectInvoicesTab from "./ProjectInvoicesTab";
