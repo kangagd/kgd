@@ -480,8 +480,8 @@ export default function ProjectDetails({ project: initialProject, onClose, onEdi
                     </div>
                 )}
 
-                <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-                    <div className="lg:col-span-2 space-y-6">
+                <div className="w-full">
+                    <div className="space-y-6">
                     <Card className="border-2 border-slate-100 shadow-sm">
                         <CardHeader className="pb-3">
                         <CardTitle className="text-lg font-semibold flex items-center gap-2">
