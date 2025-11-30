@@ -4,7 +4,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Building2, Search, Plus, Phone, Mail, MapPin, Users, Hash } from "lucide-react";
+import { Building2, Search, Plus, Phone, Mail, MapPin, Users, Hash, Eye } from "lucide-react";
 import { base44 } from "@/api/base44Client";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import OrganisationForm from "../components/organisations/OrganisationForm";
@@ -220,13 +220,26 @@ export default function Organisations() {
           {filteredOrganisations.map((org) => (
             <Card
               key={org.id}
-              className="hover:shadow-lg transition-all cursor-pointer border-2 border-[hsl(32,15%,88%)] rounded-2xl group"
-              onClick={() => setModalOrganisation(org)}
+              className="hover:shadow-lg transition-all cursor-pointer border-2 border-[hsl(32,15%,88%)] rounded-2xl group relative"
+              onClick={() => setSelectedOrganisation(org)}
             >
+              <div className="absolute top-3 right-3 z-10">
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  className="h-8 w-8 rounded-lg hover:bg-[#F3F4F6]"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    setModalOrganisation(org);
+                  }}
+                >
+                  <Eye className="w-4 h-4 text-[#6B7280]" />
+                </Button>
+              </div>
               <CardContent className="p-6">
                 <div className="flex items-start justify-between">
                   <div className="flex-1">
-                    <div className="flex items-center gap-3 mb-3">
+                    <div className="flex items-center gap-3 mb-3 pr-8">
                       <h3 className="text-[22px] font-semibold text-[#111827] leading-[1.2] group-hover:text-[#fae008] transition-colors">
                         {org.name}
                       </h3>

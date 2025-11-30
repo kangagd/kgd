@@ -451,7 +451,7 @@ export default function Projects() {
             <ProjectCard 
               key={project.id} 
               project={{ ...project, jobs: allJobs.filter(j => j.project_id === project.id && !j.deleted_at) }}
-              onClick={() => setModalProject(project)}
+              onClick={() => setSelectedProject(project)}
               onViewDetails={(p) => setModalProject(p)}
             />
           ))}
