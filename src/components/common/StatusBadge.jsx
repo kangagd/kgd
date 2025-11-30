@@ -13,7 +13,7 @@ const BADGE_VARIANTS = {
   
   // Project Statuses
   projectStatus: {
-    "Lead": "bg-slate-100 text-slate-700 hover:bg-slate-200",
+    "Lead": "bg-[#FAE008] text-[#111827] hover:bg-[#E5CF07]",
     "Initial Site Visit": "bg-blue-100 text-blue-700 hover:bg-blue-200",
     "Quote Sent": "bg-purple-100 text-purple-700 hover:bg-purple-200",
     "Quote Approved": "bg-indigo-100 text-indigo-700 hover:bg-indigo-200",
