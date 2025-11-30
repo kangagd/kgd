@@ -117,11 +117,32 @@ Deno.serve(async (req) => {
       )
     );
 
-    // Filter price list items
+    // Filter contracts
+    const contracts = allContracts.filter(contract =>
+      contract.name?.toLowerCase().includes(term) ||
+      contract.notes?.toLowerCase().includes(term)
+    );
+
+    // Filter quotes
+    const quotes = allQuotes.filter(quote =>
+      quote.name?.toLowerCase().includes(term) ||
+      quote.customer_name?.toLowerCase().includes(term) ||
+      quote.project_title?.toLowerCase().includes(term) ||
+      quote.job_number?.toString().includes(term)
+    );
+
+    // Filter price list items (Catalog)
     const priceListItems = allPriceListItems.filter(item =>
       item.item?.toLowerCase().includes(term) ||
       item.description?.toLowerCase().includes(term) ||
       item.category?.toLowerCase().includes(term)
+    );
+
+    // Filter parts (Inventory/Orders)
+    const parts = allParts.filter(part => 
+      part.order_reference?.toLowerCase().includes(term) ||
+      part.supplier_name?.toLowerCase().includes(term) ||
+      part.notes?.toLowerCase().includes(term)
     );
 
     return Response.json({
@@ -129,7 +150,10 @@ Deno.serve(async (req) => {
       customers: customers.slice(0, 50),
       projects: projects.slice(0, 50),
       organisations: organisations.slice(0, 30),
-      priceListItems: priceListItems.slice(0, 30)
+      contracts: contracts.slice(0, 30),
+      quotes: quotes.slice(0, 30),
+      priceListItems: priceListItems.slice(0, 30),
+      parts: parts.slice(0, 30)
     });
 
   } catch (error) {
