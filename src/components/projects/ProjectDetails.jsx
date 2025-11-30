@@ -411,6 +411,12 @@ export default function ProjectDetails({ project: initialProject, onClose, onEdi
                     {canDelete && <Button variant="ghost" size="icon" onClick={() => onDelete(project.id)}><Trash2 className="w-4 h-4 text-red-600"/></Button>}
                 </div>
              </div>
+             <div className="pt-2">
+                <ProjectStageSelector 
+                    currentStage={project.status} 
+                    onStageChange={handleStatusChange}
+                />
+             </div>
           </CardHeader>
 
           <CardContent className="p-3 md:p-4">
@@ -507,20 +513,7 @@ export default function ProjectDetails({ project: initialProject, onClose, onEdi
                         </CardContent>
                     </Card>
 
-                    <Card className="border-2 border-slate-100 shadow-sm">
-                        <CardHeader className="pb-3">
-                        <CardTitle className="text-lg font-semibold flex items-center gap-2">
-                            <Target className="w-5 h-5 text-slate-500" />
-                            Project Stage
-                        </CardTitle>
-                        </CardHeader>
-                        <CardContent>
-                        <ProjectStageSelector 
-                            currentStage={project.status} 
-                            onStageChange={handleStatusChange}
-                        />
-                        </CardContent>
-                    </Card>
+
                     </div>
                     
 
