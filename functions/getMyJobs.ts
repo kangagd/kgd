@@ -15,7 +15,8 @@ Deno.serve(async (req) => {
             technician, 
             date_from, 
             date_to,
-            view_mode = 'list' 
+            view_mode = 'list',
+            job_type
         } = await req.json().catch(() => ({}));
 
         const query = {
@@ -38,6 +39,17 @@ Deno.serve(async (req) => {
         // Technician Filter
         if (technician && technician !== 'all') {
             query.assigned_to = technician;
+        }
+
+        // Job Type Filter
+        if (job_type && job_type !== 'all') {
+            if (job_type === 'Standard Only') {
+                query.job_category = 'Standard';
+            } else if (job_type === 'Logistics Only') {
+                query.job_category = 'Logistics';
+            } else {
+                query.job_type_id = job_type;
+            }
         }
 
         // Date Range Filter

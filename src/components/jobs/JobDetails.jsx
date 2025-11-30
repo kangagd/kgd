@@ -224,7 +224,21 @@ export default function JobDetails({ job: initialJob, onClose, onStatusChange, o
                 </div>
                 <div className="flex gap-2">
                     {/* Chips */}
-                    <Badge className="bg-blue-100 text-blue-800">{job.job_type_name || job.job_type}</Badge>
+                    {(() => {
+                        const jt = jobTypes.find(t => t.id === job.job_type_id);
+                        const color = jt?.color || '#2563EB'; // Default blue
+                        const isLogistics = jt?.category === 'Logistics' || job.job_category === 'Logistics';
+                        
+                        return (
+                            <Badge 
+                                className="border-0 flex items-center gap-1.5"
+                                style={{ backgroundColor: `${color}20`, color: color }}
+                            >
+                                {isLogistics && <Truck className="w-3 h-3" />}
+                                {jt?.name || job.job_type_name || job.job_type}
+                            </Badge>
+                        );
+                    })()}
                     <Badge className="bg-purple-100 text-purple-800">{job.product}</Badge>
                 </div>
              </div>
