@@ -94,6 +94,13 @@ export default function ProjectStageSelector({ projectId, currentStage, onStageC
   const targetRule = automationRules.find(r => r.stage_name === targetStage);
   const willAutoCreateJob = targetRule?.auto_create_job;
 
+  // Determine if movement is backward
+  // We use the full list including "Lost" to match backend logic
+  const FULL_STAGE_ORDER = [...PROJECT_STAGES, "Lost"];
+  const currentIndex = FULL_STAGE_ORDER.indexOf(currentStage);
+  const targetIndex = FULL_STAGE_ORDER.indexOf(targetStage);
+  const isBackward = currentIndex !== -1 && targetIndex !== -1 && targetIndex < currentIndex;
+
   // Get styling for current stage
   const isLost = currentStage === "Lost";
   
@@ -147,7 +154,18 @@ export default function ProjectStageSelector({ projectId, currentStage, onStageC
             </DialogDescription>
           </DialogHeader>
 
-          {willAutoCreateJob && (
+          {/* Backward Movement Warning */}
+          {isBackward && (
+            <div className="bg-amber-50 border border-amber-100 rounded-md p-3 flex gap-3 my-2">
+              <AlertTriangle className="w-5 h-5 text-amber-600 flex-shrink-0" />
+              <div className="text-sm text-amber-800">
+                <p className="font-semibold mb-1">Moving Backward</p>
+                This project is moving backward. Some automation actions may pause but will not be deleted.
+              </div>
+            </div>
+          )}
+
+          {willAutoCreateJob && !isBackward && (
             <div className="bg-blue-50 border border-blue-100 rounded-md p-3 flex gap-3 my-2">
               <Info className="w-5 h-5 text-blue-600 flex-shrink-0" />
               <div className="text-sm text-blue-800">
