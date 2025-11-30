@@ -7,6 +7,7 @@ import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { Badge } from "@/components/ui/badge";
 import { ArrowLeft, Edit, MapPin, Calendar, Clock, AlertTriangle, CheckCircle2, Building2, Sparkles, RefreshCw, Shield, Activity, Lightbulb, Timer } from "lucide-react";
 import SLAPerformanceTab from "./SLAPerformanceTab";
+import ContractAnalyticsTab from "./ContractAnalyticsTab";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
 import { format, parseISO, isPast } from "date-fns";
