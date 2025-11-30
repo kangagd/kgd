@@ -176,7 +176,7 @@ export default function ProjectDetails({ project: initialProject, onClose, onEdi
           <CardContent className="p-3 md:p-4">
             <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
                 <div className="overflow-x-auto -mx-3 px-3 md:mx-0 md:px-0 mb-4">
-                <TabsList className="w-full justify-start min-w-full">
+                <TabsList className="w-fit justify-start min-w-full">
                     <TabsTrigger value="overview" className="flex-1 whitespace-nowrap">
                         Overview
                     </TabsTrigger>
