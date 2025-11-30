@@ -57,6 +57,7 @@ const primaryNavigationItems = [
 const adminNavigationItems = [
   { title: "Analytics", url: createPageUrl("Analytics"), icon: TrendingUp },
   { title: "Tech Performance", url: createPageUrl("TechnicianPerformance"), icon: Wrench },
+  { title: "System Health", url: createPageUrl("SystemHealth"), icon: Activity },
 ];
 
 const secondaryNavigationItems = [

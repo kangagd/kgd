@@ -21,6 +21,7 @@ import MyVehicle from './pages/MyVehicle';
 import Fleet from './pages/Fleet';
 import Analytics from './pages/Analytics';
 import TechnicianPerformance from './pages/TechnicianPerformance';
+import SystemHealth from './pages/SystemHealth';
 import __Layout from './Layout.jsx';
 
 
@@ -48,6 +49,7 @@ export const PAGES = {
     "Fleet": Fleet,
     "Analytics": Analytics,
     "TechnicianPerformance": TechnicianPerformance,
+    "SystemHealth": SystemHealth,
 }
 
 export const pagesConfig = {
