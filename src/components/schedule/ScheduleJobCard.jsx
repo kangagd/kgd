@@ -7,7 +7,16 @@ import { Truck, Package } from "lucide-react";
 import { TechnicianAvatarGroup } from "../common/TechnicianAvatar";
 import { DuplicateDot } from "../common/DuplicateWarningCard";
 
+import { useQuery } from "@tanstack/react-query";
+import { base44 } from "@/api/base44Client";
+
 export default function ScheduleJobCard({ job, onClick, onAddressClick, onProjectClick, techniciansLookup = {} }) {
+  const { data: jobType } = useQuery({
+    queryKey: ['jobType', job.job_type_id],
+    queryFn: () => base44.entities.JobType.get(job.job_type_id),
+    enabled: !!job.job_type_id,
+    staleTime: 1000 * 60 * 5, // 5 minutes
+  });
   return (
     <Card
       onClick={onClick}
@@ -30,7 +39,7 @@ export default function ScheduleJobCard({ job, onClick, onAddressClick, onProjec
             </Badge>
           )}
           {job.job_type_name && !(job.job_category === 'Logistics') && (
-            <JobTypeBadge value={job.job_type_name} />
+            <JobTypeBadge value={job.job_type_name} color={jobType?.color} />
           )}
           {job.product && (
             <ProductTypeBadge value={job.product} />

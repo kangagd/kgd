@@ -34,7 +34,12 @@ export default function CalendarView({ jobs, onSelectJob, currentDate, onDateCha
     loadUser();
   }, []);
 
-  const uniqueJobTypes = [...new Set(jobs.map(job => job.job_type_name).filter(Boolean))].sort();
+  const { data: jobTypes = [] } = useQuery({
+    queryKey: ['jobTypes'],
+    queryFn: () => base44.entities.JobType.filter({ is_active: true }, 'sort_order'),
+    staleTime: 1000 * 60 * 5
+  });
+
   const isTechnician = user?.is_field_technician && user?.role !== 'admin';
 
   // Keyboard shortcuts
@@ -234,8 +239,8 @@ export default function CalendarView({ jobs, onSelectJob, currentDate, onDateCha
                 </SelectTrigger>
                 <SelectContent>
                   <SelectItem value="all">All Job Types</SelectItem>
-                  {uniqueJobTypes.map(jobType => (
-                    <SelectItem key={jobType} value={jobType}>{jobType}</SelectItem>
+                  {jobTypes.map(jt => (
+                    <SelectItem key={jt.id} value={jt.name}>{jt.name}</SelectItem>
                   ))}
                 </SelectContent>
               </Select>

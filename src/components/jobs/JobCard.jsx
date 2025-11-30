@@ -61,6 +61,12 @@ export default function JobCard({ job, onClick, onViewDetails }) {
     enabled: !!job.id
   });
 
+  const { data: jobType } = useQuery({
+    queryKey: ['jobType', job.job_type_id],
+    queryFn: () => base44.entities.JobType.get(job.job_type_id),
+    enabled: !!job.job_type_id
+  });
+
   const handleClick = (e) => {
     e.stopPropagation();
     if (onClick) {
@@ -143,7 +149,11 @@ export default function JobCard({ job, onClick, onViewDetails }) {
                 </Badge>
               )}
               {(job.job_type_name || job.job_type) && (
-                <JobTypeBadge value={job.job_type_name || job.job_type} className="pointer-events-none" />
+                <JobTypeBadge 
+                  value={job.job_type_name || job.job_type} 
+                  color={jobType?.color}
+                  className="pointer-events-none" 
+                />
               )}
               {job.product && (
                 <ProductTypeBadge value={job.product} className="pointer-events-none" />

@@ -168,7 +168,18 @@ export function ProjectTypeBadge({ value, ...props }) {
   return <StatusBadge type="projectType" value={value} {...props} />;
 }
 
-export function JobTypeBadge({ value, ...props }) {
+export function JobTypeBadge({ value, color, ...props }) {
+  if (color) {
+    return (
+      <span
+        className="inline-flex items-center rounded-lg px-2.5 py-0.5 text-xs font-medium transition-colors border-0 shadow-none"
+        style={{ backgroundColor: `${color}20`, color: color }}
+        {...props}
+      >
+        {value}
+      </span>
+    );
+  }
   return <StatusBadge type="jobType" value={value} {...props} />;
 }
 

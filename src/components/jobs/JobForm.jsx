@@ -88,7 +88,7 @@ export default function JobForm({ job, technicians, onSubmit, onCancel, isSubmit
 
   const { data: jobTypes = [] } = useQuery({
     queryKey: ['jobTypes'],
-    queryFn: () => base44.entities.JobType.filter({ is_active: true })
+    queryFn: () => base44.entities.JobType.filter({ is_active: true }, 'sort_order')
   });
 
   useEffect(() => {
@@ -309,6 +309,7 @@ export default function JobForm({ job, technicians, onSubmit, onCancel, isSubmit
         ...formData,
         job_type_id: jobTypeId,
         job_type: jobType.name,
+        job_category: jobType.category || "Standard",
         expected_duration: jobType.estimated_duration || formData.expected_duration
       });
 
