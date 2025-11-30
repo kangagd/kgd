@@ -1031,7 +1031,7 @@ export default function Schedule() {
           {/* Filters and Tabs Container */}
           <div className="flex flex-col lg:flex-row lg:items-center gap-4 mb-6">
             {/* View Period Tabs (Day/Week/Month) */}
-            <div className="flex w-full lg:w-[300px] rounded-xl bg-[#F9FAFB] border border-[#E5E7EB] overflow-hidden p-1 gap-1">
+            <div className="flex w-full lg:w-[300px] rounded-lg bg-[#F9FAFB] border border-[#E5E7EB] overflow-hidden">
               {['Day', 'Week', 'Month'].map(viewOption => {
                 const value = viewOption.toLowerCase();
                 const isActive = view === value;
@@ -1039,10 +1039,10 @@ export default function Schedule() {
                   <button
                     key={value}
                     onClick={() => setView(value)}
-                    className={`flex-1 px-4 py-2 text-sm font-medium text-center transition-all rounded-lg focus:outline-none ${
+                    className={`flex-1 px-4 py-2 text-sm font-medium text-center transition-colors focus:outline-none ${
                       isActive
-                        ? "bg-white text-[#111827] shadow-sm border border-[#E5E7EB]"
-                        : "bg-transparent text-[#6B7280] hover:text-[#111827] hover:bg-white/50"
+                        ? "bg-white text-[#111827] shadow-sm font-semibold"
+                        : "bg-transparent text-[#6B7280] hover:text-[#111827]"
                     }`}
                   >
                     {viewOption}
