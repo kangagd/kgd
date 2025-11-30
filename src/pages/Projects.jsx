@@ -19,6 +19,7 @@ import {
 import { Label } from "@/components/ui/label";
 import ProjectForm from "../components/projects/ProjectForm";
 import ProjectDetails from "../components/projects/ProjectDetails";
+import ProjectCard from "../components/projects/ProjectCard";
 import EntityModal from "../components/common/EntityModal.jsx";
 import ProjectModalView from "../components/projects/ProjectModalView";
 import { createPageUrl } from "@/utils";
