@@ -52,6 +52,11 @@ const primaryNavigationItems = [
   { title: "Customers", url: createPageUrl("Customers"), icon: UserCircle },
 ];
 
+// Insert Analytics for admins
+const adminNavigationItems = [
+  { title: "Analytics", url: createPageUrl("Analytics"), icon: TrendingUp },
+];
+
 const secondaryNavigationItems = [
   { title: "Organisations", url: createPageUrl("Organisations"), icon: Building2 },
   { title: "Contracts", url: createPageUrl("Contracts"), icon: FileText },
@@ -59,7 +64,7 @@ const secondaryNavigationItems = [
   { title: "Photos", url: createPageUrl("Photos"), icon: ImageIcon },
   { title: "Price List", url: createPageUrl("PriceList"), icon: DollarSign },
   { title: "Fleet", url: createPageUrl("Fleet"), icon: Car },
-  { title: "Reports", url: createPageUrl("Reports"), icon: TrendingUp },
+  { title: "Reports", url: createPageUrl("Reports"), icon: FileText },
   { title: "Archive", url: createPageUrl("Archive"), icon: ArchiveIcon },
   { title: "Team", url: createPageUrl("Team"), icon: Users },
 ];
@@ -165,7 +170,9 @@ export default function Layout({ children, currentPageName }) {
     ? technicianNavigationItems 
     : isViewer 
       ? viewerNavigationItems 
-      : primaryNavigationItems;
+      : effectiveRole === 'admin' 
+        ? [...primaryNavigationItems, ...adminNavigationItems] 
+        : primaryNavigationItems;
 
   // Pull to refresh and swipe to open menu
   useEffect(() => {
