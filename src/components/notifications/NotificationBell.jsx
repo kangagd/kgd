@@ -131,22 +131,18 @@ function NotificationItem({ notification, onClose, onMarkRead }) {
   );
 }
 
-// Group notifications by date
+// Group notifications by Unread vs Read (Recent)
 const groupNotifications = (notifications) => {
   const groups = {
-    today: [],
-    yesterday: [],
-    older: []
+    unread: [],
+    read: []
   };
 
   notifications.forEach(n => {
-    const date = new Date(n.created_date);
-    if (isToday(date)) {
-      groups.today.push(n);
-    } else if (isYesterday(date)) {
-      groups.yesterday.push(n);
+    if (!n.is_read) {
+      groups.unread.push(n);
     } else {
-      groups.older.push(n);
+      groups.read.push(n);
     }
   });
 
@@ -198,34 +194,23 @@ function NotificationList({ notifications, isLoading, onClose, onMarkRead, onMar
           </div>
         ) : (
           <div className="pb-4">
-            {grouped.today.length > 0 && (
+            {grouped.unread.length > 0 && (
               <div>
                 <div className="px-4 py-2 bg-[#F9FAFB] text-[11px] font-semibold text-[#6B7280] uppercase tracking-wider sticky top-0 border-b border-[#E5E7EB]">
-                  Today
+                  New ({grouped.unread.length})
                 </div>
-                {grouped.today.map(n => (
+                {grouped.unread.map(n => (
                   <NotificationItem key={n.id} notification={n} onClose={onClose} onMarkRead={onMarkRead} />
                 ))}
               </div>
             )}
             
-            {grouped.yesterday.length > 0 && (
+            {grouped.read.length > 0 && (
               <div>
                 <div className="px-4 py-2 bg-[#F9FAFB] text-[11px] font-semibold text-[#6B7280] uppercase tracking-wider sticky top-0 border-b border-[#E5E7EB] border-t">
-                  Yesterday
+                  Earlier
                 </div>
-                {grouped.yesterday.map(n => (
-                  <NotificationItem key={n.id} notification={n} onClose={onClose} onMarkRead={onMarkRead} />
-                ))}
-              </div>
-            )}
-
-            {grouped.older.length > 0 && (
-              <div>
-                <div className="px-4 py-2 bg-[#F9FAFB] text-[11px] font-semibold text-[#6B7280] uppercase tracking-wider sticky top-0 border-b border-[#E5E7EB] border-t">
-                  Older
-                </div>
-                {grouped.older.map(n => (
+                {grouped.read.map(n => (
                   <NotificationItem key={n.id} notification={n} onClose={onClose} onMarkRead={onMarkRead} />
                 ))}
               </div>
