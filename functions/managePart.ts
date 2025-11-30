@@ -17,6 +17,21 @@ Deno.serve(async (req) => {
             // Fetch previous state for logic comparison
             previousPart = await base44.asServiceRole.entities.Part.get(id);
             part = await base44.asServiceRole.entities.Part.update(id, data);
+
+            // Notify on Delivery
+            if (data.status === 'Delivered' && previousPart.status !== 'Delivered') {
+                const admins = await base44.asServiceRole.entities.User.filter({ role: 'admin' });
+                for (const admin of admins) {
+                    await base44.asServiceRole.functions.invoke('createNotification', {
+                        userId: admin.id,
+                        title: "Part Delivered",
+                        message: `Part ${part.category} has been delivered to ${part.location}.`,
+                        entityType: "Part",
+                        entityId: part.id,
+                        priority: "normal"
+                    });
+                }
+            }
         } else if (action === 'delete') {
             await base44.asServiceRole.entities.Part.delete(id);
             return Response.json({ success: true });

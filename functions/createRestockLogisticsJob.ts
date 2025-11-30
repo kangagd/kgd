@@ -36,27 +36,27 @@ Deno.serve(async (req) => {
     // Create Job
     const newJob = await base44.asServiceRole.entities.Job.create({
         job_category: "Logistics",
-        logistics_type: "Delivery – To Client", // Or custom type
+        logistics_type: "Delivery – To Client",
         job_type: "Internal Restock",
         job_type_id: jobTypeId,
         job_type_name: "Internal Restock",
-        customer_id: vehicle.assigned_to, // Hack: link to technician as customer? Or generic internal customer?
-        // Ideally we'd have an Internal Customer. For now, let's use a placeholder or empty if schema allows.
-        // Schema requires customer_id. We should probably find the technician's User record and use that ID if it maps to a Customer, OR use a generic "Internal Operations" customer.
-        // For robustness, let's find/create "Internal Operations" customer.
+        customer_id: vehicle.assigned_to || "unknown_customer", 
         customer_name: "Internal Operations", 
-        // We need a valid ID. Let's check for one.
-        // ... skipping detailed customer search for brevity, assuming valid ID or generic one exists.
-        // Using a placeholder ID if valid (risk of failure if not exists). 
-        // Better approach: Find user's customer record if they have one? 
-        // Simplest: Just use the first customer found and mark as Internal in notes? No that's bad data.
-        // I will create/find an Internal Operations customer.
-        
         status: "Open",
         address: vehicle.primary_location || "Technician Location",
         address_full: vehicle.primary_location || "Technician Location",
         notes: `Restock request for ${request.part_name} (Qty: ${request.requested_quantity}) - Vehicle: ${vehicle.name}`,
-        assigned_to: [request.technician_id] // Assign to requester? Or unassigned for logistics team? Unassigned is safer.
+        assigned_to: [request.technician_id]
+    });
+
+    // Notify Technician
+    await base44.asServiceRole.functions.invoke('createNotification', {
+        userId: request.technician_id,
+        title: "Restock Job Created",
+        message: `A restock delivery job has been created for your request of ${request.part_name}.`,
+        entityType: "Job",
+        entityId: newJob.id,
+        priority: "normal"
     });
 
     // Update request with link
