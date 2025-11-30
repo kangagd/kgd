@@ -3,7 +3,7 @@ import { base44 } from "@/api/base44Client";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
-import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import TabbedSelector from "@/components/common/TabbedSelector";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { ChevronLeft, ChevronRight, Calendar as CalendarIcon } from "lucide-react";
 import { format, isSameDay, isSameMonth, parseISO, startOfWeek, endOfWeek, eachDayOfInterval, startOfMonth, endOfMonth, addWeeks, subWeeks, addMonths, subMonths, addDays, subDays, getDay } from "date-fns";
@@ -1038,13 +1038,16 @@ export default function Schedule() {
           {/* Filters and Tabs Container */}
           <div className="flex flex-col lg:flex-row lg:items-center gap-4 mb-6">
             {/* View Period Tabs (Day/Week/Month) */}
-            <Tabs value={view} onValueChange={setView} className="w-full lg:w-auto">
-              <TabsList className="bg-white w-full lg:w-auto">
-                <TabsTrigger value="day" className="flex-1 lg:flex-initial">Day</TabsTrigger>
-                <TabsTrigger value="week" className="flex-1 lg:flex-initial">Week</TabsTrigger>
-                <TabsTrigger value="month" className="flex-1 lg:flex-initial">Month</TabsTrigger>
-              </TabsList>
-            </Tabs>
+            <TabbedSelector
+              value={view}
+              onValueChange={setView}
+              options={[
+                { value: 'day', label: 'Day' },
+                { value: 'week', label: 'Week' },
+                { value: 'month', label: 'Month' }
+              ]}
+              className="w-full lg:w-[300px]"
+            />
 
             {/* Filters */}
             <div className="flex flex-wrap gap-3 flex-1">
@@ -1102,26 +1105,15 @@ export default function Schedule() {
             </div>
 
             {/* View Type Toggle (Resource/Calendar) */}
-            <div className="flex items-center gap-1 bg-white rounded-lg border border-[#E5E7EB] p-1">
-              <Button
-                variant={viewType === "resource" ? "default" : "ghost"}
-                size="sm"
-                onClick={() => setViewType("resource")}
-                className={viewType === "resource" ? "bg-[#FAE008] text-[#111827] hover:bg-[#E5CF07]" : ""}
-              >
-                <LayoutList className="w-4 h-4 mr-2" />
-                Resource
-              </Button>
-              <Button
-                variant={viewType === "calendar" ? "default" : "ghost"}
-                size="sm"
-                onClick={() => setViewType("calendar")}
-                className={viewType === "calendar" ? "bg-[#FAE008] text-[#111827] hover:bg-[#E5CF07]" : ""}
-              >
-                <CalendarIcon2 className="w-4 h-4 mr-2" />
-                Calendar
-              </Button>
-            </div>
+            <TabbedSelector
+              value={viewType}
+              onValueChange={setViewType}
+              options={[
+                { value: 'resource', label: <><LayoutList className="w-4 h-4 mr-2" /> Resource</> },
+                { value: 'calendar', label: <><CalendarIcon2 className="w-4 h-4 mr-2" /> Calendar</> }
+              ]}
+              className="w-full lg:w-auto"
+            />
           </div>
             </div>
 
