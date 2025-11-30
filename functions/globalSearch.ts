@@ -25,12 +25,15 @@ Deno.serve(async (req) => {
     const isTechnician = user.is_field_technician && user.role !== 'admin';
 
     // Fetch all entities in parallel
-    const [allJobs, allCustomers, allProjects, allOrganisations, allPriceListItems] = await Promise.all([
+    const [allJobs, allCustomers, allProjects, allOrganisations, allPriceListItems, allContracts, allQuotes, allParts] = await Promise.all([
       base44.entities.Job.list(),
       base44.entities.Customer.list(),
       base44.entities.Project.list(),
       base44.entities.Organisation.list(),
-      base44.entities.PriceListItem.list()
+      base44.entities.PriceListItem.list(),
+      base44.entities.Contract.list(),
+      base44.entities.Quote.list(),
+      base44.entities.Part.list()
     ]);
 
     // Filter jobs
