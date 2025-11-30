@@ -2,7 +2,7 @@ import React, { useState, useEffect } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Textarea } from "@/components/ui/textarea";
+import RichTextField from "../common/RichTextField";
 import { Edit, MapPin, User, Calendar, ExternalLink, FileText, Image as ImageIcon, AlertCircle, CheckCircle2, Clock } from "lucide-react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { base44 } from "@/api/base44Client";
@@ -175,10 +175,9 @@ export default function ProjectSummary({ project }) {
         <CardContent className="p-6">
           {isEditingNotes ? (
             <div className="space-y-3">
-              <Textarea 
+              <RichTextField 
                 value={notesBuffer}
-                onChange={(e) => setNotesBuffer(e.target.value)}
-                className="min-h-[150px] text-sm"
+                onChange={setNotesBuffer}
                 placeholder="Enter final notes..."
               />
               <div className="flex justify-end gap-2">
@@ -189,7 +188,7 @@ export default function ProjectSummary({ project }) {
           ) : (
             <div className="prose prose-sm max-w-none text-[#374151]">
               {project.notes ? (
-                <div className="whitespace-pre-wrap">{project.notes}</div>
+                <div dangerouslySetInnerHTML={{ __html: project.notes }} />
               ) : (
                 <p className="text-slate-400 italic">No final notes recorded yet.</p>
               )}
