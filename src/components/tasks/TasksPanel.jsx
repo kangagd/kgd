@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, forwardRef, useImperativeHandle } from "react";
 import { base44 } from "@/api/base44Client";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
@@ -8,13 +8,21 @@ import TaskFormModal from "./TaskFormModal";
 import TaskDetailModal from "./TaskDetailModal";
 import { toast } from "sonner";
 
-export default function TasksPanel({
+const TasksPanel = forwardRef(({
   entityType, // 'project' | 'job' | 'customer' | 'email_thread'
   entityId,
   entityName,
   entityNumber, // for jobs
-  compact = false // for sidebar compact view
-}) {
+  compact = false, // for sidebar compact view
+  hideHeader = false // option to hide header when controlled externally
+}, ref) => {
+  const queryClient = useQueryClient();
+  const [showCreateModal, setShowCreateModal] = useState(false);
+  const [selectedTask, setSelectedTask] = useState(null);
+
+  useImperativeHandle(ref, () => ({
+    openCreateModal: () => setShowCreateModal(true)
+  }));
   const queryClient = useQueryClient();
   const [showCreateModal, setShowCreateModal] = useState(false);
   const [selectedTask, setSelectedTask] = useState(null);
