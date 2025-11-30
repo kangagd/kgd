@@ -113,7 +113,7 @@ export default function CalendarView({ jobs, onSelectJob, currentDate, onDateCha
       job.job_number?.toString().includes(searchTerm);
 
     const matchesStatus = statusFilter === "all" || job.status === statusFilter;
-    const matchesJobType = jobTypeFilter === "all" || job.job_type_name === jobTypeFilter;
+    const matchesJobType = jobTypeFilter === "all" || job.job_type_id === jobTypeFilter;
 
     return matchesSearch && matchesStatus && matchesJobType;
   });
@@ -240,7 +240,7 @@ export default function CalendarView({ jobs, onSelectJob, currentDate, onDateCha
                 <SelectContent>
                   <SelectItem value="all">All Job Types</SelectItem>
                   {jobTypes.map(jt => (
-                    <SelectItem key={jt.id} value={jt.name}>{jt.name}</SelectItem>
+                    <SelectItem key={jt.id} value={jt.id}>{jt.name}</SelectItem>
                   ))}
                 </SelectContent>
               </Select>

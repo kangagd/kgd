@@ -58,11 +58,6 @@ export default function Jobs() {
     loadUser();
   }, []);
 
-  const { data: jobTypes = [] } = useQuery({
-    queryKey: ['jobTypes'],
-    queryFn: () => base44.entities.JobType.filter({ is_active: true }, 'sort_order')
-  });
-
   const { data: jobsResponse, isLoading, refetch } = useQuery({
     queryKey: ['allJobs', page, searchTerm, statusFilter, technicianFilter, dateFrom, dateTo, viewMode, calendarDate],
     queryFn: async () => {

@@ -305,11 +305,13 @@ export default function JobForm({ job, technicians, onSubmit, onCancel, isSubmit
   const handleJobTypeChange = async (jobTypeId) => {
     const jobType = jobTypes.find(jt => jt.id === jobTypeId);
     if (jobType) {
+      const category = jobType.category || "Standard";
       setFormData({
         ...formData,
         job_type_id: jobTypeId,
         job_type: jobType.name,
-        job_category: jobType.category || "Standard",
+        job_category: category,
+        is_logistics: category === "Logistics",
         expected_duration: jobType.estimated_duration || formData.expected_duration
       });
 
@@ -610,7 +612,7 @@ export default function JobForm({ job, technicians, onSubmit, onCancel, isSubmit
             <div className="grid md:grid-cols-2 gap-6">
               <div className="space-y-2">
                 <Label htmlFor="job_category" className="text-[14px] font-medium text-[#111827] leading-[1.4]">Category</Label>
-                <Select value={formData.job_category} onValueChange={(val) => setFormData({ ...formData, job_category: val })}>
+                <Select value={formData.job_category} onValueChange={(val) => setFormData({ ...formData, job_category: val, is_logistics: val === "Logistics" })}>
                   <SelectTrigger className="border-2 border-slate-300 focus:border-[#fae008] focus:ring-2 focus:ring-[#fae008]/20">
                     <SelectValue placeholder="Category" />
                   </SelectTrigger>
