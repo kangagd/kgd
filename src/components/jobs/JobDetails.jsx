@@ -6,7 +6,7 @@ import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Label } from "@/components/ui/label";
 import { Separator } from "@/components/ui/separator";
-import { ArrowLeft, MapPin, Phone, Calendar, Clock, User, Briefcase, FileText, Image as ImageIcon, DollarSign, Sparkles, LogIn, FileCheck, History, Package, ClipboardCheck, LogOut, Timer, AlertCircle, ChevronDown, Mail, Navigation, Trash2, FolderKanban, Camera, Edit, ExternalLink, MessageCircle, Plus, AlertTriangle, Loader2, Truck, Bot, Check } from "lucide-react";
+import { ArrowLeft, MapPin, Phone, Calendar, Clock, User, Briefcase, FileText, Image as ImageIcon, DollarSign, Sparkles, LogIn, FileCheck, History, Package, ClipboardCheck, LogOut, Timer, AlertCircle, ChevronDown, Mail, Navigation, Trash2, FolderKanban, Camera, Edit, ExternalLink, MessageCircle, Plus, AlertTriangle, Loader2, Truck, Bot, Check, Map } from "lucide-react";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Checkbox } from "@/components/ui/checkbox";
 import DuplicateWarningCard, { DuplicateBadge } from "../common/DuplicateWarningCard";
@@ -360,6 +360,10 @@ export default function JobDetails({ job: initialJob, onClose, onStatusChange, o
                 <ClipboardCheck className="w-4 h-4 mr-1.5" />
                 Visit
               </TabsTrigger>
+              <TabsTrigger value="map" className="flex-1 min-w-[100px]">
+                <Map className="w-4 h-4 mr-1.5" />
+                Map
+              </TabsTrigger>
               <TabsTrigger value="photos" className="flex-1 min-w-[100px]">
                 <ImageIcon className="w-4 h-4 mr-1.5" />
                 Photos
@@ -418,6 +422,13 @@ export default function JobDetails({ job: initialJob, onClose, onStatusChange, o
                <RichTextField label="Next Steps" value={nextSteps} onChange={setNextSteps} placeholder="Next steps..." />
                {/* Outcome Selector */}
                {/* ... */}
+            </TabsContent>
+
+            <TabsContent value="map" className="mt-2">
+               <Card className="border border-[#E5E7EB] shadow-sm rounded-lg p-4">
+                  <h3 className="font-semibold mb-3">Job Location</h3>
+                  <JobMapView job={job} />
+               </Card>
             </TabsContent>
 
             <TabsContent value="photos" className="mt-2">
