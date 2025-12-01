@@ -20,6 +20,7 @@ import EntityModal from "../components/common/EntityModal.jsx";
 import JobModalView from "../components/jobs/JobModalView";
 import { createPageUrl } from "@/utils";
 import { useNavigate, useSearchParams } from "react-router-dom";
+import { buildActiveCheckInMap } from "@/components/domain/checkInHelpers";
 
 export default function Jobs() {
   const navigate = useNavigate();
@@ -41,6 +42,7 @@ export default function Jobs() {
   const [calendarDate, setCalendarDate] = useState(new Date());
   const [modalJob, setModalJob] = useState(null);
   const [showFilters, setShowFilters] = useState(false);
+  const [activeCheckInMap, setActiveCheckInMap] = useState({});
   const queryClient = useQueryClient();
 
   useEffect(() => {
@@ -53,6 +55,40 @@ export default function Jobs() {
       }
     };
     loadUser();
+  }, []);
+
+  useEffect(() => {
+    let isCancelled = false;
+
+    async function loadActiveCheckIns() {
+      try {
+        // Fetch all active check-ins (no check_out_time)
+        const res = await base44.entities.CheckInOut.filter({
+          check_out_time: null,
+        });
+
+        if (isCancelled) return;
+
+        const records = Array.isArray(res) ? res : res?.data || [];
+        const map = buildActiveCheckInMap(records);
+        setActiveCheckInMap(map);
+      } catch (error) {
+        if (!isCancelled) {
+          console.error("Error loading active check-ins", error);
+          setActiveCheckInMap({});
+        }
+      }
+    }
+
+    loadActiveCheckIns();
+
+    // Refresh every minute
+    const interval = setInterval(loadActiveCheckIns, 60 * 1000);
+
+    return () => {
+      isCancelled = true;
+      clearInterval(interval);
+    };
   }, []);
 
   const { data: jobs = [], isLoading, refetch } = useQuery({
@@ -488,6 +524,7 @@ export default function Jobs() {
             isLoading={isLoading}
             onSelectJob={(job) => setSelectedJob(job)}
             onViewDetails={(job) => setModalJob(job)}
+            activeCheckInMap={activeCheckInMap}
           />
         ) : (
           <CalendarView

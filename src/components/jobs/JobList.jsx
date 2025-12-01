@@ -4,7 +4,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Timer } from "lucide-react";
 import { isPast, parseISO, addHours } from "date-fns";
 
-export default function JobList({ jobs, isLoading, onSelectJob, onViewDetails }) {
+export default function JobList({ jobs, isLoading, onSelectJob, onViewDetails, activeCheckInMap = {} }) {
 
   if (isLoading) {
     return (
@@ -51,12 +51,17 @@ export default function JobList({ jobs, isLoading, onSelectJob, onViewDetails })
           }
         }
 
+        const activeCheckIns = activeCheckInMap[job.id]?.checkIns || [];
+        const hasActiveCheckIn = !!activeCheckInMap[job.id];
+
         return (
           <div key={job.id} className={`rounded-xl transition-all ${slaStyle}`}>
             <JobCard 
               job={job}
               onClick={() => onSelectJob(job)}
               onViewDetails={onViewDetails}
+              activeCheckIns={activeCheckIns}
+              hasActiveCheckIn={hasActiveCheckIn}
             />
           </div>
         );

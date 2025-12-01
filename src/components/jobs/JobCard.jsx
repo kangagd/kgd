@@ -14,7 +14,7 @@ import { DuplicateBadge } from "../common/DuplicateWarningCard";
 
 
 
-export default function JobCard({ job, onClick, onViewDetails }) {
+export default function JobCard({ job, onClick, onViewDetails, activeCheckIns = [], hasActiveCheckIn = false }) {
   const [user, setUser] = useState(null);
   const queryClient = useQueryClient();
 
@@ -95,10 +95,23 @@ export default function JobCard({ job, onClick, onViewDetails }) {
           {/* Title and Customer */}
           <div>
             <div className="flex items-center justify-between mb-2 pr-8">
-              <div className="flex items-center gap-2 flex-wrap">
-                <h3 className="text-[18px] font-semibold text-[#111827] leading-[1.2]">
-                  {job.customer_name}
-                </h3>
+              <div className="flex flex-col gap-1">
+                {hasActiveCheckIn && (
+                  <div className="inline-flex items-center rounded-full bg-emerald-50 px-2 py-0.5 text-xs font-medium text-emerald-700 border border-emerald-100 w-fit">
+                    <span className="mr-1.5 h-2 w-2 rounded-full bg-emerald-500 animate-pulse" />
+                    In progress
+                    {activeCheckIns.length > 0 && activeCheckIns[0]?.technician_name && (
+                      <span className="ml-1 font-normal text-emerald-600">
+                        · {activeCheckIns[0].technician_name}
+                      </span>
+                    )}
+                  </div>
+                )}
+                <div className="flex items-center gap-2 flex-wrap">
+                  <h3 className="text-[18px] font-semibold text-[#111827] leading-[1.2]">
+                    {job.customer_name}
+                  </h3>
+                </div>
               </div>
               <div className="flex items-center gap-2">
                 <Badge variant="secondary" className="pointer-events-none">
