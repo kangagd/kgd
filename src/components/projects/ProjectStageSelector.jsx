@@ -1,6 +1,6 @@
 import React from "react";
 import { Check, XCircle } from "lucide-react";
-import { PROJECT_STAGES } from "@/domain/projectStages";
+import { PROJECT_STAGES } from "@/components/domain/projectStages";
 
 export default function ProjectStageSelector({ currentStage, onStageChange, onMarkAsLost, size = "default" }) {
   const isLost = currentStage === "Lost";
