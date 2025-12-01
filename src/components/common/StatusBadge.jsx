@@ -59,10 +59,10 @@ const BADGE_VARIANTS = {
   
   // Job Statuses
   jobStatus: {
-    "Open": "bg-slate-100 text-slate-700 hover:bg-slate-200",
-    "Scheduled": "bg-blue-100 text-blue-700 hover:bg-blue-200",
-    "Completed": "bg-emerald-100 text-emerald-700 hover:bg-emerald-200",
-    "Cancelled": "bg-slate-100 text-slate-700 hover:bg-slate-200",
+    [JOB_STATUS.OPEN]: "bg-slate-100 text-slate-700 hover:bg-slate-200",
+    [JOB_STATUS.SCHEDULED]: "bg-blue-100 text-blue-700 hover:bg-blue-200",
+    [JOB_STATUS.COMPLETED]: "bg-emerald-100 text-emerald-700 hover:bg-emerald-200",
+    [JOB_STATUS.CANCELLED]: "bg-slate-100 text-slate-700 hover:bg-slate-200",
   },
   
   // Payment/Financial Statuses
