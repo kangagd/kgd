@@ -804,46 +804,56 @@ export default function JobDetails({ job: initialJob, onClose, onStatusChange, o
               )}
             </div>
 
-            {!isTechnician &&
             <div className="flex gap-1 flex-shrink-0">
                 <Button
-                variant="ghost"
-                size="icon"
-                onClick={() => setShowHistory(true)}
-                className="h-9 w-9 hover:bg-[#F3F4F6] text-[#6B7280] hover:text-[#111827] transition-all rounded-lg"
-                title="History">
-
-                  <History className="w-4 h-4" />
+                  variant="ghost"
+                  size="icon"
+                  onClick={() => navigate(`${createPageUrl("CheckIn")}?jobId=${job.id}`)}
+                  className="h-9 w-9 hover:bg-[#FAE008]/10 text-[#6B7280] hover:text-[#111827] transition-all rounded-lg"
+                  title="Open in Check-In Page">
+                  <LogIn className="w-4 h-4" />
                 </Button>
-                <Button
-                variant="ghost"
-                size="icon"
-                onClick={() => setShowPriceList(true)}
-                className="h-9 w-9 hover:bg-[#F3F4F6] text-[#6B7280] hover:text-[#111827] transition-all rounded-lg"
-                title="Price List">
-
-                  <DollarSign className="w-4 h-4" />
-                </Button>
-                <Button
-                variant="ghost"
-                size="icon"
-                onClick={() => setShowAssistant(true)}
-                className="h-9 w-9 hover:bg-[#FAE008]/10 text-[#6B7280] hover:text-[#111827] transition-all rounded-lg"
-                title="AI Assistant">
-
-                  <Sparkles className="w-4 h-4" />
-                </Button>
-                <Button
-                variant="ghost"
-                size="icon"
-                onClick={() => setShowDeleteConfirm(true)}
-                className="h-9 w-9 hover:bg-red-50 hover:text-red-600 transition-all rounded-lg"
-                title="Delete">
-
-                  <Trash2 className="w-4 h-4" />
-                </Button>
+                {!isTechnician && (
+                  <>
+                    <Button
+                    variant="ghost"
+                    size="icon"
+                    onClick={() => setShowHistory(true)}
+                    className="h-9 w-9 hover:bg-[#F3F4F6] text-[#6B7280] hover:text-[#111827] transition-all rounded-lg"
+                    title="History">
+    
+                      <History className="w-4 h-4" />
+                    </Button>
+                    <Button
+                    variant="ghost"
+                    size="icon"
+                    onClick={() => setShowPriceList(true)}
+                    className="h-9 w-9 hover:bg-[#F3F4F6] text-[#6B7280] hover:text-[#111827] transition-all rounded-lg"
+                    title="Price List">
+    
+                      <DollarSign className="w-4 h-4" />
+                    </Button>
+                    <Button
+                    variant="ghost"
+                    size="icon"
+                    onClick={() => setShowAssistant(true)}
+                    className="h-9 w-9 hover:bg-[#FAE008]/10 text-[#6B7280] hover:text-[#111827] transition-all rounded-lg"
+                    title="AI Assistant">
+    
+                      <Sparkles className="w-4 h-4" />
+                    </Button>
+                    <Button
+                    variant="ghost"
+                    size="icon"
+                    onClick={() => setShowDeleteConfirm(true)}
+                    className="h-9 w-9 hover:bg-red-50 hover:text-red-600 transition-all rounded-lg"
+                    title="Delete">
+    
+                      <Trash2 className="w-4 h-4" />
+                    </Button>
+                  </>
+                )}
               </div>
-            }
           </div>
 
           <div className="space-y-3">

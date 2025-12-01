@@ -1,8 +1,11 @@
 import React, { useState, useRef } from "react";
+import { useNavigate } from "react-router-dom";
+import { createPageUrl } from "@/utils";
 import { CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
-import { Clock, MapPin, User, FileText, CheckCircle2, Package } from "lucide-react";
+import { Clock, MapPin, User, FileText, CheckCircle2, Package, LogIn } from "lucide-react";
 
 const statusColors = {
   open: "bg-slate-100 text-slate-700 border-slate-200",
@@ -31,6 +34,13 @@ const getAvatarColor = (name) => {
 export default function JobHoverCard({ job, onJobClick, children }) {
   const [open, setOpen] = useState(false);
   const timerRef = useRef(null);
+  const navigate = useNavigate();
+
+  const handleOpenCheckIn = (e) => {
+    e.stopPropagation();
+    setOpen(false);
+    navigate(`${createPageUrl("CheckIn")}?jobId=${job.id}`);
+  };
 
   const handleMouseEnter = () => {
     if (timerRef.current) clearTimeout(timerRef.current);
@@ -134,6 +144,18 @@ export default function JobHoverCard({ job, onJobClick, children }) {
               </span>
             </div>
           )}
+
+          <div className="mt-3 pt-2 border-t border-slate-100 flex justify-end">
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={handleOpenCheckIn}
+              className="h-7 text-xs gap-1 hover:bg-slate-100 text-slate-600"
+            >
+              <LogIn className="w-3 h-3" />
+              Check In
+            </Button>
+          </div>
         </CardContent>
       </PopoverContent>
     </Popover>
