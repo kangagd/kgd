@@ -1,18 +1,6 @@
 import React from "react";
 import { Check, XCircle } from "lucide-react";
-
-const PROJECT_STAGES = [
-  "Lead",
-  "Initial Site Visit",
-  "Create Quote",
-  "Quote Sent",
-  "Quote Approved",
-  "Final Measure",
-  "Parts Ordered",
-  "Scheduled",
-  "Completed",
-  "Warranty"
-];
+import { PROJECT_STAGES } from "@/domain/projectStages";
 
 export default function ProjectStageSelector({ currentStage, onStageChange, onMarkAsLost, size = "default" }) {
   const isLost = currentStage === "Lost";
