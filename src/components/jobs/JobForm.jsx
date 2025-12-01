@@ -7,7 +7,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { ArrowLeft, Upload, X, FileText, Image as ImageIcon, Loader2, Plus, Sparkles } from "lucide-react";
 import { base44 } from "@/api/base44Client";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { JOB_STATUS, JOB_STATUS_OPTIONS } from "@/domain/jobConfig";
+import { JOB_STATUS, JOB_STATUS_OPTIONS } from "@/components/domain/jobConfig";
 import {
   Dialog,
   DialogContent,
