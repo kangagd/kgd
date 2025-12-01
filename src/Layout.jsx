@@ -42,6 +42,7 @@ import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover
 import GlobalSearchDropdown from "./components/common/GlobalSearchDropdown";
 import { RoleBadge, PermissionsProvider } from "./components/common/PermissionsContext";
 import NotificationBell from "./components/notifications/NotificationBell";
+import CommandPalette from "@/components/common/CommandPalette";
 
 const primaryNavigationItems = [
   { title: "Dashboard", url: createPageUrl("Dashboard"), icon: LayoutDashboard },
@@ -127,6 +128,7 @@ export default function Layout({ children, currentPageName }) {
         }
       });
       const [recentPagesOpen, setRecentPagesOpen] = useState(false);
+  const [isCommandOpen, setIsCommandOpen] = useState(false);
   const [pullDistance, setPullDistance] = useState(0);
   const [isPulling, setIsPulling] = useState(false);
   const [isRefreshing, setIsRefreshing] = useState(false);
@@ -143,6 +145,17 @@ export default function Layout({ children, currentPageName }) {
       }
     };
     loadUser();
+  }, []);
+
+  useEffect(() => {
+    const down = (e) => {
+      if (e.key === "k" && (e.metaKey || e.ctrlKey)) {
+        e.preventDefault();
+        setIsCommandOpen(true);
+      }
+    };
+    document.addEventListener("keydown", down);
+    return () => document.removeEventListener("keydown", down);
   }, []);
 
   const handleTestModeToggle = () => {
@@ -747,6 +760,13 @@ export default function Layout({ children, currentPageName }) {
         <div className="hidden lg:flex sticky top-0 z-30 bg-[#ffffff] border-b border-[#E5E7EB] px-6 py-3 items-center justify-between gap-4">
                         <GlobalSearchDropdown />
                         <div className="flex items-center gap-1">
+                          <button
+                            onClick={() => setIsCommandOpen(true)}
+                            className="p-2 rounded-lg transition-colors text-[#6B7280] hover:bg-[#F3F4F6] hover:text-[#111827]"
+                            title="Search (Ctrl+K)"
+                          >
+                            <Search className="w-5 h-5" />
+                          </button>
                           {/* Notifications */}
                           <NotificationBell />
                           {/* Recent Pages Dropdown */}
@@ -839,6 +859,7 @@ export default function Layout({ children, currentPageName }) {
 
       {/* Test Mode Toggle */}
 
+      <CommandPalette open={isCommandOpen} onOpenChange={setIsCommandOpen} />
     </div>
     </PermissionsProvider>
   );
