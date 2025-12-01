@@ -40,7 +40,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import GlobalSearchDropdown from "./components/common/GlobalSearchDropdown";
-import { RoleBadge } from "./components/common/PermissionsContext";
+import { RoleBadge, PermissionsProvider } from "./components/common/PermissionsContext";
 import NotificationBell from "./components/notifications/NotificationBell";
 
 const primaryNavigationItems = [
@@ -344,6 +344,7 @@ export default function Layout({ children, currentPageName }) {
   // Mobile layout for technicians
           if (isTechnician) {
             return (
+              <PermissionsProvider>
               <div className="min-h-screen flex flex-col bg-[#ffffff]">
         {/* Mobile Overlay */}
         {techMobileMenuOpen && (
@@ -466,11 +467,13 @@ export default function Layout({ children, currentPageName }) {
           </button>
         )}
       </div>
+      </PermissionsProvider>
     );
   }
 
   // Desktop/Admin layout
   return (
+    <PermissionsProvider>
     <div className="min-h-screen flex bg-[#ffffff]">
       <Toaster position="top-right" richColors />
       {/* Mobile Overlay */}
@@ -837,5 +840,6 @@ export default function Layout({ children, currentPageName }) {
       {/* Test Mode Toggle */}
 
     </div>
+    </PermissionsProvider>
   );
 }
