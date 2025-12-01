@@ -7,6 +7,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { ArrowLeft, Upload, X, FileText, Image as ImageIcon, Loader2, Plus, Sparkles } from "lucide-react";
 import { base44 } from "@/api/base44Client";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { JOB_STATUS, JOB_STATUS_OPTIONS } from "@/domain/jobConfig";
 import {
   Dialog,
   DialogContent,
@@ -46,7 +47,7 @@ export default function JobForm({ job, technicians, onSubmit, onCancel, isSubmit
     scheduled_date: "",
     scheduled_time: "",
     expected_duration: null,
-    status: "Open",
+    status: JOB_STATUS.OPEN,
     outcome: "",
     notes: "",
     pricing_provided: "",
@@ -671,10 +672,11 @@ export default function JobForm({ job, technicians, onSubmit, onCancel, isSubmit
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="Open">Open</SelectItem>
-                    <SelectItem value="Scheduled">Scheduled</SelectItem>
-                    <SelectItem value="Completed">Completed</SelectItem>
-                    <SelectItem value="Cancelled">Cancelled</SelectItem>
+                    {JOB_STATUS_OPTIONS.map((status) => (
+                      <SelectItem key={status} value={status}>
+                        {status}
+                      </SelectItem>
+                    ))}
                   </SelectContent>
                 </Select>
               </div>
@@ -687,7 +689,7 @@ export default function JobForm({ job, technicians, onSubmit, onCancel, isSubmit
                   value={formData.scheduled_date}
                   onChange={(e) => {
                     const newDate = e.target.value;
-                    const newStatus = newDate ? 'Scheduled' : 'Open';
+                    const newStatus = newDate ? JOB_STATUS.SCHEDULED : JOB_STATUS.OPEN;
                     setFormData({ 
                       ...formData, 
                       scheduled_date: newDate,

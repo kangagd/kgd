@@ -7,6 +7,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { ArrowLeft, Plus, Loader2, FileText, X, Image as ImageIcon, Upload, Trash2 } from "lucide-react";
 import { base44 } from "@/api/base44Client";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { PROJECT_STAGES } from "@/domain/projectStages";
 import {
   Dialog,
   DialogContent,
@@ -26,7 +27,7 @@ export default function ProjectForm({ project, onSubmit, onCancel, isSubmitting 
     title: "",
     description: "",
     project_type: "Garage Door Install",
-    status: "Lead",
+    status: PROJECT_STAGES[0],
     financial_status: "",
     address: "",
     address_full: "",
@@ -333,14 +334,11 @@ export default function ProjectForm({ project, onSubmit, onCancel, isSubmitting 
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="Lead">Lead</SelectItem>
-                    <SelectItem value="Initial Site Visit">Initial Site Visit</SelectItem>
-                    <SelectItem value="Quote Sent">Quote Sent</SelectItem>
-                    <SelectItem value="Quote Approved">Quote Approved</SelectItem>
-                    <SelectItem value="Final Measure">Final Measure</SelectItem>
-                    <SelectItem value="Parts Ordered">Parts Ordered</SelectItem>
-                    <SelectItem value="Scheduled">Scheduled</SelectItem>
-                    <SelectItem value="Completed">Completed</SelectItem>
+                    {PROJECT_STAGES.map((stage) => (
+                      <SelectItem key={stage} value={stage}>
+                        {stage}
+                      </SelectItem>
+                    ))}
                   </SelectContent>
                 </Select>
               </div>
