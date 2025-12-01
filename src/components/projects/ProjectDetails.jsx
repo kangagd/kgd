@@ -53,6 +53,7 @@ import InitialVisitSummary from "./InitialVisitSummary";
 import MarkAsLostModal from "./MarkAsLostModal";
 import LinkInvoiceModal from "../invoices/LinkInvoiceModal";
 import ProjectChat from "./ProjectChat";
+import { PROJECT_STAGE_AUTOMATION } from "@/components/domain/projectStageAutomationConfig";
 
 const statusColors = {
   "Lead": "bg-slate-100 text-slate-700",
@@ -439,11 +440,17 @@ export default function ProjectDetails({ project: initialProject, onClose, onEdi
   const handleStageChange = async (newStage) => {
     const oldStage = project.status;
     
-    // Save the stage change
+    // Save the stage change first
     await handleFieldSave('status', oldStage, newStage);
 
-    // Handle project completion warranty logic
-    if (newStage === 'Completed' && oldStage !== 'Completed') {
+    // Look up automation rules for this stage
+    const stageRule = PROJECT_STAGE_AUTOMATION[newStage] || {
+      handleCompletion: false,
+      autoJobs: []
+    };
+
+    // Handle project completion warranty logic based on config
+    if (stageRule.handleCompletion && oldStage !== newStage) {
       try {
         await base44.functions.invoke('handleProjectCompletion', {
           project_id: project.id,
@@ -601,13 +608,13 @@ Format as HTML bullet points using <ul> and <li> tags. Include only the most cri
       navigate(createPageUrl("Jobs") + `?jobId=${newJob.id}`);
     };
 
-    // Stage-based automation
-    if (newStage === "Initial Site Visit") {
-      await autoCreateJob("Initial Site Measure");
-    } else if (newStage === "Final Measure") {
-      await autoCreateJob("Final Measure");
-    } else if (newStage === "Scheduled") {
-      await autoCreateJob("Installation");
+    // Stage-based automation driven by config
+    if (Array.isArray(stageRule.autoJobs) && stageRule.autoJobs.length > 0) {
+      for (const jobRule of stageRule.autoJobs) {
+        if (jobRule?.jobTypeName) {
+          await autoCreateJob(jobRule.jobTypeName);
+        }
+      }
     }
   };
 
