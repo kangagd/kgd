@@ -1,5 +1,6 @@
 import React from "react";
 import { cn } from "@/lib/utils";
+import { JOB_STATUS } from "@/components/domain/jobConfig";
 
 // Unified badge variant mappings
 const BADGE_VARIANTS = {
