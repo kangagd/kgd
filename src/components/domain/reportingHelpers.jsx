@@ -62,3 +62,49 @@ export const getProjectCompletedByMonth = (projects) => groupByMonth(projects, "
 
 export const getJobCreatedByMonth = (jobs) => groupByMonth(jobs, "created_date");
 export const getJobCompletedByMonth = (jobs) => groupByMonth(jobs, "completed_date");
+
+export const getDateFromRange = (rangeKey) => {
+  if (rangeKey === "all") return null;
+  
+  const today = new Date();
+  const date = new Date(today);
+  
+  switch (rangeKey) {
+    case "3m":
+      date.setMonth(today.getMonth() - 3);
+      break;
+    case "12m":
+      date.setMonth(today.getMonth() - 12);
+      break;
+    case "6m":
+    default:
+      date.setMonth(today.getMonth() - 6);
+      break;
+  }
+  
+  return date;
+};
+
+export const filterRecordsByDateRange = (records = [], dateField, rangeKey) => {
+  const fromDate = getDateFromRange(rangeKey);
+  
+  if (!fromDate) {
+    return records;
+  }
+
+  const today = new Date();
+  // Set today to end of day to include everything today
+  today.setHours(23, 59, 59, 999);
+  // Set fromDate to start of day
+  fromDate.setHours(0, 0, 0, 0);
+
+  return records.filter(record => {
+    const val = record[dateField];
+    if (!val) return false;
+    
+    const recordDate = new Date(val);
+    if (isNaN(recordDate.getTime())) return false;
+
+    return recordDate >= fromDate && recordDate <= today;
+  });
+};
