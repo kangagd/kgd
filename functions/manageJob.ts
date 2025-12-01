@@ -15,6 +15,10 @@ Deno.serve(async (req) => {
             // Handle creation
             let jobData = { ...data };
 
+            // Generate Job Number
+            const lastJobs = await base44.asServiceRole.entities.Job.list('-job_number', 1);
+            jobData.job_number = (lastJobs?.[0]?.job_number || 4999) + 1;
+
             // Auto-link contract logic
             // Link parts if provided
             if (jobData.part_ids && jobData.part_ids.length > 0) {
@@ -227,7 +231,12 @@ Deno.serve(async (req) => {
                         pickupTime = `${ph.toString().padStart(2, '0')}:${m.toString().padStart(2, '0')}`;
                     } catch (e) {}
 
+                    // Generate Job Number for Pickup Job
+                    const lastJobsPickup = await base44.asServiceRole.entities.Job.list('-job_number', 1);
+                    const nextJobNumberPickup = (lastJobsPickup?.[0]?.job_number || 4999) + 1;
+
                     const pickupJob = await base44.asServiceRole.entities.Job.create({
+                        job_number: nextJobNumberPickup,
                         job_type: pickupJobTypeName,
                         job_type_id: jobTypeId,
                         job_type_name: pickupJobTypeName,

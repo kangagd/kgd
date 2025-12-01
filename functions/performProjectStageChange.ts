@@ -309,8 +309,13 @@ async function createJobFromProjectStage(base44, project, newStage, user) {
     // Build Address
     const addressFull = project.address_full || project.address || project.site_address || "";
 
+    // Generate Job Number
+    const lastJobs = await base44.asServiceRole.entities.Job.list('-job_number', 1);
+    const nextJobNumber = (lastJobs?.[0]?.job_number || 4999) + 1;
+
     // Create Job
     const jobData = {
+        job_number: nextJobNumber,
         project_id: project.id,
         customer_id: project.customer_id,
         customer_name: project.customer_name,
