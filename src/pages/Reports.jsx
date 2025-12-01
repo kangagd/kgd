@@ -11,6 +11,7 @@ import ProjectStageFunnelReport from "@/components/reports/ProjectStageFunnelRep
 import JobStatusSummaryReport from "@/components/reports/JobStatusSummaryReport";
 import { filterRecordsByDateRange } from "@/components/domain/reportingHelpers";
 import DateRangeSelector from "@/components/reports/DateRangeSelector";
+import RequirePermission from "@/components/common/RequirePermission";
 import {
   BarChart,
   Bar,
@@ -309,11 +310,8 @@ export default function Reports() {
     );
   }
 
-  if (!hasAccess) {
-    return <AccessDenied message="Only administrators and managers can access Reports." />;
-  }
-
   return (
+    <RequirePermission roles={['admin', 'manager']}>
     <div className="p-4 md:p-5 lg:p-10 bg-[#ffffff] min-h-screen overflow-x-hidden">
       <div className="max-w-7xl mx-auto">
         <div className="flex flex-col md:flex-row justify-between items-start md:items-center py-3 lg:py-4 mb-4 lg:mb-6 gap-4">
@@ -633,5 +631,6 @@ export default function Reports() {
         </div>
       </div>
     </div>
+    </RequirePermission>
   );
 }

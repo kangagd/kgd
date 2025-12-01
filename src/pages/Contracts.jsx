@@ -10,6 +10,7 @@ import { format, parseISO } from "date-fns";
 import EntityModal from "../components/common/EntityModal";
 import ContractDetails from "../components/contracts/ContractDetails";
 import ContractForm from "../components/contracts/ContractForm";
+import RequirePermission from "@/components/common/RequirePermission";
 import { createPageUrl } from "@/utils";
 
 export default function Contracts() {
@@ -69,40 +70,45 @@ export default function Contracts() {
 
   if (showForm) {
     return (
-      <div className="p-5 md:p-10 bg-[#ffffff] min-h-screen">
-        <div className="max-w-4xl mx-auto">
-          <ContractForm
-            contract={editingContract}
-            onSubmit={handleSubmit}
-            onCancel={() => {
-              setShowForm(false);
-              setEditingContract(null);
-            }}
-            isSubmitting={createMutation.isPending || updateMutation.isPending}
-          />
+      <RequirePermission roles={['admin', 'manager']}>
+        <div className="p-5 md:p-10 bg-[#ffffff] min-h-screen">
+          <div className="max-w-4xl mx-auto">
+            <ContractForm
+              contract={editingContract}
+              onSubmit={handleSubmit}
+              onCancel={() => {
+                setShowForm(false);
+                setEditingContract(null);
+              }}
+              isSubmitting={createMutation.isPending || updateMutation.isPending}
+            />
+          </div>
         </div>
-      </div>
+      </RequirePermission>
     );
   }
 
   if (selectedContract) {
     return (
-      <div className="bg-[#ffffff] min-h-screen">
-        <ContractDetails 
-          contract={selectedContract} 
-          onClose={() => setSelectedContract(null)}
-          onEdit={() => {
-            setEditingContract(selectedContract);
-            setShowForm(true);
-            setSelectedContract(null);
-          }}
-        />
-      </div>
+      <RequirePermission roles={['admin', 'manager']}>
+        <div className="bg-[#ffffff] min-h-screen">
+          <ContractDetails 
+            contract={selectedContract} 
+            onClose={() => setSelectedContract(null)}
+            onEdit={() => {
+              setEditingContract(selectedContract);
+              setShowForm(true);
+              setSelectedContract(null);
+            }}
+          />
+        </div>
+      </RequirePermission>
     );
   }
 
   return (
-    <div className="p-4 md:p-5 lg:p-10 bg-[#ffffff] min-h-screen">
+    <RequirePermission roles={['admin', 'manager']}>
+      <div className="p-4 md:p-5 lg:p-10 bg-[#ffffff] min-h-screen">
       <div className="max-w-7xl mx-auto">
         <div className="flex flex-col md:flex-row justify-between items-start md:items-center py-3 lg:py-4 mb-4 lg:mb-6 gap-3">
           <div>
@@ -197,5 +203,6 @@ export default function Contracts() {
         )}
       </div>
     </div>
+    </RequirePermission>
   );
 }
