@@ -219,7 +219,7 @@ export default function JobDetails({ job: initialJob, onClose, onStatusChange, o
 
   return (
     <>
-      <Card className={`border border-[#E5E7EB] shadow-sm ${isTechnician ? 'rounded-none' : 'rounded-lg'} overflow-hidden`}>
+      <Card className={`border border-[#E5E7EB] shadow-sm ${isTechnician ? 'rounded-none' : 'rounded-lg'} overflow-x-auto`}>
         <CardHeader className="border-b border-[#E5E7EB] bg-white p-3 md:p-4 space-y-3">
           {/* Header Content - Kept mostly same */}
           <div className="flex items-center justify-between gap-3">

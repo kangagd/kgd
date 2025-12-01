@@ -826,7 +826,7 @@ export default function Layout({ children, currentPageName }) {
         </div>
 
         {/* Page Content */}
-        <main className="flex-1 overflow-y-auto overflow-x-hidden bg-[#ffffff] relative">
+        <main className="flex-1 overflow-y-auto overflow-x-auto bg-[#ffffff] relative">
           {/* Pull to Refresh Indicator */}
           {isPulling && (
             <div 
