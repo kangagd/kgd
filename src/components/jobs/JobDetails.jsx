@@ -142,7 +142,7 @@ export default function JobDetails({ job: initialJob, onClose, onStatusChange, o
     loadUser();
   }, []);
 
-  const isTechnician = user?.is_field_technician && user?.role !== 'admin';
+  const isTechnician = user?.is_field_technician;
   const activeCheckIn = checkIns.find((c) => !c.check_out_time && c.technician_email?.toLowerCase() === user?.email?.toLowerCase());
   const completedCheckIns = checkIns.filter((c) => c.check_out_time);
   const totalJobTime = completedCheckIns.reduce((sum, c) => sum + (c.duration_hours || 0), 0);
