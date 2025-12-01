@@ -43,6 +43,7 @@ import GlobalSearchDropdown from "./components/common/GlobalSearchDropdown";
 import { RoleBadge, PermissionsProvider } from "./components/common/PermissionsContext";
 import NotificationBell from "./components/notifications/NotificationBell";
 import CommandPalette from "@/components/common/CommandPalette";
+import ActiveCheckInBanner from "./components/common/ActiveCheckInBanner";
 
 const primaryNavigationItems = [
   { title: "Dashboard", url: createPageUrl("Dashboard"), icon: LayoutDashboard },
@@ -132,6 +133,7 @@ export default function Layout({ children, currentPageName }) {
   const [pullDistance, setPullDistance] = useState(0);
   const [isPulling, setIsPulling] = useState(false);
   const [isRefreshing, setIsRefreshing] = useState(false);
+  const [activeCheckIn, setActiveCheckIn] = useState(null);
   const touchStartY = React.useRef(0);
   const touchStartX = React.useRef(0);
   const scrollPosition = React.useRef(0);
@@ -146,6 +148,54 @@ export default function Layout({ children, currentPageName }) {
     };
     loadUser();
   }, []);
+
+  useEffect(() => {
+    let isCancelled = false;
+
+    const fetchActiveCheckIn = async () => {
+      if (!user?.email) {
+        if (!isCancelled) setActiveCheckIn(null);
+        return;
+      }
+      try {
+        // Fetch check-ins for user
+        const checkIns = await base44.entities.CheckInOut.filter({ 
+            technician_email: user.email 
+        });
+        
+        if (isCancelled) return;
+
+        // Find active one (no check_out_time)
+        const active = checkIns.find(c => !c.check_out_time);
+        
+        if (active) {
+            // Fetch job details
+            try {
+              const job = await base44.entities.Job.get(active.job_id);
+              if (!isCancelled) setActiveCheckIn({ ...active, job });
+            } catch (err) {
+              console.error("Error fetching job for active check-in", err);
+              // Still show banner but maybe without job details if fail
+              if (!isCancelled) setActiveCheckIn({ ...active, job: null });
+            }
+        } else {
+            if (!isCancelled) setActiveCheckIn(null);
+        }
+      } catch (e) {
+        if (!isCancelled) console.error("Error fetching active check-in", e);
+      }
+    };
+
+    if (user) {
+      fetchActiveCheckIn();
+      // Poll every minute
+      const interval = setInterval(fetchActiveCheckIn, 60000);
+      return () => {
+        isCancelled = true;
+        clearInterval(interval);
+      };
+    }
+  }, [user]);
 
   useEffect(() => {
     const down = (e) => {
@@ -450,6 +500,12 @@ export default function Layout({ children, currentPageName }) {
         </div>
 
         <main className="flex-1 overflow-y-auto overflow-x-hidden pb-24 bg-[#ffffff] relative">
+          {activeCheckIn && (
+            <ActiveCheckInBanner 
+              job={activeCheckIn.job} 
+              onClick={() => navigate(`${createPageUrl("CheckIn")}?jobId=${activeCheckIn.job_id}`)}
+            />
+          )}
           {/* Pull to Refresh Indicator */}
           {isPulling && (
             <div 
@@ -839,6 +895,12 @@ export default function Layout({ children, currentPageName }) {
 
         {/* Page Content */}
         <main className="flex-1 overflow-y-auto overflow-x-hidden bg-[#ffffff] relative">
+          {activeCheckIn && (
+            <ActiveCheckInBanner 
+              job={activeCheckIn.job} 
+              onClick={() => navigate(`${createPageUrl("CheckIn")}?jobId=${activeCheckIn.job_id}`)}
+            />
+          )}
           {/* Pull to Refresh Indicator */}
           {isPulling && (
             <div 
