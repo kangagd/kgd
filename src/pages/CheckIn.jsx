@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from "react";
 import { base44 } from "@/api/base44Client";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { useSearchParams } from "react-router-dom";
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
@@ -13,7 +14,10 @@ export default function CheckIn() {
   const [user, setUser] = useState(null);
   const [selectedJobId, setSelectedJobId] = useState("");
   const [notes, setNotes] = useState("");
+  const [showAllJobs, setShowAllJobs] = useState(false);
   const queryClient = useQueryClient();
+  const [searchParams] = useSearchParams();
+  const jobIdFromUrl = searchParams.get("jobId");
 
   useEffect(() => {
     const loadUser = async () => {
@@ -111,6 +115,33 @@ export default function CheckIn() {
     return jobs.find(j => j.id === jobId);
   };
 
+  // Filter jobs for today
+  const todayJobs = jobs.filter(job => {
+    if (!job.scheduled_date) return false;
+    const scheduled = parseISO(job.scheduled_date);
+    const today = new Date();
+    return scheduled.getDate() === today.getDate() &&
+           scheduled.getMonth() === today.getMonth() &&
+           scheduled.getFullYear() === today.getFullYear();
+  });
+
+  // Preselect job from URL
+  useEffect(() => {
+    if (jobIdFromUrl && jobs.length > 0 && !selectedJobId) {
+      const job = jobs.find(j => j.id === jobIdFromUrl);
+      if (job) {
+        setSelectedJobId(jobIdFromUrl);
+        // If preselected job is not today, show all jobs so it appears in the list
+        const isToday = todayJobs.find(j => j.id === jobIdFromUrl);
+        if (!isToday) {
+          setShowAllJobs(true);
+        }
+      }
+    }
+  }, [jobIdFromUrl, jobs, selectedJobId, todayJobs]);
+
+  const visibleJobs = showAllJobs ? jobs : todayJobs;
+
   return (
     <div className="p-4 md:p-8 bg-[#ffffff] min-h-screen">
       <div className="max-w-4xl mx-auto">
@@ -186,21 +217,43 @@ export default function CheckIn() {
             <CardContent className="p-6">
               <div className="space-y-4">
                 <div>
-                  <label className="block text-sm font-medium text-slate-700 mb-2">
-                    Select Job
-                  </label>
+                  <div className="flex justify-between items-center mb-2">
+                    <label className="block text-sm font-medium text-slate-700">
+                      Select Job
+                    </label>
+                    <Button 
+                      variant="ghost" 
+                      size="sm" 
+                      onClick={() => setShowAllJobs(!showAllJobs)}
+                      className="text-xs h-6"
+                    >
+                      {showAllJobs ? "Show Today's Only" : "Show All My Jobs"}
+                    </Button>
+                  </div>
                   <Select value={selectedJobId} onValueChange={setSelectedJobId}>
                     <SelectTrigger>
-                      <SelectValue placeholder="Choose a job to check in" />
+                      <SelectValue placeholder={visibleJobs.length === 0 ? "No jobs found" : "Choose a job to check in"} />
                     </SelectTrigger>
                     <SelectContent>
-                      {jobs.map((job) => (
-                        <SelectItem key={job.id} value={job.id}>
-                          {job.customer_name} - {job.address}
-                        </SelectItem>
-                      ))}
+                      {visibleJobs.length === 0 ? (
+                        <div className="p-2 text-sm text-slate-500 text-center">
+                          {showAllJobs ? "No jobs assigned to you" : "No jobs scheduled for today"}
+                        </div>
+                      ) : (
+                        visibleJobs.map((job) => (
+                          <SelectItem key={job.id} value={job.id}>
+                            {job.customer_name} - {job.address}
+                            {!showAllJobs && job.scheduled_time && ` (${job.scheduled_time})`}
+                          </SelectItem>
+                        ))
+                      )}
                     </SelectContent>
                   </Select>
+                  {!showAllJobs && jobs.length > todayJobs.length && (
+                    <p className="text-xs text-slate-500 mt-1 ml-1">
+                      Showing {todayJobs.length} jobs for today. Click "Show All My Jobs" to see others.
+                    </p>
+                  )}
                 </div>
 
                 {selectedJobId && (
