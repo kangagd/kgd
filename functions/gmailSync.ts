@@ -64,9 +64,9 @@ Deno.serve(async (req) => {
     // Refresh token if needed
     const accessToken = await refreshTokenIfNeeded(user, base44);
 
-    // Fetch recent inbox messages
+    // Fetch recent inbox messages (limit 30)
     const inboxResponse = await fetch(
-      'https://gmail.googleapis.com/gmail/v1/users/me/messages?maxResults=50&labelIds=INBOX',
+      'https://gmail.googleapis.com/gmail/v1/users/me/messages?maxResults=30&labelIds=INBOX',
       { headers: { 'Authorization': `Bearer ${accessToken}` } }
     );
 
@@ -76,9 +76,9 @@ Deno.serve(async (req) => {
       return Response.json({ error: 'Failed to fetch Gmail inbox', details: error, synced: 0 }, { status: 200 });
     }
 
-    // Fetch recent sent messages
+    // Fetch recent sent messages (limit 30)
     const sentResponse = await fetch(
-      'https://gmail.googleapis.com/gmail/v1/users/me/messages?maxResults=50&labelIds=SENT',
+      'https://gmail.googleapis.com/gmail/v1/users/me/messages?maxResults=30&labelIds=SENT',
       { headers: { 'Authorization': `Bearer ${accessToken}` } }
     );
 
@@ -89,21 +89,29 @@ Deno.serve(async (req) => {
     console.log('Inbox messages:', inboxData.messages?.length || 0);
     console.log('Sent messages:', sentData.messages?.length || 0);
 
-    // Deduplicate messages (a sent reply might appear in both INBOX and SENT)
+    // Deduplicate messages
     const messageMap = new Map();
     
-    // Add inbox messages first
-    for (const m of (inboxData.messages || [])) {
-      messageMap.set(m.id, { ...m, isOutbound: false });
-    }
-    
-    // Add sent messages - these take priority for isOutbound flag
-    for (const m of (sentData.messages || [])) {
-      if (messageMap.has(m.id)) {
-        // Message exists in both - mark as outbound
-        messageMap.set(m.id, { ...m, isOutbound: true });
-      } else {
-        messageMap.set(m.id, { ...m, isOutbound: true });
+    // Interleave messages to ensure we process recent ones from both lists
+    const inboxMsgs = inboxData.messages || [];
+    const sentMsgs = sentData.messages || [];
+    const maxLength = Math.max(inboxMsgs.length, sentMsgs.length);
+
+    for (let i = 0; i < maxLength; i++) {
+      if (i < inboxMsgs.length) {
+        const m = inboxMsgs[i];
+        if (!messageMap.has(m.id)) {
+          messageMap.set(m.id, { ...m, isOutbound: false });
+        }
+      }
+      if (i < sentMsgs.length) {
+        const m = sentMsgs[i];
+        if (messageMap.has(m.id)) {
+          // Mark existing as outbound if found in sent
+          messageMap.get(m.id).isOutbound = true;
+        } else {
+          messageMap.set(m.id, { ...m, isOutbound: true });
+        }
       }
     }
     
@@ -114,10 +122,18 @@ Deno.serve(async (req) => {
     }
 
     let syncedCount = 0;
-
-    // Process each message (limit to 30 to avoid timeouts)
-    for (const message of allMessages.slice(0, 30)) {
+    
+    // Helper for concurrency
+    async function processMessage(message) {
       try {
+        // Skip if already exists (quick check before fetch)
+        const existing = await base44.asServiceRole.entities.EmailMessage.filter({
+           gmail_message_id: message.id
+        });
+        if (existing.length > 0) {
+           return false; // Skipped
+        }
+
         const detailResponse = await fetch(
           `https://gmail.googleapis.com/gmail/v1/users/me/messages/${message.id}`,
           { headers: { 'Authorization': `Bearer ${accessToken}` } }
@@ -125,7 +141,7 @@ Deno.serve(async (req) => {
 
         if (!detailResponse.ok) {
           console.error(`Failed to fetch message ${message.id}`);
-          continue;
+          return false;
         }
 
         const detail = await detailResponse.json();
@@ -349,15 +365,12 @@ Deno.serve(async (req) => {
             // Auto-save attachments if thread is linked to Project or Job
             if (processedAttachments.length > 0) {
               if (currentThread.linked_project_id) {
-                console.log(`Auto-saving attachments for thread ${threadId} to Project ${currentThread.linked_project_id}`);
-                // We invoke the function but don't await it to avoid blocking sync
                 base44.functions.invoke('saveThreadAttachments', {
                   thread_id: threadId,
                   target_type: 'project',
                   target_id: currentThread.linked_project_id
                 }).catch(err => console.error('Auto-save attachments failed:', err));
               } else if (currentThread.linked_job_id) {
-                console.log(`Auto-saving attachments for thread ${threadId} to Job ${currentThread.linked_job_id}`);
                 base44.functions.invoke('saveThreadAttachments', {
                   thread_id: threadId,
                   target_type: 'job',
@@ -369,16 +382,29 @@ Deno.serve(async (req) => {
             console.log('Error updating thread or auto-saving:', e.message);
           }
 
-          syncedCount++;
+          return true; // Synced
         }
       } catch (msgError) {
         console.error(`Error processing message ${message.id}:`, msgError.message);
-        // Continue with next message
+        return false;
       }
     }
 
-    console.log(`=== Gmail Sync Complete: ${syncedCount} synced of ${allMessages.length} total ===`);
-    return Response.json({ synced: syncedCount, total: allMessages.length });
+    // Process with concurrency
+    const CONCURRENCY = 3;
+    const queue = allMessages.slice(0, 60); // Process up to 60 messages
+    const results = [];
+    
+    for (let i = 0; i < queue.length; i += CONCURRENCY) {
+      const chunk = queue.slice(i, i + CONCURRENCY);
+      const chunkResults = await Promise.all(chunk.map(m => processMessage(m)));
+      results.push(...chunkResults);
+    }
+    
+    syncedCount = results.filter(Boolean).length;
+
+    console.log(`=== Gmail Sync Complete: ${syncedCount} synced of ${queue.length} processed ===`);
+    return Response.json({ synced: syncedCount, total: queue.length });
   } catch (error) {
     console.error('Gmail sync error:', error);
     return Response.json({ 
