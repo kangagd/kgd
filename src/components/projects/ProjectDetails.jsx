@@ -14,9 +14,7 @@ import { toast } from "sonner";
 import ProjectSidebar from "./ProjectSidebar";
 import ProjectStageSelector from "./ProjectStageSelector";
 import MarkAsLostModal from "./MarkAsLostModal";
-import StageHistoryTab from "./StageHistoryTab";
 import ProjectSummary from "./ProjectSummary";
-import { format } from "date-fns";
 import ProjectQuotesTab from "./ProjectQuotesTab";
 import ProjectInvoicesTab from "./ProjectInvoicesTab";
 import ProjectEmailSection from "./ProjectEmailSection";
@@ -185,12 +183,9 @@ export default function ProjectDetails({ project: initialProject, onClose, onEdi
              </div>
              <div className="pt-2">
                 <ProjectStageSelector 
-                    projectId={project.id}
                     currentStage={project.status} 
-                    canEdit={canEdit}
-                    onStageChange={() => {
-                        // Query invalidation handled in component
-                    }}
+                    onStageChange={handleStatusChange}
+                    onMarkAsLost={() => setShowLostModal(true)}
                 />
              </div>
           </CardHeader>
@@ -232,10 +227,6 @@ export default function ProjectDetails({ project: initialProject, onClose, onEdi
                         <Clock className="w-4 h-4 mr-2" />
                         Warranty
                     </TabsTrigger>
-                    <TabsTrigger value="history" className="flex-1 whitespace-nowrap">
-                        <History className="w-4 h-4 mr-2" />
-                        Stage History
-                    </TabsTrigger>
                 </TabsList>
                 </div>
 
@@ -268,32 +259,6 @@ export default function ProjectDetails({ project: initialProject, onClose, onEdi
                         </CardTitle>
                         </CardHeader>
                         <CardContent className="space-y-4">
-                        
-                        <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-4 p-3 bg-slate-50 rounded-lg border border-slate-100">
-                            <div>
-                                <span className="text-xs font-medium text-slate-500 uppercase">Current Stage</span>
-                                <div className="mt-1 font-medium text-slate-900">{project.status}</div>
-                            </div>
-                            <div>
-                                <span className="text-xs font-medium text-slate-500 uppercase">Changed At</span>
-                                <div className="mt-1 text-sm text-slate-700">
-                                    {project.stage_changed_at ? format(new Date(project.stage_changed_at), "MMM d, yyyy") : "-"}
-                                </div>
-                            </div>
-                            <div>
-                                <span className="text-xs font-medium text-slate-500 uppercase">Previous Stage</span>
-                                <div className="mt-1 text-sm text-slate-700">{project.previous_stage || "-"}</div>
-                            </div>
-                             <div>
-                                <span className="text-xs font-medium text-slate-500 uppercase">Time in Stage</span>
-                                <div className="mt-1 text-sm text-slate-700">
-                                    {project.stage_changed_at ? (() => {
-                                        const days = Math.floor((new Date() - new Date(project.stage_changed_at)) / (1000 * 60 * 60 * 24));
-                                        return `${days} day${days !== 1 ? 's' : ''}`;
-                                    })() : "-"}
-                                </div>
-                            </div>
-                        </div>
                         <RichTextField
                             label="Description"
                             value={description}
@@ -374,11 +339,6 @@ export default function ProjectDetails({ project: initialProject, onClose, onEdi
                         <WarrantyCard project={project} />
                         <MaintenanceSection projectId={project.id} />
                     </div>
-                </TabsContent>
-
-                {/* History Tab */}
-                <TabsContent value="history" className="space-y-6">
-                    <StageHistoryTab projectId={project.id} />
                 </TabsContent>
 
             </Tabs>

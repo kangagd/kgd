@@ -326,7 +326,6 @@ export default function ProjectSidebar({ project, jobs, onClose, onEdit, onDelet
             <CardContent className="p-3">
               <div className="space-y-2">
                 {(project.other_documents || []).map((doc, i) => {
-                    if (!doc || typeof doc !== 'string') return null;
                     const name = doc.split('/').pop();
                     return (
                         <div key={i} className="flex items-center justify-between p-2 bg-slate-50 rounded text-sm border border-slate-100">

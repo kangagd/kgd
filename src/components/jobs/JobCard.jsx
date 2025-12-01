@@ -103,7 +103,7 @@ export default function JobCard({ job, onClick, onViewDetails, compact = false }
             <div className="flex items-center justify-between mb-2 pr-8">
               <div className="flex items-center gap-2 flex-wrap">
                 <h3 className="text-[18px] font-semibold text-[#111827] leading-[1.2]">
-                  {job.customer_name || "Unknown Customer"}
+                  {job.customer_name}
                 </h3>
               </div>
               <div className="flex items-center gap-2">

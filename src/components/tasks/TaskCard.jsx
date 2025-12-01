@@ -119,7 +119,7 @@ export default function TaskCard({
               className="w-7 h-7 rounded-full bg-[#FAE008] flex items-center justify-center text-xs font-semibold text-[#111827]"
               title={task.assigned_to_name}
             >
-              {String(task.assigned_to_name).split(" ").map(n => n[0]).join("").slice(0, 2).toUpperCase()}
+              {task.assigned_to_name.split(" ").map(n => n[0]).join("").slice(0, 2).toUpperCase()}
             </div>
           </div>
         )}

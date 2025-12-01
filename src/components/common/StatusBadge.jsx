@@ -144,7 +144,7 @@ const baseBadgeStyles = "inline-flex items-center rounded-lg px-2.5 py-0.5 text-
 // Capitalize first letter of each word
 const capitalizeWords = (str) => {
   if (!str) return '';
-  return String(str).split(' ').map(word => word.charAt(0).toUpperCase() + word.slice(1).toLowerCase()).join(' ');
+  return str.split(' ').map(word => word.charAt(0).toUpperCase() + word.slice(1).toLowerCase()).join(' ');
 };
 
 export function StatusBadge({ type, value, className, ...props }) {
