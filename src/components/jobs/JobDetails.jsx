@@ -16,6 +16,7 @@ import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/component
 import { base44 } from "@/api/base44Client";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { Link, useNavigate } from "react-router-dom";
+import { JobTypeBadge, ProductTypeBadge } from "../common/StatusBadge";
 import { createPageUrl } from "@/utils";
 import { toast } from "sonner";
 import PriceListModal from "./PriceListModal";
@@ -219,7 +220,7 @@ export default function JobDetails({ job: initialJob, onClose, onStatusChange, o
 
   return (
     <>
-      <Card className={`border border-[#E5E7EB] shadow-sm ${isTechnician ? 'rounded-none' : 'rounded-lg'} overflow-x-auto`}>
+      <Card className={`border border-[#E5E7EB] shadow-sm ${isTechnician ? 'rounded-none' : 'rounded-lg'} overflow-hidden`}>
         <CardHeader className="border-b border-[#E5E7EB] bg-white p-3 md:p-4 space-y-3">
           {/* Header Content - Kept mostly same */}
           <div className="flex items-center justify-between gap-3">
