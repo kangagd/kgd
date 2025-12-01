@@ -191,7 +191,8 @@ export default function Projects() {
       
       let matchesDateRange = true;
       if (startDate || endDate) {
-        const projectDate = new Date(project.created_date);
+        const createdAt = project.created_at || project.created_date || project.createdDate;
+        const projectDate = new Date(createdAt);
         if (startDate && new Date(startDate) > projectDate) matchesDateRange = false;
         if (endDate && new Date(endDate) < projectDate) matchesDateRange = false;
       }
@@ -202,7 +203,9 @@ export default function Projects() {
     })
     .sort((a, b) => {
       if (sortBy === "created_date") {
-        return new Date(b.created_date) - new Date(a.created_date);
+        const dateA = a.created_at || a.created_date || a.createdDate;
+        const dateB = b.created_at || b.created_date || b.createdDate;
+        return new Date(dateB) - new Date(dateA);
       } else if (sortBy === "stage") {
         const stages = ["Lead", "Initial Site Visit", "Quote Sent", "Quote Approved", "Final Measure", "Parts Ordered", "Scheduled", "Completed", "Warranty"];
         return stages.indexOf(a.status) - stages.indexOf(b.status);
@@ -443,6 +446,7 @@ export default function Projects() {
             const nextJob = getNextJob(project.id);
             const suburb = extractSuburb(project.address);
             const scopeSummary = buildScopeSummary(project);
+            const createdAt = project.created_at || project.created_date || project.createdDate;
 
             return (
               <Card
@@ -481,7 +485,7 @@ export default function Projects() {
 
                   {/* Second row */}
                   <div className="flex items-center gap-4 mb-3 text-[#4B5563] flex-wrap">
-                    <AgeBadge date={project.created_date} prefix="Created" />
+                    <AgeBadge date={createdAt} prefix="Created" />
                     <div className="flex items-center gap-1.5">
                       <User className="w-4 h-4" />
                       <span className="text-[14px] leading-[1.4]">{project.customer_name}</span>
