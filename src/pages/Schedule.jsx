@@ -1,4 +1,5 @@
-import React, { useState } from "react";
+import React, { useState, useMemo } from "react";
+import { usePermissions } from "../components/common/PermissionsContext";
 import { base44 } from "@/api/base44Client";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
@@ -38,7 +39,15 @@ export default function Schedule() {
   const [statusFilter, setStatusFilter] = useState("all");
   const [contractFilter, setContractFilter] = useState(false);
   const [viewType, setViewType] = useState("resource"); // 'resource' or 'calendar'
-  const [user, setUser] = useState(null);
+  const { user, role, isTechnician, isAdminOrManager } = usePermissions();
+  
+  const [viewScope, setViewScope] = useState("all");
+
+  React.useEffect(() => {
+    if (role === 'technician') {
+      setViewScope('mine');
+    }
+  }, [role]);
   
   // Drag and drop state
   const [pendingReschedule, setPendingReschedule] = useState(null);
@@ -50,16 +59,7 @@ export default function Schedule() {
   const [showAvailabilityManager, setShowAvailabilityManager] = useState(false);
   const [activeCheckInMap, setActiveCheckInMap] = useState({});
 
-  React.useEffect(() => {
-    const loadUser = async () => {
-      try {
-        setUser(await base44.auth.me());
-      } catch (error) {
-        console.error("Error loading user:", error);
-      }
-    };
-    loadUser();
-  }, []);
+  // User loaded via usePermissions
 
   React.useEffect(() => {
     let isCancelled = false;
@@ -143,8 +143,22 @@ export default function Schedule() {
 
   const { checkConflicts } = useScheduleConflicts(allJobs, leaves, closedDays);
 
-  const isTechnician = user?.is_field_technician && user?.role !== 'admin';
-  const isAdminOrManager = user?.role === 'admin' || user?.role === 'manager';
+  // Filter jobs by scope (Mine vs All)
+  const scopedJobs = useMemo(() => {
+    if (!allJobs) return [];
+    if (viewScope === "all" || !user?.email) return allJobs;
+
+    return allJobs.filter((job) => {
+      if (!job) return false;
+      const technicianEmail = user.email.toLowerCase().trim();
+      const assigned = job.assigned_to; 
+      
+      if (Array.isArray(assigned)) {
+        return assigned.some(email => email?.toLowerCase().trim() === technicianEmail);
+      }
+      return assigned?.toLowerCase().trim() === technicianEmail;
+    });
+  }, [allJobs, viewScope, user]);
   
   // Reschedule mutation
   const rescheduleMutation = useMutation({
@@ -214,7 +228,7 @@ export default function Schedule() {
 
   // Filter jobs
   const getFilteredJobs = (dateFilter) => {
-    return allJobs
+    return scopedJobs
       .filter(job => {
         if (job.deleted_at) return false;
         
@@ -223,15 +237,6 @@ export default function Schedule() {
         const outcome = job.outcome?.toLowerCase();
         if (status === 'cancelled' || status === 'lost' || outcome === 'lost') return false;
         
-        // Technician access filter
-        if (isTechnician && user) {
-          const userEmail = user.email?.toLowerCase().trim();
-          const isAssigned = Array.isArray(job.assigned_to) 
-            ? job.assigned_to.some(email => email?.toLowerCase().trim() === userEmail)
-            : (typeof job.assigned_to === 'string' && job.assigned_to.toLowerCase().trim() === userEmail);
-          if (!isAssigned) return false;
-        }
-
         // Date filter
         if (dateFilter && job.scheduled_date) {
           try {
@@ -855,9 +860,32 @@ export default function Schedule() {
     return (
       <div className="p-4 bg-[#ffffff] min-h-screen">
         <div className="max-w-7xl mx-auto">
-          <div className="mb-4">
-            <h1 className="text-xl font-bold text-[#111827] leading-tight">Schedule</h1>
-            <p className="text-sm text-[#4B5563] mt-1">{getDateRangeText()}</p>
+          <div className="mb-4 flex flex-col gap-3">
+            <div>
+              <h1 className="text-xl font-bold text-[#111827] leading-tight">Schedule</h1>
+              <p className="text-sm text-[#4B5563] mt-1">{getDateRangeText()}</p>
+            </div>
+            
+            <div className="inline-flex w-full items-center rounded-lg border bg-white p-1 text-xs shadow-sm">
+              <Button
+                type="button"
+                variant={viewScope === "mine" ? "default" : "ghost"}
+                size="sm"
+                className={`h-8 flex-1 rounded-md text-xs font-medium ${viewScope === "mine" ? "bg-[#FAE008] text-[#111827] hover:bg-[#E5CF07]" : "text-slate-500 hover:text-slate-900"}`}
+                onClick={() => setViewScope("mine")}
+              >
+                My Schedule
+              </Button>
+              <Button
+                type="button"
+                variant={viewScope === "all" ? "default" : "ghost"}
+                size="sm"
+                className={`h-8 flex-1 rounded-md text-xs font-medium ${viewScope === "all" ? "bg-[#FAE008] text-[#111827] hover:bg-[#E5CF07]" : "text-slate-500 hover:text-slate-900"}`}
+                onClick={() => setViewScope("all")}
+              >
+                All
+              </Button>
+            </div>
           </div>
 
           {/* View Tabs */}
@@ -953,6 +981,26 @@ export default function Schedule() {
               <p className="text-sm text-[#4B5563] mt-1">{getDateRangeText()}</p>
             </div>
             <div className="flex items-center gap-3">
+              <div className="inline-flex items-center rounded-lg border bg-white p-1 text-xs shadow-sm">
+                <Button
+                  type="button"
+                  variant={viewScope === "mine" ? "default" : "ghost"}
+                  size="sm"
+                  className={`h-7 rounded-md px-3 text-xs font-medium ${viewScope === "mine" ? "bg-[#FAE008] text-[#111827] hover:bg-[#E5CF07]" : "text-slate-500 hover:text-slate-900"}`}
+                  onClick={() => setViewScope("mine")}
+                >
+                  My Schedule
+                </Button>
+                <Button
+                  type="button"
+                  variant={viewScope === "all" ? "default" : "ghost"}
+                  size="sm"
+                  className={`h-7 rounded-md px-3 text-xs font-medium ${viewScope === "all" ? "bg-[#FAE008] text-[#111827] hover:bg-[#E5CF07]" : "text-slate-500 hover:text-slate-900"}`}
+                  onClick={() => setViewScope("all")}
+                >
+                  All
+                </Button>
+              </div>
               {isAdminOrManager && (
                 <Button
                   variant="outline"
