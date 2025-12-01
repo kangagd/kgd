@@ -258,25 +258,21 @@ export default function JobDetails({ job: initialJob, onClose, onStatusChange, o
                     {/* Chips */}
                     {(() => {
                         const jt = jobTypes.find(t => t.id === job.job_type_id);
-                        const color = jt?.color || '#2563EB'; // Default blue
+                        const color = jt?.color;
                         const isLogistics = jt?.category === 'Logistics' || job.job_category === 'Logistics';
                         
                         return (
                             <div className="flex items-center gap-2">
-                                <Badge 
-                                    className="border-0 flex items-center gap-1.5 px-2.5 py-0.5 text-xs"
-                                    style={{ backgroundColor: `${color}15`, color: color }}
-                                >
-                                    <div className="w-2 h-2 rounded-full" style={{ backgroundColor: color }} />
-                                    {jt?.name || job.job_type_name || job.job_type}
-                                </Badge>
+                                <JobTypeBadge 
+                                    value={jt?.name || job.job_type_name || job.job_type} 
+                                    color={color} 
+                                />
                                 {isLogistics && (
-                                    <Badge variant="outline" className="bg-slate-50 text-slate-600 border-slate-200 gap-1">
-                                        <Truck className="w-3 h-3" />
-                                        Logistics
+                                    <Badge variant="outline" className="bg-slate-100 text-slate-600 border-slate-200 text-[10px] font-bold px-1.5 py-0.5">
+                                        LOGISTICS
                                     </Badge>
                                 )}
-                                <Badge className="bg-purple-50 text-purple-700 border-purple-100">{job.product}</Badge>
+                                <ProductTypeBadge value={job.product} />
                             </div>
                         );
                     })()}
