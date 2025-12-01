@@ -7,7 +7,6 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { ArrowLeft, Plus, Loader2, FileText, X, Image as ImageIcon, Upload, Trash2 } from "lucide-react";
 import { base44 } from "@/api/base44Client";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { PROJECT_STAGES } from "@/domain/projectStages";
 import { PROJECT_STAGES } from "@/components/domain/projectStages";
 import {
   Dialog,
