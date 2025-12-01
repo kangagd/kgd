@@ -149,18 +149,11 @@ export default function JobCard({ job, onClick, onViewDetails, compact = false }
                 </Badge>
               )}
               {(job.job_type_name || job.job_type) && (
-                <div className="flex items-center gap-1">
-                  <JobTypeBadge 
-                    value={job.job_type_name || job.job_type} 
-                    color={jobType?.color}
-                    className="pointer-events-none" 
-                  />
-                  {(jobType?.is_logistics || job.job_category === 'Logistics') && (
-                    <Badge variant="outline" className="bg-slate-100 text-slate-600 border-slate-200 text-[10px] font-bold px-1.5 py-0.5">
-                      LOGISTICS
-                    </Badge>
-                  )}
-                </div>
+                <JobTypeBadge 
+                  value={job.job_type_name || job.job_type} 
+                  color={jobType?.color}
+                  className="pointer-events-none" 
+                />
               )}
               {job.product && (
                 <ProductTypeBadge value={job.product} className="pointer-events-none" />
