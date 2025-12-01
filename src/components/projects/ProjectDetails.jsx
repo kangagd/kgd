@@ -83,8 +83,45 @@ export default function ProjectDetails({ project: initialProject, onClose, onEdi
     }
   });
 
+  const createJobMutation = useMutation({
+    mutationFn: (data) => base44.functions.invoke('createJobFromProjectStage', data),
+    onSuccess: (response) => {
+      if (response.data && response.data.jobId) {
+         if (!response.data.alreadyExists) {
+             toast.success("Job created successfully");
+         } else {
+             toast.info("Opening existing job");
+         }
+         // Navigate to the job
+         navigate(createPageUrl("Jobs") + `?jobId=${response.data.jobId}`);
+      }
+    },
+    onError: (err) => {
+      console.error("Failed to create job", err);
+      toast.error("Failed to automatically create job");
+    }
+  });
+
   const handleStatusChange = (newStatus) => {
     updateProjectMutation.mutate({ field: 'status', value: newStatus });
+    
+    // Trigger job creation for specific stages
+    let jobTypeToCreate = null;
+    if (newStatus === "Initial Site Visit") {
+        jobTypeToCreate = "Initial Site Visit";
+    } else if (newStatus === "Final Measure") {
+        jobTypeToCreate = "Final Measure";
+    } else if (newStatus === "Scheduled") {
+        jobTypeToCreate = "Installation";
+    }
+
+    if (jobTypeToCreate) {
+        toast.info(`Creating ${jobTypeToCreate} job...`);
+        createJobMutation.mutate({
+            projectId: project.id,
+            jobType: jobTypeToCreate
+        });
+    }
   };
 
   const handleMarkAsLost = (data) => {
