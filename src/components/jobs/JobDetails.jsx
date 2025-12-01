@@ -232,7 +232,7 @@ export default function JobDetails({ job: initialJob, onClose, onStatusChange, o
                         return (
                             <div className="flex items-center gap-2">
                                 <Badge 
-                                    className="border-0 flex items-center gap-1.5 px-2.5 py-1 text-sm"
+                                    className="border-0 flex items-center gap-1.5 px-2.5 py-0.5 text-xs"
                                     style={{ backgroundColor: `${color}15`, color: color }}
                                 >
                                     <div className="w-2 h-2 rounded-full" style={{ backgroundColor: color }} />
