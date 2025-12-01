@@ -7,6 +7,8 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import ProjectStageFunnelReport from "@/components/reports/ProjectStageFunnelReport";
+import JobStatusSummaryReport from "@/components/reports/JobStatusSummaryReport";
 import {
   BarChart,
   Bar,
@@ -128,6 +130,16 @@ export default function Reports() {
       return true;
     });
   }, [allProjects, dateFrom, dateTo, projectStatusFilter]);
+
+  const filteredJobs = useMemo(() => {
+    return allJobs.filter(j => {
+      if (j.deleted_at) return false;
+      const d = new Date(j.created_date);
+      const from = new Date(dateFrom);
+      const to = new Date(dateTo);
+      return d >= from && d <= to;
+    });
+  }, [allJobs, dateFrom, dateTo]);
 
   // Project completion metrics
   const projectMetrics = useMemo(() => {
@@ -585,6 +597,15 @@ export default function Reports() {
               </ResponsiveContainer>
             </CardContent>
           </Card>
+        </div>
+
+        {/* Operations Reports */}
+        <div className="mt-6">
+          <h2 className="text-[18px] font-semibold text-[#111827] mb-4">Operations</h2>
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+            <ProjectStageFunnelReport projects={filteredProjects} />
+            <JobStatusSummaryReport jobs={filteredJobs} />
+          </div>
         </div>
       </div>
     </div>
