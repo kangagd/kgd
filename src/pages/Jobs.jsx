@@ -322,8 +322,8 @@ export default function Jobs() {
 
   if (selectedJob) {
     return (
-      <div className="bg-[#ffffff] min-h-screen">
-        <div className="mx-auto p-5 md:p-10 max-w-4xl">
+      <div className="bg-[#ffffff] w-full h-full">
+        <div className="mx-auto p-5 md:p-10 max-w-4xl pb-20">
           <JobDetails
             job={selectedJob}
             onClose={() => {
@@ -345,7 +345,7 @@ export default function Jobs() {
   }
 
   return (
-    <div className="p-4 md:p-5 lg:p-10 bg-[#ffffff] min-h-screen overflow-x-hidden">
+    <div className="p-4 md:p-5 lg:p-10 bg-[#ffffff] w-full pb-20">
       <div className="max-w-7xl mx-auto w-full">
         {!isTechnician && (
           <div className="flex flex-col md:flex-row justify-between items-start md:items-center py-3 lg:py-4 mb-4 lg:mb-6 gap-3">
