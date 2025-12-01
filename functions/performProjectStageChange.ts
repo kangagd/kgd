@@ -177,9 +177,20 @@ Deno.serve(async (req) => {
                         job_type: jobType.name, // De-normalized
                         job_category: jobType.category,
                         title: `${jobType.name} for ${project.title}`,
+                        customer_name: project.customer_name,
+                        customer_phone: project.customer_phone,
+                        customer_email: project.customer_email,
+                        product: project.project_type, // Map project_type to job product as best fit
                         address: project.address,
                         address_full: project.address_full,
-                        // Copy other relevant fields
+                        address_street: project.address_street,
+                        address_suburb: project.address_suburb,
+                        address_state: project.address_state,
+                        address_postcode: project.address_postcode,
+                        address_country: project.address_country,
+                        google_place_id: project.google_place_id,
+                        latitude: project.latitude,
+                        longitude: project.longitude,
                         created_by: user.email
                     });
                     autoCreatedJobs.push(newJob);
@@ -225,7 +236,20 @@ Deno.serve(async (req) => {
                         job_category: "Logistics",
                         logistics_type: "Material Pickup – Warehouse", // Default
                         title: `Logistics: ${pickupType.name}`,
+                        customer_name: project.customer_name,
+                        customer_phone: project.customer_phone,
+                        customer_email: project.customer_email,
+                        product: project.project_type, // Map project_type to job product as best fit
                         address: project.address,
+                        address_full: project.address_full,
+                        address_street: project.address_street,
+                        address_suburb: project.address_suburb,
+                        address_state: project.address_state,
+                        address_postcode: project.address_postcode,
+                        address_country: project.address_country,
+                        google_place_id: project.google_place_id,
+                        latitude: project.latitude,
+                        longitude: project.longitude,
                         created_by: user.email
                     });
                     autoCreatedJobs.push(logisticsJob);
