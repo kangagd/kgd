@@ -25,6 +25,12 @@ const productColors = {
 };
 
 export default function JobModalView({ job }) {
+  const { data: jobType } = useQuery({
+    queryKey: ['jobType', job.job_type_id],
+    queryFn: () => base44.entities.JobType.get(job.job_type_id),
+    enabled: !!job.job_type_id
+  });
+
   const handleCall = () => {
     if (job.customer_phone) {
       window.location.href = `tel:${job.customer_phone}`;
@@ -41,21 +47,18 @@ export default function JobModalView({ job }) {
       <div className="space-y-3">
         <div className="flex items-center justify-between gap-2 flex-wrap">
           <div className="flex items-center gap-2 flex-wrap">
-            {job.job_type_name && (
-              <Badge className="bg-[#EDE9FE] text-[#6D28D9] border-0 font-medium text-xs px-2.5 py-0.5 rounded-lg">
-                {job.job_type_name}
-              </Badge>
+            {(job.job_type_name || job.job_type) && (
+              <JobTypeBadge 
+                value={job.job_type_name || job.job_type} 
+                color={jobType?.color}
+              />
             )}
             {job.product && (
-              <Badge className={`${productColors[job.product]} font-medium text-xs px-2.5 py-0.5 rounded-lg border-0`}>
-                {job.product}
-              </Badge>
+              <ProductTypeBadge value={job.product} />
             )}
           </div>
           {job.status && (
-            <Badge className={`${statusColors[job.status]} font-medium px-2.5 py-0.5 rounded-lg border-0`}>
-              {job.status}
-            </Badge>
+            <JobStatusBadge value={job.status} />
           )}
         </div>
 
