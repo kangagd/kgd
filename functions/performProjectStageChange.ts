@@ -156,9 +156,15 @@ Deno.serve(async (req) => {
         // 1. Handle old stage jobs (hold them).
         // 2. Handle new stage jobs (create them if rule says so).
         
+        // 8. Create Job from Stage (New Logic)
+        const createdJob = await createJobFromProjectStage(base44, updatedProject, new_stage, user);
+        if (createdJob) {
+            autoCreatedJobs.push(createdJob);
+        }
+
         if (rule) {
-            // 8. Auto Create Job
-            if (rule.auto_create_job && rule.job_type_id) {
+            // Legacy Auto Create Job (Only if new logic didn't trigger, to avoid duplicates)
+            if (!createdJob && rule.auto_create_job && rule.job_type_id) {
                 // Check if we should create it. 
                 // If moving backward, maybe we shouldn't? 
                 // The user didn't say "Don't create jobs when moving backward".
@@ -268,3 +274,75 @@ Deno.serve(async (req) => {
         return Response.json({ error: error.message }, { status: 500 });
     }
 });
+
+const STAGE_JOB_TYPE_MAP = {
+    "Initial Site Visit": "Initial Site Visit",
+    "Final Measure": "Final Measure",
+    "Scheduled": "Installation",
+    "Maintenance": "Maintenance"
+};
+
+async function createJobFromProjectStage(base44, project, newStage, user) {
+    const jobTypeName = STAGE_JOB_TYPE_MAP[newStage];
+    if (!jobTypeName) return null;
+
+    // Check for existing open/scheduled job
+    // We need to fetch all jobs for project and filter in memory if filter() doesn't support job_type name directly or if it's safer
+    // Job entity has 'job_type' field which stores the name (denormalized)
+    const existingJobs = await base44.asServiceRole.entities.Job.filter({
+        project_id: project.id,
+        job_type: jobTypeName
+    });
+    
+    const activeJob = existingJobs.find(j => ['Open', 'Scheduled'].includes(j.status));
+    if (activeJob) return activeJob;
+
+    // Load JobType
+    const jobTypes = await base44.asServiceRole.entities.JobType.filter({ name: jobTypeName });
+    const jobType = jobTypes[0];
+
+    if (!jobType) {
+        console.warn(`JobType '${jobTypeName}' not found for stage '${newStage}'`);
+        return null;
+    }
+
+    // Build Address
+    const addressFull = project.address_full || project.address || project.site_address || "";
+
+    // Create Job
+    const jobData = {
+        project_id: project.id,
+        customer_id: project.customer_id,
+        customer_name: project.customer_name,
+        customer_email: project.customer_email,
+        customer_phone: project.customer_phone,
+        organisation_id: project.organisation_id,
+        address: addressFull,
+        address_full: addressFull,
+        job_type_id: jobType.id,
+        job_type: jobType.name,
+        job_type_name: jobType.name,
+        job_category: jobType.category,
+        title: jobType.name,
+        status: "Open",
+        created_by: user.email,
+        // Full Context Copy
+        address_street: project.address_street,
+        address_suburb: project.address_suburb,
+        address_state: project.address_state,
+        address_postcode: project.address_postcode,
+        address_country: project.address_country,
+        google_place_id: project.google_place_id,
+        latitude: project.latitude,
+        longitude: project.longitude,
+        product: project.project_type,
+        // Storing source/stage info in additional_info/notes as requested (without schema change)
+        additional_info: JSON.stringify({
+            source: "project_stage_change",
+            stage_at_creation: newStage
+        }),
+        notes: (project.notes ? project.notes + "\n\n" : "") + `[System] Auto-created from stage change: ${newStage}`
+    };
+
+    return await base44.asServiceRole.entities.Job.create(jobData);
+}
