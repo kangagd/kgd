@@ -250,11 +250,21 @@ export default function JobDetails({ job: initialJob, onClose, onStatusChange, o
                     })()}
                 </div>
              </div>
-             <div className="grid grid-cols-1 md:grid-cols-3 gap-3 text-sm text-gray-600">
+             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-3 text-sm text-gray-600">
                 <div className="flex gap-2"><MapPin className="w-4 h-4"/> {job.address}</div>
                 <div className="flex gap-2"><Calendar className="w-4 h-4"/> {format(parseISO(job.scheduled_date), 'MMM d, yyyy')}</div>
                 <div className="flex gap-2"><User className="w-4 h-4"/> 
                     <TechnicianAvatarGroup technicians={job.assigned_to?.map(email => ({ email, id: email })) || []} />
+                </div>
+                <div className="flex gap-2 items-center">
+                    <Phone className="w-4 h-4"/> 
+                    {job.customer_phone ? (
+                        <a href={`tel:${job.customer_phone}`} className="hover:text-blue-600 hover:underline font-medium">
+                            {job.customer_phone}
+                        </a>
+                    ) : (
+                        <span className="text-gray-400 italic">No phone</span>
+                    )}
                 </div>
              </div>
           </div>
