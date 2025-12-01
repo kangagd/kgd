@@ -42,6 +42,7 @@ export default function Schedule() {
   const { user, role, isTechnician, isAdminOrManager } = usePermissions();
   
   const [viewScope, setViewScope] = useState("all");
+  const [selectedTechnicianEmail, setSelectedTechnicianEmail] = useState("me");
 
   React.useEffect(() => {
     if (role === 'technician') {
@@ -146,19 +147,32 @@ export default function Schedule() {
   // Filter jobs by scope (Mine vs All)
   const scopedJobs = useMemo(() => {
     if (!allJobs) return [];
-    if (viewScope === "all" || !user?.email) return allJobs;
+    if (viewScope === "all") return allJobs;
+
+    // Determine target email
+    let targetEmail = null;
+    if (selectedTechnicianEmail === "me") {
+      targetEmail = user?.email;
+    } else if (selectedTechnicianEmail === "all") {
+      return allJobs;
+    } else {
+      targetEmail = selectedTechnicianEmail;
+    }
+
+    if (!targetEmail) return allJobs;
+
+    const targetEmailLower = targetEmail.toLowerCase().trim();
 
     return allJobs.filter((job) => {
       if (!job) return false;
-      const technicianEmail = user.email.toLowerCase().trim();
       const assigned = job.assigned_to; 
       
       if (Array.isArray(assigned)) {
-        return assigned.some(email => email?.toLowerCase().trim() === technicianEmail);
+        return assigned.some(email => email?.toLowerCase().trim() === targetEmailLower);
       }
-      return assigned?.toLowerCase().trim() === technicianEmail;
+      return assigned?.toLowerCase().trim() === targetEmailLower;
     });
-  }, [allJobs, viewScope, user]);
+  }, [allJobs, viewScope, user, selectedTechnicianEmail]);
   
   // Reschedule mutation
   const rescheduleMutation = useMutation({
@@ -1001,6 +1015,24 @@ export default function Schedule() {
                   All
                 </Button>
               </div>
+
+              {isAdminOrManager && (
+                <Select value={selectedTechnicianEmail} onValueChange={setSelectedTechnicianEmail}>
+                  <SelectTrigger className="h-9 w-[160px] text-xs border-slate-200 shadow-sm">
+                    <SelectValue placeholder="Select Technician" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="me">Me</SelectItem>
+                    <SelectItem value="all">All Technicians</SelectItem>
+                    {technicians.map((tech) => (
+                      <SelectItem key={tech.email} value={tech.email}>
+                        {tech.full_name || tech.display_name || tech.email}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              )}
+
               {isAdminOrManager && (
                 <Button
                   variant="outline"
