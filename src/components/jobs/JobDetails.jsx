@@ -6,7 +6,9 @@ import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Label } from "@/components/ui/label";
 import { Separator } from "@/components/ui/separator";
-import { ArrowLeft, MapPin, Phone, Calendar, Clock, User, Briefcase, FileText, Image as ImageIcon, DollarSign, Sparkles, LogIn, FileCheck, History, Package, ClipboardCheck, LogOut, Timer, AlertCircle, ChevronDown, Mail, Navigation, Trash2, FolderKanban, Camera, Edit, ExternalLink, MessageCircle, Plus, AlertTriangle, Loader2, Truck, Bot } from "lucide-react";
+import { ArrowLeft, MapPin, Phone, Calendar, Clock, User, Briefcase, FileText, Image as ImageIcon, DollarSign, Sparkles, LogIn, FileCheck, History, Package, ClipboardCheck, LogOut, Timer, AlertCircle, ChevronDown, Mail, Navigation, Trash2, FolderKanban, Camera, Edit, ExternalLink, MessageCircle, Plus, AlertTriangle, Loader2, Truck, Bot, Check } from "lucide-react";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { Checkbox } from "@/components/ui/checkbox";
 import DuplicateWarningCard, { DuplicateBadge } from "../common/DuplicateWarningCard";
 import { format, parseISO, isPast } from "date-fns";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
@@ -127,6 +129,35 @@ export default function JobDetails({ job: initialJob, onClose, onStatusChange, o
     queryKey: ['checkIns', job.id],
     queryFn: () => base44.entities.CheckInOut.filter({ job_id: job.id })
   });
+
+  const updateJobMutation = useMutation({
+    mutationFn: (data) => base44.entities.Job.update(job.id, data),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['job', job.id] });
+      queryClient.invalidateQueries({ queryKey: ['jobs'] });
+      toast.success("Job updated");
+    }
+  });
+
+  const handleTechnicianToggle = (email, name) => {
+    const currentAssigned = job.assigned_to || [];
+    const currentNames = job.assigned_to_name || [];
+    
+    let newAssigned, newNames;
+    
+    if (currentAssigned.includes(email)) {
+      newAssigned = currentAssigned.filter(e => e !== email);
+      newNames = currentNames.filter(n => n !== name);
+    } else {
+      newAssigned = [...currentAssigned, email];
+      newNames = [...currentNames, name];
+    }
+    
+    updateJobMutation.mutate({
+      assigned_to: newAssigned,
+      assigned_to_name: newNames
+    });
+  };
 
   const { data: contract } = useQuery({
     queryKey: ['contract', job.contract_id],
