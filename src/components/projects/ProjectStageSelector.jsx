@@ -112,36 +112,55 @@ export default function ProjectStageSelector({ projectId, currentStage, onStageC
   };
 
   return (
-    <div className="flex items-center gap-3">
-      <div className="flex flex-col">
-        <label className="text-xs font-medium text-slate-500 mb-1">Current Stage</label>
-        <div className="flex items-center gap-2">
-          {canEdit ? (
-            <Select 
-              value={currentStage} 
-              onValueChange={handleStageSelect}
-              disabled={changeStageMutation.isPending}
-            >
-              <SelectTrigger className={`w-[200px] h-9 font-medium ${getStageColor(currentStage)} border-transparent focus:ring-0`}>
-                <SelectValue placeholder="Select stage" />
-              </SelectTrigger>
-              <SelectContent>
-                {PROJECT_STAGES.map((stage) => (
-                  <SelectItem key={stage} value={stage} className="font-medium">
-                    {stage}
-                  </SelectItem>
-                ))}
-                <SelectItem value="Lost" className="text-red-600 font-medium">
-                  Lost
-                </SelectItem>
-              </SelectContent>
-            </Select>
-          ) : (
-            <Badge className={`text-sm px-3 py-1 ${getStageColor(currentStage)} hover:${getStageColor(currentStage)}`}>
-              {currentStage}
-            </Badge>
-          )}
-        </div>
+    <div className="w-full space-y-2">
+      <div className="flex items-center justify-between">
+        <label className="text-xs font-medium text-slate-500">Current Stage: <span className="text-slate-900 font-semibold">{currentStage}</span></label>
+      </div>
+      
+      <div className="flex items-center gap-2 overflow-x-auto pb-2 scrollbar-hide -mx-1 px-1 mask-linear">
+        {PROJECT_STAGES.map((stage) => {
+           const isActive = stage === currentStage;
+           // Use FULL_STAGE_ORDER for index comparison if needed, but for display order use PROJECT_STAGES
+           // We want to show past stages as completed/gray
+           const isPassed = FULL_STAGE_ORDER.indexOf(stage) < FULL_STAGE_ORDER.indexOf(currentStage);
+           
+           return (
+             <button
+               key={stage}
+               onClick={() => canEdit && handleStageSelect(stage)}
+               disabled={!canEdit || changeStageMutation.isPending}
+               className={`
+                 flex-shrink-0 px-3 py-1.5 rounded-full text-xs font-medium transition-all whitespace-nowrap
+                 ${isActive 
+                   ? 'bg-[#FAE008] text-[#111827] ring-2 ring-[#FAE008] ring-offset-1' 
+                   : isPassed
+                     ? 'bg-slate-100 text-slate-600 hover:bg-slate-200'
+                     : 'bg-white border border-slate-200 text-slate-500 hover:bg-slate-50'
+                 }
+                 ${!canEdit ? 'opacity-70 cursor-not-allowed' : 'cursor-pointer'}
+               `}
+             >
+               {stage}
+             </button>
+           );
+        })}
+        
+        <div className="w-px h-6 bg-slate-200 mx-1 flex-shrink-0" />
+        
+        <button
+           onClick={() => canEdit && handleStageSelect("Lost")}
+           disabled={!canEdit || changeStageMutation.isPending}
+           className={`
+             flex-shrink-0 px-3 py-1.5 rounded-full text-xs font-medium transition-all
+             ${currentStage === "Lost"
+               ? 'bg-red-100 text-red-700 ring-2 ring-red-500 ring-offset-1'
+               : 'bg-white border border-red-200 text-red-600 hover:bg-red-50'
+             }
+             ${!canEdit ? 'opacity-70 cursor-not-allowed' : 'cursor-pointer'}
+           `}
+        >
+          Lost
+        </button>
       </div>
 
       {/* Confirmation Modal */}
