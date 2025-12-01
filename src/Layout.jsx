@@ -43,7 +43,7 @@ import GlobalSearchDropdown from "./components/common/GlobalSearchDropdown";
 import { RoleBadge, PermissionsProvider } from "./components/common/PermissionsContext";
 import NotificationBell from "./components/notifications/NotificationBell";
 import CommandPalette from "@/components/common/CommandPalette";
-import ActiveCheckInBanner from "./components/common/ActiveCheckInBanner";
+import ActiveCheckInBanner from "@/components/common/ActiveCheckInBanner";
 
 const primaryNavigationItems = [
   { title: "Dashboard", url: createPageUrl("Dashboard"), icon: LayoutDashboard },
