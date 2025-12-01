@@ -306,6 +306,24 @@ async function createJobFromProjectStage(base44, project, newStage, user) {
         return null;
     }
 
+    // Ensure Customer Details (Fallback)
+    let customerName = project.customer_name;
+    let customerPhone = project.customer_phone;
+    let customerEmail = project.customer_email;
+
+    if (!customerName && project.customer_id) {
+        try {
+            const customer = await base44.asServiceRole.entities.Customer.get(project.customer_id);
+            if (customer) {
+                customerName = customer.name;
+                customerPhone = customer.phone;
+                customerEmail = customer.email;
+            }
+        } catch (e) {
+            console.error("Failed to fetch customer details fallback", e);
+        }
+    }
+
     // Build Address
     const addressFull = project.address_full || project.address || project.site_address || "";
 
@@ -318,9 +336,9 @@ async function createJobFromProjectStage(base44, project, newStage, user) {
         job_number: nextJobNumber,
         project_id: project.id,
         customer_id: project.customer_id,
-        customer_name: project.customer_name,
-        customer_email: project.customer_email,
-        customer_phone: project.customer_phone,
+        customer_name: customerName || "Unknown Customer",
+        customer_phone: customerPhone,
+        customer_email: customerEmail,
         organisation_id: project.organisation_id,
         address: addressFull,
         address_full: addressFull,
