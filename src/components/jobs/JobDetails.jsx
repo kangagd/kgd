@@ -284,9 +284,42 @@ export default function JobDetails({ job: initialJob, onClose, onStatusChange, o
              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-3 text-sm text-gray-600">
                 <div className="flex gap-2"><MapPin className="w-4 h-4"/> {job.address}</div>
                 <div className="flex gap-2"><Calendar className="w-4 h-4"/> {format(parseISO(job.scheduled_date), 'MMM d, yyyy')}</div>
-                <div className="flex gap-2"><User className="w-4 h-4"/> 
-                    <TechnicianAvatarGroup technicians={job.assigned_to?.map(email => ({ email, id: email })) || []} />
-                </div>
+                <Popover>
+                    <PopoverTrigger asChild>
+                        <button className="flex gap-2 items-center hover:bg-slate-100 rounded px-1 -ml-1 transition-colors group">
+                            <User className="w-4 h-4 group-hover:text-slate-900"/> 
+                            {(!job.assigned_to || job.assigned_to.length === 0) && <span className="text-xs text-slate-400 group-hover:text-slate-600">Unassigned</span>}
+                            <TechnicianAvatarGroup technicians={job.assigned_to?.map(email => ({ email, id: email })) || []} />
+                        </button>
+                    </PopoverTrigger>
+                    <PopoverContent className="w-72 p-0" align="start">
+                        <div className="p-3 border-b bg-slate-50">
+                            <h4 className="font-medium text-sm">Assign Technicians</h4>
+                        </div>
+                        <div className="p-2 max-h-64 overflow-y-auto space-y-1">
+                            {technicians.map(tech => {
+                                const isAssigned = job.assigned_to?.includes(tech.email);
+                                return (
+                                    <div 
+                                        key={tech.id} 
+                                        className="flex items-center gap-3 p-2 hover:bg-slate-50 rounded cursor-pointer transition-colors" 
+                                        onClick={() => handleTechnicianToggle(tech.email, tech.display_name || tech.full_name)}
+                                    >
+                                        <Checkbox 
+                                            checked={isAssigned} 
+                                            onCheckedChange={() => handleTechnicianToggle(tech.email, tech.display_name || tech.full_name)}
+                                        />
+                                        <div className="flex-1">
+                                            <div className="text-sm font-medium text-slate-900">{tech.display_name || tech.full_name}</div>
+                                            <div className="text-xs text-slate-500">{tech.email}</div>
+                                        </div>
+                                        {isAssigned && <Check className="w-4 h-4 text-green-600" />}
+                                    </div>
+                                );
+                            })}
+                        </div>
+                    </PopoverContent>
+                </Popover>
                 <div className="flex gap-2 items-center">
                     <Phone className="w-4 h-4"/> 
                     {job.customer_phone ? (
