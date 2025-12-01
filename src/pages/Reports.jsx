@@ -65,57 +65,49 @@ export default function Reports() {
     loadUser();
   }, []);
 
-  // Check permissions
   const hasAccess = user?.role === 'admin' || user?.role === 'manager';
-
-  if (loading) {
-    return (
-      <div className="p-5 md:p-10 bg-[#ffffff] min-h-screen">
-        <div className="animate-pulse space-y-4">
-          <div className="h-8 bg-gray-200 rounded w-1/4"></div>
-          <div className="h-64 bg-gray-200 rounded"></div>
-        </div>
-      </div>
-    );
-  }
-
-  if (!hasAccess) {
-    return <AccessDenied message="Only administrators and managers can access Reports." />;
-  }
+  const shouldFetch = !loading && hasAccess;
 
   const { data: allProjects = [] } = useQuery({
     queryKey: ['projects'],
-    queryFn: () => base44.entities.Project.list()
+    queryFn: () => base44.entities.Project.list(),
+    enabled: shouldFetch
   });
 
   const { data: allJobs = [] } = useQuery({
     queryKey: ['allJobs'],
-    queryFn: () => base44.entities.Job.list()
+    queryFn: () => base44.entities.Job.list(),
+    enabled: shouldFetch
   });
 
   const { data: allParts = [] } = useQuery({
     queryKey: ['allParts'],
-    queryFn: () => base44.entities.Part.list()
+    queryFn: () => base44.entities.Part.list(),
+    enabled: shouldFetch
   });
 
   const { data: technicians = [] } = useQuery({
     queryKey: ['technicians'],
-    queryFn: () => base44.entities.User.filter({ is_field_technician: true })
+    queryFn: () => base44.entities.User.filter({ is_field_technician: true }),
+    enabled: shouldFetch
   });
 
   const { data: checkInOuts = [] } = useQuery({
     queryKey: ['checkInOuts'],
-    queryFn: () => base44.entities.CheckInOut.list()
+    queryFn: () => base44.entities.CheckInOut.list(),
+    enabled: shouldFetch
   });
 
   const { data: priceListItems = [] } = useQuery({
     queryKey: ['priceListItems'],
-    queryFn: () => base44.entities.PriceListItem.list()
+    queryFn: () => base44.entities.PriceListItem.list(),
+    enabled: shouldFetch
   });
 
   const { data: contracts = [] } = useQuery({
     queryKey: ['contracts'],
-    queryFn: () => base44.entities.Contract.list()
+    queryFn: () => base44.entities.Contract.list(),
+    enabled: shouldFetch
   });
 
   const filteredProjects = useMemo(() => {
@@ -206,12 +198,12 @@ export default function Reports() {
       };
     });
     
-    const filteredJobs = allJobs.filter(j => {
+    const filteredJobsForTech = allJobs.filter(j => {
       const scheduledDate = new Date(j.scheduled_date);
       return scheduledDate >= new Date(dateFrom) && scheduledDate <= new Date(dateTo);
     });
     
-    filteredJobs.forEach(job => {
+    filteredJobsForTech.forEach(job => {
       if (job.status === 'Completed' && job.assigned_to) {
         const techs = Array.isArray(job.assigned_to) ? job.assigned_to : [job.assigned_to];
         techs.forEach(email => {
@@ -305,6 +297,21 @@ export default function Reports() {
     filterRecordsByDateRange(allJobs, "created_date", reportDateRange), 
     [allJobs, reportDateRange]
   );
+
+  if (loading) {
+    return (
+      <div className="p-5 md:p-10 bg-[#ffffff] min-h-screen">
+        <div className="animate-pulse space-y-4">
+          <div className="h-8 bg-gray-200 rounded w-1/4"></div>
+          <div className="h-64 bg-gray-200 rounded"></div>
+        </div>
+      </div>
+    );
+  }
+
+  if (!hasAccess) {
+    return <AccessDenied message="Only administrators and managers can access Reports." />;
+  }
 
   return (
     <div className="p-4 md:p-5 lg:p-10 bg-[#ffffff] min-h-screen overflow-x-hidden">
