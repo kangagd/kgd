@@ -1,9 +1,57 @@
 import React from "react";
 import { Badge } from "@/components/ui/badge";
-import { getAgeLabel } from "@/components/domain/slaHelpers";
 import { cn } from "@/lib/utils";
 
+// Helper logic inlined to avoid potential import issues
+const getAgeInDays = (dateValue) => {
+  if (!dateValue) return null;
+  const date = new Date(dateValue);
+  if (isNaN(date.getTime())) return null;
+  const now = new Date();
+  const diffMs = now - date;
+  const days = Math.floor(diffMs / (1000 * 60 * 60 * 24));
+  return Math.max(0, days);
+};
+
+const getAgeBucket = (ageInDays) => {
+  if (ageInDays === null || isNaN(ageInDays) || typeof ageInDays !== 'number') return 'unknown';
+  if (ageInDays <= 7) return 'new';
+  if (ageInDays <= 14) return 'warm';
+  if (ageInDays <= 30) return 'aging';
+  if (ageInDays <= 60) return 'old';
+  return 'stale';
+};
+
+const getAgeLabel = (dateValue) => {
+  const ageInDays = getAgeInDays(dateValue);
+  const bucket = getAgeBucket(ageInDays);
+  
+  if (bucket === 'unknown') {
+    return { ageInDays: null, bucket, label: 'Unknown age' };
+  }
+
+  const dayLabel = ageInDays === 1 ? 'day' : 'days';
+  const basePart = `${ageInDays} ${dayLabel}`;
+  
+  let prefix = '';
+  switch (bucket) {
+    case 'new': prefix = 'New'; break;
+    case 'warm': prefix = 'Recent'; break;
+    case 'aging': prefix = 'Aging'; break;
+    case 'old': prefix = 'Old'; break;
+    case 'stale': prefix = 'Stale'; break;
+    default: prefix = 'Unknown';
+  }
+
+  return {
+    ageInDays,
+    bucket,
+    label: `${prefix} · ${basePart}`
+  };
+};
+
 export default function AgeBadge({ date, prefix = null, className = "" }) {
+  // Ensure hooks are not used here (they aren't)
   const { ageInDays, bucket, label } = getAgeLabel(date);
 
   let colorClasses = "bg-slate-100 text-slate-700 border-slate-200";
@@ -30,27 +78,6 @@ export default function AgeBadge({ date, prefix = null, className = "" }) {
 
   let displayText = label;
   if (prefix && ageInDays !== null) {
-    // label from getAgeLabel already includes a prefix like "New", "Aging" etc.
-    // If a custom prefix is provided (e.g. "Created"), we might want to override or prepend.
-    // The requirement says: displayText = `${prefix} · ${label}`
-    // However, label itself is e.g. "New · 3 days".
-    // So "Created · New · 3 days" might be verbose, but following instructions directly.
-    
-    // Actually, let's look at the requirement logic again:
-    // "If prefix is provided... displayText = `${prefix} · ${label}`"
-    // But label is "BucketLabel · X days".
-    // Let's simplify the label if we are just using the bucket color as the indicator.
-    // Actually the helper returns { label: "New · 3 days" }.
-    // So the result would be "Created · New · 3 days". 
-    // Maybe the user wants to replace the helper's text prefix with their own?
-    // "Use getAgeLabel(date) to get... label".
-    // "Combine label with optional prefix...".
-    
-    // If I look at the example in previous prompt: "New · 3 days".
-    // If prefix is "Created", maybe we want "Created 3 days ago"? 
-    // But the instruction is specific.
-    // Let's stick to the instruction.
-    
     displayText = `${prefix} · ${label}`;
   }
 
