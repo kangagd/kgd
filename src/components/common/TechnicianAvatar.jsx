@@ -48,7 +48,7 @@ export default function TechnicianAvatar({
   const colorIndex = hashString(identifier) % AVATAR_COLORS.length;
   const backgroundColor = AVATAR_COLORS[colorIndex];
   
-  const displayName = technician.display_name || technician.full_name || technician.name || "";
+  const displayName = technician.display_name || technician.full_name || technician.name || technician.email || technician.id || "";
   const initials = getInitials(displayName);
   
   // Size variants
