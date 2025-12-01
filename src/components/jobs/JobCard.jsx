@@ -156,9 +156,9 @@ export default function JobCard({ job, onClick, onViewDetails, compact = false }
                     className="pointer-events-none" 
                   />
                   {(jobType?.is_logistics || job.job_category === 'Logistics') && (
-                    <span className="text-[10px] font-bold px-1.5 py-0.5 bg-slate-100 text-slate-600 rounded border border-slate-200">
+                    <Badge variant="outline" className="bg-slate-100 text-slate-600 border-slate-200 text-[10px] font-bold px-1.5 py-0.5">
                       LOGISTICS
-                    </span>
+                    </Badge>
                   )}
                 </div>
               )}
