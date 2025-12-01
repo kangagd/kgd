@@ -5,6 +5,9 @@ import { MapPin, Calendar, Clock, Phone, Navigation, User } from "lucide-react";
 import { format, parseISO } from "date-fns";
 import { TechnicianAvatarGroup } from "../common/TechnicianAvatar";
 import { createPageUrl } from "@/utils";
+import { JobTypeBadge, ProductTypeBadge, JobStatusBadge } from "../common/StatusBadge";
+import { useQuery } from "@tanstack/react-query";
+import { base44 } from "@/api/base44Client";
 
 const statusColors = {
   "Open": "bg-slate-100 text-slate-700",
