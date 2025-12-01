@@ -221,14 +221,16 @@ Deno.serve(async (req) => {
 
                     // Calculate suggested time (e.g. 1 hour before install)
                     let scheduledDate = job.scheduled_date;
-                    let scheduledTime = job.scheduled_time || "09:00";
+                    let scheduledTime = typeof job.scheduled_time === 'string' ? job.scheduled_time : "09:00";
                     // Simple logic: same date, 1 hour prior.
                     let pickupTime = "08:00";
                     try {
-                        const [h, m] = scheduledTime.split(':').map(Number);
-                        let ph = h - 1;
-                        if (ph < 7) ph = 7;
-                        pickupTime = `${ph.toString().padStart(2, '0')}:${m.toString().padStart(2, '0')}`;
+                        if (scheduledTime.includes(':')) {
+                            const [h, m] = scheduledTime.split(':').map(Number);
+                            let ph = h - 1;
+                            if (ph < 7) ph = 7;
+                            pickupTime = `${ph.toString().padStart(2, '0')}:${m.toString().padStart(2, '0')}`;
+                        }
                     } catch (e) {}
 
                     // Generate Job Number for Pickup Job
