@@ -16,11 +16,6 @@ Deno.serve(async (req) => {
             let jobData = { ...data };
 
             // Auto-link contract logic
-            // Link parts if provided
-            if (jobData.part_ids && jobData.part_ids.length > 0) {
-                // We will update parts after job creation to link them back
-            }
-
             if (jobData.customer_id) {
                 try {
                     const customer = await base44.asServiceRole.entities.Customer.get(jobData.customer_id);
@@ -56,111 +51,13 @@ Deno.serve(async (req) => {
             }
 
             job = await base44.asServiceRole.entities.Job.create(jobData);
-
-            // Notify assigned technicians
-            if (job.assigned_to && job.assigned_to.length > 0) {
-                const users = await base44.asServiceRole.entities.User.filter({});
-                const userMap = {};
-                users.forEach(u => userMap[u.email] = u);
-
-                for (const email of job.assigned_to) {
-                    const tech = userMap[email];
-                    if (tech) {
-                        await base44.asServiceRole.functions.invoke('createNotification', {
-                            userId: tech.id,
-                            title: "New Job Assigned",
-                            message: `You have been assigned to job #${job.job_number}`,
-                            entityType: "Job",
-                            entityId: job.id,
-                            priority: "normal"
-                        });
-                    }
-                }
-            }
-            
-            // Sync back to parts
-            if (jobData.part_ids && jobData.part_ids.length > 0) {
-                for (const partId of jobData.part_ids) {
-                    try {
-                        const part = await base44.asServiceRole.entities.Part.get(partId);
-                        if (part) {
-                            const currentLinks = part.linked_logistics_jobs || [];
-                            if (!currentLinks.includes(job.id)) {
-                                await base44.asServiceRole.entities.Part.update(partId, {
-                                    linked_logistics_jobs: [...currentLinks, job.id]
-                                });
-                            }
-                        }
-                    } catch (e) {
-                        console.error(`Failed to link part ${partId} to job ${job.id}`, e);
-                    }
-                }
-            }
-
-            // Log creation
-            await base44.asServiceRole.entities.ActivityLog.create({
-                entity_type: 'Job',
-                entity_id: job.id,
-                action: 'create',
-                after_data: job,
-                user_email: user.email,
-                user_name: user.full_name,
-                details: `Created Job #${job.job_number}`
-            });
         } else if (action === 'update') {
             previousJob = await base44.asServiceRole.entities.Job.get(id);
             if (!previousJob) return Response.json({ error: 'Job not found' }, { status: 404 });
             job = await base44.asServiceRole.entities.Job.update(id, data);
-
-            // Notify assigned technicians on assignment change
-            if (data.assigned_to && data.assigned_to.length > 0) {
-                 const users = await base44.asServiceRole.entities.User.filter({});
-                 const userMap = {};
-                 users.forEach(u => userMap[u.email] = u);
-
-                 for (const email of data.assigned_to) {
-                    // Check if newly assigned (simplification: just notify all currently assigned)
-                    const tech = userMap[email];
-                    if (tech) {
-                        await base44.asServiceRole.functions.invoke('createNotification', {
-                            userId: tech.id,
-                            title: "Job Assignment Update",
-                            message: `You are assigned to job #${job.job_number || previousJob.job_number}`,
-                            entityType: "Job",
-                            entityId: job.id,
-                            priority: "normal"
-                        });
-                    }
-                 }
-            }
-
-            // Log update
-            await base44.asServiceRole.entities.ActivityLog.create({
-                entity_type: 'Job',
-                entity_id: id,
-                action: 'update',
-                before_data: previousJob,
-                after_data: job,
-                user_email: user.email,
-                user_name: user.full_name,
-                details: `Updated Job #${job.job_number || previousJob.job_number}`
-            });
         } else if (action === 'delete') {
              // Soft delete usually
-             const beforeDelete = await base44.asServiceRole.entities.Job.get(id);
              await base44.asServiceRole.entities.Job.update(id, { deleted_at: new Date().toISOString() });
-             
-             // Log delete
-             await base44.asServiceRole.entities.ActivityLog.create({
-                entity_type: 'Job',
-                entity_id: id,
-                action: 'delete',
-                before_data: beforeDelete,
-                user_email: user.email,
-                user_name: user.full_name,
-                details: `Deleted Job #${beforeDelete.job_number}`
-            });
-
              return Response.json({ success: true });
         } else {
             return Response.json({ error: 'Invalid action' }, { status: 400 });
@@ -231,8 +128,6 @@ Deno.serve(async (req) => {
                         job_type: pickupJobTypeName,
                         job_type_id: jobTypeId,
                         job_type_name: pickupJobTypeName,
-                        job_category: "Logistics",
-                        logistics_type: "Material Pickup – Warehouse",
                         project_id: job.project_id,
                         project_name: job.project_name,
                         customer_id: job.customer_id,
@@ -243,22 +138,8 @@ Deno.serve(async (req) => {
                         scheduled_date: scheduledDate,
                         scheduled_time: pickupTime,
                         expected_duration: 0.5,
-                        part_ids: parts.map(p => p.id),
                         notes: `Pickup for parts: ${parts.map(p => p.category).join(', ')}`
                     });
-
-                    // Notify Logistics/Admin
-                    const admins = await base44.asServiceRole.entities.User.filter({ role: 'admin' });
-                    for (const admin of admins) {
-                         await base44.asServiceRole.functions.invoke('createNotification', {
-                            userId: admin.id,
-                            title: "Logistics Job Created",
-                            message: `Auto-generated pickup job for warehouse parts linked to install job.`,
-                            entityType: "Job",
-                            entityId: pickupJob.id,
-                            priority: "normal"
-                        });
-                    }
 
                     // Link parts to this new job
                     for (const part of parts) {

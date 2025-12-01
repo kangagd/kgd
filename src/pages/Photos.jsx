@@ -5,14 +5,12 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent } from "@/components/ui/card";
-import { Plus, Search, Filter, X, Image as ImageIcon, Trash2, Calendar } from "lucide-react";
+import { Plus, Search, Filter, X, Image as ImageIcon, Trash2 } from "lucide-react";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import PhotoUploadModal from "../components/photos/PhotoUploadModal";
-import PhotoDetailModal from "../components/photos/PhotoDetailModal";
+import FilePreviewModal from "../components/common/FilePreviewModal";
 import PhotoGridItem from "../components/photos/PhotoGridItem";
 import { useMutation } from "@tanstack/react-query";
-import { format, parseISO, isWithinInterval, startOfDay, endOfDay } from "date-fns";
 
 const TAGS = ["Before", "After", "Install", "Repair", "Service", "Maintenance", "Marketing", "Other"];
 const PRODUCT_TYPES = ["Garage Door", "Gate", "Roller Shutter", "Other"];
@@ -30,8 +28,6 @@ export default function Photos() {
   const [preselectedProjectId, setPreselectedProjectId] = useState(null);
   const [isSelectionMode, setIsSelectionMode] = useState(false);
   const [selectedPhotoIds, setSelectedPhotoIds] = useState(new Set());
-  const [dateFrom, setDateFrom] = useState("");
-  const [dateTo, setDateTo] = useState("");
   const queryClient = useQueryClient();
 
   const toggleSelection = (id) => {
@@ -105,32 +101,14 @@ export default function Photos() {
     const matchesJob = !preselectedJobId || photo.job_id === preselectedJobId;
     const matchesProject = !preselectedProjectId || photo.project_id === preselectedProjectId;
 
-    let matchesDate = true;
-    if (dateFrom || dateTo) {
-      const photoDate = photo.taken_at ? parseISO(photo.taken_at) : (photo.uploaded_at ? parseISO(photo.uploaded_at) : null);
-      if (photoDate) {
-        const start = dateFrom ? startOfDay(parseISO(dateFrom)) : null;
-        const end = dateTo ? endOfDay(parseISO(dateTo)) : null;
-        
-        if (start && end) {
-          matchesDate = isWithinInterval(photoDate, { start, end });
-        } else if (start) {
-          matchesDate = photoDate >= start;
-        } else if (end) {
-          matchesDate = photoDate <= end;
-        }
-      }
-    }
-
-    return matchesSearch && matchesProductType && matchesTag && matchesTechnician && matchesMarketing && matchesJob && matchesProject && matchesDate;
+    return matchesSearch && matchesProductType && matchesTag && matchesTechnician && matchesMarketing && matchesJob && matchesProject;
   });
 
   const activeFiltersCount = 
     (productTypeFilter !== "all" ? 1 : 0) +
     (tagFilter !== "all" ? 1 : 0) +
     (technicianFilter !== "all" ? 1 : 0) +
-    (marketingOnly ? 1 : 0) +
-    (dateFrom || dateTo ? 1 : 0);
+    (marketingOnly ? 1 : 0);
 
   return (
     <div className="p-4 md:p-5 lg:p-10 bg-[#ffffff] min-h-screen overflow-x-hidden">
@@ -275,59 +253,6 @@ export default function Photos() {
 
                     <div className="min-w-[200px]">
                       <label className="text-xs font-bold text-[#111827] mb-1.5 block tracking-tight uppercase">
-                        Date Range
-                      </label>
-                      <Popover>
-                        <PopoverTrigger asChild>
-                          <Button variant="outline" className="w-full h-10 justify-start font-normal text-left">
-                            <Calendar className="w-4 h-4 mr-2 h-4 w-4" />
-                            {dateFrom || dateTo ? (
-                              <span>
-                                {dateFrom ? format(parseISO(dateFrom), "MMM d") : "Start"} -{" "}
-                                {dateTo ? format(parseISO(dateTo), "MMM d") : "End"}
-                              </span>
-                            ) : (
-                              <span>Pick dates</span>
-                            )}
-                          </Button>
-                        </PopoverTrigger>
-                        <PopoverContent className="w-80 p-4" align="start">
-                          <div className="space-y-4">
-                            <div className="space-y-2">
-                              <label className="text-sm font-medium">From</label>
-                              <Input
-                                type="date"
-                                value={dateFrom}
-                                onChange={(e) => setDateFrom(e.target.value)}
-                              />
-                            </div>
-                            <div className="space-y-2">
-                              <label className="text-sm font-medium">To</label>
-                              <Input
-                                type="date"
-                                value={dateTo}
-                                onChange={(e) => setDateTo(e.target.value)}
-                              />
-                            </div>
-                            {(dateFrom || dateTo) && (
-                              <Button 
-                                variant="ghost" 
-                                className="w-full text-sm"
-                                onClick={() => {
-                                  setDateFrom("");
-                                  setDateTo("");
-                                }}
-                              >
-                                Clear Dates
-                              </Button>
-                            )}
-                          </div>
-                        </PopoverContent>
-                      </Popover>
-                    </div>
-
-                    <div className="min-w-[200px]">
-                      <label className="text-xs font-bold text-[#111827] mb-1.5 block tracking-tight uppercase">
                         Marketing
                       </label>
                       <Button
@@ -351,8 +276,6 @@ export default function Photos() {
                             setTagFilter("all");
                             setTechnicianFilter("all");
                             setMarketingOnly(false);
-                            setDateFrom("");
-                            setDateTo("");
                           }}
                           className="w-full h-10 font-semibold"
                         >
@@ -431,10 +354,20 @@ export default function Photos() {
         preselectedJobId={preselectedJobId}
       />
 
-      <PhotoDetailModal
-        open={!!selectedPhoto}
+      <FilePreviewModal
+        isOpen={!!selectedPhoto}
         onClose={() => setSelectedPhoto(null)}
-        photo={selectedPhoto}
+        file={selectedPhoto ? {
+          url: selectedPhoto.image_url,
+          name: selectedPhoto.notes || `Photo - ${selectedPhoto.customer_name}`,
+          type: /\.(mp4|webm|ogg|mov|avi|mkv)$/i.test(selectedPhoto.image_url) ? 'video' : 'image',
+          jobNumber: selectedPhoto.job_number,
+          projectName: selectedPhoto.project_name,
+          address: selectedPhoto.address,
+          caption: selectedPhoto.notes,
+          takenAt: selectedPhoto.uploaded_at
+        } : null}
+        onDelete={() => deletePhotoMutation.mutate(selectedPhoto.id)}
       />
     </div>
   );

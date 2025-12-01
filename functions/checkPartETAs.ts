@@ -10,30 +10,31 @@ Deno.serve(async (req) => {
         });
 
         const today = new Date().toISOString().split('T')[0];
-        let remindersSent = 0;
-
-        // Get admins
-        const admins = await base44.asServiceRole.entities.User.filter({ role: 'admin' });
+        const reminders = [];
 
         for (const part of parts) {
             if (part.eta === today) {
-                const message = `Part ${part.category} for Project is expected today.`;
+                // Create notification
+                const message = `Check delivery status for Part ${part.category} on Project ${part.project_id} (ETA today).`;
+                
+                // Find admins to notify
+                const admins = await base44.asServiceRole.entities.User.filter({ role: 'admin' });
                 
                 for (const admin of admins) {
-                     await base44.asServiceRole.functions.invoke('createNotification', {
-                        userId: admin.id,
-                        title: "Part ETA Today",
+                     await base44.asServiceRole.entities.Notification.create({
+                        user_email: admin.email,
+                        title: "Part ETA Reminder",
                         message: message,
-                        entityType: "Part",
-                        entityId: part.id,
-                        priority: "normal"
+                        is_read: false,
+                        created_at: new Date().toISOString(),
+                        link: `/projects?projectId=${part.project_id}`
                     });
                 }
-                remindersSent++;
+                reminders.push({ partId: part.id, message });
             }
         }
 
-        return Response.json({ success: true, remindersSent });
+        return Response.json({ success: true, remindersSent: reminders.length, reminders });
     } catch (error) {
         return Response.json({ error: error.message }, { status: 500 });
     }

@@ -3,7 +3,7 @@ import { Card, CardHeader, CardTitle, CardContent, CardFooter } from "@/componen
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue, SelectGroup, SelectLabel } from "@/components/ui/select";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { ArrowLeft, Upload, X, FileText, Image as ImageIcon, Loader2, Plus, Sparkles } from "lucide-react";
 import { base44 } from "@/api/base44Client";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
@@ -18,7 +18,7 @@ import MultiTechnicianSelect from "./MultiTechnicianSelect";
 import RichTextField from "../common/RichTextField";
 import AddressAutocomplete from "../common/AddressAutocomplete";
 
-export default function JobForm({ job, technicians, onSubmit, onCancel, isSubmitting, preselectedCustomerId, preselectedProjectId, preselectedPartId, preselectedJobCategory }) {
+export default function JobForm({ job, technicians, onSubmit, onCancel, isSubmitting, preselectedCustomerId, preselectedProjectId }) {
   const [formData, setFormData] = useState(job || {
     job_number: null,
     project_id: preselectedProjectId || "",
@@ -39,9 +39,6 @@ export default function JobForm({ job, technicians, onSubmit, onCancel, isSubmit
     latitude: null,
     longitude: null,
     product: "",
-    job_category: preselectedJobCategory || "Standard",
-    logistics_type: "",
-    part_ids: preselectedPartId ? [preselectedPartId] : [],
     job_type_id: "",
     job_type: "",
     assigned_to: [],
@@ -88,7 +85,7 @@ export default function JobForm({ job, technicians, onSubmit, onCancel, isSubmit
 
   const { data: jobTypes = [] } = useQuery({
     queryKey: ['jobTypes'],
-    queryFn: () => base44.entities.JobType.filter({ is_active: true }, 'sort_order')
+    queryFn: () => base44.entities.JobType.filter({ is_active: true })
   });
 
   useEffect(() => {
@@ -208,23 +205,6 @@ export default function JobForm({ job, technicians, onSubmit, onCancel, isSubmit
     if (!submitData.product) delete submitData.product;
     if (!submitData.outcome) delete submitData.outcome;
     
-    // Link part_ids back to parts if new job
-    if (!job && submitData.part_ids && submitData.part_ids.length > 0) {
-       // Note: This frontend logic handles the job creation. 
-       // The actual linking of the part entity's `linked_logistics_jobs` array 
-       // will happen via backend automation triggers or we'd need to call managePart. 
-       // But for now, we rely on manageJob to maybe handle it or managePart to be called?
-       // Wait, manageJob handles job creation. managePart handles part updates.
-       // The backend automation I added in managePart TRIGGER A/B creates jobs.
-       // This manual creation needs to link the part too.
-       // I'll rely on manageJob to link parts if `part_ids` is present.
-       // Let's quickly verify manageJob if it handles part linking.
-       // I added `part_ids` to Job schema. But manageJob creates the job.
-       // Does manageJob update the Part entity? I haven't added that logic to manageJob for *manual* creation with part_ids.
-       // I added TRIGGER D which is specific to Install Schedule.
-       // I should probably update manageJob to link parts if `part_ids` is provided in `data`.
-    }
-
     onSubmit(submitData);
   };
 
@@ -305,13 +285,10 @@ export default function JobForm({ job, technicians, onSubmit, onCancel, isSubmit
   const handleJobTypeChange = async (jobTypeId) => {
     const jobType = jobTypes.find(jt => jt.id === jobTypeId);
     if (jobType) {
-      const category = jobType.category || "Standard";
       setFormData({
         ...formData,
         job_type_id: jobTypeId,
         job_type: jobType.name,
-        job_category: category,
-        is_logistics: category === "Logistics",
         expected_duration: jobType.estimated_duration || formData.expected_duration
       });
 
@@ -611,37 +588,6 @@ export default function JobForm({ job, technicians, onSubmit, onCancel, isSubmit
 
             <div className="grid md:grid-cols-2 gap-6">
               <div className="space-y-2">
-                <Label htmlFor="job_category" className="text-[14px] font-medium text-[#111827] leading-[1.4]">Category</Label>
-                <Select value={formData.job_category} onValueChange={(val) => setFormData({ ...formData, job_category: val, is_logistics: val === "Logistics" })}>
-                  <SelectTrigger className="border-2 border-slate-300 focus:border-[#fae008] focus:ring-2 focus:ring-[#fae008]/20">
-                    <SelectValue placeholder="Category" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="Standard">Standard</SelectItem>
-                    <SelectItem value="Logistics">Logistics</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-
-              {formData.job_category === 'Logistics' && (
-                <div className="space-y-2">
-                  <Label htmlFor="logistics_type" className="text-[14px] font-medium text-[#111827] leading-[1.4]">Logistics Type</Label>
-                  <Select value={formData.logistics_type} onValueChange={(val) => setFormData({ ...formData, logistics_type: val })}>
-                    <SelectTrigger className="border-2 border-slate-300 focus:border-[#fae008] focus:ring-2 focus:ring-[#fae008]/20">
-                      <SelectValue placeholder="Select Type" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="Material Pickup – Warehouse">Material Pickup – Warehouse</SelectItem>
-                      <SelectItem value="Material Pickup – Supplier">Material Pickup – Supplier</SelectItem>
-                      <SelectItem value="Delivery – At Warehouse">Delivery – At Warehouse</SelectItem>
-                      <SelectItem value="Delivery – To Client">Delivery – To Client</SelectItem>
-                      <SelectItem value="Return to Supplier">Return to Supplier</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
-              )}
-
-              <div className="space-y-2">
                 <Label htmlFor="product" className="text-[14px] font-medium text-[#111827] leading-[1.4]">Product</Label>
                 <Select value={formData.product} onValueChange={(val) => setFormData({ ...formData, product: val })}>
                   <SelectTrigger className="border-2 border-slate-300 focus:border-[#fae008] focus:ring-2 focus:ring-[#fae008]/20">
@@ -664,30 +610,11 @@ export default function JobForm({ job, technicians, onSubmit, onCancel, isSubmit
                     <SelectValue placeholder="Select job type" />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectGroup>
-                      <SelectLabel className="text-xs font-bold text-slate-500 uppercase tracking-wider px-2 py-1.5">Standard Job Types</SelectLabel>
-                      {jobTypes.filter(jt => jt.category === 'Standard').map((jt) => (
-                        <SelectItem key={jt.id} value={jt.id}>
-                          <div className="flex items-center gap-2">
-                            <div className="w-3 h-3 rounded-full" style={{ backgroundColor: jt.color }} />
-                            <span>{jt.name}</span>
-                          </div>
-                        </SelectItem>
-                      ))}
-                    </SelectGroup>
-                    <div className="my-1 border-t border-slate-100" />
-                    <SelectGroup>
-                      <SelectLabel className="text-xs font-bold text-slate-500 uppercase tracking-wider px-2 py-1.5">Logistics Job Types</SelectLabel>
-                      {jobTypes.filter(jt => jt.category === 'Logistics').map((jt) => (
-                        <SelectItem key={jt.id} value={jt.id}>
-                          <div className="flex items-center gap-2">
-                            <div className="w-3 h-3 rounded-full" style={{ backgroundColor: jt.color }} />
-                            <span>{jt.name}</span>
-                            <span className="text-[10px] px-1.5 py-0.5 bg-slate-100 text-slate-600 rounded-full">Logistics</span>
-                          </div>
-                        </SelectItem>
-                      ))}
-                    </SelectGroup>
+                    {jobTypes.map((jt) => (
+                      <SelectItem key={jt.id} value={jt.id}>
+                        {jt.name}
+                      </SelectItem>
+                    ))}
                   </SelectContent>
                 </Select>
               </div>
@@ -953,7 +880,7 @@ export default function JobForm({ job, technicians, onSubmit, onCancel, isSubmit
             <Button 
               type="submit" 
               disabled={isSubmitting} 
-              className="font-bold shadow-md hover:shadow-lg transition-all"
+              className="bg-[#fae008] hover:bg-[#e5d007] active:bg-[#d4c006] text-[#000000] font-bold shadow-md hover:shadow-lg transition-all"
             >
               {isSubmitting ? 'Saving...' : job ? 'Update Job' : 'Create Job'}
             </Button>
@@ -967,14 +894,7 @@ export default function JobForm({ job, technicians, onSubmit, onCancel, isSubmit
           setLiveDuplicates([]);
         }
       }}>
-        <DialogContent 
-          className="rounded-2xl max-w-lg"
-          onInteractOutside={(e) => {
-            if (e.target.closest('.pac-container')) {
-              e.preventDefault();
-            }
-          }}
-        >
+        <DialogContent className="rounded-2xl max-w-lg">
           <DialogHeader>
             <DialogTitle className="text-[22px] font-semibold text-[#111827] leading-[1.2]">New Customer</DialogTitle>
           </DialogHeader>
@@ -1057,7 +977,7 @@ export default function JobForm({ job, technicians, onSubmit, onCancel, isSubmit
             <Button 
               onClick={handleCreateNewCustomer}
               disabled={!newCustomerData.name}
-              className="font-bold"
+              className="bg-[#fae008] hover:bg-[#e5d007] text-[#000000] font-bold"
             >
               Create Customer
             </Button>
@@ -1134,7 +1054,7 @@ export default function JobForm({ job, technicians, onSubmit, onCancel, isSubmit
             </Button>
             <Button 
               onClick={handleForceCreateNew}
-              className="font-bold"
+              className="bg-[#fae008] hover:bg-[#e5d007] text-[#000000] font-bold"
             >
               Create New Anyway
             </Button>

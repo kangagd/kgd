@@ -11,10 +11,10 @@ Deno.serve(async (req) => {
 
     const url = new URL(req.url);
     const onlyUnread = url.searchParams.get('only_unread') === 'true';
-    const limit = parseInt(url.searchParams.get('limit') || '50', 10);
+    const limit = parseInt(url.searchParams.get('limit') || '20', 10);
 
-    // Build filter using user_id as per new schema
-    const filter = { user_id: user.id };
+    // Build filter
+    const filter = { user_email: user.email };
     if (onlyUnread) {
       filter.is_read = false;
     }
@@ -28,7 +28,7 @@ Deno.serve(async (req) => {
 
     // Get unread count
     const unreadNotifications = await base44.asServiceRole.entities.Notification.filter(
-      { user_id: user.id, is_read: false }
+      { user_email: user.email, is_read: false }
     );
 
     return Response.json({

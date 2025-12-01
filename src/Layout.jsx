@@ -31,8 +31,7 @@ import {
     Clock,
     Shield,
     Truck,
-    Car,
-    Activity
+    Car
   } from "lucide-react";
 import { base44 } from "@/api/base44Client";
 import { toast } from "sonner";
@@ -40,7 +39,6 @@ import { Toaster } from "@/components/ui/sonner";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
-import { Dialog, DialogContent } from "@/components/ui/dialog";
 import GlobalSearchDropdown from "./components/common/GlobalSearchDropdown";
 import { RoleBadge } from "./components/common/PermissionsContext";
 import NotificationBell from "./components/notifications/NotificationBell";
@@ -48,44 +46,39 @@ import NotificationBell from "./components/notifications/NotificationBell";
 const primaryNavigationItems = [
   { title: "Dashboard", url: createPageUrl("Dashboard"), icon: LayoutDashboard },
   { title: "Inbox", url: createPageUrl("Inbox"), icon: Mail },
+  { title: "Tasks", url: createPageUrl("Tasks"), icon: CheckSquare },
   { title: "Schedule", url: createPageUrl("Schedule"), icon: Calendar },
   { title: "Projects", url: createPageUrl("Projects"), icon: FolderKanban },
-  { title: "Visits", url: createPageUrl("Jobs"), icon: Briefcase },
+  { title: "Jobs", url: createPageUrl("Jobs"), icon: Briefcase },
   { title: "Customers", url: createPageUrl("Customers"), icon: UserCircle },
-];
-
-// Insert Analytics for admins
-const adminNavigationItems = [
-  { title: "Analytics", url: createPageUrl("Analytics"), icon: TrendingUp },
-  { title: "Tech Performance", url: createPageUrl("TechnicianPerformance"), icon: Wrench },
-  { title: "System Health", url: createPageUrl("SystemHealth"), icon: Activity },
+  { title: "Contracts", url: createPageUrl("Contracts"), icon: FileText },
 ];
 
 const secondaryNavigationItems = [
   { title: "Organisations", url: createPageUrl("Organisations"), icon: Building2 },
-  { title: "Contracts", url: createPageUrl("Contracts"), icon: FileText },
-  { title: "Logistics", url: createPageUrl("Logistics"), icon: Truck },
   { title: "Photos", url: createPageUrl("Photos"), icon: ImageIcon },
   { title: "Price List", url: createPageUrl("PriceList"), icon: DollarSign },
-  { title: "Fleet", url: createPageUrl("Fleet"), icon: Car },
-  { title: "Reports", url: createPageUrl("Reports"), icon: FileText },
-  { title: "Archive", url: createPageUrl("Archive"), icon: ArchiveIcon },
+  { title: "Reports", url: createPageUrl("Reports"), icon: TrendingUp },
   { title: "Team", url: createPageUrl("Team"), icon: Users },
+  { title: "Fleet", url: createPageUrl("Fleet"), icon: Car },
+  { title: "Role Settings", url: createPageUrl("RoleSettings"), icon: Shield },
+  { title: "Archive", url: createPageUrl("Archive"), icon: ArchiveIcon },
+  { title: "Logistics", url: createPageUrl("Logistics"), icon: Truck },
 ];
 
 const technicianNavigationItems = [
+  { title: "My Vehicle", url: createPageUrl("MyVehicle"), icon: Car },
   { title: "Schedule", url: createPageUrl("Schedule"), icon: Calendar },
-  { title: "Visits", url: createPageUrl("Jobs"), icon: Briefcase },
-  { title: "My Vehicle", url: createPageUrl("MyVehicle"), icon: Truck },
+  { title: "Jobs", url: createPageUrl("Jobs"), icon: Briefcase },
+  { title: "Tasks", url: createPageUrl("Tasks"), icon: CheckSquare },
   { title: "Price List", url: createPageUrl("PriceList"), icon: DollarSign },
-  { title: "Profile", url: createPageUrl("UserProfile"), icon: UserCircle },
 ];
 
 const viewerNavigationItems = [
   { title: "Dashboard", url: createPageUrl("Dashboard"), icon: LayoutDashboard },
   { title: "Schedule", url: createPageUrl("Schedule"), icon: Calendar },
   { title: "Projects", url: createPageUrl("Projects"), icon: FolderKanban },
-  { title: "Visits", url: createPageUrl("Jobs"), icon: Briefcase },
+  { title: "Jobs", url: createPageUrl("Jobs"), icon: Briefcase },
   { title: "Customers", url: createPageUrl("Customers"), icon: UserCircle },
 ];
 
@@ -118,7 +111,6 @@ export default function Layout({ children, currentPageName }) {
     }
   }, [location.pathname, location.search, currentPageName]);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
-  const [isMobileSearchOpen, setIsMobileSearchOpen] = useState(false);
   const [testMode, setTestMode] = useState(() => 
     localStorage.getItem('testMode') || 'off'
   );
@@ -175,9 +167,7 @@ export default function Layout({ children, currentPageName }) {
     ? technicianNavigationItems 
     : isViewer 
       ? viewerNavigationItems 
-      : effectiveRole === 'admin' 
-        ? [...primaryNavigationItems, ...adminNavigationItems] 
-        : primaryNavigationItems;
+      : primaryNavigationItems;
 
   // Pull to refresh and swipe to open menu
   useEffect(() => {
@@ -355,47 +345,95 @@ export default function Layout({ children, currentPageName }) {
           if (isTechnician) {
             return (
               <div className="min-h-screen flex flex-col bg-[#ffffff]">
-        <style>{`
-          .pac-container {
-            z-index: 100000 !important;
-            pointer-events: auto !important;
-          }
-        `}</style>
+        {/* Mobile Overlay */}
+        {techMobileMenuOpen && (
+          <div 
+            className="fixed inset-0 bg-black/50 z-40 transition-opacity"
+            onClick={() => setTechMobileMenuOpen(false)}
+          />
+        )}
+
         <header className="bg-white border-b border-[#E5E7EB] px-4 py-3 sticky top-0 z-50 shadow-sm safe-area-top">
           <div className="flex items-center justify-between min-h-[44px]">
-            <div className="flex items-center gap-2">
+            <button
+              onClick={() => setTechMobileMenuOpen(!techMobileMenuOpen)}
+              className="flex items-center gap-2 hover:bg-[#F3F4F6] rounded-lg p-2 transition-colors min-h-[44px] min-w-[44px]"
+            >
               <div className="w-8 h-8 bg-[#FAE008] rounded-lg flex items-center justify-center">
                 <Wrench className="w-4 h-4 text-[#111827]" />
               </div>
               <h3 className="font-semibold text-[#111827] text-[14px]">KGD</h3>
-            </div>
+            </button>
             <div className="flex items-center gap-2">
-                <button
-                  onClick={() => setIsMobileSearchOpen(true)}
-                  className="p-2 hover:bg-[#F3F4F6] rounded-lg transition-colors min-w-[44px] min-h-[44px] flex items-center justify-center"
-                  aria-label="Search"
-                >
-                  <Search className="w-5 h-5 text-[#111827]" />
-                </button>
                 <NotificationBell isMobile={true} />
                 <RoleBadge role={effectiveRole} />
-            </div>
+                <button
+                  onClick={() => navigate(createPageUrl("UserProfile"))}
+                  className="flex items-center hover:bg-[#F3F4F6] rounded-lg p-2 transition-colors min-h-[44px] min-w-[44px] justify-center"
+                >
+                  <div className="w-8 h-8 bg-[#F3F4F6] rounded-full flex items-center justify-center">
+                          <span className="text-[#111827] font-semibold text-sm">
+                            {(user?.display_name || user?.full_name)?.charAt(0)?.toUpperCase() || 'U'}
+                          </span>
+                        </div>
+                </button>
+              </div>
           </div>
         </header>
 
-        <Dialog open={isMobileSearchOpen} onOpenChange={setIsMobileSearchOpen}>
-          <DialogContent className="w-full h-full max-w-none p-4 rounded-none sm:rounded-lg sm:h-[80vh] sm:max-w-lg flex flex-col gap-0">
-             <div className="flex items-center justify-between mb-4">
-                <h2 className="text-lg font-semibold">Search</h2>
-                <button onClick={() => setIsMobileSearchOpen(false)} className="p-2">
-                  <X className="w-5 h-5" />
-                </button>
-             </div>
-             <div className="flex-1 overflow-hidden flex flex-col">
-                <GlobalSearchDropdown autoFocus onCloseMobile={() => setIsMobileSearchOpen(false)} />
-             </div>
-          </DialogContent>
-        </Dialog>
+        {/* Dropdown Menu */}
+        <div 
+        className={`fixed top-[60px] left-0 right-0 bg-white border-b border-[#E5E7EB] shadow-lg z-40 transition-all duration-300 ${
+          techMobileMenuOpen ? 'translate-y-0 opacity-100' : '-translate-y-full opacity-0 pointer-events-none'
+        }`}
+        >
+        <nav className="p-2">
+          {/* Create Buttons - Only for non-viewers */}
+          {!isViewer && (
+            <div className="grid grid-cols-2 gap-2 mb-3 pb-3 border-b border-[#E5E7EB]">
+              <Button
+                onClick={() => {
+                  navigate(createPageUrl("Jobs") + "?action=create");
+                  setTechMobileMenuOpen(false);
+                }}
+                className="bg-[#FAE008] hover:bg-[#E5CF07] text-[#111827] font-semibold shadow-sm"
+              >
+                <Plus className="w-4 h-4 mr-1" />
+                Job
+              </Button>
+              <Button
+                onClick={() => {
+                  navigate(createPageUrl("Projects") + "?action=create");
+                  setTechMobileMenuOpen(false);
+                }}
+                className="bg-[#FAE008] hover:bg-[#E5CF07] text-[#111827] font-semibold shadow-sm"
+              >
+                <Plus className="w-4 h-4 mr-1" />
+                Project
+              </Button>
+            </div>
+          )}
+
+            {navigationItems.map((item) => {
+            const isActive = location.pathname === item.url;
+            return (
+              <Link
+                key={item.title}
+                to={item.url}
+                onClick={() => setTechMobileMenuOpen(false)}
+                className={`flex items-center gap-3 px-4 py-3 rounded-lg transition-colors no-underline ${
+                  isActive
+                    ? 'bg-[#FAE008] text-[#111827]'
+                    : 'text-[#4B5563] hover:text-[#111827] hover:bg-[#F3F4F6]'
+                }`}
+              >
+                  <item.icon className="w-5 h-5 flex-shrink-0" />
+                  <span className="text-[14px] font-medium">{item.title}</span>
+                </Link>
+              );
+            })}
+          </nav>
+        </div>
 
         <main className="flex-1 overflow-y-auto overflow-x-hidden pb-24 bg-[#ffffff] relative">
           {/* Pull to Refresh Indicator */}
@@ -427,29 +465,6 @@ export default function Layout({ children, currentPageName }) {
             </span>
           </button>
         )}
-
-        {/* Technician Bottom Navigation */}
-        <div className="fixed bottom-0 left-0 right-0 bg-white border-t border-[#E5E7EB] px-2 py-1 safe-area-bottom z-50 flex justify-around">
-          {navigationItems.map((item) => {
-            const isActive = location.pathname === item.url;
-            return (
-              <Link
-                key={item.title}
-                to={item.url}
-                className={`flex flex-col items-center justify-center w-full py-2 rounded-lg transition-colors no-underline ${
-                  isActive ? 'text-[#111827]' : 'text-[#9CA3AF] hover:text-[#4B5563]'
-                }`}
-              >
-                <div className={`p-1 rounded-full ${isActive ? 'bg-[#FAE008]' : 'bg-transparent'}`}>
-                  <item.icon className={`w-6 h-6 ${isActive ? 'text-[#111827]' : 'currentColor'}`} />
-                </div>
-                <span className={`text-[10px] mt-1 font-medium ${isActive ? 'text-[#111827]' : 'currentColor'}`}>
-                  {item.title}
-                </span>
-              </Link>
-            );
-          })}
-        </div>
       </div>
     );
   }
@@ -457,12 +472,6 @@ export default function Layout({ children, currentPageName }) {
   // Desktop/Admin layout
   return (
     <div className="min-h-screen flex bg-[#ffffff]">
-      <style>{`
-        .pac-container {
-          z-index: 100000 !important;
-          pointer-events: auto !important;
-        }
-      `}</style>
       <Toaster position="top-right" richColors />
       {/* Mobile Overlay */}
       {isMobileMenuOpen && (
@@ -504,7 +513,7 @@ export default function Layout({ children, currentPageName }) {
                 <div className={`grid ${isCollapsed ? 'grid-cols-1' : 'grid-cols-2'} gap-2 mb-4 pb-4 border-b border-[#E5E7EB]`}>
                   <Button
                     onClick={() => navigate(createPageUrl("Jobs") + "?action=create")}
-                    className={`${isCollapsed ? 'w-full px-2' : ''}`}
+                    className={`bg-[#FAE008] hover:bg-[#E5CF07] text-[#111827] font-semibold shadow-sm ${isCollapsed ? 'w-full px-2' : ''}`}
                     title={isCollapsed ? "Create Job" : ""}
                   >
                     {isCollapsed ? (
@@ -518,7 +527,7 @@ export default function Layout({ children, currentPageName }) {
                   </Button>
                   <Button
                     onClick={() => navigate(createPageUrl("Projects") + "?action=create")}
-                    className={`${isCollapsed ? 'w-full px-2' : ''}`}
+                    className={`bg-[#FAE008] hover:bg-[#E5CF07] text-[#111827] font-semibold shadow-sm ${isCollapsed ? 'w-full px-2' : ''}`}
                     title={isCollapsed ? "Create Project" : ""}
                   >
                     {isCollapsed ? (
@@ -727,29 +736,9 @@ export default function Layout({ children, currentPageName }) {
             <h1 className="font-semibold text-[#111827] text-[14px] truncate px-2 flex-1 text-center">
               {[...primaryNavigationItems, ...secondaryNavigationItems].find(item => item.url === location.pathname)?.title || 'FieldScheduler'}
             </h1>
-            <button
-              onClick={() => setIsMobileSearchOpen(true)}
-              className="p-2 hover:bg-[#F3F4F6] rounded-lg transition-colors min-w-[44px] min-h-[44px] flex items-center justify-center"
-              aria-label="Search"
-            >
-              <Search className="w-5 h-5 text-[#111827]" />
-            </button>
+
           </div>
         </header>
-
-        <Dialog open={isMobileSearchOpen} onOpenChange={setIsMobileSearchOpen}>
-          <DialogContent className="w-full h-full max-w-none p-4 rounded-none sm:rounded-lg sm:h-[80vh] sm:max-w-lg flex flex-col gap-0">
-             <div className="flex items-center justify-between mb-4">
-                <h2 className="text-lg font-semibold">Search</h2>
-                <button onClick={() => setIsMobileSearchOpen(false)} className="p-2">
-                  <X className="w-5 h-5" />
-                </button>
-             </div>
-             <div className="flex-1 overflow-hidden flex flex-col">
-                <GlobalSearchDropdown autoFocus onCloseMobile={() => setIsMobileSearchOpen(false)} />
-             </div>
-          </DialogContent>
-        </Dialog>
 
         {/* Desktop Sticky Header with Search and Notification */}
         <div className="hidden lg:flex sticky top-0 z-30 bg-[#ffffff] border-b border-[#E5E7EB] px-6 py-3 items-center justify-between gap-4">
@@ -826,7 +815,7 @@ export default function Layout({ children, currentPageName }) {
         </div>
 
         {/* Page Content */}
-        <main className="flex-1 overflow-y-auto overflow-x-auto bg-[#ffffff] relative">
+        <main className="flex-1 overflow-y-auto overflow-x-hidden bg-[#ffffff] relative">
           {/* Pull to Refresh Indicator */}
           {isPulling && (
             <div 

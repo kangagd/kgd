@@ -1,4 +1,4 @@
-import React, { useState, forwardRef, useImperativeHandle } from "react";
+import React, { useState } from "react";
 import { base44 } from "@/api/base44Client";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
@@ -8,21 +8,16 @@ import TaskFormModal from "./TaskFormModal";
 import TaskDetailModal from "./TaskDetailModal";
 import { toast } from "sonner";
 
-const TasksPanel = forwardRef(({
+export default function TasksPanel({
   entityType, // 'project' | 'job' | 'customer' | 'email_thread'
   entityId,
   entityName,
   entityNumber, // for jobs
-  compact = false, // for sidebar compact view
-  hideHeader = false // option to hide header when controlled externally
-}, ref) => {
+  compact = false // for sidebar compact view
+}) {
   const queryClient = useQueryClient();
   const [showCreateModal, setShowCreateModal] = useState(false);
   const [selectedTask, setSelectedTask] = useState(null);
-
-  useImperativeHandle(ref, () => ({
-    openCreateModal: () => setShowCreateModal(true)
-  }));
 
   // Build filter based on entity type
   const getFilter = () => {
@@ -122,23 +117,21 @@ const TasksPanel = forwardRef(({
     return (
       <div className="space-y-2">
         {/* Compact Header */}
-        {!hideHeader && (
-          <div className="flex items-center justify-between">
-            {tasks.length > 0 && (
-              <span className="text-[12px] text-[#6B7280]">
-                {openTasks.length} open
-              </span>
-            )}
-            <Button
-              size="sm"
-              variant="outline"
-              onClick={() => setShowCreateModal(true)}
-              className="h-7 text-xs"
-            >
-              <Plus className="w-3 h-3 mr-1" /> Add
-            </Button>
-          </div>
-        )}
+        <div className="flex items-center justify-between">
+          {tasks.length > 0 && (
+            <span className="text-[12px] text-[#6B7280]">
+              {openTasks.length} open
+            </span>
+          )}
+          <Button
+            size="sm"
+            variant="ghost"
+            onClick={() => setShowCreateModal(true)}
+            className="h-7 px-2 text-[#6B7280] hover:text-[#111827] hover:bg-[#F3F4F6]"
+          >
+            <Plus className="w-3.5 h-3.5" />
+          </Button>
+        </div>
 
         {/* Compact Task List */}
         {isLoading ? (
@@ -320,6 +313,4 @@ const TasksPanel = forwardRef(({
       />
     </div>
   );
-});
-
-export default TasksPanel;
+}

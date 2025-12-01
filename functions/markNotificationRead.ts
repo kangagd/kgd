@@ -15,7 +15,7 @@ Deno.serve(async (req) => {
     if (markAllRead) {
       // Mark all notifications as read for this user
       const unreadNotifications = await base44.asServiceRole.entities.Notification.filter({
-        user_id: user.id,
+        user_email: user.email,
         is_read: false
       });
 
@@ -46,7 +46,7 @@ Deno.serve(async (req) => {
       return Response.json({ error: 'Notification not found' }, { status: 404 });
     }
 
-    if (notification.user_id !== user.id) {
+    if (notification.user_email !== user.email) {
       return Response.json({ error: 'Unauthorized' }, { status: 403 });
     }
 

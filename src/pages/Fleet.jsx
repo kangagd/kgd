@@ -12,9 +12,7 @@ import {
   Plus, 
   AlertTriangle,
   Battery,
-  User,
-  Truck,
-  MapPin
+  User
 } from "lucide-react";
 import VehicleDetail from "../components/fleet/VehicleDetail";
 import VehicleFormModal from "../components/fleet/VehicleFormModal";
@@ -40,11 +38,11 @@ export default function Fleet() {
   });
 
   if (selectedVehicle) {
-    return <VehicleDetail vehicle={selectedVehicle} onClose={() => setSelectedVehicle(null)} />;
+    return <VehicleDetail vehicle={selectedVehicle} onBack={() => setSelectedVehicle(null)} />;
   }
 
   return (
-    <div className="p-6 max-w-7xl mx-auto bg-[#ffffff] min-h-screen">
+    <div className="p-6 max-w-7xl mx-auto">
       <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-8">
         <div>
           <h1 className="text-3xl font-bold text-gray-900">Fleet Management</h1>
@@ -82,84 +80,53 @@ export default function Fleet() {
           <SelectContent>
             <SelectItem value="all">All Statuses</SelectItem>
             <SelectItem value="Active">Active</SelectItem>
-            <SelectItem value="In Service">In Service</SelectItem>
-            <SelectItem value="Off Road">Off Road</SelectItem>
+            <SelectItem value="In Maintenance">In Maintenance</SelectItem>
+            <SelectItem value="Inactive">Inactive</SelectItem>
           </SelectContent>
         </Select>
       </div>
 
-      {/* Table */}
-      <div className="bg-white rounded-xl border border-gray-200 overflow-hidden shadow-sm">
-        <table className="w-full text-sm text-left">
-          <thead className="bg-gray-50 text-gray-500 font-medium border-b border-gray-200">
-            <tr>
-              <th className="px-6 py-4">Vehicle Name / Code</th>
-              <th className="px-6 py-4">Registration</th>
-              <th className="px-6 py-4">Assigned Technician</th>
-              <th className="px-6 py-4">Status</th>
-              <th className="px-6 py-4">Last Stock Audit</th>
-              <th className="px-6 py-4 text-right">Action</th>
-            </tr>
-          </thead>
-          <tbody className="divide-y divide-gray-200">
-            {filteredVehicles.length === 0 ? (
-              <tr>
-                <td colSpan="6" className="px-6 py-8 text-center text-gray-500">
-                  No vehicles found matching your filters.
-                </td>
-              </tr>
-            ) : (
-              filteredVehicles.map((vehicle) => (
-                <tr 
-                  key={vehicle.id} 
-                  className="hover:bg-blue-50/50 transition-colors cursor-pointer"
-                  onClick={() => setSelectedVehicle(vehicle)}
-                >
-                  <td className="px-6 py-4 font-medium text-gray-900">
-                    <div className="flex items-center gap-3">
-                      <div className="w-8 h-8 bg-gray-100 rounded-lg flex items-center justify-center">
-                        <Car className="w-4 h-4 text-gray-600" />
-                      </div>
-                      {vehicle.name}
-                    </div>
-                  </td>
-                  <td className="px-6 py-4 font-mono text-gray-600">
-                    {vehicle.registration || vehicle.registration_plate}
-                  </td>
-                  <td className="px-6 py-4">
-                    {vehicle.assigned_user_name ? (
-                      <div className="flex items-center gap-2">
-                        <div className="w-6 h-6 bg-blue-100 rounded-full flex items-center justify-center text-xs font-bold text-blue-700">
-                          {vehicle.assigned_user_name.charAt(0)}
-                        </div>
-                        <span className="text-gray-700">{vehicle.assigned_user_name}</span>
-                      </div>
-                    ) : (
-                      <span className="text-gray-400 italic">Unassigned</span>
-                    )}
-                  </td>
-                  <td className="px-6 py-4">
-                    <Badge 
-                      className={`
-                        ${vehicle.status === 'Active' ? 'bg-green-100 text-green-800 hover:bg-green-100' : 
-                          vehicle.status === 'In Service' ? 'bg-amber-100 text-amber-800 hover:bg-amber-100' : 
-                          'bg-red-100 text-red-800 hover:bg-red-100'}
-                      `}
-                    >
-                      {vehicle.status}
-                    </Badge>
-                  </td>
-                  <td className="px-6 py-4 text-gray-500">
-                    {vehicle.last_stock_audit ? format(new Date(vehicle.last_stock_audit), 'MMM d, yyyy') : '-'}
-                  </td>
-                  <td className="px-6 py-4 text-right">
-                     <Button variant="ghost" size="sm" className="text-blue-600 hover:text-blue-700 hover:bg-blue-50">View</Button>
-                  </td>
-                </tr>
-              ))
-            )}
-          </tbody>
-        </table>
+      {/* Grid */}
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+        {filteredVehicles.map(vehicle => (
+          <Card 
+            key={vehicle.id} 
+            className="hover:shadow-lg transition-shadow cursor-pointer group border-gray-200"
+            onClick={() => setSelectedVehicle(vehicle)}
+          >
+            <CardContent className="p-5">
+              <div className="flex justify-between items-start mb-4">
+                <div className="flex items-center gap-3">
+                  <div className="w-10 h-10 bg-gray-100 rounded-lg flex items-center justify-center group-hover:bg-[#FAE008]/20 transition-colors">
+                    <Car className="w-5 h-5 text-gray-600 group-hover:text-black" />
+                  </div>
+                  <div>
+                    <h3 className="font-bold text-gray-900">{vehicle.name}</h3>
+                    <div className="text-sm text-gray-500 font-mono">{vehicle.registration_plate}</div>
+                  </div>
+                </div>
+                <Badge variant={vehicle.status === 'Active' ? 'success' : 'secondary'} className={vehicle.status === 'Active' ? 'bg-green-100 text-green-800' : ''}>
+                  {vehicle.status}
+                </Badge>
+              </div>
+
+              <div className="space-y-3">
+                <div className="flex items-center text-sm text-gray-600">
+                  <User className="w-4 h-4 mr-2 text-gray-400" />
+                  {vehicle.assigned_user_name || "Unassigned"}
+                </div>
+                <div className="flex items-center text-sm text-gray-600">
+                  <div className="w-2 h-2 rounded-full bg-gray-400 mr-3 ml-1" />
+                  {vehicle.primary_location || "No location set"}
+                </div>
+              </div>
+
+              <div className="mt-4 pt-4 border-t border-gray-100 flex justify-between items-center">
+                <span className="text-sm text-[#FAE008] font-semibold group-hover:underline">View Details</span>
+              </div>
+            </CardContent>
+          </Card>
+        ))}
       </div>
     </div>
   );

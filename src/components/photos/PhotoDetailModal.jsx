@@ -2,11 +2,10 @@ import React from "react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Download, Briefcase, FolderKanban, MapPin, User, Calendar, Tag, Link as LinkIcon } from "lucide-react";
+import { Download, Briefcase, FolderKanban, MapPin, User, Calendar, Tag } from "lucide-react";
 import { format } from "date-fns";
 import { useNavigate } from "react-router-dom";
 import { createPageUrl } from "@/utils";
-import { toast } from "sonner";
 
 export default function PhotoDetailModal({ open, onClose, photo }) {
   const navigate = useNavigate();
@@ -15,11 +14,6 @@ export default function PhotoDetailModal({ open, onClose, photo }) {
 
   const handleDownload = () => {
     window.open(photo.image_url, '_blank');
-  };
-
-  const handleCopyUrl = () => {
-    navigator.clipboard.writeText(photo.image_url);
-    toast.success("URL copied to clipboard");
   };
 
   const handleViewJob = () => {
@@ -169,40 +163,32 @@ export default function PhotoDetailModal({ open, onClose, photo }) {
           )}
 
           {/* Actions */}
-          <div className="flex flex-wrap gap-2 pt-3 border-t border-[#E5E7EB]">
+          <div className="flex gap-2 pt-3 border-t border-[#E5E7EB]">
             <Button
               onClick={handleDownload}
-              className="flex-1 bg-[#FAE008] text-[#111827] hover:bg-[#E5CF07] font-semibold min-w-[120px]"
+              className="flex-1 bg-[#FAE008] text-[#111827] hover:bg-[#E5CF07] font-semibold"
             >
               <Download className="w-4 h-4 mr-2" />
               Download
-            </Button>
-            <Button
-              onClick={handleCopyUrl}
-              variant="outline"
-              className="flex-1 font-semibold min-w-[120px]"
-            >
-              <LinkIcon className="w-4 h-4 mr-2" />
-              Copy URL
             </Button>
             {photo.job_id && (
               <Button
                 onClick={handleViewJob}
                 variant="outline"
-                className="flex-1 font-semibold min-w-[120px]"
+                className="flex-1 font-semibold"
               >
                 <Briefcase className="w-4 h-4 mr-2" />
-                Open Job
+                View Job
               </Button>
             )}
             {photo.project_id && (
               <Button
                 onClick={handleViewProject}
                 variant="outline"
-                className="flex-1 font-semibold min-w-[120px]"
+                className="flex-1 font-semibold"
               >
                 <FolderKanban className="w-4 h-4 mr-2" />
-                Open Project
+                View Project
               </Button>
             )}
           </div>

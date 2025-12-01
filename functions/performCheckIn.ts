@@ -90,20 +90,6 @@ Deno.serve(async (req) => {
         try {
             // Use user-scoped entity access - RLS has been updated to allow this
             checkIn = await base44.entities.CheckInOut.create(checkInData);
-
-            // Notify Admins
-            const admins = await base44.asServiceRole.entities.User.filter({ role: 'admin' });
-            for (const admin of admins) {
-                await base44.asServiceRole.functions.invoke('createNotification', {
-                    userId: admin.id,
-                    title: "Technician Check-In",
-                    message: `${user.full_name} checked in to Job #${job.job_number}`,
-                    entityType: "Job",
-                    entityId: jobId,
-                    priority: "normal"
-                });
-            }
-
         } catch (e) {
             console.error("Failed to create CheckInOut entity (user scope):", e);
             // Fallback to service role if user scope fails

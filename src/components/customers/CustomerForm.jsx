@@ -489,14 +489,7 @@ export default function CustomerForm({ customer, onSubmit, onCancel, isSubmittin
       </Card>
 
       <Dialog open={showNewOrgDialog} onOpenChange={setShowNewOrgDialog}>
-        <DialogContent 
-          className="rounded-2xl"
-          onInteractOutside={(e) => {
-            if (e.target.closest('.pac-container')) {
-              e.preventDefault();
-            }
-          }}
-        >
+        <DialogContent className="rounded-2xl">
           <DialogHeader>
             <DialogTitle className="text-xl font-bold text-[#000000]">New Organisation</DialogTitle>
           </DialogHeader>

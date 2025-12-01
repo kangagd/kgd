@@ -17,71 +17,11 @@ Deno.serve(async (req) => {
             // Fetch previous state for logic comparison
             previousPart = await base44.asServiceRole.entities.Part.get(id);
             part = await base44.asServiceRole.entities.Part.update(id, data);
-
-            // Notify on Delivery
-            if (data.status === 'Delivered' && previousPart.status !== 'Delivered') {
-                const admins = await base44.asServiceRole.entities.User.filter({ role: 'admin' });
-                for (const admin of admins) {
-                    await base44.asServiceRole.functions.invoke('createNotification', {
-                        userId: admin.id,
-                        title: "Part Delivered",
-                        message: `Part ${part.category} has been delivered to ${part.location}.`,
-                        entityType: "Part",
-                        entityId: part.id,
-                        priority: "normal"
-                    });
-                }
-            }
         } else if (action === 'delete') {
             await base44.asServiceRole.entities.Part.delete(id);
             return Response.json({ success: true });
         } else {
             return Response.json({ error: 'Invalid action' }, { status: 400 });
-        }
-
-        // TRIGGER A: When Part is Ordered + Supplier Source (Pickup Required) → Create “Material Pickup – Supplier”
-        if (part.status === 'Ordered' && part.source_type === 'Supplier – Pickup Required') {
-             const wasTriggered = previousPart && previousPart.status === 'Ordered';
-             if (!wasTriggered) {
-                 const project = await base44.asServiceRole.entities.Project.get(part.project_id);
-                 if (project) {
-                     const jobTypeName = "Material Pickup – Supplier";
-                     let jobTypes = await base44.asServiceRole.entities.JobType.filter({ name: jobTypeName });
-                     let jobTypeId = jobTypes.length > 0 ? jobTypes[0].id : null;
-                     if (!jobTypeId) {
-                         const newJobType = await base44.asServiceRole.entities.JobType.create({
-                             name: jobTypeName,
-                             description: "Logistics: Pickup material from supplier",
-                             color: "#f59e0b", 
-                             estimated_duration: 1,
-                             is_active: true
-                         });
-                         jobTypeId = newJobType.id;
-                     }
-
-                     const logisticsJob = await base44.asServiceRole.entities.Job.create({
-                         job_type: jobTypeName,
-                         job_type_id: jobTypeId,
-                         job_type_name: jobTypeName,
-                         job_category: "Logistics",
-                         logistics_type: "Material Pickup – Supplier",
-                         project_id: part.project_id,
-                         project_name: project.title,
-                         customer_id: project.customer_id,
-                         customer_name: project.customer_name,
-                         address: "Supplier: " + (part.supplier_name || "Unknown"),
-                         address_full: "Supplier: " + (part.supplier_name || "Unknown"),
-                         status: "Open",
-                         part_ids: [part.id],
-                         notes: `Pickup for: ${part.category} (Order Ref: ${part.order_reference || 'N/A'})`
-                     });
-
-                     const currentLinks = part.linked_logistics_jobs || [];
-                     await base44.asServiceRole.entities.Part.update(part.id, {
-                         linked_logistics_jobs: [...currentLinks, logisticsJob.id]
-                     });
-                 }
-             }
         }
 
         // TRIGGER B: When Part is marked Delivered at Delivery Bay → create “Delivery – At Warehouse” job
@@ -91,6 +31,7 @@ Deno.serve(async (req) => {
                                 previousPart.location === 'At Delivery Bay';
             
             if (!wasTriggered) {
+                // Trigger Logic
                 const project = await base44.asServiceRole.entities.Project.get(part.project_id);
                 if (project) {
                     // Check for other parts that are also Delivered + At Delivery Bay for this project
@@ -99,10 +40,6 @@ Deno.serve(async (req) => {
                         status: 'Delivered',
                         location: 'At Delivery Bay'
                     });
-
-                    // Prepare part IDs list first to avoid ReferenceError
-                    const partIdsToUpdate = otherParts.map(p => p.id);
-                    if (!partIdsToUpdate.includes(part.id)) partIdsToUpdate.push(part.id);
 
                     // Find or Create JobType
                     const jobTypeName = "Delivery – At Warehouse";
@@ -120,7 +57,15 @@ Deno.serve(async (req) => {
                          jobTypeId = newJobType.id;
                     }
 
-                    // Check if there is already an open job of this type for this project
+                    // Check if there is already an open job of this type for this project?? 
+                    // Prompt implies: "Create a Job... Append this new job’s ID into the Part’s linked_logistics_jobs array."
+                    // It doesn't explicitly say "if one doesn't exist". But usually we group them.
+                    // The prompt says "Create a Job... linked_parts includes this Part (and any other Parts...)"
+                    // This implies creating a NEW job every time a part lands, OR grouping them.
+                    // "and any other Parts... that are ALSO Delivered + At Delivery Bay"
+                    // This suggests we might want to grouping.
+                    // Let's check if there is an existing OPEN "Delivery – At Warehouse" job for this project.
+                    
                     const existingJobs = await base44.asServiceRole.entities.Job.filter({
                         project_id: part.project_id,
                         job_type: jobTypeName,
@@ -131,26 +76,20 @@ Deno.serve(async (req) => {
 
                     if (existingJobs.length > 0) {
                         logisticsJob = existingJobs[0];
-                        // Update existing job part_ids if necessary
-                        const currentPartIds = logisticsJob.part_ids || [];
-                        const newPartIds = [...new Set([...currentPartIds, ...partIdsToUpdate])];
-                        if (newPartIds.length > currentPartIds.length) {
-                            await base44.asServiceRole.entities.Job.update(logisticsJob.id, {
-                                part_ids: newPartIds,
-                                notes: logisticsJob.notes + `\nAdded parts: ${otherParts.map(p => p.category).join(', ')}`
-                            });
-                        }
+                        // Update linked parts if we track them in the job (not standard field, but maybe in notes or just implicit)
+                        // We definitely update the PARTS to link to the JOB.
                     } else {
                         // Create new job
+                        // Need customer info
                         const customerId = project.customer_id;
+                        // Warehouse address - hardcoded or fetched. Using a placeholder or Org address.
+                        // We'll assume a fixed string or fetch Organisation type 'Supplier'? No, warehouse is internal.
                         const warehouseAddress = "Warehouse Delivery Bay";
 
                         logisticsJob = await base44.asServiceRole.entities.Job.create({
                             job_type: jobTypeName,
                             job_type_id: jobTypeId,
                             job_type_name: jobTypeName,
-                            job_category: "Logistics",
-                            logistics_type: "Delivery – At Warehouse",
                             project_id: part.project_id,
                             project_name: project.title,
                             customer_id: customerId,
@@ -158,12 +97,15 @@ Deno.serve(async (req) => {
                             address: warehouseAddress,
                             address_full: warehouseAddress,
                             status: "Open",
-                            part_ids: partIdsToUpdate,
                             notes: `Logistics job generated for parts: ${otherParts.map(p => p.category).join(', ')}`
                         });
                     }
 
                     // Append job ID to all relevant parts
+                    const partIdsToUpdate = otherParts.map(p => p.id);
+                    // Add current part if not in filter (it should be in filter if filter matches current state)
+                    if (!partIdsToUpdate.includes(part.id)) partIdsToUpdate.push(part.id);
+
                     for (const pId of partIdsToUpdate) {
                         const p = otherParts.find(op => op.id === pId) || part;
                         const currentLinks = p.linked_logistics_jobs || [];

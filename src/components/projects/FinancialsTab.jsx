@@ -4,12 +4,9 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Plus, Upload, X, DollarSign, TrendingUp, FileText } from "lucide-react";
+import { Plus, Upload, X, DollarSign, TrendingUp } from "lucide-react";
 import { base44 } from "@/api/base44Client";
-import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import RichTextField from "../common/RichTextField";
-
-import { toast } from "sonner";
 
 const getFinancialStatusOptions = (projectType) => {
   if (projectType === "Repair" || projectType === "Motor/Accessory") {
@@ -42,7 +39,6 @@ export default function FinancialsTab({ project, onUpdate }) {
     attachments: []
   });
   const [showAddPayment, setShowAddPayment] = useState(false);
-  const queryClient = useQueryClient();
 
   const totalCost = (project.materials_cost || 0) + (project.labour_cost || 0) + (project.other_costs || 0);
   const profit = (project.total_project_value || 0) - totalCost;
@@ -453,8 +449,6 @@ export default function FinancialsTab({ project, onUpdate }) {
           />
         </CardContent>
       </Card>
-
-
     </div>
   );
 }

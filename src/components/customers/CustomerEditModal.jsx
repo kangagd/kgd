@@ -42,14 +42,7 @@ export default function CustomerEditModal({ customer, open, onClose, onSubmit, i
   return (
     <>
     <Dialog open={open} onOpenChange={onClose}>
-      <DialogContent 
-        className="max-w-4xl max-h-[90vh] overflow-y-auto p-0"
-        onInteractOutside={(e) => {
-          if (e.target.closest('.pac-container')) {
-            e.preventDefault();
-          }
-        }}
-      >
+      <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto p-0">
         <div className="grid md:grid-cols-2 divide-x">
           <div className="overflow-y-auto max-h-[90vh]">
             <CustomerForm

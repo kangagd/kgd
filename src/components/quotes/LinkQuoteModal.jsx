@@ -64,7 +64,7 @@ export default function LinkQuoteModal({
 
     setLinking(true);
     try {
-      const response = await base44.functions.invoke('linkExistingPandaDocQuote', {
+      const response = await base44.functions.invoke('linkPandaDocQuote', {
         pandadocDocumentId: selectedDoc.id,
         projectId: project?.id || null,
         jobId: job?.id || null

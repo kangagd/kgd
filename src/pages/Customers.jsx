@@ -7,7 +7,7 @@ import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Checkbox } from "@/components/ui/checkbox";
-import { Plus, Search, User, AlertTriangle, GitMerge } from "lucide-react";
+import { Plus, Search, User, AlertTriangle } from "lucide-react";
 import CustomerForm from "../components/customers/CustomerForm";
 import CustomerDetails from "../components/customers/CustomerDetails";
 import CustomerCard from "../components/customers/CustomerCard";
@@ -15,8 +15,6 @@ import EntityModal from "../components/common/EntityModal.jsx";
 import CustomerModalView from "../components/customers/CustomerModalView";
 import { createPageUrl } from "@/utils";
 import { DuplicateBadge } from "../components/common/DuplicateWarningCard";
-import DuplicateReviewModal from "../components/customers/DuplicateReviewModal";
-import { toast } from "sonner";
 
 export default function Customers() {
   const [user, setUser] = useState(null);
@@ -27,7 +25,6 @@ export default function Customers() {
   const [selectedCustomer, setSelectedCustomer] = useState(null);
   const [editingCustomer, setEditingCustomer] = useState(null);
   const [modalCustomer, setModalCustomer] = useState(null);
-  const [duplicateReviewCustomer, setDuplicateReviewCustomer] = useState(null);
   const queryClient = useQueryClient();
 
   useEffect(() => {
@@ -87,9 +84,15 @@ export default function Customers() {
 
   const createCustomerMutation = useMutation({
     mutationFn: async (data) => {
-      const res = await base44.functions.invoke('manageCustomer', { action: 'create', data });
-      if (res.data?.error) throw new Error(res.data.error);
-      return res.data.customer;
+      const newCustomer = await base44.entities.Customer.create(data);
+      // Run duplicate check and update the record with flags
+      await base44.functions.invoke('checkDuplicates', {
+        entity_type: 'Customer',
+        record: newCustomer,
+        exclude_id: newCustomer.id,
+        auto_update: true
+      });
+      return newCustomer;
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['allCustomers'] });
@@ -101,9 +104,15 @@ export default function Customers() {
 
   const updateCustomerMutation = useMutation({
     mutationFn: async ({ id, data }) => {
-      const res = await base44.functions.invoke('manageCustomer', { action: 'update', id, data });
-      if (res.data?.error) throw new Error(res.data.error);
-      return res.data.customer;
+      const updated = await base44.entities.Customer.update(id, data);
+      // Run duplicate check and update the record with flags
+      await base44.functions.invoke('checkDuplicates', {
+        entity_type: 'Customer',
+        record: { ...data, id },
+        exclude_id: id,
+        auto_update: true
+      });
+      return updated;
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['allCustomers'] });
@@ -114,26 +123,8 @@ export default function Customers() {
     }
   });
 
-  const detectDuplicatesMutation = useMutation({
-    mutationFn: async () => {
-       await base44.functions.invoke('scanAllCustomerDuplicates');
-    },
-    onSuccess: () => {
-        queryClient.invalidateQueries({ queryKey: ['allCustomers'] });
-        refetch();
-        toast.success("Duplicate scan complete.");
-    },
-    onError: (err) => {
-        toast.error("Scan failed: " + err.message);
-    }
-  });
-
   const deleteCustomerMutation = useMutation({
-    mutationFn: async (customerId) => {
-        const res = await base44.functions.invoke('manageCustomer', { action: 'delete', id: customerId, data: { deleted_at: new Date().toISOString() } });
-        if (res.data?.error) throw new Error(res.data.error);
-        return res.data;
-    },
+    mutationFn: (customerId) => base44.entities.Customer.update(customerId, { deleted_at: new Date().toISOString() }),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['allCustomers'] });
       refetch();
@@ -272,18 +263,6 @@ export default function Customers() {
               <AlertTriangle className="w-3.5 h-3.5 text-[#D97706]" />
               Show only potential duplicates
             </label>
-            
-            {isAdminOrManager && (
-                <Button 
-                    variant="outline" 
-                    size="sm" 
-                    className="ml-auto"
-                    onClick={() => detectDuplicatesMutation.mutate()}
-                    disabled={detectDuplicatesMutation.isPending}
-                >
-                    {detectDuplicatesMutation.isPending ? 'Scanning...' : 'Scan for Duplicates'}
-                </Button>
-            )}
           </div>
         </div>
 
@@ -308,29 +287,12 @@ export default function Customers() {
         ) : (
           <div className="grid gap-3">
             {filteredCustomers.map((customer) => (
-              <div key={customer.id} className="relative group">
-                  <CustomerCard
-                    customer={customer}
-                    onClick={() => setSelectedCustomer(customer)}
-                    onViewDetails={(c) => setModalCustomer(c)}
-                  />
-                  {customer.is_potential_duplicate && isAdminOrManager && (
-                      <div className="absolute top-4 right-14 z-10">
-                          <Button
-                             variant="destructive"
-                             size="sm"
-                             className="h-8 gap-1 bg-amber-100 text-amber-700 hover:bg-amber-200 border-amber-200 shadow-sm"
-                             onClick={(e) => {
-                                 e.stopPropagation();
-                                 setDuplicateReviewCustomer(customer);
-                             }}
-                          >
-                              <GitMerge className="w-4 h-4" />
-                              Review Duplicate
-                          </Button>
-                      </div>
-                  )}
-              </div>
+              <CustomerCard
+                key={customer.id}
+                customer={customer}
+                onClick={() => setSelectedCustomer(customer)}
+                onViewDetails={(c) => setModalCustomer(c)}
+              />
             ))}
           </div>
         )}
@@ -349,22 +311,6 @@ export default function Customers() {
             />
           )}
         </EntityModal>
-
-        <DuplicateReviewModal
-            isOpen={!!duplicateReviewCustomer}
-            onClose={() => setDuplicateReviewCustomer(null)}
-            duplicateCustomer={duplicateReviewCustomer}
-            onMerged={() => {
-                queryClient.invalidateQueries({ queryKey: ['allCustomers'] });
-                refetch();
-                setDuplicateReviewCustomer(null);
-            }}
-            onIgnored={() => {
-                queryClient.invalidateQueries({ queryKey: ['allCustomers'] });
-                refetch();
-                setDuplicateReviewCustomer(null);
-            }}
-        />
       </div>
     </div>
   );

@@ -5,11 +5,7 @@ import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { Badge } from "@/components/ui/badge";
-import { ArrowLeft, Edit, MapPin, Calendar, Clock, AlertTriangle, CheckCircle2, Building2, Sparkles, RefreshCw, Shield, Activity, Lightbulb, Timer } from "lucide-react";
-import SLAPerformanceTab from "./SLAPerformanceTab";
-import ContractAnalyticsTab from "./ContractAnalyticsTab";
-import { useMutation, useQueryClient } from "@tanstack/react-query";
-import { toast } from "sonner";
+import { ArrowLeft, Edit, MapPin, Calendar, Clock, AlertTriangle, CheckCircle2, Building2 } from "lucide-react";
 import { format, parseISO, isPast } from "date-fns";
 import JobList from "../jobs/JobList";
 import JobCard from "../jobs/JobCard";
@@ -18,8 +14,6 @@ import { Link } from "react-router-dom";
 
 export default function ContractDetails({ contract, onClose, onEdit }) {
   const [activeTab, setActiveTab] = useState("dashboard");
-  const queryClient = useQueryClient();
-  const [isGeneratingInsights, setIsGeneratingInsights] = useState(false);
 
   const { data: dashboardData, isLoading } = useQuery({
     queryKey: ['contractDashboard', contract.id],
@@ -34,52 +28,10 @@ export default function ContractDetails({ contract, onClose, onEdit }) {
     queryFn: () => base44.entities.Job.filter({ contract_id: contract.id })
   });
 
-  const { data: projects = [] } = useQuery({
-    queryKey: ['contractProjects', contract.id],
-    queryFn: () => base44.entities.Project.filter({ contract_id: contract.id })
-  });
-
   const stations = dashboardData?.stations || [];
   const slaBreaches = dashboardData?.sla_breaches || [];
   const recentCompleted = dashboardData?.recent_completed || [];
   const upcomingMaintenance = dashboardData?.upcoming_maintenance || [];
-
-  const generateInsightsMutation = useMutation({
-    mutationFn: () => base44.functions.invoke('aiContractInsights', { contract_id: contract.id }),
-    onSuccess: (response) => {
-        if (response.data?.success) {
-            toast.success("AI Insights generated successfully");
-            // Invalidate to fetch updated contract with new insights
-            // Ideally we should refetch the contract data passed as prop or have useQuery for it inside component if not present
-            // Since contract is passed as prop, we might need to reload page or parent needs to refetch.
-            // For now, let's just reload window or assume parent handles it.
-            // But wait, we need to see the changes.
-            // Assuming parent passes updated contract on prop change if using react-query there.
-             queryClient.invalidateQueries(['contracts']);
-             queryClient.invalidateQueries(['contract', contract.id]);
-             if (onClose) {
-                 // Hacky way to force refresh if we can't control parent query
-                 // window.location.reload();
-                 // Better: Let user refresh manually or trust react-query if configured right
-             }
-        } else {
-            toast.error("Failed to generate insights");
-        }
-    },
-    onError: () => toast.error("Error generating insights")
-  });
-
-  const handleGenerateInsights = () => {
-      setIsGeneratingInsights(true);
-      generateInsightsMutation.mutate(undefined, {
-          onSettled: () => setIsGeneratingInsights(false)
-      });
-  };
-
-  // Parse AI insights if string, or use object
-  const aiInsights = typeof contract.ai_insights === 'string' 
-    ? JSON.parse(contract.ai_insights || '{}') 
-    : (contract.ai_insights || {});
 
   return (
     <div className="p-4 lg:p-10 max-w-7xl mx-auto">
@@ -96,27 +48,16 @@ export default function ContractDetails({ contract, onClose, onEdit }) {
               {contract.status}
             </Badge>
           </div>
-          <div className="flex flex-wrap gap-4 mt-2 text-sm text-gray-600 items-center">
-             {contract.organisation_name && (
-               <span className="flex items-center gap-1 font-medium text-gray-900">
-                 <Building2 className="w-4 h-4 text-gray-500" />
-                 {contract.organisation_name}
-               </span>
-             )}
+          <div className="flex gap-4 mt-2 text-sm text-gray-600">
             <span>Type: {contract.contract_type}</span>
             <span>•</span>
-            <div className="flex items-center gap-1">
-                <Calendar className="w-3.5 h-3.5" />
-                <span>{format(parseISO(contract.start_date), 'MMM d, yyyy')}</span>
-                {contract.end_date ? (
-                    <>
-                        <span>-</span>
-                        <span>{format(parseISO(contract.end_date), 'MMM d, yyyy')}</span>
-                    </>
-                ) : (
-                    <span className="italic ml-1">(Ongoing)</span>
-                )}
-            </div>
+            <span>Start: {contract.start_date}</span>
+            {contract.end_date && (
+              <>
+                <span>•</span>
+                <span>End: {contract.end_date}</span>
+              </>
+            )}
           </div>
         </div>
         <Button onClick={onEdit} variant="outline" className="border-2">
@@ -127,169 +68,12 @@ export default function ContractDetails({ contract, onClose, onEdit }) {
 
       <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
         <TabsList>
-          <TabsTrigger value="dashboard">Overview</TabsTrigger>
-          <TabsTrigger value="insights" className="data-[state=active]:bg-indigo-50 data-[state=active]:text-indigo-700">
-            <Sparkles className="w-4 h-4 mr-2 text-indigo-500" />
-            AI Insights
-          </TabsTrigger>
+          <TabsTrigger value="dashboard">Dashboard</TabsTrigger>
           <TabsTrigger value="stations">Stations ({stations.length})</TabsTrigger>
-          <TabsTrigger value="jobs">Jobs ({jobs.length})</TabsTrigger>
-          <TabsTrigger value="projects">Projects ({projects.length})</TabsTrigger>
-          <TabsTrigger value="sla" className="data-[state=active]:bg-red-50 data-[state=active]:text-red-700">
-             <Timer className="w-4 h-4 mr-2 text-red-500" />
-             SLA Performance
-          </TabsTrigger>
-          <TabsTrigger value="analytics">Analytics</TabsTrigger>
+          <TabsTrigger value="jobs">All Jobs ({jobs.length})</TabsTrigger>
         </TabsList>
 
-        <TabsContent value="insights" className="space-y-6">
-             <div className="flex justify-between items-center">
-                 <div>
-                    <h2 className="text-xl font-bold text-indigo-900">AI Contract Analysis</h2>
-                    <p className="text-sm text-gray-500">
-                        {contract.insights_generated_at 
-                            ? `Generated on ${format(parseISO(contract.insights_generated_at), 'MMM d, yyyy h:mm a')}`
-                            : 'No insights generated yet'}
-                    </p>
-                 </div>
-                 <Button 
-                    onClick={handleGenerateInsights} 
-                    disabled={isGeneratingInsights}
-                    className="bg-indigo-600 hover:bg-indigo-700 text-white"
-                 >
-                     <RefreshCw className={`w-4 h-4 mr-2 ${isGeneratingInsights ? 'animate-spin' : ''}`} />
-                     {isGeneratingInsights ? 'Analyzing...' : 'Refresh Analysis'}
-                 </Button>
-             </div>
-
-             {(!contract.ai_insights) ? (
-                 <Card className="bg-slate-50 border-dashed border-2 border-slate-300">
-                     <CardContent className="py-12 text-center">
-                         <Sparkles className="w-12 h-12 mx-auto text-indigo-300 mb-4" />
-                         <h3 className="text-lg font-medium text-gray-900">No AI Insights Yet</h3>
-                         <p className="text-gray-500 mb-6 max-w-md mx-auto">
-                             Generate an AI analysis to identify high-risk stations, recurring issues, and actionable recommendations.
-                         </p>
-                         <Button onClick={handleGenerateInsights} className="bg-indigo-600 hover:bg-indigo-700">
-                             Generate First Report
-                         </Button>
-                     </CardContent>
-                 </Card>
-             ) : (
-                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                     {/* Executive Summary */}
-                     <Card className="md:col-span-2 border-indigo-100 shadow-sm bg-gradient-to-br from-white to-indigo-50/30">
-                         <CardHeader>
-                             <CardTitle className="flex items-center gap-2 text-indigo-900">
-                                 <Activity className="w-5 h-5 text-indigo-600" />
-                                 Executive Summary
-                             </CardTitle>
-                         </CardHeader>
-                         <CardContent>
-                             <p className="text-gray-700 leading-relaxed text-lg">
-                                 {aiInsights.summary || "No summary available."}
-                             </p>
-                         </CardContent>
-                     </Card>
-
-                     {/* High Risk Stations */}
-                     <Card className="border-red-100 shadow-sm">
-                         <CardHeader>
-                             <CardTitle className="flex items-center gap-2 text-red-900">
-                                 <Shield className="w-5 h-5 text-red-600" />
-                                 High-Risk Stations
-                             </CardTitle>
-                         </CardHeader>
-                         <CardContent>
-                             <ul className="space-y-3">
-                                 {aiInsights.high_risk_stations?.map((station, idx) => (
-                                     <li key={idx} className="flex items-start gap-2 text-gray-700">
-                                         <span className="bg-red-100 text-red-700 rounded-full w-5 h-5 flex items-center justify-center text-xs flex-shrink-0 mt-0.5">{idx + 1}</span>
-                                         {station}
-                                     </li>
-                                 ))}
-                                 {(!aiInsights.high_risk_stations?.length) && (
-                                     <p className="text-gray-500 italic">No high-risk stations identified.</p>
-                                 )}
-                             </ul>
-                         </CardContent>
-                     </Card>
-
-                     {/* Common Issues */}
-                     <Card className="border-orange-100 shadow-sm">
-                         <CardHeader>
-                             <CardTitle className="flex items-center gap-2 text-orange-900">
-                                 <AlertTriangle className="w-5 h-5 text-orange-600" />
-                                 Recurring Issues
-                             </CardTitle>
-                         </CardHeader>
-                         <CardContent>
-                             <ul className="space-y-3">
-                                 {aiInsights.common_issues?.map((issue, idx) => (
-                                     <li key={idx} className="flex items-start gap-2 text-gray-700">
-                                         <span className="bg-orange-100 text-orange-700 rounded-full w-5 h-5 flex items-center justify-center text-xs flex-shrink-0 mt-0.5">•</span>
-                                         {issue}
-                                     </li>
-                                 ))}
-                                 {(!aiInsights.common_issues?.length) && (
-                                     <p className="text-gray-500 italic">No recurring issues identified.</p>
-                                 )}
-                             </ul>
-                         </CardContent>
-                     </Card>
-
-                     {/* Recommended Actions */}
-                     <Card className="md:col-span-2 border-green-100 shadow-sm">
-                         <CardHeader>
-                             <CardTitle className="flex items-center gap-2 text-green-900">
-                                 <Lightbulb className="w-5 h-5 text-green-600" />
-                                 Recommended Actions
-                             </CardTitle>
-                         </CardHeader>
-                         <CardContent>
-                             <div className="grid md:grid-cols-2 gap-4">
-                                 {aiInsights.recommended_actions?.map((action, idx) => (
-                                     <div key={idx} className="flex items-start gap-3 p-3 bg-green-50 rounded-lg border border-green-100">
-                                         <CheckCircle2 className="w-5 h-5 text-green-600 flex-shrink-0 mt-0.5" />
-                                         <span className="text-green-900 font-medium">{action}</span>
-                                     </div>
-                                 ))}
-                             </div>
-                              {(!aiInsights.recommended_actions?.length) && (
-                                 <p className="text-gray-500 italic">No recommendations available.</p>
-                             )}
-                         </CardContent>
-                     </Card>
-                 </div>
-             )}
-        </TabsContent>
-
         <TabsContent value="dashboard" className="space-y-6">
-          <Card className="border-2 border-slate-200">
-             <CardHeader>
-               <CardTitle className="text-lg">Contract Details</CardTitle>
-             </CardHeader>
-             <CardContent className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                <div>
-                   <h4 className="text-sm font-medium text-gray-500 mb-1">SLA Response Time</h4>
-                   <p className="text-lg font-semibold text-gray-900">{contract.sla_response_time_hours ? `${contract.sla_response_time_hours} Hours` : 'N/A'}</p>
-                </div>
-                <div>
-                   <h4 className="text-sm font-medium text-gray-500 mb-1">Billing Model</h4>
-                   <p className="text-lg font-semibold text-gray-900">{contract.billing_model || 'N/A'}</p>
-                </div>
-                <div className="md:col-span-2">
-                   <h4 className="text-sm font-medium text-gray-500 mb-1">Service Coverage</h4>
-                   <p className="text-gray-900">{contract.service_coverage || 'No coverage details provided.'}</p>
-                </div>
-                {contract.notes && (
-                  <div className="md:col-span-2">
-                    <h4 className="text-sm font-medium text-gray-500 mb-1">Notes</h4>
-                    <p className="text-gray-700 whitespace-pre-wrap bg-slate-50 p-3 rounded-lg border">{contract.notes}</p>
-                  </div>
-                )}
-             </CardContent>
-          </Card>
           {/* KPI Cards */}
           <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
             <Card className="bg-blue-50 border-blue-200">
@@ -431,43 +215,6 @@ export default function ContractDetails({ contract, onClose, onEdit }) {
             onSelectJob={() => {}}
             onViewDetails={(job) => window.location.href = createPageUrl('Jobs') + `?jobId=${job.id}`}
           />
-        </TabsContent>
-        
-        <TabsContent value="projects">
-            {projects.length === 0 ? (
-                <div className="text-center py-12 bg-slate-50 rounded-xl border-2 border-dashed border-slate-200">
-                  <Building2 className="w-12 h-12 mx-auto text-slate-300 mb-3" />
-                  <p className="text-slate-500">No projects linked to this contract</p>
-                </div>
-            ) : (
-                <div className="grid gap-4">
-                    {projects.map(project => (
-                         <div 
-                            key={project.id} 
-                            className="bg-white border border-slate-200 rounded-xl p-4 hover:border-[#FAE008] hover:shadow-md transition-all cursor-pointer"
-                            onClick={() => window.location.href = createPageUrl('Projects') + `?projectId=${project.id}`}
-                         >
-                            <div className="flex justify-between items-start">
-                                <div>
-                                    <h3 className="font-semibold text-lg text-gray-900">{project.title}</h3>
-                                    <div className="text-sm text-gray-500 mt-1">
-                                        {project.project_type} • {project.status}
-                                    </div>
-                                </div>
-                                <Badge variant="outline">{project.status}</Badge>
-                            </div>
-                         </div>
-                    ))}
-                </div>
-            )}
-        </TabsContent>
-
-        <TabsContent value="sla">
-            <SLAPerformanceTab contract={contract} jobs={jobs} />
-        </TabsContent>
-
-        <TabsContent value="analytics" className="space-y-6">
-            <ContractAnalyticsTab contract={contract} />
         </TabsContent>
       </Tabs>
     </div>

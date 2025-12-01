@@ -27,64 +27,8 @@ Deno.serve(async (req) => {
             }
 
             project = await base44.asServiceRole.entities.Project.create(projectData);
-
-            // Log creation
-            await base44.asServiceRole.entities.ActivityLog.create({
-                entity_type: 'Project',
-                entity_id: project.id,
-                action: 'create',
-                after_data: project,
-                user_email: user.email,
-                user_name: user.full_name,
-                details: `Created Project: ${project.title}`
-            });
         } else if (action === 'update') {
-            const previousProject = await base44.asServiceRole.entities.Project.get(id);
-            // Auto-populate warranty and completion details if status changes
-            let updateData = { ...data };
-            if (data.status === 'Completed' && previousProject.status !== 'Completed') {
-                const today = new Date().toISOString().split('T')[0];
-                if (!previousProject.completed_date) {
-                    updateData.completed_date = today;
-                }
-                
-                const startDate = previousProject.completed_date || today;
-                if (!previousProject.warranty_start_date) {
-                    updateData.warranty_start_date = startDate;
-                }
-                
-                if (!previousProject.warranty_end_date) {
-                    // Default 12 months
-                    const end = new Date(startDate);
-                    end.setFullYear(end.getFullYear() + 1);
-                    updateData.warranty_end_date = end.toISOString().split('T')[0];
-                }
-                
-                if (previousProject.warranty_status === 'Not Started' || !previousProject.warranty_status) {
-                    updateData.warranty_status = 'In Warranty';
-                }
-                updateData.is_in_warranty = true;
-            } else if (data.status === 'Warranty') {
-                updateData.warranty_status = 'In Warranty';
-                updateData.is_in_warranty = true;
-            } else if (data.warranty_status === 'Warranty Completed') {
-                 updateData.is_in_warranty = false;
-                 updateData.status = 'Completed';
-            }
-
-            project = await base44.asServiceRole.entities.Project.update(id, updateData);
-
-            // Log update
-            await base44.asServiceRole.entities.ActivityLog.create({
-                entity_type: 'Project',
-                entity_id: id,
-                action: 'update',
-                before_data: previousProject,
-                after_data: project,
-                user_email: user.email,
-                user_name: user.full_name,
-                details: `Updated Project: ${project.title}`
-            });
+            project = await base44.asServiceRole.entities.Project.update(id, data);
 
             // Auto-decline quotes if project is lost
             if (data.status === 'Lost') {
@@ -129,39 +73,13 @@ Deno.serve(async (req) => {
             // Since user asked to "Implement logic in backend functions" for auto-linking, 
             // `manageProject` is primarily for that.
             
-            const beforeDelete = await base44.asServiceRole.entities.Project.get(id);
-
             if (data && data.deleted_at) {
                  project = await base44.asServiceRole.entities.Project.update(id, { deleted_at: data.deleted_at });
-                 
-                 // Log soft delete
-                 await base44.asServiceRole.entities.ActivityLog.create({
-                    entity_type: 'Project',
-                    entity_id: id,
-                    action: 'delete',
-                    before_data: beforeDelete,
-                    user_email: user.email,
-                    user_name: user.full_name,
-                    details: `Deleted Project: ${beforeDelete.title}`
-                });
-
             } else {
                  // Hard delete or soft delete?
                  // Frontend sends { deleted_at: ... } usually for soft delete
                  // If action is delete, assume soft delete or follow passed data
                  await base44.asServiceRole.entities.Project.delete(id); 
-                 
-                 // Log hard delete
-                 await base44.asServiceRole.entities.ActivityLog.create({
-                    entity_type: 'Project',
-                    entity_id: id,
-                    action: 'delete',
-                    before_data: beforeDelete,
-                    user_email: user.email,
-                    user_name: user.full_name,
-                    details: `Deleted Project: ${beforeDelete.title}`
-                });
-
                  return Response.json({ success: true });
             }
         } else {

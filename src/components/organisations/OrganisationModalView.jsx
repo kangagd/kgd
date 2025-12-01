@@ -4,9 +4,9 @@ import { Button } from "@/components/ui/button";
 import { MapPin, Phone, Mail, Users } from "lucide-react";
 
 const organisationTypeColors = {
-  "Strata": "bg-purple-100 text-purple-700",
-  "Builder": "bg-blue-100 text-blue-700",
-  "Real Estate": "bg-green-100 text-green-700",
+  "Strata": "bg-blue-100 text-blue-700",
+  "Builder": "bg-green-100 text-green-700",
+  "Real Estate": "bg-purple-100 text-purple-700",
   "Supplier": "bg-amber-100 text-amber-700"
 };
 
@@ -39,9 +39,7 @@ export default function OrganisationModalView({ organisation, customerCount = 0 
 
         <div className="flex items-center gap-2 flex-wrap">
           {organisation.organisation_type && (
-             <Badge className={organisationTypeColors[organisation.organisation_type] || "bg-gray-100 text-gray-700"}>
-               {organisation.organisation_type}
-             </Badge>
+            <OrganisationTypeBadge value={organisation.organisation_type} />
           )}
           {organisation.sp_number && (
             <Badge variant="outline" className="font-medium">

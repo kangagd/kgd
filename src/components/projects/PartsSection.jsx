@@ -93,11 +93,6 @@ export default function PartsSection({ projectId, autoExpand = false }) {
     }
   };
 
-  const handleCreateLogisticsJob = (part) => {
-      // Pre-fill job creation with logistics type
-      window.location.href = `/jobs?action=create&projectId=${projectId}&partId=${part.id}&jobCategory=Logistics`;
-  };
-
   // Quick Action: Mark Delivered
   const markDelivered = (e, part) => {
     e.stopPropagation();
@@ -127,25 +122,14 @@ export default function PartsSection({ projectId, autoExpand = false }) {
     <div className="space-y-4">
       <div className="flex items-center justify-between">
         <h3 className="text-[16px] font-semibold text-[#111827]">Parts & Materials</h3>
-        <div className="flex gap-2">
-            <Button
-                variant="outline"
-                size="sm"
-                onClick={() => window.location.href = `/jobs?action=create&projectId=${projectId}&jobCategory=Logistics`}
-                className="hidden md:flex"
-            >
-                <Truck className="w-4 h-4 mr-2" />
-                Create Logistics Job
-            </Button>
-            <Button
-            onClick={handleAddPart}
-            size="sm"
-            className="bg-[#FAE008] text-[#111827] hover:bg-[#E5CF07] font-semibold"
-            >
-            <Plus className="w-4 h-4 mr-1" />
-            Add Part
-            </Button>
-        </div>
+        <Button
+          onClick={handleAddPart}
+          size="sm"
+          className="bg-[#FAE008] text-[#111827] hover:bg-[#E5CF07] font-semibold"
+        >
+          <Plus className="w-4 h-4 mr-1" />
+          Add Part
+        </Button>
       </div>
 
       {parts.length === 0 ? (
@@ -239,17 +223,10 @@ export default function PartsSection({ projectId, autoExpand = false }) {
                       </div>
                     </div>
 
-                    {/* Col 4: Supplier & Details */}
+                    {/* Col 4: Supplier */}
                     <div className="col-span-6 md:col-span-2 text-sm text-slate-600">
-                      <div className="font-medium text-slate-900">{part.supplier_name || "Unknown Supplier"}</div>
-                      <div className="text-xs text-slate-500 mt-0.5">{part.source_type}</div>
-                      {(part.order_reference || part.order_date) && (
-                          <div className="text-[10px] text-slate-400 mt-1">
-                              {part.order_reference && <span>Ref: {part.order_reference}</span>}
-                              {part.order_reference && part.order_date && <span> • </span>}
-                              {part.order_date && <span>{part.order_date}</span>}
-                          </div>
-                      )}
+                      <div className="font-medium">{part.supplier_name || "Unknown Supplier"}</div>
+                      <div className="text-xs opacity-80">{part.source_type?.split(' – ')[0]}</div>
                     </div>
 
                     {/* Col 5: Logistics Chips */}
@@ -257,33 +234,13 @@ export default function PartsSection({ projectId, autoExpand = false }) {
                       <div className="flex flex-wrap gap-1">
                         {(part.linked_logistics_jobs || []).length > 0 ? (
                           part.linked_logistics_jobs.map((jobId, idx) => (
-                            <a 
-                                key={jobId} 
-                                href={`/jobs?jobId=${jobId}`}
-                                onClick={(e) => e.stopPropagation()}
-                                className="no-underline"
-                            >
-                                <Badge variant="secondary" className="text-[10px] px-1.5 h-5 bg-blue-50 text-blue-700 border-blue-200 hover:bg-blue-100 cursor-pointer">
-                                <Truck className="w-2 h-2 mr-1" />
-                                Job
-                                </Badge>
-                            </a>
+                            <Badge key={jobId} variant="secondary" className="text-[10px] px-1.5 h-5 bg-slate-100 text-slate-600 border-slate-200">
+                              <LinkIcon className="w-2 h-2 mr-1" />
+                              Job {idx + 1}
+                            </Badge>
                           ))
                         ) : (
-                          <div className="flex flex-col items-start gap-1">
-                              <span className="text-xs text-slate-400 italic">No linked jobs</span>
-                              <Button 
-                                variant="link" 
-                                size="sm" 
-                                className="h-auto p-0 text-[10px] text-blue-600"
-                                onClick={(e) => {
-                                    e.stopPropagation();
-                                    handleCreateLogisticsJob(part);
-                                }}
-                              >
-                                  + Create Job
-                              </Button>
-                          </div>
+                          <span className="text-xs text-slate-400 italic">No linked jobs</span>
                         )}
                       </div>
                     </div>

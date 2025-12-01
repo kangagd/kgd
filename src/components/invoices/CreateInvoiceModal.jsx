@@ -123,10 +123,7 @@ export default function CreateInvoiceModal({
         amount: parseFloat(item.amount),
         discount: parseFloat(item.discount) || 0
       })),
-      total: calculateTotal(),
-      // Pass context
-      projectId: data.id && type === 'project' ? data.id : null,
-      jobId: data.id && type === 'job' ? data.id : null
+      total: calculateTotal()
     });
   };
 

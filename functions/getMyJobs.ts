@@ -4,107 +4,17 @@ Deno.serve(async (req) => {
     try {
         const base44 = createClientFromRequest(req);
         const user = await base44.auth.me();
-        
         if (!user) return Response.json({ error: 'Unauthorized' }, { status: 401 });
 
-        const { 
-            page = 1, 
-            limit = 50, 
-            search, 
-            status, 
-            technician, 
-            date_from, 
-            date_to,
-            view_mode = 'list',
-            job_type
-        } = await req.json().catch(() => ({}));
+        // Fetch all jobs as service role to bypass RLS restrictions
+        // Removed limit param to ensure default behavior if param is causing issues
+        const allJobs = await base44.asServiceRole.entities.Job.list(); 
 
-        const query = {
-            deleted_at: null,
-            status: { $ne: "Cancelled" }
-        };
+        // Filter out deleted and cancelled jobs on the backend
+        // This ensures we don't send unnecessary data and fixes the "duplication" issue (deleted vs active)
+        const activeJobs = allJobs.filter(job => !job.deleted_at && job.status !== "Cancelled");
 
-        // Status Filter
-        if (status && status !== 'all') {
-             if (status === 'Logistics') {
-                 query.$or = [
-                     { job_category: 'Logistics' },
-                     { job_type_name: { $regex: 'Logistics', $options: 'i' } }
-                 ];
-             } else {
-                 query.status = status;
-             }
-        }
-
-        // Technician Filter
-        if (technician && technician !== 'all') {
-            query.assigned_to = technician;
-        }
-
-        // Job Type Filter
-        if (job_type && job_type !== 'all') {
-            if (job_type === 'Standard Only') {
-                query.job_category = 'Standard';
-            } else if (job_type === 'Logistics Only') {
-                query.job_category = 'Logistics';
-            } else {
-                query.job_type_id = job_type;
-            }
-        }
-
-        // Date Range Filter
-        if (date_from || date_to) {
-            query.scheduled_date = {};
-            if (date_from) query.scheduled_date.$gte = date_from;
-            if (date_to) query.scheduled_date.$lte = date_to;
-        }
-
-        // Search Filter
-        if (search) {
-            const searchConditions = [
-                { customer_name: { $regex: search, $options: 'i' } },
-                { address: { $regex: search, $options: 'i' } },
-                { project_name: { $regex: search, $options: 'i' } }
-            ];
-            
-            // If search looks like a number, try exact job_number match
-            if (!isNaN(search)) {
-                searchConditions.push({ job_number: Number(search) });
-            }
-
-            if (query.$or) {
-                // If we already have an $or (from Logistics), we need to combine with $and
-                query.$and = [
-                    { $or: query.$or },
-                    { $or: searchConditions }
-                ];
-                delete query.$or;
-            } else {
-                query.$or = searchConditions;
-            }
-        }
-
-        // Pagination
-        // For calendar view, we probably want ALL jobs in the range, so we might increase limit or ignore pagination
-        const finalLimit = view_mode === 'calendar' ? 1000 : parseInt(limit);
-        const skip = (parseInt(page) - 1) * finalLimit;
-
-        // Sort
-        // Default sort
-        const sort = '-scheduled_date';
-
-        const jobs = await base44.asServiceRole.entities.Job.filter(query, sort, finalLimit, skip);
-        
-        // Get total count for pagination if in list mode (optional, might be slow, Base44 doesn't expose count() easily on filtered queries without fetching? 
-        // Actually we can't easily get count without fetching all or separate count query if supported.
-        // For now, we just return data. Frontend can handle "Load More" or "Next Page" based on if we got full limit.
-        
-        return Response.json({
-            data: jobs,
-            page: parseInt(page),
-            limit: finalLimit,
-            hasMore: jobs.length === finalLimit
-        });
+        return Response.json(activeJobs);
 
     } catch (error) {
         return Response.json({ error: error.message }, { status: 500 });

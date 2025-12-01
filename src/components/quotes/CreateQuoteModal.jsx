@@ -83,7 +83,7 @@ export default function CreateQuoteModal({
 
     setIsCreating(true);
     try {
-      const response = await base44.functions.invoke('createPandaDocQuoteFromProjectOrJob', {
+      const response = await base44.functions.invoke('createPandaDocQuote', {
         projectId: project?.id || null,
         jobId: job?.id || null,
         templateId: selectedTemplate,

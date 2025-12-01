@@ -56,19 +56,6 @@ Deno.serve(async (req) => {
             duration_hours: safeDurationHours
         });
 
-        // Notify Admins
-        const admins = await base44.asServiceRole.entities.User.filter({ role: 'admin' });
-        for (const admin of admins) {
-            await base44.asServiceRole.functions.invoke('createNotification', {
-                userId: admin.id,
-                title: "Technician Check-Out",
-                message: `${user.full_name} checked out of Job #${job.job_number}`,
-                entityType: "Job",
-                entityId: jobId,
-                priority: "normal"
-            });
-        }
-
         // Create JobSummary
         let scheduledDatetime = null;
         if (job.scheduled_date) {

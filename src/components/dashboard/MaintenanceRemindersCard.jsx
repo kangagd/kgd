@@ -29,17 +29,17 @@ export default function MaintenanceRemindersCard({ user }) {
     if (r.status === 'Completed' || r.status === 'Skipped') return false;
     if (!r.due_date) return false;
     
-    // Show only if due date is within the next 14 days (or overdue)
+    // Show only if due date is within the next 7 days (or overdue)
     const dueDate = parseISO(r.due_date);
-    const fourteenDaysFromNow = addDays(new Date(), 14);
-    return isBefore(dueDate, fourteenDaysFromNow);
+    const sevenDaysFromNow = addDays(new Date(), 7);
+    return isBefore(dueDate, sevenDaysFromNow);
   }).slice(0, 5);
 
   const overdueCount = activeReminders.filter(r => 
     r.due_date && isPast(parseISO(r.due_date)) && r.status === 'Pending'
   ).length;
 
-  if (user?.role !== 'admin' || activeReminders.length === 0) {
+  if (user?.role !== 'admin') {
     return null;
   }
 

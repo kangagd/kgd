@@ -19,9 +19,16 @@ const jobTypeColorsBg = [
   "bg-pink-50", "bg-rose-50", "bg-lime-50",
 ];
 
-const getJobTypeColorInfo = (jobTypeId, jobTypes) => {
-  const jobType = jobTypes.find(jt => jt.id === jobTypeId);
-  return jobType ? { color: jobType.color, name: jobType.name, isLogistics: jobType.category === 'Logistics' } : { color: '#64748B', name: 'Unknown', isLogistics: false };
+const getJobTypeColor = (jobTypeName, allJobTypes) => {
+  if (!jobTypeName) return "bg-slate-500";
+  const index = allJobTypes.indexOf(jobTypeName);
+  return jobTypeColors[index % jobTypeColors.length];
+};
+
+const getJobTypeBgColor = (jobTypeName, allJobTypes) => {
+  if (!jobTypeName) return "bg-slate-50";
+  const index = allJobTypes.indexOf(jobTypeName);
+  return jobTypeColorsBg[index % jobTypeColorsBg.length];
 };
 
 const getInitials = (name) => {
@@ -39,7 +46,7 @@ const getAvatarColor = (name) => {
   return avatarColors[index];
 };
 
-export default function MonthView({ jobs, currentDate, onJobClick, onQuickBook, jobTypes = [] }) {
+export default function MonthView({ jobs, currentDate, onJobClick, onQuickBook }) {
   const [user, setUser] = useState(null);
   const [selectedDay, setSelectedDay] = useState(null);
   const compactMode = true;
@@ -187,21 +194,11 @@ export default function MonthView({ jobs, currentDate, onJobClick, onQuickBook, 
                                 )}
                               </div>
                               
-                              {job.job_type_id && (() => {
-                                const typeInfo = getJobTypeColorInfo(job.job_type_id, jobTypes);
-                                return (
-                                  <Badge 
-                                    className="border-0 font-semibold text-[8px] px-1.5 py-0 rounded truncate w-full justify-start"
-                                    style={{ 
-                                      backgroundColor: `${typeInfo.color}20`, 
-                                      color: typeInfo.color 
-                                    }}
-                                  >
-                                    <div className="w-1 h-1 rounded-full mr-1 flex-shrink-0" style={{ backgroundColor: typeInfo.color }} />
-                                    <span className="truncate">{typeInfo.name}</span>
-                                  </Badge>
-                                );
-                              })()}
+                              {job.job_type_name && (
+                                <Badge className="bg-[#EDE9FE] text-[#6D28D9] hover:bg-[#EDE9FE] border-0 font-semibold text-[8px] px-1.5 py-0 rounded truncate w-full justify-start">
+                                  {job.job_type_name}
+                                </Badge>
+                              )}
                             </div>
                           </div>
                         );

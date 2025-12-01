@@ -4,29 +4,34 @@ Deno.serve(async (req) => {
   try {
     const base44 = createClientFromRequest(req);
     
+    // This can be called with service role for system notifications
+    // or with user auth for user-triggered notifications
     const body = await req.json();
     
     const {
+      userEmail,
       userId,
       title,
-      message,
-      entityType,
-      entityId,
-      priority = 'normal'
+      body: notificationBody,
+      type = 'info',
+      relatedEntityType,
+      relatedEntityId,
+      createdBy
     } = body;
 
-    if (!userId || !title || !message) {
-      return Response.json({ error: 'userId, title, and message are required' }, { status: 400 });
+    if (!userEmail || !title) {
+      return Response.json({ error: 'userEmail and title are required' }, { status: 400 });
     }
 
     // Create the notification using service role
     const notification = await base44.asServiceRole.entities.Notification.create({
-      user_id: userId,
+      user_id: userId || null,
+      user_email: userEmail,
       title,
-      message,
-      entity_type: entityType || "Other",
-      entity_id: entityId || null,
-      priority,
+      body: notificationBody || null,
+      type,
+      related_entity_type: relatedEntityType || null,
+      related_entity_id: relatedEntityId || null,
       is_read: false,
       read_at: null
     });

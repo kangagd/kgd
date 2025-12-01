@@ -19,11 +19,12 @@ import {
 import { Label } from "@/components/ui/label";
 import ProjectForm from "../components/projects/ProjectForm";
 import ProjectDetails from "../components/projects/ProjectDetails";
-import ProjectCard from "../components/projects/ProjectCard";
 import EntityModal from "../components/common/EntityModal.jsx";
 import ProjectModalView from "../components/projects/ProjectModalView";
 import { createPageUrl } from "@/utils";
 import { DuplicateBadge } from "../components/common/DuplicateWarningCard";
+
+
 
 export default function Projects() {
   const [user, setUser] = useState(null);
@@ -39,7 +40,6 @@ export default function Projects() {
   const [editingProject, setEditingProject] = useState(null);
   const [modalProject, setModalProject] = useState(null);
   const [showDuplicatesOnly, setShowDuplicatesOnly] = useState(false);
-  const [page, setPage] = useState(1);
   const queryClient = useQueryClient();
 
   useEffect(() => {
@@ -60,29 +60,13 @@ export default function Projects() {
   const isViewer = user?.role === 'viewer';
   const canCreateProjects = isAdminOrManager;
 
-  const { data: projectsResponse, isLoading } = useQuery({
-    queryKey: ['projects', page, searchTerm, stageFilter, startDate, endDate],
-    queryFn: async () => {
-        const response = await base44.functions.invoke('getProjects', {
-            page,
-            limit: 50,
-            search: searchTerm,
-            status: stageFilter,
-            date_from: startDate,
-            date_to: endDate
-        });
-        return response.data;
-    },
-    keepPreviousData: true
+  const { data: allProjects = [], isLoading } = useQuery({
+    queryKey: ['projects'],
+    queryFn: () => base44.entities.Project.list('-created_date'),
+    refetchInterval: 15000, // Refetch every 15 seconds
   });
 
-  const projects = projectsResponse?.data || [];
-  const hasMore = projectsResponse?.hasMore;
-
-  // Reset page when filters change
-  useEffect(() => {
-    setPage(1);
-  }, [searchTerm, stageFilter, startDate, endDate]);
+  const projects = allProjects.filter(p => !p.deleted_at && p.status !== "Lost");
 
   const { data: allJobs = [], isLoading: isJobsLoading } = useQuery({
     queryKey: ['allJobs'],
@@ -103,33 +87,12 @@ export default function Projects() {
       if (res.data?.error) throw new Error(res.data.error);
       return res.data.project;
     },
-    onSuccess: async (newProject) => {
+    onSuccess: (newProject) => {
       queryClient.invalidateQueries({ queryKey: ['projects'] });
       setEditingProject(null);
       setShowForm(false);
-      
-      // Check for fromEmail param
-      const params = new URLSearchParams(window.location.search);
-      const fromEmail = params.get('fromEmail');
-      
-      if (fromEmail) {
-          // Trigger AI Context Extraction
-          try {
-              // We don't await this deeply to block UI, but since we want to show modal on next page...
-              // If we want the data to be there when modal shows, we should probably wait.
-              // Or rely on the modal fetching it or being passed in URL.
-              // Let's wait for it to ensure data is populated.
-              // We can show a toast "Analyzing email..." if it takes time.
-              // Actually, for better UX, let's fire and forget, but pass a param that tells ProjectDetails to poll/check?
-              // Or just wait. LLM calls can be 5-10s.
-              await base44.functions.invoke('aiProjectContextFromEmail', { email_id: fromEmail, project_id: newProject.id });
-          } catch (e) {
-              console.error("Failed to extract AI context", e);
-          }
-          window.location.href = `${createPageUrl("Projects")}?projectId=${newProject.id}&aiContext=true`;
-      } else {
-          window.location.href = `${createPageUrl("Projects")}?projectId=${newProject.id}`;
-      }
+      // Navigate to the new project page
+      window.location.href = `${createPageUrl("Projects")}?projectId=${newProject.id}`;
     }
   });
 
@@ -213,23 +176,28 @@ export default function Projects() {
     window.location.href = `${createPageUrl("Projects")}?projectId=${project.id}`;
   };
 
-  // Server side filtering used. 
-  // Client side filtering for things not on backend yet (parts status, duplicates)
   const filteredProjects = projects
     .filter((project) => {
-        // Basic filters are handled on backend.
-        // Parts status and Duplicates are handled here for now as they are more complex or rare
-        // Note: If backend limits to 50, client filtering only operates on those 50. 
-        // Ideally move all to backend, but "Duplicates" and "Parts" are specific.
-        // For now, this is a trade-off.
-
+      const matchesSearch = 
+        project.title?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        project.customer_name?.toLowerCase().includes(searchTerm.toLowerCase());
+      
+      const matchesStage = stageFilter === "all" || project.status === stageFilter;
+      
       const projectParts = allParts.filter(p => p.project_id === project.id);
       const matchesPartsStatus = partsStatusFilter === "all" || 
         projectParts.some(p => p.status === partsStatusFilter);
       
+      let matchesDateRange = true;
+      if (startDate || endDate) {
+        const projectDate = new Date(project.created_date);
+        if (startDate && new Date(startDate) > projectDate) matchesDateRange = false;
+        if (endDate && new Date(endDate) < projectDate) matchesDateRange = false;
+      }
+
       const matchesDuplicateFilter = !showDuplicatesOnly || project.is_potential_duplicate;
       
-      return matchesPartsStatus && matchesDuplicateFilter;
+      return matchesSearch && matchesStage && matchesPartsStatus && matchesDateRange && matchesDuplicateFilter;
     })
     .sort((a, b) => {
       if (sortBy === "created_date") {
@@ -243,6 +211,28 @@ export default function Projects() {
 
   const getJobCount = (projectId) => {
     return allJobs.filter(j => j.project_id === projectId && !j.deleted_at).length;
+  };
+
+  const getNextJob = (projectId) => {
+    const projectJobs = allJobs.filter(j => j.project_id === projectId && !j.deleted_at && j.scheduled_date);
+    const futureJobs = projectJobs.filter(j => new Date(j.scheduled_date) >= new Date());
+    if (futureJobs.length === 0) return null;
+    return futureJobs.sort((a, b) => new Date(a.scheduled_date) - new Date(b.scheduled_date))[0];
+  };
+
+  const extractSuburb = (address) => {
+    if (!address) return null;
+    const parts = address.split(',').map(p => p.trim());
+    return parts.length > 1 ? parts[parts.length - 2] : null;
+  };
+
+  const buildScopeSummary = (project) => {
+    if (!project.doors || project.doors.length === 0) return null;
+    const doorCount = project.doors.length;
+    const firstDoor = project.doors[0];
+    const doorType = firstDoor.type || 'doors';
+    const dimensions = firstDoor.height && firstDoor.width ? `${firstDoor.height} x ${firstDoor.width}` : '';
+    return `${doorCount}x ${doorType}${dimensions ? ` • ${dimensions}` : ''}`;
   };
 
   if (showForm) {
@@ -289,7 +279,7 @@ export default function Projects() {
           {canCreateProjects && (
             <Button
               onClick={() => setShowForm(true)}
-              className="w-full md:w-auto shadow-sm hover:shadow-md rounded-xl"
+              className="bg-[#FAE008] text-[#111827] hover:bg-[#E5CF07] font-semibold shadow-sm hover:shadow-md transition w-full md:w-auto h-10 px-4 text-sm rounded-xl"
             >
               <Plus className="w-4 h-4 mr-2" />
               New Project
@@ -317,18 +307,18 @@ export default function Projects() {
           </div>
 
           <div className="overflow-x-auto -mx-4 px-4 md:mx-0 md:px-0 scrollbar-hide">
-            <Tabs value={stageFilter} onValueChange={setStageFilter} className="w-full">
-              <TabsList className="w-full justify-start min-w-max md:min-w-0">
-                <TabsTrigger value="all" className="flex-1 whitespace-nowrap">All Projects</TabsTrigger>
-                <TabsTrigger value="Lead" className="flex-1 whitespace-nowrap">Lead</TabsTrigger>
-                <TabsTrigger value="Initial Site Visit" className="flex-1 whitespace-nowrap">Initial Site Visit</TabsTrigger>
-                <TabsTrigger value="Quote Sent" className="flex-1 whitespace-nowrap">Quote Sent</TabsTrigger>
-                <TabsTrigger value="Quote Approved" className="flex-1 whitespace-nowrap">Quote Approved</TabsTrigger>
-                <TabsTrigger value="Final Measure" className="flex-1 whitespace-nowrap">Final Measure</TabsTrigger>
-                <TabsTrigger value="Parts Ordered" className="flex-1 whitespace-nowrap">Parts Ordered</TabsTrigger>
-                <TabsTrigger value="Scheduled" className="flex-1 whitespace-nowrap">Scheduled</TabsTrigger>
-                <TabsTrigger value="Completed" className="flex-1 whitespace-nowrap">Completed</TabsTrigger>
-                <TabsTrigger value="Warranty" className="flex-1 whitespace-nowrap">Warranty</TabsTrigger>
+            <Tabs value={stageFilter} onValueChange={setStageFilter}>
+              <TabsList className="inline-flex w-auto justify-start">
+                <TabsTrigger value="all" className="whitespace-nowrap flex-shrink-0">All Projects</TabsTrigger>
+                <TabsTrigger value="Lead" className="whitespace-nowrap flex-shrink-0">Lead</TabsTrigger>
+                <TabsTrigger value="Initial Site Visit" className="whitespace-nowrap flex-shrink-0">Initial Site Visit</TabsTrigger>
+                <TabsTrigger value="Quote Sent" className="whitespace-nowrap flex-shrink-0">Quote Sent</TabsTrigger>
+                <TabsTrigger value="Quote Approved" className="whitespace-nowrap flex-shrink-0">Quote Approved</TabsTrigger>
+                <TabsTrigger value="Final Measure" className="whitespace-nowrap flex-shrink-0">Final Measure</TabsTrigger>
+                <TabsTrigger value="Parts Ordered" className="whitespace-nowrap flex-shrink-0">Parts Ordered</TabsTrigger>
+                <TabsTrigger value="Scheduled" className="whitespace-nowrap flex-shrink-0">Scheduled</TabsTrigger>
+                <TabsTrigger value="Completed" className="whitespace-nowrap flex-shrink-0">Completed</TabsTrigger>
+                <TabsTrigger value="Warranty" className="whitespace-nowrap flex-shrink-0">Warranty</TabsTrigger>
               </TabsList>
             </Tabs>
           </div>
@@ -440,39 +430,100 @@ export default function Projects() {
         {!isLoading && filteredProjects.length === 0 && (
           <div className="text-center py-12 bg-white rounded-2xl border-2 border-[hsl(32,15%,88%)]">
             <p className="text-[14px] text-[#4B5563] leading-[1.4] mb-4">No projects found</p>
-            <Button onClick={() => setShowForm(true)} className="font-semibold text-[14px] leading-[1.4]">
+            <Button onClick={() => setShowForm(true)} className="bg-[#fae008] text-[#111827] font-semibold text-[14px] leading-[1.4]">
               Create First Project
             </Button>
           </div>
         )}
 
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          {filteredProjects.map((project) => (
-            <ProjectCard 
-              key={project.id} 
-              project={{ ...project, jobs: allJobs.filter(j => j.project_id === project.id && !j.deleted_at) }}
-              onClick={() => setSelectedProject(project)}
-              onViewDetails={(p) => setModalProject(p)}
-            />
-          ))}
-        </div>
+        <div className="grid gap-4">
+          {filteredProjects.map((project) => {
+            const jobCount = getJobCount(project.id);
+            const nextJob = getNextJob(project.id);
+            const suburb = extractSuburb(project.address);
+            const scopeSummary = buildScopeSummary(project);
 
-        <div className="flex justify-center gap-4 mt-6 pb-8">
-            <Button 
-                variant="outline" 
-                onClick={() => setPage(p => Math.max(1, p - 1))}
-                disabled={page === 1 || isLoading}
-            >
-                Previous
-            </Button>
-            <span className="flex items-center text-sm text-gray-600">Page {page}</span>
-            <Button 
-                variant="outline" 
-                onClick={() => setPage(p => p + 1)}
-                disabled={!hasMore || isLoading}
-            >
-                Next
-            </Button>
+            return (
+              <Card
+                key={project.id}
+                className="hover:shadow-lg transition-all duration-200 cursor-pointer hover:border-[#FAE008] border border-[#E5E7EB] rounded-xl relative"
+                onClick={() => {
+                  setSelectedProject(project);
+                  window.history.pushState({}, '', `${createPageUrl("Projects")}?projectId=${project.id}`);
+                }}
+              >
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  className="absolute top-2 right-2 h-8 w-8 rounded-lg hover:bg-[#F3F4F6] z-10"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    setModalProject(project);
+                  }}
+                >
+                  <Eye className="w-4 h-4 text-[#6B7280]" />
+                </Button>
+                <CardContent className="p-4">
+                  {/* Top row */}
+                  <div className="mb-3">
+                    <div className="flex items-center gap-2 mb-2 pr-8">
+                      <h3 className="text-[18px] font-semibold text-[#111827] leading-[1.2]">{project.title}</h3>
+                      <DuplicateBadge record={project} size="sm" />
+                    </div>
+                    <div className="flex items-center gap-2">
+                      {project.project_type && (
+                        <ProjectTypeBadge value={project.project_type} />
+                      )}
+                      <ProjectStatusBadge value={project.status} />
+                    </div>
+                    </div>
+
+                  {/* Second row */}
+                  <div className="flex items-center gap-4 mb-3 text-[#4B5563]">
+                    <div className="flex items-center gap-1.5">
+                      <User className="w-4 h-4" />
+                      <span className="text-[14px] leading-[1.4]">{project.customer_name}</span>
+                    </div>
+                    {suburb && (
+                      <div className="flex items-center gap-1.5">
+                        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
+                        </svg>
+                        <span className="text-[14px] leading-[1.4]">{suburb}</span>
+                      </div>
+                    )}
+                  </div>
+
+                  {/* Third row */}
+                  {project.stage && (
+                    <div className="flex items-center gap-3 mb-3">
+                      <Badge variant="outline" className="font-medium text-[12px] leading-[1.35] border-[#E5E7EB]">
+                        {project.stage.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase())}
+                      </Badge>
+                    </div>
+                  )}
+
+                  {/* Bottom row */}
+                  <div className="flex items-center justify-between text-[14px] leading-[1.4] pt-3 border-t border-[#E5E7EB]">
+                    <span className="text-[#4B5563] font-medium">
+                      Jobs: <span className="text-[#111827] font-semibold">{isJobsLoading ? '...' : jobCount}</span>
+                    </span>
+                    {nextJob && (
+                      <div className="text-[#4B5563]">
+                        <span className="font-medium">Next: </span>
+                        <span className="text-[#111827] font-medium">
+                          {new Date(nextJob.scheduled_date).toLocaleDateString('en-AU', { day: 'numeric', month: 'short' })}
+                          {nextJob.scheduled_time && ` · ${nextJob.scheduled_time}`}
+                          {nextJob.job_type_name && ` · ${nextJob.job_type_name}`}
+                        </span>
+                      </div>
+                    )}
+                  </div>
+                </CardContent>
+              </Card>
+            );
+          })}
         </div>
 
         <EntityModal

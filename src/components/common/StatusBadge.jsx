@@ -13,7 +13,7 @@ const BADGE_VARIANTS = {
   
   // Project Statuses
   projectStatus: {
-    "Lead": "bg-[#FAE008] text-[#111827] hover:bg-[#E5CF07]",
+    "Lead": "bg-slate-100 text-slate-700 hover:bg-slate-200",
     "Initial Site Visit": "bg-blue-100 text-blue-700 hover:bg-blue-200",
     "Quote Sent": "bg-purple-100 text-purple-700 hover:bg-purple-200",
     "Quote Approved": "bg-indigo-100 text-indigo-700 hover:bg-indigo-200",
@@ -69,14 +69,6 @@ const BADGE_VARIANTS = {
     "Pending": "bg-amber-100 text-amber-700 hover:bg-amber-200",
     "Paid": "bg-emerald-100 text-emerald-700 hover:bg-emerald-200",
     "Overdue": "bg-red-100 text-red-700 hover:bg-red-200",
-  },
-
-  // Project Financial Statuses
-  financialStatus: {
-    "50% payment made": "bg-yellow-100 text-yellow-800 hover:bg-yellow-200",
-    "30% payment made (install)": "bg-orange-100 text-orange-800 hover:bg-orange-200",
-    "Balance paid in full": "bg-green-100 text-green-800 hover:bg-green-200",
-    "No payments": "bg-slate-100 text-slate-700 hover:bg-slate-200",
   },
   
   // Email Priority
@@ -176,18 +168,7 @@ export function ProjectTypeBadge({ value, ...props }) {
   return <StatusBadge type="projectType" value={value} {...props} />;
 }
 
-export function JobTypeBadge({ value, color, ...props }) {
-  if (color) {
-    return (
-      <span
-        className="inline-flex items-center rounded-lg px-2.5 py-0.5 text-xs font-medium transition-colors border-0 shadow-none"
-        style={{ backgroundColor: `${color}20`, color: color }}
-        {...props}
-      >
-        {value}
-      </span>
-    );
-  }
+export function JobTypeBadge({ value, ...props }) {
   return <StatusBadge type="jobType" value={value} {...props} />;
 }
 
@@ -197,10 +178,6 @@ export function JobStatusBadge({ value, ...props }) {
 
 export function PaymentStatusBadge({ value, ...props }) {
   return <StatusBadge type="paymentStatus" value={value} {...props} />;
-}
-
-export function FinancialStatusBadge({ value, ...props }) {
-  return <StatusBadge type="financialStatus" value={value} {...props} />;
 }
 
 export function EmailPriorityBadge({ value, ...props }) {

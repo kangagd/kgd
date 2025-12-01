@@ -6,9 +6,7 @@ import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Switch } from "@/components/ui/switch";
 import { Badge } from "@/components/ui/badge";
-import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
-import { User, Mail, Phone, Shield, MapPin, X, Plus, TrendingUp, FileText } from "lucide-react";
-import TechnicianKPICards from "./TechnicianKPICards";
+import { User, Mail, Phone, Shield, MapPin, X, Plus } from "lucide-react";
 
 export default function UserEditModal({ user, open, onClose, onSave, isSaving }) {
   const [formData, setFormData] = useState({
@@ -79,24 +77,11 @@ export default function UserEditModal({ user, open, onClose, onSave, isSaving })
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2 text-[18px] font-semibold text-[#111827]">
             <User className="w-5 h-5 text-[#FAE008]" />
-            {user?.full_name}
+            Edit Team Member
           </DialogTitle>
         </DialogHeader>
 
-        <Tabs defaultValue="details" className="w-full">
-            <TabsList className="grid w-full grid-cols-2">
-                <TabsTrigger value="details">
-                    <FileText className="w-4 h-4 mr-2" />
-                    Details
-                </TabsTrigger>
-                <TabsTrigger value="performance" disabled={!formData.is_field_technician}>
-                    <TrendingUp className="w-4 h-4 mr-2" />
-                    Performance
-                </TabsTrigger>
-            </TabsList>
-
-            <TabsContent value="details">
-                <form onSubmit={handleSubmit} className="space-y-5 py-4">
+        <form onSubmit={handleSubmit} className="space-y-5 py-4">
           <div className="space-y-2">
             <Label htmlFor="full_name">Full Name</Label>
             <Input
@@ -268,31 +253,19 @@ export default function UserEditModal({ user, open, onClose, onSave, isSaving })
             </Select>
           </div>
 
-                  <DialogFooter className="pt-4">
-                    <Button type="button" variant="outline" onClick={onClose}>
-                      Cancel
-                    </Button>
-                    <Button 
-                      type="submit" 
-                      disabled={isSaving}
-                      className="bg-[#FAE008] hover:bg-[#E5CF07] text-[#111827]"
-                    >
-                      {isSaving ? "Saving..." : "Save Changes"}
-                    </Button>
-                  </DialogFooter>
-                </form>
-            </TabsContent>
-
-            <TabsContent value="performance" className="py-4">
-                {user && formData.is_field_technician ? (
-                    <TechnicianKPICards user={user} />
-                ) : (
-                    <div className="text-center py-8 text-gray-500">
-                        This user is not a field technician.
-                    </div>
-                )}
-            </TabsContent>
-        </Tabs>
+          <DialogFooter className="pt-4">
+            <Button type="button" variant="outline" onClick={onClose}>
+              Cancel
+            </Button>
+            <Button 
+              type="submit" 
+              disabled={isSaving}
+              className="bg-[#FAE008] hover:bg-[#E5CF07] text-[#111827]"
+            >
+              {isSaving ? "Saving..." : "Save Changes"}
+            </Button>
+          </DialogFooter>
+        </form>
       </DialogContent>
     </Dialog>
   );

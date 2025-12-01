@@ -26,7 +26,6 @@ export default function Jobs() {
   const [searchParams, setSearchParams] = useSearchParams();
   const [searchTerm, setSearchTerm] = useState("");
   const [statusFilter, setStatusFilter] = useState("all");
-  const [jobTypeFilter, setJobTypeFilter] = useState("all");
   const [technicianFilter, setTechnicianFilter] = useState("all");
   const [dateFrom, setDateFrom] = useState("");
   const [dateTo, setDateTo] = useState("");
@@ -37,14 +36,11 @@ export default function Jobs() {
   const [editingJob, setEditingJob] = useState(null);
   const [preselectedCustomerId, setPreselectedCustomerId] = useState(null);
   const [preselectedProjectId, setPreselectedProjectId] = useState(null);
-  const [preselectedPartId, setPreselectedPartId] = useState(null);
-  const [preselectedJobCategory, setPreselectedJobCategory] = useState(null);
   const [user, setUser] = useState(null);
   const [viewMode, setViewMode] = useState("list");
   const [calendarDate, setCalendarDate] = useState(new Date());
   const [modalJob, setModalJob] = useState(null);
   const [showFilters, setShowFilters] = useState(false);
-  const [page, setPage] = useState(1);
   const queryClient = useQueryClient();
 
   useEffect(() => {
@@ -59,63 +55,31 @@ export default function Jobs() {
     loadUser();
   }, []);
 
-  const { data: jobsResponse, isLoading, refetch } = useQuery({
-    queryKey: ['allJobs', page, searchTerm, statusFilter, jobTypeFilter, technicianFilter, dateFrom, dateTo, viewMode, calendarDate],
+  const { data: jobs = [], isLoading, refetch } = useQuery({
+    queryKey: ['allJobs'],
     queryFn: async () => {
       try {
-        let finalDateFrom = dateFrom;
-        let finalDateTo = dateTo;
+        console.log('[Jobs Debug] Fetching jobs...');
+        // Use backend function to fetch jobs with robust permission handling
+        const response = await base44.functions.invoke('getMyJobs');
+        const allJobs = response.data || [];
+        console.log('[Jobs Debug] ✅ Total jobs fetched:', allJobs.length);
+        console.log('[Jobs Debug] All jobs:', allJobs);
 
-        if (viewMode === 'calendar') {
-           const start = new Date(calendarDate);
-           start.setDate(start.getDate() - 45);
-           const end = new Date(calendarDate);
-           end.setDate(end.getDate() + 45);
-           finalDateFrom = start.toISOString().split('T')[0];
-           finalDateTo = end.toISOString().split('T')[0];
-        }
+        // Filter out deleted and cancelled jobs in the frontend
+        const activeJobs = allJobs.filter(job => !job.deleted_at && job.status !== "Cancelled");
+        console.log('[Jobs Debug] Active jobs (not deleted/cancelled):', activeJobs.length);
 
-        const response = await base44.functions.invoke('getMyJobs', {
-            page,
-            limit: 50,
-            search: searchTerm,
-            status: statusFilter,
-            job_type: jobTypeFilter === "all" ? undefined : jobTypeFilter, // NOTE: getMyJobs backend function might need update or it supports ad-hoc filters?
-            // Actually, getMyJobs backend function likely filters by what it receives.
-            // But wait, "Logistics Only" and "Standard Only" are special values.
-            // I should handle them here or in backend.
-            // `getMyJobs` likely takes specific fields.
-            // If I pass "Standard Only" as job_type, backend might fail if it expects an ID.
-            // The user requirement implies filtering.
-            // If I can't change backend `getMyJobs` easily (it's a function), I might need to filter on frontend if `getMyJobs` returns all?
-            // `getMyJobs` has pagination. So backend filtering is needed.
-            // But `getMyJobs` source is `functions/getMyJobs`. I should check it?
-            // I don't have `functions/getMyJobs` in file summaries or full content.
-            // I'll assume I should do client side filtering for now or just pass it if backend supports it.
-            // Actually, let's look at `Jobs.js`.
-            // It calls `base44.functions.invoke('getMyJobs', ...)`
-            // I'll check if I can read `functions/getMyJobs`.
-            technician: technicianFilter,
-            date_from: finalDateFrom,
-            date_to: finalDateTo,
-            view_mode: viewMode
-        });
-        return response.data;
+        return activeJobs;
       } catch (error) {
         console.error('[Jobs Debug] ❌ Error fetching jobs:', error);
-        return { data: [], hasMore: false };
+        return [];
       }
     },
-    keepPreviousData: true
+    refetchInterval: 5000,
+    refetchOnMount: 'always',
+    refetchOnWindowFocus: true
   });
-
-  const jobs = jobsResponse?.data || [];
-  const hasMore = jobsResponse?.hasMore;
-
-  // Reset page when filters change
-  useEffect(() => {
-    setPage(1);
-  }, [searchTerm, statusFilter, technicianFilter, dateFrom, dateTo, viewMode]);
 
   const jobIdFromUrl = searchParams.get('jobId');
 
@@ -176,18 +140,14 @@ export default function Jobs() {
     const action = searchParams.get('action');
     const customerId = searchParams.get('customerId');
     const projectId = searchParams.get('projectId');
-    const partId = searchParams.get('partId');
-    const jobCategory = searchParams.get('jobCategory');
     const status = searchParams.get('status');
     const dateFromParam = searchParams.get('dateFrom');
     const dateToParam = searchParams.get('dateTo');
 
-    if (action === 'new' || action === 'create' || customerId || projectId || partId) {
+    if (action === 'new' || action === 'create' || customerId || projectId) {
       setShowForm(true);
       if (customerId) setPreselectedCustomerId(customerId);
       if (projectId) setPreselectedProjectId(projectId);
-      if (partId) setPreselectedPartId(partId);
-      if (jobCategory) setPreselectedJobCategory(jobCategory);
     }
 
     if (status) {
@@ -236,14 +196,42 @@ export default function Jobs() {
   const isViewer = user?.role === 'viewer';
   const canCreateJobs = isAdminOrManager;
 
-  const filteredJobs = [...jobs].filter(job => {
-    let matchesJobType = true;
-    // We are reusing statusFilter state for job type filtering sometimes or we need a separate one?
-    // Wait, Jobs.js has separate statusFilter and technicianFilter but no jobTypeFilter in state?
-    // Ah, I see Jobs.js doesn't seem to have jobTypeFilter state.
-    // The user requirement said "Filter Controls (Schedule + Jobs List)".
-    // I need to add jobTypeFilter to Jobs.js.
-    return true;
+  const filteredJobs = jobs.filter((job) => {
+    // Technician filtering: only filter if user is explicitly a technician
+    // Relaxed filtering to ensure jobs are visible. Assignment check should happen but if data is mismatching, 
+    // we rely on the backend sending relevant jobs. 
+    // Since backend now sends ALL jobs for technicians (to fix visibility), we temporarily disable strict frontend filtering.
+    /*
+    if (isTechnician && user) {
+      const userEmail = user.email?.toLowerCase().trim();
+      const isAssignedToTechnician = Array.isArray(job.assigned_to) 
+        ? job.assigned_to.some(email => email?.toLowerCase().trim() === userEmail)
+        : (typeof job.assigned_to === 'string' && job.assigned_to.toLowerCase().trim() === userEmail);
+
+      if (!isAssignedToTechnician) {
+        return false;
+      }
+    }
+    */
+
+    // Remove URL date filter - let users see all jobs regardless of URL params
+    
+    const matchesSearch = !searchTerm || 
+      job.customer_name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      job.address?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      job.job_number?.toString().includes(searchTerm);
+
+    const matchesStatus = statusFilter === "all" || job.status === statusFilter;
+
+    const matchesTechnician = technicianFilter === "all" || 
+      (Array.isArray(job.assigned_to) 
+        ? job.assigned_to.includes(technicianFilter)
+        : job.assigned_to === technicianFilter);
+
+    const matchesDateRange = (!dateFrom || !job.scheduled_date || job.scheduled_date >= dateFrom) &&
+                             (!dateTo || !job.scheduled_date || job.scheduled_date <= dateTo);
+
+    return matchesSearch && matchesStatus && matchesTechnician && matchesDateRange;
   }).sort((a, b) => {
     let compareA, compareB;
     
@@ -305,15 +293,11 @@ export default function Jobs() {
               setEditingJob(null);
               setPreselectedCustomerId(null);
               setPreselectedProjectId(null);
-              setPreselectedPartId(null);
-              setPreselectedJobCategory(null);
               setSearchParams({});
             }}
             isSubmitting={createJobMutation.isPending || updateJobMutation.isPending}
             preselectedCustomerId={preselectedCustomerId}
             preselectedProjectId={preselectedProjectId}
-            preselectedPartId={preselectedPartId}
-            preselectedJobCategory={preselectedJobCategory}
           />
         </div>
       </div>
@@ -322,8 +306,8 @@ export default function Jobs() {
 
   if (selectedJob) {
     return (
-      <div className="bg-[#ffffff] w-full h-full">
-        <div className="mx-auto p-5 md:p-10 max-w-4xl pb-20">
+      <div className="bg-[#ffffff] min-h-screen">
+        <div className="mx-auto p-5 md:p-10 max-w-4xl">
           <JobDetails
             job={selectedJob}
             onClose={() => {
@@ -345,21 +329,21 @@ export default function Jobs() {
   }
 
   return (
-    <div className="p-4 md:p-5 lg:p-10 bg-[#ffffff] w-full pb-20">
+    <div className="p-4 md:p-5 lg:p-10 bg-[#ffffff] min-h-screen overflow-x-hidden">
       <div className="max-w-7xl mx-auto w-full">
         {!isTechnician && (
           <div className="flex flex-col md:flex-row justify-between items-start md:items-center py-3 lg:py-4 mb-4 lg:mb-6 gap-3">
             <div>
-              <h1 className="text-2xl font-bold text-[#111827] leading-tight">Visits</h1>
-              <p className="text-sm text-[#4B5563] mt-1">{isViewer ? 'View all scheduled visits' : 'Manage all scheduled visits'}</p>
+              <h1 className="text-2xl font-bold text-[#111827] leading-tight">Jobs</h1>
+              <p className="text-sm text-[#4B5563] mt-1">{isViewer ? 'View all scheduled jobs' : 'Manage all scheduled jobs'}</p>
             </div>
             {canCreateJobs && (
               <Button
                 onClick={() => setShowForm(true)}
-                className="w-full md:w-auto shadow-sm hover:shadow-md rounded-xl"
+                className="bg-[#FAE008] text-[#111827] hover:bg-[#E5CF07] font-semibold shadow-sm hover:shadow-md transition w-full md:w-auto h-10 px-4 text-sm rounded-xl"
               >
                 <Plus className="w-4 h-4 mr-2" />
-                New Visit
+                New Job
               </Button>
             )}
           </div>
@@ -367,7 +351,7 @@ export default function Jobs() {
 
         {isTechnician && (
           <div className="py-3 lg:py-4 mb-4 lg:mb-6">
-            <h1 className="text-xl md:text-2xl font-bold text-[#111827] leading-tight">My Visits</h1>
+            <h1 className="text-xl md:text-2xl font-bold text-[#111827] leading-tight">My Jobs</h1>
           </div>
         )}
 
@@ -376,7 +360,7 @@ export default function Jobs() {
             <div className="relative flex-1">
               <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-[#6B7280]" />
               <Input
-                placeholder="Search visits..."
+                placeholder="Search jobs..."
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
                 className="pl-9 pr-3 border border-[#E5E7EB] focus:border-[#111827] focus:ring-1 focus:ring-[#111827] transition-all h-10 text-sm rounded-lg w-full"
@@ -395,7 +379,6 @@ export default function Jobs() {
               <Tabs value={statusFilter} onValueChange={setStatusFilter} className="flex-1">
                 <TabsList className="w-full">
                   <TabsTrigger value="all" className="flex-1">All</TabsTrigger>
-                  <TabsTrigger value="Logistics" className="flex-1">Logistics</TabsTrigger>
                   <TabsTrigger value="Open" className="flex-1">Open</TabsTrigger>
                   <TabsTrigger value="Scheduled" className="flex-1">Scheduled</TabsTrigger>
                   <TabsTrigger value="Completed" className="flex-1">Completed</TabsTrigger>
@@ -404,7 +387,7 @@ export default function Jobs() {
               <Button
                 variant="outline"
                 onClick={() => setShowFilters(!showFilters)}
-                className="flex-shrink-0 gap-2"
+                className="flex-shrink-0 h-10 px-3 border border-[#E5E7EB] hover:border-[#FAE008] hover:bg-[#FFFEF5] gap-2"
               >
                 <Filter className="w-4 h-4" />
                 Filters
@@ -414,25 +397,6 @@ export default function Jobs() {
 
           {showFilters && viewMode === "list" && (
             <div className="flex flex-wrap gap-3">
-              <Select value={jobTypeFilter} onValueChange={setJobTypeFilter}>
-                <SelectTrigger className="w-full md:w-[200px] h-10">
-                  <SelectValue placeholder="All Job Types" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="all">All Job Types</SelectItem>
-                  <SelectItem value="Standard Only" className="font-medium border-b border-gray-100">Standard Only</SelectItem>
-                  <SelectItem value="Logistics Only" className="font-medium border-b border-gray-100">Logistics Only</SelectItem>
-                  {jobTypes.map((jt) => (
-                    <SelectItem key={jt.id} value={jt.id}>
-                      <div className="flex items-center gap-2">
-                        <div className="w-2 h-2 rounded-full" style={{ backgroundColor: jt.color }} />
-                        {jt.name}
-                      </div>
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-
               <Select value={technicianFilter} onValueChange={setTechnicianFilter}>
                 <SelectTrigger className="w-full md:w-[200px] h-10">
                   <SelectValue placeholder="All Technicians" />
@@ -519,31 +483,12 @@ export default function Jobs() {
         </div>
 
         {viewMode === "list" ? (
-          <>
-              <JobList
-              jobs={filteredJobs}
-              isLoading={isLoading}
-              onSelectJob={(job) => setSelectedJob(job)}
-              onViewDetails={(job) => setModalJob(job)}
-              />
-              <div className="flex justify-center gap-4 mt-4 pb-8">
-                  <Button 
-                      variant="outline" 
-                      onClick={() => setPage(p => Math.max(1, p - 1))}
-                      disabled={page === 1 || isLoading}
-                  >
-                      Previous
-                  </Button>
-                  <span className="flex items-center text-sm text-gray-600">Page {page}</span>
-                  <Button 
-                      variant="outline" 
-                      onClick={() => setPage(p => p + 1)}
-                      disabled={!hasMore || isLoading}
-                  >
-                      Next
-                  </Button>
-              </div>
-          </>
+          <JobList
+            jobs={filteredJobs}
+            isLoading={isLoading}
+            onSelectJob={(job) => setSelectedJob(job)}
+            onViewDetails={(job) => setModalJob(job)}
+          />
         ) : (
           <CalendarView
             jobs={filteredJobs}

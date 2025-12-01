@@ -11,7 +11,6 @@ import { Switch } from "@/components/ui/switch";
 import { useNavigate } from "react-router-dom";
 import { toast } from "sonner";
 import { Toaster } from "@/components/ui/sonner";
-import TechnicianKPICards from "@/components/team/TechnicianKPICards";
 
 export default function UserProfile() {
   const [user, setUser] = useState(null);
@@ -246,10 +245,6 @@ export default function UserProfile() {
             </form>
           </CardContent>
         </Card>
-
-        {user?.is_field_technician && (
-            <TechnicianKPICards user={user} />
-        )}
 
         <Card>
           <CardHeader className="border-b border-slate-100">

@@ -42,18 +42,31 @@ export default function Archive() {
   // Check permissions
   const hasAccess = user?.role === 'admin' || user?.role === 'manager';
 
+  if (loading) {
+    return (
+      <div className="p-5 md:p-10 bg-[#ffffff] min-h-screen">
+        <div className="animate-pulse space-y-4">
+          <div className="h-8 bg-gray-200 rounded w-1/4"></div>
+          <div className="h-64 bg-gray-200 rounded"></div>
+        </div>
+      </div>
+    );
+  }
+
+  if (!hasAccess) {
+    return <AccessDenied message="Only administrators and managers can access the Archive." />;
+  }
+
   const { data: allJobs = [], isLoading: jobsLoading } = useQuery({
     queryKey: ['allJobs'],
-    queryFn: () => base44.entities.Job.list('-deleted_at'),
-    enabled: !loading && hasAccess
+    queryFn: () => base44.entities.Job.list('-deleted_at')
   });
 
   const deletedJobs = allJobs.filter(job => job.deleted_at);
 
   const { data: allCustomers = [], isLoading: customersLoading } = useQuery({
     queryKey: ['allCustomers'],
-    queryFn: () => base44.entities.Customer.list('-deleted_at'),
-    enabled: !loading && hasAccess
+    queryFn: () => base44.entities.Customer.list('-deleted_at')
   });
 
   const deletedCustomers = allCustomers.filter(customer => customer.deleted_at);
@@ -87,21 +100,6 @@ export default function Archive() {
       setConfirmDelete(null);
     }
   });
-
-  if (loading) {
-    return (
-      <div className="p-5 md:p-10 bg-[#ffffff] min-h-screen">
-        <div className="animate-pulse space-y-4">
-          <div className="h-8 bg-gray-200 rounded w-1/4"></div>
-          <div className="h-64 bg-gray-200 rounded"></div>
-        </div>
-      </div>
-    );
-  }
-
-  if (!hasAccess) {
-    return <AccessDenied message="Only administrators and managers can access the Archive." />;
-  }
 
   const getDaysRemaining = (deletedAt) => {
     const deletedDate = new Date(deletedAt);
@@ -239,11 +237,11 @@ export default function Archive() {
         </div>
 
         <Tabs defaultValue="jobs" className="w-full">
-          <TabsList className="w-full mb-6">
-            <TabsTrigger value="jobs" className="flex-1">
+          <TabsList className="mb-6">
+            <TabsTrigger value="jobs">
               Jobs ({deletedJobs.length})
             </TabsTrigger>
-            <TabsTrigger value="customers" className="flex-1">
+            <TabsTrigger value="customers">
               Customers ({deletedCustomers.length})
             </TabsTrigger>
           </TabsList>

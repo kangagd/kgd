@@ -35,9 +35,6 @@ export default function ProjectStageSelector({ currentStage, onStageChange, onMa
     } else if (index < currentIndex) {
       // Past stages - light grey with checkmark
       return "bg-[#F3F4F6] text-[#111827] border-[#F3F4F6] font-medium";
-    } else if (stage === "Warranty") {
-      // Warranty stage - special styling
-      return "bg-white text-amber-600 border-amber-200 font-medium hover:bg-amber-50";
     } else {
       // Future stages - outline
       return "bg-white text-[#4B5563] border-[#E5E7EB] font-medium";
@@ -52,12 +49,10 @@ export default function ProjectStageSelector({ currentStage, onStageChange, onMa
         {PROJECT_STAGES.map((stage, index) => {
           const isPast = !isLost && index < currentIndex;
           const isCurrent = !isLost && index === currentIndex;
-          const isWarranty = stage === "Warranty";
           
           return (
             <button
               key={stage}
-              title={isWarranty ? "Re-open project for warranty work" : stage}
               onClick={() => handleStageClick(stage)}
               disabled={isCurrent || isLost}
               className={`

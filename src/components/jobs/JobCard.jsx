@@ -14,7 +14,7 @@ import { DuplicateBadge } from "../common/DuplicateWarningCard";
 
 
 
-export default function JobCard({ job, onClick, onViewDetails, compact = false }) {
+export default function JobCard({ job, onClick, onViewDetails }) {
   const [user, setUser] = useState(null);
   const queryClient = useQueryClient();
 
@@ -59,12 +59,6 @@ export default function JobCard({ job, onClick, onViewDetails, compact = false }
     queryKey: ['latestJobSummary', job.id],
     queryFn: () => base44.entities.JobSummary.filter({ job_id: job.id }, '-check_out_time', 1).then(res => res[0] || null),
     enabled: !!job.id
-  });
-
-  const { data: jobType } = useQuery({
-    queryKey: ['jobType', job.job_type_id],
-    queryFn: () => base44.entities.JobType.get(job.job_type_id),
-    enabled: !!job.job_type_id
   });
 
   const handleClick = (e) => {
@@ -142,26 +136,17 @@ export default function JobCard({ job, onClick, onViewDetails, compact = false }
           <div className="flex items-center justify-between gap-2 flex-wrap">
             <div className="flex items-center gap-2 flex-wrap">
               {/* Logistics Badge */}
-              {(job.job_category === 'Logistics' || (job.job_type_name || job.job_type || "").match(/(Delivery|Pickup|Return)/i)) && (
-                <Badge className="bg-amber-100 text-amber-800 border-amber-200 flex items-center gap-1 px-2 pointer-events-none shadow-sm">
+              {(job.job_type_name || job.job_type || "").match(/(Delivery|Pickup|Return)/i) && (
+                <Badge className="bg-slate-800 text-white border-0 flex items-center gap-1 px-2 pointer-events-none">
                   <Truck className="w-3 h-3" />
-                  {job.logistics_type || "Logistics"}
+                  Logistics
                 </Badge>
               )}
               {(job.job_type_name || job.job_type) && (
-                <JobTypeBadge 
-                  value={job.job_type_name || job.job_type} 
-                  color={jobType?.color}
-                  className="pointer-events-none" 
-                />
+                <JobTypeBadge value={job.job_type_name || job.job_type} className="pointer-events-none" />
               )}
               {job.product && (
                 <ProductTypeBadge value={job.product} className="pointer-events-none" />
-              )}
-              {job.contract_id && (
-                 <Badge variant="outline" className="bg-purple-50 text-purple-700 border-purple-200 text-[10px] px-2 py-0.5 flex items-center gap-1">
-                     Contract
-                 </Badge>
               )}
             </div>
             
@@ -181,7 +166,7 @@ export default function JobCard({ job, onClick, onViewDetails, compact = false }
           </div>
 
           {/* Latest visit summary (collapsible) */}
-          {latestVisit && !compact && (
+          {latestVisit && (
             <Collapsible onClick={(e) => e.stopPropagation()}>
               <CollapsibleTrigger className="flex items-center gap-2 text-sm font-medium text-[#6B7280] hover:text-[#111827] transition-colors group w-full pt-2 border-t border-[#E5E7EB]">
                 <span>Latest Visit Summary</span>

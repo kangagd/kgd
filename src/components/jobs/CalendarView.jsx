@@ -34,12 +34,7 @@ export default function CalendarView({ jobs, onSelectJob, currentDate, onDateCha
     loadUser();
   }, []);
 
-  const { data: jobTypes = [] } = useQuery({
-    queryKey: ['jobTypes'],
-    queryFn: () => base44.entities.JobType.filter({ is_active: true }, 'sort_order'),
-    staleTime: 1000 * 60 * 5
-  });
-
+  const uniqueJobTypes = [...new Set(jobs.map(job => job.job_type_name).filter(Boolean))].sort();
   const isTechnician = user?.is_field_technician && user?.role !== 'admin';
 
   // Keyboard shortcuts
@@ -113,16 +108,7 @@ export default function CalendarView({ jobs, onSelectJob, currentDate, onDateCha
       job.job_number?.toString().includes(searchTerm);
 
     const matchesStatus = statusFilter === "all" || job.status === statusFilter;
-    let matchesJobType = true;
-    if (jobTypeFilter === "all") {
-      matchesJobType = true;
-    } else if (jobTypeFilter === "Standard Only") {
-      matchesJobType = job.job_category === "Standard";
-    } else if (jobTypeFilter === "Logistics Only") {
-      matchesJobType = job.job_category === "Logistics";
-    } else {
-      matchesJobType = job.job_type_id === jobTypeFilter;
-    }
+    const matchesJobType = jobTypeFilter === "all" || job.job_type_name === jobTypeFilter;
 
     return matchesSearch && matchesStatus && matchesJobType;
   });
@@ -248,15 +234,8 @@ export default function CalendarView({ jobs, onSelectJob, currentDate, onDateCha
                 </SelectTrigger>
                 <SelectContent>
                   <SelectItem value="all">All Job Types</SelectItem>
-                  <SelectItem value="Standard Only" className="font-medium">Standard Only</SelectItem>
-                  <SelectItem value="Logistics Only" className="font-medium">Logistics Only</SelectItem>
-                  {jobTypes.map(jt => (
-                    <SelectItem key={jt.id} value={jt.id}>
-                      <div className="flex items-center gap-2">
-                        <div className="w-2 h-2 rounded-full" style={{ backgroundColor: jt.color }} />
-                        {jt.name}
-                      </div>
-                    </SelectItem>
+                  {uniqueJobTypes.map(jobType => (
+                    <SelectItem key={jobType} value={jobType}>{jobType}</SelectItem>
                   ))}
                 </SelectContent>
               </Select>
@@ -291,7 +270,6 @@ export default function CalendarView({ jobs, onSelectJob, currentDate, onDateCha
           currentDate={currentDate}
           onJobClick={onSelectJob}
           onQuickBook={handleQuickBook}
-          jobTypes={jobTypes}
         />
       )}
 
@@ -301,7 +279,6 @@ export default function CalendarView({ jobs, onSelectJob, currentDate, onDateCha
           currentDate={currentDate}
           onJobClick={onSelectJob}
           onQuickBook={handleQuickBook}
-          jobTypes={jobTypes}
         />
       )}
 
@@ -311,7 +288,6 @@ export default function CalendarView({ jobs, onSelectJob, currentDate, onDateCha
           currentDate={currentDate}
           onJobClick={onSelectJob}
           onQuickBook={handleQuickBook}
-          jobTypes={jobTypes}
         />
       )}
 
