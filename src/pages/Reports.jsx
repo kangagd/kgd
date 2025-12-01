@@ -9,6 +9,8 @@ import { Button } from "@/components/ui/button";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import ProjectStageFunnelReport from "@/components/reports/ProjectStageFunnelReport";
 import JobStatusSummaryReport from "@/components/reports/JobStatusSummaryReport";
+import { filterRecordsByDateRange } from "@/components/domain/reportingHelpers";
+import DateRangeSelector from "@/components/reports/DateRangeSelector";
 import {
   BarChart,
   Bar,
@@ -47,6 +49,7 @@ export default function Reports() {
   });
   const [dateTo, setDateTo] = useState(() => new Date().toISOString().split('T')[0]);
   const [projectStatusFilter, setProjectStatusFilter] = useState("all");
+  const [reportDateRange, setReportDateRange] = useState("6m");
 
   useEffect(() => {
     const loadUser = async () => {
@@ -292,14 +295,28 @@ export default function Reports() {
     return { totalContractJobs, completedContractJobs, slaBreaches, slaCompliance, jobsByType };
   }, [allJobs]);
 
+  // Data for new reports (filtered by DateRangeSelector)
+  const reportProjects = useMemo(() => 
+    filterRecordsByDateRange(allProjects, "created_date", reportDateRange), 
+    [allProjects, reportDateRange]
+  );
+
+  const reportJobs = useMemo(() => 
+    filterRecordsByDateRange(allJobs, "created_date", reportDateRange), 
+    [allJobs, reportDateRange]
+  );
+
   return (
     <div className="p-4 md:p-5 lg:p-10 bg-[#ffffff] min-h-screen overflow-x-hidden">
       <div className="max-w-7xl mx-auto">
-        <div className="py-3 lg:py-4 mb-4 lg:mb-6">
-          <h1 className="text-2xl font-bold text-[#111827] leading-tight">Business Reports</h1>
-          <p className="text-sm text-[#4B5563] mt-1">
-            Track performance and key metrics
-          </p>
+        <div className="flex flex-col md:flex-row justify-between items-start md:items-center py-3 lg:py-4 mb-4 lg:mb-6 gap-4">
+          <div>
+            <h1 className="text-2xl font-bold text-[#111827] leading-tight">Business Reports</h1>
+            <p className="text-sm text-[#4B5563] mt-1">
+              Track performance and key metrics
+            </p>
+          </div>
+          <DateRangeSelector value={reportDateRange} onChange={setReportDateRange} />
         </div>
 
         {/* Filters */}
@@ -603,8 +620,8 @@ export default function Reports() {
         <div className="mt-6">
           <h2 className="text-[18px] font-semibold text-[#111827] mb-4">Operations</h2>
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-            <ProjectStageFunnelReport projects={filteredProjects} />
-            <JobStatusSummaryReport jobs={filteredJobs} />
+            <ProjectStageFunnelReport projects={reportProjects} />
+            <JobStatusSummaryReport jobs={reportJobs} />
           </div>
         </div>
       </div>
