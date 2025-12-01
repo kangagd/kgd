@@ -26,6 +26,7 @@ import DayView from "../components/calendar/DayView";
 import WeekView from "../components/calendar/WeekView";
 import MonthView from "../components/calendar/MonthView";
 import { LayoutList, Calendar as CalendarIcon2 } from "lucide-react";
+import { buildActiveCheckInMap } from "@/components/domain/checkInHelpers";
 
 export default function Schedule() {
   const navigate = useNavigate();
@@ -47,6 +48,7 @@ export default function Schedule() {
   const [notifyTechnician, setNotifyTechnician] = useState(true);
   const [modalJob, setModalJob] = useState(null);
   const [showAvailabilityManager, setShowAvailabilityManager] = useState(false);
+  const [activeCheckInMap, setActiveCheckInMap] = useState({});
 
   React.useEffect(() => {
     const loadUser = async () => {
@@ -57,6 +59,37 @@ export default function Schedule() {
       }
     };
     loadUser();
+  }, []);
+
+  React.useEffect(() => {
+    let isCancelled = false;
+
+    async function loadActiveCheckIns() {
+      try {
+        const res = await base44.entities.CheckInOut.filter({
+          check_out_time: null,
+        });
+
+        if (isCancelled) return;
+
+        const records = Array.isArray(res) ? res : res?.data || [];
+        const map = buildActiveCheckInMap(records);
+        setActiveCheckInMap(map);
+      } catch (error) {
+        if (!isCancelled) {
+          console.error("Error loading active check-ins for schedule", error);
+          setActiveCheckInMap({});
+        }
+      }
+    }
+
+    loadActiveCheckIns();
+
+    const interval = setInterval(loadActiveCheckIns, 5 * 60 * 1000);
+    return () => {
+      isCancelled = true;
+      clearInterval(interval);
+    };
   }, []);
 
   const { data: allJobs = [], isLoading } = useQuery({
@@ -449,6 +482,7 @@ export default function Schedule() {
                             onProjectClick={handleProjectClick}
                             isDragging={dragSnapshot.isDragging}
                             techniciansLookup={techniciansLookup}
+                            hasActiveCheckIn={!!activeCheckInMap[job.id]}
                           />
                         </div>
                       )}
@@ -516,6 +550,7 @@ export default function Schedule() {
                                 onProjectClick={handleProjectClick}
                                 isDragging={dragSnapshot.isDragging}
                                 techniciansLookup={techniciansLookup}
+                                hasActiveCheckIn={!!activeCheckInMap[job.id]}
                               />
                             </div>
                           )}
@@ -633,7 +668,10 @@ export default function Schedule() {
                                 borderLeft: `3px solid ${jobTypeColorMap[job.job_type_id] || '#6B7280'}`
                               }}
                             >
-                              <div className="font-medium text-[#111827] truncate">
+                              <div className="font-medium text-[#111827] truncate flex items-center gap-1">
+                                {!!activeCheckInMap[job.id] && (
+                                  <div className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse shrink-0" />
+                                )}
                                 {job.scheduled_time || ''} #{job.job_number}
                               </div>
                               <div className="text-[#6B7280] truncate">
@@ -703,6 +741,7 @@ export default function Schedule() {
                       onAddressClick={handleAddressClick}
                       onProjectClick={handleProjectClick}
                       techniciansLookup={techniciansLookup}
+                      hasActiveCheckIn={!!activeCheckInMap[job.id]}
                     />
                   ))}
                 </div>

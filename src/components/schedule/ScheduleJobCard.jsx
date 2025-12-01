@@ -7,11 +7,13 @@ import { Truck, Package } from "lucide-react";
 import { TechnicianAvatarGroup } from "../common/TechnicianAvatar";
 import { DuplicateDot } from "../common/DuplicateWarningCard";
 
-export default function ScheduleJobCard({ job, onClick, onAddressClick, onProjectClick, techniciansLookup = {} }) {
+export default function ScheduleJobCard({ job, onClick, onAddressClick, onProjectClick, techniciansLookup = {}, hasActiveCheckIn = false }) {
   return (
     <Card
       onClick={onClick}
-      className="p-4 shadow-sm hover:shadow-md transition-shadow cursor-pointer border border-[#E5E7EB] rounded-xl bg-white"
+      className={`p-4 shadow-sm hover:shadow-md transition-shadow cursor-pointer border border-[#E5E7EB] rounded-xl bg-white ${
+        hasActiveCheckIn ? 'ring-2 ring-emerald-500 border-emerald-500' : ''
+      }`}
     >
       {/* Top Row: Time + Status + Badges */}
       <div className="flex items-start justify-between mb-3 gap-2">
@@ -20,6 +22,12 @@ export default function ScheduleJobCard({ job, onClick, onAddressClick, onProjec
             {job.scheduled_time || 'Time TBD'}
           </div>
           <DuplicateDot record={job} />
+          {hasActiveCheckIn && (
+            <div className="flex items-center gap-1 px-1.5 py-0.5 bg-emerald-100 text-emerald-700 rounded-full text-[10px] font-medium border border-emerald-200">
+              <span className="w-1.5 h-1.5 bg-emerald-500 rounded-full animate-pulse" />
+              In Progress
+            </div>
+          )}
         </div>
         <div className="flex flex-wrap justify-end gap-2">
           {(job.job_type_name || "").match(/(Delivery|Pickup|Return)/i) && (

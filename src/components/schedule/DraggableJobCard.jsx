@@ -12,13 +12,14 @@ export default function DraggableJobCard({
   onAddressClick, 
   onProjectClick,
   isDragging = false,
-  techniciansLookup = {}
+  techniciansLookup = {},
+  hasActiveCheckIn = false
 }) {
   return (
     <Card
       className={`p-4 shadow-sm hover:shadow-md transition-all cursor-grab active:cursor-grabbing border border-[#E5E7EB] rounded-xl bg-white ${
         isDragging ? 'opacity-70 shadow-lg ring-2 ring-[#FAE008] rotate-1' : ''
-      }`}
+      } ${hasActiveCheckIn ? 'ring-2 ring-emerald-500 border-emerald-500' : ''}`}
     >
       {/* Drag Handle */}
       <div className="flex items-start gap-2">
@@ -36,6 +37,12 @@ export default function DraggableJobCard({
                 {job.scheduled_time || 'Time TBD'}
               </div>
               <DuplicateDot record={job} />
+              {hasActiveCheckIn && (
+                <div className="flex items-center gap-1 px-1.5 py-0.5 bg-emerald-100 text-emerald-700 rounded-full text-[10px] font-medium border border-emerald-200">
+                  <span className="w-1.5 h-1.5 bg-emerald-500 rounded-full animate-pulse" />
+                  In Progress
+                </div>
+              )}
             </div>
             <div className="flex flex-wrap justify-end gap-2">
               {(job.job_type_name || "").match(/(Delivery|Pickup|Return)/i) && (
