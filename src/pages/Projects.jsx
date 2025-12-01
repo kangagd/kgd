@@ -23,6 +23,7 @@ import EntityModal from "../components/common/EntityModal.jsx";
 import ProjectModalView from "../components/projects/ProjectModalView";
 import { createPageUrl } from "@/utils";
 import { DuplicateBadge } from "../components/common/DuplicateWarningCard";
+import AgeBadge from "../components/common/AgeBadge";
 
 
 
@@ -479,7 +480,8 @@ export default function Projects() {
                     </div>
 
                   {/* Second row */}
-                  <div className="flex items-center gap-4 mb-3 text-[#4B5563]">
+                  <div className="flex items-center gap-4 mb-3 text-[#4B5563] flex-wrap">
+                    <AgeBadge date={project.created_date} prefix="Created" />
                     <div className="flex items-center gap-1.5">
                       <User className="w-4 h-4" />
                       <span className="text-[14px] leading-[1.4]">{project.customer_name}</span>
