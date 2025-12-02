@@ -463,6 +463,115 @@ export default function FinancialsTab({ project, onUpdate }) {
         </CardContent>
       </Card>
 
+      {/* Linked Documents */}
+      <Card className="border border-[#E5E7EB] shadow-sm rounded-lg overflow-hidden">
+        <CardHeader className="bg-[#F8F9FA] border-b border-[#E5E7EB] p-4">
+          <CardTitle className="text-[18px] font-semibold text-[#111827] leading-[1.2] flex items-center gap-2">
+            <FileText className="w-5 h-5" />
+            Linked Documents
+          </CardTitle>
+        </CardHeader>
+        <CardContent className="p-3 md:p-4 space-y-4">
+          {!primaryQuote && !primaryInvoice && !project.legacy_pandadoc_url && !project.legacy_xero_invoice_url && (
+             <div className="text-center py-4 text-[#6B7280] text-[14px]">
+               No linked documents
+             </div>
+          )}
+
+          {primaryQuote && (
+            <div className="bg-white border border-[#E5E7EB] rounded-lg p-3">
+              <div className="flex justify-between items-start">
+                <div>
+                  <div className="text-[12px] font-medium text-[#6B7280] uppercase tracking-wider mb-1">Primary Quote</div>
+                  <div className="font-medium text-[#111827]">{primaryQuote.name}</div>
+                  <div className="flex items-center gap-2 mt-1">
+                    <Badge variant="outline" className="text-[11px]">{primaryQuote.status}</Badge>
+                    <span className="text-[13px] text-[#4B5563]">
+                      ${(primaryQuote.value || 0).toLocaleString()}
+                    </span>
+                  </div>
+                </div>
+                {primaryQuote.pandadoc_public_url && (
+                  <a 
+                    href={primaryQuote.pandadoc_public_url} 
+                    target="_blank" 
+                    rel="noopener noreferrer"
+                    className="flex items-center gap-1 text-[13px] text-[#2563EB] hover:underline"
+                  >
+                    Open Quote <ExternalLink className="w-3 h-3" />
+                  </a>
+                )}
+              </div>
+            </div>
+          )}
+
+          {!primaryQuote && project.legacy_pandadoc_url && (
+             <div className="bg-white border border-[#E5E7EB] rounded-lg p-3">
+               <div className="flex justify-between items-center">
+                 <div>
+                   <div className="text-[12px] font-medium text-[#6B7280] uppercase tracking-wider mb-1">Legacy Quote</div>
+                   <div className="text-[13px] text-[#4B5563]">Legacy PandaDoc link available</div>
+                 </div>
+                 <a 
+                    href={project.legacy_pandadoc_url} 
+                    target="_blank" 
+                    rel="noopener noreferrer"
+                    className="flex items-center gap-1 text-[13px] text-[#2563EB] hover:underline"
+                  >
+                    Open PandaDoc <ExternalLink className="w-3 h-3" />
+                  </a>
+               </div>
+             </div>
+          )}
+
+          {primaryInvoice && (
+            <div className="bg-white border border-[#E5E7EB] rounded-lg p-3">
+              <div className="flex justify-between items-start">
+                <div>
+                  <div className="text-[12px] font-medium text-[#6B7280] uppercase tracking-wider mb-1">Primary Invoice</div>
+                  <div className="font-medium text-[#111827]">{primaryInvoice.xero_invoice_number}</div>
+                  <div className="flex items-center gap-2 mt-1">
+                    <Badge variant="outline" className="text-[11px]">{primaryInvoice.status}</Badge>
+                    <span className="text-[13px] text-[#4B5563]">
+                      Due: ${(primaryInvoice.amount_due || 0).toLocaleString()} / Total: ${(primaryInvoice.total_amount || primaryInvoice.total || 0).toLocaleString()}
+                    </span>
+                  </div>
+                </div>
+                {(primaryInvoice.online_payment_url || primaryInvoice.online_invoice_url) && (
+                  <a 
+                    href={primaryInvoice.online_payment_url || primaryInvoice.online_invoice_url} 
+                    target="_blank" 
+                    rel="noopener noreferrer"
+                    className="flex items-center gap-1 text-[13px] text-[#2563EB] hover:underline"
+                  >
+                    Open Invoice <ExternalLink className="w-3 h-3" />
+                  </a>
+                )}
+              </div>
+            </div>
+          )}
+
+          {!primaryInvoice && project.legacy_xero_invoice_url && (
+             <div className="bg-white border border-[#E5E7EB] rounded-lg p-3">
+               <div className="flex justify-between items-center">
+                 <div>
+                   <div className="text-[12px] font-medium text-[#6B7280] uppercase tracking-wider mb-1">Legacy Invoice</div>
+                   <div className="text-[13px] text-[#4B5563]">Legacy Xero link available</div>
+                 </div>
+                 <a 
+                    href={project.legacy_xero_invoice_url} 
+                    target="_blank" 
+                    rel="noopener noreferrer"
+                    className="flex items-center gap-1 text-[13px] text-[#2563EB] hover:underline"
+                  >
+                    Open Xero <ExternalLink className="w-3 h-3" />
+                  </a>
+               </div>
+             </div>
+          )}
+        </CardContent>
+      </Card>
+
       {/* Financial Notes */}
       <Card className="border border-[#E5E7EB] shadow-sm rounded-lg overflow-hidden">
         <CardHeader className="bg-[#F8F9FA] border-b border-[#E5E7EB] p-4">
