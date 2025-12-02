@@ -484,10 +484,24 @@ export default function FinancialsTab({ project, onUpdate }) {
       {/* Linked Documents */}
       <Card className="border border-[#E5E7EB] shadow-sm rounded-lg overflow-hidden">
         <CardHeader className="bg-[#F8F9FA] border-b border-[#E5E7EB] p-4">
-          <CardTitle className="text-[18px] font-semibold text-[#111827] leading-[1.2] flex items-center gap-2">
-            <FileText className="w-5 h-5" />
-            Linked Documents
-          </CardTitle>
+          <div className="flex justify-between items-center">
+            <CardTitle className="text-[18px] font-semibold text-[#111827] leading-[1.2] flex items-center gap-2">
+              <FileText className="w-5 h-5" />
+              Linked Documents
+            </CardTitle>
+            {((project.legacy_pandadoc_url && !primaryQuote) || (project.legacy_xero_invoice_url && !primaryInvoice)) && (
+              <Button 
+                variant="outline" 
+                size="sm" 
+                onClick={handleLinkLegacyDocs} 
+                disabled={linkingLegacy}
+                className="h-8 text-xs gap-1.5"
+              >
+                {linkingLegacy ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <LinkIcon className="w-3.5 h-3.5" />}
+                {linkingLegacy ? "Linking..." : "Import Legacy Links"}
+              </Button>
+            )}
+          </div>
         </CardHeader>
         <CardContent className="p-3 md:p-4 space-y-4">
           {!primaryQuote && !primaryInvoice && !project.legacy_pandadoc_url && !project.legacy_xero_invoice_url && (
