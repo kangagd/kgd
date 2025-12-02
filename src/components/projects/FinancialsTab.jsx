@@ -32,6 +32,7 @@ export default function FinancialsTab({ project, onUpdate }) {
   const [uploading, setUploading] = useState(false);
   const [primaryQuote, setPrimaryQuote] = useState(null);
   const [primaryInvoice, setPrimaryInvoice] = useState(null);
+  const [linkingLegacy, setLinkingLegacy] = useState(false);
 
   useEffect(() => {
     const loadLinkedDocs = async () => {
