@@ -30,6 +30,35 @@ const getFinancialStatusOptions = (projectType) => {
 
 export default function FinancialsTab({ project, onUpdate }) {
   const [uploading, setUploading] = useState(false);
+  const [primaryQuote, setPrimaryQuote] = useState(null);
+  const [primaryInvoice, setPrimaryInvoice] = useState(null);
+
+  useEffect(() => {
+    const loadLinkedDocs = async () => {
+      if (project.primary_quote_id) {
+        try {
+          const quote = await base44.entities.Quote.get(project.primary_quote_id);
+          setPrimaryQuote(quote);
+        } catch (e) {
+          console.error("Failed to load primary quote", e);
+        }
+      } else {
+        setPrimaryQuote(null);
+      }
+
+      if (project.primary_xero_invoice_id) {
+        try {
+          const invoice = await base44.entities.XeroInvoice.get(project.primary_xero_invoice_id);
+          setPrimaryInvoice(invoice);
+        } catch (e) {
+          console.error("Failed to load primary invoice", e);
+        }
+      } else {
+        setPrimaryInvoice(null);
+      }
+    };
+    loadLinkedDocs();
+  }, [project.primary_quote_id, project.primary_xero_invoice_id]);
   const [newPayment, setNewPayment] = useState({
     payment_name: "",
     payment_status: "Pending",
