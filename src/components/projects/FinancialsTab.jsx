@@ -60,6 +60,23 @@ export default function FinancialsTab({ project, onUpdate }) {
     };
     loadLinkedDocs();
   }, [project.primary_quote_id, project.primary_xero_invoice_id]);
+
+  const handleLinkLegacyDocs = async () => {
+    setLinkingLegacy(true);
+    try {
+      const response = await base44.functions.invoke("linkLegacyFinanceForProject", { projectId: project.id });
+      if (response.data?.success) {
+        const updates = response.data.updates || {};
+        if (Object.keys(updates).length > 0) {
+           onUpdate(updates);
+        }
+      }
+    } catch (error) {
+      console.error("Failed to link legacy docs:", error);
+    } finally {
+      setLinkingLegacy(false);
+    }
+  };
   const [newPayment, setNewPayment] = useState({
     payment_name: "",
     payment_status: "Pending",
