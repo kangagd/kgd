@@ -160,8 +160,8 @@ export default function FinancialsTab({ project, onUpdate }) {
     <div className="space-y-4">
       {/* Financial Summary Card */}
       <Card className="border border-[#E5E7EB] shadow-sm rounded-lg overflow-hidden">
-        <CardHeader className="bg-[#F8F9FA] border-b border-[#E5E7EB] p-4">
-          <CardTitle className="text-[18px] font-semibold text-[#111827] leading-[1.2] flex items-center gap-2">
+        <CardHeader className="bg-white px-4 py-3 border-b border-[#E5E7EB]">
+          <CardTitle className="text-[16px] font-semibold text-[#111827] leading-[1.2] flex items-center gap-2">
             <DollarSign className="w-5 h-5" />
             Financial Summary
           </CardTitle>
@@ -282,9 +282,9 @@ export default function FinancialsTab({ project, onUpdate }) {
 
       {/* Payment Tracking */}
       <Card className="border border-[#E5E7EB] shadow-sm rounded-lg overflow-hidden">
-        <CardHeader className="bg-[#F8F9FA] border-b border-[#E5E7EB] p-4">
+        <CardHeader className="bg-white px-4 py-3 border-b border-[#E5E7EB]">
           <div className="flex items-center justify-between">
-            <CardTitle className="text-[18px] font-semibold text-[#111827] leading-[1.2]">
+            <CardTitle className="text-[16px] font-semibold text-[#111827] leading-[1.2]">
               Payment Tracking
             </CardTitle>
             <Button
@@ -483,9 +483,9 @@ export default function FinancialsTab({ project, onUpdate }) {
 
       {/* Linked Documents */}
       <Card className="border border-[#E5E7EB] shadow-sm rounded-lg overflow-hidden">
-        <CardHeader className="bg-[#F8F9FA] border-b border-[#E5E7EB] p-4">
+        <CardHeader className="bg-white px-4 py-3 border-b border-[#E5E7EB]">
           <div className="flex justify-between items-center">
-            <CardTitle className="text-[18px] font-semibold text-[#111827] leading-[1.2] flex items-center gap-2">
+            <CardTitle className="text-[16px] font-semibold text-[#111827] leading-[1.2] flex items-center gap-2">
               <FileText className="w-5 h-5" />
               Linked Documents
             </CardTitle>
@@ -606,8 +606,8 @@ export default function FinancialsTab({ project, onUpdate }) {
 
       {/* Financial Notes */}
       <Card className="border border-[#E5E7EB] shadow-sm rounded-lg overflow-hidden">
-        <CardHeader className="bg-[#F8F9FA] border-b border-[#E5E7EB] p-4">
-          <CardTitle className="text-[18px] font-semibold text-[#111827] leading-[1.2]">
+        <CardHeader className="bg-white px-4 py-3 border-b border-[#E5E7EB]">
+          <CardTitle className="text-[16px] font-semibold text-[#111827] leading-[1.2]">
             Financial Notes (Admin Only)
           </CardTitle>
         </CardHeader>
