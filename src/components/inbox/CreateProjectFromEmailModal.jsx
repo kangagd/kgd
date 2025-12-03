@@ -13,6 +13,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { PROJECT_TYPE_OPTIONS } from "@/components/domain/projectConfig";
 
 export default function CreateProjectFromEmailModal({ open, onClose, thread, onSuccess }) {
   const [formData, setFormData] = useState({
@@ -95,13 +96,11 @@ export default function CreateProjectFromEmailModal({ open, onClose, thread, onS
                 <SelectValue />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="Garage Door Install">Garage Door Install</SelectItem>
-                <SelectItem value="Gate Install">Gate Install</SelectItem>
-                <SelectItem value="Roller Shutter Install">Roller Shutter Install</SelectItem>
-                <SelectItem value="Multiple">Multiple</SelectItem>
-                <SelectItem value="Motor/Accessory">Motor/Accessory</SelectItem>
-                <SelectItem value="Repair">Repair</SelectItem>
-                <SelectItem value="Maintenance">Maintenance</SelectItem>
+                {PROJECT_TYPE_OPTIONS.map((type) => (
+                  <SelectItem key={type} value={type}>
+                    {type}
+                  </SelectItem>
+                ))}
               </SelectContent>
             </Select>
           </div>

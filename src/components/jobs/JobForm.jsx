@@ -8,6 +8,7 @@ import { ArrowLeft, Upload, X, FileText, Image as ImageIcon, Loader2, Plus, Spar
 import { base44 } from "@/api/base44Client";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { JOB_STATUS, JOB_STATUS_OPTIONS } from "@/components/domain/jobConfig";
+import { PROJECT_TYPE } from "@/components/domain/projectConfig";
 import {
   Dialog,
   DialogContent,
@@ -154,10 +155,10 @@ export default function JobForm({ job, technicians, onSubmit, onCancel, isSubmit
       const project = projects.find(p => p.id === preselectedProjectId);
       if (project) {
         const productMapping = {
-          "Garage Door Install": "Garage Door",
-          "Gate Install": "Gate",
-          "Roller Shutter Install": "Roller Shutter",
-          "Multiple": "Multiple"
+          [PROJECT_TYPE.GARAGE_DOOR_INSTALL]: "Garage Door",
+          [PROJECT_TYPE.GATE_INSTALL]: "Gate",
+          [PROJECT_TYPE.ROLLER_SHUTTER_INSTALL]: "Roller Shutter",
+          [PROJECT_TYPE.MULTIPLE]: "Multiple"
         };
 
         const autoProduct = productMapping[project.project_type] || "";
@@ -251,10 +252,10 @@ export default function JobForm({ job, technicians, onSubmit, onCancel, isSubmit
       if (project) {
         // Map project type to product
         const productMapping = {
-          "Garage Door Install": "Garage Door",
-          "Gate Install": "Gate",
-          "Roller Shutter Install": "Roller Shutter",
-          "Multiple": "Multiple"
+          [PROJECT_TYPE.GARAGE_DOOR_INSTALL]: "Garage Door",
+          [PROJECT_TYPE.GATE_INSTALL]: "Gate",
+          [PROJECT_TYPE.ROLLER_SHUTTER_INSTALL]: "Roller Shutter",
+          [PROJECT_TYPE.MULTIPLE]: "Multiple"
         };
         
         const autoProduct = productMapping[project.project_type] || formData.product;
