@@ -12,11 +12,14 @@ import { createPageUrl } from "@/utils";
 import JobCard from "../components/jobs/JobCard";
 import XeroConnectButton from "../components/xero/XeroConnectButton";
 import MaintenanceRemindersCard from "../components/dashboard/MaintenanceRemindersCard";
+import EntityModal from "../components/common/EntityModal";
+import JobModalView from "../components/jobs/JobModalView";
 
 
 
 export default function Dashboard() {
   const [user, setUser] = useState(null);
+  const [modalJob, setModalJob] = useState(null);
   const navigate = useNavigate();
 
   useEffect(() => {
@@ -271,7 +274,7 @@ export default function Dashboard() {
                       key={job.id}
                       job={job}
                       onClick={() => navigate(createPageUrl("Jobs") + `?jobId=${job.id}`)}
-                      onViewDetails={() => {}}
+                      onViewDetails={(job) => setModalJob(job)}
                     />
                   ))}
                 </div>
@@ -317,6 +320,19 @@ export default function Dashboard() {
           <MaintenanceRemindersCard user={user} />
         )}
       </div>
+
+      <EntityModal
+        open={!!modalJob}
+        onClose={() => setModalJob(null)}
+        title={`Job #${modalJob?.job_number}`}
+        onOpenFullPage={() => {
+          setModalJob(null);
+          navigate(createPageUrl("Jobs") + `?jobId=${modalJob.id}`);
+        }}
+        fullPageLabel="Open Full Job"
+      >
+        {modalJob && <JobModalView job={modalJob} />}
+      </EntityModal>
     </div>
   );
 }
