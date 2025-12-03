@@ -448,6 +448,7 @@ export default function Jobs() {
               </button>
             </div>
           </div>
+          </div>
 
           {viewMode === "list" && (
             <div className="flex items-center gap-3">
