@@ -54,7 +54,7 @@ const ROLE_PERMISSIONS = {
   },
   technician: {
     canManageTeam: false,
-    canViewFinancials: false,
+    canViewFinancials: true,
     canEditPriceList: false,
     canViewReports: false,
     canViewArchive: false,
@@ -134,6 +134,9 @@ export function PermissionsProvider({ children }) {
     return permissions[permission] === true;
   };
 
+  // Specific permission for detailed costs/margins
+  const canViewCosts = role === 'admin' || role === 'manager';
+
   const isAdmin = role === 'admin';
   const isManager = role === 'manager';
   const isTechnician = role === 'technician';
@@ -146,6 +149,7 @@ export function PermissionsProvider({ children }) {
     role,
     permissions,
     hasPermission,
+    canViewCosts,
     isAdmin,
     isManager,
     isTechnician,

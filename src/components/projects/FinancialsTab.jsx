@@ -7,6 +7,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Plus, Upload, X, DollarSign, TrendingUp, FileText, ExternalLink, Link as LinkIcon, Loader2 } from "lucide-react";
 import { base44 } from "@/api/base44Client";
 import RichTextField from "../common/RichTextField";
+import { usePermissions } from "../common/PermissionsContext";
 
 const getFinancialStatusOptions = (projectType) => {
   if (projectType === "Repair" || projectType === "Motor/Accessory") {
@@ -29,6 +30,7 @@ const getFinancialStatusOptions = (projectType) => {
 };
 
 export default function FinancialsTab({ project, onUpdate }) {
+  const { canViewCosts, isAdminOrManager } = usePermissions();
   const [uploading, setUploading] = useState(false);
   const [primaryQuote, setPrimaryQuote] = useState(null);
   const [primaryInvoice, setPrimaryInvoice] = useState(null);
@@ -202,9 +204,10 @@ export default function FinancialsTab({ project, onUpdate }) {
             </div>
           </div>
 
-          <div className="border-t border-[#E5E7EB] pt-4">
-            <h4 className="text-[16px] font-medium text-[#111827] mb-3 leading-[1.4]">Cost Breakdown</h4>
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+          {canViewCosts && (
+            <div className="border-t border-[#E5E7EB] pt-4">
+              <h4 className="text-[16px] font-medium text-[#111827] mb-3 leading-[1.4]">Cost Breakdown</h4>
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
               <div>
                 <label className="block text-[13px] md:text-[14px] font-medium text-[#4B5563] mb-1.5">
                   Materials Cost
@@ -252,10 +255,12 @@ export default function FinancialsTab({ project, onUpdate }) {
                   />
                 </div>
               </div>
+              </div>
             </div>
-          </div>
+          )}
 
-          <div className="border-t border-[#E5E7EB] pt-4 bg-[#F8F9FA] -mx-4 -mb-4 px-4 py-3">
+          {canViewCosts && (
+            <div className="border-t border-[#E5E7EB] pt-4 bg-[#F8F9FA] -mx-4 -mb-4 px-4 py-3">
             <div className="grid grid-cols-3 gap-4">
               <div>
                 <div className="text-[12px] text-[#6B7280] mb-0.5">Total Cost</div>
@@ -276,7 +281,7 @@ export default function FinancialsTab({ project, onUpdate }) {
                 </div>
               </div>
             </div>
-          </div>
+          )}
         </CardContent>
       </Card>
 
@@ -605,7 +610,8 @@ export default function FinancialsTab({ project, onUpdate }) {
       </Card>
 
       {/* Financial Notes */}
-      <Card className="border border-[#E5E7EB] shadow-sm rounded-lg overflow-hidden">
+      {isAdminOrManager && (
+        <Card className="border border-[#E5E7EB] shadow-sm rounded-lg overflow-hidden">
         <CardHeader className="bg-white px-4 py-3 border-b border-[#E5E7EB]">
           <CardTitle className="text-[16px] font-semibold text-[#111827] leading-[1.2]">
             Financial Notes (Admin Only)
@@ -619,6 +625,7 @@ export default function FinancialsTab({ project, onUpdate }) {
           />
         </CardContent>
       </Card>
+      )}
     </div>
   );
 }

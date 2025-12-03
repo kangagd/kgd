@@ -28,6 +28,7 @@ export default function Jobs() {
   const [searchTerm, setSearchTerm] = useState("");
   const [statusFilter, setStatusFilter] = useState("all");
   const [technicianFilter, setTechnicianFilter] = useState("all");
+  const [jobScope, setJobScope] = useState("all"); // "all" or "mine"
   const [dateFrom, setDateFrom] = useState("");
   const [dateTo, setDateTo] = useState("");
   const [sortBy, setSortBy] = useState("scheduled_date");
@@ -50,6 +51,10 @@ export default function Jobs() {
       try {
         const currentUser = await base44.auth.me();
         setUser(currentUser);
+        // Default to "mine" for technicians
+        if (currentUser?.is_field_technician && currentUser?.role !== 'admin' && currentUser?.role !== 'manager') {
+          setJobScope("mine");
+        }
       } catch (error) {
         console.error("Error loading user:", error);
       }
@@ -259,6 +264,15 @@ export default function Jobs() {
 
     const matchesStatus = statusFilter === "all" || job.status === statusFilter;
 
+    // Scope filtering
+    const matchesScope = jobScope === "all" || (
+      user?.email && (
+        Array.isArray(job.assigned_to) 
+          ? job.assigned_to.includes(user.email) 
+          : job.assigned_to === user.email
+      )
+    );
+
     const matchesTechnician = technicianFilter === "all" || 
       (Array.isArray(job.assigned_to) 
         ? job.assigned_to.includes(technicianFilter)
@@ -267,7 +281,7 @@ export default function Jobs() {
     const matchesDateRange = (!dateFrom || !job.scheduled_date || job.scheduled_date >= dateFrom) &&
                              (!dateTo || !job.scheduled_date || job.scheduled_date <= dateTo);
 
-    return matchesSearch && matchesStatus && matchesTechnician && matchesDateRange;
+    return matchesSearch && matchesStatus && matchesTechnician && matchesDateRange && matchesScope;
   }).sort((a, b) => {
     let compareA, compareB;
     
@@ -392,9 +406,34 @@ export default function Jobs() {
         )}
 
         <div className="flex flex-col gap-3 mb-6">
-          <div className="flex gap-3">
-            <div className="relative flex-1">
-              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-[#6B7280]" />
+          <div className="flex flex-col gap-3">
+            {isTechnician && (
+              <div className="flex bg-slate-100 p-1 rounded-lg w-fit">
+                <button
+                  onClick={() => setJobScope("mine")}
+                  className={`px-4 py-1.5 text-sm font-medium rounded-md transition-all ${
+                    jobScope === "mine" 
+                      ? "bg-white text-[#111827] shadow-sm" 
+                      : "text-[#6B7280] hover:text-[#111827]"
+                  }`}
+                >
+                  My Jobs
+                </button>
+                <button
+                  onClick={() => setJobScope("all")}
+                  className={`px-4 py-1.5 text-sm font-medium rounded-md transition-all ${
+                    jobScope === "all" 
+                      ? "bg-white text-[#111827] shadow-sm" 
+                      : "text-[#6B7280] hover:text-[#111827]"
+                  }`}
+                >
+                  All Jobs
+                </button>
+              </div>
+            )}
+            <div className="flex gap-3">
+              <div className="relative flex-1">
+                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-[#6B7280]" />
               <Input
                 placeholder="Search jobs..."
                 value={searchTerm}
