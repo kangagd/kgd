@@ -1,3 +1,4 @@
+
 export const PROJECT_TYPE = {
   GARAGE_DOOR_INSTALL: "Garage Door Install",
   GATE_INSTALL: "Gate Install",
