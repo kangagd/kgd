@@ -8,6 +8,7 @@ import { ArrowLeft, Plus, Loader2, FileText, X, Image as ImageIcon, Upload, Tras
 import { base44 } from "@/api/base44Client";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { PROJECT_STAGES } from "@/components/domain/projectStages";
+import { PROJECT_TYPE_OPTIONS } from "@/components/domain/projectConfig";
 import {
   Dialog,
   DialogContent,
@@ -316,13 +317,11 @@ export default function ProjectForm({ project, onSubmit, onCancel, isSubmitting 
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="Garage Door Install">Garage Door Install</SelectItem>
-                    <SelectItem value="Gate Install">Gate Install</SelectItem>
-                    <SelectItem value="Roller Shutter Install">Roller Shutter Install</SelectItem>
-                    <SelectItem value="Multiple">Multiple</SelectItem>
-                    <SelectItem value="Motor/Accessory">Motor/Accessory</SelectItem>
-                    <SelectItem value="Repair">Repair</SelectItem>
-                    <SelectItem value="Maintenance">Maintenance</SelectItem>
+                    {PROJECT_TYPE_OPTIONS.map((type) => (
+                      <SelectItem key={type} value={type}>
+                        {type}
+                      </SelectItem>
+                    ))}
                   </SelectContent>
                 </Select>
               </div>
