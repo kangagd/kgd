@@ -1,4 +1,6 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useMemo } from "react";
+import { useQuery } from "@tanstack/react-query";
+import { MOVEMENT_TYPE } from "@/components/domain/inventoryConfig";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -7,6 +9,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Plus, Upload, X, DollarSign, TrendingUp, FileText, ExternalLink, Link as LinkIcon, Loader2 } from "lucide-react";
 import { base44 } from "@/api/base44Client";
 import RichTextField from "../common/RichTextField";
+import { usePermissions } from "../common/PermissionsContext";
 
 const getFinancialStatusOptions = (projectType) => {
   if (projectType === "Repair" || projectType === "Motor/Accessory") {
@@ -29,6 +32,7 @@ const getFinancialStatusOptions = (projectType) => {
 };
 
 export default function FinancialsTab({ project, onUpdate }) {
+  const { canViewCosts, isAdminOrManager } = usePermissions();
   const [uploading, setUploading] = useState(false);
   const [primaryQuote, setPrimaryQuote] = useState(null);
   const [primaryInvoice, setPrimaryInvoice] = useState(null);
@@ -86,6 +90,65 @@ export default function FinancialsTab({ project, onUpdate }) {
     attachments: []
   });
   const [showAddPayment, setShowAddPayment] = useState(false);
+
+  // Fetch stock movements of type "usage" for this project
+  const { data: usageMovements = [] } = useQuery({
+    queryKey: ["stock-usage-for-project", project?.id],
+    queryFn: async () => {
+      if (!project?.id) return [];
+      const all = await base44.entities.StockMovement.filter({
+        project_id: project.id,
+        movement_type: MOVEMENT_TYPE.USAGE,
+      });
+      return all;
+    },
+    enabled: !!project?.id,
+  });
+
+  // Fetch price list items to derive cost per item
+  const { data: priceListItems = [] } = useQuery({
+    queryKey: ["priceListItems-for-financials"],
+    queryFn: () => base44.entities.PriceListItem.list("category"),
+  });
+
+  // PriceList lookup
+  const priceMap = useMemo(() => {
+    const map = {};
+    for (const item of priceListItems) {
+      map[item.id] = item;
+    }
+    return map;
+  }, [priceListItems]);
+
+  // Helper to get a sensible cost per unit with fallbacks
+  const getUnitCost = (item) => {
+    if (!item) return 0;
+    return (
+      item.unit_cost ??
+      item.cost_price ??
+      item.buy_price ??
+      item.cost ??
+      item.price ??
+      0
+    );
+  };
+
+  // Calculated materials cost from usage movements
+  const autoMaterialsCost = useMemo(() => {
+    if (!usageMovements.length) return 0;
+    return usageMovements.reduce((sum, mv) => {
+      const item = mv.price_list_item_id ? priceMap[mv.price_list_item_id] : null;
+      const unitCost = getUnitCost(item);
+      const qty = mv.quantity || 0;
+      return sum + unitCost * qty;
+    }, 0);
+  }, [usageMovements, priceMap]);
+
+  // Handler to apply calculated cost into project.materials_cost
+  const handleApplyMaterialsCost = () => {
+    if (!autoMaterialsCost || autoMaterialsCost < 0) return;
+    onUpdate({ materials_cost: autoMaterialsCost });
+  };
 
   const totalCost = (project.materials_cost || 0) + (project.labour_cost || 0) + (project.other_costs || 0);
   const profit = (project.total_project_value || 0) - totalCost;
@@ -202,9 +265,10 @@ export default function FinancialsTab({ project, onUpdate }) {
             </div>
           </div>
 
-          <div className="border-t border-[#E5E7EB] pt-4">
-            <h4 className="text-[16px] font-medium text-[#111827] mb-3 leading-[1.4]">Cost Breakdown</h4>
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+          {canViewCosts && (
+            <div className="border-t border-[#E5E7EB] pt-4">
+              <h4 className="text-[16px] font-medium text-[#111827] mb-3 leading-[1.4]">Cost Breakdown</h4>
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
               <div>
                 <label className="block text-[13px] md:text-[14px] font-medium text-[#4B5563] mb-1.5">
                   Materials Cost
@@ -219,6 +283,25 @@ export default function FinancialsTab({ project, onUpdate }) {
                     className="pl-8 h-9"
                   />
                 </div>
+                {autoMaterialsCost > 0 && (
+                  <div className="mt-1 flex items-center justify-between text-[11px] text-[#4B5563] bg-[#F3F4F6] rounded px-2 py-1">
+                    <span>
+                      Calculated from item usage:{" "}
+                      <span className="font-semibold">
+                        ${autoMaterialsCost.toFixed(2)}
+                      </span>
+                    </span>
+                    <Button
+                      type="button"
+                      variant="outline"
+                      size="xs"
+                      className="h-6 text-[11px] px-2"
+                      onClick={handleApplyMaterialsCost}
+                    >
+                      Apply
+                    </Button>
+                  </div>
+                )}
               </div>
 
               <div>
@@ -252,10 +335,12 @@ export default function FinancialsTab({ project, onUpdate }) {
                   />
                 </div>
               </div>
+              </div>
             </div>
-          </div>
+          )}
 
-          <div className="border-t border-[#E5E7EB] pt-4 bg-[#F8F9FA] -mx-4 -mb-4 px-4 py-3">
+          {canViewCosts && (
+            <div className="border-t border-[#E5E7EB] pt-4 bg-[#F8F9FA] -mx-4 -mb-4 px-4 py-3">
             <div className="grid grid-cols-3 gap-4">
               <div>
                 <div className="text-[12px] text-[#6B7280] mb-0.5">Total Cost</div>
@@ -276,7 +361,8 @@ export default function FinancialsTab({ project, onUpdate }) {
                 </div>
               </div>
             </div>
-          </div>
+            </div>
+          )}
         </CardContent>
       </Card>
 
@@ -605,7 +691,8 @@ export default function FinancialsTab({ project, onUpdate }) {
       </Card>
 
       {/* Financial Notes */}
-      <Card className="border border-[#E5E7EB] shadow-sm rounded-lg overflow-hidden">
+      {isAdminOrManager && (
+        <Card className="border border-[#E5E7EB] shadow-sm rounded-lg overflow-hidden">
         <CardHeader className="bg-white px-4 py-3 border-b border-[#E5E7EB]">
           <CardTitle className="text-[16px] font-semibold text-[#111827] leading-[1.2]">
             Financial Notes (Admin Only)
@@ -619,6 +706,7 @@ export default function FinancialsTab({ project, onUpdate }) {
           />
         </CardContent>
       </Card>
+      )}
     </div>
   );
 }
