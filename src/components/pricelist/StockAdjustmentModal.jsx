@@ -118,7 +118,7 @@ export default function StockAdjustmentModal({ item, open, onClose }) {
               </div>
               {newStock < 0 && (
                 <div className="text-xs text-red-600 mt-1">
-                  Note: Stock will be negative
+                  Warning: Stock cannot be negative
                 </div>
               )}
             </div>
@@ -146,7 +146,7 @@ export default function StockAdjustmentModal({ item, open, onClose }) {
             </Button>
             <Button
               type="submit"
-              disabled={adjustStockMutation.isPending || !quantity}
+              disabled={adjustStockMutation.isPending || !quantity || newStock < 0}
               className="flex-1 bg-orange-600 hover:bg-orange-700"
             >
               {adjustStockMutation.isPending ? 'Adjusting...' : 'Adjust Stock'}
