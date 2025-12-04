@@ -200,6 +200,68 @@ export default function VehicleDetail({ vehicle, onBack }) {
           </Card>
         </TabsContent>
 
+        <TabsContent value="photos">
+          <Card>
+            <CardHeader className="flex flex-row items-center justify-between">
+              <CardTitle>Vehicle Photos</CardTitle>
+              <div className="flex gap-2">
+                <label className="cursor-pointer">
+                  <Button variant="outline" size="sm" disabled={isUploading} asChild>
+                    <span>
+                      <Upload className="w-4 h-4 mr-2" />
+                      {isUploading ? "Uploading..." : "Upload Photos"}
+                    </span>
+                  </Button>
+                  <input 
+                    type="file" 
+                    multiple 
+                    accept="image/*" 
+                    className="hidden" 
+                    onChange={handlePhotoUpload}
+                    disabled={isUploading}
+                  />
+                </label>
+              </div>
+            </CardHeader>
+            <CardContent>
+              <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-4">
+                {/* Main Profile Photo */}
+                {vehicle.photo_url && (
+                  <div className="aspect-square rounded-lg overflow-hidden border border-gray-200 relative group">
+                    <img src={vehicle.photo_url} alt="Profile" className="w-full h-full object-cover" />
+                    <div className="absolute inset-0 bg-black/50 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
+                      <span className="text-white text-xs font-medium px-2 py-1 bg-black/50 rounded">Profile Photo</span>
+                    </div>
+                  </div>
+                )}
+                
+                {/* Gallery Photos */}
+                {photos.map(photo => (
+                  <div key={photo.id} className="aspect-square rounded-lg overflow-hidden border border-gray-200 relative group">
+                    <img src={photo.image_url} alt="Vehicle Photo" className="w-full h-full object-cover" />
+                    <div className="absolute bottom-0 left-0 right-0 bg-black/60 p-2 opacity-0 group-hover:opacity-100 transition-opacity">
+                      <div className="text-white text-xs truncate">
+                        {format(new Date(photo.uploaded_at), 'MMM d, yyyy')}
+                      </div>
+                      <div className="text-gray-300 text-[10px] truncate">
+                        by {photo.technician_name || 'Unknown'}
+                      </div>
+                    </div>
+                  </div>
+                ))}
+                
+                {!vehicle.photo_url && photos.length === 0 && (
+                  <div className="col-span-full py-12 text-center text-gray-500 bg-gray-50 rounded-lg border border-dashed border-gray-200">
+                    <ImageIcon className="w-12 h-12 mx-auto text-gray-300 mb-2" />
+                    <p>No photos available</p>
+                    <p className="text-sm mt-1">Upload photos to track vehicle condition</p>
+                  </div>
+                )}
+              </div>
+            </CardContent>
+          </Card>
+        </TabsContent>
+
         <TabsContent value="overview">
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             <Card>
