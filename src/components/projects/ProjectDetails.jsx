@@ -55,6 +55,7 @@ import LinkInvoiceModal from "../invoices/LinkInvoiceModal";
 import ProjectChat from "./ProjectChat";
 import { PROJECT_STAGE_AUTOMATION } from "@/components/domain/projectStageAutomationConfig";
 import ProjectPartsPanel from "./ProjectPartsPanel";
+import HandoverReportModal from "../handover/HandoverReportModal";
 
 const statusColors = {
   "Lead": "bg-slate-100 text-slate-700",
