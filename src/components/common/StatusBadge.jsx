@@ -8,11 +8,8 @@ const BADGE_VARIANTS = {
   customerType: {
     "Owner": "bg-purple-100 text-purple-700 hover:bg-purple-200",
     "Builder": "bg-blue-100 text-blue-700 hover:bg-blue-200",
-    "Real Estate - Agent": "bg-cyan-100 text-cyan-700 hover:bg-cyan-200",
     "Real Estate - Tenant": "bg-green-100 text-green-700 hover:bg-green-200",
     "Strata - Owner": "bg-amber-100 text-amber-700 hover:bg-amber-200",
-    "Strata - Agent": "bg-orange-100 text-orange-700 hover:bg-orange-200",
-    "Other": "bg-slate-100 text-slate-700 hover:bg-slate-200",
   },
   
   // Project Statuses
@@ -111,7 +108,6 @@ const BADGE_VARIANTS = {
     "Builder": "bg-blue-100 text-blue-700 hover:bg-blue-200",
     "Real Estate": "bg-green-100 text-green-700 hover:bg-green-200",
     "Supplier": "bg-amber-100 text-amber-700 hover:bg-amber-200",
-    "Other": "bg-slate-100 text-slate-700 hover:bg-slate-200",
   },
   
   // Product Types
