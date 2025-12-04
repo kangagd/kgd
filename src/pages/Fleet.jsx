@@ -13,7 +13,8 @@ import {
   AlertTriangle,
   Battery,
   User,
-  Package
+  Package,
+  Wrench
 } from "lucide-react";
 import VehicleDetail from "../components/fleet/VehicleDetail";
 import VehicleFormModal from "../components/fleet/VehicleFormModal";
@@ -54,6 +55,36 @@ export default function Fleet() {
       return acc;
     }, {});
   }, [partsWithVehicles]);
+
+  const { data: allVehicleTools = [] } = useQuery({
+    queryKey: ["vehicle-tools-for-fleet"],
+    queryFn: () => base44.entities.VehicleTool.list("id"),
+  });
+
+  const toolComplianceByVehicle = useMemo(() => {
+    const map = {};
+    for (const vt of allVehicleTools) {
+      if (!vt.vehicle_id) continue;
+      if (!map[vt.vehicle_id]) {
+        map[vt.vehicle_id] = {
+          required: 0,
+          present: 0,
+        };
+      }
+      const required = vt.quantity_required ?? 0;
+      const onHand = vt.quantity_on_hand ?? 0;
+      map[vt.vehicle_id].required += required;
+      map[vt.vehicle_id].present += Math.min(onHand, required);
+    }
+    return map;
+  }, [allVehicleTools]);
+
+  const getToolCompliance = (vehicleId) => {
+    const stats = toolComplianceByVehicle[vehicleId];
+    if (!stats || stats.required === 0) return null;
+    const pct = (stats.present / stats.required) * 100;
+    return Math.round(pct);
+  };
 
   const filteredVehicles = vehicles.filter(v => {
     const matchesStatus = filterStatus === "all" || v.status === filterStatus;
@@ -161,6 +192,34 @@ export default function Fleet() {
                       No parts assigned
                     </span>
                   )}
+                </div>
+
+                <div className="flex items-center text-sm ml-1">
+                  {(() => {
+                    const compliance = getToolCompliance(vehicle.id);
+                    if (compliance === null) {
+                      return (
+                        <span className="inline-flex items-center rounded-full bg-slate-50 px-2 py-0.5 text-[11px] text-slate-400">
+                          <Wrench className="w-3 h-3 mr-1" />
+                          Tools: no data
+                        </span>
+                      );
+                    } else if (compliance === 100) {
+                      return (
+                        <span className="inline-flex items-center rounded-full bg-emerald-50 px-2 py-0.5 text-[11px] font-medium text-emerald-700">
+                          <Wrench className="w-3 h-3 mr-1" />
+                          Tools: 100% complete
+                        </span>
+                      );
+                    } else {
+                      return (
+                        <span className="inline-flex items-center rounded-full bg-amber-50 px-2 py-0.5 text-[11px] font-medium text-amber-700">
+                          <Wrench className="w-3 h-3 mr-1" />
+                          Tools: {compliance}% complete
+                        </span>
+                      );
+                    }
+                  })()}
                 </div>
               </div>
 
