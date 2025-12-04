@@ -726,7 +726,7 @@ export default function Layout({ children, currentPageName }) {
                   <Menu className="w-6 h-6 text-[#111827]" />
                 </button>
                 <h1 className="font-semibold text-[#111827] text-[14px] truncate px-2 flex-1 text-center">
-                  {[...primaryNavigationItems, ...secondaryNavigationItems].find(item => item.url === location.pathname)?.title || 'FieldScheduler'}
+                  {[...primaryNavigationItems, ...secondaryNavigationItems].find(item => item.url === location.pathname)?.title || 'KangarooGD'}
                 </h1>
               </div>
             </header>
