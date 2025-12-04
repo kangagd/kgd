@@ -2,8 +2,8 @@ import React, { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { ArrowLeft, Download, RefreshCw, Plus, Settings, FileText, Car, Upload, Image as ImageIcon } from "lucide-react";
-import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { ArrowLeft, Download, RefreshCw, Plus, Settings, FileText, Car } from "lucide-react";
+import { useQuery } from "@tanstack/react-query";
 import { base44 } from "@/api/base44Client";
 import VehicleStockList from "./VehicleStockList";
 import { format } from "date-fns";
@@ -11,16 +11,13 @@ import StockAdjustmentModal from "./StockAdjustmentModal";
 import RestockRequestModal from "./RestockRequestModal";
 import AddVehicleStockModal from "./AddVehicleStockModal";
 import VehicleFormModal from "./VehicleFormModal";
-import { toast } from "sonner";
 
 export default function VehicleDetail({ vehicle, onBack }) {
-  const queryClient = useQueryClient();
   const [activeTab, setActiveTab] = useState("stock");
   const [adjustmentItem, setAdjustmentItem] = useState(null);
   const [showRestockModal, setShowRestockModal] = useState(false);
   const [showAddStockModal, setShowAddStockModal] = useState(false);
   const [showEditModal, setShowEditModal] = useState(false);
-  const [isUploading, setIsUploading] = useState(false);
 
   const { data: stock = [], isLoading: isStockLoading } = useQuery({
     queryKey: ['vehicleStock', vehicle.id],
@@ -31,41 +28,6 @@ export default function VehicleDetail({ vehicle, onBack }) {
     queryKey: ['vehicleMovements', vehicle.id],
     queryFn: () => base44.entities.VehicleStockMovement.filter({ vehicle_id: vehicle.id }, '-created_date', 50)
   });
-
-  const { data: photos = [] } = useQuery({
-    queryKey: ['vehiclePhotos', vehicle.id],
-    queryFn: () => base44.entities.Photo.filter({ vehicle_id: vehicle.id }, '-uploaded_at')
-  });
-
-  const handlePhotoUpload = async (e) => {
-    const files = Array.from(e.target.files);
-    if (files.length === 0) return;
-
-    setIsUploading(true);
-    try {
-      for (const file of files) {
-        const { file_url } = await base44.integrations.Core.UploadFile({ file });
-        const user = await base44.auth.me();
-        
-        await base44.entities.Photo.create({
-          image_url: file_url,
-          vehicle_id: vehicle.id,
-          uploaded_at: new Date().toISOString(),
-          technician_email: user?.email,
-          technician_name: user?.display_name || user?.full_name,
-          tags: ["Vehicle"],
-          notes: "Uploaded from vehicle details"
-        });
-      }
-      queryClient.invalidateQueries({ queryKey: ['vehiclePhotos', vehicle.id] });
-      toast.success(`${files.length} photo(s) uploaded`);
-    } catch (error) {
-      console.error("Upload failed", error);
-      toast.error("Failed to upload photos");
-    } finally {
-      setIsUploading(false);
-    }
-  };
 
   return (
     <div className="p-6 max-w-7xl mx-auto">
@@ -111,7 +73,6 @@ export default function VehicleDetail({ vehicle, onBack }) {
         <TabsList className="bg-white border border-gray-200 p-1 h-auto">
           <TabsTrigger value="stock" className="px-6 py-2">Stock Inventory</TabsTrigger>
           <TabsTrigger value="movements" className="px-6 py-2">History & Movements</TabsTrigger>
-          <TabsTrigger value="photos" className="px-6 py-2">Photos</TabsTrigger>
           <TabsTrigger value="overview" className="px-6 py-2">Overview</TabsTrigger>
         </TabsList>
 
@@ -194,68 +155,6 @@ export default function VehicleDetail({ vehicle, onBack }) {
                 </table>
                 {movements.length === 0 && (
                   <div className="p-8 text-center text-gray-500">No history found</div>
-                )}
-              </div>
-            </CardContent>
-          </Card>
-        </TabsContent>
-
-        <TabsContent value="photos">
-          <Card>
-            <CardHeader className="flex flex-row items-center justify-between">
-              <CardTitle>Vehicle Photos</CardTitle>
-              <div className="flex gap-2">
-                <label className="cursor-pointer">
-                  <Button variant="outline" size="sm" disabled={isUploading} asChild>
-                    <span>
-                      <Upload className="w-4 h-4 mr-2" />
-                      {isUploading ? "Uploading..." : "Upload Photos"}
-                    </span>
-                  </Button>
-                  <input 
-                    type="file" 
-                    multiple 
-                    accept="image/*" 
-                    className="hidden" 
-                    onChange={handlePhotoUpload}
-                    disabled={isUploading}
-                  />
-                </label>
-              </div>
-            </CardHeader>
-            <CardContent>
-              <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-4">
-                {/* Main Profile Photo */}
-                {vehicle.photo_url && (
-                  <div className="aspect-square rounded-lg overflow-hidden border border-gray-200 relative group">
-                    <img src={vehicle.photo_url} alt="Profile" className="w-full h-full object-cover" />
-                    <div className="absolute inset-0 bg-black/50 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
-                      <span className="text-white text-xs font-medium px-2 py-1 bg-black/50 rounded">Profile Photo</span>
-                    </div>
-                  </div>
-                )}
-                
-                {/* Gallery Photos */}
-                {photos.map(photo => (
-                  <div key={photo.id} className="aspect-square rounded-lg overflow-hidden border border-gray-200 relative group">
-                    <img src={photo.image_url} alt="Vehicle Photo" className="w-full h-full object-cover" />
-                    <div className="absolute bottom-0 left-0 right-0 bg-black/60 p-2 opacity-0 group-hover:opacity-100 transition-opacity">
-                      <div className="text-white text-xs truncate">
-                        {format(new Date(photo.uploaded_at), 'MMM d, yyyy')}
-                      </div>
-                      <div className="text-gray-300 text-[10px] truncate">
-                        by {photo.technician_name || 'Unknown'}
-                      </div>
-                    </div>
-                  </div>
-                ))}
-                
-                {!vehicle.photo_url && photos.length === 0 && (
-                  <div className="col-span-full py-12 text-center text-gray-500 bg-gray-50 rounded-lg border border-dashed border-gray-200">
-                    <ImageIcon className="w-12 h-12 mx-auto text-gray-300 mb-2" />
-                    <p>No photos available</p>
-                    <p className="text-sm mt-1">Upload photos to track vehicle condition</p>
-                  </div>
                 )}
               </div>
             </CardContent>
