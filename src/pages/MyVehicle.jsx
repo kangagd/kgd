@@ -80,6 +80,28 @@ export default function MyVehicle() {
     enabled: !!vehicle?.id,
   });
 
+  const { data: vehicleInventory = [] } = useQuery({
+    queryKey: ["inventory-quantities-for-vehicle", vehicle?.id],
+    queryFn: async () => {
+      if (!vehicle?.id) return [];
+      const all = await base44.entities.InventoryQuantity.filter({
+        location_type: LOCATION_TYPE.VEHICLE,
+        location_id: vehicle.id,
+      });
+      return all;
+    },
+    enabled: !!vehicle?.id,
+  });
+
+  const inventoryByItem = useMemo(() => {
+    const map = {};
+    for (const iq of vehicleInventory) {
+      if (!iq.price_list_item_id) continue;
+      map[iq.price_list_item_id] = (map[iq.price_list_item_id] || 0) + (iq.quantity_on_hand || 0);
+    }
+    return map;
+  }, [vehicleInventory]);
+
   const { data: projects = [] } = useQuery({
     queryKey: ["projects-for-assigned-parts"],
     queryFn: () => base44.entities.Project.list("title"),
