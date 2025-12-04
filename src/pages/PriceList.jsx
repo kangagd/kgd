@@ -180,8 +180,8 @@ export default function PriceList() {
           )}
         </div>
 
-        {(lowStockCount > 0 || outOfStockCount > 0) && (
-          <div className="mb-4 flex gap-3 flex-wrap">
+        <div className="mb-4 flex flex-col sm:flex-row sm:justify-between sm:items-center gap-3">
+          <div className="flex gap-3 flex-wrap">
             {lowStockCount > 0 && (
               <Button
                 variant="outline"
@@ -203,7 +203,21 @@ export default function PriceList() {
               </Button>
             )}
           </div>
-        )}
+
+          <div className="flex items-center space-x-2">
+            <Checkbox 
+              id="stock-only" 
+              checked={showStockOnly} 
+              onCheckedChange={setShowStockOnly} 
+            />
+            <label
+              htmlFor="stock-only"
+              className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70 cursor-pointer select-none text-gray-700"
+            >
+              Stock Items Only
+            </label>
+          </div>
+        </div>
 
         <div className="flex flex-col gap-4 mb-6">
           <div className="relative w-full">
@@ -226,19 +240,7 @@ export default function PriceList() {
               </TabsList>
             </Tabs>
             
-            <div className="flex items-center space-x-2 px-1">
-              <Checkbox 
-                id="stock-only" 
-                checked={showStockOnly} 
-                onCheckedChange={setShowStockOnly} 
-              />
-              <label
-                htmlFor="stock-only"
-                className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70 cursor-pointer select-none text-gray-700"
-              >
-                Stock Items Only
-              </label>
-            </div>
+
           </div>
         </div>
 
