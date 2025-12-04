@@ -494,9 +494,32 @@ export default function MyVehicle() {
                           )}
                         </div>
                         <div className="flex items-center gap-2">
-                          <span className="text-[11px] text-gray-600 font-mono">
-                            {onHand} / {required}
-                          </span>
+                          {isAuditMode ? (
+                            <div className="flex items-center gap-1">
+                              <input
+                                type="number"
+                                min={0}
+                                className="w-14 rounded border border-gray-300 px-1 py-0.5 text-[11px]"
+                                value={onHand}
+                                onChange={(e) => {
+                                  const value = parseInt(e.target.value, 10);
+                                  const safeValue = Number.isNaN(value) ? 0 : Math.max(0, value);
+                                  updateVehicleToolMutation.mutate({
+                                    id: vehicleTool.id,
+                                    quantity_on_hand: safeValue,
+                                  });
+                                }}
+                              />
+                              <span className="text-[11px] text-gray-500">
+                                / {required}
+                              </span>
+                            </div>
+                          ) : (
+                            <span className="text-[11px] text-gray-600 font-mono">
+                              {onHand} / {required}
+                            </span>
+                          )}
+
                           {isMissing ? (
                             <Badge variant="outline" className="bg-red-50 text-red-700 border-red-200 text-[10px] px-1.5 py-0">
                               Missing {missingCount}
