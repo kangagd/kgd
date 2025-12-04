@@ -475,7 +475,8 @@ export default function Projects() {
                       <h3 className="text-[18px] font-semibold text-[#111827] leading-[1.2]">{project.title}</h3>
                       <DuplicateBadge record={project} size="sm" />
                     </div>
-                    <div className="flex items-center gap-2">
+                    <div className="flex items-center gap-2 flex-wrap">
+                      <AgeBadge date={project.stage_start_date || project.created_date} />
                       {project.project_type && (
                         <ProjectTypeBadge value={project.project_type} />
                       )}
@@ -485,7 +486,7 @@ export default function Projects() {
 
                   {/* Second row */}
                   <div className="flex items-center gap-4 mb-3 text-[#4B5563] flex-wrap">
-                    <AgeBadge date={createdAt} prefix="Created" />
+                    <div className="flex items-center gap-1.5">
                     <div className="flex items-center gap-1.5">
                       <User className="w-4 h-4" />
                       <span className="text-[14px] leading-[1.4]">{project.customer_name}</span>

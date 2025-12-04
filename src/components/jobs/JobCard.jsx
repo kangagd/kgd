@@ -163,6 +163,11 @@ export default function JobCard({ job, onClick, onViewDetails, activeCheckIns = 
               {job.product && (
                 <ProductTypeBadge value={job.product} className="pointer-events-none" />
               )}
+              {job.outcome === "return_visit_required" && (
+                <Badge className="bg-amber-100 text-amber-800 border-0 px-2 py-0.5 text-[11px] rounded-md pointer-events-none">
+                  Return visit required
+                </Badge>
+              )}
             </div>
             
             {/* Assigned Technicians */}
