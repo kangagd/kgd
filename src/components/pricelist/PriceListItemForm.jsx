@@ -12,12 +12,21 @@ export default function PriceListItemForm({ item, onSubmit, onCancel, isSubmitti
   const [formData, setFormData] = useState(item || {
     category: "",
     item: "",
+    sku: "",
+    brand: "",
     price: "",
+    unit_cost: "",
+    target_margin: "",
     description: "",
+    track_inventory: true,
     in_inventory: true,
     stock_level: 0,
     min_stock_level: 5,
-    notes: ""
+    car_quantity: 0,
+    notes: "",
+    supplier_name: "",
+    image_url: "",
+    is_active: true
   });
 
   const handleSubmit = (e) => {
@@ -25,8 +34,13 @@ export default function PriceListItemForm({ item, onSubmit, onCancel, isSubmitti
     onSubmit({
       ...formData,
       price: parseFloat(formData.price) || 0,
+      unit_cost: parseFloat(formData.unit_cost) || 0,
+      target_margin: parseFloat(formData.target_margin) || 0,
       stock_level: parseFloat(formData.stock_level) || 0,
-      min_stock_level: parseFloat(formData.min_stock_level) || 5
+      min_stock_level: parseFloat(formData.min_stock_level) || 5,
+      car_quantity: parseFloat(formData.car_quantity) || 0,
+      // Sync legacy field
+      in_inventory: formData.track_inventory
     });
   };
 
@@ -72,15 +86,74 @@ export default function PriceListItemForm({ item, onSubmit, onCancel, isSubmitti
                 />
               </div>
 
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <Label>Brand</Label>
+                  <Input
+                    value={formData.brand || ""}
+                    onChange={(e) => setFormData({ ...formData, brand: e.target.value })}
+                    placeholder="Brand name"
+                  />
+                </div>
+                <div>
+                  <Label>SKU</Label>
+                  <Input
+                    value={formData.sku || ""}
+                    onChange={(e) => setFormData({ ...formData, sku: e.target.value })}
+                    placeholder="Stock Keeping Unit"
+                  />
+                </div>
+              </div>
+
+              <div className="grid grid-cols-3 gap-4">
+                <div>
+                  <Label>Unit Cost</Label>
+                  <Input
+                    type="number"
+                    step="0.01"
+                    value={formData.unit_cost}
+                    onChange={(e) => setFormData({ ...formData, unit_cost: e.target.value })}
+                    placeholder="0.00"
+                  />
+                </div>
+                <div>
+                  <Label>Price (AUD) *</Label>
+                  <Input
+                    type="number"
+                    step="0.01"
+                    value={formData.price}
+                    onChange={(e) => setFormData({ ...formData, price: e.target.value })}
+                    placeholder="0.00"
+                    required
+                  />
+                </div>
+                <div>
+                  <Label>Target Margin (%)</Label>
+                  <Input
+                    type="number"
+                    step="0.1"
+                    value={formData.target_margin}
+                    onChange={(e) => setFormData({ ...formData, target_margin: e.target.value })}
+                    placeholder="0%"
+                  />
+                </div>
+              </div>
+
               <div>
-                <Label>Price (AUD) *</Label>
+                <Label>Supplier Name</Label>
                 <Input
-                  type="number"
-                  step="0.01"
-                  value={formData.price}
-                  onChange={(e) => setFormData({ ...formData, price: e.target.value })}
-                  placeholder="0.00"
-                  required
+                  value={formData.supplier_name || ""}
+                  onChange={(e) => setFormData({ ...formData, supplier_name: e.target.value })}
+                  placeholder="Primary supplier"
+                />
+              </div>
+
+              <div>
+                <Label>Image URL</Label>
+                <Input
+                  value={formData.image_url || ""}
+                  onChange={(e) => setFormData({ ...formData, image_url: e.target.value })}
+                  placeholder="https://..."
                 />
               </div>
 
@@ -105,6 +178,16 @@ export default function PriceListItemForm({ item, onSubmit, onCancel, isSubmitti
                     placeholder="5"
                   />
                 </div>
+                <div>
+                  <Label>Car Quantity</Label>
+                  <Input
+                    type="number"
+                    step="1"
+                    value={formData.car_quantity}
+                    onChange={(e) => setFormData({ ...formData, car_quantity: e.target.value })}
+                    placeholder="0"
+                  />
+                </div>
               </div>
 
               <TextField
@@ -126,15 +209,28 @@ export default function PriceListItemForm({ item, onSubmit, onCancel, isSubmitti
                 rows={2}
               />
 
-              <div className="flex items-center space-x-2">
-                <Checkbox
-                  id="in_inventory"
-                  checked={formData.in_inventory}
-                  onCheckedChange={(checked) => setFormData({ ...formData, in_inventory: checked })}
-                />
-                <Label htmlFor="in_inventory" className="cursor-pointer">
-                  Item is in inventory
-                </Label>
+              <div className="flex gap-6">
+                <div className="flex items-center space-x-2">
+                  <Checkbox
+                    id="track_inventory"
+                    checked={formData.track_inventory ?? formData.in_inventory}
+                    onCheckedChange={(checked) => setFormData({ ...formData, track_inventory: checked, in_inventory: checked })}
+                  />
+                  <Label htmlFor="track_inventory" className="cursor-pointer">
+                    Track Inventory
+                  </Label>
+                </div>
+
+                <div className="flex items-center space-x-2">
+                  <Checkbox
+                    id="is_active"
+                    checked={formData.is_active !== false}
+                    onCheckedChange={(checked) => setFormData({ ...formData, is_active: checked })}
+                  />
+                  <Label htmlFor="is_active" className="cursor-pointer">
+                    Active Item
+                  </Label>
+                </div>
               </div>
 
               <div className="flex gap-3 pt-4">

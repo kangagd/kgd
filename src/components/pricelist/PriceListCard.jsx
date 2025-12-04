@@ -15,6 +15,8 @@ export default function PriceListCard({ item, isAdmin, canModifyStock, onEdit, o
   const isLowStock = item.stock_level <= item.min_stock_level && item.stock_level > 0;
   const isOutOfStock = item.stock_level === 0;
 
+  if (item.is_active === false && !isAdmin) return null;
+
   return (
     <Card 
       className={`hover:shadow-lg transition-all duration-200 border rounded-xl ${
@@ -47,6 +49,12 @@ export default function PriceListCard({ item, isAdmin, canModifyStock, onEdit, o
                 <h3 className="text-[18px] font-semibold text-[#111827] leading-[1.2]">
                   {item.item}
                 </h3>
+                {(item.sku || item.brand) && (
+                  <div className="text-xs text-slate-500 mt-1">
+                    {item.brand && <span className="font-medium mr-2">{item.brand}</span>}
+                    {item.sku && <span>SKU: {item.sku}</span>}
+                  </div>
+                )}
               </div>
               
               <div className="flex items-start gap-2">
@@ -60,14 +68,20 @@ export default function PriceListCard({ item, isAdmin, canModifyStock, onEdit, o
 
             {/* Stock Info Row */}
             <div className="flex items-center justify-between">
-              <div className="flex items-center gap-3 text-[14px] text-[#4B5563] leading-[1.4]">
-                <span>
-                  Stock: <span className={`font-semibold ${isOutOfStock ? 'text-red-600' : isLowStock ? 'text-amber-600' : 'text-[#111827]'}`}>
-                    {item.stock_level}
+            <div className="flex items-center gap-3 text-[14px] text-[#4B5563] leading-[1.4]">
+              {(item.track_inventory !== false && item.in_inventory !== false) ? (
+                <>
+                  <span>
+                    Stock: <span className={`font-semibold ${isOutOfStock ? 'text-red-600' : isLowStock ? 'text-amber-600' : 'text-[#111827]'}`}>
+                      {item.stock_level}
+                    </span>
                   </span>
-                </span>
-                <span className="text-[#6B7280]">Min: {item.min_stock_level}</span>
-              </div>
+                  <span className="text-[#6B7280]">Min: {item.min_stock_level}</span>
+                </>
+              ) : (
+                <span className="text-slate-400 italic">Non-stock item</span>
+              )}
+            </div>
 
               {inventorySummary && (
                 <div className="flex items-center text-xs text-slate-500 ml-auto mr-3">
