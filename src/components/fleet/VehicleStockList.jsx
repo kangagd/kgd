@@ -52,7 +52,9 @@ export default function VehicleStockList({ stock, onMarkUsed, onAdjust, isLoadin
                       )}
                     </div>
                     <div className="flex items-center gap-2 mt-0.5 text-xs text-gray-500">
-                      <span className="font-mono bg-gray-100 px-1.5 py-0.5 rounded">{item.sku}</span>
+                      <Badge variant="secondary" className="px-1.5 py-0 text-[10px] font-normal bg-gray-100 text-gray-600 hover:bg-gray-200">
+                        {item.category}
+                      </Badge>
                       {item.location_label && (
                         <span>• {item.location_label}</span>
                       )}
