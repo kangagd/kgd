@@ -45,6 +45,44 @@ export default function MyVehicle() {
 
   const queryClient = useQueryClient();
 
+  const updateVehicleToolMutation = useMutation({
+    mutationFn: async ({ id, quantity_on_hand }) => {
+      const payload = {
+        quantity_on_hand,
+        last_checked_at: new Date().toISOString(),
+      };
+      return base44.entities.VehicleTool.update(id, payload);
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries(["vehicle-tools", vehicle?.id]);
+    },
+  });
+
+  const syncToolsMutation = useMutation({
+    mutationFn: async () => {
+      if (!vehicle?.id) return;
+      const existingToolIds = new Set(vehicleTools.map(vt => vt.tool_item_id));
+      const missingTools = toolItems.filter(t => !existingToolIds.has(t.id));
+      
+      if (missingTools.length === 0) return;
+      
+      const promises = missingTools.map(tool => base44.entities.VehicleTool.create({
+        vehicle_id: vehicle.id,
+        tool_item_id: tool.id,
+        quantity_required: tool.default_quantity_required || 1,
+        quantity_on_hand: 0
+      }));
+      
+      await Promise.all(promises);
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries(["vehicle-tools", vehicle?.id]);
+      toast.success("Tools synced");
+    },
+  });
+
+  const [isAuditMode, setIsAuditMode] = useState(false);
+
   useEffect(() => {
     const loadUser = async () => {
       const u = await base44.auth.me();
