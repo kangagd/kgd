@@ -4,6 +4,7 @@ import { Badge } from "@/components/ui/badge";
 import { MapPin, Box, ArrowRight } from "lucide-react";
 import { useQuery } from "@tanstack/react-query";
 import { base44 } from "@/api/base44Client";
+import { INVENTORY_LOCATION } from "@/components/domain/inventoryLocationConfig";
 
 export default function LinkedPartsCard({ job }) {
   // Fetch parts linked to this job

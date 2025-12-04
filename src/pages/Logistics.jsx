@@ -12,6 +12,7 @@ import { createPageUrl } from "@/utils";
 import { Link } from "react-router-dom";
 import PartDetailModal from "../components/projects/PartDetailModal";
 import { toast } from "sonner";
+import { INVENTORY_LOCATION } from "@/components/domain/inventoryLocationConfig";
 
 const STATUS_COLORS = {
   "Pending": "bg-slate-100 text-slate-800 border-slate-200",
@@ -24,11 +25,11 @@ const STATUS_COLORS = {
 
 const LOCATION_COLORS = {
   "On Order": "bg-slate-50 text-slate-600",
-  "At Supplier": "bg-indigo-50 text-indigo-600",
-  "At Delivery Bay": "bg-blue-50 text-blue-600",
-  "In Warehouse Storage": "bg-purple-50 text-purple-600",
-  "With Technician": "bg-amber-50 text-amber-600",
-  "At Client Site": "bg-green-50 text-green-600"
+  [INVENTORY_LOCATION.SUPPLIER]: "bg-indigo-50 text-indigo-600",
+  [INVENTORY_LOCATION.DELIVERY_BAY]: "bg-blue-50 text-blue-600",
+  [INVENTORY_LOCATION.WAREHOUSE]: "bg-purple-50 text-purple-600",
+  [INVENTORY_LOCATION.WITH_TECHNICIAN]: "bg-amber-50 text-amber-600",
+  [INVENTORY_LOCATION.AT_CLIENT_SITE]: "bg-green-50 text-green-600"
 };
 
 export default function Logistics() {
@@ -122,13 +123,13 @@ export default function Logistics() {
         if (!p.eta) return false;
         return new Date(p.eta) < new Date(); // Overdue
     });
-    const atDeliveryBay = activeParts.filter(p => p.location === "At Delivery Bay");
+    const atDeliveryBay = activeParts.filter(p => p.location === INVENTORY_LOCATION.DELIVERY_BAY);
     
     return {
       totalActive: activeParts.length,
       overdue: urgentParts.length,
       readyForPickup: atDeliveryBay.length,
-      withTech: activeParts.filter(p => p.location === "With Technician").length
+      withTech: activeParts.filter(p => p.location === INVENTORY_LOCATION.WITH_TECHNICIAN).length
     };
   }, [parts]);
 
