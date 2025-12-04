@@ -1772,6 +1772,13 @@ Format as HTML bullet points using <ul> and <li> tags. Include only the most cri
         onSelect={handleLinkExistingInvoice}
         isSubmitting={isLinkingInvoice}
       />
+
+      <HandoverReportModal
+        open={showHandoverModal}
+        onClose={() => setShowHandoverModal(false)}
+        project={project}
+        jobs={jobs}
+      />
     </div>
   );
 }
