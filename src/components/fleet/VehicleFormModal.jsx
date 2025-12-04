@@ -23,7 +23,6 @@ export default function VehicleFormModal({ open, onClose, vehicle }) {
   const [formData, setFormData] = useState({
     name: "",
     registration_plate: "",
-    internal_code: "",
     status: "Active",
     primary_location: "",
     assigned_user_id: "unassigned",
@@ -44,7 +43,6 @@ export default function VehicleFormModal({ open, onClose, vehicle }) {
         setFormData({
           name: vehicle.name || "",
           registration_plate: vehicle.registration_plate || "",
-          internal_code: vehicle.internal_code || "",
           status: vehicle.status || "Active",
           primary_location: vehicle.primary_location || "",
           assigned_user_id: vehicle.assigned_user_id || "unassigned",
@@ -55,7 +53,6 @@ export default function VehicleFormModal({ open, onClose, vehicle }) {
         setFormData({
           name: "",
           registration_plate: "",
-          internal_code: "",
           status: "Active",
           primary_location: "",
           assigned_user_id: "unassigned",
@@ -176,25 +173,14 @@ export default function VehicleFormModal({ open, onClose, vehicle }) {
             />
           </div>
 
-          <div className="grid grid-cols-2 gap-4">
-            <div className="space-y-2">
-              <Label htmlFor="reg">Registration</Label>
-              <Input
-                id="reg"
-                value={formData.registration_plate}
-                onChange={(e) => setFormData({...formData, registration_plate: e.target.value})}
-                placeholder="Plate No."
-              />
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="code">Internal Code</Label>
-              <Input
-                id="code"
-                value={formData.internal_code}
-                onChange={(e) => setFormData({...formData, internal_code: e.target.value})}
-                placeholder="Code"
-              />
-            </div>
+          <div className="space-y-2">
+            <Label htmlFor="reg">Registration</Label>
+            <Input
+              id="reg"
+              value={formData.registration_plate}
+              onChange={(e) => setFormData({...formData, registration_plate: e.target.value})}
+              placeholder="Plate No."
+            />
           </div>
 
           <div className="grid grid-cols-2 gap-4">

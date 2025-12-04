@@ -173,10 +173,6 @@ export default function VehicleDetail({ vehicle, onBack }) {
                   <div className="font-medium">{vehicle.name}</div>
                 </div>
                 <div>
-                  <div className="text-sm text-gray-500">Internal Code</div>
-                  <div className="font-medium">{vehicle.internal_code || "-"}</div>
-                </div>
-                <div>
                   <div className="text-sm text-gray-500">Primary Location</div>
                   <div className="font-medium">{vehicle.primary_location || "-"}</div>
                 </div>
