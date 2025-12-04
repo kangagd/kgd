@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from "react";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { base44 } from "@/api/base44Client";
+import { generateHandoverReportPdf } from "@/api/handoverReports";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -96,7 +97,22 @@ export default function HandoverReportModal({ open, onClose, job, project }) {
         }),
       };
 
-      return base44.entities.HandoverReport.create(payload);
+      const created = await base44.entities.HandoverReport.create(payload);
+
+      // Generate PDF (stub for now)
+      try {
+        const pdfUrl = await generateHandoverReportPdf(created);
+        if (pdfUrl) {
+          await base44.entities.HandoverReport.update(created.id, {
+            pdf_url: pdfUrl,
+          });
+        }
+      } catch (e) {
+        // Fail silently for now; PDF can be regenerated later
+        console.error("Failed to generate handover PDF", e);
+      }
+
+      return created;
     },
     onSuccess: () => {
       queryClient.invalidateQueries(["handover-reports", job?.id]);

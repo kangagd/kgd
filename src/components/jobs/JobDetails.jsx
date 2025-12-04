@@ -212,6 +212,12 @@ export default function JobDetails({ job: initialJob, onClose, onStatusChange, o
     queryFn: () => base44.entities.CheckInOut.filter({ job_id: job.id })
   });
 
+  const { data: handoverReports = [] } = useQuery({
+    queryKey: ["handover-reports", job.id],
+    queryFn: () => base44.entities.HandoverReport.filter({ job_id: job.id }),
+    enabled: !!job?.id,
+  });
+
   const { data: customer } = useQuery({
     queryKey: ['customer', job.customer_id],
     queryFn: () => base44.entities.Customer.get(job.customer_id),
@@ -863,6 +869,16 @@ export default function JobDetails({ job: initialJob, onClose, onStatusChange, o
                       title="Generate Handover Report">
                       <FileCheck className="w-4 h-4" />
                     </Button>
+                    {handoverReports.length > 0 && handoverReports[handoverReports.length - 1]?.pdf_url && (
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        onClick={() => window.open(handoverReports[handoverReports.length - 1].pdf_url, '_blank')}
+                        className="h-9 w-9 hover:bg-green-50 text-green-600 hover:text-green-700 transition-all rounded-lg"
+                        title="View Handover PDF">
+                        <FileText className="w-4 h-4" />
+                      </Button>
+                    )}
                   </>
                 )}
                 
