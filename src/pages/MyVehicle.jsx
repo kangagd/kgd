@@ -17,7 +17,8 @@ import {
   ArrowDownLeft,
   RefreshCw,
   ClipboardList,
-  Loader2
+  Loader2,
+  Wrench
 } from "lucide-react";
 import {
   DropdownMenu,
@@ -144,6 +145,46 @@ export default function MyVehicle() {
       return acc;
     }, {});
   }, [projects]);
+
+  const { data: vehicleTools = [], isLoading: vehicleToolsLoading } = useQuery({
+    queryKey: ["vehicle-tools", vehicle?.id],
+    queryFn: async () => {
+      if (!vehicle?.id) return [];
+      return base44.entities.VehicleTool.filter({
+        vehicle_id: vehicle.id,
+      });
+    },
+    enabled: !!vehicle?.id,
+  });
+
+  const { data: toolItems = [] } = useQuery({
+    queryKey: ["tool-items"],
+    queryFn: () => base44.entities.ToolItem.filter({ is_active: true }),
+  });
+
+  const toolItemMap = useMemo(() => {
+    const map = {};
+    for (const t of toolItems) {
+      map[t.id] = t;
+    }
+    return map;
+  }, [toolItems]);
+
+  const groupedToolsByLocation = useMemo(() => {
+    const groups = {};
+    for (const vt of vehicleTools) {
+      const tool = vt.tool_item_id ? toolItemMap[vt.tool_item_id] : null;
+      const location = vt.location || tool?.category || "Other";
+      if (!groups[location]) {
+        groups[location] = [];
+      }
+      groups[location].push({
+        vehicleTool: vt,
+        toolItem: tool,
+      });
+    }
+    return groups;
+  }, [vehicleTools, toolItemMap]);
 
   if (isVehicleLoading || !user) {
     return <div className="flex justify-center items-center h-screen"><Loader2 className="animate-spin w-8 h-8 text-gray-400" /></div>;
@@ -325,6 +366,78 @@ export default function MyVehicle() {
                 </div>
               );
             })}
+          </div>
+        )}
+      </div>
+
+      {/* Tools Section */}
+      <div className="mb-4 bg-slate-50 rounded-xl border border-slate-200 p-4">
+        <h3 className="font-semibold text-gray-900 mb-2 flex items-center gap-2">
+          <Wrench className="w-5 h-5 text-slate-600" />
+          Tools in this vehicle
+        </h3>
+        {vehicleToolsLoading ? (
+          <p className="text-sm text-gray-500">Loading tools...</p>
+        ) : !vehicleTools.length ? (
+          <p className="text-sm text-gray-500 italic">
+            No tools have been configured for this vehicle yet.
+          </p>
+        ) : (
+          <div className="space-y-4">
+            {Object.entries(groupedToolsByLocation).map(([location, items]) => (
+              <div key={location} className="border rounded-xl bg-white p-3">
+                <div className="flex items-center justify-between mb-2">
+                  <h4 className="text-sm font-semibold text-gray-900">
+                    {location}
+                  </h4>
+                  <span className="text-xs text-gray-500">
+                    {items.length} tool{items.length !== 1 ? "s" : ""}
+                  </span>
+                </div>
+                <div className="space-y-2">
+                  {items.map(({ vehicleTool, toolItem }) => {
+                    const required = vehicleTool.quantity_required ?? toolItem?.default_quantity_required ?? 0;
+                    const onHand = vehicleTool.quantity_on_hand ?? 0;
+                    const missingCount = Math.max(0, required - onHand);
+                    const isMissing = required > 0 && onHand < required;
+
+                    return (
+                      <div
+                        key={vehicleTool.id}
+                        className="flex items-center justify-between text-xs py-1 border-b border-gray-50 last:border-0"
+                      >
+                        <div>
+                          <div className="font-medium text-gray-900">
+                            {toolItem?.name || "Unknown Tool"}
+                          </div>
+                          {toolItem?.notes && (
+                            <div className="text-[10px] text-gray-500 truncate max-w-[200px]">
+                              {toolItem.notes}
+                            </div>
+                          )}
+                        </div>
+                        <div className="flex items-center gap-2">
+                          <span className="text-[11px] text-gray-600 font-mono">
+                            {onHand} / {required}
+                          </span>
+                          {isMissing ? (
+                            <Badge variant="outline" className="bg-red-50 text-red-700 border-red-200 text-[10px] px-1.5 py-0">
+                              Missing {missingCount}
+                            </Badge>
+                          ) : (
+                            required > 0 && (
+                              <Badge variant="outline" className="bg-emerald-50 text-emerald-700 border-emerald-200 text-[10px] px-1.5 py-0">
+                                OK
+                              </Badge>
+                            )
+                          )}
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
+            ))}
           </div>
         )}
       </div>
