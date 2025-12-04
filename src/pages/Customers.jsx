@@ -96,9 +96,9 @@ export default function Customers() {
       });
       return newCustomer;
     },
-    onSuccess: () => {
+    onSuccess: (newCustomer) => {
+      queryClient.setQueryData(['allCustomers'], (old) => [newCustomer, ...(old || [])]);
       queryClient.invalidateQueries({ queryKey: ['allCustomers'] });
-      refetch();
       setShowForm(false);
       setEditingCustomer(null);
     }
@@ -116,9 +116,11 @@ export default function Customers() {
       });
       return updated;
     },
-    onSuccess: () => {
+    onSuccess: (updatedCustomer) => {
+      queryClient.setQueryData(['allCustomers'], (old) => 
+        (old || []).map(c => c.id === updatedCustomer.id ? updatedCustomer : c)
+      );
       queryClient.invalidateQueries({ queryKey: ['allCustomers'] });
-      refetch();
       setShowForm(false);
       setEditingCustomer(null);
       setSelectedCustomer(null);
@@ -127,9 +129,11 @@ export default function Customers() {
 
   const deleteCustomerMutation = useMutation({
     mutationFn: (customerId) => base44.entities.Customer.update(customerId, { deleted_at: new Date().toISOString() }),
-    onSuccess: () => {
+    onSuccess: (updatedCustomer, deletedId) => {
+      queryClient.setQueryData(['allCustomers'], (old) => 
+        (old || []).map(c => c.id === deletedId ? { ...c, deleted_at: updatedCustomer.deleted_at } : c)
+      );
       queryClient.invalidateQueries({ queryKey: ['allCustomers'] });
-      refetch();
       setSelectedCustomer(null);
     },
     onError: (error) => {

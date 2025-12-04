@@ -49,9 +49,9 @@ export default function Organisations() {
 
   const createMutation = useMutation({
     mutationFn: (data) => base44.entities.Organisation.create(data),
-    onSuccess: () => {
+    onSuccess: (newOrg) => {
+      queryClient.setQueryData(['organisations'], (old) => [newOrg, ...(old || [])]);
       queryClient.invalidateQueries({ queryKey: ['organisations'] });
-      refetch();
       setShowForm(false);
       setEditingOrganisation(null);
     }
@@ -59,9 +59,11 @@ export default function Organisations() {
 
   const updateMutation = useMutation({
     mutationFn: ({ id, data }) => base44.entities.Organisation.update(id, data),
-    onSuccess: () => {
+    onSuccess: (updatedOrg) => {
+      queryClient.setQueryData(['organisations'], (old) => 
+        (old || []).map(org => org.id === updatedOrg.id ? updatedOrg : org)
+      );
       queryClient.invalidateQueries({ queryKey: ['organisations'] });
-      refetch();
       setShowForm(false);
       setEditingOrganisation(null);
     }
@@ -69,9 +71,11 @@ export default function Organisations() {
 
   const deleteMutation = useMutation({
     mutationFn: (id) => base44.entities.Organisation.update(id, { deleted_at: new Date().toISOString() }),
-    onSuccess: () => {
+    onSuccess: (updatedOrg, deletedId) => {
+      queryClient.setQueryData(['organisations'], (old) => 
+        (old || []).filter(org => org.id !== deletedId)
+      );
       queryClient.invalidateQueries({ queryKey: ['organisations'] });
-      refetch();
       setSelectedOrganisation(null);
     }
   });
