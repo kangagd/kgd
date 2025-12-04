@@ -60,7 +60,19 @@ export default function Logistics() {
     queryFn: () => base44.entities.PriceListItem.list('item'),
   });
 
+  const { data: vehicles = [] } = useQuery({
+    queryKey: ['vehicles-for-logistics'],
+    queryFn: () => base44.entities.Vehicle.list('name'),
+  });
+
   // Maps for quick lookup
+  const vehicleMap = useMemo(() => {
+    return vehicles.reduce((acc, v) => {
+      acc[v.id] = v;
+      return acc;
+    }, {});
+  }, [vehicles]);
+
   const priceListMap = useMemo(() => {
     return priceListItems.reduce((acc, item) => {
       acc[item.id] = item;
@@ -401,6 +413,16 @@ export default function Logistics() {
                               ))}
                             </SelectContent>
                           </Select>
+                          {part.location === INVENTORY_LOCATION.WITH_TECHNICIAN && part.assigned_vehicle_id && vehicleMap[part.assigned_vehicle_id] && (
+                            <div className="mt-1.5">
+                              <Badge variant="outline" className="text-[10px] px-1.5 h-5 bg-white border-amber-200 text-amber-700 font-normal whitespace-nowrap overflow-hidden max-w-[170px]">
+                                <Truck className="w-3 h-3 mr-1 flex-shrink-0" />
+                                <span className="truncate">
+                                  {vehicleMap[part.assigned_vehicle_id].name || vehicleMap[part.assigned_vehicle_id].display_name || vehicleMap[part.assigned_vehicle_id].registration_plate || "Vehicle"}
+                                </span>
+                              </Badge>
+                            </div>
+                          )}
                         </td>
                         <td className="px-6 py-4 align-top">
                           {linkedJobs.length > 0 ? (

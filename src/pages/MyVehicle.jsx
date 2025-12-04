@@ -67,6 +67,18 @@ export default function MyVehicle() {
     enabled: !!vehicle
   });
 
+  const { data: assignedParts = [] } = useQuery({
+    queryKey: ['parts-assigned-to-vehicle', vehicle?.id],
+    queryFn: async () => {
+      if (!vehicle?.id) return [];
+      const allParts = await base44.entities.Part.filter({
+        assigned_vehicle_id: vehicle.id,
+      });
+      return allParts;
+    },
+    enabled: !!vehicle?.id,
+  });
+
   if (isVehicleLoading || !user) {
     return <div className="flex justify-center items-center h-screen"><Loader2 className="animate-spin w-8 h-8 text-gray-400" /></div>;
   }
@@ -178,6 +190,42 @@ export default function MyVehicle() {
           onAdjust={(item) => setAdjustmentItem(item)}
           isLoading={isStockLoading}
         />
+      </div>
+
+      {/* Project Parts Assigned */}
+      <div className="mb-4 bg-amber-50/50 rounded-xl border border-amber-100 p-4">
+        <h3 className="font-semibold text-gray-900 mb-2 flex items-center gap-2">
+          <Package className="w-5 h-5 text-amber-600" />
+          Project Parts Assigned to This Vehicle
+        </h3>
+        {assignedParts.length === 0 ? (
+          <p className="text-sm text-gray-500 italic">
+            No project parts are currently assigned to this vehicle.
+          </p>
+        ) : (
+          <div className="space-y-2">
+            {assignedParts.map((part) => (
+              <div key={part.id} className="p-3 border border-amber-200 rounded-lg bg-white flex justify-between items-center shadow-sm">
+                <div>
+                  <div className="text-sm font-medium text-gray-900">
+                    {part.category || "Part"}
+                  </div>
+                  {part.supplier_name && (
+                    <div className="text-xs text-gray-500 mt-0.5">
+                      {part.supplier_name}
+                    </div>
+                  )}
+                </div>
+                <div className="text-xs text-right">
+                  <Badge variant="outline" className="bg-amber-50 text-amber-700 border-amber-200 mb-1">
+                    {part.location}
+                  </Badge>
+                  <div className="text-gray-500">{part.status}</div>
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
       </div>
 
       {/* Bottom Actions */}

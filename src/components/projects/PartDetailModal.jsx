@@ -96,6 +96,13 @@ export default function PartDetailModal({ open, part, onClose, onSave, isSubmitt
     enabled: open
   });
 
+  // Fetch vehicles for parts
+  const { data: vehicles = [] } = useQuery({
+    queryKey: ['vehicles-for-parts'],
+    queryFn: () => base44.entities.Vehicle.list('name'),
+    enabled: open
+  });
+
   const handleSubmit = (e) => {
     e.preventDefault();
     onSave(formData);
@@ -264,6 +271,30 @@ export default function PartDetailModal({ open, part, onClose, onSave, isSubmitt
                     </SelectContent>
                   </Select>
                 </div>
+
+                {formData.location === "With Technician" && (
+                  <div className="space-y-2">
+                    <Label>Assigned Vehicle (optional)</Label>
+                    <Select
+                      value={formData.assigned_vehicle_id || ""}
+                      onValueChange={(value) => setFormData(prev => ({ ...prev, assigned_vehicle_id: value || null }))}
+                    >
+                      <SelectTrigger className="bg-white">
+                        <SelectValue placeholder="Select a vehicle" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {vehicles.map((v) => (
+                          <SelectItem key={v.id} value={v.id}>
+                            {v.name || v.display_name || v.registration || `Vehicle ${v.id}`}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                    <p className="text-xs text-slate-500">
+                      This helps logistics and technicians see which van is carrying these parts.
+                    </p>
+                  </div>
+                )}
               </div>
             </section>
 
