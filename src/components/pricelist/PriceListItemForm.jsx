@@ -8,7 +8,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Checkbox } from "@/components/ui/checkbox";
 import { ArrowLeft } from "lucide-react";
 
-export default function PriceListItemForm({ item, onSubmit, onCancel, isSubmitting }) {
+export default function PriceListItemForm({ item, onSubmit, onCancel, isSubmitting, canViewCosts = false }) {
   const [formData, setFormData] = useState(item || {
     category: "",
     item: "",
@@ -105,7 +105,8 @@ export default function PriceListItemForm({ item, onSubmit, onCancel, isSubmitti
                 </div>
               </div>
 
-              <div className="grid grid-cols-3 gap-4">
+              <div className={`grid ${canViewCosts ? 'grid-cols-3' : 'grid-cols-1'} gap-4`}>
+                {canViewCosts && (
                 <div>
                   <Label>Unit Cost</Label>
                   <Input
@@ -116,6 +117,7 @@ export default function PriceListItemForm({ item, onSubmit, onCancel, isSubmitti
                     placeholder="0.00"
                   />
                 </div>
+                )}
                 <div>
                   <Label>Price (AUD) *</Label>
                   <Input
@@ -127,6 +129,7 @@ export default function PriceListItemForm({ item, onSubmit, onCancel, isSubmitti
                     required
                   />
                 </div>
+                {canViewCosts && (
                 <div>
                   <Label>Target Margin (%)</Label>
                   <Input
@@ -137,6 +140,7 @@ export default function PriceListItemForm({ item, onSubmit, onCancel, isSubmitti
                     placeholder="0%"
                   />
                 </div>
+                )}
               </div>
 
               <div>

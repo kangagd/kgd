@@ -157,6 +157,7 @@ export default function PriceList() {
           setEditingItem(null);
         }}
         isSubmitting={createItemMutation.isPending || updateItemMutation.isPending}
+        canViewCosts={isAdminOrManager}
       />
     );
   }
@@ -271,6 +272,7 @@ export default function PriceList() {
                 onDelete={handleDelete}
                 onStockAdjust={handleStockAdjust}
                 inventorySummary={inventorySummaryByItem[item.id]}
+                canViewCosts={isAdminOrManager}
               />
             ))}
           </div>

@@ -11,7 +11,7 @@ const categoryColors = {
   "Remotes/Accessories": "bg-green-100 text-green-700"
 };
 
-export default function PriceListCard({ item, isAdmin, canModifyStock, onEdit, onDelete, onStockAdjust, inventorySummary }) {
+export default function PriceListCard({ item, isAdmin, canModifyStock, onEdit, onDelete, onStockAdjust, inventorySummary, canViewCosts }) {
   const isLowStock = item.stock_level <= item.min_stock_level && item.stock_level > 0;
   const isOutOfStock = item.stock_level === 0;
 
@@ -62,6 +62,12 @@ export default function PriceListCard({ item, isAdmin, canModifyStock, onEdit, o
                   <div className="text-[#111827] text-[22px] font-bold leading-[1.2]">
                     ${item.price.toFixed(2)}
                   </div>
+                  {canViewCosts && (
+                    <div className="text-xs text-slate-400 mt-1 font-normal">
+                      <div>Cost: ${item.unit_cost?.toFixed(2) || '0.00'}</div>
+                      <div>Margin: {item.target_margin || 0}%</div>
+                    </div>
+                  )}
                 </div>
               </div>
             </div>
