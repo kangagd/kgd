@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useMemo } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { base44 } from "@/api/base44Client";
 import {
@@ -28,12 +28,95 @@ export default function JobItemsUsedModal({ job, vehicle, open, onClose, onSaved
     enabled: open,
   });
 
-  // Create Stock Movement
+  const priceListMap = useMemo(() => {
+    const map = {};
+    for (const item of priceItems) {
+      map[item.id] = item;
+    }
+    return map;
+  }, [priceItems]);
+
+  const getUnitCost = (item) => {
+    if (!item) return 0;
+    return (
+      item.unit_cost ??
+      item.cost_price ??
+      item.buy_price ??
+      item.cost ??
+      item.price ??
+      0
+    );
+  };
+
+  const adjustInventoryForUsage = async ({ price_list_item_id, quantity, vehicle }) => {
+    if (!price_list_item_id || !quantity) return;
+  
+    const fromLocationType = vehicle ? LOCATION_TYPE.VEHICLE : LOCATION_TYPE.WAREHOUSE;
+    const fromLocationId = vehicle ? vehicle.id : "warehouse_main";
+  
+    // Update InventoryQuantity
+    const existingRows = await base44.entities.InventoryQuantity.filter({
+      price_list_item_id,
+      location_type: fromLocationType,
+      location_id: fromLocationId,
+    });
+  
+    if (existingRows && existingRows.length > 0) {
+      const row = existingRows[0];
+      const currentQty = row.quantity_on_hand || 0;
+      const newQty = Math.max(0, currentQty - quantity);
+  
+      await base44.entities.InventoryQuantity.update(row.id, {
+        quantity_on_hand: newQty,
+      });
+    }
+  
+    // Update PriceListItem global stock
+    const item = priceListMap[price_list_item_id];
+    if (item && typeof item.stock_level === "number") {
+      const newStockLevel = Math.max(0, (item.stock_level || 0) - quantity);
+      await base44.entities.PriceListItem.update(price_list_item_id, {
+        stock_level: newStockLevel,
+      });
+    }
+  
+    queryClient.invalidateQueries(["inventory-quantities"]);
+    queryClient.invalidateQueries(["inventory-quantities-for-vehicle", vehicle?.id]);
+    queryClient.invalidateQueries(["priceListItems"]);
+  };
+
+  const addUsageCostToProject = async ({ projectId, price_list_item_id, quantity }) => {
+    if (!price_list_item_id || !quantity || !projectId) return;
+  
+    const targetProject = await base44.entities.Project.get(projectId);
+    if (!targetProject) return;
+  
+    const priceItem = priceListMap[price_list_item_id] ||
+      (await base44.entities.PriceListItem.get(price_list_item_id));
+      
+    const unitCost = getUnitCost(priceItem);
+    const delta = unitCost * quantity;
+  
+    const currentMaterials = targetProject.materials_cost || 0;
+    const newMaterials = currentMaterials + delta;
+  
+    await base44.entities.Project.update(targetProject.id, {
+      materials_cost: newMaterials,
+    });
+  
+    queryClient.invalidateQueries(["project", targetProject.id]);
+    queryClient.invalidateQueries(["projects"]);
+  };
+
+  // Create Stock Movement and Adjust Inventory
   const createMovementMutation = useMutation({
     mutationFn: async () => {
+      const qty = Number(quantity);
+      if (!selectedItemId || !qty || qty <= 0) return;
+
       const payload = {
         price_list_item_id: selectedItemId,
-        quantity: Number(quantity),
+        quantity: qty,
         movement_type: MOVEMENT_TYPE.USAGE,
         from_location_type: vehicle ? LOCATION_TYPE.VEHICLE : LOCATION_TYPE.WAREHOUSE,
         from_location_id: vehicle ? vehicle.id : "warehouse_main",
@@ -41,11 +124,26 @@ export default function JobItemsUsedModal({ job, vehicle, open, onClose, onSaved
         to_location_id: `job:${job.id}`,
         job_id: job.id,
         project_id: job.project_id,
-        technician_id: job.assigned_to && job.assigned_to.length > 0 ? job.assigned_to[0] : null, // Best guess for now
+        technician_id: job.assigned_to && job.assigned_to.length > 0 ? job.assigned_to[0] : null,
         created_at: new Date().toISOString(),
       };
       
-      return await base44.entities.StockMovement.create(payload);
+      // 1) Create StockMovement
+      await base44.entities.StockMovement.create(payload);
+
+      // 2) Adjust inventory at source
+      await adjustInventoryForUsage({
+        price_list_item_id: selectedItemId,
+        quantity: qty,
+        vehicle,
+      });
+
+      // 3) Add cost to Project.materials_cost
+      await addUsageCostToProject({
+        projectId: job.project_id,
+        price_list_item_id: selectedItemId,
+        quantity: qty,
+      });
     },
     onSuccess: () => {
       toast.success("Item usage recorded");
