@@ -54,7 +54,7 @@ import TasksPanel from "../tasks/TasksPanel";
 import QuotesSection from "../quotes/QuotesSection";
 import LinkedPartsCard from "./LinkedPartsCard";
 import JobItemsUsedModal from "./JobItemsUsedModal";
-import HandoverReportModal from "../handover/HandoverReportModal";
+
 
 const statusColors = {
   "Open": "bg-slate-100 text-slate-700 border-slate-200",
