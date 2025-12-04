@@ -487,7 +487,6 @@ export default function Projects() {
                   {/* Second row */}
                   <div className="flex items-center gap-4 mb-3 text-[#4B5563] flex-wrap">
                     <div className="flex items-center gap-1.5">
-                    <div className="flex items-center gap-1.5">
                       <User className="w-4 h-4" />
                       <span className="text-[14px] leading-[1.4]">{project.customer_name}</span>
                     </div>
