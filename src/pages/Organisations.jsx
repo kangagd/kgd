@@ -23,11 +23,13 @@ export default function Organisations() {
   const [modalOrganisation, setModalOrganisation] = useState(null);
   const queryClient = useQueryClient();
 
-  const { data: organisations = [], isLoading, refetch } = useQuery({
+  const { data: allOrganisations = [], isLoading, refetch } = useQuery({
     queryKey: ['organisations'],
-    queryFn: () => base44.entities.Organisation.filter({ deleted_at: { $exists: false } }),
+    queryFn: () => base44.entities.Organisation.list(),
     refetchInterval: 15000, // Refetch every 15 seconds
   });
+
+  const organisations = allOrganisations.filter(org => !org.deleted_at);
 
   const { data: allCustomers = [] } = useQuery({
     queryKey: ['customers'],
