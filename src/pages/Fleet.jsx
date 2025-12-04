@@ -21,7 +21,7 @@ import { format } from "date-fns";
 import { useMemo } from "react";
 
 export default function Fleet() {
-  const [selectedVehicle, setSelectedVehicle] = useState(null);
+  const [selectedVehicleId, setSelectedVehicleId] = useState(null);
   const [showCreateModal, setShowCreateModal] = useState(false);
   const [filterStatus, setFilterStatus] = useState("all");
   const [search, setSearch] = useState("");
@@ -30,6 +30,11 @@ export default function Fleet() {
     queryKey: ['vehicles'],
     queryFn: () => base44.entities.Vehicle.list('-name')
   });
+
+  const selectedVehicle = useMemo(() => 
+    vehicles.find(v => v.id === selectedVehicleId), 
+    [vehicles, selectedVehicleId]
+  );
 
   const { data: partsWithVehicles = [] } = useQuery({
     queryKey: ["parts-with-vehicles"],
@@ -58,8 +63,8 @@ export default function Fleet() {
     return matchesStatus && matchesSearch;
   });
 
-  if (selectedVehicle) {
-    return <VehicleDetail vehicle={selectedVehicle} onBack={() => setSelectedVehicle(null)} />;
+  if (selectedVehicleId && selectedVehicle) {
+    return <VehicleDetail vehicle={selectedVehicle} onBack={() => setSelectedVehicleId(null)} />;
   }
 
   return (
@@ -113,7 +118,7 @@ export default function Fleet() {
           <Card 
             key={vehicle.id} 
             className="hover:shadow-lg transition-shadow cursor-pointer group border-gray-200"
-            onClick={() => setSelectedVehicle(vehicle)}
+            onClick={() => setSelectedVehicleId(vehicle.id)}
           >
             <CardContent className="p-5">
               <div className="flex justify-between items-start mb-4">
