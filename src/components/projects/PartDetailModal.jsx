@@ -65,7 +65,8 @@ export default function PartDetailModal({ open, part, onClose, onSave, isSubmitt
         source_type: part.source_type || "Supplier – Deliver to Warehouse",
         location: part.location || "On Order",
         order_date: part.order_date || (part.id ? "" : new Date().toISOString().split('T')[0]),
-        price_list_item_id: part.price_list_item_id || null
+        price_list_item_id: part.price_list_item_id || null,
+        assigned_vehicle_id: part.assigned_vehicle_id || null
       };
       setFormData(mappedPart);
     } else {
@@ -77,7 +78,8 @@ export default function PartDetailModal({ open, part, onClose, onSave, isSubmitt
         order_date: new Date().toISOString().split('T')[0],
         linked_logistics_jobs: [],
         attachments: [],
-        price_list_item_id: null
+        price_list_item_id: null,
+        assigned_vehicle_id: null
       });
     }
   }, [part, open]);
