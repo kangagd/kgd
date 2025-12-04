@@ -114,6 +114,7 @@ export default function ProjectDetails({ project: initialProject, onClose, onEdi
   const [isLinkingInvoice, setIsLinkingInvoice] = useState(false);
   const [isChatOpen, setIsChatOpen] = useState(false);
   const [lastReadChat, setLastReadChat] = useState(() => localStorage.getItem(`lastReadChat-${initialProject.id}`) || new Date().toISOString());
+  const [showHandoverModal, setShowHandoverModal] = useState(false);
 
   // Get email thread ID from props, URL params, or project's source
   const urlParams = new URLSearchParams(window.location.search);
