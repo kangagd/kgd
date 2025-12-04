@@ -19,6 +19,11 @@ export default function AddressAutocomplete({
   
   const inputRef = useRef(null);
   const autocompleteRef = useRef(null);
+  const onChangeRef = useRef(onChange);
+
+  useEffect(() => {
+    onChangeRef.current = onChange;
+  }, [onChange]);
 
   useEffect(() => {
     setInputValue(value || "");
