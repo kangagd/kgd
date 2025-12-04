@@ -17,6 +17,7 @@ import { useMemo } from "react";
 export default function PriceList() {
   const [searchTerm, setSearchTerm] = useState("");
   const [categoryFilter, setCategoryFilter] = useState("all");
+  const [inventoryTypeFilter, setInventoryTypeFilter] = useState("all");
   const [stockFilter, setStockFilter] = useState("all");
   const [showForm, setShowForm] = useState(false);
   const [editingItem, setEditingItem] = useState(null);
@@ -107,7 +108,12 @@ export default function PriceList() {
     stockFilter === "low" && item.stock_level <= item.min_stock_level ||
     stockFilter === "out" && item.stock_level === 0;
 
-    return matchesSearch && matchesCategory && matchesStock;
+    const matchesInventoryType =
+      inventoryTypeFilter === "all" ||
+      (inventoryTypeFilter === "stock" && item.track_inventory !== false) ||
+      (inventoryTypeFilter === "non_stock" && item.track_inventory === false);
+
+    return matchesSearch && matchesCategory && matchesStock && matchesInventoryType;
   });
 
   const categories = ["Service", "Motor", "Remotes/Accessories"];
@@ -212,13 +218,21 @@ export default function PriceList() {
             />
           </div>
           
-          <div className="chip-container -mx-4 px-4 md:mx-0 md:px-0">
+          <div className="chip-container -mx-4 px-4 md:mx-0 md:px-0 space-y-2">
             <Tabs value={categoryFilter} onValueChange={setCategoryFilter} className="w-full">
               <TabsList className="w-full justify-start min-w-max md:min-w-0">
-                <TabsTrigger value="all" className="flex-1 whitespace-nowrap">All</TabsTrigger>
+                <TabsTrigger value="all" className="flex-1 whitespace-nowrap">All Categories</TabsTrigger>
                 {categories.map((cat) => (
                   <TabsTrigger key={cat} value={cat} className="flex-1 whitespace-nowrap">{cat}</TabsTrigger>
                 ))}
+              </TabsList>
+            </Tabs>
+            
+            <Tabs value={inventoryTypeFilter} onValueChange={setInventoryTypeFilter} className="w-full">
+              <TabsList className="w-full justify-start min-w-max md:min-w-0">
+                <TabsTrigger value="all" className="flex-1 whitespace-nowrap">All Types</TabsTrigger>
+                <TabsTrigger value="stock" className="flex-1 whitespace-nowrap">Stock Items</TabsTrigger>
+                <TabsTrigger value="non_stock" className="flex-1 whitespace-nowrap">Non-Stock</TabsTrigger>
               </TabsList>
             </Tabs>
           </div>
