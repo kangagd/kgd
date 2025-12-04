@@ -48,10 +48,10 @@ export default function PhotoGridItem({ photo, isSelectionMode, isSelected, onTo
       </div>
       <CardContent className="p-3 space-y-2">
         <div className="text-sm font-bold text-[#111827] leading-tight truncate">
-          {photo.job_number ? `#${photo.job_number}` : 'No Job'} - {photo.customer_name || 'Unknown'}
+          {photo.job_number ? `#${photo.job_number} - ${photo.customer_name}` : (photo.customer_name || photo.project_name || 'General Upload')}
         </div>
         <div className="text-xs text-[#6B7280] truncate">
-          {photo.project_name || photo.address || photo.product_type || 'No details'}
+          {photo.address || photo.project_name || `Uploaded by ${photo.technician_name || 'Unknown'}`}
         </div>
         <div className="flex flex-wrap gap-1">
           {photo.tags?.slice(0, 2).map((tag, index) => (

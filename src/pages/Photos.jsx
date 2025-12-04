@@ -88,11 +88,13 @@ export default function Photos() {
 
   // Filters
   const filteredPhotos = allPhotos.filter(photo => {
-    const matchesSearch =
-      photo.customer_name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      photo.job_number?.toString().includes(searchTerm) ||
-      photo.address?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      photo.project_name?.toLowerCase().includes(searchTerm.toLowerCase());
+    const term = searchTerm.toLowerCase();
+    const matchesSearch = !searchTerm ||
+      (photo.customer_name || "").toLowerCase().includes(term) ||
+      (photo.job_number || "").toString().includes(term) ||
+      (photo.address || "").toLowerCase().includes(term) ||
+      (photo.project_name || "").toLowerCase().includes(term) ||
+      (photo.notes || "").toLowerCase().includes(term);
 
     const matchesProductType = productTypeFilter === "all" || photo.product_type === productTypeFilter;
     const matchesTag = tagFilter === "all" || (photo.tags && photo.tags.includes(tagFilter));
