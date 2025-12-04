@@ -2044,12 +2044,7 @@ export default function JobDetails({ job: initialJob, onClose, onStatusChange, o
         onClose={() => setShowItemsUsedModal(false)}
       />
 
-      <HandoverReportModal
-        open={showHandoverModal}
-        onClose={() => setShowHandoverModal(false)}
-        job={job}
-        project={job.project_id ? { id: job.project_id, ...job } : null} // Pass project context if available
-      />
+
 
       </>);
 
