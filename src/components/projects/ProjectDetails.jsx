@@ -1130,6 +1130,20 @@ Format as HTML bullet points using <ul> and <li> tags. Include only the most cri
                     <span className="text-[12px] font-medium text-[#111827] truncate">Invoice</span>
                   </button>
                 )}
+                {handoverReports.length > 0 && handoverReports[handoverReports.length - 1].pdf_url && (
+                  <button
+                    onClick={() => setPreviewFile({
+                      url: handoverReports[handoverReports.length - 1].pdf_url,
+                      name: 'Handover Report',
+                      type: 'pdf',
+                      projectName: project.title
+                    })}
+                    className="w-full flex items-center gap-2 px-3 py-2 bg-white border border-[#E5E7EB] rounded-lg hover:border-[#FAE008] transition-all cursor-pointer"
+                  >
+                    <FileText className="w-4 h-4 text-orange-600 flex-shrink-0" />
+                    <span className="text-[12px] font-medium text-[#111827] truncate">Handover Report</span>
+                  </button>
+                )}
 
                 {project.other_documents && project.other_documents.length > 0 && (
                   <div className="space-y-1 pt-1 border-t border-[#E5E7EB]">
