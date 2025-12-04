@@ -1,15 +1,20 @@
 import React from "react";
 import { cn } from "@/lib/utils";
 import { JOB_STATUS } from "@/components/domain/jobConfig";
+import { CUSTOMER_TYPE } from "@/components/domain/customerConfig";
+import { ORGANISATION_TYPE } from "@/components/domain/organisationConfig";
 
 // Unified badge variant mappings
 const BADGE_VARIANTS = {
   // Customer Types
   customerType: {
-    "Owner": "bg-purple-100 text-purple-700 hover:bg-purple-200",
-    "Builder": "bg-blue-100 text-blue-700 hover:bg-blue-200",
-    "Real Estate - Tenant": "bg-green-100 text-green-700 hover:bg-green-200",
-    "Strata - Owner": "bg-amber-100 text-amber-700 hover:bg-amber-200",
+    [CUSTOMER_TYPE.OWNER]: "bg-purple-100 text-purple-700 hover:bg-purple-200",
+    [CUSTOMER_TYPE.BUILDER]: "bg-blue-100 text-blue-700 hover:bg-blue-200",
+    [CUSTOMER_TYPE.REAL_ESTATE_AGENT]: "bg-cyan-100 text-cyan-700 hover:bg-cyan-200",
+    [CUSTOMER_TYPE.REAL_ESTATE_TENANT]: "bg-green-100 text-green-700 hover:bg-green-200",
+    [CUSTOMER_TYPE.STRATA_OWNER]: "bg-amber-100 text-amber-700 hover:bg-amber-200",
+    [CUSTOMER_TYPE.STRATA_AGENT]: "bg-orange-100 text-orange-700 hover:bg-orange-200",
+    [CUSTOMER_TYPE.OTHER]: "bg-slate-100 text-slate-700 hover:bg-slate-200",
   },
   
   // Project Statuses
@@ -104,10 +109,11 @@ const BADGE_VARIANTS = {
   
   // Organisation Types
   organisationType: {
-    "Strata": "bg-purple-100 text-purple-700 hover:bg-purple-200",
-    "Builder": "bg-blue-100 text-blue-700 hover:bg-blue-200",
-    "Real Estate": "bg-green-100 text-green-700 hover:bg-green-200",
-    "Supplier": "bg-amber-100 text-amber-700 hover:bg-amber-200",
+    [ORGANISATION_TYPE.STRATA]: "bg-purple-100 text-purple-700 hover:bg-purple-200",
+    [ORGANISATION_TYPE.BUILDER]: "bg-blue-100 text-blue-700 hover:bg-blue-200",
+    [ORGANISATION_TYPE.REAL_ESTATE]: "bg-green-100 text-green-700 hover:bg-green-200",
+    [ORGANISATION_TYPE.SUPPLIER]: "bg-amber-100 text-amber-700 hover:bg-amber-200",
+    [ORGANISATION_TYPE.OTHER]: "bg-slate-100 text-slate-700 hover:bg-slate-200",
   },
   
   // Product Types
