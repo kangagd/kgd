@@ -5,7 +5,12 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Plus, Search, SlidersHorizontal, User, Filter, Eye, AlertTriangle } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
-import { ProjectStatusBadge, ProjectTypeBadge } from "../components/common/StatusBadge";
+import { 
+  ProjectStatusBadge, 
+  ProjectTypeBadge, 
+  CustomerTypeBadge, 
+  OrganisationTypeBadge 
+} from "../components/common/StatusBadge";
 import { Card, CardContent } from "@/components/ui/card";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Checkbox } from "@/components/ui/checkbox";
@@ -477,6 +482,12 @@ export default function Projects() {
                     </div>
                     <div className="flex items-center gap-2 flex-wrap">
                       <AgeBadge date={project.stage_start_date || project.created_date} />
+                      {project.organisation_type && (
+                        <OrganisationTypeBadge value={project.organisation_type} />
+                      )}
+                      {project.customer_type && (
+                        <CustomerTypeBadge value={project.customer_type} />
+                      )}
                       {project.project_type && (
                         <ProjectTypeBadge value={project.project_type} />
                       )}

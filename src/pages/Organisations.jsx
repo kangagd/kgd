@@ -12,13 +12,7 @@ import OrganisationDetails from "../components/organisations/OrganisationDetails
 import EntityModal from "../components/common/EntityModal.jsx";
 import OrganisationModalView from "../components/organisations/OrganisationModalView";
 import { createPageUrl } from "@/utils";
-
-const organisationTypeColors = {
-  "Strata": "bg-purple-100 text-purple-700 border-purple-200",
-  "Builder": "bg-blue-100 text-blue-700 border-blue-200",
-  "Real Estate": "bg-green-100 text-green-700 border-green-200",
-  "Supplier": "bg-orange-100 text-orange-700 border-orange-200",
-};
+import { OrganisationTypeBadge } from "@/components/common/StatusBadge";
 
 export default function Organisations() {
   const [searchTerm, setSearchTerm] = useState("");
@@ -229,9 +223,7 @@ export default function Organisations() {
                         {org.name}
                       </h3>
                       {org.organisation_type && (
-                        <Badge className={`${organisationTypeColors[org.organisation_type]} font-medium text-[12px] leading-[1.35] border-2 hover:opacity-100`}>
-                          {org.organisation_type}
-                        </Badge>
+                        <OrganisationTypeBadge value={org.organisation_type} />
                       )}
                       {org.status === 'inactive' && (
                         <Badge variant="outline" className="bg-[hsl(32,25%,94%)] text-[hsl(25,8%,45%)] border-[hsl(32,15%,88%)]">
