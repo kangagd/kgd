@@ -9,6 +9,12 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 
+const categoryColors = {
+  "Service": "bg-blue-100 text-blue-700",
+  "Motor": "bg-purple-100 text-purple-700",
+  "Remotes/Accessories": "bg-green-100 text-green-700"
+};
+
 export default function VehicleStockList({ stock, onMarkUsed, onAdjust, isLoading, inventoryByItem }) {
   if (isLoading) {
     return <div className="text-center py-8 text-gray-500">Loading inventory...</div>;
