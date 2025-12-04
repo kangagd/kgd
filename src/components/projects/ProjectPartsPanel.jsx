@@ -1,9 +1,16 @@
-import React from "react";
+import React, { useState } from "react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { AlertTriangle, CheckCircle2, Package } from "lucide-react";
+import { AlertTriangle, CheckCircle2, Package, Truck } from "lucide-react";
+import AssignPartToVehicleModal from "./AssignPartToVehicleModal";
+import { INVENTORY_LOCATION } from "@/components/domain/inventoryLocationConfig";
+import { useQueryClient } from "@tanstack/react-query";
 
 export default function ProjectPartsPanel({ project, parts = [], inventoryByItem = {} }) {
+  const [assignModalOpen, setAssignModalOpen] = useState(false);
+  const [partToAssign, setPartToAssign] = useState(null);
+  const queryClient = useQueryClient();
+
   const detectShortage = (part) => {
     // If part is already ordered/delivered/etc, it's not a shortage
     if (['Ordered', 'Back-ordered', 'Delivered', 'At Supplier', 'At Delivery Bay', 'In Warehouse Storage', 'With Technician', 'At Client Site'].includes(part.status)) {
@@ -62,10 +69,24 @@ export default function ProjectPartsPanel({ project, parts = [], inventoryByItem
                     </div>
                   )}
                 </div>
-                <div className="text-right">
+                <div className="text-right flex flex-col gap-2 items-end">
                    <Badge variant="outline" className="bg-white border-red-200 text-red-800">
                      Qty: {part.quantity_required || 1}
                    </Badge>
+                   
+                   {(part.location !== INVENTORY_LOCATION.WITH_TECHNICIAN) && (
+                     <Button
+                       variant="outline"
+                       size="sm"
+                       className="h-7 text-xs"
+                       onClick={() => {
+                         setPartToAssign(part);
+                         setAssignModalOpen(true);
+                       }}
+                     >
+                       Assign to vehicle
+                     </Button>
+                   )}
                 </div>
               </div>
             ))}
@@ -89,14 +110,46 @@ export default function ProjectPartsPanel({ project, parts = [], inventoryByItem
                     {part.status !== 'Pending' && ` • ${part.status}`}
                   </div>
                 </div>
-                <Badge variant="outline" className="bg-gray-50">
-                  Qty: {part.quantity_required || 1}
-                </Badge>
+                <div className="flex flex-col gap-2 items-end">
+                  <Badge variant="outline" className="bg-gray-50">
+                    Qty: {part.quantity_required || 1}
+                  </Badge>
+                  
+                  {(part.location !== INVENTORY_LOCATION.WITH_TECHNICIAN || !part.assigned_vehicle_id) && (
+                     <Button
+                       variant="outline"
+                       size="sm"
+                       className="h-7 text-xs border-blue-200 text-blue-700 hover:bg-blue-50"
+                       onClick={() => {
+                         setPartToAssign(part);
+                         setAssignModalOpen(true);
+                       }}
+                     >
+                       <Truck className="w-3 h-3 mr-1" />
+                       Assign to vehicle
+                     </Button>
+                   )}
+                </div>
               </div>
             ))}
           </div>
         </div>
       )}
+
+      <AssignPartToVehicleModal
+        open={assignModalOpen}
+        onClose={() => {
+          setAssignModalOpen(false);
+          setPartToAssign(null);
+        }}
+        part={partToAssign}
+        project={project}
+        defaultQuantity={partToAssign?.quantity_required || partToAssign?.quantity || 1}
+        onAssigned={() => {
+          queryClient.invalidateQueries({ queryKey: ['projectParts', project?.id] });
+          queryClient.invalidateQueries({ queryKey: ['parts'] });
+        }}
+      />
     </div>
   );
 }
