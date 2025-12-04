@@ -9,9 +9,10 @@ import { Textarea } from "@/components/ui/textarea";
 import { toast } from "sonner";
 import { Loader2 } from "lucide-react";
 
-export default function HandoverReportModal({ open, onClose, job, project }) {
+export default function HandoverReportModal({ open, onClose, project, jobs = [] }) {
   const queryClient = useQueryClient();
 
+  const [installJobId, setInstallJobId] = useState("");
   const [clientName, setClientName] = useState("");
   const [siteAddress, setSiteAddress] = useState("");
   const [dateOfWorks, setDateOfWorks] = useState("");
@@ -27,48 +28,61 @@ export default function HandoverReportModal({ open, onClose, job, project }) {
   // Pre-fill on open
   useEffect(() => {
     if (!open) return;
+
+    // Reset job selection when reopening
+    setInstallJobId("");
+
     if (project) {
       setClientName(project.client_name || project.contact_name || project.customer_name || "");
       setSiteAddress(project.site_address || project.address_full || project.address || "");
-      setWarrantySummary(project.warranty_summary || "");
-    } else if (job) {
-      setClientName(job.customer_name || "");
-      setSiteAddress(job.address_full || job.address || "");
+      if (project.warranty_summary) {
+        setWarrantySummary(project.warranty_summary);
+      }
     }
-    
-    if (job) {
-      // fallback date: job.completed_at or job.scheduled_date
-      const dt = job.completed_at || job.scheduled_date;
-      setDateOfWorks(dt ? dt.slice(0, 10) : "");
+
+    // Try to auto-select an installation job:
+    if (jobs && jobs.length > 0) {
+      const installCandidates = jobs.filter((j) => {
+        const type = (j.job_type || j.type || j.job_type_name || "").toLowerCase();
+        return type.includes("install");
+      });
+      const sorted = (installCandidates.length ? installCandidates : jobs).slice().sort((a, b) => {
+        const da = new Date(a.completed_at || a.scheduled_date || 0).getTime();
+        const db = new Date(b.completed_at || b.scheduled_date || 0).getTime();
+        return da - db;
+      });
+      const installJob = sorted[sorted.length - 1];
       
-      // technicians: join names if relation is resolved, else fall back to text
-      if (job.assigned_to_name && Array.isArray(job.assigned_to_name)) {
-        setTechnicians(job.assigned_to_name.join(", "));
-      } else if (job.technician_name) {
-        setTechnicians(job.technician_name);
-      }
+      if (installJob) {
+        setInstallJobId(installJob.id);
+        const dt = installJob.completed_at || installJob.scheduled_date;
+        setDateOfWorks(dt ? dt.slice(0, 10) : "");
+        
+        if (installJob.assigned_to_name && Array.isArray(installJob.assigned_to_name)) {
+          setTechnicians(installJob.assigned_to_name.join(", "));
+        } else if (installJob.technician_name) {
+          setTechnicians(installJob.technician_name);
+        }
 
-      // Pre-fill work completed from technician notes / completion notes / description
-      const wc = job.completion_notes || job.technician_notes || job.description || "";
-      setWorkCompleted(wc);
-
-      // Optional: pre-fill products & manuals if the job has that data
-      if (job.installed_products_summary) {
-        setInstalledProducts(job.installed_products_summary);
-      }
-      if (job.manuals_summary) {
-        setManuals(job.manuals_summary);
+        const wc = installJob.completion_notes || installJob.technician_notes || installJob.description || "";
+        if (wc && !workCompleted) {
+          setWorkCompleted(wc);
+        }
+        
+        if (installJob.installed_products_summary) {
+          setInstalledProducts(installJob.installed_products_summary);
+        }
       }
     }
-  }, [open, job, project]);
+  }, [open, project, jobs]);
 
   const mutation = useMutation({
     mutationFn: async () => {
-      if (!job?.id) return;
+      if (!project?.id) return;
 
       const payload = {
-        job_id: job.id,
-        project_id: project?.id || job.project_id || null,
+        project_id: project.id,
+        job_id: installJobId || null, // treat as install_job_id in usage
         status: approved ? "approved" : "draft",
         client_name: clientName,
         site_address: siteAddress,
@@ -80,10 +94,11 @@ export default function HandoverReportModal({ open, onClose, job, project }) {
         installed_products: installedProducts,
         manuals: manuals,
         warranty_summary: warrantySummary,
-        approved_by: approved ? (await base44.auth.me())?.email : null,
+        approved_by: approved ? ((await base44.auth.me())?.email || "Office") : null,
         approved_at: approved ? new Date().toISOString() : null,
-        // pdf_url will be added later after PDF generation
         data_snapshot: JSON.stringify({
+          project_id: project.id,
+          install_job_id: installJobId || null,
           client_name: clientName,
           site_address: siteAddress,
           date_of_works: dateOfWorks,
@@ -99,7 +114,6 @@ export default function HandoverReportModal({ open, onClose, job, project }) {
 
       const created = await base44.entities.HandoverReport.create(payload);
 
-      // Generate PDF (stub for now)
       try {
         const pdfUrl = await generateHandoverReportPdf(created);
         if (pdfUrl) {
@@ -108,14 +122,13 @@ export default function HandoverReportModal({ open, onClose, job, project }) {
           });
         }
       } catch (e) {
-        // Fail silently for now; PDF can be regenerated later
         console.error("Failed to generate handover PDF", e);
       }
 
       return created;
     },
     onSuccess: () => {
-      queryClient.invalidateQueries(["handover-reports", job?.id]);
+      queryClient.invalidateQueries(["handover-reports", project?.id]);
       toast.success("Handover report saved");
       onClose && onClose();
     },
@@ -153,6 +166,48 @@ export default function HandoverReportModal({ open, onClose, job, project }) {
                 onChange={(e) => setDateOfWorks(e.target.value)}
               />
             </div>
+            
+            <div className="md:col-span-2">
+              <label className="text-xs text-gray-500 font-medium mb-1 block">Installation visit (job)</label>
+              <select
+                className="flex h-9 w-full rounded-md border border-input bg-transparent px-3 py-1 text-sm shadow-sm transition-colors file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:cursor-not-allowed disabled:opacity-50"
+                value={installJobId}
+                onChange={(e) => {
+                  const selectedId = e.target.value;
+                  setInstallJobId(selectedId);
+                  const j = jobs.find((job) => job.id === selectedId);
+                  if (j) {
+                    const dt = j.completed_at || j.scheduled_date;
+                    setDateOfWorks(dt ? dt.slice(0, 10) : "");
+                    if (j.assigned_to_name && Array.isArray(j.assigned_to_name)) {
+                      setTechnicians(j.assigned_to_name.join(", "));
+                    } else if (j.technician_name) {
+                      setTechnicians(j.technician_name);
+                    }
+                    const wc = j.completion_notes || j.technician_notes || j.description || "";
+                    if (wc) {
+                      setWorkCompleted(wc);
+                    }
+                  }
+                }}
+              >
+                <option value="">Select installation visit (optional)</option>
+                {jobs.map((j) => {
+                  const labelParts = [];
+                  const dt = j.completed_at || j.scheduled_date;
+                  if (dt) labelParts.push(dt.slice(0, 10));
+                  if (j.job_type_name || j.job_type) labelParts.push(j.job_type_name || j.job_type);
+                  if (j.job_number) labelParts.push(`#${j.job_number}`);
+                  const label = labelParts.join(" – ");
+                  return (
+                    <option key={j.id} value={j.id}>
+                      {label || j.id}
+                    </option>
+                  );
+                })}
+              </select>
+            </div>
+
             <div className="md:col-span-2">
               <label className="text-xs text-gray-500 font-medium mb-1 block">Site Address</label>
               <Input value={siteAddress} onChange={(e) => setSiteAddress(e.target.value)} />
