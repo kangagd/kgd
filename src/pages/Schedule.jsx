@@ -984,7 +984,7 @@ export default function Schedule() {
                 className={`h-8 flex-1 rounded-md text-xs font-medium ${viewScope === "all" ? "bg-[#FAE008] text-[#111827] hover:bg-[#E5CF07]" : "text-slate-500 hover:text-slate-900"}`}
                 onClick={() => setViewScope("all")}
               >
-                All
+                All Technicians
               </Button>
             </div>
           </div>
@@ -1101,7 +1101,7 @@ export default function Schedule() {
                   className={`h-7 rounded-md px-3 text-xs font-medium ${viewScope === "all" ? "bg-[#FAE008] text-[#111827] hover:bg-[#E5CF07]" : "text-slate-500 hover:text-slate-900"}`}
                   onClick={() => setViewScope("all")}
                 >
-                  All
+                  All Technicians
                 </Button>
               </div>
 
