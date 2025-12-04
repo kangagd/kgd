@@ -417,11 +417,11 @@ export default function CustomerForm({ customer, onSubmit, onCancel, isSubmittin
               <AddressAutocomplete
                 id="address"
                 value={formData.address_full || formData.address || ""}
-                onChange={(addressData) => setFormData({ 
-                  ...formData, 
+                onChange={(addressData) => setFormData(prev => ({ 
+                  ...prev, 
                   ...addressData,
                   address: addressData.address_full // Keep legacy field for backward compatibility
-                })}
+                }))}
                 placeholder="Start typing an address..."
               />
             </div>
