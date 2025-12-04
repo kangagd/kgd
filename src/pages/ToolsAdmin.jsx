@@ -6,6 +6,7 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Wrench, Loader2, Check, AlertCircle } from "lucide-react";
 import { toast } from "sonner";
+import LocationBadge from "@/components/common/LocationBadge";
 
 export default function ToolsAdmin() {
   const queryClient = useQueryClient();
@@ -238,9 +239,7 @@ export default function ToolsAdmin() {
                     )}
                   </div>
                   <div className="col-span-3">
-                    <span className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-gray-100 text-gray-800">
-                        {tool.category || "Uncategorised"}
-                    </span>
+                    <LocationBadge location={tool.category} />
                   </div>
                   <div className="col-span-2 text-sm text-gray-600">
                     Qty: {tool.default_quantity_required ?? 0}

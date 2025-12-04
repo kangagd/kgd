@@ -20,6 +20,7 @@ import {
   Loader2,
   Wrench
 } from "lucide-react";
+import LocationBadge from "@/components/common/LocationBadge";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -464,9 +465,9 @@ export default function MyVehicle() {
             {Object.entries(groupedToolsByLocation).map(([location, items]) => (
               <div key={location} className="border rounded-xl bg-white p-3">
                 <div className="flex items-center justify-between mb-2">
-                  <h4 className="text-sm font-semibold text-gray-900">
-                    {location}
-                  </h4>
+                  <div className="flex items-center gap-2">
+                    <LocationBadge location={location} />
+                  </div>
                   <span className="text-xs text-gray-500">
                     {items.length} tool{items.length !== 1 ? "s" : ""}
                   </span>
