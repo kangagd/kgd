@@ -54,6 +54,7 @@ import MarkAsLostModal from "./MarkAsLostModal";
 import LinkInvoiceModal from "../invoices/LinkInvoiceModal";
 import ProjectChat from "./ProjectChat";
 import { PROJECT_STAGE_AUTOMATION } from "@/components/domain/projectStageAutomationConfig";
+import ProjectPartsPanel from "./ProjectPartsPanel";
 
 const statusColors = {
   "Lead": "bg-slate-100 text-slate-700",
@@ -164,6 +165,35 @@ export default function ProjectDetails({ project: initialProject, onClose, onEdi
     refetchInterval: 5000,
     enabled: !!project.id
   });
+
+  const { data: parts = [] } = useQuery({
+    queryKey: ['projectParts', project.id],
+    queryFn: () => base44.entities.Part.filter({ project_id: project.id }),
+    enabled: !!project.id
+  });
+
+  const { data: priceListItems = [] } = useQuery({
+    queryKey: ['priceListItems'],
+    queryFn: () => base44.entities.PriceListItem.list(),
+  });
+
+  const { data: inventoryQuantities = [] } = useQuery({
+    queryKey: ['inventoryQuantities'],
+    queryFn: () => base44.entities.InventoryQuantity.list(),
+  });
+
+  const inventoryByItem = React.useMemo(() => {
+    const map = {};
+    for (const item of priceListItems) {
+      map[item.id] = (map[item.id] || 0) + (item.stock_level || 0);
+    }
+    for (const iq of inventoryQuantities) {
+      if (iq.price_list_item_id && iq.location_type === 'vehicle') {
+        map[iq.price_list_item_id] = (map[iq.price_list_item_id] || 0) + (iq.quantity_on_hand || 0);
+      }
+    }
+    return map;
+  }, [priceListItems, inventoryQuantities]);
 
   const { data: customer } = useQuery({
     queryKey: ['customer', project.customer_id],
@@ -1534,6 +1564,11 @@ Format as HTML bullet points using <ul> and <li> tags. Include only the most cri
           </TabsContent>
 
           <TabsContent value="parts" className="mt-3 space-y-6">
+            <ProjectPartsPanel 
+              project={project} 
+              parts={parts} 
+              inventoryByItem={inventoryByItem} 
+            />
             <PartsSection 
               projectId={project.id} 
               autoExpand={project.status === "Parts Ordered"} 

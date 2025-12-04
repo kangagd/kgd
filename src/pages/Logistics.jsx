@@ -48,6 +48,11 @@ export default function Logistics() {
     queryFn: () => base44.entities.Part.list(),
   });
 
+  const { data: inventoryQuantities = [] } = useQuery({
+    queryKey: ['inventoryQuantities'],
+    queryFn: () => base44.entities.InventoryQuantity.list(),
+  });
+
   const { data: projects = [] } = useQuery({
     queryKey: ['projects'],
     queryFn: () => base44.entities.Project.list(),
@@ -82,6 +87,35 @@ export default function Logistics() {
       return acc;
     }, {});
   }, [priceListItems]);
+
+  const inventoryByItem = useMemo(() => {
+    const map = {};
+    // Warehouse from PriceList
+    for (const item of priceListItems) {
+      map[item.id] = (map[item.id] || 0) + (item.stock_level || 0);
+    }
+    // Vehicles from InventoryQuantity
+    for (const iq of inventoryQuantities) {
+      if (iq.price_list_item_id && iq.location_type === 'vehicle') {
+        map[iq.price_list_item_id] = (map[iq.price_list_item_id] || 0) + (iq.quantity_on_hand || 0);
+      }
+    }
+    return map;
+  }, [priceListItems, inventoryQuantities]);
+
+  const detectShortage = (part) => {
+    if (['Ordered', 'Back-ordered', 'Delivered', 'At Supplier', 'At Delivery Bay', 'In Warehouse Storage', 'With Technician', 'At Client Site'].includes(part.status)) {
+      return false;
+    }
+    if (part.status === 'Cancelled') return false;
+    
+    const requiredQty = part.quantity_required || 1;
+    if (part.price_list_item_id) {
+       const availableQty = inventoryByItem[part.price_list_item_id] || 0;
+       return availableQty < requiredQty;
+    }
+    return true;
+  };
 
   const projectMap = useMemo(() => {
     return projects.reduce((acc, p) => ({ ...acc, [p.id]: p }), {});
@@ -360,8 +394,13 @@ export default function Logistics() {
                             onClick={() => setSelectedPart(part)}
                             className="text-left w-full group/btn"
                           >
-                            <div className="font-medium text-gray-900 group-hover/btn:text-blue-600 transition-colors text-base">
+                            <div className="font-medium text-gray-900 group-hover/btn:text-blue-600 transition-colors text-base flex items-center gap-2">
                               {part.category}
+                              {detectShortage(part) && (
+                                <span className="inline-flex items-center rounded-full bg-red-100 text-red-700 px-2 py-0.5 text-xs font-medium">
+                                  Shortage
+                                </span>
+                              )}
                             </div>
                             {part.price_list_item_id && priceListMap[part.price_list_item_id] && (
                                 <div className="text-xs text-slate-500 mt-0.5">

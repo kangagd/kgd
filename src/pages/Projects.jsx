@@ -87,6 +87,45 @@ export default function Projects() {
     queryFn: () => base44.entities.Part.list()
   });
 
+  const { data: priceListItems = [] } = useQuery({
+    queryKey: ['priceListItems'],
+    queryFn: () => base44.entities.PriceListItem.list(),
+  });
+
+  const { data: inventoryQuantities = [] } = useQuery({
+    queryKey: ['inventoryQuantities'],
+    queryFn: () => base44.entities.InventoryQuantity.list(),
+  });
+
+  const inventoryByItem = React.useMemo(() => {
+    const map = {};
+    // Warehouse from PriceList
+    for (const item of priceListItems) {
+      map[item.id] = (map[item.id] || 0) + (item.stock_level || 0);
+    }
+    // Vehicles from InventoryQuantity
+    for (const iq of inventoryQuantities) {
+      if (iq.price_list_item_id && iq.location_type === 'vehicle') {
+        map[iq.price_list_item_id] = (map[iq.price_list_item_id] || 0) + (iq.quantity_on_hand || 0);
+      }
+    }
+    return map;
+  }, [priceListItems, inventoryQuantities]);
+
+  const detectShortage = (part) => {
+    if (['Ordered', 'Back-ordered', 'Delivered', 'At Supplier', 'At Delivery Bay', 'In Warehouse Storage', 'With Technician', 'At Client Site'].includes(part.status)) {
+      return false;
+    }
+    if (part.status === 'Cancelled') return false;
+    
+    const requiredQty = part.quantity_required || 1;
+    if (part.price_list_item_id) {
+       const availableQty = inventoryByItem[part.price_list_item_id] || 0;
+       return availableQty < requiredQty;
+    }
+    return true;
+  };
+
   const createProjectMutation = useMutation({
     mutationFn: async (data) => {
       const res = await base44.functions.invoke('manageProject', { action: 'create', data });
@@ -479,6 +518,11 @@ export default function Projects() {
                     <div className="flex items-center gap-2 mb-2 pr-8">
                       <h3 className="text-[18px] font-semibold text-[#111827] leading-[1.2]">{project.title}</h3>
                       <DuplicateBadge record={project} size="sm" />
+                      {allParts.filter(p => p.project_id === project.id).some(detectShortage) && (
+                        <span className="inline-flex items-center rounded-full bg-red-100 text-red-700 px-2 py-0.5 text-xs font-medium">
+                          Shortage
+                        </span>
+                      )}
                     </div>
                     <div className="flex items-center gap-2 flex-wrap">
                       <AgeBadge date={project.stage_start_date || project.created_date} />
