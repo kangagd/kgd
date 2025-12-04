@@ -1260,6 +1260,14 @@ Format as HTML bullet points using <ul> and <li> tags. Include only the most cri
               </div>
             )}
             <Button
+              variant="outline"
+              size="sm"
+              onClick={() => setShowHandoverModal(true)}
+              className="h-9 text-xs"
+            >
+              Handover Report
+            </Button>
+            <Button
               variant="ghost"
               size="icon"
               onClick={() => setShowHistory(true)}
