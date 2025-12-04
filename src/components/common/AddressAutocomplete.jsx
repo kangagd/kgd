@@ -150,7 +150,7 @@ export default function AddressAutocomplete({
       autocompleteRef.current = autocomplete;
       
       // Listen for place selection
-      autocomplete.addListener('place_changed', () => {
+      const listener = autocomplete.addListener('place_changed', () => {
         const place = autocomplete.getPlace();
         
         if (!place || !place.formatted_address) {
@@ -207,15 +207,26 @@ export default function AddressAutocomplete({
 
         console.log('✅ [AddressAutocomplete] Address data:', addressData);
         setInputValue(place.formatted_address);
-        onChange(addressData);
+        onChangeRef.current(addressData);
       });
       
       console.log('✅ [AddressAutocomplete] Autocomplete widget initialized');
+
+      // Cleanup
+      return () => {
+        if (window.google && window.google.maps && window.google.maps.event) {
+          window.google.maps.event.removeListener(listener);
+          if (autocompleteRef.current) {
+             window.google.maps.event.clearInstanceListeners(autocompleteRef.current);
+          }
+        }
+      };
+
     } catch (err) {
       console.error('❌ [AddressAutocomplete] Error initializing widget:', err);
       setError('Failed to initialize autocomplete');
     }
-  }, [isScriptLoaded, onChange]);
+  }, [isScriptLoaded]);
 
   const handleInputChange = (e) => {
     const newValue = e.target.value;
