@@ -281,6 +281,7 @@ export default function FinancialsTab({ project, onUpdate }) {
                 </div>
               </div>
             </div>
+            </div>
           )}
         </CardContent>
       </Card>
