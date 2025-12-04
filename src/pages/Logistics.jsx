@@ -14,6 +14,7 @@ import { Link } from "react-router-dom";
 import PartDetailModal from "../components/projects/PartDetailModal";
 import { toast } from "sonner";
 import { INVENTORY_LOCATION } from "@/components/domain/inventoryLocationConfig";
+import { MOVEMENT_TYPE } from "@/components/domain/inventoryConfig";
 
 const STATUS_COLORS = {
   "Pending": "bg-slate-100 text-slate-800 border-slate-200",
@@ -488,6 +489,18 @@ export default function Logistics() {
                             </div>
                           ) : (
                             <span className="text-xs text-gray-400 font-medium">-</span>
+                          )}
+                          {part.price_list_item_id && (
+                             <button
+                               onClick={async () => {
+                                 const moves = await base44.entities.StockMovement.filter({ price_list_item_id: part.price_list_item_id });
+                                 console.log("Movements for item:", part.price_list_item_id, moves);
+                                 toast.info(`Found ${moves.length} movements (check console)`);
+                               }}
+                               className="mt-2 text-[10px] text-blue-600 hover:underline block"
+                             >
+                               View Movements
+                             </button>
                           )}
                         </td>
                       </tr>

@@ -9,7 +9,7 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 
-export default function VehicleStockList({ stock, onMarkUsed, onAdjust, isLoading }) {
+export default function VehicleStockList({ stock, onMarkUsed, onAdjust, isLoading, inventoryByItem }) {
   if (isLoading) {
     return <div className="text-center py-8 text-gray-500">Loading inventory...</div>;
   }
@@ -67,6 +67,11 @@ export default function VehicleStockList({ stock, onMarkUsed, onAdjust, isLoadin
                       <div className="text-[10px] text-gray-400">
                         Min: {item.minimum_target_quantity || 0}
                       </div>
+                      {inventoryByItem && inventoryByItem[item.price_list_item_id] !== undefined && (
+                        <div className="text-[10px] text-blue-600 mt-0.5 font-medium">
+                          Tracked: {inventoryByItem[item.price_list_item_id]}
+                        </div>
+                      )}
                     </div>
                     
                     <DropdownMenu>

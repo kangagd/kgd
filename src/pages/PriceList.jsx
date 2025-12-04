@@ -10,7 +10,8 @@ import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import PriceListItemForm from "../components/pricelist/PriceListItemForm";
 import StockAdjustmentModal from "../components/pricelist/StockAdjustmentModal";
 import PriceListCard from "../components/pricelist/PriceListCard";
-
+import { LOCATION_TYPE } from "@/components/domain/inventoryConfig";
+import { useMemo } from "react";
 
 
 export default function PriceList() {
@@ -40,6 +41,33 @@ export default function PriceList() {
     queryFn: () => base44.entities.PriceListItem.list('category'),
     refetchInterval: 15000, // Refetch every 15 seconds
   });
+
+  const { data: inventoryQuantities = [] } = useQuery({
+    queryKey: ["inventory-quantities"],
+    queryFn: () => base44.entities.InventoryQuantity.list("id"),
+  });
+
+  const inventorySummaryByItem = useMemo(() => {
+    const map = {};
+    for (const iq of inventoryQuantities) {
+      if (!iq.price_list_item_id) continue;
+      if (!map[iq.price_list_item_id]) {
+        map[iq.price_list_item_id] = {
+          total_on_hand: 0,
+          total_in_vehicles: 0,
+          total_in_warehouse: 0,
+        };
+      }
+      const summary = map[iq.price_list_item_id];
+      summary.total_on_hand += iq.quantity_on_hand || 0;
+      if (iq.location_type === LOCATION_TYPE.VEHICLE) {
+        summary.total_in_vehicles += iq.quantity_on_hand || 0;
+      } else if (iq.location_type === LOCATION_TYPE.WAREHOUSE) {
+        summary.total_in_warehouse += iq.quantity_on_hand || 0;
+      }
+    }
+    return map;
+  }, [inventoryQuantities]);
 
   const createItemMutation = useMutation({
     mutationFn: (data) => base44.entities.PriceListItem.create(data),
@@ -222,6 +250,7 @@ export default function PriceList() {
                 onEdit={handleEdit}
                 onDelete={handleDelete}
                 onStockAdjust={handleStockAdjust}
+                inventorySummary={inventorySummaryByItem[item.id]}
               />
             ))}
           </div>

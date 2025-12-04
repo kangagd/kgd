@@ -11,7 +11,7 @@ const categoryColors = {
   "Remotes/Accessories": "bg-green-100 text-green-700"
 };
 
-export default function PriceListCard({ item, isAdmin, canModifyStock, onEdit, onDelete, onStockAdjust }) {
+export default function PriceListCard({ item, isAdmin, canModifyStock, onEdit, onDelete, onStockAdjust, inventorySummary }) {
   const isLowStock = item.stock_level <= item.min_stock_level && item.stock_level > 0;
   const isOutOfStock = item.stock_level === 0;
 
@@ -68,6 +68,16 @@ export default function PriceListCard({ item, isAdmin, canModifyStock, onEdit, o
                 </span>
                 <span className="text-[#6B7280]">Min: {item.min_stock_level}</span>
               </div>
+
+              {inventorySummary && (
+                <div className="flex items-center text-xs text-slate-500 ml-auto mr-3">
+                  <span>Inv: {inventorySummary.total_on_hand}</span>
+                  <span className="mx-1">•</span>
+                  <span>WH: {inventorySummary.total_in_warehouse}</span>
+                  <span className="mx-1">•</span>
+                  <span>Veh: {inventorySummary.total_in_vehicles}</span>
+                </div>
+              )}
 
               {/* Quick Action Buttons */}
               <div className="flex items-center gap-1">

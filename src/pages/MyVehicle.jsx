@@ -30,6 +30,7 @@ import RestockRequestModal from "../components/fleet/RestockRequestModal";
 import StockAdjustmentModal from "../components/fleet/StockAdjustmentModal";
 import StockUsageModal from "../components/fleet/StockUsageModal";
 import VehicleStockList from "../components/fleet/VehicleStockList";
+import { LOCATION_TYPE } from "@/components/domain/inventoryConfig";
 
 export default function MyVehicle() {
   const [user, setUser] = useState(null);
@@ -201,6 +202,7 @@ export default function MyVehicle() {
           onMarkUsed={(item) => setUsageItem(item)}
           onAdjust={(item) => setAdjustmentItem(item)}
           isLoading={isStockLoading}
+          inventoryByItem={inventoryByItem}
         />
       </div>
 
