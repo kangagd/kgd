@@ -5,8 +5,22 @@ import { MapPin, Box, ArrowRight } from "lucide-react";
 import { useQuery } from "@tanstack/react-query";
 import { base44 } from "@/api/base44Client";
 import { INVENTORY_LOCATION } from "@/components/domain/inventoryLocationConfig";
+import { useMemo } from "react";
 
 export default function LinkedPartsCard({ job }) {
+  // Fetch price list items for displaying linked item info
+  const { data: priceListItems = [] } = useQuery({
+    queryKey: ['priceListItems-for-linked-parts'],
+    queryFn: () => base44.entities.PriceListItem.list('item'),
+  });
+
+  const priceListMap = useMemo(() => {
+    return priceListItems.reduce((acc, item) => {
+      acc[item.id] = item;
+      return acc;
+    }, {});
+  }, [priceListItems]);
+
   // Fetch parts linked to this job
   const { data: linkedParts = [] } = useQuery({
     queryKey: ['linkedParts', job.id],
@@ -64,6 +78,12 @@ export default function LinkedPartsCard({ job }) {
                 </div>
                 <div>
                   <div className="font-medium text-sm text-slate-900">{part.category}</div>
+                  {part.price_list_item_id && priceListMap[part.price_list_item_id] && (
+                    <div className="text-xs text-slate-500 mb-0.5">
+                      {priceListMap[part.price_list_item_id].item}
+                      {priceListMap[part.price_list_item_id].sku ? ` • ${priceListMap[part.price_list_item_id].sku}` : ""}
+                    </div>
+                  )}
                   <div className="text-xs text-slate-500">
                     {part.supplier_name && <span className="mr-2">{part.supplier_name}</span>}
                     <span className="bg-slate-100 px-1.5 py-0.5 rounded border border-slate-200">

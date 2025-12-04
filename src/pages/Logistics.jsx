@@ -55,7 +55,19 @@ export default function Logistics() {
     queryFn: () => base44.entities.Job.list(),
   });
 
+  const { data: priceListItems = [] } = useQuery({
+    queryKey: ['priceListItems-for-logistics'],
+    queryFn: () => base44.entities.PriceListItem.list('item'),
+  });
+
   // Maps for quick lookup
+  const priceListMap = useMemo(() => {
+    return priceListItems.reduce((acc, item) => {
+      acc[item.id] = item;
+      return acc;
+    }, {});
+  }, [priceListItems]);
+
   const projectMap = useMemo(() => {
     return projects.reduce((acc, p) => ({ ...acc, [p.id]: p }), {});
   }, [projects]);
@@ -290,6 +302,12 @@ export default function Logistics() {
                             <div className="font-medium text-gray-900 group-hover/btn:text-blue-600 transition-colors text-base">
                               {part.category}
                             </div>
+                            {part.price_list_item_id && priceListMap[part.price_list_item_id] && (
+                                <div className="text-xs text-slate-500 mt-0.5">
+                                    Linked: {priceListMap[part.price_list_item_id].item}
+                                    {priceListMap[part.price_list_item_id].sku ? ` • ${priceListMap[part.price_list_item_id].sku}` : ""}
+                                </div>
+                            )}
                             <div className="text-sm text-gray-500 mt-1 flex items-center gap-2">
                               <span className="truncate max-w-[200px]">{part.supplier_name || "No Supplier"}</span>
                               {part.order_reference && (

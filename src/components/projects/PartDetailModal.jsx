@@ -64,7 +64,8 @@ export default function PartDetailModal({ open, part, onClose, onSave, isSubmitt
         status: part.status || "Pending",
         source_type: part.source_type || "Supplier – Deliver to Warehouse",
         location: part.location || "On Order",
-        order_date: part.order_date || (part.id ? "" : new Date().toISOString().split('T')[0])
+        order_date: part.order_date || (part.id ? "" : new Date().toISOString().split('T')[0]),
+        price_list_item_id: part.price_list_item_id || null
       };
       setFormData(mappedPart);
     } else {
@@ -75,7 +76,8 @@ export default function PartDetailModal({ open, part, onClose, onSave, isSubmitt
         location: "On Order",
         order_date: new Date().toISOString().split('T')[0],
         linked_logistics_jobs: [],
-        attachments: []
+        attachments: [],
+        price_list_item_id: null
       });
     }
   }, [part, open]);
@@ -84,6 +86,13 @@ export default function PartDetailModal({ open, part, onClose, onSave, isSubmitt
   const { data: jobs = [] } = useQuery({
     queryKey: ['activeJobs'],
     queryFn: () => base44.entities.Job.filter({ status: { $ne: 'Cancelled' } }),
+    enabled: open
+  });
+
+  // Fetch price list items
+  const { data: priceListItems = [] } = useQuery({
+    queryKey: ['priceListItems-for-parts'],
+    queryFn: () => base44.entities.PriceListItem.list('item'),
     enabled: open
   });
 
@@ -163,6 +172,26 @@ export default function PartDetailModal({ open, part, onClose, onSave, isSubmitt
             <section className="space-y-4">
               <h3 className="text-[15px] font-semibold text-[#111827] uppercase tracking-wide">Part Overview</h3>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
+                <div className="space-y-2">
+                  <Label>Linked Price List Item (optional)</Label>
+                  <Select
+                    value={formData.price_list_item_id || ""}
+                    onValueChange={(value) => setFormData(prev => ({ ...prev, price_list_item_id: value || null }))}
+                  >
+                    <SelectTrigger className="bg-white">
+                      <SelectValue placeholder="Select a price list item" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value={null}>None</SelectItem>
+                      {priceListItems.map((item) => (
+                        <SelectItem key={item.id} value={item.id}>
+                          {item.item} {item.sku ? `(${item.sku})` : ""}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+
                 <div className="space-y-2">
                   <Label>Category</Label>
                   <Select 
