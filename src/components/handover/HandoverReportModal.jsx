@@ -124,6 +124,12 @@ export default function HandoverReportModal({ open, onClose, job, project }) {
     }
   });
 
+  const SectionLabel = ({ children }) => (
+    <div className="mt-4 mb-1 text-[11px] font-semibold text-gray-700 uppercase tracking-wide">
+      {children}
+    </div>
+  );
+
   return (
     <Dialog open={open} onOpenChange={onClose}>
       <DialogContent className="max-w-2xl max-h-[90vh] flex flex-col">
@@ -132,6 +138,8 @@ export default function HandoverReportModal({ open, onClose, job, project }) {
         </DialogHeader>
 
         <div className="space-y-4 flex-1 overflow-y-auto pr-2 p-1">
+          {/* Basics */}
+          <SectionLabel>Job & Client Details</SectionLabel>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
             <div>
               <label className="text-xs text-gray-500 font-medium mb-1 block">Client</label>
@@ -155,60 +163,69 @@ export default function HandoverReportModal({ open, onClose, job, project }) {
             </div>
           </div>
 
+          {/* What we tell the client */}
+          <SectionLabel>What we tell the client</SectionLabel>
+
           <div>
-            <label className="text-xs text-gray-500 font-medium mb-1 block">Work Completed</label>
+            <label className="text-xs text-gray-500 font-medium mb-1 block">What we did today</label>
             <Textarea
               rows={4}
+              placeholder="- Checked and tested both doors&#10;- Adjusted spring tension&#10;- Tightened fixings and added support"
               value={workCompleted}
               onChange={(e) => setWorkCompleted(e.target.value)}
             />
           </div>
 
           <div>
-            <label className="text-xs text-gray-500 font-medium mb-1 block">Cause Identified (optional)</label>
+            <label className="text-xs text-gray-500 font-medium mb-1 block">What we found (if anything)</label>
             <Textarea
               rows={3}
+              placeholder="E.g. No product faults found. Existing structure for the motor is incomplete, causing movement at the head/track fixings."
               value={causeIdentified}
               onChange={(e) => setCauseIdentified(e.target.value)}
             />
           </div>
 
           <div>
-            <label className="text-xs text-gray-500 font-medium mb-1 block">Recommendations (optional)</label>
+            <label className="text-xs text-gray-500 font-medium mb-1 block">What happens next</label>
             <Textarea
               rows={3}
+              placeholder="- Builder to complete noggin/structure at marked locations&#10;- KangarooGD to return to install motors and safety beams&#10;- Recommend annual service to keep everything running smoothly"
               value={recommendations}
               onChange={(e) => setRecommendations(e.target.value)}
             />
           </div>
 
+          {/* Products & care */}
+          <SectionLabel>Products & care</SectionLabel>
+
           <div>
-            <label className="text-xs text-gray-500 font-medium mb-1 block">Installed Products (for report)</label>
+            <label className="text-xs text-gray-500 font-medium mb-1 block">Installed products (for summary)</label>
             <Textarea
               rows={3}
-              placeholder="e.g. 2x Custom GlassLite Sectional Doors (low headroom), 2x Merlin Commander Platinum motors..."
+              placeholder="E.g. 2x Custom GlassLite sectional doors (low headroom)&#10;2x Merlin Commander Platinum motors (to be installed on return)"
               value={installedProducts}
               onChange={(e) => setInstalledProducts(e.target.value)}
             />
           </div>
 
           <div>
-            <label className="text-xs text-gray-500 font-medium mb-1 block">Manuals (for report)</label>
+            <label className="text-xs text-gray-500 font-medium mb-1 block">How to look after your door</label>
             <Textarea
-              rows={2}
-              placeholder="- Merlin Commander Platinum – User Manual&#10;- Custom Sectional Door – Care & Maintenance Guide"
-              value={manuals}
-              onChange={(e) => setManuals(e.target.value)}
+              rows={3}
+              placeholder="- Book a service roughly every 12 months&#10;- Keep the area under the door clear before operating&#10;- Contact us if the door feels heavy, noisy or jerky"
+              value={warrantySummary}
+              onChange={(e) => setWarrantySummary(e.target.value)}
             />
           </div>
 
           <div>
-            <label className="text-xs text-gray-500 font-medium mb-1 block">Warranty Summary</label>
+            <label className="text-xs text-gray-500 font-medium mb-1 block">Manuals & links (one per line)</label>
             <Textarea
-              rows={3}
-              placeholder="5 years on motors, 3 years on doors, 12 months on workmanship..."
-              value={warrantySummary}
-              onChange={(e) => setWarrantySummary(e.target.value)}
+              rows={2}
+              placeholder="- Merlin Commander Platinum – User Manual&#10;- Custom Sectional Door – Care & Maintenance Guide&#10;- KangarooGD – Full Warranty Terms"
+              value={manuals}
+              onChange={(e) => setManuals(e.target.value)}
             />
           </div>
 
