@@ -19,6 +19,7 @@ import Logistics from './pages/Logistics';
 import Contracts from './pages/Contracts';
 import MyVehicle from './pages/MyVehicle';
 import Fleet from './pages/Fleet';
+import ToolsAdmin from './pages/ToolsAdmin';
 import __Layout from './Layout.jsx';
 
 
@@ -44,6 +45,7 @@ export const PAGES = {
     "Contracts": Contracts,
     "MyVehicle": MyVehicle,
     "Fleet": Fleet,
+    "ToolsAdmin": ToolsAdmin,
 }
 
 export const pagesConfig = {

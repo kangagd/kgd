@@ -64,10 +64,11 @@ const secondaryNavigationItems = [
   { title: "Reports", url: createPageUrl("Reports"), icon: TrendingUp },
   { title: "Team", url: createPageUrl("Team"), icon: Users },
   { title: "Fleet", url: createPageUrl("Fleet"), icon: Car },
+  { title: "Tools Admin", url: createPageUrl("ToolsAdmin"), icon: Wrench },
   { title: "Role Settings", url: createPageUrl("RoleSettings"), icon: Shield },
   { title: "Archive", url: createPageUrl("Archive"), icon: ArchiveIcon },
   { title: "Logistics", url: createPageUrl("Logistics"), icon: Truck },
-];
+  ];
 
 const technicianNavigationItems = [
   { title: "My Vehicle", url: createPageUrl("MyVehicle"), icon: Car },
