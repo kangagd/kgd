@@ -118,8 +118,12 @@ export default function Fleet() {
             <CardContent className="p-5">
               <div className="flex justify-between items-start mb-4">
                 <div className="flex items-center gap-3">
-                  <div className="w-10 h-10 bg-gray-100 rounded-lg flex items-center justify-center group-hover:bg-[#FAE008]/20 transition-colors">
-                    <Car className="w-5 h-5 text-gray-600 group-hover:text-black" />
+                  <div className="w-12 h-12 bg-gray-100 rounded-lg flex items-center justify-center overflow-hidden group-hover:bg-[#FAE008]/20 transition-colors">
+                    {vehicle.photo_url ? (
+                      <img src={vehicle.photo_url} alt={vehicle.name} className="w-full h-full object-cover" />
+                    ) : (
+                      <Car className="w-6 h-6 text-gray-600 group-hover:text-black" />
+                    )}
                   </div>
                   <div>
                     <h3 className="font-bold text-gray-900">{vehicle.name}</h3>

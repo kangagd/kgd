@@ -14,6 +14,8 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { base44 } from "@/api/base44Client";
 import { toast } from "sonner";
+import { Upload, X } from "lucide-react";
+import EditableFileUpload from "../jobs/EditableFileUpload";
 
 export default function VehicleFormModal({ open, onClose, vehicle }) {
   const queryClient = useQueryClient();
@@ -25,8 +27,11 @@ export default function VehicleFormModal({ open, onClose, vehicle }) {
     status: "Active",
     primary_location: "",
     assigned_user_id: "unassigned",
-    notes: ""
+    notes: "",
+    photo_url: ""
   });
+
+  const [uploading, setUploading] = useState(false);
 
   const { data: users = [] } = useQuery({
     queryKey: ['users'],
@@ -43,7 +48,8 @@ export default function VehicleFormModal({ open, onClose, vehicle }) {
           status: vehicle.status || "Active",
           primary_location: vehicle.primary_location || "",
           assigned_user_id: vehicle.assigned_user_id || "unassigned",
-          notes: vehicle.notes || ""
+          notes: vehicle.notes || "",
+          photo_url: vehicle.photo_url || ""
         });
       } else {
         setFormData({
@@ -53,7 +59,8 @@ export default function VehicleFormModal({ open, onClose, vehicle }) {
           status: "Active",
           primary_location: "",
           assigned_user_id: "unassigned",
-          notes: ""
+          notes: "",
+          photo_url: ""
         });
       }
     }
@@ -100,6 +107,23 @@ export default function VehicleFormModal({ open, onClose, vehicle }) {
     mutation.mutate(formData);
   };
 
+  const handleFileUpload = async (e) => {
+    const file = e.target.files[0];
+    if (!file) return;
+
+    setUploading(true);
+    try {
+      const { file_url } = await base44.integrations.Core.UploadFile({ file });
+      setFormData({ ...formData, photo_url: file_url });
+      toast.success("Photo uploaded");
+    } catch (error) {
+      console.error("Upload failed:", error);
+      toast.error("Failed to upload photo");
+    } finally {
+      setUploading(false);
+    }
+  };
+
   return (
     <Dialog open={open} onOpenChange={onClose}>
       <DialogContent className="sm:max-w-[500px]">
@@ -108,6 +132,40 @@ export default function VehicleFormModal({ open, onClose, vehicle }) {
         </DialogHeader>
         
         <form onSubmit={handleSubmit} className="space-y-4">
+          <div className="flex justify-center mb-4">
+            <div className="relative group">
+              <div className="w-32 h-32 rounded-xl bg-gray-100 border-2 border-dashed border-gray-300 flex items-center justify-center overflow-hidden">
+                {formData.photo_url ? (
+                  <img src={formData.photo_url} alt="Vehicle" className="w-full h-full object-cover" />
+                ) : (
+                  <Upload className="w-8 h-8 text-gray-400" />
+                )}
+              </div>
+              <div className="absolute bottom-0 right-0">
+                <label htmlFor="photo-upload" className="cursor-pointer bg-white rounded-full p-2 shadow-sm border border-gray-200 hover:bg-gray-50 flex items-center justify-center">
+                  <Upload className="w-4 h-4 text-gray-600" />
+                  <input 
+                    id="photo-upload" 
+                    type="file" 
+                    className="hidden" 
+                    accept="image/*"
+                    onChange={handleFileUpload}
+                    disabled={uploading}
+                  />
+                </label>
+              </div>
+              {formData.photo_url && (
+                <button
+                  type="button"
+                  onClick={() => setFormData({ ...formData, photo_url: "" })}
+                  className="absolute top-0 right-0 bg-white rounded-full p-1 shadow-sm border border-gray-200 hover:bg-red-50 text-red-500 translate-x-1/3 -translate-y-1/3"
+                >
+                  <X className="w-4 h-4" />
+                </button>
+              )}
+            </div>
+          </div>
+
           <div className="space-y-2">
             <Label htmlFor="name">Vehicle Name *</Label>
             <Input

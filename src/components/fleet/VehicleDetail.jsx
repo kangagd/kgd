@@ -2,7 +2,7 @@ import React, { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { ArrowLeft, Download, RefreshCw, Plus, Settings, FileText } from "lucide-react";
+import { ArrowLeft, Download, RefreshCw, Plus, Settings, FileText, Car } from "lucide-react";
 import { useQuery } from "@tanstack/react-query";
 import { base44 } from "@/api/base44Client";
 import VehicleStockList from "./VehicleStockList";
@@ -36,14 +36,23 @@ export default function VehicleDetail({ vehicle, onBack }) {
       </Button>
 
       <div className="flex flex-col md:flex-row justify-between items-start gap-6 mb-8">
-        <div>
-          <h1 className="text-3xl font-bold text-gray-900">{vehicle.name}</h1>
-          <div className="flex items-center gap-3 mt-2 text-gray-600">
-            <span className="font-mono bg-gray-100 px-2 py-0.5 rounded">{vehicle.registration_plate}</span>
-            <span>•</span>
-            <span>{vehicle.status}</span>
-            <span>•</span>
-            <span>{vehicle.assigned_user_name || "Unassigned"}</span>
+        <div className="flex items-start gap-6">
+          <div className="w-24 h-24 rounded-xl bg-gray-100 border-2 border-gray-200 flex items-center justify-center overflow-hidden flex-shrink-0">
+            {vehicle.photo_url ? (
+              <img src={vehicle.photo_url} alt={vehicle.name} className="w-full h-full object-cover" />
+            ) : (
+              <Car className="w-10 h-10 text-gray-400" />
+            )}
+          </div>
+          <div>
+            <h1 className="text-3xl font-bold text-gray-900">{vehicle.name}</h1>
+            <div className="flex items-center gap-3 mt-2 text-gray-600">
+              <span className="font-mono bg-gray-100 px-2 py-0.5 rounded">{vehicle.registration_plate}</span>
+              <span>•</span>
+              <span>{vehicle.status}</span>
+              <span>•</span>
+              <span>{vehicle.assigned_user_name || "Unassigned"}</span>
+            </div>
           </div>
         </div>
         <div className="flex gap-2">
