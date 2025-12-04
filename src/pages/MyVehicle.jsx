@@ -224,6 +224,15 @@ export default function MyVehicle() {
     return groups;
   }, [vehicleTools, toolItemMap]);
 
+  const latestCheck = useMemo(() => {
+    if (!vehicleTools?.length) return null;
+    const dates = vehicleTools
+      .map((vt) => vt.last_checked_at && new Date(vt.last_checked_at))
+      .filter(Boolean);
+    if (!dates.length) return null;
+    return new Date(Math.max(...dates.map((d) => d.getTime())));
+  }, [vehicleTools]);
+
   if (isVehicleLoading || !user) {
     return <div className="flex justify-center items-center h-screen"><Loader2 className="animate-spin w-8 h-8 text-gray-400" /></div>;
   }
