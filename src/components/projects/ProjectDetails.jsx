@@ -244,6 +244,12 @@ export default function ProjectDetails({ project: initialProject, onClose, onEdi
     }
   };
 
+  const { data: handoverReports = [] } = useQuery({
+    queryKey: ["handover-reports", project.id],
+    queryFn: () => base44.entities.HandoverReport.filter({ project_id: project.id }),
+    enabled: !!project?.id,
+  });
+
   const { data: xeroInvoices = [] } = useQuery({
     queryKey: ['projectXeroInvoices', project.id],
     queryFn: async () => {
