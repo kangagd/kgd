@@ -106,8 +106,8 @@ export default function PriceList() {
 
     const matchesStock =
     stockFilter === "all" ||
-    stockFilter === "low" && item.stock_level <= item.min_stock_level ||
-    stockFilter === "out" && item.stock_level === 0;
+    (stockFilter === "low" && item.stock_level <= item.min_stock_level && item.track_inventory !== false) ||
+    (stockFilter === "out" && item.stock_level === 0 && item.track_inventory !== false);
 
     const matchesInventoryType = !showStockOnly || item.track_inventory !== false;
 
@@ -121,8 +121,8 @@ export default function PriceList() {
   const isTechnician = user?.is_field_technician && !isAdminOrManager;
   const canModifyStock = isAdminOrManager || isTechnician;
   const canEditPriceList = isAdminOrManager;
-  const lowStockCount = priceItems.filter((item) => item.stock_level <= item.min_stock_level && item.stock_level > 0).length;
-  const outOfStockCount = priceItems.filter((item) => item.stock_level === 0).length;
+  const lowStockCount = priceItems.filter((item) => item.stock_level <= item.min_stock_level && item.stock_level > 0 && item.track_inventory !== false).length;
+  const outOfStockCount = priceItems.filter((item) => item.stock_level === 0 && item.track_inventory !== false).length;
 
   const handleSubmit = (data) => {
     if (editingItem) {
