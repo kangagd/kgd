@@ -4,7 +4,8 @@ import { base44 } from "@/api/base44Client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
-import { Wrench, Loader2, Check, AlertCircle } from "lucide-react";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Wrench, Loader2, Check, AlertCircle, Search, Filter, ArrowUpDown } from "lucide-react";
 import { toast } from "sonner";
 import LocationBadge from "@/components/common/LocationBadge";
 
@@ -27,6 +28,12 @@ export default function ToolsAdmin() {
     default_quantity_required: 1,
     notes: "",
   });
+
+  // Filter & Sort State
+  const [searchTerm, setSearchTerm] = useState("");
+  const [filterCategory, setFilterCategory] = useState("all");
+  const [filterStatus, setFilterStatus] = useState("all");
+  const [sortConfig, setSortConfig] = useState({ key: "name", direction: "asc" });
 
   const createToolMutation = useMutation({
     mutationFn: async () => {
@@ -72,6 +79,41 @@ export default function ToolsAdmin() {
       toast.success("Tool deleted");
     },
   });
+
+  const categories = [...new Set(tools.map(t => t.category).filter(Boolean))].sort();
+
+  const filteredTools = tools.filter(tool => {
+    const matchesSearch = tool.name.toLowerCase().includes(searchTerm.toLowerCase()) || 
+                          (tool.notes && tool.notes.toLowerCase().includes(searchTerm.toLowerCase()));
+    const matchesCategory = filterCategory === "all" || tool.category === filterCategory;
+    const matchesStatus = filterStatus === "all" || 
+                          (filterStatus === "active" ? tool.is_active : !tool.is_active);
+    
+    return matchesSearch && matchesCategory && matchesStatus;
+  });
+
+  const sortedTools = [...filteredTools].sort((a, b) => {
+    const aValue = a[sortConfig.key];
+    const bValue = b[sortConfig.key];
+    
+    // Handle string vs number comparison safely
+    if (typeof aValue === 'string' && typeof bValue === 'string') {
+        return sortConfig.direction === "asc" 
+            ? aValue.localeCompare(bValue) 
+            : bValue.localeCompare(aValue);
+    }
+    
+    if (aValue < bValue) return sortConfig.direction === "asc" ? -1 : 1;
+    if (aValue > bValue) return sortConfig.direction === "asc" ? 1 : -1;
+    return 0;
+  });
+
+  const handleSort = (key) => {
+    setSortConfig(current => ({
+      key,
+      direction: current.key === key && current.direction === "asc" ? "desc" : "asc"
+    }));
+  };
 
   const applyTemplateMutation = useMutation({
     mutationFn: async () => {
@@ -214,19 +256,75 @@ export default function ToolsAdmin() {
         </div>
       </div>
 
+      {/* Filters & Sort */}
+      <div className="flex flex-col md:flex-row gap-4 items-center justify-between bg-white p-4 rounded-xl border border-gray-200 shadow-sm">
+        <div className="relative w-full md:w-72">
+            <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-gray-500" />
+            <Input
+                placeholder="Search tools..."
+                className="pl-9 h-9"
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+            />
+        </div>
+        
+        <div className="flex items-center gap-2 w-full md:w-auto overflow-x-auto pb-1 md:pb-0">
+            <Select value={filterCategory} onValueChange={setFilterCategory}>
+                <SelectTrigger className="h-9 w-[160px]">
+                    <div className="flex items-center gap-2 text-xs text-gray-600">
+                        <Filter className="w-3.5 h-3.5" />
+                        <SelectValue placeholder="Category" />
+                    </div>
+                </SelectTrigger>
+                <SelectContent>
+                    <SelectItem value="all">All Categories</SelectItem>
+                    {categories.map(cat => (
+                        <SelectItem key={cat} value={cat}>{cat}</SelectItem>
+                    ))}
+                </SelectContent>
+            </Select>
+
+            <Select value={filterStatus} onValueChange={setFilterStatus}>
+                <SelectTrigger className="h-9 w-[130px]">
+                    <div className="flex items-center gap-2 text-xs text-gray-600">
+                        <Check className="w-3.5 h-3.5" />
+                        <SelectValue placeholder="Status" />
+                    </div>
+                </SelectTrigger>
+                <SelectContent>
+                    <SelectItem value="all">All Status</SelectItem>
+                    <SelectItem value="active">Active Only</SelectItem>
+                    <SelectItem value="inactive">Inactive Only</SelectItem>
+                </SelectContent>
+            </Select>
+
+            <Button 
+                variant="outline" 
+                size="sm" 
+                className="h-9 gap-2"
+                onClick={() => handleSort('name')}
+            >
+                <ArrowUpDown className="w-3.5 h-3.5" />
+                <span className="text-xs">Name</span>
+            </Button>
+        </div>
+      </div>
+
       {/* Tool list */}
       <div className="border border-gray-200 rounded-xl bg-white shadow-sm overflow-hidden">
         <div className="px-5 py-3 border-b border-gray-100 flex justify-between items-center bg-gray-50">
-            <h2 className="text-sm font-semibold text-gray-900">Tool Templates ({tools.length})</h2>
+            <h2 className="text-sm font-semibold text-gray-900">Tool Templates ({filteredTools.length})</h2>
             <div className="text-xs text-gray-500">
-                {tools.filter(t => t.is_active).length} active
+                {filteredTools.filter(t => t.is_active).length} active
             </div>
         </div>
-        {!tools.length ? (
-          <div className="p-8 text-center text-gray-500 italic">No tools defined yet. Add one above.</div>
+        {!sortedTools.length ? (
+          <div className="p-8 text-center text-gray-500 italic">
+              {tools.length === 0 ? "No tools defined yet. Add one above." : "No tools match your filters."}
+          </div>
         ) : (
           <div className="divide-y divide-gray-100">
-            {tools.map((tool) => (
+            {sortedTools.map((tool) => (
               <div
                 key={tool.id}
                 className="flex items-center justify-between px-5 py-3 hover:bg-gray-50 transition-colors group"
