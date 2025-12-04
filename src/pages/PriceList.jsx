@@ -7,6 +7,7 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Search, DollarSign, Plus, Pencil, Trash2, PackagePlus, PackageMinus, AlertCircle, Package } from "lucide-react";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Checkbox } from "@/components/ui/checkbox";
 import PriceListItemForm from "../components/pricelist/PriceListItemForm";
 import StockAdjustmentModal from "../components/pricelist/StockAdjustmentModal";
 import PriceListCard from "../components/pricelist/PriceListCard";
@@ -17,7 +18,7 @@ import { useMemo } from "react";
 export default function PriceList() {
   const [searchTerm, setSearchTerm] = useState("");
   const [categoryFilter, setCategoryFilter] = useState("all");
-  const [inventoryTypeFilter, setInventoryTypeFilter] = useState("all");
+  const [showStockOnly, setShowStockOnly] = useState(false);
   const [stockFilter, setStockFilter] = useState("all");
   const [showForm, setShowForm] = useState(false);
   const [editingItem, setEditingItem] = useState(null);
@@ -108,10 +109,7 @@ export default function PriceList() {
     stockFilter === "low" && item.stock_level <= item.min_stock_level ||
     stockFilter === "out" && item.stock_level === 0;
 
-    const matchesInventoryType =
-      inventoryTypeFilter === "all" ||
-      (inventoryTypeFilter === "stock" && item.track_inventory !== false) ||
-      (inventoryTypeFilter === "non_stock" && item.track_inventory === false);
+    const matchesInventoryType = !showStockOnly || item.track_inventory !== false;
 
     return matchesSearch && matchesCategory && matchesStock && matchesInventoryType;
   });
@@ -228,13 +226,19 @@ export default function PriceList() {
               </TabsList>
             </Tabs>
             
-            <Tabs value={inventoryTypeFilter} onValueChange={setInventoryTypeFilter} className="w-full">
-              <TabsList className="w-full justify-start min-w-max md:min-w-0">
-                <TabsTrigger value="all" className="flex-1 whitespace-nowrap">All Types</TabsTrigger>
-                <TabsTrigger value="stock" className="flex-1 whitespace-nowrap">Stock Items</TabsTrigger>
-                <TabsTrigger value="non_stock" className="flex-1 whitespace-nowrap">Non-Stock</TabsTrigger>
-              </TabsList>
-            </Tabs>
+            <div className="flex items-center space-x-2 px-1">
+              <Checkbox 
+                id="stock-only" 
+                checked={showStockOnly} 
+                onCheckedChange={setShowStockOnly} 
+              />
+              <label
+                htmlFor="stock-only"
+                className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70 cursor-pointer select-none text-gray-700"
+              >
+                Stock Items Only
+              </label>
+            </div>
           </div>
         </div>
 
