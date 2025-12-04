@@ -54,6 +54,7 @@ import TasksPanel from "../tasks/TasksPanel";
 import QuotesSection from "../quotes/QuotesSection";
 import LinkedPartsCard from "./LinkedPartsCard";
 import JobItemsUsedModal from "./JobItemsUsedModal";
+import HandoverReportModal from "../handover/HandoverReportModal";
 
 const statusColors = {
   "Open": "bg-slate-100 text-slate-700 border-slate-200",
@@ -154,6 +155,7 @@ export default function JobDetails({ job: initialJob, onClose, onStatusChange, o
   const [showPaymentModal, setShowPaymentModal] = useState(false);
   const [showLinkInvoiceModal, setShowLinkInvoiceModal] = useState(false);
   const [showItemsUsedModal, setShowItemsUsedModal] = useState(false);
+  const [showHandoverModal, setShowHandoverModal] = useState(false);
   const [user, setUser] = useState(null);
   const [measurements, setMeasurements] = useState(job.measurements || null);
   const [notes, setNotes] = useState(job.notes || "");
@@ -852,6 +854,14 @@ export default function JobDetails({ job: initialJob, onClose, onStatusChange, o
                     title="Delete">
     
                       <Trash2 className="w-4 h-4" />
+                    </Button>
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      onClick={() => setShowHandoverModal(true)}
+                      className="h-9 w-9 hover:bg-[#F3F4F6] text-[#6B7280] hover:text-[#111827] transition-all rounded-lg"
+                      title="Generate Handover Report">
+                      <FileCheck className="w-4 h-4" />
                     </Button>
                   </>
                 )}
@@ -2023,6 +2033,13 @@ export default function JobDetails({ job: initialJob, onClose, onStatusChange, o
         vehicle={null} // For now, defaulting to null (Warehouse) as per instructions
         open={showItemsUsedModal}
         onClose={() => setShowItemsUsedModal(false)}
+      />
+
+      <HandoverReportModal
+        open={showHandoverModal}
+        onClose={() => setShowHandoverModal(false)}
+        job={job}
+        project={job.project_id ? { id: job.project_id, ...job } : null} // Pass project context if available
       />
 
       </>);
