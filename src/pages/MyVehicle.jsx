@@ -419,10 +419,40 @@ export default function MyVehicle() {
 
       {/* Tools Section */}
       <div className="mb-4 bg-slate-50 rounded-xl border border-slate-200 p-4">
-        <h3 className="font-semibold text-gray-900 mb-2 flex items-center gap-2">
-          <Wrench className="w-5 h-5 text-slate-600" />
-          Tools in this vehicle
-        </h3>
+        <div className="flex items-center justify-between mb-2">
+          <h3 className="font-semibold text-gray-900 flex items-center gap-2">
+            <Wrench className="w-5 h-5 text-slate-600" />
+            Tools in this vehicle
+          </h3>
+          <div className="flex items-center gap-2">
+            <Button
+              type="button"
+              variant={isAuditMode ? "outline" : "ghost"}
+              size="sm"
+              className="text-xs h-8"
+              onClick={() => setIsAuditMode((v) => !v)}
+              disabled={vehicleToolsLoading}
+            >
+              {isAuditMode ? "Exit audit mode" : "Audit tools"}
+            </Button>
+            <Button
+              type="button"
+              variant="outline"
+              size="sm"
+              className="text-xs h-8"
+              onClick={() => syncToolsMutation.mutate()}
+              disabled={syncToolsMutation.isLoading || !vehicle}
+            >
+              {syncToolsMutation.isLoading ? "Syncing..." : "Sync tools"}
+            </Button>
+          </div>
+        </div>
+        {latestCheck && (
+          <p className="mb-3 text-[11px] text-gray-500">
+            Last tools check: {latestCheck.toLocaleString()}
+          </p>
+        )}
+
         {vehicleToolsLoading ? (
           <p className="text-sm text-gray-500">Loading tools...</p>
         ) : !vehicleTools.length ? (
