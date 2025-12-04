@@ -46,11 +46,11 @@ export default function PhotoGridItem({ photo, isSelectionMode, isSelected, onTo
           </div>
         )}
       </div>
-      <CardContent className="p-3 space-y-2">
-        <div className="text-sm font-bold text-[#111827] leading-tight truncate">
+      <CardContent className="p-2 space-y-1">
+        <div className="text-xs font-bold text-[#111827] leading-tight truncate">
           {photo.job_number ? `#${photo.job_number} - ${photo.customer_name}` : (photo.customer_name || photo.project_name || 'General Upload')}
         </div>
-        <div className="text-xs text-[#6B7280] truncate">
+        <div className="text-[10px] text-[#6B7280] truncate">
           {photo.address || photo.project_name || `Uploaded by ${photo.technician_name || 'Unknown'}`}
         </div>
         <div className="flex flex-wrap gap-1">

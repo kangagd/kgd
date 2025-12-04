@@ -301,7 +301,7 @@ export default function Photos() {
 
         {/* Photos Grid */}
         {isLoading ? (
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
+          <div className="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-6 xl:grid-cols-8 gap-3">
             {[1, 2, 3, 4, 5, 6, 7, 8].map(i => (
               <Card key={i} className="animate-pulse">
                 <div className="aspect-square bg-[#E5E7EB] rounded-t-lg" />
@@ -334,7 +334,7 @@ export default function Photos() {
             )}
           </Card>
         ) : (
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
+          <div className="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-6 xl:grid-cols-8 gap-3">
             {filteredPhotos.map(photo => (
               <PhotoGridItem
                 key={photo.id}
