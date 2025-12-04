@@ -6,6 +6,7 @@ import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Badge } from "@/components/ui/badge";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Search, Filter, Truck, Package, MapPin, CheckCircle2, Clock, AlertCircle, Link as LinkIcon } from "lucide-react";
 import { format } from "date-fns";
 import { createPageUrl } from "@/utils";
@@ -37,6 +38,7 @@ export default function Logistics() {
   const [searchTerm, setSearchTerm] = useState("");
   const [statusFilter, setStatusFilter] = useState("active"); // active, all, specific statuses
   const [locationFilter, setLocationFilter] = useState("all");
+  const [vehicleFilter, setVehicleFilter] = useState("all");
   const [selectedPart, setSelectedPart] = useState(null);
 
   // Fetch Data
@@ -130,6 +132,11 @@ export default function Logistics() {
 
       // Location Filter
       if (locationFilter !== "all" && part.location !== locationFilter) return false;
+
+      // Vehicle Filter
+      if (vehicleFilter !== "all") {
+        if (part.assigned_vehicle_id !== vehicleFilter) return false;
+      }
 
       return true;
     }).sort((a, b) => {
@@ -258,6 +265,47 @@ export default function Logistics() {
                 ))}
               </SelectContent>
             </Select>
+
+            <Popover>
+              <PopoverTrigger asChild>
+                <Button variant="outline" className="h-10 border border-[#E5E7EB] flex items-center gap-2 px-3 font-normal">
+                  <Truck className="w-4 h-4 text-gray-500" />
+                  <span className="hidden sm:inline">Vehicle</span>
+                  {vehicleFilter !== "all" && (
+                    <Badge variant="secondary" className="ml-1 px-1.5 h-5 text-[10px] font-normal pointer-events-none">
+                      {
+                        vehicles.find((v) => v.id === vehicleFilter)?.name
+                        || vehicles.find((v) => v.id === vehicleFilter)?.registration
+                        || "Selected"
+                      }
+                    </Badge>
+                  )}
+                </Button>
+              </PopoverTrigger>
+              <PopoverContent className="w-56 p-1" align="end">
+                <div className="space-y-1">
+                  <Button
+                    variant={vehicleFilter === "all" ? "secondary" : "ghost"}
+                    size="sm"
+                    className="w-full justify-start font-normal"
+                    onClick={() => setVehicleFilter("all")}
+                  >
+                    All vehicles
+                  </Button>
+                  {vehicles.map((v) => (
+                    <Button
+                      key={v.id}
+                      variant={vehicleFilter === v.id ? "secondary" : "ghost"}
+                      size="sm"
+                      className="w-full justify-start font-normal truncate"
+                      onClick={() => setVehicleFilter(v.id)}
+                    >
+                      {v.name || v.registration || `Vehicle ${v.id}`}
+                    </Button>
+                  ))}
+                </div>
+              </PopoverContent>
+            </Popover>
           </div>
         </div>
 

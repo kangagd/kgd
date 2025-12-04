@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useMemo } from "react";
 import { base44 } from "@/api/base44Client";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
@@ -78,6 +78,18 @@ export default function MyVehicle() {
     },
     enabled: !!vehicle?.id,
   });
+
+  const { data: projects = [] } = useQuery({
+    queryKey: ["projects-for-assigned-parts"],
+    queryFn: () => base44.entities.Project.list("title"),
+  });
+
+  const projectMap = useMemo(() => {
+    return projects.reduce((acc, p) => {
+      acc[p.id] = p;
+      return acc;
+    }, {});
+  }, [projects]);
 
   if (isVehicleLoading || !user) {
     return <div className="flex justify-center items-center h-screen"><Loader2 className="animate-spin w-8 h-8 text-gray-400" /></div>;
@@ -204,26 +216,38 @@ export default function MyVehicle() {
           </p>
         ) : (
           <div className="space-y-2">
-            {assignedParts.map((part) => (
-              <div key={part.id} className="p-3 border border-amber-200 rounded-lg bg-white flex justify-between items-center shadow-sm">
-                <div>
-                  <div className="text-sm font-medium text-gray-900">
-                    {part.category || "Part"}
-                  </div>
-                  {part.supplier_name && (
-                    <div className="text-xs text-gray-500 mt-0.5">
-                      {part.supplier_name}
+            {assignedParts.map((part) => {
+              const project = part.project_id ? projectMap[part.project_id] : null;
+              return (
+                <div key={part.id} className="p-3 border border-amber-200 rounded-lg bg-white flex justify-between items-center shadow-sm">
+                  <div>
+                    <div className="text-sm font-medium text-gray-900">
+                      {part.category || "Part"}
                     </div>
-                  )}
+                    {project ? (
+                      <div className="text-xs text-gray-500 mt-0.5">
+                        Project: {project.title}
+                      </div>
+                    ) : part.project_id ? (
+                      <div className="text-xs text-gray-500 mt-0.5">
+                        Project ID: {part.project_id}
+                      </div>
+                    ) : null}
+                    {part.supplier_name && (
+                      <div className="text-xs text-gray-400 mt-0.5">
+                        {part.supplier_name}
+                      </div>
+                    )}
+                  </div>
+                  <div className="text-xs text-right">
+                    <Badge variant="outline" className="bg-amber-50 text-amber-700 border-amber-200 mb-1">
+                      {part.location}
+                    </Badge>
+                    <div className="text-gray-500">{part.status}</div>
+                  </div>
                 </div>
-                <div className="text-xs text-right">
-                  <Badge variant="outline" className="bg-amber-50 text-amber-700 border-amber-200 mb-1">
-                    {part.location}
-                  </Badge>
-                  <div className="text-gray-500">{part.status}</div>
-                </div>
-              </div>
-            ))}
+              );
+            })}
           </div>
         )}
       </div>

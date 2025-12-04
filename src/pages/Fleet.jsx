@@ -12,11 +12,13 @@ import {
   Plus, 
   AlertTriangle,
   Battery,
-  User
+  User,
+  Package
 } from "lucide-react";
 import VehicleDetail from "../components/fleet/VehicleDetail";
 import VehicleFormModal from "../components/fleet/VehicleFormModal";
 import { format } from "date-fns";
+import { useMemo } from "react";
 
 export default function Fleet() {
   const [selectedVehicle, setSelectedVehicle] = useState(null);
@@ -28,6 +30,25 @@ export default function Fleet() {
     queryKey: ['vehicles'],
     queryFn: () => base44.entities.Vehicle.list('-name')
   });
+
+  const { data: partsWithVehicles = [] } = useQuery({
+    queryKey: ["parts-with-vehicles"],
+    queryFn: async () => {
+      const allParts = await base44.entities.Part.filter({
+        location: "With Technician",
+      });
+      return allParts.filter((p) => p.assigned_vehicle_id);
+    },
+  });
+
+  const partsCountByVehicle = useMemo(() => {
+    return partsWithVehicles.reduce((acc, part) => {
+      const vid = part.assigned_vehicle_id;
+      if (!vid) return acc;
+      acc[vid] = (acc[vid] || 0) + 1;
+      return acc;
+    }, {});
+  }, [partsWithVehicles]);
 
   const filteredVehicles = vehicles.filter(v => {
     const matchesStatus = filterStatus === "all" || v.status === filterStatus;
@@ -118,6 +139,19 @@ export default function Fleet() {
                 <div className="flex items-center text-sm text-gray-600">
                   <div className="w-2 h-2 rounded-full bg-gray-400 mr-3 ml-1" />
                   {vehicle.primary_location || "No location set"}
+                </div>
+                
+                <div className="flex items-center text-sm">
+                  {partsCountByVehicle[vehicle.id] > 0 ? (
+                    <span className="inline-flex items-center rounded-full bg-indigo-50 px-2 py-0.5 text-xs font-medium text-indigo-700 ml-1">
+                      <Package className="w-3 h-3 mr-1" />
+                      {partsCountByVehicle[vehicle.id]} part{partsCountByVehicle[vehicle.id] !== 1 ? "s" : ""} assigned
+                    </span>
+                  ) : (
+                    <span className="inline-flex items-center rounded-full bg-slate-50 px-2 py-0.5 text-xs text-slate-400 ml-1">
+                      No parts assigned
+                    </span>
+                  )}
                 </div>
               </div>
 
