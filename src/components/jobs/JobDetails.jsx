@@ -6,7 +6,7 @@ import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Label } from "@/components/ui/label";
 import { Separator } from "@/components/ui/separator";
-import { ArrowLeft, MapPin, Phone, Calendar, Clock, User, Briefcase, FileText, Image as ImageIcon, DollarSign, Sparkles, LogIn, FileCheck, History, Package, ClipboardCheck, LogOut, Timer, AlertCircle, ChevronDown, Mail, Navigation, Trash2, FolderKanban, Camera, Edit, ExternalLink, MessageCircle, Plus, AlertTriangle, Loader2 } from "lucide-react";
+import { ArrowLeft, MapPin, Phone, Calendar, Clock, User, Briefcase, FileText, Image as ImageIcon, DollarSign, Sparkles, LogIn, FileCheck, History, Package, ClipboardCheck, LogOut, Timer, AlertCircle, ChevronDown, Mail, Navigation, Trash2, FolderKanban, Camera, Edit, ExternalLink, MessageCircle, Plus, AlertTriangle, Loader2, PackageMinus } from "lucide-react";
 import DuplicateWarningCard, { DuplicateBadge } from "../common/DuplicateWarningCard";
 import { format, parseISO, isPast } from "date-fns";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
@@ -53,6 +53,7 @@ import {
 import TasksPanel from "../tasks/TasksPanel";
 import QuotesSection from "../quotes/QuotesSection";
 import LinkedPartsCard from "./LinkedPartsCard";
+import JobItemsUsedModal from "./JobItemsUsedModal";
 
 const statusColors = {
   "Open": "bg-slate-100 text-slate-700 border-slate-200",
@@ -152,6 +153,7 @@ export default function JobDetails({ job: initialJob, onClose, onStatusChange, o
   const [showInvoiceModal, setShowInvoiceModal] = useState(false);
   const [showPaymentModal, setShowPaymentModal] = useState(false);
   const [showLinkInvoiceModal, setShowLinkInvoiceModal] = useState(false);
+  const [showItemsUsedModal, setShowItemsUsedModal] = useState(false);
   const [user, setUser] = useState(null);
   const [measurements, setMeasurements] = useState(job.measurements || null);
   const [notes, setNotes] = useState(job.notes || "");
@@ -853,6 +855,15 @@ export default function JobDetails({ job: initialJob, onClose, onStatusChange, o
                     </Button>
                   </>
                 )}
+                
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  onClick={() => setShowItemsUsedModal(true)}
+                  className="h-9 w-9 hover:bg-[#F3F4F6] text-[#6B7280] hover:text-[#111827] transition-all rounded-lg"
+                  title="Items Used">
+                  <PackageMinus className="w-4 h-4" />
+                </Button>
               </div>
           </div>
 
@@ -1207,6 +1218,16 @@ export default function JobDetails({ job: initialJob, onClose, onStatusChange, o
 
                 <Sparkles className="w-5 h-5 text-[#111827]" />
                 <span className="text-[10px] font-medium text-[#111827] leading-[1.35]">AI</span>
+              </Button>
+              
+              <Button
+              variant="outline"
+              onClick={() => setShowItemsUsedModal(true)}
+              className="flex flex-col items-center gap-1 h-auto py-3 hover:bg-[#FAE008]/10 hover:border-[#FAE008] transition-all rounded-lg col-span-4 mt-2">
+                <div className="flex items-center gap-2">
+                  <PackageMinus className="w-4 h-4 text-[#111827]" />
+                  <span className="text-[12px] font-medium text-[#111827] leading-[1.35]">Record Items Used</span>
+                </div>
               </Button>
             </div>
           </div>
@@ -1995,6 +2016,13 @@ export default function JobDetails({ job: initialJob, onClose, onStatusChange, o
         onSelect={(invoice) => linkInvoiceMutation.mutate(invoice)}
         isSubmitting={linkInvoiceMutation.isPending}
         currentInvoiceId={job.xero_invoice_id}
+      />
+
+      <JobItemsUsedModal
+        job={job}
+        vehicle={null} // For now, defaulting to null (Warehouse) as per instructions
+        open={showItemsUsedModal}
+        onClose={() => setShowItemsUsedModal(false)}
       />
 
       </>);

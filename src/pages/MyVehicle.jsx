@@ -30,7 +30,7 @@ import RestockRequestModal from "../components/fleet/RestockRequestModal";
 import StockAdjustmentModal from "../components/fleet/StockAdjustmentModal";
 import StockUsageModal from "../components/fleet/StockUsageModal";
 import VehicleStockList from "../components/fleet/VehicleStockList";
-import { LOCATION_TYPE } from "@/components/domain/inventoryConfig";
+import { LOCATION_TYPE, MOVEMENT_TYPE } from "@/components/domain/inventoryConfig";
 
 export default function MyVehicle() {
   const [user, setUser] = useState(null);
@@ -106,6 +106,37 @@ export default function MyVehicle() {
     queryKey: ["projects-for-assigned-parts"],
     queryFn: () => base44.entities.Project.list("title"),
   });
+
+  const { data: todaysUsage = [] } = useQuery({
+    queryKey: ["stock-usage-today", vehicle?.id],
+    queryFn: async () => {
+      if (!vehicle?.id) return [];
+      // Filter for usage movements from this vehicle
+      const all = await base44.entities.StockMovement.filter({
+        from_location_type: LOCATION_TYPE.VEHICLE,
+        from_location_id: vehicle.id,
+        movement_type: MOVEMENT_TYPE.USAGE,
+      });
+      
+      // Client-side date filter for "today" since we don't have date filters in the API yet for some backends
+      const today = new Date();
+      today.setHours(0, 0, 0, 0);
+      return all.filter(m => new Date(m.created_at) >= today);
+    },
+    enabled: !!vehicle?.id,
+  });
+
+  const { data: priceItems = [] } = useQuery({
+    queryKey: ['priceListItems-for-usage'],
+    queryFn: () => base44.entities.PriceListItem.list('item'),
+  });
+
+  const itemMap = useMemo(() => {
+    return priceItems.reduce((acc, item) => {
+      acc[item.id] = item;
+      return acc;
+    }, {});
+  }, [priceItems]);
 
   const projectMap = useMemo(() => {
     return projects.reduce((acc, p) => {
@@ -184,6 +215,28 @@ export default function MyVehicle() {
               {lowStockCount}
             </div>
           </div>
+        </div>
+
+        {/* Today's Usage Summary */}
+        <div className="mt-4 pt-4 border-t border-gray-100">
+          <h4 className="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-2">Items Used Today</h4>
+          {todaysUsage.length === 0 ? (
+            <p className="text-sm text-gray-400 italic">No usage logged yet today.</p>
+          ) : (
+            <div className="space-y-1.5">
+              {todaysUsage.map((usage) => {
+                const item = itemMap[usage.price_list_item_id];
+                return (
+                  <div key={usage.id} className="flex justify-between items-center text-sm">
+                    <span className="text-gray-700">{item ? item.item : "Unknown Item"}</span>
+                    <Badge variant="secondary" className="text-xs">
+                      {usage.quantity} used
+                    </Badge>
+                  </div>
+                );
+              })}
+            </div>
+          )}
         </div>
       </div>
 
