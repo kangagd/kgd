@@ -255,6 +255,15 @@ export default function MyVehicle() {
 
   const lowStockCount = stock.filter(i => i.quantity_on_hand < (i.minimum_target_quantity || 0)).length;
 
+  const latestCheck = useMemo(() => {
+    if (!vehicleTools?.length) return null;
+    const dates = vehicleTools
+      .map((vt) => vt.last_checked_at && new Date(vt.last_checked_at))
+      .filter(Boolean);
+    if (!dates.length) return null;
+    return new Date(Math.max(...dates.map((d) => d.getTime())));
+  }, [vehicleTools]);
+
   return (
     <div className="p-4 max-w-2xl mx-auto pb-24">
       {/* Header */}
