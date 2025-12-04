@@ -1293,14 +1293,20 @@ export default function JobDetails({ job: initialJob, onClose, onStatusChange, o
               <LinkedPartsCard job={job} />
 
               {/* Tasks Panel */}
-              <Card className="border border-[#E5E7EB] shadow-sm rounded-lg p-4">
-                <TasksPanel
-                  entityType="job"
-                  entityId={job.id}
-                  entityName={`Job #${job.job_number}`}
-                  entityNumber={job.job_number}
-                />
-              </Card>
+              <Collapsible defaultOpen={false} className="border border-[#E5E7EB] shadow-sm rounded-lg bg-white">
+                <CollapsibleTrigger className="w-full flex items-center justify-between p-4 hover:bg-slate-50 transition-colors group">
+                  <h3 className="text-[16px] font-semibold text-[#111827] leading-[1.2]">Tasks</h3>
+                  <ChevronDown className="w-4 h-4 text-slate-500 transition-transform group-data-[state=open]:rotate-180" />
+                </CollapsibleTrigger>
+                <CollapsibleContent className="p-4 pt-0">
+                  <TasksPanel
+                    entityType="job"
+                    entityId={job.id}
+                    entityName={`Job #${job.job_number}`}
+                    entityNumber={job.job_number}
+                  />
+                </CollapsibleContent>
+              </Collapsible>
 
               {job.project_id && projectJobs.length > 0 &&
               <div className="bg-blue-50 border-2 border-blue-200 rounded-xl p-3 mb-4">
