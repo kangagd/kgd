@@ -861,14 +861,7 @@ export default function JobDetails({ job: initialJob, onClose, onStatusChange, o
     
                       <Trash2 className="w-4 h-4" />
                     </Button>
-                    <Button
-                      variant="ghost"
-                      size="icon"
-                      onClick={() => setShowHandoverModal(true)}
-                      className="h-9 w-9 hover:bg-[#F3F4F6] text-[#6B7280] hover:text-[#111827] transition-all rounded-lg"
-                      title="Generate Handover Report">
-                      <FileCheck className="w-4 h-4" />
-                    </Button>
+
                     {handoverReports.length > 0 && handoverReports[handoverReports.length - 1]?.pdf_url && (
                       <Button
                         variant="ghost"
