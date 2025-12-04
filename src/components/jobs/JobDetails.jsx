@@ -815,14 +815,16 @@ export default function JobDetails({ job: initialJob, onClose, onStatusChange, o
             </div>
 
             <div className="flex gap-1 flex-shrink-0">
-                <Button
-                  variant="ghost"
-                  size="icon"
-                  onClick={() => navigate(`${createPageUrl("CheckIn")}?jobId=${job.id}`)}
-                  className="h-9 w-9 hover:bg-[#FAE008]/10 text-[#6B7280] hover:text-[#111827] transition-all rounded-lg"
-                  title="Open in Check-In Page">
-                  <LogIn className="w-4 h-4" />
-                </Button>
+                {job.project_id && (
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    onClick={() => navigate(`${createPageUrl("Projects")}?projectId=${job.project_id}`)}
+                    className="h-9 w-9 hover:bg-[#FAE008]/10 text-[#6B7280] hover:text-[#111827] transition-all rounded-lg"
+                    title="View Project">
+                    <FolderKanban className="w-4 h-4" />
+                  </Button>
+                )}
                 {!isTechnician && (
                   <>
                     <Button
