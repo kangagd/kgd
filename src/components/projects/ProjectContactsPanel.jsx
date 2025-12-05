@@ -4,8 +4,10 @@ import { base44 } from "@/api/base44Client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Switch } from "@/components/ui/switch";
-import { Users, Plus, Trash2, Phone, Mail } from "lucide-react";
+import { Users, Plus, Trash2, Phone, Mail, ExternalLink } from "lucide-react";
 import { toast } from "sonner";
+import { Link } from "react-router-dom";
+import { createPageUrl } from "@/utils";
 
 export default function ProjectContactsPanel({ project }) {
   const queryClient = useQueryClient();
