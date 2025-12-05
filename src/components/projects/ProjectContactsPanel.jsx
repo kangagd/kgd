@@ -1,0 +1,203 @@
+import React, { useState } from "react";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { base44 } from "@/api/base44Client";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Switch } from "@/components/ui/switch";
+import { Users, Plus, Trash2, Phone, Mail } from "lucide-react";
+import { toast } from "sonner";
+
+export default function ProjectContactsPanel({ project }) {
+  const queryClient = useQueryClient();
+  const [newContact, setNewContact] = useState({
+    name: "",
+    email: "",
+    phone: "",
+    role: "",
+    show_on_jobs: true,
+  });
+
+  const { data: projectContacts = [], isLoading: projectContactsLoading } = useQuery({
+    queryKey: ["project-contacts", project.id],
+    queryFn: () =>
+      base44.entities.ProjectContact.filter({
+        project_id: project.id,
+      }),
+    enabled: !!project?.id,
+  });
+
+  const createContactMutation = useMutation({
+    mutationFn: async () => {
+      if (!project?.id || !newContact.name) return;
+      await base44.entities.ProjectContact.create({
+        project_id: project.id,
+        name: newContact.name,
+        email: newContact.email || "",
+        phone: newContact.phone || "",
+        role: newContact.role || "",
+        show_on_jobs: newContact.show_on_jobs,
+      });
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries(["project-contacts", project.id]);
+      setNewContact({
+        name: "",
+        email: "",
+        phone: "",
+        role: "",
+        show_on_jobs: true,
+      });
+      toast.success("Contact added");
+    },
+    onError: () => {
+        toast.error("Failed to add contact");
+    }
+  });
+
+  const updateContactMutation = useMutation({
+    mutationFn: async ({ id, patch }) => {
+      return base44.entities.ProjectContact.update(id, patch);
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries(["project-contacts", project.id]);
+      toast.success("Contact updated");
+    },
+  });
+
+  const deleteContactMutation = useMutation({
+    mutationFn: async (id) => {
+      return base44.entities.ProjectContact.delete(id);
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries(["project-contacts", project.id]);
+      toast.success("Contact deleted");
+    },
+  });
+
+  return (
+    <div className="mt-6 border border-[#E5E7EB] rounded-xl bg-white p-4 shadow-sm">
+      <div className="flex items-center justify-between mb-3">
+        <div className="flex items-center gap-2">
+            <Users className="w-4 h-4 text-[#111827]" />
+            <h2 className="text-sm font-semibold text-[#111827]">Project Contacts</h2>
+        </div>
+        {projectContacts?.length > 0 && (
+          <span className="text-[11px] text-gray-500 bg-gray-100 px-2 py-0.5 rounded-full">
+            {projectContacts.length} contact{projectContacts.length === 1 ? "" : "s"}
+          </span>
+        )}
+      </div>
+
+      {projectContactsLoading ? (
+        <p className="text-xs text-gray-500">Loading contacts…</p>
+      ) : !projectContacts?.length ? (
+        <p className="text-xs text-gray-500 mb-3 italic">
+          No additional contacts yet. Add owners, builders, tenants or strata managers here.
+        </p>
+      ) : (
+        <div className="space-y-2 mb-4">
+          {projectContacts.map((c) => (
+            <div
+              key={c.id}
+              className="flex items-center justify-between rounded-lg border border-gray-100 bg-gray-50/50 px-3 py-2 text-xs hover:bg-gray-50 transition-colors"
+            >
+              <div className="space-y-1">
+                <div className="font-medium text-gray-900 flex items-center gap-2">
+                  {c.name || "Unnamed contact"}
+                  {c.role && (
+                    <span className="rounded-md bg-[#FAE008]/20 border border-[#FAE008]/30 px-1.5 py-0.5 text-[10px] font-medium text-[#854D0E]">
+                      {c.role}
+                    </span>
+                  )}
+                </div>
+                <div className="text-[11px] text-gray-500 flex items-center gap-2">
+                  {c.email && <span className="flex items-center gap-1"><Mail className="w-3 h-3" /> {c.email}</span>}
+                  {c.phone && <span className="flex items-center gap-1"><Phone className="w-3 h-3" /> {c.phone}</span>}
+                </div>
+              </div>
+              <div className="flex items-center gap-4">
+                <div className="flex items-center gap-2">
+                  <span className="text-[10px] text-gray-500 font-medium">Show on jobs</span>
+                  <Switch
+                    checked={!!c.show_on_jobs}
+                    onCheckedChange={(value) =>
+                      updateContactMutation.mutate({
+                        id: c.id,
+                        patch: { show_on_jobs: value },
+                      })
+                    }
+                    className="scale-75"
+                  />
+                </div>
+                <Button 
+                    variant="ghost" 
+                    size="icon" 
+                    className="h-6 w-6 text-gray-400 hover:text-red-600 hover:bg-red-50"
+                    onClick={() => deleteContactMutation.mutate(c.id)}
+                >
+                    <Trash2 className="w-3.5 h-3.5" />
+                </Button>
+              </div>
+            </div>
+          ))}
+        </div>
+      )}
+
+      {/* Quick add contact */}
+      <div className="border-t border-gray-100 pt-3 mt-2">
+        <p className="text-[11px] font-medium text-gray-500 mb-2">
+          Quick add contact for this project
+        </p>
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-2 mb-3">
+          <Input
+            placeholder="Name"
+            value={newContact.name}
+            onChange={(e) => setNewContact((c) => ({ ...c, name: e.target.value }))}
+            className="h-8 text-xs"
+          />
+          <Input
+            placeholder="Email"
+            value={newContact.email}
+            onChange={(e) => setNewContact((c) => ({ ...c, email: e.target.value }))}
+            className="h-8 text-xs"
+          />
+          <Input
+            placeholder="Phone"
+            value={newContact.phone}
+            onChange={(e) => setNewContact((c) => ({ ...c, phone: e.target.value }))}
+            className="h-8 text-xs"
+          />
+          <Input
+            placeholder="Role (e.g. Builder)"
+            value={newContact.role}
+            onChange={(e) => setNewContact((c) => ({ ...c, role: e.target.value }))}
+            className="h-8 text-xs"
+          />
+        </div>
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-2 pl-1">
+            <Switch
+              checked={newContact.show_on_jobs}
+              onCheckedChange={(value) =>
+                setNewContact((c) => ({ ...c, show_on_jobs: value }))
+              }
+              className="scale-75"
+            />
+            <span className="text-[11px] text-gray-600">
+              Show on related jobs
+            </span>
+          </div>
+          <Button
+            size="sm"
+            onClick={() => createContactMutation.mutate()}
+            disabled={!newContact.name || createContactMutation.isPending}
+            className="h-8 bg-[#FAE008] text-[#111827] hover:bg-[#E5CF07]"
+          >
+            <Plus className="w-3.5 h-3.5 mr-1.5" />
+            {createContactMutation.isPending ? "Adding…" : "Add contact"}
+          </Button>
+        </div>
+      </div>
+    </div>
+  );
+}
