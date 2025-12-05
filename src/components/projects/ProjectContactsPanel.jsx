@@ -24,6 +24,7 @@ export default function ProjectContactsPanel({ project }) {
     role: "",
     show_on_jobs: true,
   });
+  const [showSuggestions, setShowSuggestions] = useState(false);
 
   const { data: projectContacts = [], isLoading: projectContactsLoading } = useQuery({
     queryKey: ["project-contacts", project.id],
@@ -174,36 +175,54 @@ export default function ProjectContactsPanel({ project }) {
         <p className="text-[11px] font-medium text-gray-500 mb-2">
           Quick add contact for this project
         </p>
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-2 mb-3">
-          <select
-            className="h-8 text-xs rounded border border-input bg-background px-2"
-            value={newContact.contact_id}
-            onChange={(e) => {
-              const id = e.target.value;
-              const person = people.find((p) => p.id === id);
-              setNewContact((c) => ({
-                ...c,
-                contact_id: id,
-                name: c.name || person?.name || "",
-                email: c.email || person?.email || "",
-                phone: c.phone || person?.phone || "",
-              }));
-            }}
-          >
-            <option value="">Link existing person (optional)</option>
-            {people.map((p) => (
-              <option key={p.id} value={p.id}>
-                {p.name || p.email || 'Unnamed'}
-              </option>
-            ))}
-          </select>
-
-          <Input
-            placeholder="Name"
-            value={newContact.name}
-            onChange={(e) => setNewContact((c) => ({ ...c, name: e.target.value }))}
-            className="h-8 text-xs"
-          />
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-2 mb-3">
+          <div className="relative z-20">
+            <Input
+              placeholder="Name"
+              value={newContact.name}
+              onChange={(e) => {
+                setNewContact((c) => ({ ...c, name: e.target.value, contact_id: "" }));
+                setShowSuggestions(true);
+              }}
+              onFocus={() => setShowSuggestions(true)}
+              onBlur={() => setTimeout(() => setShowSuggestions(false), 200)}
+              className="h-8 text-xs"
+              autoComplete="off"
+            />
+            {showSuggestions && newContact.name && !newContact.contact_id && (
+              <div className="absolute top-full left-0 right-0 mt-1 bg-white border border-gray-200 rounded-lg shadow-lg max-h-48 overflow-y-auto py-1">
+                {people
+                  .filter(p => p.name?.toLowerCase().includes(newContact.name.toLowerCase()))
+                  .slice(0, 5)
+                  .map(person => (
+                    <button
+                      key={person.id}
+                      className="w-full text-left px-3 py-2 text-xs hover:bg-gray-50 flex flex-col"
+                      onClick={() => {
+                        setNewContact(prev => ({
+                          ...prev,
+                          contact_id: person.id,
+                          name: person.name,
+                          email: person.email || prev.email,
+                          phone: person.phone || prev.phone,
+                        }));
+                        setShowSuggestions(false);
+                      }}
+                    >
+                      <span className="font-medium text-gray-900">{person.name}</span>
+                      {(person.email || person.phone) && (
+                        <span className="text-gray-500 text-[10px]">
+                          {person.email} {person.phone && `• ${person.phone}`}
+                        </span>
+                      )}
+                    </button>
+                  ))}
+                 {people.filter(p => p.name?.toLowerCase().includes(newContact.name.toLowerCase())).length === 0 && (
+                   <div className="px-3 py-2 text-xs text-gray-400 italic">No existing contacts found</div>
+                 )}
+              </div>
+            )}
+          </div>
           <Input
             placeholder="Email"
             value={newContact.email}
