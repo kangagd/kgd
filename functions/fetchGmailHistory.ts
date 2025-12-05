@@ -40,7 +40,7 @@ function parseEmailAddress(addressString) {
 Deno.serve(async (req) => {
   try {
     const base44 = createClientFromRequest(req);
-    const { emails } = await req.json();
+    const { emails, projectId } = await req.json();
 
     if (!emails || !Array.isArray(emails) || emails.length === 0) {
        return Response.json({ error: 'Emails array required' }, { status: 400 });
@@ -105,13 +105,43 @@ Deno.serve(async (req) => {
             const userEmail = user.gmail_email || user.email;
             // Simple outbound check
             const isOutbound = fromAddress.toLowerCase() === userEmail.toLowerCase();
+            const sentAt = date ? new Date(date).toISOString() : new Date().toISOString();
+
+            // Upsert to ProjectEmail if projectId is provided
+            if (projectId) {
+              try {
+                const existing = await base44.asServiceRole.entities.ProjectEmail.filter({ 
+                  project_id: projectId, 
+                  gmail_message_id: msg.id 
+                });
+
+                if (existing.length === 0) {
+                  await base44.asServiceRole.entities.ProjectEmail.create({
+                    project_id: projectId,
+                    gmail_message_id: msg.id,
+                    thread_id: detail.threadId,
+                    subject: subject,
+                    snippet: detail.snippet,
+                    from_email: fromAddress,
+                    to_email: to,
+                    direction: isOutbound ? 'outgoing' : 'incoming',
+                    sent_at: sentAt,
+                    is_historical: true,
+                    source: 'gmail',
+                    created_at: new Date().toISOString()
+                  });
+                }
+              } catch (err) {
+                console.error(`Failed to upsert ProjectEmail for ${msg.id}:`, err);
+              }
+            }
 
             return {
                 gmail_message_id: msg.id,
                 thread_id: detail.threadId,
                 subject,
                 snippet: detail.snippet,
-                sent_at: date ? new Date(date).toISOString() : new Date().toISOString(),
+                sent_at: sentAt,
                 is_outbound: isOutbound,
                 from_address: fromAddress,
                 from_name: from.replace(/<.*>/, '').trim(),

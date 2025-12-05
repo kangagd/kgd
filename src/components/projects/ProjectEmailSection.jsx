@@ -22,7 +22,6 @@ export default function ProjectEmailSection({ project, onThreadLinked }) {
   // Historical Search State
   const [showHistorySearch, setShowHistorySearch] = useState(false);
   const [historySearchInput, setHistorySearchInput] = useState("");
-  const [historicalEmails, setHistoricalEmails] = useState([]);
   const [isSearchingHistory, setIsSearchingHistory] = useState(false);
 
   // Fetch ALL email threads linked to this project
@@ -80,6 +79,13 @@ export default function ProjectEmailSection({ project, onThreadLinked }) {
     cacheTime: 0
   });
 
+  // Fetch Saved Historical Emails
+  const { data: savedEmails = [], isLoading: savedEmailsLoading } = useQuery({
+    queryKey: ["project-emails", project.id],
+    queryFn: () => base44.entities.ProjectEmail.filter({ project_id: project.id }),
+    enabled: !!project?.id,
+  });
+
   // For backward compatibility - use first thread as "emailThread"
   const emailThread = linkedThreads[0];
 
@@ -118,17 +124,18 @@ export default function ProjectEmailSection({ project, onThreadLinked }) {
 
     setIsSearchingHistory(true);
     try {
-      const res = await base44.functions.invoke('fetchGmailHistory', { emails });
-      if (res.data?.messages) {
-        setHistoricalEmails(prev => {
-          // Merge and deduplicate by gmail_message_id
-          const existingIds = new Set(prev.map(m => m.gmail_message_id));
-          const newMsgs = res.data.messages.filter(m => !existingIds.has(m.gmail_message_id));
-          return [...prev, ...newMsgs];
-        });
+      const res = await base44.functions.invoke('fetchGmailHistory', { 
+        emails, 
+        projectId: project.id 
+      });
+      
+      // Refresh saved emails
+      queryClient.invalidateQueries(["project-emails", project.id]);
+      
+      if (res.data?.messages?.length > 0) {
         toast.success(`Found ${res.data.messages.length} historical emails`);
       } else {
-        toast.info('No historical emails found');
+        toast.info('No new historical emails found');
       }
     } catch (error) {
       console.error('Search failed:', error);
@@ -140,8 +147,25 @@ export default function ProjectEmailSection({ project, onThreadLinked }) {
 
   // Combine Threads & Messages
   const { displayThreads, displayMessages } = React.useMemo(() => {
+    // Normalize saved emails to message shape
+    const normalisedSavedEmails = savedEmails.map((e) => ({
+      id: e.id,
+      gmail_message_id: e.gmail_message_id,
+      thread_id: e.thread_id, // Gmail thread ID
+      subject: e.subject,
+      body_text: e.snippet, // Minimal content
+      from_address: e.from_email,
+      from_name: e.from_email?.split('<')[0]?.trim() || e.from_email,
+      to_addresses: e.to_email ? e.to_email.split(',').map(s => s.trim()) : [],
+      sent_at: e.sent_at,
+      is_outbound: e.direction === 'outgoing',
+      isHistorical: e.is_historical,
+      source: e.source || "gmail",
+      attachments: []
+    }));
+
     // 1. Map historical messages to existing threads if possible
-    const mappedHistorical = historicalEmails.map(msg => {
+    const mappedHistorical = normalisedSavedEmails.map(msg => {
       const existingThread = linkedThreads.find(t => t.gmail_thread_id === msg.thread_id);
       return existingThread 
         ? { ...msg, thread_id: existingThread.id } // Map to UUID
@@ -188,7 +212,7 @@ export default function ProjectEmailSection({ project, onThreadLinked }) {
     });
 
     return { displayThreads: allThreads, displayMessages: combinedMessages };
-  }, [linkedThreads, messages, historicalEmails]);
+  }, [linkedThreads, messages, savedEmails]);
 
   // Link thread mutation
   const linkThreadMutation = useMutation({
@@ -270,6 +294,8 @@ export default function ProjectEmailSection({ project, onThreadLinked }) {
   const handleRefresh = async () => {
     // Force complete refresh by incrementing key
     setRefreshKey(k => k + 1);
+    // Also refresh historical
+    queryClient.invalidateQueries(["project-emails", project.id]);
     toast.success('Emails refreshed');
   };
 
@@ -316,17 +342,17 @@ export default function ProjectEmailSection({ project, onThreadLinked }) {
     }
   };
 
-  const isLoading = threadLoading || messagesLoading;
+  const isLoading = threadLoading || messagesLoading || savedEmailsLoading;
 
   // No linked threads - show option to link
-  if (linkedThreads.length === 0 && !project.source_email_thread_id && historicalEmails.length === 0) {
+  if (linkedThreads.length === 0 && !project.source_email_thread_id && savedEmails.length === 0) {
     return (
       <Card className="border border-[#E5E7EB] shadow-sm rounded-lg">
         <CardContent className="p-8 text-center">
           <Mail className="w-12 h-12 text-[#E5E7EB] mx-auto mb-4" />
-          <h3 className="text-[16px] font-semibold text-[#111827] mb-2">No Linked Email Thread</h3>
+          <h3 className="text-[16px] font-semibold text-[#111827] mb-2">No Emails</h3>
           <p className="text-[14px] text-[#6B7280] mb-6">
-            Link an email thread to view and manage customer communications for this project.
+            Link an email thread or search for historical emails to view communications for this project.
           </p>
           <div className="flex flex-col sm:flex-row gap-3 justify-center">
             <Button
@@ -344,6 +370,28 @@ export default function ProjectEmailSection({ project, onThreadLinked }) {
               <Plus className="w-4 h-4 mr-2" />
               New Email
             </Button>
+          </div>
+
+          <div className="mt-8 pt-6 border-t border-[#E5E7EB] max-w-md mx-auto">
+            <h4 className="text-sm font-medium text-[#111827] mb-3">Or load older emails from Gmail</h4>
+            <div className="flex gap-2">
+              <input
+                type="text"
+                value={historySearchInput}
+                onChange={(e) => setHistorySearchInput(e.target.value)}
+                placeholder="e.g. client@example.com"
+                className="flex-1 px-3 py-2 border border-[#E5E7EB] rounded-lg text-sm focus:outline-none focus:border-[#FAE008]"
+                onKeyDown={(e) => e.key === 'Enter' && handleSearchHistory()}
+              />
+              <Button 
+                onClick={handleSearchHistory} 
+                disabled={isSearchingHistory || !historySearchInput.trim()}
+                size="sm"
+                className="bg-[#FAE008] text-[#111827] hover:bg-[#E5CF07]"
+              >
+                {isSearchingHistory ? 'Searching...' : 'Search'}
+              </Button>
+            </div>
           </div>
 
           {/* Email Composer */}
@@ -439,7 +487,7 @@ export default function ProjectEmailSection({ project, onThreadLinked }) {
             Load older emails
           </div>
           <div className="text-xs text-slate-500">
-            {historicalEmails.length > 0 ? `${historicalEmails.length} loaded` : 'Search Gmail'}
+            {savedEmails.length > 0 ? `${savedEmails.length} loaded` : 'Search Gmail'}
           </div>
         </div>
         
@@ -517,7 +565,7 @@ export default function ProjectEmailSection({ project, onThreadLinked }) {
 
             return (
               <Card key={thread.id} className={`border border-[#E5E7EB] shadow-sm rounded-lg ${thread.isVirtual ? 'bg-slate-50/30' : ''}`}>
-                <CardHeader className="bg-white px-4 py-3 border-b border-[#E5E7EB]">
+                <CardHeader className="bg-white px-4 py-3 border-b border-[#E5E7EB] bg-transparent">
                   <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
                     <div className="flex-1 min-w-0">
                       <div className="flex items-center gap-2 flex-wrap">
