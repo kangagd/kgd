@@ -62,27 +62,45 @@ export default function EmailMessageView({ message, isFirst, linkedJobId, linked
   const [inlineImageUrls, setInlineImageUrls] = useState({});
   const [loadingInlineImages, setLoadingInlineImages] = useState(false);
   const [inlineImagesAttempted, setInlineImagesAttempted] = useState(false);
+  const [fullContent, setFullContent] = useState(null);
+  const [loadingFullContent, setLoadingFullContent] = useState(false);
+
+  // Fetch full content for historical messages on expand
+  useEffect(() => {
+    if (expanded && message.isHistorical && !message.body_html && !fullContent && !loadingFullContent) {
+      setLoadingFullContent(true);
+      base44.functions.invoke('fetchGmailMessage', { gmail_message_id: gmailMessageId })
+        .then(res => {
+          setFullContent(res.data);
+        })
+        .catch(err => console.error('Failed to fetch historical content:', err))
+        .finally(() => setLoadingFullContent(false));
+    }
+  }, [expanded, message.isHistorical, message.body_html, gmailMessageId, fullContent, loadingFullContent]);
+
+  // Merge full content if available
+  const displayMessage = fullContent ? { ...message, ...fullContent } : message;
 
   // Separate inline images from regular attachments
   const { inlineAttachments, regularAttachments } = useMemo(() => {
-    const attachments = message.attachments || [];
-    const inline = [];
-    const regular = [];
-    
-    for (const att of attachments) {
-      if (isInlineImageInHtml(att, message.body_html)) {
-        inline.push(att);
-      } else {
-        regular.push(att);
-      }
+  const attachments = displayMessage.attachments || [];
+  const inline = [];
+  const regular = [];
+
+  for (const att of attachments) {
+    if (isInlineImageInHtml(att, displayMessage.body_html)) {
+      inline.push(att);
+    } else {
+      regular.push(att);
     }
-    
-    return { inlineAttachments: inline, regularAttachments: regular };
-  }, [message.attachments, message.body_html]);
+  }
+
+  return { inlineAttachments: inline, regularAttachments: regular };
+  }, [displayMessage.attachments, displayMessage.body_html]);
 
   // Load inline images when expanded
   useEffect(() => {
-    if (!expanded || inlineAttachments.length === 0 || loadingInlineImages || inlineImagesAttempted) return;
+  if (!expanded || inlineAttachments.length === 0 || loadingInlineImages || inlineImagesAttempted) return;
     
     const loadInlineImages = async () => {
       setLoadingInlineImages(true);
@@ -124,9 +142,9 @@ export default function EmailMessageView({ message, isFirst, linkedJobId, linked
 
   // Process HTML to replace cid: references with actual URLs
   const processedBodyHtml = useMemo(() => {
-    if (!message.body_html) return '';
+    if (!displayMessage.body_html) return '';
     
-    let html = message.body_html;
+    let html = displayMessage.body_html;
     
     // Replace cid: references with resolved URLs
     for (const [contentId, url] of Object.entries(inlineImageUrls)) {
@@ -171,6 +189,11 @@ export default function EmailMessageView({ message, isFirst, linkedJobId, linked
               <span className="text-[15px] font-semibold text-[#111827]">
                 {message.from_name || message.from_address}
               </span>
+              {message.isHistorical && (
+                <Badge variant="secondary" className="bg-gray-100 text-gray-600 border-gray-200 text-[11px] h-5">
+                  Historical
+                </Badge>
+              )}
               {message.is_outbound && (
                 <Badge className="bg-green-50 text-green-700 border-green-200 text-[11px] h-5">
                   Sent
@@ -262,6 +285,12 @@ export default function EmailMessageView({ message, isFirst, linkedJobId, linked
 
           {/* Email Body - Gmail-style rendering with inline images */}
           <div className="mb-5">
+            {loadingFullContent && (
+              <div className="text-[12px] text-[#6B7280] mb-2 flex items-center gap-2">
+                <div className="w-3 h-3 border-2 border-[#FAE008] border-t-transparent rounded-full animate-spin" />
+                Loading message content...
+              </div>
+            )}
             {loadingInlineImages && inlineAttachments.length > 0 && (
               <div className="text-[12px] text-[#6B7280] mb-2 flex items-center gap-2">
                 <div className="w-3 h-3 border-2 border-[#FAE008] border-t-transparent rounded-full animate-spin" />
@@ -282,7 +311,7 @@ export default function EmailMessageView({ message, isFirst, linkedJobId, linked
               />
             ) : (
               <div className="whitespace-pre-wrap text-[14px] text-[#111827] leading-[1.6] break-words overflow-wrap-anywhere">
-                {message.body_text || message.subject || '(No content)'}
+                {displayMessage.body_text || displayMessage.subject || '(No content)'}
               </div>
             )}
           </div>
