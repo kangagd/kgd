@@ -75,7 +75,7 @@ export default function ProjectContactsPanel({ project }) {
   });
 
   return (
-    <div className="mt-6 border border-[#E5E7EB] rounded-xl bg-white p-4 shadow-sm">
+    <div className="mt-4 border border-[#E5E7EB] rounded-lg bg-white p-4 shadow-sm">
       <div className="flex items-center justify-between mb-3">
         <div className="flex items-center gap-2">
             <Users className="w-4 h-4 text-[#111827]" />

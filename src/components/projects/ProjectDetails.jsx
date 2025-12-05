@@ -56,6 +56,7 @@ import ProjectChat from "./ProjectChat";
 import { PROJECT_STAGE_AUTOMATION } from "@/components/domain/projectStageAutomationConfig";
 import ProjectPartsPanel from "./ProjectPartsPanel";
 import HandoverReportModal from "../handover/HandoverReportModal";
+import ProjectContactsPanel from "./ProjectContactsPanel";
 
 const statusColors = {
   "Lead": "bg-slate-100 text-slate-700",
@@ -942,6 +943,8 @@ Format as HTML bullet points using <ul> and <li> tags. Include only the most cri
             </div>
             </CardContent>
             </Card>
+
+            <ProjectContactsPanel project={project} />
 
             {/* Tasks Section */}
             <Collapsible defaultOpen={true}>
