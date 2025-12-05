@@ -1,7 +1,9 @@
 import React from "react";
 import { useQuery } from "@tanstack/react-query";
 import { base44 } from "@/api/base44Client";
-import { Users, Phone, Mail } from "lucide-react";
+import { Users, Phone, Mail, ExternalLink } from "lucide-react";
+import { Link } from "react-router-dom";
+import { createPageUrl } from "@/utils";
 
 export default function JobContactsPanel({ job }) {
   const { data: jobProjectContacts = [], isLoading: jobContactsLoading } = useQuery({
@@ -57,6 +59,16 @@ export default function JobContactsPanel({ job }) {
                         <Mail className="w-3 h-3 text-gray-400" />
                         <a href={`mailto:${c.email}`} className="hover:text-blue-600 hover:underline truncate">{c.email}</a>
                     </div>
+                )}
+                {c.contact_id && (
+                  <div className="pt-1 mt-1 border-t border-gray-100">
+                    <Link 
+                      to={`${createPageUrl("Customers")}?customerId=${c.contact_id}`}
+                      className="text-[10px] text-blue-600 hover:underline flex items-center gap-1"
+                    >
+                      View contact <ExternalLink className="w-2.5 h-2.5" />
+                    </Link>
+                  </div>
                 )}
               </div>
             </div>

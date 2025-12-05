@@ -9,7 +9,13 @@ import { toast } from "sonner";
 
 export default function ProjectContactsPanel({ project }) {
   const queryClient = useQueryClient();
+  const { data: people = [] } = useQuery({
+    queryKey: ["people-for-project-contacts"],
+    queryFn: () => base44.entities.Customer.list("name"),
+  });
+
   const [newContact, setNewContact] = useState({
+    contact_id: "",
     name: "",
     email: "",
     phone: "",
@@ -28,12 +34,21 @@ export default function ProjectContactsPanel({ project }) {
 
   const createContactMutation = useMutation({
     mutationFn: async () => {
-      if (!project?.id || !newContact.name) return;
+      if (!project?.id) return;
+      
+      const person = newContact.contact_id
+        ? people.find((p) => p.id === newContact.contact_id)
+        : null;
+
+      const name = newContact.name || person?.name || "";
+      if (!name) return;
+
       await base44.entities.ProjectContact.create({
         project_id: project.id,
-        name: newContact.name,
-        email: newContact.email || "",
-        phone: newContact.phone || "",
+        contact_id: newContact.contact_id || null,
+        name: name,
+        email: newContact.email || person?.email || "",
+        phone: newContact.phone || person?.phone || "",
         role: newContact.role || "",
         show_on_jobs: newContact.show_on_jobs,
       });
@@ -41,6 +56,7 @@ export default function ProjectContactsPanel({ project }) {
     onSuccess: () => {
       queryClient.invalidateQueries(["project-contacts", project.id]);
       setNewContact({
+        contact_id: "",
         name: "",
         email: "",
         phone: "",
@@ -114,6 +130,14 @@ export default function ProjectContactsPanel({ project }) {
                   {c.email && <span className="flex items-center gap-1"><Mail className="w-3 h-3" /> {c.email}</span>}
                   {c.phone && <span className="flex items-center gap-1"><Phone className="w-3 h-3" /> {c.phone}</span>}
                 </div>
+                {c.contact_id && (
+                  <Link 
+                    to={`${createPageUrl("Customers")}?customerId=${c.contact_id}`}
+                    className="text-[10px] text-blue-600 hover:underline flex items-center gap-0.5"
+                  >
+                    View contact <ExternalLink className="w-2.5 h-2.5" />
+                  </Link>
+                )}
               </div>
               <div className="flex items-center gap-4">
                 <div className="flex items-center gap-2">
@@ -148,7 +172,30 @@ export default function ProjectContactsPanel({ project }) {
         <p className="text-[11px] font-medium text-gray-500 mb-2">
           Quick add contact for this project
         </p>
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-2 mb-3">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-2 mb-3">
+          <select
+            className="h-8 text-xs rounded border border-input bg-background px-2"
+            value={newContact.contact_id}
+            onChange={(e) => {
+              const id = e.target.value;
+              const person = people.find((p) => p.id === id);
+              setNewContact((c) => ({
+                ...c,
+                contact_id: id,
+                name: c.name || person?.name || "",
+                email: c.email || person?.email || "",
+                phone: c.phone || person?.phone || "",
+              }));
+            }}
+          >
+            <option value="">Link existing person (optional)</option>
+            {people.map((p) => (
+              <option key={p.id} value={p.id}>
+                {p.name || p.email || 'Unnamed'}
+              </option>
+            ))}
+          </select>
+
           <Input
             placeholder="Name"
             value={newContact.name}
