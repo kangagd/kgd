@@ -54,6 +54,7 @@ import TasksPanel from "../tasks/TasksPanel";
 import QuotesSection from "../quotes/QuotesSection";
 import LinkedPartsCard from "./LinkedPartsCard";
 import JobItemsUsedModal from "./JobItemsUsedModal";
+import JobContactsPanel from "./JobContactsPanel";
 
 
 const statusColors = {
@@ -1291,6 +1292,9 @@ export default function JobDetails({ job: initialJob, onClose, onStatusChange, o
 
               {/* Linked Parts Card - Logistics */}
               <LinkedPartsCard job={job} />
+
+              {/* Job Contacts Panel */}
+              <JobContactsPanel job={job} />
 
               {/* Tasks Panel */}
               <Collapsible defaultOpen={false} className="border border-[#E5E7EB] shadow-sm rounded-lg bg-white">
