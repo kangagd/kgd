@@ -39,25 +39,59 @@ export default function ProjectContactsPanel({ project }) {
     mutationFn: async () => {
       if (!project?.id) return;
       
-      const person = newContact.contact_id
-        ? people.find((p) => p.id === newContact.contact_id)
-        : null;
+      let finalContactId = newContact.contact_id;
+      let finalName = newContact.name;
+      let finalEmail = newContact.email;
+      let finalPhone = newContact.phone;
 
-      const name = newContact.name || person?.name || "";
-      if (!name) return;
+      // If no existing contact selected, create a new Customer first
+      if (!finalContactId && newContact.name) {
+          try {
+             // Try to map role to customer_type
+             const validTypes = ["Owner", "Builder", "Real Estate - Tenant", "Real Estate - Agent", "Strata - Owner", "Strata - Agent"];
+             const mappedType = validTypes.includes(newContact.role) ? newContact.role : undefined;
+
+             const newCustomer = await base44.entities.Customer.create({
+                 name: newContact.name,
+                 email: newContact.email || undefined,
+                 phone: newContact.phone || undefined,
+                 customer_type: mappedType,
+                 source: "Other",
+                 source_details: "Added via Project Contacts",
+                 status: "active"
+             });
+             finalContactId = newCustomer.id;
+             finalName = newCustomer.name;
+             finalEmail = newCustomer.email || finalEmail;
+             finalPhone = newCustomer.phone || finalPhone;
+          } catch (e) {
+              console.error("Error creating customer:", e);
+              throw new Error("Failed to create new customer record: " + e.message);
+          }
+      } else if (finalContactId) {
+          const person = people.find((p) => p.id === finalContactId);
+          if (person) {
+             finalName = finalName || person.name;
+             finalEmail = finalEmail || person.email || "";
+             finalPhone = finalPhone || person.phone || "";
+          }
+      }
+
+      if (!finalName) return;
 
       await base44.entities.ProjectContact.create({
         project_id: project.id,
-        contact_id: newContact.contact_id || null,
-        name: name,
-        email: newContact.email || person?.email || "",
-        phone: newContact.phone || person?.phone || "",
+        contact_id: finalContactId || null,
+        name: finalName,
+        email: finalEmail,
+        phone: finalPhone,
         role: newContact.role || "",
         show_on_jobs: newContact.show_on_jobs,
       });
     },
     onSuccess: () => {
       queryClient.invalidateQueries(["project-contacts", project.id]);
+      queryClient.invalidateQueries(["people-for-project-contacts"]);
       setNewContact({
         contact_id: "",
         name: "",
@@ -68,8 +102,8 @@ export default function ProjectContactsPanel({ project }) {
       });
       toast.success("Contact added");
     },
-    onError: () => {
-        toast.error("Failed to add contact");
+    onError: (err) => {
+        toast.error(err.message || "Failed to add contact");
     }
   });
 
