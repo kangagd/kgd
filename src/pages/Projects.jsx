@@ -29,10 +29,11 @@ import ProjectModalView from "../components/projects/ProjectModalView";
 import { createPageUrl } from "@/utils";
 import { DuplicateBadge } from "../components/common/DuplicateWarningCard";
 import AgeBadge from "../components/common/AgeBadge";
-
-
+import { useLocation } from "react-router-dom";
+import EntityLink from "../components/common/EntityLink";
 
 export default function Projects() {
+  const location = useLocation();
   const [user, setUser] = useState(null);
   const [searchTerm, setSearchTerm] = useState("");
   const [stageFilter, setStageFilter] = useState("all");
@@ -190,13 +191,13 @@ export default function Projects() {
       setShowForm(true);
     }
     
-    if (projectId && projects.length > 0 && !selectedProject) {
+    if (projectId && projects.length > 0) {
       const project = projects.find((p) => p.id === projectId);
-      if (project) {
+      if (project && project.id !== selectedProject?.id) {
         setSelectedProject(project);
       }
     }
-  }, [projects, selectedProject]);
+  }, [projects, selectedProject, location.search]);
 
   const handleSubmit = (data) => {
     if (editingProject) {
@@ -493,13 +494,13 @@ export default function Projects() {
             const createdAt = project.created_at || project.created_date || project.createdDate;
 
             return (
-              <Card
+              <EntityLink
                 key={project.id}
+                to={`${createPageUrl("Projects")}?projectId=${project.id}`}
+                className="block"
+              >
+              <Card
                 className="hover:shadow-lg transition-all duration-200 cursor-pointer hover:border-[#FAE008] border border-[#E5E7EB] rounded-xl relative"
-                onClick={() => {
-                  setSelectedProject(project);
-                  window.history.pushState({}, '', `${createPageUrl("Projects")}?projectId=${project.id}`);
-                }}
               >
                 <Button
                   variant="ghost"
@@ -583,6 +584,7 @@ export default function Projects() {
                   </div>
                 </CardContent>
               </Card>
+              </EntityLink>
             );
           })}
         </div>

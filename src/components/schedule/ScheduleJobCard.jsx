@@ -6,12 +6,22 @@ import { JobStatusBadge, JobTypeBadge, ProductTypeBadge } from "../common/Status
 import { Truck, Package } from "lucide-react";
 import { TechnicianAvatarGroup } from "../common/TechnicianAvatar";
 import { DuplicateDot } from "../common/DuplicateWarningCard";
+import EntityLink from "../common/EntityLink";
+import { createPageUrl } from "@/utils";
 
 export default function ScheduleJobCard({ job, onClick, onAddressClick, onProjectClick, techniciansLookup = {}, hasActiveCheckIn = false }) {
   return (
+    <EntityLink
+      to={`${createPageUrl("Jobs")}?jobId=${job.id}`}
+      onClick={(e) => {
+        if (e.metaKey || e.ctrlKey || e.button === 1) return;
+        e.preventDefault();
+        onClick && onClick(e);
+      }}
+      className="block h-full"
+    >
     <Card
-      onClick={onClick}
-      className={`p-4 shadow-sm hover:shadow-md transition-shadow cursor-pointer border border-[#E5E7EB] rounded-xl bg-white ${
+      className={`p-4 shadow-sm hover:shadow-md transition-shadow cursor-pointer border border-[#E5E7EB] rounded-xl bg-white h-full ${
         hasActiveCheckIn ? 'ring-2 ring-emerald-500 border-emerald-500' : ''
       }`}
     >
@@ -62,6 +72,15 @@ export default function ScheduleJobCard({ job, onClick, onAddressClick, onProjec
       </div>
 
       {/* Bottom Row: Address + Project + Technicians */}
+      </Card>
+      </EntityLink>
+      );
+      }
+
+      // Helper component to preserve content structure
+      function JobCardContent({ job, onAddressClick, onProjectClick, techniciansLookup }) {
+      return (
+      <>
       <div className="flex items-end justify-between mt-3">
         <div className="space-y-2 text-xs text-[#6B7280] flex-1 min-w-0 mr-2">
           {job.address_full && (

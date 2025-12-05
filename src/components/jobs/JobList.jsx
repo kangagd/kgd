@@ -3,6 +3,8 @@ import JobCard from "./JobCard";
 import { Card, CardContent } from "@/components/ui/card";
 import { Timer } from "lucide-react";
 import { isPast, parseISO, addHours } from "date-fns";
+import EntityLink from "../common/EntityLink";
+import { createPageUrl } from "@/utils";
 
 export default function JobList({ jobs, isLoading, onSelectJob, onViewDetails, activeCheckInMap = {} }) {
 
@@ -55,15 +57,20 @@ export default function JobList({ jobs, isLoading, onSelectJob, onViewDetails, a
         const hasActiveCheckIn = !!activeCheckInMap[job.id];
 
         return (
-          <div key={job.id} className={`rounded-xl transition-all ${slaStyle}`}>
+          <EntityLink 
+            key={job.id} 
+            to={`${createPageUrl("Jobs")}?jobId=${job.id}`}
+            className={`block rounded-xl transition-all ${slaStyle}`}
+          >
             <JobCard 
               job={job}
-              onClick={() => onSelectJob(job)}
+              // onClick removed as EntityLink handles it. 
+              // If JobCard has internal interactive elements, they should stopPropagation.
               onViewDetails={onViewDetails}
               activeCheckIns={activeCheckIns}
               hasActiveCheckIn={hasActiveCheckIn}
             />
-          </div>
+          </EntityLink>
         );
       })}
     </div>
