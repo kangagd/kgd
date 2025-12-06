@@ -8,7 +8,7 @@ import { ShoppingCart, ExternalLink, PackageCheck } from "lucide-react";
 import { format } from "date-fns";
 import ReceivePurchaseOrderModal from "../purchasing/ReceivePurchaseOrderModal";
 
-export default function PurchaseOrdersList({ supplierId }) {
+export default function PurchaseOrdersList({ supplierId, onSelectPO }) {
   const queryClient = useQueryClient();
   const [receiveModalOpen, setReceiveModalOpen] = useState(false);
   const [selectedPOId, setSelectedPOId] = useState(null);
@@ -58,7 +58,11 @@ export default function PurchaseOrdersList({ supplierId }) {
           </TableHeader>
           <TableBody>
             {purchaseOrders.map((po) => (
-              <TableRow key={po.id} className="hover:bg-gray-50 transition-colors border-b last:border-0">
+              <TableRow 
+                key={po.id} 
+                className="hover:bg-gray-50 transition-colors border-b last:border-0 cursor-pointer"
+                onClick={() => onSelectPO && onSelectPO(po)}
+              >
                 <TableCell className="px-2 py-2 font-medium">{po.po_number || "—"}</TableCell>
                 <TableCell className="px-2 py-2">
                   {po.order_date ? format(new Date(po.order_date), "dd MMM yyyy") : "—"}
@@ -87,7 +91,10 @@ export default function PurchaseOrdersList({ supplierId }) {
                         size="xs" 
                         variant="outline"
                         className="h-6 text-[10px] gap-1"
-                        onClick={() => markAsSentMutation.mutate(po.id)}
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          markAsSentMutation.mutate(po.id);
+                        }}
                         disabled={markAsSentMutation.isPending}
                       >
                         <ExternalLink className="w-3 h-3" /> Mark Sent
@@ -98,7 +105,8 @@ export default function PurchaseOrdersList({ supplierId }) {
                         size="xs" 
                         variant="outline"
                         className="h-6 text-[10px] gap-1 border-green-200 hover:bg-green-50 text-green-700"
-                        onClick={() => {
+                        onClick={(e) => {
+                          e.stopPropagation();
                           setSelectedPOId(po.id);
                           setReceiveModalOpen(true);
                         }}

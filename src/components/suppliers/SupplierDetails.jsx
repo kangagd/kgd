@@ -8,6 +8,17 @@ import SupplierPurchaseOrderModal from "../purchasing/SupplierPurchaseOrderModal
 
 export default function SupplierDetails({ supplier, onClose, onEdit }) {
   const [poModalOpen, setPoModalOpen] = useState(false);
+  const [selectedPO, setSelectedPO] = useState(null);
+
+  const handleEditPO = (po) => {
+    setSelectedPO(po);
+    setPoModalOpen(true);
+  };
+
+  const handleCloseModal = () => {
+    setPoModalOpen(false);
+    setSelectedPO(null);
+  };
 
   return (
     <div className="space-y-6">
@@ -123,14 +134,15 @@ export default function SupplierDetails({ supplier, onClose, onEdit }) {
             </div>
         </CardHeader>
         <CardContent className="p-4 md:p-6">
-            <PurchaseOrdersList supplierId={supplier.id} />
+            <PurchaseOrdersList supplierId={supplier.id} onSelectPO={handleEditPO} />
         </CardContent>
       </Card>
 
       <SupplierPurchaseOrderModal 
         open={poModalOpen}
-        onClose={() => setPoModalOpen(false)}
+        onClose={handleCloseModal}
         supplier={supplier}
+        purchaseOrderToEdit={selectedPO}
       />
     </div>
   );
