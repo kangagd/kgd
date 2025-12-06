@@ -55,16 +55,35 @@ export default function LogisticsTimeline({ project }) {
                 <div className={`w-2 h-2 rounded-full ${isCompleted ? 'bg-green-500' : 'bg-slate-300'}`} />
               </div>
 
+              {(() => {
+                const isStockJob = !!job.purchase_order_id;
+                const isProjectJob = !!job.project_id;
+                const containerClasses = `p-3 rounded-lg border shadow-sm transition-all cursor-pointer ${
+                    isProjectJob 
+                        ? "bg-sky-50/30 border-sky-200 hover:border-sky-300 hover:shadow-md" 
+                        : isStockJob 
+                            ? "bg-amber-50/30 border-amber-200 hover:border-amber-300 hover:shadow-md" 
+                            : "bg-white border-slate-200 hover:border-blue-300 hover:shadow-md"
+                }`;
+
+                return (
               <div 
                 onClick={() => navigate(createPageUrl("Jobs") + `?jobId=${job.id}`)}
-                className="bg-white p-3 rounded-lg border border-slate-200 shadow-sm hover:border-blue-300 hover:shadow-md transition-all cursor-pointer"
+                className={containerClasses}
               >
                 <div className="flex items-start justify-between gap-4 mb-2">
                   <div>
                     <div className="font-semibold text-slate-900 flex items-center gap-2">
                       {job.job_type_name || job.job_type}
+                      {isStockJob && (
+                        <span className="inline-flex items-center rounded-full bg-amber-100 px-2 py-0.5 text-[10px] font-medium text-amber-700">
+                          PO
+                        </span>
+                      )}
                       <span className="text-xs font-normal text-slate-500">#{job.job_number}</span>
                     </div>
+                );
+              })()}
                     <div className="text-xs text-slate-500 flex items-center gap-3 mt-1">
                       <span className="flex items-center gap-1">
                         <Calendar className="w-3 h-3" />

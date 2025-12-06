@@ -291,8 +291,20 @@ export default function Logistics() {
                             </tr>
                         </thead>
                         <tbody className="divide-y divide-gray-200 bg-white">
-                            {stockLogisticsJobs.map(job => (
-                                <tr key={job.id} className="hover:bg-gray-50 transition-colors">
+                            {stockLogisticsJobs.map(job => {
+                                const isStockJob = !!job.purchase_order_id;
+                                const isProjectJob = !!job.project_id;
+                                
+                                const rowClasses = `transition-colors border-b ${
+                                    isProjectJob 
+                                        ? "bg-sky-50/40 hover:bg-sky-50 border-sky-100" 
+                                        : isStockJob 
+                                            ? "bg-amber-50/40 hover:bg-amber-50 border-amber-100" 
+                                            : "hover:bg-gray-50"
+                                }`;
+
+                                return (
+                                <tr key={job.id} className={rowClasses}>
                                     <td className="px-6 py-3 text-gray-700 font-medium">
                                         {job.scheduled_date ? format(new Date(job.scheduled_date), 'MMM d, yyyy') : '-'}
                                     </td>
@@ -300,13 +312,20 @@ export default function Logistics() {
                                         {job.notes?.split(' from ')?.[1]?.split(' –')?.[0] || 'Supplier'}
                                     </td>
                                     <td className="px-6 py-3">
-                                        <Badge variant="outline" className={
-                                            job.job_type_name?.includes('Pickup') 
-                                                ? "bg-amber-50 text-amber-700 border-amber-200" 
-                                                : "bg-blue-50 text-blue-700 border-blue-200"
-                                        }>
-                                            {job.job_type_name}
-                                        </Badge>
+                                        <div className="flex items-center gap-2">
+                                            <Badge variant="outline" className={
+                                                job.job_type_name?.includes('Pickup') 
+                                                    ? "bg-amber-50 text-amber-700 border-amber-200" 
+                                                    : "bg-blue-50 text-blue-700 border-blue-200"
+                                            }>
+                                                {job.job_type_name}
+                                            </Badge>
+                                            {isStockJob && (
+                                                <span className="inline-flex items-center rounded-full bg-amber-100 px-2 py-0.5 text-[10px] font-medium text-amber-700">
+                                                    PO
+                                                </span>
+                                            )}
+                                        </div>
                                     </td>
                                     <td className="px-6 py-3 text-gray-600">
                                         {job.address_full || job.address}
@@ -318,7 +337,8 @@ export default function Logistics() {
                                         <Badge variant="secondary">{job.status}</Badge>
                                     </td>
                                 </tr>
-                            ))}
+                                );
+                            })}
                         </tbody>
                     </table>
                 </div>
