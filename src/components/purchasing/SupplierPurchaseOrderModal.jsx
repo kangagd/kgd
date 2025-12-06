@@ -163,18 +163,18 @@ export default function SupplierPurchaseOrderModal({ open, onClose, supplier }) 
 
   return (
     <Dialog open={open} onOpenChange={onClose}>
-      <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
+      <DialogContent className="modal-container max-w-4xl max-h-[90vh] overflow-y-auto">
         <DialogHeader>
-          <DialogTitle>Create Purchase Order - {supplier.name}</DialogTitle>
+          <DialogTitle className="modal-title text-lg font-semibold text-gray-900">Create Purchase Order - {supplier.name}</DialogTitle>
         </DialogHeader>
 
-        <div className="grid gap-6 py-4">
+        <div className="modal-panel py-4 space-y-6">
           {/* Header Info */}
           <div className="grid grid-cols-2 gap-4">
             <div className="space-y-2">
-              <Label>Delivery Location</Label>
+              <Label className="text-xs font-medium text-gray-700">Delivery Location</Label>
               <Select value={deliveryLocationId} onValueChange={setDeliveryLocationId}>
-                <SelectTrigger>
+                <SelectTrigger className="input-sm w-full h-9">
                   <SelectValue placeholder="Select location" />
                 </SelectTrigger>
                 <SelectContent>
@@ -185,124 +185,128 @@ export default function SupplierPurchaseOrderModal({ open, onClose, supplier }) 
               </Select>
             </div>
             <div className="space-y-2">
-              <Label>PO Number (Optional)</Label>
+              <Label className="text-xs font-medium text-gray-700">PO Number (Optional)</Label>
               <Input 
                 value={poNumber} 
                 onChange={(e) => setPoNumber(e.target.value)} 
                 placeholder="e.g. PO-2024-001"
+                className="input-sm w-full h-9"
               />
             </div>
             <div className="space-y-2">
-              <Label>Order Date</Label>
+              <Label className="text-xs font-medium text-gray-700">Order Date</Label>
               <Input 
                 type="date" 
                 value={orderDate} 
                 onChange={(e) => setOrderDate(e.target.value)} 
+                className="input-sm w-full h-9"
               />
             </div>
             <div className="space-y-2">
-              <Label>Expected Date</Label>
+              <Label className="text-xs font-medium text-gray-700">Expected Date</Label>
               <Input 
                 type="date" 
                 value={expectedDate} 
                 onChange={(e) => setExpectedDate(e.target.value)} 
+                className="input-sm w-full h-9"
               />
             </div>
             <div className="col-span-2 space-y-2">
-              <Label>Notes</Label>
+              <Label className="text-xs font-medium text-gray-700">Notes</Label>
               <Textarea 
                 value={notes} 
                 onChange={(e) => setNotes(e.target.value)} 
                 placeholder="Shipping instructions, etc."
+                className="textarea-sm w-full min-h-[80px]"
               />
             </div>
           </div>
 
           {/* Lines */}
-          <div className="space-y-2">
+          <div className="space-y-3">
             <div className="flex justify-between items-center">
-              <Label className="text-base font-semibold">Order Items</Label>
-              <Button variant="outline" size="sm" onClick={handleAddLine}>
-                <Plus className="w-4 h-4 mr-2" /> Add Line
+              <Label className="text-sm font-semibold text-gray-900">Order Items</Label>
+              <Button variant="outline" size="sm" onClick={handleAddLine} className="h-8 text-xs">
+                <Plus className="w-3.5 h-3.5 mr-1.5" /> Add Line
               </Button>
             </div>
 
-            <div className="border rounded-md overflow-hidden">
-              <Table>
+            <div className="border rounded-lg overflow-hidden">
+              <Table className="w-full text-xs">
                 <TableHeader>
-                  <TableRow>
-                    <TableHead className="w-[30%]">Item</TableHead>
-                    <TableHead className="w-[25%]">Description</TableHead>
-                    <TableHead className="w-[15%]">Qty</TableHead>
-                    <TableHead className="w-[15%]">Unit Cost</TableHead>
-                    <TableHead className="w-[10%]">Total</TableHead>
-                    <TableHead className="w-[5%]"></TableHead>
+                  <TableRow className="bg-gray-50/50 hover:bg-transparent border-b">
+                    <TableHead className="w-[30%] h-9 text-[11px] uppercase">Item</TableHead>
+                    <TableHead className="w-[25%] h-9 text-[11px] uppercase">Description</TableHead>
+                    <TableHead className="w-[15%] h-9 text-[11px] uppercase">Qty</TableHead>
+                    <TableHead className="w-[15%] h-9 text-[11px] uppercase">Unit Cost</TableHead>
+                    <TableHead className="w-[10%] h-9 text-[11px] uppercase">Total</TableHead>
+                    <TableHead className="w-[5%] h-9"></TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
                   {lines.map((line, index) => (
-                    <TableRow key={index}>
-                      <TableCell>
+                    <TableRow key={index} className="hover:bg-gray-50 border-b last:border-0">
+                      <TableCell className="p-2">
                         <Select 
                           value={line.price_list_item_id} 
                           onValueChange={(val) => handleLineChange(index, "price_list_item_id", val)}
                         >
-                          <SelectTrigger className="h-8">
+                          <SelectTrigger className="h-8 text-xs w-full">
                             <SelectValue placeholder="Select item" />
                           </SelectTrigger>
                           <SelectContent>
                             {availableItems.map(item => (
-                              <SelectItem key={item.id} value={item.id}>
+                              <SelectItem key={item.id} value={item.id} className="text-xs">
                                 {item.item} {item.sku ? `(${item.sku})` : ''}
                               </SelectItem>
                             ))}
                           </SelectContent>
                         </Select>
                       </TableCell>
-                      <TableCell>
+                      <TableCell className="p-2">
                         <Input 
                           value={line.description} 
                           onChange={(e) => handleLineChange(index, "description", e.target.value)}
-                          className="h-8"
+                          className="h-8 text-xs w-full"
                         />
                       </TableCell>
-                      <TableCell>
+                      <TableCell className="p-2">
                         <Input 
                           type="number" 
                           min="0"
                           value={line.qty_ordered} 
                           onChange={(e) => handleLineChange(index, "qty_ordered", e.target.value)}
-                          className="h-8"
+                          className="h-8 text-xs w-full"
                         />
                       </TableCell>
-                      <TableCell>
+                      <TableCell className="p-2">
                         <Input 
                           type="number" 
                           min="0"
                           step="0.01"
                           value={line.unit_cost_ex_tax} 
                           onChange={(e) => handleLineChange(index, "unit_cost_ex_tax", e.target.value)}
-                          className="h-8"
+                          className="h-8 text-xs w-full"
                         />
                       </TableCell>
-                      <TableCell>
+                      <TableCell className="p-2 font-medium text-right pr-4">
                         ${((parseFloat(line.qty_ordered) || 0) * (parseFloat(line.unit_cost_ex_tax) || 0)).toFixed(2)}
                       </TableCell>
-                      <TableCell>
+                      <TableCell className="p-2 text-center">
                         <Button 
                           variant="ghost" 
                           size="icon" 
-                          className="h-8 w-8 text-red-500 hover:text-red-600 hover:bg-red-50"
+                          className="h-7 w-7 text-red-500 hover:text-red-600 hover:bg-red-50"
                           onClick={() => handleRemoveLine(index)}
                         >
-                          <Trash2 className="w-4 h-4" />
+                          <Trash2 className="w-3.5 h-3.5" />
                         </Button>
                       </TableCell>
                     </TableRow>
                   ))}
                   {lines.length === 0 && (
                     <TableRow>
-                      <TableCell colSpan={6} className="text-center text-muted-foreground py-4">
+                      <TableCell colSpan={6} className="text-center text-gray-500 py-6 text-xs">
                         No items added yet. Click "Add Line" to start.
                       </TableCell>
                     </TableRow>
@@ -312,21 +316,22 @@ export default function SupplierPurchaseOrderModal({ open, onClose, supplier }) 
             </div>
             
             <div className="flex justify-end mt-2">
-              <div className="text-lg font-semibold">
+              <div className="text-sm font-semibold text-gray-900">
                 Total: ${calculateTotal().toFixed(2)}
               </div>
             </div>
           </div>
         </div>
 
-        <DialogFooter>
-          <Button variant="outline" onClick={onClose}>Cancel</Button>
+        <DialogFooter className="gap-2 border-t pt-4 mt-2">
+          <Button variant="outline" size="sm" onClick={onClose}>Cancel</Button>
           <Button 
+            size="sm"
             onClick={() => createPOMutation.mutate()} 
             disabled={createPOMutation.isPending || lines.length === 0}
-            className="bg-[#FAE008] text-[#111827] hover:bg-[#E5CF07]"
+            className="bg-[#FAE008] text-[#111827] hover:bg-[#E5CF07] font-medium"
           >
-            {createPOMutation.isPending && <Loader2 className="w-4 h-4 mr-2 animate-spin" />}
+            {createPOMutation.isPending && <Loader2 className="w-3.5 h-3.5 mr-2 animate-spin" />}
             Create Purchase Order
           </Button>
         </DialogFooter>

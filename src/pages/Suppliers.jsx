@@ -9,7 +9,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Badge } from "@/components/ui/badge";
 import SupplierPurchaseOrderModal from "../components/purchasing/SupplierPurchaseOrderModal";
 import ReceivePurchaseOrderModal from "../components/purchasing/ReceivePurchaseOrderModal";
-import { ShoppingCart, ExternalLink, CheckCircle2, PackageCheck } from "lucide-react";
+import { ShoppingCart, ExternalLink, CheckCircle2, PackageCheck, Edit2 } from "lucide-react";
 import { format } from "date-fns";
 
 const SUPPLIER_TYPES = [
@@ -44,13 +44,13 @@ function PurchaseOrdersList({ supplierId }) {
     }
   });
 
-  if (isLoading) return <div className="py-4 text-center text-gray-500">Loading orders...</div>;
+  if (isLoading) return <div className="py-4 text-center text-gray-500 text-xs">Loading orders...</div>;
 
   if (purchaseOrders.length === 0) {
     return (
       <div className="bg-gray-50 border border-dashed border-gray-200 rounded-lg p-8 text-center">
         <ShoppingCart className="w-8 h-8 text-gray-300 mx-auto mb-2" />
-        <p className="text-gray-500">No purchase orders found for this supplier.</p>
+        <p className="text-xs text-gray-500">No purchase orders found for this supplier.</p>
       </div>
     );
   }
@@ -58,26 +58,26 @@ function PurchaseOrdersList({ supplierId }) {
   return (
     <>
       <div className="border rounded-lg overflow-hidden">
-        <Table>
+        <Table className="table-auto w-full text-xs">
           <TableHeader>
-            <TableRow className="bg-gray-50/50">
-              <TableHead>PO Number</TableHead>
-              <TableHead>Date</TableHead>
-              <TableHead>Status</TableHead>
-              <TableHead>Delivery To</TableHead>
-              <TableHead>Amount</TableHead>
-              <TableHead className="text-right">Actions</TableHead>
+            <TableRow className="hover:bg-transparent border-b bg-gray-50/50">
+              <TableHead className="text-[11px] uppercase text-gray-500 h-9">PO Number</TableHead>
+              <TableHead className="text-[11px] uppercase text-gray-500 h-9">Date</TableHead>
+              <TableHead className="text-[11px] uppercase text-gray-500 h-9">Status</TableHead>
+              <TableHead className="text-[11px] uppercase text-gray-500 h-9">Delivery To</TableHead>
+              <TableHead className="text-[11px] uppercase text-gray-500 h-9">Amount</TableHead>
+              <TableHead className="text-[11px] uppercase text-gray-500 text-right h-9">Actions</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
             {purchaseOrders.map((po) => (
-              <TableRow key={po.id}>
-                <TableCell className="font-medium">{po.po_number || "—"}</TableCell>
-                <TableCell>
+              <TableRow key={po.id} className="hover:bg-gray-50 transition-colors border-b last:border-0">
+                <TableCell className="px-2 py-2 font-medium">{po.po_number || "—"}</TableCell>
+                <TableCell className="px-2 py-2">
                   {po.order_date ? format(new Date(po.order_date), "dd MMM yyyy") : "—"}
                 </TableCell>
-                <TableCell>
-                  <Badge variant="outline" className={`capitalize ${
+                <TableCell className="px-2 py-2">
+                  <Badge variant="outline" className={`capitalize text-[10px] px-1.5 py-0 ${
                     po.status === 'sent' ? 'bg-blue-50 text-blue-700 border-blue-200' : 
                     po.status === 'draft' ? 'bg-gray-100 text-gray-700 border-gray-200' :
                     po.status === 'received' ? 'bg-green-50 text-green-700 border-green-200' : 
@@ -86,20 +86,20 @@ function PurchaseOrdersList({ supplierId }) {
                     {po.status?.replace('_', ' ')}
                   </Badge>
                   {po.email_sent_at && (
-                    <div className="text-xs text-gray-500 mt-1">
+                    <div className="text-[10px] text-gray-400 mt-0.5">
                       Sent: {format(new Date(po.email_sent_at), "dd/MM")}
                     </div>
                   )}
                 </TableCell>
-                <TableCell>{po.delivery_location_name || "—"}</TableCell>
-                <TableCell>${po.total_amount_ex_tax?.toFixed(2) || "0.00"}</TableCell>
-                <TableCell className="text-right">
+                <TableCell className="px-2 py-2">{po.delivery_location_name || "—"}</TableCell>
+                <TableCell className="px-2 py-2">${po.total_amount_ex_tax?.toFixed(2) || "0.00"}</TableCell>
+                <TableCell className="px-2 py-2 text-right">
                   <div className="flex justify-end gap-2">
                     {po.status === 'draft' && (
                       <Button 
-                        size="sm" 
+                        size="xs" 
                         variant="outline"
-                        className="h-7 text-xs gap-1"
+                        className="h-6 text-[10px] gap-1"
                         onClick={() => markAsSentMutation.mutate(po.id)}
                         disabled={markAsSentMutation.isPending}
                       >
@@ -108,9 +108,9 @@ function PurchaseOrdersList({ supplierId }) {
                     )}
                     {(po.status === 'sent' || po.status === 'partially_received' || po.status === 'draft') && (
                       <Button 
-                        size="sm" 
+                        size="xs" 
                         variant="outline"
-                        className="h-7 text-xs gap-1 border-green-200 hover:bg-green-50 text-green-700"
+                        className="h-6 text-[10px] gap-1 border-green-200 hover:bg-green-50 text-green-700"
                         onClick={() => {
                           setSelectedPOId(po.id);
                           setReceiveModalOpen(true);
@@ -159,6 +159,8 @@ function SuppliersPage() {
 
   const [selectedSupplier, setSelectedSupplier] = useState(null);
   const [poModalOpen, setPoModalOpen] = useState(false);
+  const [editingSupplier, setEditingSupplier] = useState(null); // Added missing state
+  const [isDialogOpen, setIsDialogOpen] = useState(false); // Added missing state
 
   const createMutation = useMutation({
     mutationFn: async () => {
@@ -209,186 +211,193 @@ function SuppliersPage() {
   };
 
   return (
-    <div className="p-4 md:p-6">
-      <div className="mb-4 flex items-center justify-between">
+    <div className="page-container p-4 md:p-6 space-y-4">
+      <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-base font-semibold text-gray-900">Suppliers</h1>
-          <p className="text-xs text-gray-500">
-            Manage suppliers used for parts, price lists and pickup logistics jobs.
+          <h1 className="page-title text-lg font-semibold text-gray-900">Suppliers</h1>
+          <p className="page-subtitle text-xs text-gray-500 mt-1">
+            Manage supplier vendors for stock and logistics operations.
           </p>
         </div>
       </div>
 
-      <div className="grid gap-4 md:grid-cols-[2fr,1fr]">
-        <div className="space-y-4">
-        {/* List */}
-        <div className="rounded-xl border bg-white p-3 md:p-4">
-          <div className="mb-2 flex items-center justify-between">
-            <h2 className="text-sm font-semibold text-gray-900">All suppliers</h2>
-            <span className="text-[11px] text-gray-500">
-              {suppliers.length} total
-            </span>
-          </div>
+      <div className="grid gap-4 md:grid-cols-3">
+        <div className="col-span-2 space-y-4">
+          {/* List */}
+          <div className="card rounded-xl border bg-white shadow-sm p-4 md:p-5">
+            <div className="mb-4 flex items-center justify-between">
+              <h2 className="text-sm font-semibold text-gray-900">All suppliers</h2>
+              <span className="text-[11px] text-gray-500">
+                {suppliers.length} total
+              </span>
+            </div>
 
-          {isLoading ? (
-            <p className="text-xs text-gray-500">Loading suppliers…</p>
-          ) : !suppliers.length ? (
-            <p className="text-xs text-gray-500">
-              No suppliers yet. Add your first supplier on the right.
-            </p>
-          ) : (
-            <div className="overflow-x-auto">
-              <table className="min-w-full border-separate border-spacing-y-1 text-xs">
-                <thead className="text-[11px] uppercase text-gray-500">
-                  <tr>
-                    <th className="px-2 py-1 text-left">Name</th>
-                    <th className="px-2 py-1 text-left">Type</th>
-                    <th className="px-2 py-1 text-left">Contact</th>
-                    <th className="px-2 py-1 text-left">Phone</th>
-                    <th className="px-2 py-1 text-left">Email</th>
-                    <th className="px-2 py-1 text-left">Lead time (days)</th>
-                    <th className="px-2 py-1 text-left">Active</th>
-                    <th className="px-2 py-1 text-right">Actions</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {suppliers.map((s) => (
-                    <tr
-                      key={s.id}
-                      className={`rounded-lg align-top transition-colors ${
-                        selectedSupplier?.id === s.id ? "bg-[#FAE008]/10 border border-[#FAE008]" : "bg-slate-50 hover:bg-slate-100"
-                      }`}
-                      onClick={() => setSelectedSupplier(s)}
-                    >
-                      <td className="px-2 py-1">
-                        <Input
-                          className="h-7 text-xs"
-                          value={s.name || ""}
-                          onChange={(e) =>
-                            handleInlineChange(s, "name", e.target.value)
-                          }
-                        />
-                      </td>
-                      <td className="px-2 py-1">
-                        <select
-                          className="h-7 w-full rounded border border-gray-300 bg-white px-1 text-xs"
-                          value={s.type || ""}
-                          onChange={(e) =>
-                            handleInlineChange(s, "type", e.target.value)
-                          }
-                        >
-                          <option value="">-</option>
-                          {SUPPLIER_TYPES.map((t) => (
-                            <option key={t} value={t}>
-                              {t}
-                            </option>
-                          ))}
-                        </select>
-                      </td>
-                      <td className="px-2 py-1">
-                        <Input
-                          className="h-7 text-xs"
-                          placeholder="Contact name"
-                          value={s.contact_name || ""}
-                          onChange={(e) =>
-                            handleInlineChange(s, "contact_name", e.target.value)
-                          }
-                        />
-                      </td>
-                      <td className="px-2 py-1">
-                        <Input
-                          className="h-7 text-xs"
-                          placeholder="Phone"
-                          value={s.phone || ""}
-                          onChange={(e) =>
-                            handleInlineChange(s, "phone", e.target.value)
-                          }
-                        />
-                      </td>
-                      <td className="px-2 py-1">
-                        <Input
-                          className="h-7 text-xs"
-                          placeholder="Email"
-                          value={s.email || ""}
-                          onChange={(e) =>
-                            handleInlineChange(s, "email", e.target.value)
-                          }
-                        />
-                      </td>
-                      <td className="px-2 py-1">
-                        <Input
-                          className="h-7 text-xs"
-                          type="number"
-                          placeholder="0"
-                          value={
-                            s.default_lead_time_days !== null &&
-                            s.default_lead_time_days !== undefined
-                              ? String(s.default_lead_time_days)
-                              : ""
-                          }
-                          onChange={(e) =>
-                            handleInlineChange(
-                              s,
-                              "default_lead_time_days",
-                              e.target.value
-                            )
-                          }
-                        />
-                      </td>
-                      <td className="px-2 py-1">
-                        <div className="flex items-center gap-1">
-                          <Switch
-                            checked={!!s.is_active}
-                            onCheckedChange={(val) =>
-                              handleInlineChange(s, "is_active", val)
+            {isLoading ? (
+              <p className="text-xs text-gray-500">Loading suppliers…</p>
+            ) : !suppliers.length ? (
+              <p className="text-xs text-gray-500">
+                No suppliers yet. Add your first supplier on the right.
+              </p>
+            ) : (
+              <div className="overflow-x-auto">
+                <Table className="table-auto w-full text-xs">
+                  <TableHeader>
+                    <TableRow className="hover:bg-transparent border-b">
+                      <TableHead className="text-[11px] uppercase text-gray-500 h-9">Name</TableHead>
+                      <TableHead className="text-[11px] uppercase text-gray-500 h-9">Type</TableHead>
+                      <TableHead className="text-[11px] uppercase text-gray-500 h-9">Contact</TableHead>
+                      <TableHead className="text-[11px] uppercase text-gray-500 h-9">Phone</TableHead>
+                      <TableHead className="text-[11px] uppercase text-gray-500 h-9">Email</TableHead>
+                      <TableHead className="text-[11px] uppercase text-gray-500 h-9">Lead time</TableHead>
+                      <TableHead className="text-[11px] uppercase text-gray-500 h-9">Active</TableHead>
+                      <TableHead className="text-[11px] uppercase text-gray-500 text-right h-9">Actions</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {suppliers.map((s) => (
+                      <TableRow
+                        key={s.id}
+                        className={`hover:bg-gray-50 transition-colors border-b last:border-0 cursor-pointer ${
+                          selectedSupplier?.id === s.id ? "bg-[#FAE008]/5 border-l-2 border-l-[#FAE008]" : ""
+                        }`}
+                        onClick={() => setSelectedSupplier(s)}
+                      >
+                        <TableCell className="px-2 py-2">
+                          <Input
+                            className="input-sm h-7 text-xs w-full"
+                            value={s.name || ""}
+                            onClick={(e) => e.stopPropagation()}
+                            onChange={(e) =>
+                              handleInlineChange(s, "name", e.target.value)
                             }
                           />
-                        </div>
-                      </td>
-                      <td className="px-2 py-1 text-right">
-                         <Button
-                            variant="ghost"
-                            size="icon"
-                            className="h-7 w-7 text-blue-600 hover:text-blue-700 hover:bg-blue-50"
-                            onClick={(e) => {
-                               e.stopPropagation();
-                               setSelectedSupplier(s);
-                               setPoModalOpen(true);
-                            }}
-                            title="Create Purchase Order"
-                         >
-                            <ShoppingCart className="w-4 h-4" />
-                         </Button>
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
+                        </TableCell>
+                        <TableCell className="px-2 py-2">
+                          <select
+                            className="h-7 w-full rounded border border-gray-300 bg-white px-1 text-xs focus:ring-1 focus:ring-[#FAE008] focus:border-[#FAE008]"
+                            value={s.type || ""}
+                            onClick={(e) => e.stopPropagation()}
+                            onChange={(e) =>
+                              handleInlineChange(s, "type", e.target.value)
+                            }
+                          >
+                            <option value="">-</option>
+                            {SUPPLIER_TYPES.map((t) => (
+                              <option key={t} value={t}>
+                                {t}
+                              </option>
+                            ))}
+                          </select>
+                        </TableCell>
+                        <TableCell className="px-2 py-2">
+                          <Input
+                            className="input-sm h-7 text-xs w-full"
+                            placeholder="Contact name"
+                            value={s.contact_name || ""}
+                            onClick={(e) => e.stopPropagation()}
+                            onChange={(e) =>
+                              handleInlineChange(s, "contact_name", e.target.value)
+                            }
+                          />
+                        </TableCell>
+                        <TableCell className="px-2 py-2">
+                          <Input
+                            className="input-sm h-7 text-xs w-full"
+                            placeholder="Phone"
+                            value={s.phone || ""}
+                            onClick={(e) => e.stopPropagation()}
+                            onChange={(e) =>
+                              handleInlineChange(s, "phone", e.target.value)
+                            }
+                          />
+                        </TableCell>
+                        <TableCell className="px-2 py-2">
+                          <Input
+                            className="input-sm h-7 text-xs w-full"
+                            placeholder="Email"
+                            value={s.email || ""}
+                            onClick={(e) => e.stopPropagation()}
+                            onChange={(e) =>
+                              handleInlineChange(s, "email", e.target.value)
+                            }
+                          />
+                        </TableCell>
+                        <TableCell className="px-2 py-2">
+                          <Input
+                            className="input-sm h-7 text-xs w-16"
+                            type="number"
+                            placeholder="0"
+                            value={
+                              s.default_lead_time_days !== null &&
+                              s.default_lead_time_days !== undefined
+                                ? String(s.default_lead_time_days)
+                                : ""
+                            }
+                            onClick={(e) => e.stopPropagation()}
+                            onChange={(e) =>
+                              handleInlineChange(
+                                s,
+                                "default_lead_time_days",
+                                e.target.value
+                              )
+                            }
+                          />
+                        </TableCell>
+                        <TableCell className="px-2 py-2">
+                          <div className="flex items-center gap-1" onClick={(e) => e.stopPropagation()}>
+                            <Switch
+                              checked={!!s.is_active}
+                              onCheckedChange={(val) =>
+                                handleInlineChange(s, "is_active", val)
+                              }
+                              className="scale-75 origin-left"
+                            />
+                          </div>
+                        </TableCell>
+                        <TableCell className="px-2 py-2 text-right">
+                           <Button
+                              variant="ghost"
+                              size="xs"
+                              className="h-7 w-7 text-blue-600 hover:text-blue-700 hover:bg-blue-50"
+                              onClick={(e) => {
+                                 e.stopPropagation();
+                                 setSelectedSupplier(s);
+                                 setPoModalOpen(true);
+                              }}
+                              title="Create Purchase Order"
+                           >
+                              <ShoppingCart className="w-4 h-4" />
+                           </Button>
+                        </TableCell>
+                      </TableRow>
+                    ))}
+                  </TableBody>
+                </Table>
+              </div>
+            )}
+          </div>
+
+          {/* Purchase Orders Panel */}
+          {selectedSupplier && (
+            <div className="card rounded-xl border bg-white shadow-sm p-4 md:p-5">
+              <div className="flex items-center justify-between mb-4">
+                <div>
+                    <h2 className="text-sm font-semibold text-gray-900">Purchase Orders</h2>
+                    <p className="text-xs text-gray-500">Managing orders for {selectedSupplier.name}</p>
+                </div>
+                <Button 
+                  size="sm"
+                  onClick={() => setPoModalOpen(true)}
+                  className="bg-[#FAE008] text-[#111827] hover:bg-[#E5CF07] h-8 text-xs font-medium"
+                >
+                  <ShoppingCart className="w-3.5 h-3.5 mr-2" />
+                  Create Order
+                </Button>
+              </div>
+              
+              <PurchaseOrdersList supplierId={selectedSupplier.id} />
             </div>
           )}
-        </div>
-
-        {/* Purchase Orders Panel */}
-        {selectedSupplier && (
-          <div className="rounded-xl border bg-white p-4">
-            <div className="flex items-center justify-between mb-4">
-              <div>
-                  <h2 className="text-sm font-semibold text-gray-900">Purchase Orders</h2>
-                  <p className="text-xs text-gray-500">Managing orders for {selectedSupplier.name}</p>
-              </div>
-              <Button 
-                size="sm"
-                onClick={() => setPoModalOpen(true)}
-                className="bg-[#FAE008] text-[#111827] hover:bg-[#E5CF07] text-xs h-8"
-              >
-                <ShoppingCart className="w-3 h-3 mr-2" />
-                Create Order
-              </Button>
-            </div>
-            
-            <PurchaseOrdersList supplierId={selectedSupplier.id} />
-          </div>
-        )}
         </div>
 
         <SupplierPurchaseOrderModal 
@@ -398,172 +407,175 @@ function SuppliersPage() {
         />
 
         {/* Create / details */}
-        <div className="rounded-xl border bg-white p-3 md:p-4">
-          <h2 className="mb-2 text-sm font-semibold text-gray-900">
-            Add supplier
-          </h2>
-          <div className="space-y-2 text-xs">
-            <div>
-              <label className="mb-1 block text-[11px] text-gray-600">
-                Name
-              </label>
-              <Input
-                className="h-8 text-xs"
-                value={newSupplier.name}
-                onChange={(e) =>
-                  setNewSupplier((s) => ({ ...s, name: e.target.value }))
-                }
-              />
-            </div>
-
-            <div>
-              <label className="mb-1 block text-[11px] text-gray-600">
-                Type
-              </label>
-              <select
-                className="h-8 w-full rounded border border-gray-300 bg-white px-1 text-xs"
-                value={newSupplier.type}
-                onChange={(e) =>
-                  setNewSupplier((s) => ({ ...s, type: e.target.value }))
-                }
-              >
-                <option value="">Select type…</option>
-                {SUPPLIER_TYPES.map((t) => (
-                  <option key={t} value={t}>
-                    {t}
-                  </option>
-                ))}
-              </select>
-            </div>
-
-            <div className="grid grid-cols-1 gap-2 md:grid-cols-2">
+        <div className="col-span-1">
+          <div className="card rounded-xl border bg-white shadow-sm p-4 md:p-5 sticky top-6">
+            <h2 className="mb-4 text-sm font-semibold text-gray-900">
+              Add supplier
+            </h2>
+            <div className="space-y-3 text-xs">
               <div>
-                <label className="mb-1 block text-[11px] text-gray-600">
-                  Contact name
+                <label className="form-label mb-1 block text-[11px] font-medium text-gray-700">
+                  Name
                 </label>
                 <Input
-                  className="h-8 text-xs"
-                  value={newSupplier.contact_name}
+                  className="input-sm w-full"
+                  value={newSupplier.name}
+                  onChange={(e) =>
+                    setNewSupplier((s) => ({ ...s, name: e.target.value }))
+                  }
+                />
+              </div>
+
+              <div>
+                <label className="form-label mb-1 block text-[11px] font-medium text-gray-700">
+                  Type
+                </label>
+                <select
+                  className="input-sm w-full rounded-md border border-gray-300 bg-white px-2 py-1.5 text-xs focus:outline-none focus:ring-2 focus:ring-[#FAE008] focus:border-transparent"
+                  value={newSupplier.type}
+                  onChange={(e) =>
+                    setNewSupplier((s) => ({ ...s, type: e.target.value }))
+                  }
+                >
+                  <option value="">Select type…</option>
+                  {SUPPLIER_TYPES.map((t) => (
+                    <option key={t} value={t}>
+                      {t}
+                    </option>
+                  ))}
+                </select>
+              </div>
+
+              <div className="grid grid-cols-1 gap-3 md:grid-cols-2">
+                <div>
+                  <label className="form-label mb-1 block text-[11px] font-medium text-gray-700">
+                    Contact name
+                  </label>
+                  <Input
+                    className="input-sm w-full"
+                    value={newSupplier.contact_name}
+                    onChange={(e) =>
+                      setNewSupplier((s) => ({
+                        ...s,
+                        contact_name: e.target.value,
+                      }))
+                    }
+                  />
+                </div>
+                <div>
+                  <label className="form-label mb-1 block text-[11px] font-medium text-gray-700">
+                    Phone
+                  </label>
+                  <Input
+                    className="input-sm w-full"
+                    value={newSupplier.phone}
+                    onChange={(e) =>
+                      setNewSupplier((s) => ({ ...s, phone: e.target.value }))
+                    }
+                  />
+                </div>
+              </div>
+
+              <div>
+                <label className="form-label mb-1 block text-[11px] font-medium text-gray-700">
+                  Email
+                </label>
+                <Input
+                  className="input-sm w-full"
+                  value={newSupplier.email}
+                  onChange={(e) =>
+                    setNewSupplier((s) => ({ ...s, email: e.target.value }))
+                  }
+                />
+              </div>
+
+              <div>
+                <label className="form-label mb-1 block text-[11px] font-medium text-gray-700">
+                  Pickup address
+                </label>
+                <Textarea
+                  rows={2}
+                  className="textarea-sm w-full min-h-[60px]"
+                  value={newSupplier.pickup_address}
                   onChange={(e) =>
                     setNewSupplier((s) => ({
                       ...s,
-                      contact_name: e.target.value,
+                      pickup_address: e.target.value,
                     }))
                   }
                 />
               </div>
+
               <div>
-                <label className="mb-1 block text-[11px] text-gray-600">
-                  Phone
+                <label className="form-label mb-1 block text-[11px] font-medium text-gray-700">
+                  Opening hours
                 </label>
                 <Input
-                  className="h-8 text-xs"
-                  value={newSupplier.phone}
+                  className="input-sm w-full"
+                  placeholder="e.g. Mon–Fri 7:00–3:30"
+                  value={newSupplier.opening_hours}
                   onChange={(e) =>
-                    setNewSupplier((s) => ({ ...s, phone: e.target.value }))
+                    setNewSupplier((s) => ({
+                      ...s,
+                      opening_hours: e.target.value,
+                    }))
                   }
                 />
               </div>
-            </div>
 
-            <div>
-              <label className="mb-1 block text-[11px] text-gray-600">
-                Email
-              </label>
-              <Input
-                className="h-8 text-xs"
-                value={newSupplier.email}
-                onChange={(e) =>
-                  setNewSupplier((s) => ({ ...s, email: e.target.value }))
-                }
-              />
-            </div>
-
-            <div>
-              <label className="mb-1 block text-[11px] text-gray-600">
-                Pickup address
-              </label>
-              <Textarea
-                rows={2}
-                className="text-xs"
-                value={newSupplier.pickup_address}
-                onChange={(e) =>
-                  setNewSupplier((s) => ({
-                    ...s,
-                    pickup_address: e.target.value,
-                  }))
-                }
-              />
-            </div>
-
-            <div>
-              <label className="mb-1 block text-[11px] text-gray-600">
-                Opening hours
-              </label>
-              <Input
-                className="h-8 text-xs"
-                placeholder="e.g. Mon–Fri 7:00–3:30"
-                value={newSupplier.opening_hours}
-                onChange={(e) =>
-                  setNewSupplier((s) => ({
-                    ...s,
-                    opening_hours: e.target.value,
-                  }))
-                }
-              />
-            </div>
-
-            <div>
-              <label className="mb-1 block text-[11px] text-gray-600">
-                Notes for pickup
-              </label>
-              <Textarea
-                rows={2}
-                className="text-xs"
-                placeholder="e.g. Use rear loading dock, call on arrival, bring order number…"
-                value={newSupplier.notes}
-                onChange={(e) =>
-                  setNewSupplier((s) => ({ ...s, notes: e.target.value }))
-                }
-              />
-            </div>
-
-            <div>
-              <label className="mb-1 block text-[11px] text-gray-600">
-                Default lead time (days)
-              </label>
-              <Input
-                type="number"
-                className="h-8 text-xs"
-                value={newSupplier.default_lead_time_days}
-                onChange={(e) =>
-                  setNewSupplier((s) => ({
-                    ...s,
-                    default_lead_time_days: e.target.value,
-                  }))
-                }
-              />
-            </div>
-
-            <div className="flex items-center justify-between pt-2">
-              <div className="flex items-center gap-2">
-                <Switch
-                  checked={newSupplier.is_active}
-                  onCheckedChange={(val) =>
-                    setNewSupplier((s) => ({ ...s, is_active: val }))
+              <div>
+                <label className="form-label mb-1 block text-[11px] font-medium text-gray-700">
+                  Notes for pickup
+                </label>
+                <Textarea
+                  rows={2}
+                  className="textarea-sm w-full min-h-[60px]"
+                  placeholder="e.g. Use rear loading dock..."
+                  value={newSupplier.notes}
+                  onChange={(e) =>
+                    setNewSupplier((s) => ({ ...s, notes: e.target.value }))
                   }
                 />
-                <span className="text-[11px] text-gray-600">
-                  Supplier is active
-                </span>
               </div>
-              <Button
-                size="sm"
-                onClick={() => createMutation.mutate()}
-                disabled={!newSupplier.name || createMutation.isLoading}
-              >
-                {createMutation.isLoading ? "Saving…" : "Add supplier"}
-              </Button>
+
+              <div>
+                <label className="form-label mb-1 block text-[11px] font-medium text-gray-700">
+                  Default lead time (days)
+                </label>
+                <Input
+                  type="number"
+                  className="input-sm w-full"
+                  value={newSupplier.default_lead_time_days}
+                  onChange={(e) =>
+                    setNewSupplier((s) => ({
+                      ...s,
+                      default_lead_time_days: e.target.value,
+                    }))
+                  }
+                />
+              </div>
+
+              <div className="flex items-center justify-between pt-4 border-t border-gray-100">
+                <div className="flex items-center gap-2">
+                  <Switch
+                    checked={newSupplier.is_active}
+                    onCheckedChange={(val) =>
+                      setNewSupplier((s) => ({ ...s, is_active: val }))
+                    }
+                  />
+                  <span className="text-[11px] text-gray-600">
+                    Active
+                  </span>
+                </div>
+                <Button
+                  size="sm"
+                  className="bg-[#FAE008] text-[#111827] hover:bg-[#E5CF07] font-medium"
+                  onClick={() => createMutation.mutate()}
+                  disabled={!newSupplier.name || createMutation.isLoading}
+                >
+                  {createMutation.isLoading ? "Saving…" : "Add Supplier"}
+                </Button>
+              </div>
             </div>
           </div>
         </div>

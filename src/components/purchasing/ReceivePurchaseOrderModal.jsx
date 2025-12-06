@@ -141,43 +141,43 @@ export default function ReceivePurchaseOrderModal({ open, onClose, purchaseOrder
 
   return (
     <Dialog open={open} onOpenChange={onClose}>
-      <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
+      <DialogContent className="modal-container max-w-4xl max-h-[90vh] overflow-y-auto">
         <DialogHeader>
-          <DialogTitle className="flex items-center gap-2">
+          <DialogTitle className="modal-title flex items-center gap-2 text-lg font-semibold text-gray-900">
             <PackageCheck className="w-5 h-5" />
             Receive Stock
           </DialogTitle>
         </DialogHeader>
 
-        <div className="space-y-4 py-4">
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm bg-slate-50 p-3 rounded-lg border">
+        <div className="modal-panel py-4 space-y-6">
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm bg-gray-50 p-4 rounded-xl border border-gray-100">
             <div>
-              <div className="text-muted-foreground text-xs">Supplier</div>
-              <div className="font-medium">{purchaseOrder.supplier_name || "—"}</div>
+              <div className="text-gray-500 text-xs mb-1">Supplier</div>
+              <div className="font-medium text-gray-900">{purchaseOrder.supplier_name || "—"}</div>
             </div>
             <div>
-              <div className="text-muted-foreground text-xs">PO Number</div>
-              <div className="font-medium">{purchaseOrder.po_number || "—"}</div>
+              <div className="text-gray-500 text-xs mb-1">PO Number</div>
+              <div className="font-medium text-gray-900">{purchaseOrder.po_number || "—"}</div>
             </div>
             <div>
-              <div className="text-muted-foreground text-xs">Delivery Location</div>
-              <div className="font-medium">{purchaseOrder.delivery_location_name || "—"}</div>
+              <div className="text-gray-500 text-xs mb-1">Delivery Location</div>
+              <div className="font-medium text-gray-900">{purchaseOrder.delivery_location_name || "—"}</div>
             </div>
             <div>
-              <div className="text-muted-foreground text-xs">Status</div>
-              <div className="capitalize font-medium">{purchaseOrder.status?.replace('_', ' ')}</div>
+              <div className="text-gray-500 text-xs mb-1">Status</div>
+              <div className="capitalize font-medium text-gray-900">{purchaseOrder.status?.replace('_', ' ')}</div>
             </div>
           </div>
 
-          <div className="border rounded-md overflow-hidden">
-            <Table>
+          <div className="border rounded-lg overflow-hidden">
+            <Table className="w-full text-xs">
               <TableHeader>
-                <TableRow>
-                  <TableHead className="w-[40%]">Item</TableHead>
-                  <TableHead className="w-[15%]">Ordered</TableHead>
-                  <TableHead className="w-[15%]">Received</TableHead>
-                  <TableHead className="w-[15%]">Receive Now</TableHead>
-                  <TableHead className="w-[15%]">Value</TableHead>
+                <TableRow className="bg-gray-50/50 hover:bg-transparent border-b">
+                  <TableHead className="w-[40%] h-9 text-[11px] uppercase">Item</TableHead>
+                  <TableHead className="w-[15%] h-9 text-[11px] uppercase">Ordered</TableHead>
+                  <TableHead className="w-[15%] h-9 text-[11px] uppercase">Received</TableHead>
+                  <TableHead className="w-[15%] h-9 text-[11px] uppercase">Receive Now</TableHead>
+                  <TableHead className="w-[15%] h-9 text-[11px] uppercase">Value</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
@@ -187,14 +187,14 @@ export default function ReceivePurchaseOrderModal({ open, onClose, purchaseOrder
                   const isFullyReceived = remaining === 0;
                   
                   return (
-                    <TableRow key={line.id} className={isFullyReceived ? "bg-slate-50 opacity-60" : ""}>
-                      <TableCell>
-                        <div className="font-medium text-sm">{line.description || "Item"}</div>
-                        {isFullyReceived && <span className="text-xs text-green-600 font-medium">Fully Received</span>}
+                    <TableRow key={line.id} className={`hover:bg-gray-50 border-b last:border-0 ${isFullyReceived ? "bg-gray-50/50 opacity-60" : ""}`}>
+                      <TableCell className="p-2">
+                        <div className="font-medium text-gray-900">{line.description || "Item"}</div>
+                        {isFullyReceived && <span className="text-[10px] text-green-600 font-medium">Fully Received</span>}
                       </TableCell>
-                      <TableCell>{line.qty_ordered}</TableCell>
-                      <TableCell>{line.qty_received || 0}</TableCell>
-                      <TableCell>
+                      <TableCell className="p-2">{line.qty_ordered}</TableCell>
+                      <TableCell className="p-2">{line.qty_received || 0}</TableCell>
+                      <TableCell className="p-2">
                         <Input 
                           type="number" 
                           min="0" 
@@ -202,10 +202,10 @@ export default function ReceivePurchaseOrderModal({ open, onClose, purchaseOrder
                           disabled={isFullyReceived}
                           value={receiveNow}
                           onChange={(e) => handleReceiveChange(line.id, e.target.value)}
-                          className="h-8 w-24"
+                          className="h-8 w-24 input-sm text-xs"
                         />
                       </TableCell>
-                      <TableCell>
+                      <TableCell className="p-2">
                         ${((parseFloat(receiveNow) || 0) * (line.unit_cost_ex_tax || 0)).toFixed(2)}
                       </TableCell>
                     </TableRow>
@@ -213,7 +213,7 @@ export default function ReceivePurchaseOrderModal({ open, onClose, purchaseOrder
                 })}
                 {lines.length === 0 && (
                   <TableRow>
-                    <TableCell colSpan={5} className="text-center py-4 text-muted-foreground">
+                    <TableCell colSpan={5} className="text-center py-6 text-gray-500 text-xs">
                       No lines found for this order.
                     </TableCell>
                   </TableRow>
@@ -223,14 +223,15 @@ export default function ReceivePurchaseOrderModal({ open, onClose, purchaseOrder
           </div>
         </div>
 
-        <DialogFooter>
-          <Button variant="outline" onClick={onClose}>Cancel</Button>
+        <DialogFooter className="gap-2 border-t pt-4 mt-2">
+          <Button variant="outline" size="sm" onClick={onClose}>Cancel</Button>
           <Button 
+            size="sm"
             onClick={() => receiveMutation.mutate()} 
             disabled={receiveMutation.isPending || lines.length === 0}
-            className="bg-[#FAE008] text-[#111827] hover:bg-[#E5CF07]"
+            className="bg-[#FAE008] text-[#111827] hover:bg-[#E5CF07] font-medium"
           >
-            {receiveMutation.isPending && <Loader2 className="w-4 h-4 mr-2 animate-spin" />}
+            {receiveMutation.isPending && <Loader2 className="w-3.5 h-3.5 mr-2 animate-spin" />}
             Receive Stock
           </Button>
         </DialogFooter>
