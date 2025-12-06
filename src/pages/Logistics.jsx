@@ -297,10 +297,10 @@ export default function Logistics() {
                                 
                                 const rowClasses = `transition-colors border-b ${
                                     isProjectJob 
-                                        ? "bg-sky-50/40 hover:bg-sky-50 border-sky-100" 
+                                        ? "bg-sky-50/40 hover:bg-sky-50 border-sky-200" 
                                         : isStockJob 
-                                            ? "bg-amber-50/40 hover:bg-amber-50 border-amber-100" 
-                                            : "hover:bg-gray-50"
+                                            ? "bg-amber-50/40 hover:bg-amber-50 border-amber-200" 
+                                            : "hover:bg-gray-50 border-gray-200"
                                 }`;
 
                                 return (
@@ -323,6 +323,11 @@ export default function Logistics() {
                                             {isStockJob && (
                                                 <span className="inline-flex items-center rounded-full bg-amber-100 px-2 py-0.5 text-[10px] font-medium text-amber-700">
                                                     PO
+                                                </span>
+                                            )}
+                                            {isProjectJob && (
+                                                <span className="inline-flex items-center rounded-full bg-sky-100 px-2 py-0.5 text-[10px] font-medium text-sky-700">
+                                                    Project
                                                 </span>
                                             )}
                                         </div>
