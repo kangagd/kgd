@@ -45,6 +45,7 @@ export default function LogisticsTimeline({ project }) {
         {jobs.map((job, index) => {
           const isCompleted = job.status === "Completed";
           const date = job.scheduled_date ? parseISO(job.scheduled_date) : parseISO(job.created_date);
+          
           const isStockJob = !!job.purchase_order_id;
           const isProjectJob = !!job.project_id;
           const containerClasses = `p-3 rounded-lg border shadow-sm transition-all cursor-pointer ${
@@ -54,7 +55,7 @@ export default function LogisticsTimeline({ project }) {
                       ? "bg-amber-50/30 border-amber-200 hover:border-amber-300 hover:shadow-md" 
                       : "bg-white border-slate-200 hover:border-blue-300 hover:shadow-md"
           }`;
-          
+
           return (
             <div key={job.id} className="relative">
               {/* Timeline Dot */}
