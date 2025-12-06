@@ -5,6 +5,11 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Switch } from "@/components/ui/switch";
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import { Badge } from "@/components/ui/badge";
+import SupplierPurchaseOrderModal from "../components/purchasing/SupplierPurchaseOrderModal";
+import { ShoppingCart, ExternalLink, CheckCircle2 } from "lucide-react";
+import { format } from "date-fns";
 
 const SUPPLIER_TYPES = [
   "Door Manufacturer",
@@ -14,6 +19,95 @@ const SUPPLIER_TYPES = [
   "Steel / Fabrication",
   "Other",
 ];
+
+function PurchaseOrdersList({ supplierId }) {
+  const queryClient = useQueryClient();
+
+  const { data: purchaseOrders = [], isLoading } = useQuery({
+    queryKey: ["purchase-orders-by-supplier", supplierId],
+    queryFn: () => base44.entities.PurchaseOrder.filter({ supplier_id: supplierId }, "-order_date"),
+    enabled: !!supplierId,
+  });
+
+  const markAsSentMutation = useMutation({
+    mutationFn: async (poId) => {
+      await base44.entities.PurchaseOrder.update(poId, {
+        status: "sent",
+        email_sent_at: new Date().toISOString()
+      });
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries(["purchase-orders-by-supplier", supplierId]);
+    }
+  });
+
+  if (isLoading) return <div className="py-4 text-center text-gray-500">Loading orders...</div>;
+
+  if (purchaseOrders.length === 0) {
+    return (
+      <div className="bg-gray-50 border border-dashed border-gray-200 rounded-lg p-8 text-center">
+        <ShoppingCart className="w-8 h-8 text-gray-300 mx-auto mb-2" />
+        <p className="text-gray-500">No purchase orders found for this supplier.</p>
+      </div>
+    );
+  }
+
+  return (
+    <div className="border rounded-lg overflow-hidden">
+      <Table>
+        <TableHeader>
+          <TableRow className="bg-gray-50/50">
+            <TableHead>PO Number</TableHead>
+            <TableHead>Date</TableHead>
+            <TableHead>Status</TableHead>
+            <TableHead>Delivery To</TableHead>
+            <TableHead>Amount</TableHead>
+            <TableHead className="text-right">Actions</TableHead>
+          </TableRow>
+        </TableHeader>
+        <TableBody>
+          {purchaseOrders.map((po) => (
+            <TableRow key={po.id}>
+              <TableCell className="font-medium">{po.po_number || "—"}</TableCell>
+              <TableCell>
+                {po.order_date ? format(new Date(po.order_date), "dd MMM yyyy") : "—"}
+              </TableCell>
+              <TableCell>
+                <Badge variant="outline" className={`capitalize ${
+                  po.status === 'sent' ? 'bg-blue-50 text-blue-700 border-blue-200' : 
+                  po.status === 'draft' ? 'bg-gray-100 text-gray-700 border-gray-200' :
+                  po.status === 'received' ? 'bg-green-50 text-green-700 border-green-200' : ''
+                }`}>
+                  {po.status?.replace('_', ' ')}
+                </Badge>
+                {po.email_sent_at && (
+                  <div className="text-xs text-gray-500 mt-1">
+                    Sent: {format(new Date(po.email_sent_at), "dd/MM")}
+                  </div>
+                )}
+              </TableCell>
+              <TableCell>{po.delivery_location_name || "—"}</TableCell>
+              <TableCell>${po.total_amount_ex_tax?.toFixed(2) || "0.00"}</TableCell>
+              <TableCell className="text-right">
+                {po.status === 'draft' && (
+                  <Button 
+                    size="sm" 
+                    variant="outline"
+                    className="h-7 text-xs gap-1"
+                    onClick={() => markAsSentMutation.mutate(po.id)}
+                    disabled={markAsSentMutation.isPending}
+                  >
+                    <ExternalLink className="w-3 h-3" /> Mark Sent
+                  </Button>
+                )}
+              </TableCell>
+            </TableRow>
+          ))}
+        </TableBody>
+      </Table>
+    </div>
+  );
+}
 
 function SuppliersPage() {
   const queryClient = useQueryClient();
@@ -35,6 +129,9 @@ function SuppliersPage() {
     default_lead_time_days: "",
     is_active: true,
   });
+
+  const [selectedSupplier, setSelectedSupplier] = useState(null);
+  const [poModalOpen, setPoModalOpen] = useState(false);
 
   const createMutation = useMutation({
     mutationFn: async () => {
@@ -96,6 +193,7 @@ function SuppliersPage() {
       </div>
 
       <div className="grid gap-4 md:grid-cols-[2fr,1fr]">
+        <div className="space-y-4">
         {/* List */}
         <div className="rounded-xl border bg-white p-3 md:p-4">
           <div className="mb-2 flex items-center justify-between">
@@ -123,13 +221,17 @@ function SuppliersPage() {
                     <th className="px-2 py-1 text-left">Email</th>
                     <th className="px-2 py-1 text-left">Lead time (days)</th>
                     <th className="px-2 py-1 text-left">Active</th>
+                    <th className="px-2 py-1 text-right">Actions</th>
                   </tr>
                 </thead>
                 <tbody>
                   {suppliers.map((s) => (
                     <tr
                       key={s.id}
-                      className="rounded-lg bg-slate-50 align-top hover:bg-slate-100"
+                      className={`rounded-lg align-top transition-colors ${
+                        selectedSupplier?.id === s.id ? "bg-[#FAE008]/10 border border-[#FAE008]" : "bg-slate-50 hover:bg-slate-100"
+                      }`}
+                      onClick={() => setSelectedSupplier(s)}
                     >
                       <td className="px-2 py-1">
                         <Input
@@ -216,6 +318,21 @@ function SuppliersPage() {
                           />
                         </div>
                       </td>
+                      <td className="px-2 py-1 text-right">
+                         <Button
+                            variant="ghost"
+                            size="icon"
+                            className="h-7 w-7 text-blue-600 hover:text-blue-700 hover:bg-blue-50"
+                            onClick={(e) => {
+                               e.stopPropagation();
+                               setSelectedSupplier(s);
+                               setPoModalOpen(true);
+                            }}
+                            title="Create Purchase Order"
+                         >
+                            <ShoppingCart className="w-4 h-4" />
+                         </Button>
+                      </td>
                     </tr>
                   ))}
                 </tbody>
@@ -223,6 +340,35 @@ function SuppliersPage() {
             </div>
           )}
         </div>
+
+        {/* Purchase Orders Panel */}
+        {selectedSupplier && (
+          <div className="rounded-xl border bg-white p-4">
+            <div className="flex items-center justify-between mb-4">
+              <div>
+                  <h2 className="text-sm font-semibold text-gray-900">Purchase Orders</h2>
+                  <p className="text-xs text-gray-500">Managing orders for {selectedSupplier.name}</p>
+              </div>
+              <Button 
+                size="sm"
+                onClick={() => setPoModalOpen(true)}
+                className="bg-[#FAE008] text-[#111827] hover:bg-[#E5CF07] text-xs h-8"
+              >
+                <ShoppingCart className="w-3 h-3 mr-2" />
+                Create Order
+              </Button>
+            </div>
+            
+            <PurchaseOrdersList supplierId={selectedSupplier.id} />
+          </div>
+        )}
+        </div>
+
+        <SupplierPurchaseOrderModal 
+          open={poModalOpen}
+          onClose={() => setPoModalOpen(false)}
+          supplier={selectedSupplier}
+        />
 
         {/* Create / details */}
         <div className="rounded-xl border bg-white p-3 md:p-4">
