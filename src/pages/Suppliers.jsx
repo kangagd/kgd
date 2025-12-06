@@ -9,6 +9,9 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Badge } from "@/components/ui/badge";
 import SupplierPurchaseOrderModal from "../components/purchasing/SupplierPurchaseOrderModal";
 import ReceivePurchaseOrderModal from "../components/purchasing/ReceivePurchaseOrderModal";
+import PageLayout from "@/components/layout/PageLayout";
+import Card from "@/components/layout/Card";
+import TableShell from "@/components/layout/TableShell";
 import { ShoppingCart, ExternalLink, CheckCircle2, PackageCheck, Edit2 } from "lucide-react";
 import { format } from "date-fns";
 
@@ -211,27 +214,21 @@ function SuppliersPage() {
   };
 
   return (
-    <div className="page-container">
-      <div className="flex flex-col md:flex-row justify-between items-center w-full py-3 lg:py-4 mb-4 lg:mb-6 gap-3">
-        <div>
-          <h1 className="page-title">Suppliers</h1>
-          <p className="page-subtitle">
-            Manage supplier vendors for stock and logistics operations.
-          </p>
-        </div>
-      </div>
-
+    <PageLayout 
+      title="Suppliers" 
+      subtitle="Manage supplier vendors for stock and logistics operations."
+    >
       <div className="grid gap-4 md:grid-cols-3">
         <div className="col-span-2 space-y-4">
           {/* List */}
-          <div className="card">
-            <div className="mb-4 flex items-center justify-between">
-              <h2 className="section-title">All suppliers</h2>
+          <Card
+            title="All suppliers"
+            headerRight={
               <span className="text-[11px] text-gray-500">
                 {suppliers.length} total
               </span>
-            </div>
-
+            }
+          >
             {isLoading ? (
               <p className="text-xs text-gray-500">Loading suppliers…</p>
             ) : !suppliers.length ? (
@@ -239,152 +236,148 @@ function SuppliersPage() {
                 No suppliers yet. Add your first supplier on the right.
               </p>
             ) : (
-              <div className="overflow-x-auto">
-                <Table className="table-shell">
-                  <TableHeader>
-                    <TableRow className="table-row hover:bg-transparent border-b">
-                      <TableHead className="table-head h-9">Name</TableHead>
-                      <TableHead className="table-head h-9">Type</TableHead>
-                      <TableHead className="table-head h-9">Contact</TableHead>
-                      <TableHead className="table-head h-9">Phone</TableHead>
-                      <TableHead className="table-head h-9">Email</TableHead>
-                      <TableHead className="table-head h-9">Lead time</TableHead>
-                      <TableHead className="table-head h-9">Active</TableHead>
-                      <TableHead className="table-head text-right h-9">Actions</TableHead>
-                    </TableRow>
-                  </TableHeader>
-                  <TableBody>
-                    {suppliers.map((s) => (
-                      <TableRow
-                        key={s.id}
-                        className={`table-row border-b last:border-0 cursor-pointer ${
-                          selectedSupplier?.id === s.id ? "bg-[#FAE008]/5 border-l-2 border-l-[#FAE008]" : ""
-                        }`}
-                        onClick={() => setSelectedSupplier(s)}
-                      >
-                        <TableCell className="table-cell">
-                          <Input
-                            className="input-sm w-full"
-                            value={s.name || ""}
-                            onClick={(e) => e.stopPropagation()}
-                            onChange={(e) =>
-                              handleInlineChange(s, "name", e.target.value)
+              <TableShell>
+                <TableHeader>
+                  <TableRow className="table-row hover:bg-transparent border-b">
+                    <TableHead className="table-head h-9">Name</TableHead>
+                    <TableHead className="table-head h-9">Type</TableHead>
+                    <TableHead className="table-head h-9">Contact</TableHead>
+                    <TableHead className="table-head h-9">Phone</TableHead>
+                    <TableHead className="table-head h-9">Email</TableHead>
+                    <TableHead className="table-head h-9">Lead time</TableHead>
+                    <TableHead className="table-head h-9">Active</TableHead>
+                    <TableHead className="table-head text-right h-9">Actions</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {suppliers.map((s) => (
+                    <TableRow
+                      key={s.id}
+                      className={`table-row border-b last:border-0 cursor-pointer ${
+                        selectedSupplier?.id === s.id ? "bg-[#FAE008]/5 border-l-2 border-l-[#FAE008]" : ""
+                      }`}
+                      onClick={() => setSelectedSupplier(s)}
+                    >
+                      <TableCell className="table-cell">
+                        <Input
+                          className="input-sm w-full"
+                          value={s.name || ""}
+                          onClick={(e) => e.stopPropagation()}
+                          onChange={(e) =>
+                            handleInlineChange(s, "name", e.target.value)
+                          }
+                        />
+                      </TableCell>
+                      <TableCell className="table-cell">
+                        <select
+                          className="input-sm w-full rounded border border-gray-300 bg-white px-1 text-xs focus:ring-1 focus:ring-[#FAE008] focus:border-[#FAE008]"
+                          value={s.type || ""}
+                          onClick={(e) => e.stopPropagation()}
+                          onChange={(e) =>
+                            handleInlineChange(s, "type", e.target.value)
+                          }
+                        >
+                          <option value="">-</option>
+                          {SUPPLIER_TYPES.map((t) => (
+                            <option key={t} value={t}>
+                              {t}
+                            </option>
+                          ))}
+                        </select>
+                      </TableCell>
+                      <TableCell className="table-cell">
+                        <Input
+                          className="input-sm w-full"
+                          placeholder="Contact name"
+                          value={s.contact_name || ""}
+                          onClick={(e) => e.stopPropagation()}
+                          onChange={(e) =>
+                            handleInlineChange(s, "contact_name", e.target.value)
+                          }
+                        />
+                      </TableCell>
+                      <TableCell className="table-cell">
+                        <Input
+                          className="input-sm w-full"
+                          placeholder="Phone"
+                          value={s.phone || ""}
+                          onClick={(e) => e.stopPropagation()}
+                          onChange={(e) =>
+                            handleInlineChange(s, "phone", e.target.value)
+                          }
+                        />
+                      </TableCell>
+                      <TableCell className="table-cell">
+                        <Input
+                          className="input-sm w-full"
+                          placeholder="Email"
+                          value={s.email || ""}
+                          onClick={(e) => e.stopPropagation()}
+                          onChange={(e) =>
+                            handleInlineChange(s, "email", e.target.value)
+                          }
+                        />
+                      </TableCell>
+                      <TableCell className="table-cell">
+                        <Input
+                          className="input-sm w-16"
+                          type="number"
+                          placeholder="0"
+                          value={
+                            s.default_lead_time_days !== null &&
+                            s.default_lead_time_days !== undefined
+                              ? String(s.default_lead_time_days)
+                              : ""
+                          }
+                          onClick={(e) => e.stopPropagation()}
+                          onChange={(e) =>
+                            handleInlineChange(
+                              s,
+                              "default_lead_time_days",
+                              e.target.value
+                            )
+                          }
+                        />
+                      </TableCell>
+                      <TableCell className="table-cell">
+                        <div className="flex items-center gap-1" onClick={(e) => e.stopPropagation()}>
+                          <Switch
+                            checked={!!s.is_active}
+                            onCheckedChange={(val) =>
+                              handleInlineChange(s, "is_active", val)
                             }
+                            className="scale-75 origin-left"
                           />
-                        </TableCell>
-                        <TableCell className="table-cell">
-                          <select
-                            className="input-sm w-full rounded border border-gray-300 bg-white px-1 text-xs focus:ring-1 focus:ring-[#FAE008] focus:border-[#FAE008]"
-                            value={s.type || ""}
-                            onClick={(e) => e.stopPropagation()}
-                            onChange={(e) =>
-                              handleInlineChange(s, "type", e.target.value)
-                            }
+                        </div>
+                      </TableCell>
+                      <TableCell className="table-cell text-right">
+                          <Button
+                            variant="ghost"
+                            size="xs"
+                            className="h-7 w-7 text-blue-600 hover:text-blue-700 hover:bg-blue-50"
+                            onClick={(e) => {
+                                e.stopPropagation();
+                                setSelectedSupplier(s);
+                                setPoModalOpen(true);
+                            }}
+                            title="Create Purchase Order"
                           >
-                            <option value="">-</option>
-                            {SUPPLIER_TYPES.map((t) => (
-                              <option key={t} value={t}>
-                                {t}
-                              </option>
-                            ))}
-                          </select>
-                        </TableCell>
-                        <TableCell className="table-cell">
-                          <Input
-                            className="input-sm w-full"
-                            placeholder="Contact name"
-                            value={s.contact_name || ""}
-                            onClick={(e) => e.stopPropagation()}
-                            onChange={(e) =>
-                              handleInlineChange(s, "contact_name", e.target.value)
-                            }
-                          />
-                        </TableCell>
-                        <TableCell className="table-cell">
-                          <Input
-                            className="input-sm w-full"
-                            placeholder="Phone"
-                            value={s.phone || ""}
-                            onClick={(e) => e.stopPropagation()}
-                            onChange={(e) =>
-                              handleInlineChange(s, "phone", e.target.value)
-                            }
-                          />
-                        </TableCell>
-                        <TableCell className="table-cell">
-                          <Input
-                            className="input-sm w-full"
-                            placeholder="Email"
-                            value={s.email || ""}
-                            onClick={(e) => e.stopPropagation()}
-                            onChange={(e) =>
-                              handleInlineChange(s, "email", e.target.value)
-                            }
-                          />
-                        </TableCell>
-                        <TableCell className="table-cell">
-                          <Input
-                            className="input-sm w-16"
-                            type="number"
-                            placeholder="0"
-                            value={
-                              s.default_lead_time_days !== null &&
-                              s.default_lead_time_days !== undefined
-                                ? String(s.default_lead_time_days)
-                                : ""
-                            }
-                            onClick={(e) => e.stopPropagation()}
-                            onChange={(e) =>
-                              handleInlineChange(
-                                s,
-                                "default_lead_time_days",
-                                e.target.value
-                              )
-                            }
-                          />
-                        </TableCell>
-                        <TableCell className="table-cell">
-                          <div className="flex items-center gap-1" onClick={(e) => e.stopPropagation()}>
-                            <Switch
-                              checked={!!s.is_active}
-                              onCheckedChange={(val) =>
-                                handleInlineChange(s, "is_active", val)
-                              }
-                              className="scale-75 origin-left"
-                            />
-                          </div>
-                        </TableCell>
-                        <TableCell className="table-cell text-right">
-                           <Button
-                              variant="ghost"
-                              size="xs"
-                              className="h-7 w-7 text-blue-600 hover:text-blue-700 hover:bg-blue-50"
-                              onClick={(e) => {
-                                 e.stopPropagation();
-                                 setSelectedSupplier(s);
-                                 setPoModalOpen(true);
-                              }}
-                              title="Create Purchase Order"
-                           >
-                              <ShoppingCart className="w-4 h-4" />
-                           </Button>
-                        </TableCell>
-                      </TableRow>
-                    ))}
-                  </TableBody>
-                </Table>
-              </div>
+                            <ShoppingCart className="w-4 h-4" />
+                          </Button>
+                      </TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </TableShell>
             )}
-          </div>
+          </Card>
 
           {/* Purchase Orders Panel */}
           {selectedSupplier && (
-            <div className="card">
-              <div className="flex items-center justify-between mb-4">
-                <div>
-                    <h2 className="section-title">Purchase Orders</h2>
-                    <p className="text-xs text-gray-500">Managing orders for {selectedSupplier.name}</p>
-                </div>
+            <Card
+              title="Purchase Orders"
+              subtitle={`Managing orders for ${selectedSupplier.name}`}
+              headerRight={
                 <Button 
                   size="sm"
                   onClick={() => setPoModalOpen(true)}
@@ -393,10 +386,10 @@ function SuppliersPage() {
                   <ShoppingCart className="w-3.5 h-3.5 mr-2" />
                   Create Order
                 </Button>
-              </div>
-              
+              }
+            >
               <PurchaseOrdersList supplierId={selectedSupplier.id} />
-            </div>
+            </Card>
           )}
         </div>
 
@@ -408,10 +401,10 @@ function SuppliersPage() {
 
         {/* Create / details */}
         <div className="col-span-1">
-          <div className="card sticky top-6">
-            <h2 className="mb-4 section-title">
-              Add supplier
-            </h2>
+          <Card 
+            title="Add supplier" 
+            className="sticky top-6"
+          >
             <div className="space-y-3 text-xs">
               <div>
                 <label className="form-label">
@@ -577,10 +570,10 @@ function SuppliersPage() {
                 </Button>
               </div>
             </div>
-          </div>
+          </Card>
         </div>
       </div>
-    </div>
+    </PageLayout>
   );
 }
 
