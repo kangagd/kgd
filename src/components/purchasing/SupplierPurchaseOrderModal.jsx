@@ -211,7 +211,7 @@ export default function SupplierPurchaseOrderModal({ open, onClose, supplier }) 
           <div className="grid grid-cols-2 gap-4">
             <div className="space-y-2">
               <Label className="text-xs font-medium text-gray-700">Delivery Location</Label>
-              <Popover open={locationOpen} onOpenChange={setLocationOpen} modal={true}>
+              <Popover open={locationOpen} onOpenChange={setLocationOpen}>
                 <PopoverTrigger asChild>
                   <Button
                     variant="outline"
@@ -323,7 +323,6 @@ export default function SupplierPurchaseOrderModal({ open, onClose, supplier }) 
                         <Popover 
                             open={itemOpenStates[index] || false} 
                             onOpenChange={(open) => setItemOpenStates({ ...itemOpenStates, [index]: open })}
-                            modal={true}
                         >
                           <PopoverTrigger asChild>
                             <Button
