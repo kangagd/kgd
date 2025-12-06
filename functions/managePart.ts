@@ -66,7 +66,7 @@ Deno.serve(async (req) => {
                             address_full: pickupAddress,
                             status: "Scheduled", // or Planned
                             notes: `Pickup parts for project ${project.title} from ${supplierName}.`,
-                            overview: `Part: ${part.category} - ${part.description || ''}`,
+                            overview: `Part: ${part.category}${part.notes ? ' - ' + part.notes : ''}`,
                             additional_info: `Order Ref: ${part.order_reference || 'N/A'}`
                         });
 
