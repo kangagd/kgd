@@ -212,10 +212,10 @@ function SuppliersPage() {
 
   return (
     <div className="page-container p-4 md:p-6 space-y-4">
-      <div className="flex items-center justify-between">
+      <div className="flex flex-col md:flex-row justify-between items-center w-full py-3 lg:py-4 mb-4 lg:mb-6 gap-3">
         <div>
-          <h1 className="page-title text-lg font-semibold text-gray-900">Suppliers</h1>
-          <p className="page-subtitle text-xs text-gray-500 mt-1">
+          <h1 className="text-2xl font-bold text-[#111827] leading-tight">Suppliers</h1>
+          <p className="text-sm text-[#4B5563] mt-1">
             Manage supplier vendors for stock and logistics operations.
           </p>
         </div>
