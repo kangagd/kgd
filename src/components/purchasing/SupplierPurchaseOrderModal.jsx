@@ -234,13 +234,14 @@ export default function SupplierPurchaseOrderModal({ open, onClose, supplier }) 
                         {locations.map((loc) => (
                           <CommandItem
                             key={loc.id}
-                            value={`${loc.name} ${loc.id}`}
+                            value={`${loc.name} ${loc.id}`.toLowerCase()}
                             keywords={[loc.name]}
                             onSelect={() => {
                               setDeliveryLocationId(loc.id);
                               setLocationOpen(false);
                             }}
-                            className="text-xs cursor-pointer"
+                            className="text-xs cursor-pointer !opacity-100 !pointer-events-auto"
+                            disabled={false}
                           >
                             <Check
                               className={cn(
@@ -349,13 +350,14 @@ export default function SupplierPurchaseOrderModal({ open, onClose, supplier }) 
                                   {availableItems.map((item) => (
                                     <CommandItem
                                       key={item.id}
-                                      value={`${item.item} ${item.sku || ''} ${item.id}`}
+                                      value={`${item.item} ${item.sku || ''} ${item.id}`.toLowerCase()}
                                       keywords={[item.item, item.sku || '']}
                                       onSelect={() => {
                                         handleLineChange(index, "price_list_item_id", item.id);
                                         setItemOpenStates({ ...itemOpenStates, [index]: false });
                                       }}
-                                      className="text-xs cursor-pointer"
+                                      className="text-xs cursor-pointer !opacity-100 !pointer-events-auto"
+                                      disabled={false}
                                     >
                                       <Check
                                         className={cn(
