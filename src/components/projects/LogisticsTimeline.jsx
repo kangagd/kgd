@@ -10,6 +10,7 @@ import { createPageUrl } from "@/utils";
 const LOGISTICS_JOB_TYPES = [
   "Material Pickup – Warehouse",
   "Material Pickup – Supplier",
+  "Material Delivery – Supplier",
   "Delivery – At Warehouse",
   "Delivery – To Client",
   "Return to Supplier"

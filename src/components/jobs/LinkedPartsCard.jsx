@@ -58,10 +58,18 @@ export default function LinkedPartsCard({ job }) {
             </p>
           )}
           {isDelivery && (
-            <p className="flex items-center gap-2">
-              <ArrowRight className="w-4 h-4" />
-              <strong>Task:</strong> Deliver these parts to <strong>{job.address}</strong>.
-            </p>
+            <div className="space-y-1">
+              <p className="flex items-center gap-2">
+                <ArrowRight className="w-4 h-4" />
+                <strong>Task:</strong> Deliver these parts to <strong>{job.address}</strong>.
+              </p>
+              {/* Check job notes for delivery days info */}
+              {job.notes && job.notes.includes("Usual delivery days:") && (
+                 <p className="text-xs ml-6 text-blue-700 font-medium">
+                    {job.notes.split("Usual delivery days:")[1].split(".")[0]}
+                 </p>
+              )}
+            </div>
           )}
           {!isPickup && !isDelivery && (
             <p>These parts are associated with this job.</p>
