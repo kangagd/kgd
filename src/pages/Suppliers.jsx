@@ -8,7 +8,8 @@ import { Switch } from "@/components/ui/switch";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
 import SupplierPurchaseOrderModal from "../components/purchasing/SupplierPurchaseOrderModal";
-import { ShoppingCart, ExternalLink, CheckCircle2 } from "lucide-react";
+import ReceivePurchaseOrderModal from "../components/purchasing/ReceivePurchaseOrderModal";
+import { ShoppingCart, ExternalLink, CheckCircle2, PackageCheck } from "lucide-react";
 import { format } from "date-fns";
 
 const SUPPLIER_TYPES = [
@@ -22,6 +23,8 @@ const SUPPLIER_TYPES = [
 
 function PurchaseOrdersList({ supplierId }) {
   const queryClient = useQueryClient();
+  const [receiveModalOpen, setReceiveModalOpen] = useState(false);
+  const [selectedPOId, setSelectedPOId] = useState(null);
 
   const { data: purchaseOrders = [], isLoading } = useQuery({
     queryKey: ["purchase-orders-by-supplier", supplierId],
@@ -53,59 +56,83 @@ function PurchaseOrdersList({ supplierId }) {
   }
 
   return (
-    <div className="border rounded-lg overflow-hidden">
-      <Table>
-        <TableHeader>
-          <TableRow className="bg-gray-50/50">
-            <TableHead>PO Number</TableHead>
-            <TableHead>Date</TableHead>
-            <TableHead>Status</TableHead>
-            <TableHead>Delivery To</TableHead>
-            <TableHead>Amount</TableHead>
-            <TableHead className="text-right">Actions</TableHead>
-          </TableRow>
-        </TableHeader>
-        <TableBody>
-          {purchaseOrders.map((po) => (
-            <TableRow key={po.id}>
-              <TableCell className="font-medium">{po.po_number || "—"}</TableCell>
-              <TableCell>
-                {po.order_date ? format(new Date(po.order_date), "dd MMM yyyy") : "—"}
-              </TableCell>
-              <TableCell>
-                <Badge variant="outline" className={`capitalize ${
-                  po.status === 'sent' ? 'bg-blue-50 text-blue-700 border-blue-200' : 
-                  po.status === 'draft' ? 'bg-gray-100 text-gray-700 border-gray-200' :
-                  po.status === 'received' ? 'bg-green-50 text-green-700 border-green-200' : ''
-                }`}>
-                  {po.status?.replace('_', ' ')}
-                </Badge>
-                {po.email_sent_at && (
-                  <div className="text-xs text-gray-500 mt-1">
-                    Sent: {format(new Date(po.email_sent_at), "dd/MM")}
-                  </div>
-                )}
-              </TableCell>
-              <TableCell>{po.delivery_location_name || "—"}</TableCell>
-              <TableCell>${po.total_amount_ex_tax?.toFixed(2) || "0.00"}</TableCell>
-              <TableCell className="text-right">
-                {po.status === 'draft' && (
-                  <Button 
-                    size="sm" 
-                    variant="outline"
-                    className="h-7 text-xs gap-1"
-                    onClick={() => markAsSentMutation.mutate(po.id)}
-                    disabled={markAsSentMutation.isPending}
-                  >
-                    <ExternalLink className="w-3 h-3" /> Mark Sent
-                  </Button>
-                )}
-              </TableCell>
+    <>
+      <div className="border rounded-lg overflow-hidden">
+        <Table>
+          <TableHeader>
+            <TableRow className="bg-gray-50/50">
+              <TableHead>PO Number</TableHead>
+              <TableHead>Date</TableHead>
+              <TableHead>Status</TableHead>
+              <TableHead>Delivery To</TableHead>
+              <TableHead>Amount</TableHead>
+              <TableHead className="text-right">Actions</TableHead>
             </TableRow>
-          ))}
-        </TableBody>
-      </Table>
-    </div>
+          </TableHeader>
+          <TableBody>
+            {purchaseOrders.map((po) => (
+              <TableRow key={po.id}>
+                <TableCell className="font-medium">{po.po_number || "—"}</TableCell>
+                <TableCell>
+                  {po.order_date ? format(new Date(po.order_date), "dd MMM yyyy") : "—"}
+                </TableCell>
+                <TableCell>
+                  <Badge variant="outline" className={`capitalize ${
+                    po.status === 'sent' ? 'bg-blue-50 text-blue-700 border-blue-200' : 
+                    po.status === 'draft' ? 'bg-gray-100 text-gray-700 border-gray-200' :
+                    po.status === 'received' ? 'bg-green-50 text-green-700 border-green-200' : 
+                    po.status === 'partially_received' ? 'bg-orange-50 text-orange-700 border-orange-200' : ''
+                  }`}>
+                    {po.status?.replace('_', ' ')}
+                  </Badge>
+                  {po.email_sent_at && (
+                    <div className="text-xs text-gray-500 mt-1">
+                      Sent: {format(new Date(po.email_sent_at), "dd/MM")}
+                    </div>
+                  )}
+                </TableCell>
+                <TableCell>{po.delivery_location_name || "—"}</TableCell>
+                <TableCell>${po.total_amount_ex_tax?.toFixed(2) || "0.00"}</TableCell>
+                <TableCell className="text-right">
+                  <div className="flex justify-end gap-2">
+                    {po.status === 'draft' && (
+                      <Button 
+                        size="sm" 
+                        variant="outline"
+                        className="h-7 text-xs gap-1"
+                        onClick={() => markAsSentMutation.mutate(po.id)}
+                        disabled={markAsSentMutation.isPending}
+                      >
+                        <ExternalLink className="w-3 h-3" /> Mark Sent
+                      </Button>
+                    )}
+                    {(po.status === 'sent' || po.status === 'partially_received' || po.status === 'draft') && (
+                      <Button 
+                        size="sm" 
+                        variant="outline"
+                        className="h-7 text-xs gap-1 border-green-200 hover:bg-green-50 text-green-700"
+                        onClick={() => {
+                          setSelectedPOId(po.id);
+                          setReceiveModalOpen(true);
+                        }}
+                      >
+                        <PackageCheck className="w-3 h-3" /> Receive
+                      </Button>
+                    )}
+                  </div>
+                </TableCell>
+              </TableRow>
+            ))}
+          </TableBody>
+        </Table>
+      </div>
+
+      <ReceivePurchaseOrderModal 
+        open={receiveModalOpen}
+        onClose={() => setReceiveModalOpen(false)}
+        purchaseOrderId={selectedPOId}
+      />
+    </>
   );
 }
 
