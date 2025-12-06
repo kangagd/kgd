@@ -54,13 +54,13 @@ export default function SupplierDetails({ supplier, onClose, onEdit }) {
                     {supplier.phone && (
                         <div className="flex items-center gap-2 text-sm">
                             <Phone className="w-4 h-4 text-slate-400" />
-                            <a href={`tel:${supplier.phone}`} className="text-blue-600 hover:underline">{supplier.phone}</a>
+                            <span className="text-slate-700">{supplier.phone}</span>
                         </div>
                     )}
                     {supplier.email && (
                         <div className="flex items-center gap-2 text-sm">
                             <Mail className="w-4 h-4 text-slate-400" />
-                            <a href={`mailto:${supplier.email}`} className="text-blue-600 hover:underline">{supplier.email}</a>
+                            <span className="text-slate-700">{supplier.email}</span>
                         </div>
                     )}
                 </div>
