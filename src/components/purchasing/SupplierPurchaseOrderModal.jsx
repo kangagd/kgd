@@ -6,7 +6,21 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { Plus, Trash2, Loader2 } from "lucide-react";
+import { Plus, Trash2, Loader2, Check, ChevronsUpDown } from "lucide-react";
+import {
+  Command,
+  CommandEmpty,
+  CommandGroup,
+  CommandInput,
+  CommandItem,
+  CommandList,
+} from "@/components/ui/command"
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from "@/components/ui/popover"
+import { cn } from "@/lib/utils"
 import { base44 } from "@/api/base44Client";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
@@ -20,6 +34,8 @@ export default function SupplierPurchaseOrderModal({ open, onClose, supplier }) 
   const [deliveryLocationId, setDeliveryLocationId] = useState("");
   const [notes, setNotes] = useState("");
   const [lines, setLines] = useState([]);
+  const [locationOpen, setLocationOpen] = useState(false);
+  const [itemOpenStates, setItemOpenStates] = useState({}); // Map of index -> open boolean
 
   // Fetch Inventory Locations
   const { data: locations = [] } = useQuery({
@@ -53,6 +69,7 @@ export default function SupplierPurchaseOrderModal({ open, onClose, supplier }) 
       setExpectedDate("");
       setDeliveryLocationId("");
       setNotes("");
+      setItemOpenStates({});
       setLines([{ 
         price_list_item_id: "", 
         description: "", 
@@ -171,18 +188,52 @@ export default function SupplierPurchaseOrderModal({ open, onClose, supplier }) 
         <div className="modal-panel py-4 space-y-6">
           {/* Header Info */}
           <div className="grid grid-cols-2 gap-4">
-            <div className="space-y-2">
+            <div className="space-y-2 flex flex-col">
               <Label className="text-xs font-medium text-gray-700">Delivery Location</Label>
-              <Select value={deliveryLocationId} onValueChange={setDeliveryLocationId}>
-                <SelectTrigger className="input-sm w-full h-9">
-                  <SelectValue placeholder="Select location" />
-                </SelectTrigger>
-                <SelectContent>
-                  {locations.map(loc => (
-                    <SelectItem key={loc.id} value={loc.id}>{loc.name} ({loc.type})</SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
+              <Popover open={locationOpen} onOpenChange={setLocationOpen}>
+                <PopoverTrigger asChild>
+                  <Button
+                    variant="outline"
+                    role="combobox"
+                    aria-expanded={locationOpen}
+                    className="w-full h-9 justify-between text-xs font-normal"
+                  >
+                    {deliveryLocationId
+                      ? locations.find((loc) => loc.id === deliveryLocationId)?.name
+                      : "Select location..."}
+                    <ChevronsUpDown className="ml-2 h-3 w-3 shrink-0 opacity-50" />
+                  </Button>
+                </PopoverTrigger>
+                <PopoverContent className="w-[200px] p-0">
+                  <Command>
+                    <CommandInput placeholder="Search location..." className="h-8 text-xs" />
+                    <CommandList>
+                      <CommandEmpty>No location found.</CommandEmpty>
+                      <CommandGroup>
+                        {locations.map((loc) => (
+                          <CommandItem
+                            key={loc.id}
+                            value={loc.name}
+                            onSelect={() => {
+                              setDeliveryLocationId(loc.id === deliveryLocationId ? "" : loc.id);
+                              setLocationOpen(false);
+                            }}
+                            className="text-xs"
+                          >
+                            <Check
+                              className={cn(
+                                "mr-2 h-3 w-3",
+                                deliveryLocationId === loc.id ? "opacity-100" : "opacity-0"
+                              )}
+                            />
+                            {loc.name}
+                          </CommandItem>
+                        ))}
+                      </CommandGroup>
+                    </CommandList>
+                  </Command>
+                </PopoverContent>
+              </Popover>
             </div>
             <div className="space-y-2">
               <Label className="text-xs font-medium text-gray-700">PO Number (Optional)</Label>
@@ -247,21 +298,59 @@ export default function SupplierPurchaseOrderModal({ open, onClose, supplier }) 
                   {lines.map((line, index) => (
                     <TableRow key={index} className="hover:bg-gray-50 border-b last:border-0">
                       <TableCell className="p-2">
-                        <Select 
-                          value={line.price_list_item_id} 
-                          onValueChange={(val) => handleLineChange(index, "price_list_item_id", val)}
+                        <Popover 
+                            open={itemOpenStates[index] || false} 
+                            onOpenChange={(open) => setItemOpenStates({ ...itemOpenStates, [index]: open })}
                         >
-                          <SelectTrigger className="h-8 text-xs w-full">
-                            <SelectValue placeholder="Select item" />
-                          </SelectTrigger>
-                          <SelectContent>
-                            {availableItems.map(item => (
-                              <SelectItem key={item.id} value={item.id} className="text-xs">
-                                {item.item} {item.sku ? `(${item.sku})` : ''}
-                              </SelectItem>
-                            ))}
-                          </SelectContent>
-                        </Select>
+                          <PopoverTrigger asChild>
+                            <Button
+                              variant="outline"
+                              role="combobox"
+                              aria-expanded={itemOpenStates[index] || false}
+                              className="w-full h-8 justify-between text-xs font-normal px-2"
+                            >
+                              {line.price_list_item_id
+                                ? (() => {
+                                    const item = availableItems.find((i) => i.id === line.price_list_item_id);
+                                    return item ? item.item : "Select item";
+                                  })()
+                                : "Select item"}
+                              <ChevronsUpDown className="ml-2 h-3 w-3 shrink-0 opacity-50" />
+                            </Button>
+                          </PopoverTrigger>
+                          <PopoverContent className="w-[300px] p-0" align="start">
+                            <Command>
+                              <CommandInput placeholder="Search item..." className="h-8 text-xs" />
+                              <CommandList>
+                                <CommandEmpty>No item found.</CommandEmpty>
+                                <CommandGroup>
+                                  {availableItems.map((item) => (
+                                    <CommandItem
+                                      key={item.id}
+                                      value={`${item.item} ${item.sku || ''}`}
+                                      onSelect={() => {
+                                        handleLineChange(index, "price_list_item_id", item.id);
+                                        setItemOpenStates({ ...itemOpenStates, [index]: false });
+                                      }}
+                                      className="text-xs"
+                                    >
+                                      <Check
+                                        className={cn(
+                                          "mr-2 h-3 w-3",
+                                          line.price_list_item_id === item.id ? "opacity-100" : "opacity-0"
+                                        )}
+                                      />
+                                      <div className="flex flex-col">
+                                        <span>{item.item}</span>
+                                        {item.sku && <span className="text-xs text-muted-foreground">{item.sku}</span>}
+                                      </div>
+                                    </CommandItem>
+                                  ))}
+                                </CommandGroup>
+                              </CommandList>
+                            </Command>
+                          </PopoverContent>
+                        </Popover>
                       </TableCell>
                       <TableCell className="p-2">
                         <Input 
