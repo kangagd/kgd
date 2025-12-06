@@ -33,6 +33,7 @@ export default function SupplierPurchaseOrderModal({ open, onClose, supplier, pu
   const [orderDate, setOrderDate] = useState(format(new Date(), "yyyy-MM-dd"));
   const [expectedDate, setExpectedDate] = useState("");
   const [deliveryLocationId, setDeliveryLocationId] = useState("");
+  const [fulfilmentMethod, setFulfilmentMethod] = useState("");
   const [notes, setNotes] = useState("");
   const [lines, setLines] = useState([]);
   const [locationOpen, setLocationOpen] = useState(false);
@@ -77,6 +78,7 @@ export default function SupplierPurchaseOrderModal({ open, onClose, supplier, pu
         setOrderDate(purchaseOrderToEdit.order_date ? format(new Date(purchaseOrderToEdit.order_date), "yyyy-MM-dd") : format(new Date(), "yyyy-MM-dd"));
         setExpectedDate(purchaseOrderToEdit.expected_date ? format(new Date(purchaseOrderToEdit.expected_date), "yyyy-MM-dd") : "");
         setDeliveryLocationId(purchaseOrderToEdit.delivery_location_id || "");
+        setFulfilmentMethod(purchaseOrderToEdit.fulfilment_method || "");
         setNotes(purchaseOrderToEdit.notes || "");
         setLinesLoaded(false);
         // Lines will be set via existingLines effect
@@ -91,6 +93,13 @@ export default function SupplierPurchaseOrderModal({ open, onClose, supplier, pu
           (l.name || "").includes("866 Bourke")
         );
         setDeliveryLocationId(defaultLoc ? defaultLoc.id : "");
+        
+        // Default fulfilment method from supplier
+        if (supplier?.fulfilment_preference === 'pickup' || supplier?.fulfilment_preference === 'delivery') {
+            setFulfilmentMethod(supplier.fulfilment_preference);
+        } else {
+            setFulfilmentMethod("delivery");
+        }
   
         setNotes("");
         setItemOpenStates({});
@@ -186,6 +195,7 @@ export default function SupplierPurchaseOrderModal({ open, onClose, supplier, pu
         po_number: poNumber || null,
         order_date: orderDate,
         expected_date: expectedDate || null,
+        fulfilment_method: fulfilmentMethod || null,
         notes: notes,
         total_amount_ex_tax: calculateTotal(),
       };
@@ -372,6 +382,18 @@ export default function SupplierPurchaseOrderModal({ open, onClose, supplier, pu
                 onChange={(e) => setExpectedDate(e.target.value)} 
                 className="input-sm w-full h-9"
               />
+            </div>
+            <div className="space-y-2">
+              <Label className="text-xs font-medium text-gray-700">Fulfilment Method</Label>
+              <Select value={fulfilmentMethod} onValueChange={setFulfilmentMethod}>
+                <SelectTrigger className="h-9 text-xs">
+                  <SelectValue placeholder="Select method" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="delivery">Delivery from Supplier</SelectItem>
+                  <SelectItem value="pickup">Pickup from Supplier</SelectItem>
+                </SelectContent>
+              </Select>
             </div>
             <div className="col-span-2 space-y-2">
               <Label className="text-xs font-medium text-gray-700">Notes</Label>

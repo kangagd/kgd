@@ -63,6 +63,13 @@ export default function Logistics() {
     queryFn: () => base44.entities.Job.list(),
   });
 
+  const { data: stockLogisticsJobs = [] } = useQuery({
+    queryKey: ['stockLogisticsJobs'],
+    queryFn: () => base44.entities.Job.filter({
+        purchase_order_id: { $ne: null } 
+    }),
+  });
+
   const { data: priceListItems = [] } = useQuery({
     queryKey: ['priceListItems-for-logistics'],
     queryFn: () => base44.entities.PriceListItem.list('item'),
@@ -261,6 +268,62 @@ export default function Logistics() {
             </CardContent>
           </Card>
         </div>
+
+        {/* Stock & Supplier Logistics Section */}
+        {stockLogisticsJobs.length > 0 && (
+            <Card className="border border-[#E5E7EB] shadow-sm">
+                <CardHeader className="bg-gray-50/50 px-6 py-4 border-b border-[#E5E7EB]">
+                    <CardTitle className="text-lg font-bold text-[#111827] flex items-center gap-2">
+                        <Truck className="w-5 h-5 text-indigo-600" />
+                        Stock & Supplier Logistics
+                    </CardTitle>
+                </CardHeader>
+                <div className="overflow-x-auto">
+                    <table className="w-full text-left text-sm">
+                        <thead className="bg-white border-b border-gray-200">
+                            <tr>
+                                <th className="px-6 py-3 font-semibold text-gray-900">Date</th>
+                                <th className="px-6 py-3 font-semibold text-gray-900">Supplier</th>
+                                <th className="px-6 py-3 font-semibold text-gray-900">Type</th>
+                                <th className="px-6 py-3 font-semibold text-gray-900">Location</th>
+                                <th className="px-6 py-3 font-semibold text-gray-900">Details</th>
+                                <th className="px-6 py-3 font-semibold text-gray-900">Status</th>
+                            </tr>
+                        </thead>
+                        <tbody className="divide-y divide-gray-200 bg-white">
+                            {stockLogisticsJobs.map(job => (
+                                <tr key={job.id} className="hover:bg-gray-50 transition-colors">
+                                    <td className="px-6 py-3 text-gray-700 font-medium">
+                                        {job.scheduled_date ? format(new Date(job.scheduled_date), 'MMM d, yyyy') : '-'}
+                                    </td>
+                                    <td className="px-6 py-3 text-gray-700">
+                                        {job.notes?.split(' from ')?.[1]?.split(' –')?.[0] || 'Supplier'}
+                                    </td>
+                                    <td className="px-6 py-3">
+                                        <Badge variant="outline" className={
+                                            job.job_type_name?.includes('Pickup') 
+                                                ? "bg-amber-50 text-amber-700 border-amber-200" 
+                                                : "bg-blue-50 text-blue-700 border-blue-200"
+                                        }>
+                                            {job.job_type_name}
+                                        </Badge>
+                                    </td>
+                                    <td className="px-6 py-3 text-gray-600">
+                                        {job.address_full || job.address}
+                                    </td>
+                                    <td className="px-6 py-3 text-gray-600 text-xs">
+                                        {job.notes}
+                                    </td>
+                                    <td className="px-6 py-3">
+                                        <Badge variant="secondary">{job.status}</Badge>
+                                    </td>
+                                </tr>
+                            ))}
+                        </tbody>
+                    </table>
+                </div>
+            </Card>
+        )}
 
         {/* Filters */}
         <div className="flex flex-col md:flex-row gap-3">
