@@ -177,7 +177,7 @@ export default function ReceivePurchaseOrderModal({ open, onClose, purchaseOrder
                   <TableHead className="w-[15%] h-9 text-[11px] uppercase">Ordered</TableHead>
                   <TableHead className="w-[15%] h-9 text-[11px] uppercase">Received</TableHead>
                   <TableHead className="w-[15%] h-9 text-[11px] uppercase">Receive Now</TableHead>
-                  <TableHead className="w-[15%] h-9 text-[11px] uppercase">Value</TableHead>
+                  <TableHead className="w-[15%] h-9 text-[11px] uppercase">Value (ex GST)</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>

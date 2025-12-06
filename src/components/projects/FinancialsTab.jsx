@@ -10,6 +10,7 @@ import { Plus, Upload, X, DollarSign, TrendingUp, FileText, ExternalLink, Link a
 import { base44 } from "@/api/base44Client";
 import RichTextField from "../common/RichTextField";
 import { usePermissions } from "../common/PermissionsContext";
+import { exToGstAmount, exToInc } from "@/components/gst";
 
 const getFinancialStatusOptions = (projectType) => {
   if (projectType === "Repair" || projectType === "Motor/Accessory") {
@@ -233,7 +234,7 @@ export default function FinancialsTab({ project, onUpdate }) {
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div>
               <label className="block text-[13px] md:text-[14px] font-medium text-[#4B5563] mb-1.5">
-                Total Project Value
+                Total Project Value (ex GST)
               </label>
               <div className="relative">
                 <span className="absolute left-3 top-1/2 -translate-y-1/2 text-[#6B7280]">$</span>
@@ -245,6 +246,11 @@ export default function FinancialsTab({ project, onUpdate }) {
                   className="pl-8"
                 />
               </div>
+              {project.total_project_value && !isNaN(project.total_project_value) && (
+                  <p className="text-[11px] text-gray-500 mt-1">
+                    GST: ${exToGstAmount(project.total_project_value).toFixed(2)} • Inc: ${exToInc(project.total_project_value).toFixed(2)}
+                  </p>
+              )}
             </div>
 
             <div>
@@ -271,7 +277,7 @@ export default function FinancialsTab({ project, onUpdate }) {
               <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
               <div>
                 <label className="block text-[13px] md:text-[14px] font-medium text-[#4B5563] mb-1.5">
-                  Materials Cost
+                  Materials Cost (ex GST)
                 </label>
                 <div className="relative">
                   <span className="absolute left-3 top-1/2 -translate-y-1/2 text-[#6B7280] text-sm">$</span>
@@ -283,6 +289,11 @@ export default function FinancialsTab({ project, onUpdate }) {
                     className="pl-8 h-9"
                   />
                 </div>
+                {project.materials_cost && !isNaN(project.materials_cost) && (
+                  <p className="text-[10px] text-gray-500 mt-1">
+                    Inc: ${exToInc(project.materials_cost).toFixed(2)}
+                  </p>
+                )}
                 {autoMaterialsCost > 0 && (
                   <div className="mt-1 flex items-center justify-between text-[11px] text-[#4B5563] bg-[#F3F4F6] rounded px-2 py-1">
                     <span>
@@ -306,7 +317,7 @@ export default function FinancialsTab({ project, onUpdate }) {
 
               <div>
                 <label className="block text-[13px] md:text-[14px] font-medium text-[#4B5563] mb-1.5">
-                  Labour Cost
+                  Labour Cost (ex GST)
                 </label>
                 <div className="relative">
                   <span className="absolute left-3 top-1/2 -translate-y-1/2 text-[#6B7280] text-sm">$</span>
@@ -318,11 +329,16 @@ export default function FinancialsTab({ project, onUpdate }) {
                     className="pl-8 h-9"
                   />
                 </div>
+                {project.labour_cost && !isNaN(project.labour_cost) && (
+                  <p className="text-[10px] text-gray-500 mt-1">
+                    Inc: ${exToInc(project.labour_cost).toFixed(2)}
+                  </p>
+                )}
               </div>
 
               <div>
                 <label className="block text-[13px] md:text-[14px] font-medium text-[#4B5563] mb-1.5">
-                  Other Costs
+                  Other Costs (ex GST)
                 </label>
                 <div className="relative">
                   <span className="absolute left-3 top-1/2 -translate-y-1/2 text-[#6B7280] text-sm">$</span>
@@ -334,6 +350,11 @@ export default function FinancialsTab({ project, onUpdate }) {
                     className="pl-8 h-9"
                   />
                 </div>
+                {project.other_costs && !isNaN(project.other_costs) && (
+                  <p className="text-[10px] text-gray-500 mt-1">
+                    Inc: ${exToInc(project.other_costs).toFixed(2)}
+                  </p>
+                )}
               </div>
               </div>
             </div>

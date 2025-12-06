@@ -25,6 +25,7 @@ import { base44 } from "@/api/base44Client";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
 import { format } from "date-fns";
+import { exToGstAmount, exToInc } from "@/components/gst";
 
 export default function SupplierPurchaseOrderModal({ open, onClose, supplier, purchaseOrderToEdit }) {
   const queryClient = useQueryClient();
@@ -399,8 +400,8 @@ export default function SupplierPurchaseOrderModal({ open, onClose, supplier, pu
                     <TableHead className="w-[30%] h-9 text-[11px] uppercase">Item</TableHead>
                     <TableHead className="w-[25%] h-9 text-[11px] uppercase">Description</TableHead>
                     <TableHead className="w-[15%] h-9 text-[11px] uppercase">Qty</TableHead>
-                    <TableHead className="w-[15%] h-9 text-[11px] uppercase">Unit Cost</TableHead>
-                    <TableHead className="w-[10%] h-9 text-[11px] uppercase">Total</TableHead>
+                    <TableHead className="w-[15%] h-9 text-[11px] uppercase">Unit Cost (ex GST)</TableHead>
+                    <TableHead className="w-[10%] h-9 text-[11px] uppercase">Total (ex GST)</TableHead>
                     <TableHead className="w-[5%] h-9"></TableHead>
                   </TableRow>
                 </TableHeader>
@@ -489,9 +490,19 @@ export default function SupplierPurchaseOrderModal({ open, onClose, supplier, pu
                           onChange={(e) => handleLineChange(index, "unit_cost_ex_tax", e.target.value)}
                           className="h-8 text-xs w-full"
                         />
+                        {line.unit_cost_ex_tax && !isNaN(parseFloat(line.unit_cost_ex_tax)) && (
+                            <div className="text-[10px] text-gray-400 mt-1 whitespace-nowrap">
+                                +GST: ${exToGstAmount(parseFloat(line.unit_cost_ex_tax)).toFixed(2)}
+                            </div>
+                        )}
                       </TableCell>
                       <TableCell className="p-2 font-medium text-right pr-4">
-                        ${((parseFloat(line.qty_ordered) || 0) * (parseFloat(line.unit_cost_ex_tax) || 0)).toFixed(2)}
+                        <div>${((parseFloat(line.qty_ordered) || 0) * (parseFloat(line.unit_cost_ex_tax) || 0)).toFixed(2)}</div>
+                        {line.unit_cost_ex_tax && line.qty_ordered && (
+                            <div className="text-[10px] text-gray-400 mt-1 whitespace-nowrap">
+                                Inc: ${((parseFloat(line.qty_ordered) || 0) * exToInc(parseFloat(line.unit_cost_ex_tax))).toFixed(2)}
+                            </div>
+                        )}
                       </TableCell>
                       <TableCell className="p-2 text-center">
                         <Button 
@@ -517,8 +528,13 @@ export default function SupplierPurchaseOrderModal({ open, onClose, supplier, pu
             </div>
             
             <div className="flex justify-end mt-2">
-              <div className="text-sm font-semibold text-gray-900">
-                Total: ${calculateTotal().toFixed(2)}
+              <div className="text-right">
+                <div className="text-sm font-semibold text-gray-900">
+                  Total (ex GST): ${calculateTotal().toFixed(2)}
+                </div>
+                <div className="text-xs text-gray-500">
+                  Total (inc GST): ${exToInc(calculateTotal()).toFixed(2)}
+                </div>
               </div>
             </div>
           </div>
