@@ -7,6 +7,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Switch } from "@/components/ui/switch";
 import { ArrowLeft } from "lucide-react";
+import { Checkbox } from "@/components/ui/checkbox";
 
 const SUPPLIER_TYPES = [
   "Door Manufacturer",
@@ -29,7 +30,25 @@ export default function SupplierForm({ supplier, onSubmit, onCancel, isSubmittin
     notes: "",
     default_lead_time_days: "",
     is_active: true,
+    fulfilment_preference: "pickup",
+    delivery_days: "",
   });
+
+  const DAYS = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"];
+
+  const handleDayChange = (day, checked) => {
+    const currentDays = formData.delivery_days ? formData.delivery_days.split(',') : [];
+    let newDays;
+    if (checked) {
+      if (!currentDays.includes(day)) newDays = [...currentDays, day];
+      else newDays = currentDays;
+    } else {
+      newDays = currentDays.filter(d => d !== day);
+    }
+    // Sort days based on week order
+    newDays.sort((a, b) => DAYS.indexOf(a) - DAYS.indexOf(b));
+    setFormData({ ...formData, delivery_days: newDays.join(',') });
+  };
 
   const handleSubmit = (e) => {
     e.preventDefault();
@@ -156,6 +175,41 @@ export default function SupplierForm({ supplier, onSubmit, onCancel, isSubmittin
               className="input-sm"
             />
           </div>
+
+          <div className="space-y-2">
+            <Label htmlFor="fulfilment">Usual Fulfilment</Label>
+            <Select 
+                value={formData.fulfilment_preference} 
+                onValueChange={(val) => setFormData({ ...formData, fulfilment_preference: val })}
+            >
+                <SelectTrigger className="select-sm">
+                <SelectValue placeholder="Select method" />
+                </SelectTrigger>
+                <SelectContent>
+                <SelectItem value="pickup">Pickup</SelectItem>
+                <SelectItem value="delivery">Delivery</SelectItem>
+                <SelectItem value="mixed">Mixed</SelectItem>
+                </SelectContent>
+            </Select>
+          </div>
+
+          {(formData.fulfilment_preference === 'delivery' || formData.fulfilment_preference === 'mixed') && (
+            <div className="space-y-2">
+                <Label>Delivery Days</Label>
+                <div className="flex flex-wrap gap-4 pt-1 border rounded-md p-3 bg-slate-50">
+                {DAYS.map(day => (
+                    <div key={day} className="flex items-center gap-2">
+                    <Checkbox 
+                        id={`day-${day}`} 
+                        checked={(formData.delivery_days || "").split(',').includes(day)}
+                        onCheckedChange={(checked) => handleDayChange(day, checked)}
+                    />
+                    <label htmlFor={`day-${day}`} className="text-sm text-slate-700 cursor-pointer select-none font-medium">{day}</label>
+                    </div>
+                ))}
+                </div>
+            </div>
+          )}
 
           <div className="flex items-center gap-2 pt-2">
             <Switch

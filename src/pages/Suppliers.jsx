@@ -6,6 +6,9 @@ import { Input } from "@/components/ui/input";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
 import { Plus, Search, ShoppingCart, Package } from "lucide-react";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { Checkbox } from "@/components/ui/checkbox";
 import SupplierForm from "../components/suppliers/SupplierForm";
 import SupplierDetails from "../components/suppliers/SupplierDetails";
 
@@ -161,8 +164,8 @@ function SuppliersPage() {
                             <TableHead className="text-[11px] uppercase text-gray-500 h-10 font-semibold">Name</TableHead>
                             <TableHead className="text-[11px] uppercase text-gray-500 h-10 font-semibold">Type</TableHead>
                             <TableHead className="text-[11px] uppercase text-gray-500 h-10 font-semibold">Contact</TableHead>
-                            <TableHead className="text-[11px] uppercase text-gray-500 h-10 font-semibold">Phone</TableHead>
-                            <TableHead className="text-[11px] uppercase text-gray-500 h-10 font-semibold">Email</TableHead>
+                            <TableHead className="text-[11px] uppercase text-gray-500 h-10 font-semibold">Fulfilment</TableHead>
+                            <TableHead className="text-[11px] uppercase text-gray-500 h-10 font-semibold">Delivery Days</TableHead>
                             <TableHead className="text-[11px] uppercase text-gray-500 h-10 font-semibold text-center">Status</TableHead>
                         </TableRow>
                     </TableHeader>
@@ -176,8 +179,66 @@ function SuppliersPage() {
                                 <TableCell className="px-4 py-3 font-medium text-gray-900">{s.name}</TableCell>
                                 <TableCell className="px-4 py-3 text-gray-600">{s.type || "—"}</TableCell>
                                 <TableCell className="px-4 py-3 text-gray-600">{s.contact_name || "—"}</TableCell>
-                                <TableCell className="px-4 py-3 text-gray-600">{s.phone || "—"}</TableCell>
-                                <TableCell className="px-4 py-3 text-gray-600">{s.email || "—"}</TableCell>
+                                
+                                <TableCell className="px-4 py-3" onClick={(e) => e.stopPropagation()}>
+                                    <Select 
+                                        value={s.fulfilment_preference || "pickup"} 
+                                        onValueChange={(val) => updateMutation.mutate({ id: s.id, data: { fulfilment_preference: val } })}
+                                    >
+                                        <SelectTrigger className="h-7 text-xs w-[100px] bg-white border-gray-200">
+                                            <SelectValue />
+                                        </SelectTrigger>
+                                        <SelectContent>
+                                            <SelectItem value="pickup">Pickup</SelectItem>
+                                            <SelectItem value="delivery">Delivery</SelectItem>
+                                            <SelectItem value="mixed">Mixed</SelectItem>
+                                        </SelectContent>
+                                    </Select>
+                                </TableCell>
+
+                                <TableCell className="px-4 py-3" onClick={(e) => e.stopPropagation()}>
+                                    {(s.fulfilment_preference === 'delivery' || s.fulfilment_preference === 'mixed') ? (
+                                        <Popover>
+                                            <PopoverTrigger asChild>
+                                                <Button variant="outline" size="sm" className="h-7 text-xs w-full justify-start bg-white border-gray-200 font-normal text-gray-600">
+                                                    {s.delivery_days ? <span className="truncate max-w-[120px]">{s.delivery_days}</span> : "Select Days"}
+                                                </Button>
+                                            </PopoverTrigger>
+                                            <PopoverContent className="w-64 p-3" align="start">
+                                                <div className="space-y-2">
+                                                    <h4 className="font-medium text-xs text-gray-900">Delivery Days</h4>
+                                                    <div className="grid grid-cols-2 gap-2">
+                                                        {["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"].map(day => (
+                                                            <div key={day} className="flex items-center gap-2">
+                                                                <Checkbox 
+                                                                    id={`day-${s.id}-${day}`} 
+                                                                    checked={(s.delivery_days || "").split(',').includes(day)}
+                                                                    onCheckedChange={(checked) => {
+                                                                        const currentDays = s.delivery_days ? s.delivery_days.split(',') : [];
+                                                                        let newDays;
+                                                                        if (checked) {
+                                                                            if (!currentDays.includes(day)) newDays = [...currentDays, day];
+                                                                            else newDays = currentDays;
+                                                                        } else {
+                                                                            newDays = currentDays.filter(d => d !== day);
+                                                                        }
+                                                                        const DAYS = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"];
+                                                                        newDays.sort((a, b) => DAYS.indexOf(a) - DAYS.indexOf(b));
+                                                                        updateMutation.mutate({ id: s.id, data: { delivery_days: newDays.join(',') } });
+                                                                    }}
+                                                                />
+                                                                <label htmlFor={`day-${s.id}-${day}`} className="text-xs cursor-pointer">{day}</label>
+                                                            </div>
+                                                        ))}
+                                                    </div>
+                                                </div>
+                                            </PopoverContent>
+                                        </Popover>
+                                    ) : (
+                                        <span className="text-gray-300 text-xs pl-2">—</span>
+                                    )}
+                                </TableCell>
+
                                 <TableCell className="px-4 py-3 text-center">
                                     {s.is_active ? (
                                         <Badge variant="outline" className="bg-green-50 text-green-700 border-green-200 font-normal">Active</Badge>

@@ -14,11 +14,9 @@ Deno.serve(async (req) => {
         if (action === 'create') {
             part = await base44.asServiceRole.entities.Part.create(data);
 
-            // AUTO-CREATE SUPPLIER PICKUP JOB LOGIC
-            // Only on create, if project_id exists, source_type is Pickup Required, status is Ordered
-            // and we have supplier info
+            // LOGISTICS AUTOMATION LOGIC
+            // Only on create, if project_id exists and part is Ordered
             if (part.project_id && 
-                part.source_type === "Supplier – Pickup Required" && 
                 (part.status === "Ordered" || part.status === "Pending") && // Relaxed to Pending/Ordered as usually created as Ordered
                 (part.supplier_id || part.supplier_name)) {
                 
@@ -29,24 +27,80 @@ Deno.serve(async (req) => {
                         supplier = await base44.asServiceRole.entities.Supplier.get(part.supplier_id);
                     }
 
-                    // Determine address and name
-                    const pickupAddress = supplier?.pickup_address || "Address not defined";
-                    const supplierName = supplier?.name || part.supplier_name || "Unknown Supplier";
+                    // Determine Fulfilment Preference
+                    // Default to pickup if not set
+                    let fulfilmentPreference = supplier?.fulfilment_preference || "pickup";
 
-                    // Get project for title
+                    // If mixed, try to infer from source_type
+                    if (fulfilmentPreference === "mixed") {
+                        const sourceType = (part.source_type || "").toLowerCase();
+                        if (sourceType.includes("pickup")) {
+                            fulfilmentPreference = "pickup";
+                        } else if (sourceType.includes("deliver") || sourceType.includes("delivery")) {
+                            fulfilmentPreference = "delivery";
+                        } else {
+                            fulfilmentPreference = "pickup"; // Default
+                        }
+                    } else if (fulfilmentPreference === "delivery") {
+                         // If preference is delivery, we should ideally create a delivery job
+                         // BUT if the user explicitly set source_type to "Supplier - Pickup Required", we might want to respect that?
+                         // The prompt says "Create a Material Delivery... if Supplier is usually Delivery".
+                         // And "If they are usually Delivery... automatically create...".
+                         // So we prioritize the supplier preference unless the source type STRONGLY contradicts?
+                         // Let's assume supplier preference + automation is key here.
+                         // However, if source_type is explicit "Pickup Required", it would be weird to create a Delivery job.
+                         // Let's trust the mixed logic: if source_type explicitly says Pickup, we do Pickup.
+                         // Otherwise if Supplier is Delivery, we do Delivery.
+                         const sourceType = (part.source_type || "").toLowerCase();
+                         if (sourceType.includes("pickup")) {
+                             fulfilmentPreference = "pickup";
+                         }
+                    }
+
+                    // Determine details
+                    const supplierName = supplier?.name || part.supplier_name || "Unknown Supplier";
                     const project = await base44.asServiceRole.entities.Project.get(part.project_id);
-                    
+
                     if (project) {
-                        // Find or Create JobType "Material Pickup – Supplier"
-                        const jobTypeName = "Material Pickup – Supplier";
+                        let jobTypeName;
+                        let jobDescription;
+                        let jobColor;
+                        let jobNotes;
+                        let jobAddress;
+                        let newLocation;
+
+                        if (fulfilmentPreference === "delivery") {
+                            jobTypeName = "Material Delivery – Supplier";
+                            jobDescription = "Logistics: Receive delivery from supplier";
+                            jobColor = "#3b82f6"; // Blue
+                            jobAddress = project.address_full || project.address || "Site Address";
+                            
+                            let deliveryNote = `Supplier delivery for project ${project.title} from ${supplierName}.`;
+                            if (supplier?.delivery_days) {
+                                deliveryNote += ` Usual delivery days: ${supplier.delivery_days}.`;
+                            }
+                            jobNotes = deliveryNote;
+                            newLocation = "Awaiting Supplier Delivery";
+
+                        } else {
+                            // PICKUP
+                            jobTypeName = "Material Pickup – Supplier";
+                            jobDescription = "Logistics: Pickup parts from supplier";
+                            jobColor = "#f59e0b"; // Amber
+                            jobAddress = supplier?.pickup_address || "Address not defined";
+                            jobNotes = `Pickup parts for project ${project.title} from ${supplierName}.`;
+                            newLocation = "At Supplier";
+                        }
+
+                        // Find or Create JobType
                         let jobTypes = await base44.asServiceRole.entities.JobType.filter({ name: jobTypeName });
                         let jobTypeId = jobTypes.length > 0 ? jobTypes[0].id : null;
                         
                         if (!jobTypeId) {
                              const newJobType = await base44.asServiceRole.entities.JobType.create({
                                  name: jobTypeName,
-                                 description: "Logistics: Pickup parts from supplier",
-                                 color: "#f59e0b", // Amber/Orange
+                                 description: jobDescription,
+                                 color: jobColor,
                                  estimated_duration: 0.5,
                                  is_active: true
                              });
@@ -62,10 +116,10 @@ Deno.serve(async (req) => {
                             project_name: project.title,
                             customer_id: project.customer_id,
                             customer_name: project.customer_name,
-                            address: pickupAddress,
-                            address_full: pickupAddress,
-                            status: "Scheduled", // or Planned
-                            notes: `Pickup parts for project ${project.title} from ${supplierName}.`,
+                            address: jobAddress,
+                            address_full: jobAddress,
+                            status: "Scheduled",
+                            notes: jobNotes,
                             overview: `Part: ${part.category}${part.notes ? ' - ' + part.notes : ''}`,
                             additional_info: `Order Ref: ${part.order_reference || 'N/A'}`
                         });
@@ -74,16 +128,15 @@ Deno.serve(async (req) => {
                         const currentLinks = part.linked_logistics_jobs || [];
                         await base44.asServiceRole.entities.Part.update(part.id, {
                             linked_logistics_jobs: [...currentLinks, logisticsJob.id],
-                            location: "At Supplier" // Ensure correct location
+                            location: newLocation // Update location based on job type
                         });
 
-                        // Update local part object to return correct state
+                        // Update local part object
                         part.linked_logistics_jobs = [...currentLinks, logisticsJob.id];
-                        part.location = "At Supplier";
+                        part.location = newLocation;
                     }
                 } catch (err) {
-                    console.error("Error auto-creating supplier pickup job:", err);
-                    // Don't fail the whole request, just log
+                    console.error("Error auto-creating supplier logistics job:", err);
                 }
             }
 
@@ -105,17 +158,14 @@ Deno.serve(async (req) => {
                                 previousPart.location === 'At Delivery Bay';
             
             if (!wasTriggered) {
-                // Trigger Logic
                 const project = await base44.asServiceRole.entities.Project.get(part.project_id);
                 if (project) {
-                    // Check for other parts that are also Delivered + At Delivery Bay for this project
                     const otherParts = await base44.asServiceRole.entities.Part.filter({
                         project_id: part.project_id,
                         status: 'Delivered',
                         location: 'At Delivery Bay'
                     });
 
-                    // Find or Create JobType
                     const jobTypeName = "Delivery – At Warehouse";
                     let jobTypes = await base44.asServiceRole.entities.JobType.filter({ name: jobTypeName });
                     let jobTypeId = jobTypes.length > 0 ? jobTypes[0].id : null;
@@ -124,22 +174,13 @@ Deno.serve(async (req) => {
                          const newJobType = await base44.asServiceRole.entities.JobType.create({
                              name: jobTypeName,
                              description: "Logistics: Delivery of parts at warehouse",
-                             color: "#3b82f6", // Blueish
+                             color: "#3b82f6",
                              estimated_duration: 0.5,
                              is_active: true
                          });
                          jobTypeId = newJobType.id;
                     }
 
-                    // Check if there is already an open job of this type for this project?? 
-                    // Prompt implies: "Create a Job... Append this new job’s ID into the Part’s linked_logistics_jobs array."
-                    // It doesn't explicitly say "if one doesn't exist". But usually we group them.
-                    // The prompt says "Create a Job... linked_parts includes this Part (and any other Parts...)"
-                    // This implies creating a NEW job every time a part lands, OR grouping them.
-                    // "and any other Parts... that are ALSO Delivered + At Delivery Bay"
-                    // This suggests we might want to grouping.
-                    // Let's check if there is an existing OPEN "Delivery – At Warehouse" job for this project.
-                    
                     const existingJobs = await base44.asServiceRole.entities.Job.filter({
                         project_id: part.project_id,
                         job_type: jobTypeName,
@@ -150,14 +191,8 @@ Deno.serve(async (req) => {
 
                     if (existingJobs.length > 0) {
                         logisticsJob = existingJobs[0];
-                        // Update linked parts if we track them in the job (not standard field, but maybe in notes or just implicit)
-                        // We definitely update the PARTS to link to the JOB.
                     } else {
-                        // Create new job
-                        // Need customer info
                         const customerId = project.customer_id;
-                        // Warehouse address - hardcoded or fetched. Using a placeholder or Org address.
-                        // We'll assume a fixed string or fetch Organisation type 'Supplier'? No, warehouse is internal.
                         const warehouseAddress = "Warehouse Delivery Bay";
 
                         logisticsJob = await base44.asServiceRole.entities.Job.create({
@@ -175,9 +210,7 @@ Deno.serve(async (req) => {
                         });
                     }
 
-                    // Append job ID to all relevant parts
                     const partIdsToUpdate = otherParts.map(p => p.id);
-                    // Add current part if not in filter (it should be in filter if filter matches current state)
                     if (!partIdsToUpdate.includes(part.id)) partIdsToUpdate.push(part.id);
 
                     for (const pId of partIdsToUpdate) {

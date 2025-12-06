@@ -1,7 +1,7 @@
 import React, { useState } from "react";
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { ArrowLeft, Edit, Phone, Mail, MapPin, ShoppingCart, Clock, Info } from "lucide-react";
+import { ArrowLeft, Edit, Phone, Mail, MapPin, ShoppingCart, Clock, Info, Truck } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import PurchaseOrdersList from "./PurchaseOrdersList";
 import SupplierPurchaseOrderModal from "../purchasing/SupplierPurchaseOrderModal";
@@ -69,6 +69,13 @@ export default function SupplierDetails({ supplier, onClose, onEdit }) {
             <div className="space-y-4">
                 <h3 className="text-sm font-semibold text-gray-900 uppercase tracking-wider">Logistics</h3>
                 <div className="space-y-3">
+                    <div className="flex items-center gap-2 text-sm">
+                        <Truck className="w-4 h-4 text-slate-400" />
+                        <span className="capitalize font-medium">{supplier.fulfilment_preference || 'pickup'}</span>
+                        {(supplier.fulfilment_preference === 'delivery' || supplier.fulfilment_preference === 'mixed') && supplier.delivery_days && (
+                            <span className="text-slate-500">({supplier.delivery_days})</span>
+                        )}
+                    </div>
                     {supplier.pickup_address && (
                         <div className="flex items-start gap-2 text-sm">
                             <MapPin className="w-4 h-4 text-slate-400 mt-0.5" />
