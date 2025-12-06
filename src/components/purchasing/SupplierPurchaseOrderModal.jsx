@@ -209,7 +209,7 @@ export default function SupplierPurchaseOrderModal({ open, onClose, supplier }) 
         <div className="modal-panel py-4 space-y-6">
           {/* Header Info */}
           <div className="grid grid-cols-2 gap-4">
-            <div className="space-y-2 flex flex-col">
+            <div className="space-y-2">
               <Label className="text-xs font-medium text-gray-700">Delivery Location</Label>
               <Popover open={locationOpen} onOpenChange={setLocationOpen} modal={true}>
                 <PopoverTrigger asChild>
@@ -217,7 +217,7 @@ export default function SupplierPurchaseOrderModal({ open, onClose, supplier }) 
                     variant="outline"
                     role="combobox"
                     aria-expanded={locationOpen}
-                    className="w-full h-9 justify-between text-xs font-normal"
+                    className="w-full h-[44px] justify-between text-[15px] font-normal"
                   >
                     {deliveryLocationId
                       ? locations.find((loc) => loc.id === deliveryLocationId)?.name
