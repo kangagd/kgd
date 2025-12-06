@@ -31,8 +31,9 @@ import {
     Clock,
     Shield,
     Truck,
-    Car
-  } from "lucide-react";
+    Car,
+    Package
+    } from "lucide-react";
 import { base44 } from "@/api/base44Client";
 import { toast } from "sonner";
 import { Toaster } from "@/components/ui/sonner";
@@ -68,6 +69,7 @@ const secondaryNavigationItems = [
   { title: "Role Settings", url: createPageUrl("RoleSettings"), icon: Shield },
   { title: "Archive", url: createPageUrl("Archive"), icon: ArchiveIcon },
   { title: "Logistics", url: createPageUrl("Logistics"), icon: Truck },
+  { title: "Suppliers", url: createPageUrl("Suppliers"), icon: Package },
   ];
 
 const technicianNavigationItems = [
