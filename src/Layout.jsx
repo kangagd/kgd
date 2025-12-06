@@ -47,47 +47,30 @@ import CommandPalette from "@/components/common/CommandPalette";
 import ActiveCheckInBanner from "@/components/common/ActiveCheckInBanner";
 import PullToRefresh from "@/components/common/PullToRefresh";
 
-const adminNavigationGroups = [
-  {
-    title: "Overview",
-    items: [
-      { title: "Dashboard", url: createPageUrl("Dashboard"), icon: LayoutDashboard },
-      { title: "Inbox", url: createPageUrl("Inbox"), icon: Mail },
-      { title: "Tasks", url: createPageUrl("Tasks"), icon: CheckSquare },
-      { title: "Schedule", url: createPageUrl("Schedule"), icon: Calendar },
-    ]
-  },
-  {
-    title: "Work",
-    items: [
-      { title: "Projects", url: createPageUrl("Projects"), icon: FolderKanban },
-      { title: "Jobs", url: createPageUrl("Jobs"), icon: Briefcase },
-      { title: "Customers", url: createPageUrl("Customers"), icon: UserCircle },
-      { title: "Contracts", url: createPageUrl("Contracts"), icon: FileText },
-    ]
-  },
-  {
-    title: "Resources",
-    items: [
-      { title: "Price List", url: createPageUrl("PriceList"), icon: DollarSign },
-      { title: "Suppliers", url: createPageUrl("Suppliers"), icon: Package },
-      { title: "Logistics", url: createPageUrl("Logistics"), icon: Truck },
-      { title: "Fleet", url: createPageUrl("Fleet"), icon: Car },
-      { title: "Tools", url: createPageUrl("ToolsAdmin"), icon: Wrench },
-    ]
-  },
-  {
-    title: "Organization",
-    items: [
-      { title: "Team", url: createPageUrl("Team"), icon: Users },
-      { title: "Organisations", url: createPageUrl("Organisations"), icon: Building2 },
-      { title: "Reports", url: createPageUrl("Reports"), icon: TrendingUp },
-      { title: "Photos", url: createPageUrl("Photos"), icon: ImageIcon },
-      { title: "Role Settings", url: createPageUrl("RoleSettings"), icon: Shield },
-      { title: "Archive", url: createPageUrl("Archive"), icon: ArchiveIcon },
-    ]
-  }
+const primaryNavigationItems = [
+  { title: "Dashboard", url: createPageUrl("Dashboard"), icon: LayoutDashboard },
+  { title: "Inbox", url: createPageUrl("Inbox"), icon: Mail },
+  { title: "Tasks", url: createPageUrl("Tasks"), icon: CheckSquare },
+  { title: "Schedule", url: createPageUrl("Schedule"), icon: Calendar },
+  { title: "Projects", url: createPageUrl("Projects"), icon: FolderKanban },
+  { title: "Jobs", url: createPageUrl("Jobs"), icon: Briefcase },
+  { title: "Customers", url: createPageUrl("Customers"), icon: UserCircle },
+  { title: "Contracts", url: createPageUrl("Contracts"), icon: FileText },
 ];
+
+const secondaryNavigationItems = [
+  { title: "Organisations", url: createPageUrl("Organisations"), icon: Building2 },
+  { title: "Photos", url: createPageUrl("Photos"), icon: ImageIcon },
+  { title: "Price List", url: createPageUrl("PriceList"), icon: DollarSign },
+  { title: "Reports", url: createPageUrl("Reports"), icon: TrendingUp },
+  { title: "Team", url: createPageUrl("Team"), icon: Users },
+  { title: "Fleet", url: createPageUrl("Fleet"), icon: Car },
+  { title: "Tools Admin", url: createPageUrl("ToolsAdmin"), icon: Wrench },
+  { title: "Role Settings", url: createPageUrl("RoleSettings"), icon: Shield },
+  { title: "Archive", url: createPageUrl("Archive"), icon: ArchiveIcon },
+  { title: "Logistics", url: createPageUrl("Logistics"), icon: Truck },
+  { title: "Suppliers", url: createPageUrl("Suppliers"), icon: Package },
+  ];
 
 const technicianNavigationItems = [
   { title: "My Vehicle", url: createPageUrl("MyVehicle"), icon: Car },
@@ -248,7 +231,7 @@ export default function Layout({ children, currentPageName }) {
     ? technicianNavigationItems 
     : isViewer 
       ? viewerNavigationItems 
-      : null; // Admin/Manager uses groups
+      : primaryNavigationItems;
 
   // Swipe to open menu
   useEffect(() => {
@@ -299,8 +282,7 @@ export default function Layout({ children, currentPageName }) {
   // Track recent pages
   useEffect(() => {
     const trackRecentPage = async () => {
-      const allAdminItems = adminNavigationGroups.flatMap(g => g.items);
-      const allNavItems = [...allAdminItems, ...technicianNavigationItems, ...viewerNavigationItems];
+      const allNavItems = [...primaryNavigationItems, ...secondaryNavigationItems, ...technicianNavigationItems];
       const currentItem = allNavItems.find(item => item.url === location.pathname);
       const params = new URLSearchParams(location.search);
 
@@ -468,43 +450,107 @@ export default function Layout({ children, currentPageName }) {
                     </div>
                   )}
 
-                  {/* Navigation Groups */}
-                  {(navigationItems ? [{ title: "", items: navigationItems }] : adminNavigationGroups).map((group, groupIdx) => (
-                    <div key={groupIdx} className="mb-2">
-                      {!isCollapsed && group.title && (
-                        <div className="px-3 py-1.5 text-[11px] font-bold text-gray-400 uppercase tracking-wider">
-                          {group.title}
+                  {/* Primary Navigation */}
+                  {primaryNavigationItems.map((item) => {
+                  const isActive = location.pathname === item.url;
+                  return (
+                    <Link
+                      key={item.title}
+                      to={item.url}
+                      className={`
+                        flex items-center gap-3 px-3 py-2.5 rounded-lg transition-all relative
+                        ${isActive 
+                          ? 'bg-[#FAE008]/10 text-[#111827] font-semibold' 
+                          : 'text-[#111827] hover:bg-[#F3F4F6]'
+                        }
+                        ${isCollapsed ? 'justify-center' : ''}
+                      `}
+                      style={{ textDecoration: 'none', color: 'inherit' }}
+                      title={isCollapsed ? item.title : ''}
+                    >
+                      {isActive && <div className="absolute left-0 w-1 h-6 bg-[#FAE008] rounded-r" />}
+                      <item.icon className={`w-5 h-5 flex-shrink-0 ${isActive ? 'text-[#FAE008]' : 'text-[#111827]'}`} />
+                      {!isCollapsed && <span className="text-[14px]">{item.title}</span>}
+                    </Link>
+                  );
+                  })}
+
+                  {/* More Menu - Only for admin/manager */}
+                  {!isCollapsed && isAdminOrManager && (
+                    <div className="mt-2">
+                      <button
+                        onClick={() => setIsMoreMenuOpen(!isMoreMenuOpen)}
+                        className="w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-[#111827] hover:bg-[#F3F4F6] transition-all"
+                      >
+                        <ChevronDown className={`w-5 h-5 flex-shrink-0 transition-transform duration-200 ${isMoreMenuOpen ? 'rotate-180' : ''}`} />
+                        <span className="text-[14px] font-medium">More</span>
+                      </button>
+
+                      {isMoreMenuOpen && (
+                        <div className="mt-1 space-y-1 pl-3">
+                          {secondaryNavigationItems.map((item) => {
+                            const isActive = location.pathname === item.url;
+                            return (
+                              <Link
+                                key={item.title}
+                                to={item.url}
+                                className={`
+                                  flex items-center gap-3 px-3 py-2.5 rounded-lg transition-all relative no-underline
+                                  ${isActive 
+                                    ? 'bg-[#FAE008]/10 text-[#111827] font-semibold' 
+                                    : 'text-[#111827] hover:bg-[#F3F4F6]'
+                                  }
+                                `}
+                              >
+                                {isActive && <div className="absolute left-0 w-1 h-6 bg-[#FAE008] rounded-r" />}
+                                <item.icon className={`w-5 h-5 flex-shrink-0 ${isActive ? 'text-[#FAE008]' : 'text-[#111827]'}`} />
+                                <span className="text-[14px]">{item.title}</span>
+                              </Link>
+                            );
+                          })}
                         </div>
                       )}
-                      {isCollapsed && group.title && <div className="h-px bg-gray-100 mx-3 my-2" />}
-                      
-                      <div className="space-y-0.5">
-                        {group.items.map((item) => {
-                          const isActive = location.pathname === item.url;
-                          return (
-                            <Link
-                              key={item.title}
-                              to={item.url}
-                              className={`
-                                flex items-center gap-3 px-3 py-2.5 rounded-lg transition-all relative
-                                ${isActive 
-                                  ? 'bg-[#FAE008]/10 text-[#111827] font-semibold' 
-                                  : 'text-[#4B5563] hover:bg-[#F3F4F6] hover:text-[#111827]'
-                                }
-                                ${isCollapsed ? 'justify-center' : ''}
-                              `}
-                              style={{ textDecoration: 'none', color: 'inherit' }}
-                              title={isCollapsed ? item.title : ''}
-                            >
-                              {isActive && <div className="absolute left-0 w-1 h-6 bg-[#FAE008] rounded-r" />}
-                              <item.icon className={`w-5 h-5 flex-shrink-0 ${isActive ? 'text-[#FAE008]' : 'currentColor'}`} />
-                              {!isCollapsed && <span className="text-[14px]">{item.title}</span>}
-                            </Link>
-                          );
-                        })}
-                      </div>
                     </div>
-                  ))}
+                  )}
+
+                  {/* Collapsed More Menu - Only for admin/manager */}
+                  {isCollapsed && isAdminOrManager && (
+                    <Popover open={collapsedMoreOpen} onOpenChange={setCollapsedMoreOpen}>
+                      <PopoverTrigger asChild>
+                        <button
+                          className="flex items-center gap-3 px-3 py-2.5 rounded-lg transition-all justify-center relative text-[#111827] hover:bg-[#F3F4F6]"
+                          title="More"
+                        >
+                          <MoreHorizontal className="w-5 h-5 flex-shrink-0" />
+                        </button>
+                      </PopoverTrigger>
+                      <PopoverContent side="right" align="start" className="w-56 p-2">
+                        <div className="space-y-1">
+                          {secondaryNavigationItems.map((item) => {
+                            const isActive = location.pathname === item.url;
+                            return (
+                              <Link
+                                key={item.title}
+                                to={item.url}
+                                onClick={() => setCollapsedMoreOpen(false)}
+                                className={`
+                                  flex items-center gap-3 px-3 py-2.5 rounded-lg transition-all relative no-underline
+                                  ${isActive 
+                                    ? 'bg-[#FAE008]/10 text-[#111827] font-semibold' 
+                                    : 'text-[#111827] hover:bg-[#F3F4F6]'
+                                  }
+                                `}
+                              >
+                                {isActive && <div className="absolute left-0 w-1 h-6 bg-[#FAE008] rounded-r" />}
+                                <item.icon className={`w-5 h-5 flex-shrink-0 ${isActive ? 'text-[#FAE008]' : 'text-[#111827]'}`} />
+                                <span className="text-[14px]">{item.title}</span>
+                              </Link>
+                            );
+                          })}
+                        </div>
+                      </PopoverContent>
+                    </Popover>
+                  )}
                 </div>
               </nav>
 
@@ -682,7 +728,7 @@ export default function Layout({ children, currentPageName }) {
                   <Menu className="w-6 h-6 text-[#111827]" />
                 </button>
                 <h1 className="font-semibold text-[#111827] text-[14px] truncate px-2 flex-1 text-center">
-                  {adminNavigationGroups.flatMap(g => g.items).find(item => item.url === location.pathname)?.title || 'KangarooGD'}
+                  {[...primaryNavigationItems, ...secondaryNavigationItems].find(item => item.url === location.pathname)?.title || 'KangarooGD'}
                 </h1>
               </div>
             </header>
