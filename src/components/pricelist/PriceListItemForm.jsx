@@ -1,4 +1,6 @@
 import React, { useState } from "react";
+import { base44 } from "@/api/base44Client";
+import { useQuery } from "@tanstack/react-query";
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -24,9 +26,15 @@ export default function PriceListItemForm({ item, onSubmit, onCancel, isSubmitti
     min_stock_level: 5,
     car_quantity: 0,
     notes: "",
+    supplier_id: "",
     supplier_name: "",
     image_url: "",
     is_active: true
+  });
+
+  const { data: suppliers = [] } = useQuery({
+    queryKey: ['activeSuppliers'],
+    queryFn: () => base44.entities.Supplier.list('name'),
   });
 
   const handleSubmit = (e) => {
@@ -143,13 +151,41 @@ export default function PriceListItemForm({ item, onSubmit, onCancel, isSubmitti
                 )}
               </div>
 
-              <div>
-                <Label>Supplier Name</Label>
-                <Input
-                  value={formData.supplier_name || ""}
-                  onChange={(e) => setFormData({ ...formData, supplier_name: e.target.value })}
-                  placeholder="Primary supplier"
-                />
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div>
+                  <Label>Supplier</Label>
+                  <Select
+                    value={formData.supplier_id || "none"}
+                    onValueChange={(val) => {
+                      const supplierId = val === "none" ? null : val;
+                      const supplier = suppliers.find(s => s.id === supplierId);
+                      setFormData({ 
+                        ...formData, 
+                        supplier_id: supplierId,
+                        // Auto-fill name if supplier selected
+                        supplier_name: supplier ? supplier.name : formData.supplier_name 
+                      });
+                    }}
+                  >
+                    <SelectTrigger>
+                      <SelectValue placeholder="Select supplier" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="none">None / Manual</SelectItem>
+                      {suppliers.filter(s => s.is_active).map(s => (
+                        <SelectItem key={s.id} value={s.id}>{s.name}</SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div>
+                  <Label>Supplier Name (Manual/Override)</Label>
+                  <Input
+                    value={formData.supplier_name || ""}
+                    onChange={(e) => setFormData({ ...formData, supplier_name: e.target.value })}
+                    placeholder="Primary supplier"
+                  />
+                </div>
               </div>
 
               <div>

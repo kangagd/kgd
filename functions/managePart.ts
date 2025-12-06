@@ -13,6 +13,80 @@ Deno.serve(async (req) => {
 
         if (action === 'create') {
             part = await base44.asServiceRole.entities.Part.create(data);
+
+            // AUTO-CREATE SUPPLIER PICKUP JOB LOGIC
+            // Only on create, if project_id exists, source_type is Pickup Required, status is Ordered
+            // and we have supplier info
+            if (part.project_id && 
+                part.source_type === "Supplier – Pickup Required" && 
+                (part.status === "Ordered" || part.status === "Pending") && // Relaxed to Pending/Ordered as usually created as Ordered
+                (part.supplier_id || part.supplier_name)) {
+                
+                try {
+                    // Fetch supplier if ID exists
+                    let supplier = null;
+                    if (part.supplier_id) {
+                        supplier = await base44.asServiceRole.entities.Supplier.get(part.supplier_id);
+                    }
+
+                    // Determine address and name
+                    const pickupAddress = supplier?.pickup_address || "Address not defined";
+                    const supplierName = supplier?.name || part.supplier_name || "Unknown Supplier";
+
+                    // Get project for title
+                    const project = await base44.asServiceRole.entities.Project.get(part.project_id);
+                    
+                    if (project) {
+                        // Find or Create JobType "Material Pickup – Supplier"
+                        const jobTypeName = "Material Pickup – Supplier";
+                        let jobTypes = await base44.asServiceRole.entities.JobType.filter({ name: jobTypeName });
+                        let jobTypeId = jobTypes.length > 0 ? jobTypes[0].id : null;
+                        
+                        if (!jobTypeId) {
+                             const newJobType = await base44.asServiceRole.entities.JobType.create({
+                                 name: jobTypeName,
+                                 description: "Logistics: Pickup parts from supplier",
+                                 color: "#f59e0b", // Amber/Orange
+                                 estimated_duration: 0.5,
+                                 is_active: true
+                             });
+                             jobTypeId = newJobType.id;
+                        }
+
+                        // Create Job
+                        const logisticsJob = await base44.asServiceRole.entities.Job.create({
+                            job_type: jobTypeName,
+                            job_type_id: jobTypeId,
+                            job_type_name: jobTypeName,
+                            project_id: part.project_id,
+                            project_name: project.title,
+                            customer_id: project.customer_id,
+                            customer_name: project.customer_name,
+                            address: pickupAddress,
+                            address_full: pickupAddress,
+                            status: "Scheduled", // or Planned
+                            notes: `Pickup parts for project ${project.title} from ${supplierName}.`,
+                            overview: `Part: ${part.category} - ${part.description || ''}`,
+                            additional_info: `Order Ref: ${part.order_reference || 'N/A'}`
+                        });
+
+                        // Update Part with linked job and location
+                        const currentLinks = part.linked_logistics_jobs || [];
+                        await base44.asServiceRole.entities.Part.update(part.id, {
+                            linked_logistics_jobs: [...currentLinks, logisticsJob.id],
+                            location: "At Supplier" // Ensure correct location
+                        });
+
+                        // Update local part object to return correct state
+                        part.linked_logistics_jobs = [...currentLinks, logisticsJob.id];
+                        part.location = "At Supplier";
+                    }
+                } catch (err) {
+                    console.error("Error auto-creating supplier pickup job:", err);
+                    // Don't fail the whole request, just log
+                }
+            }
+
         } else if (action === 'update') {
             // Fetch previous state for logic comparison
             previousPart = await base44.asServiceRole.entities.Part.get(id);

@@ -66,7 +66,9 @@ export default function PartDetailModal({ open, part, onClose, onSave, isSubmitt
         location: part.location || "On Order",
         order_date: part.order_date || (part.id ? "" : new Date().toISOString().split('T')[0]),
         price_list_item_id: part.price_list_item_id || null,
-        assigned_vehicle_id: part.assigned_vehicle_id || null
+        assigned_vehicle_id: part.assigned_vehicle_id || null,
+        supplier_id: part.supplier_id || null,
+        supplier_name: part.supplier_name || ""
       };
       setFormData(mappedPart);
     } else {
@@ -79,7 +81,9 @@ export default function PartDetailModal({ open, part, onClose, onSave, isSubmitt
         linked_logistics_jobs: [],
         attachments: [],
         price_list_item_id: null,
-        assigned_vehicle_id: null
+        assigned_vehicle_id: null,
+        supplier_id: null,
+        supplier_name: ""
       });
     }
   }, [part, open]);
@@ -102,6 +106,13 @@ export default function PartDetailModal({ open, part, onClose, onSave, isSubmitt
   const { data: vehicles = [] } = useQuery({
     queryKey: ['vehicles-for-parts'],
     queryFn: () => base44.entities.Vehicle.list('name'),
+    enabled: open
+  });
+
+  // Fetch active suppliers
+  const { data: suppliers = [] } = useQuery({
+    queryKey: ['activeSuppliers-parts'],
+    queryFn: () => base44.entities.Supplier.list('name'),
     enabled: open
   });
 
@@ -185,7 +196,16 @@ export default function PartDetailModal({ open, part, onClose, onSave, isSubmitt
                   <Label>Linked Price List Item (optional)</Label>
                   <Select
                     value={formData.price_list_item_id || ""}
-                    onValueChange={(value) => setFormData(prev => ({ ...prev, price_list_item_id: value || null }))}
+                    onValueChange={(value) => {
+                      const selectedItem = priceListItems.find(p => p.id === value);
+                      setFormData(prev => ({ 
+                        ...prev, 
+                        price_list_item_id: value || null,
+                        // Auto-fill supplier info from Price List Item if available
+                        supplier_id: selectedItem?.supplier_id || prev.supplier_id,
+                        supplier_name: selectedItem?.supplier_name || selectedItem?.brand || prev.supplier_name
+                      }));
+                    }}
                   >
                     <SelectTrigger className="bg-white">
                       <SelectValue placeholder="Select a price list item" />
@@ -307,7 +327,34 @@ export default function PartDetailModal({ open, part, onClose, onSave, isSubmitt
               <h3 className="text-[15px] font-semibold text-[#111827] uppercase tracking-wide">Supplier & Order Info</h3>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
                 <div className="space-y-2">
-                  <Label>Supplier Name</Label>
+                  <Label>Supplier</Label>
+                  <Select
+                    value={formData.supplier_id || "none"}
+                    onValueChange={(val) => {
+                      const supplierId = val === "none" ? null : val;
+                      const supplier = suppliers.find(s => s.id === supplierId);
+                      setFormData(prev => ({ 
+                        ...prev, 
+                        supplier_id: supplierId,
+                        // Auto-fill name if supplier selected
+                        supplier_name: supplier ? supplier.name : prev.supplier_name
+                      }));
+                    }}
+                  >
+                    <SelectTrigger className="bg-white">
+                      <SelectValue placeholder="Select supplier" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="none">None / Manual</SelectItem>
+                      {suppliers.filter(s => s.is_active).map(s => (
+                        <SelectItem key={s.id} value={s.id}>{s.name}</SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+                
+                <div className="space-y-2">
+                  <Label>Supplier Name (Override)</Label>
                   <Input 
                     value={formData.supplier_name || ""}
                     onChange={(e) => setFormData({...formData, supplier_name: e.target.value})}
