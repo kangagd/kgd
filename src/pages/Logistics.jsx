@@ -286,7 +286,7 @@ export default function Logistics() {
                                 <th className="px-6 py-3 font-semibold text-gray-900">Supplier</th>
                                 <th className="px-6 py-3 font-semibold text-gray-900">Type</th>
                                 <th className="px-6 py-3 font-semibold text-gray-900">Location</th>
-                                <th className="px-6 py-3 font-semibold text-gray-900">Details</th>
+                                <th className="px-6 py-3 font-semibold text-gray-900">PO</th>
                                 <th className="px-6 py-3 font-semibold text-gray-900">Status</th>
                             </tr>
                         </thead>
@@ -311,8 +311,8 @@ export default function Logistics() {
                                     <td className="px-6 py-3 text-gray-600">
                                         {job.address_full || job.address}
                                     </td>
-                                    <td className="px-6 py-3 text-gray-600 text-xs">
-                                        {job.notes}
+                                    <td className="px-6 py-3 text-gray-600 text-sm font-medium">
+                                        {job.notes?.startsWith('PO ') ? job.notes.split(' from ')[0] : job.notes}
                                     </td>
                                     <td className="px-6 py-3">
                                         <Badge variant="secondary">{job.status}</Badge>
