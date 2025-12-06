@@ -225,7 +225,7 @@ export default function SupplierPurchaseOrderModal({ open, onClose, supplier }) 
                     <ChevronsUpDown className="ml-2 h-3 w-3 shrink-0 opacity-50" />
                   </Button>
                 </PopoverTrigger>
-                <PopoverContent className="w-[200px] p-0">
+                <PopoverContent className="w-[300px] p-0 z-[100]">
                   <Command>
                     <CommandInput placeholder="Search location..." className="h-8 text-xs" />
                     <CommandList>
@@ -234,12 +234,13 @@ export default function SupplierPurchaseOrderModal({ open, onClose, supplier }) 
                         {locations.map((loc) => (
                           <CommandItem
                             key={loc.id}
-                            value={loc.name}
+                            value={`${loc.name} ${loc.id}`}
+                            keywords={[loc.name]}
                             onSelect={() => {
-                              setDeliveryLocationId(loc.id === deliveryLocationId ? "" : loc.id);
+                              setDeliveryLocationId(loc.id);
                               setLocationOpen(false);
                             }}
-                            className="text-xs"
+                            className="text-xs cursor-pointer"
                           >
                             <Check
                               className={cn(
@@ -340,7 +341,7 @@ export default function SupplierPurchaseOrderModal({ open, onClose, supplier }) 
                               <ChevronsUpDown className="ml-2 h-3 w-3 shrink-0 opacity-50" />
                             </Button>
                           </PopoverTrigger>
-                          <PopoverContent className="w-[300px] p-0" align="start">
+                          <PopoverContent className="w-[350px] p-0 z-[100]" align="start">
                             <Command>
                               <CommandInput placeholder="Search item..." className="h-8 text-xs" />
                               <CommandList>
@@ -349,12 +350,13 @@ export default function SupplierPurchaseOrderModal({ open, onClose, supplier }) 
                                   {availableItems.map((item) => (
                                     <CommandItem
                                       key={item.id}
-                                      value={`${item.item} ${item.sku || ''}`}
+                                      value={`${item.item} ${item.sku || ''} ${item.id}`}
+                                      keywords={[item.item, item.sku || '']}
                                       onSelect={() => {
                                         handleLineChange(index, "price_list_item_id", item.id);
                                         setItemOpenStates({ ...itemOpenStates, [index]: false });
                                       }}
-                                      className="text-xs"
+                                      className="text-xs cursor-pointer"
                                     >
                                       <Check
                                         className={cn(
