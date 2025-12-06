@@ -45,6 +45,15 @@ export default function LogisticsTimeline({ project }) {
         {jobs.map((job, index) => {
           const isCompleted = job.status === "Completed";
           const date = job.scheduled_date ? parseISO(job.scheduled_date) : parseISO(job.created_date);
+          const isStockJob = !!job.purchase_order_id;
+          const isProjectJob = !!job.project_id;
+          const containerClasses = `p-3 rounded-lg border shadow-sm transition-all cursor-pointer ${
+              isProjectJob 
+                  ? "bg-sky-50/30 border-sky-200 hover:border-sky-300 hover:shadow-md" 
+                  : isStockJob 
+                      ? "bg-amber-50/30 border-amber-200 hover:border-amber-300 hover:shadow-md" 
+                      : "bg-white border-slate-200 hover:border-blue-300 hover:shadow-md"
+          }`;
           
           return (
             <div key={job.id} className="relative">
@@ -55,18 +64,6 @@ export default function LogisticsTimeline({ project }) {
                 <div className={`w-2 h-2 rounded-full ${isCompleted ? 'bg-green-500' : 'bg-slate-300'}`} />
               </div>
 
-              {(() => {
-                const isStockJob = !!job.purchase_order_id;
-                const isProjectJob = !!job.project_id;
-                const containerClasses = `p-3 rounded-lg border shadow-sm transition-all cursor-pointer ${
-                    isProjectJob 
-                        ? "bg-sky-50/30 border-sky-200 hover:border-sky-300 hover:shadow-md" 
-                        : isStockJob 
-                            ? "bg-amber-50/30 border-amber-200 hover:border-amber-300 hover:shadow-md" 
-                            : "bg-white border-slate-200 hover:border-blue-300 hover:shadow-md"
-                }`;
-
-                return (
               <div 
                 onClick={() => navigate(createPageUrl("Jobs") + `?jobId=${job.id}`)}
                 className={containerClasses}
@@ -82,8 +79,6 @@ export default function LogisticsTimeline({ project }) {
                       )}
                       <span className="text-xs font-normal text-slate-500">#{job.job_number}</span>
                     </div>
-                );
-              })()}
                     <div className="text-xs text-slate-500 flex items-center gap-3 mt-1">
                       <span className="flex items-center gap-1">
                         <Calendar className="w-3 h-3" />
