@@ -26,7 +26,7 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
 import { format } from "date-fns";
 
-export default function SupplierPurchaseOrderModal({ open, onClose, supplier }) {
+export default function SupplierPurchaseOrderModal({ open, onClose, supplier, purchaseOrderToEdit }) {
   const queryClient = useQueryClient();
   const [poNumber, setPoNumber] = useState("");
   const [orderDate, setOrderDate] = useState(format(new Date(), "yyyy-MM-dd"));
@@ -35,7 +35,14 @@ export default function SupplierPurchaseOrderModal({ open, onClose, supplier }) 
   const [notes, setNotes] = useState("");
   const [lines, setLines] = useState([]);
   const [locationOpen, setLocationOpen] = useState(false);
-  const [itemOpenStates, setItemOpenStates] = useState({}); // Map of index -> open boolean
+  const [itemOpenStates, setItemOpenStates] = useState({});
+  const [linesLoaded, setLinesLoaded] = useState(false);
+
+  const { data: existingLines = [], isLoading: isLoadingLines } = useQuery({
+    queryKey: ["purchase-order-lines", purchaseOrderToEdit?.id],
+    queryFn: () => base44.entities.PurchaseOrderLine.filter({ purchase_order_id: purchaseOrderToEdit.id }),
+    enabled: !!purchaseOrderToEdit && open,
+  });
 
   // Fetch Inventory Locations
   const { data: locations = [] } = useQuery({
@@ -64,32 +71,54 @@ export default function SupplierPurchaseOrderModal({ open, onClose, supplier }) 
   // Reset form when modal opens
   useEffect(() => {
     if (open) {
-      setPoNumber("");
-      setOrderDate(format(new Date(), "yyyy-MM-dd"));
-      setExpectedDate("");
-      
-      // Try to find default location immediately
-      const defaultLoc = locations.find(l => 
-        (l.address || "").includes("866 Bourke") || 
-        (l.name || "").includes("866 Bourke")
-      );
-      setDeliveryLocationId(defaultLoc ? defaultLoc.id : "");
-
-      setNotes("");
-      setItemOpenStates({});
-      setLines([{ 
-        price_list_item_id: "", 
-        description: "", 
-        qty_ordered: 1, 
-        unit_cost_ex_tax: "", 
-        tax_rate_percent: 0 
-      }]);
+      if (purchaseOrderToEdit) {
+        setPoNumber(purchaseOrderToEdit.po_number || "");
+        setOrderDate(purchaseOrderToEdit.order_date ? format(new Date(purchaseOrderToEdit.order_date), "yyyy-MM-dd") : format(new Date(), "yyyy-MM-dd"));
+        setExpectedDate(purchaseOrderToEdit.expected_date ? format(new Date(purchaseOrderToEdit.expected_date), "yyyy-MM-dd") : "");
+        setDeliveryLocationId(purchaseOrderToEdit.delivery_location_id || "");
+        setNotes(purchaseOrderToEdit.notes || "");
+        setLinesLoaded(false);
+        // Lines will be set via existingLines effect
+      } else {
+        setPoNumber("");
+        setOrderDate(format(new Date(), "yyyy-MM-dd"));
+        setExpectedDate("");
+        
+        // Try to find default location immediately
+        const defaultLoc = locations.find(l => 
+          (l.address || "").includes("866 Bourke") || 
+          (l.name || "").includes("866 Bourke")
+        );
+        setDeliveryLocationId(defaultLoc ? defaultLoc.id : "");
+  
+        setNotes("");
+        setItemOpenStates({});
+        setLines([{ 
+          price_list_item_id: "", 
+          description: "", 
+          qty_ordered: 1, 
+          unit_cost_ex_tax: "", 
+          tax_rate_percent: 0 
+        }]);
+      }
     }
-  }, [open, supplier]);
+  }, [open, supplier, purchaseOrderToEdit]);
 
-  // Attempt to set default location if locations load after modal opens
+  // Load lines for editing
   useEffect(() => {
-    if (open && locations.length > 0) {
+    if (open && purchaseOrderToEdit && !linesLoaded && !isLoadingLines) {
+       setLines(existingLines.map(l => ({
+         ...l,
+         qty_ordered: l.qty_ordered, // ensure it's accessible
+         // keep id
+       })));
+       setLinesLoaded(true);
+    }
+  }, [open, purchaseOrderToEdit, existingLines, linesLoaded, isLoadingLines]);
+
+  // Attempt to set default location if locations load after modal opens (only for create)
+  useEffect(() => {
+    if (open && !purchaseOrderToEdit && locations.length > 0) {
       setDeliveryLocationId(prev => {
         if (prev) return prev;
         const defaultLoc = locations.find(l => 
@@ -99,7 +128,7 @@ export default function SupplierPurchaseOrderModal({ open, onClose, supplier }) 
         return defaultLoc ? defaultLoc.id : prev;
       });
     }
-  }, [locations, open]);
+  }, [locations, open, purchaseOrderToEdit]);
 
   const handleAddLine = () => {
     setLines([...lines, { 
@@ -142,59 +171,115 @@ export default function SupplierPurchaseOrderModal({ open, onClose, supplier }) 
     }, 0);
   };
 
-  const createPOMutation = useMutation({
+  const savePOMutation = useMutation({
     mutationFn: async () => {
       if (!supplier) throw new Error("No supplier selected");
       
       const locationName = locations.find(l => l.id === deliveryLocationId)?.name || "";
-
-      // 1. Create Purchase Order
-      const po = await base44.entities.PurchaseOrder.create({
+      const poData = {
         supplier_id: supplier.id,
         supplier_name: supplier.name,
         delivery_location_id: deliveryLocationId || null,
         delivery_location_name: locationName,
-        status: "draft",
+        status: purchaseOrderToEdit?.status || "draft",
         po_number: poNumber || null,
         order_date: orderDate,
         expected_date: expectedDate || null,
         notes: notes,
         total_amount_ex_tax: calculateTotal(),
-        // Simple tax calc could be added here if needed
-      });
+      };
 
-      // 2. Create Lines
-      const validLines = lines.filter(l => l.price_list_item_id && l.qty_ordered > 0);
-      
-      // Use parallel creation for lines
-      await Promise.all(validLines.map(line => {
-        const qty = parseFloat(line.qty_ordered) || 0;
-        const cost = parseFloat(line.unit_cost_ex_tax) || 0;
-        const total = qty * cost;
+      let poId;
 
-        return base44.entities.PurchaseOrderLine.create({
-          purchase_order_id: po.id,
-          price_list_item_id: line.price_list_item_id,
-          description: line.description || "",
-          qty_ordered: qty,
-          qty_received: 0,
-          unit_cost_ex_tax: cost,
-          tax_rate_percent: parseFloat(line.tax_rate_percent) || 0,
-          total_line_ex_tax: total
-        });
-      }));
+      if (purchaseOrderToEdit) {
+         await base44.entities.PurchaseOrder.update(purchaseOrderToEdit.id, poData);
+         poId = purchaseOrderToEdit.id;
+         
+         // Handle Lines
+         const currentLineIds = new Set(lines.filter(l => l.id).map(l => l.id));
+         const linesToDelete = existingLines.filter(l => !currentLineIds.has(l.id));
+         
+         await Promise.all(linesToDelete.map(l => base44.entities.PurchaseOrderLine.delete(l.id)));
+         
+         const validLines = lines.filter(l => l.price_list_item_id && l.qty_ordered > 0);
+         
+         await Promise.all(validLines.map(line => {
+            const qty = parseFloat(line.qty_ordered) || 0;
+            const cost = parseFloat(line.unit_cost_ex_tax) || 0;
+            const total = qty * cost;
+            
+            const lineData = {
+              purchase_order_id: poId,
+              price_list_item_id: line.price_list_item_id,
+              description: line.description || "",
+              qty_ordered: qty,
+              unit_cost_ex_tax: cost,
+              tax_rate_percent: parseFloat(line.tax_rate_percent) || 0,
+              total_line_ex_tax: total
+            };
 
-      return po;
+            if (line.id) {
+                return base44.entities.PurchaseOrderLine.update(line.id, lineData);
+            } else {
+                return base44.entities.PurchaseOrderLine.create({
+                    ...lineData,
+                    qty_received: 0,
+                });
+            }
+         }));
+
+      } else {
+          const po = await base44.entities.PurchaseOrder.create(poData);
+          poId = po.id;
+
+          const validLines = lines.filter(l => l.price_list_item_id && l.qty_ordered > 0);
+          await Promise.all(validLines.map(line => {
+            const qty = parseFloat(line.qty_ordered) || 0;
+            const cost = parseFloat(line.unit_cost_ex_tax) || 0;
+            const total = qty * cost;
+    
+            return base44.entities.PurchaseOrderLine.create({
+              purchase_order_id: poId,
+              price_list_item_id: line.price_list_item_id,
+              description: line.description || "",
+              qty_ordered: qty,
+              qty_received: 0,
+              unit_cost_ex_tax: cost,
+              tax_rate_percent: parseFloat(line.tax_rate_percent) || 0,
+              total_line_ex_tax: total
+            });
+          }));
+      }
     },
     onSuccess: () => {
       queryClient.invalidateQueries(["purchase-orders-by-supplier", supplier?.id]);
-      toast.success("Purchase Order created successfully");
+      queryClient.invalidateQueries(["purchase-order-lines", purchaseOrderToEdit?.id]);
+      toast.success(`Purchase Order ${purchaseOrderToEdit ? 'updated' : 'created'} successfully`);
       onClose();
     },
     onError: (error) => {
-      console.error("Failed to create PO:", error);
-      toast.error("Failed to create Purchase Order");
+      console.error("Failed to save PO:", error);
+      toast.error(`Failed to ${purchaseOrderToEdit ? 'update' : 'create'} Purchase Order`);
     }
+  });
+
+  const deletePOMutation = useMutation({
+      mutationFn: async () => {
+          if (!purchaseOrderToEdit) return;
+          // Delete lines first
+          const linesToDelete = await base44.entities.PurchaseOrderLine.filter({ purchase_order_id: purchaseOrderToEdit.id });
+          await Promise.all(linesToDelete.map(l => base44.entities.PurchaseOrderLine.delete(l.id)));
+          await base44.entities.PurchaseOrder.delete(purchaseOrderToEdit.id);
+      },
+      onSuccess: () => {
+          queryClient.invalidateQueries(["purchase-orders-by-supplier", supplier?.id]);
+          toast.success("Purchase Order deleted");
+          onClose();
+      },
+      onError: (error) => {
+          console.error("Failed to delete PO:", error);
+          toast.error("Failed to delete Purchase Order");
+      }
   });
 
   if (!supplier) return null;
@@ -203,7 +288,9 @@ export default function SupplierPurchaseOrderModal({ open, onClose, supplier }) 
     <Dialog open={open} onOpenChange={onClose}>
       <DialogContent className="modal-container max-w-4xl max-h-[90vh] overflow-y-auto">
         <DialogHeader>
-          <DialogTitle className="modal-title text-lg font-semibold text-gray-900">Create Purchase Order - {supplier.name}</DialogTitle>
+          <DialogTitle className="modal-title text-lg font-semibold text-gray-900">
+              {purchaseOrderToEdit ? 'Edit Purchase Order' : 'Create Purchase Order'} - {supplier.name}
+          </DialogTitle>
         </DialogHeader>
 
         <div className="modal-panel py-4 space-y-6">
@@ -437,17 +524,37 @@ export default function SupplierPurchaseOrderModal({ open, onClose, supplier }) 
           </div>
         </div>
 
-        <DialogFooter className="gap-2 border-t pt-4 mt-2">
-          <Button variant="outline" size="sm" onClick={onClose}>Cancel</Button>
-          <Button 
-            size="sm"
-            onClick={() => createPOMutation.mutate()} 
-            disabled={createPOMutation.isPending || lines.length === 0}
-            className="bg-[#FAE008] text-[#111827] hover:bg-[#E5CF07] font-medium"
-          >
-            {createPOMutation.isPending && <Loader2 className="w-3.5 h-3.5 mr-2 animate-spin" />}
-            Create Purchase Order
-          </Button>
+        <DialogFooter className="gap-2 border-t pt-4 mt-2 flex justify-between items-center w-full">
+            <div>
+                {purchaseOrderToEdit && (
+                    <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => {
+                            if (window.confirm("Are you sure you want to delete this purchase order?")) {
+                                deletePOMutation.mutate();
+                            }
+                        }}
+                        disabled={deletePOMutation.isPending}
+                        className="text-red-600 hover:text-red-700 hover:bg-red-50"
+                    >
+                        {deletePOMutation.isPending ? <Loader2 className="w-3.5 h-3.5 mr-2 animate-spin" /> : <Trash2 className="w-4 h-4 mr-2" />}
+                        Delete Order
+                    </Button>
+                )}
+            </div>
+            <div className="flex gap-2">
+              <Button variant="outline" size="sm" onClick={onClose}>Cancel</Button>
+              <Button 
+                size="sm"
+                onClick={() => savePOMutation.mutate()} 
+                disabled={savePOMutation.isPending || lines.length === 0}
+                className="bg-[#FAE008] text-[#111827] hover:bg-[#E5CF07] font-medium"
+              >
+                {savePOMutation.isPending && <Loader2 className="w-3.5 h-3.5 mr-2 animate-spin" />}
+                {purchaseOrderToEdit ? 'Update Order' : 'Create Purchase Order'}
+              </Button>
+            </div>
         </DialogFooter>
       </DialogContent>
     </Dialog>
