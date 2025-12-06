@@ -67,7 +67,14 @@ export default function SupplierPurchaseOrderModal({ open, onClose, supplier }) 
       setPoNumber("");
       setOrderDate(format(new Date(), "yyyy-MM-dd"));
       setExpectedDate("");
-      setDeliveryLocationId("");
+      
+      // Try to find default location immediately
+      const defaultLoc = locations.find(l => 
+        (l.address || "").includes("866 Bourke") || 
+        (l.name || "").includes("866 Bourke")
+      );
+      setDeliveryLocationId(defaultLoc ? defaultLoc.id : "");
+
       setNotes("");
       setItemOpenStates({});
       setLines([{ 
@@ -79,6 +86,20 @@ export default function SupplierPurchaseOrderModal({ open, onClose, supplier }) 
       }]);
     }
   }, [open, supplier]);
+
+  // Attempt to set default location if locations load after modal opens
+  useEffect(() => {
+    if (open && locations.length > 0) {
+      setDeliveryLocationId(prev => {
+        if (prev) return prev;
+        const defaultLoc = locations.find(l => 
+          (l.address || "").includes("866 Bourke") || 
+          (l.name || "").includes("866 Bourke")
+        );
+        return defaultLoc ? defaultLoc.id : prev;
+      });
+    }
+  }, [locations, open]);
 
   const handleAddLine = () => {
     setLines([...lines, { 
