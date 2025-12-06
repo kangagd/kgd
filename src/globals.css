@@ -512,3 +512,59 @@ css
 
   /* Status badges (moved to StatusBadge component and Badge base styles) */
   }
+
+  .page-container {
+    @apply p-4 md:p-6 space-y-4;
+  }
+  
+  .page-title {
+    @apply text-lg font-semibold text-gray-900;
+  }
+  
+  .page-subtitle {
+    @apply text-xs text-gray-500 mt-1;
+  }
+  
+  .card {
+    @apply rounded-xl border border-slate-200 bg-white shadow-sm p-4 md:p-5;
+  }
+  
+  .card-tight {
+    @apply rounded-xl border border-slate-200 bg-white shadow-sm p-3 md:p-4;
+  }
+  
+  .section-title {
+    @apply text-sm font-semibold text-gray-900;
+  }
+  
+  .form-label {
+    @apply block text-[11px] font-medium text-gray-600 mb-1;
+  }
+  
+  .input-sm {
+    @apply h-8 text-xs;
+  }
+  
+  .input-xs {
+    @apply h-7 text-[11px];
+  }
+  
+  .table-shell {
+    @apply min-w-full text-xs;
+  }
+  
+  .table-head {
+    @apply text-[11px] uppercase text-gray-500 border-b border-slate-200;
+  }
+  
+  .table-head-cell {
+    @apply px-2 py-2 text-left;
+  }
+  
+  .table-row {
+    @apply hover:bg-slate-50 transition-colors;
+  }
+  
+  .table-cell {
+    @apply px-2 py-2 align-top;
+  }

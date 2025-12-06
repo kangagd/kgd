@@ -211,11 +211,11 @@ function SuppliersPage() {
   };
 
   return (
-    <div className="page-container p-4 md:p-6 space-y-4">
+    <div className="page-container">
       <div className="flex flex-col md:flex-row justify-between items-center w-full py-3 lg:py-4 mb-4 lg:mb-6 gap-3">
         <div>
-          <h1 className="text-2xl font-bold text-[#111827] leading-tight">Suppliers</h1>
-          <p className="text-sm text-[#4B5563] mt-1">
+          <h1 className="page-title">Suppliers</h1>
+          <p className="page-subtitle">
             Manage supplier vendors for stock and logistics operations.
           </p>
         </div>
@@ -224,9 +224,9 @@ function SuppliersPage() {
       <div className="grid gap-4 md:grid-cols-3">
         <div className="col-span-2 space-y-4">
           {/* List */}
-          <div className="card rounded-xl border bg-white shadow-sm p-4 md:p-5">
+          <div className="card">
             <div className="mb-4 flex items-center justify-between">
-              <h2 className="text-sm font-semibold text-gray-900">All suppliers</h2>
+              <h2 className="section-title">All suppliers</h2>
               <span className="text-[11px] text-gray-500">
                 {suppliers.length} total
               </span>
@@ -240,31 +240,31 @@ function SuppliersPage() {
               </p>
             ) : (
               <div className="overflow-x-auto">
-                <Table className="table-auto w-full text-xs">
+                <Table className="table-shell">
                   <TableHeader>
-                    <TableRow className="hover:bg-transparent border-b">
-                      <TableHead className="text-[11px] uppercase text-gray-500 h-9">Name</TableHead>
-                      <TableHead className="text-[11px] uppercase text-gray-500 h-9">Type</TableHead>
-                      <TableHead className="text-[11px] uppercase text-gray-500 h-9">Contact</TableHead>
-                      <TableHead className="text-[11px] uppercase text-gray-500 h-9">Phone</TableHead>
-                      <TableHead className="text-[11px] uppercase text-gray-500 h-9">Email</TableHead>
-                      <TableHead className="text-[11px] uppercase text-gray-500 h-9">Lead time</TableHead>
-                      <TableHead className="text-[11px] uppercase text-gray-500 h-9">Active</TableHead>
-                      <TableHead className="text-[11px] uppercase text-gray-500 text-right h-9">Actions</TableHead>
+                    <TableRow className="table-row hover:bg-transparent border-b">
+                      <TableHead className="table-head h-9">Name</TableHead>
+                      <TableHead className="table-head h-9">Type</TableHead>
+                      <TableHead className="table-head h-9">Contact</TableHead>
+                      <TableHead className="table-head h-9">Phone</TableHead>
+                      <TableHead className="table-head h-9">Email</TableHead>
+                      <TableHead className="table-head h-9">Lead time</TableHead>
+                      <TableHead className="table-head h-9">Active</TableHead>
+                      <TableHead className="table-head text-right h-9">Actions</TableHead>
                     </TableRow>
                   </TableHeader>
                   <TableBody>
                     {suppliers.map((s) => (
                       <TableRow
                         key={s.id}
-                        className={`hover:bg-gray-50 transition-colors border-b last:border-0 cursor-pointer ${
+                        className={`table-row border-b last:border-0 cursor-pointer ${
                           selectedSupplier?.id === s.id ? "bg-[#FAE008]/5 border-l-2 border-l-[#FAE008]" : ""
                         }`}
                         onClick={() => setSelectedSupplier(s)}
                       >
-                        <TableCell className="px-2 py-2">
+                        <TableCell className="table-cell">
                           <Input
-                            className="input-sm h-7 text-xs w-full"
+                            className="input-sm w-full"
                             value={s.name || ""}
                             onClick={(e) => e.stopPropagation()}
                             onChange={(e) =>
@@ -272,9 +272,9 @@ function SuppliersPage() {
                             }
                           />
                         </TableCell>
-                        <TableCell className="px-2 py-2">
+                        <TableCell className="table-cell">
                           <select
-                            className="h-7 w-full rounded border border-gray-300 bg-white px-1 text-xs focus:ring-1 focus:ring-[#FAE008] focus:border-[#FAE008]"
+                            className="input-sm w-full rounded border border-gray-300 bg-white px-1 text-xs focus:ring-1 focus:ring-[#FAE008] focus:border-[#FAE008]"
                             value={s.type || ""}
                             onClick={(e) => e.stopPropagation()}
                             onChange={(e) =>
@@ -289,9 +289,9 @@ function SuppliersPage() {
                             ))}
                           </select>
                         </TableCell>
-                        <TableCell className="px-2 py-2">
+                        <TableCell className="table-cell">
                           <Input
-                            className="input-sm h-7 text-xs w-full"
+                            className="input-sm w-full"
                             placeholder="Contact name"
                             value={s.contact_name || ""}
                             onClick={(e) => e.stopPropagation()}
@@ -300,9 +300,9 @@ function SuppliersPage() {
                             }
                           />
                         </TableCell>
-                        <TableCell className="px-2 py-2">
+                        <TableCell className="table-cell">
                           <Input
-                            className="input-sm h-7 text-xs w-full"
+                            className="input-sm w-full"
                             placeholder="Phone"
                             value={s.phone || ""}
                             onClick={(e) => e.stopPropagation()}
@@ -311,9 +311,9 @@ function SuppliersPage() {
                             }
                           />
                         </TableCell>
-                        <TableCell className="px-2 py-2">
+                        <TableCell className="table-cell">
                           <Input
-                            className="input-sm h-7 text-xs w-full"
+                            className="input-sm w-full"
                             placeholder="Email"
                             value={s.email || ""}
                             onClick={(e) => e.stopPropagation()}
@@ -322,9 +322,9 @@ function SuppliersPage() {
                             }
                           />
                         </TableCell>
-                        <TableCell className="px-2 py-2">
+                        <TableCell className="table-cell">
                           <Input
-                            className="input-sm h-7 text-xs w-16"
+                            className="input-sm w-16"
                             type="number"
                             placeholder="0"
                             value={
@@ -343,7 +343,7 @@ function SuppliersPage() {
                             }
                           />
                         </TableCell>
-                        <TableCell className="px-2 py-2">
+                        <TableCell className="table-cell">
                           <div className="flex items-center gap-1" onClick={(e) => e.stopPropagation()}>
                             <Switch
                               checked={!!s.is_active}
@@ -354,7 +354,7 @@ function SuppliersPage() {
                             />
                           </div>
                         </TableCell>
-                        <TableCell className="px-2 py-2 text-right">
+                        <TableCell className="table-cell text-right">
                            <Button
                               variant="ghost"
                               size="xs"
@@ -379,10 +379,10 @@ function SuppliersPage() {
 
           {/* Purchase Orders Panel */}
           {selectedSupplier && (
-            <div className="card rounded-xl border bg-white shadow-sm p-4 md:p-5">
+            <div className="card">
               <div className="flex items-center justify-between mb-4">
                 <div>
-                    <h2 className="text-sm font-semibold text-gray-900">Purchase Orders</h2>
+                    <h2 className="section-title">Purchase Orders</h2>
                     <p className="text-xs text-gray-500">Managing orders for {selectedSupplier.name}</p>
                 </div>
                 <Button 
@@ -408,13 +408,13 @@ function SuppliersPage() {
 
         {/* Create / details */}
         <div className="col-span-1">
-          <div className="card rounded-xl border bg-white shadow-sm p-4 md:p-5 sticky top-6">
-            <h2 className="mb-4 text-sm font-semibold text-gray-900">
+          <div className="card sticky top-6">
+            <h2 className="mb-4 section-title">
               Add supplier
             </h2>
             <div className="space-y-3 text-xs">
               <div>
-                <label className="form-label mb-1 block text-[11px] font-medium text-gray-700">
+                <label className="form-label">
                   Name
                 </label>
                 <Input
@@ -427,7 +427,7 @@ function SuppliersPage() {
               </div>
 
               <div>
-                <label className="form-label mb-1 block text-[11px] font-medium text-gray-700">
+                <label className="form-label">
                   Type
                 </label>
                 <select
@@ -448,7 +448,7 @@ function SuppliersPage() {
 
               <div className="grid grid-cols-1 gap-3 md:grid-cols-2">
                 <div>
-                  <label className="form-label mb-1 block text-[11px] font-medium text-gray-700">
+                  <label className="form-label">
                     Contact name
                   </label>
                   <Input
@@ -463,7 +463,7 @@ function SuppliersPage() {
                   />
                 </div>
                 <div>
-                  <label className="form-label mb-1 block text-[11px] font-medium text-gray-700">
+                  <label className="form-label">
                     Phone
                   </label>
                   <Input
@@ -477,7 +477,7 @@ function SuppliersPage() {
               </div>
 
               <div>
-                <label className="form-label mb-1 block text-[11px] font-medium text-gray-700">
+                <label className="form-label">
                   Email
                 </label>
                 <Input
@@ -490,7 +490,7 @@ function SuppliersPage() {
               </div>
 
               <div>
-                <label className="form-label mb-1 block text-[11px] font-medium text-gray-700">
+                <label className="form-label">
                   Pickup address
                 </label>
                 <Textarea
@@ -507,7 +507,7 @@ function SuppliersPage() {
               </div>
 
               <div>
-                <label className="form-label mb-1 block text-[11px] font-medium text-gray-700">
+                <label className="form-label">
                   Opening hours
                 </label>
                 <Input
@@ -524,7 +524,7 @@ function SuppliersPage() {
               </div>
 
               <div>
-                <label className="form-label mb-1 block text-[11px] font-medium text-gray-700">
+                <label className="form-label">
                   Notes for pickup
                 </label>
                 <Textarea
@@ -539,7 +539,7 @@ function SuppliersPage() {
               </div>
 
               <div>
-                <label className="form-label mb-1 block text-[11px] font-medium text-gray-700">
+                <label className="form-label">
                   Default lead time (days)
                 </label>
                 <Input
