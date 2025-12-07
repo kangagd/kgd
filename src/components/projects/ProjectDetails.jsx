@@ -1202,71 +1202,72 @@ Format as HTML bullet points using <ul> and <li> tags. Include only the most cri
                   </div>
                 )}
 
-                <div className="grid grid-cols-2 gap-2 pt-1">
-                  <label className="block">
-                    <Button
-                      type="button"
-                      variant="outline"
-                      size="sm"
-                      className="w-full h-8 text-xs"
-                      disabled={uploading}
-                      asChild
-                    >
-                      <span>
-                        <FileText className="w-3 h-3 mr-1" />
-                        Quote
-                      </span>
-                    </Button>
-                    <input
-                      type="file"
-                      accept=".pdf,.doc,.docx"
-                      className="hidden"
-                      onChange={(e) => handleFileUpload(e, 'quote')}
-                    />
-                  </label>
-                  <label className="block">
-                    <Button
-                      type="button"
-                      variant="outline"
-                      size="sm"
-                      className="w-full h-8 text-xs"
-                      disabled={uploading}
-                      asChild
-                    >
-                      <span>
-                        <FileText className="w-3 h-3 mr-1" />
-                        Invoice
-                      </span>
-                    </Button>
-                    <input
-                      type="file"
-                      accept=".pdf,.doc,.docx"
-                      className="hidden"
-                      onChange={(e) => handleFileUpload(e, 'invoice')}
-                    />
-                  </label>
-                  <label className="block col-span-2">
-                    <Button
-                      type="button"
-                      variant="outline"
-                      size="sm"
-                      className="w-full h-8 text-xs"
-                      disabled={uploading}
-                      asChild
-                    >
-                      <span>
-                        <Upload className="w-3 h-3 mr-1" />
-                        Other Docs
-                      </span>
-                    </Button>
-                    <input
-                      type="file"
-                      multiple
-                      accept=".pdf,.doc,.docx,.xls,.xlsx,.txt"
-                      className="hidden"
-                      onChange={(e) => handleFileUpload(e, 'other')}
-                    />
-                  </label>
+                        <div className="grid grid-cols-2 gap-2 pt-2 border-t border-[#E5E7EB] mt-2">
+                          <label className="block">
+                            <Button
+                              type="button"
+                              variant="outline"
+                              size="sm"
+                              className="w-full h-8 text-xs"
+                              disabled={uploading}
+                              asChild
+                            >
+                              <span>
+                                <FileText className="w-3 h-3 mr-1" />
+                                Quote
+                              </span>
+                            </Button>
+                            <input
+                              type="file"
+                              accept=".pdf,.doc,.docx"
+                              className="hidden"
+                              onChange={(e) => handleFileUpload(e, 'quote')}
+                            />
+                          </label>
+                          <label className="block">
+                            <Button
+                              type="button"
+                              variant="outline"
+                              size="sm"
+                              className="w-full h-8 text-xs"
+                              disabled={uploading}
+                              asChild
+                            >
+                              <span>
+                                <FileText className="w-3 h-3 mr-1" />
+                                Invoice
+                              </span>
+                            </Button>
+                            <input
+                              type="file"
+                              accept=".pdf,.doc,.docx"
+                              className="hidden"
+                              onChange={(e) => handleFileUpload(e, 'invoice')}
+                            />
+                          </label>
+                          <label className="block col-span-2">
+                            <Button
+                              type="button"
+                              variant="outline"
+                              size="sm"
+                              className="w-full h-8 text-xs"
+                              disabled={uploading}
+                              asChild
+                            >
+                              <span>
+                                <Upload className="w-3 h-3 mr-1" />
+                                Other Docs
+                              </span>
+                            </Button>
+                            <input
+                              type="file"
+                              multiple
+                              accept=".pdf,.doc,.docx,.xls,.xlsx,.txt"
+                              className="hidden"
+                              onChange={(e) => handleFileUpload(e, 'other')}
+                            />
+                          </label>
+                        </div>
                       </div>
                     </div>
                   </CardContent>
