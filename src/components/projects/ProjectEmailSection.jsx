@@ -80,8 +80,8 @@ export default function ProjectEmailSection({ project, onThreadLinked }) {
   });
 
   // Fetch Saved Historical Emails
-  const { data: savedEmails = [], isLoading: savedEmailsLoading } = useQuery({
-    queryKey: ["project-emails", project.id],
+  const { data: savedEmails = [], isLoading: savedEmailsLoading, refetch: refetchSavedEmails } = useQuery({
+    queryKey: ["project-emails", project.id, refreshKey],
     queryFn: () => base44.entities.ProjectEmail.filter({ project_id: project.id }),
     enabled: !!project?.id,
   });
@@ -152,10 +152,13 @@ export default function ProjectEmailSection({ project, onThreadLinked }) {
       }
       
       // Refresh saved emails and threads - force complete re-fetch
-      queryClient.invalidateQueries(["project-emails", project.id]);
-      queryClient.invalidateQueries({ queryKey: ['projectEmailThreads'] });
-      queryClient.invalidateQueries({ queryKey: ['projectEmailMessages'] });
       setRefreshKey(k => k + 1); // Force re-fetch with new key
+      
+      // Wait a moment for backend to finish, then refetch everything
+      await new Promise(resolve => setTimeout(resolve, 500));
+      await refetchSavedEmails();
+      await refetchThreads();
+      await refetchMessages();
       
       if (res.data?.messages?.length > 0) {
         toast.success(`Found ${res.data.messages.length} historical emails and linked them`);
