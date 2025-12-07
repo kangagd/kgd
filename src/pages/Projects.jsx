@@ -204,6 +204,9 @@ export default function Projects() {
       if (project && project.id !== selectedProject?.id) {
         setSelectedProject(project);
       }
+    } else if (!projectId && selectedProject) {
+      // Clear selected project when projectId is removed from URL
+      setSelectedProject(null);
     }
   }, [projects, selectedProject, location.search]);
 
