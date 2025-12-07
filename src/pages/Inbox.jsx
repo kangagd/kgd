@@ -59,7 +59,6 @@ export default function Inbox() {
   const [isResizing, setIsResizing] = useState(false);
   const sidebarRef = useRef(null);
   const [showComposer, setShowComposer] = useState(false);
-  const [isAnalyzingAll, setIsAnalyzingAll] = useState(false);
   const [editingDraft, setEditingDraft] = useState(null);
   const queryClient = useQueryClient();
 
@@ -425,52 +424,7 @@ export default function Inbox() {
     }
   };
 
-  const handleAnalyzeAllEmails = async () => {
-    // Find threads without AI tags
-    const threadsToAnalyze = threads.filter(t => !t.ai_tags || t.ai_tags.length === 0);
-    
-    if (threadsToAnalyze.length === 0) {
-      toast.info('All emails have already been analyzed');
-      return;
-    }
 
-    setIsAnalyzingAll(true);
-    toast.info(`Analyzing ${threadsToAnalyze.length} emails...`);
-
-    let successCount = 0;
-    let errorCount = 0;
-
-    // Process in batches of 3 to avoid rate limits
-    for (let i = 0; i < threadsToAnalyze.length; i += 3) {
-      const batch = threadsToAnalyze.slice(i, i + 3);
-      
-      await Promise.all(batch.map(async (thread) => {
-        try {
-          await base44.functions.invoke('generateEmailThreadInsights', {
-            email_thread_id: thread.id
-          });
-          successCount++;
-        } catch (error) {
-          console.error(`Failed to analyze thread ${thread.id}:`, error);
-          errorCount++;
-        }
-      }));
-
-      // Update progress
-      if (i + 3 < threadsToAnalyze.length) {
-        toast.info(`Progress: ${Math.min(i + 3, threadsToAnalyze.length)}/${threadsToAnalyze.length} emails analyzed`);
-      }
-    }
-
-    setIsAnalyzingAll(false);
-    queryClient.invalidateQueries({ queryKey: ['emailThreads'] });
-    
-    if (errorCount === 0) {
-      toast.success(`Successfully analyzed ${successCount} emails with AI tagging and priority`);
-    } else {
-      toast.warning(`Analyzed ${successCount} emails. ${errorCount} failed.`);
-    }
-  };
 
   if (!userPermissions?.can_view) {
     return (
@@ -509,21 +463,6 @@ export default function Inbox() {
                 title="Email Settings"
               >
                 <Settings className="w-4 h-4" />
-              </Button>
-              <Button
-                onClick={handleAnalyzeAllEmails}
-                size="sm"
-                variant="outline"
-                disabled={isAnalyzingAll}
-                className="h-9"
-                title="Analyze all emails with AI to add tags and priority"
-              >
-                {isAnalyzingAll ? (
-                  <Loader2 className="w-4 h-4 mr-1 animate-spin" />
-                ) : (
-                  <Sparkles className="w-4 h-4 mr-1 text-purple-500" />
-                )}
-                {isAnalyzingAll ? 'Analyzing...' : 'AI Analyze All'}
               </Button>
               <Button
                 onClick={async () => {

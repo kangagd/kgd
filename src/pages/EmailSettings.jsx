@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { base44 } from "@/api/base44Client";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -7,13 +8,15 @@ import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
 import { Textarea } from "@/components/ui/textarea";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Mail, Signature, Clock, Settings2, Loader2 } from "lucide-react";
+import { Mail, Signature, Clock, Settings2, Loader2, Sparkles } from "lucide-react";
 import { toast } from "sonner";
 
 export default function EmailSettings() {
   const [user, setUser] = useState(null);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
+  const [isAnalyzingAll, setIsAnalyzingAll] = useState(false);
+  const queryClient = useQueryClient();
 
   // Email signature settings
   const [emailSignature, setEmailSignature] = useState("");
@@ -137,6 +140,56 @@ export default function EmailSettings() {
       toast.error("Failed to save settings");
     } finally {
       setSaving(false);
+    }
+  };
+
+  const { data: threads = [] } = useQuery({
+    queryKey: ['emailThreads'],
+    queryFn: () => base44.entities.EmailThread.list('-last_message_date'),
+    enabled: !!user
+  });
+
+  const handleAnalyzeAllEmails = async () => {
+    const threadsToAnalyze = threads.filter(t => !t.ai_tags || t.ai_tags.length === 0);
+    
+    if (threadsToAnalyze.length === 0) {
+      toast.info('All emails have already been analyzed');
+      return;
+    }
+
+    setIsAnalyzingAll(true);
+    toast.info(`Analyzing ${threadsToAnalyze.length} emails...`);
+
+    let successCount = 0;
+    let errorCount = 0;
+
+    for (let i = 0; i < threadsToAnalyze.length; i += 3) {
+      const batch = threadsToAnalyze.slice(i, i + 3);
+      
+      await Promise.all(batch.map(async (thread) => {
+        try {
+          await base44.functions.invoke('generateEmailThreadInsights', {
+            email_thread_id: thread.id
+          });
+          successCount++;
+        } catch (error) {
+          console.error(`Failed to analyze thread ${thread.id}:`, error);
+          errorCount++;
+        }
+      }));
+
+      if (i + 3 < threadsToAnalyze.length) {
+        toast.info(`Progress: ${Math.min(i + 3, threadsToAnalyze.length)}/${threadsToAnalyze.length} emails analyzed`);
+      }
+    }
+
+    setIsAnalyzingAll(false);
+    queryClient.invalidateQueries({ queryKey: ['emailThreads'] });
+    
+    if (errorCount === 0) {
+      toast.success(`Successfully analyzed ${successCount} emails with AI tagging and priority`);
+    } else {
+      toast.warning(`Analyzed ${successCount} emails. ${errorCount} failed.`);
     }
   };
 
@@ -418,6 +471,36 @@ export default function EmailSettings() {
                       <p className="text-sm text-[#0369A1] mt-1">
                         {user?.gmail_connected ? "Connected and syncing" : "Not connected"}
                       </p>
+                    </div>
+                  </div>
+                </div>
+
+                <div className="p-4 bg-purple-50 border border-purple-200 rounded-lg">
+                  <div className="flex items-start gap-3">
+                    <Sparkles className="w-5 h-5 text-purple-600 flex-shrink-0 mt-0.5" />
+                    <div className="flex-1">
+                      <p className="text-sm font-medium text-purple-900 mb-2">AI Email Analysis</p>
+                      <p className="text-sm text-purple-700 mb-3">
+                        Analyze all your emails with AI to automatically add tags, categorize by priority, and extract key information.
+                      </p>
+                      <Button
+                        onClick={handleAnalyzeAllEmails}
+                        disabled={isAnalyzingAll}
+                        variant="outline"
+                        className="border-purple-300 hover:bg-purple-100"
+                      >
+                        {isAnalyzingAll ? (
+                          <>
+                            <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                            Analyzing...
+                          </>
+                        ) : (
+                          <>
+                            <Sparkles className="w-4 h-4 mr-2" />
+                            Analyze All Emails
+                          </>
+                        )}
+                      </Button>
                     </div>
                   </div>
                 </div>
