@@ -151,10 +151,11 @@ export default function ProjectEmailSection({ project, onThreadLinked }) {
         }
       }
       
-      // Refresh saved emails and threads
+      // Refresh saved emails and threads - force complete re-fetch
       queryClient.invalidateQueries(["project-emails", project.id]);
       queryClient.invalidateQueries({ queryKey: ['projectEmailThreads'] });
       queryClient.invalidateQueries({ queryKey: ['projectEmailMessages'] });
+      setRefreshKey(k => k + 1); // Force re-fetch with new key
       
       if (res.data?.messages?.length > 0) {
         toast.success(`Found ${res.data.messages.length} historical emails and linked them`);
