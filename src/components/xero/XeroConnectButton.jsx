@@ -26,7 +26,16 @@ export default function XeroConnectButton() {
     try {
       setIsConnecting(true);
       const response = await base44.functions.invoke('connectToXero', {});
-      const authUrl = response.data.authUrl;
+      
+      if (response.data?.error) {
+        throw new Error(response.data.error);
+      }
+      
+      const authUrl = response.data?.authUrl;
+      
+      if (!authUrl) {
+        throw new Error('No authorization URL received');
+      }
       
       // Open Xero auth in new window
       window.open(authUrl, '_blank', 'width=600,height=700');
@@ -37,7 +46,7 @@ export default function XeroConnectButton() {
       }, 3000);
     } catch (error) {
       console.error('Xero connection error:', error);
-      alert('Failed to connect to Xero');
+      alert(`Failed to connect to Xero: ${error.message}`);
     } finally {
       setIsConnecting(false);
     }
