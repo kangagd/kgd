@@ -1294,11 +1294,11 @@ export default function JobDetails({ job: initialJob, onClose, onStatusChange, o
               {/* Linked Parts Card - Logistics */}
               <LinkedPartsCard job={job} />
 
-              {/* Third-Party Trades Info */}
-              {job.project_id && <ThirdPartyTradesInfo job={job} />}
-
               {/* Job Contacts Panel */}
               <JobContactsPanel job={job} />
+
+              {/* Third-Party Trades Info */}
+              {job.project_id && <ThirdPartyTradesInfo job={job} />}
 
               {/* Tasks Panel */}
               <Collapsible defaultOpen={false} className="border border-[#E5E7EB] shadow-sm rounded-lg bg-white">
