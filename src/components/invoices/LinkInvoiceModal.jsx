@@ -22,7 +22,7 @@ const statusColors = {
   VOIDED: "bg-red-100 text-red-700"
 };
 
-export default function LinkInvoiceModal({ open, onClose, onSelect, isSubmitting, currentInvoiceId }) {
+export default function LinkInvoiceModal({ open, onClose, onSelect, isSubmitting, currentInvoiceId, projectId }) {
   const [searchTerm, setSearchTerm] = useState("");
   const [debouncedSearch, setDebouncedSearch] = useState("");
 
@@ -51,15 +51,20 @@ export default function LinkInvoiceModal({ open, onClose, onSelect, isSubmitting
   // Also fetch linked invoices from our DB to check which are already linked
   const { data: linkedInvoices = [] } = useQuery({
     queryKey: ['linkedXeroInvoices'],
-    queryFn: () => base44.entities.XeroInvoice.filter({ job_id: { $ne: null } }),
+    queryFn: () => base44.entities.XeroInvoice.list(),
     enabled: open
   });
 
-  const linkedInvoiceIds = new Set(linkedInvoices.map(inv => inv.xero_invoice_id));
+  // Create a map of linked invoice IDs to their project IDs (not to this project)
+  const linkedToOtherProjectIds = new Set(
+    linkedInvoices
+      .filter(inv => inv.project_id && inv.project_id !== projectId)
+      .map(inv => inv.xero_invoice_id)
+  );
 
-  // Filter out already linked invoices (unless it's the current one)
+  // Filter out invoices already linked to OTHER projects (allow current project's invoices)
   const availableInvoices = invoices.filter(inv => 
-    !linkedInvoiceIds.has(inv.xero_invoice_id) || inv.xero_invoice_id === currentInvoiceId
+    !linkedToOtherProjectIds.has(inv.xero_invoice_id)
   );
 
   const handleSelect = (invoice) => {
