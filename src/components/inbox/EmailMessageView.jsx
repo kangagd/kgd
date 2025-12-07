@@ -309,6 +309,18 @@ export default function EmailMessageView({ message, isFirst, linkedJobId, linked
                 }}
                 dangerouslySetInnerHTML={{ __html: sanitizeBodyHtml(processedBodyHtml) }} 
               />
+            ) : displayMessage.body_text?.includes('<') ? (
+              <div 
+                className="gmail-email-body"
+                style={{
+                  fontSize: '14px',
+                  lineHeight: '1.5',
+                  color: '#111827',
+                  wordWrap: 'break-word',
+                  overflowWrap: 'anywhere'
+                }}
+                dangerouslySetInnerHTML={{ __html: sanitizeBodyHtml(displayMessage.body_text) }} 
+              />
             ) : (
               <div className="whitespace-pre-wrap text-[14px] text-[#111827] leading-[1.6] break-words overflow-wrap-anywhere">
                 {displayMessage.body_text || displayMessage.subject || '(No content)'}
