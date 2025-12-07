@@ -172,6 +172,7 @@ export default function JobDetails({ job: initialJob, onClose, onStatusChange, o
   const [outcome, setOutcome] = useState(job.outcome || "");
   const [validationError, setValidationError] = useState("");
   const [isGeneratingReport, setIsGeneratingReport] = useState(false);
+  const [previousReportData, setPreviousReportData] = useState(null);
   const queryClient = useQueryClient();
 
   const { data: jobTypes = [] } = useQuery({
@@ -1484,7 +1485,23 @@ export default function JobDetails({ job: initialJob, onClose, onStatusChange, o
 
             <TabsContent value="visit" className="space-y-3 mt-2">
               <div className="space-y-3">
-                <div className="flex justify-end">
+                <div className="flex justify-end gap-2">
+                  {previousReportData && (
+                    <Button
+                      onClick={() => {
+                        setOverview(previousReportData.overview);
+                        setIssuesFound(previousReportData.issuesFound);
+                        setResolution(previousReportData.resolution);
+                        setNextSteps(previousReportData.nextSteps);
+                        setPreviousReportData(null);
+                        toast.success("Report reverted to previous version");
+                      }}
+                      variant="outline"
+                      className="gap-2 border-slate-200 bg-slate-50 text-slate-700 hover:bg-slate-100 hover:text-slate-800"
+                    >
+                      Revert AI Report
+                    </Button>
+                  )}
                   <Button
                     onClick={async () => {
                       if (!job.image_urls || job.image_urls.length === 0) {
@@ -1493,6 +1510,14 @@ export default function JobDetails({ job: initialJob, onClose, onStatusChange, o
                       }
                       setIsGeneratingReport(true);
                       try {
+                        // Save current state before generating
+                        setPreviousReportData({
+                          overview,
+                          issuesFound,
+                          resolution,
+                          nextSteps
+                        });
+                        
                         const response = await base44.functions.invoke('generateServiceReport', { jobId: job.id });
                         const data = response.data;
                         setOverview(data.work_performed || "");
