@@ -25,6 +25,17 @@ const outcomeColors = {
   return_visit_required: "bg-amber-100 text-amber-800"
 };
 
+// Logistics job types to exclude
+const LOGISTICS_JOB_TYPES = [
+  'Parts Pickup',
+  'Parts Delivery',
+  'Stock Transfer',
+  'Warehouse Pickup',
+  'Supplier Pickup',
+  'Drop Off Parts',
+  'Collect Parts'
+];
+
 export default function ProjectVisitsTab({ projectId, isReadOnly }) {
   const navigate = useNavigate();
 
@@ -34,8 +45,11 @@ export default function ProjectVisitsTab({ projectId, isReadOnly }) {
     queryFn: async () => {
       // Fetch all jobs for this project using filter
       const projectJobs = await base44.entities.Job.filter({ project_id: projectId }, '-scheduled_date');
-      // Filter out deleted jobs
-      return projectJobs.filter(job => !job.deleted_at);
+      // Filter out deleted jobs and logistics jobs
+      return projectJobs.filter(job => 
+        !job.deleted_at && 
+        !LOGISTICS_JOB_TYPES.includes(job.job_type_name)
+      );
     },
     refetchInterval: 5000,
     enabled: !!projectId
