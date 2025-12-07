@@ -57,6 +57,7 @@ import { PROJECT_STAGE_AUTOMATION } from "@/components/domain/projectStageAutoma
 import ProjectPartsPanel from "./ProjectPartsPanel";
 import HandoverReportModal from "../handover/HandoverReportModal";
 import ProjectContactsPanel from "./ProjectContactsPanel";
+import ThirdPartyTradesPanel from "./ThirdPartyTradesPanel";
 
 const statusColors = {
   "Lead": "bg-slate-100 text-slate-700",
@@ -945,6 +946,9 @@ Format as HTML bullet points using <ul> and <li> tags. Include only the most cri
             </Card>
 
             <ProjectContactsPanel project={project} />
+
+            {/* Third-Party Trades */}
+            <ThirdPartyTradesPanel project={project} />
 
             {/* Tasks Section */}
             <Collapsible defaultOpen={true}>

@@ -55,6 +55,7 @@ import QuotesSection from "../quotes/QuotesSection";
 import LinkedPartsCard from "./LinkedPartsCard";
 import JobItemsUsedModal from "./JobItemsUsedModal";
 import JobContactsPanel from "./JobContactsPanel";
+import ThirdPartyTradesInfo from "./ThirdPartyTradesInfo";
 
 
 const statusColors = {
@@ -1292,6 +1293,9 @@ export default function JobDetails({ job: initialJob, onClose, onStatusChange, o
 
               {/* Linked Parts Card - Logistics */}
               <LinkedPartsCard job={job} />
+
+              {/* Third-Party Trades Info */}
+              {job.project_id && <ThirdPartyTradesInfo job={job} />}
 
               {/* Job Contacts Panel */}
               <JobContactsPanel job={job} />
