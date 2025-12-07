@@ -153,7 +153,7 @@ export default function EmailMessageView({ message, isFirst, linkedJobId, linked
     }
     
     return html;
-  }, [message.body_html, inlineImageUrls]);
+  }, [displayMessage.body_html, inlineImageUrls]);
 
   // Minimal sanitization - preserve Gmail layout and styling
   const sanitizeBodyHtml = (html) => {
