@@ -8,6 +8,7 @@ import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Plus, Search, User, AlertTriangle, Phone, Mail, MapPin, Building2, ChevronDown, Eye } from "lucide-react";
+import { AddIconButton } from "@/components/ui/AddIconButton";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 import { CustomerTypeBadge } from "../components/common/StatusBadge";
 import CustomerForm from "../components/customers/CustomerForm";
@@ -219,30 +220,30 @@ export default function Customers() {
         <div className="flex items-center gap-3 mb-4">
           <BackButton to={createPageUrl("Dashboard")} />
         </div>
-        <div className="flex flex-col md:flex-row justify-between items-center w-full py-3 lg:py-4 mb-4 lg:mb-6 gap-3">
+        <div className="flex flex-col md:flex-row justify-between items-start md:items-center py-3 lg:py-4 mb-4 lg:mb-6 gap-3">
           <div>
-            <h1 className="text-2xl font-bold text-[#111827] leading-tight">Customers</h1>
+            <h1 className="text-xl md:text-2xl font-bold text-[#111827] leading-tight">Customers</h1>
             <p className="text-sm text-[#4B5563] mt-1">Manage customer information</p>
           </div>
           {canEditCustomers && (
-            <Button
-              onClick={() => setShowForm(true)}
-              className="bg-[#FAE008] text-[#111827] hover:bg-[#E5CF07] font-semibold shadow-sm hover:shadow-md transition w-full md:w-auto h-10 px-4 text-sm rounded-xl"
-            >
-              <Plus className="w-4 h-4 mr-2" />
-              New Customer
-            </Button>
+            <div className="flex items-center gap-2 w-full md:w-auto">
+              <span className="text-sm font-medium text-[#6B7280]">New Customer</span>
+              <AddIconButton
+                onClick={() => setShowForm(true)}
+                title="Create New Customer"
+              />
+            </div>
           )}
         </div>
 
         <div className="flex flex-col gap-4 mb-6">
           <div className="relative">
-            <Search className="absolute left-4 top-1/2 transform -translate-y-1/2 w-5 h-5 text-[#6B7280]" />
+            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-[#6B7280]" />
             <Input
               placeholder="Search customers..."
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
-              className="pl-12 border border-[#E5E7EB] focus:border-[#FAE008] focus:ring-2 focus:ring-[#FAE008]/20 transition-all h-12 text-base rounded-lg"
+              className="pl-9 pr-3 border border-[#E5E7EB] focus:border-[#111827] focus:ring-1 focus:ring-[#111827] transition-all h-10 text-sm rounded-lg w-full"
             />
           </div>
 
@@ -277,21 +278,21 @@ export default function Customers() {
         </div>
 
         {isLoading ? (
-          <div className="grid gap-4">
+          <div className="grid gap-3">
             {[1, 2, 3, 4, 5].map((i) => (
-              <Card key={i} className="animate-pulse rounded-2xl">
-                <CardContent className="p-6">
-                  <div className="h-6 bg-[hsl(32,15%,88%)] rounded-lg w-1/3 mb-4"></div>
-                  <div className="h-4 bg-[hsl(32,15%,88%)] rounded-lg w-2/3 mb-2"></div>
-                  <div className="h-4 bg-[hsl(32,15%,88%)] rounded-lg w-1/2"></div>
+              <Card key={i} className="animate-pulse rounded-xl">
+                <CardContent className="p-4">
+                  <div className="h-5 bg-[#E5E7EB] rounded-lg w-1/3 mb-3"></div>
+                  <div className="h-4 bg-[#E5E7EB] rounded-lg w-2/3 mb-2"></div>
+                  <div className="h-4 bg-[#E5E7EB] rounded-lg w-1/2"></div>
                 </CardContent>
               </Card>
             ))}
           </div>
         ) : filteredCustomers.length === 0 ? (
-          <Card className="p-12 text-center rounded-2xl border-2 border-[hsl(32,15%,88%)]">
-            <User className="w-16 h-16 mx-auto text-[hsl(32,15%,88%)] mb-4" />
-            <h3 className="text-[18px] font-semibold text-[#111827] leading-[1.2] mb-2">No customers found</h3>
+          <Card className="p-8 text-center rounded-xl border border-[#E5E7EB]">
+            <User className="w-12 h-12 mx-auto text-[#E5E7EB] mb-3" />
+            <h3 className="text-[16px] font-semibold text-[#111827] leading-[1.2] mb-2">No customers found</h3>
             <p className="text-[14px] text-[#6B7280] leading-[1.4]">Try adjusting your search or add a new customer</p>
           </Card>
         ) : (
