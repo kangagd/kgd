@@ -129,11 +129,35 @@ export default function ProjectEmailSection({ project, onThreadLinked }) {
         projectId: project.id 
       });
       
-      // Refresh saved emails
+      // Auto-link any found threads that match
+      if (res.data?.threadIds?.length > 0) {
+        const threadIds = res.data.threadIds;
+        
+        // Link each thread to this project
+        for (const threadId of threadIds) {
+          try {
+            const thread = await base44.entities.EmailThread.get(threadId);
+            
+            // Only link if not already linked to another project
+            if (!thread.linked_project_id) {
+              await base44.entities.EmailThread.update(threadId, {
+                linked_project_id: project.id,
+                linked_project_title: project.title
+              });
+            }
+          } catch (e) {
+            console.warn(`Failed to link thread ${threadId}:`, e);
+          }
+        }
+      }
+      
+      // Refresh saved emails and threads
       queryClient.invalidateQueries(["project-emails", project.id]);
+      queryClient.invalidateQueries({ queryKey: ['projectEmailThreads'] });
+      queryClient.invalidateQueries({ queryKey: ['projectEmailMessages'] });
       
       if (res.data?.messages?.length > 0) {
-        toast.success(`Found ${res.data.messages.length} historical emails`);
+        toast.success(`Found ${res.data.messages.length} historical emails and linked them`);
       } else {
         toast.info('No new historical emails found');
       }
