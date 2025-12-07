@@ -52,7 +52,7 @@ import QuotesSection from "../quotes/QuotesSection";
 import InitialVisitSummary from "./InitialVisitSummary";
 import MarkAsLostModal from "./MarkAsLostModal";
 import LinkInvoiceModal from "../invoices/LinkInvoiceModal";
-import ProjectChat from "./ProjectChat";
+import ProjectChatModal from "./ProjectChatModal";
 import { PROJECT_STAGE_AUTOMATION } from "@/components/domain/projectStageAutomationConfig";
 import ProjectPartsPanel from "./ProjectPartsPanel";
 import HandoverReportModal from "../handover/HandoverReportModal";
@@ -1005,30 +1005,6 @@ Format as HTML bullet points using <ul> and <li> tags. Include only the most cri
               </Card>
             </Collapsible>
 
-
-
-            {/* Chat Section */}
-            <Collapsible open={isChatOpen} onOpenChange={handleChatOpenChange}>
-              <Card className="border border-[#E5E7EB] shadow-sm rounded-lg overflow-hidden mt-4">
-                <CollapsibleTrigger className="w-full">
-                  <CardHeader className="bg-white px-4 py-3 border-b border-[#E5E7EB] flex flex-row items-center justify-between">
-                    <div className="flex items-center gap-2">
-                      <h3 className="text-[16px] font-semibold text-[#111827] leading-[1.2]">Project Chat</h3>
-                      {!isChatOpen && hasNewMessages && (
-                        <span className="flex h-2.5 w-2.5 rounded-full bg-red-500" />
-                      )}
-                    </div>
-                    <ChevronDown className={`w-4 h-4 text-[#6B7280] transition-transform ${isChatOpen ? 'transform rotate-180' : ''}`} />
-                  </CardHeader>
-                </CollapsibleTrigger>
-                <CollapsibleContent>
-                  <CardContent className="p-3">
-                    {isChatOpen && <ProjectChat projectId={project.id} />}
-                  </CardContent>
-                </CollapsibleContent>
-              </Card>
-            </Collapsible>
-
             {/* Visits Section */}
             <Collapsible open={visitsOpen} onOpenChange={setVisitsOpen}>
               <Card className="border border-[#E5E7EB] shadow-sm rounded-lg overflow-hidden mt-4">
@@ -1337,6 +1313,17 @@ Format as HTML bullet points using <ul> and <li> tags. Include only the most cri
               className="h-9 w-9 hover:bg-[#F3F4F6] text-[#6B7280] hover:text-[#111827] transition-all rounded-lg"
             >
               <History className="w-4 h-4" />
+            </Button>
+            <Button
+              variant="ghost"
+              size="icon"
+              onClick={() => handleChatOpenChange(true)}
+              className="h-9 w-9 hover:bg-[#F3F4F6] text-[#6B7280] hover:text-[#111827] transition-all rounded-lg relative"
+            >
+              <MessageCircle className="w-4 h-4" />
+              {hasNewMessages && (
+                <span className="absolute top-1.5 right-1.5 flex h-2 w-2 rounded-full bg-red-500" />
+              )}
             </Button>
             {canEdit && (
               <Button
@@ -1851,6 +1838,12 @@ Format as HTML bullet points using <ul> and <li> tags. Include only the most cri
         onClose={() => setShowHandoverModal(false)}
         project={project}
         jobs={jobs}
+      />
+
+      <ProjectChatModal
+        open={isChatOpen}
+        onClose={() => handleChatOpenChange(false)}
+        projectId={project.id}
       />
     </div>
   );
