@@ -67,7 +67,6 @@ const secondaryNavigationItems = [
   { title: "Fleet", url: createPageUrl("Fleet"), icon: Car },
   { title: "Tools Admin", url: createPageUrl("ToolsAdmin"), icon: Wrench },
   { title: "Role Settings", url: createPageUrl("RoleSettings"), icon: Shield },
-  { title: "Email Settings", url: createPageUrl("EmailSettings"), icon: Mail },
   { title: "Archive", url: createPageUrl("Archive"), icon: ArchiveIcon },
   { title: "Logistics", url: createPageUrl("Logistics"), icon: Truck },
   { title: "Suppliers", url: createPageUrl("Suppliers"), icon: Package },
