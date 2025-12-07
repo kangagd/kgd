@@ -98,6 +98,11 @@ export default function Projects() {
     queryFn: () => base44.entities.InventoryQuantity.list(),
   });
 
+  const { data: allTradeRequirements = [] } = useQuery({
+    queryKey: ['allTradeRequirements'],
+    queryFn: () => base44.entities.ProjectTradeRequirement.list(),
+  });
+
   const inventoryByItem = React.useMemo(() => {
     const map = {};
     // Warehouse from PriceList
@@ -282,6 +287,10 @@ export default function Projects() {
     const doorType = firstDoor.type || 'doors';
     const dimensions = firstDoor.height && firstDoor.width ? `${firstDoor.height} x ${firstDoor.width}` : '';
     return `${doorCount}x ${doorType}${dimensions ? ` • ${dimensions}` : ''}`;
+  };
+
+  const hasRequiredTrades = (projectId) => {
+    return allTradeRequirements.some(t => t.project_id === projectId && t.is_required);
   };
 
   if (showForm) {
@@ -537,6 +546,11 @@ export default function Projects() {
                         <ProjectTypeBadge value={project.project_type} />
                       )}
                       <ProjectStatusBadge value={project.status} />
+                      {hasRequiredTrades(project.id) && (
+                        <span className="rounded-full bg-amber-100 px-2 py-0.5 text-[10px] text-amber-700 font-medium">
+                          Third-party required
+                        </span>
+                      )}
                     </div>
                     </div>
 

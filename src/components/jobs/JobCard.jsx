@@ -30,6 +30,14 @@ export default function JobCard({ job, onClick, onViewDetails, activeCheckIns = 
     loadUser();
   }, []);
 
+  const { data: tradeRequirements = [] } = useQuery({
+    queryKey: ['jobTradeRequirements', job?.project_id],
+    queryFn: () => base44.entities.ProjectTradeRequirement.filter({ project_id: job.project_id }),
+    enabled: !!job?.project_id
+  });
+
+  const hasRequiredTrades = tradeRequirements.some(t => t.is_required);
+
   const { data: savedJobs = [] } = useQuery({
     queryKey: ['savedJobs', user?.email],
     queryFn: () => base44.entities.SavedJob.filter({ user_email: user.email }),
@@ -167,6 +175,11 @@ export default function JobCard({ job, onClick, onViewDetails, activeCheckIns = 
                 <Badge className="bg-amber-100 text-amber-800 border-0 px-2 py-0.5 text-[11px] rounded-md pointer-events-none">
                   Return visit required
                 </Badge>
+              )}
+              {hasRequiredTrades && (
+                <span className="rounded-full bg-amber-100 px-2 py-0.5 text-[10px] text-amber-700 font-medium pointer-events-none">
+                  Third-party required
+                </span>
               )}
             </div>
             
