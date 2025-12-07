@@ -58,6 +58,7 @@ import ProjectPartsPanel from "./ProjectPartsPanel";
 import HandoverReportModal from "../handover/HandoverReportModal";
 import ProjectContactsPanel from "./ProjectContactsPanel";
 import ThirdPartyTradesPanel from "./ThirdPartyTradesPanel";
+import BackButton from "../common/BackButton";
 
 const statusColors = {
   "Lead": "bg-slate-100 text-slate-700",
@@ -1316,14 +1317,7 @@ Format as HTML bullet points using <ul> and <li> tags. Include only the most cri
         <CardHeader className="border-b border-[#E5E7EB] bg-white p-3 md:p-4 space-y-3">
         <div className="flex items-center justify-between gap-3">
           <div className="flex items-center gap-2">
-            <Button
-              variant="ghost"
-              size="icon"
-              onClick={onClose}
-              className="h-9 w-9 flex-shrink-0 hover:bg-[#F3F4F6] rounded-lg transition-colors"
-            >
-              <ArrowLeft className="w-5 h-5 text-[#111827]" />
-            </Button>
+            <BackButton onClick={onClose} />
             {project.created_date && (
               <div className="text-[12px] text-[#6B7280] leading-[1.35] hidden sm:block">
                 Opened on {new Date(project.created_date).toLocaleDateString('en-AU', { day: 'numeric', month: 'short', year: 'numeric' })} 
