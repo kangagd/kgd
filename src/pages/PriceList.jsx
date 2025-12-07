@@ -13,6 +13,8 @@ import StockAdjustmentModal from "../components/pricelist/StockAdjustmentModal";
 import PriceListCard from "../components/pricelist/PriceListCard";
 import { LOCATION_TYPE } from "@/components/domain/inventoryConfig";
 import { useMemo } from "react";
+import BackButton from "../components/common/BackButton";
+import { createPageUrl } from "@/utils";
 
 
 export default function PriceList() {
@@ -165,6 +167,9 @@ export default function PriceList() {
   return (
     <div className="p-4 md:p-5 lg:p-10 bg-[#ffffff] min-h-screen overflow-x-hidden">
       <div className="max-w-7xl mx-auto w-full">
+        <div className="flex items-center gap-3 mb-4">
+          <BackButton to={createPageUrl("Dashboard")} />
+        </div>
         <div className="flex flex-col md:flex-row justify-between items-center w-full py-3 lg:py-4 mb-4 lg:mb-6 gap-3">
           <div>
             <h1 className="text-2xl font-bold text-[#111827] leading-tight">Price List</h1>

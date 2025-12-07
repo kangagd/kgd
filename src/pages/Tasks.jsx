@@ -10,9 +10,9 @@ import TaskCard from "../components/tasks/TaskCard";
 import TaskFormModal from "../components/tasks/TaskFormModal";
 import TaskDetailModal from "../components/tasks/TaskDetailModal";
 import TaskKanbanView from "../components/tasks/TaskKanbanView";
+import { toast } from "sonner";
 import BackButton from "../components/common/BackButton";
 import { createPageUrl } from "@/utils";
-import { toast } from "sonner";
 
 export default function Tasks() {
   const queryClient = useQueryClient();
@@ -308,6 +308,9 @@ export default function Tasks() {
   return (
     <div className="px-4 py-4 lg:px-6 lg:py-6 bg-[#ffffff] min-h-screen">
       <div className="max-w-7xl mx-auto">
+        <div className="flex items-center gap-3 mb-4">
+          <BackButton to={createPageUrl("Dashboard")} />
+        </div>
         {/* Header */}
         <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4 mb-6">
           <div>
