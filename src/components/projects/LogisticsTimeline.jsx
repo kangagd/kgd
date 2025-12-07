@@ -31,6 +31,23 @@ export default function LogisticsTimeline({ project }) {
     enabled: !!project.id
   });
 
+  const { data: projectTrades = [] } = useQuery({
+    queryKey: ["project-trades-for-logistics", project.id],
+    queryFn: () => base44.entities.ProjectTradeRequirement.filter({ project_id: project.id }),
+    enabled: !!project?.id,
+  });
+
+  const getRelevantTradesForJob = (job, trades) => {
+    return (trades || []).filter((t) => {
+      if (!t.is_required) return false;
+      const appliesToAll = t.applies_to_all_jobs !== false;
+      if (appliesToAll) return true;
+      const types = t.applies_to_job_types || [];
+      if (!job?.job_type_name) return false;
+      return types.includes(job.job_type_name);
+    });
+  };
+
   if (jobs.length === 0) return (
     <div className="text-center py-8 bg-slate-50 rounded-lg border border-dashed border-slate-200">
       <Truck className="w-8 h-8 text-slate-300 mx-auto mb-2" />
@@ -48,12 +65,19 @@ export default function LogisticsTimeline({ project }) {
           
           const isStockJob = !!job.purchase_order_id;
           const isProjectJob = !!job.project_id;
+          
+          const relevantTrades = getRelevantTradesForJob(job, projectTrades);
+          const hasRequiredTrades = relevantTrades.length > 0;
+          const anyUnbooked = relevantTrades.some((t) => !t.is_booked);
+          
           const containerClasses = `p-3 rounded-lg border shadow-sm transition-all cursor-pointer ${
-              isProjectJob 
-                  ? "bg-sky-50/30 border-sky-200 hover:border-sky-300 hover:shadow-md" 
-                  : isStockJob 
-                      ? "bg-amber-50/30 border-amber-200 hover:border-amber-300 hover:shadow-md" 
-                      : "bg-white border-slate-200 hover:border-blue-300 hover:shadow-md"
+              hasRequiredTrades 
+                  ? "bg-amber-50/40 border-amber-200 hover:border-amber-300 hover:shadow-md"
+                  : isProjectJob 
+                      ? "bg-sky-50/30 border-sky-200 hover:border-sky-300 hover:shadow-md" 
+                      : isStockJob 
+                          ? "bg-amber-50/30 border-amber-200 hover:border-amber-300 hover:shadow-md" 
+                          : "bg-white border-slate-200 hover:border-blue-300 hover:shadow-md"
           }`;
 
           return (
@@ -71,11 +95,16 @@ export default function LogisticsTimeline({ project }) {
               >
                 <div className="flex items-start justify-between gap-4 mb-2">
                   <div>
-                    <div className="font-semibold text-slate-900 flex items-center gap-2">
+                    <div className="font-semibold text-slate-900 flex items-center gap-2 flex-wrap">
                       {job.job_type_name || job.job_type}
                       {isStockJob && (
                         <span className="inline-flex items-center rounded-full bg-amber-100 px-2 py-0.5 text-[10px] font-medium text-amber-700">
                           PO
+                        </span>
+                      )}
+                      {hasRequiredTrades && (
+                        <span className="inline-flex items-center rounded-full bg-amber-100 px-2 py-0.5 text-[10px] font-medium text-amber-700">
+                          3rd party
                         </span>
                       )}
                       <span className="text-xs font-normal text-slate-500">#{job.job_number}</span>
@@ -92,6 +121,18 @@ export default function LogisticsTimeline({ project }) {
                         </span>
                       )}
                     </div>
+                    {hasRequiredTrades && (
+                      <div className="mt-2 space-y-1">
+                        <p className="text-[11px] text-amber-900 font-medium">
+                          Trades: {relevantTrades.map((t) => t.trade_type || "Trade").join(", ")}
+                        </p>
+                        {anyUnbooked && (
+                          <p className="text-[10px] text-amber-800">
+                            ⚠️ Some trades not yet booked
+                          </p>
+                        )}
+                      </div>
+                    )}
                   </div>
                   <Badge variant={isCompleted ? "default" : "outline"} className={
                     isCompleted ? "bg-green-100 text-green-800 border-green-200 hover:bg-green-100" : "bg-slate-100 text-slate-700 border-slate-200"

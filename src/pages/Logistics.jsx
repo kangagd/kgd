@@ -42,6 +42,7 @@ export default function Logistics() {
   const [locationFilter, setLocationFilter] = useState("all");
   const [vehicleFilter, setVehicleFilter] = useState("all");
   const [selectedPart, setSelectedPart] = useState(null);
+  const [showOnlyThirdParty, setShowOnlyThirdParty] = useState(false);
 
   // Fetch Data
   const { data: parts = [], isLoading: partsLoading } = useQuery({
@@ -80,6 +81,33 @@ export default function Logistics() {
     queryKey: ['vehicles-for-logistics'],
     queryFn: () => base44.entities.Vehicle.list('name'),
   });
+
+  const { data: allTradeRequirements = [] } = useQuery({
+    queryKey: ['allTradeRequirements'],
+    queryFn: () => base44.entities.ProjectTradeRequirement.list(),
+  });
+
+  const tradesByProjectId = useMemo(() => {
+    const map = {};
+    for (const trade of allTradeRequirements) {
+      if (!map[trade.project_id]) {
+        map[trade.project_id] = [];
+      }
+      map[trade.project_id].push(trade);
+    }
+    return map;
+  }, [allTradeRequirements]);
+
+  const getRelevantTradesForJob = (job, trades) => {
+    return (trades || []).filter((t) => {
+      if (!t.is_required) return false;
+      const appliesToAll = t.applies_to_all_jobs !== false;
+      if (appliesToAll) return true;
+      const types = t.applies_to_job_types || [];
+      if (!job?.job_type_name) return false;
+      return types.includes(job.job_type_name);
+    });
+  };
 
   // Maps for quick lookup
   const vehicleMap = useMemo(() => {
@@ -188,7 +216,17 @@ export default function Logistics() {
         const dateB = b.order_date || b.created_date;
         return new Date(dateB) - new Date(dateA);
     });
-  }, [parts, searchTerm, statusFilter, locationFilter, projectMap]);
+  }, [parts, searchTerm, statusFilter, locationFilter, vehicleFilter, projectMap]);
+
+  const filteredStockJobs = useMemo(() => {
+    return stockLogisticsJobs.filter(job => {
+      if (!job.project_id) return true;
+      const relevantTrades = getRelevantTradesForJob(job, tradesByProjectId[job.project_id]);
+      const hasRequiredTrades = relevantTrades.length > 0;
+      if (showOnlyThirdParty && !hasRequiredTrades) return false;
+      return true;
+    });
+  }, [stockLogisticsJobs, showOnlyThirdParty, tradesByProjectId]);
 
   // Stats
   const stats = useMemo(() => {
@@ -295,16 +333,21 @@ export default function Logistics() {
                             </tr>
                         </thead>
                         <tbody className="divide-y divide-gray-200 bg-white">
-                            {stockLogisticsJobs.map(job => {
+                            {filteredStockJobs.map(job => {
                                 const isStockJob = !!job.purchase_order_id;
                                 const isProjectJob = !!job.project_id;
                                 
+                                const relevantTrades = getRelevantTradesForJob(job, tradesByProjectId[job.project_id]);
+                                const hasRequiredTrades = relevantTrades.length > 0;
+                                
                                 const rowClasses = `transition-colors border-b ${
-                                    isProjectJob 
-                                        ? "bg-sky-50/40 hover:bg-sky-50 border-sky-200" 
-                                        : isStockJob 
-                                            ? "bg-amber-50/40 hover:bg-amber-50 border-amber-200" 
-                                            : "hover:bg-gray-50 border-gray-200"
+                                    hasRequiredTrades
+                                        ? "bg-amber-50/40 hover:bg-amber-50 border-amber-200"
+                                        : isProjectJob 
+                                            ? "bg-sky-50/40 hover:bg-sky-50 border-sky-200" 
+                                            : isStockJob 
+                                                ? "bg-amber-50/40 hover:bg-amber-50 border-amber-200" 
+                                                : "hover:bg-gray-50 border-gray-200"
                                 }`;
 
                                 return (
@@ -316,7 +359,7 @@ export default function Logistics() {
                                         {job.notes?.split(' from ')?.[1]?.split(' –')?.[0] || 'Supplier'}
                                     </td>
                                     <td className="px-6 py-3">
-                                        <div className="flex items-center gap-2">
+                                        <div className="flex items-center gap-2 flex-wrap">
                                             <Badge variant="outline" className={
                                                 job.job_type_name?.includes('Pickup') 
                                                     ? "bg-amber-50 text-amber-700 border-amber-200" 
@@ -332,6 +375,11 @@ export default function Logistics() {
                                             {isProjectJob && (
                                                 <span className="inline-flex items-center rounded-full bg-sky-100 px-2 py-0.5 text-[10px] font-medium text-sky-700">
                                                     Project
+                                                </span>
+                                            )}
+                                            {hasRequiredTrades && (
+                                                <span className="inline-flex items-center rounded-full bg-amber-100 px-2 py-0.5 text-[10px] font-medium text-amber-700">
+                                                    3rd party
                                                 </span>
                                             )}
                                         </div>
@@ -392,6 +440,18 @@ export default function Logistics() {
                 ))}
               </SelectContent>
             </Select>
+
+            <button
+              type="button"
+              onClick={() => setShowOnlyThirdParty((v) => !v)}
+              className={`rounded-lg border px-3 py-2 h-10 text-xs font-medium transition-all ${
+                showOnlyThirdParty
+                  ? "border-amber-500 bg-amber-50 text-amber-700"
+                  : "border-gray-200 bg-white text-gray-600 hover:bg-gray-50"
+              }`}
+            >
+              3rd party only
+            </button>
 
             <Popover>
               <PopoverTrigger asChild>
