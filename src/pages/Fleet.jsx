@@ -20,6 +20,8 @@ import VehicleDetail from "../components/fleet/VehicleDetail";
 import VehicleFormModal from "../components/fleet/VehicleFormModal";
 import { format } from "date-fns";
 import { useMemo } from "react";
+import BackButton from "../components/common/BackButton";
+import { createPageUrl } from "@/utils";
 
 export default function Fleet() {
   const [selectedVehicleId, setSelectedVehicleId] = useState(null);
@@ -100,6 +102,9 @@ export default function Fleet() {
 
   return (
     <div className="p-6 max-w-7xl mx-auto">
+      <div className="flex items-center gap-3 mb-4">
+        <BackButton to={createPageUrl("Dashboard")} />
+      </div>
       <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-8">
         <div>
           <h1 className="text-3xl font-bold text-gray-900">Fleet Management</h1>

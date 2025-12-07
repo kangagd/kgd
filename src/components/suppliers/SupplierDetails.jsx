@@ -5,6 +5,7 @@ import { ArrowLeft, Edit, Phone, Mail, MapPin, ShoppingCart, Clock, Info, Truck 
 import { Badge } from "@/components/ui/badge";
 import PurchaseOrdersList from "./PurchaseOrdersList";
 import SupplierPurchaseOrderModal from "../purchasing/SupplierPurchaseOrderModal";
+import BackButton from "../common/BackButton";
 
 export default function SupplierDetails({ supplier, onClose, onEdit }) {
   const [poModalOpen, setPoModalOpen] = useState(false);
@@ -26,9 +27,7 @@ export default function SupplierDetails({ supplier, onClose, onEdit }) {
         <CardHeader className="border-b-2 border-slate-200 bg-gradient-to-r from-slate-50 to-white p-4 md:p-6">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-4">
-              <Button variant="ghost" size="icon" onClick={onClose} className="hover:bg-slate-200 rounded-xl">
-                <ArrowLeft className="w-4 h-4" />
-              </Button>
+              <BackButton onClick={onClose} />
               <div>
                 <div className="flex items-center gap-2">
                     <CardTitle className="text-[22px] font-semibold text-[#111827] leading-[1.2]">{supplier.name}</CardTitle>

@@ -15,6 +15,8 @@ import {
 import { toast } from "sonner";
 import { Toaster } from "@/components/ui/sonner";
 import AccessDenied from "@/components/common/AccessDenied";
+import BackButton from "../components/common/BackButton";
+import { createPageUrl } from "@/utils";
 
 const ROLES = [
   { id: "admin", label: "Admin", icon: ShieldCheck, color: "bg-purple-100 text-purple-700" },
@@ -251,6 +253,9 @@ export default function RoleSettings() {
     <div className="p-5 md:p-10 bg-[#ffffff] min-h-screen">
       <Toaster position="top-right" richColors />
       <div className="max-w-5xl mx-auto">
+        <div className="flex items-center gap-3 mb-4">
+          <BackButton to={createPageUrl("Dashboard")} />
+        </div>
         {/* Header */}
         <div className="py-3 lg:py-4 mb-6 flex items-center justify-between">
           <div>
