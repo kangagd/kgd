@@ -48,6 +48,8 @@ Deno.serve(async (req) => {
     if (!user || (user.role !== 'admin' && user.role !== 'manager')) {
       return Response.json({ error: 'Unauthorized - Admin or Manager access required' }, { status: 403 });
     }
+    
+    // Search Xero invoices endpoint
 
     const { search = '', page = 1 } = await req.json().catch(() => ({}));
 
