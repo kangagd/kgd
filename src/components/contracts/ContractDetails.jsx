@@ -11,6 +11,7 @@ import JobList from "../jobs/JobList";
 import JobCard from "../jobs/JobCard";
 import { createPageUrl } from "@/utils";
 import { Link } from "react-router-dom";
+import BackButton from "../common/BackButton";
 
 export default function ContractDetails({ contract, onClose, onEdit }) {
   const [activeTab, setActiveTab] = useState("dashboard");
@@ -36,9 +37,7 @@ export default function ContractDetails({ contract, onClose, onEdit }) {
   return (
     <div className="p-4 lg:p-10 max-w-7xl mx-auto">
       <div className="mb-6 flex items-center gap-4">
-        <Button variant="ghost" size="icon" onClick={onClose} className="hover:bg-slate-200">
-          <ArrowLeft className="w-5 h-5" />
-        </Button>
+        <BackButton onClick={onClose} />
         <div className="flex-1">
           <div className="flex items-center gap-3">
             <h1 className="text-3xl font-bold text-[#111827]">{contract.name}</h1>

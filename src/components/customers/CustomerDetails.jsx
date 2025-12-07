@@ -21,8 +21,7 @@ import {
 } from "@/components/ui/alert-dialog";
 import TasksPanel from "../tasks/TasksPanel";
 import { Badge } from "@/components/ui/badge";
-
-
+import BackButton from "../common/BackButton";
 
 export default function CustomerDetails({ customer, onClose, onEdit, onDelete }) {
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
@@ -59,9 +58,7 @@ export default function CustomerDetails({ customer, onClose, onEdit, onDelete })
         <CardHeader className="border-b-2 border-slate-200 bg-gradient-to-r from-slate-50 to-white p-4 md:p-6">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-4 flex-1 min-w-0">
-              <Button variant="ghost" size="icon" onClick={onClose} className="hover:bg-slate-200 rounded-xl">
-                <ArrowLeft className="w-4 h-4" />
-              </Button>
+              <BackButton onClick={onClose} />
               <div className="flex-1 min-w-0">
                 <div className="flex items-center gap-2 flex-wrap">
                   <CardTitle className="text-[22px] font-semibold text-[#111827] leading-[1.2]">{customer.name}</CardTitle>

@@ -11,6 +11,8 @@ import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover
 import { Checkbox } from "@/components/ui/checkbox";
 import SupplierForm from "../components/suppliers/SupplierForm";
 import SupplierDetails from "../components/suppliers/SupplierDetails";
+import BackButton from "../components/common/BackButton";
+import { createPageUrl } from "@/utils";
 
 function SuppliersPage() {
   const queryClient = useQueryClient();
@@ -116,6 +118,9 @@ function SuppliersPage() {
 
   return (
     <div className="page-container p-4 md:p-6 space-y-4">
+      <div className="flex items-center gap-3 mb-4">
+        <BackButton to={createPageUrl("Dashboard")} />
+      </div>
       <div className="flex flex-col md:flex-row justify-between items-center w-full py-3 lg:py-4 mb-4 lg:mb-6 gap-3">
         <div>
           <h1 className="text-2xl font-bold text-[#111827] leading-tight">Suppliers</h1>

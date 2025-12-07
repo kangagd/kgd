@@ -54,14 +54,7 @@ export default function OrganisationDetails({ organisation, onClose, onEdit, onD
         <CardHeader className="border-b-2 border-slate-200 bg-gradient-to-r from-slate-50 to-white p-6">
           <div className="flex items-start justify-between">
             <div className="flex items-center gap-4 flex-1">
-              <Button 
-                variant="ghost" 
-                size="icon" 
-                onClick={onClose}
-                className="hover:bg-slate-200 transition-colors"
-              >
-                <ArrowLeft className="w-5 h-5" />
-              </Button>
+              <BackButton onClick={onClose} />
               <div className="flex-1">
                 <div className="flex items-center gap-3 mb-2">
                   <CardTitle className="text-2xl font-bold text-[#000000] tracking-tight">
