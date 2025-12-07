@@ -47,12 +47,31 @@ export default function ThirdPartyTradesPanel({ project }) {
   });
 
   const createTradeMutation = useMutation({
-    mutationFn: (data) => base44.entities.ProjectTradeRequirement.create({
-      ...data,
-      project_id: project.id
-    }),
+    mutationFn: async (data) => {
+      const newTrade = await base44.entities.ProjectTradeRequirement.create({
+        ...data,
+        project_id: project.id
+      });
+      
+      // If marked as booked on creation, trigger logistics job
+      if (data.is_booked) {
+        try {
+          await base44.functions.invoke('onTradeRequirementUpdated', {
+            tradeId: newTrade.id,
+            wasBooked: false,
+            isBooked: true
+          });
+        } catch (error) {
+          console.error('Failed to create logistics job:', error);
+        }
+      }
+      
+      return newTrade;
+    },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['projectTradeRequirements', project.id] });
+      queryClient.invalidateQueries({ queryKey: ['projectJobs', project.id] });
+      queryClient.invalidateQueries({ queryKey: ['allJobs'] });
       resetForm();
       toast.success("Trade requirement added");
     },
@@ -63,9 +82,26 @@ export default function ThirdPartyTradesPanel({ project }) {
   });
 
   const updateTradeMutation = useMutation({
-    mutationFn: ({ id, data }) => base44.entities.ProjectTradeRequirement.update(id, data),
+    mutationFn: async ({ id, data, wasBooked }) => {
+      await base44.entities.ProjectTradeRequirement.update(id, data);
+      
+      // Trigger logistics job creation if newly booked
+      if (wasBooked !== undefined && !wasBooked && data.is_booked) {
+        try {
+          await base44.functions.invoke('onTradeRequirementUpdated', {
+            tradeId: id,
+            wasBooked: wasBooked,
+            isBooked: data.is_booked
+          });
+        } catch (error) {
+          console.error('Failed to create logistics job:', error);
+        }
+      }
+    },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['projectTradeRequirements', project.id] });
+      queryClient.invalidateQueries({ queryKey: ['projectJobs', project.id] });
+      queryClient.invalidateQueries({ queryKey: ['allJobs'] });
       resetForm();
       toast.success("Trade requirement updated");
     },
@@ -136,7 +172,13 @@ export default function ThirdPartyTradesPanel({ project }) {
 
   const handleSubmit = () => {
     if (editingId) {
-      updateTradeMutation.mutate({ id: editingId, data: formData });
+      // Find original trade to compare is_booked status
+      const originalTrade = tradeRequirements.find(t => t.id === editingId);
+      updateTradeMutation.mutate({ 
+        id: editingId, 
+        data: formData, 
+        wasBooked: originalTrade?.is_booked || false 
+      });
     } else {
       createTradeMutation.mutate(formData);
     }
@@ -163,33 +205,32 @@ export default function ThirdPartyTradesPanel({ project }) {
   const bookedCount = requiredTrades.filter(t => t.is_booked).length;
 
   return (
-    <Card className="border border-[#E5E7EB] shadow-sm rounded-lg">
-      <CardHeader className="bg-white px-4 py-3 border-b border-[#E5E7EB]">
-        <div className="flex items-center justify-between">
-          <div>
-            <CardTitle className="text-[16px] font-semibold text-[#111827] leading-[1.2] flex items-center gap-2">
-              <Users className="w-5 h-5" />
-              Third-Party Trades
-            </CardTitle>
-            {requiredTrades.length > 0 && (
-              <p className="text-xs text-[#6B7280] mt-1">
-                {bookedCount} of {requiredTrades.length} booked
-              </p>
-            )}
+    <div className="space-y-3">
+      {/* Header */}
+      <div className="flex items-center justify-between mb-2">
+        <div>
+          <div className="flex items-center gap-2">
+            <Users className="w-5 h-5 text-[#6B7280]" />
+            <h4 className="text-[15px] font-semibold text-[#111827]">Third-Party Trades</h4>
           </div>
-          <Button
-            onClick={() => setIsAdding(true)}
-            size="sm"
-            className="bg-[#FAE008] text-[#111827] hover:bg-[#E5CF07] font-semibold h-8"
-          >
-            <Plus className="w-4 h-4 mr-1" />
-            Add Trade
-          </Button>
+          {requiredTrades.length > 0 && (
+            <p className="text-xs text-[#6B7280] mt-0.5 ml-7">
+              {bookedCount} of {requiredTrades.length} booked
+            </p>
+          )}
         </div>
-      </CardHeader>
-      <CardContent className="p-4 space-y-3">
-        {/* Add/Edit Form */}
-        {isAdding && (
+        <Button
+          onClick={() => setIsAdding(true)}
+          size="sm"
+          className="bg-[#FAE008] text-[#111827] hover:bg-[#E5CF07] font-semibold h-8"
+        >
+          <Plus className="w-4 h-4 mr-1" />
+          Add Trade
+        </Button>
+      </div>
+
+      {/* Add/Edit Form */}
+      {isAdding && (
           <div className="bg-slate-50 border border-slate-200 rounded-lg p-4 space-y-3">
             <div className="space-y-2">
               <Label>Trade Type</Label>
@@ -405,7 +446,6 @@ export default function ThirdPartyTradesPanel({ project }) {
             ))}
           </div>
         )}
-      </CardContent>
-    </Card>
+    </div>
   );
 }
