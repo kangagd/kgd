@@ -124,6 +124,7 @@ export default function ProjectDetails({ project: initialProject, onClose, onEdi
   const [visitsOpen, setVisitsOpen] = useState(true);
   const [mediaOpen, setMediaOpen] = useState(false);
   const [docsOpen, setDocsOpen] = useState(false);
+  const addTradeRef = React.useRef(null);
 
   // Get email thread ID from props, URL params, or project's source
   const urlParams = new URLSearchParams(window.location.search);
@@ -991,15 +992,32 @@ Format as HTML bullet points using <ul> and <li> tags. Include only the most cri
             {/* Third-Party Trades */}
             <Collapsible open={tradesOpen} onOpenChange={setTradesOpen}>
               <Card className="border border-[#E5E7EB] shadow-sm rounded-lg overflow-hidden mt-4">
-                <CollapsibleTrigger className="w-full">
-                  <CardHeader className="bg-white px-4 py-3 border-b border-[#E5E7EB] flex flex-row items-center justify-between">
-                    <h3 className="text-[16px] font-semibold text-[#111827] leading-[1.2]">Third-Party Trades</h3>
-                    <ChevronDown className={`w-4 h-4 text-[#6B7280] transition-transform ${tradesOpen ? 'transform rotate-180' : ''}`} />
-                  </CardHeader>
-                </CollapsibleTrigger>
+                <CardHeader className="bg-white px-4 py-3 border-b border-[#E5E7EB]">
+                  <div className="flex items-center justify-between w-full">
+                    <CollapsibleTrigger className="flex items-center flex-1 justify-between">
+                      <div>
+                        <h3 className="text-[16px] font-semibold text-[#111827] leading-[1.2]">Third-Party Trades</h3>
+                        {tradeRequirements.length > 0 && (
+                          <p className="text-xs text-[#6B7280] mt-0.5">
+                            {tradeRequirements.filter(t => t.is_required && t.is_booked).length} of {tradeRequirements.filter(t => t.is_required).length} booked
+                          </p>
+                        )}
+                      </div>
+                      <ChevronDown className={`w-4 h-4 text-[#6B7280] mr-2 transition-transform ${tradesOpen ? 'transform rotate-180' : ''}`} />
+                    </CollapsibleTrigger>
+                    <Button
+                      onClick={() => addTradeRef.current?.()}
+                      size="sm"
+                      className="bg-[#FAE008] text-[#111827] hover:bg-[#E5CF07] font-semibold h-8 flex-shrink-0 ml-2"
+                    >
+                      <Plus className="w-4 h-4 mr-1" />
+                      Add
+                    </Button>
+                  </div>
+                </CardHeader>
                 <CollapsibleContent>
                   <CardContent className="p-3">
-                    <ThirdPartyTradesPanel project={project} />
+                    <ThirdPartyTradesPanel project={project} onAddTrade={addTradeRef} />
                   </CardContent>
                 </CollapsibleContent>
               </Card>

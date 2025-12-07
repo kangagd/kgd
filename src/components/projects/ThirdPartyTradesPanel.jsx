@@ -22,7 +22,7 @@ const tradeTypeIcons = {
   "Other": "🔨"
 };
 
-export default function ThirdPartyTradesPanel({ project }) {
+export default function ThirdPartyTradesPanel({ project, onAddTrade }) {
   const queryClient = useQueryClient();
   const [isAdding, setIsAdding] = useState(false);
   const [editingId, setEditingId] = useState(null);
@@ -204,31 +204,16 @@ export default function ThirdPartyTradesPanel({ project }) {
   const requiredTrades = tradeRequirements.filter(t => t.is_required);
   const bookedCount = requiredTrades.filter(t => t.is_booked).length;
 
+  // Expose method to parent for adding trades
+  React.useEffect(() => {
+    if (onAddTrade) {
+      // Make the function available to parent
+      onAddTrade.current = () => setIsAdding(true);
+    }
+  }, [onAddTrade]);
+
   return (
     <div className="space-y-3">
-      {/* Header */}
-      <div className="flex items-center justify-between mb-2">
-        <div>
-          <div className="flex items-center gap-2">
-            <Users className="w-5 h-5 text-[#6B7280]" />
-            <h4 className="text-[15px] font-semibold text-[#111827]">Third-Party Trades</h4>
-          </div>
-          {requiredTrades.length > 0 && (
-            <p className="text-xs text-[#6B7280] mt-0.5 ml-7">
-              {bookedCount} of {requiredTrades.length} booked
-            </p>
-          )}
-        </div>
-        <Button
-          onClick={() => setIsAdding(true)}
-          size="sm"
-          className="bg-[#FAE008] text-[#111827] hover:bg-[#E5CF07] font-semibold h-8"
-        >
-          <Plus className="w-4 h-4 mr-1" />
-          Add Trade
-        </Button>
-      </div>
-
       {/* Add/Edit Form */}
       {isAdding && (
           <div className="bg-slate-50 border border-slate-200 rounded-lg p-4 space-y-3">
