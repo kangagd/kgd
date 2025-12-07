@@ -56,6 +56,7 @@ import LinkedPartsCard from "./LinkedPartsCard";
 import JobItemsUsedModal from "./JobItemsUsedModal";
 import JobContactsPanel from "./JobContactsPanel";
 import ThirdPartyTradesInfo from "./ThirdPartyTradesInfo";
+import BackButton from "../common/BackButton";
 
 
 const statusColors = {
@@ -799,14 +800,7 @@ export default function JobDetails({ job: initialJob, onClose, onStatusChange, o
           )}
           <div className="flex items-center justify-between gap-3">
             <div className="flex items-center gap-2">
-              <Button
-                variant="ghost"
-                size="icon"
-                onClick={onClose}
-                className="h-9 w-9 flex-shrink-0 hover:bg-[#F3F4F6] rounded-lg transition-colors">
-
-                <ArrowLeft className="w-5 h-5 text-[#111827]" />
-              </Button>
+              <BackButton onClick={onClose} />
               {job.scheduled_date && (
                 <div className="text-[12px] text-[#6B7280] leading-[1.35] hidden sm:block">
                   <span>Scheduled for {format(parseISO(job.scheduled_date), 'EEEE, MMM d, yyyy')}
