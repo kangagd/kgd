@@ -122,8 +122,7 @@ export default function ProjectDetails({ project: initialProject, onClose, onEdi
   const [tradesOpen, setTradesOpen] = useState(false);
   const [tasksOpen, setTasksOpen] = useState(true);
   const [visitsOpen, setVisitsOpen] = useState(true);
-  const [mediaOpen, setMediaOpen] = useState(false);
-  const [docsOpen, setDocsOpen] = useState(false);
+  const [mediaDocsOpen, setMediaDocsOpen] = useState(false);
   const addTradeRef = React.useRef(null);
 
   // Get email thread ID from props, URL params, or project's source
@@ -276,8 +275,7 @@ export default function ProjectDetails({ project: initialProject, onClose, onEdi
   React.useEffect(() => {
     if (projectContacts.length > 0 && !contactsOpen) setContactsOpen(true);
     if (tradeRequirements.length > 0 && !tradesOpen) setTradesOpen(true);
-    if ((project.image_urls && project.image_urls.length > 0) && !mediaOpen) setMediaOpen(true);
-    if ((project.quote_url || project.invoice_url || (project.other_documents && project.other_documents.length > 0) || handoverReports.length > 0) && !docsOpen) setDocsOpen(true);
+    if (((project.image_urls && project.image_urls.length > 0) || project.quote_url || project.invoice_url || (project.other_documents && project.other_documents.length > 0) || handoverReports.length > 0) && !mediaDocsOpen) setMediaDocsOpen(true);
   }, [projectContacts, tradeRequirements, project.image_urls, project.quote_url, project.invoice_url, project.other_documents, handoverReports]);
 
   const { data: xeroInvoices = [] } = useQuery({
@@ -1114,42 +1112,33 @@ Format as HTML bullet points using <ul> and <li> tags. Include only the most cri
               </Card>
             </Collapsible>
 
-            {/* Images & Videos Section */}
-            <Collapsible open={mediaOpen} onOpenChange={setMediaOpen}>
+            {/* Media & Documents Section */}
+            <Collapsible open={mediaDocsOpen} onOpenChange={setMediaDocsOpen}>
               <Card className="border border-[#E5E7EB] shadow-sm rounded-lg overflow-hidden mt-4">
                 <CollapsibleTrigger className="w-full">
                   <CardHeader className="bg-white px-4 py-3 border-b border-[#E5E7EB] flex flex-row items-center justify-between">
-                    <h3 className="text-[16px] font-semibold text-[#111827] leading-[1.2]">Media</h3>
-                    <ChevronDown className={`w-4 h-4 text-[#6B7280] transition-transform ${mediaOpen ? 'transform rotate-180' : ''}`} />
+                    <h3 className="text-[16px] font-semibold text-[#111827] leading-[1.2]">Media & Documents</h3>
+                    <ChevronDown className={`w-4 h-4 text-[#6B7280] transition-transform ${mediaDocsOpen ? 'transform rotate-180' : ''}`} />
                   </CardHeader>
                 </CollapsibleTrigger>
                 <CollapsibleContent>
-                  <CardContent className="p-3">
-                    <EditableFileUpload
-                      files={project.image_urls || []}
-                      onFilesChange={handleImagesChange}
-                      accept="image/*,video/*"
-                      multiple={true}
-                      icon={ImageIcon}
-                      label=""
-                      emptyText="Upload media" 
-                    />
-                  </CardContent>
-                </CollapsibleContent>
-              </Card>
-            </Collapsible>
+                  <CardContent className="p-3 space-y-3">
+                    <div>
+                      <div className="text-xs font-medium text-[#6B7280] mb-2">Photos & Videos</div>
+                      <EditableFileUpload
+                        files={project.image_urls || []}
+                        onFilesChange={handleImagesChange}
+                        accept="image/*,video/*"
+                        multiple={true}
+                        icon={ImageIcon}
+                        label=""
+                        emptyText="Upload media" 
+                      />
+                    </div>
 
-            {/* Documents Section */}
-            <Collapsible open={docsOpen} onOpenChange={setDocsOpen}>
-              <Card className="border border-[#E5E7EB] shadow-sm rounded-lg overflow-hidden mt-4">
-                <CollapsibleTrigger className="w-full">
-                  <CardHeader className="bg-white px-4 py-3 border-b border-[#E5E7EB] flex flex-row items-center justify-between">
-                    <h3 className="text-[16px] font-semibold text-[#111827] leading-[1.2]">Documents</h3>
-                    <ChevronDown className={`w-4 h-4 text-[#6B7280] transition-transform ${docsOpen ? 'transform rotate-180' : ''}`} />
-                  </CardHeader>
-                </CollapsibleTrigger>
-                <CollapsibleContent>
-                  <CardContent className="p-3 space-y-2">
+                    <div className="border-t border-[#E5E7EB] pt-3">
+                      <div className="text-xs font-medium text-[#6B7280] mb-2">Documents</div>
+                      <div className="space-y-2">
                 {project.quote_url && (
                   <button
                     onClick={() => setPreviewFile({
@@ -1278,11 +1267,12 @@ Format as HTML bullet points using <ul> and <li> tags. Include only the most cri
                       onChange={(e) => handleFileUpload(e, 'other')}
                     />
                   </label>
-                </div>
-              </CardContent>
-            </CollapsibleContent>
-          </Card>
-        </Collapsible>
+                      </div>
+                    </div>
+                  </CardContent>
+                </CollapsibleContent>
+              </Card>
+            </Collapsible>
       </aside>
 
             {/* Main Content */}
