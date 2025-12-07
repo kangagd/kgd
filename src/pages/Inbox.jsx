@@ -5,7 +5,7 @@ import { useNavigate, useSearchParams } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent } from "@/components/ui/card";
-import { Mail, Archive, Trash2, SlidersHorizontal, Plus, Sparkles, Loader2, Paperclip } from "lucide-react";
+import { Mail, Archive, Trash2, SlidersHorizontal, Plus, Sparkles, Loader2, Paperclip, Settings } from "lucide-react";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import {
@@ -25,6 +25,7 @@ import EmailComposer from "../components/inbox/EmailComposer";
 import { toast } from "sonner";
 import { Badge } from "@/components/ui/badge";
 import { FileEdit } from "lucide-react";
+import { createPageUrl } from "@/utils";
 
 export default function Inbox() {
   const navigate = useNavigate();
@@ -500,6 +501,15 @@ export default function Inbox() {
               onSyncComplete={() => queryClient.invalidateQueries({ queryKey: ['emailThreads'] })} 
             />
             <div className="flex gap-2">
+              <Button
+                onClick={() => navigate(createPageUrl("EmailSettings"))}
+                size="sm"
+                variant="outline"
+                className="h-9"
+                title="Email Settings"
+              >
+                <Settings className="w-4 h-4" />
+              </Button>
               <Button
                 onClick={handleAnalyzeAllEmails}
                 size="sm"
