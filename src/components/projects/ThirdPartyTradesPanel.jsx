@@ -205,33 +205,31 @@ export default function ThirdPartyTradesPanel({ project }) {
   const bookedCount = requiredTrades.filter(t => t.is_booked).length;
 
   return (
-    <Card className="border border-[#E5E7EB] shadow-sm rounded-lg">
-      <CardHeader className="bg-white px-4 py-3 border-b border-[#E5E7EB]">
-        <div className="flex items-center justify-between">
-          <div>
-            <CardTitle className="text-[15px] font-semibold text-[#111827] leading-[1.2] flex items-center gap-2">
-              <Users className="w-5 h-5 text-[#6B7280]" />
-              Third-Party Trades
-            </CardTitle>
-            {requiredTrades.length > 0 && (
-              <p className="text-xs text-[#6B7280] mt-0.5">
-                {bookedCount} of {requiredTrades.length} booked
-              </p>
-            )}
+    <div className="space-y-3">
+      {/* Header */}
+      <div className="flex items-center justify-between mb-2">
+        <div>
+          <div className="flex items-center gap-2">
+            <Users className="w-5 h-5 text-[#6B7280]" />
+            <h4 className="text-[15px] font-semibold text-[#111827]">Third-Party Trades</h4>
           </div>
-          <Button
-            onClick={() => setIsAdding(true)}
-            size="sm"
-            className="bg-[#FAE008] text-[#111827] hover:bg-[#E5CF07] font-semibold h-8"
-          >
-            <Plus className="w-4 h-4 mr-1" />
-            Add Trade
-          </Button>
+          {requiredTrades.length > 0 && (
+            <p className="text-xs text-[#6B7280] mt-0.5 ml-7">
+              {bookedCount} of {requiredTrades.length} booked
+            </p>
+          )}
         </div>
-      </CardHeader>
+        <Button
+          onClick={() => setIsAdding(true)}
+          size="sm"
+          className="bg-[#FAE008] text-[#111827] hover:bg-[#E5CF07] font-semibold h-8"
+        >
+          <Plus className="w-4 h-4 mr-1" />
+          Add Trade
+        </Button>
+      </div>
 
-      <CardContent className="p-4 space-y-3">
-        {/* Add/Edit Form */}
+      {/* Add/Edit Form */}
       {isAdding && (
           <div className="bg-slate-50 border border-slate-200 rounded-lg p-4 space-y-3">
             <div className="space-y-2">
@@ -448,7 +446,6 @@ export default function ThirdPartyTradesPanel({ project }) {
             ))}
           </div>
         )}
-      </CardContent>
-    </Card>
+    </div>
   );
 }
