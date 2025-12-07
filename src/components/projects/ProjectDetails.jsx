@@ -5,6 +5,7 @@ import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { ArrowLeft, Plus, Edit, Trash2, MapPin, Phone, Mail, FileText, Image as ImageIcon, User, Upload, X, Briefcase, History, ExternalLink, DollarSign, Eye, Link2, MessageCircle } from "lucide-react";
+import { AddIconButton } from "@/components/ui/AddIconButton";
 import { base44 } from "@/api/base44Client";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useNavigate, Link } from "react-router-dom";
@@ -1003,14 +1004,11 @@ Format as HTML bullet points using <ul> and <li> tags. Include only the most cri
                       </div>
                       <ChevronDown className={`w-4 h-4 text-[#6B7280] mr-2 transition-transform ${tradesOpen ? 'transform rotate-180' : ''}`} />
                     </CollapsibleTrigger>
-                    <Button
+                    <AddIconButton
                       onClick={() => addTradeRef.current?.()}
-                      size="sm"
-                      className="bg-[#FAE008] text-[#111827] hover:bg-[#E5CF07] font-semibold h-8 flex-shrink-0 ml-2"
-                    >
-                      <Plus className="w-4 h-4 mr-1" />
-                      Add
-                    </Button>
+                      title="Add Trade"
+                      className="flex-shrink-0 ml-2"
+                    />
                   </div>
                 </CardHeader>
                 <CollapsibleContent>
@@ -1031,13 +1029,11 @@ Format as HTML bullet points using <ul> and <li> tags. Include only the most cri
                       <ChevronDown className={`w-4 h-4 text-[#6B7280] mr-2 transition-transform ${visitsOpen ? 'transform rotate-180' : ''}`} />
                     </CollapsibleTrigger>
                     {canCreateJobs && (
-                      <Button
+                      <AddIconButton
                         onClick={handleAddJob}
-                        className="bg-[#FAE008] text-[#111827] hover:bg-[#E5CF07] font-semibold h-9 text-sm flex-shrink-0 ml-2"
-                      >
-                        <Plus className="w-4 h-4 mr-1" />
-                        Add
-                      </Button>
+                        title="Add Visit"
+                        className="flex-shrink-0 ml-2"
+                      />
                     )}
                   </div>
                 </CardHeader>
@@ -1553,12 +1549,10 @@ Format as HTML bullet points using <ul> and <li> tags. Include only the most cri
                     Measurements Provided
                   </label>
                   {!showAddDoor && (
-                    <button
+                    <AddIconButton
                       onClick={() => setShowAddDoor(true)}
-                      className="w-8 h-8 bg-[#FAE008] hover:bg-[#E5CF07] rounded-lg flex items-center justify-center transition-colors"
-                    >
-                      <Plus className="w-4 h-4 text-[#111827]" />
-                    </button>
+                      title="Add Door"
+                    />
                   )}
                 </div>
                 

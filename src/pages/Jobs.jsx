@@ -5,6 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent } from "@/components/ui/card";
 import { Plus, Search, List, Calendar as CalendarIcon, ArrowUpDown, Filter } from "lucide-react";
+import { AddIconButton } from "@/components/ui/AddIconButton";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import {
   Popover,
@@ -398,13 +399,13 @@ export default function Jobs() {
             </p>
           </div>
           {canCreateJobs && (
-            <Button
-              onClick={() => setShowForm(true)}
-              className="bg-[#FAE008] text-[#111827] hover:bg-[#E5CF07] font-semibold shadow-sm hover:shadow-md transition w-full md:w-auto h-10 px-4 text-sm rounded-xl"
-            >
-              <Plus className="w-4 h-4 mr-2" />
-              New Job
-            </Button>
+            <div className="flex items-center gap-2">
+              <span className="text-sm font-medium text-[#6B7280]">New Job</span>
+              <AddIconButton
+                onClick={() => setShowForm(true)}
+                title="Create New Job"
+              />
+            </div>
           )}
         </div>
 

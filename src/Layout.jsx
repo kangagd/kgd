@@ -419,34 +419,25 @@ export default function Layout({ children, currentPageName }) {
                   {/* Create Buttons - Only for admin/manager */}
                   {isAdminOrManager && (
                     <div className={`grid ${isCollapsed ? 'grid-cols-1' : 'grid-cols-2'} gap-2 mb-4 pb-4 border-b border-[#E5E7EB]`}>
-                      <Button
-                        onClick={() => navigate(createPageUrl("Jobs") + "?action=create")}
-                        className={`bg-[#FAE008] hover:bg-[#E5CF07] text-[#111827] font-semibold shadow-sm ${isCollapsed ? 'w-full px-2' : ''}`}
-                        title={isCollapsed ? "Create Job" : ""}
-                      >
-                        {isCollapsed ? (
-                          <Briefcase className="w-4 h-4" />
-                        ) : (
-                          <>
-                            <Plus className="w-4 h-4 mr-2" />
-                            Job
-                          </>
-                        )}
-                      </Button>
-                      <Button
-                        onClick={() => navigate(createPageUrl("Projects") + "?action=create")}
-                        className={`bg-[#FAE008] hover:bg-[#E5CF07] text-[#111827] font-semibold shadow-sm ${isCollapsed ? 'w-full px-2' : ''}`}
-                        title={isCollapsed ? "Create Project" : ""}
-                      >
-                        {isCollapsed ? (
-                          <FolderKanban className="w-4 h-4" />
-                        ) : (
-                          <>
-                            <Plus className="w-4 h-4 mr-2" />
-                            Project
-                          </>
-                        )}
-                      </Button>
+                      <div className="flex items-center gap-1.5">
+                        <span className="text-xs font-medium text-[#6B7280]">Create:</span>
+                        <Button
+                          onClick={() => navigate(createPageUrl("Jobs") + "?action=create")}
+                          variant="ghost"
+                          title="Create Job"
+                          className="h-8 w-8 min-w-[32px] rounded-lg p-0 flex items-center justify-center hover:bg-[#FAE008]/20 transition-colors"
+                        >
+                          <Briefcase className="w-4 h-4 text-[#6B7280]" />
+                        </Button>
+                        <Button
+                          onClick={() => navigate(createPageUrl("Projects") + "?action=create")}
+                          variant="ghost"
+                          title="Create Project"
+                          className="h-8 w-8 min-w-[32px] rounded-lg p-0 flex items-center justify-center hover:bg-[#FAE008]/20 transition-colors"
+                        >
+                          <FolderKanban className="w-4 h-4 text-[#6B7280]" />
+                        </Button>
+                      </div>
                     </div>
                   )}
 
@@ -637,26 +628,31 @@ export default function Layout({ children, currentPageName }) {
               {/* Create Buttons - Only for non-viewers */}
               {!isViewer && (
                 <div className="grid grid-cols-2 gap-2 mb-3 pb-3 border-b border-[#E5E7EB]">
-                  <Button
-                    onClick={() => {
-                      navigate(createPageUrl("Jobs") + "?action=create");
-                      setTechMobileMenuOpen(false);
-                    }}
-                    className="bg-[#FAE008] hover:bg-[#E5CF07] text-[#111827] font-semibold shadow-sm"
-                  >
-                    <Plus className="w-4 h-4 mr-1" />
-                    Job
-                  </Button>
-                  <Button
-                    onClick={() => {
-                      navigate(createPageUrl("Projects") + "?action=create");
-                      setTechMobileMenuOpen(false);
-                    }}
-                    className="bg-[#FAE008] hover:bg-[#E5CF07] text-[#111827] font-semibold shadow-sm"
-                  >
-                    <Plus className="w-4 h-4 mr-1" />
-                    Project
-                  </Button>
+                  <div className="flex items-center gap-2 justify-center">
+                    <span className="text-xs font-medium text-[#6B7280]">Create:</span>
+                    <Button
+                      onClick={() => {
+                        navigate(createPageUrl("Jobs") + "?action=create");
+                        setTechMobileMenuOpen(false);
+                      }}
+                      variant="ghost"
+                      title="Create Job"
+                      className="h-8 w-8 min-w-[32px] rounded-lg p-0 flex items-center justify-center hover:bg-[#FAE008]/20 transition-colors"
+                    >
+                      <Briefcase className="w-4 h-4 text-[#6B7280]" />
+                    </Button>
+                    <Button
+                      onClick={() => {
+                        navigate(createPageUrl("Projects") + "?action=create");
+                        setTechMobileMenuOpen(false);
+                      }}
+                      variant="ghost"
+                      title="Create Project"
+                      className="h-8 w-8 min-w-[32px] rounded-lg p-0 flex items-center justify-center hover:bg-[#FAE008]/20 transition-colors"
+                    >
+                      <FolderKanban className="w-4 h-4 text-[#6B7280]" />
+                    </Button>
+                  </div>
                 </div>
               )}
 
