@@ -469,7 +469,7 @@ export default function EmailSettings() {
                     <div>
                       <p className="text-sm font-medium text-[#0C4A6E]">Gmail Connection Status</p>
                       <p className="text-sm text-[#0369A1] mt-1">
-                        {user?.gmail_connected ? "Connected and syncing" : "Not connected"}
+                        {user?.gmail_access_token ? "Connected and syncing" : "Not connected"}
                       </p>
                     </div>
                   </div>
