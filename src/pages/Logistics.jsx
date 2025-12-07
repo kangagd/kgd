@@ -15,6 +15,7 @@ import PartDetailModal from "../components/projects/PartDetailModal";
 import { toast } from "sonner";
 import { INVENTORY_LOCATION } from "@/components/domain/inventoryLocationConfig";
 import { MOVEMENT_TYPE } from "@/components/domain/inventoryConfig";
+import BackButton from "../components/common/BackButton";
 
 const STATUS_COLORS = {
   "Pending": "bg-slate-100 text-slate-800 border-slate-200",
@@ -209,8 +210,11 @@ export default function Logistics() {
   return (
     <div className="p-4 md:p-5 lg:p-10 bg-[#ffffff] min-h-screen">
       <div className="max-w-7xl mx-auto w-full space-y-6">
-        
+
         {/* Header */}
+        <div className="flex items-center gap-3 mb-4">
+          <BackButton to={createPageUrl("Dashboard")} />
+        </div>
         <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
           <div>
             <h1 className="text-2xl font-bold text-[#111827]">Logistics Dashboard</h1>
