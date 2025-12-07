@@ -1005,27 +1005,7 @@ Format as HTML bullet points using <ul> and <li> tags. Include only the most cri
               </Card>
             </Collapsible>
 
-            {/* Tasks Section */}
-            <Collapsible open={tasksOpen} onOpenChange={setTasksOpen}>
-              <Card className="border border-[#E5E7EB] shadow-sm rounded-lg overflow-hidden mt-4">
-                <CollapsibleTrigger className="w-full">
-                  <CardHeader className="bg-white px-4 py-3 border-b border-[#E5E7EB] flex flex-row items-center justify-between">
-                    <h3 className="text-[16px] font-semibold text-[#111827] leading-[1.2]">Tasks</h3>
-                    <ChevronDown className={`w-4 h-4 text-[#6B7280] transition-transform ${tasksOpen ? 'transform rotate-180' : ''}`} />
-                  </CardHeader>
-                </CollapsibleTrigger>
-                <CollapsibleContent>
-                  <CardContent className="p-3">
-                    <TasksPanel
-                      entityType="project"
-                      entityId={project.id}
-                      entityName={project.title}
-                      compact={true}
-                    />
-                  </CardContent>
-                </CollapsibleContent>
-              </Card>
-            </Collapsible>
+
 
             {/* Chat Section */}
             <Collapsible open={isChatOpen} onOpenChange={handleChatOpenChange}>
@@ -1497,25 +1477,49 @@ Format as HTML bullet points using <ul> and <li> tags. Include only the most cri
 
       <CardContent className="p-3 md:p-4">
         <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-            <div className="overflow-x-auto -mx-3 px-3 md:mx-0 md:px-0 mb-4">
-              <TabsList className="w-full justify-start min-w-max md:min-w-0">
-                <TabsTrigger value="overview" className="flex-1 whitespace-nowrap">
-                  Overview
-                </TabsTrigger>
-                <TabsTrigger value="emails" className="flex-1 whitespace-nowrap">Emails</TabsTrigger>
-                <TabsTrigger value="quoting" className="flex-1 whitespace-nowrap">Quoting</TabsTrigger>
-                <TabsTrigger value="parts" className="flex-1 whitespace-nowrap">Parts</TabsTrigger>
-                <TabsTrigger value="invoices" className="flex-1 whitespace-nowrap">Invoices</TabsTrigger>
-                {(user?.role === 'admin' || user?.role === 'manager') && (
-                  <TabsTrigger value="financials" className="flex-1 whitespace-nowrap">Financials</TabsTrigger>
-                )}
-                <TabsTrigger value="summary" className="flex-1 whitespace-nowrap">
-                  Summary
-                </TabsTrigger>
-                {(user?.role === 'admin' || user?.role === 'manager') && (
-                  <TabsTrigger value="warranty" className="flex-1 whitespace-nowrap">Warranty</TabsTrigger>
-                )}
-              </TabsList>
+            <div className="sticky top-0 z-10 bg-white pb-3">
+              <div className="overflow-x-auto -mx-3 px-3 md:mx-0 md:px-0 mb-3">
+                <TabsList className="w-full justify-start min-w-max md:min-w-0">
+                  <TabsTrigger value="overview" className="flex-1 whitespace-nowrap">
+                    Overview
+                  </TabsTrigger>
+                  <TabsTrigger value="emails" className="flex-1 whitespace-nowrap">Emails</TabsTrigger>
+                  <TabsTrigger value="quoting" className="flex-1 whitespace-nowrap">Quoting</TabsTrigger>
+                  <TabsTrigger value="parts" className="flex-1 whitespace-nowrap">Parts</TabsTrigger>
+                  <TabsTrigger value="invoices" className="flex-1 whitespace-nowrap">Invoices</TabsTrigger>
+                  {(user?.role === 'admin' || user?.role === 'manager') && (
+                    <TabsTrigger value="financials" className="flex-1 whitespace-nowrap">Financials</TabsTrigger>
+                  )}
+                  <TabsTrigger value="summary" className="flex-1 whitespace-nowrap">
+                    Summary
+                  </TabsTrigger>
+                  {(user?.role === 'admin' || user?.role === 'manager') && (
+                    <TabsTrigger value="warranty" className="flex-1 whitespace-nowrap">Warranty</TabsTrigger>
+                  )}
+                </TabsList>
+              </div>
+
+              {/* Tasks Section - Sticky Below Tabs */}
+              <div className="border border-[#E5E7EB] rounded-lg bg-white shadow-sm">
+                <Collapsible open={tasksOpen} onOpenChange={setTasksOpen}>
+                  <CollapsibleTrigger className="w-full">
+                    <div className="px-4 py-2.5 flex items-center justify-between hover:bg-[#F9FAFB] transition-colors">
+                      <h3 className="text-[14px] font-semibold text-[#111827]">Tasks</h3>
+                      <ChevronDown className={`w-4 h-4 text-[#6B7280] transition-transform ${tasksOpen ? 'transform rotate-180' : ''}`} />
+                    </div>
+                  </CollapsibleTrigger>
+                  <CollapsibleContent>
+                    <div className="px-3 pb-3 pt-1 border-t border-[#E5E7EB]">
+                      <TasksPanel
+                        entityType="project"
+                        entityId={project.id}
+                        entityName={project.title}
+                        compact={true}
+                      />
+                    </div>
+                  </CollapsibleContent>
+                </Collapsible>
+              </div>
             </div>
 
           <TabsContent value="overview" className="space-y-3 mt-3">
