@@ -32,9 +32,11 @@ import AgeBadge from "../components/common/AgeBadge";
 import { useLocation } from "react-router-dom";
 import EntityLink from "../components/common/EntityLink";
 import BackButton from "../components/common/BackButton";
+import { useNavigate } from "react-router-dom";
 
 export default function Projects() {
   const location = useLocation();
+  const navigate = useNavigate();
   const [user, setUser] = useState(null);
   const [searchTerm, setSearchTerm] = useState("");
   const [stageFilter, setStageFilter] = useState("all");
@@ -318,7 +320,10 @@ export default function Projects() {
         <div className="mx-auto p-5 md:p-10 max-w-6xl">
           <ProjectDetails
             project={selectedProject}
-            onClose={() => setSelectedProject(null)}
+            onClose={() => {
+              setSelectedProject(null);
+              navigate(createPageUrl("Projects"));
+            }}
             onEdit={handleEdit}
             onDelete={handleDelete}
           />
