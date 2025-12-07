@@ -24,8 +24,10 @@ export default function LogisticsTimeline({ project }) {
     queryFn: async () => {
       const projectJobs = await base44.entities.Job.filter({ project_id: project.id });
       return projectJobs.filter(job => 
-        !job.deleted_at && 
-        LOGISTICS_JOB_TYPES.some(type => (job.job_type_name || job.job_type || "").includes(type) || (job.job_type_name || "").includes("Pickup") || (job.job_type_name || "").includes("Delivery"))
+        !job.deleted_at && (
+          LOGISTICS_JOB_TYPES.some(type => (job.job_type_name || job.job_type || "").includes(type) || (job.job_type_name || "").includes("Pickup") || (job.job_type_name || "").includes("Delivery")) ||
+          job.third_party_trade_id // Include jobs linked to third-party trades
+        )
       ).sort((a, b) => new Date(a.scheduled_date || a.created_date) - new Date(b.scheduled_date || b.created_date));
     },
     enabled: !!project.id
@@ -65,6 +67,7 @@ export default function LogisticsTimeline({ project }) {
           
           const isStockJob = !!job.purchase_order_id;
           const isProjectJob = !!job.project_id;
+          const isThirdPartyJob = !!job.third_party_trade_id;
           
           const relevantTrades = getRelevantTradesForJob(job, projectTrades);
           const hasRequiredTrades = relevantTrades.length > 0;
@@ -73,11 +76,13 @@ export default function LogisticsTimeline({ project }) {
           const containerClasses = `p-3 rounded-lg border shadow-sm transition-all cursor-pointer ${
               hasRequiredTrades 
                   ? "bg-amber-50/40 border-amber-200 hover:border-amber-300 hover:shadow-md"
-                  : isProjectJob 
-                      ? "bg-sky-50/30 border-sky-200 hover:border-sky-300 hover:shadow-md" 
-                      : isStockJob 
-                          ? "bg-amber-50/30 border-amber-200 hover:border-amber-300 hover:shadow-md" 
-                          : "bg-white border-slate-200 hover:border-blue-300 hover:shadow-md"
+                  : isThirdPartyJob
+                      ? "bg-purple-50/30 border-purple-200 hover:border-purple-300 hover:shadow-md"
+                      : isProjectJob 
+                          ? "bg-sky-50/30 border-sky-200 hover:border-sky-300 hover:shadow-md" 
+                          : isStockJob 
+                              ? "bg-amber-50/30 border-amber-200 hover:border-amber-300 hover:shadow-md" 
+                              : "bg-white border-slate-200 hover:border-blue-300 hover:shadow-md"
           }`;
 
           return (
@@ -102,8 +107,8 @@ export default function LogisticsTimeline({ project }) {
                           PO
                         </span>
                       )}
-                      {hasRequiredTrades && (
-                        <span className="inline-flex items-center rounded-full bg-amber-100 px-2 py-0.5 text-[10px] font-medium text-amber-700">
+                      {(hasRequiredTrades || isThirdPartyJob) && (
+                        <span className="inline-flex items-center rounded-full bg-purple-100 px-2 py-0.5 text-[10px] font-medium text-purple-700">
                           3rd party
                         </span>
                       )}

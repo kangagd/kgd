@@ -88,10 +88,32 @@ export default function ThirdPartyTradesPanel({ project }) {
   });
 
   const toggleBookedMutation = useMutation({
-    mutationFn: ({ id, isBooked }) => 
-      base44.entities.ProjectTradeRequirement.update(id, { is_booked: isBooked }),
+    mutationFn: async ({ id, isBooked, wasBooked }) => {
+      // Update the trade requirement
+      await base44.entities.ProjectTradeRequirement.update(id, { is_booked: isBooked });
+      
+      // Trigger logistics job creation/update if newly booked
+      if (!wasBooked && isBooked) {
+        try {
+          await base44.functions.invoke('onTradeRequirementUpdated', {
+            tradeId: id,
+            wasBooked: wasBooked,
+            isBooked: isBooked
+          });
+        } catch (error) {
+          console.error('Failed to create/update logistics job:', error);
+          // Don't fail the whole operation if logistics job creation fails
+        }
+      }
+    },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['projectTradeRequirements', project.id] });
+      queryClient.invalidateQueries({ queryKey: ['projectJobs', project.id] });
+      toast.success("Trade requirement updated");
+    },
+    onError: (error) => {
+      toast.error("Failed to update trade requirement");
+      console.error(error);
     }
   });
 
@@ -294,7 +316,11 @@ export default function ThirdPartyTradesPanel({ project }) {
                   </div>
                   <div className="flex items-center gap-2">
                     <button
-                      onClick={() => toggleBookedMutation.mutate({ id: trade.id, isBooked: !trade.is_booked })}
+                      onClick={() => toggleBookedMutation.mutate({ 
+                        id: trade.id, 
+                        isBooked: !trade.is_booked,
+                        wasBooked: trade.is_booked 
+                      })}
                       className="hover:opacity-70 transition-opacity"
                       title={trade.is_booked ? "Mark as not booked" : "Mark as booked"}
                     >
