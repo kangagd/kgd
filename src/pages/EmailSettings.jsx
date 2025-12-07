@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from "react";
 import { base44 } from "@/api/base44Client";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { useNavigate } from "react-router-dom";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -8,10 +9,12 @@ import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
 import { Textarea } from "@/components/ui/textarea";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Mail, Signature, Clock, Settings2, Loader2, Sparkles } from "lucide-react";
+import { Mail, Signature, Clock, Settings2, Loader2, Sparkles, ArrowLeft } from "lucide-react";
 import { toast } from "sonner";
+import { createPageUrl } from "@/utils";
 
 export default function EmailSettings() {
+  const navigate = useNavigate();
   const [user, setUser] = useState(null);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
@@ -205,6 +208,14 @@ export default function EmailSettings() {
     <div className="p-4 md:p-10 bg-[#ffffff] min-h-screen">
       <div className="max-w-4xl mx-auto">
         <div className="mb-6">
+          <Button
+            variant="ghost"
+            onClick={() => navigate(createPageUrl("Inbox"))}
+            className="mb-4 -ml-2"
+          >
+            <ArrowLeft className="w-4 h-4 mr-2" />
+            Back to Inbox
+          </Button>
           <h1 className="text-2xl font-bold text-[#111827] mb-2">Email Settings</h1>
           <p className="text-sm text-[#6B7280]">
             Manage your email signature, out of office replies, and sync preferences
