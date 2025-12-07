@@ -1317,7 +1317,7 @@ Format as HTML bullet points using <ul> and <li> tags. Include only the most cri
         <CardHeader className="border-b border-[#E5E7EB] bg-white p-3 md:p-4 space-y-3">
         <div className="flex items-center justify-between gap-3">
           <div className="flex items-center gap-2">
-            <BackButton onClick={onClose} />
+            <BackButton to={createPageUrl("Projects")} />
             {project.created_date && (
               <div className="text-[12px] text-[#6B7280] leading-[1.35] hidden sm:block">
                 Opened on {new Date(project.created_date).toLocaleDateString('en-AU', { day: 'numeric', month: 'short', year: 'numeric' })} 
