@@ -17,6 +17,8 @@ export default function EmailSettings() {
 
   // Email signature settings
   const [emailSignature, setEmailSignature] = useState("");
+  const [signatureImageUrl, setSignatureImageUrl] = useState("");
+  const [uploadingImage, setUploadingImage] = useState(false);
   
   // Out of office settings
   const [oooEnabled, setOooEnabled] = useState(false);
@@ -40,6 +42,7 @@ export default function EmailSettings() {
 
       // Load existing settings
       setEmailSignature(currentUser.email_signature || "");
+      setSignatureImageUrl(currentUser.email_signature_image_url || "");
       setOooEnabled(currentUser.out_of_office_enabled || false);
       setOooMessage(currentUser.out_of_office_message || "");
       setOooStartDate(currentUser.out_of_office_start || "");
@@ -54,11 +57,45 @@ export default function EmailSettings() {
     }
   };
 
+  const handleImageUpload = async (e) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    // Validate file type
+    if (!file.type.startsWith('image/')) {
+      toast.error("Please upload an image file");
+      return;
+    }
+
+    // Validate file size (max 2MB)
+    if (file.size > 2 * 1024 * 1024) {
+      toast.error("Image must be less than 2MB");
+      return;
+    }
+
+    try {
+      setUploadingImage(true);
+      const { file_url } = await base44.integrations.Core.UploadFile({ file });
+      setSignatureImageUrl(file_url);
+      toast.success("Image uploaded");
+    } catch (error) {
+      console.error("Error uploading image:", error);
+      toast.error("Failed to upload image");
+    } finally {
+      setUploadingImage(false);
+    }
+  };
+
+  const handleRemoveImage = () => {
+    setSignatureImageUrl("");
+  };
+
   const handleSaveSignature = async () => {
     try {
       setSaving(true);
       await base44.auth.updateMe({
-        email_signature: emailSignature
+        email_signature: emailSignature,
+        email_signature_image_url: signatureImageUrl
       });
       toast.success("Email signature saved");
     } catch (error) {
@@ -150,6 +187,42 @@ export default function EmailSettings() {
               </CardHeader>
               <CardContent className="space-y-4">
                 <div className="space-y-2">
+                  <Label>Signature Image/Logo</Label>
+                  <div className="flex items-start gap-4">
+                    {signatureImageUrl ? (
+                      <div className="relative">
+                        <img
+                          src={signatureImageUrl}
+                          alt="Signature"
+                          className="max-w-[200px] max-h-[100px] rounded-lg border border-[#E5E7EB]"
+                        />
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={handleRemoveImage}
+                          className="mt-2"
+                        >
+                          Remove Image
+                        </Button>
+                      </div>
+                    ) : (
+                      <div className="flex-1">
+                        <Input
+                          type="file"
+                          accept="image/*"
+                          onChange={handleImageUpload}
+                          disabled={uploadingImage}
+                          className="cursor-pointer"
+                        />
+                        <p className="text-xs text-[#6B7280] mt-1">
+                          Upload your logo or signature image (max 2MB)
+                        </p>
+                      </div>
+                    )}
+                  </div>
+                </div>
+
+                <div className="space-y-2">
                   <Label>Your Signature</Label>
                   <Textarea
                     value={emailSignature}
@@ -163,13 +236,22 @@ export default function EmailSettings() {
                   </p>
                 </div>
 
-                {emailSignature && (
+                {(emailSignature || signatureImageUrl) && (
                   <div className="space-y-2">
                     <Label>Preview</Label>
                     <div className="border border-[#E5E7EB] rounded-lg p-4 bg-[#F9FAFB]">
-                      <div className="text-sm whitespace-pre-wrap text-[#111827]">
-                        {emailSignature}
-                      </div>
+                      {signatureImageUrl && (
+                        <img
+                          src={signatureImageUrl}
+                          alt="Signature"
+                          className="max-w-[200px] max-h-[100px] mb-3"
+                        />
+                      )}
+                      {emailSignature && (
+                        <div className="text-sm whitespace-pre-wrap text-[#111827]">
+                          {emailSignature}
+                        </div>
+                      )}
                     </div>
                   </div>
                 )}
