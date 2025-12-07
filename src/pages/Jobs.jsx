@@ -21,6 +21,7 @@ import JobModalView from "../components/jobs/JobModalView";
 import { createPageUrl } from "@/utils";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import { buildActiveCheckInMap } from "@/components/domain/checkInHelpers";
+import BackButton from "../components/common/BackButton";
 
 export default function Jobs() {
   const navigate = useNavigate();
@@ -381,6 +382,9 @@ export default function Jobs() {
   return (
     <div className="p-4 md:p-5 lg:p-10 bg-[#ffffff] min-h-screen overflow-x-hidden">
       <div className="max-w-7xl mx-auto w-full">
+        <div className="flex items-center gap-3 mb-4">
+          <BackButton to={createPageUrl("Dashboard")} />
+        </div>
         <div className="flex flex-col md:flex-row justify-between items-start md:items-center py-3 lg:py-4 mb-4 lg:mb-6 gap-3">
           <div>
             <h1 className="text-xl md:text-2xl font-bold text-[#111827] leading-tight">
