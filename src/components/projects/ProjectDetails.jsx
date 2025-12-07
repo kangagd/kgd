@@ -117,6 +117,12 @@ export default function ProjectDetails({ project: initialProject, onClose, onEdi
   const [isChatOpen, setIsChatOpen] = useState(false);
   const [lastReadChat, setLastReadChat] = useState(() => localStorage.getItem(`lastReadChat-${initialProject.id}`) || new Date().toISOString());
   const [showHandoverModal, setShowHandoverModal] = useState(false);
+  const [contactsOpen, setContactsOpen] = useState(false);
+  const [tradesOpen, setTradesOpen] = useState(false);
+  const [tasksOpen, setTasksOpen] = useState(true);
+  const [visitsOpen, setVisitsOpen] = useState(true);
+  const [mediaOpen, setMediaOpen] = useState(false);
+  const [docsOpen, setDocsOpen] = useState(false);
 
   // Get email thread ID from props, URL params, or project's source
   const urlParams = new URLSearchParams(window.location.search);
@@ -251,6 +257,26 @@ export default function ProjectDetails({ project: initialProject, onClose, onEdi
     queryFn: () => base44.entities.HandoverReport.filter({ project_id: project.id }),
     enabled: !!project?.id,
   });
+
+  const { data: projectContacts = [] } = useQuery({
+    queryKey: ['projectContacts', project.id],
+    queryFn: () => base44.entities.ProjectContact.filter({ project_id: project.id }),
+    enabled: !!project.id
+  });
+
+  const { data: tradeRequirements = [] } = useQuery({
+    queryKey: ['projectTrades', project.id],
+    queryFn: () => base44.entities.ProjectTradeRequirement.filter({ project_id: project.id }),
+    enabled: !!project.id
+  });
+
+  // Auto-expand panels based on content
+  React.useEffect(() => {
+    if (projectContacts.length > 0 && !contactsOpen) setContactsOpen(true);
+    if (tradeRequirements.length > 0 && !tradesOpen) setTradesOpen(true);
+    if ((project.image_urls && project.image_urls.length > 0) && !mediaOpen) setMediaOpen(true);
+    if ((project.quote_url || project.invoice_url || (project.other_documents && project.other_documents.length > 0) || handoverReports.length > 0) && !docsOpen) setDocsOpen(true);
+  }, [projectContacts, tradeRequirements, project.image_urls, project.quote_url, project.invoice_url, project.other_documents, handoverReports]);
 
   const { data: xeroInvoices = [] } = useQuery({
     queryKey: ['projectXeroInvoices', project.id],
@@ -945,18 +971,46 @@ Format as HTML bullet points using <ul> and <li> tags. Include only the most cri
             </CardContent>
             </Card>
 
-            <ProjectContactsPanel project={project} />
+            <Collapsible open={contactsOpen} onOpenChange={setContactsOpen}>
+              <Card className="border border-[#E5E7EB] shadow-sm rounded-lg overflow-hidden mt-4">
+                <CollapsibleTrigger className="w-full">
+                  <CardHeader className="bg-white px-4 py-3 border-b border-[#E5E7EB] flex flex-row items-center justify-between">
+                    <h3 className="text-[16px] font-semibold text-[#111827] leading-[1.2]">Contacts</h3>
+                    <ChevronDown className={`w-4 h-4 text-[#6B7280] transition-transform ${contactsOpen ? 'transform rotate-180' : ''}`} />
+                  </CardHeader>
+                </CollapsibleTrigger>
+                <CollapsibleContent>
+                  <CardContent className="p-3">
+                    <ProjectContactsPanel project={project} />
+                  </CardContent>
+                </CollapsibleContent>
+              </Card>
+            </Collapsible>
 
             {/* Third-Party Trades */}
-            <ThirdPartyTradesPanel project={project} />
+            <Collapsible open={tradesOpen} onOpenChange={setTradesOpen}>
+              <Card className="border border-[#E5E7EB] shadow-sm rounded-lg overflow-hidden mt-4">
+                <CollapsibleTrigger className="w-full">
+                  <CardHeader className="bg-white px-4 py-3 border-b border-[#E5E7EB] flex flex-row items-center justify-between">
+                    <h3 className="text-[16px] font-semibold text-[#111827] leading-[1.2]">Third-Party Trades</h3>
+                    <ChevronDown className={`w-4 h-4 text-[#6B7280] transition-transform ${tradesOpen ? 'transform rotate-180' : ''}`} />
+                  </CardHeader>
+                </CollapsibleTrigger>
+                <CollapsibleContent>
+                  <CardContent className="p-3">
+                    <ThirdPartyTradesPanel project={project} />
+                  </CardContent>
+                </CollapsibleContent>
+              </Card>
+            </Collapsible>
 
             {/* Tasks Section */}
-            <Collapsible defaultOpen={true}>
+            <Collapsible open={tasksOpen} onOpenChange={setTasksOpen}>
               <Card className="border border-[#E5E7EB] shadow-sm rounded-lg overflow-hidden mt-4">
                 <CollapsibleTrigger className="w-full">
                   <CardHeader className="bg-white px-4 py-3 border-b border-[#E5E7EB] flex flex-row items-center justify-between">
                     <h3 className="text-[16px] font-semibold text-[#111827] leading-[1.2]">Tasks</h3>
-                    <ChevronDown className="w-4 h-4 text-[#6B7280]" />
+                    <ChevronDown className={`w-4 h-4 text-[#6B7280] transition-transform ${tasksOpen ? 'transform rotate-180' : ''}`} />
                   </CardHeader>
                 </CollapsibleTrigger>
                 <CollapsibleContent>
@@ -995,13 +1049,13 @@ Format as HTML bullet points using <ul> and <li> tags. Include only the most cri
             </Collapsible>
 
             {/* Visits Section */}
-            <Collapsible defaultOpen={true}>
+            <Collapsible open={visitsOpen} onOpenChange={setVisitsOpen}>
               <Card className="border border-[#E5E7EB] shadow-sm rounded-lg overflow-hidden mt-4">
                 <CardHeader className="bg-white px-4 py-3 border-b border-[#E5E7EB]">
                   <div className="flex items-center justify-between w-full">
                     <CollapsibleTrigger className="flex items-center flex-1 justify-between">
                       <h3 className="text-[16px] font-semibold text-[#111827] leading-[1.2]">Visits ({jobs.length})</h3>
-                      <ChevronDown className="w-4 h-4 text-[#6B7280] mr-2" />
+                      <ChevronDown className={`w-4 h-4 text-[#6B7280] mr-2 transition-transform ${visitsOpen ? 'transform rotate-180' : ''}`} />
                     </CollapsibleTrigger>
                     {canCreateJobs && (
                       <Button
@@ -1086,29 +1140,41 @@ Format as HTML bullet points using <ul> and <li> tags. Include only the most cri
             </Collapsible>
 
             {/* Images & Videos Section */}
-            <Card className="border border-[#E5E7EB] shadow-sm rounded-lg overflow-hidden mt-4">
-              <CardHeader className="bg-white px-4 py-3 border-b border-[#E5E7EB]">
-                <h3 className="text-[16px] font-semibold text-[#111827] leading-[1.2]">Media</h3>
-              </CardHeader>
-              <CardContent className="p-3">
-                <EditableFileUpload
-                  files={project.image_urls || []}
-                  onFilesChange={handleImagesChange}
-                  accept="image/*,video/*"
-                  multiple={true}
-                  icon={ImageIcon}
-                  label=""
-                  emptyText="Upload media" 
-                />
-              </CardContent>
-            </Card>
+            <Collapsible open={mediaOpen} onOpenChange={setMediaOpen}>
+              <Card className="border border-[#E5E7EB] shadow-sm rounded-lg overflow-hidden mt-4">
+                <CollapsibleTrigger className="w-full">
+                  <CardHeader className="bg-white px-4 py-3 border-b border-[#E5E7EB] flex flex-row items-center justify-between">
+                    <h3 className="text-[16px] font-semibold text-[#111827] leading-[1.2]">Media</h3>
+                    <ChevronDown className={`w-4 h-4 text-[#6B7280] transition-transform ${mediaOpen ? 'transform rotate-180' : ''}`} />
+                  </CardHeader>
+                </CollapsibleTrigger>
+                <CollapsibleContent>
+                  <CardContent className="p-3">
+                    <EditableFileUpload
+                      files={project.image_urls || []}
+                      onFilesChange={handleImagesChange}
+                      accept="image/*,video/*"
+                      multiple={true}
+                      icon={ImageIcon}
+                      label=""
+                      emptyText="Upload media" 
+                    />
+                  </CardContent>
+                </CollapsibleContent>
+              </Card>
+            </Collapsible>
 
             {/* Documents Section */}
-            <Card className="border border-[#E5E7EB] shadow-sm rounded-lg overflow-hidden mt-4">
-              <CardHeader className="bg-white px-4 py-3 border-b border-[#E5E7EB]">
-                <h3 className="text-[16px] font-semibold text-[#111827] leading-[1.2]">Documents</h3>
-              </CardHeader>
-              <CardContent className="p-3 space-y-2">
+            <Collapsible open={docsOpen} onOpenChange={setDocsOpen}>
+              <Card className="border border-[#E5E7EB] shadow-sm rounded-lg overflow-hidden mt-4">
+                <CollapsibleTrigger className="w-full">
+                  <CardHeader className="bg-white px-4 py-3 border-b border-[#E5E7EB] flex flex-row items-center justify-between">
+                    <h3 className="text-[16px] font-semibold text-[#111827] leading-[1.2]">Documents</h3>
+                    <ChevronDown className={`w-4 h-4 text-[#6B7280] transition-transform ${docsOpen ? 'transform rotate-180' : ''}`} />
+                  </CardHeader>
+                </CollapsibleTrigger>
+                <CollapsibleContent>
+                  <CardContent className="p-3 space-y-2">
                 {project.quote_url && (
                   <button
                     onClick={() => setPreviewFile({
@@ -1239,8 +1305,10 @@ Format as HTML bullet points using <ul> and <li> tags. Include only the most cri
                   </label>
                 </div>
               </CardContent>
-            </Card>
-            </aside>
+            </CollapsibleContent>
+          </Card>
+        </Collapsible>
+      </aside>
 
             {/* Main Content */}
             <div className="flex-1 w-full lg:min-w-0">
