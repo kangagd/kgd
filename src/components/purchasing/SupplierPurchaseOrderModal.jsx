@@ -170,9 +170,20 @@ export default function SupplierPurchaseOrderModal({ open, onClose, supplier, pu
     if (field === "price_list_item_id") {
       const item = availableItems.find(i => i.id === value);
       if (item) {
-        line.description = item.item + (item.description ? ` - ${item.description}` : "");
-        line.unit_cost_ex_tax = item.unit_cost || item.price || ""; // Best guess at cost
+        line.item_name = item.item;
+        line.description = item.description || "";
+        line.unit_cost_ex_tax = item.unit_cost || item.price || "";
+        line.is_custom = false;
       }
+    }
+
+    // Toggle custom mode
+    if (field === "is_custom" && value === true) {
+      line.price_list_item_id = "";
+      line.item_name = "";
+      line.description = "";
+    } else if (field === "is_custom" && value === false) {
+      line.item_name = "";
     }
 
     newLines[index] = line;
