@@ -7,7 +7,7 @@ import { createPageUrl } from "@/utils";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Wrench, Loader2, Check, AlertCircle, Search, Filter, ArrowUpDown } from "lucide-react";
+import { Wrench, Loader2, Check, AlertCircle, Search, Filter, ArrowUpDown, Truck } from "lucide-react";
 import { toast } from "sonner";
 import LocationBadge from "@/components/common/LocationBadge";
 
@@ -186,16 +186,9 @@ export default function ToolsAdmin() {
           variant="outline"
           onClick={() => applyTemplateMutation.mutate()}
           disabled={applyTemplateMutation.isLoading || !tools.length || !vehicles.length}
-          className="border-amber-200 bg-amber-50 text-amber-900 hover:bg-amber-100 hover:text-amber-950"
         >
-          {applyTemplateMutation.isLoading ? (
-            <>
-                <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                Applying to {vehicles.length} vehicles...
-            </>
-          ) : (
-            "Apply template to all vehicles"
-          )}
+          <Truck className="w-4 h-4 mr-2" />
+          {applyTemplateMutation.isLoading ? "Applying..." : "Apply to All Vehicles"}
         </Button>
       </div>
 
