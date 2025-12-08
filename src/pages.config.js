@@ -22,7 +22,7 @@ import Fleet from './pages/Fleet';
 import ToolsAdmin from './pages/ToolsAdmin';
 import Suppliers from './pages/Suppliers';
 import EmailSettings from './pages/EmailSettings';
-import PartsHardwareAdmin from './pages/PartsHardwareAdmin';
+import ConsumablesAdmin from './pages/ConsumablesAdmin';
 import __Layout from './Layout.jsx';
 
 
@@ -51,7 +51,7 @@ export const PAGES = {
     "ToolsAdmin": ToolsAdmin,
     "Suppliers": Suppliers,
     "EmailSettings": EmailSettings,
-    "PartsHardwareAdmin": PartsHardwareAdmin,
+    "ConsumablesAdmin": ConsumablesAdmin,
 }
 
 export const pagesConfig = {
