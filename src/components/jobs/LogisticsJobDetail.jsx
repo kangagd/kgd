@@ -256,7 +256,7 @@ export default function LogisticsJobDetail({ job: initialJob, onClose }) {
                           className="mt-1"
                         />
                         <div className="flex-1">
-                          <div className="font-medium text-slate-900">{line.description}</div>
+                          <div className="font-medium text-slate-900">{line.item_name || line.description}</div>
                           <div className="text-xs text-slate-500 mt-0.5">
                             Qty: {line.qty_ordered} • ${line.unit_cost_ex_tax?.toFixed(2)} each
                           </div>
