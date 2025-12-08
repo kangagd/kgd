@@ -69,12 +69,24 @@ Deno.serve(async (req) => {
                 if (fulfilment === "pickup") {
                     address = supplier.pickup_address || supplier.name;
                 } else {
-                    address = locationName || "Warehouse"; // Delivery to warehouse
+                    // Delivery - use the warehouse/location address
+                    const location = locationId ? await base44.asServiceRole.entities.InventoryLocation.get(locationId) : null;
+                    address = location?.address || locationName || "Warehouse";
                 }
 
-                let notes = `PO ${po.po_number || po.id} from ${supplier.name} – stock replenishment.`;
-                if (supplier.delivery_days) {
-                    notes += ` Delivery Days: ${supplier.delivery_days}`;
+                // Build notes with PO info
+                let notes = po.notes || '';
+
+                // Get the actual line items with proper item names
+                const poLines = await base44.asServiceRole.entities.PurchaseOrderLine.filter({ purchase_order_id: po.id });
+                const priceListItemIds = poLines.map(l => l.price_list_item_id).filter(Boolean);
+                const priceListItems = priceListItemIds.length > 0 
+                    ? await base44.asServiceRole.entities.PriceListItem.filter({ id: { $in: priceListItemIds } })
+                    : [];
+                
+                const itemMap = {};
+                for (const item of priceListItems) {
+                    itemMap[item.id] = item.item;
                 }
 
                 const jobData = {
@@ -88,8 +100,9 @@ Deno.serve(async (req) => {
                     address_full: address,
                     scheduled_date: scheduledDate,
                     notes: notes,
-                    overview: `Stock replenishment from ${supplier.name}`,
-                    customer_name: "Stock / Internal" // Dummy customer name for display if needed
+                    overview: `${fulfilment === "pickup" ? "Pickup" : "Delivery"} from ${supplier.name}`,
+                    customer_name: supplier.name,
+                    image_urls: po.attachments || []
                 };
 
                 if (existingJobs.length > 0) {

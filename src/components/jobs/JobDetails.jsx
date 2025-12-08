@@ -243,27 +243,19 @@ export default function JobDetails({ job: initialJob, onClose, onStatusChange, o
   const { data: purchaseOrder } = useQuery({
     queryKey: ['purchaseOrder', job.purchase_order_id],
     queryFn: () => base44.entities.PurchaseOrder.get(job.purchase_order_id),
-    enabled: !!job.purchase_order_id
+    enabled: !!job.purchase_order_id && isLogisticsJob
   });
 
   const { data: purchaseOrderLines = [] } = useQuery({
     queryKey: ['purchaseOrderLines', job.purchase_order_id],
     queryFn: () => base44.entities.PurchaseOrderLine.filter({ purchase_order_id: job.purchase_order_id }),
-    enabled: !!job.purchase_order_id
+    enabled: !!job.purchase_order_id && isLogisticsJob
   });
 
-  // Fetch supplier data for logistics jobs
-  const { data: supplier } = useQuery({
-    queryKey: ['supplier', purchaseOrder?.supplier_id],
-    queryFn: () => base44.entities.Supplier.get(purchaseOrder.supplier_id),
-    enabled: !!purchaseOrder?.supplier_id
-  });
-
-  // Fetch inventory location for delivery address
-  const { data: deliveryLocation } = useQuery({
-    queryKey: ['inventoryLocation', purchaseOrder?.delivery_location_id],
-    queryFn: () => base44.entities.InventoryLocation.get(purchaseOrder.delivery_location_id),
-    enabled: !!purchaseOrder?.delivery_location_id
+  const { data: priceListItems = [] } = useQuery({
+    queryKey: ["price-list-items"],
+    queryFn: () => base44.entities.PriceListItem.list(),
+    enabled: isLogisticsJob && purchaseOrderLines.length > 0,
   });
 
   // Fetch parts for logistics jobs
@@ -278,6 +270,12 @@ export default function JobDetails({ job: initialJob, onClose, onStatusChange, o
       );
     },
     enabled: isLogisticsJob
+  });
+
+  const { data: supplier } = useQuery({
+    queryKey: ["supplier", purchaseOrder?.supplier_id],
+    queryFn: () => base44.entities.Supplier.get(purchaseOrder.supplier_id),
+    enabled: !!purchaseOrder?.supplier_id && isLogisticsJob,
   });
 
   const { data: xeroInvoice } = useQuery({
@@ -960,7 +958,7 @@ export default function JobDetails({ job: initialJob, onClose, onStatusChange, o
                 <CardTitle
                   className="text-[22px] font-semibold text-[#111827] leading-[1.2] cursor-pointer hover:text-[#FAE008] transition-colors"
                   onClick={() => setShowCustomerEdit(true)}>
-                  {isLogisticsJob && purchaseOrder ? purchaseOrder.supplier_name : job.customer_name}
+                  {job.customer_name}
                 </CardTitle>
                 <Badge className="bg-white text-[#6B7280] border border-[#E5E7EB] font-medium text-[12px] leading-[1.35] px-2.5 py-0.5 rounded-lg hover:bg-white">
                   #{job.job_number}
@@ -1023,30 +1021,12 @@ export default function JobDetails({ job: initialJob, onClose, onStatusChange, o
                 <Navigation className="text-green-600 w-5 h-5 flex-shrink-0 mt-0.5" />
                 <div className="flex-1 min-w-0">
                   <div className="text-[12px] text-[#6B7280] font-normal leading-[1.35] mb-0.5">Address</div>
-                  {isLogisticsJob && purchaseOrder ? (
-                    <button
-                      onClick={() => {
-                        const address = purchaseOrder.fulfilment_method === 'pickup' 
-                          ? supplier?.pickup_address 
-                          : deliveryLocation?.address;
-                        if (address) {
-                          window.open(`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(address)}`, '_blank');
-                        }
-                      }}
-                      className="text-[14px] text-[#111827] leading-[1.4] hover:text-green-600 transition-colors text-left"
-                    >
-                      {purchaseOrder.fulfilment_method === 'pickup' 
-                        ? (supplier?.pickup_address || 'Pickup address not available')
-                        : (deliveryLocation?.address || purchaseOrder.delivery_location_name || 'Delivery address not available')}
-                    </button>
-                  ) : (
-                    <button
-                      onClick={() => window.open(`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(job.address)}`, '_blank')}
-                      className="text-[14px] text-[#111827] leading-[1.4] hover:text-green-600 transition-colors text-left"
-                    >
-                      {job.address}
-                    </button>
-                  )}
+                  <button
+                    onClick={() => window.open(`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(job.address)}`, '_blank')}
+                    className="text-[14px] text-[#111827] leading-[1.4] hover:text-green-600 transition-colors text-left"
+                  >
+                    {job.address}
+                  </button>
                 </div>
               </div>
               <div className="flex items-start gap-2.5">
@@ -1388,22 +1368,18 @@ export default function JobDetails({ job: initialJob, onClose, onStatusChange, o
                         </CardTitle>
                       </CardHeader>
                       <CardContent className="p-4 space-y-2">
-                        {purchaseOrderLines.map((line) => {
-                          // Extract just the item name from the description (before the dash or use full description)
-                          const itemName = line.description?.split(' - ')[0] || line.description;
-                          return (
-                            <div key={line.id} className="flex items-center gap-3 p-2 hover:bg-[#F9FAFB] rounded-lg transition-colors">
-                              <Checkbox
-                                checked={checkedItems[line.id] || false}
-                                onCheckedChange={(checked) => handleItemCheck(line.id, checked)}
-                              />
-                              <div className="flex-1">
-                                <span className="text-[14px] font-medium text-[#111827]">{itemName}</span>
-                                <span className="text-[14px] text-[#6B7280] ml-2">× {line.qty_ordered}</span>
-                              </div>
+                        {purchaseOrderLines.map((line) => (
+                          <div key={line.id} className="flex items-center gap-3 p-2 hover:bg-[#F9FAFB] rounded-lg transition-colors">
+                            <Checkbox
+                              checked={checkedItems[line.id] || false}
+                              onCheckedChange={(checked) => handleItemCheck(line.id, checked)}
+                            />
+                            <div className="flex-1">
+                              <span className="text-[14px] font-medium text-[#111827]">{line.item_name}</span>
+                              <span className="text-[14px] text-[#6B7280] ml-2">× {line.quantity}</span>
                             </div>
-                          );
-                        })}
+                          </div>
+                        ))}
                         {jobParts.map((part) => (
                           <div key={part.id} className="flex items-center gap-3 p-2 hover:bg-[#F9FAFB] rounded-lg transition-colors">
                             <Checkbox
@@ -2084,87 +2060,65 @@ export default function JobDetails({ job: initialJob, onClose, onStatusChange, o
 
                 {isLogisticsJob && (
                   <>
-                    {/* Auto-load all files from purchase order, parts, and job.other_documents */}
-                    {((purchaseOrder?.other_documents && purchaseOrder.other_documents.length > 0) || 
-                      (jobParts.some(p => p.attachments && p.attachments.length > 0)) ||
-                      (job.other_documents && job.other_documents.length > 0)) && (
+                    {/* Auto-load files from purchase order attachments */}
+                    {purchaseOrder?.attachments && purchaseOrder.attachments.length > 0 && (
                       <Card className="border border-[#E5E7EB] shadow-sm rounded-lg">
                         <CardHeader className="bg-white px-4 py-3 border-b border-[#E5E7EB]">
-                          <CardTitle className="text-[14px] font-semibold text-[#111827]">Files & Attachments</CardTitle>
+                          <CardTitle className="text-[14px] font-semibold text-[#111827]">Purchase Order Attachments</CardTitle>
                         </CardHeader>
-                        <CardContent className="p-4 space-y-3">
-                          {/* Purchase Order Files */}
-                          {purchaseOrder?.other_documents && purchaseOrder.other_documents.length > 0 && (
-                            <div>
-                              <div className="text-[12px] font-semibold text-[#6B7280] mb-2">Purchase Order Documents</div>
-                              <div className="space-y-2">
-                                {purchaseOrder.other_documents.map((url, idx) => (
-                                  <a
-                                    key={idx}
-                                    href={url}
-                                    target="_blank"
-                                    rel="noopener noreferrer"
-                                    className="flex items-center gap-2 p-2 hover:bg-[#F9FAFB] rounded-lg transition-colors text-[#2563EB] hover:text-[#1E40AF]"
-                                  >
-                                    <FileText className="w-4 h-4" />
-                                    <span className="text-sm">Document {idx + 1}</span>
-                                    <ExternalLink className="w-3 h-3 ml-auto" />
-                                  </a>
-                                ))}
-                              </div>
-                            </div>
-                          )}
-
-                          {/* Part Attachments */}
-                          {jobParts.filter(p => p.attachments && p.attachments.length > 0).map((part) => (
-                            <div key={part.id}>
-                              <div className="text-[12px] font-semibold text-[#6B7280] mb-2">{part.category} Attachments</div>
-                              <div className="space-y-2">
-                                {part.attachments.map((url, idx) => (
-                                  <a
-                                    key={idx}
-                                    href={url}
-                                    target="_blank"
-                                    rel="noopener noreferrer"
-                                    className="flex items-center gap-2 p-2 hover:bg-[#F9FAFB] rounded-lg transition-colors text-[#2563EB] hover:text-[#1E40AF]"
-                                  >
-                                    <FileText className="w-4 h-4" />
-                                    <span className="text-sm">Document {idx + 1}</span>
-                                    <ExternalLink className="w-3 h-3 ml-auto" />
-                                  </a>
-                                ))}
-                              </div>
-                            </div>
-                          ))}
-
-                          {/* Job Additional Documents */}
-                          {job.other_documents && job.other_documents.length > 0 && (
-                            <div>
-                              <div className="text-[12px] font-semibold text-[#6B7280] mb-2">Additional Documents</div>
-                              <div className="space-y-2">
-                                {job.other_documents.map((url, idx) => (
-                                  <a
-                                    key={idx}
-                                    href={url}
-                                    target="_blank"
-                                    rel="noopener noreferrer"
-                                    className="flex items-center gap-2 p-2 hover:bg-[#F9FAFB] rounded-lg transition-colors text-[#2563EB] hover:text-[#1E40AF]"
-                                  >
-                                    <FileText className="w-4 h-4" />
-                                    <span className="text-sm">Document {idx + 1}</span>
-                                    <ExternalLink className="w-3 h-3 ml-auto" />
-                                  </a>
-                                ))}
-                              </div>
-                            </div>
-                          )}
+                        <CardContent className="p-4">
+                          <div className="space-y-2">
+                            {purchaseOrder.attachments.map((url, idx) => (
+                              <a
+                                key={idx}
+                                href={url}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                className="flex items-center gap-2 p-2 hover:bg-[#F9FAFB] rounded-lg transition-colors text-[#2563EB] hover:text-[#1E40AF]"
+                              >
+                                <FileText className="w-4 h-4" />
+                                <span className="text-sm">Document {idx + 1}</span>
+                                <ExternalLink className="w-3 h-3 ml-auto" />
+                              </a>
+                            ))}
+                          </div>
                         </CardContent>
                       </Card>
                     )}
-                    {/* Allow additional file uploads */}
-                    <div className={((purchaseOrder?.other_documents && purchaseOrder.other_documents.length > 0) || 
-                      (jobParts.some(p => p.attachments && p.attachments.length > 0)) ||
-                      (job.other_documents && job.other_documents.length > 0)) ? "pt-3 border-t-2" : ""}>
+                    {/* Auto-load files from parts attachments */}
+                    {jobParts.some(p => p.attachments && p.attachments.length > 0) && (
+                      <Card className="border border-[#E5E7EB] shadow-sm rounded-lg">
+                        <CardHeader className="bg-white px-4 py-3 border-b border-[#E5E7EB]">
+                          <CardTitle className="text-[14px] font-semibold text-[#111827]">Part Attachments</CardTitle>
+                        </CardHeader>
+                        <CardContent className="p-4">
+                          <div className="space-y-3">
+                            {jobParts.filter(p => p.attachments && p.attachments.length > 0).map((part) => (
+                              <div key={part.id}>
+                                <div className="text-[12px] font-semibold text-[#6B7280] mb-1">{part.category}</div>
+                                <div className="space-y-2">
+                                  {part.attachments.map((url, idx) => (
+                                    <a
+                                      key={idx}
+                                      href={url}
+                                      target="_blank"
+                                      rel="noopener noreferrer"
+                                      className="flex items-center gap-2 p-2 hover:bg-[#F9FAFB] rounded-lg transition-colors text-[#2563EB] hover:text-[#1E40AF]"
+                                    >
+                                      <FileText className="w-4 h-4" />
+                                      <span className="text-sm">Document {idx + 1}</span>
+                                      <ExternalLink className="w-3 h-3 ml-auto" />
+                                    </a>
+                                  ))}
+                                </div>
+                              </div>
+                            ))}
+                          </div>
+                        </CardContent>
+                      </Card>
+                    )}
+                    {/* Additional uploads */}
+                    <div className="pt-3 border-t-2">
                       <EditableFileUpload
                         files={job.other_documents || []}
                         onFilesChange={handleOtherDocumentsChange}
