@@ -121,7 +121,8 @@ Deno.serve(async (req) => {
                             status: "Scheduled",
                             notes: jobNotes,
                             overview: `Part: ${part.category}${part.notes ? ' - ' + part.notes : ''}`,
-                            additional_info: `Order Ref: ${part.order_reference || 'N/A'}`
+                            additional_info: `Order Ref: ${part.order_reference || 'N/A'}`,
+                            is_logistics_job: true
                         });
 
                         // Update Part with linked job and location
@@ -206,7 +207,8 @@ Deno.serve(async (req) => {
                             address: warehouseAddress,
                             address_full: warehouseAddress,
                             status: "Open",
-                            notes: `Logistics job generated for parts: ${otherParts.map(p => p.category).join(', ')}`
+                            notes: `Logistics job generated for parts: ${otherParts.map(p => p.category).join(', ')}`,
+                            is_logistics_job: true
                         });
                     }
 

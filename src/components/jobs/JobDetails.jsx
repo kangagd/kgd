@@ -57,6 +57,7 @@ import JobItemsUsedModal from "./JobItemsUsedModal";
 import JobContactsPanel from "./JobContactsPanel";
 import ThirdPartyTradesInfo from "./ThirdPartyTradesInfo";
 import BackButton from "../common/BackButton";
+import LogisticsJobDetail from "./LogisticsJobDetail";
 
 
 const statusColors = {
@@ -788,6 +789,11 @@ export default function JobDetails({ job: initialJob, onClose, onStatusChange, o
     onDelete(job.id);
     setShowDeleteConfirm(false);
   };
+
+  // Route to logistics detail if this is a logistics job
+  if (job?.is_logistics_job) {
+    return <LogisticsJobDetail job={job} onClose={onClose} />;
+  }
 
   return (
     <>
