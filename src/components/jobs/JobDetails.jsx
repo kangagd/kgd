@@ -1675,9 +1675,11 @@ export default function JobDetails({ job: initialJob, onClose, onStatusChange, o
                       </div>
                   )}
                   </CollapsibleContent>
-                </Collapsible>
-              }
-            </TabsContent>
+                  </Collapsible>
+                  )}
+                  </>
+                  )}
+                  </TabsContent>
 
             {!isLogisticsJob && (
               <TabsContent value="visit" className="space-y-3 mt-2">
