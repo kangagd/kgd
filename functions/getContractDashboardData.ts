@@ -57,13 +57,47 @@ Deno.serve(async (req) => {
         if (contract_id) completedFilter.contract_id = contract_id;
         const recentCompleted = await base44.asServiceRole.entities.Job.filter(completedFilter, '-updated_date', 5);
 
+        // 6. Financial Data - fetch all invoices for contract jobs
+        let allContractJobs = [];
+        if (contract_id) {
+            // Get all jobs under this contract
+            const directJobs = await base44.asServiceRole.entities.Job.filter({ contract_id });
+            const stationIds = stations.map(s => s.id);
+            const stationJobs = stationIds.length > 0 
+                ? await Promise.all(stationIds.map(id => base44.asServiceRole.entities.Job.filter({ customer_id: id })))
+                : [];
+            allContractJobs = [...directJobs, ...stationJobs.flat()];
+        }
+        
+        // Get invoices for all contract jobs
+        const jobIds = allContractJobs.map(j => j.id).filter(Boolean);
+        let invoices = [];
+        if (jobIds.length > 0) {
+            invoices = await base44.asServiceRole.entities.XeroInvoice.list();
+            invoices = invoices.filter(inv => jobIds.includes(inv.job_id));
+        }
+
+        // Calculate financial totals
+        let totalBalance = 0;
+        let totalOwing = 0;
+        
+        invoices.forEach(inv => {
+            if (inv.status !== 'VOIDED') {
+                totalBalance += (inv.total || inv.total_amount || 0);
+                totalOwing += (inv.amount_due || 0);
+            }
+        });
+
         return Response.json({
             stations: stations.map(s => ({ id: s.id, name: s.name })),
             open_jobs_count: openJobsCount,
             sla_breaches_count: slaBreaches.length,
             sla_breaches: slaBreaches.map(j => ({ id: j.id, job_number: j.job_number, customer_name: j.customer_name, sla_due_at: j.sla_due_at })),
             upcoming_maintenance: upcomingMaintenance.map(j => ({ id: j.id, job_number: j.job_number, scheduled_date: j.scheduled_date })),
-            recent_completed: recentCompleted.map(j => ({ id: j.id, job_number: j.job_number, completed_date: j.updated_date }))
+            recent_completed: recentCompleted.map(j => ({ id: j.id, job_number: j.job_number, completed_date: j.updated_date })),
+            total_balance: totalBalance,
+            total_owing: totalOwing,
+            invoice_count: invoices.length
         });
 
     } catch (error) {
