@@ -128,6 +128,10 @@ export default function ReceivePurchaseOrderModal({ open, onClose, purchaseOrder
       queryClient.invalidateQueries(["purchase-order", purchaseOrderId]);
       queryClient.invalidateQueries(["purchase-order-lines", purchaseOrderId]);
       queryClient.invalidateQueries(["purchase-orders-by-supplier", purchaseOrder?.supplier_id]);
+      queryClient.invalidateQueries(["purchaseOrders"]);
+      queryClient.invalidateQueries(["stockLogisticsJobs"]);
+      queryClient.invalidateQueries(["inventoryQuantities"]);
+      queryClient.invalidateQueries(["parts"]);
       toast.success("Stock received successfully");
       onClose();
     },

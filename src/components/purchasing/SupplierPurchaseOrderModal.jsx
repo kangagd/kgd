@@ -6,7 +6,7 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { Plus, Trash2, Loader2, Check, ChevronsUpDown } from "lucide-react";
+import { Plus, Trash2, Loader2, Check, ChevronsUpDown, Upload, X } from "lucide-react";
 import {
   Command,
   CommandEmpty,
@@ -39,6 +39,8 @@ export default function SupplierPurchaseOrderModal({ open, onClose, supplier, pu
   const [locationOpen, setLocationOpen] = useState(false);
   const [itemOpenStates, setItemOpenStates] = useState({});
   const [linesLoaded, setLinesLoaded] = useState(false);
+  const [attachments, setAttachments] = useState([]);
+  const [isUploading, setIsUploading] = useState(false);
 
   const { data: existingLines = [], isLoading: isLoadingLines } = useQuery({
     queryKey: ["purchase-order-lines", purchaseOrderToEdit?.id],
@@ -80,6 +82,7 @@ export default function SupplierPurchaseOrderModal({ open, onClose, supplier, pu
         setDeliveryLocationId(purchaseOrderToEdit.delivery_location_id || "");
         setFulfilmentMethod(purchaseOrderToEdit.fulfilment_method || "");
         setNotes(purchaseOrderToEdit.notes || "");
+        setAttachments(purchaseOrderToEdit.attachments || []);
         setLinesLoaded(false);
         // Lines will be set via existingLines effect
       } else {
@@ -102,6 +105,7 @@ export default function SupplierPurchaseOrderModal({ open, onClose, supplier, pu
         }
   
         setNotes("");
+        setAttachments([]);
         setItemOpenStates({});
         setLines([{ 
           price_list_item_id: "", 
@@ -181,6 +185,31 @@ export default function SupplierPurchaseOrderModal({ open, onClose, supplier, pu
     }, 0);
   };
 
+  const handleFileUpload = async (e) => {
+    const files = Array.from(e.target.files || []);
+    if (files.length === 0) return;
+
+    setIsUploading(true);
+    try {
+      const uploadPromises = files.map(async (file) => {
+        const result = await base44.integrations.Core.UploadFile({ file });
+        return result.file_url;
+      });
+      const urls = await Promise.all(uploadPromises);
+      setAttachments([...attachments, ...urls]);
+      toast.success(`${files.length} file(s) uploaded`);
+    } catch (error) {
+      console.error("Upload failed:", error);
+      toast.error("Failed to upload files");
+    } finally {
+      setIsUploading(false);
+    }
+  };
+
+  const removeAttachment = (url) => {
+    setAttachments(attachments.filter(a => a !== url));
+  };
+
   const savePOMutation = useMutation({
     mutationFn: async () => {
       if (!supplier) throw new Error("No supplier selected");
@@ -197,6 +226,7 @@ export default function SupplierPurchaseOrderModal({ open, onClose, supplier, pu
         expected_date: expectedDate || null,
         fulfilment_method: fulfilmentMethod || null,
         notes: notes,
+        attachments: attachments,
         total_amount_ex_tax: calculateTotal(),
       };
 
@@ -265,6 +295,10 @@ export default function SupplierPurchaseOrderModal({ open, onClose, supplier, pu
     onSuccess: () => {
       queryClient.invalidateQueries(["purchase-orders-by-supplier", supplier?.id]);
       queryClient.invalidateQueries(["purchase-order-lines", purchaseOrderToEdit?.id]);
+      queryClient.invalidateQueries(["purchaseOrders"]);
+      queryClient.invalidateQueries(["stockLogisticsJobs"]);
+      queryClient.invalidateQueries(["inventoryQuantities"]);
+      queryClient.invalidateQueries(["parts"]);
       toast.success(`Purchase Order ${purchaseOrderToEdit ? 'updated' : 'created'} successfully`);
       onClose();
     },
@@ -414,6 +448,52 @@ export default function SupplierPurchaseOrderModal({ open, onClose, supplier, pu
                 placeholder="Shipping instructions, etc."
                 className="textarea-sm w-full min-h-[80px]"
               />
+            </div>
+            <div className="col-span-2 space-y-2">
+              <Label className="text-xs font-medium text-gray-700">Attachments</Label>
+              <div className="space-y-2">
+                {attachments.map((url, idx) => (
+                  <div key={idx} className="flex items-center justify-between bg-gray-50 rounded-lg p-2">
+                    <a href={url} target="_blank" rel="noopener noreferrer" className="text-xs text-blue-600 hover:underline truncate flex-1">
+                      {url.split('/').pop()}
+                    </a>
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      onClick={() => removeAttachment(url)}
+                      className="h-6 w-6 ml-2"
+                    >
+                      <X className="w-3 h-3" />
+                    </Button>
+                  </div>
+                ))}
+                <div>
+                  <input
+                    type="file"
+                    multiple
+                    onChange={handleFileUpload}
+                    className="hidden"
+                    id="po-file-upload"
+                    disabled={isUploading}
+                  />
+                  <label htmlFor="po-file-upload">
+                    <Button
+                      type="button"
+                      variant="outline"
+                      size="sm"
+                      disabled={isUploading}
+                      className="cursor-pointer"
+                      onClick={(e) => {
+                        e.preventDefault();
+                        document.getElementById('po-file-upload').click();
+                      }}
+                    >
+                      {isUploading ? <Loader2 className="w-3.5 h-3.5 mr-2 animate-spin" /> : <Upload className="w-3.5 h-3.5 mr-2" />}
+                      Upload Files
+                    </Button>
+                  </label>
+                </div>
+              </div>
             </div>
           </div>
 

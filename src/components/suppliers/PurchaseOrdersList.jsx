@@ -28,6 +28,10 @@ export default function PurchaseOrdersList({ supplierId, onSelectPO }) {
     },
     onSuccess: () => {
       queryClient.invalidateQueries(["purchase-orders-by-supplier", supplierId]);
+      queryClient.invalidateQueries(["purchaseOrders"]);
+      queryClient.invalidateQueries(["stockLogisticsJobs"]);
+      queryClient.invalidateQueries(["inventoryQuantities"]);
+      queryClient.invalidateQueries(["parts"]);
     }
   });
 
