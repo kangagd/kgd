@@ -1368,18 +1368,22 @@ export default function JobDetails({ job: initialJob, onClose, onStatusChange, o
                         </CardTitle>
                       </CardHeader>
                       <CardContent className="p-4 space-y-2">
-                        {purchaseOrderLines.map((line) => (
-                          <div key={line.id} className="flex items-center gap-3 p-2 hover:bg-[#F9FAFB] rounded-lg transition-colors">
-                            <Checkbox
-                              checked={checkedItems[line.id] || false}
-                              onCheckedChange={(checked) => handleItemCheck(line.id, checked)}
-                            />
-                            <div className="flex-1">
-                              <span className="text-[14px] font-medium text-[#111827]">{line.item_name}</span>
-                              <span className="text-[14px] text-[#6B7280] ml-2">× {line.quantity}</span>
+                        {purchaseOrderLines.map((line) => {
+                          const item = priceListItems.find(i => i.id === line.price_list_item_id);
+                          const itemName = item?.item || line.description || "Item";
+                          return (
+                            <div key={line.id} className="flex items-center gap-3 p-2 hover:bg-[#F9FAFB] rounded-lg transition-colors">
+                              <Checkbox
+                                checked={checkedItems[line.id] || false}
+                                onCheckedChange={(checked) => handleItemCheck(line.id, checked)}
+                              />
+                              <div className="flex-1">
+                                <span className="text-[14px] font-medium text-[#111827]">{itemName}</span>
+                                <span className="text-[14px] text-[#6B7280] ml-2">× {line.qty_ordered}</span>
+                              </div>
                             </div>
-                          </div>
-                        ))}
+                          );
+                        })}
                         {jobParts.map((part) => (
                           <div key={part.id} className="flex items-center gap-3 p-2 hover:bg-[#F9FAFB] rounded-lg transition-colors">
                             <Checkbox
