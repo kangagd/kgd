@@ -1962,16 +1962,16 @@ export default function JobDetails({ job: initialJob, onClose, onStatusChange, o
 
               </div>
 
-              {jobSummaries.length > 0 &&
-              <Collapsible defaultOpen={true} className="pt-3 border-t-2 mt-3">
-                  <CollapsibleTrigger className="flex items-center justify-between w-full group bg-[#F9FAFB] border border-[#E5E7EB] rounded-xl p-3 hover:bg-[#F3F4F6] transition-colors">
-                    <h4 className="text-[14px] font-semibold text-[#111827] leading-[1.4]">Previous Visit Summaries ({jobSummaries.length})</h4>
-                    <ChevronDown className="w-4 h-4 text-slate-500 transition-transform group-data-[state=open]:rotate-180" />
-                  </CollapsibleTrigger>
-                  
-                  <CollapsibleContent className="pt-3 space-y-3">
-                    {jobSummaries.map((summary) =>
-                  <div key={summary.id} className="bg-white border-2 border-slate-200 rounded-xl p-3">
+                  {jobSummaries.length > 0 && (
+                    <Collapsible defaultOpen={true} className="pt-3 border-t-2 mt-3">
+                      <CollapsibleTrigger className="flex items-center justify-between w-full group bg-[#F9FAFB] border border-[#E5E7EB] rounded-xl p-3 hover:bg-[#F3F4F6] transition-colors">
+                        <h4 className="text-[14px] font-semibold text-[#111827] leading-[1.4]">Previous Visit Summaries ({jobSummaries.length})</h4>
+                        <ChevronDown className="w-4 h-4 text-slate-500 transition-transform group-data-[state=open]:rotate-180" />
+                      </CollapsibleTrigger>
+                      
+                      <CollapsibleContent className="pt-3 space-y-3">
+                        {jobSummaries.map((summary) => (
+                          <div key={summary.id} className="bg-white border-2 border-slate-200 rounded-xl p-3">
                         <div className="flex items-center justify-between mb-3">
                           <span className="font-bold text-[#000000]">{summary.technician_name}</span>
                           <span className="text-xs text-slate-500 font-medium">
@@ -1979,53 +1979,53 @@ export default function JobDetails({ job: initialJob, onClose, onStatusChange, o
                           </span>
                         </div>
                         
-                        {summary.outcome &&
-                    <Badge className={`${outcomeColors[summary.outcome]} mb-3 font-semibold border-2 hover:opacity-100`}>
-                            {summary.outcome?.replace(/_/g, ' ') || summary.outcome}
-                          </Badge>
-                    }
+                            {summary.outcome && (
+                              <Badge className={`${outcomeColors[summary.outcome]} mb-3 font-semibold border-2 hover:opacity-100`}>
+                                {summary.outcome?.replace(/_/g, ' ') || summary.outcome}
+                              </Badge>
+                            )}
 
-                        <div className="space-y-2">
-                          {summary.overview &&
-                      <div>
-                              <div className="text-xs font-bold text-slate-500 mb-1">Work Performed:</div>
-                              <div className="text-sm text-slate-700" dangerouslySetInnerHTML={{ __html: summary.overview }} />
-                            </div>
-                      }
+                            <div className="space-y-2">
+                              {summary.overview && (
+                                <div>
+                                  <div className="text-xs font-bold text-slate-500 mb-1">Work Performed:</div>
+                                  <div className="text-sm text-slate-700" dangerouslySetInnerHTML={{ __html: summary.overview }} />
+                                </div>
+                              )}
 
-                          {summary.issues_found &&
-                      <div>
-                              <div className="text-xs font-bold text-slate-500 mb-1">Issues Found:</div>
-                              <div className="text-sm text-slate-700" dangerouslySetInnerHTML={{ __html: summary.issues_found }} />
-                            </div>
-                      }
+                              {summary.issues_found && (
+                                <div>
+                                  <div className="text-xs font-bold text-slate-500 mb-1">Issues Found:</div>
+                                  <div className="text-sm text-slate-700" dangerouslySetInnerHTML={{ __html: summary.issues_found }} />
+                                </div>
+                              )}
 
-                          {summary.resolution &&
-                      <div>
-                              <div className="text-xs font-bold text-slate-500 mb-1">Resolution:</div>
-                              <div className="text-sm text-slate-700" dangerouslySetInnerHTML={{ __html: summary.resolution }} />
+                              {summary.resolution && (
+                                <div>
+                                  <div className="text-xs font-bold text-slate-500 mb-1">Resolution:</div>
+                                  <div className="text-sm text-slate-700" dangerouslySetInnerHTML={{ __html: summary.resolution }} />
+                                </div>
+                              )}
+                              
+                              {summary.next_steps && (
+                                <div>
+                                  <div className="text-xs font-bold text-slate-500 mb-1">Next Steps:</div>
+                                  <div className="text-sm text-slate-700" dangerouslySetInnerHTML={{ __html: summary.next_steps }} />
+                                </div>
+                              )}
+                              
+                              {summary.communication_with_client && (
+                                <div>
+                                  <div className="text-xs font-bold text-slate-500 mb-1">Communication:</div>
+                                  <div className="text-sm text-slate-700" dangerouslySetInnerHTML={{ __html: summary.communication_with_client }} />
+                                </div>
+                              )}
                             </div>
-                      }
-                          
-                          {summary.next_steps &&
-                      <div>
-                              <div className="text-xs font-bold text-slate-500 mb-1">Next Steps:</div>
-                              <div className="text-sm text-slate-700" dangerouslySetInnerHTML={{ __html: summary.next_steps }} />
-                            </div>
-                      }
-                          
-                          {summary.communication_with_client &&
-                      <div>
-                              <div className="text-xs font-bold text-slate-500 mb-1">Communication:</div>
-                              <div className="text-sm text-slate-700" dangerouslySetInnerHTML={{ __html: summary.communication_with_client }} />
-                            </div>
-                      }
-                        </div>
-                      </div>
-                    )}
-                    </CollapsibleContent>
-                  </Collapsible>
-                )}
+                          </div>
+                        ))}
+                      </CollapsibleContent>
+                    </Collapsible>
+                  )}
               </TabsContent>
             )}
 
