@@ -244,12 +244,34 @@ export default function Layout({ children, currentPageName }) {
   const isTechnician = effectiveRole === 'technician';
   const isViewer = effectiveRole === 'viewer';
   const isAdminOrManager = effectiveRole === 'admin' || effectiveRole === 'manager';
+  const isRegularUser = effectiveRole === 'user';
 
   const navigationItems = isTechnician 
     ? technicianNavigationItems 
     : isViewer 
       ? viewerNavigationItems 
       : primaryNavigationItems;
+
+  // Filter navigation sections for regular users
+  const filteredNavigationSections = isRegularUser 
+    ? navigationSections.map(section => {
+        if (section.title === "Technicians") {
+          return {
+            ...section,
+            items: section.items.filter(item => item.title !== "Tools Admin")
+          };
+        }
+        if (section.title === "Admin") {
+          return {
+            ...section,
+            items: section.items.filter(item => 
+              !["Team", "Role Settings", "Reports", "Archive"].includes(item.title)
+            )
+          };
+        }
+        return section;
+      })
+    : navigationSections;
 
   // Swipe to open menu
   useEffect(() => {
@@ -439,8 +461,8 @@ export default function Layout({ children, currentPageName }) {
               {/* Navigation */}
               <nav className="flex-1 overflow-y-auto overflow-x-hidden p-3 min-h-0">
                 <div className="space-y-1 min-w-0">
-                  {/* Create Buttons - Only for admin/manager */}
-                  {isAdminOrManager && (
+                  {/* Create Buttons - Only for admin/manager/regular users */}
+                  {(isAdminOrManager || isRegularUser) && (
                     <div className={`grid ${isCollapsed ? 'grid-cols-1' : 'grid-cols-2'} gap-2 mb-4 pb-4 border-b border-[#E5E7EB]`}>
                       <div className="flex items-center gap-1.5">
                         <span className="text-xs font-medium text-[#6B7280]">Create:</span>
@@ -489,10 +511,10 @@ export default function Layout({ children, currentPageName }) {
                   );
                   })}
 
-                  {/* Sectioned Navigation - Only for admin/manager */}
-                  {!isCollapsed && isAdminOrManager && (
+                  {/* Sectioned Navigation - Only for admin/manager/regular users */}
+                  {!isCollapsed && (isAdminOrManager || isRegularUser) && (
                     <>
-                      {navigationSections.map((section, sectionIndex) => (
+                      {filteredNavigationSections.map((section, sectionIndex) => (
                         <div key={section.title} className={sectionIndex === 0 ? "mt-4" : "mt-6"}>
                           <div className="px-3 mb-2">
                             <span className="text-[11px] font-semibold text-[#6B7280] uppercase tracking-wider">
@@ -526,8 +548,8 @@ export default function Layout({ children, currentPageName }) {
                     </>
                   )}
 
-                  {/* Collapsed More Menu - Only for admin/manager */}
-                  {isCollapsed && isAdminOrManager && (
+                  {/* Collapsed More Menu - Only for admin/manager/regular users */}
+                  {isCollapsed && (isAdminOrManager || isRegularUser) && (
                     <Popover open={collapsedMoreOpen} onOpenChange={setCollapsedMoreOpen}>
                       <PopoverTrigger asChild>
                         <button
@@ -538,7 +560,7 @@ export default function Layout({ children, currentPageName }) {
                         </button>
                       </PopoverTrigger>
                       <PopoverContent side="right" align="start" className="w-56 p-2 max-h-[500px] overflow-y-auto">
-                        {navigationSections.map((section) => (
+                        {filteredNavigationSections.map((section) => (
                           <div key={section.title} className="mb-4 last:mb-0">
                             <div className="px-3 mb-2">
                               <span className="text-[11px] font-semibold text-[#6B7280] uppercase tracking-wider">
