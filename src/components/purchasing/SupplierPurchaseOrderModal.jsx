@@ -260,17 +260,21 @@ export default function SupplierPurchaseOrderModal({ open, onClose, supplier, pu
          const linesToDelete = existingLines.filter(l => !currentLineIds.has(l.id));
          
          await Promise.all(linesToDelete.map(l => base44.entities.PurchaseOrderLine.delete(l.id)));
-         
-         const validLines = lines.filter(l => l.price_list_item_id && l.qty_ordered > 0);
-         
+
+         const validLines = lines.filter(l => 
+           l.qty_ordered > 0 && 
+           (l.price_list_item_id || (l.is_custom && l.item_name))
+         );
+
          await Promise.all(validLines.map(line => {
             const qty = parseFloat(line.qty_ordered) || 0;
             const cost = parseFloat(line.unit_cost_ex_tax) || 0;
             const total = qty * cost;
-            
+
             const lineData = {
               purchase_order_id: poId,
-              price_list_item_id: line.price_list_item_id,
+              price_list_item_id: line.price_list_item_id || null,
+              item_name: line.is_custom ? line.item_name : (line.item_name || null),
               description: line.description || "",
               qty_ordered: qty,
               unit_cost_ex_tax: cost,
