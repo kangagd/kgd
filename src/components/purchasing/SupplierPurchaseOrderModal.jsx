@@ -529,11 +529,11 @@ export default function SupplierPurchaseOrderModal({ open, onClose, supplier, pu
               <Table className="w-full text-xs">
                 <TableHeader>
                   <TableRow className="bg-gray-50/50 hover:bg-transparent border-b">
-                    <TableHead className="w-[30%] h-9 text-[11px] uppercase">Item</TableHead>
-                    <TableHead className="w-[25%] h-9 text-[11px] uppercase">Description</TableHead>
-                    <TableHead className="w-[15%] h-9 text-[11px] uppercase">Qty</TableHead>
+                    <TableHead className="w-[25%] h-9 text-[11px] uppercase">Item</TableHead>
+                    <TableHead className="w-[30%] h-9 text-[11px] uppercase">Description</TableHead>
+                    <TableHead className="w-[12%] h-9 text-[11px] uppercase">Qty</TableHead>
                     <TableHead className="w-[15%] h-9 text-[11px] uppercase">Unit Cost (ex GST)</TableHead>
-                    <TableHead className="w-[10%] h-9 text-[11px] uppercase">Total (ex GST)</TableHead>
+                    <TableHead className="w-[13%] h-9 text-[11px] uppercase">Total (ex GST)</TableHead>
                     <TableHead className="w-[5%] h-9"></TableHead>
                   </TableRow>
                 </TableHeader>
