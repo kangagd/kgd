@@ -277,7 +277,7 @@ export default function MyVehicle() {
       });
     }
     return groups;
-  }, [vehicleTools, toolItemMap]);
+  }, [activeVehicleTools, toolItemMap]);
 
   const latestCheck = useMemo(() => {
     if (!activeVehicleTools?.length) return null;
