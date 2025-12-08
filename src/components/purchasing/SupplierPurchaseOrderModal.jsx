@@ -147,10 +147,12 @@ export default function SupplierPurchaseOrderModal({ open, onClose, supplier, pu
   const handleAddLine = () => {
     setLines([...lines, { 
       price_list_item_id: "", 
+      item_name: "",
       description: "", 
       qty_ordered: 1, 
       unit_cost_ex_tax: "", 
-      tax_rate_percent: 0 
+      tax_rate_percent: 0,
+      is_custom: false
     }]);
   };
 
