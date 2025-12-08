@@ -307,55 +307,57 @@ export default function SupplierPurchaseOrderModal({ open, onClose, supplier, pu
         <div className="modal-panel py-4 space-y-6">
           {/* Header Info */}
           <div className="grid grid-cols-2 gap-4">
-            <div className="space-y-2">
-              <Label className="text-xs font-medium text-gray-700">Delivery Location</Label>
-              <Popover open={locationOpen} onOpenChange={setLocationOpen}>
-                <PopoverTrigger asChild>
-                  <Button
-                    variant="outline"
-                    role="combobox"
-                    aria-expanded={locationOpen}
-                    className="w-full h-[44px] justify-between text-[15px] font-normal"
-                  >
-                    {deliveryLocationId
-                      ? locations.find((loc) => loc.id === deliveryLocationId)?.name
-                      : "Select location..."}
-                    <ChevronsUpDown className="ml-2 h-3 w-3 shrink-0 opacity-50" />
-                  </Button>
-                </PopoverTrigger>
-                <PopoverContent className="w-[300px] p-0 z-[100]">
-                  <Command>
-                    <CommandInput placeholder="Search location..." className="h-8 text-xs" />
-                    <CommandList>
-                      <CommandEmpty>No location found.</CommandEmpty>
-                      <CommandGroup>
-                        {locations.map((loc) => (
-                          <CommandItem
-                            key={loc.id}
-                            value={`${loc.name} ${loc.id}`.toLowerCase()}
-                            keywords={[loc.name]}
-                            onSelect={() => {
-                              setDeliveryLocationId(loc.id);
-                              setLocationOpen(false);
-                            }}
-                            className="text-xs cursor-pointer !opacity-100 !pointer-events-auto"
-                            disabled={false}
-                          >
-                            <Check
-                              className={cn(
-                                "mr-2 h-3 w-3",
-                                deliveryLocationId === loc.id ? "opacity-100" : "opacity-0"
-                              )}
-                            />
-                            {loc.name}
-                          </CommandItem>
-                        ))}
-                      </CommandGroup>
-                    </CommandList>
-                  </Command>
-                </PopoverContent>
-              </Popover>
-            </div>
+            {fulfilmentMethod !== "pickup" && (
+              <div className="space-y-2">
+                <Label className="text-xs font-medium text-gray-700">Delivery Location</Label>
+                <Popover open={locationOpen} onOpenChange={setLocationOpen}>
+                  <PopoverTrigger asChild>
+                    <Button
+                      variant="outline"
+                      role="combobox"
+                      aria-expanded={locationOpen}
+                      className="w-full h-[44px] justify-between text-[15px] font-normal"
+                    >
+                      {deliveryLocationId
+                        ? locations.find((loc) => loc.id === deliveryLocationId)?.name
+                        : "Select location..."}
+                      <ChevronsUpDown className="ml-2 h-3 w-3 shrink-0 opacity-50" />
+                    </Button>
+                  </PopoverTrigger>
+                  <PopoverContent className="w-[300px] p-0 z-[100]">
+                    <Command>
+                      <CommandInput placeholder="Search location..." className="h-8 text-xs" />
+                      <CommandList>
+                        <CommandEmpty>No location found.</CommandEmpty>
+                        <CommandGroup>
+                          {locations.map((loc) => (
+                            <CommandItem
+                              key={loc.id}
+                              value={`${loc.name} ${loc.id}`.toLowerCase()}
+                              keywords={[loc.name]}
+                              onSelect={() => {
+                                setDeliveryLocationId(loc.id);
+                                setLocationOpen(false);
+                              }}
+                              className="text-xs cursor-pointer !opacity-100 !pointer-events-auto"
+                              disabled={false}
+                            >
+                              <Check
+                                className={cn(
+                                  "mr-2 h-3 w-3",
+                                  deliveryLocationId === loc.id ? "opacity-100" : "opacity-0"
+                                )}
+                              />
+                              {loc.name}
+                            </CommandItem>
+                          ))}
+                        </CommandGroup>
+                      </CommandList>
+                    </Command>
+                  </PopoverContent>
+                </Popover>
+              </div>
+            )}
             <div className="space-y-2">
               <Label className="text-xs font-medium text-gray-700">PO Number (Optional)</Label>
               <Input 
@@ -383,7 +385,7 @@ export default function SupplierPurchaseOrderModal({ open, onClose, supplier, pu
                 className="input-sm w-full h-9"
               />
             </div>
-            <div className="space-y-2">
+            <div className="space-y-2 col-span-2">
               <Label className="text-xs font-medium text-gray-700">Fulfilment Method</Label>
               <Select value={fulfilmentMethod} onValueChange={setFulfilmentMethod}>
                 <SelectTrigger className="h-9 text-xs">
