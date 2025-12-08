@@ -57,13 +57,39 @@ export default function PartsHardwareAdmin() {
     },
   });
 
-  const filteredItems = items.filter(c =>
-    c.name.toLowerCase().includes(search.toLowerCase()) ||
-    c.category?.toLowerCase().includes(search.toLowerCase())
-  );
+  const categories = useMemo(() => {
+    const cats = new Set(items.filter(i => i.category).map(i => i.category));
+    return Array.from(cats).sort();
+  }, [items]);
 
-  const activeItems = filteredItems.filter(c => c.is_active !== false);
-  const archivedItems = filteredItems.filter(c => c.is_active === false);
+  const filteredAndSortedItems = useMemo(() => {
+    let filtered = items.filter(c => c.is_active !== false);
+    
+    // Search filter
+    if (search) {
+      filtered = filtered.filter(c =>
+        c.name.toLowerCase().includes(search.toLowerCase()) ||
+        c.category?.toLowerCase().includes(search.toLowerCase())
+      );
+    }
+    
+    // Category filter
+    if (categoryFilter !== "all") {
+      filtered = filtered.filter(c => c.category === categoryFilter);
+    }
+    
+    // Sort
+    filtered.sort((a, b) => {
+      if (sortBy === "name") {
+        return a.name.localeCompare(b.name);
+      } else if (sortBy === "category") {
+        return (a.category || "").localeCompare(b.category || "");
+      }
+      return 0;
+    });
+    
+    return filtered;
+  }, [items, search, categoryFilter, sortBy]);
 
   return (
     <div className="p-4 md:p-6 max-w-6xl mx-auto">
@@ -123,16 +149,20 @@ export default function PartsHardwareAdmin() {
       ) : (
         <>
           <div className="mb-8">
-            <h2 className="text-lg font-semibold text-gray-900 mb-4">Active Items</h2>
-            {activeItems.length === 0 ? (
+            <div className="flex items-center justify-between mb-4">
+              <h2 className="text-lg font-semibold text-gray-900">
+                Items ({filteredAndSortedItems.length})
+              </h2>
+            </div>
+            {filteredAndSortedItems.length === 0 ? (
               <Card>
                 <CardContent className="py-12 text-center text-gray-500">
-                  No items found. Add one to get started.
+                  {search || categoryFilter !== "all" ? "No items match your filters." : "No items found. Add one to get started."}
                 </CardContent>
               </Card>
             ) : (
               <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-                {activeItems.map(item => (
+                {filteredAndSortedItems.map(item => (
                   <Card key={item.id} className="hover:shadow-lg transition-shadow">
                     <CardHeader className="pb-3">
                       <div className="flex items-start justify-between gap-3">
