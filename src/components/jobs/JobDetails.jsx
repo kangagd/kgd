@@ -1507,49 +1507,49 @@ export default function JobDetails({ job: initialJob, onClose, onStatusChange, o
                     </CollapsibleContent>
                   </Collapsible>
 
-              {job.project_id && projectJobs.length > 0 &&
-              <div className="bg-blue-50 border-2 border-blue-200 rounded-xl p-3 mb-4">
+              {job.project_id && projectJobs.length > 0 && (
+                <div className="bg-blue-50 border-2 border-blue-200 rounded-xl p-3 mb-4">
                   <h3 className="text-[14px] font-semibold text-blue-900 leading-[1.4] mb-2 flex items-center gap-1.5">
                     <FolderKanban className="w-4 h-4" />
                     Project Job History ({projectJobs.length})
                   </h3>
                   <div className="space-y-2">
-                    {projectJobs.map((pJob) =>
-                  <div key={pJob.id} className="bg-white border border-blue-200 rounded-lg p-2.5 text-sm">
+                    {projectJobs.map((pJob) => (
+                      <div key={pJob.id} className="bg-white border border-blue-200 rounded-lg p-2.5 text-sm">
                         <div className="flex items-start justify-between gap-2 mb-1.5">
                           <div className="flex-1">
                             <div className="font-bold text-slate-900">
                               {pJob.job_type_name || 'Job'} #{pJob.job_number}
                             </div>
-                            {pJob.scheduled_date &&
-                        <div className="text-xs text-slate-600 flex items-center gap-1 mt-0.5">
+                            {pJob.scheduled_date && (
+                              <div className="text-xs text-slate-600 flex items-center gap-1 mt-0.5">
                                 <Calendar className="w-3 h-3" />
                                 {format(parseISO(pJob.scheduled_date), 'MMM d, yyyy')}
                               </div>
-                        }
+                            )}
                           </div>
-                          {pJob.status &&
-                      <Badge className={`${statusColors[pJob.status]} text-xs font-semibold border hover:opacity-100`}>
+                          {pJob.status && (
+                            <Badge className={`${statusColors[pJob.status]} text-xs font-semibold border hover:opacity-100`}>
                               {pJob.status}
                             </Badge>
-                      }
+                          )}
                         </div>
-                        {pJob.notes && pJob.notes !== "<p><br></p>" && // Check for empty RichTextEditor content
-                    <div className="text-xs text-slate-600 mt-2 pt-2 border-t border-blue-100">
+                        {pJob.notes && pJob.notes !== "<p><br></p>" && (
+                          <div className="text-xs text-slate-600 mt-2 pt-2 border-t border-blue-100">
                             <div className="font-semibold mb-0.5">Notes:</div>
                             <div className="line-clamp-2" dangerouslySetInnerHTML={{ __html: pJob.notes }} />
                           </div>
-                    }
-                        {pJob.outcome &&
-                    <Badge className={`${outcomeColors[pJob.outcome]} text-xs font-semibold border mt-1.5 hover:opacity-100`}>
+                        )}
+                        {pJob.outcome && (
+                          <Badge className={`${outcomeColors[pJob.outcome]} text-xs font-semibold border mt-1.5 hover:opacity-100`}>
                             Outcome: {pJob.outcome?.replace(/_/g, ' ') || pJob.outcome}
                           </Badge>
-                    }
+                        )}
                       </div>
-                  )}
+                    ))}
                   </div>
                 </div>
-              }
+              )}
 
               <div>
                 <RichTextField
@@ -1581,40 +1581,40 @@ export default function JobDetails({ job: initialJob, onClose, onStatusChange, o
                 />
               </div>
 
-              {!isTechnician &&
-              <div className="flex flex-col gap-2">
-                  {!activeCheckIn ?
-                <Button
-                  onClick={handleCheckIn}
-                  disabled={checkInMutation.isPending}
-                  className="w-full bg-[#FAE008] hover:bg-[#E5CF07] text-[#111827] h-11 font-semibold text-base rounded-lg shadow-sm hover:shadow-md transition-all">
-
-                      <LogIn className="w-5 h-5 mr-2" />
-                      {checkInMutation.isPending ? 'Checking In...' : 'Check In'}
-                    </Button> :
-
-                <div className="bg-blue-50 border border-blue-200 rounded-lg p-3">
-                      <div className="flex items-center gap-2 text-blue-700">
-                        <Timer className="w-4 h-4" />
-                        <span className="text-sm font-semibold">
-                          Checked in at {format(new Date(activeCheckIn.check_in_time), 'h:mm a')}
-                        </span>
-                      </div>
+                  {!isTechnician && (
+                    <div className="flex flex-col gap-2">
+                      {!activeCheckIn ? (
+                        <Button
+                          onClick={handleCheckIn}
+                          disabled={checkInMutation.isPending}
+                          className="w-full bg-[#FAE008] hover:bg-[#E5CF07] text-[#111827] h-11 font-semibold text-base rounded-lg shadow-sm hover:shadow-md transition-all"
+                        >
+                          <LogIn className="w-5 h-5 mr-2" />
+                          {checkInMutation.isPending ? 'Checking In...' : 'Check In'}
+                        </Button>
+                      ) : (
+                        <div className="bg-blue-50 border border-blue-200 rounded-lg p-3">
+                          <div className="flex items-center gap-2 text-blue-700">
+                            <Timer className="w-4 h-4" />
+                            <span className="text-sm font-semibold">
+                              Checked in at {format(new Date(activeCheckIn.check_in_time), 'h:mm a')}
+                            </span>
+                          </div>
+                        </div>
+                      )}
+                      {totalJobTime > 0 && (
+                        <div className="bg-[#F8F9FA] border border-[#E5E7EB] rounded-lg p-3">
+                          <div className="flex items-center justify-between">
+                            <span className="text-sm text-[#6B7280] font-semibold">Total Time:</span>
+                            <span className="text-sm font-bold text-[#111827]">{totalJobTime.toFixed(1)}h</span>
+                          </div>
+                        </div>
+                      )}
                     </div>
-                }
-                  {totalJobTime > 0 &&
-                <div className="bg-[#F8F9FA] border border-[#E5E7EB] rounded-lg p-3">
-                      <div className="flex items-center justify-between">
-                        <span className="text-sm text-[#6B7280] font-semibold">Total Time:</span>
-                        <span className="text-sm font-bold text-[#111827]">{totalJobTime.toFixed(1)}h</span>
-                      </div>
-                    </div>
-                }
-                </div>
-              }
+                  )}
 
-              {jobSummaries.length > 0 &&
-              <Collapsible defaultOpen={true} className="pt-3 border-t-2">
+                  {jobSummaries.length > 0 && (
+                    <Collapsible defaultOpen={true} className="pt-3 border-t-2">
                   <CollapsibleTrigger className="flex items-center justify-between w-full group bg-slate-50 border-2 border-slate-200 rounded-xl p-3 hover:bg-slate-100 transition-colors">
                     <h4 className="text-[14px] font-semibold text-[#111827] leading-[1.4]">Previous Visit Summaries ({jobSummaries.length})</h4>
                     <ChevronDown className="w-4 h-4 text-slate-500 transition-transform group-data-[state=open]:rotate-180" />
