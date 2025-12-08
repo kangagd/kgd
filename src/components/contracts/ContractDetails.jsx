@@ -27,8 +27,29 @@ export default function ContractDetails({ contract, onClose, onEdit }) {
   const { data: jobs = [] } = useQuery({
     queryKey: ['contractJobs', contract.id],
     queryFn: async () => {
-      const allJobs = await base44.entities.Job.filter({ contract_id: contract.id });
-      return allJobs.filter(job => !job.deleted_at);
+      // Get jobs directly linked to contract
+      const directJobs = await base44.entities.Job.filter({ contract_id: contract.id });
+      
+      // Get all stations (customers) linked to this contract
+      const stations = await base44.entities.Customer.filter({ contract_id: contract.id, is_station: true });
+      const stationIds = stations.map(s => s.id);
+      
+      // Get jobs for those stations
+      const stationJobs = stationIds.length > 0
+        ? await Promise.all(stationIds.map(id => base44.entities.Job.filter({ customer_id: id })))
+        : [];
+      const flatStationJobs = stationJobs.flat();
+      
+      // Combine and deduplicate
+      const allJobs = [...directJobs, ...flatStationJobs];
+      const uniqueJobs = allJobs.reduce((acc, job) => {
+        if (!acc.find(j => j.id === job.id)) {
+          acc.push(job);
+        }
+        return acc;
+      }, []);
+      
+      return uniqueJobs.filter(job => !job.deleted_at);
     }
   });
 
