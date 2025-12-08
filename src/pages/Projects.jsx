@@ -146,7 +146,7 @@ export default function Projects() {
       setEditingProject(null);
       setShowForm(false);
       // Navigate to the new project page
-      window.location.href = `${createPageUrl("Projects")}?projectId=${newProject.id}`;
+      navigate(`${createPageUrl("Projects")}?projectId=${newProject.id}`);
     }
   });
 
@@ -230,7 +230,7 @@ export default function Projects() {
 
   const handleOpenFullProject = (project) => {
     setModalProject(null);
-    window.location.href = `${createPageUrl("Projects")}?projectId=${project.id}`;
+    navigate(`${createPageUrl("Projects")}?projectId=${project.id}`);
   };
 
   const filteredProjects = projects
@@ -521,7 +521,7 @@ export default function Projects() {
                 className="block"
               >
               <Card
-                className="hover:shadow-lg transition-all duration-200 cursor-pointer hover:border-[#FAE008] border border-[#E5E7EB] rounded-xl relative"
+                className="hover:shadow-lg transition-all duration-200 hover:border-[#FAE008] border border-[#E5E7EB] rounded-xl relative"
               >
                 <Button
                   variant="ghost"
