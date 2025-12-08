@@ -92,6 +92,9 @@ const technicianNavigationItems = [
   { title: "Schedule", url: createPageUrl("Schedule"), icon: Calendar },
   { title: "Jobs", url: createPageUrl("Jobs"), icon: Briefcase },
   { title: "Tasks", url: createPageUrl("Tasks"), icon: CheckSquare },
+  { title: "Logistics", url: createPageUrl("Logistics"), icon: Truck },
+  { title: "Suppliers", url: createPageUrl("Suppliers"), icon: Package },
+  { title: "Photos", url: createPageUrl("Photos"), icon: ImageIcon },
   { title: "Price List", url: createPageUrl("PriceList"), icon: DollarSign },
 ];
 
