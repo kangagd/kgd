@@ -5,7 +5,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { ProjectStatusBadge } from "../components/common/StatusBadge";
-import { Plus, Clock, Briefcase, Calendar, CheckCircle, FolderKanban, CheckSquare } from "lucide-react";
+import { Plus, Clock, Briefcase, Calendar, CheckCircle, FolderKanban, CheckSquare, Truck, Package } from "lucide-react";
 import { format, parseISO } from "date-fns";
 import { useNavigate } from "react-router-dom";
 import { createPageUrl } from "@/utils";
@@ -68,6 +68,21 @@ export default function Dashboard() {
       return new Date(a.due_date) - new Date(b.due_date);
     })
     .slice(0, 5);
+
+  const { data: allPurchaseOrders = [] } = useQuery({
+    queryKey: ['recentPurchaseOrders'],
+    queryFn: () => base44.entities.PurchaseOrder.list('-updated_date', 5),
+    enabled: isAdminOrManager,
+  });
+
+  const recentPurchaseOrders = allPurchaseOrders.filter(po => po.status !== 'received').slice(0, 5);
+
+  const logisticsJobs = jobs.filter(j => 
+    j.job_type === 'Logistics' || 
+    j.vehicle_id || 
+    j.purchase_order_id ||
+    j.third_party_trade_id
+  ).slice(0, 5);
 
   const today = new Date().toISOString().split('T')[0];
   const tomorrow = new Date(Date.now() + 86400000).toISOString().split('T')[0];
