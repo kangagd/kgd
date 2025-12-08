@@ -7,6 +7,7 @@ import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Badge } from "@/components/ui/badge";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { Search, Filter, Truck, Package, MapPin, CheckCircle2, Clock, AlertCircle, Link as LinkIcon, Plus } from "lucide-react";
 import { format } from "date-fns";
 import { createPageUrl } from "@/utils";
@@ -46,6 +47,8 @@ export default function Logistics() {
   const [showOnlyThirdParty, setShowOnlyThirdParty] = useState(false);
   const [showPOModal, setShowPOModal] = useState(false);
   const [selectedSupplier, setSelectedSupplier] = useState(null);
+  const [showSupplierSelector, setShowSupplierSelector] = useState(false);
+  const [tempSupplierSelection, setTempSupplierSelection] = useState("");
 
   // Fetch Data
   const { data: parts = [], isLoading: partsLoading } = useQuery({
@@ -268,8 +271,8 @@ export default function Logistics() {
           </div>
           <Button
             onClick={() => {
-              setSelectedSupplier(null);
-              setShowPOModal(true);
+              setTempSupplierSelection("");
+              setShowSupplierSelector(true);
             }}
             className="bg-[#FAE008] text-[#111827] hover:bg-[#E5CF07] font-semibold shadow-sm hover:shadow-md transition h-10 px-4 text-sm rounded-xl"
           >
@@ -736,15 +739,58 @@ export default function Logistics() {
         />
       )}
 
+      {/* Supplier Selection Dialog */}
+      <Dialog open={showSupplierSelector} onOpenChange={setShowSupplierSelector}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle>Select Supplier</DialogTitle>
+          </DialogHeader>
+          <div className="py-4">
+            <Label className="text-sm font-medium mb-2 block">Choose a supplier for this purchase order</Label>
+            <Select value={tempSupplierSelection} onValueChange={setTempSupplierSelection}>
+              <SelectTrigger className="w-full">
+                <SelectValue placeholder="Select supplier..." />
+              </SelectTrigger>
+              <SelectContent>
+                {suppliers.map(supplier => (
+                  <SelectItem key={supplier.id} value={supplier.id}>
+                    {supplier.name}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setShowSupplierSelector(false)}>
+              Cancel
+            </Button>
+            <Button
+              onClick={() => {
+                const supplier = suppliers.find(s => s.id === tempSupplierSelection);
+                if (supplier) {
+                  setSelectedSupplier(supplier);
+                  setShowSupplierSelector(false);
+                  setShowPOModal(true);
+                }
+              }}
+              disabled={!tempSupplierSelection}
+              className="bg-[#FAE008] text-[#111827] hover:bg-[#E5CF07]"
+            >
+              Continue
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
       {/* Purchase Order Modal */}
-      {showPOModal && (
+      {showPOModal && selectedSupplier && (
         <SupplierPurchaseOrderModal
           open={showPOModal}
           onClose={() => {
             setShowPOModal(false);
             setSelectedSupplier(null);
           }}
-          supplier={selectedSupplier || (suppliers.length > 0 ? suppliers[0] : null)}
+          supplier={selectedSupplier}
         />
       )}
     </div>
