@@ -395,6 +395,15 @@ export default function SupplierPurchaseOrderModal({ open, onClose, supplier, pu
                 </SelectContent>
               </Select>
             </div>
+            {fulfilmentMethod === "pickup" && supplier?.pickup_address && (
+              <div className="col-span-2 bg-blue-50 border border-blue-200 rounded-lg p-3">
+                <Label className="text-xs font-medium text-blue-900">Pickup Address</Label>
+                <p className="text-sm text-blue-800 mt-1">{supplier.pickup_address}</p>
+                {supplier.opening_hours && (
+                  <p className="text-xs text-blue-600 mt-1">Hours: {supplier.opening_hours}</p>
+                )}
+              </div>
+            )}
             <div className="col-span-2 space-y-2">
               <Label className="text-xs font-medium text-gray-700">Notes</Label>
               <Textarea 
