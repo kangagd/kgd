@@ -214,6 +214,12 @@ export default function SupplierPurchaseOrderModal({ open, onClose, supplier, pu
     mutationFn: async () => {
       if (!supplier) throw new Error("No supplier selected");
       
+      // Ensure fulfilment_method is always valid
+      const finalFulfilmentMethod =
+        fulfilmentMethod === "pickup" || fulfilmentMethod === "delivery"
+          ? fulfilmentMethod
+          : "delivery";
+      
       const locationName = locations.find(l => l.id === deliveryLocationId)?.name || "";
       const poData = {
         supplier_id: supplier.id,
@@ -224,7 +230,7 @@ export default function SupplierPurchaseOrderModal({ open, onClose, supplier, pu
         po_number: poNumber || null,
         order_date: orderDate,
         expected_date: expectedDate || null,
-        fulfilment_method: fulfilmentMethod || null,
+        fulfilment_method: finalFulfilmentMethod,
         notes: notes,
         attachments: attachments,
         total_amount_ex_tax: calculateTotal(),
