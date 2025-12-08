@@ -104,7 +104,14 @@ export default function PartsHardwareAdmin() {
                 {activeItems.map(item => (
                   <Card key={item.id} className="hover:shadow-lg transition-shadow">
                     <CardHeader className="pb-3">
-                      <div className="flex items-start justify-between">
+                      <div className="flex items-start justify-between gap-3">
+                        {item.image_url && (
+                          <img
+                            src={item.image_url}
+                            alt={item.name}
+                            className="w-16 h-16 object-cover rounded-lg flex-shrink-0"
+                          />
+                        )}
                         <div className="flex-1">
                           <CardTitle className="text-lg">{item.name}</CardTitle>
                           {item.category && (
