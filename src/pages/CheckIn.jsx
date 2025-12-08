@@ -9,6 +9,7 @@ import { Badge } from "@/components/ui/badge";
 import { Clock, MapPin, CheckCircle, LogIn, LogOut } from "lucide-react";
 import { format, parseISO } from "date-fns";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { toast } from "sonner";
 
 export default function CheckIn() {
   const [user, setUser] = useState(null);
@@ -62,6 +63,10 @@ export default function CheckIn() {
       queryClient.invalidateQueries({ queryKey: ['myJobs'] });
       setSelectedJobId("");
       setNotes("");
+      toast.success("Checked in successfully!");
+    },
+    onError: (error) => {
+      toast.error("Failed to check in: " + error.message);
     },
   });
 
@@ -86,6 +91,10 @@ export default function CheckIn() {
       queryClient.invalidateQueries({ queryKey: ['myCheckIns'] });
       queryClient.invalidateQueries({ queryKey: ['myJobs'] });
       setNotes("");
+      toast.success("Checked out successfully!");
+    },
+    onError: (error) => {
+      toast.error("Failed to check out: " + error.message);
     },
   });
 
