@@ -89,6 +89,13 @@ Deno.serve(async (req) => {
                     itemMap[item.id] = item.item;
                 }
 
+                // Build detailed line items summary
+                const itemsSummary = poLines.map(line => {
+                    const itemName = itemMap[line.price_list_item_id] || line.description || "Item";
+                    const qty = line.qty_ordered || 0;
+                    return `${qty}x ${itemName}`;
+                }).join(', ');
+
                 const jobData = {
                     purchase_order_id: po.id,
                     project_id: null, // Stock PO
@@ -99,8 +106,8 @@ Deno.serve(async (req) => {
                     address: address,
                     address_full: address,
                     scheduled_date: scheduledDate,
-                    notes: notes,
-                    overview: `${fulfilment === "pickup" ? "Pickup" : "Delivery"} from ${supplier.name}`,
+                    notes: `PO ${po.po_number || po.id} from ${supplier.name} – ${itemsSummary}${notes ? '\n' + notes : ''}`,
+                    overview: `${fulfilment === "pickup" ? "Pickup" : "Delivery"} from ${supplier.name}: ${itemsSummary}`,
                     customer_name: supplier.name,
                     image_urls: po.attachments || []
                 };
