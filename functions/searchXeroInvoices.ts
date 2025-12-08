@@ -56,8 +56,8 @@ Deno.serve(async (req) => {
     const connection = await refreshAndGetConnection(base44);
 
     // Build Xero API URL with filters
-    // Fetch recent invoices, excluding voided
-    let url = `https://api.xero.com/api.xro/2.0/Invoices?Statuses=DRAFT,SUBMITTED,AUTHORISED,PAID&order=UpdatedDateUTC DESC&page=${page}`;
+    // Fetch recent invoices only (Type=ACCREC), excluding voided and bills (Type=ACCPAY)
+    let url = `https://api.xero.com/api.xro/2.0/Invoices?Statuses=DRAFT,SUBMITTED,AUTHORISED,PAID&Type=ACCREC&order=UpdatedDateUTC DESC&page=${page}`;
     
     // If search term provided, we'll filter client-side since Xero search is limited
     const xeroResponse = await fetch(url, {
