@@ -69,6 +69,8 @@ export default function Dashboard() {
     })
     .slice(0, 5);
 
+  const isAdminOrManager = user?.role === 'admin' || user?.role === 'manager';
+
   const { data: allPurchaseOrders = [] } = useQuery({
     queryKey: ['recentPurchaseOrders'],
     queryFn: () => base44.entities.PurchaseOrder.list('-updated_date', 5),
