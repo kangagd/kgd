@@ -1507,51 +1507,51 @@ export default function JobDetails({ job: initialJob, onClose, onStatusChange, o
                     </CollapsibleContent>
                   </Collapsible>
 
-              {job.project_id && projectJobs.length > 0 && (
-                <div className="bg-blue-50 border-2 border-blue-200 rounded-xl p-3 mb-4">
-                  <h3 className="text-[14px] font-semibold text-blue-900 leading-[1.4] mb-2 flex items-center gap-1.5">
-                    <FolderKanban className="w-4 h-4" />
-                    Project Job History ({projectJobs.length})
-                  </h3>
-                  <div className="space-y-2">
-                    {projectJobs.map((pJob) => (
-                      <div key={pJob.id} className="bg-white border border-blue-200 rounded-lg p-2.5 text-sm">
-                        <div className="flex items-start justify-between gap-2 mb-1.5">
-                          <div className="flex-1">
-                            <div className="font-bold text-slate-900">
-                              {pJob.job_type_name || 'Job'} #{pJob.job_number}
+                  {job.project_id && projectJobs.length > 0 && (
+                    <div className="bg-blue-50 border-2 border-blue-200 rounded-xl p-3 mb-4">
+                      <h3 className="text-[14px] font-semibold text-blue-900 leading-[1.4] mb-2 flex items-center gap-1.5">
+                        <FolderKanban className="w-4 h-4" />
+                        Project Job History ({projectJobs.length})
+                      </h3>
+                      <div className="space-y-2">
+                        {projectJobs.map((pJob) => (
+                          <div key={pJob.id} className="bg-white border border-blue-200 rounded-lg p-2.5 text-sm">
+                            <div className="flex items-start justify-between gap-2 mb-1.5">
+                              <div className="flex-1">
+                                <div className="font-bold text-slate-900">
+                                  {pJob.job_type_name || 'Job'} #{pJob.job_number}
+                                </div>
+                                {pJob.scheduled_date && (
+                                  <div className="text-xs text-slate-600 flex items-center gap-1 mt-0.5">
+                                    <Calendar className="w-3 h-3" />
+                                    {format(parseISO(pJob.scheduled_date), 'MMM d, yyyy')}
+                                  </div>
+                                )}
+                              </div>
+                              {pJob.status && (
+                                <Badge className={`${statusColors[pJob.status]} text-xs font-semibold border hover:opacity-100`}>
+                                  {pJob.status}
+                                </Badge>
+                              )}
                             </div>
-                            {pJob.scheduled_date && (
-                              <div className="text-xs text-slate-600 flex items-center gap-1 mt-0.5">
-                                <Calendar className="w-3 h-3" />
-                                {format(parseISO(pJob.scheduled_date), 'MMM d, yyyy')}
+                            {pJob.notes && pJob.notes !== "<p><br></p>" && (
+                              <div className="text-xs text-slate-600 mt-2 pt-2 border-t border-blue-100">
+                                <div className="font-semibold mb-0.5">Notes:</div>
+                                <div className="line-clamp-2" dangerouslySetInnerHTML={{ __html: pJob.notes }} />
                               </div>
                             )}
+                            {pJob.outcome && (
+                              <Badge className={`${outcomeColors[pJob.outcome]} text-xs font-semibold border mt-1.5 hover:opacity-100`}>
+                                Outcome: {pJob.outcome?.replace(/_/g, ' ') || pJob.outcome}
+                              </Badge>
+                            )}
                           </div>
-                          {pJob.status && (
-                            <Badge className={`${statusColors[pJob.status]} text-xs font-semibold border hover:opacity-100`}>
-                              {pJob.status}
-                            </Badge>
-                          )}
-                        </div>
-                        {pJob.notes && pJob.notes !== "<p><br></p>" && (
-                          <div className="text-xs text-slate-600 mt-2 pt-2 border-t border-blue-100">
-                            <div className="font-semibold mb-0.5">Notes:</div>
-                            <div className="line-clamp-2" dangerouslySetInnerHTML={{ __html: pJob.notes }} />
-                          </div>
-                        )}
-                        {pJob.outcome && (
-                          <Badge className={`${outcomeColors[pJob.outcome]} text-xs font-semibold border mt-1.5 hover:opacity-100`}>
-                            Outcome: {pJob.outcome?.replace(/_/g, ' ') || pJob.outcome}
-                          </Badge>
-                        )}
+                        ))}
                       </div>
-                    ))}
-                  </div>
-                </div>
-              )}
+                    </div>
+                  )}
 
-              <div>
+                  <div>
                 <RichTextField
                   label="Job Info"
                   value={additionalInfo}
@@ -1615,71 +1615,71 @@ export default function JobDetails({ job: initialJob, onClose, onStatusChange, o
 
                   {jobSummaries.length > 0 && (
                     <Collapsible defaultOpen={true} className="pt-3 border-t-2">
-                  <CollapsibleTrigger className="flex items-center justify-between w-full group bg-slate-50 border-2 border-slate-200 rounded-xl p-3 hover:bg-slate-100 transition-colors">
-                    <h4 className="text-[14px] font-semibold text-[#111827] leading-[1.4]">Previous Visit Summaries ({jobSummaries.length})</h4>
-                    <ChevronDown className="w-4 h-4 text-slate-500 transition-transform group-data-[state=open]:rotate-180" />
-                  </CollapsibleTrigger>
-                  
-                  <CollapsibleContent className="pt-3 space-y-3">
-                    {jobSummaries.map((summary) =>
-                  <div key={summary.id} className="bg-white border-2 border-slate-200 rounded-xl p-3">
-                        <div className="flex items-center justify-between mb-3">
-                          <span className="font-bold text-[#000000]">{summary.technician_name}</span>
-                          <span className="text-xs text-slate-500 font-medium">
-                            {format(new Date(summary.check_out_time), 'MMM d, yyyy h:mm a')}
-                          </span>
-                        </div>
-                        
-                        {summary.outcome &&
-                    <Badge className={`${outcomeColors[summary.outcome]} mb-3 font-semibold border-2 hover:opacity-100`}>
-                            {summary.outcome?.replace(/_/g, ' ') || summary.outcome}
-                          </Badge>
-                    }
+                      <CollapsibleTrigger className="flex items-center justify-between w-full group bg-slate-50 border-2 border-slate-200 rounded-xl p-3 hover:bg-slate-100 transition-colors">
+                        <h4 className="text-[14px] font-semibold text-[#111827] leading-[1.4]">Previous Visit Summaries ({jobSummaries.length})</h4>
+                        <ChevronDown className="w-4 h-4 text-slate-500 transition-transform group-data-[state=open]:rotate-180" />
+                      </CollapsibleTrigger>
+                      
+                      <CollapsibleContent className="pt-3 space-y-3">
+                        {jobSummaries.map((summary) => (
+                          <div key={summary.id} className="bg-white border-2 border-slate-200 rounded-xl p-3">
+                            <div className="flex items-center justify-between mb-3">
+                              <span className="font-bold text-[#000000]">{summary.technician_name}</span>
+                              <span className="text-xs text-slate-500 font-medium">
+                                {format(new Date(summary.check_out_time), 'MMM d, yyyy h:mm a')}
+                              </span>
+                            </div>
+                            
+                            {summary.outcome && (
+                              <Badge className={`${outcomeColors[summary.outcome]} mb-3 font-semibold border-2 hover:opacity-100`}>
+                                {summary.outcome?.replace(/_/g, ' ') || summary.outcome}
+                              </Badge>
+                            )}
 
-                        <div className="space-y-2">
-                          {summary.overview &&
-                      <div>
-                              <div className="text-xs font-bold text-slate-500 mb-1">Work Performed:</div>
-                              <div className="text-sm text-slate-700" dangerouslySetInnerHTML={{ __html: summary.overview }} />
-                            </div>
-                      }
+                            <div className="space-y-2">
+                              {summary.overview && (
+                                <div>
+                                  <div className="text-xs font-bold text-slate-500 mb-1">Work Performed:</div>
+                                  <div className="text-sm text-slate-700" dangerouslySetInnerHTML={{ __html: summary.overview }} />
+                                </div>
+                              )}
 
-                          {summary.issues_found &&
-                      <div>
-                              <div className="text-xs font-bold text-slate-500 mb-1">Issues Found:</div>
-                              <div className="text-sm text-slate-700" dangerouslySetInnerHTML={{ __html: summary.issues_found }} />
-                            </div>
-                      }
+                              {summary.issues_found && (
+                                <div>
+                                  <div className="text-xs font-bold text-slate-500 mb-1">Issues Found:</div>
+                                  <div className="text-sm text-slate-700" dangerouslySetInnerHTML={{ __html: summary.issues_found }} />
+                                </div>
+                              )}
 
-                          {summary.resolution &&
-                      <div>
-                              <div className="text-xs font-bold text-slate-500 mb-1">Resolution:</div>
-                              <div className="text-sm text-slate-700" dangerouslySetInnerHTML={{ __html: summary.resolution }} />
+                              {summary.resolution && (
+                                <div>
+                                  <div className="text-xs font-bold text-slate-500 mb-1">Resolution:</div>
+                                  <div className="text-sm text-slate-700" dangerouslySetInnerHTML={{ __html: summary.resolution }} />
+                                </div>
+                              )}
+                              
+                              {summary.next_steps && (
+                                <div>
+                                  <div className="text-xs font-bold text-slate-500 mb-1">Next Steps:</div>
+                                  <div className="text-sm text-slate-700" dangerouslySetInnerHTML={{ __html: summary.next_steps }} />
+                                </div>
+                              )}
+                              
+                              {summary.communication_with_client && (
+                                <div>
+                                  <div className="text-xs font-bold text-slate-500 mb-1">Communication:</div>
+                                  <div className="text-sm text-slate-700" dangerouslySetInnerHTML={{ __html: summary.communication_with_client }} />
+                                </div>
+                              )}
                             </div>
-                      }
-                          
-                          {summary.next_steps &&
-                      <div>
-                              <div className="text-xs font-bold text-slate-500 mb-1">Next Steps:</div>
-                              <div className="text-sm text-slate-700" dangerouslySetInnerHTML={{ __html: summary.next_steps }} />
-                            </div>
-                      }
-                          
-                          {summary.communication_with_client &&
-                      <div>
-                              <div className="text-xs font-bold text-slate-500 mb-1">Communication:</div>
-                              <div className="text-sm text-slate-700" dangerouslySetInnerHTML={{ __html: summary.communication_with_client }} />
-                            </div>
-                      }
-                        </div>
-                      </div>
+                          </div>
+                        ))}
+                      </CollapsibleContent>
+                    </Collapsible>
                   )}
-                  </CollapsibleContent>
-                  </Collapsible>
-                  )}
-                  </>
-                  )}
-                  </TabsContent>
+                </>
+              )}
+            </TabsContent>
 
             {!isLogisticsJob && (
               <TabsContent value="visit" className="space-y-3 mt-2">
