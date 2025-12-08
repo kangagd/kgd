@@ -199,79 +199,77 @@ export default function LogisticsJobDetail({ job: initialJob, onClose }) {
   const isDelivery = job.job_type_name?.toLowerCase().includes('delivery');
 
   return (
-    <div className="bg-[#ffffff] min-h-screen">
-      <div className="mx-auto p-5 md:p-10 max-w-6xl">
-        <div className="flex items-center gap-3 mb-4">
-          <BackButton onClick={onClose} />
-        </div>
-
-        <div className="flex items-center justify-between mb-6">
-          <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-lg bg-blue-100 flex items-center justify-center">
-              <Truck className="w-5 h-5 text-blue-600" />
-            </div>
-            <div>
-              <h1 className="text-2xl font-bold text-[#111827]">Job #{job.job_number}</h1>
-              <p className="text-sm text-[#6B7280]">{job.job_type_name}</p>
-            </div>
-          </div>
-          <Badge className={`${statusColors[job.status]} border text-xs font-semibold px-3 py-1`}>
-            {job.status}
-          </Badge>
-        </div>
-
-        <Card className="border border-[#E5E7EB] shadow-sm mb-6">
-          <CardHeader className="border-b border-[#E5E7EB] bg-white p-6">
-            <CardTitle className="text-lg font-bold text-[#111827]">Job Details</CardTitle>
-          </CardHeader>
-          <CardContent className="p-6">
-            <div className="space-y-4">
-              {job.project_id && project && (
-                <div>
-                  <label className="text-sm font-medium text-[#6B7280]">Project</label>
-                  <Link to={`${createPageUrl("Projects")}?projectId=${job.project_id}`}>
-                    <div className="flex items-center gap-2 text-purple-600 hover:text-purple-700 transition-colors mt-1">
-                      <FolderKanban className="w-4 h-4" />
-                      <span className="text-sm font-medium">{project.title}</span>
-                    </div>
-                  </Link>
+    <div className="p-4 md:p-5 lg:p-10 bg-[#ffffff] min-h-screen">
+      <div className="max-w-4xl mx-auto">
+        <Card className="border border-[#E5E7EB] shadow-sm rounded-lg overflow-hidden">
+          <CardHeader className="border-b border-[#E5E7EB] bg-white p-4 space-y-3">
+            <div className="flex items-center justify-between gap-3">
+              <div className="flex items-center gap-2">
+                <BackButton onClick={onClose} />
+                <div className="flex items-center gap-2">
+                  <Truck className="w-5 h-5 text-blue-600" />
+                  <h1 className="text-xl font-bold text-[#111827]">Logistics Job #{job.job_number}</h1>
                 </div>
+              </div>
+              <Badge className={`${statusColors[job.status]} border text-xs font-semibold px-3 py-1`}>
+                {job.status}
+              </Badge>
+            </div>
+
+            {/* Job Info */}
+            <div className="bg-slate-50 rounded-lg p-4 space-y-3">
+              <div className="flex items-center gap-2">
+                <Package className="w-4 h-4 text-slate-600" />
+                <span className="font-semibold text-slate-900">{job.job_type_name}</span>
+              </div>
+
+              {job.project_id && project && (
+                <Link to={`${createPageUrl("Projects")}?projectId=${job.project_id}`}>
+                  <div className="flex items-center gap-2 text-purple-600 hover:text-purple-700 transition-colors">
+                    <FolderKanban className="w-4 h-4" />
+                    <span className="text-sm font-medium">{project.title}</span>
+                  </div>
+                </Link>
               )}
 
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div>
-                  <label className="text-sm font-medium text-[#6B7280]">
-                    {isPickup ? 'Pickup From' : 'Deliver To'}
-                  </label>
-                  <button
-                    onClick={() => window.open(`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(job.address)}`, '_blank')}
-                    className="text-sm text-[#111827] hover:text-blue-600 transition-colors text-left mt-1 flex items-center gap-2"
-                  >
-                    <MapPin className="w-4 h-4 flex-shrink-0" />
-                    {job.address_full || job.address}
-                  </button>
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+                <div className="flex items-start gap-2">
+                  <Navigation className="w-4 h-4 text-green-600 mt-0.5 flex-shrink-0" />
+                  <div>
+                    <div className="text-xs text-slate-500 mb-0.5">
+                      {isPickup ? 'Pickup From' : 'Deliver To'}
+                    </div>
+                    <button
+                      onClick={() => window.open(`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(job.address)}`, '_blank')}
+                      className="text-sm text-slate-900 hover:text-green-600 transition-colors text-left"
+                    >
+                      {job.address_full || job.address}
+                    </button>
+                  </div>
                 </div>
 
-                <div>
-                  <label className="text-sm font-medium text-[#6B7280]">Scheduled</label>
-                  <div className="mt-1">
+                <div className="flex items-start gap-2">
+                  <Calendar className="w-4 h-4 text-blue-600 mt-0.5 flex-shrink-0" />
+                  <div>
+                    <div className="text-xs text-slate-500 mb-0.5">Scheduled</div>
                     <EditableField
                       value={job.scheduled_date}
                       onSave={(val) => updateJobMutation.mutate({ scheduled_date: val })}
                       type="date"
                       displayFormat={(val) => format(parseISO(val), 'MMM d, yyyy')}
                       placeholder="Set date"
-                      className="text-sm font-medium text-[#111827]"
+                      className="text-sm font-medium text-slate-900"
                     />
                     {job.scheduled_time && (
-                      <div className="text-sm text-[#6B7280] mt-1">{job.scheduled_time}</div>
+                      <div className="text-sm text-slate-600 mt-0.5">{job.scheduled_time}</div>
                     )}
                   </div>
                 </div>
 
-                <div>
-                  <label className="text-sm font-medium text-[#6B7280]">Assigned To</label>
-                  <div className="mt-1">
+                <div className="flex items-start gap-2">
+                  <User className="w-4 h-4 text-purple-600 mt-0.5 flex-shrink-0" />
+                  <div>
+                    <div className="text-xs text-slate-500 mb-0.5">Assigned To</div>
                     <EditableField
                       value={Array.isArray(job.assigned_to) ? job.assigned_to : job.assigned_to ? [job.assigned_to] : []}
                       onSave={handleAssignedToChange}
@@ -308,38 +306,34 @@ export default function LogisticsJobDetail({ job: initialJob, onClose }) {
                     />
                   </div>
                 </div>
-
-                {purchaseOrder && (
-                  <div>
-                    <label className="text-sm font-medium text-[#6B7280]">Purchase Order</label>
-                    <div className="mt-1">
-                      <div className="text-sm font-medium text-[#111827]">
-                        {purchaseOrder.po_number || 'Draft'} • {purchaseOrder.supplier_name}
-                      </div>
-                      {purchaseOrder.expected_date && (
-                        <div className="text-xs text-[#6B7280] mt-1">
-                          Expected: {format(new Date(purchaseOrder.expected_date), 'MMM d, yyyy')}
-                        </div>
-                      )}
-                    </div>
-                  </div>
-                )}
               </div>
-            </div>
-          </CardContent>
-        </Card>
 
-        <div className="grid grid-cols-1 gap-6">
-          {/* Order Items Checklist */}
-          {(poLines.length > 0 || linkedParts.length > 0) && (
-            <Card className="border border-[#E5E7EB] shadow-sm">
-              <CardHeader className="border-b border-[#E5E7EB] bg-white p-6">
-                <CardTitle className="text-lg font-bold text-[#111827] flex items-center gap-2">
-                  <Package className="w-5 h-5" />
-                  Items Checklist
-                </CardTitle>
-              </CardHeader>
-              <CardContent className="p-0">
+              {purchaseOrder && (
+                <div className="pt-3 border-t border-slate-200 space-y-1">
+                  <div className="text-xs text-slate-500">Purchase Order</div>
+                  <div className="font-medium text-slate-900">
+                    {purchaseOrder.po_number || 'Draft'} • {purchaseOrder.supplier_name}
+                  </div>
+                  {purchaseOrder.expected_date && (
+                    <div className="text-xs text-slate-600">
+                      Expected: {format(new Date(purchaseOrder.expected_date), 'MMM d, yyyy')}
+                    </div>
+                  )}
+                </div>
+              )}
+            </div>
+          </CardHeader>
+
+          <CardContent className="p-4 space-y-4">
+            {/* SECTION 2: Order Items Checklist */}
+            {(poLines.length > 0 || linkedParts.length > 0) && (
+              <div className="border border-slate-200 rounded-lg overflow-hidden">
+                <div className="bg-slate-50 px-4 py-3 border-b border-slate-200">
+                  <h3 className="font-semibold text-slate-900 flex items-center gap-2">
+                    <Package className="w-4 h-4" />
+                    Items Checklist
+                  </h3>
+                </div>
                 <div className="divide-y divide-slate-200">
                   {/* PO Lines */}
                   {poLines.map((line) => {
@@ -391,62 +385,60 @@ export default function LogisticsJobDetail({ job: initialJob, onClose }) {
                     );
                   })}
                 </div>
-              </CardContent>
-            </Card>
-          )}
+              </div>
+            )}
 
-          {/* Photos */}
-          <Card className="border border-[#E5E7EB] shadow-sm">
-            <CardHeader className="border-b border-[#E5E7EB] bg-white p-6">
-              <CardTitle className="text-lg font-bold text-[#111827] flex items-center gap-2">
-                <ImageIcon className="w-5 h-5" />
-                Photos
-              </CardTitle>
-            </CardHeader>
-            <CardContent className="p-6">
-              <EditableFileUpload
-                files={job.image_urls || []}
-                onFilesChange={handleImagesChange}
-                accept="image/*,video/*"
-                multiple={true}
-                icon={ImageIcon}
-                label=""
-                emptyText="Upload photos"
-              />
-            </CardContent>
-          </Card>
+            {/* Photos */}
+            <div className="border border-slate-200 rounded-lg overflow-hidden">
+              <div className="bg-slate-50 px-4 py-3 border-b border-slate-200">
+                <h3 className="font-semibold text-slate-900 flex items-center gap-2">
+                  <ImageIcon className="w-4 h-4" />
+                  Photos
+                </h3>
+              </div>
+              <div className="p-4">
+                <EditableFileUpload
+                  files={job.image_urls || []}
+                  onFilesChange={handleImagesChange}
+                  accept="image/*,video/*"
+                  multiple={true}
+                  icon={ImageIcon}
+                  label=""
+                  emptyText="Upload photos"
+                />
+              </div>
+            </div>
 
-          {/* Notes */}
-          <Card className="border border-[#E5E7EB] shadow-sm">
-            <CardHeader className="border-b border-[#E5E7EB] bg-white p-6">
-              <CardTitle className="text-lg font-bold text-[#111827]">Notes</CardTitle>
-            </CardHeader>
-            <CardContent className="p-6">
-              <div className="space-y-4">
+            {/* SECTION 3: Notes */}
+            <div className="border border-slate-200 rounded-lg overflow-hidden">
+              <div className="bg-slate-50 px-4 py-3 border-b border-slate-200">
+                <h3 className="font-semibold text-slate-900">Notes</h3>
+              </div>
+              <div className="p-4 space-y-3">
                 <div>
-                  <label className="block text-sm font-medium text-[#6B7280] mb-2">Job Notes</label>
+                  <label className="block text-sm font-medium text-slate-700 mb-2">Job Notes</label>
                   <Textarea
                     value={notes}
                     onChange={(e) => setNotes(e.target.value)}
                     onBlur={handleNotesBlur}
                     placeholder="Add pickup/delivery notes..."
-                    className="min-h-[100px]"
+                    className="min-h-[80px]"
                   />
                 </div>
 
                 {purchaseOrder?.notes && (
-                  <div className="pt-4 border-t border-[#E5E7EB]">
-                    <div className="text-sm font-medium text-[#6B7280] mb-2">Purchase Order Notes</div>
-                    <div className="text-sm text-[#111827] bg-[#F9FAFB] p-3 rounded-lg">{purchaseOrder.notes}</div>
+                  <div className="pt-3 border-t border-slate-200">
+                    <div className="text-xs font-medium text-slate-500 mb-1">Purchase Order Notes:</div>
+                    <div className="text-sm text-slate-700 bg-slate-50 p-2 rounded">{purchaseOrder.notes}</div>
                   </div>
                 )}
 
                 {linkedParts.some(p => p.notes) && (
-                  <div className="pt-4 border-t border-[#E5E7EB]">
-                    <div className="text-sm font-medium text-[#6B7280] mb-2">Part Notes</div>
+                  <div className="pt-3 border-t border-slate-200">
+                    <div className="text-xs font-medium text-slate-500 mb-2">Part Notes:</div>
                     <div className="space-y-2">
                       {linkedParts.filter(p => p.notes).map((part) => (
-                        <div key={part.id} className="text-sm text-[#111827] bg-[#F9FAFB] p-3 rounded-lg">
+                        <div key={part.id} className="text-sm text-slate-700 bg-slate-50 p-2 rounded">
                           <span className="font-medium">{part.category}:</span> {part.notes}
                         </div>
                       ))}
@@ -454,33 +446,31 @@ export default function LogisticsJobDetail({ job: initialJob, onClose }) {
                   </div>
                 )}
               </div>
-            </CardContent>
-          </Card>
+            </div>
 
-          {/* Team Chat */}
-          <Card className="border border-[#E5E7EB] shadow-sm">
-            <CardHeader className="border-b border-[#E5E7EB] bg-white p-6">
-              <CardTitle className="text-lg font-bold text-[#111827] flex items-center gap-2">
-                <MessageCircle className="w-5 h-5" />
-                Team Chat
-              </CardTitle>
-            </CardHeader>
-            <CardContent className="p-6">
-              <JobChat jobId={job.id} />
-            </CardContent>
-          </Card>
+            {/* Chat */}
+            <div className="border border-slate-200 rounded-lg overflow-hidden">
+              <div className="bg-slate-50 px-4 py-3 border-b border-slate-200">
+                <h3 className="font-semibold text-slate-900 flex items-center gap-2">
+                  <MessageCircle className="w-4 h-4" />
+                  Team Chat
+                </h3>
+              </div>
+              <div className="p-4">
+                <JobChat jobId={job.id} />
+              </div>
+            </div>
 
-          {/* Attachments */}
-          {(purchaseOrder?.attachments?.length > 0 || linkedParts.some(p => p.attachments?.length > 0) || job.other_documents?.length > 0) && (
-            <Card className="border border-[#E5E7EB] shadow-sm">
-              <CardHeader className="border-b border-[#E5E7EB] bg-white p-6">
-                <CardTitle className="text-lg font-bold text-[#111827] flex items-center gap-2">
-                  <FileText className="w-5 h-5" />
-                  Attachments
-                </CardTitle>
-              </CardHeader>
-              <CardContent className="p-6">
-                <div className="space-y-2">
+            {/* SECTION 4: Attachments */}
+            {(purchaseOrder?.attachments?.length > 0 || linkedParts.some(p => p.attachments?.length > 0) || job.other_documents?.length > 0) && (
+              <div className="border border-slate-200 rounded-lg overflow-hidden">
+                <div className="bg-slate-50 px-4 py-3 border-b border-slate-200">
+                  <h3 className="font-semibold text-slate-900 flex items-center gap-2">
+                    <FileText className="w-4 h-4" />
+                    Attachments
+                  </h3>
+                </div>
+                <div className="p-4 space-y-2">
                   {purchaseOrder?.attachments?.map((url, idx) => (
                     <Button
                       key={`po-${idx}`}
@@ -520,54 +510,52 @@ export default function LogisticsJobDetail({ job: initialJob, onClose }) {
                     </Button>
                   ))}
                 </div>
-              </CardContent>
-            </Card>
-          )}
+              </div>
+            )}
 
-          {/* Outcome Actions */}
-          {job.status !== "Completed" && job.status !== "Cancelled" && (
-            <Card className="border border-[#E5E7EB] shadow-sm">
-              <CardHeader className="border-b border-[#E5E7EB] bg-white p-6">
-                <CardTitle className="text-lg font-bold text-[#111827]">Complete Job</CardTitle>
-              </CardHeader>
-              <CardContent className="p-6 space-y-4">
-                <div className="grid grid-cols-2 gap-3">
-                  <Button
-                    variant="outline"
-                    onClick={handleReschedule}
-                    disabled={updateJobMutation.isPending}
-                    className="font-medium h-11"
-                  >
-                    <Clock className="w-4 h-4 mr-2" />
-                    Reschedule
-                  </Button>
-                  <Button
-                    onClick={handleComplete}
-                    disabled={updateJobMutation.isPending}
-                    className="bg-[#16A34A] hover:bg-[#15803D] text-white font-semibold h-11"
-                  >
-                    <CheckCircle2 className="w-4 h-4 mr-2" />
-                    {updateJobMutation.isPending ? 'Completing...' : 'Mark Complete'}
-                  </Button>
+            {/* SECTION 5: Outcome */}
+            {job.status !== "Completed" && job.status !== "Cancelled" && (
+              <div className="border border-slate-200 rounded-lg overflow-hidden">
+                <div className="bg-slate-50 px-4 py-3 border-b border-slate-200">
+                  <h3 className="font-semibold text-slate-900">Outcome</h3>
                 </div>
-                <p className="text-xs text-[#6B7280] text-center">
-                  Mark complete when all items have been picked up or delivered
-                </p>
-              </CardContent>
-            </Card>
-          )}
+                <div className="p-4 space-y-3">
+                  <div className="grid grid-cols-2 gap-3">
+                    <Button
+                      variant="outline"
+                      onClick={handleReschedule}
+                      disabled={updateJobMutation.isPending}
+                      className="font-medium h-11"
+                    >
+                      <Clock className="w-4 h-4 mr-2" />
+                      Reschedule
+                    </Button>
+                    <Button
+                      onClick={handleComplete}
+                      disabled={updateJobMutation.isPending}
+                      className="bg-emerald-600 hover:bg-emerald-700 text-white font-semibold h-11"
+                    >
+                      <CheckCircle2 className="w-4 h-4 mr-2" />
+                      {updateJobMutation.isPending ? 'Completing...' : 'Mark Complete'}
+                    </Button>
+                  </div>
+                  <p className="text-xs text-slate-500 text-center">
+                    Mark complete when all items have been picked up or delivered
+                  </p>
+                </div>
+              </div>
+            )}
 
-          {job.status === "Completed" && (
-            <Card className="border border-[#16A34A] bg-[#F0FDF4]">
-              <CardContent className="p-6">
-                <div className="flex items-center gap-2 text-[#16A34A]">
+            {job.status === "Completed" && (
+              <div className="bg-emerald-50 border border-emerald-200 rounded-lg p-4">
+                <div className="flex items-center gap-2 text-emerald-700">
                   <CheckCircle2 className="w-5 h-5" />
                   <span className="font-semibold">Logistics job completed</span>
                 </div>
-              </CardContent>
-            </Card>
-          )}
-        </div>
+              </div>
+            )}
+          </CardContent>
+        </Card>
       </div>
     </div>
   );
