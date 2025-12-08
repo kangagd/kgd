@@ -21,9 +21,7 @@ export default function ContractDetails({ contract, onClose, onEdit }) {
     queryFn: async () => {
       const response = await base44.functions.invoke('getContractDashboardData', { contract_id: contract.id });
       return response.data;
-    },
-    refetchInterval: 30000, // Auto-refresh every 30 seconds
-    refetchOnWindowFocus: true
+    }
   });
 
   const { data: jobs = [] } = useQuery({
