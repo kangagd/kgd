@@ -541,61 +541,81 @@ export default function SupplierPurchaseOrderModal({ open, onClose, supplier, pu
                   {lines.map((line, index) => (
                     <TableRow key={index} className="hover:bg-gray-50 border-b last:border-0">
                       <TableCell className="p-2">
-                        <Popover 
-                            open={itemOpenStates[index] || false} 
-                            onOpenChange={(open) => setItemOpenStates({ ...itemOpenStates, [index]: open })}
-                        >
-                          <PopoverTrigger asChild>
-                            <Button
-                              variant="outline"
-                              role="combobox"
-                              aria-expanded={itemOpenStates[index] || false}
-                              className="w-full h-8 justify-between text-xs font-normal px-2"
+                        <div className="space-y-1.5">
+                          {!line.is_custom ? (
+                            <Popover 
+                                open={itemOpenStates[index] || false} 
+                                onOpenChange={(open) => setItemOpenStates({ ...itemOpenStates, [index]: open })}
                             >
-                              {line.price_list_item_id
-                                ? (() => {
-                                    const item = availableItems.find((i) => i.id === line.price_list_item_id);
-                                    return item ? item.item : "Select item";
-                                  })()
-                                : "Select item"}
-                              <ChevronsUpDown className="ml-2 h-3 w-3 shrink-0 opacity-50" />
-                            </Button>
-                          </PopoverTrigger>
-                          <PopoverContent className="w-[350px] p-0 z-[100]" align="start">
-                            <Command>
-                              <CommandInput placeholder="Search item..." className="h-8 text-xs" />
-                              <CommandList>
-                                <CommandEmpty>No item found.</CommandEmpty>
-                                <CommandGroup>
-                                  {availableItems.map((item) => (
-                                    <CommandItem
-                                      key={item.id}
-                                      value={`${item.item} ${item.sku || ''} ${item.id}`.toLowerCase()}
-                                      keywords={[item.item, item.sku || '']}
-                                      onSelect={() => {
-                                        handleLineChange(index, "price_list_item_id", item.id);
-                                        setItemOpenStates({ ...itemOpenStates, [index]: false });
-                                      }}
-                                      className="text-xs cursor-pointer !opacity-100 !pointer-events-auto"
-                                      disabled={false}
-                                    >
-                                      <Check
-                                        className={cn(
-                                          "mr-2 h-3 w-3",
-                                          line.price_list_item_id === item.id ? "opacity-100" : "opacity-0"
-                                        )}
-                                      />
-                                      <div className="flex flex-col">
-                                        <span>{item.item}</span>
-                                        {item.sku && <span className="text-xs text-muted-foreground">{item.sku}</span>}
-                                      </div>
-                                    </CommandItem>
-                                  ))}
-                                </CommandGroup>
-                              </CommandList>
-                            </Command>
-                          </PopoverContent>
-                        </Popover>
+                              <PopoverTrigger asChild>
+                                <Button
+                                  variant="outline"
+                                  role="combobox"
+                                  aria-expanded={itemOpenStates[index] || false}
+                                  className="w-full h-8 justify-between text-xs font-normal px-2"
+                                >
+                                  {line.price_list_item_id
+                                    ? (() => {
+                                        const item = availableItems.find((i) => i.id === line.price_list_item_id);
+                                        return item ? item.item : "Select item";
+                                      })()
+                                    : "Select item"}
+                                  <ChevronsUpDown className="ml-2 h-3 w-3 shrink-0 opacity-50" />
+                                </Button>
+                              </PopoverTrigger>
+                              <PopoverContent className="w-[350px] p-0 z-[100]" align="start">
+                                <Command>
+                                  <CommandInput placeholder="Search item..." className="h-8 text-xs" />
+                                  <CommandList>
+                                    <CommandEmpty>No item found.</CommandEmpty>
+                                    <CommandGroup>
+                                      {availableItems.map((item) => (
+                                        <CommandItem
+                                          key={item.id}
+                                          value={`${item.item} ${item.sku || ''} ${item.id}`.toLowerCase()}
+                                          keywords={[item.item, item.sku || '']}
+                                          onSelect={() => {
+                                            handleLineChange(index, "price_list_item_id", item.id);
+                                            setItemOpenStates({ ...itemOpenStates, [index]: false });
+                                          }}
+                                          className="text-xs cursor-pointer !opacity-100 !pointer-events-auto"
+                                          disabled={false}
+                                        >
+                                          <Check
+                                            className={cn(
+                                              "mr-2 h-3 w-3",
+                                              line.price_list_item_id === item.id ? "opacity-100" : "opacity-0"
+                                            )}
+                                          />
+                                          <div className="flex flex-col">
+                                            <span>{item.item}</span>
+                                            {item.sku && <span className="text-xs text-muted-foreground">{item.sku}</span>}
+                                          </div>
+                                        </CommandItem>
+                                      ))}
+                                    </CommandGroup>
+                                  </CommandList>
+                                </Command>
+                              </PopoverContent>
+                            </Popover>
+                          ) : (
+                            <Input
+                              value={line.item_name || ""}
+                              onChange={(e) => handleLineChange(index, "item_name", e.target.value)}
+                              placeholder="Enter item name"
+                              className="h-8 text-xs w-full"
+                            />
+                          )}
+                          <label className="flex items-center gap-1.5 cursor-pointer">
+                            <input
+                              type="checkbox"
+                              checked={line.is_custom || false}
+                              onChange={(e) => handleLineChange(index, "is_custom", e.target.checked)}
+                              className="w-3 h-3"
+                            />
+                            <span className="text-[10px] text-gray-500">Custom item</span>
+                          </label>
+                        </div>
                       </TableCell>
                       <TableCell className="p-2">
                         <Input 
