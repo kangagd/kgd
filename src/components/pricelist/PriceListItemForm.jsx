@@ -202,11 +202,35 @@ export default function PriceListItemForm({ item, onSubmit, onCancel, isSubmitti
               </div>
 
               <div>
-                <Label>Image URL</Label>
+                <Label>Image</Label>
+                {formData.image_url && (
+                  <div className="mb-2">
+                    <img src={formData.image_url} alt="Item" className="w-32 h-32 object-cover rounded-lg border" />
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => setFormData({ ...formData, image_url: "" })}
+                      className="mt-1 text-xs text-red-600"
+                    >
+                      Remove
+                    </Button>
+                  </div>
+                )}
                 <Input
-                  value={formData.image_url || ""}
-                  onChange={(e) => setFormData({ ...formData, image_url: e.target.value })}
-                  placeholder="https://..."
+                  type="file"
+                  accept="image/*"
+                  onChange={async (e) => {
+                    const file = e.target.files?.[0];
+                    if (file) {
+                      try {
+                        const { data } = await base44.integrations.Core.UploadFile({ file });
+                        setFormData({ ...formData, image_url: data.file_url });
+                      } catch (error) {
+                        console.error('Error uploading image:', error);
+                      }
+                    }
+                  }}
                 />
               </div>
 
