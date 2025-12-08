@@ -4,15 +4,18 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Textarea } from "@/components/ui/textarea";
 import { Checkbox } from "@/components/ui/checkbox";
-import { ArrowLeft, MapPin, Calendar, Clock, Truck, Package, CheckCircle2, Navigation, Trash2, FileText, ExternalLink, FolderKanban } from "lucide-react";
+import { ArrowLeft, MapPin, Calendar, Clock, Truck, Package, CheckCircle2, Navigation, Trash2, FileText, ExternalLink, FolderKanban, User, Image as ImageIcon, MessageCircle } from "lucide-react";
 import { format, parseISO } from "date-fns";
 import { base44 } from "@/api/base44Client";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
 import BackButton from "../common/BackButton";
 import EditableField from "./EditableField";
+import EditableFileUpload from "./EditableFileUpload";
+import JobChat from "./JobChat";
 import { Link } from "react-router-dom";
 import { createPageUrl } from "@/utils";
+import TechnicianAvatar, { TechnicianAvatarGroup } from "../common/TechnicianAvatar";
 
 const statusColors = {
   "Open": "bg-slate-100 text-slate-700 border-slate-200",
@@ -69,6 +72,13 @@ export default function LogisticsJobDetail({ job: initialJob, onClose }) {
     queryKey: ['project', job.project_id],
     queryFn: () => base44.entities.Project.get(job.project_id),
     enabled: !!job.project_id
+  });
+
+  // Fetch technicians
+  const { data: technicians = [] } = useQuery({
+    queryKey: ['technicians'],
+    queryFn: () => base44.entities.User.filter({ is_field_technician: true }),
+    enabled: !!(user?.role === 'admin' || user?.role === 'manager')
   });
 
   useEffect(() => {
@@ -146,6 +156,45 @@ export default function LogisticsJobDetail({ job: initialJob, onClose }) {
     toast.info("Job status changed to Open for rescheduling");
   };
 
+  const handleAssignedToChange = (emails) => {
+    const newAssignedEmails = Array.isArray(emails) ? emails : emails ? [emails] : [];
+    const techNames = newAssignedEmails.map((email) => {
+      const tech = technicians.find((t) => t.email === email);
+      return tech?.display_name || tech?.full_name;
+    }).filter(Boolean);
+    
+    updateJobMutation.mutate({
+      assigned_to: newAssignedEmails,
+      assigned_to_name: techNames
+    });
+  };
+
+  const handleImagesChange = async (urls) => {
+    updateJobMutation.mutate({ image_urls: urls });
+    
+    // Create Photo records for new images
+    const existingUrls = job.image_urls || [];
+    const newUrls = Array.isArray(urls) ? urls.filter(url => !existingUrls.includes(url)) : [];
+    
+    if (newUrls.length > 0 && user) {
+      for (const url of newUrls) {
+        try {
+          await base44.entities.Photo.create({
+            image_url: url,
+            job_id: job.id,
+            job_number: job.job_number,
+            uploaded_at: new Date().toISOString(),
+            technician_email: user.email,
+            technician_name: user.full_name
+          });
+        } catch (error) {
+          console.error('Failed to create photo record:', error);
+        }
+      }
+      queryClient.invalidateQueries({ queryKey: ['photos'] });
+    }
+  };
+
   const isPickup = job.job_type_name?.toLowerCase().includes('pickup');
   const isDelivery = job.job_type_name?.toLowerCase().includes('delivery');
 
@@ -183,7 +232,7 @@ export default function LogisticsJobDetail({ job: initialJob, onClose }) {
                 </Link>
               )}
 
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
                 <div className="flex items-start gap-2">
                   <Navigation className="w-4 h-4 text-green-600 mt-0.5 flex-shrink-0" />
                   <div>
@@ -214,6 +263,47 @@ export default function LogisticsJobDetail({ job: initialJob, onClose }) {
                     {job.scheduled_time && (
                       <div className="text-sm text-slate-600 mt-0.5">{job.scheduled_time}</div>
                     )}
+                  </div>
+                </div>
+
+                <div className="flex items-start gap-2">
+                  <User className="w-4 h-4 text-purple-600 mt-0.5 flex-shrink-0" />
+                  <div>
+                    <div className="text-xs text-slate-500 mb-0.5">Assigned To</div>
+                    <EditableField
+                      value={Array.isArray(job.assigned_to) ? job.assigned_to : job.assigned_to ? [job.assigned_to] : []}
+                      onSave={handleAssignedToChange}
+                      type="multi-select"
+                      options={technicians.map((t) => ({ value: t.email, label: t.display_name || t.full_name }))}
+                      displayFormat={(val) => {
+                        const emailsToDisplay = Array.isArray(val) ? val : val ? [val] : [];
+                        const namesToDisplay = Array.isArray(job.assigned_to_name) ? job.assigned_to_name : job.assigned_to_name ? [job.assigned_to_name] : [];
+
+                        if (namesToDisplay.length === 0) {
+                          return (
+                            <TechnicianAvatar
+                              technician={{ email: '', full_name: 'Unassigned', id: 'unassigned' }}
+                              size="sm"
+                              showPlaceholder={true}
+                            />
+                          );
+                        }
+
+                        return (
+                          <TechnicianAvatarGroup
+                            technicians={emailsToDisplay.map((email, idx) => ({
+                              email,
+                              display_name: namesToDisplay[idx] || email,
+                              full_name: namesToDisplay[idx] || email,
+                              id: email
+                            }))}
+                            maxDisplay={3}
+                            size="sm"
+                          />
+                        );
+                      }}
+                      placeholder="Assign"
+                    />
                   </div>
                 </div>
               </div>
@@ -258,16 +348,13 @@ export default function LogisticsJobDetail({ job: initialJob, onClose }) {
                         <div className="flex-1">
                           <div className="font-medium text-slate-900">{line.item_name || line.description}</div>
                           <div className="text-xs text-slate-500 mt-0.5">
-                            Qty: {line.qty_ordered} • ${line.unit_cost_ex_tax?.toFixed(2)} each
+                            Qty: {line.qty_ordered}
                           </div>
                           {line.qty_received > 0 && (
                             <Badge variant="outline" className="text-[10px] mt-1 bg-green-50 text-green-700 border-green-200">
                               {line.qty_received}/{line.qty_ordered} received
                             </Badge>
                           )}
-                        </div>
-                        <div className="text-right">
-                          <div className="font-semibold text-slate-900">${line.total_line_ex_tax?.toFixed(2)}</div>
                         </div>
                       </div>
                     );
@@ -303,6 +390,27 @@ export default function LogisticsJobDetail({ job: initialJob, onClose }) {
                 </div>
               </div>
             )}
+
+            {/* Photos */}
+            <div className="border border-slate-200 rounded-lg overflow-hidden">
+              <div className="bg-slate-50 px-4 py-3 border-b border-slate-200">
+                <h3 className="font-semibold text-slate-900 flex items-center gap-2">
+                  <ImageIcon className="w-4 h-4" />
+                  Photos
+                </h3>
+              </div>
+              <div className="p-4">
+                <EditableFileUpload
+                  files={job.image_urls || []}
+                  onFilesChange={handleImagesChange}
+                  accept="image/*,video/*"
+                  multiple={true}
+                  icon={ImageIcon}
+                  label=""
+                  emptyText="Upload photos"
+                />
+              </div>
+            </div>
 
             {/* SECTION 3: Notes */}
             <div className="border border-slate-200 rounded-lg overflow-hidden">
@@ -340,6 +448,19 @@ export default function LogisticsJobDetail({ job: initialJob, onClose }) {
                     </div>
                   </div>
                 )}
+              </div>
+            </div>
+
+            {/* Chat */}
+            <div className="border border-slate-200 rounded-lg overflow-hidden">
+              <div className="bg-slate-50 px-4 py-3 border-b border-slate-200">
+                <h3 className="font-semibold text-slate-900 flex items-center gap-2">
+                  <MessageCircle className="w-4 h-4" />
+                  Team Chat
+                </h3>
+              </div>
+              <div className="p-4">
+                <JobChat jobId={job.id} />
               </div>
             </div>
 
