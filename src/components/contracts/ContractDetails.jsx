@@ -26,7 +26,10 @@ export default function ContractDetails({ contract, onClose, onEdit }) {
 
   const { data: jobs = [] } = useQuery({
     queryKey: ['contractJobs', contract.id],
-    queryFn: () => base44.entities.Job.filter({ contract_id: contract.id })
+    queryFn: async () => {
+      const allJobs = await base44.entities.Job.filter({ contract_id: contract.id });
+      return allJobs.filter(job => !job.deleted_at);
+    }
   });
 
   const stations = dashboardData?.stations || [];
