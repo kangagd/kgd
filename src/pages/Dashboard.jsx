@@ -362,31 +362,39 @@ export default function Dashboard() {
                 </div>
               ) : (
                 <div className="space-y-3">
-                  {logisticsJobs.map(job => (
-                    <div 
-                      key={job.id} 
-                      className="p-4 rounded-xl border border-[#E5E7EB] hover:bg-[#F9FAFB] hover:border-[#FAE008] transition-all cursor-pointer"
-                      onClick={() => navigate(createPageUrl("Jobs") + `?jobId=${job.id}`)}
-                    >
-                      <div className="flex items-start gap-3">
-                        <div className="w-8 h-8 bg-[#FAE008]/10 rounded-lg flex items-center justify-center flex-shrink-0">
-                          <Truck className="w-4 h-4 text-[#111827]" />
-                        </div>
-                        <div className="flex-1 min-w-0">
-                          <h4 className="text-[14px] font-medium text-[#111827] leading-[1.4]">
-                            #{job.job_number} {job.job_type_name || 'Logistics'}
-                          </h4>
-                          <p className="text-[12px] text-[#6B7280] leading-[1.35] truncate">{job.notes || job.address_full}</p>
-                          {job.scheduled_date && (
-                            <p className="text-[12px] text-[#6B7280] leading-[1.35] mt-1">
-                              {format(parseISO(job.scheduled_date), 'MMM d')}
-                              {job.scheduled_time && ` • ${job.scheduled_time}`}
-                            </p>
-                          )}
+                  {logisticsJobs.map(job => {
+                    const po = job.purchase_order_id ? allPurchaseOrders.find(p => p.id === job.purchase_order_id) : null;
+                    const supplierName = po?.supplier_name || job.customer_name;
+                    
+                    return (
+                      <div 
+                        key={job.id} 
+                        className="p-4 rounded-xl border border-[#E5E7EB] hover:bg-[#F9FAFB] hover:border-[#FAE008] transition-all cursor-pointer"
+                        onClick={() => navigate(createPageUrl("Jobs") + `?jobId=${job.id}`)}
+                      >
+                        <div className="flex items-start gap-3">
+                          <div className="w-8 h-8 bg-[#FAE008]/10 rounded-lg flex items-center justify-center flex-shrink-0">
+                            <Truck className="w-4 h-4 text-[#111827]" />
+                          </div>
+                          <div className="flex-1 min-w-0">
+                            <h4 className="text-[14px] font-medium text-[#111827] leading-[1.4]">
+                              #{job.job_number} {job.job_type_name || 'Logistics'}
+                            </h4>
+                            {supplierName && (
+                              <p className="text-[12px] font-medium text-[#111827] leading-[1.35]">{supplierName}</p>
+                            )}
+                            <p className="text-[12px] text-[#6B7280] leading-[1.35] truncate">{job.address_full || job.address}</p>
+                            {job.scheduled_date && (
+                              <p className="text-[12px] text-[#6B7280] leading-[1.35] mt-1">
+                                {format(parseISO(job.scheduled_date), 'MMM d')}
+                                {job.scheduled_time && ` • ${job.scheduled_time}`}
+                              </p>
+                            )}
+                          </div>
                         </div>
                       </div>
-                    </div>
-                  ))}
+                    );
+                  })}
                 </div>
               )}
             </div>
