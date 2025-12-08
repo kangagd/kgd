@@ -226,6 +226,7 @@ export default function PriceListItemForm({ item, onSubmit, onCancel, isSubmitti
                       try {
                         const { data } = await base44.integrations.Core.UploadFile({ file });
                         setFormData({ ...formData, image_url: data.file_url });
+                        e.target.value = '';
                       } catch (error) {
                         console.error('Error uploading image:', error);
                       }
