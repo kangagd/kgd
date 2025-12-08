@@ -63,6 +63,11 @@ export default function Logistics() {
     queryFn: () => base44.entities.PurchaseOrder.list(),
   });
 
+  const { data: purchaseOrderLines = [] } = useQuery({
+    queryKey: ['purchaseOrderLines'],
+    queryFn: () => base44.entities.PurchaseOrderLine.list(),
+  });
+
   const { data: inventoryQuantities = [] } = useQuery({
     queryKey: ['inventoryQuantities'],
     queryFn: () => base44.entities.InventoryQuantity.list(),
