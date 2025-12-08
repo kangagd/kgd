@@ -172,6 +172,7 @@ Deno.serve(async (req) => {
       credit_notes_total: creditNotesTotal,
       last_payment_date: lastPaymentDate,
       online_payment_url: onlinePaymentUrl, // Public customer-facing URL
+      online_invoice_url: onlinePaymentUrl, // Also save in online_invoice_url field
       raw_payload: xeroInvoice
     });
 
