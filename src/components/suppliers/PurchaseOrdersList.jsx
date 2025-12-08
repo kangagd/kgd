@@ -51,7 +51,7 @@ export default function PurchaseOrdersList({ supplierId, onSelectPO }) {
               <TableHead className="text-[11px] uppercase text-gray-500 h-9">PO Number</TableHead>
               <TableHead className="text-[11px] uppercase text-gray-500 h-9">Date</TableHead>
               <TableHead className="text-[11px] uppercase text-gray-500 h-9">Status</TableHead>
-              <TableHead className="text-[11px] uppercase text-gray-500 h-9">Delivery To</TableHead>
+              <TableHead className="text-[11px] uppercase text-gray-500 h-9">Delivery/Pick Up</TableHead>
               <TableHead className="text-[11px] uppercase text-gray-500 h-9">Amount</TableHead>
               <TableHead className="text-[11px] uppercase text-gray-500 text-right h-9">Actions</TableHead>
             </TableRow>
@@ -82,7 +82,13 @@ export default function PurchaseOrdersList({ supplierId, onSelectPO }) {
                     </div>
                   )}
                 </TableCell>
-                <TableCell className="px-2 py-2">{po.delivery_location_name || "—"}</TableCell>
+                <TableCell className="px-2 py-2">
+                  {po.fulfilment_method === 'pickup' && po.supplier_name ? (
+                    <span className="text-blue-700">Pickup: {po.supplier_name}</span>
+                  ) : (
+                    po.delivery_location_name || "—"
+                  )}
+                </TableCell>
                 <TableCell className="px-2 py-2">${po.total_amount_ex_tax?.toFixed(2) || "0.00"}</TableCell>
                 <TableCell className="px-2 py-2 text-right">
                   <div className="flex justify-end gap-2">
