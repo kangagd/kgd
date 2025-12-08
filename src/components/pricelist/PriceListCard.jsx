@@ -28,6 +28,13 @@ export default function PriceListCard({ item, isAdmin, canModifyStock, onEdit, o
           <div className="space-y-3">
             {/* Header Row */}
             <div className="flex items-start justify-between gap-3">
+              {item.image_url && (
+                <img 
+                  src={item.image_url} 
+                  alt={item.item} 
+                  className="w-16 h-16 object-cover rounded-lg border border-gray-200 flex-shrink-0"
+                />
+              )}
               <div className="flex-1 min-w-0">
                 <div className="flex items-center gap-2 mb-2">
                   <Badge className={`${categoryColors[item.category] || "bg-slate-100 text-slate-700"} font-medium border-0 px-2.5 py-0.5 rounded-lg text-[12px] leading-[1.35]`}>
