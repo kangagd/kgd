@@ -159,7 +159,7 @@ export default function JobDetails({ job: initialJob, onClose, onStatusChange, o
   const [showPaymentModal, setShowPaymentModal] = useState(false);
   const [showLinkInvoiceModal, setShowLinkInvoiceModal] = useState(false);
   const [showItemsUsedModal, setShowItemsUsedModal] = useState(false);
-  const [checkedItems, setCheckedItems] = useState({});
+  const [checkedItems, setCheckedItems] = useState(job.checked_items || {});
 
   const [user, setUser] = useState(null);
   const [measurements, setMeasurements] = useState(job.measurements || null);
@@ -338,6 +338,11 @@ export default function JobDetails({ job: initialJob, onClose, onStatusChange, o
         }
         if (outcome === 'completed' && !allItemsChecked()) {
           throw new Error("All items must be checked off before completing.");
+        }
+        
+        // Save checked items state to job when completing logistics
+        if (outcome === 'completed') {
+          await base44.entities.Job.update(job.id, { checked_items: checkedItems });
         }
       }
 
