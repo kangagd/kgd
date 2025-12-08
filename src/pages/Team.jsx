@@ -23,7 +23,6 @@ export default function Team() {
   const [currentUser, setCurrentUser] = useState(null);
   const [searchTerm, setSearchTerm] = useState("");
   const [roleFilter, setRoleFilter] = useState("all");
-  const [statusFilter, setStatusFilter] = useState("all");
   const [selectedUser, setSelectedUser] = useState(null);
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
 
@@ -88,6 +87,9 @@ export default function Team() {
 
   // Filter users
   const filteredUsers = users.filter(user => {
+    // Exclude inactive users by default
+    if ((user.status || 'active') === 'inactive') return false;
+    
     const matchesSearch = 
       (user.display_name?.toLowerCase() || '').includes(searchTerm.toLowerCase()) ||
       (user.full_name?.toLowerCase() || '').includes(searchTerm.toLowerCase()) ||
@@ -99,11 +101,8 @@ export default function Team() {
       (roleFilter === "manager" && user.role === "manager") ||
       (roleFilter === "technician" && user.is_field_technician) ||
       (roleFilter === "viewer" && user.role === "viewer");
-    
-    const matchesStatus = statusFilter === "all" || 
-      (user.status || 'active') === statusFilter;
 
-    return matchesSearch && matchesRole && matchesStatus;
+    return matchesSearch && matchesRole;
   });
 
   const handleEditUser = (user) => {
@@ -192,16 +191,7 @@ export default function Team() {
                     <SelectItem value="viewer">Viewer</SelectItem>
                   </SelectContent>
                 </Select>
-                <Select value={statusFilter} onValueChange={setStatusFilter}>
-                  <SelectTrigger className="w-[150px]">
-                    <SelectValue placeholder="Status" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="all">All Status</SelectItem>
-                    <SelectItem value="active">Active</SelectItem>
-                    <SelectItem value="inactive">Inactive</SelectItem>
-                  </SelectContent>
-                </Select>
+
               </div>
             </div>
           </CardContent>
