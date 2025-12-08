@@ -251,7 +251,7 @@ export default function Logistics() {
     });
   }, [stockLogisticsJobs, showOnlyThirdParty, tradesByProjectId]);
 
-  // Stats
+  // Stats - Include both Parts and Purchase Order Lines
   const stats = useMemo(() => {
     const activeParts = parts.filter(p => !["Delivered", "Cancelled", "Returned"].includes(p.status));
     const urgentParts = activeParts.filter(p => {
@@ -260,13 +260,28 @@ export default function Logistics() {
     });
     const atDeliveryBay = activeParts.filter(p => p.location === INVENTORY_LOCATION.DELIVERY_BAY);
     
+    // Add active PO lines
+    const activePOs = purchaseOrders.filter(po => 
+      po.status === 'sent' || po.status === 'partially_received'
+    );
+    const activePOIds = new Set(activePOs.map(po => po.id));
+    const activePOLines = purchaseOrderLines.filter(line => 
+      activePOIds.has(line.purchase_order_id) && 
+      (line.qty_received || 0) < line.qty_ordered
+    );
+    
+    // Count unreceived items from POs
+    const unreceived = activePOLines.reduce((sum, line) => 
+      sum + (line.qty_ordered - (line.qty_received || 0)), 0
+    );
+    
     return {
-      totalActive: activeParts.length,
+      totalActive: activeParts.length + unreceived,
       overdue: urgentParts.length,
       readyForPickup: atDeliveryBay.length,
       withTech: activeParts.filter(p => p.location === INVENTORY_LOCATION.WITH_TECHNICIAN).length
     };
-  }, [parts]);
+  }, [parts, purchaseOrders, purchaseOrderLines]);
 
   return (
     <div className="p-4 md:p-5 lg:p-10 bg-[#ffffff] min-h-screen">
