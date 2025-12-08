@@ -237,7 +237,7 @@ export default function JobDetails({ job: initialJob, onClose, onStatusChange, o
   });
 
   // Detect logistics job
-  const isLogisticsJob = job.job_type === 'Logistics' || job.vehicle_id || job.purchase_order_id || job.third_party_trade_id;
+  const isLogisticsJob = !!(job.job_type === 'Logistics' || job.vehicle_id || job.purchase_order_id || job.third_party_trade_id);
 
   // Fetch purchase order data for logistics jobs
   const { data: purchaseOrder } = useQuery({
