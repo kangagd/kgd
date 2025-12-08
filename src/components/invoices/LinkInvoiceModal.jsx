@@ -61,21 +61,26 @@ export default function LinkInvoiceModal({ open, onClose, onSelect, isSubmitting
     enabled: open
   });
 
-  // Create a map of linked invoice IDs to their project IDs (not to this project)
-  // Also check if the linked job is deleted
+  // Create a map of linked invoice IDs that should be excluded
+  // Only exclude if: linked to another project AND (not linked to a job OR job is not deleted)
   const linkedToOtherProjectIds = new Set(
     linkedInvoices
       .filter(inv => {
-        if (!inv.project_id || inv.project_id === projectId) return false;
+        // Allow if linked to current project
+        if (inv.project_id === projectId) return false;
+        
+        // Allow if not linked to any project or job
+        if (!inv.project_id && !inv.job_id) return false;
         
         // If linked to a job, check if that job is deleted
         if (inv.job_id) {
           const linkedJob = allJobs.find(j => j.id === inv.job_id);
-          // If job is deleted, allow this invoice to be linked again
+          // If job is deleted, allow this invoice to be relinked
           if (linkedJob?.deleted_at) return false;
         }
         
-        return true;
+        // Exclude if linked to another project and job is not deleted
+        return inv.project_id && inv.project_id !== projectId;
       })
       .map(inv => inv.xero_invoice_id)
   );
