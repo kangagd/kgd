@@ -164,20 +164,7 @@ export default function PartsHardwareAdmin() {
             )}
           </div>
 
-          {archivedItems.length > 0 && (
-            <div>
-              <h2 className="text-lg font-semibold text-gray-500 mb-4">Archived</h2>
-              <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3 opacity-60">
-                {archivedItems.map(item => (
-                  <Card key={item.id}>
-                    <CardHeader>
-                      <CardTitle className="text-lg text-gray-500">{item.name}</CardTitle>
-                    </CardHeader>
-                  </Card>
-                ))}
-              </div>
-            </div>
-          )}
+
         </>
       )}
 
