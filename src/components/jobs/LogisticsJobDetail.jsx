@@ -3,14 +3,16 @@ import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Textarea } from "@/components/ui/textarea";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { ArrowLeft, MapPin, Calendar, Clock, Truck, Package, CheckCircle2, Navigation, Trash2 } from "lucide-react";
+import { Checkbox } from "@/components/ui/checkbox";
+import { ArrowLeft, MapPin, Calendar, Clock, Truck, Package, CheckCircle2, Navigation, Trash2, FileText, ExternalLink, FolderKanban } from "lucide-react";
 import { format, parseISO } from "date-fns";
 import { base44 } from "@/api/base44Client";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
 import BackButton from "../common/BackButton";
 import EditableField from "./EditableField";
+import { Link } from "react-router-dom";
+import { createPageUrl } from "@/utils";
 
 const statusColors = {
   "Open": "bg-slate-100 text-slate-700 border-slate-200",
@@ -55,6 +57,20 @@ export default function LogisticsJobDetail({ job: initialJob, onClose }) {
     }
   });
 
+  // Fetch supplier
+  const { data: supplier } = useQuery({
+    queryKey: ['supplier', purchaseOrder?.supplier_id],
+    queryFn: () => base44.entities.Supplier.get(purchaseOrder.supplier_id),
+    enabled: !!purchaseOrder?.supplier_id
+  });
+
+  // Fetch project
+  const { data: project } = useQuery({
+    queryKey: ['project', job.project_id],
+    queryFn: () => base44.entities.Project.get(job.project_id),
+    enabled: !!job.project_id
+  });
+
   useEffect(() => {
     const loadUser = async () => {
       try {
@@ -87,6 +103,34 @@ export default function LogisticsJobDetail({ job: initialJob, onClose }) {
     }
   };
 
+  const togglePOLineMutation = useMutation({
+    mutationFn: async ({ lineId, isDone }) => {
+      const line = poLines.find(l => l.id === lineId);
+      await base44.entities.PurchaseOrderLine.update(lineId, {
+        qty_received: isDone ? line.qty_ordered : 0
+      });
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['po-lines'] });
+      toast.success("Item updated");
+    }
+  });
+
+  const togglePartMutation = useMutation({
+    mutationFn: async ({ partId, isDone }) => {
+      const newStatus = isDone ? "Delivered" : "Ordered";
+      const newLocation = isDone ? "At Delivery Bay" : "At Supplier";
+      await base44.entities.Part.update(partId, {
+        status: newStatus,
+        location: newLocation
+      });
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['parts-for-logistics-job'] });
+      toast.success("Part updated");
+    }
+  });
+
   const handleComplete = () => {
     updateJobMutation.mutate({ 
       status: "Completed",
@@ -96,8 +140,10 @@ export default function LogisticsJobDetail({ job: initialJob, onClose }) {
   };
 
   const handleReschedule = () => {
-    // Just navigate to schedule page with this job pre-selected
-    window.location.href = `${window.location.origin}/Schedule?jobId=${job.id}`;
+    updateJobMutation.mutate({ 
+      status: "Open"
+    });
+    toast.info("Job status changed to Open for rescheduling");
   };
 
   const isPickup = job.job_type_name?.toLowerCase().includes('pickup');
@@ -127,6 +173,15 @@ export default function LogisticsJobDetail({ job: initialJob, onClose }) {
                 <Package className="w-4 h-4 text-slate-600" />
                 <span className="font-semibold text-slate-900">{job.job_type_name}</span>
               </div>
+
+              {job.project_id && project && (
+                <Link to={`${createPageUrl("Projects")}?projectId=${job.project_id}`}>
+                  <div className="flex items-center gap-2 text-purple-600 hover:text-purple-700 transition-colors">
+                    <FolderKanban className="w-4 h-4" />
+                    <span className="text-sm font-medium">{project.title}</span>
+                  </div>
+                </Link>
+              )}
 
               <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
                 <div className="flex items-start gap-2">
@@ -164,156 +219,220 @@ export default function LogisticsJobDetail({ job: initialJob, onClose }) {
               </div>
 
               {purchaseOrder && (
-                <div className="pt-3 border-t border-slate-200">
-                  <div className="text-xs text-slate-500 mb-1">Purchase Order</div>
+                <div className="pt-3 border-t border-slate-200 space-y-1">
+                  <div className="text-xs text-slate-500">Purchase Order</div>
                   <div className="font-medium text-slate-900">
                     {purchaseOrder.po_number || 'Draft'} • {purchaseOrder.supplier_name}
                   </div>
+                  {purchaseOrder.expected_date && (
+                    <div className="text-xs text-slate-600">
+                      Expected: {format(new Date(purchaseOrder.expected_date), 'MMM d, yyyy')}
+                    </div>
+                  )}
                 </div>
               )}
             </div>
           </CardHeader>
 
           <CardContent className="p-4 space-y-4">
-            {/* Order Items Section */}
-            {poLines.length > 0 && (
+            {/* SECTION 2: Order Items Checklist */}
+            {(poLines.length > 0 || linkedParts.length > 0) && (
               <div className="border border-slate-200 rounded-lg overflow-hidden">
                 <div className="bg-slate-50 px-4 py-3 border-b border-slate-200">
                   <h3 className="font-semibold text-slate-900 flex items-center gap-2">
                     <Package className="w-4 h-4" />
-                    Order Items
+                    Items Checklist
                   </h3>
                 </div>
                 <div className="divide-y divide-slate-200">
-                  {poLines.map((line, idx) => (
-                    <div key={idx} className="p-3 flex items-center justify-between hover:bg-slate-50 transition-colors">
-                      <div className="flex-1">
-                        <div className="font-medium text-slate-900">{line.description}</div>
-                        <div className="text-xs text-slate-500 mt-0.5">
-                          Qty: {line.qty_ordered} • ${line.unit_cost_ex_tax?.toFixed(2)} each
+                  {/* PO Lines */}
+                  {poLines.map((line) => {
+                    const isDone = line.qty_received >= line.qty_ordered;
+                    return (
+                      <div key={line.id} className="p-3 flex items-start gap-3 hover:bg-slate-50 transition-colors">
+                        <Checkbox
+                          checked={isDone}
+                          onCheckedChange={(checked) => togglePOLineMutation.mutate({ lineId: line.id, isDone: !!checked })}
+                          className="mt-1"
+                        />
+                        <div className="flex-1">
+                          <div className="font-medium text-slate-900">{line.description}</div>
+                          <div className="text-xs text-slate-500 mt-0.5">
+                            Qty: {line.qty_ordered} • ${line.unit_cost_ex_tax?.toFixed(2)} each
+                          </div>
+                          {line.qty_received > 0 && (
+                            <Badge variant="outline" className="text-[10px] mt-1 bg-green-50 text-green-700 border-green-200">
+                              {line.qty_received}/{line.qty_ordered} received
+                            </Badge>
+                          )}
+                        </div>
+                        <div className="text-right">
+                          <div className="font-semibold text-slate-900">${line.total_line_ex_tax?.toFixed(2)}</div>
                         </div>
                       </div>
-                      <div className="text-right">
-                        <div className="font-semibold text-slate-900">${line.total_line_ex_tax?.toFixed(2)}</div>
-                        {line.qty_received > 0 && (
-                          <Badge variant="outline" className="text-[10px] mt-1 bg-green-50 text-green-700 border-green-200">
-                            {line.qty_received}/{line.qty_ordered} received
-                          </Badge>
-                        )}
+                    );
+                  })}
+
+                  {/* Linked Parts */}
+                  {linkedParts.map((part) => {
+                    const isDone = part.status === "Delivered";
+                    return (
+                      <div key={part.id} className="p-3 flex items-start gap-3 hover:bg-slate-50 transition-colors">
+                        <Checkbox
+                          checked={isDone}
+                          onCheckedChange={(checked) => togglePartMutation.mutate({ partId: part.id, isDone: !!checked })}
+                          className="mt-1"
+                        />
+                        <div className="flex-1">
+                          <div className="font-medium text-slate-900">{part.category}</div>
+                          {part.notes && (
+                            <div className="text-sm text-slate-600 mt-1">{part.notes}</div>
+                          )}
+                          <div className="flex items-center gap-2 mt-2">
+                            <Badge variant="outline" className="text-[10px]">
+                              {part.status}
+                            </Badge>
+                            {part.supplier_name && (
+                              <span className="text-xs text-slate-500">{part.supplier_name}</span>
+                            )}
+                          </div>
+                        </div>
                       </div>
-                    </div>
-                  ))}
+                    );
+                  })}
                 </div>
               </div>
             )}
 
-            {/* Linked Parts from Project */}
-            {linkedParts.length > 0 && (
+            {/* SECTION 3: Notes */}
+            <div className="border border-slate-200 rounded-lg overflow-hidden">
+              <div className="bg-slate-50 px-4 py-3 border-b border-slate-200">
+                <h3 className="font-semibold text-slate-900">Notes</h3>
+              </div>
+              <div className="p-4 space-y-3">
+                <div>
+                  <label className="block text-sm font-medium text-slate-700 mb-2">Job Notes</label>
+                  <Textarea
+                    value={notes}
+                    onChange={(e) => setNotes(e.target.value)}
+                    onBlur={handleNotesBlur}
+                    placeholder="Add pickup/delivery notes..."
+                    className="min-h-[80px]"
+                  />
+                </div>
+
+                {purchaseOrder?.notes && (
+                  <div className="pt-3 border-t border-slate-200">
+                    <div className="text-xs font-medium text-slate-500 mb-1">Purchase Order Notes:</div>
+                    <div className="text-sm text-slate-700 bg-slate-50 p-2 rounded">{purchaseOrder.notes}</div>
+                  </div>
+                )}
+
+                {linkedParts.some(p => p.notes) && (
+                  <div className="pt-3 border-t border-slate-200">
+                    <div className="text-xs font-medium text-slate-500 mb-2">Part Notes:</div>
+                    <div className="space-y-2">
+                      {linkedParts.filter(p => p.notes).map((part) => (
+                        <div key={part.id} className="text-sm text-slate-700 bg-slate-50 p-2 rounded">
+                          <span className="font-medium">{part.category}:</span> {part.notes}
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
+              </div>
+            </div>
+
+            {/* SECTION 4: Attachments */}
+            {(purchaseOrder?.attachments?.length > 0 || linkedParts.some(p => p.attachments?.length > 0) || job.other_documents?.length > 0) && (
               <div className="border border-slate-200 rounded-lg overflow-hidden">
                 <div className="bg-slate-50 px-4 py-3 border-b border-slate-200">
                   <h3 className="font-semibold text-slate-900 flex items-center gap-2">
-                    <Package className="w-4 h-4" />
-                    Project Parts
+                    <FileText className="w-4 h-4" />
+                    Attachments
                   </h3>
                 </div>
-                <div className="divide-y divide-slate-200">
-                  {linkedParts.map((part) => (
-                    <div key={part.id} className="p-3">
-                      <div className="font-medium text-slate-900">{part.category}</div>
-                      {part.notes && (
-                        <div className="text-sm text-slate-600 mt-1">{part.notes}</div>
-                      )}
-                      <div className="flex items-center gap-2 mt-2">
-                        <Badge variant="outline" className="text-[10px]">
-                          {part.status}
-                        </Badge>
-                        {part.supplier_name && (
-                          <span className="text-xs text-slate-500">{part.supplier_name}</span>
-                        )}
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              </div>
-            )}
-
-            {/* Notes */}
-            <div>
-              <label className="block text-sm font-medium text-slate-700 mb-2">Notes</label>
-              <Textarea
-                value={notes}
-                onChange={(e) => setNotes(e.target.value)}
-                onBlur={handleNotesBlur}
-                placeholder="Add pickup/delivery notes..."
-                className="min-h-[100px]"
-              />
-            </div>
-
-            {/* Attachments from PO/Parts */}
-            {(purchaseOrder?.attachments?.length > 0 || linkedParts.some(p => p.attachments?.length > 0)) && (
-              <div className="border border-slate-200 rounded-lg p-4">
-                <h3 className="font-semibold text-slate-900 mb-3">Attachments</h3>
-                <div className="space-y-2">
+                <div className="p-4 space-y-2">
                   {purchaseOrder?.attachments?.map((url, idx) => (
-                    <a 
-                      key={idx} 
-                      href={url} 
-                      target="_blank" 
-                      rel="noopener noreferrer"
-                      className="block text-sm text-blue-600 hover:text-blue-700 hover:underline"
+                    <Button
+                      key={`po-${idx}`}
+                      variant="outline"
+                      size="sm"
+                      onClick={() => window.open(url, '_blank')}
+                      className="w-full justify-between"
                     >
-                      PO Attachment {idx + 1}
-                    </a>
+                      <span className="text-sm">PO Attachment {idx + 1}</span>
+                      <ExternalLink className="w-3.5 h-3.5" />
+                    </Button>
                   ))}
-                  {linkedParts.flatMap(p => p.attachments || []).map((url, idx) => (
-                    <a 
-                      key={idx} 
-                      href={url} 
-                      target="_blank" 
-                      rel="noopener noreferrer"
-                      className="block text-sm text-blue-600 hover:text-blue-700 hover:underline"
+                  {linkedParts.flatMap((part, partIdx) => 
+                    (part.attachments || []).map((url, idx) => (
+                      <Button
+                        key={`part-${partIdx}-${idx}`}
+                        variant="outline"
+                        size="sm"
+                        onClick={() => window.open(url, '_blank')}
+                        className="w-full justify-between"
+                      >
+                        <span className="text-sm">{part.category} Attachment {idx + 1}</span>
+                        <ExternalLink className="w-3.5 h-3.5" />
+                      </Button>
+                    ))
+                  )}
+                  {job.other_documents?.map((url, idx) => (
+                    <Button
+                      key={`job-${idx}`}
+                      variant="outline"
+                      size="sm"
+                      onClick={() => window.open(url, '_blank')}
+                      className="w-full justify-between"
                     >
-                      Part Attachment {idx + 1}
-                    </a>
+                      <span className="text-sm">Job Document {idx + 1}</span>
+                      <ExternalLink className="w-3.5 h-3.5" />
+                    </Button>
                   ))}
                 </div>
               </div>
             )}
 
-            {/* Actions */}
+            {/* SECTION 5: Outcome */}
             {job.status !== "Completed" && job.status !== "Cancelled" && (
-              <div className="flex flex-col gap-3 pt-4 border-t border-slate-200">
-                <div>
-                  <label className="block text-sm font-medium text-slate-700 mb-2">Outcome (optional)</label>
-                  <Select value={outcome} onValueChange={setOutcome}>
-                    <SelectTrigger>
-                      <SelectValue placeholder="Select outcome..." />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="completed">Completed Successfully</SelectItem>
-                      <SelectItem value="partial">Partially Completed</SelectItem>
-                      <SelectItem value="issue">Issue Encountered</SelectItem>
-                    </SelectContent>
-                  </Select>
+              <div className="border border-slate-200 rounded-lg overflow-hidden">
+                <div className="bg-slate-50 px-4 py-3 border-b border-slate-200">
+                  <h3 className="font-semibold text-slate-900">Outcome</h3>
                 </div>
+                <div className="p-4 space-y-3">
+                  <div className="grid grid-cols-2 gap-3">
+                    <Button
+                      variant="outline"
+                      onClick={handleReschedule}
+                      disabled={updateJobMutation.isPending}
+                      className="font-medium h-11"
+                    >
+                      <Clock className="w-4 h-4 mr-2" />
+                      Reschedule
+                    </Button>
+                    <Button
+                      onClick={handleComplete}
+                      disabled={updateJobMutation.isPending}
+                      className="bg-emerald-600 hover:bg-emerald-700 text-white font-semibold h-11"
+                    >
+                      <CheckCircle2 className="w-4 h-4 mr-2" />
+                      {updateJobMutation.isPending ? 'Completing...' : 'Mark Complete'}
+                    </Button>
+                  </div>
+                  <p className="text-xs text-slate-500 text-center">
+                    Mark complete when all items have been picked up or delivered
+                  </p>
+                </div>
+              </div>
+            )}
 
-                <div className="grid grid-cols-2 gap-3">
-                  <Button
-                    variant="outline"
-                    onClick={handleReschedule}
-                    className="font-medium"
-                  >
-                    <Clock className="w-4 h-4 mr-2" />
-                    Reschedule
-                  </Button>
-                  <Button
-                    onClick={handleComplete}
-                    disabled={updateJobMutation.isPending}
-                    className="bg-emerald-600 hover:bg-emerald-700 text-white font-semibold"
-                  >
-                    <CheckCircle2 className="w-4 h-4 mr-2" />
-                    {updateJobMutation.isPending ? 'Completing...' : 'Mark Complete'}
-                  </Button>
+            {job.status === "Completed" && (
+              <div className="bg-emerald-50 border border-emerald-200 rounded-lg p-4">
+                <div className="flex items-center gap-2 text-emerald-700">
+                  <CheckCircle2 className="w-5 h-5" />
+                  <span className="font-semibold">Logistics job completed</span>
                 </div>
               </div>
             )}
