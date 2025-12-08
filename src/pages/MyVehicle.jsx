@@ -59,6 +59,20 @@ export default function MyVehicle() {
     },
   });
 
+  const updateConsumableMutation = useMutation({
+    mutationFn: async ({ id, quantity_present, condition }) => {
+      const payload = {
+        quantity_present,
+        condition,
+        last_checked_at: new Date().toISOString(),
+      };
+      return base44.entities.VehicleConsumableAssignment.update(id, payload);
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries(["vehicle-consumables", vehicle?.id]);
+    },
+  });
+
   const syncToolsMutation = useMutation({
     mutationFn: async () => {
       if (!vehicle?.id) return;
@@ -193,6 +207,17 @@ export default function MyVehicle() {
     queryFn: async () => {
       if (!vehicle?.id) return [];
       return base44.entities.VehicleTool.filter({
+        vehicle_id: vehicle.id,
+      });
+    },
+    enabled: !!vehicle?.id,
+  });
+
+  const { data: vehicleConsumables = [], isLoading: consumablesLoading } = useQuery({
+    queryKey: ["vehicle-consumables", vehicle?.id],
+    queryFn: async () => {
+      if (!vehicle?.id) return [];
+      return base44.entities.VehicleConsumableAssignment.filter({
         vehicle_id: vehicle.id,
       });
     },
@@ -542,6 +567,81 @@ export default function MyVehicle() {
                 </div>
               </div>
             ))}
+          </div>
+        )}
+      </div>
+
+      {/* Consumables Section */}
+      <div className="mb-4 bg-emerald-50 rounded-xl border border-emerald-200 p-4">
+        <div className="flex items-center justify-between mb-2">
+          <h3 className="font-semibold text-gray-900 flex items-center gap-2">
+            <Package className="w-5 h-5 text-emerald-600" />
+            Consumables
+          </h3>
+        </div>
+        <p className="text-xs text-gray-500 mb-3">Overhead items (not tracked as stock)</p>
+
+        {consumablesLoading ? (
+          <p className="text-sm text-gray-500">Loading consumables...</p>
+        ) : !vehicleConsumables.length ? (
+          <p className="text-sm text-gray-500 italic">
+            No consumables assigned to this vehicle yet.
+          </p>
+        ) : (
+          <div className="space-y-2">
+            {vehicleConsumables.map((vc) => {
+              const conditionColors = {
+                Full: "bg-emerald-50 text-emerald-700 border-emerald-200",
+                Low: "bg-amber-50 text-amber-700 border-amber-200",
+                Empty: "bg-red-50 text-red-700 border-red-200",
+              };
+              return (
+                <div key={vc.id} className="p-3 border border-emerald-200 rounded-lg bg-white">
+                  <div className="flex items-center justify-between mb-2">
+                    <div className="font-medium text-sm text-gray-900">
+                      {vc.consumable_name}
+                    </div>
+                    <Badge variant="outline" className={`text-xs ${conditionColors[vc.condition]}`}>
+                      {vc.condition}
+                    </Badge>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <label className="text-xs text-gray-500">Qty:</label>
+                    <Input
+                      type="number"
+                      min="0"
+                      step="0.1"
+                      className="w-20 h-8 text-xs"
+                      value={vc.quantity_present || 0}
+                      onChange={(e) => {
+                        const value = parseFloat(e.target.value) || 0;
+                        updateConsumableMutation.mutate({
+                          id: vc.id,
+                          quantity_present: value,
+                          condition: vc.condition,
+                        });
+                      }}
+                    />
+                    <label className="text-xs text-gray-500 ml-2">Condition:</label>
+                    <select
+                      className="h-8 rounded border border-gray-300 px-2 text-xs"
+                      value={vc.condition}
+                      onChange={(e) => {
+                        updateConsumableMutation.mutate({
+                          id: vc.id,
+                          quantity_present: vc.quantity_present,
+                          condition: e.target.value,
+                        });
+                      }}
+                    >
+                      <option value="Full">Full</option>
+                      <option value="Low">Low</option>
+                      <option value="Empty">Empty</option>
+                    </select>
+                  </div>
+                </div>
+              );
+            })}
           </div>
         )}
       </div>
