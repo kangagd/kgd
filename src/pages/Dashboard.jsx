@@ -134,7 +134,7 @@ export default function Dashboard() {
         <div className="flex flex-col md:flex-row justify-between items-center w-full py-3 lg:py-4 mb-4 lg:mb-6 gap-3">
           <div className="flex-1">
             <h1 className="text-2xl font-bold text-[#111827] leading-tight">
-              Good {new Date().getHours() < 12 ? 'Morning' : new Date().getHours() < 18 ? 'Afternoon' : 'Evening'}, {user?.full_name?.split(' ')[0] || 'there'}!
+              Good {new Date().getHours() < 12 ? 'Morning' : new Date().getHours() < 18 ? 'Afternoon' : 'Evening'}, {user?.display_name || 'there'}!
             </h1>
             <p className="text-sm text-[#4B5563] mt-1">Here's what's happening today</p>
           </div>
