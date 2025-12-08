@@ -86,6 +86,13 @@ export default function Dashboard() {
     j.third_party_trade_id
   ).slice(0, 5);
 
+  // Fetch suppliers for logistics jobs
+  const { data: suppliers = [] } = useQuery({
+    queryKey: ['suppliers'],
+    queryFn: () => base44.entities.Supplier.list('name'),
+    enabled: isAdminOrManager && logisticsJobs.length > 0,
+  });
+
   const today = new Date().toISOString().split('T')[0];
   const tomorrow = new Date(Date.now() + 86400000).toISOString().split('T')[0];
 
