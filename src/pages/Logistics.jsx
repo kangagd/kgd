@@ -12,6 +12,7 @@ import { format } from "date-fns";
 import { createPageUrl } from "@/utils";
 import { Link } from "react-router-dom";
 import PartDetailModal from "../components/projects/PartDetailModal";
+import SupplierPurchaseOrderModal from "../components/purchasing/SupplierPurchaseOrderModal";
 import { toast } from "sonner";
 import { INVENTORY_LOCATION } from "@/components/domain/inventoryLocationConfig";
 import { MOVEMENT_TYPE } from "@/components/domain/inventoryConfig";
@@ -43,6 +44,8 @@ export default function Logistics() {
   const [vehicleFilter, setVehicleFilter] = useState("all");
   const [selectedPart, setSelectedPart] = useState(null);
   const [showOnlyThirdParty, setShowOnlyThirdParty] = useState(false);
+  const [showPOModal, setShowPOModal] = useState(false);
+  const [selectedSupplier, setSelectedSupplier] = useState(null);
 
   // Fetch Data
   const { data: parts = [], isLoading: partsLoading } = useQuery({
@@ -85,6 +88,11 @@ export default function Logistics() {
   const { data: allTradeRequirements = [] } = useQuery({
     queryKey: ['allTradeRequirements'],
     queryFn: () => base44.entities.ProjectTradeRequirement.list(),
+  });
+
+  const { data: suppliers = [] } = useQuery({
+    queryKey: ['suppliers'],
+    queryFn: () => base44.entities.Supplier.list('name'),
   });
 
   const tradesByProjectId = useMemo(() => {
@@ -258,6 +266,16 @@ export default function Logistics() {
             <h1 className="text-2xl font-bold text-[#111827]">Logistics Dashboard</h1>
             <p className="text-sm text-[#6B7280] mt-1">Manage parts, orders, and locations across all projects</p>
           </div>
+          <Button
+            onClick={() => {
+              setSelectedSupplier(null);
+              setShowPOModal(true);
+            }}
+            className="bg-[#FAE008] text-[#111827] hover:bg-[#E5CF07] font-semibold shadow-sm hover:shadow-md transition h-10 px-4 text-sm rounded-xl"
+          >
+            <Plus className="w-4 h-4 mr-2" />
+            Create Purchase Order
+          </Button>
         </div>
 
         {/* Stats Cards */}
@@ -715,6 +733,18 @@ export default function Logistics() {
             setSelectedPart(null);
           }}
           isSubmitting={updatePartMutation.isPending}
+        />
+      )}
+
+      {/* Purchase Order Modal */}
+      {showPOModal && (
+        <SupplierPurchaseOrderModal
+          open={showPOModal}
+          onClose={() => {
+            setShowPOModal(false);
+            setSelectedSupplier(null);
+          }}
+          supplier={selectedSupplier || (suppliers.length > 0 ? suppliers[0] : null)}
         />
       )}
     </div>
