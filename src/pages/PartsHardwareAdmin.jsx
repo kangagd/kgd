@@ -57,6 +57,38 @@ export default function PartsHardwareAdmin() {
     },
   });
 
+  const applyToAllVehiclesMutation = useMutation({
+    mutationFn: async () => {
+      const activeItems = items.filter(i => i.is_active !== false);
+      const activeVehicles = vehicles.filter(v => v.status === 'Active');
+      
+      const promises = [];
+      for (const vehicle of activeVehicles) {
+        for (const item of activeItems) {
+          promises.push(
+            base44.entities.VehiclePartsHardwareAssignment.create({
+              vehicle_id: vehicle.id,
+              parts_hardware_id: item.id,
+              item_name: item.name,
+              quantity_present: item.default_quantity_expected || 1,
+              condition: "Full",
+              last_checked_at: new Date().toISOString(),
+            })
+          );
+        }
+      }
+      
+      await Promise.all(promises);
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries(['vehicle-parts-hardware']);
+      toast.success("Template applied to all vehicles");
+    },
+    onError: (error) => {
+      toast.error("Failed to apply template: " + error.message);
+    },
+  });
+
   const categories = useMemo(() => {
     const cats = new Set(items.filter(i => i.category).map(i => i.category));
     return Array.from(cats).sort();
@@ -98,10 +130,20 @@ export default function PartsHardwareAdmin() {
           <h1 className="text-2xl font-bold text-gray-900">Parts & Hardware Admin</h1>
           <p className="text-sm text-gray-500 mt-1">Manage overhead items (non-stock)</p>
         </div>
-        <Button onClick={() => setShowForm(true)} className="bg-[#FAE008] hover:bg-[#E5CF07] text-black">
-          <Plus className="w-4 h-4 mr-2" />
-          Add Item
-        </Button>
+        <div className="flex gap-2">
+          <Button 
+            onClick={() => applyToAllVehiclesMutation.mutate()} 
+            disabled={applyToAllVehiclesMutation.isLoading}
+            variant="outline"
+          >
+            <Truck className="w-4 h-4 mr-2" />
+            {applyToAllVehiclesMutation.isLoading ? "Applying..." : "Apply to All Vehicles"}
+          </Button>
+          <Button onClick={() => setShowForm(true)} className="bg-[#FAE008] hover:bg-[#E5CF07] text-black">
+            <Plus className="w-4 h-4 mr-2" />
+            Add Item
+          </Button>
+        </div>
       </div>
 
       <Card className="border border-[#E5E7EB] mb-6">
