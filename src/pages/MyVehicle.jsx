@@ -96,7 +96,10 @@ export default function MyVehicle() {
     queryKey: ['myVehicle', user?.id],
     queryFn: async () => {
       if (!user) return null;
+      console.log('MyVehicle - User ID:', user.id);
+      console.log('MyVehicle - User object:', user);
       const vehicles = await base44.entities.Vehicle.filter({ assigned_user_id: user.id });
+      console.log('MyVehicle - Vehicles found:', vehicles);
       return vehicles[0] || null;
     },
     enabled: !!user
