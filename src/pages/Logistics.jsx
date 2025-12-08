@@ -496,7 +496,7 @@ export default function Logistics() {
                                         }
                                       }}
                                     >
-                                        <Badge variant="secondary">{job.status}</Badge>
+                                        <Badge className={job.status === 'Completed' ? 'bg-green-100 text-green-700 border-green-200' : ''} variant={job.status === 'Completed' ? 'outline' : 'secondary'}>{job.status}</Badge>
                                     </td>
                                     <td className="px-6 py-3">
                                         <Link 
