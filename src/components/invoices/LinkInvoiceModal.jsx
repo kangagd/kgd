@@ -48,17 +48,35 @@ export default function LinkInvoiceModal({ open, onClose, onSelect, isSubmitting
 
   const invoices = xeroData?.invoices || [];
 
-  // Also fetch linked invoices from our DB to check which are already linked
+  // Also fetch linked invoices and jobs to check which are already linked
   const { data: linkedInvoices = [] } = useQuery({
     queryKey: ['linkedXeroInvoices'],
     queryFn: () => base44.entities.XeroInvoice.list(),
     enabled: open
   });
 
+  const { data: allJobs = [] } = useQuery({
+    queryKey: ['allJobs'],
+    queryFn: () => base44.entities.Job.list(),
+    enabled: open
+  });
+
   // Create a map of linked invoice IDs to their project IDs (not to this project)
+  // Also check if the linked job is deleted
   const linkedToOtherProjectIds = new Set(
     linkedInvoices
-      .filter(inv => inv.project_id && inv.project_id !== projectId)
+      .filter(inv => {
+        if (!inv.project_id || inv.project_id === projectId) return false;
+        
+        // If linked to a job, check if that job is deleted
+        if (inv.job_id) {
+          const linkedJob = allJobs.find(j => j.id === inv.job_id);
+          // If job is deleted, allow this invoice to be linked again
+          if (linkedJob?.deleted_at) return false;
+        }
+        
+        return true;
+      })
       .map(inv => inv.xero_invoice_id)
   );
 
