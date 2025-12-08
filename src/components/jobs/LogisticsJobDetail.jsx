@@ -347,9 +347,6 @@ export default function LogisticsJobDetail({ job: initialJob, onClose }) {
                         />
                         <div className="flex-1">
                           <div className="font-medium text-slate-900">{line.item_name || line.description}</div>
-                          <div className="text-xs text-slate-500 mt-0.5">
-                            Qty: {line.qty_ordered}
-                          </div>
                           {line.qty_received > 0 && (
                             <Badge variant="outline" className="text-[10px] mt-1 bg-green-50 text-green-700 border-green-200">
                               {line.qty_received}/{line.qty_ordered} received
