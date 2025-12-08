@@ -81,6 +81,9 @@ export default function PriceListItemForm({ item, onSubmit, onCancel, isSubmitti
                     <SelectItem value="Service">Service</SelectItem>
                     <SelectItem value="Motor">Motor</SelectItem>
                     <SelectItem value="Remotes/Accessories">Remotes/Accessories</SelectItem>
+                    <SelectItem value="Parts">Parts</SelectItem>
+                    <SelectItem value="Tools">Tools</SelectItem>
+                    <SelectItem value="Other">Other</SelectItem>
                   </SelectContent>
                 </Select>
               </div>
