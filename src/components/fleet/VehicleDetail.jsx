@@ -14,7 +14,6 @@ import VehicleFormModal from "./VehicleFormModal";
 import { toast } from "sonner";
 import { Badge } from "@/components/ui/badge";
 import LocationBadge from "@/components/common/LocationBadge";
-import React from "react";
 
 export default function VehicleDetail({ vehicle, onBack }) {
   const queryClient = useQueryClient();
