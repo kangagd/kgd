@@ -96,7 +96,7 @@ export default function PriceListCard({ item, isAdmin, canModifyStock, onEdit, o
               )}
             </div>
 
-              {inventorySummary && (
+              {inventorySummary && (item.track_inventory !== false && item.in_inventory !== false) && (
                 <div className="flex items-center text-xs text-slate-500 ml-auto mr-3">
                   <span>Inv: {inventorySummary.total_on_hand}</span>
                   <span className="mx-1">•</span>
