@@ -253,7 +253,10 @@ export default function Logistics() {
 
   // Stats - Include both Parts and Purchase Order Lines
   const stats = useMemo(() => {
-    const activeParts = parts.filter(p => !["Delivered", "Cancelled", "Returned"].includes(p.status));
+    const activeParts = parts.filter(p => 
+      !p.deleted_at && 
+      !["Delivered", "Cancelled", "Returned"].includes(p.status)
+    );
     const urgentParts = activeParts.filter(p => {
         if (!p.eta) return false;
         return new Date(p.eta) < new Date(); // Overdue
