@@ -39,34 +39,64 @@ export default function Fleet() {
     [vehicles, selectedVehicleId]
   );
 
-  const { data: partsWithVehicles = [] } = useQuery({
-    queryKey: ["parts-with-vehicles"],
-    queryFn: async () => {
-      const allParts = await base44.entities.Part.filter({
-        location: "With Technician",
-      });
-      return allParts.filter((p) => p.assigned_vehicle_id);
-    },
+  const { data: vehiclePartsHardwareAssignments = [] } = useQuery({
+    queryKey: ["vehicle-parts-hardware-assignments"],
+    queryFn: () => base44.entities.VehiclePartsHardwareAssignment.list("id"),
   });
 
+  const { data: partsHardwareItems = [] } = useQuery({
+    queryKey: ["parts-hardware-items-fleet"],
+    queryFn: () => base44.entities.PartsHardwareItem.list("name"),
+  });
+
+  const activePartsHardwareItemMap = useMemo(() => {
+    const map = {};
+    for (const p of partsHardwareItems) {
+      if (p.is_active !== false) {
+        map[p.id] = p;
+      }
+    }
+    return map;
+  }, [partsHardwareItems]);
+
   const partsCountByVehicle = useMemo(() => {
-    return partsWithVehicles.reduce((acc, part) => {
-      const vid = part.assigned_vehicle_id;
-      if (!vid) return acc;
-      acc[vid] = (acc[vid] || 0) + 1;
+    return vehiclePartsHardwareAssignments.reduce((acc, assignment) => {
+      // Only count if the referenced item is active
+      if (!assignment.vehicle_id || !assignment.parts_hardware_id) return acc;
+      if (!activePartsHardwareItemMap[assignment.parts_hardware_id]) return acc;
+      
+      acc[assignment.vehicle_id] = (acc[assignment.vehicle_id] || 0) + 1;
       return acc;
     }, {});
-  }, [partsWithVehicles]);
+  }, [vehiclePartsHardwareAssignments, activePartsHardwareItemMap]);
 
   const { data: allVehicleTools = [] } = useQuery({
     queryKey: ["vehicle-tools-for-fleet"],
     queryFn: () => base44.entities.VehicleTool.list("id"),
   });
 
+  const { data: toolItems = [] } = useQuery({
+    queryKey: ["tool-items-fleet"],
+    queryFn: () => base44.entities.ToolItem.list("name"),
+  });
+
+  const activeToolItemMap = useMemo(() => {
+    const map = {};
+    for (const t of toolItems) {
+      if (t.is_active !== false) {
+        map[t.id] = t;
+      }
+    }
+    return map;
+  }, [toolItems]);
+
   const toolComplianceByVehicle = useMemo(() => {
     const map = {};
     for (const vt of allVehicleTools) {
-      if (!vt.vehicle_id) continue;
+      // Only count if the referenced tool item is active
+      if (!vt.vehicle_id || !vt.tool_item_id) continue;
+      if (!activeToolItemMap[vt.tool_item_id]) continue;
+
       if (!map[vt.vehicle_id]) {
         map[vt.vehicle_id] = {
           required: 0,
@@ -79,7 +109,7 @@ export default function Fleet() {
       map[vt.vehicle_id].present += Math.min(onHand, required);
     }
     return map;
-  }, [allVehicleTools]);
+  }, [allVehicleTools, activeToolItemMap]);
 
   const getToolCompliance = (vehicleId) => {
     const stats = toolComplianceByVehicle[vehicleId];
