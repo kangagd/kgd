@@ -54,23 +54,38 @@ const primaryNavigationItems = [
   { title: "Schedule", url: createPageUrl("Schedule"), icon: Calendar },
   { title: "Projects", url: createPageUrl("Projects"), icon: FolderKanban },
   { title: "Jobs", url: createPageUrl("Jobs"), icon: Briefcase },
-  { title: "Customers", url: createPageUrl("Customers"), icon: UserCircle },
-  { title: "Contracts", url: createPageUrl("Contracts"), icon: FileText },
 ];
 
-const secondaryNavigationItems = [
-  { title: "Organisations", url: createPageUrl("Organisations"), icon: Building2 },
-  { title: "Photos", url: createPageUrl("Photos"), icon: ImageIcon },
-  { title: "Price List", url: createPageUrl("PriceList"), icon: DollarSign },
-  { title: "Reports", url: createPageUrl("Reports"), icon: TrendingUp },
-  { title: "Team", url: createPageUrl("Team"), icon: Users },
-  { title: "Fleet", url: createPageUrl("Fleet"), icon: Car },
-  { title: "Tools Admin", url: createPageUrl("ToolsAdmin"), icon: Wrench },
-  { title: "Role Settings", url: createPageUrl("RoleSettings"), icon: Shield },
-  { title: "Archive", url: createPageUrl("Archive"), icon: ArchiveIcon },
-  { title: "Logistics", url: createPageUrl("Logistics"), icon: Truck },
-  { title: "Suppliers", url: createPageUrl("Suppliers"), icon: Package },
-  ];
+const navigationSections = [
+  {
+    title: "Customer Management",
+    items: [
+      { title: "Contracts", url: createPageUrl("Contracts"), icon: FileText },
+      { title: "Customers", url: createPageUrl("Customers"), icon: UserCircle },
+      { title: "Organisations", url: createPageUrl("Organisations"), icon: Building2 },
+    ]
+  },
+  {
+    title: "Technicians",
+    items: [
+      { title: "Fleet", url: createPageUrl("Fleet"), icon: Car },
+      { title: "Tools Admin", url: createPageUrl("ToolsAdmin"), icon: Wrench },
+      { title: "Logistics", url: createPageUrl("Logistics"), icon: Truck },
+      { title: "Suppliers", url: createPageUrl("Suppliers"), icon: Package },
+      { title: "Price List", url: createPageUrl("PriceList"), icon: DollarSign },
+    ]
+  },
+  {
+    title: "Admin",
+    items: [
+      { title: "Team", url: createPageUrl("Team"), icon: Users },
+      { title: "Role Settings", url: createPageUrl("RoleSettings"), icon: Shield },
+      { title: "Photos", url: createPageUrl("Photos"), icon: ImageIcon },
+      { title: "Reports", url: createPageUrl("Reports"), icon: TrendingUp },
+      { title: "Archive", url: createPageUrl("Archive"), icon: ArchiveIcon },
+    ]
+  }
+];
 
 const technicianNavigationItems = [
   { title: "My Vehicle", url: createPageUrl("MyVehicle"), icon: Car },
@@ -277,13 +292,18 @@ export default function Layout({ children, currentPageName }) {
     const handleEscape = (e) => e.key === 'Escape' && isMobileMenuOpen && setIsMobileMenuOpen(false);
     window.addEventListener('keydown', handleEscape);
     return () => window.removeEventListener('keydown', handleEscape);
-  }, [isMobileMenuOpen]);
+    }, [isMobileMenuOpen]);
+
+    // Flatten all navigation items for recent pages tracking
+    const allNavigationItems = React.useMemo(() => {
+    const sectionItems = navigationSections.flatMap(section => section.items);
+    return [...primaryNavigationItems, ...sectionItems];
+    }, []);
 
   // Track recent pages
   useEffect(() => {
     const trackRecentPage = async () => {
-      const allNavItems = [...primaryNavigationItems, ...secondaryNavigationItems, ...technicianNavigationItems];
-      const currentItem = allNavItems.find(item => item.url === location.pathname);
+      const currentItem = allNavigationItems.find(item => item.url === location.pathname);
       const params = new URLSearchParams(location.search);
 
       let pageEntry = null;
@@ -466,42 +486,41 @@ export default function Layout({ children, currentPageName }) {
                   );
                   })}
 
-                  {/* More Menu - Only for admin/manager */}
+                  {/* Sectioned Navigation - Only for admin/manager */}
                   {!isCollapsed && isAdminOrManager && (
-                    <div className="mt-2">
-                      <button
-                        onClick={() => setIsMoreMenuOpen(!isMoreMenuOpen)}
-                        className="w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-[#111827] hover:bg-[#F3F4F6] transition-all"
-                      >
-                        <ChevronDown className={`w-5 h-5 flex-shrink-0 transition-transform duration-200 ${isMoreMenuOpen ? 'rotate-180' : ''}`} />
-                        <span className="text-[14px] font-medium">More</span>
-                      </button>
-
-                      {isMoreMenuOpen && (
-                        <div className="mt-1 space-y-1 pl-3">
-                          {secondaryNavigationItems.map((item) => {
-                            const isActive = location.pathname === item.url;
-                            return (
-                              <Link
-                                key={item.title}
-                                to={item.url}
-                                className={`
-                                  flex items-center gap-3 px-3 py-2.5 rounded-lg transition-all relative no-underline
-                                  ${isActive 
-                                    ? 'bg-[#FAE008]/10 text-[#111827] font-semibold' 
-                                    : 'text-[#111827] hover:bg-[#F3F4F6]'
-                                  }
-                                `}
-                              >
-                                {isActive && <div className="absolute left-0 w-1 h-6 bg-[#FAE008] rounded-r" />}
-                                <item.icon className={`w-5 h-5 flex-shrink-0 ${isActive ? 'text-[#FAE008]' : 'text-[#111827]'}`} />
-                                <span className="text-[14px]">{item.title}</span>
-                              </Link>
-                            );
-                          })}
+                    <>
+                      {navigationSections.map((section, sectionIndex) => (
+                        <div key={section.title} className={sectionIndex === 0 ? "mt-4" : "mt-6"}>
+                          <div className="px-3 mb-2">
+                            <span className="text-[11px] font-semibold text-[#6B7280] uppercase tracking-wider">
+                              {section.title}
+                            </span>
+                          </div>
+                          <div className="space-y-1">
+                            {section.items.map((item) => {
+                              const isActive = location.pathname === item.url;
+                              return (
+                                <Link
+                                  key={item.title}
+                                  to={item.url}
+                                  className={`
+                                    flex items-center gap-3 px-3 py-2.5 rounded-lg transition-all relative no-underline
+                                    ${isActive 
+                                      ? 'bg-[#FAE008]/10 text-[#111827] font-semibold' 
+                                      : 'text-[#111827] hover:bg-[#F3F4F6]'
+                                    }
+                                  `}
+                                >
+                                  {isActive && <div className="absolute left-0 w-1 h-6 bg-[#FAE008] rounded-r" />}
+                                  <item.icon className={`w-5 h-5 flex-shrink-0 ${isActive ? 'text-[#FAE008]' : 'text-[#111827]'}`} />
+                                  <span className="text-[14px]">{item.title}</span>
+                                </Link>
+                              );
+                            })}
+                          </div>
                         </div>
-                      )}
-                    </div>
+                      ))}
+                    </>
                   )}
 
                   {/* Collapsed More Menu - Only for admin/manager */}
@@ -509,36 +528,45 @@ export default function Layout({ children, currentPageName }) {
                     <Popover open={collapsedMoreOpen} onOpenChange={setCollapsedMoreOpen}>
                       <PopoverTrigger asChild>
                         <button
-                          className="flex items-center gap-3 px-3 py-2.5 rounded-lg transition-all justify-center relative text-[#111827] hover:bg-[#F3F4F6]"
+                          className="flex items-center gap-3 px-3 py-2.5 rounded-lg transition-all justify-center relative text-[#111827] hover:bg-[#F3F4F6] mt-2"
                           title="More"
                         >
                           <MoreHorizontal className="w-5 h-5 flex-shrink-0" />
                         </button>
                       </PopoverTrigger>
-                      <PopoverContent side="right" align="start" className="w-56 p-2">
-                        <div className="space-y-1">
-                          {secondaryNavigationItems.map((item) => {
-                            const isActive = location.pathname === item.url;
-                            return (
-                              <Link
-                                key={item.title}
-                                to={item.url}
-                                onClick={() => setCollapsedMoreOpen(false)}
-                                className={`
-                                  flex items-center gap-3 px-3 py-2.5 rounded-lg transition-all relative no-underline
-                                  ${isActive 
-                                    ? 'bg-[#FAE008]/10 text-[#111827] font-semibold' 
-                                    : 'text-[#111827] hover:bg-[#F3F4F6]'
-                                  }
-                                `}
-                              >
-                                {isActive && <div className="absolute left-0 w-1 h-6 bg-[#FAE008] rounded-r" />}
-                                <item.icon className={`w-5 h-5 flex-shrink-0 ${isActive ? 'text-[#FAE008]' : 'text-[#111827]'}`} />
-                                <span className="text-[14px]">{item.title}</span>
-                              </Link>
-                            );
-                          })}
-                        </div>
+                      <PopoverContent side="right" align="start" className="w-56 p-2 max-h-[500px] overflow-y-auto">
+                        {navigationSections.map((section) => (
+                          <div key={section.title} className="mb-4 last:mb-0">
+                            <div className="px-3 mb-2">
+                              <span className="text-[11px] font-semibold text-[#6B7280] uppercase tracking-wider">
+                                {section.title}
+                              </span>
+                            </div>
+                            <div className="space-y-1">
+                              {section.items.map((item) => {
+                                const isActive = location.pathname === item.url;
+                                return (
+                                  <Link
+                                    key={item.title}
+                                    to={item.url}
+                                    onClick={() => setCollapsedMoreOpen(false)}
+                                    className={`
+                                      flex items-center gap-3 px-3 py-2.5 rounded-lg transition-all relative no-underline
+                                      ${isActive 
+                                        ? 'bg-[#FAE008]/10 text-[#111827] font-semibold' 
+                                        : 'text-[#111827] hover:bg-[#F3F4F6]'
+                                      }
+                                    `}
+                                  >
+                                    {isActive && <div className="absolute left-0 w-1 h-6 bg-[#FAE008] rounded-r" />}
+                                    <item.icon className={`w-5 h-5 flex-shrink-0 ${isActive ? 'text-[#FAE008]' : 'text-[#111827]'}`} />
+                                    <span className="text-[14px]">{item.title}</span>
+                                  </Link>
+                                );
+                              })}
+                            </div>
+                          </div>
+                        ))}
                       </PopoverContent>
                     </Popover>
                   )}
@@ -724,7 +752,7 @@ export default function Layout({ children, currentPageName }) {
                   <Menu className="w-6 h-6 text-[#111827]" />
                 </button>
                 <h1 className="font-semibold text-[#111827] text-[14px] truncate px-2 flex-1 text-center">
-                  {[...primaryNavigationItems, ...secondaryNavigationItems].find(item => item.url === location.pathname)?.title || 'KangarooGD'}
+                  {allNavigationItems.find(item => item.url === location.pathname)?.title || 'KangarooGD'}
                 </h1>
               </div>
             </header>
