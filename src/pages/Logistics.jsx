@@ -50,11 +50,17 @@ export default function Logistics() {
   const [selectedSupplier, setSelectedSupplier] = useState(null);
   const [showSupplierSelector, setShowSupplierSelector] = useState(false);
   const [tempSupplierSelection, setTempSupplierSelection] = useState("");
+  const [selectedPO, setSelectedPO] = useState(null);
 
   // Fetch Data
   const { data: parts = [], isLoading: partsLoading } = useQuery({
     queryKey: ['parts'],
     queryFn: () => base44.entities.Part.list(),
+  });
+
+  const { data: purchaseOrders = [] } = useQuery({
+    queryKey: ['purchaseOrders'],
+    queryFn: () => base44.entities.PurchaseOrder.list(),
   });
 
   const { data: inventoryQuantities = [] } = useQuery({
@@ -372,8 +378,19 @@ export default function Logistics() {
                                                 : "hover:bg-gray-50 border-gray-200"
                                 }`;
 
+                                const po = job.purchase_order_id ? purchaseOrders.find(p => p.id === job.purchase_order_id) : null;
+
                                 return (
-                                <tr key={job.id} className={rowClasses}>
+                                <tr 
+                                  key={job.id} 
+                                  className={`${rowClasses} cursor-pointer`}
+                                  onClick={() => {
+                                    if (po) {
+                                      setSelectedPO(po);
+                                      setShowPOModal(true);
+                                    }
+                                  }}
+                                >
                                     <td className="px-6 py-3 text-gray-700 font-medium">
                                         {job.scheduled_date ? format(new Date(job.scheduled_date), 'MMM d, yyyy') : '-'}
                                     </td>
@@ -784,14 +801,16 @@ export default function Logistics() {
       </Dialog>
 
       {/* Purchase Order Modal */}
-      {showPOModal && selectedSupplier && (
+      {showPOModal && (selectedSupplier || selectedPO) && (
         <SupplierPurchaseOrderModal
           open={showPOModal}
           onClose={() => {
             setShowPOModal(false);
             setSelectedSupplier(null);
+            setSelectedPO(null);
           }}
-          supplier={selectedSupplier}
+          supplier={selectedSupplier || (selectedPO ? suppliers.find(s => s.id === selectedPO.supplier_id) : null)}
+          purchaseOrder={selectedPO}
         />
       )}
     </div>
