@@ -9,7 +9,7 @@ import { Badge } from "@/components/ui/badge";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { Label } from "@/components/ui/label";
-import { Search, Filter, Truck, Package, MapPin, CheckCircle2, Clock, AlertCircle, Link as LinkIcon, Plus } from "lucide-react";
+import { Search, Filter, Truck, Package, MapPin, CheckCircle2, Clock, AlertCircle, Link as LinkIcon, Plus, Briefcase, ExternalLink } from "lucide-react";
 import { format } from "date-fns";
 import { createPageUrl } from "@/utils";
 import { Link } from "react-router-dom";
@@ -358,6 +358,7 @@ export default function Logistics() {
                                 <th className="px-6 py-3 font-semibold text-gray-900">Location</th>
                                 <th className="px-6 py-3 font-semibold text-gray-900">PO</th>
                                 <th className="px-6 py-3 font-semibold text-gray-900">Status</th>
+                                <th className="px-6 py-3 font-semibold text-gray-900 w-12"></th>
                             </tr>
                         </thead>
                         <tbody className="divide-y divide-gray-200 bg-white">
@@ -383,21 +384,39 @@ export default function Logistics() {
                                 return (
                                 <tr 
                                   key={job.id} 
-                                  className={`${rowClasses} cursor-pointer`}
-                                  onClick={() => {
-                                    if (po) {
-                                      setSelectedPO(po);
-                                      setShowPOModal(true);
-                                    }
-                                  }}
+                                  className={rowClasses}
                                 >
-                                    <td className="px-6 py-3 text-gray-700 font-medium">
+                                    <td 
+                                      className="px-6 py-3 text-gray-700 font-medium cursor-pointer hover:bg-opacity-80"
+                                      onClick={() => {
+                                        if (po) {
+                                          setSelectedPO(po);
+                                          setShowPOModal(true);
+                                        }
+                                      }}
+                                    >
                                         {job.scheduled_date ? format(new Date(job.scheduled_date), 'MMM d, yyyy') : '-'}
                                     </td>
-                                    <td className="px-6 py-3 text-gray-700">
+                                    <td 
+                                      className="px-6 py-3 text-gray-700 cursor-pointer hover:bg-opacity-80"
+                                      onClick={() => {
+                                        if (po) {
+                                          setSelectedPO(po);
+                                          setShowPOModal(true);
+                                        }
+                                      }}
+                                    >
                                         {job.notes?.split(' from ')?.[1]?.split(' –')?.[0] || 'Supplier'}
                                     </td>
-                                    <td className="px-6 py-3">
+                                    <td 
+                                      className="px-6 py-3 cursor-pointer hover:bg-opacity-80"
+                                      onClick={() => {
+                                        if (po) {
+                                          setSelectedPO(po);
+                                          setShowPOModal(true);
+                                        }
+                                      }}
+                                    >
                                         <div className="flex items-center gap-2 flex-wrap">
                                             <Badge variant="outline" className={
                                                 job.job_type_name?.includes('Pickup') 
@@ -423,14 +442,48 @@ export default function Logistics() {
                                             )}
                                         </div>
                                     </td>
-                                    <td className="px-6 py-3 text-gray-600">
+                                    <td 
+                                      className="px-6 py-3 text-gray-600 cursor-pointer hover:bg-opacity-80"
+                                      onClick={() => {
+                                        if (po) {
+                                          setSelectedPO(po);
+                                          setShowPOModal(true);
+                                        }
+                                      }}
+                                    >
                                         {job.address_full || job.address}
                                     </td>
-                                    <td className="px-6 py-3 text-gray-600 text-sm font-medium">
+                                    <td 
+                                      className="px-6 py-3 text-gray-600 text-sm font-medium cursor-pointer hover:bg-opacity-80"
+                                      onClick={() => {
+                                        if (po) {
+                                          setSelectedPO(po);
+                                          setShowPOModal(true);
+                                        }
+                                      }}
+                                    >
                                         {job.notes?.startsWith('PO ') ? job.notes.split(' from ')[0] : job.notes}
                                     </td>
-                                    <td className="px-6 py-3">
+                                    <td 
+                                      className="px-6 py-3 cursor-pointer hover:bg-opacity-80"
+                                      onClick={() => {
+                                        if (po) {
+                                          setSelectedPO(po);
+                                          setShowPOModal(true);
+                                        }
+                                      }}
+                                    >
                                         <Badge variant="secondary">{job.status}</Badge>
+                                    </td>
+                                    <td className="px-6 py-3">
+                                        <Link 
+                                          to={`${createPageUrl("Jobs")}?jobId=${job.id}`}
+                                          onClick={(e) => e.stopPropagation()}
+                                          className="inline-flex items-center justify-center w-8 h-8 rounded-lg hover:bg-blue-50 text-blue-600 hover:text-blue-700 transition-colors"
+                                          title="View Job Details"
+                                        >
+                                          <Briefcase className="w-4 h-4" />
+                                        </Link>
                                     </td>
                                 </tr>
                                 );
