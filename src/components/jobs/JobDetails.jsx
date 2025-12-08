@@ -6,6 +6,7 @@ import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Label } from "@/components/ui/label";
 import { Separator } from "@/components/ui/separator";
+import { Checkbox } from "@/components/ui/checkbox";
 import { ArrowLeft, MapPin, Phone, Calendar, Clock, User, Briefcase, FileText, Image as ImageIcon, DollarSign, Sparkles, LogIn, FileCheck, History, Package, ClipboardCheck, LogOut, Timer, AlertCircle, ChevronDown, Mail, Navigation, Trash2, FolderKanban, Camera, Edit, ExternalLink, MessageCircle, Plus, AlertTriangle, Loader2, PackageMinus } from "lucide-react";
 import DuplicateWarningCard, { DuplicateBadge } from "../common/DuplicateWarningCard";
 import { format, parseISO, isPast } from "date-fns";
@@ -158,6 +159,7 @@ export default function JobDetails({ job: initialJob, onClose, onStatusChange, o
   const [showPaymentModal, setShowPaymentModal] = useState(false);
   const [showLinkInvoiceModal, setShowLinkInvoiceModal] = useState(false);
   const [showItemsUsedModal, setShowItemsUsedModal] = useState(false);
+  const [checkedItems, setCheckedItems] = useState({});
 
   const [user, setUser] = useState(null);
   const [measurements, setMeasurements] = useState(job.measurements || null);
@@ -234,6 +236,36 @@ export default function JobDetails({ job: initialJob, onClose, onStatusChange, o
     enabled: !!job.contract_id
   });
 
+  // Detect logistics job
+  const isLogisticsJob = job.job_type === 'Logistics' || job.vehicle_id || job.purchase_order_id || job.third_party_trade_id;
+
+  // Fetch purchase order data for logistics jobs
+  const { data: purchaseOrder } = useQuery({
+    queryKey: ['purchaseOrder', job.purchase_order_id],
+    queryFn: () => base44.entities.PurchaseOrder.get(job.purchase_order_id),
+    enabled: !!job.purchase_order_id
+  });
+
+  const { data: purchaseOrderLines = [] } = useQuery({
+    queryKey: ['purchaseOrderLines', job.purchase_order_id],
+    queryFn: () => base44.entities.PurchaseOrderLine.filter({ purchase_order_id: job.purchase_order_id }),
+    enabled: !!job.purchase_order_id
+  });
+
+  // Fetch parts for logistics jobs
+  const { data: jobParts = [] } = useQuery({
+    queryKey: ['jobParts', job.id],
+    queryFn: async () => {
+      const parts = await base44.entities.Part.list();
+      return parts.filter(p => 
+        p.linked_logistics_jobs && 
+        Array.isArray(p.linked_logistics_jobs) && 
+        p.linked_logistics_jobs.includes(job.id)
+      );
+    },
+    enabled: isLogisticsJob
+  });
+
   const { data: xeroInvoice } = useQuery({
     queryKey: ['xeroInvoice', job.xero_invoice_id],
     queryFn: () => base44.entities.XeroInvoice.get(job.xero_invoice_id),
@@ -287,8 +319,18 @@ export default function JobDetails({ job: initialJob, onClose, onStatusChange, o
       // Check if this is a mistake check-in (less than 1 minute)
       const isMistake = durationMinutes < 1;
 
-      // Only validate fields if this is a real visit
-      if (!isMistake) {
+      // Validation for logistics jobs
+      if (isLogisticsJob && !isMistake) {
+        if (!outcome) {
+          throw new Error("Please select an outcome before checking out.");
+        }
+        if (outcome === 'completed' && !allItemsChecked()) {
+          throw new Error("All items must be checked off before completing.");
+        }
+      }
+
+      // Only validate fields if this is a real visit and NOT a logistics job
+      if (!isMistake && !isLogisticsJob) {
         if (!overview || !nextSteps || !communicationWithClient || !outcome) {
           throw new Error("Please fill in all Site Visit fields before checking out.");
         }
@@ -668,6 +710,17 @@ export default function JobDetails({ job: initialJob, onClose, onStatusChange, o
     if (newStatus !== job.status) {
       updateJobMutation.mutate({ field: 'status', value: newStatus });
     }
+  };
+
+  const handleItemCheck = (itemId, checked) => {
+    setCheckedItems(prev => ({ ...prev, [itemId]: checked }));
+  };
+
+  const allItemsChecked = () => {
+    if (purchaseOrderLines.length === 0 && jobParts.length === 0) return true;
+    const totalItems = purchaseOrderLines.length + jobParts.length;
+    const checkedCount = Object.values(checkedItems).filter(Boolean).length;
+    return checkedCount === totalItems;
   };
 
   const handleAssignedToChange = (emails) => {
@@ -1255,14 +1308,18 @@ export default function JobDetails({ job: initialJob, onClose, onStatusChange, o
           <Tabs defaultValue="details" className="w-full">
             <TabsList className="w-full justify-start mb-3 overflow-x-auto flex-nowrap">
               <TabsTrigger value="details" className="flex-1">Details</TabsTrigger>
-              <TabsTrigger value="visit" className="flex-1">
-                <ClipboardCheck className="w-4 h-4 mr-1.5" />
-                <span className="hidden md:inline">Visit</span>
-              </TabsTrigger>
-              <TabsTrigger value="form" className="flex-1">
-                <FileCheck className="w-4 h-4 mr-1.5" />
-                <span className="hidden md:inline">Form</span>
-              </TabsTrigger>
+              {!isLogisticsJob && (
+                <>
+                  <TabsTrigger value="visit" className="flex-1">
+                    <ClipboardCheck className="w-4 h-4 mr-1.5" />
+                    <span className="hidden md:inline">Visit</span>
+                  </TabsTrigger>
+                  <TabsTrigger value="form" className="flex-1">
+                    <FileCheck className="w-4 h-4 mr-1.5" />
+                    <span className="hidden md:inline">Form</span>
+                  </TabsTrigger>
+                </>
+              )}
               <TabsTrigger value="files" className="flex-1">
                 <ImageIcon className="w-4 h-4 mr-1.5" />
                 <span className="hidden md:inline">Files</span>
@@ -1276,40 +1333,179 @@ export default function JobDetails({ job: initialJob, onClose, onStatusChange, o
                 <MapPin className="w-4 h-4 mr-1.5" />
                 <span className="hidden md:inline">Map</span>
               </TabsTrigger>
-              <TabsTrigger value="invoicing" className="flex-1">
-                <DollarSign className="w-4 h-4 mr-1.5" />
-                <span className="hidden md:inline">Invoice</span>
-              </TabsTrigger>
+              {!isLogisticsJob && (
+                <TabsTrigger value="invoicing" className="flex-1">
+                  <DollarSign className="w-4 h-4 mr-1.5" />
+                  <span className="hidden md:inline">Invoice</span>
+                </TabsTrigger>
+              )}
               </TabsList>
 
             <TabsContent value="details" className="space-y-4 mt-3">
               {/* Duplicate Warning */}
               <DuplicateWarningCard entityType="Job" record={job} />
 
-              {/* Linked Parts Card - Logistics */}
-              <LinkedPartsCard job={job} />
+              {isLogisticsJob ? (
+                <>
+                  {/* Order Items Checklist for Logistics Jobs */}
+                  {(purchaseOrderLines.length > 0 || jobParts.length > 0) && (
+                    <Card className="border border-[#E5E7EB] shadow-sm rounded-lg">
+                      <CardHeader className="bg-white px-4 py-3 border-b border-[#E5E7EB]">
+                        <CardTitle className="text-[16px] font-semibold text-[#111827] leading-[1.2]">
+                          Order Items
+                        </CardTitle>
+                      </CardHeader>
+                      <CardContent className="p-4 space-y-2">
+                        {purchaseOrderLines.map((line) => (
+                          <div key={line.id} className="flex items-center gap-3 p-2 hover:bg-[#F9FAFB] rounded-lg transition-colors">
+                            <Checkbox
+                              checked={checkedItems[line.id] || false}
+                              onCheckedChange={(checked) => handleItemCheck(line.id, checked)}
+                            />
+                            <div className="flex-1">
+                              <span className="text-[14px] font-medium text-[#111827]">{line.item_name}</span>
+                              <span className="text-[14px] text-[#6B7280] ml-2">× {line.quantity}</span>
+                            </div>
+                          </div>
+                        ))}
+                        {jobParts.map((part) => (
+                          <div key={part.id} className="flex items-center gap-3 p-2 hover:bg-[#F9FAFB] rounded-lg transition-colors">
+                            <Checkbox
+                              checked={checkedItems[part.id] || false}
+                              onCheckedChange={(checked) => handleItemCheck(part.id, checked)}
+                            />
+                            <div className="flex-1">
+                              <span className="text-[14px] font-medium text-[#111827]">{part.category}</span>
+                              {part.quantity_required && (
+                                <span className="text-[14px] text-[#6B7280] ml-2">× {part.quantity_required}</span>
+                              )}
+                            </div>
+                          </div>
+                        ))}
+                      </CardContent>
+                    </Card>
+                  )}
 
-              {/* Job Contacts Panel */}
-              <JobContactsPanel job={job} />
+                  {/* Notes from Purchase Order or Parts */}
+                  {(purchaseOrder?.notes || jobParts.some(p => p.notes)) && (
+                    <Card className="border border-[#E5E7EB] shadow-sm rounded-lg">
+                      <CardHeader className="bg-white px-4 py-3 border-b border-[#E5E7EB]">
+                        <CardTitle className="text-[16px] font-semibold text-[#111827] leading-[1.2]">
+                          Notes
+                        </CardTitle>
+                      </CardHeader>
+                      <CardContent className="p-4 space-y-3">
+                        {purchaseOrder?.notes && (
+                          <div>
+                            <div className="text-[12px] font-semibold text-[#6B7280] mb-1">Purchase Order Notes:</div>
+                            <p className="text-[14px] text-[#111827]">{purchaseOrder.notes}</p>
+                          </div>
+                        )}
+                        {jobParts.filter(p => p.notes).map((part) => (
+                          <div key={part.id}>
+                            <div className="text-[12px] font-semibold text-[#6B7280] mb-1">{part.category} Notes:</div>
+                            <p className="text-[14px] text-[#111827]">{part.notes}</p>
+                          </div>
+                        ))}
+                      </CardContent>
+                    </Card>
+                  )}
 
-              {/* Third-Party Trades Info */}
-              {job.project_id && <ThirdPartyTradesInfo job={job} />}
+                  {/* Check In/Out Section for Logistics */}
+                  {!isTechnician && (
+                    <div className="flex flex-col gap-2">
+                      {!activeCheckIn ? (
+                        <Button
+                          onClick={handleCheckIn}
+                          disabled={checkInMutation.isPending}
+                          className="w-full bg-[#FAE008] hover:bg-[#E5CF07] text-[#111827] h-11 font-semibold text-base rounded-lg shadow-sm hover:shadow-md transition-all"
+                        >
+                          <LogIn className="w-5 h-5 mr-2" />
+                          {checkInMutation.isPending ? 'Checking In...' : 'Check In'}
+                        </Button>
+                      ) : (
+                        <div className="bg-blue-50 border border-blue-200 rounded-lg p-3">
+                          <div className="flex items-center gap-2 text-blue-700">
+                            <Timer className="w-4 h-4" />
+                            <span className="text-sm font-semibold">
+                              Checked in at {format(new Date(activeCheckIn.check_in_time), 'h:mm a')}
+                            </span>
+                          </div>
+                        </div>
+                      )}
+                      {totalJobTime > 0 && (
+                        <div className="bg-[#F8F9FA] border border-[#E5E7EB] rounded-lg p-3">
+                          <div className="flex items-center justify-between">
+                            <span className="text-sm text-[#6B7280] font-semibold">Total Time:</span>
+                            <span className="text-sm font-bold text-[#111827]">{totalJobTime.toFixed(1)}h</span>
+                          </div>
+                        </div>
+                      )}
+                    </div>
+                  )}
 
-              {/* Tasks Panel */}
-              <Collapsible defaultOpen={false} className="border border-[#E5E7EB] shadow-sm rounded-lg bg-white">
-                <CollapsibleTrigger className="w-full flex items-center justify-between p-4 hover:bg-slate-50 transition-colors group">
-                  <h3 className="text-[16px] font-semibold text-[#111827] leading-[1.2]">Tasks</h3>
-                  <ChevronDown className="w-4 h-4 text-slate-500 transition-transform group-data-[state=open]:rotate-180" />
-                </CollapsibleTrigger>
-                <CollapsibleContent className="p-4 pt-0">
-                  <TasksPanel
-                    entityType="job"
-                    entityId={job.id}
-                    entityName={`Job #${job.job_number}`}
-                    entityNumber={job.job_number}
-                  />
-                </CollapsibleContent>
-              </Collapsible>
+                  {/* Outcome for Logistics Jobs - Only Complete and Reschedule */}
+                  {activeCheckIn && (
+                    <div>
+                      <Label className="block text-[13px] md:text-[14px] font-medium text-[#4B5563] mb-1.5">Outcome *</Label>
+                      <Select value={outcome} onValueChange={handleOutcomeChange}>
+                        <SelectTrigger className="h-11 text-sm border-2 border-slate-300 focus:border-[#fae008] focus:ring-2 focus:ring-[#fae008]/20 rounded-xl font-medium">
+                          <SelectValue placeholder="Select outcome" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="completed">Complete</SelectItem>
+                          <SelectItem value="return_visit_required">Reschedule</SelectItem>
+                        </SelectContent>
+                      </Select>
+                      {!allItemsChecked() && outcome === 'completed' && (
+                        <div className="bg-red-50 border border-red-200 rounded-lg p-2 mt-2 flex items-start gap-2">
+                          <AlertCircle className="w-4 h-4 text-red-600 mt-0.5 flex-shrink-0" />
+                          <span className="text-sm text-red-700">All items must be checked off before completing</span>
+                        </div>
+                      )}
+                    </div>
+                  )}
+
+                  {activeCheckIn && !isTechnician && (
+                    <div className="pt-3 border-t-2">
+                      <Button
+                        onClick={handleCheckOut}
+                        disabled={checkOutMutation.isPending || (outcome === 'completed' && !allItemsChecked())}
+                        className="w-full bg-blue-600 hover:bg-blue-700 h-11 font-semibold text-base rounded-xl shadow-md hover:shadow-lg transition-all disabled:opacity-50"
+                      >
+                        <LogOut className="w-4 h-4 mr-2" />
+                        {checkOutMutation.isPending ? 'Checking Out...' : 'Check Out'}
+                      </Button>
+                    </div>
+                  )}
+                </>
+              ) : (
+                <>
+                  {/* Standard Job Details */}
+                  {/* Linked Parts Card - Logistics */}
+                  <LinkedPartsCard job={job} />
+
+                  {/* Job Contacts Panel */}
+                  <JobContactsPanel job={job} />
+
+                  {/* Third-Party Trades Info */}
+                  {job.project_id && <ThirdPartyTradesInfo job={job} />}
+
+                  {/* Tasks Panel */}
+                  <Collapsible defaultOpen={false} className="border border-[#E5E7EB] shadow-sm rounded-lg bg-white">
+                    <CollapsibleTrigger className="w-full flex items-center justify-between p-4 hover:bg-slate-50 transition-colors group">
+                      <h3 className="text-[16px] font-semibold text-[#111827] leading-[1.2]">Tasks</h3>
+                      <ChevronDown className="w-4 h-4 text-slate-500 transition-transform group-data-[state=open]:rotate-180" />
+                    </CollapsibleTrigger>
+                    <CollapsibleContent className="p-4 pt-0">
+                      <TasksPanel
+                        entityType="job"
+                        entityId={job.id}
+                        entityName={`Job #${job.job_number}`}
+                        entityNumber={job.job_number}
+                      />
+                    </CollapsibleContent>
+                  </Collapsible>
 
               {job.project_id && projectJobs.length > 0 &&
               <div className="bg-blue-50 border-2 border-blue-200 rounded-xl p-3 mb-4">
@@ -1483,276 +1679,279 @@ export default function JobDetails({ job: initialJob, onClose, onStatusChange, o
               }
             </TabsContent>
 
-            <TabsContent value="visit" className="space-y-3 mt-2">
-              <div className="space-y-3">
-                <div className="flex justify-end gap-2">
-                  {previousReportData && (
-                    <Button
-                      onClick={() => {
-                        setOverview(previousReportData.overview);
-                        setIssuesFound(previousReportData.issuesFound);
-                        setResolution(previousReportData.resolution);
-                        setNextSteps(previousReportData.nextSteps);
-                        setPreviousReportData(null);
-                        toast.success("Report reverted to previous version");
-                      }}
-                      variant="outline"
-                      className="gap-2 border-slate-200 bg-slate-50 text-slate-700 hover:bg-slate-100 hover:text-slate-800"
-                    >
-                      Revert AI Report
-                    </Button>
-                  )}
-                  <Button
-                    onClick={async () => {
-                      if (!job.image_urls || job.image_urls.length === 0) {
-                        toast.error("Please upload photos first");
-                        return;
-                      }
-                      setIsGeneratingReport(true);
-                      try {
-                        // Save current state before generating
-                        setPreviousReportData({
-                          overview,
-                          issuesFound,
-                          resolution,
-                          nextSteps
-                        });
-                        
-                        const response = await base44.functions.invoke('generateServiceReport', { jobId: job.id });
-                        const data = response.data;
-                        setOverview(data.work_performed || "");
-                        setIssuesFound(data.issues_found || "");
-                        setResolution(data.resolution || "");
-                        setNextSteps(data.next_steps || "");
-                        toast.success("Report generated successfully");
-                      } catch (error) {
-                        console.error("Error generating report:", error);
-                        toast.error("Failed to generate report");
-                      } finally {
-                        setIsGeneratingReport(false);
-                      }
-                    }}
-                    disabled={isGeneratingReport}
-                    variant="outline"
-                    className="gap-2 border-indigo-200 bg-indigo-50 text-indigo-700 hover:bg-indigo-100 hover:text-indigo-800"
-                  >
-                    {isGeneratingReport ? (
-                      <Loader2 className="w-4 h-4 animate-spin" />
-                    ) : (
-                      <Sparkles className="w-4 h-4" />
+            {!isLogisticsJob && (
+              <TabsContent value="visit" className="space-y-3 mt-2">
+                <div className="space-y-3">
+                  <div className="flex justify-end gap-2">
+                    {previousReportData && (
+                      <Button
+                        onClick={() => {
+                          setOverview(previousReportData.overview);
+                          setIssuesFound(previousReportData.issuesFound);
+                          setResolution(previousReportData.resolution);
+                          setNextSteps(previousReportData.nextSteps);
+                          setPreviousReportData(null);
+                          toast.success("Report reverted to previous version");
+                        }}
+                        variant="outline"
+                        className="gap-2 border-slate-200 bg-slate-50 text-slate-700 hover:bg-slate-100 hover:text-slate-800"
+                      >
+                        Revert AI Report
+                      </Button>
                     )}
-                    {isGeneratingReport ? "Generating Report..." : "Generate AI Report"}
-                  </Button>
-                </div>
-
-                <RichTextField
-                  label="Work Performed (Overview) *"
-                  value={overview}
-                  onChange={setOverview}
-                  onBlur={handleOverviewBlur}
-                  placeholder="Detailed description of tasks completed..."
-                  helperText="Required for checkout"
-                />
-
-                <RichTextField
-                  label="Issues Found"
-                  value={issuesFound}
-                  onChange={setIssuesFound}
-                  placeholder="Diagnosis of problems identified..."
-                />
-
-                <RichTextField
-                  label="Resolution"
-                  value={resolution}
-                  onChange={setResolution}
-                  placeholder="How the issues were resolved..."
-                />
-
-                <RichTextField
-                  label="Next Steps / Recommendations *"
-                  value={nextSteps}
-                  onChange={setNextSteps}
-                  onBlur={handleNextStepsBlur}
-                  placeholder="What needs to happen next? Any follow-up required…"
-                  helperText="Required for checkout"
-                />
-
-                <RichTextField
-                  label="Communication *"
-                  value={communicationWithClient}
-                  onChange={setCommunicationWithClient}
-                  onBlur={handleCommunicationBlur}
-                  placeholder="What was discussed with the client? Any agreements made…"
-                  helperText="Required for checkout"
-                />
-
-                <div>
-                  <Label className="block text-[13px] md:text-[14px] font-medium text-[#4B5563] mb-1.5">Outcome *</Label>
-                  <Select value={outcome} onValueChange={handleOutcomeChange}>
-                    <SelectTrigger className="h-11 text-sm border-2 border-slate-300 focus:border-[#fae008] focus:ring-2 focus:ring-[#fae008]/20 rounded-xl font-medium">
-                      <SelectValue placeholder="Select outcome" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="new_quote">New Quote</SelectItem>
-                      <SelectItem value="update_quote">Update Quote</SelectItem>
-                      <SelectItem value="send_invoice">Send Invoice</SelectItem>
-                      <SelectItem value="completed">Completed</SelectItem>
-                      <SelectItem value="return_visit_required">Return Visit Required</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
-
-                {validationError &&
-                <div className="bg-red-50 border-2 border-red-200 rounded-xl p-2.5 flex items-start gap-2">
-                    <AlertCircle className="w-4 h-4 text-red-600 mt-0.5 flex-shrink-0" />
-                    <span className="text-sm text-red-700 font-medium">{validationError}</span>
-                  </div>
-                }
-
-                {activeCheckIn && isTechnician &&
-                <div className="fixed bottom-0 left-0 right-0 bg-white border-t border-[#E5E7EB] shadow-lg z-50 p-3">
                     <Button
-                    onClick={handleCheckOut}
-                    disabled={checkOutMutation.isPending}
-                    className="w-full bg-blue-600 hover:bg-blue-700 h-11 font-semibold text-base rounded-xl shadow-md hover:shadow-lg transition-all max-w-screen-sm mx-auto">
-
-                      <LogOut className="w-4 h-4 mr-2" />
-                      {checkOutMutation.isPending ? 'Checking Out...' : 'Check Out'}
+                      onClick={async () => {
+                        if (!job.image_urls || job.image_urls.length === 0) {
+                          toast.error("Please upload photos first");
+                          return;
+                        }
+                        setIsGeneratingReport(true);
+                        try {
+                          // Save current state before generating
+                          setPreviousReportData({
+                            overview,
+                            issuesFound,
+                            resolution,
+                            nextSteps
+                          });
+                          
+                          const response = await base44.functions.invoke('generateServiceReport', { jobId: job.id });
+                          const data = response.data;
+                          setOverview(data.work_performed || "");
+                          setIssuesFound(data.issues_found || "");
+                          setResolution(data.resolution || "");
+                          setNextSteps(data.next_steps || "");
+                          toast.success("Report generated successfully");
+                        } catch (error) {
+                          console.error("Error generating report:", error);
+                          toast.error("Failed to generate report");
+                        } finally {
+                          setIsGeneratingReport(false);
+                        }
+                      }}
+                      disabled={isGeneratingReport}
+                      variant="outline"
+                      className="gap-2 border-indigo-200 bg-indigo-50 text-indigo-700 hover:bg-indigo-100 hover:text-indigo-800"
+                    >
+                      {isGeneratingReport ? (
+                        <Loader2 className="w-4 h-4 animate-spin" />
+                      ) : (
+                        <Sparkles className="w-4 h-4" />
+                      )}
+                      {isGeneratingReport ? "Generating Report..." : "Generate AI Report"}
                     </Button>
                   </div>
-                }
-                {activeCheckIn && !isTechnician &&
-                <div className="pt-3 border-t-2">
-                    <Button
-                    onClick={handleCheckOut}
-                    disabled={checkOutMutation.isPending}
-                    className="w-full bg-blue-600 hover:bg-blue-700 h-11 font-semibold text-base rounded-xl shadow-md hover:shadow-lg transition-all">
 
-                      <LogOut className="w-4 h-4 mr-2" />
-                      {checkOutMutation.isPending ? 'Checking Out...' : 'Check Out'}
-                    </Button>
+                  <RichTextField
+                    label="Work Performed (Overview) *"
+                    value={overview}
+                    onChange={setOverview}
+                    onBlur={handleOverviewBlur}
+                    placeholder="Detailed description of tasks completed..."
+                    helperText="Required for checkout"
+                  />
+
+                  <RichTextField
+                    label="Issues Found"
+                    value={issuesFound}
+                    onChange={setIssuesFound}
+                    placeholder="Diagnosis of problems identified..."
+                  />
+
+                  <RichTextField
+                    label="Resolution"
+                    value={resolution}
+                    onChange={setResolution}
+                    placeholder="How the issues were resolved..."
+                  />
+
+                  <RichTextField
+                    label="Next Steps / Recommendations *"
+                    value={nextSteps}
+                    onChange={setNextSteps}
+                    onBlur={handleNextStepsBlur}
+                    placeholder="What needs to happen next? Any follow-up required…"
+                    helperText="Required for checkout"
+                  />
+
+                  <RichTextField
+                    label="Communication *"
+                    value={communicationWithClient}
+                    onChange={setCommunicationWithClient}
+                    onBlur={handleCommunicationBlur}
+                    placeholder="What was discussed with the client? Any agreements made…"
+                    helperText="Required for checkout"
+                  />
+
+                  <div>
+                    <Label className="block text-[13px] md:text-[14px] font-medium text-[#4B5563] mb-1.5">Outcome *</Label>
+                    <Select value={outcome} onValueChange={handleOutcomeChange}>
+                      <SelectTrigger className="h-11 text-sm border-2 border-slate-300 focus:border-[#fae008] focus:ring-2 focus:ring-[#fae008]/20 rounded-xl font-medium">
+                        <SelectValue placeholder="Select outcome" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="new_quote">New Quote</SelectItem>
+                        <SelectItem value="update_quote">Update Quote</SelectItem>
+                        <SelectItem value="send_invoice">Send Invoice</SelectItem>
+                        <SelectItem value="completed">Completed</SelectItem>
+                        <SelectItem value="return_visit_required">Return Visit Required</SelectItem>
+                      </SelectContent>
+                    </Select>
                   </div>
-                }
-              </div>
 
-              {completedCheckIns.length > 0 &&
-              <Collapsible defaultOpen={false} className="pt-3 border-t-2">
-                  <CollapsibleTrigger className="flex items-center justify-between w-full group bg-[#F9FAFB] border border-[#E5E7EB] rounded-xl p-3 hover:bg-[#F3F4F6] transition-colors">
-                    <h4 className="text-[14px] font-semibold text-[#111827] leading-[1.4]">Time Tracking ({completedCheckIns.length})</h4>
-                    <ChevronDown className="w-4 h-4 text-slate-500 transition-transform group-data-[state=open]:rotate-180" />
-                  </CollapsibleTrigger>
-                  
-                  <CollapsibleContent className="pt-2.5 space-y-2.5">
-                    {completedCheckIns.map((checkIn, index) =>
-                  <div key={checkIn.id} className="bg-[#F9FAFB] border border-[#E5E7EB] rounded-xl p-2.5">
-                        <div className="space-y-2">
-                          <div className="flex items-center justify-between text-sm">
-                            <span className="text-slate-500 font-medium">Visit {completedCheckIns.length - index}</span>
-                            <span className="font-bold text-[#000000]">{checkIn.technician_name}</span>
-                          </div>
-                          <div className="grid grid-cols-2 gap-2 text-xs md:text-sm">
-                            <div>
-                              <span className="text-slate-500 font-medium">In:</span>
-                              <div className="font-bold text-[#000000]">
-                                {format(new Date(checkIn.check_in_time), 'MMM d, h:mm a')}
-                              </div>
-                            </div>
-                            <div>
-                              <span className="text-slate-500 font-medium">Out:</span>
-                              <div className="font-bold text-[#000000]">
-                                {format(new Date(checkIn.check_out_time), 'MMM d, h:mm a')}
-                              </div>
-                            </div>
-                          </div>
-                          <div className="pt-2 border-t-2 border-slate-300">
-                            <div className="flex items-center justify-between text-sm">
-                              <span className="text-slate-600 font-semibold">Duration:</span>
-                              <span className="font-bold text-[#000000]">
-                                {checkIn.duration_hours.toFixed(1)}h
-                              </span>
-                            </div>
-                          </div>
-                        </div>
-                      </div>
-                  )}
-
-                    <div className="bg-blue-50 border-2 border-blue-200 rounded-xl p-2.5">
-                      <div className="flex items-center justify-between">
-                        <span className="text-sm font-bold text-blue-900">Total:</span>
-                        <span className="text-base font-bold text-blue-900">{totalJobTime.toFixed(1)}h</span>
-                      </div>
+                  {validationError && (
+                    <div className="bg-red-50 border-2 border-red-200 rounded-xl p-2.5 flex items-start gap-2">
+                      <AlertCircle className="w-4 h-4 text-red-600 mt-0.5 flex-shrink-0" />
+                      <span className="text-sm text-red-700 font-medium">{validationError}</span>
                     </div>
-                  </CollapsibleContent>
-                </Collapsible>
-              }
+                  )}
 
-              {jobSummaries.length > 0 &&
-              <Collapsible defaultOpen={false} className="pt-3 border-t-2">
-                  <CollapsibleTrigger className="flex items-center justify-between w-full group bg-slate-50 border-2 border-slate-200 rounded-xl p-3 hover:bg-slate-100 transition-colors">
-                    <h4 className="text-[14px] font-semibold text-[#111827] leading-[1.4]">Previous Visit Summaries ({jobSummaries.length})</h4>
-                    <ChevronDown className="w-4 h-4 text-slate-500 transition-transform group-data-[state=open]:rotate-180" />
-                  </CollapsibleTrigger>
-                  
-                  <CollapsibleContent className="pt-3 space-y-3">
-                    {jobSummaries.map((summary) =>
-                  <div key={summary.id} className="bg-white border-2 border-slate-200 rounded-xl p-3">
-                        <div className="flex items-center justify-between mb-3">
-                          <span className="font-bold text-[#000000]">{summary.technician_name}</span>
-                          <span className="text-xs text-slate-500 font-medium">
-                            {format(new Date(summary.check_out_time), 'MMM d, yyyy h:mm a')}
-                          </span>
+                  {activeCheckIn && isTechnician && (
+                    <div className="fixed bottom-0 left-0 right-0 bg-white border-t border-[#E5E7EB] shadow-lg z-50 p-3">
+                      <Button
+                        onClick={handleCheckOut}
+                        disabled={checkOutMutation.isPending}
+                        className="w-full bg-blue-600 hover:bg-blue-700 h-11 font-semibold text-base rounded-xl shadow-md hover:shadow-lg transition-all max-w-screen-sm mx-auto"
+                      >
+                        <LogOut className="w-4 h-4 mr-2" />
+                        {checkOutMutation.isPending ? 'Checking Out...' : 'Check Out'}
+                      </Button>
+                    </div>
+                  )}
+                  {activeCheckIn && !isTechnician && (
+                    <div className="pt-3 border-t-2">
+                      <Button
+                        onClick={handleCheckOut}
+                        disabled={checkOutMutation.isPending}
+                        className="w-full bg-blue-600 hover:bg-blue-700 h-11 font-semibold text-base rounded-xl shadow-md hover:shadow-lg transition-all"
+                      >
+                        <LogOut className="w-4 h-4 mr-2" />
+                        {checkOutMutation.isPending ? 'Checking Out...' : 'Check Out'}
+                      </Button>
+                    </div>
+                  )}
+                </div>
+
+                {completedCheckIns.length > 0 && (
+                  <Collapsible defaultOpen={false} className="pt-3 border-t-2">
+                    <CollapsibleTrigger className="flex items-center justify-between w-full group bg-[#F9FAFB] border border-[#E5E7EB] rounded-xl p-3 hover:bg-[#F3F4F6] transition-colors">
+                      <h4 className="text-[14px] font-semibold text-[#111827] leading-[1.4]">Time Tracking ({completedCheckIns.length})</h4>
+                      <ChevronDown className="w-4 h-4 text-slate-500 transition-transform group-data-[state=open]:rotate-180" />
+                    </CollapsibleTrigger>
+                    
+                    <CollapsibleContent className="pt-2.5 space-y-2.5">
+                      {completedCheckIns.map((checkIn, index) => (
+                        <div key={checkIn.id} className="bg-[#F9FAFB] border border-[#E5E7EB] rounded-xl p-2.5">
+                          <div className="space-y-2">
+                            <div className="flex items-center justify-between text-sm">
+                              <span className="text-slate-500 font-medium">Visit {completedCheckIns.length - index}</span>
+                              <span className="font-bold text-[#000000]">{checkIn.technician_name}</span>
+                            </div>
+                            <div className="grid grid-cols-2 gap-2 text-xs md:text-sm">
+                              <div>
+                                <span className="text-slate-500 font-medium">In:</span>
+                                <div className="font-bold text-[#000000]">
+                                  {format(new Date(checkIn.check_in_time), 'MMM d, h:mm a')}
+                                </div>
+                              </div>
+                              <div>
+                                <span className="text-slate-500 font-medium">Out:</span>
+                                <div className="font-bold text-[#000000]">
+                                  {format(new Date(checkIn.check_out_time), 'MMM d, h:mm a')}
+                                </div>
+                              </div>
+                            </div>
+                            <div className="pt-2 border-t-2 border-slate-300">
+                              <div className="flex items-center justify-between text-sm">
+                                <span className="text-slate-600 font-semibold">Duration:</span>
+                                <span className="font-bold text-[#000000]">
+                                  {checkIn.duration_hours.toFixed(1)}h
+                                </span>
+                              </div>
+                            </div>
+                          </div>
                         </div>
-                        
-                        {summary.outcome &&
-                    <Badge className={`${outcomeColors[summary.outcome]} mb-3 font-semibold border-2 hover:opacity-100`}>
-                            {summary.outcome?.replace(/_/g, ' ') || summary.outcome}
-                          </Badge>
-                    }
+                      ))}
 
-                        <div className="space-y-2">
-                          {summary.overview &&
-                      <div>
-                              <div className="text-xs font-bold text-slate-500 mb-1">Work Performed:</div>
-                              <div className="text-sm text-slate-700" dangerouslySetInnerHTML={{ __html: summary.overview }} />
-                            </div>
-                      }
-
-                          {summary.issues_found &&
-                      <div>
-                              <div className="text-xs font-bold text-slate-500 mb-1">Issues Found:</div>
-                              <div className="text-sm text-slate-700" dangerouslySetInnerHTML={{ __html: summary.issues_found }} />
-                            </div>
-                      }
-
-                          {summary.resolution &&
-                      <div>
-                              <div className="text-xs font-bold text-slate-500 mb-1">Resolution:</div>
-                              <div className="text-sm text-slate-700" dangerouslySetInnerHTML={{ __html: summary.resolution }} />
-                            </div>
-                      }
-                          
-                          {summary.next_steps &&
-                      <div>
-                              <div className="text-xs font-bold text-slate-500 mb-1">Next Steps:</div>
-                              <div className="text-sm text-slate-700" dangerouslySetInnerHTML={{ __html: summary.next_steps }} />
-                            </div>
-                      }
-                          
-                          {summary.communication_with_client &&
-                      <div>
-                              <div className="text-xs font-bold text-slate-500 mb-1">Communication:</div>
-                              <div className="text-sm text-slate-700" dangerouslySetInnerHTML={{ __html: summary.communication_with_client }} />
-                            </div>
-                      }
+                      <div className="bg-blue-50 border-2 border-blue-200 rounded-xl p-2.5">
+                        <div className="flex items-center justify-between">
+                          <span className="text-sm font-bold text-blue-900">Total:</span>
+                          <span className="text-base font-bold text-blue-900">{totalJobTime.toFixed(1)}h</span>
                         </div>
                       </div>
-                  )}
-                  </CollapsibleContent>
-                </Collapsible>
-              }
-            </TabsContent>
+                    </CollapsibleContent>
+                  </Collapsible>
+                )}
 
-            <TabsContent value="form" className="mt-2">
+                {jobSummaries.length > 0 && (
+                  <Collapsible defaultOpen={false} className="pt-3 border-t-2">
+                    <CollapsibleTrigger className="flex items-center justify-between w-full group bg-slate-50 border-2 border-slate-200 rounded-xl p-3 hover:bg-slate-100 transition-colors">
+                      <h4 className="text-[14px] font-semibold text-[#111827] leading-[1.4]">Previous Visit Summaries ({jobSummaries.length})</h4>
+                      <ChevronDown className="w-4 h-4 text-slate-500 transition-transform group-data-[state=open]:rotate-180" />
+                    </CollapsibleTrigger>
+                    
+                    <CollapsibleContent className="pt-3 space-y-3">
+                      {jobSummaries.map((summary) => (
+                        <div key={summary.id} className="bg-white border-2 border-slate-200 rounded-xl p-3">
+                          <div className="flex items-center justify-between mb-3">
+                            <span className="font-bold text-[#000000]">{summary.technician_name}</span>
+                            <span className="text-xs text-slate-500 font-medium">
+                              {format(new Date(summary.check_out_time), 'MMM d, yyyy h:mm a')}
+                            </span>
+                          </div>
+                          
+                          {summary.outcome && (
+                            <Badge className={`${outcomeColors[summary.outcome]} mb-3 font-semibold border-2 hover:opacity-100`}>
+                              {summary.outcome?.replace(/_/g, ' ') || summary.outcome}
+                            </Badge>
+                          )}
+
+                          <div className="space-y-2">
+                            {summary.overview && (
+                              <div>
+                                <div className="text-xs font-bold text-slate-500 mb-1">Work Performed:</div>
+                                <div className="text-sm text-slate-700" dangerouslySetInnerHTML={{ __html: summary.overview }} />
+                              </div>
+                            )}
+
+                            {summary.issues_found && (
+                              <div>
+                                <div className="text-xs font-bold text-slate-500 mb-1">Issues Found:</div>
+                                <div className="text-sm text-slate-700" dangerouslySetInnerHTML={{ __html: summary.issues_found }} />
+                              </div>
+                            )}
+
+                            {summary.resolution && (
+                              <div>
+                                <div className="text-xs font-bold text-slate-500 mb-1">Resolution:</div>
+                                <div className="text-sm text-slate-700" dangerouslySetInnerHTML={{ __html: summary.resolution }} />
+                              </div>
+                            )}
+                            
+                            {summary.next_steps && (
+                              <div>
+                                <div className="text-xs font-bold text-slate-500 mb-1">Next Steps:</div>
+                                <div className="text-sm text-slate-700" dangerouslySetInnerHTML={{ __html: summary.next_steps }} />
+                              </div>
+                            )}
+                            
+                            {summary.communication_with_client && (
+                              <div>
+                                <div className="text-xs font-bold text-slate-500 mb-1">Communication:</div>
+                                <div className="text-sm text-slate-700" dangerouslySetInnerHTML={{ __html: summary.communication_with_client }} />
+                              </div>
+                            )}
+                          </div>
+                        </div>
+                      ))}
+                    </CollapsibleContent>
+                  </Collapsible>
+                )}
+              </TabsContent>
+            )}
+
+            {!isLogisticsJob && (
+              <TabsContent value="form" className="mt-2">
               <div className="space-y-2.5">
                 <h3 className="text-[16px] font-semibold text-[#111827] leading-[1.2] mb-3">Measurements</h3>
                 <MeasurementsForm
@@ -1821,17 +2020,20 @@ export default function JobDetails({ job: initialJob, onClose, onStatusChange, o
                       }
                         </div>
                       </div>
-                  )}
-                  </CollapsibleContent>
-                </Collapsible>
-              }
-            </TabsContent>
+                    )}
+                    </CollapsibleContent>
+                  </Collapsible>
+                )}
+              </TabsContent>
+            )}
 
             <TabsContent value="files" className="mt-2">
               <div className="space-y-3">
                 <div className="flex items-center justify-between mb-2">
-                  <h4 className="text-[16px] font-semibold text-[#111827] leading-[1.2]">Photos & Videos</h4>
-                  {job.image_urls && job.image_urls.length > 0 && (
+                  <h4 className="text-[16px] font-semibold text-[#111827] leading-[1.2]">
+                    {isLogisticsJob ? 'Documents & Attachments' : 'Photos & Videos'}
+                  </h4>
+                  {job.image_urls && job.image_urls.length > 0 && !isLogisticsJob && (
                     <Link 
                       to={`${createPageUrl("Photos")}?jobId=${job.id}`}
                       className="text-[12px] text-[#FAE008] hover:text-[#E5CF07] font-semibold flex items-center gap-1 transition-colors"
@@ -1841,48 +2043,128 @@ export default function JobDetails({ job: initialJob, onClose, onStatusChange, o
                     </Link>
                   )}
                 </div>
-                <EditableFileUpload
-                  files={job.image_urls || []}
-                  onFilesChange={handleImagesChange}
-                  accept="image/*,video/*"
-                  multiple={true}
-                  icon={ImageIcon}
-                  label=""
-                  emptyText="Upload media" />
 
+                {isLogisticsJob && (
+                  <>
+                    {/* Auto-load files from purchase order attachments */}
+                    {purchaseOrder?.attachments && purchaseOrder.attachments.length > 0 && (
+                      <Card className="border border-[#E5E7EB] shadow-sm rounded-lg">
+                        <CardHeader className="bg-white px-4 py-3 border-b border-[#E5E7EB]">
+                          <CardTitle className="text-[14px] font-semibold text-[#111827]">Purchase Order Attachments</CardTitle>
+                        </CardHeader>
+                        <CardContent className="p-4">
+                          <div className="space-y-2">
+                            {purchaseOrder.attachments.map((url, idx) => (
+                              <a
+                                key={idx}
+                                href={url}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                className="flex items-center gap-2 p-2 hover:bg-[#F9FAFB] rounded-lg transition-colors text-[#2563EB] hover:text-[#1E40AF]"
+                              >
+                                <FileText className="w-4 h-4" />
+                                <span className="text-sm">Document {idx + 1}</span>
+                                <ExternalLink className="w-3 h-3 ml-auto" />
+                              </a>
+                            ))}
+                          </div>
+                        </CardContent>
+                      </Card>
+                    )}
+                    {/* Auto-load files from parts attachments */}
+                    {jobParts.some(p => p.attachments && p.attachments.length > 0) && (
+                      <Card className="border border-[#E5E7EB] shadow-sm rounded-lg">
+                        <CardHeader className="bg-white px-4 py-3 border-b border-[#E5E7EB]">
+                          <CardTitle className="text-[14px] font-semibold text-[#111827]">Part Attachments</CardTitle>
+                        </CardHeader>
+                        <CardContent className="p-4">
+                          <div className="space-y-3">
+                            {jobParts.filter(p => p.attachments && p.attachments.length > 0).map((part) => (
+                              <div key={part.id}>
+                                <div className="text-[12px] font-semibold text-[#6B7280] mb-1">{part.category}</div>
+                                <div className="space-y-2">
+                                  {part.attachments.map((url, idx) => (
+                                    <a
+                                      key={idx}
+                                      href={url}
+                                      target="_blank"
+                                      rel="noopener noreferrer"
+                                      className="flex items-center gap-2 p-2 hover:bg-[#F9FAFB] rounded-lg transition-colors text-[#2563EB] hover:text-[#1E40AF]"
+                                    >
+                                      <FileText className="w-4 h-4" />
+                                      <span className="text-sm">Document {idx + 1}</span>
+                                      <ExternalLink className="w-3 h-3 ml-auto" />
+                                    </a>
+                                  ))}
+                                </div>
+                              </div>
+                            ))}
+                          </div>
+                        </CardContent>
+                      </Card>
+                    )}
+                    {/* Additional uploads */}
+                    <div className="pt-3 border-t-2">
+                      <EditableFileUpload
+                        files={job.other_documents || []}
+                        onFilesChange={handleOtherDocumentsChange}
+                        accept=".pdf,.doc,.docx,.xls,.xlsx,.txt,image/*"
+                        multiple={true}
+                        icon={FileText}
+                        label="Additional Documents"
+                        emptyText="Upload documents"
+                      />
+                    </div>
+                  </>
+                )}
 
-                <div className="grid md:grid-cols-2 gap-2.5 pt-3 border-t-2">
-                  <EditableFileUpload
-                    files={job.quote_url}
-                    onFilesChange={handleQuoteChange}
-                    accept=".pdf,.doc,.docx"
-                    multiple={false}
-                    icon={FileText}
-                    label="Quote"
-                    emptyText="Upload quote" />
+                {!isLogisticsJob && (
+                  <>
+                    <EditableFileUpload
+                      files={job.image_urls || []}
+                      onFilesChange={handleImagesChange}
+                      accept="image/*,video/*"
+                      multiple={true}
+                      icon={ImageIcon}
+                      label=""
+                      emptyText="Upload media"
+                    />
 
+                    <div className="grid md:grid-cols-2 gap-2.5 pt-3 border-t-2">
+                      <EditableFileUpload
+                        files={job.quote_url}
+                        onFilesChange={handleQuoteChange}
+                        accept=".pdf,.doc,.docx"
+                        multiple={false}
+                        icon={FileText}
+                        label="Quote"
+                        emptyText="Upload quote"
+                      />
 
-                  <EditableFileUpload
-                    files={job.invoice_url}
-                    onFilesChange={handleInvoiceChange}
-                    accept=".pdf,.doc,.docx"
-                    multiple={false}
-                    icon={FileText}
-                    label="Invoice"
-                    emptyText="Upload invoice" />
+                      <EditableFileUpload
+                        files={job.invoice_url}
+                        onFilesChange={handleInvoiceChange}
+                        accept=".pdf,.doc,.docx"
+                        multiple={false}
+                        icon={FileText}
+                        label="Invoice"
+                        emptyText="Upload invoice"
+                      />
+                    </div>
 
-                </div>
-
-                <div className="pt-3 border-t-2">
-                  <EditableFileUpload
-                    files={job.other_documents || []}
-                    onFilesChange={handleOtherDocumentsChange}
-                    accept=".pdf,.doc,.docx,.xls,.xlsx,.txt"
-                    multiple={true}
-                    icon={FileText}
-                    label="Other Documents"
-                    emptyText="Upload documents" />
-                </div>
+                    <div className="pt-3 border-t-2">
+                      <EditableFileUpload
+                        files={job.other_documents || []}
+                        onFilesChange={handleOtherDocumentsChange}
+                        accept=".pdf,.doc,.docx,.xls,.xlsx,.txt"
+                        multiple={true}
+                        icon={FileText}
+                        label="Other Documents"
+                        emptyText="Upload documents"
+                      />
+                    </div>
+                  </>
+                )}
               </div>
             </TabsContent>
 
@@ -1911,7 +2193,8 @@ export default function JobDetails({ job: initialJob, onClose, onStatusChange, o
               </div>
             </TabsContent>
 
-            <TabsContent value="invoicing" className="mt-2">
+            {!isLogisticsJob && (
+              <TabsContent value="invoicing" className="mt-2">
               <div className="space-y-6">
                 {/* PandaDoc Quotes */}
                 <QuotesSection 
@@ -1992,7 +2275,8 @@ export default function JobDetails({ job: initialJob, onClose, onStatusChange, o
                   </CardContent>
                 </Card>
               </div>
-            </TabsContent>
+              </TabsContent>
+            )}
             </Tabs>
             </CardContent>
             </Card>
