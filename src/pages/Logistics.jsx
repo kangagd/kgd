@@ -12,7 +12,7 @@ import { Label } from "@/components/ui/label";
 import { Search, Filter, Truck, Package, MapPin, CheckCircle2, Clock, AlertCircle, Link as LinkIcon, Plus } from "lucide-react";
 import { format } from "date-fns";
 import { createPageUrl } from "@/utils";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import PartDetailModal from "../components/projects/PartDetailModal";
 import SupplierPurchaseOrderModal from "../components/purchasing/SupplierPurchaseOrderModal";
 import { toast } from "sonner";
@@ -39,6 +39,7 @@ const LOCATION_COLORS = {
 };
 
 export default function Logistics() {
+  const navigate = useNavigate();
   const queryClient = useQueryClient();
   const [searchTerm, setSearchTerm] = useState("");
   const [statusFilter, setStatusFilter] = useState("active"); // active, all, specific statuses
@@ -384,12 +385,7 @@ export default function Logistics() {
                                 <tr 
                                   key={job.id} 
                                   className={`${rowClasses} cursor-pointer`}
-                                  onClick={() => {
-                                    if (po) {
-                                      setSelectedPO(po);
-                                      setShowPOModal(true);
-                                    }
-                                  }}
+                                  onClick={() => navigate(`${createPageUrl("Jobs")}?jobId=${job.id}`)}
                                 >
                                     <td className="px-6 py-3 text-gray-700 font-medium">
                                         {job.scheduled_date ? format(new Date(job.scheduled_date), 'MMM d, yyyy') : '-'}
