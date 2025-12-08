@@ -53,7 +53,28 @@ export default function ReceivePurchaseOrderModal({ open, onClose, purchaseOrder
     mutationFn: async () => {
       if (!purchaseOrder) return;
       const now = new Date().toISOString();
-      const locationId = purchaseOrder.delivery_location_id || null;
+      let locationId = purchaseOrder.delivery_location_id || null;
+      
+      // Ensure we have a valid location - default to main warehouse if missing
+      if (!locationId) {
+        const warehouseLocations = await base44.entities.InventoryLocation.filter({
+          name: "866 Bourke St Warehouse"
+        });
+        
+        if (warehouseLocations.length > 0) {
+          locationId = warehouseLocations[0].id;
+        } else {
+          // Fallback to any warehouse if main one not found
+          const anyWarehouse = await base44.entities.InventoryLocation.filter({ type: "Warehouse" });
+          if (anyWarehouse.length > 0) {
+            locationId = anyWarehouse[0].id;
+          }
+        }
+        
+        if (!locationId) {
+          throw new Error("No delivery location or warehouse location configured. Please set a delivery location.");
+        }
+      }
       
       // Process each line
       const updates = lines.map(async (line) => {
@@ -79,20 +100,18 @@ export default function ReceivePurchaseOrderModal({ open, onClose, purchaseOrder
           qty_received: (line.qty_received || 0) + actualReceive,
         });
 
-        // 2. Create StockMovement
-        if (locationId) {
-            await base44.entities.StockMovement.create({
-            price_list_item_id: line.price_list_item_id,
-            location_id: locationId,
-            movement_type: "purchase_in",
-            qty: actualReceive,
-            unit_cost_ex_tax: line.unit_cost_ex_tax || 0,
-            reference_type: "purchase_order",
-            reference_id: purchaseOrder.id,
-            occurred_at: now,
-            notes: `PO ${purchaseOrder.po_number || purchaseOrder.id} – received`,
-            });
-        }
+        // 2. Create StockMovement (always with valid locationId)
+        await base44.entities.StockMovement.create({
+          price_list_item_id: line.price_list_item_id,
+          location_id: locationId,
+          movement_type: "purchase_in",
+          qty: actualReceive,
+          unit_cost_ex_tax: line.unit_cost_ex_tax || 0,
+          reference_type: "purchase_order",
+          reference_id: purchaseOrder.id,
+          occurred_at: now,
+          notes: `PO ${purchaseOrder.po_number || purchaseOrder.id} – received`,
+        });
         
         return actualReceive;
       });
