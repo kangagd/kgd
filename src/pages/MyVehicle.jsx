@@ -226,20 +226,46 @@ export default function MyVehicle() {
 
   const { data: toolItems = [] } = useQuery({
     queryKey: ["tool-items"],
-    queryFn: () => base44.entities.ToolItem.filter({ is_active: true }),
+    queryFn: () => base44.entities.ToolItem.list("name"),
+  });
+
+  const { data: partsHardwareItems = [] } = useQuery({
+    queryKey: ["parts-hardware-items"],
+    queryFn: () => base44.entities.PartsHardwareItem.list("name"),
   });
 
   const toolItemMap = useMemo(() => {
     const map = {};
     for (const t of toolItems) {
-      map[t.id] = t;
+      if (t.is_active !== false) {
+        map[t.id] = t;
+      }
     }
     return map;
   }, [toolItems]);
 
+  const partsHardwareItemMap = useMemo(() => {
+    const map = {};
+    for (const p of partsHardwareItems) {
+      if (p.is_active !== false) {
+        map[p.id] = p;
+      }
+    }
+    return map;
+  }, [partsHardwareItems]);
+
+  // Filter out assignments that reference deleted/inactive items
+  const activeVehicleTools = useMemo(() => {
+    return vehicleTools.filter(vt => vt.tool_item_id && toolItemMap[vt.tool_item_id]);
+  }, [vehicleTools, toolItemMap]);
+
+  const activeVehiclePartsHardware = useMemo(() => {
+    return vehiclePartsHardware.filter(vp => vp.parts_hardware_id && partsHardwareItemMap[vp.parts_hardware_id]);
+  }, [vehiclePartsHardware, partsHardwareItemMap]);
+
   const groupedToolsByLocation = useMemo(() => {
     const groups = {};
-    for (const vt of vehicleTools) {
+    for (const vt of activeVehicleTools) {
       const tool = vt.tool_item_id ? toolItemMap[vt.tool_item_id] : null;
       const location = vt.location || tool?.category || "Other";
       if (!groups[location]) {
@@ -254,13 +280,13 @@ export default function MyVehicle() {
   }, [vehicleTools, toolItemMap]);
 
   const latestCheck = useMemo(() => {
-    if (!vehicleTools?.length) return null;
-    const dates = vehicleTools
+    if (!activeVehicleTools?.length) return null;
+    const dates = activeVehicleTools
       .map((vt) => vt.last_checked_at && new Date(vt.last_checked_at))
       .filter(Boolean);
     if (!dates.length) return null;
     return new Date(Math.max(...dates.map((d) => d.getTime())));
-  }, [vehicleTools]);
+  }, [activeVehicleTools]);
 
   if (isVehicleLoading || !user) {
     return <div className="flex justify-center items-center h-screen"><Loader2 className="animate-spin w-8 h-8 text-gray-400" /></div>;
@@ -484,7 +510,7 @@ export default function MyVehicle() {
 
         {vehicleToolsLoading ? (
           <p className="text-sm text-gray-500">Loading tools...</p>
-        ) : !vehicleTools.length ? (
+        ) : !activeVehicleTools.length ? (
           <p className="text-sm text-gray-500 italic">
             No tools have been configured for this vehicle yet.
           </p>
@@ -583,13 +609,13 @@ export default function MyVehicle() {
 
         {partsHardwareLoading ? (
           <p className="text-sm text-gray-500">Loading items...</p>
-        ) : !vehiclePartsHardware.length ? (
+        ) : !activeVehiclePartsHardware.length ? (
           <p className="text-sm text-gray-500 italic">
             No items assigned to this vehicle yet.
           </p>
         ) : (
           <div className="space-y-2">
-            {vehiclePartsHardware.map((vc) => {
+            {activeVehiclePartsHardware.map((vc) => {
               const conditionColors = {
                 Full: "bg-emerald-50 text-emerald-700 border-emerald-200",
                 Low: "bg-amber-50 text-amber-700 border-amber-200",

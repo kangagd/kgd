@@ -55,16 +55,42 @@ export default function VehicleDetail({ vehicle, onBack }) {
 
   const { data: toolItems = [] } = useQuery({
     queryKey: ["tool-items"],
-    queryFn: () => base44.entities.ToolItem.filter({ is_active: true }),
+    queryFn: () => base44.entities.ToolItem.list("name"),
+  });
+
+  const { data: partsHardwareItems = [] } = useQuery({
+    queryKey: ["parts-hardware-items"],
+    queryFn: () => base44.entities.PartsHardwareItem.list("name"),
   });
 
   const toolItemMap = React.useMemo(() => {
     const map = {};
     for (const t of toolItems) {
-      map[t.id] = t;
+      if (t.is_active !== false) {
+        map[t.id] = t;
+      }
     }
     return map;
   }, [toolItems]);
+
+  const partsHardwareItemMap = React.useMemo(() => {
+    const map = {};
+    for (const p of partsHardwareItems) {
+      if (p.is_active !== false) {
+        map[p.id] = p;
+      }
+    }
+    return map;
+  }, [partsHardwareItems]);
+
+  // Filter out vehicle tools and parts that reference deleted/inactive items
+  const activeVehicleTools = React.useMemo(() => {
+    return vehicleTools.filter(vt => vt.tool_item_id && toolItemMap[vt.tool_item_id]);
+  }, [vehicleTools, toolItemMap]);
+
+  const activeVehiclePartsHardware = React.useMemo(() => {
+    return vehiclePartsHardware.filter(vp => vp.parts_hardware_id && partsHardwareItemMap[vp.parts_hardware_id]);
+  }, [vehiclePartsHardware, partsHardwareItemMap]);
 
   const handlePhotoUpload = async (e) => {
     const files = Array.from(e.target.files);
@@ -183,14 +209,14 @@ export default function VehicleDetail({ vehicle, onBack }) {
             <CardContent>
               {vehicleToolsLoading ? (
                 <div className="text-center py-8 text-gray-500">Loading tools...</div>
-              ) : vehicleTools.length === 0 ? (
+              ) : activeVehicleTools.length === 0 ? (
                 <div className="text-center py-8 text-gray-500">
                   No tools assigned to this vehicle yet.
                 </div>
               ) : (
                 <div className="space-y-4">
                   {Object.entries(
-                    vehicleTools.reduce((acc, vt) => {
+                    activeVehicleTools.reduce((acc, vt) => {
                       const tool = toolItemMap[vt.tool_item_id];
                       const location = vt.location || tool?.category || "Other";
                       if (!acc[location]) acc[location] = [];
@@ -272,13 +298,13 @@ export default function VehicleDetail({ vehicle, onBack }) {
             <CardContent>
               {partsHardwareLoading ? (
                 <div className="text-center py-8 text-gray-500">Loading items...</div>
-              ) : vehiclePartsHardware.length === 0 ? (
+              ) : activeVehiclePartsHardware.length === 0 ? (
                 <div className="text-center py-8 text-gray-500">
                   No parts & hardware assigned to this vehicle yet.
                 </div>
               ) : (
                 <div className="space-y-3">
-                  {vehiclePartsHardware.map((item) => {
+                  {activeVehiclePartsHardware.map((item) => {
                     const conditionColors = {
                       Full: "bg-emerald-50 text-emerald-700 border-emerald-200",
                       Low: "bg-amber-50 text-amber-700 border-amber-200",
