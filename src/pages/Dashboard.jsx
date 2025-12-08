@@ -5,7 +5,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { ProjectStatusBadge } from "../components/common/StatusBadge";
-import { Plus, Clock, Briefcase, Calendar, CheckCircle, FolderKanban, CheckSquare, Package, Truck } from "lucide-react";
+import { Plus, Clock, Briefcase, Calendar, CheckCircle, FolderKanban, CheckSquare } from "lucide-react";
 import { format, parseISO } from "date-fns";
 import { useNavigate } from "react-router-dom";
 import { createPageUrl } from "@/utils";
@@ -14,7 +14,6 @@ import XeroConnectButton from "../components/xero/XeroConnectButton";
 import MaintenanceRemindersCard from "../components/dashboard/MaintenanceRemindersCard";
 import EntityModal from "../components/common/EntityModal";
 import JobModalView from "../components/jobs/JobModalView";
-import { Link } from "react-router-dom";
 
 
 
@@ -69,35 +68,6 @@ export default function Dashboard() {
       return new Date(a.due_date) - new Date(b.due_date);
     })
     .slice(0, 5);
-
-  const isAdminOrManager = user?.role === 'admin' || user?.role === 'manager';
-
-  const { data: recentPurchaseOrders = [] } = useQuery({
-    queryKey: ["recent-purchase-orders-dashboard"],
-    queryFn: async () => {
-      const orders = await base44.entities.PurchaseOrder.list("-order_date", 5);
-      return orders.filter(po => po.status !== 'received' && po.status !== 'cancelled');
-    },
-    enabled: isAdminOrManager,
-  });
-
-  const { data: upcomingLogisticsJobs = [] } = useQuery({
-    queryKey: ["upcoming-logistics-jobs-dashboard"],
-    queryFn: async () => {
-      const today = new Date();
-      const nextWeek = new Date(today);
-      nextWeek.setDate(today.getDate() + 7);
-      
-      const jobs = await base44.entities.Job.filter({
-        purchase_order_id: { $ne: null },
-        scheduled_date: { $gte: today.toISOString().split('T')[0], $lte: nextWeek.toISOString().split('T')[0] }
-      });
-      return jobs.filter(j => !j.deleted_at && j.status !== 'Completed').sort((a, b) => 
-        new Date(a.scheduled_date) - new Date(b.scheduled_date)
-      );
-    },
-    enabled: isAdminOrManager,
-  });
 
   const today = new Date().toISOString().split('T')[0];
   const tomorrow = new Date(Date.now() + 86400000).toISOString().split('T')[0];
@@ -348,92 +318,6 @@ export default function Dashboard() {
 
         {user?.role === 'admin' && (
           <MaintenanceRemindersCard user={user} />
-        )}
-
-        {/* Logistics Overview - Admin/Manager Only */}
-        {isAdminOrManager && (recentPurchaseOrders.length > 0 || upcomingLogisticsJobs.length > 0) && (
-          <Card className="border-[#E5E7EB] shadow-sm mb-6">
-            <CardHeader className="pb-3">
-              <div className="flex items-center justify-between">
-                <CardTitle className="text-lg font-bold text-[#111827] flex items-center gap-2">
-                  <Truck className="w-5 h-5 text-blue-600" />
-                  Logistics Overview
-                </CardTitle>
-                <Link to={createPageUrl("Logistics")} className="text-sm text-blue-600 hover:text-blue-700 font-medium">
-                  View All →
-                </Link>
-              </div>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              {/* Recent Purchase Orders */}
-              {recentPurchaseOrders.length > 0 && (
-                <div>
-                  <h4 className="text-sm font-semibold text-[#4B5563] mb-2 flex items-center gap-1.5">
-                    <Package className="w-4 h-4" />
-                    Recent Purchase Orders
-                  </h4>
-                  <div className="space-y-2">
-                    {recentPurchaseOrders.map(po => (
-                      <div key={po.id} className="flex items-center justify-between p-2 bg-gray-50 rounded-lg hover:bg-gray-100 transition-colors">
-                        <div className="flex-1">
-                          <div className="flex items-center gap-2">
-                            <span className="text-sm font-medium text-[#111827]">{po.po_number || 'Draft'}</span>
-                            <Badge variant="outline" className={`text-[10px] px-1.5 py-0 ${
-                              po.status === 'sent' ? 'bg-blue-50 text-blue-700 border-blue-200' : 
-                              po.status === 'draft' ? 'bg-gray-100 text-gray-700' :
-                              po.status === 'partially_received' ? 'bg-orange-50 text-orange-700' : ''
-                            }`}>
-                              {po.status?.replace('_', ' ')}
-                            </Badge>
-                          </div>
-                          <p className="text-xs text-[#6B7280] mt-0.5">{po.supplier_name}</p>
-                        </div>
-                        <div className="text-right">
-                          <p className="text-sm font-medium text-[#111827]">${po.total_amount_ex_tax?.toFixed(2) || '0.00'}</p>
-                          {po.expected_date && (
-                            <p className="text-xs text-[#6B7280]">{format(new Date(po.expected_date), 'MMM d')}</p>
-                          )}
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-              )}
-
-              {/* Upcoming Logistics Jobs */}
-              {upcomingLogisticsJobs.length > 0 && (
-                <div>
-                  <h4 className="text-sm font-semibold text-[#4B5563] mb-2 flex items-center gap-1.5">
-                    <Truck className="w-4 h-4" />
-                    Upcoming Pickups/Deliveries
-                  </h4>
-                  <div className="space-y-2">
-                    {upcomingLogisticsJobs.map(job => (
-                      <Link key={job.id} to={`${createPageUrl("Jobs")}?jobId=${job.id}`}>
-                        <div className="flex items-center justify-between p-2 bg-amber-50 rounded-lg hover:bg-amber-100 transition-colors border border-amber-200">
-                          <div className="flex-1">
-                            <div className="flex items-center gap-2">
-                              <span className="text-sm font-medium text-[#111827]">#{job.job_number}</span>
-                              <Badge variant="outline" className="text-[10px] px-1.5 py-0 bg-white">
-                                {job.job_type_name}
-                              </Badge>
-                            </div>
-                            <p className="text-xs text-[#6B7280] mt-0.5">{job.address_full || job.address}</p>
-                          </div>
-                          <div className="text-right">
-                            <p className="text-xs font-medium text-amber-700">
-                              {format(new Date(job.scheduled_date), 'MMM d')}
-                              {job.scheduled_time && ` • ${job.scheduled_time}`}
-                            </p>
-                          </div>
-                        </div>
-                      </Link>
-                    ))}
-                  </div>
-                </div>
-              )}
-            </CardContent>
-          </Card>
         )}
       </div>
 

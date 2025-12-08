@@ -114,8 +114,7 @@ Deno.serve(async (req) => {
 
                     await base44.asServiceRole.entities.Job.create({
                         ...jobData,
-                        job_type_id: jobTypeId,
-                        is_logistics_job: true
+                        job_type_id: jobTypeId
                     });
                 }
             }
