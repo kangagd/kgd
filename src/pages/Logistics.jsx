@@ -810,7 +810,7 @@ export default function Logistics() {
             setSelectedPO(null);
           }}
           supplier={selectedSupplier || (selectedPO ? suppliers.find(s => s.id === selectedPO.supplier_id) : null)}
-          purchaseOrder={selectedPO}
+          purchaseOrderToEdit={selectedPO}
         />
       )}
     </div>
