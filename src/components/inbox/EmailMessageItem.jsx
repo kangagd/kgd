@@ -6,6 +6,21 @@ const sanitizeBodyHtml = (html) => {
   if (!html) return html;
   
   let sanitized = html;
+  
+  // Fix common encoding issues (mojibake from Windows-1252 → UTF-8)
+  sanitized = sanitized.replace(/â€"/g, '—');  // em dash
+  sanitized = sanitized.replace(/â€"/g, '–');  // en dash
+  sanitized = sanitized.replace(/â€œ/g, '"');  // left double quote
+  sanitized = sanitized.replace(/â€/g, '"');   // right double quote
+  sanitized = sanitized.replace(/â€™/g, "'");  // right single quote
+  sanitized = sanitized.replace(/â€˜/g, "'");  // left single quote
+  sanitized = sanitized.replace(/Â /g, ' ');   // non-breaking space
+  sanitized = sanitized.replace(/Â/g, ' ');    // stray non-breaking space marker
+  sanitized = sanitized.replace(/â€¦/g, '…');  // ellipsis
+  sanitized = sanitized.replace(/Ã¢â‚¬â„¢/g, "'");  // another single quote variant
+  sanitized = sanitized.replace(/â€¢/g, '•');  // bullet point
+  
+  // Remove dangerous tags
   sanitized = sanitized.replace(/<script[^>]*>.*?<\/script>/gi, '');
   sanitized = sanitized.replace(/<iframe[^>]*>.*?<\/iframe>/gi, '');
   sanitized = sanitized.replace(/<object[^>]*>.*?<\/object>/gi, '');
