@@ -151,6 +151,8 @@ The summary should be a single paragraph, professional, and capture the key work
         // Update Job - mark as completed unless outcome is return_visit_required
         try {
             const finalStatus = (outcome === 'return_visit_required') ? newStatus : 'Completed';
+            console.log(`🔄 Updating Job ${jobId} with status: ${finalStatus}, outcome: ${outcome}`);
+            
             await base44.asServiceRole.entities.Job.update(jobId, {
                 overview: overview,
                 next_steps: nextSteps,
@@ -158,8 +160,10 @@ The summary should be a single paragraph, professional, and capture the key work
                 outcome: outcome,
                 status: finalStatus
             });
+            
+            console.log(`✅ Job ${jobId} updated successfully with status: ${finalStatus}`);
         } catch (e) {
-             console.error("Failed to update Job:", e);
+             console.error("❌ Failed to update Job:", e);
              // We don't throw here to ensure we return the summary if created
         }
 
