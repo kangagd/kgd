@@ -1628,18 +1628,17 @@ Format as HTML bullet points using <ul> and <li> tags. Include only the most cri
             <TabsContent value="financials" className="mt-3">
               <FinancialsTab 
                 project={project}
-                onUpdate={(fields) => {
+                onUpdate={async (fields) => {
                   console.log('FinancialsTab onUpdate called with:', fields);
-                  // Optimistically update the local cache first
-                  queryClient.setQueryData(['project', project.id], (oldData) => ({
-                    ...oldData,
-                    ...fields
-                  }));
-                  // Then update the database
-                  base44.entities.Project.update(project.id, fields).then(() => {
-                    queryClient.invalidateQueries({ queryKey: ['project', project.id] });
-                    queryClient.invalidateQueries({ queryKey: ['projects'] });
-                  });
+                  try {
+                    // Update the database first
+                    await base44.entities.Project.update(project.id, fields);
+                    // Then invalidate and refetch
+                    await queryClient.invalidateQueries({ queryKey: ['project', project.id] });
+                    await queryClient.invalidateQueries({ queryKey: ['projects'] });
+                  } catch (error) {
+                    console.error('Failed to update project:', error);
+                  }
                 }}
               />
             </TabsContent>
