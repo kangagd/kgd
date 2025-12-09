@@ -171,9 +171,7 @@ export default function FinancialsTab({ project, onUpdate }) {
     onUpdate({ materials_cost: autoMaterialsCost });
   };
 
-  const totalCost = (project.materials_cost || 0) + (project.labour_cost || 0) + (project.other_costs || 0);
-  const profit = (project.total_project_value || 0) - totalCost;
-  const marginPercentage = project.total_project_value ? ((profit / project.total_project_value) * 100).toFixed(1) : 0;
+
 
   const handleAddPayment = () => {
     if (!newPayment.payment_name || !newPayment.payment_amount) return;
