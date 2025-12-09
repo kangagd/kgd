@@ -326,6 +326,39 @@ export default function FinancialsTab({ project, onUpdate }) {
     }
   }, [xeroFullyPaid, project?.id, project?.financial_status]);
 
+  // Suggest financial status based on % paid
+  // Payment model: Initial 50%, Second 30%, Balance 20%
+  const baseValue = project.total_project_value || 0;
+  const effectivePaid = xeroTotalPaid > 0 ? xeroTotalPaid : totalPaid;
+  
+  let suggestedStatus = null;
+  if (baseValue > 0 && effectivePaid > 0) {
+    const ratio = effectivePaid / baseValue;
+    if (ratio >= 0.95) {
+      suggestedStatus = "Balance Paid in Full";
+    } else if (ratio >= 0.8) {
+      suggestedStatus = "Second Payment Made"; // 50% + 30% = 80%
+    } else if (ratio >= 0.5) {
+      suggestedStatus = "Initial Payment Made"; // 50%
+    }
+  }
+
+  // Auto-apply suggested financial status (unless locked)
+  useEffect(() => {
+    if (!suggestedStatus || !project?.id) return;
+    
+    // If user has locked the status, do not auto-update
+    if (project.financial_status_locked) return;
+    
+    const currentStatus = project.financial_status;
+    
+    // If already matches suggestion, do nothing
+    if (currentStatus === suggestedStatus) return;
+    
+    // Auto-apply the suggested status
+    onUpdate({ financial_status: suggestedStatus });
+  }, [suggestedStatus, project?.id, project?.financial_status_locked]);
+
   // Handler for manual total project value changes - locks the value
   const handleTotalProjectValueChange = (newValue) => {
     onUpdate({
