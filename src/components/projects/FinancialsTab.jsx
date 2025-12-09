@@ -285,6 +285,30 @@ export default function FinancialsTab({ project, onUpdate }) {
     ? (profit / totalProjectValue) * 100
     : 0;
 
+  // For future Health strip
+  const quotedValue = autoQuoteValue || 0;
+
+  // Auto-apply project value from quotes when not locked
+  useEffect(() => {
+    if (!project || autoQuoteValue <= 0) return;
+
+    // If user has locked the value, do not auto-update
+    if (project.financial_value_locked) return;
+
+    const currentValue = project.total_project_value || 0;
+
+    // If already in sync, do nothing
+    if (currentValue === autoQuoteValue) return;
+
+    base44.entities.Project.update(project.id, {
+      total_project_value: autoQuoteValue,
+    });
+  }, [
+    project?.id,
+    project?.financial_value_locked,
+    autoQuoteValue,
+  ]);
+
   // Auto-mark financial status if Xero shows fully paid (with guardrails)
   useEffect(() => {
     if (!xeroFullyPaid || !project?.id) return;
