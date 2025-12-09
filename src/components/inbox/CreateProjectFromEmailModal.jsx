@@ -16,12 +16,18 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/u
 import { PROJECT_TYPE_OPTIONS } from "@/components/domain/projectConfig";
 
 export default function CreateProjectFromEmailModal({ open, onClose, thread, onSuccess }) {
+  const aiSuggested = thread?.ai_suggested_project_fields || {};
+  
   const [formData, setFormData] = useState({
-    title: thread?.subject || "",
+    title: aiSuggested.suggested_title || thread?.subject || "",
     customer_id: "",
-    project_type: "Garage Door Install",
+    customer_name: aiSuggested.suggested_customer_name || "",
+    customer_email: aiSuggested.suggested_customer_email || "",
+    customer_phone: aiSuggested.suggested_customer_phone || "",
+    project_type: aiSuggested.suggested_project_type || "Garage Door Install",
     status: "Lead",
-    description: thread?.last_message_snippet || "",
+    description: aiSuggested.suggested_description || thread?.last_message_snippet || "",
+    address_full: aiSuggested.suggested_address || "",
     notes: `Created from email: ${thread?.from_address}\n\n${thread?.subject}`
   });
 
@@ -42,9 +48,9 @@ export default function CreateProjectFromEmailModal({ open, onClose, thread, onS
     const customer = customers.find(c => c.id === formData.customer_id);
     const projectData = {
       ...formData,
-      customer_name: customer?.name,
-      customer_phone: customer?.phone,
-      customer_email: customer?.email
+      customer_name: customer?.name || formData.customer_name,
+      customer_phone: customer?.phone || formData.customer_phone,
+      customer_email: customer?.email || formData.customer_email
     };
     createProjectMutation.mutate(projectData);
   };
@@ -84,6 +90,13 @@ export default function CreateProjectFromEmailModal({ open, onClose, thread, onS
                 ))}
               </SelectContent>
             </Select>
+            {formData.customer_name && !formData.customer_id && (
+              <p className="text-xs text-[#6B7280] bg-[#FEF3C7] border border-[#FCD34D] rounded px-2 py-1">
+                AI suggested: {formData.customer_name}
+                {formData.customer_phone && ` • ${formData.customer_phone}`}
+                {formData.customer_email && ` • ${formData.customer_email}`}
+              </p>
+            )}
           </div>
 
           <div className="space-y-2">
@@ -113,6 +126,16 @@ export default function CreateProjectFromEmailModal({ open, onClose, thread, onS
               rows={3}
             />
           </div>
+
+          {formData.address_full && (
+            <div className="space-y-2">
+              <Label>Address (AI Suggested)</Label>
+              <Input
+                value={formData.address_full}
+                onChange={(e) => setFormData({ ...formData, address_full: e.target.value })}
+              />
+            </div>
+          )}
 
           <div className="space-y-2">
             <Label>Notes</Label>
