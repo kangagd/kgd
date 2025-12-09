@@ -127,7 +127,17 @@ export default function FinancialsTab({ project, onUpdate }) {
     queryKey: ["xero-invoices-for-project", project?.id],
     queryFn: async () => {
       if (!project?.id) return [];
-      return base44.entities.XeroInvoice.filter({ project_id: project.id });
+      const allInvoices = await base44.entities.XeroInvoice.filter({ project_id: project.id });
+      
+      // Deduplicate by xero_invoice_id (in case duplicates were created)
+      const uniqueInvoices = allInvoices.reduce((acc, inv) => {
+        if (!acc.find(i => i.xero_invoice_id === inv.xero_invoice_id)) {
+          acc.push(inv);
+        }
+        return acc;
+      }, []);
+      
+      return uniqueInvoices;
     },
     enabled: !!project?.id,
   });
