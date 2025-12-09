@@ -347,12 +347,12 @@ export default function FinancialsTab({ project, onUpdate }) {
                   return (
                     <Badge 
                       key={option.value}
-                      className={`font-medium px-3 py-1 rounded-lg text-[12px] leading-[1.35] transition-all ${
+                      className={`font-medium px-3 py-1 rounded-lg text-[12px] leading-[1.35] transition-all cursor-pointer ${
                         isActive 
-                          ? 'bg-[#FAE008] text-[#111827] hover:bg-[#E5CF07] cursor-default' 
-                          : 'bg-[#F3F4F6] text-[#9CA3AF] hover:bg-[#E5E7EB] cursor-pointer opacity-50'
+                          ? 'bg-[#FAE008] text-[#111827] hover:bg-[#E5CF07]' 
+                          : 'bg-[#F3F4F6] text-[#9CA3AF] hover:bg-[#E5E7EB] opacity-50'
                       }`}
-                      onClick={() => !isActive && onUpdate({ financial_status: option.value })}
+                      onClick={() => onUpdate({ financial_status: isActive ? null : option.value })}
                     >
                       {option.label}
                     </Badge>
