@@ -1629,8 +1629,11 @@ Format as HTML bullet points using <ul> and <li> tags. Include only the most cri
               <FinancialsTab 
                 project={project}
                 onUpdate={(fields) => {
-                  Object.entries(fields).forEach(([field, value]) => {
-                    updateProjectMutation.mutate({ field, value });
+                  console.log('FinancialsTab onUpdate called with:', fields);
+                  // Update all fields together
+                  base44.entities.Project.update(project.id, fields).then(() => {
+                    queryClient.invalidateQueries({ queryKey: ['project', project.id] });
+                    queryClient.invalidateQueries({ queryKey: ['projects'] });
                   });
                 }}
               />
