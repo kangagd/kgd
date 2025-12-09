@@ -71,10 +71,12 @@ export default function CustomerForm({ customer, onSubmit, onCancel, isSubmittin
   const [isCheckingDuplicates, setIsCheckingDuplicates] = useState(false);
   const queryClient = useQueryClient();
 
-  const { data: organisations = [] } = useQuery({
+  const { data: allOrganisations = [] } = useQuery({
     queryKey: ['organisations'],
-    queryFn: () => base44.entities.Organisation.filter({ status: 'active', deleted_at: { $exists: false } })
+    queryFn: () => base44.entities.Organisation.list()
   });
+
+  const organisations = allOrganisations.filter(org => !org.deleted_at && org.status === 'active');
 
   const { data: contracts = [] } = useQuery({
     queryKey: ['contracts'],
