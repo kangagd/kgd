@@ -142,7 +142,31 @@ export default function EmailDetailView({
     }
   };
 
-  const handleCreateProjectFromAI = () => {
+  const handleCreateProjectFromAI = async () => {
+    // Check if this is a Wix email and parse it first
+    const isWixEmail = thread.from_address?.toLowerCase() === 'no-reply@crm.wix.com' && 
+                       thread.subject?.includes('You have received a new notification from KangarooGD');
+    
+    if (isWixEmail && !thread.ai_suggested_project_fields) {
+      toast.info('Analyzing Wix form...');
+      try {
+        const result = await base44.functions.invoke('parseWixFormEmail', { 
+          email_thread_id: thread.id 
+        });
+        
+        if (result.data?.success) {
+          toast.success('Form data extracted!');
+          // Refresh thread data to get the updated ai_suggested_project_fields
+          await queryClient.invalidateQueries({ queryKey: ['emailThreads'] });
+          // Small delay to ensure data is refreshed
+          await new Promise(resolve => setTimeout(resolve, 500));
+        }
+      } catch (error) {
+        console.error('Error parsing Wix email:', error);
+        toast.error('Could not parse form data, but you can still create the project');
+      }
+    }
+    
     navigate(createPageUrl("Projects") + `?action=create&fromEmail=${thread.id}`);
   };
 
@@ -323,7 +347,7 @@ export default function EmailDetailView({
                     </DropdownMenuTrigger>
                     <DropdownMenuContent align="end">
                       {userPermissions?.can_create_project_from_email && (
-                        <DropdownMenuItem onClick={() => navigate(createPageUrl("Projects") + `?action=create&fromEmail=${thread.id}`)}>
+                        <DropdownMenuItem onClick={handleCreateProjectFromAI}>
                           Create Project
                         </DropdownMenuItem>
                       )}
