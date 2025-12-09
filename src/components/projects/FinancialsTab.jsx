@@ -266,6 +266,7 @@ export default function FinancialsTab({ project, onUpdate }) {
   }, [xeroFullyPaid, project?.id, project?.financial_status]);
 
   // Suggest financial status based on % paid
+  // Payment model: Initial 50%, Second 30%, Balance 20%
   const baseValue = project.total_project_value || 0;
   const effectivePaid = xeroTotalPaid > 0 ? xeroTotalPaid : totalPaid;
   
@@ -274,10 +275,10 @@ export default function FinancialsTab({ project, onUpdate }) {
     const ratio = effectivePaid / baseValue;
     if (ratio >= 0.95) {
       suggestedStatus = "Balance Paid in Full";
+    } else if (ratio >= 0.8) {
+      suggestedStatus = "Second Payment Made"; // 50% + 30% = 80%
     } else if (ratio >= 0.5) {
-      suggestedStatus = "Second Payment Made";
-    } else {
-      suggestedStatus = "Initial Payment Made";
+      suggestedStatus = "Initial Payment Made"; // 50%
     }
   }
 
