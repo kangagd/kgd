@@ -242,7 +242,7 @@ export default function ProjectForm({ project, onSubmit, onCancel, isSubmitting 
     setFormData({ ...formData, doors: updatedDoors });
   };
 
-  const isInstallType = formData.project_type && formData.project_type.includes("Install");
+  const isInstallType = formData.project_type && (formData.project_type.includes("Install") || formData.project_type === "Multiple");
 
   return (
     <>
