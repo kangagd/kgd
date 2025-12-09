@@ -282,18 +282,12 @@ export default function ProjectDetails({ project: initialProject, onClose, onEdi
   const { data: xeroInvoices = [] } = useQuery({
     queryKey: ['projectXeroInvoices', project.id],
     queryFn: async () => {
-      // Fetch invoices linked via xero_invoices array
-      const invoicesFromArray = project.xero_invoices && project.xero_invoices.length > 0
-        ? await Promise.all(project.xero_invoices.map(id => base44.entities.XeroInvoice.get(id).catch(() => null)))
-        : [];
+      // Fetch all invoices linked to this project via project_id
+      const allInvoices = await base44.entities.XeroInvoice.filter({ project_id: project.id });
       
-      // Also fetch invoices linked directly via project_id field
-      const invoicesFromProjectId = await base44.entities.XeroInvoice.filter({ project_id: project.id });
-      
-      // Combine and deduplicate
-      const allInvoices = [...invoicesFromArray.filter(Boolean), ...invoicesFromProjectId];
+      // Deduplicate by xero_invoice_id (in case duplicates were created)
       const uniqueInvoices = allInvoices.reduce((acc, inv) => {
-        if (!acc.find(i => i.id === inv.id)) {
+        if (!acc.find(i => i.xero_invoice_id === inv.xero_invoice_id)) {
           acc.push(inv);
         }
         return acc;
@@ -409,12 +403,26 @@ export default function ProjectDetails({ project: initialProject, onClose, onEdi
   const handleLinkExistingInvoice = async (invoice) => {
     setIsLinkingInvoice(true);
     try {
+      // Check if this invoice is already linked
+      const existing = await base44.entities.XeroInvoice.filter({ 
+        xero_invoice_id: invoice.xero_invoice_id,
+        project_id: project.id
+      });
+
+      if (existing.length > 0) {
+        toast.info('This invoice is already linked to this project');
+        setShowLinkInvoiceModal(false);
+        setIsLinkingInvoice(false);
+        return;
+      }
+
       // Create XeroInvoice record linking to this project
-      const xeroInvoice = await base44.entities.XeroInvoice.create({
+      await base44.entities.XeroInvoice.create({
         xero_invoice_id: invoice.xero_invoice_id,
         xero_invoice_number: invoice.xero_invoice_number,
         status: invoice.status,
         total: invoice.total,
+        total_amount: invoice.total,
         amount_due: invoice.amount_due,
         amount_paid: invoice.amount_paid,
         date: invoice.date,
@@ -422,13 +430,8 @@ export default function ProjectDetails({ project: initialProject, onClose, onEdi
         contact_name: invoice.contact_name,
         contact_id: invoice.contact_id,
         pdf_url: invoice.pdf_url,
+        online_payment_url: invoice.online_payment_url,
         project_id: project.id
-      });
-
-      // Link to project
-      const currentXeroInvoices = project.xero_invoices || [];
-      await base44.entities.Project.update(project.id, {
-        xero_invoices: [...currentXeroInvoices, xeroInvoice.id]
       });
 
       queryClient.invalidateQueries({ queryKey: ['projectXeroInvoices', project.id] });
