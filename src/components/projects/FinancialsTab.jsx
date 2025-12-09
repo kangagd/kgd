@@ -506,15 +506,25 @@ export default function FinancialsTab({ project, onUpdate }) {
                   );
                 })}
               </div>
-              {suggestedStatus && (
+              {suggestedStatus && project.financial_status !== suggestedStatus && (
                 <p className="mt-2 text-[11px] text-[#6B7280]">
                   Suggested status based on payments:{" "}
                   <span className="font-semibold">{suggestedStatus}</span>
                 </p>
               )}
-              {xeroFullyPaid && project.financial_status === "Balance Paid in Full" && (
-                <p className="mt-2 text-[11px] text-[#16A34A]">
-                  ✓ Auto-updated from Xero: all invoices paid in full
+              {project.financial_status_locked && (
+                <p className="mt-2 text-[11px] text-[#D97706] flex items-center gap-1">
+                  🔒 Status manually set
+                  <button
+                    onClick={() => {
+                      base44.entities.Project.update(project.id, {
+                        financial_status_locked: false,
+                      });
+                    }}
+                    className="underline hover:text-[#B45309]"
+                  >
+                    Allow auto-update
+                  </button>
                 </p>
               )}
             </div>
