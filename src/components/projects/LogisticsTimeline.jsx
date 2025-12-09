@@ -140,9 +140,16 @@ export default function LogisticsTimeline({ project }) {
                         </span>
                       )}
                     </div>
-                    {linkedPO?.supplier_name && (
+                    {isStockJob && (
                       <div className="text-xs text-slate-600 mt-1 font-medium">
-                        Supplier: {linkedPO.supplier_name}
+                        {linkedPO ? (
+                          <>
+                            {linkedPO.supplier_name && `Supplier: ${linkedPO.supplier_name}`}
+                            {!linkedPO.supplier_name && `PO ID: ${job.purchase_order_id}`}
+                          </>
+                        ) : (
+                          `PO ID: ${job.purchase_order_id} (not found)`
+                        )}
                       </div>
                     )}
                     {hasRequiredTrades && (
