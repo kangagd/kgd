@@ -41,6 +41,9 @@ function mapSource(rawSource) {
 function parseWixEmailBody(bodyText) {
   if (!bodyText) return null;
   
+  console.log('[parseWixEmailBody] Raw body text length:', bodyText.length);
+  console.log('[parseWixEmailBody] First 1000 chars:', bodyText.substring(0, 1000));
+  
   const result = {
     first_name: null,
     last_name: null,
@@ -51,23 +54,59 @@ function parseWixEmailBody(bodyText) {
     how_did_you_hear: null,
   };
 
-  const patterns = {
-    first_name: /First\s*name:\s*(.+?)(?=\n|Last|$)/i,
-    last_name: /Last\s*name:\s*(.+?)(?=\n|Phone|$)/i,
-    phone: /Phone:\s*(.+?)(?=\n|Email|$)/i,
-    email: /Email:\s*(.+?)(?=\n|Address|$)/i,
-    address: /Address:\s*(.+?)(?=\n|How can|$)/i,
-    how_can_we_help: /How\s*can\s*we\s*help\??:\s*(.+?)(?=\n|How did|$)/is,
-    how_did_you_hear: /How\s*did\s*you\s*hear\s*about\s*us\??:\s*(.+?)(?=\n|$)/i,
-  };
-
-  for (const [key, pattern] of Object.entries(patterns)) {
-    const match = bodyText.match(pattern);
-    if (match && match[1]) {
-      result[key] = match[1].trim();
+  // Extract each field line by line - more reliable
+  const lines = bodyText.split(/\r?\n/).map(line => line.trim()).filter(Boolean);
+  console.log('[parseWixEmailBody] Lines count:', lines.length);
+  
+  for (let i = 0; i < lines.length; i++) {
+    const line = lines[i];
+    
+    // First name
+    if (/^First\s*name\s*:/i.test(line)) {
+      result.first_name = line.replace(/^First\s*name\s*:\s*/i, '').trim();
+      console.log('[parseWixEmailBody] Matched first_name:', result.first_name);
+    }
+    // Last name
+    else if (/^Last\s*name\s*:/i.test(line)) {
+      result.last_name = line.replace(/^Last\s*name\s*:\s*/i, '').trim();
+      console.log('[parseWixEmailBody] Matched last_name:', result.last_name);
+    }
+    // Phone
+    else if (/^Phone\s*:/i.test(line)) {
+      result.phone = line.replace(/^Phone\s*:\s*/i, '').trim();
+      console.log('[parseWixEmailBody] Matched phone:', result.phone);
+    }
+    // Email
+    else if (/^Email\s*:/i.test(line)) {
+      result.email = line.replace(/^Email\s*:\s*/i, '').trim();
+      console.log('[parseWixEmailBody] Matched email:', result.email);
+    }
+    // Address
+    else if (/^Address\s*:/i.test(line)) {
+      result.address = line.replace(/^Address\s*:\s*/i, '').trim();
+      console.log('[parseWixEmailBody] Matched address:', result.address);
+    }
+    // How can we help - may span multiple lines
+    else if (/^How\s*can\s*we\s*help/i.test(line)) {
+      const helpText = line.replace(/^How\s*can\s*we\s*help\??:\s*/i, '').trim();
+      // Collect following lines until next field or "How did you hear"
+      let fullHelp = helpText;
+      for (let j = i + 1; j < lines.length; j++) {
+        if (/^How\s*did\s*you\s*hear/i.test(lines[j])) break;
+        if (/^(First|Last|Phone|Email|Address)\s*:/i.test(lines[j])) break;
+        fullHelp += ' ' + lines[j];
+      }
+      result.how_can_we_help = fullHelp.trim();
+      console.log('[parseWixEmailBody] Matched how_can_we_help:', result.how_can_we_help);
+    }
+    // How did you hear
+    else if (/^How\s*did\s*you\s*hear/i.test(line)) {
+      result.how_did_you_hear = line.replace(/^How\s*did\s*you\s*hear\s*about\s*us\??:\s*/i, '').trim();
+      console.log('[parseWixEmailBody] Matched how_did_you_hear:', result.how_did_you_hear);
     }
   }
 
+  console.log('[parseWixEmailBody] Final parsed result:', result);
   return result;
 }
 
@@ -90,50 +129,46 @@ async function handleWixFormEmail(base44, thread, messages) {
 
   const customerName = [parsedData.first_name, parsedData.last_name]
     .filter(Boolean)
-    .join(' ') || 'Unknown';
+    .join(' ') || '';
 
   const customerSource = mapSource(parsedData.how_did_you_hear);
 
-  const suggestedFields = {
-    suggested_title: `New Lead - ${customerName}`,
-    suggested_description: parsedData.how_can_we_help || '',
-    suggested_project_type: null,
-    suggested_customer_name: customerName,
-    suggested_customer_email: parsedData.email,
-    suggested_customer_phone: parsedData.phone,
-    suggested_customer_source: customerSource,
-    suggested_address: parsedData.address,
-    suggested_priority: 'Normal'
-  };
-
   // Determine project type from description
+  let projectType = '';
   if (parsedData.how_can_we_help) {
     const desc = parsedData.how_can_we_help.toLowerCase();
     if (desc.includes('install') && desc.includes('garage')) {
-      suggestedFields.suggested_project_type = 'Garage Door Install';
+      projectType = 'Garage Door Install';
     } else if (desc.includes('install') && desc.includes('gate')) {
-      suggestedFields.suggested_project_type = 'Gate Install';
+      projectType = 'Gate Install';
     } else if (desc.includes('install') && (desc.includes('roller') || desc.includes('shutter'))) {
-      suggestedFields.suggested_project_type = 'Roller Shutter Install';
+      projectType = 'Roller Shutter Install';
     } else if (desc.includes('repair') || desc.includes('broken') || desc.includes('fix')) {
-      suggestedFields.suggested_project_type = 'Repair';
+      projectType = 'Repair';
     } else if (desc.includes('service') || desc.includes('maintenance')) {
-      suggestedFields.suggested_project_type = 'Maintenance';
+      projectType = 'Maintenance';
     } else if (desc.includes('motor') || desc.includes('remote') || desc.includes('opener')) {
-      suggestedFields.suggested_project_type = 'Motor/Accessory';
+      projectType = 'Motor/Accessory';
     } else if (desc.includes('replacement') || desc.includes('replace') || desc.includes('new')) {
-      suggestedFields.suggested_project_type = 'Garage Door Install';
-    }
-    
-    if (desc.includes('urgent') || desc.includes('emergency') || desc.includes('asap') || desc.includes('immediately')) {
-      suggestedFields.suggested_priority = 'High';
+      projectType = 'Garage Door Install';
     }
   }
 
-  const summary = `Website enquiry from ${customerName}. ${parsedData.how_can_we_help || 'No details provided.'} Found via ${parsedData.how_did_you_hear || 'unknown source'}.`;
+  // Build unified suggested_project_fields schema
+  const suggestedFields = {
+    suggested_title: customerName ? `New Lead - ${customerName}` : 'Website Enquiry',
+    suggested_customer_name: customerName || '',
+    suggested_customer_email: parsedData.email || '',
+    suggested_customer_phone: parsedData.phone || '',
+    suggested_project_type: projectType || '',
+    suggested_description: parsedData.how_can_we_help || '',
+    suggested_address: parsedData.address || ''
+  };
+
+  const summary = `Website enquiry from ${customerName || 'an unknown customer'}. ${parsedData.how_can_we_help || 'No details provided.'} Found via ${parsedData.how_did_you_hear || 'unknown source'}.`;
 
   const keyPoints = [];
-  if (customerName !== 'Unknown') keyPoints.push(`Customer: ${customerName}`);
+  if (customerName) keyPoints.push(`Customer: ${customerName}`);
   if (parsedData.phone) keyPoints.push(`Phone: ${parsedData.phone}`);
   if (parsedData.email) keyPoints.push(`Email: ${parsedData.email}`);
   if (parsedData.address) keyPoints.push(`Location: ${parsedData.address}`);
@@ -142,8 +177,8 @@ async function handleWixFormEmail(base44, thread, messages) {
 
   // Generate tags based on parsed content
   const tags = ['Website Enquiry'];
-  if (suggestedFields.suggested_project_type) {
-    tags.push(suggestedFields.suggested_project_type);
+  if (projectType) {
+    tags.push(projectType);
   }
   if (parsedData.how_can_we_help) {
     const desc = parsedData.how_can_we_help.toLowerCase();
@@ -157,8 +192,11 @@ async function handleWixFormEmail(base44, thread, messages) {
 
   // Determine AI priority
   let aiPriority = 'Normal';
-  if (suggestedFields.suggested_priority === 'High') {
-    aiPriority = 'High';
+  if (parsedData.how_can_we_help) {
+    const desc = parsedData.how_can_we_help.toLowerCase();
+    if (desc.includes('urgent') || desc.includes('emergency') || desc.includes('asap') || desc.includes('immediately')) {
+      aiPriority = 'High';
+    }
   }
 
   return {
@@ -272,9 +310,9 @@ Subject: ${m.subject}
 ${body}`;
     }).join('\n\n---\n\n');
 
-    // Call AI to analyze the thread
+    // Call AI to analyze the thread and extract structured project fields
     const aiResponse = await base44.asServiceRole.integrations.Core.InvokeLLM({
-      prompt: `You are an assistant for a garage door service company. Analyze this email thread and extract insights to help create a project.
+      prompt: `You are an assistant for a garage door service company. Analyze this email thread and extract structured information to create a project lead.
 
 EMAIL THREAD:
 Subject: ${thread.subject}
@@ -301,18 +339,16 @@ TASKS:
    - "Normal": Standard enquiries and requests
    - "Low": General information, future planning, non-urgent follow-ups
 
-5. Suggest project fields if this thread could become a project:
-   - suggested_title: A clear project title
-   - suggested_description: What work needs to be done
-   - suggested_project_type: One of "Garage Door Install", "Gate Install", "Roller Shutter Install", "Multiple", "Motor/Accessory", "Repair", "Maintenance"
-   - suggested_customer_name: Customer's name if mentioned
-   - suggested_customer_email: Customer's email if available
+5. EXTRACT PROJECT LEAD DETAILS (return empty string if not found):
+   - suggested_title: A short, clear project title (e.g., "Garage Door Repair - Smith")
+   - suggested_customer_name: Full customer name if mentioned
+   - suggested_customer_email: Customer email (or use sender email if none mentioned)
    - suggested_customer_phone: Phone number if mentioned
+   - suggested_project_type: Choose one of: "Garage Door Install", "Gate Install", "Roller Shutter Install", "Multiple", "Motor/Accessory", "Repair", "Maintenance"
+   - suggested_description: Description of work needed (from email body)
    - suggested_address: Property address if mentioned
-   - suggested_products: Array of products mentioned (e.g., ["Garage Door", "Motor", "Remote"])
-   - suggested_priority: "Low", "Normal", or "High" based on urgency
 
-Return JSON with: summary (string), key_points (array of strings), tags (array of strings), ai_priority (string), suggested_project_fields (object with the fields above, use null for unknown fields)`,
+Return JSON with: summary (string), key_points (array of strings), tags (array of strings), ai_priority (string), suggested_project_fields (object with exactly the 7 fields above, use empty string "" if unknown)`,
       response_json_schema: {
         type: "object",
         properties: {
@@ -330,15 +366,14 @@ Return JSON with: summary (string), key_points (array of strings), tags (array o
             type: "object",
             properties: {
               suggested_title: { type: "string" },
-              suggested_description: { type: "string" },
-              suggested_project_type: { type: "string" },
               suggested_customer_name: { type: "string" },
               suggested_customer_email: { type: "string" },
               suggested_customer_phone: { type: "string" },
-              suggested_address: { type: "string" },
-              suggested_products: { type: "array", items: { type: "string" } },
-              suggested_priority: { type: "string" }
-            }
+              suggested_project_type: { type: "string" },
+              suggested_description: { type: "string" },
+              suggested_address: { type: "string" }
+            },
+            required: ["suggested_title", "suggested_customer_name", "suggested_customer_email", "suggested_customer_phone", "suggested_project_type", "suggested_description", "suggested_address"]
           }
         }
       }
@@ -346,11 +381,22 @@ Return JSON with: summary (string), key_points (array of strings), tags (array o
 
     const now = new Date().toISOString();
 
+    // Normalize suggested_project_fields to ensure all fields exist
+    const normalizedFields = {
+      suggested_title: aiResponse.suggested_project_fields?.suggested_title || '',
+      suggested_customer_name: aiResponse.suggested_project_fields?.suggested_customer_name || '',
+      suggested_customer_email: aiResponse.suggested_project_fields?.suggested_customer_email || thread.from_address || '',
+      suggested_customer_phone: aiResponse.suggested_project_fields?.suggested_customer_phone || '',
+      suggested_project_type: aiResponse.suggested_project_fields?.suggested_project_type || '',
+      suggested_description: aiResponse.suggested_project_fields?.suggested_description || '',
+      suggested_address: aiResponse.suggested_project_fields?.suggested_address || ''
+    };
+
     // Update the EmailThread with AI insights
     await base44.asServiceRole.entities.EmailThread.update(email_thread_id, {
       ai_summary: aiResponse.summary,
       ai_key_points: aiResponse.key_points || [],
-      ai_suggested_project_fields: aiResponse.suggested_project_fields || {},
+      ai_suggested_project_fields: normalizedFields,
       ai_tags: aiResponse.tags || [],
       ai_priority: aiResponse.ai_priority || 'Normal',
       ai_analyzed_at: now
@@ -367,7 +413,7 @@ Return JSON with: summary (string), key_points (array of strings), tags (array o
       insight = await base44.asServiceRole.entities.AIEmailInsight.update(existingInsights[0].id, {
         summary: aiResponse.summary,
         key_points: aiResponse.key_points || [],
-        suggested_project_fields: aiResponse.suggested_project_fields || {},
+        suggested_project_fields: normalizedFields,
         tags: aiResponse.tags || [],
         ai_priority: aiResponse.ai_priority || 'Normal'
       });
@@ -377,7 +423,7 @@ Return JSON with: summary (string), key_points (array of strings), tags (array o
         email_thread_id: email_thread_id,
         summary: aiResponse.summary,
         key_points: aiResponse.key_points || [],
-        suggested_project_fields: aiResponse.suggested_project_fields || {},
+        suggested_project_fields: normalizedFields,
         tags: aiResponse.tags || [],
         ai_priority: aiResponse.ai_priority || 'Normal',
         applied_to_project: false
