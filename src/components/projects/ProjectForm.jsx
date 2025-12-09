@@ -49,7 +49,9 @@ export default function ProjectForm({ project, onSubmit, onCancel, isSubmitting 
     image_urls: [],
     quote_url: "",
     invoice_url: "",
-    doors: []
+    doors: [],
+    contract_id: "",
+    opened_date: ""
   });
 
   const [showNewCustomerDialog, setShowNewCustomerDialog] = useState(false);
@@ -82,6 +84,11 @@ export default function ProjectForm({ project, onSubmit, onCancel, isSubmitting 
   const { data: technicians = [] } = useQuery({
     queryKey: ['technicians'],
     queryFn: () => base44.entities.User.filter({ is_field_technician: true })
+  });
+
+  const { data: contracts = [] } = useQuery({
+    queryKey: ['contracts'],
+    queryFn: () => base44.entities.Contract.list()
   });
 
   const createCustomerMutation = useMutation({
@@ -263,6 +270,12 @@ export default function ProjectForm({ project, onSubmit, onCancel, isSubmitting 
                 id="title"
                 value={formData.title}
                 onChange={(e) => setFormData({ ...formData, title: e.target.value })}
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter') {
+                    e.preventDefault();
+                    e.stopPropagation();
+                  }
+                }}
                 required
                 placeholder="e.g., Garage Door Replacement - Unit 6"
                 className="border-2 border-slate-300 focus:border-[#fae008] focus:ring-2 focus:ring-[#fae008]/20"
@@ -293,6 +306,26 @@ export default function ProjectForm({ project, onSubmit, onCancel, isSubmitting 
                   <Plus className="w-4 h-4" />
                 </Button>
               </div>
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="contract_id">Linked Contract (Optional)</Label>
+              <Select
+                value={formData.contract_id || "none"}
+                onValueChange={(val) => setFormData({ ...formData, contract_id: val === "none" ? "" : val })}
+              >
+                <SelectTrigger className="border-2 border-slate-300">
+                  <SelectValue placeholder="Select a contract" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="none">None</SelectItem>
+                  {contracts.map((contract) => (
+                    <SelectItem key={contract.id} value={contract.id}>
+                      {contract.name}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
             </div>
 
             <div className="space-y-2">
@@ -380,6 +413,12 @@ export default function ProjectForm({ project, onSubmit, onCancel, isSubmitting 
                             <Input
                               value={door.height}
                               onChange={(e) => updateDoor(index, 'height', e.target.value)}
+                              onKeyDown={(e) => {
+                                if (e.key === 'Enter') {
+                                  e.preventDefault();
+                                  e.stopPropagation();
+                                }
+                              }}
                               placeholder="e.g., 2.4m"
                               className="border-2 border-slate-300 focus:border-[#fae008] h-9"
                             />
@@ -389,6 +428,12 @@ export default function ProjectForm({ project, onSubmit, onCancel, isSubmitting 
                             <Input
                               value={door.width}
                               onChange={(e) => updateDoor(index, 'width', e.target.value)}
+                              onKeyDown={(e) => {
+                                if (e.key === 'Enter') {
+                                  e.preventDefault();
+                                  e.stopPropagation();
+                                }
+                              }}
                               placeholder="e.g., 5.0m"
                               className="border-2 border-slate-300 focus:border-[#fae008] h-9"
                             />
@@ -398,6 +443,12 @@ export default function ProjectForm({ project, onSubmit, onCancel, isSubmitting 
                             <Input
                               value={door.type}
                               onChange={(e) => updateDoor(index, 'type', e.target.value)}
+                              onKeyDown={(e) => {
+                                if (e.key === 'Enter') {
+                                  e.preventDefault();
+                                  e.stopPropagation();
+                                }
+                              }}
                               placeholder="e.g., Sectional, Roller"
                               className="border-2 border-slate-300 focus:border-[#fae008] h-9"
                             />
@@ -407,6 +458,12 @@ export default function ProjectForm({ project, onSubmit, onCancel, isSubmitting 
                             <Input
                               value={door.style}
                               onChange={(e) => updateDoor(index, 'style', e.target.value)}
+                              onKeyDown={(e) => {
+                                if (e.key === 'Enter') {
+                                  e.preventDefault();
+                                  e.stopPropagation();
+                                }
+                              }}
                               placeholder="e.g., Modern, Classic"
                               className="border-2 border-slate-300 focus:border-[#fae008] h-9"
                             />
@@ -571,6 +628,12 @@ export default function ProjectForm({ project, onSubmit, onCancel, isSubmitting 
                 id="new_customer_name"
                 value={newCustomerData.name}
                 onChange={(e) => setNewCustomerData({ ...newCustomerData, name: e.target.value })}
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter') {
+                    e.preventDefault();
+                    e.stopPropagation();
+                  }
+                }}
                 placeholder="Customer name"
                 className="border-2 border-slate-300 focus:border-[#fae008]"
               />
@@ -581,6 +644,12 @@ export default function ProjectForm({ project, onSubmit, onCancel, isSubmitting 
                 id="new_customer_phone"
                 value={newCustomerData.phone}
                 onChange={(e) => setNewCustomerData({ ...newCustomerData, phone: e.target.value })}
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter') {
+                    e.preventDefault();
+                    e.stopPropagation();
+                  }
+                }}
                 placeholder="Phone number"
                 className="border-2 border-slate-300 focus:border-[#fae008]"
               />
@@ -592,6 +661,12 @@ export default function ProjectForm({ project, onSubmit, onCancel, isSubmitting 
                 type="email"
                 value={newCustomerData.email}
                 onChange={(e) => setNewCustomerData({ ...newCustomerData, email: e.target.value })}
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter') {
+                    e.preventDefault();
+                    e.stopPropagation();
+                  }
+                }}
                 placeholder="Email address"
                 className="border-2 border-slate-300 focus:border-[#fae008]"
               />

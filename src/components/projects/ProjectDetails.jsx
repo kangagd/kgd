@@ -912,6 +912,8 @@ Format as HTML bullet points using <ul> and <li> tags. Include only the most cri
     }
   }, [project.status]);
 
+  const effectiveOpenedDate = project.opened_date || project.created_date;
+
   return (
     <div className="relative flex flex-col lg:flex-row gap-4 overflow-x-hidden items-start">
       {/* Customer Sidebar */}
@@ -1285,10 +1287,10 @@ Format as HTML bullet points using <ul> and <li> tags. Include only the most cri
         <div className="flex items-center justify-between gap-3">
           <div className="flex items-center gap-2">
             <BackButton to={createPageUrl("Projects")} />
-            {project.created_date && (
+            {effectiveOpenedDate && (
               <div className="text-[12px] text-[#6B7280] leading-[1.35] hidden sm:block">
-                Opened on {new Date(project.created_date).toLocaleDateString('en-AU', { day: 'numeric', month: 'short', year: 'numeric' })} 
-                {' '}({Math.floor((new Date() - new Date(project.created_date)) / (1000 * 60 * 60 * 24))} days)
+                Opened on {new Date(effectiveOpenedDate).toLocaleDateString('en-AU', { day: 'numeric', month: 'short', year: 'numeric' })} 
+                {' '}({Math.floor((new Date() - new Date(effectiveOpenedDate)) / (1000 * 60 * 60 * 24))} days)
               </div>
             )}
           </div>
@@ -1592,21 +1594,45 @@ Format as HTML bullet points using <ul> and <li> tags. Include only the most cri
                           placeholder="Height"
                           value={newDoor.height}
                           onChange={(e) => setNewDoor({ ...newDoor, height: e.target.value })}
+                          onKeyDown={(e) => {
+                            if (e.key === 'Enter') {
+                              e.preventDefault();
+                              e.stopPropagation();
+                            }
+                          }}
                         />
                         <Input
                           placeholder="Width"
                           value={newDoor.width}
                           onChange={(e) => setNewDoor({ ...newDoor, width: e.target.value })}
+                          onKeyDown={(e) => {
+                            if (e.key === 'Enter') {
+                              e.preventDefault();
+                              e.stopPropagation();
+                            }
+                          }}
                         />
                         <Input
                           placeholder="Type (e.g. Sectional, Roller)"
                           value={newDoor.type}
                           onChange={(e) => setNewDoor({ ...newDoor, type: e.target.value })}
+                          onKeyDown={(e) => {
+                            if (e.key === 'Enter') {
+                              e.preventDefault();
+                              e.stopPropagation();
+                            }
+                          }}
                         />
                         <Input
                           placeholder="Style"
                           value={newDoor.style}
                           onChange={(e) => setNewDoor({ ...newDoor, style: e.target.value })}
+                          onKeyDown={(e) => {
+                            if (e.key === 'Enter') {
+                              e.preventDefault();
+                              e.stopPropagation();
+                            }
+                          }}
                         />
                       </div>
                       <div className="flex gap-2">
