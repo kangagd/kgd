@@ -1,3 +1,7 @@
+// DEPRECATED – not used by email UI anymore, reserved for future AI pipeline.
+// Email-to-project/job creation now uses basic fields only (subject, snippet, sender).
+// This function remains for backward compatibility or manual AI analysis.
+
 import { createClientFromRequest } from 'npm:@base44/sdk@0.8.4';
 
 const WIX_SENDER = 'no-reply@crm.wix.com';
