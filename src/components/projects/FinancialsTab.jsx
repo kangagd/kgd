@@ -862,40 +862,61 @@ export default function FinancialsTab({ project, onUpdate }) {
           </div>
         </CardHeader>
         <CardContent className="p-3 md:p-4 space-y-4">
-          {!primaryQuote && !primaryInvoice && !project.legacy_pandadoc_url && !project.legacy_xero_invoice_url && (
+          {projectQuotes.length === 0 && projectXeroInvoices.length === 0 && !project.legacy_pandadoc_url && !project.legacy_xero_invoice_url && (
              <div className="text-center py-4 text-[#6B7280] text-[14px]">
                No linked documents
              </div>
           )}
 
-          {primaryQuote && (
-            <div className="bg-white border border-[#E5E7EB] rounded-lg p-3">
-              <div className="flex justify-between items-start">
-                <div>
-                  <div className="text-[12px] font-medium text-[#6B7280] uppercase tracking-wider mb-1">Primary Quote</div>
-                  <div className="font-medium text-[#111827]">{primaryQuote.name}</div>
-                  <div className="flex items-center gap-2 mt-1">
-                    <Badge variant="outline" className="text-[11px]">{primaryQuote.status}</Badge>
-                    <span className="text-[13px] text-[#4B5563]">
-                      ${(primaryQuote.value || 0).toLocaleString()}
-                    </span>
+          {/* All Quotes */}
+          {projectQuotes.length > 0 && (
+            <div className="space-y-2">
+              <div className="text-[12px] font-medium text-[#6B7280] uppercase tracking-wider">Quotes ({projectQuotes.length})</div>
+              {projectQuotes.map((quote) => (
+                <div key={quote.id} className="bg-white border border-[#E5E7EB] rounded-lg p-3">
+                  <div className="flex justify-between items-start">
+                    <div className="flex-1">
+                      <div className="font-medium text-[#111827]">{quote.name}</div>
+                      <div className="flex items-center gap-2 mt-1 flex-wrap">
+                        <Badge variant="outline" className="text-[11px]">{quote.status}</Badge>
+                        {quote.id === project.primary_quote_id && (
+                          <Badge className="bg-[#FAE008] text-[#111827] text-[11px]">Primary</Badge>
+                        )}
+                        <span className="text-[13px] text-[#4B5563]">
+                          ${((quote.value || quote.total_ex_gst || 0)).toLocaleString()}
+                        </span>
+                      </div>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      {quote.pandadoc_public_url && (
+                        <a 
+                          href={quote.pandadoc_public_url} 
+                          target="_blank" 
+                          rel="noopener noreferrer"
+                          className="flex items-center gap-1 text-[13px] text-[#2563EB] hover:underline whitespace-nowrap"
+                        >
+                          View <ExternalLink className="w-3 h-3" />
+                        </a>
+                      )}
+                      {quote.pandadoc_client_link && !quote.pandadoc_public_url && (
+                        <a 
+                          href={quote.pandadoc_client_link} 
+                          target="_blank" 
+                          rel="noopener noreferrer"
+                          className="flex items-center gap-1 text-[13px] text-[#2563EB] hover:underline whitespace-nowrap"
+                        >
+                          View <ExternalLink className="w-3 h-3" />
+                        </a>
+                      )}
+                    </div>
                   </div>
                 </div>
-                {primaryQuote.pandadoc_public_url && (
-                  <a 
-                    href={primaryQuote.pandadoc_public_url} 
-                    target="_blank" 
-                    rel="noopener noreferrer"
-                    className="flex items-center gap-1 text-[13px] text-[#2563EB] hover:underline"
-                  >
-                    Open Quote <ExternalLink className="w-3 h-3" />
-                  </a>
-                )}
-              </div>
+              ))}
             </div>
           )}
 
-          {!primaryQuote && project.legacy_pandadoc_url && (
+          {/* Legacy Quote */}
+          {projectQuotes.length === 0 && project.legacy_pandadoc_url && (
              <div className="bg-white border border-[#E5E7EB] rounded-lg p-3">
                <div className="flex justify-between items-center">
                  <div>
@@ -908,40 +929,61 @@ export default function FinancialsTab({ project, onUpdate }) {
                     rel="noopener noreferrer"
                     className="flex items-center gap-1 text-[13px] text-[#2563EB] hover:underline"
                   >
-                    Open PandaDoc <ExternalLink className="w-3 h-3" />
+                    View <ExternalLink className="w-3 h-3" />
                   </a>
                </div>
              </div>
           )}
 
-          {primaryInvoice && (
-            <div className="bg-white border border-[#E5E7EB] rounded-lg p-3">
-              <div className="flex justify-between items-start">
-                <div>
-                  <div className="text-[12px] font-medium text-[#6B7280] uppercase tracking-wider mb-1">Primary Invoice</div>
-                  <div className="font-medium text-[#111827]">{primaryInvoice.xero_invoice_number}</div>
-                  <div className="flex items-center gap-2 mt-1">
-                    <Badge variant="outline" className="text-[11px]">{primaryInvoice.status}</Badge>
-                    <span className="text-[13px] text-[#4B5563]">
-                      Due: ${(primaryInvoice.amount_due || 0).toLocaleString()} / Total: ${(primaryInvoice.total_amount || primaryInvoice.total || 0).toLocaleString()}
-                    </span>
+          {/* All Invoices */}
+          {projectXeroInvoices.length > 0 && (
+            <div className="space-y-2">
+              <div className="text-[12px] font-medium text-[#6B7280] uppercase tracking-wider">Invoices ({projectXeroInvoices.length})</div>
+              {projectXeroInvoices.map((invoice) => (
+                <div key={invoice.id} className="bg-white border border-[#E5E7EB] rounded-lg p-3">
+                  <div className="flex justify-between items-start">
+                    <div className="flex-1">
+                      <div className="font-medium text-[#111827]">Invoice #{invoice.xero_invoice_number}</div>
+                      <div className="flex items-center gap-2 mt-1 flex-wrap">
+                        <Badge variant="outline" className="text-[11px]">{invoice.status}</Badge>
+                        {invoice.id === project.primary_xero_invoice_id && (
+                          <Badge className="bg-[#FAE008] text-[#111827] text-[11px]">Primary</Badge>
+                        )}
+                        <span className="text-[13px] text-[#4B5563]">
+                          Due: ${(invoice.amount_due || 0).toLocaleString()} / Total: ${(invoice.total_amount || invoice.total || 0).toLocaleString()}
+                        </span>
+                      </div>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      {invoice.pdf_url && (
+                        <a 
+                          href={invoice.pdf_url} 
+                          target="_blank" 
+                          rel="noopener noreferrer"
+                          className="flex items-center gap-1 text-[13px] text-[#2563EB] hover:underline whitespace-nowrap"
+                        >
+                          PDF <ExternalLink className="w-3 h-3" />
+                        </a>
+                      )}
+                      {(invoice.online_payment_url || invoice.online_invoice_url) && (
+                        <a 
+                          href={invoice.online_payment_url || invoice.online_invoice_url} 
+                          target="_blank" 
+                          rel="noopener noreferrer"
+                          className="flex items-center gap-1 text-[13px] text-[#2563EB] hover:underline whitespace-nowrap"
+                        >
+                          View <ExternalLink className="w-3 h-3" />
+                        </a>
+                      )}
+                    </div>
                   </div>
                 </div>
-                {(primaryInvoice.online_payment_url || primaryInvoice.online_invoice_url) && (
-                  <a 
-                    href={primaryInvoice.online_payment_url || primaryInvoice.online_invoice_url} 
-                    target="_blank" 
-                    rel="noopener noreferrer"
-                    className="flex items-center gap-1 text-[13px] text-[#2563EB] hover:underline"
-                  >
-                    Open Invoice <ExternalLink className="w-3 h-3" />
-                  </a>
-                )}
-              </div>
+              ))}
             </div>
           )}
 
-          {!primaryInvoice && project.legacy_xero_invoice_url && (
+          {/* Legacy Invoice */}
+          {projectXeroInvoices.length === 0 && project.legacy_xero_invoice_url && (
              <div className="bg-white border border-[#E5E7EB] rounded-lg p-3">
                <div className="flex justify-between items-center">
                  <div>
@@ -954,7 +996,7 @@ export default function FinancialsTab({ project, onUpdate }) {
                     rel="noopener noreferrer"
                     className="flex items-center gap-1 text-[13px] text-[#2563EB] hover:underline"
                   >
-                    Open Xero <ExternalLink className="w-3 h-3" />
+                    View <ExternalLink className="w-3 h-3" />
                   </a>
                </div>
              </div>
