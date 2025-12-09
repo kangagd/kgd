@@ -39,6 +39,8 @@ import {
 import EmailMessageItem from "./EmailMessageItem";
 import LinkedThreadsSection from "./LinkedThreadsSection";
 import LinkThreadToThreadModal from "./LinkThreadToThreadModal";
+import EmailAIInsightsPanel from "./EmailAIInsightsPanel";
+import CreateProjectFromEmailModal from "./CreateProjectFromEmailModal";
 
 export default function EmailDetailView({
   thread,
@@ -60,6 +62,8 @@ export default function EmailDetailView({
   const [attachmentsExpanded, setAttachmentsExpanded] = useState(false);
   const [updatingPriority, setUpdatingPriority] = useState(false);
   const [showLinkThreadModal, setShowLinkThreadModal] = useState(false);
+  const [showCreateProjectModal, setShowCreateProjectModal] = useState(false);
+  const [aiThread, setAiThread] = useState(thread);
 
   const { data: messages = [], refetch } = useQuery({
     queryKey: ['emailMessages', thread.id, thread.gmail_thread_id],
@@ -213,6 +217,18 @@ export default function EmailDetailView({
             onNavigateToThread={(threadId) => navigate(`?threadId=${threadId}`)}
             canEdit={!!userPermissions?.can_link_to_project}
           />
+
+          {/* AI Insights Panel */}
+          <div className="mb-6">
+            <EmailAIInsightsPanel
+              thread={aiThread}
+              onThreadUpdated={(updated) => {
+                setAiThread(updated);
+                handleThreadUpdate();
+              }}
+              onCreateProjectFromAI={() => setShowCreateProjectModal(true)}
+            />
+          </div>
 
           {/* Main Email Card */}
           <div className="bg-white rounded-xl shadow-sm border border-[#E5E7EB] overflow-hidden mb-6">
@@ -522,6 +538,20 @@ export default function EmailDetailView({
         existingLinkedIds={thread.linked_thread_ids || []}
         onLink={handleLinkThread}
       />
+
+      {/* Create Project From Email Modal */}
+      {showCreateProjectModal && (
+        <CreateProjectFromEmailModal
+          open={showCreateProjectModal}
+          onClose={() => setShowCreateProjectModal(false)}
+          thread={aiThread}
+          onSuccess={(projectId, projectTitle) => {
+            toast.success('Project created successfully');
+            setShowCreateProjectModal(false);
+            handleThreadUpdate();
+          }}
+        />
+      )}
     </div>
   );
 }
