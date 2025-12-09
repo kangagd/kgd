@@ -383,22 +383,48 @@ export default function FinancialsTab({ project, onUpdate }) {
     });
   };
 
-  // Suggest financial status based on % paid
-  // Payment model: Initial 50%, Second 30%, Balance 20%
-  const baseValue = project.total_project_value || 0;
-  const effectivePaid = xeroTotalPaid > 0 ? xeroTotalPaid : totalPaid;
-  
+  // Calculate suggested financial status based on payment ratio
   let suggestedStatus = null;
-  if (baseValue > 0 && effectivePaid > 0) {
-    const ratio = effectivePaid / baseValue;
+
+  if (totalProjectValue > 0 && totalPaid > 0) {
+    const ratio = totalPaid / totalProjectValue;
+
     if (ratio >= 0.95) {
       suggestedStatus = "Balance Paid in Full";
-    } else if (ratio >= 0.8) {
-      suggestedStatus = "Second Payment Made"; // 50% + 30% = 80%
     } else if (ratio >= 0.5) {
-      suggestedStatus = "Initial Payment Made"; // 50%
+      suggestedStatus = "Second Payment Made";
+    } else {
+      suggestedStatus = "Initial Payment Made";
     }
   }
+
+  // Auto-apply financial status when not locked
+  useEffect(() => {
+    if (!project || !suggestedStatus) return;
+
+    // If user has locked the status, do not auto-update
+    if (project.financial_status_locked) return;
+
+    // If already matches, do nothing
+    if (project.financial_status === suggestedStatus) return;
+
+    base44.entities.Project.update(project.id, {
+      financial_status: suggestedStatus,
+    });
+  }, [
+    project?.id,
+    suggestedStatus,
+    project?.financial_status_locked,
+    project?.financial_status,
+  ]);
+
+  // Handler for manual financial status changes - locks the status
+  const handleFinancialStatusChange = (newStatus) => {
+    base44.entities.Project.update(project.id, {
+      financial_status: newStatus,
+      financial_status_locked: true, // user override
+    });
+  };
 
   return (
     <div className="space-y-4">
