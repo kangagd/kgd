@@ -2,23 +2,38 @@ import React, { useState } from "react";
 import { format, parseISO } from "date-fns";
 import AttachmentCard from "./AttachmentCard";
 
+const fixEncodingIssues = (text) => {
+  if (!text) return text;
+  
+  let fixed = text;
+  
+  // Fix common encoding issues (mojibake from Windows-1252 → UTF-8)
+  fixed = fixed.replace(/â€"/g, '—');  // em dash
+  fixed = fixed.replace(/â€"/g, '–');  // en dash
+  fixed = fixed.replace(/â€œ/g, '"');  // left double quote
+  fixed = fixed.replace(/â€/g, '"');   // right double quote
+  fixed = fixed.replace(/â€™/g, "'");  // right single quote
+  fixed = fixed.replace(/â€˜/g, "'");  // left single quote
+  fixed = fixed.replace(/Â /g, ' ');   // non-breaking space
+  fixed = fixed.replace(/Â/g, ' ');    // stray non-breaking space marker
+  fixed = fixed.replace(/â€¦/g, '…');  // ellipsis
+  fixed = fixed.replace(/Ã¢â‚¬â„¢/g, "'");  // another single quote variant
+  fixed = fixed.replace(/â€¢/g, '•');  // bullet point
+  fixed = fixed.replace(/Ã /g, 'à');   // à
+  fixed = fixed.replace(/Ã¨/g, 'è');   // è
+  fixed = fixed.replace(/Ã©/g, 'é');   // é
+  fixed = fixed.replace(/â‚¬/g, '€');  // euro sign
+  
+  return fixed;
+};
+
 const sanitizeBodyHtml = (html) => {
   if (!html) return html;
   
   let sanitized = html;
   
-  // Fix common encoding issues (mojibake from Windows-1252 → UTF-8)
-  sanitized = sanitized.replace(/â€"/g, '—');  // em dash
-  sanitized = sanitized.replace(/â€"/g, '–');  // en dash
-  sanitized = sanitized.replace(/â€œ/g, '"');  // left double quote
-  sanitized = sanitized.replace(/â€/g, '"');   // right double quote
-  sanitized = sanitized.replace(/â€™/g, "'");  // right single quote
-  sanitized = sanitized.replace(/â€˜/g, "'");  // left single quote
-  sanitized = sanitized.replace(/Â /g, ' ');   // non-breaking space
-  sanitized = sanitized.replace(/Â/g, ' ');    // stray non-breaking space marker
-  sanitized = sanitized.replace(/â€¦/g, '…');  // ellipsis
-  sanitized = sanitized.replace(/Ã¢â‚¬â„¢/g, "'");  // another single quote variant
-  sanitized = sanitized.replace(/â€¢/g, '•');  // bullet point
+  // Fix encoding issues first
+  sanitized = fixEncodingIssues(sanitized);
   
   // Remove dangerous tags
   sanitized = sanitized.replace(/<script[^>]*>.*?<\/script>/gi, '');
@@ -88,7 +103,7 @@ export default function EmailMessageItem({ message, isLast, totalMessages, getSe
               <div dangerouslySetInnerHTML={{ __html: sanitizeBodyHtml(message.body_html) }} />
             ) : (
               <div className="whitespace-pre-wrap text-[14px] text-[#111827] leading-relaxed">
-                {message.body_text || '(No content)'}
+                {fixEncodingIssues(message.body_text) || '(No content)'}
               </div>
             )}
           </div>
