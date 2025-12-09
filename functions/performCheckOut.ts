@@ -50,11 +50,14 @@ Deno.serve(async (req) => {
             return Response.json({ error: 'Job not found' }, { status: 404 });
         }
 
-        // Update CheckInOut record
+        // Update CheckInOut record with check-out details
         await base44.asServiceRole.entities.CheckInOut.update(checkInId, {
             check_out_time: safeCheckOutTime,
+            check_out_notes: overview || "",
             duration_hours: safeDurationHours
         });
+        
+        console.log(`✅ CheckInOut ${checkInId} updated with check_out_time: ${safeCheckOutTime}`);
 
         // Create JobSummary
         let scheduledDatetime = null;
