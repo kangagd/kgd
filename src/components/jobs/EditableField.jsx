@@ -64,6 +64,7 @@ export default function EditableField({
 
   const handleKeyDown = (e) => {
     if (e.key === 'Enter' && type !== "multi-select") {
+      e.preventDefault();
       handleSave();
     } else if (e.key === 'Escape') {
       handleCancel();
