@@ -547,7 +547,7 @@ export default function Projects() {
                       )}
                     </div>
                     <div className="flex items-center gap-2 flex-wrap">
-                      <AgeBadge date={project.stage_start_date || project.created_date} />
+                      <AgeBadge date={project.opened_date || project.stage_start_date || project.created_date} />
                       {project.organisation_type && (
                         <OrganisationTypeBadge value={project.organisation_type} />
                       )}
