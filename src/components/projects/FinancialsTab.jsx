@@ -509,7 +509,7 @@ export default function FinancialsTab({ project, onUpdate }) {
               <div>
                 <div className="text-[12px] text-[#6B7280] mb-0.5">Total Cost</div>
                 <div className="text-[18px] font-bold text-[#111827]">
-                  ${totalCost.toLocaleString('en-AU', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                  ${totalCosts.toLocaleString('en-AU', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                 </div>
               </div>
               <div>
@@ -520,8 +520,8 @@ export default function FinancialsTab({ project, onUpdate }) {
               </div>
               <div>
                 <div className="text-[12px] text-[#6B7280] mb-0.5">Margin</div>
-                <div className={`text-[18px] font-bold ${marginPercentage >= 0 ? 'text-[#16A34A]' : 'text-[#DC2626]'}`}>
-                  {marginPercentage}%
+                <div className={`text-[18px] font-bold ${marginPct >= 0 ? 'text-[#16A34A]' : 'text-[#DC2626]'}`}>
+                  {marginPct.toFixed(1)}%
                 </div>
               </div>
             </div>
