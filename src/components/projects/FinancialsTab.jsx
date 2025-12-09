@@ -342,15 +342,22 @@ export default function FinancialsTab({ project, onUpdate }) {
                 Financial Status
               </label>
               <div className="flex flex-wrap gap-2">
-                {financialStatusOptions.map(option => (
-                  <Badge 
-                    key={option.value}
-                    className="bg-[#FAE008] text-[#111827] hover:bg-[#E5CF07] cursor-pointer font-medium px-3 py-1 rounded-lg text-[12px] leading-[1.35] transition-all"
-                    onClick={() => {/* Status tracking only, no project status change */}}
-                  >
-                    {option.label}
-                  </Badge>
-                ))}
+                {financialStatusOptions.map(option => {
+                  const isActive = project.financial_status === option.value;
+                  return (
+                    <Badge 
+                      key={option.value}
+                      className={`font-medium px-3 py-1 rounded-lg text-[12px] leading-[1.35] transition-all ${
+                        isActive 
+                          ? 'bg-[#FAE008] text-[#111827] hover:bg-[#E5CF07] cursor-default' 
+                          : 'bg-[#F3F4F6] text-[#9CA3AF] hover:bg-[#E5E7EB] cursor-pointer opacity-50'
+                      }`}
+                      onClick={() => {/* Status tracking only, no project status change */}}
+                    >
+                      {option.label}
+                    </Badge>
+                  );
+                })}
               </div>
               {suggestedStatus && (
                 <p className="mt-2 text-[11px] text-[#6B7280]">
