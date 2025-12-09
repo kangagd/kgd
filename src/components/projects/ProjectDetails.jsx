@@ -1630,7 +1630,12 @@ Format as HTML bullet points using <ul> and <li> tags. Include only the most cri
                 project={project}
                 onUpdate={(fields) => {
                   console.log('FinancialsTab onUpdate called with:', fields);
-                  // Update all fields together
+                  // Optimistically update the local cache first
+                  queryClient.setQueryData(['project', project.id], (oldData) => ({
+                    ...oldData,
+                    ...fields
+                  }));
+                  // Then update the database
                   base44.entities.Project.update(project.id, fields).then(() => {
                     queryClient.invalidateQueries({ queryKey: ['project', project.id] });
                     queryClient.invalidateQueries({ queryKey: ['projects'] });
