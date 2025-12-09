@@ -145,10 +145,6 @@ Return ONLY a JSON object.`,
     try {
       const user = await base44.auth.me();
       const uploadPromises = files.map(async (file) => {
-        // Skip duplicates if needed? For now we just flag them but allow upload if user insists.
-        // But user asked for duplicate check, usually implies prevention or at least knowledge.
-        // We upload anyway but store hash.
-        
         let hash = null;
         try {
           hash = await computeFileHash(file);
@@ -156,15 +152,34 @@ Return ONLY a JSON object.`,
 
         const { file_url } = await base44.integrations.Core.UploadFile({ file });
         
+        // AI Analysis for marketing approval
+        let aiAnalysis = null;
+        try {
+          const analysisResult = await base44.functions.invoke('analyzePhotoForMarketing', {
+            image_url: file_url
+          });
+          aiAnalysis = analysisResult.data;
+        } catch (err) {
+          console.error('AI analysis failed:', err);
+        }
+
+        // Only save to central Photo entity if AI approves for marketing OR user manually approved
+        const shouldSaveToCentral = aiAnalysis?.is_marketing_approved || isMarketingApproved;
+        
+        if (!shouldSaveToCentral) {
+          console.log('Photo not approved for marketing, skipping save:', file.name);
+          return null;
+        }
+
         const photoData = {
           image_url: file_url,
           file_hash: hash,
           file_size: file.size,
           uploaded_at: new Date().toISOString(),
-          tags: tags.length > 0 ? tags : undefined,
+          tags: aiAnalysis?.suggested_tags?.length > 0 ? aiAnalysis.suggested_tags : (tags.length > 0 ? tags : undefined),
           product_type: productType || undefined,
-          is_marketing_approved: isMarketingApproved,
-          notes: notes || undefined,
+          is_marketing_approved: true,
+          notes: aiAnalysis?.reason ? `AI: ${aiAnalysis.reason}${notes ? '\n' + notes : ''}` : notes || undefined,
           technician_email: user.email,
           technician_name: user.full_name
         };
@@ -185,7 +200,13 @@ Return ONLY a JSON object.`,
         return base44.entities.Photo.create(photoData);
       });
 
-      await Promise.all(uploadPromises);
+      const results = await Promise.all(uploadPromises);
+      const savedCount = results.filter(r => r !== null).length;
+      const rejectedCount = files.length - savedCount;
+
+      if (rejectedCount > 0) {
+        alert(`${savedCount} photo${savedCount !== 1 ? 's' : ''} saved. ${rejectedCount} photo${rejectedCount !== 1 ? 's were' : ' was'} rejected (not marketing quality).`);
+      }
       
       if (onUploadComplete) onUploadComplete();
       handleClose();
