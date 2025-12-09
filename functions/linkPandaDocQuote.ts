@@ -32,7 +32,7 @@ Deno.serve(async (req) => {
     }
 
     // Check if already linked
-    const existingQuotes = await base44.entities.Quote.filter({
+    const existingQuotes = await base44.asServiceRole.entities.Quote.filter({
       pandadoc_document_id: pandadocDocumentId
     });
 

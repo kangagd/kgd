@@ -15,7 +15,8 @@ import {
   Clock,
   Mail,
   Copy,
-  RotateCw
+  RotateCw,
+  Unlink
 } from "lucide-react";
 import {
   DropdownMenu,
@@ -41,6 +42,7 @@ export default function QuoteCard({ quote, onUpdate, onSelect, isAdmin = false, 
   const [isSending, setIsSending] = useState(false);
   const [isRefreshing, setIsRefreshing] = useState(false);
   const [isLoadingLink, setIsLoadingLink] = useState(false);
+  const [isUnlinking, setIsUnlinking] = useState(false);
 
   const config = statusConfig[quote.status] || statusConfig.Draft;
   const StatusIcon = config.icon;
@@ -136,6 +138,32 @@ export default function QuoteCard({ quote, onUpdate, onSelect, isAdmin = false, 
       toast.success('Client link copied to clipboard');
     } else {
       toast.error('No client link available');
+    }
+  };
+
+  const handleUnlink = async (e) => {
+    e?.stopPropagation();
+    if (!confirm('Unlink this quote? This will remove it from the project and you can re-link it later if needed.')) {
+      return;
+    }
+
+    setIsUnlinking(true);
+    try {
+      const response = await base44.functions.invoke('unlinkQuote', {
+        quoteId: quote.id
+      });
+
+      if (response.data?.success) {
+        toast.success('Quote unlinked successfully');
+        onUpdate?.();
+      } else {
+        toast.error(response.data?.error || 'Failed to unlink quote');
+      }
+    } catch (error) {
+      console.error('Unlink quote error:', error);
+      toast.error('Failed to unlink quote');
+    } finally {
+      setIsUnlinking(false);
     }
   };
 
@@ -269,6 +297,11 @@ export default function QuoteCard({ quote, onUpdate, onSelect, isAdmin = false, 
                       Resend (via PandaDoc)
                     </DropdownMenuItem>
                   )}
+                  <DropdownMenuSeparator />
+                  <DropdownMenuItem onClick={handleUnlink} disabled={isUnlinking} className="text-red-600 focus:text-red-600">
+                    {isUnlinking ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : <Unlink className="w-4 h-4 mr-2" />}
+                    Unlink Quote
+                  </DropdownMenuItem>
                 </DropdownMenuContent>
               </DropdownMenu>
             )}
