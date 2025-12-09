@@ -41,6 +41,8 @@ function mapSource(rawSource) {
 function parseWixEmailBody(bodyText) {
   if (!bodyText) return null;
   
+  console.log('[parseWixEmailBody] Raw body text:', bodyText.substring(0, 500));
+  
   const result = {
     first_name: null,
     last_name: null,
@@ -51,24 +53,28 @@ function parseWixEmailBody(bodyText) {
     how_did_you_hear: null,
   };
 
-  // Patterns for each field - handles various formats
+  // More flexible patterns that handle HTML entities and variations
   const patterns = {
-    first_name: /First\s*name:\s*(.+?)(?=\n|Last|$)/i,
-    last_name: /Last\s*name:\s*(.+?)(?=\n|Phone|$)/i,
-    phone: /Phone:\s*(.+?)(?=\n|Email|$)/i,
-    email: /Email:\s*(.+?)(?=\n|Address|$)/i,
-    address: /Address:\s*(.+?)(?=\n|How can|$)/i,
-    how_can_we_help: /How\s*can\s*we\s*help\??:\s*(.+?)(?=\n|How did|$)/is,
-    how_did_you_hear: /How\s*did\s*you\s*hear\s*about\s*us\??:\s*(.+?)(?=\n|$)/i,
+    first_name: /First[\s\u00A0]*name[\s\u00A0]*:[\s\u00A0]*(.+?)(?=\n|\r|Last|Phone|Email|$)/i,
+    last_name: /Last[\s\u00A0]*name[\s\u00A0]*:[\s\u00A0]*(.+?)(?=\n|\r|Phone|Email|Address|$)/i,
+    phone: /Phone[\s\u00A0]*:[\s\u00A0]*(.+?)(?=\n|\r|Email|Address|How|$)/i,
+    email: /Email[\s\u00A0]*:[\s\u00A0]*(.+?)(?=\n|\r|Address|Phone|How|$)/i,
+    address: /Address[\s\u00A0]*:[\s\u00A0]*(.+?)(?=\n|\r|How|$)/i,
+    how_can_we_help: /How[\s\u00A0]*can[\s\u00A0]*we[\s\u00A0]*help[\s\u00A0]*\??[\s\u00A0]*:[\s\u00A0]*(.+?)(?=\n\n|\r\r|How[\s\u00A0]*did|$)/is,
+    how_did_you_hear: /How[\s\u00A0]*did[\s\u00A0]*you[\s\u00A0]*hear[\s\u00A0]*about[\s\u00A0]*us[\s\u00A0]*\??[\s\u00A0]*:[\s\u00A0]*(.+?)(?=\n|\r|$)/i,
   };
 
   for (const [key, pattern] of Object.entries(patterns)) {
     const match = bodyText.match(pattern);
     if (match && match[1]) {
       result[key] = match[1].trim();
+      console.log(`[parseWixEmailBody] Matched ${key}:`, result[key]);
+    } else {
+      console.log(`[parseWixEmailBody] No match for ${key}`);
     }
   }
 
+  console.log('[parseWixEmailBody] Final parsed result:', result);
   return result;
 }
 
