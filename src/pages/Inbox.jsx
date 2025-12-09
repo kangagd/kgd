@@ -441,12 +441,12 @@ export default function Inbox() {
   }
 
   return (
-    <div className="flex h-[calc(100vh-60px)] lg:h-screen bg-[#ffffff] overflow-hidden">
-      {/* Thread List - Left Side */}
+    <div className="flex h-[calc(100vh-60px)] lg:h-screen bg-[#F9FAFB] overflow-hidden">
+      {/* Thread List - Left Side (Gmail-style sidebar) */}
       <div 
         ref={sidebarRef}
-        className={`${selectedThread ? 'hidden lg:flex' : 'flex'} flex-col border-r border-[#E5E7EB] bg-white overflow-x-hidden`}
-        style={{ width: selectedThread ? `${sidebarWidth}px` : '100%' }}
+        className={`${selectedThread ? 'hidden lg:flex' : 'flex'} flex-col border-r border-[#E5E7EB] bg-white`}
+        style={{ width: selectedThread ? `${sidebarWidth}px` : '100%', minWidth: selectedThread ? '320px' : '100%', maxWidth: selectedThread ? '600px' : '100%' }}
       >
         <div className="p-4 md:p-5 border-b border-[#E5E7EB] bg-white">
           <div className="flex items-center justify-between py-3 lg:py-4 gap-3">
@@ -713,19 +713,19 @@ export default function Inbox() {
         />
       </div>
 
-      {/* Resize Handle */}
+      {/* Resize Handle (Gmail-style divider) */}
       {selectedThread && (
         <div
-          className="hidden lg:block w-1 bg-[#E5E7EB] hover:bg-[#FAE008] cursor-col-resize transition-colors relative group"
+          className="hidden lg:block w-1 bg-[#E5E7EB] hover:bg-[#9CA3AF] cursor-col-resize transition-colors relative group flex-shrink-0"
           onMouseDown={() => setIsResizing(true)}
         >
-          <div className="absolute inset-y-0 -left-1 -right-1" />
+          <div className="absolute inset-y-0 -left-2 -right-2" />
         </div>
       )}
 
-      {/* Thread Detail - Right Side */}
+      {/* Thread Detail - Right Side (Gmail-style email panel) */}
       {selectedThread && (
-        <div className="flex flex-1 flex-col bg-[#ffffff]">
+        <div className="flex flex-1 flex-col bg-white overflow-hidden">
           <EmailDetailView
             thread={selectedThread}
             onClose={() => navigate('', { replace: true })}
