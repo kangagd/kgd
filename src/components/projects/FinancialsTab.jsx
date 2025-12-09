@@ -373,7 +373,7 @@ export default function FinancialsTab({ project, onUpdate }) {
                   type="number"
                   placeholder="0.00"
                   value={project.total_project_value || ""}
-                  onChange={(e) => onUpdate({ total_project_value: parseFloat(e.target.value) || null })}
+                  onChange={(e) => handleTotalProjectValueChange(parseFloat(e.target.value) || null)}
                   className="pl-8"
                 />
               </div>
