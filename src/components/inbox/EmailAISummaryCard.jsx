@@ -1,3 +1,7 @@
+// DEPRECATED – Email AI features have been removed from the UI.
+// This component is no longer used in the inbox.
+// Kept for backward compatibility only.
+
 import React, { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
