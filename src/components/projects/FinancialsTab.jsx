@@ -449,6 +449,29 @@ export default function FinancialsTab({ project, onUpdate }) {
                 </div>
               </div>
             </div>
+
+            {xeroTotalInvoiced > 0 && (
+              <div className="mt-3 pt-3 border-t border-[#E5E7EB] text-[12px] text-[#4B5563]">
+                <div className="flex justify-between mb-1">
+                  <span>Xero – Total Invoiced</span>
+                  <span className="font-semibold">
+                    ${xeroTotalInvoiced.toFixed(2)}
+                  </span>
+                </div>
+                <div className="flex justify-between mb-1">
+                  <span>Xero – Paid</span>
+                  <span className="font-semibold text-[#16A34A]">
+                    ${xeroTotalPaid.toFixed(2)}
+                  </span>
+                </div>
+                <div className="flex justify-between">
+                  <span>Xero – Outstanding</span>
+                  <span className="font-semibold text-[#DC2626]">
+                    ${xeroTotalDue.toFixed(2)}
+                  </span>
+                </div>
+              </div>
+            )}
             </div>
           )}
         </CardContent>
