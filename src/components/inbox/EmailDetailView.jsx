@@ -147,6 +147,9 @@ export default function EmailDetailView({
     const isWixEmail = thread.from_address?.toLowerCase() === 'no-reply@crm.wix.com' && 
                        thread.subject?.includes('You have received a new notification from KangarooGD');
     
+    console.log('[EmailDetailView] Creating project from email, isWix:', isWixEmail);
+    console.log('[EmailDetailView] Existing AI fields:', thread.ai_suggested_project_fields);
+    
     if (isWixEmail && !thread.ai_suggested_project_fields) {
       toast.info('Analyzing Wix form...');
       try {
@@ -154,19 +157,22 @@ export default function EmailDetailView({
           email_thread_id: thread.id 
         });
         
+        console.log('[EmailDetailView] Wix parse result:', result.data);
+        
         if (result.data?.success) {
           toast.success('Form data extracted!');
           // Refresh thread data to get the updated ai_suggested_project_fields
           await queryClient.invalidateQueries({ queryKey: ['emailThreads'] });
           // Small delay to ensure data is refreshed
-          await new Promise(resolve => setTimeout(resolve, 500));
+          await new Promise(resolve => setTimeout(resolve, 1000));
         }
       } catch (error) {
-        console.error('Error parsing Wix email:', error);
-        toast.error('Could not parse form data, but you can still create the project');
+        console.error('[EmailDetailView] Error parsing Wix email:', error);
+        toast.error('Could not parse form data');
       }
     }
     
+    console.log('[EmailDetailView] Navigating to project form with thread:', thread.id);
     navigate(createPageUrl("Projects") + `?action=create&fromEmail=${thread.id}`);
   };
 

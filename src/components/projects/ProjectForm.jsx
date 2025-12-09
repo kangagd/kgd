@@ -129,26 +129,33 @@ export default function ProjectForm({ project, onSubmit, onCancel, isSubmitting 
           const aiSuggested = thread.ai_suggested_project_fields;
           console.log('[ProjectForm] Applying AI suggested fields:', aiSuggested);
           
-          setFormData(prev => ({
-            ...prev,
-            title: aiSuggested.suggested_title || thread.subject || prev.title,
-            description: aiSuggested.suggested_description || thread.last_message_snippet || prev.description,
-            project_type: aiSuggested.suggested_project_type || prev.project_type,
-            address_full: aiSuggested.suggested_address || prev.address_full,
-            notes: `Created from email: ${thread.from_address}\n\n${thread.subject}`,
-            source_email_thread_id: thread.id
-          }));
+          // Make sure to set ALL fields that have values
+          const updates = {
+            source_email_thread_id: thread.id,
+            notes: `Created from email: ${thread.from_address}\n\n${thread.subject}`
+          };
+          
+          if (aiSuggested.suggested_title) updates.title = aiSuggested.suggested_title;
+          if (aiSuggested.suggested_description) updates.description = aiSuggested.suggested_description;
+          if (aiSuggested.suggested_project_type) updates.project_type = aiSuggested.suggested_project_type;
+          if (aiSuggested.suggested_address) {
+            updates.address_full = aiSuggested.suggested_address;
+            updates.address = aiSuggested.suggested_address;
+          }
+          
+          setFormData(prev => ({ ...prev, ...updates }));
+          console.log('[ProjectForm] Form updates:', updates);
           
           // Pre-fill customer fields in new customer dialog
           if (aiSuggested.suggested_customer_name || aiSuggested.suggested_customer_email || aiSuggested.suggested_customer_phone) {
-            setNewCustomerData(prev => ({
-              ...prev,
-              name: aiSuggested.suggested_customer_name || prev.name,
-              email: aiSuggested.suggested_customer_email || prev.email,
-              phone: aiSuggested.suggested_customer_phone || prev.phone,
-              address_full: aiSuggested.suggested_address || prev.address_full
-            }));
-            console.log('[ProjectForm] Pre-filled new customer data');
+            const customerUpdates = {};
+            if (aiSuggested.suggested_customer_name) customerUpdates.name = aiSuggested.suggested_customer_name;
+            if (aiSuggested.suggested_customer_email) customerUpdates.email = aiSuggested.suggested_customer_email;
+            if (aiSuggested.suggested_customer_phone) customerUpdates.phone = aiSuggested.suggested_customer_phone;
+            if (aiSuggested.suggested_address) customerUpdates.address_full = aiSuggested.suggested_address;
+            
+            setNewCustomerData(prev => ({ ...prev, ...customerUpdates }));
+            console.log('[ProjectForm] Pre-filled new customer data:', customerUpdates);
           }
         } else {
           // Basic email data without AI parsing
