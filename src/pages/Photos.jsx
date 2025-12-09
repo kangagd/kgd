@@ -86,6 +86,13 @@ export default function Photos() {
     }
   });
 
+  const updatePhotoMutation = useMutation({
+    mutationFn: ({ photoId, updates }) => base44.entities.Photo.update(photoId, updates),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['photos'] });
+    }
+  });
+
   // Filters
   const filteredPhotos = allPhotos.filter(photo => {
     const term = searchTerm.toLowerCase();
@@ -367,9 +374,12 @@ export default function Photos() {
           projectName: selectedPhoto.project_name,
           address: selectedPhoto.address,
           caption: selectedPhoto.notes,
-          takenAt: selectedPhoto.uploaded_at
+          takenAt: selectedPhoto.uploaded_at,
+          tags: selectedPhoto.tags,
+          productType: selectedPhoto.product_type
         } : null}
         onDelete={() => deletePhotoMutation.mutate(selectedPhoto.id)}
+        onUpdate={(updates) => updatePhotoMutation.mutate({ photoId: selectedPhoto.id, updates })}
       />
     </div>
   );

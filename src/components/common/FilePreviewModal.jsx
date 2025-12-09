@@ -1,7 +1,9 @@
 import React, { useEffect, useState } from "react";
-import { X, Download, Trash2, FileText, File, ExternalLink, ChevronLeft, ChevronRight } from "lucide-react";
+import { X, Download, Trash2, FileText, File, ExternalLink, ChevronLeft, ChevronRight, Edit2, Save } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
+import { Textarea } from "@/components/ui/textarea";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -13,22 +15,37 @@ import {
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 
+const TAGS = ["Before", "After", "Install", "Repair", "Service", "Maintenance", "Marketing", "Other"];
+const PRODUCT_TYPES = ["Garage Door", "Gate", "Roller Shutter", "Other"];
+
 export default function FilePreviewModal({ 
   isOpen,
   onClose, 
   file,
   onDelete,
-  canDelete = true
+  onUpdate,
+  canDelete = true,
+  canEdit = true
 }) {
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   const [currentIndex, setCurrentIndex] = useState(file?.index || 0);
+  const [isEditing, setIsEditing] = useState(false);
+  const [editedTags, setEditedTags] = useState([]);
+  const [editedProductType, setEditedProductType] = useState("");
+  const [editedNotes, setEditedNotes] = useState("");
 
-  // Update currentIndex when file changes
+  // Update currentIndex and editing state when file changes
   useEffect(() => {
     if (file?.index !== undefined) {
       setCurrentIndex(file.index);
     }
-  }, [file?.index]);
+    if (file) {
+      setEditedTags(file.tags || []);
+      setEditedProductType(file.productType || "");
+      setEditedNotes(file.caption || "");
+      setIsEditing(false);
+    }
+  }, [file?.index, file]);
 
   const allImages = file?.allImages || [];
   const hasMultipleImages = allImages.length > 1;
@@ -97,6 +114,23 @@ export default function FilePreviewModal({
     onClose();
   };
 
+  const toggleTag = (tag) => {
+    setEditedTags(prev => 
+      prev.includes(tag) ? prev.filter(t => t !== tag) : [...prev, tag]
+    );
+  };
+
+  const handleSave = () => {
+    if (onUpdate) {
+      onUpdate({
+        tags: editedTags,
+        product_type: editedProductType || null,
+        notes: editedNotes || null
+      });
+    }
+    setIsEditing(false);
+  };
+
   return (
     <>
       <div 
@@ -125,6 +159,16 @@ export default function FilePreviewModal({
             >
               <Download className="w-5 h-5" />
             </Button>
+            {canEdit && onUpdate && (
+              <Button
+                onClick={isEditing ? handleSave : () => setIsEditing(true)}
+                size="icon"
+                className="w-10 h-10 bg-white/90 hover:bg-white text-[#111827] rounded-full shadow-lg backdrop-blur-sm"
+                title={isEditing ? "Save" : "Edit"}
+              >
+                {isEditing ? <Save className="w-5 h-5" /> : <Edit2 className="w-5 h-5" />}
+              </Button>
+            )}
             {canDelete && onDelete && (
               <Button
                 onClick={handleDelete}
@@ -167,6 +211,57 @@ export default function FilePreviewModal({
           {hasMultipleImages && (isImage || isVideo) && (
             <div className="absolute bottom-4 left-1/2 -translate-x-1/2 bg-black/60 text-white px-4 py-2 rounded-full text-sm font-medium backdrop-blur-sm z-20">
               {currentIndex + 1} / {allImages.length}
+            </div>
+          )}
+
+          {/* Metadata Panel */}
+          {isEditing && (
+            <div className="absolute bottom-4 left-4 right-4 bg-white/95 backdrop-blur-sm rounded-2xl shadow-2xl p-6 max-w-2xl mx-auto z-20">
+              <div className="space-y-4">
+                <div>
+                  <label className="text-xs font-bold text-[#111827] mb-2 block tracking-tight uppercase">Tags</label>
+                  <div className="flex flex-wrap gap-2">
+                    {TAGS.map(tag => (
+                      <Badge
+                        key={tag}
+                        onClick={() => toggleTag(tag)}
+                        className={`cursor-pointer transition-colors ${
+                          editedTags.includes(tag)
+                            ? 'bg-[#FAE008] text-[#111827] hover:bg-[#E5CF07]'
+                            : 'bg-[#F3F4F6] text-[#6B7280] hover:bg-[#E5E7EB]'
+                        }`}
+                      >
+                        {tag}
+                      </Badge>
+                    ))}
+                  </div>
+                </div>
+
+                <div>
+                  <label className="text-xs font-bold text-[#111827] mb-2 block tracking-tight uppercase">Product Type</label>
+                  <Select value={editedProductType} onValueChange={setEditedProductType}>
+                    <SelectTrigger>
+                      <SelectValue placeholder="Select product type..." />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value={null}>None</SelectItem>
+                      {PRODUCT_TYPES.map(type => (
+                        <SelectItem key={type} value={type}>{type}</SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+
+                <div>
+                  <label className="text-xs font-bold text-[#111827] mb-2 block tracking-tight uppercase">Notes</label>
+                  <Textarea
+                    value={editedNotes}
+                    onChange={(e) => setEditedNotes(e.target.value)}
+                    placeholder="Add notes..."
+                    rows={2}
+                  />
+                </div>
+              </div>
             </div>
           )}
 
