@@ -246,6 +246,25 @@ export default function FinancialsTab({ project, onUpdate }) {
     0
   );
 
+  const xeroFullyPaid = xeroTotalInvoiced > 0 && xeroTotalDue <= 0;
+
+  // Auto-mark financial status if Xero shows fully paid (with guardrails)
+  useEffect(() => {
+    if (!xeroFullyPaid || !project?.id) return;
+    
+    const currentStatus = project.financial_status;
+    const allowedToAutoUpdate = !currentStatus || 
+      currentStatus === "Awaiting Payment" ||
+      currentStatus === "Initial Payment Made" ||
+      currentStatus === "Second Payment Made";
+    
+    // Only auto-update if status allows and it's not already set
+    if (allowedToAutoUpdate && currentStatus !== "Balance Paid in Full") {
+      // Update project financial status
+      onUpdate({ financial_status: "Balance Paid in Full" });
+    }
+  }, [xeroFullyPaid, project?.id, project?.financial_status]);
+
   // Suggest financial status based on % paid
   const baseValue = project.total_project_value || 0;
   const effectivePaid = xeroTotalPaid > 0 ? xeroTotalPaid : totalPaid;
@@ -312,6 +331,9 @@ export default function FinancialsTab({ project, onUpdate }) {
                   </Button>
                 </div>
               )}
+              {primaryQuote && project.total_project_value === primaryQuote.value && (
+                <p className="text-[10px] text-[#6B7280] mt-1">Set from primary quote</p>
+              )}
             </div>
 
             <div>
@@ -333,6 +355,11 @@ export default function FinancialsTab({ project, onUpdate }) {
                 <p className="mt-2 text-[11px] text-[#6B7280]">
                   Suggested status based on payments:{" "}
                   <span className="font-semibold">{suggestedStatus}</span>
+                </p>
+              )}
+              {xeroFullyPaid && project.financial_status === "Balance Paid in Full" && (
+                <p className="mt-2 text-[11px] text-[#16A34A]">
+                  ✓ Auto-updated from Xero: all invoices paid in full
                 </p>
               )}
             </div>

@@ -134,7 +134,7 @@ Deno.serve(async (req) => {
     }
 
     // Create Quote record
-    const quote = await base44.entities.Quote.create({
+    const quote = await base44.asServiceRole.entities.Quote.create({
       project_id: projectId || null,
       job_id: jobId || null,
       customer_id: finalCustomerId,
@@ -153,6 +153,45 @@ Deno.serve(async (req) => {
       customer_email: customerEmail,
       customer_phone: customerPhone
     });
+
+    // Auto-populate project fields from quote if this is linked to a project
+    if (projectId && value > 0) {
+      try {
+        const project = await base44.asServiceRole.entities.Project.get(projectId);
+        const updates = {};
+
+        // Set total_project_value if empty/zero
+        if (!project.total_project_value || project.total_project_value === 0) {
+          updates.total_project_value = value;
+        }
+
+        // Infer project_type if empty
+        if (!project.project_type || project.project_type === '') {
+          const quoteName = (pandadocDoc.name || '').toLowerCase();
+          if (quoteName.includes('gate')) {
+            updates.project_type = 'Gate Install';
+          } else if (quoteName.includes('shutter') || quoteName.includes('roller')) {
+            updates.project_type = 'Roller Shutter Install';
+          } else if (quoteName.includes('repair')) {
+            updates.project_type = 'Repair';
+          } else if (quoteName.includes('door') || quoteName.includes('garage')) {
+            updates.project_type = 'Garage Door Install';
+          } else if (quoteName.includes('motor') || quoteName.includes('accessory')) {
+            updates.project_type = 'Motor/Accessory';
+          } else if (quoteName.includes('maintenance')) {
+            updates.project_type = 'Maintenance';
+          }
+        }
+
+        // Update project if we have any changes
+        if (Object.keys(updates).length > 0) {
+          await base44.asServiceRole.entities.Project.update(projectId, updates);
+        }
+      } catch (error) {
+        console.error('Failed to auto-populate project fields:', error);
+        // Don't fail the whole operation if this fails
+      }
+    }
 
     return Response.json({
       success: true,
