@@ -27,8 +27,18 @@ export default function PhotoGridItem({ photo, isSelectionMode, isSelected, onTo
       <div className="aspect-square overflow-hidden bg-[#F8F9FA] flex items-center justify-center relative">
         {!hasError ? (
           isVideo(photo.image_url) ? (
-            <div className="w-full h-full flex items-center justify-center bg-slate-100">
-              <Video className="w-12 h-12 text-slate-400" />
+            <div className="w-full h-full relative">
+              <video
+                src={photo.image_url}
+                className="w-full h-full object-cover"
+                onError={() => setHasError(true)}
+                preload="metadata"
+              />
+              <div className="absolute inset-0 flex items-center justify-center bg-black/30">
+                <div className="w-12 h-12 bg-white/90 rounded-full flex items-center justify-center">
+                  <Video className="w-6 h-6 text-slate-700" />
+                </div>
+              </div>
             </div>
           ) : (
             <img
