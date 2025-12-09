@@ -49,6 +49,12 @@ export default function TaskFormModal({
     queryFn: () => base44.entities.User.list()
   });
 
+  const { data: jobs = [] } = useQuery({
+    queryKey: ['jobs'],
+    queryFn: () => base44.entities.Job.list(),
+    enabled: !!preLinkedEntity && preLinkedEntity.type === 'job'
+  });
+
   useEffect(() => {
     if (task) {
       setFormData({
@@ -72,6 +78,18 @@ export default function TaskFormModal({
       });
     } else {
       // Reset form
+      // If pre-linked to a job, also link to its project
+      let projectId = "";
+      let projectName = "";
+      
+      if (preLinkedEntity?.type === 'job') {
+        const linkedJob = jobs.find(j => j.id === preLinkedEntity.id);
+        if (linkedJob && linkedJob.project_id) {
+          projectId = linkedJob.project_id;
+          projectName = linkedJob.project_name || "";
+        }
+      }
+
       setFormData({
         title: "",
         description: "",
@@ -82,8 +100,8 @@ export default function TaskFormModal({
         assigned_to_user_id: "",
         assigned_to_name: "",
         assigned_to_email: "",
-        project_id: preLinkedEntity?.type === 'project' ? preLinkedEntity.id : "",
-        project_name: preLinkedEntity?.type === 'project' ? preLinkedEntity.name : "",
+        project_id: preLinkedEntity?.type === 'project' ? preLinkedEntity.id : projectId,
+        project_name: preLinkedEntity?.type === 'project' ? preLinkedEntity.name : projectName,
         job_id: preLinkedEntity?.type === 'job' ? preLinkedEntity.id : "",
         job_number: preLinkedEntity?.type === 'job' ? preLinkedEntity.number : null,
         customer_id: preLinkedEntity?.type === 'customer' ? preLinkedEntity.id : "",
@@ -92,7 +110,7 @@ export default function TaskFormModal({
         email_thread_subject: preLinkedEntity?.type === 'email_thread' ? preLinkedEntity.name : ""
       });
     }
-  }, [task, preLinkedEntity, open]);
+  }, [task, preLinkedEntity, open, jobs]);
 
   const handleAssigneeChange = (userId) => {
     const user = users.find(u => u.id === userId);
