@@ -30,6 +30,7 @@ export default function Jobs() {
   const [searchTerm, setSearchTerm] = useState("");
   const [statusFilter, setStatusFilter] = useState("all");
   const [technicianFilter, setTechnicianFilter] = useState("all");
+  const [jobTypeFilter, setJobTypeFilter] = useState("all");
   const [jobScope, setJobScope] = useState("all"); // "all" or "mine"
   const [dateFrom, setDateFrom] = useState("");
   const [dateTo, setDateTo] = useState("");
@@ -136,6 +137,11 @@ export default function Jobs() {
     queryKey: ['technicians'],
     queryFn: () => base44.entities.User.filter({ is_field_technician: true }),
     enabled: !!(user?.role === 'admin' || user?.role === 'manager')
+  });
+
+  const { data: jobTypes = [] } = useQuery({
+    queryKey: ['jobTypes'],
+    queryFn: () => base44.entities.JobType.filter({ is_active: true })
   });
 
   const createJobMutation = useMutation({
@@ -280,10 +286,15 @@ export default function Jobs() {
         ? job.assigned_to.includes(technicianFilter)
         : job.assigned_to === technicianFilter);
 
+    const matchesJobType = jobTypeFilter === "all" || 
+      job.job_type_id === jobTypeFilter ||
+      job.job_type === jobTypeFilter ||
+      job.job_type_name === jobTypeFilter;
+
     const matchesDateRange = (!dateFrom || !job.scheduled_date || job.scheduled_date >= dateFrom) &&
                              (!dateTo || !job.scheduled_date || job.scheduled_date <= dateTo);
 
-    return matchesSearch && matchesStatus && matchesTechnician && matchesDateRange && matchesScope;
+    return matchesSearch && matchesStatus && matchesTechnician && matchesJobType && matchesDateRange && matchesScope;
   }).sort((a, b) => {
     let compareA, compareB;
     
@@ -486,6 +497,20 @@ export default function Jobs() {
                   {technicians.map((tech) => (
                     <SelectItem key={tech.email} value={tech.email}>
                       {tech.full_name}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+
+              <Select value={jobTypeFilter} onValueChange={setJobTypeFilter}>
+                <SelectTrigger className="w-full md:w-[200px] h-10">
+                  <SelectValue placeholder="All Job Types" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">All Job Types</SelectItem>
+                  {jobTypes.map((type) => (
+                    <SelectItem key={type.id} value={type.id}>
+                      {type.name}
                     </SelectItem>
                   ))}
                 </SelectContent>
