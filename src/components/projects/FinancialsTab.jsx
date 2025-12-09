@@ -240,7 +240,23 @@ export default function FinancialsTab({ project, onUpdate }) {
     .filter(p => p.payment_status === "Paid")
     .reduce((sum, p) => sum + (p.payment_amount || 0), 0);
 
-  // Compute Xero invoice totals
+  // 1) Quotes: sum of all accepted quotes (by status)
+  const acceptedQuotes = (projectQuotes || []).filter(
+    (q) => q.status === "Accepted" || q.status === "Approved"
+  );
+
+  const totalAcceptedQuoteValue = acceptedQuotes.reduce(
+    (sum, q) => sum + (q.total_ex_gst || 0),
+    0
+  );
+
+  const fallbackPrimaryQuoteValue = primaryQuote?.total_ex_gst || 0;
+
+  // Auto quote value = sum of accepted quotes, or primary quote if none
+  const autoQuoteValue =
+    totalAcceptedQuoteValue > 0 ? totalAcceptedQuoteValue : fallbackPrimaryQuoteValue;
+
+  // 2) Xero invoice totals
   const xeroTotalInvoiced = projectXeroInvoices.reduce(
     (sum, inv) => sum + (inv.total_amount || 0),
     0
@@ -257,6 +273,19 @@ export default function FinancialsTab({ project, onUpdate }) {
   );
 
   const xeroFullyPaid = xeroTotalInvoiced > 0 && xeroTotalDue <= 0;
+
+  // 3) Cost / profit / margin
+  const materialsCost = project?.materials_cost || 0;
+  const labourCost = project?.labour_cost || 0;
+  const otherCosts = project?.other_costs || 0;
+
+  const totalCosts = materialsCost + labourCost + otherCosts;
+  const totalProjectValue = project?.total_project_value || 0;
+
+  const profit = totalProjectValue - totalCosts;
+  const marginPct = totalProjectValue
+    ? (profit / totalProjectValue) * 100
+    : 0;
 
   // Auto-mark financial status if Xero shows fully paid (with guardrails)
   useEffect(() => {
