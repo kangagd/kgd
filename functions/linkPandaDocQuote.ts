@@ -155,13 +155,18 @@ Deno.serve(async (req) => {
     });
 
     // Auto-populate project fields from quote if this is linked to a project
-    if (projectId && value > 0) {
+    if (projectId) {
       try {
         const project = await base44.asServiceRole.entities.Project.get(projectId);
         const updates = {};
 
-        // Set total_project_value if empty/zero
-        if (!project.total_project_value || project.total_project_value === 0) {
+        // Set as primary quote if no primary quote exists
+        if (!project.primary_quote_id) {
+          updates.primary_quote_id = quote.id;
+        }
+
+        // Set total_project_value if empty/zero and quote has value
+        if (value > 0 && (!project.total_project_value || project.total_project_value === 0)) {
           updates.total_project_value = value;
         }
 
