@@ -112,6 +112,16 @@ export default function FinancialsTab({ project, onUpdate }) {
     queryFn: () => base44.entities.PriceListItem.list("category"),
   });
 
+  // Fetch all XeroInvoices for this project
+  const { data: projectXeroInvoices = [] } = useQuery({
+    queryKey: ["xero-invoices-for-project", project?.id],
+    queryFn: async () => {
+      if (!project?.id) return [];
+      return base44.entities.XeroInvoice.filter({ project_id: project.id });
+    },
+    enabled: !!project?.id,
+  });
+
   // PriceList lookup
   const priceMap = useMemo(() => {
     const map = {};
@@ -220,6 +230,38 @@ export default function FinancialsTab({ project, onUpdate }) {
     .filter(p => p.payment_status === "Paid")
     .reduce((sum, p) => sum + (p.payment_amount || 0), 0);
 
+  // Compute Xero invoice totals
+  const xeroTotalInvoiced = projectXeroInvoices.reduce(
+    (sum, inv) => sum + (inv.total_amount || 0),
+    0
+  );
+
+  const xeroTotalPaid = projectXeroInvoices.reduce(
+    (sum, inv) => sum + (inv.amount_paid || 0),
+    0
+  );
+
+  const xeroTotalDue = projectXeroInvoices.reduce(
+    (sum, inv) => sum + (inv.amount_due || 0),
+    0
+  );
+
+  // Suggest financial status based on % paid
+  const baseValue = project.total_project_value || 0;
+  const effectivePaid = xeroTotalPaid > 0 ? xeroTotalPaid : totalPaid;
+  
+  let suggestedStatus = null;
+  if (baseValue > 0 && effectivePaid > 0) {
+    const ratio = effectivePaid / baseValue;
+    if (ratio >= 0.95) {
+      suggestedStatus = "Balance Paid in Full";
+    } else if (ratio >= 0.5) {
+      suggestedStatus = "Second Payment Made";
+    } else {
+      suggestedStatus = "Initial Payment Made";
+    }
+  }
+
   return (
     <div className="space-y-4">
       {/* Financial Summary Card */}
@@ -251,6 +293,25 @@ export default function FinancialsTab({ project, onUpdate }) {
                     GST: ${exToGstAmount(project.total_project_value).toFixed(2)} • Inc: ${exToInc(project.total_project_value).toFixed(2)}
                   </p>
               )}
+              {primaryQuote && primaryQuote.value > 0 && (
+                <div className="mt-1 flex items-center justify-between text-[11px] text-[#4B5563] bg-[#F3F4F6] rounded px-2 py-1">
+                  <span>
+                    From primary quote:{" "}
+                    <span className="font-semibold">
+                      ${primaryQuote.value.toFixed(2)}
+                    </span>
+                  </span>
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="xs"
+                    className="h-6 text-[11px] px-2"
+                    onClick={() => onUpdate({ total_project_value: primaryQuote.value })}
+                  >
+                    Apply
+                  </Button>
+                </div>
+              )}
             </div>
 
             <div>
@@ -268,6 +329,12 @@ export default function FinancialsTab({ project, onUpdate }) {
                   </Badge>
                 ))}
               </div>
+              {suggestedStatus && (
+                <p className="mt-2 text-[11px] text-[#6B7280]">
+                  Suggested status based on payments:{" "}
+                  <span className="font-semibold">{suggestedStatus}</span>
+                </p>
+              )}
             </div>
           </div>
 
@@ -405,6 +472,36 @@ export default function FinancialsTab({ project, onUpdate }) {
           </div>
         </CardHeader>
         <CardContent className="p-3 md:p-4 space-y-3">
+          {xeroTotalPaid > 0 && (
+            <div className="mb-3 flex items-center justify-between text-[11px] text-[#4B5563] bg-[#F3F4F6] rounded px-2 py-1">
+              <span>
+                Xero payments total:{" "}
+                <span className="font-semibold">
+                  ${xeroTotalPaid.toFixed(2)}
+                </span>
+              </span>
+              <Button
+                type="button"
+                variant="outline"
+                size="xs"
+                className="h-6 text-[11px] px-2"
+                onClick={() => {
+                  const syntheticPayment = {
+                    payment_name: "Xero Payments",
+                    payment_status: xeroTotalDue === 0 ? "Paid" : "Pending",
+                    payment_amount: xeroTotalPaid,
+                    paid_date: new Date().toISOString().split("T")[0],
+                    notes: "Auto-synced summary from Xero invoices",
+                    attachments: []
+                  };
+                  const currentPayments = project.payments || [];
+                  onUpdate({ payments: [...currentPayments.filter(p => p.payment_name !== "Xero Payments"), syntheticPayment] });
+                }}
+              >
+                Apply to Payments
+              </Button>
+            </div>
+          )}
           {showAddPayment && (
             <div className="bg-[#F8F9FA] border border-[#E5E7EB] rounded-lg p-4 space-y-3">
               <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
