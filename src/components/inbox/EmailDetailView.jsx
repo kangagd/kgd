@@ -38,6 +38,8 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import EmailMessageItem from "./EmailMessageItem";
+import LinkedThreadsSection from "./LinkedThreadsSection";
+import LinkThreadToThreadModal from "./LinkThreadToThreadModal";
 
 export default function EmailDetailView({
   thread,
@@ -58,6 +60,7 @@ export default function EmailDetailView({
   const [previewAttachment, setPreviewAttachment] = useState(null);
   const [attachmentsExpanded, setAttachmentsExpanded] = useState(false);
   const [updatingPriority, setUpdatingPriority] = useState(false);
+  const [showLinkThreadModal, setShowLinkThreadModal] = useState(false);
 
   const { data: messages = [], refetch } = useQuery({
     queryKey: ['emailMessages', thread.id, thread.gmail_thread_id],
@@ -82,6 +85,21 @@ export default function EmailDetailView({
 
   const latestMessage = messages[messages.length - 1];
   const allAttachments = messages.flatMap(m => m.attachments || []);
+
+  // Fetch linked threads
+  const { data: linkedThreads = [] } = useQuery({
+    queryKey: ['linkedThreads', thread.id],
+    queryFn: async () => {
+      if (!thread.linked_thread_ids || thread.linked_thread_ids.length === 0) {
+        return [];
+      }
+      const threads = await Promise.all(
+        thread.linked_thread_ids.map(id => base44.entities.EmailThread.get(id).catch(() => null))
+      );
+      return threads.filter(t => t && !t.is_deleted);
+    },
+    enabled: !!(thread.linked_thread_ids && thread.linked_thread_ids.length > 0)
+  });
 
   const handleReply = () => {
     if (!latestMessage) return;
@@ -128,6 +146,57 @@ export default function EmailDetailView({
     navigate(createPageUrl("Projects") + `?action=create&fromEmail=${thread.id}`);
   };
 
+  const handleLinkThread = async (threadToLink) => {
+    try {
+      const currentLinked = thread.linked_thread_ids || [];
+      await base44.entities.EmailThread.update(thread.id, {
+        linked_thread_ids: [...currentLinked, threadToLink.id]
+      });
+      
+      // Also add reciprocal link
+      const otherLinked = threadToLink.linked_thread_ids || [];
+      if (!otherLinked.includes(thread.id)) {
+        await base44.entities.EmailThread.update(threadToLink.id, {
+          linked_thread_ids: [...otherLinked, thread.id]
+        });
+      }
+      
+      queryClient.invalidateQueries({ queryKey: ['linkedThreads'] });
+      queryClient.invalidateQueries({ queryKey: ['emailThreads'] });
+      toast.success('Thread linked successfully');
+      setShowLinkThreadModal(false);
+      onThreadUpdate?.();
+    } catch (error) {
+      toast.error('Failed to link thread');
+      console.error(error);
+    }
+  };
+
+  const handleUnlinkThread = async (threadIdToUnlink) => {
+    try {
+      const currentLinked = thread.linked_thread_ids || [];
+      await base44.entities.EmailThread.update(thread.id, {
+        linked_thread_ids: currentLinked.filter(id => id !== threadIdToUnlink)
+      });
+      
+      // Also remove reciprocal link
+      const otherThread = await base44.entities.EmailThread.get(threadIdToUnlink);
+      if (otherThread && otherThread.linked_thread_ids) {
+        await base44.entities.EmailThread.update(threadIdToUnlink, {
+          linked_thread_ids: otherThread.linked_thread_ids.filter(id => id !== thread.id)
+        });
+      }
+      
+      queryClient.invalidateQueries({ queryKey: ['linkedThreads'] });
+      queryClient.invalidateQueries({ queryKey: ['emailThreads'] });
+      toast.success('Thread unlinked');
+      onThreadUpdate?.();
+    } catch (error) {
+      toast.error('Failed to unlink thread');
+      console.error(error);
+    }
+  };
+
   const getSenderInitials = (name, email) => {
     if (name) {
       const parts = name.split(' ');
@@ -146,6 +215,15 @@ export default function EmailDetailView({
             thread={thread}
             onThreadUpdate={handleThreadUpdate}
             onCreateProject={userPermissions?.can_create_project_from_email ? handleCreateProjectFromAI : null}
+          />
+
+          {/* Linked Threads Section */}
+          <LinkedThreadsSection
+            linkedThreads={linkedThreads}
+            onAddLink={() => setShowLinkThreadModal(true)}
+            onRemoveLink={handleUnlinkThread}
+            onNavigateToThread={(threadId) => navigate(`?threadId=${threadId}`)}
+            canEdit={!!userPermissions?.can_link_to_project}
           />
 
           {/* Main Email Card */}
@@ -447,6 +525,15 @@ export default function EmailDetailView({
           )}
         </DialogContent>
       </Dialog>
+
+      {/* Link Thread Modal */}
+      <LinkThreadToThreadModal
+        open={showLinkThreadModal}
+        onClose={() => setShowLinkThreadModal(false)}
+        currentThreadId={thread.id}
+        existingLinkedIds={thread.linked_thread_ids || []}
+        onLink={handleLinkThread}
+      />
     </div>
   );
 }
