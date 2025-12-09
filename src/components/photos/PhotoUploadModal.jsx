@@ -11,7 +11,7 @@ import { Upload, X, Search, Sparkles, Loader2 } from "lucide-react";
 import { base44 } from "@/api/base44Client";
 import { useQuery } from "@tanstack/react-query";
 
-const TAGS = ["Before", "After", "Install", "Repair", "Service", "Maintenance", "Marketing", "Other"];
+const TAGS = ["Before", "After", "Install", "Repair", "Service", "Maintenance", "Marketing", "Custom", "4D", "Colorbond", "Other"];
 const PRODUCT_TYPES = ["Garage Door", "Gate", "Roller Shutter", "Other"];
 
 export default function PhotoUploadModal({ open, onClose, onUploadComplete, preselectedJobId = null }) {
