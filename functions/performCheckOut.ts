@@ -198,8 +198,9 @@ The summary should be a single paragraph, professional, and capture the key work
 
         // LOGISTICS AUTOMATION (Triggers C, E, F)
         try {
+            const finalStatus = (outcome === 'return_visit_required') ? newStatus : 'Completed';
             const jobType = job.job_type_name || job.job_type;
-            if (jobType && newStatus === 'Completed') {
+            if (jobType && finalStatus === 'Completed') {
                 // Find linked parts for this job
                 // Part entity has linked_logistics_jobs array containing job IDs
                 // We need to find parts where linked_logistics_jobs contains jobId
