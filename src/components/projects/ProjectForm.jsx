@@ -80,29 +80,46 @@ export default function ProjectForm({ project, onSubmit, onCancel, isSubmitting 
       const params = new URLSearchParams(window.location.search);
       const fromEmail = params.get('fromEmail');
       
+      console.log('[ProjectForm] fromEmail param:', fromEmail);
+      console.log('[ProjectForm] project prop:', project);
+      
       if (!fromEmail || project) return; // Only for new projects
       
       try {
+        console.log('[ProjectForm] Fetching thread:', fromEmail);
         // Fetch the email thread
         const threads = await base44.entities.EmailThread.filter({ id: fromEmail });
-        if (!threads || threads.length === 0) return;
+        console.log('[ProjectForm] Threads fetched:', threads);
+        
+        if (!threads || threads.length === 0) {
+          console.log('[ProjectForm] No thread found');
+          return;
+        }
         
         let thread = threads[0];
+        console.log('[ProjectForm] Thread data:', thread);
+        console.log('[ProjectForm] AI suggested fields:', thread.ai_suggested_project_fields);
         
         // Check if it's a Wix email and needs parsing
         const isWixEmail = thread.from_address?.toLowerCase() === 'no-reply@crm.wix.com' && 
                            thread.subject?.includes('You have received a new notification from KangarooGD');
         
+        console.log('[ProjectForm] Is Wix email:', isWixEmail);
+        
         if (isWixEmail && !thread.ai_suggested_project_fields) {
+          console.log('[ProjectForm] Parsing Wix email...');
           const result = await base44.functions.invoke('parseWixFormEmail', { 
             email_thread_id: thread.id 
           });
+          
+          console.log('[ProjectForm] Parse result:', result.data);
           
           if (result.data?.success) {
             // Refetch the thread to get updated data
             const updatedThreads = await base44.entities.EmailThread.filter({ id: fromEmail });
             if (updatedThreads && updatedThreads.length > 0) {
               thread = updatedThreads[0];
+              console.log('[ProjectForm] Updated thread after parsing:', thread);
             }
           }
         }
@@ -110,6 +127,7 @@ export default function ProjectForm({ project, onSubmit, onCancel, isSubmitting 
         // Apply AI-suggested fields or basic email data
         if (thread.ai_suggested_project_fields) {
           const aiSuggested = thread.ai_suggested_project_fields;
+          console.log('[ProjectForm] Applying AI suggested fields:', aiSuggested);
           
           setFormData(prev => ({
             ...prev,
@@ -130,9 +148,11 @@ export default function ProjectForm({ project, onSubmit, onCancel, isSubmitting 
               phone: aiSuggested.suggested_customer_phone || prev.phone,
               address_full: aiSuggested.suggested_address || prev.address_full
             }));
+            console.log('[ProjectForm] Pre-filled new customer data');
           }
         } else {
           // Basic email data without AI parsing
+          console.log('[ProjectForm] Using basic email data (no AI fields)');
           setFormData(prev => ({
             ...prev,
             title: thread.subject || prev.title,
@@ -142,7 +162,7 @@ export default function ProjectForm({ project, onSubmit, onCancel, isSubmitting 
           }));
         }
       } catch (error) {
-        console.error('Error loading email data:', error);
+        console.error('[ProjectForm] Error loading email data:', error);
       }
     };
     
