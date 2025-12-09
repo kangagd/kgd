@@ -326,6 +326,14 @@ export default function FinancialsTab({ project, onUpdate }) {
     }
   }, [xeroFullyPaid, project?.id, project?.financial_status]);
 
+  // Handler for manual total project value changes - locks the value
+  const handleTotalProjectValueChange = (newValue) => {
+    onUpdate({
+      total_project_value: newValue,
+      financial_value_locked: true, // lock once user overrides
+    });
+  };
+
   // Suggest financial status based on % paid
   // Payment model: Initial 50%, Second 30%, Balance 20%
   const baseValue = project.total_project_value || 0;
