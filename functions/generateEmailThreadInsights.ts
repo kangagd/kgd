@@ -41,6 +41,9 @@ function mapSource(rawSource) {
 function parseWixEmailBody(bodyText) {
   if (!bodyText) return null;
   
+  console.log('[parseWixEmailBody] Raw body text length:', bodyText.length);
+  console.log('[parseWixEmailBody] First 1000 chars:', bodyText.substring(0, 1000));
+  
   const result = {
     first_name: null,
     last_name: null,
@@ -51,23 +54,59 @@ function parseWixEmailBody(bodyText) {
     how_did_you_hear: null,
   };
 
-  const patterns = {
-    first_name: /First\s*name:\s*(.+?)(?=\n|Last|$)/i,
-    last_name: /Last\s*name:\s*(.+?)(?=\n|Phone|$)/i,
-    phone: /Phone:\s*(.+?)(?=\n|Email|$)/i,
-    email: /Email:\s*(.+?)(?=\n|Address|$)/i,
-    address: /Address:\s*(.+?)(?=\n|How can|$)/i,
-    how_can_we_help: /How\s*can\s*we\s*help\??:\s*(.+?)(?=\n|How did|$)/is,
-    how_did_you_hear: /How\s*did\s*you\s*hear\s*about\s*us\??:\s*(.+?)(?=\n|$)/i,
-  };
-
-  for (const [key, pattern] of Object.entries(patterns)) {
-    const match = bodyText.match(pattern);
-    if (match && match[1]) {
-      result[key] = match[1].trim();
+  // Extract each field line by line - more reliable
+  const lines = bodyText.split(/\r?\n/).map(line => line.trim()).filter(Boolean);
+  console.log('[parseWixEmailBody] Lines count:', lines.length);
+  
+  for (let i = 0; i < lines.length; i++) {
+    const line = lines[i];
+    
+    // First name
+    if (/^First\s*name\s*:/i.test(line)) {
+      result.first_name = line.replace(/^First\s*name\s*:\s*/i, '').trim();
+      console.log('[parseWixEmailBody] Matched first_name:', result.first_name);
+    }
+    // Last name
+    else if (/^Last\s*name\s*:/i.test(line)) {
+      result.last_name = line.replace(/^Last\s*name\s*:\s*/i, '').trim();
+      console.log('[parseWixEmailBody] Matched last_name:', result.last_name);
+    }
+    // Phone
+    else if (/^Phone\s*:/i.test(line)) {
+      result.phone = line.replace(/^Phone\s*:\s*/i, '').trim();
+      console.log('[parseWixEmailBody] Matched phone:', result.phone);
+    }
+    // Email
+    else if (/^Email\s*:/i.test(line)) {
+      result.email = line.replace(/^Email\s*:\s*/i, '').trim();
+      console.log('[parseWixEmailBody] Matched email:', result.email);
+    }
+    // Address
+    else if (/^Address\s*:/i.test(line)) {
+      result.address = line.replace(/^Address\s*:\s*/i, '').trim();
+      console.log('[parseWixEmailBody] Matched address:', result.address);
+    }
+    // How can we help - may span multiple lines
+    else if (/^How\s*can\s*we\s*help/i.test(line)) {
+      const helpText = line.replace(/^How\s*can\s*we\s*help\??:\s*/i, '').trim();
+      // Collect following lines until next field or "How did you hear"
+      let fullHelp = helpText;
+      for (let j = i + 1; j < lines.length; j++) {
+        if (/^How\s*did\s*you\s*hear/i.test(lines[j])) break;
+        if (/^(First|Last|Phone|Email|Address)\s*:/i.test(lines[j])) break;
+        fullHelp += ' ' + lines[j];
+      }
+      result.how_can_we_help = fullHelp.trim();
+      console.log('[parseWixEmailBody] Matched how_can_we_help:', result.how_can_we_help);
+    }
+    // How did you hear
+    else if (/^How\s*did\s*you\s*hear/i.test(line)) {
+      result.how_did_you_hear = line.replace(/^How\s*did\s*you\s*hear\s*about\s*us\??:\s*/i, '').trim();
+      console.log('[parseWixEmailBody] Matched how_did_you_hear:', result.how_did_you_hear);
     }
   }
 
+  console.log('[parseWixEmailBody] Final parsed result:', result);
   return result;
 }
 
