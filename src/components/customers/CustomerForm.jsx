@@ -524,6 +524,7 @@ export default function CustomerForm({ customer, onSubmit, onCancel, isSubmittin
                   <SelectItem value="Builder">Builder</SelectItem>
                   <SelectItem value="Real Estate">Real Estate</SelectItem>
                   <SelectItem value="Supplier">Supplier</SelectItem>
+                  <SelectItem value="Other">Other</SelectItem>
                 </SelectContent>
               </Select>
             </div>
@@ -535,7 +536,7 @@ export default function CustomerForm({ customer, onSubmit, onCancel, isSubmittin
                 onChange={(addressData) => setNewOrgData({ 
                   ...newOrgData, 
                   ...addressData, 
-                  address: addressData.address_full // Keep legacy field for backward compatibility
+                  address: addressData.address_full
                 })}
                 className="border-2 border-slate-300"
               />
@@ -556,92 +557,6 @@ export default function CustomerForm({ customer, onSubmit, onCancel, isSubmittin
               className="bg-[#fae008] hover:bg-[#e5d007] text-[#000000] font-bold"
             >
               {isCreatingOrg ? 'Creating...' : 'Create Organisation'}
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
-
-      {/* New Organisation Dialog */}
-      <Dialog open={showNewOrgDialog} onOpenChange={setShowNewOrgDialog}>
-        <DialogContent className="max-w-2xl">
-          <DialogHeader>
-            <DialogTitle>Add New Organisation</DialogTitle>
-          </DialogHeader>
-          <div className="space-y-4 py-4">
-            <div className="space-y-2">
-              <Label htmlFor="new_org_name">Organisation Name *</Label>
-              <Input
-                id="new_org_name"
-                value={newOrgData.name}
-                onChange={(e) => setNewOrgData({ ...newOrgData, name: e.target.value })}
-                placeholder="Organisation name"
-              />
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="new_org_type">Organisation Type</Label>
-              <Select
-                value={newOrgData.organisation_type}
-                onValueChange={(val) => setNewOrgData({ ...newOrgData, organisation_type: val })}
-              >
-                <SelectTrigger>
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="Strata">Strata</SelectItem>
-                  <SelectItem value="Builder">Builder</SelectItem>
-                  <SelectItem value="Real Estate">Real Estate</SelectItem>
-                  <SelectItem value="Supplier">Supplier</SelectItem>
-                  <SelectItem value="Other">Other</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-            <div className="grid md:grid-cols-2 gap-4">
-              <div className="space-y-2">
-                <Label htmlFor="new_org_phone">Phone</Label>
-                <Input
-                  id="new_org_phone"
-                  value={newOrgData.phone}
-                  onChange={(e) => setNewOrgData({ ...newOrgData, phone: e.target.value })}
-                  placeholder="Phone number"
-                />
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="new_org_email">Email</Label>
-                <Input
-                  id="new_org_email"
-                  type="email"
-                  value={newOrgData.email}
-                  onChange={(e) => setNewOrgData({ ...newOrgData, email: e.target.value })}
-                  placeholder="Email address"
-                />
-              </div>
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="new_org_address">Address</Label>
-              <AddressAutocomplete
-                id="new_org_address"
-                value={newOrgData.address_full || ""}
-                onChange={(addressData) => setNewOrgData({ 
-                  ...newOrgData, 
-                  ...addressData
-                })}
-              />
-            </div>
-          </div>
-          <DialogFooter>
-            <Button
-              type="button"
-              variant="outline"
-              onClick={() => setShowNewOrgDialog(false)}
-            >
-              Cancel
-            </Button>
-            <Button
-              onClick={() => createOrgMutation.mutate({ ...newOrgData, status: "active" })}
-              disabled={!newOrgData.name || createOrgMutation.isPending}
-              className="bg-[#FAE008] text-[#111827] hover:bg-[#E5CF07]"
-            >
-              {createOrgMutation.isPending ? 'Creating...' : 'Create Organisation'}
             </Button>
           </DialogFooter>
         </DialogContent>
