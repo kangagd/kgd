@@ -39,6 +39,12 @@ export default function LogisticsTimeline({ project }) {
     enabled: !!project?.id,
   });
 
+  const { data: purchaseOrders = [] } = useQuery({
+    queryKey: ["purchase-orders-for-logistics", project.id],
+    queryFn: () => base44.entities.PurchaseOrder.list(),
+    enabled: !!project?.id,
+  });
+
   const getRelevantTradesForJob = (job, trades) => {
     return (trades || []).filter((t) => {
       if (!t.is_required) return false;
@@ -102,11 +108,14 @@ export default function LogisticsTimeline({ project }) {
                   <div>
                     <div className="font-semibold text-slate-900 flex items-center gap-2 flex-wrap">
                       {job.job_type_name || job.job_type}
-                      {isStockJob && (
-                        <span className="inline-flex items-center rounded-full bg-amber-100 px-2 py-0.5 text-[10px] font-medium text-amber-700">
-                          PO
-                        </span>
-                      )}
+                      {isStockJob && (() => {
+                        const po = purchaseOrders.find(p => p.id === job.purchase_order_id);
+                        return (
+                          <span className="inline-flex items-center rounded-full bg-amber-100 px-2 py-0.5 text-[10px] font-medium text-amber-700">
+                            {po?.po_number ? `PO #${po.po_number}` : 'PO'}
+                          </span>
+                        );
+                      })()}
                       {(hasRequiredTrades || isThirdPartyJob) && (
                         <span className="inline-flex items-center rounded-full bg-purple-100 px-2 py-0.5 text-[10px] font-medium text-purple-700">
                           3rd party
@@ -114,7 +123,7 @@ export default function LogisticsTimeline({ project }) {
                       )}
                       <span className="text-xs font-normal text-slate-500">#{job.job_number}</span>
                     </div>
-                    <div className="text-xs text-slate-500 flex items-center gap-3 mt-1">
+                    <div className="text-xs text-slate-500 flex items-center gap-3 mt-1 flex-wrap">
                       <span className="flex items-center gap-1">
                         <Calendar className="w-3 h-3" />
                         {format(date, 'MMM d, yyyy')}
@@ -126,6 +135,14 @@ export default function LogisticsTimeline({ project }) {
                         </span>
                       )}
                     </div>
+                    {isStockJob && (() => {
+                      const po = purchaseOrders.find(p => p.id === job.purchase_order_id);
+                      return po?.supplier_name ? (
+                        <div className="text-xs text-slate-600 mt-1 font-medium">
+                          {po.supplier_name}
+                        </div>
+                      ) : null;
+                    })()}
                     {hasRequiredTrades && (
                       <div className="mt-2 space-y-1">
                         <p className="text-[11px] text-amber-900 font-medium">
