@@ -447,8 +447,7 @@ export default function FinancialsTab({ project, onUpdate }) {
                       }`}
                       onClick={() => {
                         const newValue = isActive ? null : option.value;
-                        console.log('Financial status update:', { from: project.financial_status, to: newValue });
-                        onUpdate({ financial_status: newValue });
+                        handleFinancialStatusChange(newValue);
                       }}
                     >
                       {option.label}
