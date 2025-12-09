@@ -2,13 +2,7 @@ import React from "react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { MapPin, Phone, Mail, Users } from "lucide-react";
-
-const organisationTypeColors = {
-  "Strata": "bg-blue-100 text-blue-700",
-  "Builder": "bg-green-100 text-green-700",
-  "Real Estate": "bg-purple-100 text-purple-700",
-  "Supplier": "bg-amber-100 text-amber-700"
-};
+import { OrganisationTypeBadge } from "../common/StatusBadge";
 
 export default function OrganisationModalView({ organisation, customerCount = 0 }) {
   const handleCall = () => {
