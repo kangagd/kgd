@@ -62,10 +62,20 @@ export default function QuotesSection({
 
   const handleQuoteCreated = () => {
     queryClient.invalidateQueries({ queryKey: filterKey });
+    // Refetch project data to update primary_quote_id and other fields
+    if (projectId) {
+      queryClient.invalidateQueries({ queryKey: ['project', projectId] });
+      queryClient.invalidateQueries({ queryKey: ['projects'] });
+    }
   };
 
   const handleQuoteUpdate = () => {
     queryClient.invalidateQueries({ queryKey: filterKey });
+    // Refetch project data
+    if (projectId) {
+      queryClient.invalidateQueries({ queryKey: ['project', projectId] });
+      queryClient.invalidateQueries({ queryKey: ['projects'] });
+    }
   };
 
   // Function to get a fresh link from PandaDoc using Session API
@@ -97,10 +107,8 @@ export default function QuotesSection({
     }
   }, [customer, project, job]);
 
-  // For technicians, only show accepted quotes
-  const visibleQuotes = isAdmin 
-    ? quotes 
-    : quotes.filter(q => q.status === 'Accepted');
+  // For technicians, show all quotes (read-only)
+  const visibleQuotes = quotes;
 
   if (!projectId && !jobId) {
     return null;
@@ -109,14 +117,14 @@ export default function QuotesSection({
   // Technician view - compact read-only
   if (!isAdmin) {
     if (visibleQuotes.length === 0) {
-      return null; // Don't show section at all for technicians if no accepted quotes
+      return null; 
     }
 
     return (
       <div className="space-y-3">
         <h3 className="text-[16px] font-semibold text-[#111827] flex items-center gap-2">
           <FileText className="w-5 h-5 text-[#FAE008]" />
-          Accepted Quotes
+          Quotes
         </h3>
         <div className="space-y-2">
           {visibleQuotes.map((quote) => (
