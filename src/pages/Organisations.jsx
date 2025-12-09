@@ -12,8 +12,8 @@ import OrganisationDetails from "../components/organisations/OrganisationDetails
 import EntityModal from "../components/common/EntityModal.jsx";
 import OrganisationModalView from "../components/organisations/OrganisationModalView";
 import { createPageUrl } from "@/utils";
-import { OrganisationTypeBadge } from "@/components/common/StatusBadge";
 import BackButton from "../components/common/BackButton";
+import { OrganisationTypeBadge } from "../components/common/StatusBadge";
 
 export default function Organisations() {
   const [searchTerm, setSearchTerm] = useState("");
