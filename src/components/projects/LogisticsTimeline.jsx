@@ -39,10 +39,10 @@ export default function LogisticsTimeline({ project }) {
     enabled: !!project?.id,
   });
 
+  // Fetch all POs to match with jobs
   const { data: purchaseOrders = [] } = useQuery({
-    queryKey: ["purchase-orders-for-logistics", project.id],
+    queryKey: ["purchase-orders-for-logistics"],
     queryFn: () => base44.entities.PurchaseOrder.list(),
-    enabled: !!project?.id,
   });
 
   const getRelevantTradesForJob = (job, trades) => {
