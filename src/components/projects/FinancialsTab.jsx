@@ -651,36 +651,7 @@ export default function FinancialsTab({ project, onUpdate }) {
           </div>
         </CardHeader>
         <CardContent className="p-3 md:p-4 space-y-3">
-          {xeroTotalPaid > 0 && (
-            <div className="mb-3 flex items-center justify-between text-[11px] text-[#4B5563] bg-[#F3F4F6] rounded px-2 py-1">
-              <span>
-                Xero payments total:{" "}
-                <span className="font-semibold">
-                  ${xeroTotalPaid.toFixed(2)}
-                </span>
-              </span>
-              <Button
-                type="button"
-                variant="outline"
-                size="xs"
-                className="h-6 text-[11px] px-2"
-                onClick={() => {
-                  const syntheticPayment = {
-                    payment_name: "Xero Payments",
-                    payment_status: xeroTotalDue === 0 ? "Paid" : "Pending",
-                    payment_amount: xeroTotalPaid,
-                    paid_date: new Date().toISOString().split("T")[0],
-                    notes: "Auto-synced summary from Xero invoices",
-                    attachments: []
-                  };
-                  const currentPayments = project.payments || [];
-                  onUpdate({ payments: [...currentPayments.filter(p => p.payment_name !== "Xero Payments"), syntheticPayment] });
-                }}
-              >
-                Apply to Payments
-              </Button>
-            </div>
-          )}
+
           {showAddPayment && (
             <div className="bg-[#F8F9FA] border border-[#E5E7EB] rounded-lg p-4 space-y-3">
               <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
