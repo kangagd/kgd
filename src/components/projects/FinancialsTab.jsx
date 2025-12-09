@@ -309,6 +309,54 @@ export default function FinancialsTab({ project, onUpdate }) {
     autoQuoteValue,
   ]);
 
+  // Auto-sync Xero payments into project.payments
+  useEffect(() => {
+    if (!project || !Array.isArray(projectXeroInvoices)) return;
+
+    const xeroPaid = projectXeroInvoices.reduce(
+      (sum, inv) => sum + (inv.amount_paid || 0),
+      0
+    );
+
+    // If no paid amount, do nothing
+    if (xeroPaid <= 0) return;
+
+    const currentPayments = project.payments || [];
+
+    // Try to find existing Xero-synced payment
+    const existingIndex = currentPayments.findIndex(
+      (p) => p.is_xero_synced
+    );
+
+    // For now, use today as payment date; can refine later
+    const latestPaymentDate = new Date().toISOString().split("T")[0];
+
+    const xeroPayment = {
+      payment_name: "Xero Payments",
+      payment_status: "Paid", // auto-mark as paid
+      payment_amount: xeroPaid,
+      paid_date: latestPaymentDate,
+      notes: "Automatically synced from Xero invoices",
+      attachments: [],
+      is_xero_synced: true,
+    };
+
+    let newPayments;
+    if (existingIndex >= 0) {
+      newPayments = [...currentPayments];
+      newPayments[existingIndex] = {
+        ...newPayments[existingIndex],
+        ...xeroPayment,
+      };
+    } else {
+      newPayments = [...currentPayments, xeroPayment];
+    }
+
+    base44.entities.Project.update(project.id, {
+      payments: newPayments,
+    });
+  }, [project?.id, projectXeroInvoices]);
+
   // Auto-mark financial status if Xero shows fully paid (with guardrails)
   useEffect(() => {
     if (!xeroFullyPaid || !project?.id) return;
