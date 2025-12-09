@@ -9,6 +9,8 @@ import { base44 } from "@/api/base44Client";
 import { useQuery } from "@tanstack/react-query";
 import { useNavigate } from "react-router-dom";
 import { createPageUrl } from "@/utils";
+import { OrganisationTypeBadge } from "../common/StatusBadge";
+import BackButton from "../common/BackButton";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -20,14 +22,6 @@ import {
   AlertDialogTitle,
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
-
-const organisationTypeColors = {
-  "Strata": "bg-purple-100 text-purple-700 border-purple-200",
-  "Builder": "bg-blue-100 text-blue-700 border-blue-200",
-  "Real Estate": "bg-green-100 text-green-700 border-green-200",
-  "Supplier": "bg-orange-100 text-orange-700 border-orange-200",
-  "Other": "bg-slate-100 text-slate-700 border-slate-200",
-};
 
 export default function OrganisationDetails({ organisation, onClose, onEdit, onDelete }) {
   const navigate = useNavigate();
@@ -60,9 +54,7 @@ export default function OrganisationDetails({ organisation, onClose, onEdit, onD
                   <CardTitle className="text-2xl font-bold text-[#000000] tracking-tight">
                     {organisation.name}
                   </CardTitle>
-                  <Badge className={`${organisationTypeColors[organisation.organisation_type]} font-semibold border-2`}>
-                    {organisation.organisation_type}
-                  </Badge>
+                  <OrganisationTypeBadge value={organisation.organisation_type} />
                   {organisation.status === 'inactive' && (
                     <Badge variant="outline" className="bg-slate-100 text-slate-600 border-slate-300">
                       Inactive
