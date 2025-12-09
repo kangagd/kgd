@@ -75,6 +75,9 @@ export default function LogisticsTimeline({ project }) {
           const isProjectJob = !!job.project_id;
           const isThirdPartyJob = !!job.third_party_trade_id;
           
+          // Find the PO for this job
+          const linkedPO = isStockJob ? purchaseOrders.find(p => p.id === job.purchase_order_id) : null;
+          
           const relevantTrades = getRelevantTradesForJob(job, projectTrades);
           const hasRequiredTrades = relevantTrades.length > 0;
           const anyUnbooked = relevantTrades.some((t) => !t.is_booked);
@@ -108,14 +111,16 @@ export default function LogisticsTimeline({ project }) {
                   <div>
                     <div className="font-semibold text-slate-900 flex items-center gap-2 flex-wrap">
                       {job.job_type_name || job.job_type}
-                      {isStockJob && (() => {
-                        const po = purchaseOrders.find(p => p.id === job.purchase_order_id);
-                        return (
-                          <span className="inline-flex items-center rounded-full bg-amber-100 px-2 py-0.5 text-[10px] font-medium text-amber-700">
-                            {po?.po_number ? `PO #${po.po_number}` : 'PO'}
-                          </span>
-                        );
-                      })()}
+                      {linkedPO && (
+                        <span className="inline-flex items-center rounded-full bg-amber-100 px-2 py-0.5 text-[10px] font-medium text-amber-700">
+                          {linkedPO.po_number ? `PO #${linkedPO.po_number}` : 'PO'}
+                        </span>
+                      )}
+                      {isStockJob && !linkedPO && (
+                        <span className="inline-flex items-center rounded-full bg-amber-100 px-2 py-0.5 text-[10px] font-medium text-amber-700">
+                          PO
+                        </span>
+                      )}
                       {(hasRequiredTrades || isThirdPartyJob) && (
                         <span className="inline-flex items-center rounded-full bg-purple-100 px-2 py-0.5 text-[10px] font-medium text-purple-700">
                           3rd party
@@ -135,14 +140,11 @@ export default function LogisticsTimeline({ project }) {
                         </span>
                       )}
                     </div>
-                    {isStockJob && (() => {
-                      const po = purchaseOrders.find(p => p.id === job.purchase_order_id);
-                      return po?.supplier_name ? (
-                        <div className="text-xs text-slate-600 mt-1 font-medium">
-                          {po.supplier_name}
-                        </div>
-                      ) : null;
-                    })()}
+                    {linkedPO?.supplier_name && (
+                      <div className="text-xs text-slate-600 mt-1 font-medium">
+                        Supplier: {linkedPO.supplier_name}
+                      </div>
+                    )}
                     {hasRequiredTrades && (
                       <div className="mt-2 space-y-1">
                         <p className="text-[11px] text-amber-900 font-medium">
