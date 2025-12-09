@@ -4,7 +4,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Building2, Search, Plus, Phone, Mail, MapPin, Users, Hash } from "lucide-react";
+import { Building2, Search, Plus, Phone, Mail, MapPin, Users, Hash, Eye } from "lucide-react";
 import { base44 } from "@/api/base44Client";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import OrganisationForm from "../components/organisations/OrganisationForm";
@@ -102,7 +102,8 @@ export default function Organisations() {
   };
 
   const handleOpenFullOrganisation = (organisation) => {
-    window.open(`${createPageUrl("Organisations")}?organisationId=${organisation.id}`, '_blank');
+    setModalOrganisation(null);
+    setSelectedOrganisation(organisation);
   };
 
   const filteredOrganisations = organisations.filter(org => {
@@ -223,11 +224,25 @@ export default function Organisations() {
             <Card
               key={org.id}
               className="hover:shadow-lg transition-all duration-200 cursor-pointer hover:border-[#FAE008] border border-[#E5E7EB] rounded-xl relative group"
-              onClick={() => setModalOrganisation(org)}
+              onClick={(e) => {
+                e.stopPropagation();
+                setSelectedOrganisation(org);
+              }}
             >
+              <Button
+                variant="ghost"
+                size="icon"
+                className="absolute top-2 right-2 h-8 w-8 rounded-lg hover:bg-[#F3F4F6] z-10"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  setModalOrganisation(org);
+                }}
+              >
+                <Eye className="w-4 h-4 text-[#6B7280]" />
+              </Button>
               <CardContent className="p-6">
                 <div className="flex items-start justify-between">
-                  <div className="flex-1">
+                  <div className="flex-1 pr-8">
                     <div className="flex items-center gap-3 mb-3">
                       <h3 className="text-[22px] font-semibold text-[#111827] leading-[1.2]">
                         {org.name}
