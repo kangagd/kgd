@@ -345,10 +345,27 @@ export default function ProjectDetails({ project: initialProject, onClose, onEdi
 
   const updateProjectMutation = useMutation({
     mutationFn: ({ field, value }) => base44.entities.Project.update(project.id, { [field]: value }),
-    onSuccess: () => {
+    onSuccess: (data, variables) => {
+      // Optimistically update the cache with the new value
+      queryClient.setQueryData(['project', project.id], (oldData) => ({
+        ...oldData,
+        [variables.field]: variables.value
+      }));
       queryClient.invalidateQueries({ queryKey: ['projects'] });
       queryClient.invalidateQueries({ queryKey: ['allProjects'] });
-      queryClient.invalidateQueries({ queryKey: ['project', project.id] });
+    }
+  });
+
+  const updateProjectFieldsMutation = useMutation({
+    mutationFn: (fields) => base44.entities.Project.update(project.id, fields),
+    onSuccess: (data, fields) => {
+      // Optimistically update the cache with all new values
+      queryClient.setQueryData(['project', project.id], (oldData) => ({
+        ...oldData,
+        ...fields
+      }));
+      queryClient.invalidateQueries({ queryKey: ['projects'] });
+      queryClient.invalidateQueries({ queryKey: ['allProjects'] });
     }
   });
 
