@@ -15,44 +15,50 @@ Deno.serve(async (req) => {
             // Handle creation
             let jobData = { ...data };
 
-            // Auto-assign job number
-            if (jobData.project_id) {
-                // Project job - use project number with alpha suffix
-                const project = await base44.asServiceRole.entities.Project.get(jobData.project_id);
-                const projectNumber = project.project_number;
-                
-                // Find existing jobs for this project to determine next suffix
-                const projectJobs = await base44.asServiceRole.entities.Job.filter({ 
-                    project_id: jobData.project_id 
-                });
-                const alphabet = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ';
-                const suffix = alphabet[projectJobs.length] || `Z${projectJobs.length - 25}`;
-                
-                jobData.job_number = `${projectNumber}-${suffix}`;
-                jobData.project_number = projectNumber;
-            } else {
-                // Standalone job - use unique number
-                const allJobs = await base44.asServiceRole.entities.Job.list('-created_date', 1);
-                const allProjects = await base44.asServiceRole.entities.Project.list('-project_number', 1);
-                
-                // Find highest number used across both projects and standalone jobs
-                let highestNumber = 4999;
-                
-                if (allProjects.length > 0 && allProjects[0].project_number) {
-                    highestNumber = Math.max(highestNumber, allProjects[0].project_number);
-                }
-                
-                // Check existing standalone job numbers
-                const standaloneJobs = allJobs.filter(j => !j.project_id && typeof j.job_number === 'string' && !j.job_number.includes('-'));
-                for (const job of standaloneJobs) {
-                    const num = parseInt(job.job_number);
-                    if (!isNaN(num)) {
-                        highestNumber = Math.max(highestNumber, num);
+            // Check if this is a logistics job
+            const jobTypeName = (jobData.job_type_name || jobData.job_type || '').toLowerCase();
+            const isLogisticsJob = /delivery|pickup|return|logistics/.test(jobTypeName);
+
+            // Auto-assign job number (skip for logistics jobs)
+            if (!isLogisticsJob) {
+                if (jobData.project_id) {
+                    // Project job - use project number with alpha suffix
+                    const project = await base44.asServiceRole.entities.Project.get(jobData.project_id);
+                    const projectNumber = project.project_number;
+                    
+                    // Find existing jobs for this project to determine next suffix
+                    const projectJobs = await base44.asServiceRole.entities.Job.filter({ 
+                        project_id: jobData.project_id 
+                    });
+                    const alphabet = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ';
+                    const suffix = alphabet[projectJobs.length] || `Z${projectJobs.length - 25}`;
+                    
+                    jobData.job_number = `${projectNumber}-${suffix}`;
+                    jobData.project_number = projectNumber;
+                } else {
+                    // Standalone job - use unique number
+                    const allJobs = await base44.asServiceRole.entities.Job.list('-created_date', 1);
+                    const allProjects = await base44.asServiceRole.entities.Project.list('-project_number', 1);
+                    
+                    // Find highest number used across both projects and standalone jobs
+                    let highestNumber = 4999;
+                    
+                    if (allProjects.length > 0 && allProjects[0].project_number) {
+                        highestNumber = Math.max(highestNumber, allProjects[0].project_number);
                     }
+                    
+                    // Check existing standalone job numbers
+                    const standaloneJobs = allJobs.filter(j => !j.project_id && typeof j.job_number === 'string' && !j.job_number.includes('-'));
+                    for (const job of standaloneJobs) {
+                        const num = parseInt(job.job_number);
+                        if (!isNaN(num)) {
+                            highestNumber = Math.max(highestNumber, num);
+                        }
+                    }
+                    
+                    jobData.job_number = String(highestNumber + 1);
+                    jobData.project_number = null;
                 }
-                
-                jobData.job_number = String(highestNumber + 1);
-                jobData.project_number = null;
             }
 
             // Auto-link contract logic
