@@ -145,9 +145,9 @@ The summary should be a single paragraph, professional, and capture the key work
             throw new Error(`JobSummary creation failed: ${e.message}`);
         }
 
-        // Update Job - mark as completed if outcome is not return_visit_required
+        // Update Job - mark as completed unless outcome is return_visit_required
         try {
-            const finalStatus = (outcome && outcome !== 'return_visit_required') ? 'Completed' : newStatus;
+            const finalStatus = (outcome === 'return_visit_required') ? newStatus : 'Completed';
             await base44.asServiceRole.entities.Job.update(jobId, {
                 overview: overview,
                 next_steps: nextSteps,
