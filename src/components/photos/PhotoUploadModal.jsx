@@ -94,10 +94,10 @@ export default function PhotoUploadModal({ open, onClose, onUploadComplete, pres
       const { file_url } = await base44.integrations.Core.UploadFile({ file: fileToAnalyze });
 
       const response = await base44.integrations.Core.InvokeLLM({
-        prompt: `Analyze this photo for a field service technician app.
+        prompt: `Analyze this photo or video for a field service technician app.
 Identify the product type (Garage Door, Gate, Roller Shutter, Other) and suggest relevant tags (Before, After, Install, Repair, Service, Maintenance, Marketing, Other).
 Also provide a brief description of what is seen (e.g. "Damaged panel on sectional door" or "Completed installation of roller shutter").
-Check if the photo is high quality and good for marketing (is_marketing_worthy).
+Check if the content is high quality and good for marketing (is_marketing_worthy).
 
 Return ONLY a JSON object.`,
         file_urls: [file_url],
@@ -167,7 +167,7 @@ Return ONLY a JSON object.`,
         const shouldSaveToCentral = aiAnalysis?.is_marketing_approved || isMarketingApproved;
         
         if (!shouldSaveToCentral) {
-          console.log('Photo not approved for marketing, skipping save:', file.name);
+          console.log('Content not approved for marketing, skipping save:', file.name);
           return null;
         }
 
@@ -205,7 +205,7 @@ Return ONLY a JSON object.`,
       const rejectedCount = files.length - savedCount;
 
       if (rejectedCount > 0) {
-        alert(`${savedCount} photo${savedCount !== 1 ? 's' : ''} saved. ${rejectedCount} photo${rejectedCount !== 1 ? 's were' : ' was'} rejected (not marketing quality).`);
+        alert(`${savedCount} item${savedCount !== 1 ? 's' : ''} saved. ${rejectedCount} item${rejectedCount !== 1 ? 's were' : ' was'} rejected (not marketing quality).`);
       }
       
       if (onUploadComplete) onUploadComplete();
@@ -295,7 +295,7 @@ Return ONLY a JSON object.`,
                   {analyzing ? (
                     <>
                       <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                      Analyzing photo...
+                      Analyzing content...
                     </>
                   ) : (
                     <>

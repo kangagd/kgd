@@ -16,14 +16,15 @@ Deno.serve(async (req) => {
     }
 
     const result = await base44.integrations.Core.InvokeLLM({
-      prompt: `Analyze this photo and determine if it's suitable for marketing use. 
+      prompt: `Analyze this photo or video and determine if it's suitable for marketing use. 
       
-      Marketing-suitable photos should be:
+      Marketing-suitable content should be:
       - Professional quality (good lighting, clear focus, not blurry)
       - Show completed/finished work (not in-progress or messy)
       - Visually appealing and presentable to customers
       - Free of inappropriate content
       - Show products/installations in their best light
+      - For videos: smooth footage, good audio quality (if applicable)
       
       Return your analysis.`,
       file_urls: [image_url],
