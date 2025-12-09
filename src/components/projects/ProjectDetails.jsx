@@ -859,32 +859,6 @@ Format as HTML bullet points using <ul> and <li> tags. Include only the most cri
 
     // Update project with new images
     updateProjectMutation.mutate({ field: 'image_urls', value: urls });
-    
-    // Create Photo records for any new images
-    const existingUrls = project.image_urls || [];
-    const newUrls = Array.isArray(urls) ? urls.filter(url => !existingUrls.includes(url)) : [];
-    
-    if (newUrls.length > 0) {
-      const user = await base44.auth.me();
-      for (const url of newUrls) {
-        try {
-          await base44.entities.Photo.create({
-            image_url: url,
-            project_id: project.id,
-            project_name: project.title,
-            customer_id: project.customer_id,
-            customer_name: project.customer_name,
-            address: project.address,
-            uploaded_at: new Date().toISOString(),
-            technician_email: user.email,
-            technician_name: user.full_name
-          });
-        } catch (error) {
-          console.error('Failed to create photo record:', error);
-        }
-      }
-      queryClient.invalidateQueries({ queryKey: ['photos'] });
-    }
   };
 
   const handleAddDoor = () => {

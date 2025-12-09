@@ -807,34 +807,6 @@ export default function JobDetails({ job: initialJob, onClose, onStatusChange, o
 
     // Update job with new images
     updateJobMutation.mutate({ field: 'image_urls', value: urls });
-    
-    // Create Photo records for any new images
-    const existingUrls = job.image_urls || [];
-    const newUrls = Array.isArray(urls) ? urls.filter(url => !existingUrls.includes(url)) : [];
-    
-    if (newUrls.length > 0 && user) {
-      for (const url of newUrls) {
-        try {
-          await base44.entities.Photo.create({
-            image_url: url,
-            job_id: job.id,
-            job_number: job.job_number,
-            customer_id: job.customer_id,
-            customer_name: job.customer_name,
-            project_id: job.project_id || undefined,
-            project_name: job.project_name || undefined,
-            address: job.address,
-            uploaded_at: new Date().toISOString(),
-            product_type: job.product || undefined,
-            technician_email: user.email,
-            technician_name: user.full_name
-          });
-        } catch (error) {
-          console.error('Failed to create photo record:', error);
-        }
-      }
-      queryClient.invalidateQueries({ queryKey: ['photos'] });
-    }
   };
 
   const handleQuoteChange = (url) => {
