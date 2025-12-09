@@ -26,6 +26,7 @@ export default function CustomerForm({ customer, onSubmit, onCancel, isSubmittin
   const [formData, setFormData] = useState(customer || {
     name: "",
     customer_type: "",
+    sp_number: "",
     source: "",
     source_details: "",
     phone: "",
@@ -53,7 +54,6 @@ export default function CustomerForm({ customer, onSubmit, onCancel, isSubmittin
   const [newOrgData, setNewOrgData] = useState({
     name: "",
     organisation_type: undefined,
-    sp_number: "",
     address: "", // Legacy field for backward compatibility
     address_full: "",
     address_street: "",
@@ -159,9 +159,6 @@ export default function CustomerForm({ customer, onSubmit, onCancel, isSubmittin
       if (newOrgData.organisation_type) {
         submitData.organisation_type = newOrgData.organisation_type;
       }
-      if (newOrgData.sp_number?.trim()) {
-        submitData.sp_number = newOrgData.sp_number.trim();
-      }
       if (newOrgData.address_full) {
         submitData.address_full = newOrgData.address_full;
         submitData.address = newOrgData.address_full;
@@ -191,7 +188,6 @@ export default function CustomerForm({ customer, onSubmit, onCancel, isSubmittin
       setNewOrgData({
         name: "",
         organisation_type: undefined,
-        sp_number: "",
         address: "",
         address_full: "",
         address_street: "",
@@ -336,6 +332,18 @@ export default function CustomerForm({ customer, onSubmit, onCancel, isSubmittin
                 </SelectContent>
               </Select>
             </div>
+
+            {formData.customer_type === "Strata - Owner" && (
+              <div className="space-y-2">
+                <Label htmlFor="sp_number">SP Number</Label>
+                <Input
+                  id="sp_number"
+                  value={formData.sp_number}
+                  onChange={(e) => setFormData({ ...formData, sp_number: e.target.value })}
+                  placeholder="Strata Plan number"
+                />
+              </div>
+            )}
 
             <div className="space-y-2">
               <Label htmlFor="source">Source</Label>
@@ -519,18 +527,6 @@ export default function CustomerForm({ customer, onSubmit, onCancel, isSubmittin
                 </SelectContent>
               </Select>
             </div>
-            {newOrgData.organisation_type === "Strata" && (
-              <div className="space-y-2">
-                <Label htmlFor="new_org_sp">SP Number</Label>
-                <Input
-                  id="new_org_sp"
-                  value={newOrgData.sp_number}
-                  onChange={(e) => setNewOrgData({ ...newOrgData, sp_number: e.target.value })}
-                  placeholder="Strata Plan number"
-                  className="border-2 border-slate-300"
-                />
-              </div>
-            )}
             <div className="space-y-2">
               <Label htmlFor="new_org_address">Address</Label>
               <AddressAutocomplete

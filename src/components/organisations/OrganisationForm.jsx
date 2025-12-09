@@ -12,7 +12,6 @@ export default function OrganisationForm({ organisation, onSubmit, onCancel, isS
   const [formData, setFormData] = useState(organisation || {
     name: "",
     organisation_type: undefined,
-    sp_number: "",
     address: "",
     phone: "",
     email: "",
@@ -26,9 +25,6 @@ export default function OrganisationForm({ organisation, onSubmit, onCancel, isS
     const submitData = { ...formData };
     if (!submitData.organisation_type) {
       delete submitData.organisation_type;
-    }
-    if (!submitData.sp_number) {
-      delete submitData.sp_number;
     }
     if (!submitData.address) {
       delete submitData.address;
@@ -105,19 +101,6 @@ export default function OrganisationForm({ organisation, onSubmit, onCancel, isS
               </Select>
             </div>
           </div>
-
-          {formData.organisation_type === "Strata" && (
-            <div className="space-y-2">
-              <Label htmlFor="sp_number" className="text-sm font-semibold text-[#000000]">SP Number</Label>
-              <Input
-                id="sp_number"
-                value={formData.sp_number}
-                onChange={(e) => setFormData({ ...formData, sp_number: e.target.value })}
-                placeholder="Strata Plan number"
-                className="border-2 border-slate-300 focus:border-[#fae008] focus:ring-2 focus:ring-[#fae008]/20 transition-all"
-              />
-            </div>
-          )}
 
           <div className="space-y-2">
             <Label htmlFor="address" className="text-sm font-semibold text-[#000000]">Address</Label>
