@@ -55,6 +55,46 @@ Deno.serve(async (req) => {
             previousJob = await base44.asServiceRole.entities.Job.get(id);
             if (!previousJob) return Response.json({ error: 'Job not found' }, { status: 404 });
             job = await base44.asServiceRole.entities.Job.update(id, data);
+
+            // Auto-mark PO items as received when logistics job is completed
+            if (job.purchase_order_id && job.status === 'Completed' && previousJob.status !== 'Completed') {
+                const checkedItems = job.checked_items || {};
+                const checkedItemIds = Object.keys(checkedItems).filter(itemId => checkedItems[itemId]);
+
+                if (checkedItemIds.length > 0) {
+                    // Get all PO lines for this PO
+                    const poLines = await base44.asServiceRole.entities.PurchaseOrderLine.filter({
+                        purchase_order_id: job.purchase_order_id
+                    });
+
+                    // Mark checked items as received
+                    for (const line of poLines) {
+                        if (checkedItemIds.includes(line.id) && line.quantity_received < line.quantity_ordered) {
+                            await base44.asServiceRole.entities.PurchaseOrderLine.update(line.id, {
+                                quantity_received: line.quantity_ordered,
+                                received_at: new Date().toISOString()
+                            });
+                        }
+                    }
+
+                    // Update PO status if all lines are now received
+                    const allLines = await base44.asServiceRole.entities.PurchaseOrderLine.filter({
+                        purchase_order_id: job.purchase_order_id
+                    });
+                    const allReceived = allLines.every(line => line.quantity_received >= line.quantity_ordered);
+                    const someReceived = allLines.some(line => line.quantity_received > 0);
+
+                    if (allReceived) {
+                        await base44.asServiceRole.entities.PurchaseOrder.update(job.purchase_order_id, {
+                            status: 'received'
+                        });
+                    } else if (someReceived) {
+                        await base44.asServiceRole.entities.PurchaseOrder.update(job.purchase_order_id, {
+                            status: 'partially_received'
+                        });
+                    }
+                }
+            }
         } else if (action === 'delete') {
              // Soft delete usually
              await base44.asServiceRole.entities.Job.update(id, { deleted_at: new Date().toISOString() });
