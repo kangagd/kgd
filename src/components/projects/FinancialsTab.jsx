@@ -352,7 +352,7 @@ export default function FinancialsTab({ project, onUpdate }) {
                           ? 'bg-[#FAE008] text-[#111827] hover:bg-[#E5CF07] cursor-default' 
                           : 'bg-[#F3F4F6] text-[#9CA3AF] hover:bg-[#E5E7EB] cursor-pointer opacity-50'
                       }`}
-                      onClick={() => {/* Status tracking only, no project status change */}}
+                      onClick={() => !isActive && onUpdate({ financial_status: option.value })}
                     >
                       {option.label}
                     </Badge>
