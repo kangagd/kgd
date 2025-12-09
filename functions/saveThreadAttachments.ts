@@ -48,6 +48,28 @@ const isImageFile = (mimeType, filename) => {
   return type.startsWith('image/') || /\.(jpg|jpeg|png|gif|bmp|svg|webp)$/.test(name);
 };
 
+// Helper to identify logos and review graphics that should be skipped
+const isLogoOrReview = (filename, size) => {
+  const name = (filename || '').toLowerCase();
+  
+  // Skip if filename contains logo-related terms
+  if (/logo|brand|signature|icon|badge|header|footer/.test(name)) {
+    return true;
+  }
+  
+  // Skip if filename contains review-related terms
+  if (/review|rating|star|google|testimonial/.test(name)) {
+    return true;
+  }
+  
+  // Skip very small images (likely logos/icons) - under 10KB
+  if (size && size < 10 * 1024) {
+    return true;
+  }
+  
+  return false;
+};
+
 Deno.serve(async (req) => {
   try {
     const base44 = createClientFromRequest(req);
@@ -123,6 +145,12 @@ Deno.serve(async (req) => {
       for (const attachment of message.attachments) {
         const isImage = isImageFile(attachment.mime_type, attachment.filename);
         console.log(`Examining attachment: ${attachment.filename}, Size: ${attachment.size}, Inline: ${attachment.is_inline}, Type: ${attachment.mime_type}`);
+
+        // Skip logos and review graphics
+        if (isLogoOrReview(attachment.filename, attachment.size)) {
+          console.log(`Skipping logo/review image: ${attachment.filename}`);
+          continue;
+        }
 
         // Skip small inline images (likely signatures/icons)
         // Lower threshold to 5KB to catch smaller screenshots but skip tiny icons
