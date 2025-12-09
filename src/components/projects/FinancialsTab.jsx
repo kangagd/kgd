@@ -112,6 +112,16 @@ export default function FinancialsTab({ project, onUpdate }) {
     queryFn: () => base44.entities.PriceListItem.list("category"),
   });
 
+  // Fetch all quotes for this project
+  const { data: projectQuotes = [] } = useQuery({
+    queryKey: ["quotes-for-project", project?.id],
+    queryFn: async () => {
+      if (!project?.id) return [];
+      return base44.entities.Quote.filter({ project_id: project.id });
+    },
+    enabled: !!project?.id,
+  });
+
   // Fetch all XeroInvoices for this project
   const { data: projectXeroInvoices = [] } = useQuery({
     queryKey: ["xero-invoices-for-project", project?.id],
