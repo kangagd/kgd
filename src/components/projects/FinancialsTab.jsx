@@ -428,6 +428,57 @@ export default function FinancialsTab({ project, onUpdate }) {
 
   return (
     <div className="space-y-4">
+      {/* Project Health Snapshot */}
+      <div className="mb-4 rounded-xl border border-[#E5E7EB] bg-[#F9FAFB] p-4">
+        <h2 className="text-xs font-semibold text-gray-700 mb-3 tracking-wide">
+          PROJECT HEALTH SNAPSHOT
+        </h2>
+
+        <div className="grid grid-cols-2 md:grid-cols-6 gap-3 text-[11px] text-gray-600">
+          <div>
+            <p className="uppercase text-[10px] text-gray-500 mb-1">Quoted</p>
+            <p className="font-semibold text-gray-900">
+              ${quotedValue.toFixed(2)}
+            </p>
+          </div>
+
+          <div>
+            <p className="uppercase text-[10px] text-gray-500 mb-1">Invoiced</p>
+            <p className="font-semibold text-gray-900">
+              ${xeroTotalInvoiced.toFixed(2)}
+            </p>
+          </div>
+
+          <div>
+            <p className="uppercase text-[10px] text-gray-500 mb-1">Paid</p>
+            <p className="font-semibold text-green-700">
+              ${xeroTotalPaid.toFixed(2)}
+            </p>
+          </div>
+
+          <div>
+            <p className="uppercase text-[10px] text-gray-500 mb-1">Total Cost</p>
+            <p className="font-semibold text-red-600">
+              ${totalCosts.toFixed(2)}
+            </p>
+          </div>
+
+          <div>
+            <p className="uppercase text-[10px] text-gray-500 mb-1">Profit</p>
+            <p className={`font-semibold ${profit >= 0 ? "text-green-700" : "text-red-600"}`}>
+              ${profit.toFixed(2)}
+            </p>
+          </div>
+
+          <div>
+            <p className="uppercase text-[10px] text-gray-500 mb-1">Margin</p>
+            <p className={`font-semibold ${marginPct >= 0 ? "text-green-700" : "text-red-600"}`}>
+              {marginPct.toFixed(1)}%
+            </p>
+          </div>
+        </div>
+      </div>
+
       {/* Financial Summary Card */}
       <Card className="border border-[#E5E7EB] shadow-sm rounded-lg overflow-hidden">
         <CardHeader className="bg-white px-4 py-3 border-b border-[#E5E7EB]">
