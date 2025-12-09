@@ -40,6 +40,7 @@ const LOCATION_COLORS = {
 
 export default function Logistics() {
   const queryClient = useQueryClient();
+  const [viewMode, setViewMode] = useState("orders"); // "orders" | "jobs"
   const [searchTerm, setSearchTerm] = useState("");
   const [statusFilter, setStatusFilter] = useState("active"); // active, all, specific statuses
   const [locationFilter, setLocationFilter] = useState("all");
@@ -184,7 +185,7 @@ export default function Logistics() {
     return jobs.reduce((acc, j) => ({ ...acc, [j.id]: j }), {});
   }, [jobs]);
 
-  // Update Mutation
+  // Update Mutations
   const updatePartMutation = useMutation({
     mutationFn: ({ id, data }) => base44.entities.Part.update(id, data),
     onSuccess: () => {
@@ -192,6 +193,15 @@ export default function Logistics() {
       toast.success("Part updated successfully");
     },
     onError: () => toast.error("Failed to update part")
+  });
+
+  const updateJobMutation = useMutation({
+    mutationFn: ({ id, data }) => base44.entities.Job.update(id, data),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['jobs'] });
+      toast.success("Logistics job updated");
+    },
+    onError: () => toast.error("Failed to update job"),
   });
 
   const handleStatusChange = (partId, newStatus) => {
@@ -311,6 +321,34 @@ export default function Logistics() {
           </Button>
         </div>
 
+        {/* View Mode Toggle */}
+        <div className="flex items-center justify-between mt-2 mb-4">
+          <div className="inline-flex rounded-xl border border-gray-200 bg-gray-50 p-1">
+            <button
+              type="button"
+              onClick={() => setViewMode("orders")}
+              className={`px-3 py-1.5 text-xs font-medium rounded-lg transition-colors ${
+                viewMode === "orders"
+                  ? "bg-white text-gray-900 shadow-sm"
+                  : "text-gray-500 hover:text-gray-900"
+              }`}
+            >
+              Orders
+            </button>
+            <button
+              type="button"
+              onClick={() => setViewMode("jobs")}
+              className={`px-3 py-1.5 text-xs font-medium rounded-lg transition-colors ${
+                viewMode === "jobs"
+                  ? "bg-white text-gray-900 shadow-sm"
+                  : "text-gray-500 hover:text-gray-900"
+              }`}
+            >
+              Logistics Jobs
+            </button>
+          </div>
+        </div>
+
         {/* Stats Cards */}
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
           <Card className="border border-[#E5E7EB] shadow-sm hover:shadow-md transition-shadow duration-200">
@@ -363,7 +401,7 @@ export default function Logistics() {
         </div>
 
         {/* Stock & Supplier Logistics Section */}
-        {stockLogisticsJobs.length > 0 && (
+        {viewMode === "jobs" && stockLogisticsJobs.length > 0 && (
             <Card className="border border-[#E5E7EB] shadow-sm">
                 <CardHeader className="bg-gray-50/50 px-6 py-4 border-b border-[#E5E7EB]">
                     <CardTitle className="text-lg font-bold text-[#111827] flex items-center gap-2">
@@ -476,27 +514,42 @@ export default function Logistics() {
                                     >
                                         {job.address_full || job.address}
                                     </td>
-                                    <td 
-                                      className="px-6 py-3 text-gray-600 text-sm font-medium cursor-pointer hover:bg-opacity-80"
-                                      onClick={() => {
-                                        if (po) {
-                                          setSelectedPO(po);
-                                          setShowPOModal(true);
-                                        }
-                                      }}
-                                    >
-                                        {job.notes?.startsWith('PO ') ? job.notes.split(' from ')[0] : job.notes}
+                                    <td className="px-6 py-3 text-gray-600 text-sm font-medium">
+                                       {po ? (
+                                         <button
+                                           type="button"
+                                           onClick={() => {
+                                             setSelectedPO(po);
+                                             setShowPOModal(true);
+                                           }}
+                                           className="inline-flex items-center gap-1 text-xs font-medium text-blue-700 hover:text-blue-800"
+                                         >
+                                           {job.notes?.startsWith('PO ')
+                                             ? job.notes.split(' from ')[0]
+                                             : job.notes || 'View PO'}
+                                           <ExternalLink className="w-3 h-3" />
+                                         </button>
+                                       ) : (
+                                         <span className="text-xs text-gray-400">-</span>
+                                       )}
                                     </td>
-                                    <td 
-                                      className="px-6 py-3 cursor-pointer hover:bg-opacity-80"
-                                      onClick={() => {
-                                        if (po) {
-                                          setSelectedPO(po);
-                                          setShowPOModal(true);
-                                        }
-                                      }}
-                                    >
-                                        <Badge className={job.status === 'Completed' ? 'bg-green-100 text-green-700 border-green-200' : ''} variant={job.status === 'Completed' ? 'outline' : 'secondary'}>{job.status}</Badge>
+                                    <td className="px-6 py-3">
+                                       <Select
+                                         value={job.status || "Scheduled"}
+                                         onValueChange={(val) => {
+                                           updateJobMutation.mutate({ id: job.id, data: { status: val } });
+                                         }}
+                                       >
+                                         <SelectTrigger className="h-8 w-[140px] border-0 bg-white shadow-sm text-xs">
+                                           <SelectValue />
+                                         </SelectTrigger>
+                                         <SelectContent>
+                                           <SelectItem value="Scheduled">Scheduled</SelectItem>
+                                           <SelectItem value="In Progress">In Progress</SelectItem>
+                                           <SelectItem value="Completed">Completed</SelectItem>
+                                           <SelectItem value="Cancelled">Cancelled</SelectItem>
+                                         </SelectContent>
+                                       </Select>
                                     </td>
                                     <td className="px-6 py-3">
                                         <Link 
@@ -518,6 +571,7 @@ export default function Logistics() {
         )}
 
         {/* Filters */}
+        {viewMode === "orders" && (
         <div className="flex flex-col md:flex-row gap-3">
           <div className="relative flex-1">
             <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-[#6B7280]" />
@@ -610,8 +664,10 @@ export default function Logistics() {
             </Popover>
           </div>
         </div>
+        )}
 
         {/* Parts Table */}
+        {viewMode === "orders" && (
         <div className="bg-white border border-[#E5E7EB] rounded-xl shadow-sm overflow-hidden">
           <div className="overflow-x-auto">
             <table className="w-full text-left text-sm">
@@ -733,21 +789,39 @@ export default function Logistics() {
                           </div>
                         </td>
                         <td className="px-6 py-4 align-top">
-                          <Select 
-                            value={part.status} 
-                            onValueChange={(val) => handleStatusChange(part.id, val)}
-                          >
-                            <SelectTrigger className={`h-9 border-0 font-medium text-xs w-[140px] ${STATUS_COLORS[part.status] || 'bg-gray-100'} shadow-sm`}>
-                              <SelectValue />
-                            </SelectTrigger>
-                            <SelectContent>
-                              {Object.keys(STATUS_COLORS).map(status => (
-                                <SelectItem key={status} value={status}>
-                                  {status}
-                                </SelectItem>
-                              ))}
-                            </SelectContent>
-                          </Select>
+                         <Select 
+                           value={part.status} 
+                           onValueChange={(val) => handleStatusChange(part.id, val)}
+                         >
+                           <SelectTrigger className={`h-9 border-0 font-medium text-xs w-[140px] ${STATUS_COLORS[part.status] || 'bg-gray-100'} shadow-sm`}>
+                             <SelectValue />
+                           </SelectTrigger>
+                           <SelectContent>
+                             {Object.keys(STATUS_COLORS).map(status => (
+                               <SelectItem key={status} value={status}>
+                                 {status}
+                               </SelectItem>
+                             ))}
+                           </SelectContent>
+                         </Select>
+
+                         {part.status !== "Delivered" && part.status !== "Cancelled" && (
+                           <button
+                             type="button"
+                             onClick={() => {
+                               updatePartMutation.mutate({
+                                 id: part.id,
+                                 data: {
+                                   status: "Delivered",
+                                   location: part.location || INVENTORY_LOCATION.WAREHOUSE,
+                                 },
+                               });
+                             }}
+                             className="mt-1 text-[10px] text-green-700 hover:text-green-800 font-medium"
+                           >
+                             Mark as received
+                           </button>
+                         )}
                         </td>
                         <td className="px-6 py-4 align-top">
                           <Select 
@@ -817,6 +891,7 @@ export default function Logistics() {
             </table>
           </div>
         </div>
+        )}
       </div>
 
       {/* Part Detail Modal */}
