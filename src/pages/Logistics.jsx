@@ -725,12 +725,6 @@ export default function Logistics() {
                                 </span>
                               )}
                             </div>
-                            {part.price_list_item_id && priceListMap[part.price_list_item_id] && (
-                                <div className="text-xs text-slate-500 mt-0.5">
-                                    Linked: {priceListMap[part.price_list_item_id].item}
-                                    {priceListMap[part.price_list_item_id].sku ? ` • ${priceListMap[part.price_list_item_id].sku}` : ""}
-                                </div>
-                            )}
                             <div className="text-sm text-gray-500 mt-1 flex items-center gap-2">
                               <span className="truncate max-w-[200px]">{part.supplier_name || "No Supplier"}</span>
                               {part.order_reference && (
