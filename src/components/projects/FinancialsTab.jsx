@@ -352,7 +352,11 @@ export default function FinancialsTab({ project, onUpdate }) {
                           ? 'bg-[#FAE008] text-[#111827] hover:bg-[#E5CF07]' 
                           : 'bg-[#F3F4F6] text-[#9CA3AF] hover:bg-[#E5E7EB] opacity-50'
                       }`}
-                      onClick={() => onUpdate({ financial_status: isActive ? null : option.value })}
+                      onClick={() => {
+                        const newValue = isActive ? null : option.value;
+                        console.log('Financial status update:', { from: project.financial_status, to: newValue });
+                        onUpdate({ financial_status: newValue });
+                      }}
                     >
                       {option.label}
                     </Badge>
