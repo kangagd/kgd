@@ -234,9 +234,10 @@ export default function FinancialsTab({ project, onUpdate }) {
   };
 
   const financialStatusOptions = getFinancialStatusOptions(project.project_type);
-  const totalPaid = (project.payments || [])
-    .filter(p => p.payment_status === "Paid")
-    .reduce((sum, p) => sum + (p.payment_amount || 0), 0);
+  const totalPaid = (project.payments || []).reduce(
+    (sum, p) => sum + (p.payment_amount || 0),
+    0
+  );
 
   // 1) Quotes: sum of all accepted quotes (by status)
   const acceptedQuotes = (projectQuotes || []).filter(
