@@ -40,13 +40,13 @@ export default function PriceListCard({ item, isAdmin, canModifyStock, onEdit, o
                   <Badge className={`${categoryColors[item.category] || "bg-slate-100 text-slate-700"} font-medium border-0 px-2.5 py-0.5 rounded-lg text-[12px] leading-[1.35]`}>
                     {item.category}
                   </Badge>
-                  {isOutOfStock && (
+                  {(item.track_inventory !== false && item.in_inventory !== false) && isOutOfStock && (
                     <Badge className="bg-red-100 text-red-700 font-medium border-0 px-2.5 py-0.5 rounded-lg text-[12px] leading-[1.35]">
                       <Package className="w-3 h-3 mr-1" />
                       Out
                     </Badge>
                   )}
-                  {isLowStock && (
+                  {(item.track_inventory !== false && item.in_inventory !== false) && isLowStock && (
                     <Badge className="bg-amber-100 text-amber-700 font-medium border-0 px-2.5 py-0.5 rounded-lg text-[12px] leading-[1.35]">
                       <AlertCircle className="w-3 h-3 mr-1" />
                       Low
