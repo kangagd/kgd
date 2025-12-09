@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState } from "react";
 import { Card, CardHeader, CardTitle, CardContent, CardFooter } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -73,108 +73,6 @@ export default function ProjectForm({ project, onSubmit, onCancel, isSubmitting 
   const [uploadingFiles, setUploadingFiles] = useState(false);
 
   const queryClient = useQueryClient();
-
-  // Handle email pre-filling
-  useEffect(() => {
-    const loadEmailData = async () => {
-      const params = new URLSearchParams(window.location.search);
-      const fromEmail = params.get('fromEmail');
-      
-      console.log('[ProjectForm] fromEmail param:', fromEmail);
-      console.log('[ProjectForm] project prop:', project);
-      
-      if (!fromEmail || project) return; // Only for new projects
-      
-      try {
-        console.log('[ProjectForm] Fetching thread:', fromEmail);
-        // Fetch the email thread
-        const threads = await base44.entities.EmailThread.filter({ id: fromEmail });
-        console.log('[ProjectForm] Threads fetched:', threads);
-        
-        if (!threads || threads.length === 0) {
-          console.log('[ProjectForm] No thread found');
-          return;
-        }
-        
-        let thread = threads[0];
-        console.log('[ProjectForm] Thread data:', thread);
-        console.log('[ProjectForm] AI suggested fields:', thread.ai_suggested_project_fields);
-        
-        // Check if it's a Wix email and needs parsing
-        const isWixEmail = thread.from_address?.toLowerCase() === 'no-reply@crm.wix.com' && 
-                           thread.subject?.includes('You have received a new notification from KangarooGD');
-        
-        console.log('[ProjectForm] Is Wix email:', isWixEmail);
-        
-        if (isWixEmail && !thread.ai_suggested_project_fields) {
-          console.log('[ProjectForm] Parsing Wix email...');
-          const result = await base44.functions.invoke('parseWixFormEmail', { 
-            email_thread_id: thread.id 
-          });
-          
-          console.log('[ProjectForm] Parse result:', result.data);
-          
-          if (result.data?.success) {
-            // Refetch the thread to get updated data
-            const updatedThreads = await base44.entities.EmailThread.filter({ id: fromEmail });
-            if (updatedThreads && updatedThreads.length > 0) {
-              thread = updatedThreads[0];
-              console.log('[ProjectForm] Updated thread after parsing:', thread);
-            }
-          }
-        }
-        
-        // Apply AI-suggested fields or basic email data
-        if (thread.ai_suggested_project_fields) {
-          const aiSuggested = thread.ai_suggested_project_fields;
-          console.log('[ProjectForm] Applying AI suggested fields:', aiSuggested);
-          
-          // Make sure to set ALL fields that have values
-          const updates = {
-            source_email_thread_id: thread.id,
-            notes: `Created from email: ${thread.from_address}\n\n${thread.subject}`
-          };
-          
-          if (aiSuggested.suggested_title) updates.title = aiSuggested.suggested_title;
-          if (aiSuggested.suggested_description) updates.description = aiSuggested.suggested_description;
-          if (aiSuggested.suggested_project_type) updates.project_type = aiSuggested.suggested_project_type;
-          if (aiSuggested.suggested_address) {
-            updates.address_full = aiSuggested.suggested_address;
-            updates.address = aiSuggested.suggested_address;
-          }
-          
-          setFormData(prev => ({ ...prev, ...updates }));
-          console.log('[ProjectForm] Form updates:', updates);
-          
-          // Pre-fill customer fields in new customer dialog
-          if (aiSuggested.suggested_customer_name || aiSuggested.suggested_customer_email || aiSuggested.suggested_customer_phone) {
-            const customerUpdates = {};
-            if (aiSuggested.suggested_customer_name) customerUpdates.name = aiSuggested.suggested_customer_name;
-            if (aiSuggested.suggested_customer_email) customerUpdates.email = aiSuggested.suggested_customer_email;
-            if (aiSuggested.suggested_customer_phone) customerUpdates.phone = aiSuggested.suggested_customer_phone;
-            if (aiSuggested.suggested_address) customerUpdates.address_full = aiSuggested.suggested_address;
-            
-            setNewCustomerData(prev => ({ ...prev, ...customerUpdates }));
-            console.log('[ProjectForm] Pre-filled new customer data:', customerUpdates);
-          }
-        } else {
-          // Basic email data without AI parsing
-          console.log('[ProjectForm] Using basic email data (no AI fields)');
-          setFormData(prev => ({
-            ...prev,
-            title: thread.subject || prev.title,
-            description: thread.last_message_snippet || prev.description,
-            notes: `Created from email: ${thread.from_address}\n\n${thread.subject}`,
-            source_email_thread_id: thread.id
-          }));
-        }
-      } catch (error) {
-        console.error('[ProjectForm] Error loading email data:', error);
-      }
-    };
-    
-    loadEmailData();
-  }, [project]);
 
   const { data: allCustomers = [] } = useQuery({
     queryKey: ['customers'],
