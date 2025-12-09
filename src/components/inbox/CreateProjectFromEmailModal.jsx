@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState } from "react";
 import { base44 } from "@/api/base44Client";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
@@ -16,37 +16,20 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/u
 import { PROJECT_TYPE_OPTIONS } from "@/components/domain/projectConfig";
 
 export default function CreateProjectFromEmailModal({ open, onClose, thread, onSuccess }) {
+  const aiSuggested = thread?.ai_suggested_project_fields || {};
+  
   const [formData, setFormData] = useState({
-    title: "",
+    title: aiSuggested.suggested_title || thread?.subject || "",
     customer_id: "",
-    customer_name: "",
-    customer_email: "",
-    customer_phone: "",
-    project_type: "Garage Door Install",
+    customer_name: aiSuggested.suggested_customer_name || "",
+    customer_email: aiSuggested.suggested_customer_email || "",
+    customer_phone: aiSuggested.suggested_customer_phone || "",
+    project_type: aiSuggested.suggested_project_type || "Garage Door Install",
     status: "Lead",
-    description: "",
-    address_full: "",
-    notes: ""
+    description: aiSuggested.suggested_description || thread?.last_message_snippet || "",
+    address_full: aiSuggested.suggested_address || "",
+    notes: `Created from email: ${thread?.from_address}\n\n${thread?.subject}`
   });
-
-  // Update form data when thread changes or modal opens
-  useEffect(() => {
-    if (open && thread) {
-      const aiSuggested = thread.ai_suggested_project_fields || {};
-      setFormData({
-        title: aiSuggested.suggested_title || thread.subject || "",
-        customer_id: "",
-        customer_name: aiSuggested.suggested_customer_name || "",
-        customer_email: aiSuggested.suggested_customer_email || "",
-        customer_phone: aiSuggested.suggested_customer_phone || "",
-        project_type: aiSuggested.suggested_project_type || "Garage Door Install",
-        status: "Lead",
-        description: aiSuggested.suggested_description || thread.last_message_snippet || "",
-        address_full: aiSuggested.suggested_address || "",
-        notes: `Created from email: ${thread.from_address}\n\n${thread.subject}`
-      });
-    }
-  }, [open, thread]);
 
   const { data: customers = [] } = useQuery({
     queryKey: ['customers'],
