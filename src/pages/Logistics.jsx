@@ -524,9 +524,7 @@ export default function Logistics() {
                                            }}
                                            className="inline-flex items-center gap-1 text-xs font-medium text-blue-700 hover:text-blue-800"
                                          >
-                                           {job.notes?.startsWith('PO ')
-                                             ? job.notes.split(' from ')[0]
-                                             : job.notes || 'View PO'}
+                                           {(job.notes?.startsWith('PO ') && job.notes.split(' from ')[0]) || 'View PO'}
                                            <ExternalLink className="w-3 h-3" />
                                          </button>
                                        ) : (
