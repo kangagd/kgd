@@ -15,7 +15,7 @@ import {
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 
-const TAGS = ["Before", "After", "Install", "Repair", "Service", "Maintenance", "Marketing", "Other"];
+const TAGS = ["Before", "After", "Install", "Repair", "Service", "Maintenance", "Marketing", "Custom", "4D", "Colorbond", "Other"];
 const PRODUCT_TYPES = ["Garage Door", "Gate", "Roller Shutter", "Other"];
 
 export default function FilePreviewModal({ 

@@ -12,7 +12,7 @@ import FilePreviewModal from "../components/common/FilePreviewModal";
 import PhotoGridItem from "../components/photos/PhotoGridItem";
 import { useMutation } from "@tanstack/react-query";
 
-const TAGS = ["Before", "After", "Install", "Repair", "Service", "Maintenance", "Marketing", "Other"];
+const TAGS = ["Before", "After", "Install", "Repair", "Service", "Maintenance", "Marketing", "Custom", "4D", "Colorbond", "Other"];
 const PRODUCT_TYPES = ["Garage Door", "Gate", "Roller Shutter", "Other"];
 
 export default function Photos() {
