@@ -230,14 +230,27 @@ export default function Logistics() {
     [purchaseOrders]
   );
 
-  const loadingBayPOCount = useMemo(() => {
-    const poIds = new Set(
-      loadingBayParts
-        .map((part) => part.purchase_order_id)
-        .filter(Boolean)
-    );
-    return poIds.size;
-  }, [loadingBayParts]);
+  const loadingBaySummary = useMemo(() => {
+    let totalItems = 0;
+    const poIds = new Set();
+
+    // Count items and POs from deliveredPOItems
+    for (const item of deliveredPOItems) {
+      totalItems += item.quantity || 0;
+      if (item.po_id) poIds.add(item.po_id);
+    }
+
+    // Count items and POs from loadingBayParts
+    for (const part of loadingBayParts) {
+      totalItems += part.quantity_required || 1;
+      if (part.purchase_order_id) poIds.add(part.purchase_order_id);
+    }
+
+    return {
+      totalItems,
+      totalPOs: poIds.size,
+    };
+  }, [deliveredPOItems, loadingBayParts]);
 
   const openLogisticsJobsCount = useMemo(() => {
     const open = [
@@ -604,7 +617,7 @@ export default function Logistics() {
           <Card className="border border-gray-200">
             <CardContent className="py-3">
               <p className="text-xs text-gray-500">Items in Loading Bay</p>
-              <p className="text-xl font-semibold text-gray-900">{loadingBayParts.length}</p>
+              <p className="text-xl font-semibold text-gray-900">{loadingBaySummary.totalItems}</p>
             </CardContent>
           </Card>
           <Card className="border border-gray-200">
@@ -986,7 +999,7 @@ export default function Logistics() {
                 <div>
                   <CardTitle className="text-base">Loading Bay</CardTitle>
                   <p className="text-xs text-[#6B7280] mt-1">
-                    {loadingBayParts.length} items from {loadingBayPOCount} POs
+                    {loadingBaySummary.totalItems} items from {loadingBaySummary.totalPOs} POs
                   </p>
                 </div>
               </CardHeader>
