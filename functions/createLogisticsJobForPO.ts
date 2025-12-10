@@ -42,7 +42,7 @@ Deno.serve(async (req) => {
         }
 
         // Determine origin and destination based on delivery method
-        let origin, destination;
+        let origin, destination, jobAddress;
         if (po.delivery_method === PO_DELIVERY_METHOD.PICKUP) {
             origin = LOGISTICS_LOCATION.SUPPLIER;
             destination = LOGISTICS_LOCATION.STORAGE;
@@ -72,17 +72,26 @@ Deno.serve(async (req) => {
             jobTypeId = newJobType.id;
         }
 
-        // Get supplier name for title
+        // Get supplier name and address
         let supplierName = "Supplier";
+        let supplierAddress = "";
         if (po.supplier_id) {
             try {
                 const supplier = await base44.asServiceRole.entities.Supplier.get(po.supplier_id);
                 if (supplier) {
                     supplierName = supplier.name;
+                    supplierAddress = supplier.pickup_address || supplier.address_full || supplier.address_street || "";
                 }
             } catch (error) {
                 console.error('Error fetching supplier:', error);
             }
+        }
+
+        // Set job address based on delivery method
+        if (po.delivery_method === PO_DELIVERY_METHOD.PICKUP) {
+            jobAddress = supplierAddress || supplierName;
+        } else {
+            jobAddress = "866 Bourke Street, Waterloo";
         }
 
         // Create the Job
@@ -96,8 +105,8 @@ Deno.serve(async (req) => {
             scheduled_date: scheduled_date || new Date().toISOString().split('T')[0],
             assigned_to: technician_id ? [technician_id] : [],
             notes: `Logistics job for PO from ${supplierName}\nOrigin: ${origin}\nDestination: ${destination}`,
-            address: supplierName,
-            address_full: supplierName,
+            address: jobAddress,
+            address_full: jobAddress,
             customer_name: supplierName,
         };
 
