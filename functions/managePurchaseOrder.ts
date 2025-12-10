@@ -28,30 +28,46 @@ Deno.serve(async (req) => {
                 return Response.json({ error: 'supplier_id and non-empty line_items are required' }, { status: 400 });
             }
 
+            // Extract all potential fields from params
+            const { supplier_name, notes, delivery_location } = await req.json();
+
             const poData = {
                 supplier_id,
+                supplier_name: supplier_name || null,
                 project_id: project_id || null,
                 status: PO_STATUS.DRAFT,
                 delivery_method: delivery_method || PO_DELIVERY_METHOD.DELIVERY,
                 delivery_location: delivery_location || null,
+                notes: notes || null,
                 created_by: user.email,
                 order_date: new Date().toISOString().split('T')[0],
             };
 
             const po = await base44.asServiceRole.entities.PurchaseOrder.create(poData);
 
-            // Create line items
+            // Create line items - support both formats
             for (const item of line_items) {
                 await base44.asServiceRole.entities.PurchaseOrderLine.create({
                     purchase_order_id: po.id,
-                    price_list_item_id: item.part_id || null,
-                    description: item.name || '',
-                    qty_ordered: item.qty,
-                    unit_price: item.price || 0,
+                    price_list_item_id: item.part_id || item.price_list_item_id || null,
+                    description: item.name || item.description || '',
+                    qty_ordered: item.quantity || item.qty || 0,
+                    unit_price: item.unit_price || item.price || 0,
                 });
             }
 
-            return Response.json({ success: true, purchaseOrder: po });
+            // Reload PO with line items for response
+            const finalPO = await base44.asServiceRole.entities.PurchaseOrder.get(po.id);
+            const finalLines = await base44.asServiceRole.entities.PurchaseOrderLine.filter({ purchase_order_id: po.id });
+            
+            finalPO.line_items = finalLines.map(line => ({
+                name: line.description || '',
+                quantity: line.qty_ordered || 0,
+                unit_price: line.unit_price || 0,
+                price_list_item_id: line.price_list_item_id
+            }));
+
+            return Response.json({ success: true, purchaseOrder: finalPO });
         }
 
         // Action: update
@@ -65,34 +81,51 @@ Deno.serve(async (req) => {
                 return Response.json({ error: 'Purchase Order not found' }, { status: 404 });
             }
 
+            // Extract all potential update fields from params
+            const { supplier_name, notes, delivery_location } = await req.json();
+
             const updateData = {};
             if (supplier_id !== undefined) updateData.supplier_id = supplier_id;
+            if (supplier_name !== undefined) updateData.supplier_name = supplier_name;
             if (project_id !== undefined) updateData.project_id = project_id;
             if (delivery_method !== undefined) updateData.delivery_method = delivery_method;
             if (delivery_location !== undefined) updateData.delivery_location = delivery_location;
+            if (notes !== undefined) updateData.notes = notes;
 
             const updatedPO = await base44.asServiceRole.entities.PurchaseOrder.update(id, updateData);
 
             // Update line items if provided
-            if (line_items) {
+            if (line_items && Array.isArray(line_items)) {
                 // Delete existing lines
                 const existingLines = await base44.asServiceRole.entities.PurchaseOrderLine.filter({ purchase_order_id: id });
                 for (const line of existingLines) {
                     await base44.asServiceRole.entities.PurchaseOrderLine.delete(line.id);
                 }
-                // Create new lines
+                // Create new lines - support both new format (quantity/unit_price) and old format (qty/price)
                 for (const item of line_items) {
                     await base44.asServiceRole.entities.PurchaseOrderLine.create({
                         purchase_order_id: id,
-                        price_list_item_id: item.part_id || null,
-                        description: item.name || '',
-                        qty_ordered: item.qty,
-                        unit_price: item.price || 0,
+                        price_list_item_id: item.part_id || item.price_list_item_id || null,
+                        description: item.name || item.description || '',
+                        qty_ordered: item.quantity || item.qty || 0,
+                        unit_price: item.unit_price || item.price || 0,
                     });
                 }
             }
 
-            return Response.json({ success: true, purchaseOrder: updatedPO });
+            // Reload PO to return fresh data with line items
+            const finalPO = await base44.asServiceRole.entities.PurchaseOrder.get(id);
+            const finalLines = await base44.asServiceRole.entities.PurchaseOrderLine.filter({ purchase_order_id: id });
+            
+            // Attach line_items to the response for frontend consistency
+            finalPO.line_items = finalLines.map(line => ({
+                name: line.description || '',
+                quantity: line.qty_ordered || 0,
+                unit_price: line.unit_price || 0,
+                price_list_item_id: line.price_list_item_id
+            }));
+
+            return Response.json({ success: true, purchaseOrder: finalPO });
         }
 
         // Action: updateStatus

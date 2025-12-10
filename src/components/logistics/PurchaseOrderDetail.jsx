@@ -48,18 +48,35 @@ export default function PurchaseOrderDetail({ poId, onClose }) {
     enabled: !!po?.linked_logistics_job_id
   });
 
+  // Fetch line items separately if needed
+  const { data: lineItems = [] } = useQuery({
+    queryKey: ['purchaseOrderLines', poId],
+    queryFn: () => base44.entities.PurchaseOrderLine.filter({ purchase_order_id: poId }),
+    enabled: !!poId
+  });
+
   useEffect(() => {
     if (po) {
+      // Map line items from separate entity if po.line_items is not populated
+      const items = po.line_items?.length > 0 
+        ? po.line_items 
+        : lineItems.map(line => ({
+            name: line.description || line.item_name || '',
+            quantity: line.qty_ordered || 0,
+            unit_price: line.unit_price || line.unit_cost_ex_tax || 0,
+            price_list_item_id: line.price_list_item_id
+          }));
+
       setFormData({
         supplier_id: po.supplier_id || "",
         project_id: po.project_id || "",
         delivery_method: po.delivery_method || "",
         notes: po.notes || "",
-        line_items: po.line_items || []
+        line_items: items
       });
       setIsEditing(po.status === PO_STATUS.DRAFT);
     }
-  }, [po]);
+  }, [po, lineItems]);
 
   const updatePOMutation = useMutation({
     mutationFn: async (data) => {
@@ -69,8 +86,20 @@ export default function PurchaseOrderDetail({ poId, onClose }) {
       }
       return response.data;
     },
-    onSuccess: () => {
+    onSuccess: (data) => {
+      // Update local form state with saved data to reflect any backend changes
+      if (data.purchaseOrder) {
+        const items = data.purchaseOrder.line_items || [];
+        setFormData({
+          supplier_id: data.purchaseOrder.supplier_id || "",
+          project_id: data.purchaseOrder.project_id || "",
+          delivery_method: data.purchaseOrder.delivery_method || "",
+          notes: data.purchaseOrder.notes || "",
+          line_items: items
+        });
+      }
       queryClient.invalidateQueries({ queryKey: ['purchaseOrder', poId] });
+      queryClient.invalidateQueries({ queryKey: ['purchaseOrderLines', poId] });
       queryClient.invalidateQueries({ queryKey: ['purchaseOrders'] });
       toast.success('Purchase Order updated');
     },
