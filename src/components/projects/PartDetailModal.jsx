@@ -191,13 +191,6 @@ export default function PartDetailModal({ open, part, onClose, onSave, isSubmitt
     enabled: open
   });
 
-  // Fetch price list items
-  const { data: priceListItems = [] } = useQuery({
-    queryKey: ['priceListItems-for-parts'],
-    queryFn: () => base44.entities.PriceListItem.list('item'),
-    enabled: open
-  });
-
   // Fetch vehicles for parts
   const { data: vehicles = [] } = useQuery({
     queryKey: ['vehicles-for-parts'],
