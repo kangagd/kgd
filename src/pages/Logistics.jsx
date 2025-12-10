@@ -15,7 +15,6 @@ import { format } from "date-fns";
 import { createPageUrl } from "@/utils";
 import { Link, useNavigate } from "react-router-dom";
 import PartDetailModal from "../components/projects/PartDetailModal";
-import SupplierPurchaseOrderModal from "../components/purchasing/SupplierPurchaseOrderModal";
 import { toast } from "sonner";
 import { INVENTORY_LOCATION } from "@/components/domain/inventoryLocationConfig";
 import { MOVEMENT_TYPE } from "@/components/domain/inventoryConfig";
@@ -58,11 +57,6 @@ export default function Logistics() {
   const [vehicleFilter, setVehicleFilter] = useState("all");
   const [selectedPart, setSelectedPart] = useState(null);
   const [showOnlyThirdParty, setShowOnlyThirdParty] = useState(false);
-  const [showPOModal, setShowPOModal] = useState(false);
-  const [selectedSupplier, setSelectedSupplier] = useState(null);
-  const [showSupplierSelector, setShowSupplierSelector] = useState(false);
-  const [tempSupplierSelection, setTempSupplierSelection] = useState("");
-  const [selectedPO, setSelectedPO] = useState(null);
   
   // Board view data
   const [boardPOs, setBoardPOs] = useState([]);
@@ -556,9 +550,25 @@ export default function Logistics() {
               </button>
             </div>
             <Button
-              onClick={() => {
-                setTempSupplierSelection("");
-                setShowSupplierSelector(true);
+              onClick={async () => {
+                try {
+                  const response = await base44.functions.invoke('managePurchaseOrder', {
+                    action: 'create',
+                    supplier_id: suppliers[0]?.id || 'temp',
+                    line_items: [{ name: 'New Item', qty: 1, price: 0 }]
+                  });
+
+                  if (response.data?.success && response.data?.purchaseOrder) {
+                    const newPO = response.data.purchaseOrder;
+                    navigate(`${createPageUrl("PurchaseOrders")}?poId=${newPO.id}`);
+                    toast.success('Draft Purchase Order created');
+                  } else {
+                    toast.error('Failed to create PO');
+                  }
+                } catch (error) {
+                  console.error('Error creating PO:', error);
+                  toast.error('Failed to create Purchase Order');
+                }
               }}
               className="bg-[#FAE008] text-[#111827] hover:bg-[#E5CF07] font-semibold shadow-sm hover:shadow-md transition h-9 px-4 text-sm rounded-xl"
             >
@@ -1025,8 +1035,7 @@ export default function Logistics() {
                                       className="px-6 py-3 text-gray-700 font-medium cursor-pointer hover:bg-opacity-80"
                                       onClick={() => {
                                         if (po) {
-                                          setSelectedPO(po);
-                                          setShowPOModal(true);
+                                          navigate(`${createPageUrl("PurchaseOrders")}?poId=${po.id}`);
                                         }
                                       }}
                                     >
@@ -1036,8 +1045,7 @@ export default function Logistics() {
                                       className="px-6 py-3 text-gray-700 cursor-pointer hover:bg-opacity-80"
                                       onClick={() => {
                                         if (po) {
-                                          setSelectedPO(po);
-                                          setShowPOModal(true);
+                                          navigate(`${createPageUrl("PurchaseOrders")}?poId=${po.id}`);
                                         }
                                       }}
                                     >
@@ -1047,8 +1055,7 @@ export default function Logistics() {
                                       className="px-6 py-3 cursor-pointer hover:bg-opacity-80"
                                       onClick={() => {
                                         if (po) {
-                                          setSelectedPO(po);
-                                          setShowPOModal(true);
+                                          navigate(`${createPageUrl("PurchaseOrders")}?poId=${po.id}`);
                                         }
                                       }}
                                     >
@@ -1081,29 +1088,25 @@ export default function Logistics() {
                                       className="px-6 py-3 text-gray-600 cursor-pointer hover:bg-opacity-80"
                                       onClick={() => {
                                         if (po) {
-                                          setSelectedPO(po);
-                                          setShowPOModal(true);
+                                          navigate(`${createPageUrl("PurchaseOrders")}?poId=${po.id}`);
                                         }
                                       }}
                                     >
                                         {job.address_full || job.address}
                                     </td>
                                     <td className="px-6 py-3 text-gray-600 text-sm font-medium">
-                                       {po ? (
-                                         <button
-                                           type="button"
-                                           onClick={() => {
-                                             setSelectedPO(po);
-                                             setShowPOModal(true);
-                                           }}
-                                           className="inline-flex items-center gap-1 text-xs font-medium text-blue-700 hover:text-blue-800"
-                                         >
-                                           {(job.notes?.startsWith('PO ') && job.notes.split(' from ')[0]) || 'View PO'}
-                                           <ExternalLink className="w-3 h-3" />
-                                         </button>
-                                       ) : (
-                                         <span className="text-xs text-gray-400">-</span>
-                                       )}
+                                      {po ? (
+                                        <button
+                                          type="button"
+                                          onClick={() => navigate(`${createPageUrl("PurchaseOrders")}?poId=${po.id}`)}
+                                          className="inline-flex items-center gap-1 text-xs font-medium text-blue-700 hover:text-blue-800"
+                                        >
+                                          {(job.notes?.startsWith('PO ') && job.notes.split(' from ')[0]) || 'View PO'}
+                                          <ExternalLink className="w-3 h-3" />
+                                        </button>
+                                      ) : (
+                                        <span className="text-xs text-gray-400">-</span>
+                                      )}
                                     </td>
                                     <td className="px-6 py-3">
                                        <Select
@@ -1474,62 +1477,7 @@ export default function Logistics() {
         />
       )}
 
-      {/* Supplier Selection Dialog */}
-      <Dialog open={showSupplierSelector} onOpenChange={setShowSupplierSelector}>
-        <DialogContent className="max-w-md">
-          <DialogHeader>
-            <DialogTitle>Select Supplier</DialogTitle>
-          </DialogHeader>
-          <div className="py-4">
-            <Label className="text-sm font-medium mb-2 block">Choose a supplier for this purchase order</Label>
-            <Select value={tempSupplierSelection} onValueChange={setTempSupplierSelection}>
-              <SelectTrigger className="w-full">
-                <SelectValue placeholder="Select supplier..." />
-              </SelectTrigger>
-              <SelectContent>
-                {suppliers.map(supplier => (
-                  <SelectItem key={supplier.id} value={supplier.id}>
-                    {supplier.name}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </div>
-          <DialogFooter>
-            <Button variant="outline" onClick={() => setShowSupplierSelector(false)}>
-              Cancel
-            </Button>
-            <Button
-              onClick={() => {
-                const supplier = suppliers.find(s => s.id === tempSupplierSelection);
-                if (supplier) {
-                  setSelectedSupplier(supplier);
-                  setShowSupplierSelector(false);
-                  setShowPOModal(true);
-                }
-              }}
-              disabled={!tempSupplierSelection}
-              className="bg-[#FAE008] text-[#111827] hover:bg-[#E5CF07]"
-            >
-              Continue
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
 
-      {/* Purchase Order Modal */}
-      {showPOModal && (selectedSupplier || selectedPO) && (
-        <SupplierPurchaseOrderModal
-          open={showPOModal}
-          onClose={() => {
-            setShowPOModal(false);
-            setSelectedSupplier(null);
-            setSelectedPO(null);
-          }}
-          supplier={selectedSupplier || (selectedPO ? suppliers.find(s => s.id === selectedPO.supplier_id) : null)}
-          purchaseOrderToEdit={selectedPO}
-        />
-      )}
     </div>
   );
 }
