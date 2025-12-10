@@ -21,7 +21,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { X, Upload, FileText, Link as LinkIcon, Plus, Search, Trash2, Package, Truck, ArrowRight } from "lucide-react";
 import { base44 } from "@/api/base44Client";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import TextField from "../common/TextField";
+import RichTextEditor from "../common/RichTextEditor";
 import { format } from "date-fns";
 import { toast } from "sonner";
 import { PART_STATUS, PART_STATUS_OPTIONS, LOGISTICS_LOCATION } from "@/components/domain/logisticsConfig";
@@ -385,124 +385,19 @@ export default function PartDetailModal({ open, part, onClose, onSave, isSubmitt
                 </div>
 
                 <div className="space-y-2">
-                  <Label>Location</Label>
-                  <Select 
-                    value={formData.location} 
-                    onValueChange={(val) => setFormData({...formData, location: val})}
-                  >
-                    <SelectTrigger className="bg-white">
-                      <SelectValue placeholder="Select location" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {LOCATIONS.map(loc => (
-                        <SelectItem key={loc} value={loc}>{loc}</SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </div>
-
-                {formData.location === "With Technician" && (
-                  <div className="space-y-2">
-                    <Label>Assigned Vehicle (optional)</Label>
-                    <Select
-                      value={formData.assigned_vehicle_id || ""}
-                      onValueChange={(value) => setFormData(prev => ({ ...prev, assigned_vehicle_id: value || null }))}
-                    >
-                      <SelectTrigger className="bg-white">
-                        <SelectValue placeholder="Select a vehicle" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        {vehicles.map((v) => (
-                          <SelectItem key={v.id} value={v.id}>
-                            {v.name || v.display_name || v.registration || `Vehicle ${v.id}`}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                    <p className="text-xs text-slate-500">
-                      This helps logistics and technicians see which van is carrying these parts.
-                    </p>
-                  </div>
-                )}
-              </div>
-            </section>
-
-            <hr className="border-[#E5E7EB]" />
-
-            {/* Supplier & Order Info */}
-            <section className="space-y-4">
-              <h3 className="text-[15px] font-semibold text-[#111827] uppercase tracking-wide">Supplier & Order Info</h3>
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
-                <div className="space-y-2">
-                  <Label>Supplier</Label>
-                  <Select
-                    value={formData.supplier_id || "none"}
-                    onValueChange={(val) => {
-                      const supplierId = val === "none" ? null : val;
-                      const supplier = suppliers.find(s => s.id === supplierId);
-                      setFormData(prev => ({ 
-                        ...prev, 
-                        supplier_id: supplierId,
-                        // Auto-fill name if supplier selected
-                        supplier_name: supplier ? supplier.name : prev.supplier_name
-                      }));
-                    }}
-                  >
-                    <SelectTrigger className="bg-white">
-                      <SelectValue placeholder="Select supplier" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="none">None / Manual</SelectItem>
-                      {suppliers.filter(s => s.is_active).map(s => (
-                        <SelectItem key={s.id} value={s.id}>{s.name}</SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </div>
-                
-                <div className="space-y-2">
-                  <Label>Supplier Name (Override)</Label>
+                  <Label>Quantity Required</Label>
                   <Input 
-                    value={formData.supplier_name || ""}
-                    onChange={(e) => setFormData({...formData, supplier_name: e.target.value})}
-                    placeholder="e.g. Gliderol"
-                    className="bg-white"
-                  />
-                </div>
-
-                <div className="space-y-2">
-                  <Label>Order Reference</Label>
-                  <Input 
-                    value={formData.order_reference || ""}
-                    onChange={(e) => setFormData({...formData, order_reference: e.target.value})}
-                    placeholder="e.g. PO-12345"
-                    className="bg-white"
-                  />
-                </div>
-
-                <div className="space-y-2">
-                  <Label>Order Date</Label>
-                  <Input 
-                    type="date"
-                    value={formData.order_date || ""}
-                    onChange={(e) => setFormData({...formData, order_date: e.target.value})}
-                    className="bg-white"
-                  />
-                </div>
-
-                <div className="space-y-2">
-                  <Label>ETA</Label>
-                  <Input 
-                    type="date"
-                    value={formData.eta || ""}
-                    onChange={(e) => setFormData({...formData, eta: e.target.value})}
+                    type="number"
+                    min="1"
+                    value={formData.quantity_required || 1}
+                    onChange={(e) => setFormData({...formData, quantity_required: parseInt(e.target.value) || 1})}
                     className="bg-white"
                   />
                 </div>
               </div>
             </section>
 
-            <hr className="border-[#E5E7EB]" />
+
 
             {/* Embedded Purchase Order Details */}
             {(formData.source_type === "Supplier – Deliver to Warehouse" ||
@@ -553,11 +448,32 @@ export default function PartDetailModal({ open, part, onClose, onSave, isSubmitt
                   </div>
 
                   <div className="space-y-2">
+                    <Label className="text-[#6B7280] font-normal">Order Date</Label>
+                    <Input
+                      type="date"
+                      value={formData.order_date || ""}
+                      onChange={(e) => setFormData({...formData, order_date: e.target.value})}
+                      className="bg-white"
+                    />
+                  </div>
+
+                  <div className="space-y-2">
                     <Label className="text-[#6B7280] font-normal">Requested ETA</Label>
                     <Input
                       type="date"
                       value={poDetails.requested_eta}
                       onChange={(e) => setPoDetails(prev => ({ ...prev, requested_eta: e.target.value }))}
+                      className="bg-white"
+                    />
+                  </div>
+
+                  <div className="space-y-2 md:col-span-2">
+                    <Label className="text-[#6B7280] font-normal">Tracking URL</Label>
+                    <Input
+                      type="url"
+                      value={formData.tracking_url || ""}
+                      onChange={(e) => setFormData({...formData, tracking_url: e.target.value})}
+                      placeholder="https://tracking.example.com/..."
                       className="bg-white"
                     />
                   </div>
@@ -707,12 +623,11 @@ export default function PartDetailModal({ open, part, onClose, onSave, isSubmitt
               
               <div className="space-y-2">
                 <Label>Notes</Label>
-                <TextField
-                  multiline
+                <RichTextEditor
                   value={formData.notes || ""}
-                  onChange={(e) => setFormData({...formData, notes: e.target.value})}
+                  onChange={(value) => setFormData({...formData, notes: value})}
                   placeholder="Add detailed notes..."
-                  className="min-h-[100px] bg-white"
+                  className="bg-white"
                 />
               </div>
 
