@@ -18,19 +18,19 @@ import {
 } from "@/components/ui/select";
 import { Badge } from "@/components/ui/badge";
 import { Textarea } from "@/components/ui/textarea";
-import { X, Upload, FileText, Link as LinkIcon, Plus, Search, Trash2 } from "lucide-react";
+import { X, Upload, FileText, Link as LinkIcon, Plus, Search, Trash2, Package, Truck, ArrowRight } from "lucide-react";
 import { base44 } from "@/api/base44Client";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import TextField from "../common/TextField";
 import { format } from "date-fns";
+import { toast } from "sonner";
+import { PART_STATUS, PART_STATUS_OPTIONS, LOGISTICS_LOCATION } from "@/components/domain/logisticsConfig";
 
 const CATEGORIES = [
   "Door", "Motor", "Posts", "Tracks", "Small Parts", "Hardware", "Other"
 ];
 
-const STATUSES = [
-  "Pending", "Ordered", "Back-ordered", "Delivered", "Returned", "Cancelled"
-];
+const STATUSES = PART_STATUS_OPTIONS;
 
 const SOURCE_TYPES = [
   "Supplier – Deliver to Warehouse",
@@ -40,6 +40,11 @@ const SOURCE_TYPES = [
 ];
 
 const LOCATIONS = [
+  LOGISTICS_LOCATION.LOADING_BAY,
+  LOGISTICS_LOCATION.STORAGE,
+  LOGISTICS_LOCATION.VEHICLE,
+  LOGISTICS_LOCATION.SITE,
+  // Legacy locations
   "On Order", "At Supplier", "At Delivery Bay", "In Warehouse Storage", "With Technician", "At Client Site"
 ];
 
@@ -48,6 +53,29 @@ export default function PartDetailModal({ open, part, onClose, onSave, isSubmitt
   const [formData, setFormData] = useState({});
   const [uploading, setUploading] = useState(false);
   const [jobSearch, setJobSearch] = useState("");
+  const queryClient = useQueryClient();
+
+  const movePartMutation = useMutation({
+    mutationFn: ({ part_ids, from_location, to_location }) => 
+      base44.functions.invoke('recordStockMovement', {
+        part_ids,
+        from_location,
+        to_location,
+        project_id: part?.project_id
+      }),
+    onSuccess: (response) => {
+      if (response.data?.success) {
+        queryClient.invalidateQueries({ queryKey: ['parts'] });
+        toast.success("Part moved successfully");
+        onClose();
+      } else {
+        toast.error(response.data?.error || "Failed to move part");
+      }
+    },
+    onError: (error) => {
+      toast.error(error.message || "Failed to move part");
+    }
+  });
 
   useEffect(() => {
     if (part) {
@@ -175,6 +203,22 @@ export default function PartDetailModal({ open, part, onClose, onSave, isSubmitt
   }).slice(0, 20); // Limit results
 
   const linkedJobsData = jobs.filter(job => (formData.linked_logistics_jobs || []).includes(job.id));
+
+  const handleMovePart = (toLocation) => {
+    if (!part?.id) {
+      toast.error("Save the part first before moving");
+      return;
+    }
+    const fromLocation = part.location || LOGISTICS_LOCATION.LOADING_BAY;
+    movePartMutation.mutate({
+      part_ids: [part.id],
+      from_location: fromLocation,
+      to_location: toLocation
+    });
+  };
+
+  const isInLoadingBay = part?.location === LOGISTICS_LOCATION.LOADING_BAY || part?.location === "At Delivery Bay";
+  const isOnVehicle = part?.location === LOGISTICS_LOCATION.VEHICLE || part?.location === "With Technician";
 
   return (
     <Dialog open={open} onOpenChange={onClose}>
@@ -396,6 +440,53 @@ export default function PartDetailModal({ open, part, onClose, onSave, isSubmitt
             </section>
 
             <hr className="border-[#E5E7EB]" />
+
+            {/* Quick Movement Actions */}
+            {part?.id && (isInLoadingBay || isOnVehicle) && (
+              <section className="space-y-4">
+                <h3 className="text-[15px] font-semibold text-[#111827] uppercase tracking-wide">Quick Movement</h3>
+                <div className="flex flex-wrap gap-3">
+                  {isInLoadingBay && (
+                    <>
+                      <Button
+                        type="button"
+                        onClick={() => handleMovePart(LOGISTICS_LOCATION.STORAGE)}
+                        disabled={movePartMutation.isPending}
+                        variant="outline"
+                        className="flex-1 min-w-[140px]"
+                      >
+                        <Package className="w-4 h-4 mr-2" />
+                        Move to Storage
+                      </Button>
+                      <Button
+                        type="button"
+                        onClick={() => handleMovePart(LOGISTICS_LOCATION.VEHICLE)}
+                        disabled={movePartMutation.isPending}
+                        variant="outline"
+                        className="flex-1 min-w-[140px]"
+                      >
+                        <Truck className="w-4 h-4 mr-2" />
+                        Move to Vehicle
+                      </Button>
+                    </>
+                  )}
+                  {isOnVehicle && (
+                    <Button
+                      type="button"
+                      onClick={() => handleMovePart(LOGISTICS_LOCATION.SITE)}
+                      disabled={movePartMutation.isPending}
+                      variant="outline"
+                      className="flex-1 min-w-[140px]"
+                    >
+                      <ArrowRight className="w-4 h-4 mr-2" />
+                      Move to Site
+                    </Button>
+                  )}
+                </div>
+              </section>
+            )}
+
+            {(part?.id && (isInLoadingBay || isOnVehicle)) && <hr className="border-[#E5E7EB]" />}
 
             {/* Logistics Links */}
             <section className="space-y-4">
