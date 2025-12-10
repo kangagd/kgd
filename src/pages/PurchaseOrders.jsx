@@ -9,7 +9,7 @@ import { Badge } from "@/components/ui/badge";
 import { Plus, Search, Package } from "lucide-react";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { createPageUrl } from "@/utils";
-import { PO_STATUS_OPTIONS } from "@/components/domain/logisticsConfig";
+import { PO_STATUS_OPTIONS, PO_STATUS } from "@/components/domain/logisticsConfig";
 import BackButton from "../components/common/BackButton";
 import { format, parseISO } from "date-fns";
 import { toast } from "sonner";
