@@ -14,6 +14,53 @@ const PO_DELIVERY_METHOD = {
     PICKUP: "pickup",
 };
 
+// Helper: Build line item data with auto-population from source entities
+async function buildLineItemData(base44, purchaseOrderId, item) {
+    const sourceType = item.source_type || "custom";
+    const sourceId = item.source_id || item.price_list_item_id || item.part_id || null;
+    
+    let itemName = item.name || item.item_name || item.description || '';
+    let unitPrice = item.unit_price || item.price || item.unit_cost_ex_tax || 0;
+    let unit = item.unit || null;
+    
+    // Auto-populate from source if name/price not provided
+    if (sourceId && (!itemName || !unitPrice)) {
+        try {
+            if (sourceType === "price_list") {
+                const priceListItem = await base44.asServiceRole.entities.PriceListItem.get(sourceId);
+                if (priceListItem) {
+                    itemName = itemName || priceListItem.item;
+                    unitPrice = unitPrice || priceListItem.unit_cost || priceListItem.price || 0;
+                }
+            } else if (sourceType === "project_part") {
+                const part = await base44.asServiceRole.entities.Part.get(sourceId);
+                if (part) {
+                    itemName = itemName || part.category;
+                    // Parts don't have unit price, keep user-entered or 0
+                }
+            }
+            // stock_item would be similar if that entity exists
+        } catch (err) {
+            console.error(`Failed to auto-populate from ${sourceType}:`, err);
+        }
+    }
+    
+    return {
+        purchase_order_id: purchaseOrderId,
+        source_type: sourceType,
+        source_id: sourceId,
+        price_list_item_id: sourceType === "price_list" ? sourceId : (item.price_list_item_id || null), // Legacy field
+        item_name: itemName,
+        description: item.description || itemName || '',
+        qty_ordered: item.quantity || item.qty || item.qty_ordered || 0,
+        unit_cost_ex_tax: unitPrice,
+        unit: unit,
+        tax_rate_percent: item.tax_rate_percent || 0,
+        total_line_ex_tax: (item.quantity || item.qty || 0) * unitPrice,
+        notes: item.notes || null
+    };
+}
+
 Deno.serve(async (req) => {
     try {
         const base44 = createClientFromRequest(req);
@@ -45,15 +92,10 @@ Deno.serve(async (req) => {
 
             const po = await base44.asServiceRole.entities.PurchaseOrder.create(poData);
 
-            // Create line items - support both formats
+            // Create line items with source type support
             for (const item of line_items) {
-                await base44.asServiceRole.entities.PurchaseOrderLine.create({
-                    purchase_order_id: po.id,
-                    price_list_item_id: item.part_id || item.price_list_item_id || null,
-                    description: item.name || item.description || '',
-                    qty_ordered: item.quantity || item.qty || 0,
-                    unit_price: item.unit_price || item.price || 0,
-                });
+                const lineData = await buildLineItemData(base44, po.id, item);
+                await base44.asServiceRole.entities.PurchaseOrderLine.create(lineData);
             }
 
             // Reload PO with line items for response
@@ -61,10 +103,15 @@ Deno.serve(async (req) => {
             const finalLines = await base44.asServiceRole.entities.PurchaseOrderLine.filter({ purchase_order_id: po.id });
             
             finalPO.line_items = finalLines.map(line => ({
-                name: line.description || '',
+                id: line.id,
+                source_type: line.source_type || "custom",
+                source_id: line.source_id || null,
+                name: line.item_name || line.description || '',
                 quantity: line.qty_ordered || 0,
-                unit_price: line.unit_price || 0,
-                price_list_item_id: line.price_list_item_id
+                unit_price: line.unit_cost_ex_tax || 0,
+                unit: line.unit || null,
+                notes: line.notes || null,
+                price_list_item_id: line.price_list_item_id // Keep for backward compat
             }));
 
             return Response.json({ success: true, purchaseOrder: finalPO });
@@ -101,15 +148,10 @@ Deno.serve(async (req) => {
                 for (const line of existingLines) {
                     await base44.asServiceRole.entities.PurchaseOrderLine.delete(line.id);
                 }
-                // Create new lines - support both new format (quantity/unit_price) and old format (qty/price)
+                // Create new lines with source type support
                 for (const item of line_items) {
-                    await base44.asServiceRole.entities.PurchaseOrderLine.create({
-                        purchase_order_id: id,
-                        price_list_item_id: item.part_id || item.price_list_item_id || null,
-                        description: item.name || item.description || '',
-                        qty_ordered: item.quantity || item.qty || 0,
-                        unit_price: item.unit_price || item.price || 0,
-                    });
+                    const lineData = await buildLineItemData(base44, id, item);
+                    await base44.asServiceRole.entities.PurchaseOrderLine.create(lineData);
                 }
             }
 
@@ -119,10 +161,15 @@ Deno.serve(async (req) => {
             
             // Attach line_items to the response for frontend consistency
             finalPO.line_items = finalLines.map(line => ({
-                name: line.description || '',
+                id: line.id,
+                source_type: line.source_type || "custom",
+                source_id: line.source_id || null,
+                name: line.item_name || line.description || '',
                 quantity: line.qty_ordered || 0,
-                unit_price: line.unit_price || 0,
-                price_list_item_id: line.price_list_item_id
+                unit_price: line.unit_cost_ex_tax || 0,
+                unit: line.unit || null,
+                notes: line.notes || null,
+                price_list_item_id: line.price_list_item_id // Keep for backward compat
             }));
 
             return Response.json({ success: true, purchaseOrder: finalPO });

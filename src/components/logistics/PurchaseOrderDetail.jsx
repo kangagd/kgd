@@ -8,11 +8,16 @@ import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { X, Plus, Trash2, Package, Truck, Save, Send, ArrowRight } from "lucide-react";
+import { X, Plus, Trash2, Package, Truck, Save, Send, ArrowRight, List, ShoppingCart } from "lucide-react";
 import { toast } from "sonner";
 import { PO_STATUS, PO_DELIVERY_METHOD_OPTIONS } from "@/components/domain/logisticsConfig";
 import { createPageUrl } from "@/utils";
 import { useNavigate } from "react-router-dom";
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from "@/components/ui/popover";
 
 export default function PurchaseOrderDetail({ poId, onClose }) {
   const navigate = useNavigate();
@@ -48,11 +53,22 @@ export default function PurchaseOrderDetail({ poId, onClose }) {
     enabled: !!po?.linked_logistics_job_id
   });
 
-  // Fetch line items separately if needed
+  // Fetch additional data for line item sources
   const { data: lineItems = [] } = useQuery({
     queryKey: ['purchaseOrderLines', poId],
     queryFn: () => base44.entities.PurchaseOrderLine.filter({ purchase_order_id: poId }),
     enabled: !!poId
+  });
+
+  const { data: priceListItems = [] } = useQuery({
+    queryKey: ['priceListItems'],
+    queryFn: () => base44.entities.PriceListItem.filter({ is_active: true })
+  });
+
+  const { data: projectParts = [] } = useQuery({
+    queryKey: ['projectParts', formData.project_id],
+    queryFn: () => base44.entities.Part.filter({ project_id: formData.project_id }),
+    enabled: !!formData.project_id
   });
 
   useEffect(() => {
@@ -61,10 +77,14 @@ export default function PurchaseOrderDetail({ poId, onClose }) {
       const items = po.line_items?.length > 0 
         ? po.line_items 
         : lineItems.map(line => ({
-            name: line.description || line.item_name || '',
+            id: line.id,
+            source_type: line.source_type || "custom",
+            source_id: line.source_id || line.price_list_item_id || null,
+            name: line.item_name || line.description || '',
             quantity: line.qty_ordered || 0,
-            unit_price: line.unit_price || line.unit_cost_ex_tax || 0,
-            price_list_item_id: line.price_list_item_id
+            unit_price: line.unit_cost_ex_tax || 0,
+            unit: line.unit || null,
+            notes: line.notes || null
           }));
 
       setFormData({
@@ -165,11 +185,23 @@ export default function PurchaseOrderDetail({ poId, onClose }) {
     createLogisticsJobMutation.mutate();
   };
 
-  const addLineItem = () => {
+  const [addItemMenuOpen, setAddItemMenuOpen] = useState(false);
+
+  const addLineItem = (sourceType = "custom", sourceItem = null) => {
+    const newItem = { 
+      source_type: sourceType,
+      source_id: sourceItem?.id || null,
+      name: sourceItem?.item || sourceItem?.category || '', 
+      quantity: 1, 
+      unit_price: sourceItem?.unit_cost || sourceItem?.price || 0,
+      unit: null,
+      notes: null
+    };
     setFormData({
       ...formData,
-      line_items: [...formData.line_items, { name: '', quantity: 1, unit_price: 0 }]
+      line_items: [...formData.line_items, newItem]
     });
+    setAddItemMenuOpen(false);
   };
 
   const removeLineItem = (index) => {
@@ -352,15 +384,69 @@ export default function PurchaseOrderDetail({ poId, onClose }) {
             <div className="flex items-center justify-between">
               <CardTitle className="text-[18px]">Line Items</CardTitle>
               {isDraft && (
-                <Button
-                  onClick={addLineItem}
-                  variant="outline"
-                  size="sm"
-                  className="h-8"
-                >
-                  <Plus className="w-4 h-4 mr-1" />
-                  Add Item
-                </Button>
+                <Popover open={addItemMenuOpen} onOpenChange={setAddItemMenuOpen}>
+                  <PopoverTrigger asChild>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      className="h-8"
+                    >
+                      <Plus className="w-4 h-4 mr-1" />
+                      Add Item
+                    </Button>
+                  </PopoverTrigger>
+                  <PopoverContent className="w-64 p-2" align="end">
+                    <div className="space-y-1">
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        className="w-full justify-start"
+                        onClick={() => addLineItem("custom")}
+                      >
+                        <Package className="w-4 h-4 mr-2" />
+                        Custom Item
+                      </Button>
+                      <div className="border-t my-1" />
+                      {priceListItems.length > 0 && (
+                        <div className="max-h-48 overflow-y-auto space-y-1">
+                          <div className="px-2 py-1 text-xs font-medium text-[#6B7280]">From Price List</div>
+                          {priceListItems.map((item) => (
+                            <Button
+                              key={item.id}
+                              variant="ghost"
+                              size="sm"
+                              className="w-full justify-start text-xs"
+                              onClick={() => addLineItem("price_list", item)}
+                            >
+                              <List className="w-3 h-3 mr-2" />
+                              {item.item}
+                            </Button>
+                          ))}
+                        </div>
+                      )}
+                      {projectParts.length > 0 && (
+                        <>
+                          <div className="border-t my-1" />
+                          <div className="max-h-48 overflow-y-auto space-y-1">
+                            <div className="px-2 py-1 text-xs font-medium text-[#6B7280]">From Project Parts</div>
+                            {projectParts.map((part) => (
+                              <Button
+                                key={part.id}
+                                variant="ghost"
+                                size="sm"
+                                className="w-full justify-start text-xs"
+                                onClick={() => addLineItem("project_part", part)}
+                              >
+                                <ShoppingCart className="w-3 h-3 mr-2" />
+                                {part.category}
+                              </Button>
+                            ))}
+                          </div>
+                        </>
+                      )}
+                    </div>
+                  </PopoverContent>
+                </Popover>
               )}
             </div>
           </CardHeader>
@@ -372,29 +458,49 @@ export default function PurchaseOrderDetail({ poId, onClose }) {
             ) : (
               <div className="space-y-3">
                 {formData.line_items.map((item, index) => (
-                  <div key={index} className="flex gap-3 items-start border-b pb-3 last:border-b-0">
-                    <div className="flex-1 space-y-2">
+                  <div key={index} className="border rounded-lg p-3">
+                    {/* Source Badge */}
+                    <div className="flex items-center justify-between mb-2">
+                      <Badge variant="outline" className="text-xs">
+                        {item.source_type === "price_list" && "Price List"}
+                        {item.source_type === "project_part" && "Project Part"}
+                        {item.source_type === "stock_item" && "Stock Item"}
+                        {item.source_type === "custom" && "Custom"}
+                      </Badge>
+                      {isDraft && (
+                        <button
+                          onClick={() => removeLineItem(index)}
+                          className="p-1 hover:bg-red-50 rounded text-red-600 transition-colors"
+                        >
+                          <Trash2 className="w-4 h-4" />
+                        </button>
+                      )}
+                    </div>
+
+                    {/* Item Details */}
+                    <div className="space-y-2">
                       <Input
                         placeholder="Item name/description"
                         value={item.name || ''}
                         onChange={(e) => updateLineItem(index, 'name', e.target.value)}
                         disabled={!isDraft}
+                        className="font-medium"
                       />
-                      <div className="flex gap-2">
-                        <div className="w-24">
+                      <div className="grid grid-cols-3 gap-2">
+                        <div>
+                          <Label className="text-xs text-[#6B7280]">Quantity</Label>
                           <Input
                             type="number"
-                            placeholder="Qty"
                             value={item.quantity || ''}
                             onChange={(e) => updateLineItem(index, 'quantity', parseFloat(e.target.value) || 0)}
                             disabled={!isDraft}
                             min="0"
                           />
                         </div>
-                        <div className="flex-1">
+                        <div>
+                          <Label className="text-xs text-[#6B7280]">Unit Price</Label>
                           <Input
                             type="number"
-                            placeholder="Unit Price"
                             value={item.unit_price || ''}
                             onChange={(e) => updateLineItem(index, 'unit_price', parseFloat(e.target.value) || 0)}
                             disabled={!isDraft}
@@ -402,21 +508,24 @@ export default function PurchaseOrderDetail({ poId, onClose }) {
                             step="0.01"
                           />
                         </div>
-                        <div className="w-32 flex items-center justify-end">
-                          <span className="text-sm font-medium">
-                            ${((item.quantity || 0) * (item.unit_price || 0)).toFixed(2)}
-                          </span>
+                        <div>
+                          <Label className="text-xs text-[#6B7280]">Total</Label>
+                          <div className="h-10 flex items-center justify-end px-3 bg-[#F3F4F6] rounded-lg">
+                            <span className="text-sm font-semibold">
+                              ${((item.quantity || 0) * (item.unit_price || 0)).toFixed(2)}
+                            </span>
+                          </div>
                         </div>
                       </div>
+                      {isDraft && (
+                        <Input
+                          placeholder="Notes (optional)"
+                          value={item.notes || ''}
+                          onChange={(e) => updateLineItem(index, 'notes', e.target.value)}
+                          className="text-xs"
+                        />
+                      )}
                     </div>
-                    {isDraft && (
-                      <button
-                        onClick={() => removeLineItem(index)}
-                        className="p-2 hover:bg-red-50 rounded text-red-600 transition-colors"
-                      >
-                        <Trash2 className="w-4 h-4" />
-                      </button>
-                    )}
                   </div>
                 ))}
                 <div className="flex justify-end pt-3 border-t">
