@@ -326,10 +326,10 @@ export default function Schedule() {
 
   const handleToday = () => setSelectedDate(new Date());
 
-  // Memoized filtered jobs to avoid re-filtering on every render
+  // Filter jobs
   // Potential optimisation: Server-side filtering for large datasets
-  const getFilteredJobs = useMemo(() => {
-    return (dateFilter) => scopedJobs
+  const getFilteredJobs = (dateFilter) => {
+    return scopedJobs
       .filter(job => {
         if (job.deleted_at) return false;
         
@@ -378,8 +378,7 @@ export default function Schedule() {
         const timeB = b.scheduled_time || '';
         return timeA.localeCompare(timeB);
       });
-    };
-  }, [scopedJobs, technicianFilter, statusFilter, contractFilter]);
+  };
 
   // Get date range text
   const getDateRangeText = () => {
