@@ -68,6 +68,11 @@ export default function ProjectPartsPanel({ project, parts = [], inventoryByItem
                       Stock Available: {inventoryByItem[part.price_list_item_id] || 0}
                     </div>
                   )}
+                  {part.purchase_order_id && (
+                    <div className="text-xs text-red-700 mt-0.5 opacity-75">
+                      Linked to PO #{part.purchase_order_id.substring(0, 8)}
+                    </div>
+                  )}
                 </div>
                 <div className="text-right flex flex-col gap-2 items-end">
                    <Badge variant="outline" className="bg-white border-red-200 text-red-800">
@@ -109,6 +114,11 @@ export default function ProjectPartsPanel({ project, parts = [], inventoryByItem
                     {part.location}
                     {part.status !== 'Pending' && ` • ${part.status}`}
                   </div>
+                  {part.purchase_order_id && (
+                    <div className="text-xs text-gray-500 mt-0.5 opacity-75">
+                      Linked to PO #{part.purchase_order_id.substring(0, 8)}
+                    </div>
+                  )}
                 </div>
                 <div className="flex flex-col gap-2 items-end">
                   <Badge variant="outline" className="bg-gray-50">

@@ -52,6 +52,8 @@ export default function PurchaseOrderDetail({ poId, onClose }) {
     queryFn: () => base44.entities.Project.list('-created_date')
   });
 
+  const linkedProject = projects.find(p => p.id === formData.project_id);
+
   const { data: linkedJob } = useQuery({
     queryKey: ['linkedJob', po?.linked_logistics_job_id],
     queryFn: () => base44.entities.Job.get(po.linked_logistics_job_id),
@@ -399,6 +401,11 @@ export default function PurchaseOrderDetail({ poId, onClose }) {
               ) : (
                 <p className="text-sm text-[#6B7280] mt-1">
                   {po.po_number || `ID: ${po.id.slice(0, 8)}`}
+                </p>
+              )}
+              {linkedProject && (
+                <p className="text-sm text-[#6B7280] mt-1">
+                  Project: {linkedProject.title}
                 </p>
               )}
             </div>

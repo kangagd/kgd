@@ -267,10 +267,10 @@ export default function PartsSection({ projectId, autoExpand = false }) {
                             e.stopPropagation();
                             navigate(`${createPageUrl("PurchaseOrders")}?poId=${part.purchase_order_id}`);
                           }}
-                          className="flex items-center gap-1 text-xs text-blue-600 hover:text-blue-800 hover:underline mt-0.5"
+                          className="inline-flex items-center gap-1 mt-1 px-2 py-0.5 rounded-md bg-blue-50 text-blue-700 hover:bg-blue-100 text-xs font-medium transition-colors"
                         >
                           <FileText className="w-3 h-3" />
-                          View PO
+                          PO #{part.purchase_order_id.substring(0, 8)}
                         </button>
                       ) : (
                         <div className="text-xs opacity-80">{part.source_type?.split(' – ')[0]}</div>
@@ -281,11 +281,18 @@ export default function PartsSection({ projectId, autoExpand = false }) {
                     <div className="col-span-6 md:col-span-2">
                       <div className="flex flex-wrap gap-1">
                         {(part.linked_logistics_jobs || []).length > 0 ? (
-                          part.linked_logistics_jobs.map((jobId, idx) => (
-                            <Badge key={jobId} variant="secondary" className="text-[10px] px-1.5 h-5 bg-slate-100 text-slate-600 border-slate-200">
-                              <LinkIcon className="w-2 h-2 mr-1" />
-                              Job {idx + 1}
-                            </Badge>
+                          part.linked_logistics_jobs.map((jobId) => (
+                            <button
+                              key={jobId}
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                navigate(`${createPageUrl("Jobs")}?jobId=${jobId}`);
+                              }}
+                              className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-medium transition-colors"
+                            >
+                              <LinkIcon className="w-3 h-3" />
+                              Job #{jobId.substring(0, 8)}
+                            </button>
                           ))
                         ) : (
                           <span className="text-xs text-slate-400 italic">No linked jobs</span>
