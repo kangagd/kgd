@@ -168,21 +168,6 @@ export default function Logistics() {
   );
 
   // Kanban columns based on PO status
-  const sentPOs = useMemo(
-    () => purchaseOrders.filter((po) => po.status === PO_STATUS.SENT || po.status === PO_STATUS.CONFIRMED),
-    [purchaseOrders]
-  );
-
-  const confirmedPOs = useMemo(
-    () =>
-      purchaseOrders.filter(
-        (po) =>
-          po.status === PO_STATUS.DELIVERED ||
-          po.status === PO_STATUS.READY_TO_PICK_UP
-      ),
-    [purchaseOrders]
-  );
-
   const draftPOs = useMemo(
     () => purchaseOrders.filter((po) => po.status === PO_STATUS.DRAFT),
     [purchaseOrders]
