@@ -189,16 +189,25 @@ export default function Logistics() {
   );
 
   const confirmedPOs = useMemo(() =>
-    purchaseOrders.filter((po) => 
-      po.status === PO_STATUS.CONFIRMED ||
-      po.status === PO_STATUS.DELIVERED ||
-      po.status === PO_STATUS.READY_TO_PICK_UP
-    ),
+    purchaseOrders.filter((po) => {
+      // For Confirmed column, filter based on delivery method
+      if (po.status === PO_STATUS.CONFIRMED || po.status === PO_STATUS.DELIVERED) {
+        return true;
+      }
+      // Only show "Ready to Pick Up" for pickup orders
+      if (po.status === PO_STATUS.READY_TO_PICK_UP && po.delivery_method === PO_DELIVERY_METHOD.PICKUP) {
+        return true;
+      }
+      return false;
+    }),
     [purchaseOrders]
   );
 
   const deliveryBayPOs = useMemo(() =>
-    purchaseOrders.filter((po) => po.status === PO_STATUS.DELIVERED_TO_DELIVERY_BAY),
+    purchaseOrders.filter((po) => 
+      po.status === PO_STATUS.DELIVERED_TO_DELIVERY_BAY && 
+      po.delivery_method === PO_DELIVERY_METHOD.DELIVERY
+    ),
     [purchaseOrders]
   );
 
@@ -211,6 +220,12 @@ export default function Logistics() {
   );
 
   const handleMovePoToLane = async (po, targetLane) => {
+    // Validate delivery method constraints
+    if (targetLane === "delivery_bay" && po.delivery_method === PO_DELIVERY_METHOD.PICKUP) {
+      toast.error("Pickup orders cannot go to Delivery Bay");
+      return;
+    }
+    
     let newStatus = po.status;
 
     if (targetLane === "sent") {
