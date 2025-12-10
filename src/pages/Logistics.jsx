@@ -275,6 +275,59 @@ export default function Logistics() {
     }
   });
 
+  const handleCreateLogisticsJobForPO = async (po) => {
+    try {
+      const response = await base44.functions.invoke("createLogisticsJobForPO", {
+        purchase_order_id: po.id,
+      });
+
+      if (!response?.data?.success) {
+        toast.error(response?.data?.error || "Failed to create logistics job");
+        return;
+      }
+
+      toast.success("Logistics job created");
+      queryClient.invalidateQueries({ queryKey: ['jobs'] });
+      queryClient.invalidateQueries({ queryKey: ['purchaseOrders'] });
+      
+      // Reload board data
+      const [jobResult] = await Promise.all([
+        base44.entities.Job.list('-created_date', 200)
+      ]);
+      const jobList = Array.isArray(jobResult) ? jobResult : jobResult?.data || [];
+      setBoardJobs(jobList);
+    } catch (error) {
+      toast.error("Error creating logistics job");
+    }
+  };
+
+  const handleMoveLoadingBayPart = async (part, destination) => {
+    try {
+      const response = await base44.functions.invoke("recordStockMovement", {
+        part_ids: [part.id],
+        from_location: LOGISTICS_LOCATION.DELIVERY_BAY,
+        to_location: destination,
+      });
+
+      if (!response?.data?.success) {
+        toast.error(response?.data?.error || "Failed to move part");
+        return;
+      }
+
+      toast.success(`Part moved to ${destination}`);
+      queryClient.invalidateQueries({ queryKey: ['parts'] });
+      
+      // Reload board data
+      const [partResult] = await Promise.all([
+        base44.entities.Part.list('-created_date', 500)
+      ]);
+      const partList = Array.isArray(partResult) ? partResult : partResult?.data || [];
+      setBoardParts(partList);
+    } catch (error) {
+      toast.error("Error moving part");
+    }
+  };
+
   const updateJobMutation = useMutation({
     mutationFn: ({ id, data }) => base44.entities.Job.update(id, data),
     onSuccess: () => {
