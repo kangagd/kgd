@@ -131,12 +131,22 @@ export default function PartDetailModal({ open, part, onClose, onSave, isSubmitt
       };
       console.log("Setting formData to:", mappedPart);
       setFormData(mappedPart);
+      
+      // Initialize poDetails from part data
       setPoDetails({
         supplier_id: part.supplier_id || "",
-        internal_reference: part.order_reference || "",
+        internal_reference: part.po_number || part.order_reference || "",
         requested_eta: part.eta || "",
         notes_to_supplier: ""
       });
+      
+      // If part has a price list item, set the search to display it
+      if (part.price_list_item_id) {
+        const linkedItem = priceListItems.find(item => item.id === part.price_list_item_id);
+        if (linkedItem) {
+          setPriceListSearch(linkedItem.item);
+        }
+      }
     } else {
       console.log("PartDetailModal: Creating new part (no part data)");
       setFormData({
@@ -161,11 +171,11 @@ export default function PartDetailModal({ open, part, onClose, onSave, isSubmitt
         requested_eta: "",
         notes_to_supplier: ""
       });
+      setPriceListSearch("");
     }
     setPoError("");
-    setPriceListSearch("");
     setPriceListOpen(false);
-  }, [part, open]);
+  }, [part, open, priceListItems]);
 
   // Fetch jobs for logistics linking
   const { data: jobs = [] } = useQuery({

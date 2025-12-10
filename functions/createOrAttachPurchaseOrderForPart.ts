@@ -121,6 +121,7 @@ Deno.serve(async (req) => {
         const today = new Date().toISOString().split('T')[0];
         const partUpdateData = {
             purchase_order_id: purchaseOrder.id,
+            po_number: purchaseOrder.po_number || purchaseOrder.internal_reference || null,
             supplier_id: supplier_id,
             supplier_name: supplier.name
         };
