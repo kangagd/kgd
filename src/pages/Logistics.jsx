@@ -896,7 +896,7 @@ export default function Logistics() {
                           </div>
                         </div>
                       );
-                    }))
+                    })
                   )}
                 </CardContent>
               </Card>
