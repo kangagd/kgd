@@ -1164,6 +1164,7 @@ export default function Logistics() {
         </div>
         )}
         </section>
+      </div>
 
       {/* Part Detail Modal */}
       {selectedPart && (
