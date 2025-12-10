@@ -12,22 +12,26 @@ export default function ProjectPartsPanel({ project, parts = [], inventoryByItem
   const queryClient = useQueryClient();
 
   const detectShortage = (part) => {
-    // If part is already ordered/delivered/etc, it's not a shortage
-    if (['Ordered', 'Back-ordered', 'Delivered', 'At Supplier', 'At Delivery Bay', 'In Warehouse Storage', 'With Technician', 'At Client Site'].includes(part.status)) {
+    // Not a shortage if status is beyond Pending or location is beyond On Order
+    if (part.status !== 'Pending') {
       return false;
     }
-    // If cancelled, no shortage
-    if (part.status === 'Cancelled') return false;
 
-    // If Pending, check if we have stock
+    const location = part.location;
+    const isOnOrder = !location || location === 'On Order';
+    
+    if (!isOnOrder) {
+      return false;
+    }
+
+    // If Pending and On Order, check stock availability
     const requiredQty = part.quantity_required || 1;
     if (part.price_list_item_id) {
        const availableQty = inventoryByItem[part.price_list_item_id] || 0;
        return availableQty < requiredQty;
     }
     
-    // If not linked to price list, we can't check stock, assume shortage if Pending? 
-    // Or assume no shortage? Safe to assume shortage to prompt action.
+    // No price list item linked = unknown stock, treat as shortage
     return true; 
   };
 
