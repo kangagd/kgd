@@ -10,7 +10,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { X, Plus, Trash2, Package, Truck, Save, Send, ArrowRight, List, ShoppingCart } from "lucide-react";
 import { toast } from "sonner";
-import { PO_STATUS, PO_DELIVERY_METHOD_OPTIONS } from "@/components/domain/logisticsConfig";
+import { PO_STATUS, PO_STATUS_OPTIONS, PO_DELIVERY_METHOD_OPTIONS } from "@/components/domain/logisticsConfig";
 import { createPageUrl } from "@/utils";
 import { useNavigate } from "react-router-dom";
 import {
