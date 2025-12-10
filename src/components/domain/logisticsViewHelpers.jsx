@@ -15,9 +15,10 @@ export function getIncomingPurchaseOrders(purchaseOrders) {
 
   const relevantStatuses = [
     PO_STATUS.SENT,
-    PO_STATUS.ACKNOWLEDGED,
-    PO_STATUS.IN_TRANSIT,
-    PO_STATUS.ARRIVED,
+    PO_STATUS.CONFIRMED,
+    PO_STATUS.DELIVERED,
+    PO_STATUS.READY_TO_PICK_UP,
+    PO_STATUS.DELIVERED_TO_DELIVERY_BAY,
   ];
 
   const filtered = purchaseOrders.filter(po => 
