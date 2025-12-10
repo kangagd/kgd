@@ -78,7 +78,6 @@ export default function Schedule() {
         setActiveCheckInMap(map);
       } catch (error) {
         if (!isCancelled) {
-          console.error("Error loading active check-ins for schedule", error);
           setActiveCheckInMap({});
         }
       }

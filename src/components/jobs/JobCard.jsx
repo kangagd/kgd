@@ -24,7 +24,7 @@ export default function JobCard({ job, onClick, onViewDetails, activeCheckIns = 
       try {
         setUser(await base44.auth.me());
       } catch (error) {
-        console.error("Error loading user:", error);
+        // Error loading user
       }
     };
     loadUser();

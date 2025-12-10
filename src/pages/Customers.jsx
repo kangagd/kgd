@@ -18,6 +18,7 @@ import CustomerModalView from "../components/customers/CustomerModalView";
 import { createPageUrl } from "@/utils";
 import { DuplicateBadge } from "../components/common/DuplicateWarningCard";
 import BackButton from "../components/common/BackButton";
+import { toast } from "sonner";
 
 export default function Customers() {
   const [user, setUser] = useState(null);
@@ -36,7 +37,7 @@ export default function Customers() {
         const currentUser = await base44.auth.me();
         setUser(currentUser);
       } catch (error) {
-        console.error("Error loading user:", error);
+        // Error loading user
       }
     };
     loadUser();

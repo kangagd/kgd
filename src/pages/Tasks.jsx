@@ -25,7 +25,7 @@ export default function Tasks() {
   const [selectedTask, setSelectedTask] = useState(null);
 
   useEffect(() => {
-    base44.auth.me().then(setUser).catch(console.error);
+    base44.auth.me().then(setUser).catch(() => {});
   }, []);
 
   const isTechnician = user?.is_field_technician && user?.role !== 'admin';
