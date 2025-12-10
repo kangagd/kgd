@@ -610,184 +610,185 @@ export default function Logistics() {
                 </div>
 
                 {/* Column: Sent */}
-            <div
-              className="flex flex-col rounded-xl border border-[#E5E7EB] bg-white p-3"
-              onDragOver={(e) => e.preventDefault()}
-              onDrop={(e) => {
-                e.preventDefault();
-                if (!draggingPoId) return;
-                const po = purchaseOrders.find((p) => p.id === draggingPoId);
-                if (po) {
-                  handleMovePoToLane(po, "sent");
-                }
-                setDraggingPoId(null);
-              }}
-            >
-              <div className="mb-2 flex items-center justify-between">
-                <span className="text-sm font-semibold text-[#111827]">
-                  Sent
-                </span>
-                <span className="text-xs text-[#6B7280]">{sentPOs.length}</span>
-              </div>
-              <div className="space-y-2">
-                {sentPOs.map((po) => (
-                  <div
-                    key={po.id}
-                    className="cursor-grab rounded-md border border-[#E5E7EB] bg-white px-3 py-2 text-xs shadow-sm hover:bg-[#F9FAFB] transition-colors"
-                    draggable
-                    onDragStart={() => setDraggingPoId(po.id)}
-                    onDragEnd={() => setDraggingPoId(null)}
-                    onClick={() =>
-                      navigate(
-                        createPageUrl("PurchaseOrders") + `?poId=${po.id}`
-                      )
+                <div
+                  className="flex flex-col rounded-xl border border-[#E5E7EB] bg-white p-3"
+                  onDragOver={(e) => e.preventDefault()}
+                  onDrop={(e) => {
+                    e.preventDefault();
+                    if (!draggingPoId) return;
+                    const po = purchaseOrders.find((p) => p.id === draggingPoId);
+                    if (po) {
+                      handleMovePoToLane(po, "sent");
                     }
-                  >
-                    <div className="flex items-center justify-between">
-                      <span className="font-medium text-[#111827]">
-                        {po.po_number || `PO #${po.id.substring(0, 8)}`}
-                      </span>
-                    </div>
-                    <div className="mt-1 text-[11px] text-[#6B7280]">
-                      {po.supplier_name || "Supplier not set"}
-                    </div>
-                    {po.eta && (
-                      <div className="mt-1 text-[11px] text-[#6B7280]">
-                        ETA: {format(new Date(po.eta), "MMM d")}
+                    setDraggingPoId(null);
+                  }}
+                >
+                  <div className="mb-2 flex items-center justify-between">
+                    <span className="text-sm font-semibold text-[#111827]">
+                      Sent
+                    </span>
+                    <span className="text-xs text-[#6B7280]">{sentPOs.length}</span>
+                  </div>
+                  <div className="space-y-2">
+                    {sentPOs.map((po) => (
+                      <div
+                        key={po.id}
+                        className="cursor-grab rounded-md border border-[#E5E7EB] bg-white px-3 py-2 text-xs shadow-sm hover:bg-[#F9FAFB] transition-colors"
+                        draggable
+                        onDragStart={() => setDraggingPoId(po.id)}
+                        onDragEnd={() => setDraggingPoId(null)}
+                        onClick={() =>
+                          navigate(
+                            createPageUrl("PurchaseOrders") + `?poId=${po.id}`
+                          )
+                        }
+                      >
+                        <div className="flex items-center justify-between">
+                          <span className="font-medium text-[#111827]">
+                            {po.po_number || `PO #${po.id.substring(0, 8)}`}
+                          </span>
+                        </div>
+                        <div className="mt-1 text-[11px] text-[#6B7280]">
+                          {po.supplier_name || "Supplier not set"}
+                        </div>
+                        {po.eta && (
+                          <div className="mt-1 text-[11px] text-[#6B7280]">
+                            ETA: {format(new Date(po.eta), "MMM d")}
+                          </div>
+                        )}
                       </div>
-                    )}
-                    </div>
                     ))}
                     {!sentPOs.length && (
-                    <div className="text-[11px] text-[#6B7280] text-center py-4">
-                    No POs
-                    </div>
+                      <div className="text-[11px] text-[#6B7280] text-center py-4">
+                        No POs
+                      </div>
                     )}
-                    </div>
-                    </div>
+                  </div>
+                </div>
 
                     {/* Column: Delivered/Picked Up */}
-            <div
-              className="flex flex-col rounded-xl border border-[#E5E7EB] bg-white p-3"
-              onDragOver={(e) => e.preventDefault()}
-              onDrop={(e) => {
-                e.preventDefault();
-                if (!draggingPoId) return;
-                const po = purchaseOrders.find((p) => p.id === draggingPoId);
-                if (po) {
-                  handleMovePoToLane(po, "delivered_picked_up");
-                }
-                setDraggingPoId(null);
-              }}
-            >
-              <div className="mb-2 flex items-center justify-between">
-                <span className="text-sm font-semibold text-[#111827]">
-                  Delivered / Picked Up
-                </span>
-                <span className="text-xs text-[#6B7280]">
-                  {deliveredPickedUpPOs.length}
-                </span>
-              </div>
-              <div className="space-y-2">
-                {deliveredPickedUpPOs.map((po) => (
-                  <div
-                    key={po.id}
-                    className="cursor-grab rounded-md border border-[#E5E7EB] bg-white px-3 py-2 text-xs shadow-sm hover:bg-[#F9FAFB] transition-colors"
-                    draggable
-                    onDragStart={() => setDraggingPoId(po.id)}
-                    onDragEnd={() => setDraggingPoId(null)}
-                    onClick={() =>
-                      navigate(
-                        createPageUrl("PurchaseOrders") + `?poId=${po.id}`
-                      )
+                <div
+                  className="flex flex-col rounded-xl border border-[#E5E7EB] bg-white p-3"
+                  onDragOver={(e) => e.preventDefault()}
+                  onDrop={(e) => {
+                    e.preventDefault();
+                    if (!draggingPoId) return;
+                    const po = purchaseOrders.find((p) => p.id === draggingPoId);
+                    if (po) {
+                      handleMovePoToLane(po, "delivered_picked_up");
                     }
-                  >
-                    <div className="flex items-center justify-between">
-                      <span className="font-medium text-[#111827]">
-                        {po.po_number || `PO #${po.id.substring(0, 8)}`}
-                      </span>
-                    </div>
-                    <div className="mt-1 text-[11px] text-[#6B7280]">
-                      {po.supplier_name || "Supplier not set"}
-                    </div>
-                    {po.eta && (
-                      <div className="mt-1 text-[11px] text-[#6B7280]">
-                        ETA: {format(new Date(po.eta), "MMM d")}
+                    setDraggingPoId(null);
+                  }}
+                >
+                  <div className="mb-2 flex items-center justify-between">
+                    <span className="text-sm font-semibold text-[#111827]">
+                      Delivered / Picked Up
+                    </span>
+                    <span className="text-xs text-[#6B7280]">
+                      {deliveredPickedUpPOs.length}
+                    </span>
+                  </div>
+                  <div className="space-y-2">
+                    {deliveredPickedUpPOs.map((po) => (
+                      <div
+                        key={po.id}
+                        className="cursor-grab rounded-md border border-[#E5E7EB] bg-white px-3 py-2 text-xs shadow-sm hover:bg-[#F9FAFB] transition-colors"
+                        draggable
+                        onDragStart={() => setDraggingPoId(po.id)}
+                        onDragEnd={() => setDraggingPoId(null)}
+                        onClick={() =>
+                          navigate(
+                            createPageUrl("PurchaseOrders") + `?poId=${po.id}`
+                          )
+                        }
+                      >
+                        <div className="flex items-center justify-between">
+                          <span className="font-medium text-[#111827]">
+                            {po.po_number || `PO #${po.id.substring(0, 8)}`}
+                          </span>
+                        </div>
+                        <div className="mt-1 text-[11px] text-[#6B7280]">
+                          {po.supplier_name || "Supplier not set"}
+                        </div>
+                        {po.eta && (
+                          <div className="mt-1 text-[11px] text-[#6B7280]">
+                            ETA: {format(new Date(po.eta), "MMM d")}
+                          </div>
+                        )}
+                      </div>
+                    ))}
+                    {!deliveredPickedUpPOs.length && (
+                      <div className="text-[11px] text-[#6B7280] text-center py-4">
+                        No POs
                       </div>
                     )}
                   </div>
-                ))}
-                {!deliveredPickedUpPOs.length && (
-                  <div className="text-[11px] text-[#6B7280] text-center py-4">
-                    No POs
-                  </div>
-                )}
-              </div>
-            </div>
+                </div>
 
-            {/* Column: Completed */}
-            <div
-              className="flex flex-col rounded-xl border border-[#E5E7EB] bg-white p-3"
-              onDragOver={(e) => e.preventDefault()}
-              onDrop={(e) => {
-                e.preventDefault();
-                if (!draggingPoId) return;
-                const po = purchaseOrders.find((p) => p.id === draggingPoId);
-                if (po) {
-                  handleMovePoToLane(po, "completed");
-                }
-                setDraggingPoId(null);
-              }}
-            >
-              <div className="mb-2 flex items-center justify-between">
-                <span className="text-sm font-semibold text-[#111827]">
-                  Completed
-                </span>
-                <span className="text-xs text-[#6B7280]">
-                  {completedPOs.length}
-                </span>
-              </div>
-              <div className="space-y-2">
-                {completedPOs.map((po) => (
-                  <div
-                    key={po.id}
-                    className="cursor-grab rounded-md border border-[#E5E7EB] bg-white px-3 py-2 text-xs shadow-sm hover:bg-[#F9FAFB] transition-colors"
-                    draggable
-                    onDragStart={() => setDraggingPoId(po.id)}
-                    onDragEnd={() => setDraggingPoId(null)}
-                    onClick={() =>
-                      navigate(
-                        createPageUrl("PurchaseOrders") + `?poId=${po.id}`
-                      )
+                {/* Column: Completed */}
+                <div
+                  className="flex flex-col rounded-xl border border-[#E5E7EB] bg-white p-3"
+                  onDragOver={(e) => e.preventDefault()}
+                  onDrop={(e) => {
+                    e.preventDefault();
+                    if (!draggingPoId) return;
+                    const po = purchaseOrders.find((p) => p.id === draggingPoId);
+                    if (po) {
+                      handleMovePoToLane(po, "completed");
                     }
-                  >
-                    <div className="flex items-center justify-between">
-                      <span className="font-medium text-[#111827]">
-                        {po.po_number || `PO #${po.id.substring(0, 8)}`}
-                      </span>
-                    </div>
-                    <div className="mt-1 text-[11px] text-[#6B7280]">
-                      {po.supplier_name || "Supplier not set"}
-                    </div>
-                    {po.eta && (
-                      <div className="mt-1 text-[11px] text-[#6B7280]">
-                        ETA: {format(new Date(po.eta), "MMM d")}
+                    setDraggingPoId(null);
+                  }}
+                >
+                  <div className="mb-2 flex items-center justify-between">
+                    <span className="text-sm font-semibold text-[#111827]">
+                      Completed
+                    </span>
+                    <span className="text-xs text-[#6B7280]">
+                      {completedPOs.length}
+                    </span>
+                  </div>
+                  <div className="space-y-2">
+                    {completedPOs.map((po) => (
+                      <div
+                        key={po.id}
+                        className="cursor-grab rounded-md border border-[#E5E7EB] bg-white px-3 py-2 text-xs shadow-sm hover:bg-[#F9FAFB] transition-colors"
+                        draggable
+                        onDragStart={() => setDraggingPoId(po.id)}
+                        onDragEnd={() => setDraggingPoId(null)}
+                        onClick={() =>
+                          navigate(
+                            createPageUrl("PurchaseOrders") + `?poId=${po.id}`
+                          )
+                        }
+                      >
+                        <div className="flex items-center justify-between">
+                          <span className="font-medium text-[#111827]">
+                            {po.po_number || `PO #${po.id.substring(0, 8)}`}
+                          </span>
+                        </div>
+                        <div className="mt-1 text-[11px] text-[#6B7280]">
+                          {po.supplier_name || "Supplier not set"}
+                        </div>
+                        {po.eta && (
+                          <div className="mt-1 text-[11px] text-[#6B7280]">
+                            ETA: {format(new Date(po.eta), "MMM d")}
+                          </div>
+                        )}
+                      </div>
+                    ))}
+                    {!completedPOs.length && (
+                      <div className="text-[11px] text-[#6B7280] text-center py-4">
+                        No POs
                       </div>
                     )}
                   </div>
-                ))}
-                {!completedPOs.length && (
-                  <div className="text-[11px] text-[#6B7280] text-center py-4">
-                    No POs
-                  </div>
-                )}
-              </div>
-            </div>
-            </section>
+                </div>
+                </div>
+                </section>
 
-            {/* Loading Bay */}
-            <section className="mb-6">
-            <Card>
+                {/* Loading Bay */}
+                <section className="mb-6">
+                <Card>
               <CardHeader>
                 <CardTitle className="text-base">Loading Bay</CardTitle>
               </CardHeader>
@@ -855,13 +856,13 @@ export default function Logistics() {
                       </div>
                     </div>
                   ))
-                )}
-              </CardContent>
-            </Card>
-            </section>
+                  )}
+                  </CardContent>
+                  </Card>
+                  </section>
 
-            {/* Filters */}
-            <div className="flex flex-col md:flex-row gap-3">
+                  {/* Filters */}
+                  <div className="flex flex-col md:flex-row gap-3">
             <div className="relative flex-1">
               <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-[#6B7280]" />
               <Input
@@ -964,11 +965,11 @@ export default function Logistics() {
                   </div>
                 </PopoverContent>
               </Popover>
+              </div>
             </div>
-          </div>
 
-          {/* Parts Table */}
-          <div className="bg-white border border-[#E5E7EB] rounded-xl shadow-sm overflow-hidden">
+            {/* Parts Table */}
+            <div className="bg-white border border-[#E5E7EB] rounded-xl shadow-sm overflow-hidden">
             <div className="overflow-x-auto">
               <table className="w-full text-left text-sm">
                 <thead className="bg-gray-50/50 border-b border-gray-200">
@@ -1268,8 +1269,8 @@ export default function Logistics() {
                   )}
                 </tbody>
               </table>
+              </div>
             </div>
-          </div>
           </>
         )}
 
