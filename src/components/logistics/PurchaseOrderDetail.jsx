@@ -377,9 +377,6 @@ export default function PurchaseOrderDetail({ poId, onClose }) {
   const isProjectPO = !!formData.project_id;
   const availableStatuses = isProjectPO ? PO_STATUS_OPTIONS_PROJECT : PO_STATUS_OPTIONS_NON_PROJECT;
   
-  // Ensure priceListItems is always defined (prevents initialization error)
-  const safeePriceListItems = priceListItems || [];
-  
   const canCreateLogistics = [
     PO_STATUS.ON_ORDER,
     PO_STATUS.IN_TRANSIT,
@@ -702,7 +699,7 @@ export default function PurchaseOrderDetail({ poId, onClose }) {
                         Custom Item
                       </Button>
                       <div className="border-t my-1" />
-                      {safeePriceListItems.length > 0 && (
+                      {(priceListItems || []).length > 0 && (
                         <div className="space-y-1">
                           <div className="px-2 py-1 text-xs font-medium text-[#6B7280]">From Price List</div>
                           <Input
@@ -712,7 +709,7 @@ export default function PurchaseOrderDetail({ poId, onClose }) {
                             className="h-8 text-xs"
                           />
                           <div className="max-h-48 overflow-y-auto space-y-1">
-                            {safeePriceListItems
+                            {(priceListItems || [])
                               .filter(item => 
                                 !priceListSearch || 
                                 item.item?.toLowerCase().includes(priceListSearch.toLowerCase()) ||
