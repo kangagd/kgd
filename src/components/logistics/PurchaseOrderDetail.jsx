@@ -8,7 +8,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { X, Plus, Trash2, Package, Truck, Save, Send, ArrowRight, List, ShoppingCart } from "lucide-react";
+import { X, Plus, Trash2, Package, Truck, Save, Send, ArrowRight, List, ShoppingCart, Upload, FileText, Calendar } from "lucide-react";
 import { toast } from "sonner";
 import { PO_STATUS, PO_STATUS_OPTIONS, PO_DELIVERY_METHOD, PO_DELIVERY_METHOD_OPTIONS } from "@/components/domain/logisticsConfig";
 import { createPageUrl } from "@/utils";
@@ -30,8 +30,11 @@ export default function PurchaseOrderDetail({ poId, onClose }) {
     notes: "",
     reference: "",
     status: PO_STATUS.DRAFT,
+    eta: "",
+    attachments: [],
     line_items: []
   });
+  const [uploading, setUploading] = useState(false);
 
   const { data: po, isLoading } = useQuery({
     queryKey: ['purchaseOrder', poId],
@@ -101,6 +104,8 @@ export default function PurchaseOrderDetail({ poId, onClose }) {
         notes: po.notes || "",
         reference: po.po_number || "",
         status: po.status || PO_STATUS.DRAFT,
+        eta: po.expected_date || "",
+        attachments: po.attachments || [],
         line_items: items
       });
       setIsEditing(po.status === PO_STATUS.DRAFT);
@@ -160,10 +165,43 @@ export default function PurchaseOrderDetail({ poId, onClose }) {
       delivery_method: formData.delivery_method || null,
       notes: formData.notes,
       reference: formData.reference,
+      eta: formData.eta || null,
+      attachments: formData.attachments,
       line_items: formData.line_items
     };
     console.log('Saving PO with data:', dataToSend);
     updatePOMutation.mutate(dataToSend);
+  };
+
+  const handleFileUpload = async (e) => {
+    const files = Array.from(e.target.files || []);
+    if (files.length === 0) return;
+
+    setUploading(true);
+    try {
+      const uploadPromises = files.map(async (file) => {
+        const { file_url } = await base44.integrations.Core.UploadFile({ file });
+        return file_url;
+      });
+
+      const uploadedUrls = await Promise.all(uploadPromises);
+      setFormData((prev) => ({
+        ...prev,
+        attachments: [...prev.attachments, ...uploadedUrls]
+      }));
+      toast.success(`${files.length} file(s) uploaded`);
+    } catch (error) {
+      toast.error('Failed to upload files');
+    } finally {
+      setUploading(false);
+    }
+  };
+
+  const removeAttachment = (index) => {
+    setFormData((prev) => ({
+      ...prev,
+      attachments: prev.attachments.filter((_, i) => i !== index)
+    }));
   };
 
   const handleSendToSupplier = async () => {
@@ -187,6 +225,8 @@ export default function PurchaseOrderDetail({ poId, onClose }) {
       delivery_method: formData.delivery_method,
       notes: formData.notes,
       reference: formData.reference,
+      eta: formData.eta || null,
+      attachments: formData.attachments,
       line_items: formData.line_items
     });
     
@@ -455,6 +495,67 @@ export default function PurchaseOrderDetail({ poId, onClose }) {
                   ))}
                 </SelectContent>
               </Select>
+            </div>
+
+            <div>
+              <Label>ETA (Expected Date)</Label>
+              <div className="relative">
+                <Calendar className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-[#6B7280] pointer-events-none" />
+                <Input
+                  type="date"
+                  value={formData.eta}
+                  onChange={(e) => setFormData({ ...formData, eta: e.target.value })}
+                  className="pl-9"
+                />
+              </div>
+            </div>
+
+            <div>
+              <Label>Attachments</Label>
+              <div className="space-y-2">
+                {formData.attachments.length > 0 && (
+                  <div className="space-y-1">
+                    {formData.attachments.map((url, index) => (
+                      <div key={index} className="flex items-center justify-between p-2 bg-[#F3F4F6] rounded-lg">
+                        <a
+                          href={url}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="flex items-center gap-2 text-sm text-blue-600 hover:underline flex-1 truncate"
+                        >
+                          <FileText className="w-4 h-4 flex-shrink-0" />
+                          <span className="truncate">{url.split('/').pop()}</span>
+                        </a>
+                        <button
+                          onClick={() => removeAttachment(index)}
+                          className="p-1 hover:bg-red-50 rounded text-red-600 transition-colors"
+                        >
+                          <X className="w-4 h-4" />
+                        </button>
+                      </div>
+                    ))}
+                  </div>
+                )}
+                <div>
+                  <input
+                    type="file"
+                    id="attachment-upload"
+                    multiple
+                    onChange={handleFileUpload}
+                    className="hidden"
+                  />
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => document.getElementById('attachment-upload').click()}
+                    disabled={uploading}
+                    className="w-full"
+                  >
+                    <Upload className="w-4 h-4 mr-2" />
+                    {uploading ? 'Uploading...' : 'Upload Files'}
+                  </Button>
+                </div>
+              </div>
             </div>
 
             <div>
