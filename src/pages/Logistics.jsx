@@ -393,22 +393,212 @@ export default function Logistics() {
         <div className="flex items-center gap-3 mb-4">
           <BackButton to={createPageUrl("Dashboard")} />
         </div>
-        <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+
+        {/* Summary Header */}
+        <div className="mb-4 flex flex-wrap items-center justify-between gap-4">
           <div>
-            <h1 className="text-2xl font-bold text-[#111827]">Logistics Dashboard</h1>
-            <p className="text-sm text-[#6B7280] mt-1">Manage parts, orders, and locations across all projects</p>
+            <h1 className="text-2xl font-bold text-[#111827]">Delivery & Pickup Board</h1>
+            <p className="text-sm text-[#6B7280] mt-1">Track incoming orders, logistics jobs, and parts movement</p>
           </div>
-          <Button
-            onClick={() => {
-              setTempSupplierSelection("");
-              setShowSupplierSelector(true);
-            }}
-            className="bg-[#FAE008] text-[#111827] hover:bg-[#E5CF07] font-semibold shadow-sm hover:shadow-md transition h-10 px-4 text-sm rounded-xl"
-          >
-            <Plus className="w-4 h-4 mr-2" />
-            Create Purchase Order
-          </Button>
+          <div className="flex gap-6 text-sm">
+            <div className="flex flex-col">
+              <span className="font-semibold text-lg">{summaryStats.incomingPOCount}</span>
+              <span className="text-[#6B7280]">Incoming POs</span>
+            </div>
+            <div className="flex flex-col">
+              <span className="font-semibold text-lg">{summaryStats.logisticsJobCount}</span>
+              <span className="text-[#6B7280]">Logistics Jobs</span>
+            </div>
+            <div className="flex flex-col">
+              <span className="font-semibold text-lg">{summaryStats.loadingBayPartCount}</span>
+              <span className="text-[#6B7280]">Loading Bay Items</span>
+            </div>
+          </div>
         </div>
+
+        {/* Board Layout */}
+        <section className="mb-8">
+          <div className="grid gap-4 md:grid-cols-3">
+            {/* Column 1: Incoming POs */}
+            <Card className="h-full">
+              <CardHeader>
+                <CardTitle className="text-base">Incoming Purchase Orders</CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-2">
+                {loadingBoard ? (
+                  <div className="text-sm text-[#6B7280]">Loading…</div>
+                ) : incomingPOs.length === 0 ? (
+                  <div className="text-sm text-[#6B7280]">No incoming POs.</div>
+                ) : (
+                  incomingPOs.map((po) => (
+                    <div
+                      key={po.id}
+                      className="flex items-center justify-between rounded-md border px-3 py-2 hover:bg-[#F3F4F6] cursor-pointer transition-colors"
+                      onClick={() => navigate(createPageUrl("PurchaseOrders") + `?poId=${po.id}`)}
+                    >
+                      <div className="flex flex-col">
+                        <span className="text-sm font-medium">
+                          {po.po_number || po.reference || `PO #${po.id.substring(0, 8)}`}
+                        </span>
+                        <span className="text-xs text-[#6B7280]">
+                          {po.supplier_name || "Supplier not set"}
+                        </span>
+                      </div>
+                      <StatusBadge value={po.status} />
+                    </div>
+                  ))
+                )}
+              </CardContent>
+            </Card>
+
+            {/* Column 2: Logistics Jobs */}
+            <Card className="h-full">
+              <CardHeader>
+                <CardTitle className="text-base">Logistics Jobs</CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-4 text-sm">
+                {loadingBoard ? (
+                  <div className="text-sm text-[#6B7280]">Loading…</div>
+                ) : (
+                  <>
+                    <div>
+                      <div className="mb-1 font-medium text-[#111827]">Open / Scheduled</div>
+                      <div className="space-y-1">
+                        {[
+                          ...(logisticsJobGroups.open || []),
+                          ...(logisticsJobGroups.scheduled || []),
+                        ].map((job) => (
+                          <div
+                            key={job.id}
+                            className="flex items-center justify-between rounded-md border px-3 py-2 hover:bg-[#F3F4F6] cursor-pointer transition-colors"
+                            onClick={() => navigate(createPageUrl("Jobs") + `?jobId=${job.id}`)}
+                          >
+                            <div className="flex flex-col">
+                              <span className="text-sm font-medium">
+                                Job #{job.job_number || job.id.substring(0, 8)}
+                              </span>
+                              <span className="text-xs text-[#6B7280]">
+                                {job.scheduled_date ? format(new Date(job.scheduled_date), 'MMM d, yyyy') : "No date"}
+                              </span>
+                            </div>
+                            <StatusBadge value={job.status} />
+                          </div>
+                        ))}
+                        {(!logisticsJobGroups.open?.length && !logisticsJobGroups.scheduled?.length) && (
+                          <div className="text-xs text-[#6B7280]">No open logistics jobs.</div>
+                        )}
+                      </div>
+                    </div>
+
+                    <div>
+                      <div className="mb-1 font-medium text-[#111827]">In Progress</div>
+                      <div className="space-y-1">
+                        {(logisticsJobGroups.in_progress || []).map((job) => (
+                          <div
+                            key={job.id}
+                            className="flex items-center justify-between rounded-md border px-3 py-2 hover:bg-[#F3F4F6] cursor-pointer transition-colors"
+                            onClick={() => navigate(createPageUrl("Jobs") + `?jobId=${job.id}`)}
+                          >
+                            <div className="flex flex-col">
+                              <span className="text-sm font-medium">
+                                Job #{job.job_number || job.id.substring(0, 8)}
+                              </span>
+                              <span className="text-xs text-[#6B7280]">
+                                {job.scheduled_date ? format(new Date(job.scheduled_date), 'MMM d, yyyy') : "No date"}
+                              </span>
+                            </div>
+                            <StatusBadge value={job.status} />
+                          </div>
+                        ))}
+                        {(!logisticsJobGroups.in_progress?.length) && (
+                          <div className="text-xs text-[#6B7280]">No jobs in progress.</div>
+                        )}
+                      </div>
+                    </div>
+
+                    <div>
+                      <div className="mb-1 font-medium text-[#111827]">Completed</div>
+                      <div className="space-y-1">
+                        {(logisticsJobGroups.completed || []).map((job) => (
+                          <div
+                            key={job.id}
+                            className="flex items-center justify-between rounded-md border px-3 py-2 hover:bg-[#F3F4F6] cursor-pointer transition-colors"
+                            onClick={() => navigate(createPageUrl("Jobs") + `?jobId=${job.id}`)}
+                          >
+                            <div className="flex flex-col">
+                              <span className="text-sm font-medium">
+                                Job #{job.job_number || job.id.substring(0, 8)}
+                              </span>
+                              <span className="text-xs text-[#6B7280]">
+                                {job.scheduled_date ? format(new Date(job.scheduled_date), 'MMM d, yyyy') : "No date"}
+                              </span>
+                            </div>
+                            <StatusBadge value={job.status} />
+                          </div>
+                        ))}
+                        {(!logisticsJobGroups.completed?.length) && (
+                          <div className="text-xs text-[#6B7280]">No recently completed logistics jobs.</div>
+                        )}
+                      </div>
+                    </div>
+                  </>
+                )}
+              </CardContent>
+            </Card>
+
+            {/* Column 3: Loading Bay Parts */}
+            <Card className="h-full">
+              <CardHeader>
+                <CardTitle className="text-base">Loading Bay</CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-2 text-sm">
+                {loadingBoard ? (
+                  <div className="text-sm text-[#6B7280]">Loading…</div>
+                ) : loadingBayParts.length === 0 ? (
+                  <div className="text-sm text-[#6B7280]">No items in Loading Bay.</div>
+                ) : (
+                  loadingBayParts.map((part) => (
+                    <div
+                      key={part.id}
+                      className="flex flex-col rounded-md border px-3 py-2 cursor-pointer hover:bg-[#F3F4F6] transition-colors"
+                      onClick={() => setSelectedPart(part)}
+                    >
+                      <div className="flex items-center justify-between">
+                        <span className="text-sm font-medium">{part.category || "Part"}</span>
+                        <span className="text-xs text-[#6B7280]">Qty: {part.quantity_required || part.quantity || 1}</span>
+                      </div>
+                      <div className="text-xs text-[#6B7280] mt-1">
+                        {(() => {
+                          const proj = projects.find(p => p.id === part.project_id);
+                          return proj ? proj.title : part.project_id ? `Project ${part.project_id.substring(0, 8)}` : "No project";
+                        })()}
+                      </div>
+                    </div>
+                  ))
+                )}
+              </CardContent>
+            </Card>
+          </div>
+        </section>
+
+        {/* Existing Content Section */}
+        <section className="space-y-6">
+          <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+            <div>
+              <h2 className="text-lg font-semibold text-[#111827]">Jobs & Calendar</h2>
+              <p className="text-sm text-[#6B7280] mt-1">Manage parts, orders, and locations across all projects</p>
+            </div>
+            <Button
+              onClick={() => {
+                setTempSupplierSelection("");
+                setShowSupplierSelector(true);
+              }}
+              className="bg-[#FAE008] text-[#111827] hover:bg-[#E5CF07] font-semibold shadow-sm hover:shadow-md transition h-10 px-4 text-sm rounded-xl"
+            >
+              <Plus className="w-4 h-4 mr-2" />
+              Create Purchase Order
+            </Button>
+          </div>
 
         {/* View Mode Toggle */}
         <div className="flex items-center justify-between mt-2 mb-4">
