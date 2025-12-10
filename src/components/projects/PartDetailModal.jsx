@@ -102,6 +102,13 @@ export default function PartDetailModal({ open, part, onClose, onSave, isSubmitt
     }
   });
 
+  // Fetch price list items BEFORE useEffect that needs them
+  const { data: priceListItems = [] } = useQuery({
+    queryKey: ['priceListItems-for-parts'],
+    queryFn: () => base44.entities.PriceListItem.list('item'),
+    enabled: open
+  });
+
   useEffect(() => {
     if (!open) return; // Don't run if modal isn't open
     
