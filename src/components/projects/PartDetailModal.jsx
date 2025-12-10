@@ -197,7 +197,9 @@ export default function PartDetailModal({ open, part, onClose, onSave, isSubmitt
 
   // Get selected item name for display
   const selectedPriceListItem = priceListItems.find(item => item.id === formData.price_list_item_id);
-  const displayValue = selectedPriceListItem ? selectedPriceListItem.item : (formData.price_list_item_id ? "Loading..." : priceListSearch);
+  const displayValue = formData.price_list_item_id 
+    ? (selectedPriceListItem?.item || "Loading...") 
+    : priceListSearch;
 
   const handleSubmit = async (e) => {
     e.preventDefault();
