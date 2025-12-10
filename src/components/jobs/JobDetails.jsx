@@ -207,7 +207,7 @@ export default function JobDetails({ job: initialJob, onClose, onStatusChange, o
         const currentUser = await base44.auth.me();
         setUser(currentUser);
       } catch (error) {
-        console.error("Error loading user:", error);
+        // Error loading user
       }
     };
     loadUser();
@@ -448,7 +448,7 @@ export default function JobDetails({ job: initialJob, onClose, onStatusChange, o
         changed_by_name: user.full_name
       });
     } catch (error) {
-      console.error("Error logging change:", error);
+      // Error logging change
     }
   };
 
@@ -801,7 +801,7 @@ export default function JobDetails({ job: initialJob, onClose, onStatusChange, o
           toast.success(`Deleted ${photosToDelete.length} photo(s)`);
         }
       } catch (error) {
-        console.error("Error deleting photo records:", error);
+        // Error deleting photo records
       }
     }
 
@@ -826,7 +826,6 @@ export default function JobDetails({ job: initialJob, onClose, onStatusChange, o
   };
 
   const handleDeleteClick = () => {
-    console.log('Delete clicked for job:', job.id, job.job_number);
     onDelete(job.id);
     setShowDeleteConfirm(false);
   };
@@ -1718,7 +1717,6 @@ export default function JobDetails({ job: initialJob, onClose, onStatusChange, o
                           setNextSteps(data.next_steps || "");
                           toast.success("Report generated successfully");
                         } catch (error) {
-                          console.error("Error generating report:", error);
                           toast.error("Failed to generate report");
                         } finally {
                           setIsGeneratingReport(false);

@@ -42,7 +42,6 @@ import CreateInvoiceModal from "../invoices/CreateInvoiceModal";
 import TakePaymentModal from "../invoices/TakePaymentModal";
 import WarrantyCard from "./WarrantyCard";
 import MaintenanceSection from "./MaintenanceSection";
-import AIEmailSuggestionsBanner from "./AIEmailSuggestionsBanner";
 import DuplicateWarningCard, { DuplicateBadge } from "../common/DuplicateWarningCard";
 import CustomerQuickEdit from "./CustomerQuickEdit";
 import EntityModal from "../common/EntityModal";
@@ -136,7 +135,7 @@ export default function ProjectDetails({ project: initialProject, onClose, onEdi
         const currentUser = await base44.auth.me();
         setUser(currentUser);
       } catch (error) {
-        console.error("Error loading user:", error);
+        // Error loading user
       }
     };
     loadUser();
@@ -439,7 +438,6 @@ export default function ProjectDetails({ project: initialProject, onClose, onEdi
       toast.success(`Invoice #${invoice.xero_invoice_number} linked to project`);
       setShowLinkInvoiceModal(false);
     } catch (error) {
-      console.error('Error linking invoice:', error);
       toast.error('Failed to link invoice');
     } finally {
       setIsLinkingInvoice(false);
@@ -519,7 +517,6 @@ export default function ProjectDetails({ project: initialProject, onClose, onEdi
       queryClient.invalidateQueries({ queryKey: ['projects'] });
       toast.success('AI suggestions applied to project');
     } catch (error) {
-      console.error('Error applying AI suggestions:', error);
       toast.error('Failed to apply AI suggestions');
     }
   };
@@ -568,7 +565,7 @@ export default function ProjectDetails({ project: initialProject, onClose, onEdi
       const jobType = jobTypes.find(jt => jt.name === jobTypeName);
       
       if (!jobType) {
-        console.warn(`JobType "${jobTypeName}" not found. Available job types:`, jobTypes.map(jt => jt.name));
+        // JobType not found
       }
       
       // Get the latest job number
@@ -765,7 +762,6 @@ Format as HTML bullet points using <ul> and <li> tags. Include only the most cri
       toast.success(`Project marked as lost. ${openJobs.length} job${openJobs.length !== 1 ? 's' : ''} and ${allOpenTasks.length} task${allOpenTasks.length !== 1 ? 's' : ''} cancelled.`);
       setShowLostModal(false);
     } catch (error) {
-      console.error('Error marking project as lost:', error);
       toast.error('Failed to mark project as lost');
     } finally {
       setIsMarkingLost(false);
@@ -851,7 +847,7 @@ Format as HTML bullet points using <ul> and <li> tags. Include only the most cri
         }
       }
     } catch (error) {
-      console.error('Upload failed:', error);
+      toast.error('Upload failed');
     } finally {
       setUploading(false);
     }
@@ -873,7 +869,7 @@ Format as HTML bullet points using <ul> and <li> tags. Include only the most cri
           toast.success(`Deleted ${photosToDelete.length} photo(s)`);
         }
       } catch (error) {
-        console.error("Error deleting photo records:", error);
+        // Error deleting photo records
       }
     }
 
@@ -1422,14 +1418,7 @@ Format as HTML bullet points using <ul> and <li> tags. Include only the most cri
             )}
           </div>
 
-          {/* AI Email Suggestions Banner */}
-          {emailThreadId && (
-            <AIEmailSuggestionsBanner
-              emailThreadId={emailThreadId}
-              project={project}
-              onApplySuggestions={handleApplyAISuggestions}
-            />
-          )}
+
 
           <div className="bg-white p-3 rounded-lg border border-[#E5E7EB] overflow-hidden">
             <div className="text-[12px] font-medium text-[#4B5563] leading-[1.35] mb-2 uppercase tracking-wide">Project Stage</div>
