@@ -542,7 +542,7 @@ export default function Logistics() {
         {/* Purchase Orders Kanban Board */}
         <section className="mb-8">
           <h2 className="mb-3 text-lg font-semibold text-[#111827]">Purchase Orders – Logistics Board</h2>
-          <div className="grid gap-4 md:grid-cols-3">
+          <div className="grid gap-4 md:grid-cols-4">
             {/* Column: Sent */}
             <div
               className="flex flex-col rounded-xl border border-[#E5E7EB] bg-white p-3"
@@ -583,13 +583,13 @@ export default function Logistics() {
                 ))}
                 {!sentPOs.length && (
                   <div className="text-[11px] text-[#6B7280] text-center py-4">
-                    No POs in Sent
+                    No POs
                   </div>
                 )}
               </div>
             </div>
 
-            {/* Column: Delivered / Acknowledged */}
+            {/* Column: Confirmed */}
             <div
               className="flex flex-col rounded-xl border border-[#E5E7EB] bg-white p-3"
               onDragOver={(e) => e.preventDefault()}
@@ -598,17 +598,68 @@ export default function Logistics() {
                 if (!draggingPoId) return;
                 const po = purchaseOrders.find((p) => p.id === draggingPoId);
                 if (po) {
-                  handleMovePoToLane(po, "ready");
+                  handleMovePoToLane(po, "confirmed");
                 }
                 setDraggingPoId(null);
               }}
             >
               <div className="mb-2 flex items-center justify-between">
-                <span className="text-sm font-semibold text-[#111827]">Delivered / Acknowledged</span>
-                <span className="text-xs text-[#6B7280]">{readyPOs.length}</span>
+                <span className="text-sm font-semibold text-[#111827]">Confirmed</span>
+                <span className="text-xs text-[#6B7280]">{confirmedPOs.length}</span>
               </div>
               <div className="space-y-2">
-                {readyPOs.map((po) => (
+                {confirmedPOs.map((po) => (
+                  <div
+                    key={po.id}
+                    className="cursor-grab rounded-md border border-[#E5E7EB] bg-white px-3 py-2 text-xs shadow-sm hover:bg-[#F9FAFB] transition-colors"
+                    draggable
+                    onDragStart={() => setDraggingPoId(po.id)}
+                    onDragEnd={() => setDraggingPoId(null)}
+                    onClick={() => navigate(createPageUrl("PurchaseOrders") + `?poId=${po.id}`)}
+                  >
+                    <div className="flex items-center justify-between">
+                      <span className="font-medium text-[#111827]">
+                        {po.po_number || `PO #${po.id.substring(0, 8)}`}
+                      </span>
+                    </div>
+                    <div className="mt-1 text-[11px] text-[#6B7280]">
+                      {po.supplier_name || "Supplier not set"}
+                    </div>
+                    <div className="mt-1">
+                      <Badge variant="outline" className="text-[10px] px-1 py-0">
+                        {po.status}
+                      </Badge>
+                    </div>
+                  </div>
+                ))}
+                {!confirmedPOs.length && (
+                  <div className="text-[11px] text-[#6B7280] text-center py-4">
+                    No POs
+                  </div>
+                )}
+              </div>
+            </div>
+
+            {/* Column: Delivery Bay */}
+            <div
+              className="flex flex-col rounded-xl border border-[#E5E7EB] bg-white p-3"
+              onDragOver={(e) => e.preventDefault()}
+              onDrop={(e) => {
+                e.preventDefault();
+                if (!draggingPoId) return;
+                const po = purchaseOrders.find((p) => p.id === draggingPoId);
+                if (po) {
+                  handleMovePoToLane(po, "delivery_bay");
+                }
+                setDraggingPoId(null);
+              }}
+            >
+              <div className="mb-2 flex items-center justify-between">
+                <span className="text-sm font-semibold text-[#111827]">Delivery Bay</span>
+                <span className="text-xs text-[#6B7280]">{deliveryBayPOs.length}</span>
+              </div>
+              <div className="space-y-2">
+                {deliveryBayPOs.map((po) => (
                   <div
                     key={po.id}
                     className="cursor-grab rounded-md border border-[#E5E7EB] bg-white px-3 py-2 text-xs shadow-sm hover:bg-[#F9FAFB] transition-colors"
@@ -627,9 +678,9 @@ export default function Logistics() {
                     </div>
                   </div>
                 ))}
-                {!readyPOs.length && (
+                {!deliveryBayPOs.length && (
                   <div className="text-[11px] text-[#6B7280] text-center py-4">
-                    No POs ready or acknowledged
+                    No POs
                   </div>
                 )}
               </div>
@@ -671,11 +722,16 @@ export default function Logistics() {
                     <div className="mt-1 text-[11px] text-[#6B7280]">
                       {po.supplier_name || "Supplier not set"}
                     </div>
+                    <div className="mt-1">
+                      <Badge variant="outline" className="text-[10px] px-1 py-0">
+                        {po.status}
+                      </Badge>
+                    </div>
                   </div>
                 ))}
                 {!completedPOs.length && (
                   <div className="text-[11px] text-[#6B7280] text-center py-4">
-                    No completed POs
+                    No POs
                   </div>
                 )}
               </div>
