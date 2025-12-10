@@ -8,7 +8,9 @@ import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Badge } from "@/components/ui/badge";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { Dialog, DialogContent } from "@/components/ui/dialog";
 import { Search, Truck, MapPin, AlertCircle, Link as LinkIcon, Plus, Briefcase, ExternalLink } from "lucide-react";
+import PurchaseOrderDetail from "../components/logistics/PurchaseOrderDetail";
 import { format } from "date-fns";
 import { createPageUrl } from "@/utils";
 import { Link, useNavigate } from "react-router-dom";
@@ -54,7 +56,7 @@ export default function Logistics() {
   const [vehicleFilter, setVehicleFilter] = useState("all");
   const [selectedPart, setSelectedPart] = useState(null);
   const [showOnlyThirdParty, setShowOnlyThirdParty] = useState(false);
-  const [draggingPoId, setDraggingPoId] = useState(null);
+  const [selectedPoId, setSelectedPoId] = useState(null);
 
   // Fetch Data
   const { data: parts = [], isLoading: partsLoading } = useQuery({
@@ -142,7 +144,7 @@ export default function Logistics() {
 
   // Kanban columns based on PO status
   const sentPOs = useMemo(
-    () => purchaseOrders.filter((po) => po.status === PO_STATUS.SENT),
+    () => purchaseOrders.filter((po) => po.status === PO_STATUS.SENT || po.status === PO_STATUS.CONFIRMED),
     [purchaseOrders]
   );
 
@@ -150,7 +152,6 @@ export default function Logistics() {
     () =>
       purchaseOrders.filter(
         (po) =>
-          po.status === PO_STATUS.CONFIRMED ||
           po.status === PO_STATUS.DELIVERED ||
           po.status === PO_STATUS.READY_TO_PICK_UP
       ),
@@ -183,25 +184,7 @@ export default function Logistics() {
     [purchaseOrders]
   );
 
-  const handleMovePoToLane = async (po, targetLane) => {
-    let newStatus = po.status;
-
-    if (targetLane === "draft") {
-      newStatus = PO_STATUS.DRAFT;
-    } else if (targetLane === "sent") {
-      newStatus = PO_STATUS.SENT;
-    } else if (targetLane === "delivered_picked_up") {
-      if (po.delivery_method === PO_DELIVERY_METHOD.DELIVERY) {
-        newStatus = PO_STATUS.DELIVERED;
-      } else if (po.delivery_method === PO_DELIVERY_METHOD.PICKUP) {
-        newStatus = PO_STATUS.READY_TO_PICK_UP;
-      } else {
-        newStatus = PO_STATUS.DELIVERED_TO_DELIVERY_BAY;
-      }
-    } else if (targetLane === "completed") {
-      newStatus = PO_STATUS.COMPLETED_IN_STORAGE;
-    }
-
+  const handleUpdatePoStatus = async (po, newStatus) => {
     if (newStatus === po.status) return;
 
     try {
@@ -212,20 +195,14 @@ export default function Logistics() {
       });
 
       if (!response?.data?.success) {
-        toast.error(response?.data?.error || "Failed to move PO");
+        toast.error(response?.data?.error || "Failed to update PO status");
         return;
       }
 
-      const laneNames = {
-        draft: "Draft",
-        sent: "Sent",
-        delivered_picked_up: "Delivered/Picked Up",
-        completed: "Completed",
-      };
-      toast.success(`PO moved to ${laneNames[targetLane]}`);
+      toast.success(`Status updated to ${newStatus}`);
       queryClient.invalidateQueries({ queryKey: ["purchaseOrders"] });
     } catch (error) {
-      toast.error("Error moving PO");
+      toast.error("Error updating PO status");
     }
   };
 
@@ -553,19 +530,7 @@ export default function Logistics() {
             <section className="mb-6">
               <div className="grid gap-4 md:grid-cols-4">
                 {/* Column: Draft */}
-                <div
-                  className="flex flex-col rounded-xl border border-[#E5E7EB] bg-white p-3"
-                  onDragOver={(e) => e.preventDefault()}
-                  onDrop={(e) => {
-                    e.preventDefault();
-                    if (!draggingPoId) return;
-                    const po = purchaseOrders.find((p) => p.id === draggingPoId);
-                    if (po) {
-                      handleMovePoToLane(po, "draft");
-                    }
-                    setDraggingPoId(null);
-                  }}
-                >
+                <div className="flex flex-col rounded-xl border border-[#E5E7EB] bg-white p-3">
                   <div className="mb-2 flex items-center justify-between">
                     <span className="text-sm font-semibold text-[#111827]">
                       Draft
@@ -576,20 +541,33 @@ export default function Logistics() {
                     {draftPOs.map((po) => (
                       <div
                         key={po.id}
-                        className="cursor-grab rounded-md border border-[#E5E7EB] bg-white px-3 py-2 text-xs shadow-sm hover:bg-[#F9FAFB] transition-colors"
-                        draggable
-                        onDragStart={() => setDraggingPoId(po.id)}
-                        onDragEnd={() => setDraggingPoId(null)}
-                        onClick={() =>
-                          navigate(
-                            createPageUrl("PurchaseOrders") + `?poId=${po.id}`
-                          )
-                        }
+                        className="cursor-pointer rounded-md border border-[#E5E7EB] bg-white px-3 py-2 text-xs shadow-sm hover:bg-[#F9FAFB] transition-colors"
+                        onClick={() => setSelectedPoId(po.id)}
                       >
-                        <div className="flex items-center justify-between">
+                        <div className="flex items-center justify-between mb-2">
                           <span className="font-medium text-[#111827]">
                             {po.po_number || `PO #${po.id.substring(0, 8)}`}
                           </span>
+                          <Select
+                            value={po.status}
+                            onValueChange={(value) => handleUpdatePoStatus(po, value)}
+                            onClick={(e) => e.stopPropagation()}
+                          >
+                            <SelectTrigger className="h-6 w-auto min-w-[100px] text-[10px] px-2 border-0 bg-slate-100 text-slate-700">
+                              <SelectValue />
+                            </SelectTrigger>
+                            <SelectContent onClick={(e) => e.stopPropagation()}>
+                              {PO_STATUS_OPTIONS.filter((status) => {
+                                if (po.delivery_method === PO_DELIVERY_METHOD.DELIVERY && status === PO_STATUS.READY_TO_PICK_UP) return false;
+                                if (po.delivery_method === PO_DELIVERY_METHOD.PICKUP && status === PO_STATUS.DELIVERED_TO_DELIVERY_BAY) return false;
+                                return true;
+                              }).map((status) => (
+                                <SelectItem key={status} value={status}>
+                                  {status}
+                                </SelectItem>
+                              ))}
+                            </SelectContent>
+                          </Select>
                         </div>
                         <div className="mt-1 text-[11px] text-[#6B7280]">
                           {po.supplier_name || "Supplier not set"}
@@ -610,19 +588,7 @@ export default function Logistics() {
                 </div>
 
                 {/* Column: Sent */}
-                <div
-                  className="flex flex-col rounded-xl border border-[#E5E7EB] bg-white p-3"
-                  onDragOver={(e) => e.preventDefault()}
-                  onDrop={(e) => {
-                    e.preventDefault();
-                    if (!draggingPoId) return;
-                    const po = purchaseOrders.find((p) => p.id === draggingPoId);
-                    if (po) {
-                      handleMovePoToLane(po, "sent");
-                    }
-                    setDraggingPoId(null);
-                  }}
-                >
+                <div className="flex flex-col rounded-xl border border-[#E5E7EB] bg-white p-3">
                   <div className="mb-2 flex items-center justify-between">
                     <span className="text-sm font-semibold text-[#111827]">
                       Sent
@@ -633,20 +599,33 @@ export default function Logistics() {
                     {sentPOs.map((po) => (
                       <div
                         key={po.id}
-                        className="cursor-grab rounded-md border border-[#E5E7EB] bg-white px-3 py-2 text-xs shadow-sm hover:bg-[#F9FAFB] transition-colors"
-                        draggable
-                        onDragStart={() => setDraggingPoId(po.id)}
-                        onDragEnd={() => setDraggingPoId(null)}
-                        onClick={() =>
-                          navigate(
-                            createPageUrl("PurchaseOrders") + `?poId=${po.id}`
-                          )
-                        }
+                        className="cursor-pointer rounded-md border border-[#E5E7EB] bg-white px-3 py-2 text-xs shadow-sm hover:bg-[#F9FAFB] transition-colors"
+                        onClick={() => setSelectedPoId(po.id)}
                       >
-                        <div className="flex items-center justify-between">
+                        <div className="flex items-center justify-between mb-2">
                           <span className="font-medium text-[#111827]">
                             {po.po_number || `PO #${po.id.substring(0, 8)}`}
                           </span>
+                          <Select
+                            value={po.status}
+                            onValueChange={(value) => handleUpdatePoStatus(po, value)}
+                            onClick={(e) => e.stopPropagation()}
+                          >
+                            <SelectTrigger className={`h-6 w-auto min-w-[100px] text-[10px] px-2 border-0 ${po.status === PO_STATUS.SENT ? 'bg-blue-100 text-blue-700' : 'bg-purple-100 text-purple-700'}`}>
+                              <SelectValue />
+                            </SelectTrigger>
+                            <SelectContent onClick={(e) => e.stopPropagation()}>
+                              {PO_STATUS_OPTIONS.filter((status) => {
+                                if (po.delivery_method === PO_DELIVERY_METHOD.DELIVERY && status === PO_STATUS.READY_TO_PICK_UP) return false;
+                                if (po.delivery_method === PO_DELIVERY_METHOD.PICKUP && status === PO_STATUS.DELIVERED_TO_DELIVERY_BAY) return false;
+                                return true;
+                              }).map((status) => (
+                                <SelectItem key={status} value={status}>
+                                  {status}
+                                </SelectItem>
+                              ))}
+                            </SelectContent>
+                          </Select>
                         </div>
                         <div className="mt-1 text-[11px] text-[#6B7280]">
                           {po.supplier_name || "Supplier not set"}
@@ -666,20 +645,8 @@ export default function Logistics() {
                   </div>
                 </div>
 
-                    {/* Column: Delivered/Picked Up */}
-                <div
-                  className="flex flex-col rounded-xl border border-[#E5E7EB] bg-white p-3"
-                  onDragOver={(e) => e.preventDefault()}
-                  onDrop={(e) => {
-                    e.preventDefault();
-                    if (!draggingPoId) return;
-                    const po = purchaseOrders.find((p) => p.id === draggingPoId);
-                    if (po) {
-                      handleMovePoToLane(po, "delivered_picked_up");
-                    }
-                    setDraggingPoId(null);
-                  }}
-                >
+                {/* Column: Delivered/Picked Up */}
+                <div className="flex flex-col rounded-xl border border-[#E5E7EB] bg-white p-3">
                   <div className="mb-2 flex items-center justify-between">
                     <span className="text-sm font-semibold text-[#111827]">
                       Delivered / Picked Up
@@ -692,20 +659,33 @@ export default function Logistics() {
                     {deliveredPickedUpPOs.map((po) => (
                       <div
                         key={po.id}
-                        className="cursor-grab rounded-md border border-[#E5E7EB] bg-white px-3 py-2 text-xs shadow-sm hover:bg-[#F9FAFB] transition-colors"
-                        draggable
-                        onDragStart={() => setDraggingPoId(po.id)}
-                        onDragEnd={() => setDraggingPoId(null)}
-                        onClick={() =>
-                          navigate(
-                            createPageUrl("PurchaseOrders") + `?poId=${po.id}`
-                          )
-                        }
+                        className="cursor-pointer rounded-md border border-[#E5E7EB] bg-white px-3 py-2 text-xs shadow-sm hover:bg-[#F9FAFB] transition-colors"
+                        onClick={() => setSelectedPoId(po.id)}
                       >
-                        <div className="flex items-center justify-between">
+                        <div className="flex items-center justify-between mb-2">
                           <span className="font-medium text-[#111827]">
                             {po.po_number || `PO #${po.id.substring(0, 8)}`}
                           </span>
+                          <Select
+                            value={po.status}
+                            onValueChange={(value) => handleUpdatePoStatus(po, value)}
+                            onClick={(e) => e.stopPropagation()}
+                          >
+                            <SelectTrigger className={`h-6 w-auto min-w-[100px] text-[10px] px-2 border-0 ${po.status === PO_STATUS.READY_TO_PICK_UP ? 'bg-amber-100 text-amber-700' : 'bg-cyan-100 text-cyan-700'}`}>
+                              <SelectValue />
+                            </SelectTrigger>
+                            <SelectContent onClick={(e) => e.stopPropagation()}>
+                              {PO_STATUS_OPTIONS.filter((status) => {
+                                if (po.delivery_method === PO_DELIVERY_METHOD.DELIVERY && status === PO_STATUS.READY_TO_PICK_UP) return false;
+                                if (po.delivery_method === PO_DELIVERY_METHOD.PICKUP && status === PO_STATUS.DELIVERED_TO_DELIVERY_BAY) return false;
+                                return true;
+                              }).map((status) => (
+                                <SelectItem key={status} value={status}>
+                                  {status}
+                                </SelectItem>
+                              ))}
+                            </SelectContent>
+                          </Select>
                         </div>
                         <div className="mt-1 text-[11px] text-[#6B7280]">
                           {po.supplier_name || "Supplier not set"}
@@ -726,19 +706,7 @@ export default function Logistics() {
                 </div>
 
                 {/* Column: Completed */}
-                <div
-                  className="flex flex-col rounded-xl border border-[#E5E7EB] bg-white p-3"
-                  onDragOver={(e) => e.preventDefault()}
-                  onDrop={(e) => {
-                    e.preventDefault();
-                    if (!draggingPoId) return;
-                    const po = purchaseOrders.find((p) => p.id === draggingPoId);
-                    if (po) {
-                      handleMovePoToLane(po, "completed");
-                    }
-                    setDraggingPoId(null);
-                  }}
-                >
+                <div className="flex flex-col rounded-xl border border-[#E5E7EB] bg-white p-3">
                   <div className="mb-2 flex items-center justify-between">
                     <span className="text-sm font-semibold text-[#111827]">
                       Completed
@@ -751,20 +719,33 @@ export default function Logistics() {
                     {completedPOs.map((po) => (
                       <div
                         key={po.id}
-                        className="cursor-grab rounded-md border border-[#E5E7EB] bg-white px-3 py-2 text-xs shadow-sm hover:bg-[#F9FAFB] transition-colors"
-                        draggable
-                        onDragStart={() => setDraggingPoId(po.id)}
-                        onDragEnd={() => setDraggingPoId(null)}
-                        onClick={() =>
-                          navigate(
-                            createPageUrl("PurchaseOrders") + `?poId=${po.id}`
-                          )
-                        }
+                        className="cursor-pointer rounded-md border border-[#E5E7EB] bg-white px-3 py-2 text-xs shadow-sm hover:bg-[#F9FAFB] transition-colors"
+                        onClick={() => setSelectedPoId(po.id)}
                       >
-                        <div className="flex items-center justify-between">
+                        <div className="flex items-center justify-between mb-2">
                           <span className="font-medium text-[#111827]">
                             {po.po_number || `PO #${po.id.substring(0, 8)}`}
                           </span>
+                          <Select
+                            value={po.status}
+                            onValueChange={(value) => handleUpdatePoStatus(po, value)}
+                            onClick={(e) => e.stopPropagation()}
+                          >
+                            <SelectTrigger className={`h-6 w-auto min-w-[100px] text-[10px] px-2 border-0 ${po.status === PO_STATUS.COMPLETED_IN_STORAGE ? 'bg-emerald-100 text-emerald-700' : 'bg-teal-100 text-teal-700'}`}>
+                              <SelectValue />
+                            </SelectTrigger>
+                            <SelectContent onClick={(e) => e.stopPropagation()}>
+                              {PO_STATUS_OPTIONS.filter((status) => {
+                                if (po.delivery_method === PO_DELIVERY_METHOD.DELIVERY && status === PO_STATUS.READY_TO_PICK_UP) return false;
+                                if (po.delivery_method === PO_DELIVERY_METHOD.PICKUP && status === PO_STATUS.DELIVERED_TO_DELIVERY_BAY) return false;
+                                return true;
+                              }).map((status) => (
+                                <SelectItem key={status} value={status}>
+                                  {status}
+                                </SelectItem>
+                              ))}
+                            </SelectContent>
+                          </Select>
                         </div>
                         <div className="mt-1 text-[11px] text-[#6B7280]">
                           {po.supplier_name || "Supplier not set"}
@@ -783,8 +764,8 @@ export default function Logistics() {
                     )}
                   </div>
                 </div>
-                </div>
-                </section>
+              </div>
+            </section>
 
                 {/* Loading Bay */}
                 <section className="mb-6">
@@ -987,7 +968,17 @@ export default function Logistics() {
         )}
       </div>
 
-
+      {/* PO Detail Modal */}
+      {selectedPoId && (
+        <Dialog open={!!selectedPoId} onOpenChange={(open) => !open && setSelectedPoId(null)}>
+          <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto p-0">
+            <PurchaseOrderDetail
+              poId={selectedPoId}
+              onClose={() => setSelectedPoId(null)}
+            />
+          </DialogContent>
+        </Dialog>
+      )}
     </div>
   );
 }
