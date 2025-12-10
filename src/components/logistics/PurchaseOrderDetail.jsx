@@ -10,7 +10,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { X, Plus, Trash2, Package, Truck, Save, Send, ArrowRight, List, ShoppingCart, Upload, FileText, Calendar, Trash } from "lucide-react";
 import { toast } from "sonner";
-import { PO_STATUS, PO_STATUS_OPTIONS, PO_DELIVERY_METHOD, PO_DELIVERY_METHOD_OPTIONS } from "@/components/domain/logisticsConfig";
+import { PO_STATUS, PO_STATUS_OPTIONS, PO_STATUS_OPTIONS_NON_PROJECT, PO_STATUS_OPTIONS_PROJECT, PO_DELIVERY_METHOD, PO_DELIVERY_METHOD_OPTIONS } from "@/components/domain/logisticsConfig";
 import { createPageUrl } from "@/utils";
 import { useNavigate } from "react-router-dom";
 import {
@@ -286,11 +286,11 @@ export default function PurchaseOrderDetail({ poId, onClose }) {
       line_items: formData.line_items
     });
     
-    // Then update status to Sent
+    // Then update status to On Order
     updatePOMutation.mutate({
       action: 'updateStatus',
       id: poId,
-      status: PO_STATUS.SENT
+      status: PO_STATUS.ON_ORDER
     });
   };
 
@@ -335,6 +335,14 @@ export default function PurchaseOrderDetail({ poId, onClose }) {
   const getStatusColor = (status) => {
     const colors = {
       'Draft': 'bg-slate-100 text-slate-700',
+      'On Order': 'bg-blue-100 text-blue-700',
+      'In Transit': 'bg-purple-100 text-purple-700',
+      'Delivered - Loading Bay': 'bg-cyan-100 text-cyan-700',
+      'Ready for Pick up': 'bg-amber-100 text-amber-700',
+      'In Storage': 'bg-emerald-100 text-emerald-700',
+      'In Vehicle': 'bg-teal-100 text-teal-700',
+      'Installed': 'bg-green-100 text-green-700',
+      // Legacy support
       'Sent': 'bg-blue-100 text-blue-700',
       'Confirmed': 'bg-purple-100 text-purple-700',
       'Ready to Pick Up': 'bg-amber-100 text-amber-700',
@@ -368,10 +376,17 @@ export default function PurchaseOrderDetail({ poId, onClose }) {
   }
 
   const isDraft = po.status === PO_STATUS.DRAFT;
+  const isProjectPO = !!formData.project_id;
+  const availableStatuses = isProjectPO ? PO_STATUS_OPTIONS_PROJECT : PO_STATUS_OPTIONS_NON_PROJECT;
+  
   const canCreateLogistics = [
+    PO_STATUS.ON_ORDER,
+    PO_STATUS.IN_TRANSIT,
+    PO_STATUS.READY_TO_PICK_UP,
+    PO_STATUS.DELIVERED_LOADING_BAY,
+    // Legacy
     PO_STATUS.SENT, 
     PO_STATUS.CONFIRMED, 
-    PO_STATUS.READY_TO_PICK_UP,
     PO_STATUS.DELIVERED_TO_DELIVERY_BAY
   ].includes(po.status);
 
@@ -562,13 +577,15 @@ export default function PurchaseOrderDetail({ poId, onClose }) {
                   <SelectValue placeholder="Select status" />
                 </SelectTrigger>
                 <SelectContent>
-                  {PO_STATUS_OPTIONS.filter((status) => {
-                    // For DELIVERY: exclude "Ready to Pick Up"
-                    if (formData.delivery_method === PO_DELIVERY_METHOD.PICKUP && status === PO_STATUS.DELIVERED_TO_DELIVERY_BAY) {
+                  {availableStatuses.filter((status) => {
+                    // For PICKUP: exclude "Delivered - Loading Bay"
+                    if (formData.delivery_method === PO_DELIVERY_METHOD.PICKUP && 
+                        (status === PO_STATUS.DELIVERED_LOADING_BAY || status === PO_STATUS.DELIVERED_TO_DELIVERY_BAY)) {
                       return false;
                     }
-                    // For PICKUP: exclude "Delivered to Delivery Bay"
-                    if (formData.delivery_method === PO_DELIVERY_METHOD.DELIVERY && status === PO_STATUS.READY_TO_PICK_UP) {
+                    // For DELIVERY: exclude "Ready for Pick up"
+                    if (formData.delivery_method === PO_DELIVERY_METHOD.DELIVERY && 
+                        (status === PO_STATUS.READY_TO_PICK_UP || status === "Ready to Pick Up")) {
                       return false;
                     }
                     return true;
