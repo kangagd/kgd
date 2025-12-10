@@ -63,10 +63,6 @@ export default function PartDetailModal({ open, part, onClose, onSave, isSubmitt
     notes_to_supplier: ""
   });
   const [poError, setPoError] = useState("");
-
-  // Get selected item name for display
-  const selectedPriceListItem = priceListItems.find(item => item.id === formData.price_list_item_id);
-  const displayValue = selectedPriceListItem ? selectedPriceListItem.item : priceListSearch;
   const queryClient = useQueryClient();
 
   const movePartMutation = useMutation({
@@ -172,6 +168,10 @@ export default function PartDetailModal({ open, part, onClose, onSave, isSubmitt
     queryFn: () => base44.entities.Supplier.list('name'),
     enabled: open
   });
+
+  // Get selected item name for display
+  const selectedPriceListItem = priceListItems.find(item => item.id === formData.price_list_item_id);
+  const displayValue = selectedPriceListItem ? selectedPriceListItem.item : priceListSearch;
 
   const handleSubmit = async (e) => {
     e.preventDefault();
