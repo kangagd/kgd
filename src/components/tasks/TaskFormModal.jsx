@@ -56,6 +56,8 @@ export default function TaskFormModal({
   });
 
   useEffect(() => {
+    if (!open) return; // Don't run if modal isn't open
+    
     if (task) {
       setFormData({
         title: task.title || "",
@@ -82,7 +84,7 @@ export default function TaskFormModal({
       let projectId = "";
       let projectName = "";
       
-      if (preLinkedEntity?.type === 'job') {
+      if (preLinkedEntity?.type === 'job' && jobs.length > 0) {
         const linkedJob = jobs.find(j => j.id === preLinkedEntity.id);
         if (linkedJob && linkedJob.project_id) {
           projectId = linkedJob.project_id;
@@ -110,7 +112,7 @@ export default function TaskFormModal({
         email_thread_subject: preLinkedEntity?.type === 'email_thread' ? preLinkedEntity.name : ""
       });
     }
-  }, [task, preLinkedEntity, open, jobs]);
+  }, [task?.id, preLinkedEntity?.id, preLinkedEntity?.type, open]);
 
   const handleAssigneeChange = (userId) => {
     const user = users.find(u => u.id === userId);
