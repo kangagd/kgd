@@ -1,5 +1,6 @@
-import React, { useState, useEffect, useRef } from "react";
+import React, { useState, useEffect, useRef, useMemo, useCallback } from "react";
 import { base44 } from "@/api/base44Client";
+import { useDebounce } from "@/components/common/useDebounce";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import { Button } from "@/components/ui/button";
@@ -43,6 +44,7 @@ export default function Inbox() {
     searchInBody: true,
     statusFilter: "all"
   });
+  const debouncedSearchFilters = useDebounce(searchFilters, 250);
   const [statusFilter, setStatusFilter] = useState("all");
   const [priorityFilter, setPriorityFilter] = useState("all");
   const [sortBy, setSortBy] = useState("date");
@@ -200,20 +202,21 @@ export default function Inbox() {
     }
   });
 
-  const filteredThreads = threads.filter(thread => {
+  // Memoized thread filtering and sorting - use debounced search to avoid recomputation on every keystroke
+  const filteredThreads = useMemo(() => threads.filter(thread => {
     // Skip deleted threads
     if (thread.is_deleted) return false;
     // Text search
     let matchesSearch = true;
-    if (searchFilters.searchText) {
-      const searchLower = searchFilters.searchText.toLowerCase();
+    if (debouncedSearchFilters.searchText) {
+      const searchLower = debouncedSearchFilters.searchText.toLowerCase();
       const subjectMatch = thread.subject?.toLowerCase().includes(searchLower);
       const fromMatch = thread.from_address?.toLowerCase().includes(searchLower);
       const toMatch = thread.to_addresses?.some(addr => addr.toLowerCase().includes(searchLower));
       
       // Search in email body if enabled
       let bodyMatch = false;
-      if (searchFilters.searchInBody && messages.length > 0) {
+      if (debouncedSearchFilters.searchInBody && messages.length > 0) {
         const threadMessages = messages.filter(m => m.thread_id === thread.id);
         bodyMatch = threadMessages.some(m => 
           m.body_text?.toLowerCase().includes(searchLower) ||
@@ -225,40 +228,40 @@ export default function Inbox() {
     }
 
     // Sender filter
-    const matchesSender = !searchFilters.sender || 
-      thread.from_address?.toLowerCase().includes(searchFilters.sender.toLowerCase());
+    const matchesSender = !debouncedSearchFilters.sender || 
+      thread.from_address?.toLowerCase().includes(debouncedSearchFilters.sender.toLowerCase());
 
     // Recipient filter
-    const matchesRecipient = !searchFilters.recipient ||
+    const matchesRecipient = !debouncedSearchFilters.recipient ||
       thread.to_addresses?.some(addr => 
-        addr.toLowerCase().includes(searchFilters.recipient.toLowerCase())
+        addr.toLowerCase().includes(debouncedSearchFilters.recipient.toLowerCase())
       );
 
     // Date range filter
     const threadDate = new Date(thread.last_message_date);
-    const matchesDateFrom = !searchFilters.dateFrom || 
-      threadDate >= new Date(searchFilters.dateFrom);
-    const matchesDateTo = !searchFilters.dateTo || 
-      threadDate <= new Date(searchFilters.dateTo + 'T23:59:59');
+    const matchesDateFrom = !debouncedSearchFilters.dateFrom || 
+      threadDate >= new Date(debouncedSearchFilters.dateFrom);
+    const matchesDateTo = !debouncedSearchFilters.dateTo || 
+      threadDate <= new Date(debouncedSearchFilters.dateTo + 'T23:59:59');
 
     // Attachment filter
-    const matchesAttachment = !searchFilters.hasAttachment || (() => {
+    const matchesAttachment = !debouncedSearchFilters.hasAttachment || (() => {
       const threadMessages = messages.filter(m => m.thread_id === thread.id);
       return threadMessages.some(m => m.attachments && m.attachments.length > 0);
     })();
 
     // Attachment name filter
-    const matchesAttachmentName = !searchFilters.attachmentName || (() => {
+    const matchesAttachmentName = !debouncedSearchFilters.attachmentName || (() => {
       const threadMessages = messages.filter(m => m.thread_id === thread.id);
       return threadMessages.some(m => 
         m.attachments && m.attachments.some(att => 
-          att.filename?.toLowerCase().includes(searchFilters.attachmentName.toLowerCase())
+          att.filename?.toLowerCase().includes(debouncedSearchFilters.attachmentName.toLowerCase())
         )
       );
     })();
 
     // Advanced status filter (from search filters)
-    const matchesAdvancedStatus = searchFilters.statusFilter === "all" || thread.status === searchFilters.statusFilter;
+    const matchesAdvancedStatus = debouncedSearchFilters.statusFilter === "all" || thread.status === debouncedSearchFilters.statusFilter;
 
     // "Sent" tab filter - show threads where user sent an email (has outbound messages)
     const matchesSentFilter = statusFilter !== "sent" || (() => {
@@ -296,13 +299,13 @@ export default function Inbox() {
       default:
         return 0;
     }
-  });
+  }), [threads, debouncedSearchFilters, statusFilter, priorityFilter, sortBy, messages, user?.gmail_email, user?.email]);
 
-  const handleStatusChange = (threadId, newStatus) => {
+  const handleStatusChange = useCallback((threadId, newStatus) => {
     updateThreadMutation.mutate({ id: threadId, data: { status: newStatus } });
-  };
+  }, [updateThreadMutation]);
 
-  const handleLinkProject = (projectId, projectTitle) => {
+  const handleLinkProject = useCallback((projectId, projectTitle) => {
     updateThreadMutation.mutate({
       id: selectedThread.id,
       data: { linked_project_id: projectId, linked_project_title: projectTitle }
@@ -322,9 +325,9 @@ export default function Inbox() {
       }
     });
     setLinkModalOpen(false);
-  };
+  }, [selectedThread, updateThreadMutation]);
 
-  const handleLinkJob = (jobId, jobNumber) => {
+  const handleLinkJob = useCallback((jobId, jobNumber) => {
     updateThreadMutation.mutate({
       id: selectedThread.id,
       data: { linked_job_id: jobId, linked_job_number: jobNumber }
@@ -344,28 +347,28 @@ export default function Inbox() {
       }
     });
     setLinkModalOpen(false);
-  };
+  }, [selectedThread, updateThreadMutation]);
 
-  const handleUnlinkProject = () => {
+  const handleUnlinkProject = useCallback(() => {
     updateThreadMutation.mutate({
       id: selectedThread.id,
       data: { linked_project_id: null, linked_project_title: null }
     });
-  };
+  }, [selectedThread, updateThreadMutation]);
 
-  const handleUnlinkJob = () => {
+  const handleUnlinkJob = useCallback(() => {
     updateThreadMutation.mutate({
       id: selectedThread.id,
       data: { linked_job_id: null, linked_job_number: null }
     });
-  };
+  }, [selectedThread, updateThreadMutation]);
 
-  const openLinkModal = (type) => {
+  const openLinkModal = useCallback((type) => {
     setLinkType(type);
     setLinkModalOpen(true);
-  };
+  }, []);
 
-  const handleBulkStatusChange = async (status) => {
+  const handleBulkStatusChange = useCallback(async (status) => {
     await Promise.all(
       selectedThreadIds.map(id => 
         base44.entities.EmailThread.update(id, { status })
@@ -373,9 +376,9 @@ export default function Inbox() {
     );
     queryClient.invalidateQueries({ queryKey: ['emailThreads'] });
     setSelectedThreadIds([]);
-  };
+  }, [selectedThreadIds, queryClient]);
 
-  const handleBulkMarkRead = async (isRead) => {
+  const handleBulkMarkRead = useCallback(async (isRead) => {
     await Promise.all(
       selectedThreadIds.map(id => 
         base44.entities.EmailThread.update(id, { is_read: isRead })
@@ -383,9 +386,9 @@ export default function Inbox() {
     );
     queryClient.invalidateQueries({ queryKey: ['emailThreads'] });
     setSelectedThreadIds([]);
-  };
+  }, [selectedThreadIds, queryClient]);
 
-  const handleBulkArchive = async () => {
+  const handleBulkArchive = useCallback(async () => {
     await Promise.all(
       selectedThreadIds.map(id => 
         base44.entities.EmailThread.update(id, { status: "Archived" })
@@ -393,9 +396,9 @@ export default function Inbox() {
     );
     queryClient.invalidateQueries({ queryKey: ['emailThreads'] });
     setSelectedThreadIds([]);
-  };
+  }, [selectedThreadIds, queryClient]);
 
-  const handleBulkDelete = async () => {
+  const handleBulkDelete = useCallback(async () => {
     if (!confirm(`Delete ${selectedThreadIds.length} email thread(s)?`)) return;
     // Soft delete - mark as deleted instead of actually deleting
     await Promise.all(
@@ -406,23 +409,23 @@ export default function Inbox() {
     if (selectedThread && selectedThreadIds.includes(selectedThread.id)) {
       setSelectedThread(null);
     }
-  };
+  }, [selectedThreadIds, queryClient, selectedThread]);
 
-  const handleToggleSelection = (threadId) => {
+  const handleToggleSelection = useCallback((threadId) => {
     setSelectedThreadIds(prev => 
       prev.includes(threadId) 
         ? prev.filter(id => id !== threadId)
         : [...prev, threadId]
     );
-  };
+  }, []);
 
-  const handleSelectAll = () => {
+  const handleSelectAll = useCallback(() => {
     if (selectedThreadIds.length === filteredThreads.length) {
       setSelectedThreadIds([]);
     } else {
       setSelectedThreadIds(filteredThreads.map(t => t.id));
     }
-  };
+  }, [selectedThreadIds, filteredThreads]);
 
 
 

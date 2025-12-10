@@ -1,5 +1,6 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useCallback } from "react";
 import { base44 } from "@/api/base44Client";
+import { useDebounce } from "@/components/common/useDebounce";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -28,6 +29,7 @@ export default function Jobs() {
   const navigate = useNavigate();
   const [searchParams, setSearchParams] = useSearchParams();
   const [searchTerm, setSearchTerm] = useState("");
+  const debouncedSearchTerm = useDebounce(searchTerm, 250);
   const [statusFilter, setStatusFilter] = useState("all");
   const [technicianFilter, setTechnicianFilter] = useState("all");
   const [jobTypeFilter, setJobTypeFilter] = useState("all");
@@ -208,29 +210,6 @@ export default function Jobs() {
     }
   }, [jobIdFromUrl, directJob]);
 
-  const handleSubmit = (data) => {
-    if (editingJob) {
-      updateJobMutation.mutate({ id: editingJob.id, data });
-    } else {
-      createJobMutation.mutate(data);
-    }
-  };
-
-  const handleEdit = (job) => {
-    setEditingJob(job);
-    setShowForm(true);
-    setSelectedJob(null);
-  };
-
-  const handleDelete = (jobId) => {
-    deleteJobMutation.mutate(jobId);
-  };
-
-  const handleOpenFullJob = (job) => {
-    setModalJob(null);
-    window.location.href = `${createPageUrl("Jobs")}?jobId=${job.id}`;
-  };
-
   const isAdmin = user?.role === 'admin';
   const isManager = user?.role === 'manager';
   const isAdminOrManager = isAdmin || isManager;
@@ -239,7 +218,6 @@ export default function Jobs() {
   const canCreateJobs = isAdminOrManager;
 
   // Memoized job filtering and sorting to avoid re-computation on every render
-  // Potential optimisation: Debounce searchTerm for large job lists
   const filteredJobs = React.useMemo(() => jobs.filter((job) => {
     // Technician filtering: only filter if user is explicitly a technician
     // Relaxed filtering to ensure jobs are visible. Assignment check should happen but if data is mismatching, 
@@ -260,10 +238,10 @@ export default function Jobs() {
 
     // Remove URL date filter - let users see all jobs regardless of URL params
     
-    const matchesSearch = !searchTerm || 
-      job.customer_name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      job.address?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      job.job_number?.toString().includes(searchTerm);
+    const matchesSearch = !debouncedSearchTerm || 
+      job.customer_name?.toLowerCase().includes(debouncedSearchTerm.toLowerCase()) ||
+      job.address?.toLowerCase().includes(debouncedSearchTerm.toLowerCase()) ||
+      job.job_number?.toString().includes(debouncedSearchTerm);
 
     const matchesStatus = statusFilter === "all" || job.status === statusFilter;
 
@@ -317,7 +295,30 @@ export default function Jobs() {
     if (compareA < compareB) return sortOrder === 'asc' ? -1 : 1;
     if (compareA > compareB) return sortOrder === 'asc' ? 1 : -1;
     return 0;
-  }), [jobs, searchTerm, statusFilter, jobScope, user?.email, technicianFilter, jobTypeFilter, dateFrom, dateTo, sortBy, sortOrder]);
+  }), [jobs, debouncedSearchTerm, statusFilter, jobScope, user?.email, technicianFilter, jobTypeFilter, dateFrom, dateTo, sortBy, sortOrder]);
+
+  const handleSubmit = useCallback((data) => {
+    if (editingJob) {
+      updateJobMutation.mutate({ id: editingJob.id, data });
+    } else {
+      createJobMutation.mutate(data);
+    }
+  }, [editingJob, updateJobMutation, createJobMutation]);
+
+  const handleEdit = useCallback((job) => {
+    setEditingJob(job);
+    setShowForm(true);
+    setSelectedJob(null);
+  }, []);
+
+  const handleDelete = useCallback((jobId) => {
+    deleteJobMutation.mutate(jobId);
+  }, [deleteJobMutation]);
+
+  const handleOpenFullJob = useCallback((job) => {
+    setModalJob(null);
+    window.location.href = `${createPageUrl("Jobs")}?jobId=${job.id}`;
+  }, []);
 
   if (showForm) {
     return (

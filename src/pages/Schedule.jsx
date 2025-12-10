@@ -1,4 +1,4 @@
-import React, { useState, useMemo } from "react";
+import React, { useState, useMemo, useCallback } from "react";
 import { usePermissions } from "../components/common/PermissionsContext";
 import { base44 } from "@/api/base44Client";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
@@ -188,17 +188,17 @@ export default function Schedule() {
     });
   }, [scopedJobs]);
 
-  const handleOpenJob = (job) => {
+  const handleOpenJob = useCallback((job) => {
     if (!job?.id) return;
     const url = `${createPageUrl("Jobs")}?jobId=${job.id}`;
     navigate(url);
-  };
+  }, [navigate]);
 
-  const handleOpenCheckIn = (job) => {
+  const handleOpenCheckIn = useCallback((job) => {
     if (!job?.id) return;
     const url = `${createPageUrl("CheckIn")}?jobId=${job.id}`;
     navigate(url);
-  };
+  }, [navigate]);
 
   const renderTodaysJobs = () => (
     <section className="mb-4 rounded-xl border border-slate-200 bg-white p-3 shadow-sm">
@@ -312,23 +312,22 @@ export default function Schedule() {
   });
 
   // Date navigation handlers
-  const handlePrevious = () => {
+  const handlePrevious = useCallback(() => {
     if (view === "day") setSelectedDate(subDays(selectedDate, 1));
     else if (view === "week") setSelectedDate(subWeeks(selectedDate, 1));
     else setSelectedDate(subMonths(selectedDate, 1));
-  };
+  }, [view, selectedDate]);
 
-  const handleNext = () => {
+  const handleNext = useCallback(() => {
     if (view === "day") setSelectedDate(addDays(selectedDate, 1));
     else if (view === "week") setSelectedDate(addWeeks(selectedDate, 1));
     else setSelectedDate(addMonths(selectedDate, 1));
-  };
+  }, [view, selectedDate]);
 
-  const handleToday = () => setSelectedDate(new Date());
+  const handleToday = useCallback(() => setSelectedDate(new Date()), []);
 
-  // Filter jobs
-  // Potential optimisation: Server-side filtering for large datasets
-  const getFilteredJobs = (dateFilter) => {
+  // Memoize filter function to avoid recreating on every render
+  const getFilteredJobs = useCallback((dateFilter) => {
     return scopedJobs
       .filter(job => {
         if (job.deleted_at) return false;
@@ -378,7 +377,7 @@ export default function Schedule() {
         const timeB = b.scheduled_time || '';
         return timeA.localeCompare(timeB);
       });
-  };
+  }, [scopedJobs, technicianFilter, statusFilter, contractFilter]);
 
   // Get date range text
   const getDateRangeText = () => {
@@ -391,22 +390,22 @@ export default function Schedule() {
     return format(selectedDate, 'MMMM yyyy');
   };
 
-  const handleAddressClick = (job) => {
+  const handleAddressClick = useCallback((job) => {
     if (job.latitude && job.longitude) {
       window.open(`https://www.google.com/maps/dir/?api=1&destination=${job.latitude},${job.longitude}`, '_blank');
     } else if (job.address_full) {
       window.open(`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(job.address_full)}`, '_blank');
     }
-  };
+  }, []);
 
-  const handleProjectClick = (projectId) => {
+  const handleProjectClick = useCallback((projectId) => {
     navigate(`${createPageUrl("Projects")}?projectId=${projectId}`);
-  };
+  }, [navigate]);
 
-  const handleOpenFullJob = (job) => {
+  const handleOpenFullJob = useCallback((job) => {
     setModalJob(null);
     navigate(`${createPageUrl("Jobs")}?jobId=${job.id}`);
-  };
+  }, [navigate]);
 
   // Handle drag end for rescheduling
   const handleDragEnd = (result) => {
