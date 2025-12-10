@@ -103,7 +103,10 @@ export default function PartDetailModal({ open, part, onClose, onSave, isSubmitt
   });
 
   useEffect(() => {
+    if (!open) return; // Don't run if modal isn't open
+    
     if (part) {
+      console.log("PartDetailModal received part:", part);
       // Map legacy fields if they exist and new ones are empty
       const mappedPart = {
         ...part,
@@ -126,6 +129,7 @@ export default function PartDetailModal({ open, part, onClose, onSave, isSubmitt
         notes: part.notes || "",
         tracking_url: part.tracking_url || ""
       };
+      console.log("Setting formData to:", mappedPart);
       setFormData(mappedPart);
       setPoDetails({
         supplier_id: part.supplier_id || "",
@@ -134,6 +138,7 @@ export default function PartDetailModal({ open, part, onClose, onSave, isSubmitt
         notes_to_supplier: ""
       });
     } else {
+      console.log("PartDetailModal: Creating new part (no part data)");
       setFormData({
         category: "Other",
         status: "Pending",
