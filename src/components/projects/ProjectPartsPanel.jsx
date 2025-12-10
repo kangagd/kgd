@@ -41,7 +41,12 @@ export default function ProjectPartsPanel({ project, parts = [], inventoryByItem
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between">
-        <h3 className="text-[16px] font-semibold text-[#111827] leading-[1.2]">Pick List</h3>
+        <div>
+          <h3 className="text-[16px] font-semibold text-[#111827] leading-[1.2]">Pick List</h3>
+          <p className="text-xs text-[#6B7280] mt-0.5">
+            "Shortages" = Parts requiring ordering or not in stock. "Ready" = Parts delivered or assigned to vehicles.
+          </p>
+        </div>
         <Button variant="outline" size="sm" className="h-8 text-xs">
           Print Pick List
         </Button>

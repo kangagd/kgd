@@ -8,6 +8,12 @@ import { base44 } from "@/api/base44Client";
 import { Upload, X, Image as ImageIcon } from "lucide-react";
 import { toast } from "sonner";
 
+/**
+ * PartsHardwareFormModal
+ * Modal for creating/editing hardware library items (templates).
+ * These represent small consumables (screws, silicone, lube, etc.) carried by technicians.
+ * NOTE: Hardware items do NOT create Purchase Orders - they are reusable templates only.
+ */
 export default function PartsHardwareFormModal({ open, onClose, item, onSubmit, isSubmitting }) {
   const [formData, setFormData] = useState({
     name: "",
@@ -80,8 +86,11 @@ export default function PartsHardwareFormModal({ open, onClose, item, onSubmit, 
     <Dialog open={open} onOpenChange={onClose}>
       <DialogContent className="max-w-md">
         <DialogHeader>
-          <DialogTitle>{item ? "Edit Item" : "Add Item"}</DialogTitle>
+          <DialogTitle>{item ? "Edit Hardware Item" : "Add Hardware Item"}</DialogTitle>
         </DialogHeader>
+        <p className="text-sm text-[#6B7280] -mt-2 mb-4">
+          These items represent small hardware / consumables (e.g. screws, silicone, spray) carried by technicians or used regularly. They do NOT create supplier purchase orders.
+        </p>
         <form onSubmit={handleSubmit} className="space-y-4">
           <div>
             <Label>Name *</Label>

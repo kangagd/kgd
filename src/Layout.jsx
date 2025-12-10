@@ -70,7 +70,7 @@ const navigationSections = [
     items: [
       { title: "Fleet", url: createPageUrl("Fleet"), icon: Car },
       { title: "Tools Admin", url: createPageUrl("ToolsAdmin"), icon: Wrench },
-      { title: "Parts & Hardware", url: createPageUrl("PartsHardwareAdmin"), icon: Package },
+      { title: "Hardware Library", url: createPageUrl("PartsHardwareAdmin"), icon: Package },
       { title: "Logistics", url: createPageUrl("Logistics"), icon: Truck },
       { title: "Purchase Orders", url: createPageUrl("PurchaseOrders"), icon: FileText },
       { title: "Suppliers", url: createPageUrl("Suppliers"), icon: Package },

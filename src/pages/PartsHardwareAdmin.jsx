@@ -127,8 +127,8 @@ export default function PartsHardwareAdmin() {
     <div className="p-4 md:p-6 max-w-6xl mx-auto">
       <div className="flex items-center justify-between mb-6">
         <div>
-          <h1 className="text-2xl font-bold text-gray-900">Parts & Hardware Admin</h1>
-          <p className="text-sm text-gray-500 mt-1">Manage overhead items (non-stock)</p>
+          <h1 className="text-2xl font-bold text-gray-900">Hardware Library</h1>
+          <p className="text-sm text-gray-500 mt-1">Manage common hardware and consumables used across jobs. These are templates and do not create supplier purchase orders.</p>
         </div>
         <div className="flex gap-2">
           <Button 

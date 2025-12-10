@@ -177,11 +177,15 @@ export default function PartsSection({ projectId, autoExpand = false }) {
   return (
     <div className="space-y-4">
       <div className="flex items-center justify-between">
-        <h3 className="text-[16px] font-semibold text-[#111827]">Parts & Materials</h3>
+        <div>
+          <h3 className="text-[16px] font-semibold text-[#111827]">Project Parts & Ordering</h3>
+          <p className="text-xs text-[#6B7280] mt-0.5">These Parts represent what this project needs. Supplier-type parts will be linked to Purchase Orders and logistics.</p>
+        </div>
         <Button
           onClick={handleAddPart}
           size="sm"
           className="bg-[#FAE008] text-[#111827] hover:bg-[#E5CF07] font-semibold"
+          title="Add a Part required for this project (can be supplier, in-stock or client-supplied)"
         >
           <Plus className="w-4 h-4 mr-1" />
           Add Part
