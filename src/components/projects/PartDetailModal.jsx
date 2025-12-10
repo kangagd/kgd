@@ -18,6 +18,7 @@ import {
 } from "@/components/ui/select";
 import { Badge } from "@/components/ui/badge";
 import { Textarea } from "@/components/ui/textarea";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { X, Upload, FileText, Link as LinkIcon, Plus, Search, Trash2, Package, Truck, ArrowRight } from "lucide-react";
 import { base44 } from "@/api/base44Client";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
@@ -53,6 +54,8 @@ export default function PartDetailModal({ open, part, onClose, onSave, isSubmitt
   const [formData, setFormData] = useState({});
   const [uploading, setUploading] = useState(false);
   const [jobSearch, setJobSearch] = useState("");
+  const [priceListSearch, setPriceListSearch] = useState("");
+  const [priceListOpen, setPriceListOpen] = useState(false);
   const [poDetails, setPoDetails] = useState({
     supplier_id: "",
     internal_reference: "",
@@ -301,31 +304,84 @@ export default function PartDetailModal({ open, part, onClose, onSave, isSubmitt
               <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
                 <div className="space-y-2">
                   <Label>Linked Price List Item (optional)</Label>
-                  <Select
-                    value={formData.price_list_item_id || ""}
-                    onValueChange={(value) => {
-                      const selectedItem = priceListItems.find(p => p.id === value);
-                      setFormData(prev => ({ 
-                        ...prev, 
-                        price_list_item_id: value || null,
-                        // Auto-fill supplier info from Price List Item if available
-                        supplier_id: selectedItem?.supplier_id || prev.supplier_id,
-                        supplier_name: selectedItem?.supplier_name || selectedItem?.brand || prev.supplier_name
-                      }));
-                    }}
-                  >
-                    <SelectTrigger className="bg-white">
-                      <SelectValue placeholder="Select a price list item" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value={null}>None</SelectItem>
-                      {priceListItems.map((item) => (
-                        <SelectItem key={item.id} value={item.id}>
-                          {item.item} {item.sku ? `(${item.sku})` : ""}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
+                  <Popover open={priceListOpen} onOpenChange={setPriceListOpen}>
+                    <PopoverTrigger asChild>
+                      <div className="relative">
+                        <Input
+                          value={priceListSearch}
+                          onChange={(e) => {
+                            setPriceListSearch(e.target.value);
+                            if (!priceListOpen) setPriceListOpen(true);
+                          }}
+                          onFocus={() => setPriceListOpen(true)}
+                          placeholder="Search or enter custom item name..."
+                          className="bg-white pr-10"
+                        />
+                        {formData.price_list_item_id && (
+                          <button
+                            type="button"
+                            onClick={() => {
+                              setFormData(prev => ({ ...prev, price_list_item_id: null }));
+                              setPriceListSearch("");
+                            }}
+                            className="absolute right-3 top-1/2 -translate-y-1/2 text-[#6B7280] hover:text-[#111827]"
+                          >
+                            <X className="w-4 h-4" />
+                          </button>
+                        )}
+                      </div>
+                    </PopoverTrigger>
+                    <PopoverContent className="w-[400px] p-0" align="start">
+                      <div className="max-h-[300px] overflow-y-auto">
+                        {priceListItems
+                          .filter(item => 
+                            !priceListSearch || 
+                            item.item?.toLowerCase().includes(priceListSearch.toLowerCase()) ||
+                            item.sku?.toLowerCase().includes(priceListSearch.toLowerCase()) ||
+                            item.brand?.toLowerCase().includes(priceListSearch.toLowerCase())
+                          )
+                          .slice(0, 50)
+                          .map((item) => (
+                            <button
+                              key={item.id}
+                              type="button"
+                              onClick={() => {
+                                const selectedItem = priceListItems.find(p => p.id === item.id);
+                                setFormData(prev => ({ 
+                                  ...prev, 
+                                  price_list_item_id: item.id,
+                                  category: selectedItem?.category || prev.category,
+                                  supplier_id: selectedItem?.supplier_id || prev.supplier_id,
+                                  supplier_name: selectedItem?.supplier_name || selectedItem?.brand || prev.supplier_name
+                                }));
+                                setPriceListSearch(item.item);
+                                setPriceListOpen(false);
+                              }}
+                              className="w-full text-left px-3 py-2 hover:bg-[#F3F4F6] transition-colors border-b border-[#E5E7EB] last:border-0"
+                            >
+                              <div className="font-medium text-sm text-[#111827]">{item.item}</div>
+                              <div className="text-xs text-[#6B7280] mt-0.5">
+                                {item.sku && `SKU: ${item.sku}`}
+                                {item.brand && ` • ${item.brand}`}
+                                {item.category && ` • ${item.category}`}
+                              </div>
+                            </button>
+                          ))}
+                        {priceListItems.filter(item => 
+                          !priceListSearch || 
+                          item.item?.toLowerCase().includes(priceListSearch.toLowerCase()) ||
+                          item.sku?.toLowerCase().includes(priceListSearch.toLowerCase())
+                        ).length === 0 && (
+                          <div className="p-3 text-sm text-[#6B7280] text-center">
+                            No items found. Type a custom item name.
+                          </div>
+                        )}
+                      </div>
+                    </PopoverContent>
+                  </Popover>
+                  {priceListSearch && !formData.price_list_item_id && (
+                    <p className="text-xs text-[#6B7280]">Custom item: "{priceListSearch}"</p>
+                  )}
                 </div>
 
                 <div className="space-y-2">
