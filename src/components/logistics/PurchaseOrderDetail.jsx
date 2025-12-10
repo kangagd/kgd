@@ -166,6 +166,7 @@ export default function PurchaseOrderDetail({ poId, onClose }) {
       return response.data;
     },
     onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['purchaseOrders'] });
       toast.success('Purchase Order deleted');
       onClose();
     },
