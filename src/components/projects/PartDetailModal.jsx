@@ -106,12 +106,15 @@ export default function PartDetailModal({ open, part, onClose, onSave, isSubmitt
         price_list_item_id: part.price_list_item_id || null,
         assigned_vehicle_id: part.assigned_vehicle_id || null,
         supplier_id: part.supplier_id || null,
-        supplier_name: part.supplier_name || ""
+        supplier_name: part.supplier_name || "",
+        quantity_required: part.quantity_required || 1,
+        notes: part.notes || "",
+        tracking_url: part.tracking_url || ""
       };
       setFormData(mappedPart);
       setPoDetails({
         supplier_id: part.supplier_id || "",
-        internal_reference: "",
+        internal_reference: part.order_reference || "",
         requested_eta: part.eta || "",
         notes_to_supplier: ""
       });
@@ -127,7 +130,10 @@ export default function PartDetailModal({ open, part, onClose, onSave, isSubmitt
         price_list_item_id: null,
         assigned_vehicle_id: null,
         supplier_id: null,
-        supplier_name: ""
+        supplier_name: "",
+        quantity_required: 1,
+        notes: "",
+        tracking_url: ""
       });
       setPoDetails({
         supplier_id: "",
