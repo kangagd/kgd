@@ -105,7 +105,7 @@ Deno.serve(async (req) => {
 
         // Update PO with linked job reference
         const updatedPO = await base44.asServiceRole.entities.PurchaseOrder.update(po.id, {
-            logistics_job_id: job.id
+            linked_logistics_job_id: job.id
         });
 
         return Response.json({
