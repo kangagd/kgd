@@ -1,3 +1,7 @@
+// PARTIALLY DEPRECATED: Auto-logistics job creation logic in this function uses old Part schema.
+// For new logistics workflows, prefer using createLogisticsJobForPO and recordStockMovement.
+// The CRUD operations (create/update/delete Part) are still valid.
+
 import { createClientFromRequest } from 'npm:@base44/sdk@0.8.4';
 
 Deno.serve(async (req) => {

@@ -21,6 +21,8 @@ export default function PurchaseOrdersList({ supplierId, onSelectPO }) {
 
   const markAsSentMutation = useMutation({
     mutationFn: async (poId) => {
+      // Using managePurchaseOrder with markAsSent action (legacy)
+      // TODO: Migrate to use updateStatus action with status: "Sent"
       await base44.functions.invoke("managePurchaseOrder", { 
         action: "markAsSent", 
         id: poId 

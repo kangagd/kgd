@@ -124,11 +124,12 @@ Deno.serve(async (req) => {
             return Response.json({ success: true, purchaseOrder: updatedPO });
         }
 
+        // LEGACY ACTION - DEPRECATED in favor of updateStatus
         if (action === 'markAsSent') {
             const poId = id;
             if (!poId) return Response.json({ error: 'Missing PO ID' }, { status: 400 });
 
-            // 1. Update PO status
+            // 1. Update PO status (using old schema "sent" vs new "Sent")
             const updateData = {
                 status: "sent",
                 email_sent_at: new Date().toISOString(),

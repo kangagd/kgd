@@ -1,3 +1,7 @@
+// DEPRECATED APPROACH: This component directly manipulates PurchaseOrder and PurchaseOrderLine entities.
+// NEW CODE should use managePurchaseOrder cloud function instead.
+// This component is kept for backward compatibility but will be phased out.
+
 import React, { useState, useEffect } from "react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
