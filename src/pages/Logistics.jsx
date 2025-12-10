@@ -48,6 +48,7 @@ const LOCATION_COLORS = {
 
 export default function Logistics() {
   const queryClient = useQueryClient();
+  const navigate = useNavigate();
   const [viewMode, setViewMode] = useState("orders"); // "orders" | "jobs"
   const [searchTerm, setSearchTerm] = useState("");
   const debouncedSearchTerm = useDebounce(searchTerm, 250);
@@ -61,6 +62,12 @@ export default function Logistics() {
   const [showSupplierSelector, setShowSupplierSelector] = useState(false);
   const [tempSupplierSelection, setTempSupplierSelection] = useState("");
   const [selectedPO, setSelectedPO] = useState(null);
+  
+  // Board view data
+  const [boardPOs, setBoardPOs] = useState([]);
+  const [boardJobs, setBoardJobs] = useState([]);
+  const [boardParts, setBoardParts] = useState([]);
+  const [loadingBoard, setLoadingBoard] = useState(false);
 
   // Fetch Data
   const { data: parts = [], isLoading: partsLoading } = useQuery({
