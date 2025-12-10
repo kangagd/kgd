@@ -974,9 +974,6 @@ export default function Logistics() {
           </div>
         </section>
 
-        {/* Existing Content Section */}
-        <section className="space-y-6">
-
         {/* Stock & Supplier Logistics Section */}
         {viewMode === "jobs" && stockLogisticsJobs.length > 0 && (
             <Card className="border border-[#E5E7EB] shadow-sm">
@@ -1461,7 +1458,6 @@ export default function Logistics() {
           </div>
         </div>
         )}
-        </section>
       </div>
 
       {/* Part Detail Modal */}
