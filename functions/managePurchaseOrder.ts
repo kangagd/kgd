@@ -68,7 +68,7 @@ Deno.serve(async (req) => {
         const user = await base44.auth.me();
         if (!user) return Response.json({ error: 'Unauthorized' }, { status: 401 });
 
-        const { action, id, data, supplier_id, project_id, delivery_method, delivery_location, line_items, status, supplier_name, notes, reference } = await req.json();
+        const { action, id, data, supplier_id, project_id, delivery_method, delivery_location, line_items, status, supplier_name, notes, reference, eta, attachments } = await req.json();
 
         // Action: create
         if (action === 'create') {
@@ -134,6 +134,8 @@ Deno.serve(async (req) => {
             if (delivery_method !== undefined) updateData.delivery_method = delivery_method || null;
             if (delivery_location !== undefined) updateData.delivery_location = delivery_location || null;
             if (notes !== undefined) updateData.notes = notes || null;
+            if (eta !== undefined) updateData.expected_date = eta || null;
+            if (attachments !== undefined) updateData.attachments = attachments || [];
             
             // Only allow reference editing if not completed
             if (reference !== undefined && po.status !== PO_STATUS.COMPLETED) {
