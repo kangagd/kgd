@@ -9,7 +9,7 @@ export const PO_STATUS = {
   SENT: "Sent",
   CONFIRMED: "Confirmed",
   READY_TO_PICK_UP: "Ready to Pick Up",
-  DELIVERED_TO_DELIVERY_BAY: "Delivered to Loading Bay",
+  DELIVERED_TO_DELIVERY_BAY: "Delivered to Delivery Bay",
   COMPLETED_IN_STORAGE: "Completed - In Storage",
   COMPLETED_IN_VEHICLE: "Completed - In Vehicle",
 };
