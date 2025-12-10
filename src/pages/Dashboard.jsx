@@ -28,7 +28,7 @@ export default function Dashboard() {
         const currentUser = await base44.auth.me();
         setUser(currentUser);
       } catch (error) {
-        console.error("Error loading user:", error);
+        // Error loading user - handled silently
       }
     };
     loadUser();

@@ -52,7 +52,7 @@ export default function GlobalSearchDropdown() {
         });
         setResults(response.data);
       } catch (error) {
-        console.error("Search error:", error);
+        // Search error - handled silently
         setResults(null);
       } finally {
         setIsLoading(false);
