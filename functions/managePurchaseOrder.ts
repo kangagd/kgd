@@ -213,13 +213,13 @@ Deno.serve(async (req) => {
             const shouldHaveLogisticsJob =
                 !updatedPO.linked_logistics_job_id && // only if no job linked yet
                 (
-                    // DELIVERY: create job when ARRIVED
+                    // DELIVERY: create job when DELIVERED
                     (updatedPO.delivery_method === PO_DELIVERY_METHOD.DELIVERY &&
-                     newStatus === PO_STATUS.ARRIVED) ||
+                     newStatus === PO_STATUS.DELIVERED) ||
 
-                    // PICKUP: create job when ACKNOWLEDGED (ready for collection)
+                    // PICKUP: create job when READY_TO_PICK_UP
                     (updatedPO.delivery_method === PO_DELIVERY_METHOD.PICKUP &&
-                     newStatus === PO_STATUS.ACKNOWLEDGED)
+                     newStatus === PO_STATUS.READY_TO_PICK_UP)
                 );
 
             if (shouldHaveLogisticsJob) {
