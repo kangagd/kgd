@@ -67,11 +67,10 @@ export default function PurchaseOrderDetail({ poId, onClose }) {
     enabled: !!poId
   });
 
-  const { data: fetchedPriceListItems = [] } = useQuery({
+  const { data: priceListItems = [] } = useQuery({
     queryKey: ['priceListItems'],
     queryFn: () => base44.entities.PriceListItem.filter({ is_active: true })
   });
-  const priceListItems = fetchedPriceListItems || [];
 
   const { data: projectParts = [] } = useQuery({
     queryKey: ['projectParts', formData.project_id],
@@ -700,7 +699,7 @@ export default function PurchaseOrderDetail({ poId, onClose }) {
                         Custom Item
                       </Button>
                       <div className="border-t my-1" />
-                      {(priceListItems || []).length > 0 && (
+                      {priceListItems?.length > 0 && (
                         <div className="space-y-1">
                           <div className="px-2 py-1 text-xs font-medium text-[#6B7280]">From Price List</div>
                           <Input
@@ -710,7 +709,7 @@ export default function PurchaseOrderDetail({ poId, onClose }) {
                             className="h-8 text-xs"
                           />
                           <div className="max-h-48 overflow-y-auto space-y-1">
-                            {(priceListItems || [])
+                            {priceListItems
                               .filter(item => 
                                 !priceListSearch || 
                                 item.item?.toLowerCase().includes(priceListSearch.toLowerCase()) ||
