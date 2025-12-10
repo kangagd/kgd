@@ -644,6 +644,30 @@ export default function Logistics() {
                           return proj ? proj.title : part.project_id ? `Project ${part.project_id.substring(0, 8)}` : "No project";
                         })()}
                       </div>
+                      <div className="mt-2 flex gap-2">
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          className="h-7 text-xs flex-1"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            handleMoveLoadingBayPart(part, LOGISTICS_LOCATION.WAREHOUSE);
+                          }}
+                        >
+                          To Storage
+                        </Button>
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          className="h-7 text-xs flex-1"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            handleMoveLoadingBayPart(part, LOGISTICS_LOCATION.WITH_TECHNICIAN);
+                          }}
+                        >
+                          To Vehicle
+                        </Button>
+                      </div>
                     </div>
                   ))
                 )}
