@@ -15,10 +15,52 @@ const PO_DELIVERY_METHOD = {
     PICKUP: "pickup",
 };
 
+// Helper: Link Parts to PO
+async function linkPartsToPO(base44, purchaseOrderId, lineItems) {
+    const today = new Date().toISOString().split('T')[0];
+    const partIds = lineItems.map(item => item.part_id).filter(Boolean);
+    
+    if (partIds.length === 0) return;
+
+    // Get unique part IDs
+    const uniquePartIds = [...new Set(partIds)];
+
+    for (const partId of uniquePartIds) {
+        try {
+            const part = await base44.asServiceRole.entities.Part.get(partId);
+            if (!part) continue;
+
+            // Skip if part already linked to a different PO
+            if (part.purchase_order_id && part.purchase_order_id !== purchaseOrderId) {
+                continue;
+            }
+
+            const updateData = {
+                purchase_order_id: purchaseOrderId
+            };
+
+            // Update status if currently Pending
+            if (part.status === "Pending") {
+                updateData.status = "Ordered";
+            }
+
+            // Set order_date if empty
+            if (!part.order_date) {
+                updateData.order_date = today;
+            }
+
+            await base44.asServiceRole.entities.Part.update(partId, updateData);
+        } catch (error) {
+            console.error(`Error linking part ${partId} to PO ${purchaseOrderId}:`, error);
+        }
+    }
+}
+
 // Helper: Build line item data with auto-population from source entities
 async function buildLineItemData(base44, purchaseOrderId, item) {
     const sourceType = item.source_type || "custom";
     const sourceId = item.source_id || item.price_list_item_id || item.part_id || null;
+    const partId = item.part_id || null;
     
     let itemName = item.name || item.item_name || item.description || '';
     let unitPrice = item.unit_price || item.price || item.unit_cost_ex_tax || 0;
@@ -50,6 +92,7 @@ async function buildLineItemData(base44, purchaseOrderId, item) {
         purchase_order_id: purchaseOrderId,
         source_type: sourceType,
         source_id: sourceId,
+        part_id: partId,
         price_list_item_id: sourceType === "price_list" ? sourceId : (item.price_list_item_id || null), // Legacy field
         item_name: itemName,
         description: item.description || itemName || '',
@@ -97,6 +140,9 @@ Deno.serve(async (req) => {
                 await base44.asServiceRole.entities.PurchaseOrderLine.create(lineData);
             }
 
+            // Link Parts to PO
+            await linkPartsToPO(base44, po.id, line_items);
+
             // Reload PO with line items for response
             const finalPO = await base44.asServiceRole.entities.PurchaseOrder.get(po.id);
             const finalLines = await base44.asServiceRole.entities.PurchaseOrderLine.filter({ purchase_order_id: po.id });
@@ -105,6 +151,7 @@ Deno.serve(async (req) => {
                 id: line.id,
                 source_type: line.source_type || "custom",
                 source_id: line.source_id || null,
+                part_id: line.part_id || null,
                 name: line.item_name || line.description || '',
                 quantity: line.qty_ordered || 0,
                 unit_price: line.unit_cost_ex_tax || 0,
@@ -156,6 +203,9 @@ Deno.serve(async (req) => {
                     const lineData = await buildLineItemData(base44, id, item);
                     await base44.asServiceRole.entities.PurchaseOrderLine.create(lineData);
                 }
+
+                // Link Parts to PO
+                await linkPartsToPO(base44, id, line_items);
             }
 
             // Reload PO to return fresh data with line items
@@ -167,6 +217,7 @@ Deno.serve(async (req) => {
                 id: line.id,
                 source_type: line.source_type || "custom",
                 source_id: line.source_id || null,
+                part_id: line.part_id || null,
                 name: line.item_name || line.description || '',
                 quantity: line.qty_ordered || 0,
                 unit_price: line.unit_cost_ex_tax || 0,

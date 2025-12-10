@@ -90,6 +90,7 @@ export default function PurchaseOrderDetail({ poId, onClose }) {
             id: line.id,
             source_type: line.source_type || "custom",
             source_id: line.source_id || line.price_list_item_id || null,
+            part_id: line.part_id || null,
             name: line.item_name || line.description || '',
             quantity: line.qty_ordered || 0,
             unit_price: line.unit_cost_ex_tax || 0,
@@ -302,8 +303,9 @@ export default function PurchaseOrderDetail({ poId, onClose }) {
     const newItem = { 
       source_type: sourceType,
       source_id: sourceItem?.id || null,
+      part_id: sourceType === "project_part" ? sourceItem?.id : null,
       name: sourceItem?.item || sourceItem?.category || '', 
-      quantity: 1, 
+      quantity: sourceType === "project_part" ? (sourceItem?.quantity_required || 1) : 1, 
       unit_price: sourceItem?.unit_cost || sourceItem?.price || 0,
       unit: null,
       notes: null
