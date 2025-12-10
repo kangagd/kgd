@@ -22,6 +22,108 @@ Deno.serve(async (req) => {
 
         const { action, id, data, supplier_id, project_id, delivery_method, delivery_location, line_items, status } = await req.json();
 
+        // Action: create
+        if (action === 'create') {
+            if (!supplier_id || !line_items || line_items.length === 0) {
+                return Response.json({ error: 'supplier_id and non-empty line_items are required' }, { status: 400 });
+            }
+
+            const poData = {
+                supplier_id,
+                project_id: project_id || null,
+                status: PO_STATUS.DRAFT,
+                delivery_method: delivery_method || PO_DELIVERY_METHOD.DELIVERY,
+                delivery_location: delivery_location || null,
+                created_by: user.email,
+                order_date: new Date().toISOString().split('T')[0],
+            };
+
+            const po = await base44.asServiceRole.entities.PurchaseOrder.create(poData);
+
+            // Create line items
+            for (const item of line_items) {
+                await base44.asServiceRole.entities.PurchaseOrderLine.create({
+                    purchase_order_id: po.id,
+                    price_list_item_id: item.part_id || null,
+                    description: item.name || '',
+                    qty_ordered: item.qty,
+                    unit_price: item.price || 0,
+                });
+            }
+
+            return Response.json({ success: true, purchaseOrder: po });
+        }
+
+        // Action: update
+        if (action === 'update') {
+            if (!id) {
+                return Response.json({ error: 'id is required for update' }, { status: 400 });
+            }
+
+            const po = await base44.asServiceRole.entities.PurchaseOrder.get(id);
+            if (!po) {
+                return Response.json({ error: 'Purchase Order not found' }, { status: 404 });
+            }
+
+            const updateData = {};
+            if (supplier_id !== undefined) updateData.supplier_id = supplier_id;
+            if (project_id !== undefined) updateData.project_id = project_id;
+            if (delivery_method !== undefined) updateData.delivery_method = delivery_method;
+            if (delivery_location !== undefined) updateData.delivery_location = delivery_location;
+
+            const updatedPO = await base44.asServiceRole.entities.PurchaseOrder.update(id, updateData);
+
+            // Update line items if provided
+            if (line_items) {
+                // Delete existing lines
+                const existingLines = await base44.asServiceRole.entities.PurchaseOrderLine.filter({ purchase_order_id: id });
+                for (const line of existingLines) {
+                    await base44.asServiceRole.entities.PurchaseOrderLine.delete(line.id);
+                }
+                // Create new lines
+                for (const item of line_items) {
+                    await base44.asServiceRole.entities.PurchaseOrderLine.create({
+                        purchase_order_id: id,
+                        price_list_item_id: item.part_id || null,
+                        description: item.name || '',
+                        qty_ordered: item.qty,
+                        unit_price: item.price || 0,
+                    });
+                }
+            }
+
+            return Response.json({ success: true, purchaseOrder: updatedPO });
+        }
+
+        // Action: updateStatus
+        if (action === 'updateStatus') {
+            if (!id || !status) {
+                return Response.json({ error: 'id and status are required' }, { status: 400 });
+            }
+
+            const validStatuses = Object.values(PO_STATUS);
+            if (!validStatuses.includes(status)) {
+                return Response.json({ error: `Invalid status. Must be one of: ${validStatuses.join(', ')}` }, { status: 400 });
+            }
+
+            const po = await base44.asServiceRole.entities.PurchaseOrder.get(id);
+            if (!po) {
+                return Response.json({ error: 'Purchase Order not found' }, { status: 404 });
+            }
+
+            const updateData = { status };
+
+            // Set timestamps based on status
+            if (status === PO_STATUS.SENT) {
+                updateData.sent_at = new Date().toISOString();
+            } else if (status === PO_STATUS.ARRIVED) {
+                updateData.arrived_at = new Date().toISOString();
+            }
+
+            const updatedPO = await base44.asServiceRole.entities.PurchaseOrder.update(id, updateData);
+            return Response.json({ success: true, purchaseOrder: updatedPO });
+        }
+
         if (action === 'markAsSent') {
             const poId = id;
             if (!poId) return Response.json({ error: 'Missing PO ID' }, { status: 400 });
