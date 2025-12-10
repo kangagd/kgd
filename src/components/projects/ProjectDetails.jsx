@@ -321,7 +321,7 @@ export default function ProjectDetails({ project: initialProject, onClose, onEdi
           viewerRecordId = newViewer.id;
         }
       } catch (error) {
-        console.error('Error updating presence:', error);
+        // Error updating presence
       }
     };
 
@@ -546,7 +546,7 @@ export default function ProjectDetails({ project: initialProject, onClose, onEdi
         queryClient.invalidateQueries({ queryKey: ['maintenanceReminders', project.id] });
         toast.success('Project completed and warranty activated');
       } catch (error) {
-        console.error('Error handling project completion:', error);
+        // Error handling project completion
       }
     }
 
