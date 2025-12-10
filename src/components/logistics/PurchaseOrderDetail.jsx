@@ -169,7 +169,7 @@ export default function PurchaseOrderDetail({ poId, onClose }) {
     });
   };
 
-  const handleSendToSupplier = () => {
+  const handleSendToSupplier = async () => {
     if (!formData.supplier_id) {
       toast.error('Please select a supplier before sending');
       return;
@@ -178,6 +178,22 @@ export default function PurchaseOrderDetail({ poId, onClose }) {
       toast.error('Please add at least one line item');
       return;
     }
+    
+    // First save any pending changes
+    const supplier = suppliers.find(s => s.id === formData.supplier_id);
+    await updatePOMutation.mutateAsync({
+      action: 'update',
+      id: poId,
+      supplier_id: formData.supplier_id,
+      supplier_name: supplier?.name || "",
+      project_id: formData.project_id,
+      delivery_method: formData.delivery_method,
+      notes: formData.notes,
+      reference: formData.reference,
+      line_items: formData.line_items
+    });
+    
+    // Then update status to Sent
     updatePOMutation.mutate({
       action: 'updateStatus',
       id: poId,
