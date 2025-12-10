@@ -67,10 +67,11 @@ export default function PurchaseOrderDetail({ poId, onClose }) {
     enabled: !!poId
   });
 
-  const { data: priceListItems = [] } = useQuery({
+  const { data: fetchedPriceListItems = [] } = useQuery({
     queryKey: ['priceListItems'],
     queryFn: () => base44.entities.PriceListItem.filter({ is_active: true })
   });
+  const priceListItems = fetchedPriceListItems || [];
 
   const { data: projectParts = [] } = useQuery({
     queryKey: ['projectParts', formData.project_id],
