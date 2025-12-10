@@ -2,6 +2,8 @@ import { createClientFromRequest } from 'npm:@base44/sdk@0.8.4';
 
 // Helper: Handle logistics job completion - move Parts accordingly
 async function handleLogisticsJobCompletion(base44, job) {
+    if (!job.purchase_order_id) return;
+
     try {
         // Fetch Parts linked to this PO
         const parts = await base44.asServiceRole.entities.Part.filter({
@@ -10,44 +12,62 @@ async function handleLogisticsJobCompletion(base44, job) {
 
         if (parts.length === 0) return;
 
-        // Determine destination based on job type
+        // Determine destination based on job type and notes
         const jobTypeName = (job.job_type_name || job.job_type || '').toLowerCase();
+        const jobNotes = (job.notes || '').toLowerCase();
         
-        let newLocation;
-        let vehicleId = null;
+        let updateData = {};
+        let vehicleId = job.vehicle_id || null;
 
-        // Supplier → Warehouse / Delivery Bay (delivery jobs)
-        if (jobTypeName.includes('delivery') || jobTypeName.includes('supplier')) {
-            newLocation = "At Delivery Bay";
+        // Supplier → Delivery Bay (delivery jobs)
+        if (jobTypeName.includes('delivery') || jobNotes.includes('delivery bay')) {
+            updateData = {
+                status: "Delivered",
+                location: "At Delivery Bay"
+            };
         }
-        // Supplier → Vehicle or Warehouse → Vehicle (pickup to vehicle jobs)
-        else if (jobTypeName.includes('pickup') && jobTypeName.includes('vehicle')) {
-            newLocation = "With Technician";
+        // Supplier → Storage (pickup to warehouse)
+        else if (jobNotes.includes('storage') || jobNotes.includes('warehouse')) {
+            updateData = {
+                status: "Delivered",
+                location: "In Warehouse Storage"
+            };
+        }
+        // Warehouse/Supplier → Vehicle (pickup to vehicle)
+        else if (jobTypeName.includes('pickup') && (jobTypeName.includes('vehicle') || jobNotes.includes('vehicle'))) {
+            updateData = {
+                status: "Delivered",
+                location: "With Technician"
+            };
+            
             // Get vehicle from job assignment if available
-            if (Array.isArray(job.assigned_to) && job.assigned_to.length > 0) {
+            if (!vehicleId && Array.isArray(job.assigned_to) && job.assigned_to.length > 0) {
                 try {
-                    const tech = await base44.asServiceRole.entities.User.get(job.assigned_to[0]);
-                    if (tech?.default_vehicle_id) {
-                        vehicleId = tech.default_vehicle_id;
+                    const vehicles = await base44.asServiceRole.entities.Vehicle.filter({
+                        assigned_technician: job.assigned_to[0]
+                    });
+                    if (vehicles.length > 0) {
+                        vehicleId = vehicles[0].id;
                     }
                 } catch (e) {
-                    console.error("Error fetching technician vehicle:", e);
+                    console.error("Error fetching vehicle for technician:", e);
                 }
             }
+            
+            if (vehicleId) {
+                updateData.assigned_vehicle_id = vehicleId;
+            }
         }
-        // Warehouse pickup (default)
+        // Default: delivery bay
         else {
-            newLocation = "In Warehouse Storage";
+            updateData = {
+                status: "Delivered",
+                location: "At Delivery Bay"
+            };
         }
 
         // Update all Parts
         for (const part of parts) {
-            const updateData = { location: newLocation };
-            
-            if (vehicleId && newLocation === "With Technician") {
-                updateData.assigned_vehicle_id = vehicleId;
-            }
-
             await base44.asServiceRole.entities.Part.update(part.id, updateData);
         }
     } catch (error) {
