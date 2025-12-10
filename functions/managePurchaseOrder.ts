@@ -255,6 +255,34 @@ Deno.serve(async (req) => {
             });
         }
 
+        // Action: delete
+        if (action === 'delete') {
+            if (!id) {
+                return Response.json({ error: 'id is required for delete' }, { status: 400 });
+            }
+
+            const po = await base44.asServiceRole.entities.PurchaseOrder.get(id);
+            if (!po) {
+                return Response.json({ error: 'Purchase Order not found' }, { status: 404 });
+            }
+
+            // Only allow deletion if status is Draft
+            if (po.status !== PO_STATUS.DRAFT) {
+                return Response.json({ error: 'Only Draft purchase orders can be deleted' }, { status: 400 });
+            }
+
+            // Delete associated line items first
+            const lines = await base44.asServiceRole.entities.PurchaseOrderLine.filter({ purchase_order_id: id });
+            for (const line of lines) {
+                await base44.asServiceRole.entities.PurchaseOrderLine.delete(line.id);
+            }
+
+            // Delete the purchase order
+            await base44.asServiceRole.entities.PurchaseOrder.delete(id);
+
+            return Response.json({ success: true });
+        }
+
         // LEGACY ACTION - DEPRECATED in favor of updateStatus
         if (action === 'markAsSent') {
             const poId = id;

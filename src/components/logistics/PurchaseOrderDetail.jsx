@@ -8,7 +8,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { X, Plus, Trash2, Package, Truck, Save, Send, ArrowRight, List, ShoppingCart, Upload, FileText, Calendar } from "lucide-react";
+import { X, Plus, Trash2, Package, Truck, Save, Send, ArrowRight, List, ShoppingCart, Upload, FileText, Calendar, Trash } from "lucide-react";
 import { toast } from "sonner";
 import { PO_STATUS, PO_STATUS_OPTIONS, PO_DELIVERY_METHOD, PO_DELIVERY_METHOD_OPTIONS } from "@/components/domain/logisticsConfig";
 import { createPageUrl } from "@/utils";
@@ -152,9 +152,35 @@ export default function PurchaseOrderDetail({ poId, onClose }) {
     onError: (error) => {
       toast.error(error.message || 'Failed to create logistics job');
     }
-  });
+    });
 
-  const handleSave = () => {
+    const deletePOMutation = useMutation({
+    mutationFn: async () => {
+      const response = await base44.functions.invoke('managePurchaseOrder', {
+        action: 'delete',
+        id: poId
+      });
+      if (!response.data?.success) {
+        throw new Error(response.data?.error || 'Failed to delete PO');
+      }
+      return response.data;
+    },
+    onSuccess: () => {
+      toast.success('Purchase Order deleted');
+      onClose();
+    },
+    onError: (error) => {
+      toast.error(error.message || 'Failed to delete Purchase Order');
+    }
+    });
+
+    const handleDelete = () => {
+    if (confirm('Are you sure you want to delete this draft Purchase Order? This action cannot be undone.')) {
+      deletePOMutation.mutate();
+    }
+    };
+
+    const handleSave = () => {
     const supplier = suppliers.find(s => s.id === formData.supplier_id);
     const dataToSend = {
       action: 'update',
@@ -377,6 +403,15 @@ export default function PurchaseOrderDetail({ poId, onClose }) {
           <div className="flex gap-2">
             {isDraft && (
               <>
+                <Button
+                  onClick={handleDelete}
+                  disabled={deletePOMutation.isPending}
+                  variant="outline"
+                  className="text-red-600 hover:text-red-700 hover:bg-red-50"
+                >
+                  <Trash className="w-4 h-4 mr-2" />
+                  Delete
+                </Button>
                 <Button
                   onClick={handleSave}
                   disabled={updatePOMutation.isPending}
