@@ -2,12 +2,19 @@ import { createClientFromRequest } from 'npm:@base44/sdk@0.8.4';
 
 const PO_STATUS = {
   DRAFT: "Draft",
-  SENT: "Sent",
-  CONFIRMED: "Confirmed",
-  READY_TO_PICK_UP: "Ready to Pick Up",
-  DELIVERED_TO_DELIVERY_BAY: "Delivered to Delivery Bay",
-  COMPLETED_IN_STORAGE: "Completed - In Storage",
-  COMPLETED_IN_VEHICLE: "Completed - In Vehicle",
+  ON_ORDER: "On Order",
+  IN_TRANSIT: "In Transit",
+  DELIVERED_LOADING_BAY: "Delivered - Loading Bay",
+  READY_TO_PICK_UP: "Ready for Pick up",
+  IN_STORAGE: "In Storage",
+  IN_VEHICLE: "In Vehicle",
+  INSTALLED: "Installed",
+  // Legacy aliases
+  SENT: "On Order",
+  CONFIRMED: "In Transit",
+  DELIVERED_TO_DELIVERY_BAY: "Delivered - Loading Bay",
+  COMPLETED_IN_STORAGE: "In Storage",
+  COMPLETED_IN_VEHICLE: "In Vehicle",
 };
 
 const PO_DELIVERY_METHOD = {
@@ -76,41 +83,47 @@ async function syncPartsWithPurchaseOrderStatus(base44, purchaseOrder, vehicleId
 
             // Apply status/location mapping based on PO status
             switch (purchaseOrder.status) {
+                case PO_STATUS.ON_ORDER:
                 case PO_STATUS.SENT:
-                    // For Pending parts: mark as Ordered
-                    if (part.status === "Pending") {
-                        updateData.status = "Ordered";
-                    }
-                    // Set location if empty
-                    if (!part.location) {
-                        updateData.location = "On Order";
-                    }
+                    updateData.status = "On Order";
+                    updateData.location = "On Order";
                     break;
 
+                case PO_STATUS.IN_TRANSIT:
                 case PO_STATUS.CONFIRMED:
-                    // Leave status as Ordered, update location
-                    if (part.location === "On Order") {
-                        updateData.location = "At Supplier";
-                    }
+                    updateData.status = "In Transit";
+                    updateData.location = "At Supplier";
                     break;
 
+                case PO_STATUS.DELIVERED_LOADING_BAY:
                 case PO_STATUS.DELIVERED_TO_DELIVERY_BAY:
-                    // For non-cancelled/returned parts
-                    if (part.status !== "Cancelled" && part.status !== "Returned") {
-                        updateData.status = "Delivered";
-                        updateData.location = "At Delivery Bay";
-                    }
+                    updateData.status = "Arrived";
+                    updateData.location = "Loading Bay";
                     break;
 
+                case PO_STATUS.READY_TO_PICK_UP:
+                    updateData.status = "Arrived";
+                    updateData.location = "At Supplier";
+                    break;
+
+                case PO_STATUS.IN_STORAGE:
                 case PO_STATUS.COMPLETED_IN_STORAGE:
-                    updateData.location = "In Warehouse Storage";
+                    updateData.status = "In Storage";
+                    updateData.location = "Storage";
                     break;
 
+                case PO_STATUS.IN_VEHICLE:
                 case PO_STATUS.COMPLETED_IN_VEHICLE:
-                    updateData.location = "With Technician";
+                    updateData.status = "On Vehicle";
+                    updateData.location = "Vehicle";
                     if (vehicleId) {
                         updateData.assigned_vehicle_id = vehicleId;
                     }
+                    break;
+
+                case PO_STATUS.INSTALLED:
+                    updateData.status = "Installed";
+                    updateData.location = "Site";
                     break;
             }
 
@@ -319,9 +332,9 @@ Deno.serve(async (req) => {
             const updateData = { status: newStatus };
 
             // Set timestamps based on status
-            if (newStatus === PO_STATUS.SENT) {
+            if (newStatus === PO_STATUS.ON_ORDER || newStatus === PO_STATUS.SENT) {
                 updateData.sent_at = new Date().toISOString();
-            } else if (newStatus === PO_STATUS.ARRIVED) {
+            } else if (newStatus === PO_STATUS.DELIVERED_LOADING_BAY || newStatus === PO_STATUS.READY_TO_PICK_UP) {
                 updateData.arrived_at = new Date().toISOString();
             }
 
@@ -336,9 +349,9 @@ Deno.serve(async (req) => {
             const shouldHaveLogisticsJob =
                 !updatedPO.linked_logistics_job_id && // only if no job linked yet
                 (
-                    // DELIVERY: create job when DELIVERED_TO_DELIVERY_BAY
+                    // DELIVERY: create job when DELIVERED_LOADING_BAY
                     (updatedPO.delivery_method === PO_DELIVERY_METHOD.DELIVERY &&
-                     newStatus === PO_STATUS.DELIVERED_TO_DELIVERY_BAY) ||
+                     (newStatus === PO_STATUS.DELIVERED_LOADING_BAY || newStatus === PO_STATUS.DELIVERED_TO_DELIVERY_BAY)) ||
 
                     // PICKUP: create job when READY_TO_PICK_UP
                     (updatedPO.delivery_method === PO_DELIVERY_METHOD.PICKUP &&

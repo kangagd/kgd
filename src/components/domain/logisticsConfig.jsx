@@ -1,4 +1,3 @@
-
 /**
  * Logistics Domain Configuration
  * Centralizes constants for purchase orders, delivery methods, locations, and part statuses
@@ -6,15 +5,44 @@
 
 export const PO_STATUS = {
   DRAFT: "Draft",
-  SENT: "Sent",
-  CONFIRMED: "Confirmed",
-  READY_TO_PICK_UP: "Ready to Pick Up",
-  DELIVERED_TO_DELIVERY_BAY: "Delivered to Delivery Bay",
-  COMPLETED_IN_STORAGE: "Completed - In Storage",
-  COMPLETED_IN_VEHICLE: "Completed - In Vehicle",
+  ON_ORDER: "On Order",
+  IN_TRANSIT: "In Transit",
+  DELIVERED_LOADING_BAY: "Delivered - Loading Bay",
+  READY_TO_PICK_UP: "Ready for Pick up",
+  IN_STORAGE: "In Storage",
+  IN_VEHICLE: "In Vehicle",
+  INSTALLED: "Installed",
+  // Legacy aliases for backward compatibility
+  SENT: "On Order",
+  CONFIRMED: "In Transit",
+  DELIVERED_TO_DELIVERY_BAY: "Delivered - Loading Bay",
+  COMPLETED_IN_STORAGE: "In Storage",
+  COMPLETED_IN_VEHICLE: "In Vehicle",
 };
 
-export const PO_STATUS_OPTIONS = Object.values(PO_STATUS);
+export const PO_STATUS_OPTIONS = [
+  "Draft",
+  "On Order",
+  "In Transit",
+  "Delivered - Loading Bay",
+  "Ready for Pick up",
+  "In Storage",
+  "In Vehicle",
+  "Installed"
+];
+
+// Status options for non-project POs (stops at In Storage)
+export const PO_STATUS_OPTIONS_NON_PROJECT = [
+  "Draft",
+  "On Order",
+  "In Transit",
+  "Delivered - Loading Bay",
+  "Ready for Pick up",
+  "In Storage"
+];
+
+// Status options for project POs (includes vehicle and installed)
+export const PO_STATUS_OPTIONS_PROJECT = PO_STATUS_OPTIONS;
 
 export const PO_DELIVERY_METHOD = {
   DELIVERY: "delivery",
