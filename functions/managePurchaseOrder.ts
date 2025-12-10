@@ -1,12 +1,26 @@
 import { createClientFromRequest } from 'npm:@base44/sdk@0.8.4';
 
+const PO_STATUS = {
+    DRAFT: "Draft",
+    SENT: "Sent",
+    ACKNOWLEDGED: "Acknowledged",
+    IN_TRANSIT: "In Transit",
+    ARRIVED: "Arrived",
+    COMPLETED: "Completed",
+};
+
+const PO_DELIVERY_METHOD = {
+    DELIVERY: "delivery",
+    PICKUP: "pickup",
+};
+
 Deno.serve(async (req) => {
     try {
         const base44 = createClientFromRequest(req);
         const user = await base44.auth.me();
         if (!user) return Response.json({ error: 'Unauthorized' }, { status: 401 });
 
-        const { action, id, data } = await req.json();
+        const { action, id, data, supplier_id, project_id, delivery_method, delivery_location, line_items, status } = await req.json();
 
         if (action === 'markAsSent') {
             const poId = id;
