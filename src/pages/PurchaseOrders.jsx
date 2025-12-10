@@ -13,10 +13,12 @@ import { PO_STATUS_OPTIONS } from "@/components/domain/logisticsConfig";
 import BackButton from "../components/common/BackButton";
 import { format, parseISO } from "date-fns";
 import { toast } from "sonner";
+import PurchaseOrderDetail from "../components/logistics/PurchaseOrderDetail";
 
 export default function PurchaseOrders() {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
+  const poId = searchParams.get('poId');
   const [searchTerm, setSearchTerm] = useState("");
   const [statusFilter, setStatusFilter] = useState("all");
   const [supplierFilter, setSupplierFilter] = useState("");
@@ -95,6 +97,16 @@ export default function PurchaseOrders() {
   const isAdmin = user?.role === 'admin';
   const isManager = user?.role === 'manager';
   const canCreate = isAdmin || isManager;
+
+  // Show detail view if poId is present
+  if (poId) {
+    return (
+      <PurchaseOrderDetail
+        poId={poId}
+        onClose={() => navigate(createPageUrl("PurchaseOrders"))}
+      />
+    );
+  }
 
   return (
     <div className="p-4 md:p-5 lg:p-10 bg-[#ffffff] min-h-screen overflow-x-hidden">
