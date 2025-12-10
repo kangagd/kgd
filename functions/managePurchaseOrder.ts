@@ -179,7 +179,7 @@ Deno.serve(async (req) => {
         const user = await base44.auth.me();
         if (!user) return Response.json({ error: 'Unauthorized' }, { status: 401 });
 
-        const { action, id, data, supplier_id, project_id, delivery_method, delivery_location, line_items, status, supplier_name, notes, reference, eta, attachments } = await req.json();
+        const { action, id, data, supplier_id, project_id, delivery_method, delivery_location, line_items, status, supplier_name, notes, reference, eta, attachments, vehicle_id } = await req.json();
 
         // Action: create
         if (action === 'create') {
@@ -328,7 +328,7 @@ Deno.serve(async (req) => {
             const updatedPO = await base44.asServiceRole.entities.PurchaseOrder.update(id, updateData);
 
             // Sync linked Parts status/location
-            await syncPartsWithPurchaseOrderStatus(base44, updatedPO);
+            await syncPartsWithPurchaseOrderStatus(base44, updatedPO, vehicle_id);
 
             // Auto-create Logistics Job if conditions are met
             let logisticsJob = null;
