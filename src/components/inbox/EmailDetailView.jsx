@@ -65,6 +65,11 @@ export default function EmailDetailView({
   const [showCreateProjectModal, setShowCreateProjectModal] = useState(false);
   const [aiThread, setAiThread] = useState(thread);
 
+  // Update aiThread when thread prop changes
+  React.useEffect(() => {
+    setAiThread(thread);
+  }, [thread, thread?.id]);
+
   const { data: messages = [], refetch } = useQuery({
     queryKey: ['emailMessages', thread.id, thread.gmail_thread_id],
     queryFn: async () => {
