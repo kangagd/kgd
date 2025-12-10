@@ -1,3 +1,4 @@
+
 /**
  * Logistics Domain Configuration
  * Centralizes constants for purchase orders, delivery methods, locations, and part statuses
@@ -25,8 +26,11 @@ export const PO_DELIVERY_METHOD_OPTIONS = Object.values(PO_DELIVERY_METHOD);
 export const LOGISTICS_LOCATION = {
   SUPPLIER: "Supplier",
   LOADING_BAY: "Loading Bay",
+  DELIVERY_BAY: "Loading Bay", // Alias for backwards compatibility
   STORAGE: "Storage",
+  WAREHOUSE: "Storage", // Alias for backwards compatibility
   VEHICLE: "Vehicle",
+  WITH_TECHNICIAN: "Vehicle", // Alias for backwards compatibility
   SITE: "Site",
 };
 

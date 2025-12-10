@@ -157,10 +157,18 @@ export default function Logistics() {
     [purchaseOrders]
   );
 
-  const deliveryBayPOs = useMemo(
+  const draftPOs = useMemo(
+    () => purchaseOrders.filter((po) => po.status === PO_STATUS.DRAFT),
+    [purchaseOrders]
+  );
+
+  const deliveredPickedUpPOs = useMemo(
     () =>
       purchaseOrders.filter(
-        (po) => po.status === PO_STATUS.DELIVERED_TO_DELIVERY_BAY
+        (po) =>
+          po.status === PO_STATUS.DELIVERED ||
+          po.status === PO_STATUS.READY_TO_PICK_UP ||
+          po.status === PO_STATUS.DELIVERED_TO_DELIVERY_BAY
       ),
     [purchaseOrders]
   );
@@ -178,18 +186,18 @@ export default function Logistics() {
   const handleMovePoToLane = async (po, targetLane) => {
     let newStatus = po.status;
 
-    if (targetLane === "sent") {
+    if (targetLane === "draft") {
+      newStatus = PO_STATUS.DRAFT;
+    } else if (targetLane === "sent") {
       newStatus = PO_STATUS.SENT;
-    } else if (targetLane === "confirmed") {
+    } else if (targetLane === "delivered_picked_up") {
       if (po.delivery_method === PO_DELIVERY_METHOD.DELIVERY) {
         newStatus = PO_STATUS.DELIVERED;
       } else if (po.delivery_method === PO_DELIVERY_METHOD.PICKUP) {
         newStatus = PO_STATUS.READY_TO_PICK_UP;
       } else {
-        newStatus = PO_STATUS.CONFIRMED;
+        newStatus = PO_STATUS.DELIVERED_TO_DELIVERY_BAY;
       }
-    } else if (targetLane === "delivery_bay") {
-      newStatus = PO_STATUS.DELIVERED_TO_DELIVERY_BAY;
     } else if (targetLane === "completed") {
       newStatus = PO_STATUS.COMPLETED_IN_STORAGE;
     }
@@ -209,9 +217,9 @@ export default function Logistics() {
       }
 
       const laneNames = {
+        draft: "Draft",
         sent: "Sent",
-        confirmed: "Confirmed",
-        delivery_bay: "Delivery Bay",
+        delivered_picked_up: "Delivered/Picked Up",
         completed: "Completed",
       };
       toast.success(`PO moved to ${laneNames[targetLane]}`);
@@ -355,7 +363,7 @@ export default function Logistics() {
     try {
       const response = await base44.functions.invoke("recordStockMovement", {
         part_ids: [part.id],
-        from_location: LOGISTICS_LOCATION.DELIVERY_BAY,
+        from_location: LOGISTICS_LOCATION.LOADING_BAY,
         to_location: destination,
       });
 
@@ -473,10 +481,10 @@ export default function Logistics() {
         <div className="mb-4 flex flex-wrap items-center justify-between gap-4">
           <div>
             <h1 className="text-2xl font-bold text-[#111827]">
-              Delivery & Pickup Board
+              Logistics
             </h1>
             <p className="text-sm text-[#6B7280] mt-1">
-              Track incoming orders, logistics jobs, and parts movement
+              Track purchase orders, logistics jobs, and parts movement
             </p>
           </div>
           <div className="flex items-center gap-3">
@@ -538,13 +546,70 @@ export default function Logistics() {
           </div>
         </div>
 
-        {/* Purchase Orders Kanban Board */}
-        <section className="mb-8">
-          <h2 className="mb-3 text-lg font-semibold text-[#111827]">
-            Purchase Orders – Logistics Board
-          </h2>
-          <div className="grid gap-4 md:grid-cols-4">
-            {/* Column: Sent */}
+        {/* Orders View */}
+        {viewMode === "orders" && (
+          <>
+            {/* Purchase Orders Kanban Board */}
+            <section className="mb-6">
+              <div className="grid gap-4 md:grid-cols-4">
+                {/* Column: Draft */}
+                <div
+                  className="flex flex-col rounded-xl border border-[#E5E7EB] bg-white p-3"
+                  onDragOver={(e) => e.preventDefault()}
+                  onDrop={(e) => {
+                    e.preventDefault();
+                    if (!draggingPoId) return;
+                    const po = purchaseOrders.find((p) => p.id === draggingPoId);
+                    if (po) {
+                      handleMovePoToLane(po, "draft");
+                    }
+                    setDraggingPoId(null);
+                  }}
+                >
+                  <div className="mb-2 flex items-center justify-between">
+                    <span className="text-sm font-semibold text-[#111827]">
+                      Draft
+                    </span>
+                    <span className="text-xs text-[#6B7280]">{draftPOs.length}</span>
+                  </div>
+                  <div className="space-y-2">
+                    {draftPOs.map((po) => (
+                      <div
+                        key={po.id}
+                        className="cursor-grab rounded-md border border-[#E5E7EB] bg-white px-3 py-2 text-xs shadow-sm hover:bg-[#F9FAFB] transition-colors"
+                        draggable
+                        onDragStart={() => setDraggingPoId(po.id)}
+                        onDragEnd={() => setDraggingPoId(null)}
+                        onClick={() =>
+                          navigate(
+                            createPageUrl("PurchaseOrders") + `?poId=${po.id}`
+                          )
+                        }
+                      >
+                        <div className="flex items-center justify-between">
+                          <span className="font-medium text-[#111827]">
+                            {po.po_number || `PO #${po.id.substring(0, 8)}`}
+                          </span>
+                        </div>
+                        <div className="mt-1 text-[11px] text-[#6B7280]">
+                          {po.supplier_name || "Supplier not set"}
+                        </div>
+                        {po.eta && (
+                          <div className="mt-1 text-[11px] text-[#6B7280]">
+                            ETA: {format(new Date(po.eta), "MMM d")}
+                          </div>
+                        )}
+                      </div>
+                    ))}
+                    {!draftPOs.length && (
+                      <div className="text-[11px] text-[#6B7280] text-center py-4">
+                        No POs
+                      </div>
+                    )}
+                  </div>
+                </div>
+
+                {/* Column: Sent */}
             <div
               className="flex flex-col rounded-xl border border-[#E5E7EB] bg-white p-3"
               onDragOver={(e) => e.preventDefault()}
@@ -586,17 +651,21 @@ export default function Logistics() {
                     <div className="mt-1 text-[11px] text-[#6B7280]">
                       {po.supplier_name || "Supplier not set"}
                     </div>
-                  </div>
-                ))}
-                {!sentPOs.length && (
-                  <div className="text-[11px] text-[#6B7280] text-center py-4">
+                    {po.eta && (
+                      <div className="mt-1 text-[11px] text-[#6B7280]">
+                        ETA: {format(new Date(po.eta), "MMM d")}
+                      </div>
+                    )}
+                    </div>
+                    ))}
+                    {!sentPOs.length && (
+                    <div className="text-[11px] text-[#6B7280] text-center py-4">
                     No POs
-                  </div>
-                )}
-              </div>
-            </div>
+                    </div>
+                    )}
+                    </div>
 
-            {/* Column: Confirmed */}
+                    {/* Column: Delivered/Picked Up */}
             <div
               className="flex flex-col rounded-xl border border-[#E5E7EB] bg-white p-3"
               onDragOver={(e) => e.preventDefault()}
@@ -605,21 +674,21 @@ export default function Logistics() {
                 if (!draggingPoId) return;
                 const po = purchaseOrders.find((p) => p.id === draggingPoId);
                 if (po) {
-                  handleMovePoToLane(po, "confirmed");
+                  handleMovePoToLane(po, "delivered_picked_up");
                 }
                 setDraggingPoId(null);
               }}
             >
               <div className="mb-2 flex items-center justify-between">
                 <span className="text-sm font-semibold text-[#111827]">
-                  Confirmed
+                  Delivered / Picked Up
                 </span>
                 <span className="text-xs text-[#6B7280]">
-                  {confirmedPOs.length}
+                  {deliveredPickedUpPOs.length}
                 </span>
               </div>
               <div className="space-y-2">
-                {confirmedPOs.map((po) => (
+                {deliveredPickedUpPOs.map((po) => (
                   <div
                     key={po.id}
                     className="cursor-grab rounded-md border border-[#E5E7EB] bg-white px-3 py-2 text-xs shadow-sm hover:bg-[#F9FAFB] transition-colors"
@@ -640,71 +709,14 @@ export default function Logistics() {
                     <div className="mt-1 text-[11px] text-[#6B7280]">
                       {po.supplier_name || "Supplier not set"}
                     </div>
-                    <div className="mt-1">
-                      <Badge
-                        variant="outline"
-                        className="text-[10px] px-1 py-0"
-                      >
-                        {po.status}
-                      </Badge>
-                    </div>
+                    {po.eta && (
+                      <div className="mt-1 text-[11px] text-[#6B7280]">
+                        ETA: {format(new Date(po.eta), "MMM d")}
+                      </div>
+                    )}
                   </div>
                 ))}
-                {!confirmedPOs.length && (
-                  <div className="text-[11px] text-[#6B7280] text-center py-4">
-                    No POs
-                  </div>
-                )}
-              </div>
-            </div>
-
-            {/* Column: Delivery Bay */}
-            <div
-              className="flex flex-col rounded-xl border border-[#E5E7EB] bg-white p-3"
-              onDragOver={(e) => e.preventDefault()}
-              onDrop={(e) => {
-                e.preventDefault();
-                if (!draggingPoId) return;
-                const po = purchaseOrders.find((p) => p.id === draggingPoId);
-                if (po) {
-                  handleMovePoToLane(po, "delivery_bay");
-                }
-                setDraggingPoId(null);
-              }}
-            >
-              <div className="mb-2 flex items-center justify-between">
-                <span className="text-sm font-semibold text-[#111827]">
-                  Delivery Bay
-                </span>
-                <span className="text-xs text-[#6B7280]">
-                  {deliveryBayPOs.length}
-                </span>
-              </div>
-              <div className="space-y-2">
-                {deliveryBayPOs.map((po) => (
-                  <div
-                    key={po.id}
-                    className="cursor-grab rounded-md border border-[#E5E7EB] bg-white px-3 py-2 text-xs shadow-sm hover:bg-[#F9FAFB] transition-colors"
-                    draggable
-                    onDragStart={() => setDraggingPoId(po.id)}
-                    onDragEnd={() => setDraggingPoId(null)}
-                    onClick={() =>
-                      navigate(
-                        createPageUrl("PurchaseOrders") + `?poId=${po.id}`
-                      )
-                    }
-                  >
-                    <div className="flex items-center justify-between">
-                      <span className="font-medium text-[#111827]">
-                        {po.po_number || `PO #${po.id.substring(0, 8)}`}
-                      </span>
-                    </div>
-                    <div className="mt-1 text-[11px] text-[#6B7280]">
-                      {po.supplier_name || "Supplier not set"}
-                    </div>
-                  </div>
-                ))}
-                {!deliveryBayPOs.length && (
+                {!deliveredPickedUpPOs.length && (
                   <div className="text-[11px] text-[#6B7280] text-center py-4">
                     No POs
                   </div>
@@ -756,14 +768,11 @@ export default function Logistics() {
                     <div className="mt-1 text-[11px] text-[#6B7280]">
                       {po.supplier_name || "Supplier not set"}
                     </div>
-                    <div className="mt-1">
-                      <Badge
-                        variant="outline"
-                        className="text-[10px] px-1 py-0"
-                      >
-                        {po.status}
-                      </Badge>
-                    </div>
+                    {po.eta && (
+                      <div className="mt-1 text-[11px] text-[#6B7280]">
+                        ETA: {format(new Date(po.eta), "MMM d")}
+                      </div>
+                    )}
                   </div>
                 ))}
                 {!completedPOs.length && (
@@ -773,202 +782,15 @@ export default function Logistics() {
                 )}
               </div>
             </div>
-          </div>
-        </section>
+            </section>
 
-        {/* Board Layout: Incoming POs / Jobs / Loading Bay */}
-        <section className="mb-8">
-          <div className="grid gap-4 md:grid-cols-3">
-            {/* Column 1: Incoming POs */}
-            <Card className="h-full">
-              <CardHeader>
-                <CardTitle className="text-base">
-                  Incoming Purchase Orders
-                </CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-2">
-                {incomingPOs.length === 0 ? (
-                  <div className="text-sm text-[#6B7280]">No incoming POs.</div>
-                ) : (
-                  incomingPOs.map((po) => (
-                    <div
-                      key={po.id}
-                      className="flex flex-col rounded-md border px-3 py-2 hover:bg-[#F3F4F6] cursor-pointer transition-colors"
-                      onClick={() =>
-                        navigate(
-                          createPageUrl("PurchaseOrders") + `?poId=${po.id}`
-                        )
-                      }
-                    >
-                      <div className="flex items-center justify-between">
-                        <div className="flex flex-col">
-                          <span className="text-sm font-medium">
-                            {po.po_number ||
-                              po.reference ||
-                              `PO #${po.id.substring(0, 8)}`}
-                          </span>
-                          <span className="text-xs text-[#6B7280]">
-                            {po.supplier_name || "Supplier not set"}
-                          </span>
-                        </div>
-                        <StatusBadge type="poStatus" value={po.status} />
-                      </div>
-                      {!po.linked_logistics_job_id && (
-                        <div className="mt-2 flex justify-end">
-                          <Button
-                            size="sm"
-                            variant="outline"
-                            className="h-7 text-xs"
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              handleCreateLogisticsJobForPO(po);
-                            }}
-                          >
-                            Create Logistics Job
-                          </Button>
-                        </div>
-                      )}
-                    </div>
-                  ))
-                )}
-              </CardContent>
-            </Card>
-
-            {/* Column 2: Logistics Jobs */}
-            <Card className="h-full">
-              <CardHeader>
-                <CardTitle className="text-base">Logistics Jobs</CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-4 text-sm">
-                <>
-                  <div>
-                    <div className="mb-1 font-medium text-[#111827]">
-                      Open / Scheduled
-                    </div>
-                    <div className="space-y-1">
-                      {[
-                        ...(logisticsJobGroups.open || []),
-                        ...(logisticsJobGroups.scheduled || []),
-                      ].map((job) => (
-                        <div
-                          key={job.id}
-                          className="flex items-center justify-between rounded-md border px-3 py-2 hover:bg-[#F3F4F6] cursor-pointer transition-colors"
-                          onClick={() =>
-                            navigate(createPageUrl("Jobs") + `?jobId=${job.id}`)
-                          }
-                        >
-                          <div className="flex flex-col">
-                            <span className="text-sm font-medium">
-                              Job #{job.job_number || job.id.substring(0, 8)}
-                            </span>
-                            <span className="text-xs text-[#6B7280]">
-                              {job.scheduled_date
-                                ? format(
-                                    new Date(job.scheduled_date),
-                                    "MMM d, yyyy"
-                                  )
-                                : "No date"}
-                            </span>
-                          </div>
-                          <StatusBadge value={job.status} />
-                        </div>
-                      ))}
-                      {!logisticsJobGroups.open?.length &&
-                        !logisticsJobGroups.scheduled?.length && (
-                          <div className="text-xs text-[#6B7280]">
-                            No open logistics jobs.
-                          </div>
-                        )}
-                    </div>
-                  </div>
-
-                  <div>
-                    <div className="mb-1 font-medium text-[#111827]">
-                      In Progress
-                    </div>
-                    <div className="space-y-1">
-                      {(logisticsJobGroups.in_progress || []).map((job) => (
-                        <div
-                          key={job.id}
-                          className="flex items-center justify-between rounded-md border px-3 py-2 hover:bg-[#F3F4F6] cursor-pointer transition-colors"
-                          onClick={() =>
-                            navigate(
-                              createPageUrl("Jobs") + `?jobId=${job.id}`
-                            )
-                          }
-                        >
-                          <div className="flex flex-col">
-                            <span className="text-sm font-medium">
-                              Job #{job.job_number || job.id.substring(0, 8)}
-                            </span>
-                            <span className="text-xs text-[#6B7280]">
-                              {job.scheduled_date
-                                ? format(
-                                    new Date(job.scheduled_date),
-                                    "MMM d, yyyy"
-                                  )
-                                : "No date"}
-                            </span>
-                          </div>
-                          <StatusBadge value={job.status} />
-                        </div>
-                      ))}
-                      {!logisticsJobGroups.in_progress?.length && (
-                        <div className="text-xs text-[#6B7280]">
-                          No jobs in progress.
-                        </div>
-                      )}
-                    </div>
-                  </div>
-
-                  <div>
-                    <div className="mb-1 font-medium text-[#111827]">
-                      Completed
-                    </div>
-                    <div className="space-y-1">
-                      {(logisticsJobGroups.completed || []).map((job) => (
-                        <div
-                          key={job.id}
-                          className="flex items-center justify-between rounded-md border px-3 py-2 hover:bg-[#F3F4F6] cursor-pointer transition-colors"
-                          onClick={() =>
-                            navigate(
-                              createPageUrl("Jobs") + `?jobId=${job.id}`
-                            )
-                          }
-                        >
-                          <div className="flex flex-col">
-                            <span className="text-sm font-medium">
-                              Job #{job.job_number || job.id.substring(0, 8)}
-                            </span>
-                            <span className="text-xs text-[#6B7280]">
-                              {job.scheduled_date
-                                ? format(
-                                    new Date(job.scheduled_date),
-                                    "MMM d, yyyy"
-                                  )
-                                : "No date"}
-                            </span>
-                          </div>
-                          <StatusBadge value={job.status} />
-                        </div>
-                      ))}
-                      {!logisticsJobGroups.completed?.length && (
-                        <div className="text-xs text-[#6B7280]">
-                          No recently completed logistics jobs.
-                        </div>
-                      )}
-                    </div>
-                  </div>
-                </>
-              </CardContent>
-            </Card>
-
-            {/* Column 3: Loading Bay Parts */}
-            <Card className="h-full">
+            {/* Loading Bay */}
+            <section className="mb-6">
+            <Card>
               <CardHeader>
                 <CardTitle className="text-base">Loading Bay</CardTitle>
               </CardHeader>
-              <CardContent className="space-y-2 text-sm">
+              <CardContent className="space-y-2">
                 {loadingBayParts.length === 0 ? (
                   <div className="text-sm text-[#6B7280]">
                     No items in Loading Bay.
@@ -1035,223 +857,10 @@ export default function Logistics() {
                 )}
               </CardContent>
             </Card>
-          </div>
-        </section>
+            </section>
 
-        {/* Stock & Supplier Logistics Section */}
-        {viewMode === "jobs" && stockLogisticsJobs.length > 0 && (
-          <Card className="border border-[#E5E7EB] shadow-sm">
-            <CardHeader className="bg-gray-50/50 px-6 py-4 border-b border-[#E5E7EB]">
-              <CardTitle className="text-lg font-bold text-[#111827] flex items-center gap-2">
-                <Truck className="w-5 h-5 text-indigo-600" />
-                Stock & Supplier Logistics
-              </CardTitle>
-            </CardHeader>
-            <div className="overflow-x-auto">
-              <table className="w-full text-left text-sm">
-                <thead className="bg-white border-b border-gray-200">
-                  <tr>
-                    <th className="px-6 py-3 font-semibold text-gray-900">
-                      Date
-                    </th>
-                    <th className="px-6 py-3 font-semibold text-gray-900">
-                      Supplier
-                    </th>
-                    <th className="px-6 py-3 font-semibold text-gray-900">
-                      Type
-                    </th>
-                    <th className="px-6 py-3 font-semibold text-gray-900">
-                      Location
-                    </th>
-                    <th className="px-6 py-3 font-semibold text-gray-900">
-                      PO
-                    </th>
-                    <th className="px-6 py-3 font-semibold text-gray-900">
-                      Status
-                    </th>
-                    <th className="px-6 py-3 font-semibold text-gray-900 w-12" />
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-gray-200 bg-white">
-                  {filteredStockJobs.map((job) => {
-                    const isStockJob = !!job.purchase_order_id;
-                    const isProjectJob = !!job.project_id;
-
-                    const relevantTrades = getRelevantTradesForJob(
-                      job,
-                      tradesByProjectId[job.project_id]
-                    );
-                    const hasRequiredTrades = relevantTrades.length > 0;
-
-                    const rowClasses = `transition-colors border-b ${
-                      hasRequiredTrades
-                        ? "bg-amber-50/40 hover:bg-amber-50 border-amber-200"
-                        : isProjectJob
-                        ? "bg-sky-50/40 hover:bg-sky-50 border-sky-200"
-                        : isStockJob
-                        ? "bg-amber-50/40 hover:bg-amber-50 border-amber-200"
-                        : "hover:bg-gray-50 border-gray-200"
-                    }`;
-
-                    const po = job.purchase_order_id
-                      ? purchaseOrders.find(
-                          (p) => p.id === job.purchase_order_id
-                        )
-                      : null;
-
-                    return (
-                      <tr key={job.id} className={rowClasses}>
-                        <td
-                          className="px-6 py-3 text-gray-700 font-medium cursor-pointer hover:bg-opacity-80"
-                          onClick={() => {
-                            if (po) {
-                              navigate(
-                                `${createPageUrl("PurchaseOrders")}?poId=${po.id}`
-                              );
-                            }
-                          }}
-                        >
-                          {job.scheduled_date
-                            ? format(
-                                new Date(job.scheduled_date),
-                                "MMM d, yyyy"
-                              )
-                            : "-"}
-                        </td>
-                        <td
-                          className="px-6 py-3 text-gray-700 cursor-pointer hover:bg-opacity-80"
-                          onClick={() => {
-                            if (po) {
-                              navigate(
-                                `${createPageUrl("PurchaseOrders")}?poId=${po.id}`
-                              );
-                            }
-                          }}
-                        >
-                          {job.notes?.split(" from ")?.[1]?.split(" –")?.[0] ||
-                            "Supplier"}
-                        </td>
-                        <td
-                          className="px-6 py-3 cursor-pointer hover:bg-opacity-80"
-                          onClick={() => {
-                            if (po) {
-                              navigate(
-                                `${createPageUrl("PurchaseOrders")}?poId=${po.id}`
-                              );
-                            }
-                          }}
-                        >
-                          <div className="flex items-center gap-2 flex-wrap">
-                            <Badge
-                              variant="outline"
-                              className={
-                                job.job_type_name?.includes("Pickup")
-                                  ? "bg-amber-50 text-amber-700 border-amber-200"
-                                  : "bg-blue-50 text-blue-700 border-blue-200"
-                              }
-                            >
-                              {job.job_type_name}
-                            </Badge>
-                            {isStockJob && (
-                              <span className="inline-flex items-center rounded-full bg-amber-100 px-2 py-0.5 text-[10px] font-medium text-amber-700">
-                                PO
-                              </span>
-                            )}
-                            {isProjectJob && (
-                              <span className="inline-flex items-center rounded-full bg-sky-100 px-2 py-0.5 text-[10px] font-medium text-sky-700">
-                                Project
-                              </span>
-                            )}
-                            {hasRequiredTrades && (
-                              <span className="inline-flex items-center rounded-full bg-amber-100 px-2 py-0.5 text-[10px] font-medium text-amber-700">
-                                3rd party
-                              </span>
-                            )}
-                          </div>
-                        </td>
-                        <td
-                          className="px-6 py-3 text-gray-600 cursor-pointer hover:bg-opacity-80"
-                          onClick={() => {
-                            if (po) {
-                              navigate(
-                                `${createPageUrl("PurchaseOrders")}?poId=${po.id}`
-                              );
-                            }
-                          }}
-                        >
-                          {job.address_full || job.address}
-                        </td>
-                        <td className="px-6 py-3 text-gray-600 text-sm font-medium">
-                          {po ? (
-                            <button
-                              type="button"
-                              onClick={() =>
-                                navigate(
-                                  `${createPageUrl("PurchaseOrders")}?poId=${po.id}`
-                                )
-                              }
-                              className="inline-flex items-center gap-1 text-xs font-medium text-blue-700 hover:text-blue-800"
-                            >
-                              {(job.notes?.startsWith("PO ") &&
-                                job.notes.split(" from ")[0]) ||
-                                "View PO"}
-                              <ExternalLink className="w-3 h-3" />
-                            </button>
-                          ) : (
-                            <span className="text-xs text-gray-400">-</span>
-                          )}
-                        </td>
-                        <td className="px-6 py-3">
-                          <Select
-                            value={job.status || "Scheduled"}
-                            onValueChange={(val) => {
-                              updateJobMutation.mutate({
-                                id: job.id,
-                                data: { status: val },
-                              });
-                            }}
-                          >
-                            <SelectTrigger className="h-8 w-[140px] border-0 bg-white shadow-sm text-xs">
-                              <SelectValue />
-                            </SelectTrigger>
-                            <SelectContent>
-                              <SelectItem value="Scheduled">
-                                Scheduled
-                              </SelectItem>
-                              <SelectItem value="In Progress">
-                                In Progress
-                              </SelectItem>
-                              <SelectItem value="Completed">
-                                Completed
-                              </SelectItem>
-                              <SelectItem value="Cancelled">
-                                Cancelled
-                              </SelectItem>
-                            </SelectContent>
-                          </Select>
-                        </td>
-                        <td className="px-6 py-3">
-                          <Link
-                            to={`${createPageUrl("Jobs")}?jobId=${job.id}`}
-                            onClick={(e) => e.stopPropagation()}
-                            className="inline-flex items-center justify-center w-8 h-8 rounded-lg hover:bg-blue-50 text-blue-600 hover:text-blue-700 transition-colors"
-                            title="View Job Details"
-                          >
-                            <Briefcase className="w-4 h-4" />
-                          </Link>
-                        </td>
-                      </tr>
-                    );
-                  })}
-                </tbody>
-              </table>
-            </div>
-          </Card>
-        )}
-
-        {/* Filters */}
-        {viewMode === "orders" && (
-          <div className="flex flex-col md:flex-row gap-3">
+            {/* Filters */}
+            <div className="flex flex-col md:flex-row gap-3">
             <div className="relative flex-1">
               <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-[#6B7280]" />
               <Input
@@ -1356,10 +965,9 @@ export default function Logistics() {
               </Popover>
             </div>
           </div>
-        )}
 
-        {/* Parts Table */}
-        {viewMode === "orders" && (
+            {/* Parts Table */}
+            <div className="bg-white border border-[#E5E7EB] rounded-xl shadow-sm overflow-hidden">
           <div className="bg-white border border-[#E5E7EB] rounded-xl shadow-sm overflow-hidden">
             <div className="overflow-x-auto">
               <table className="w-full text-left text-sm">
@@ -1661,7 +1269,129 @@ export default function Logistics() {
                 </tbody>
               </table>
             </div>
-          </div>
+            </div>
+          </>
+        )}
+
+        {/* Logistics Jobs View */}
+        {viewMode === "jobs" && (
+          <section>
+            <div className="grid gap-4 md:grid-cols-3">
+              {/* Column: Open/Scheduled */}
+              <Card className="h-full">
+                <CardHeader>
+                  <CardTitle className="text-base">Open / Scheduled</CardTitle>
+                </CardHeader>
+                <CardContent className="space-y-2">
+                  {[
+                    ...(logisticsJobGroups.open || []),
+                    ...(logisticsJobGroups.scheduled || []),
+                  ].length === 0 ? (
+                    <div className="text-sm text-[#6B7280]">
+                      No open logistics jobs.
+                    </div>
+                  ) : (
+                    [
+                      ...(logisticsJobGroups.open || []),
+                      ...(logisticsJobGroups.scheduled || []),
+                    ].map((job) => (
+                      <div
+                        key={job.id}
+                        className="flex flex-col rounded-md border px-3 py-2 hover:bg-[#F3F4F6] cursor-pointer transition-colors"
+                        onClick={() =>
+                          navigate(createPageUrl("Jobs") + `?jobId=${job.id}`)
+                        }
+                      >
+                        <div className="flex items-center justify-between">
+                          <span className="text-sm font-medium">
+                            Job #{job.job_number || job.id.substring(0, 8)}
+                          </span>
+                          <StatusBadge value={job.status} />
+                        </div>
+                        <span className="text-xs text-[#6B7280] mt-1">
+                          {job.scheduled_date
+                            ? format(new Date(job.scheduled_date), "MMM d, yyyy")
+                            : "No date"}
+                        </span>
+                      </div>
+                    ))
+                  )}
+                </CardContent>
+              </Card>
+
+              {/* Column: In Progress */}
+              <Card className="h-full">
+                <CardHeader>
+                  <CardTitle className="text-base">In Progress</CardTitle>
+                </CardHeader>
+                <CardContent className="space-y-2">
+                  {(logisticsJobGroups.in_progress || []).length === 0 ? (
+                    <div className="text-sm text-[#6B7280]">
+                      No jobs in progress.
+                    </div>
+                  ) : (
+                    (logisticsJobGroups.in_progress || []).map((job) => (
+                      <div
+                        key={job.id}
+                        className="flex flex-col rounded-md border px-3 py-2 hover:bg-[#F3F4F6] cursor-pointer transition-colors"
+                        onClick={() =>
+                          navigate(createPageUrl("Jobs") + `?jobId=${job.id}`)
+                        }
+                      >
+                        <div className="flex items-center justify-between">
+                          <span className="text-sm font-medium">
+                            Job #{job.job_number || job.id.substring(0, 8)}
+                          </span>
+                          <StatusBadge value={job.status} />
+                        </div>
+                        <span className="text-xs text-[#6B7280] mt-1">
+                          {job.scheduled_date
+                            ? format(new Date(job.scheduled_date), "MMM d, yyyy")
+                            : "No date"}
+                        </span>
+                      </div>
+                    ))
+                  )}
+                </CardContent>
+              </Card>
+
+              {/* Column: Completed */}
+              <Card className="h-full">
+                <CardHeader>
+                  <CardTitle className="text-base">Completed</CardTitle>
+                </CardHeader>
+                <CardContent className="space-y-2">
+                  {(logisticsJobGroups.completed || []).length === 0 ? (
+                    <div className="text-sm text-[#6B7280]">
+                      No recently completed logistics jobs.
+                    </div>
+                  ) : (
+                    (logisticsJobGroups.completed || []).map((job) => (
+                      <div
+                        key={job.id}
+                        className="flex flex-col rounded-md border px-3 py-2 hover:bg-[#F3F4F6] cursor-pointer transition-colors"
+                        onClick={() =>
+                          navigate(createPageUrl("Jobs") + `?jobId=${job.id}`)
+                        }
+                      >
+                        <div className="flex items-center justify-between">
+                          <span className="text-sm font-medium">
+                            Job #{job.job_number || job.id.substring(0, 8)}
+                          </span>
+                          <StatusBadge value={job.status} />
+                        </div>
+                        <span className="text-xs text-[#6B7280] mt-1">
+                          {job.scheduled_date
+                            ? format(new Date(job.scheduled_date), "MMM d, yyyy")
+                            : "No date"}
+                        </span>
+                      </div>
+                    ))
+                  )}
+                </CardContent>
+              </Card>
+            </div>
+          </section>
         )}
       </div>
 
