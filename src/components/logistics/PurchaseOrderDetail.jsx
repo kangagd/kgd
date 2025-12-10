@@ -185,23 +185,45 @@ export default function PurchaseOrderDetail({ poId, onClose }) {
       });
 
       const uploadedUrls = await Promise.all(uploadPromises);
+      const newAttachments = [...formData.attachments, ...uploadedUrls];
+      
       setFormData((prev) => ({
         ...prev,
-        attachments: [...prev.attachments, ...uploadedUrls]
+        attachments: newAttachments
       }));
+
+      // Auto-save attachments
+      await base44.entities.PurchaseOrder.update(poId, {
+        attachments: newAttachments
+      });
+      
+      queryClient.invalidateQueries({ queryKey: ['purchaseOrder', poId] });
       toast.success(`${files.length} file(s) uploaded`);
     } catch (error) {
+      console.error('Upload error:', error);
       toast.error('Failed to upload files');
     } finally {
       setUploading(false);
     }
   };
 
-  const removeAttachment = (index) => {
+  const removeAttachment = async (index) => {
+    const newAttachments = formData.attachments.filter((_, i) => i !== index);
     setFormData((prev) => ({
       ...prev,
-      attachments: prev.attachments.filter((_, i) => i !== index)
+      attachments: newAttachments
     }));
+    
+    // Auto-save after removing
+    try {
+      await base44.entities.PurchaseOrder.update(poId, {
+        attachments: newAttachments
+      });
+      queryClient.invalidateQueries({ queryKey: ['purchaseOrder', poId] });
+      toast.success('Attachment removed');
+    } catch (error) {
+      toast.error('Failed to remove attachment');
+    }
   };
 
   const handleSendToSupplier = async () => {
