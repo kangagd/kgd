@@ -1,4 +1,4 @@
-import React, { useState, useMemo, useCallback } from "react";
+import React, { useState, useMemo, useCallback, useEffect } from "react";
 import { base44 } from "@/api/base44Client";
 import { useDebounce } from "@/components/common/useDebounce";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
@@ -13,13 +13,20 @@ import { Label } from "@/components/ui/label";
 import { Search, Filter, Truck, Package, MapPin, CheckCircle2, Clock, AlertCircle, Link as LinkIcon, Plus, Briefcase, ExternalLink } from "lucide-react";
 import { format } from "date-fns";
 import { createPageUrl } from "@/utils";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import PartDetailModal from "../components/projects/PartDetailModal";
 import SupplierPurchaseOrderModal from "../components/purchasing/SupplierPurchaseOrderModal";
 import { toast } from "sonner";
 import { INVENTORY_LOCATION } from "@/components/domain/inventoryLocationConfig";
 import { MOVEMENT_TYPE } from "@/components/domain/inventoryConfig";
 import BackButton from "../components/common/BackButton";
+import StatusBadge from "../components/common/StatusBadge";
+import {
+  getIncomingPurchaseOrders,
+  getLoadingBayParts,
+  getLogisticsJobs,
+  getLogisticsSummaryStats,
+} from "@/components/domain/logisticsViewHelpers";
 
 const STATUS_COLORS = {
   "Pending": "bg-slate-100 text-slate-800 border-slate-200",
