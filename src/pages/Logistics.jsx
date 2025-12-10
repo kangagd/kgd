@@ -662,6 +662,18 @@ export default function Logistics() {
                             ETA: {format(new Date(po.expected_date), "MMM d")}
                           </div>
                         )}
+                        <div className="mt-1 flex items-center gap-1">
+                          {po.delivery_method && (
+                            <Badge variant="outline" className="text-[10px] px-1 py-0">
+                              {po.delivery_method === PO_DELIVERY_METHOD.PICKUP ? "Pickup" : "Delivery"}
+                            </Badge>
+                          )}
+                          {po.linked_logistics_job_id && (
+                            <Badge variant="outline" className="text-[10px] px-1 py-0">
+                              Job
+                            </Badge>
+                          )}
+                        </div>
                         <div className="mt-2">
                           <Select
                             value={po.status}
