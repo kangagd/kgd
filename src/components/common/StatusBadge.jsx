@@ -107,6 +107,18 @@ const BADGE_VARIANTS = {
     "Cancelled": "bg-red-100 text-red-700 hover:bg-red-200",
   },
   
+  // Purchase Order Status
+  poStatus: {
+    "Draft": "bg-slate-100 text-slate-700 hover:bg-slate-200",
+    "Sent": "bg-blue-100 text-blue-700 hover:bg-blue-200",
+    "Confirmed": "bg-purple-100 text-purple-700 hover:bg-purple-200",
+    "Delivered": "bg-green-100 text-green-700 hover:bg-green-200",
+    "Ready to Pick Up": "bg-amber-100 text-amber-700 hover:bg-amber-200",
+    "Delivered to Delivery Bay": "bg-cyan-100 text-cyan-700 hover:bg-cyan-200",
+    "Completed - In Storage": "bg-emerald-100 text-emerald-700 hover:bg-emerald-200",
+    "Completed - In Vehicle": "bg-teal-100 text-teal-700 hover:bg-teal-200",
+  },
+  
   // Organisation Types
   organisationType: {
     [ORGANISATION_TYPE.STRATA]: "bg-purple-100 text-purple-700 hover:bg-purple-200",
