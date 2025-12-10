@@ -29,6 +29,7 @@ export default function PurchaseOrderDetail({ poId, onClose }) {
     delivery_method: "",
     notes: "",
     reference: "",
+    status: PO_STATUS.DRAFT,
     line_items: []
   });
 
