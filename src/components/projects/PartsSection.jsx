@@ -6,6 +6,7 @@ import { Plus, Edit, Trash2, Link as LinkIcon, MapPin, Truck, CheckCircle2, Aler
 import { base44 } from "@/api/base44Client";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import PartDetailModal from "./PartDetailModal";
+import PurchaseOrderDetail from "../logistics/PurchaseOrderDetail";
 import { format, isPast, parseISO } from "date-fns";
 import { toast } from "sonner";
 import { useNavigate } from "react-router-dom";
@@ -48,6 +49,7 @@ const FLOW_STEPS = ["On Order", "At Delivery Bay", "In Warehouse Storage", "With
 export default function PartsSection({ projectId, autoExpand = false }) {
   const [showModal, setShowModal] = useState(false);
   const [editingPart, setEditingPart] = useState(null);
+  const [selectedPoId, setSelectedPoId] = useState(null);
   const queryClient = useQueryClient();
   const navigate = useNavigate();
 
@@ -284,7 +286,7 @@ export default function PartsSection({ projectId, autoExpand = false }) {
                         <button
                           onClick={(e) => {
                             e.stopPropagation();
-                            navigate(`${createPageUrl("PurchaseOrders")}?poId=${part.purchase_order_id}`);
+                            setSelectedPoId(part.purchase_order_id);
                           }}
                           className="inline-flex items-center gap-1 mt-1 px-2 py-0.5 rounded-md bg-blue-50 text-blue-700 hover:bg-blue-100 text-xs font-medium transition-colors"
                         >
@@ -406,6 +408,13 @@ export default function PartsSection({ projectId, autoExpand = false }) {
           }}
           onSave={handleSave}
           isSubmitting={createPartMutation.isPending || updatePartMutation.isPending}
+        />
+      )}
+
+      {selectedPoId && (
+        <PurchaseOrderDetail
+          poId={selectedPoId}
+          onClose={() => setSelectedPoId(null)}
         />
       )}
     </div>
