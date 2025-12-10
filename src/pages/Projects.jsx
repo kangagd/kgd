@@ -1,5 +1,6 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useMemo, useCallback } from "react";
 import { base44 } from "@/api/base44Client";
+import { useDebounce } from "@/components/common/useDebounce";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -39,6 +40,7 @@ export default function Projects() {
   const navigate = useNavigate();
   const [user, setUser] = useState(null);
   const [searchTerm, setSearchTerm] = useState("");
+  const debouncedSearchTerm = useDebounce(searchTerm, 250);
   const [stageFilter, setStageFilter] = useState("all");
   const [partsStatusFilter, setPartsStatusFilter] = useState("all");
   const [startDate, setStartDate] = useState("");
@@ -106,7 +108,7 @@ export default function Projects() {
     queryFn: () => base44.entities.ProjectTradeRequirement.list(),
   });
 
-  const inventoryByItem = React.useMemo(() => {
+  const inventoryByItem = useMemo(() => {
     const map = {};
     // Warehouse from PriceList
     for (const item of priceListItems) {
@@ -121,7 +123,7 @@ export default function Projects() {
     return map;
   }, [priceListItems, inventoryQuantities]);
 
-  const detectShortage = (part) => {
+  const detectShortage = useCallback((part) => {
     if (['Ordered', 'Back-ordered', 'Delivered', 'At Supplier', 'At Delivery Bay', 'In Warehouse Storage', 'With Technician', 'At Client Site'].includes(part.status)) {
       return false;
     }
@@ -133,7 +135,7 @@ export default function Projects() {
        return availableQty < requiredQty;
     }
     return true;
-  };
+  }, [inventoryByItem]);
 
   const createProjectMutation = useMutation({
     mutationFn: async (data) => {
@@ -224,20 +226,20 @@ export default function Projects() {
     setSelectedProject(null);
   };
 
-  const handleDelete = (projectId) => {
+  const handleDelete = useCallback((projectId) => {
     deleteProjectMutation.mutate(projectId);
-  };
+  }, [deleteProjectMutation]);
 
-  const handleOpenFullProject = (project) => {
+  const handleOpenFullProject = useCallback((project) => {
     setModalProject(null);
     navigate(`${createPageUrl("Projects")}?projectId=${project.id}`);
-  };
+  }, [navigate]);
 
-  const filteredProjects = projects
+  const filteredProjects = useMemo(() => projects
     .filter((project) => {
       const matchesSearch = 
-        project.title?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        project.customer_name?.toLowerCase().includes(searchTerm.toLowerCase());
+        project.title?.toLowerCase().includes(debouncedSearchTerm.toLowerCase()) ||
+        project.customer_name?.toLowerCase().includes(debouncedSearchTerm.toLowerCase());
       
       const matchesStage = stageFilter === "all" || project.status === stageFilter;
       
@@ -265,39 +267,39 @@ export default function Projects() {
       } else if (sortBy === "stage") {
         const stages = ["Lead", "Initial Site Visit", "Quote Sent", "Quote Approved", "Final Measure", "Parts Ordered", "Scheduled", "Completed", "Warranty"];
         return stages.indexOf(a.status) - stages.indexOf(b.status);
-      }
-      return 0;
-    });
+        }
+        return 0;
+        }), [projects, debouncedSearchTerm, stageFilter, partsStatusFilter, startDate, endDate, sortBy, showDuplicatesOnly, allParts]);
 
-  const getJobCount = (projectId) => {
-    return allJobs.filter(j => j.project_id === projectId && !j.deleted_at).length;
-  };
+        const getJobCount = useCallback((projectId) => {
+        return allJobs.filter(j => j.project_id === projectId && !j.deleted_at).length;
+        }, [allJobs]);
 
-  const getNextJob = (projectId) => {
-    const projectJobs = allJobs.filter(j => j.project_id === projectId && !j.deleted_at && j.scheduled_date);
-    const futureJobs = projectJobs.filter(j => new Date(j.scheduled_date) >= new Date());
-    if (futureJobs.length === 0) return null;
-    return futureJobs.sort((a, b) => new Date(a.scheduled_date) - new Date(b.scheduled_date))[0];
-  };
+        const getNextJob = useCallback((projectId) => {
+        const projectJobs = allJobs.filter(j => j.project_id === projectId && !j.deleted_at && j.scheduled_date);
+        const futureJobs = projectJobs.filter(j => new Date(j.scheduled_date) >= new Date());
+        if (futureJobs.length === 0) return null;
+        return futureJobs.sort((a, b) => new Date(a.scheduled_date) - new Date(b.scheduled_date))[0];
+        }, [allJobs]);
 
-  const extractSuburb = (address) => {
-    if (!address) return null;
-    const parts = address.split(',').map(p => p.trim());
-    return parts.length > 1 ? parts[parts.length - 2] : null;
-  };
+        const extractSuburb = useCallback((address) => {
+        if (!address) return null;
+        const parts = address.split(',').map(p => p.trim());
+        return parts.length > 1 ? parts[parts.length - 2] : null;
+        }, []);
 
-  const buildScopeSummary = (project) => {
-    if (!project.doors || project.doors.length === 0) return null;
-    const doorCount = project.doors.length;
-    const firstDoor = project.doors[0];
-    const doorType = firstDoor.type || 'doors';
-    const dimensions = firstDoor.height && firstDoor.width ? `${firstDoor.height} x ${firstDoor.width}` : '';
-    return `${doorCount}x ${doorType}${dimensions ? ` • ${dimensions}` : ''}`;
-  };
+        const buildScopeSummary = useCallback((project) => {
+        if (!project.doors || project.doors.length === 0) return null;
+        const doorCount = project.doors.length;
+        const firstDoor = project.doors[0];
+        const doorType = firstDoor.type || 'doors';
+        const dimensions = firstDoor.height && firstDoor.width ? `${firstDoor.height} x ${firstDoor.width}` : '';
+        return `${doorCount}x ${doorType}${dimensions ? ` • ${dimensions}` : ''}`;
+        }, []);
 
-  const hasRequiredTrades = (projectId) => {
-    return allTradeRequirements.some(t => t.project_id === projectId && t.is_required);
-  };
+        const hasRequiredTrades = useCallback((projectId) => {
+        return allTradeRequirements.some(t => t.project_id === projectId && t.is_required);
+        }, [allTradeRequirements]);
 
   if (showForm) {
     return (

@@ -1,5 +1,6 @@
-import React, { useState, useMemo } from "react";
+import React, { useState, useMemo, useCallback } from "react";
 import { base44 } from "@/api/base44Client";
+import { useDebounce } from "@/components/common/useDebounce";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -42,6 +43,7 @@ export default function Logistics() {
   const queryClient = useQueryClient();
   const [viewMode, setViewMode] = useState("orders"); // "orders" | "jobs"
   const [searchTerm, setSearchTerm] = useState("");
+  const debouncedSearchTerm = useDebounce(searchTerm, 250);
   const [statusFilter, setStatusFilter] = useState("active"); // active, all, specific statuses
   const [locationFilter, setLocationFilter] = useState("all");
   const [vehicleFilter, setVehicleFilter] = useState("all");
@@ -122,7 +124,7 @@ export default function Logistics() {
     return map;
   }, [allTradeRequirements]);
 
-  const getRelevantTradesForJob = (job, trades) => {
+  const getRelevantTradesForJob = useCallback((job, trades) => {
     return (trades || []).filter((t) => {
       if (!t.is_required) return false;
       const appliesToAll = t.applies_to_all_jobs !== false;
@@ -131,7 +133,7 @@ export default function Logistics() {
       if (!job?.job_type_name) return false;
       return types.includes(job.job_type_name);
     });
-  };
+  }, []);
 
   // Maps for quick lookup
   const vehicleMap = useMemo(() => {
@@ -163,7 +165,7 @@ export default function Logistics() {
     return map;
   }, [priceListItems, inventoryQuantities]);
 
-  const detectShortage = (part) => {
+  const detectShortage = useCallback((part) => {
     if (['Ordered', 'Back-ordered', 'Delivered', 'At Supplier', 'At Delivery Bay', 'In Warehouse Storage', 'With Technician', 'At Client Site'].includes(part.status)) {
       return false;
     }
@@ -175,7 +177,7 @@ export default function Logistics() {
        return availableQty < requiredQty;
     }
     return true;
-  };
+  }, [inventoryByItem]);
 
   const projectMap = useMemo(() => {
     return projects.reduce((acc, p) => ({ ...acc, [p.id]: p }), {});
@@ -204,19 +206,19 @@ export default function Logistics() {
     onError: () => toast.error("Failed to update job"),
   });
 
-  const handleStatusChange = (partId, newStatus) => {
+  const handleStatusChange = useCallback((partId, newStatus) => {
     updatePartMutation.mutate({ id: partId, data: { status: newStatus } });
-  };
+  }, [updatePartMutation]);
 
-  const handleLocationChange = (partId, newLocation) => {
+  const handleLocationChange = useCallback((partId, newLocation) => {
     updatePartMutation.mutate({ id: partId, data: { location: newLocation } });
-  };
+  }, [updatePartMutation]);
 
-  // Filtering
+  // Filtering - use debounced search to avoid recomputation on every keystroke
   const filteredParts = useMemo(() => {
     return parts.filter(part => {
       // Search
-      const searchLower = searchTerm.toLowerCase();
+      const searchLower = debouncedSearchTerm.toLowerCase();
       const project = projectMap[part.project_id];
       const matchesSearch = 
         part.category?.toLowerCase().includes(searchLower) ||
@@ -249,7 +251,7 @@ export default function Logistics() {
         const dateB = b.order_date || b.created_date;
         return new Date(dateB) - new Date(dateA);
     });
-  }, [parts, searchTerm, statusFilter, locationFilter, vehicleFilter, projectMap]);
+  }, [parts, debouncedSearchTerm, statusFilter, locationFilter, vehicleFilter, projectMap]);
 
   const filteredStockJobs = useMemo(() => {
     return stockLogisticsJobs.filter(job => {
