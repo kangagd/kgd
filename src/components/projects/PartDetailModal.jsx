@@ -48,11 +48,18 @@ const LOCATIONS = [
   "On Order", "At Supplier", "At Delivery Bay", "In Warehouse Storage", "With Technician", "At Client Site"
 ];
 
-export default function PartDetailModal({ open, part, onClose, onSave, isSubmitting }) {
+export default function PartDetailModal({ open, part, onClose, onSave, isSubmitting, projectId }) {
   // If part is null (new), initialize with defaults
   const [formData, setFormData] = useState({});
   const [uploading, setUploading] = useState(false);
   const [jobSearch, setJobSearch] = useState("");
+  const [poDetails, setPoDetails] = useState({
+    supplier_id: "",
+    internal_reference: "",
+    requested_eta: "",
+    notes_to_supplier: ""
+  });
+  const [poError, setPoError] = useState("");
   const queryClient = useQueryClient();
 
   const movePartMutation = useMutation({
@@ -99,6 +106,12 @@ export default function PartDetailModal({ open, part, onClose, onSave, isSubmitt
         supplier_name: part.supplier_name || ""
       };
       setFormData(mappedPart);
+      setPoDetails({
+        supplier_id: part.supplier_id || "",
+        internal_reference: "",
+        requested_eta: part.eta || "",
+        notes_to_supplier: ""
+      });
     } else {
       setFormData({
         category: "Other",
@@ -113,7 +126,14 @@ export default function PartDetailModal({ open, part, onClose, onSave, isSubmitt
         supplier_id: null,
         supplier_name: ""
       });
+      setPoDetails({
+        supplier_id: "",
+        internal_reference: "",
+        requested_eta: "",
+        notes_to_supplier: ""
+      });
     }
+    setPoError("");
   }, [part, open]);
 
   // Fetch jobs for logistics linking
@@ -144,9 +164,52 @@ export default function PartDetailModal({ open, part, onClose, onSave, isSubmitt
     enabled: open
   });
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
-    onSave(formData);
+    setPoError("");
+
+    const isSupplierSource = 
+      formData.source_type === "Supplier – Deliver to Warehouse" ||
+      formData.source_type === "Supplier – Pickup Required";
+
+    // Validate PO details if supplier source
+    if (isSupplierSource && !poDetails.supplier_id) {
+      setPoError("Supplier is required for this source type");
+      return;
+    }
+
+    try {
+      // First save/create the Part
+      const savedPart = await onSave(formData);
+      
+      // If supplier source, create/attach PO
+      if (isSupplierSource && savedPart?.id) {
+        const response = await base44.functions.invoke("createOrAttachPurchaseOrderForPart", {
+          part_id: savedPart.id,
+          supplier_id: poDetails.supplier_id,
+          project_id: projectId || savedPart.project_id,
+          source_type: savedPart.source_type,
+          internal_reference: poDetails.internal_reference || null,
+          requested_eta: poDetails.requested_eta || null,
+          notes_to_supplier: poDetails.notes_to_supplier || null
+        });
+
+        if (!response.data?.success) {
+          toast.error(response.data?.error || "Failed to create Purchase Order");
+          return;
+        }
+
+        // Invalidate PO queries
+        queryClient.invalidateQueries({ queryKey: ['purchaseOrders'] });
+        queryClient.invalidateQueries({ queryKey: ['parts'] });
+        
+        toast.success("Part and Purchase Order saved");
+      }
+      
+      onClose();
+    } catch (error) {
+      toast.error(error.message || "Failed to save part");
+    }
   };
 
   const handleFileUpload = async (e) => {
@@ -440,6 +503,81 @@ export default function PartDetailModal({ open, part, onClose, onSave, isSubmitt
             </section>
 
             <hr className="border-[#E5E7EB]" />
+
+            {/* Embedded Purchase Order Details */}
+            {(formData.source_type === "Supplier – Deliver to Warehouse" ||
+              formData.source_type === "Supplier – Pickup Required") && (
+              <section className="space-y-4">
+                <h3 className="text-[15px] font-semibold text-[#111827] uppercase tracking-wide">Purchase Order Details</h3>
+                <p className="text-sm text-[#6B7280]">
+                  This part will be added to a purchase order for the selected supplier.
+                </p>
+
+                {poError && (
+                  <div className="bg-red-50 border border-red-200 rounded-lg p-3">
+                    <p className="text-sm text-red-600">{poError}</p>
+                  </div>
+                )}
+
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
+                  <div className="space-y-2">
+                    <Label className="text-[#111827] font-medium">Supplier *</Label>
+                    <Select
+                      value={poDetails.supplier_id || "none"}
+                      onValueChange={(val) => {
+                        const supplierId = val === "none" ? "" : val;
+                        setPoDetails(prev => ({ ...prev, supplier_id: supplierId }));
+                        setPoError("");
+                      }}
+                    >
+                      <SelectTrigger className="bg-white">
+                        <SelectValue placeholder="Select supplier" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="none">Select a supplier</SelectItem>
+                        {suppliers.filter(s => s.is_active).map(s => (
+                          <SelectItem key={s.id} value={s.id}>{s.name}</SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+
+                  <div className="space-y-2">
+                    <Label className="text-[#6B7280] font-normal">Internal PO Reference</Label>
+                    <Input
+                      value={poDetails.internal_reference}
+                      onChange={(e) => setPoDetails(prev => ({ ...prev, internal_reference: e.target.value }))}
+                      placeholder="Optional internal reference"
+                      className="bg-white"
+                    />
+                  </div>
+
+                  <div className="space-y-2">
+                    <Label className="text-[#6B7280] font-normal">Requested ETA</Label>
+                    <Input
+                      type="date"
+                      value={poDetails.requested_eta}
+                      onChange={(e) => setPoDetails(prev => ({ ...prev, requested_eta: e.target.value }))}
+                      className="bg-white"
+                    />
+                  </div>
+                </div>
+
+                <div className="space-y-2">
+                  <Label className="text-[#6B7280] font-normal">Notes to Supplier</Label>
+                  <Textarea
+                    value={poDetails.notes_to_supplier}
+                    onChange={(e) => setPoDetails(prev => ({ ...prev, notes_to_supplier: e.target.value }))}
+                    placeholder="Optional notes to include on the purchase order"
+                    rows={3}
+                    className="bg-white"
+                  />
+                </div>
+              </section>
+            )}
+
+            {(formData.source_type === "Supplier – Deliver to Warehouse" ||
+              formData.source_type === "Supplier – Pickup Required") && <hr className="border-[#E5E7EB]" />}
 
             {/* Quick Movement Actions */}
             {part?.id && (isInLoadingBay || isOnVehicle) && (
