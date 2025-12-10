@@ -98,6 +98,26 @@ export default function PurchaseOrders() {
   const isManager = user?.role === 'manager';
   const canCreate = isAdmin || isManager;
 
+  const handleStatusChange = async (po, newStatus) => {
+    try {
+      const response = await base44.functions.invoke('managePurchaseOrder', {
+        action: 'updateStatus',
+        id: po.id,
+        status: newStatus
+      });
+
+      if (!response.data?.success) {
+        toast.error(response.data?.error || 'Failed to update status');
+        return;
+      }
+
+      toast.success('Status updated');
+      queryClient.invalidateQueries({ queryKey: ['purchaseOrders'] });
+    } catch (error) {
+      toast.error('Error updating status');
+    }
+  };
+
   // Show detail view if poId is present
   if (poId) {
     return (
