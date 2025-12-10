@@ -664,6 +664,7 @@ export default function Logistics() {
                     </div>
                     )}
                     </div>
+                    </div>
 
                     {/* Column: Delivered/Picked Up */}
             <div
@@ -857,10 +858,10 @@ export default function Logistics() {
                 )}
               </CardContent>
             </Card>
-            </section>
+          </section>
 
-            {/* Filters */}
-            <div className="flex flex-col md:flex-row gap-3">
+          {/* Filters */}
+          <div className="flex flex-col md:flex-row gap-3">
             <div className="relative flex-1">
               <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-[#6B7280]" />
               <Input
@@ -966,8 +967,7 @@ export default function Logistics() {
             </div>
           </div>
 
-            {/* Parts Table */}
-            <div className="bg-white border border-[#E5E7EB] rounded-xl shadow-sm overflow-hidden">
+          {/* Parts Table */}
           <div className="bg-white border border-[#E5E7EB] rounded-xl shadow-sm overflow-hidden">
             <div className="overflow-x-auto">
               <table className="w-full text-left text-sm">
@@ -1269,7 +1269,7 @@ export default function Logistics() {
                 </tbody>
               </table>
             </div>
-            </div>
+          </div>
           </>
         )}
 
