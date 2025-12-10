@@ -775,7 +775,7 @@ export default function Logistics() {
                             {po.supplier_name || "Supplier not set"}
                           </span>
                         </div>
-                        <StatusBadge value={po.status} />
+                        <StatusBadge type="poStatus" value={po.status} />
                       </div>
                       {!po.linked_logistics_job_id && (
                         <div className="mt-2 flex justify-end">
