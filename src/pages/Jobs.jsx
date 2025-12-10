@@ -59,7 +59,7 @@ export default function Jobs() {
           setJobScope("mine");
         }
       } catch (error) {
-        console.error("Error loading user:", error);
+        // Error loading user
       }
     };
     loadUser();
@@ -82,7 +82,6 @@ export default function Jobs() {
         setActiveCheckInMap(map);
       } catch (error) {
         if (!isCancelled) {
-          console.error("Error loading active check-ins", error);
           setActiveCheckInMap({});
         }
       }
@@ -103,20 +102,15 @@ export default function Jobs() {
     queryKey: ['allJobs'],
     queryFn: async () => {
       try {
-        console.log('[Jobs Debug] Fetching jobs...');
         // Use backend function to fetch jobs with robust permission handling
         const response = await base44.functions.invoke('getMyJobs');
         const allJobs = response.data || [];
-        console.log('[Jobs Debug] ✅ Total jobs fetched:', allJobs.length);
-        console.log('[Jobs Debug] All jobs:', allJobs);
 
         // Filter out deleted and cancelled jobs in the frontend
         const activeJobs = allJobs.filter(job => !job.deleted_at && job.status !== "Cancelled");
-        console.log('[Jobs Debug] Active jobs (not deleted/cancelled):', activeJobs.length);
 
         return activeJobs;
       } catch (error) {
-        console.error('[Jobs Debug] ❌ Error fetching jobs:', error);
         return [];
       }
     },
@@ -180,7 +174,6 @@ export default function Jobs() {
       setSelectedJob(null);
     },
     onError: (error) => {
-      console.error("Error deleting job:", error);
       alert(`Failed to delete job: ${error.message || 'Unknown error'}`);
     }
   });
@@ -245,7 +238,9 @@ export default function Jobs() {
   const isViewer = user?.role === 'viewer';
   const canCreateJobs = isAdminOrManager;
 
-  const filteredJobs = jobs.filter((job) => {
+  // Memoized job filtering and sorting to avoid re-computation on every render
+  // Potential optimisation: Debounce searchTerm for large job lists
+  const filteredJobs = React.useMemo(() => jobs.filter((job) => {
     // Technician filtering: only filter if user is explicitly a technician
     // Relaxed filtering to ensure jobs are visible. Assignment check should happen but if data is mismatching, 
     // we rely on the backend sending relevant jobs. 
@@ -322,26 +317,7 @@ export default function Jobs() {
     if (compareA < compareB) return sortOrder === 'asc' ? -1 : 1;
     if (compareA > compareB) return sortOrder === 'asc' ? 1 : -1;
     return 0;
-  });
-
-  // Debug logging
-  useEffect(() => {
-    console.log('[Jobs Debug] Raw jobs count:', jobs.length);
-    console.log('[Jobs Debug] Raw jobs:', jobs);
-    console.log('[Jobs Debug] Filters applied:');
-    console.log('  - Status filter:', statusFilter);
-    console.log('  - Technician filter:', technicianFilter);
-    console.log('  - Date from:', dateFrom);
-    console.log('  - Date to:', dateTo);
-    console.log('  - Search term:', searchTerm);
-    console.log('  - Is technician:', isTechnician);
-    console.log('  - User:', user);
-    console.log('[Jobs Debug] Jobs after filtering:', filteredJobs.length);
-    console.log('[Jobs Debug] Filtered jobs:', filteredJobs);
-    console.log('[Jobs Debug] showForm:', showForm);
-    console.log('[Jobs Debug] selectedJob:', selectedJob);
-    console.log('[Jobs Debug] viewMode:', viewMode);
-  }, [jobs, filteredJobs, statusFilter, technicianFilter, dateFrom, dateTo, searchTerm, isTechnician, user, showForm, selectedJob, viewMode]);
+  }), [jobs, searchTerm, statusFilter, jobScope, user?.email, technicianFilter, jobTypeFilter, dateFrom, dateTo, sortBy, sortOrder]);
 
   if (showForm) {
     return (
