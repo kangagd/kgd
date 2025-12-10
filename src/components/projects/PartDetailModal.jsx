@@ -50,8 +50,23 @@ const LOCATIONS = [
 ];
 
 export default function PartDetailModal({ open, part, onClose, onSave, isSubmitting, projectId }) {
-  // If part is null (new), initialize with defaults
-  const [formData, setFormData] = useState({});
+  // Initialize with defaults to avoid blank fields
+  const [formData, setFormData] = useState({
+    category: "Other",
+    status: "Pending",
+    source_type: "Supplier – Deliver to Warehouse",
+    location: "On Order",
+    order_date: new Date().toISOString().split('T')[0],
+    linked_logistics_jobs: [],
+    attachments: [],
+    price_list_item_id: null,
+    assigned_vehicle_id: null,
+    supplier_id: null,
+    supplier_name: "",
+    quantity_required: 1,
+    notes: "",
+    tracking_url: ""
+  });
   const [uploading, setUploading] = useState(false);
   const [jobSearch, setJobSearch] = useState("");
   const [priceListSearch, setPriceListSearch] = useState("");
