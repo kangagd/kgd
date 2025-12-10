@@ -223,4 +223,8 @@ export function QuoteStatusBadge({ value, ...props }) {
   return <StatusBadge type="quoteStatus" value={value} {...props} />;
 }
 
+export function POStatusBadge({ value, ...props }) {
+  return <StatusBadge type="poStatus" value={value} {...props} />;
+}
+
 export default StatusBadge;
