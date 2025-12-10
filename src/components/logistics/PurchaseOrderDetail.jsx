@@ -85,20 +85,18 @@ export default function PurchaseOrderDetail({ poId, onClose }) {
         delivery_method: po.delivery_method 
       });
       
-      // Map line items from separate entity if po.line_items is not populated
-      const items = po.line_items?.length > 0 
-        ? po.line_items 
-        : lineItems.map(line => ({
-            id: line.id,
-            source_type: line.source_type || "custom",
-            source_id: line.source_id || line.price_list_item_id || null,
-            part_id: line.part_id || null,
-            name: line.item_name || line.description || '',
-            quantity: line.qty_ordered || 0,
-            unit_price: line.unit_cost_ex_tax || 0,
-            unit: line.unit || null,
-            notes: line.notes || null
-          }));
+      // Map line items from separate entity (source of truth)
+      const items = lineItems.map(line => ({
+        id: line.id,
+        source_type: line.source_type || "custom",
+        source_id: line.source_id || line.price_list_item_id || null,
+        part_id: line.part_id || null,
+        name: line.item_name || line.description || '',
+        quantity: line.qty_ordered || 0,
+        unit_price: line.unit_cost_ex_tax || 0,
+        unit: line.unit || null,
+        notes: line.notes || null
+      }));
 
       setFormData({
         supplier_id: po.supplier_id || "",
@@ -769,7 +767,7 @@ export default function PurchaseOrderDetail({ poId, onClose }) {
             ) : (
               <div className="space-y-3">
                 {formData.line_items.map((item, index) => (
-                  <div key={index} className="border rounded-lg p-3">
+                  <div key={item.id || index} className="border rounded-lg p-3">
                     {/* Source Badge */}
                     <div className="flex items-center justify-between mb-2">
                       <Badge variant="outline" className="text-xs">
