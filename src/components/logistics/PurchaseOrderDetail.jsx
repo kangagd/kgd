@@ -240,7 +240,6 @@ export default function PurchaseOrderDetail({ poId, onClose }) {
       'Draft': 'bg-slate-100 text-slate-700',
       'Sent': 'bg-blue-100 text-blue-700',
       'Confirmed': 'bg-purple-100 text-purple-700',
-      'Delivered': 'bg-green-100 text-green-700',
       'Ready to Pick Up': 'bg-amber-100 text-amber-700',
       'Delivered to Delivery Bay': 'bg-cyan-100 text-cyan-700',
       'Completed - In Storage': 'bg-emerald-100 text-emerald-700',
@@ -275,7 +274,6 @@ export default function PurchaseOrderDetail({ poId, onClose }) {
   const canCreateLogistics = [
     PO_STATUS.SENT, 
     PO_STATUS.CONFIRMED, 
-    PO_STATUS.DELIVERED, 
     PO_STATUS.READY_TO_PICK_UP,
     PO_STATUS.DELIVERED_TO_DELIVERY_BAY
   ].includes(po.status);

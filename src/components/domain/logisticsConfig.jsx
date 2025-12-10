@@ -1,4 +1,3 @@
-
 /**
  * Logistics Domain Configuration
  * Centralizes constants for purchase orders, delivery methods, locations, and part statuses
@@ -8,7 +7,6 @@ export const PO_STATUS = {
   DRAFT: "Draft",
   SENT: "Sent",
   CONFIRMED: "Confirmed",
-  DELIVERED: "Delivered",
   READY_TO_PICK_UP: "Ready to Pick Up",
   DELIVERED_TO_DELIVERY_BAY: "Delivered to Delivery Bay",
   COMPLETED_IN_STORAGE: "Completed - In Storage",
