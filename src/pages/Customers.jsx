@@ -139,8 +139,7 @@ export default function Customers() {
       setSelectedCustomer(null);
     },
     onError: (error) => {
-      console.error("Error deleting customer:", error);
-      alert("Failed to delete customer. Please try again.");
+      toast.error("Failed to delete customer. Please try again.");
     }
   });
 

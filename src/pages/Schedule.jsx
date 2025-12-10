@@ -307,7 +307,6 @@ export default function Schedule() {
     },
     onError: (error) => {
       toast.error('Failed to reschedule job');
-      console.error('Reschedule error:', error);
     }
   });
 
