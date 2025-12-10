@@ -127,6 +127,42 @@ export default function Logistics() {
     queryFn: () => base44.entities.Supplier.list('name'),
   });
 
+  // Load data for board view
+  useEffect(() => {
+    let isCancelled = false;
+
+    async function loadLogisticsBoardData() {
+      setLoadingBoard(true);
+      try {
+        const [poResult, jobResult, partResult] = await Promise.all([
+          base44.entities.PurchaseOrder.list('-created_date', 200),
+          base44.entities.Job.list('-created_date', 200),
+          base44.entities.Part.list('-created_date', 500),
+        ]);
+
+        if (!isCancelled) {
+          const poList = Array.isArray(poResult) ? poResult : poResult?.data || [];
+          const jobList = Array.isArray(jobResult) ? jobResult : jobResult?.data || [];
+          const partList = Array.isArray(partResult) ? partResult : partResult?.data || [];
+
+          setBoardPOs(poList);
+          setBoardJobs(jobList);
+          setBoardParts(partList);
+        }
+      } catch (error) {
+        console.error("Error loading logistics board data", error);
+      } finally {
+        if (!isCancelled) setLoadingBoard(false);
+      }
+    }
+
+    loadLogisticsBoardData();
+
+    return () => {
+      isCancelled = true;
+    };
+  }, []);
+
   const tradesByProjectId = useMemo(() => {
     const map = {};
     for (const trade of allTradeRequirements) {
