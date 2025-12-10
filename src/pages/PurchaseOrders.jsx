@@ -86,10 +86,12 @@ export default function PurchaseOrders() {
     const statusColors = {
       'Draft': 'bg-slate-100 text-slate-700',
       'Sent': 'bg-blue-100 text-blue-700',
-      'Acknowledged': 'bg-purple-100 text-purple-700',
-      'In Transit': 'bg-amber-100 text-amber-700',
-      'Arrived': 'bg-green-100 text-green-700',
-      'Completed': 'bg-emerald-100 text-emerald-700',
+      'Confirmed': 'bg-purple-100 text-purple-700',
+      'Delivered': 'bg-green-100 text-green-700',
+      'Ready to Pick Up': 'bg-amber-100 text-amber-700',
+      'Delivered to Delivery Bay': 'bg-cyan-100 text-cyan-700',
+      'Completed - In Storage': 'bg-emerald-100 text-emerald-700',
+      'Completed - In Vehicle': 'bg-teal-100 text-teal-700',
     };
     return statusColors[status] || 'bg-slate-100 text-slate-700';
   };
