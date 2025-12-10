@@ -894,6 +894,11 @@ export default function Logistics() {
                               {po?.delivery_method === PO_DELIVERY_METHOD.PICKUP ? "Pick Up" : "Delivery"}
                             </Badge>
                           </div>
+                          <div className="text-xs text-[#6B7280] mt-1">
+                            {po?.delivery_method === PO_DELIVERY_METHOD.PICKUP 
+                              ? (supplier?.pickup_address || supplier?.address_full || "Supplier address")
+                              : "866 Bourke Street, Waterloo"}
+                          </div>
                         </div>
                       );
                     })
@@ -939,6 +944,11 @@ export default function Logistics() {
                               {po?.delivery_method === PO_DELIVERY_METHOD.PICKUP ? "Pick Up" : "Delivery"}
                             </Badge>
                           </div>
+                          <div className="text-xs text-[#6B7280] mt-1">
+                            {po?.delivery_method === PO_DELIVERY_METHOD.PICKUP 
+                              ? (supplier?.pickup_address || supplier?.address_full || "Supplier address")
+                              : "866 Bourke Street, Waterloo"}
+                          </div>
                         </div>
                       );
                     })
@@ -983,6 +993,11 @@ export default function Logistics() {
                             <Badge variant="outline" className="text-xs h-5">
                               {po?.delivery_method === PO_DELIVERY_METHOD.PICKUP ? "Pick Up" : "Delivery"}
                             </Badge>
+                          </div>
+                          <div className="text-xs text-[#6B7280] mt-1">
+                            {po?.delivery_method === PO_DELIVERY_METHOD.PICKUP 
+                              ? (supplier?.pickup_address || supplier?.address_full || "Supplier address")
+                              : "866 Bourke Street, Waterloo"}
                           </div>
                         </div>
                       );
