@@ -49,6 +49,11 @@ async function linkPartsToPO(base44, purchaseOrderId, lineItems) {
                 updateData.order_date = today;
             }
 
+            // Set location if empty
+            if (!part.location) {
+                updateData.location = "On Order";
+            }
+
             await base44.asServiceRole.entities.Part.update(partId, updateData);
         } catch (error) {
             console.error(`Error linking part ${partId} to PO ${purchaseOrderId}:`, error);
