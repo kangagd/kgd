@@ -529,6 +529,150 @@ export default function Logistics() {
           </div>
         </div>
 
+        {/* Purchase Orders Kanban Board */}
+        <section className="mb-8">
+          <h2 className="mb-3 text-lg font-semibold text-[#111827]">Purchase Orders – Logistics Board</h2>
+          <div className="grid gap-4 md:grid-cols-3">
+            {/* Column: Sent */}
+            <div
+              className="flex flex-col rounded-xl border border-[#E5E7EB] bg-white p-3"
+              onDragOver={(e) => e.preventDefault()}
+              onDrop={(e) => {
+                e.preventDefault();
+                if (!draggingPoId) return;
+                const po = purchaseOrders.find((p) => p.id === draggingPoId);
+                if (po) {
+                  handleMovePoToLane(po, "sent");
+                }
+                setDraggingPoId(null);
+              }}
+            >
+              <div className="mb-2 flex items-center justify-between">
+                <span className="text-sm font-semibold text-[#111827]">Sent</span>
+                <span className="text-xs text-[#6B7280]">{sentPOs.length}</span>
+              </div>
+              <div className="space-y-2">
+                {sentPOs.map((po) => (
+                  <div
+                    key={po.id}
+                    className="cursor-grab rounded-md border border-[#E5E7EB] bg-white px-3 py-2 text-xs shadow-sm hover:bg-[#F9FAFB] transition-colors"
+                    draggable
+                    onDragStart={() => setDraggingPoId(po.id)}
+                    onDragEnd={() => setDraggingPoId(null)}
+                    onClick={() => navigate(createPageUrl("PurchaseOrders") + `?poId=${po.id}`)}
+                  >
+                    <div className="flex items-center justify-between">
+                      <span className="font-medium text-[#111827]">
+                        {po.po_number || `PO #${po.id.substring(0, 8)}`}
+                      </span>
+                    </div>
+                    <div className="mt-1 text-[11px] text-[#6B7280]">
+                      {po.supplier_name || "Supplier not set"}
+                    </div>
+                  </div>
+                ))}
+                {!sentPOs.length && (
+                  <div className="text-[11px] text-[#6B7280] text-center py-4">
+                    No POs in Sent
+                  </div>
+                )}
+              </div>
+            </div>
+
+            {/* Column: Delivered / Acknowledged */}
+            <div
+              className="flex flex-col rounded-xl border border-[#E5E7EB] bg-white p-3"
+              onDragOver={(e) => e.preventDefault()}
+              onDrop={(e) => {
+                e.preventDefault();
+                if (!draggingPoId) return;
+                const po = purchaseOrders.find((p) => p.id === draggingPoId);
+                if (po) {
+                  handleMovePoToLane(po, "ready");
+                }
+                setDraggingPoId(null);
+              }}
+            >
+              <div className="mb-2 flex items-center justify-between">
+                <span className="text-sm font-semibold text-[#111827]">Delivered / Acknowledged</span>
+                <span className="text-xs text-[#6B7280]">{readyPOs.length}</span>
+              </div>
+              <div className="space-y-2">
+                {readyPOs.map((po) => (
+                  <div
+                    key={po.id}
+                    className="cursor-grab rounded-md border border-[#E5E7EB] bg-white px-3 py-2 text-xs shadow-sm hover:bg-[#F9FAFB] transition-colors"
+                    draggable
+                    onDragStart={() => setDraggingPoId(po.id)}
+                    onDragEnd={() => setDraggingPoId(null)}
+                    onClick={() => navigate(createPageUrl("PurchaseOrders") + `?poId=${po.id}`)}
+                  >
+                    <div className="flex items-center justify-between">
+                      <span className="font-medium text-[#111827]">
+                        {po.po_number || `PO #${po.id.substring(0, 8)}`}
+                      </span>
+                    </div>
+                    <div className="mt-1 text-[11px] text-[#6B7280]">
+                      {po.supplier_name || "Supplier not set"}
+                    </div>
+                  </div>
+                ))}
+                {!readyPOs.length && (
+                  <div className="text-[11px] text-[#6B7280] text-center py-4">
+                    No POs ready or acknowledged
+                  </div>
+                )}
+              </div>
+            </div>
+
+            {/* Column: Completed */}
+            <div
+              className="flex flex-col rounded-xl border border-[#E5E7EB] bg-white p-3"
+              onDragOver={(e) => e.preventDefault()}
+              onDrop={(e) => {
+                e.preventDefault();
+                if (!draggingPoId) return;
+                const po = purchaseOrders.find((p) => p.id === draggingPoId);
+                if (po) {
+                  handleMovePoToLane(po, "completed");
+                }
+                setDraggingPoId(null);
+              }}
+            >
+              <div className="mb-2 flex items-center justify-between">
+                <span className="text-sm font-semibold text-[#111827]">Completed</span>
+                <span className="text-xs text-[#6B7280]">{completedPOs.length}</span>
+              </div>
+              <div className="space-y-2">
+                {completedPOs.map((po) => (
+                  <div
+                    key={po.id}
+                    className="cursor-grab rounded-md border border-[#E5E7EB] bg-white px-3 py-2 text-xs shadow-sm hover:bg-[#F9FAFB] transition-colors"
+                    draggable
+                    onDragStart={() => setDraggingPoId(po.id)}
+                    onDragEnd={() => setDraggingPoId(null)}
+                    onClick={() => navigate(createPageUrl("PurchaseOrders") + `?poId=${po.id}`)}
+                  >
+                    <div className="flex items-center justify-between">
+                      <span className="font-medium text-[#111827]">
+                        {po.po_number || `PO #${po.id.substring(0, 8)}`}
+                      </span>
+                    </div>
+                    <div className="mt-1 text-[11px] text-[#6B7280]">
+                      {po.supplier_name || "Supplier not set"}
+                    </div>
+                  </div>
+                ))}
+                {!completedPOs.length && (
+                  <div className="text-[11px] text-[#6B7280] text-center py-4">
+                    No completed POs
+                  </div>
+                )}
+              </div>
+            </div>
+          </div>
+        </section>
+
         {/* Board Layout */}
         <section className="mb-8">
           <div className="grid gap-4 md:grid-cols-3">
