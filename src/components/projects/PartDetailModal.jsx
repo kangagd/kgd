@@ -139,13 +139,37 @@ export default function PartDetailModal({ open, part, onClose, onSave, isSubmitt
       console.log("Setting formData to:", mappedPart);
       setFormData(mappedPart);
       
-      // Initialize poDetails from part data
+      // Initialize poDetails with defaults first
       setPoDetails({
         supplier_id: part.supplier_id || "",
         internal_reference: part.po_number || part.order_reference || "",
         requested_eta: part.eta || "",
         notes_to_supplier: ""
       });
+      
+      // If part is linked to a PurchaseOrder, fetch it and hydrate PO fields
+      if (part.purchase_order_id) {
+        base44.entities.PurchaseOrder.get(part.purchase_order_id)
+          .then((po) => {
+            if (!po) return;
+            
+            setPoDetails({
+              supplier_id: po.supplier_id || part.supplier_id || "",
+              internal_reference: po.po_number || "",
+              requested_eta: po.expected_date || "",
+              notes_to_supplier: po.notes || ""
+            });
+            
+            // Sync supplier_id to formData if needed
+            setFormData((prev) => ({
+              ...prev,
+              supplier_id: prev.supplier_id || po.supplier_id || ""
+            }));
+          })
+          .catch((err) => {
+            console.error("Failed to hydrate PO details:", err);
+          });
+      }
       
       // If part has a price list item, set the search to display it
       if (part.price_list_item_id) {
@@ -182,7 +206,7 @@ export default function PartDetailModal({ open, part, onClose, onSave, isSubmitt
     }
     setPoError("");
     setPriceListOpen(false);
-  }, [part, open, priceListItems]);
+  }, [part?.id, part?.purchase_order_id, open, priceListItems]);
 
   // Fetch jobs for logistics linking
   const { data: jobs = [] } = useQuery({
