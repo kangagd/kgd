@@ -80,6 +80,13 @@ export default function PartDetailModal({ open, part, onClose, onSave, isSubmitt
   const [poError, setPoError] = useState("");
   const queryClient = useQueryClient();
 
+  // Fetch price list items FIRST (needed by useEffect below)
+  const { data: priceListItems = [] } = useQuery({
+    queryKey: ['priceListItems-for-parts'],
+    queryFn: () => base44.entities.PriceListItem.list('item'),
+    enabled: open
+  });
+
   const movePartMutation = useMutation({
     mutationFn: ({ part_ids, from_location, to_location }) => 
       base44.functions.invoke('recordStockMovement', {
@@ -100,13 +107,6 @@ export default function PartDetailModal({ open, part, onClose, onSave, isSubmitt
     onError: (error) => {
       toast.error(error.message || "Failed to move part");
     }
-  });
-
-  // Fetch price list items FIRST before useEffect uses it
-  const { data: priceListItems = [] } = useQuery({
-    queryKey: ['priceListItems-for-parts'],
-    queryFn: () => base44.entities.PriceListItem.list('item'),
-    enabled: open
   });
 
   useEffect(() => {
