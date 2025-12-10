@@ -69,6 +69,7 @@ export default function Logistics() {
   const [boardJobs, setBoardJobs] = useState([]);
   const [boardParts, setBoardParts] = useState([]);
   const [loadingBoard, setLoadingBoard] = useState(false);
+  const [draggingPoId, setDraggingPoId] = useState(null);
 
   // Fetch Data
   const { data: parts = [], isLoading: partsLoading } = useQuery({
