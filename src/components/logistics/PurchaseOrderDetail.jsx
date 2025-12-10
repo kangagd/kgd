@@ -190,6 +190,7 @@ export default function PurchaseOrderDetail({ poId, onClose }) {
   };
 
   const [addItemMenuOpen, setAddItemMenuOpen] = useState(false);
+  const [priceListSearch, setPriceListSearch] = useState("");
 
   const addLineItem = (sourceType = "custom", sourceItem = null) => {
     const newItem = { 
@@ -411,7 +412,7 @@ export default function PurchaseOrderDetail({ poId, onClose }) {
                       Add Item
                     </Button>
                   </PopoverTrigger>
-                  <PopoverContent className="w-64 p-2" align="end">
+                  <PopoverContent className="w-80 p-2" align="end">
                     <div className="space-y-1">
                       <Button
                         variant="ghost"
@@ -424,20 +425,37 @@ export default function PurchaseOrderDetail({ poId, onClose }) {
                       </Button>
                       <div className="border-t my-1" />
                       {priceListItems.length > 0 && (
-                        <div className="max-h-48 overflow-y-auto space-y-1">
+                        <div className="space-y-1">
                           <div className="px-2 py-1 text-xs font-medium text-[#6B7280]">From Price List</div>
-                          {priceListItems.map((item) => (
-                            <Button
-                              key={item.id}
-                              variant="ghost"
-                              size="sm"
-                              className="w-full justify-start text-xs"
-                              onClick={() => addLineItem("price_list", item)}
-                            >
-                              <List className="w-3 h-3 mr-2" />
-                              {item.item}
-                            </Button>
-                          ))}
+                          <Input
+                            placeholder="Search items..."
+                            value={priceListSearch}
+                            onChange={(e) => setPriceListSearch(e.target.value)}
+                            className="h-8 text-xs"
+                          />
+                          <div className="max-h-48 overflow-y-auto space-y-1">
+                            {priceListItems
+                              .filter(item => 
+                                !priceListSearch || 
+                                item.item?.toLowerCase().includes(priceListSearch.toLowerCase()) ||
+                                item.sku?.toLowerCase().includes(priceListSearch.toLowerCase())
+                              )
+                              .map((item) => (
+                                <Button
+                                  key={item.id}
+                                  variant="ghost"
+                                  size="sm"
+                                  className="w-full justify-start text-xs"
+                                  onClick={() => {
+                                    addLineItem("price_list", item);
+                                    setPriceListSearch("");
+                                  }}
+                                >
+                                  <List className="w-3 h-3 mr-2" />
+                                  {item.item}
+                                </Button>
+                              ))}
+                          </div>
                         </div>
                       )}
                       {projectParts.length > 0 && (
