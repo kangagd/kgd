@@ -199,9 +199,13 @@ export default function PurchaseOrderDetail({ poId, onClose }) {
       
       queryClient.invalidateQueries({ queryKey: ['purchaseOrder', poId] });
       toast.success(`${files.length} file(s) uploaded`);
+      
+      // Reset input to allow uploading same file again
+      e.target.value = '';
     } catch (error) {
       console.error('Upload error:', error);
       toast.error('Failed to upload files');
+      e.target.value = '';
     } finally {
       setUploading(false);
     }
