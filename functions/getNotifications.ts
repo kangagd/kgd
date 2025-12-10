@@ -26,14 +26,18 @@ Deno.serve(async (req) => {
       limit
     );
 
-    // Get unread count
+    // Calculate unread count from fetched notifications to avoid second query
+    // For total unread count across all notifications (not just the limited set),
+    // we need a separate query, but we can optimize by only fetching count-relevant fields
     const unreadNotifications = await base44.asServiceRole.entities.Notification.filter(
-      { user_email: user.email, is_read: false }
+      { user_email: user.email, is_read: false },
+      '-created_date',
+      100 // Cap at 100 to avoid scanning entire table - show 99+ if needed
     );
 
     return Response.json({
       notifications,
-      unread_count: unreadNotifications.length
+      unread_count: Math.min(unreadNotifications.length, 99) // Cap display at 99+
     });
   } catch (error) {
     console.error('Error fetching notifications:', error);
