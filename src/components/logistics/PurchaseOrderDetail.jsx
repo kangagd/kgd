@@ -100,6 +100,7 @@ export default function PurchaseOrderDetail({ poId, onClose }) {
         delivery_method: po.delivery_method || "",
         notes: po.notes || "",
         reference: po.po_number || "",
+        status: po.status || PO_STATUS.DRAFT,
         line_items: items
       });
       setIsEditing(po.status === PO_STATUS.DRAFT);
