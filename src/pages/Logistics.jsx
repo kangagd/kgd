@@ -867,27 +867,36 @@ export default function Logistics() {
                     [
                       ...(logisticsJobGroups.open || []),
                       ...(logisticsJobGroups.scheduled || []),
-                    ].map((job) => (
-                      <div
-                        key={job.id}
-                        className="flex flex-col rounded-md border px-3 py-2 hover:bg-[#F3F4F6] cursor-pointer transition-colors"
-                        onClick={() =>
-                          navigate(createPageUrl("Jobs") + `?jobId=${job.id}`)
-                        }
-                      >
-                        <div className="flex items-center justify-between">
-                          <span className="text-sm font-medium">
-                            Job #{job.job_number || job.id.substring(0, 8)}
-                          </span>
-                          <StatusBadge value={job.status} />
+                    ].map((job) => {
+                      const po = purchaseOrders.find(p => p.id === job.purchase_order_id);
+                      const supplier = suppliers.find(s => s.id === po?.supplier_id);
+                      return (
+                        <div
+                          key={job.id}
+                          className="flex flex-col rounded-md border px-3 py-2 hover:bg-[#F3F4F6] cursor-pointer transition-colors"
+                          onClick={() =>
+                            navigate(createPageUrl("Jobs") + `?jobId=${job.id}`)
+                          }
+                        >
+                          <div className="flex items-center justify-between">
+                            <span className="text-sm font-medium">
+                              {supplier?.name || po?.supplier_name || "Supplier"}
+                            </span>
+                            <StatusBadge value={job.status} />
+                          </div>
+                          <div className="flex items-center justify-between mt-1">
+                            <span className="text-xs text-[#6B7280]">
+                              {job.scheduled_date
+                                ? format(new Date(job.scheduled_date), "MMM d, yyyy")
+                                : "No date"}
+                            </span>
+                            <Badge variant="outline" className="text-xs h-5">
+                              {po?.delivery_method === PO_DELIVERY_METHOD.PICKUP ? "Pick Up" : "Delivery"}
+                            </Badge>
+                          </div>
                         </div>
-                        <span className="text-xs text-[#6B7280] mt-1">
-                          {job.scheduled_date
-                            ? format(new Date(job.scheduled_date), "MMM d, yyyy")
-                            : "No date"}
-                        </span>
-                      </div>
-                    ))
+                      );
+                    }))
                   )}
                 </CardContent>
               </Card>
@@ -903,27 +912,36 @@ export default function Logistics() {
                       No jobs in progress.
                     </div>
                   ) : (
-                    (logisticsJobGroups.in_progress || []).map((job) => (
-                      <div
-                        key={job.id}
-                        className="flex flex-col rounded-md border px-3 py-2 hover:bg-[#F3F4F6] cursor-pointer transition-colors"
-                        onClick={() =>
-                          navigate(createPageUrl("Jobs") + `?jobId=${job.id}`)
-                        }
-                      >
-                        <div className="flex items-center justify-between">
-                          <span className="text-sm font-medium">
-                            Job #{job.job_number || job.id.substring(0, 8)}
-                          </span>
-                          <StatusBadge value={job.status} />
+                    (logisticsJobGroups.in_progress || []).map((job) => {
+                      const po = purchaseOrders.find(p => p.id === job.purchase_order_id);
+                      const supplier = suppliers.find(s => s.id === po?.supplier_id);
+                      return (
+                        <div
+                          key={job.id}
+                          className="flex flex-col rounded-md border px-3 py-2 hover:bg-[#F3F4F6] cursor-pointer transition-colors"
+                          onClick={() =>
+                            navigate(createPageUrl("Jobs") + `?jobId=${job.id}`)
+                          }
+                        >
+                          <div className="flex items-center justify-between">
+                            <span className="text-sm font-medium">
+                              {supplier?.name || po?.supplier_name || "Supplier"}
+                            </span>
+                            <StatusBadge value={job.status} />
+                          </div>
+                          <div className="flex items-center justify-between mt-1">
+                            <span className="text-xs text-[#6B7280]">
+                              {job.scheduled_date
+                                ? format(new Date(job.scheduled_date), "MMM d, yyyy")
+                                : "No date"}
+                            </span>
+                            <Badge variant="outline" className="text-xs h-5">
+                              {po?.delivery_method === PO_DELIVERY_METHOD.PICKUP ? "Pick Up" : "Delivery"}
+                            </Badge>
+                          </div>
                         </div>
-                        <span className="text-xs text-[#6B7280] mt-1">
-                          {job.scheduled_date
-                            ? format(new Date(job.scheduled_date), "MMM d, yyyy")
-                            : "No date"}
-                        </span>
-                      </div>
-                    ))
+                      );
+                    })
                   )}
                 </CardContent>
               </Card>
@@ -939,27 +957,36 @@ export default function Logistics() {
                       No recently completed logistics jobs.
                     </div>
                   ) : (
-                    (logisticsJobGroups.completed || []).map((job) => (
-                      <div
-                        key={job.id}
-                        className="flex flex-col rounded-md border px-3 py-2 hover:bg-[#F3F4F6] cursor-pointer transition-colors"
-                        onClick={() =>
-                          navigate(createPageUrl("Jobs") + `?jobId=${job.id}`)
-                        }
-                      >
-                        <div className="flex items-center justify-between">
-                          <span className="text-sm font-medium">
-                            Job #{job.job_number || job.id.substring(0, 8)}
-                          </span>
-                          <StatusBadge value={job.status} />
+                    (logisticsJobGroups.completed || []).map((job) => {
+                      const po = purchaseOrders.find(p => p.id === job.purchase_order_id);
+                      const supplier = suppliers.find(s => s.id === po?.supplier_id);
+                      return (
+                        <div
+                          key={job.id}
+                          className="flex flex-col rounded-md border px-3 py-2 hover:bg-[#F3F4F6] cursor-pointer transition-colors"
+                          onClick={() =>
+                            navigate(createPageUrl("Jobs") + `?jobId=${job.id}`)
+                          }
+                        >
+                          <div className="flex items-center justify-between">
+                            <span className="text-sm font-medium">
+                              {supplier?.name || po?.supplier_name || "Supplier"}
+                            </span>
+                            <StatusBadge value={job.status} />
+                          </div>
+                          <div className="flex items-center justify-between mt-1">
+                            <span className="text-xs text-[#6B7280]">
+                              {job.scheduled_date
+                                ? format(new Date(job.scheduled_date), "MMM d, yyyy")
+                                : "No date"}
+                            </span>
+                            <Badge variant="outline" className="text-xs h-5">
+                              {po?.delivery_method === PO_DELIVERY_METHOD.PICKUP ? "Pick Up" : "Delivery"}
+                            </Badge>
+                          </div>
                         </div>
-                        <span className="text-xs text-[#6B7280] mt-1">
-                          {job.scheduled_date
-                            ? format(new Date(job.scheduled_date), "MMM d, yyyy")
-                            : "No date"}
-                        </span>
-                      </div>
-                    ))
+                      );
+                    })
                   )}
                 </CardContent>
               </Card>
