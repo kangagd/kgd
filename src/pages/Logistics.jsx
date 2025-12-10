@@ -572,9 +572,9 @@ export default function Logistics() {
                         <div className="mt-1 text-[11px] text-[#6B7280]">
                           {po.supplier_name || "Supplier not set"}
                         </div>
-                        {po.eta && (
+                        {po.expected_date && (
                           <div className="mt-1 text-[11px] text-[#6B7280]">
-                            ETA: {format(new Date(po.eta), "MMM d")}
+                            ETA: {format(new Date(po.expected_date), "MMM d")}
                           </div>
                         )}
                       </div>
@@ -630,9 +630,9 @@ export default function Logistics() {
                         <div className="mt-1 text-[11px] text-[#6B7280]">
                           {po.supplier_name || "Supplier not set"}
                         </div>
-                        {po.eta && (
+                        {po.expected_date && (
                           <div className="mt-1 text-[11px] text-[#6B7280]">
-                            ETA: {format(new Date(po.eta), "MMM d")}
+                            ETA: {format(new Date(po.expected_date), "MMM d")}
                           </div>
                         )}
                       </div>
@@ -690,9 +690,9 @@ export default function Logistics() {
                         <div className="mt-1 text-[11px] text-[#6B7280]">
                           {po.supplier_name || "Supplier not set"}
                         </div>
-                        {po.eta && (
+                        {po.expected_date && (
                           <div className="mt-1 text-[11px] text-[#6B7280]">
-                            ETA: {format(new Date(po.eta), "MMM d")}
+                            ETA: {format(new Date(po.expected_date), "MMM d")}
                           </div>
                         )}
                       </div>
@@ -750,9 +750,9 @@ export default function Logistics() {
                         <div className="mt-1 text-[11px] text-[#6B7280]">
                           {po.supplier_name || "Supplier not set"}
                         </div>
-                        {po.eta && (
+                        {po.expected_date && (
                           <div className="mt-1 text-[11px] text-[#6B7280]">
-                            ETA: {format(new Date(po.eta), "MMM d")}
+                            ETA: {format(new Date(po.expected_date), "MMM d")}
                           </div>
                         )}
                       </div>
