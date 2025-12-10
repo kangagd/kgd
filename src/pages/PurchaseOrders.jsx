@@ -251,9 +251,24 @@ export default function PurchaseOrders() {
                       <h3 className="text-[18px] font-semibold text-[#111827] leading-[1.2]">
                         PO #{po.po_number || po.id.slice(0, 8)}
                       </h3>
-                      <Badge className={getStatusColor(po.status)}>
-                        {po.status}
-                      </Badge>
+                      <Select
+                        value={po.status}
+                        onValueChange={(value) => handleStatusChange(po, value)}
+                      >
+                        <SelectTrigger 
+                          className={`h-6 w-auto min-w-[100px] text-xs ${getStatusColor(po.status)} border-0`}
+                          onClick={(e) => e.stopPropagation()}
+                        >
+                          <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent onClick={(e) => e.stopPropagation()}>
+                          {PO_STATUS_OPTIONS.map((status) => (
+                            <SelectItem key={status} value={status}>
+                              {status}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
                     </div>
                     <div className="flex items-center gap-4 text-[#4B5563] text-[14px] leading-[1.4] flex-wrap">
                       <div className="flex items-center gap-1.5">
