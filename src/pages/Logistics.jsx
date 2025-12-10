@@ -137,6 +137,30 @@ export default function Logistics() {
     () => getLoadingBayParts(parts),
     [parts]
   );
+
+  // Get all PO line items for POs in Delivered to Delivery Bay status
+  const deliveredPOItems = useMemo(() => {
+    const deliveredPOs = purchaseOrders.filter(
+      po => po.status === PO_STATUS.DELIVERED_TO_DELIVERY_BAY
+    );
+    
+    const items = [];
+    for (const po of deliveredPOs) {
+      const poLines = purchaseOrderLines.filter(line => line.purchase_order_id === po.id);
+      for (const line of poLines) {
+        items.push({
+          id: line.id,
+          po_id: po.id,
+          po_number: po.po_number,
+          supplier_name: po.supplier_name,
+          item_name: line.item_name || line.description,
+          quantity: line.qty_ordered || 0,
+          expected_date: po.expected_date,
+        });
+      }
+    }
+    return items;
+  }, [purchaseOrders, purchaseOrderLines]);
   const logisticsJobGroups = useMemo(
     () => getLogisticsJobs(jobs),
     [jobs]
@@ -773,71 +797,116 @@ export default function Logistics() {
               <CardHeader>
                 <CardTitle className="text-base">Loading Bay</CardTitle>
               </CardHeader>
-              <CardContent className="space-y-2">
-                {loadingBayParts.length === 0 ? (
+              <CardContent className="space-y-3">
+                {deliveredPOItems.length === 0 && loadingBayParts.length === 0 ? (
                   <div className="text-sm text-[#6B7280]">
                     No items in Loading Bay.
                   </div>
                 ) : (
-                  loadingBayParts.map((part) => (
-                    <div
-                      key={part.id}
-                      className="flex flex-col rounded-md border px-3 py-2 cursor-pointer hover:bg-[#F3F4F6] transition-colors"
-                      onClick={() => setSelectedPart(part)}
-                    >
-                      <div className="flex items-center justify-between">
-                        <span className="text-sm font-medium">
-                          {part.category || "Part"}
-                        </span>
-                        <span className="text-xs text-[#6B7280]">
-                          Qty: {part.quantity_required || part.quantity || 1}
-                        </span>
+                  <>
+                    {/* PO Items */}
+                    {deliveredPOItems.length > 0 && (
+                      <div className="space-y-2">
+                        <div className="text-xs font-semibold text-[#6B7280] uppercase">
+                          Purchase Orders
+                        </div>
+                        {deliveredPOItems.map((item) => (
+                          <div
+                            key={item.id}
+                            className="flex flex-col rounded-md border px-3 py-2 cursor-pointer hover:bg-[#F3F4F6] transition-colors"
+                            onClick={() => setSelectedPoId(item.po_id)}
+                          >
+                            <div className="flex items-center justify-between">
+                              <span className="text-sm font-medium">
+                                {item.item_name}
+                              </span>
+                              <span className="text-xs text-[#6B7280]">
+                                Qty: {item.quantity}
+                              </span>
+                            </div>
+                            <div className="text-xs text-[#6B7280] mt-1">
+                              PO: {item.po_number || `#${item.po_id.substring(0, 8)}`} • {item.supplier_name}
+                            </div>
+                            {item.expected_date && (
+                              <div className="text-xs text-[#6B7280] mt-0.5">
+                                ETA: {format(new Date(item.expected_date), "MMM d")}
+                              </div>
+                            )}
+                          </div>
+                        ))}
                       </div>
-                      <div className="text-xs text-[#6B7280] mt-1">
-                        {(() => {
-                          const proj = projects.find(
-                            (p) => p.id === part.project_id
-                          );
-                          return proj
-                            ? proj.title
-                            : part.project_id
-                            ? `Project ${part.project_id.substring(0, 8)}`
-                            : "No project";
-                        })()}
+                    )}
+
+                    {/* Legacy Parts (if any) */}
+                    {loadingBayParts.length > 0 && (
+                      <div className="space-y-2">
+                        {deliveredPOItems.length > 0 && (
+                          <div className="text-xs font-semibold text-[#6B7280] uppercase mt-4">
+                            Project Parts
+                          </div>
+                        )}
+                        {loadingBayParts.map((part) => (
+                          <div
+                            key={part.id}
+                            className="flex flex-col rounded-md border px-3 py-2 cursor-pointer hover:bg-[#F3F4F6] transition-colors"
+                            onClick={() => setSelectedPart(part)}
+                          >
+                            <div className="flex items-center justify-between">
+                              <span className="text-sm font-medium">
+                                {part.category || "Part"}
+                              </span>
+                              <span className="text-xs text-[#6B7280]">
+                                Qty: {part.quantity_required || part.quantity || 1}
+                              </span>
+                            </div>
+                            <div className="text-xs text-[#6B7280] mt-1">
+                              {(() => {
+                                const proj = projects.find(
+                                  (p) => p.id === part.project_id
+                                );
+                                return proj
+                                  ? proj.title
+                                  : part.project_id
+                                  ? `Project ${part.project_id.substring(0, 8)}`
+                                  : "No project";
+                              })()}
+                            </div>
+                            <div className="mt-2 flex gap-2">
+                              <Button
+                                size="sm"
+                                variant="outline"
+                                className="h-7 text-xs flex-1"
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  handleMoveLoadingBayPart(
+                                    part,
+                                    LOGISTICS_LOCATION.WAREHOUSE
+                                  );
+                                }}
+                              >
+                                To Storage
+                              </Button>
+                              <Button
+                                size="sm"
+                                variant="outline"
+                                className="h-7 text-xs flex-1"
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  handleMoveLoadingBayPart(
+                                    part,
+                                    LOGISTICS_LOCATION.WITH_TECHNICIAN
+                                  );
+                                }}
+                              >
+                                To Vehicle
+                              </Button>
+                            </div>
+                          </div>
+                        ))}
                       </div>
-                      <div className="mt-2 flex gap-2">
-                        <Button
-                          size="sm"
-                          variant="outline"
-                          className="h-7 text-xs flex-1"
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            handleMoveLoadingBayPart(
-                              part,
-                              LOGISTICS_LOCATION.WAREHOUSE
-                            );
-                          }}
-                        >
-                          To Storage
-                        </Button>
-                        <Button
-                          size="sm"
-                          variant="outline"
-                          className="h-7 text-xs flex-1"
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            handleMoveLoadingBayPart(
-                              part,
-                              LOGISTICS_LOCATION.WITH_TECHNICIAN
-                            );
-                          }}
-                        >
-                          To Vehicle
-                        </Button>
-                      </div>
-                    </div>
-                  ))
-                  )}
+                    )}
+                  </>
+                )}
                   </CardContent>
                   </Card>
                   </section>
