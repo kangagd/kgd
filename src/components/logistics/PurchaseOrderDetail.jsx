@@ -74,6 +74,11 @@ export default function PurchaseOrderDetail({ poId, onClose }) {
 
   useEffect(() => {
     if (po) {
+      console.log('PO data from server:', { 
+        project_id: po.project_id, 
+        delivery_method: po.delivery_method 
+      });
+      
       // Map line items from separate entity if po.line_items is not populated
       const items = po.line_items?.length > 0 
         ? po.line_items 
@@ -144,17 +149,19 @@ export default function PurchaseOrderDetail({ poId, onClose }) {
 
   const handleSave = () => {
     const supplier = suppliers.find(s => s.id === formData.supplier_id);
-    updatePOMutation.mutate({
+    const dataToSend = {
       action: 'update',
       id: poId,
       supplier_id: formData.supplier_id,
       supplier_name: supplier?.name || "",
-      project_id: formData.project_id,
-      delivery_method: formData.delivery_method,
+      project_id: formData.project_id || null,
+      delivery_method: formData.delivery_method || null,
       notes: formData.notes,
       reference: formData.reference,
       line_items: formData.line_items
-    });
+    };
+    console.log('Saving PO with data:', dataToSend);
+    updatePOMutation.mutate(dataToSend);
   };
 
   const handleSendToSupplier = async () => {
