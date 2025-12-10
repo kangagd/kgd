@@ -108,19 +108,7 @@ export default function PurchaseOrderDetail({ poId, onClose }) {
       }
       return response.data;
     },
-    onSuccess: (data) => {
-      // Update local form state with saved data to reflect any backend changes
-      if (data.purchaseOrder) {
-        const items = data.purchaseOrder.line_items || [];
-        setFormData({
-          supplier_id: data.purchaseOrder.supplier_id || "",
-          project_id: data.purchaseOrder.project_id || "",
-          delivery_method: data.purchaseOrder.delivery_method || "",
-          notes: data.purchaseOrder.notes || "",
-          reference: data.purchaseOrder.po_number || "",
-          line_items: items
-        });
-      }
+    onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['purchaseOrder', poId] });
       queryClient.invalidateQueries({ queryKey: ['purchaseOrderLines', poId] });
       queryClient.invalidateQueries({ queryKey: ['purchaseOrders'] });
