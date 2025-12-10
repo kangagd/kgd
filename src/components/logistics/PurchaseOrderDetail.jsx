@@ -397,6 +397,51 @@ export default function PurchaseOrderDetail({ poId, onClose }) {
             </div>
 
             <div>
+              <Label>Status</Label>
+              <Select
+                value={formData.status}
+                onValueChange={async (value) => {
+                  setFormData((prev) => ({ ...prev, status: value }));
+
+                  try {
+                    const response = await base44.functions.invoke("managePurchaseOrder", {
+                      action: "updateStatus",
+                      id: po.id,
+                      status: value,
+                    });
+
+                    if (!response?.data?.success) {
+                      setFormData((prev) => ({ ...prev, status: po.status }));
+                      toast.error(response?.data?.error || "Failed to update status");
+                      return;
+                    }
+
+                    const updated = response.data.purchaseOrder || po;
+                    queryClient.invalidateQueries({ queryKey: ['purchaseOrder', poId] });
+                    queryClient.invalidateQueries({ queryKey: ['purchaseOrders'] });
+                    setFormData((prev) => ({ ...prev, status: updated.status ?? value }));
+                    toast.success("Status updated");
+                  } catch (error) {
+                    setFormData((prev) => ({ ...prev, status: po.status }));
+                    toast.error("Error updating status");
+                  }
+                }}
+                disabled={updatePOMutation.isPending}
+              >
+                <SelectTrigger>
+                  <SelectValue placeholder="Select status" />
+                </SelectTrigger>
+                <SelectContent>
+                  {PO_STATUS_OPTIONS.map((status) => (
+                    <SelectItem key={status} value={status}>
+                      {status}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+
+            <div>
               <Label>Notes</Label>
               <Textarea
                 value={formData.notes}
