@@ -76,7 +76,7 @@ Deno.serve(async (req) => {
             }
 
             // Extract all potential fields from params
-            const { supplier_name, notes, delivery_location } = await req.json();
+            const { supplier_name, notes, delivery_location, reference } = await req.json();
 
             const poData = {
                 supplier_id,
@@ -86,6 +86,7 @@ Deno.serve(async (req) => {
                 delivery_method: delivery_method || PO_DELIVERY_METHOD.DELIVERY,
                 delivery_location: delivery_location || null,
                 notes: notes || null,
+                po_number: reference || null,
                 created_by: user.email,
                 order_date: new Date().toISOString().split('T')[0],
             };
@@ -129,7 +130,7 @@ Deno.serve(async (req) => {
             }
 
             // Extract all potential update fields from params
-            const { supplier_name, notes, delivery_location } = await req.json();
+            const { supplier_name, notes, delivery_location, reference } = await req.json();
 
             const updateData = {};
             if (supplier_id !== undefined) updateData.supplier_id = supplier_id;
@@ -138,6 +139,11 @@ Deno.serve(async (req) => {
             if (delivery_method !== undefined) updateData.delivery_method = delivery_method;
             if (delivery_location !== undefined) updateData.delivery_location = delivery_location;
             if (notes !== undefined) updateData.notes = notes;
+            
+            // Only allow reference editing if not completed
+            if (reference !== undefined && po.status !== PO_STATUS.COMPLETED) {
+                updateData.po_number = reference;
+            }
 
             const updatedPO = await base44.asServiceRole.entities.PurchaseOrder.update(id, updateData);
 

@@ -28,6 +28,7 @@ export default function PurchaseOrderDetail({ poId, onClose }) {
     project_id: "",
     delivery_method: "",
     notes: "",
+    reference: "",
     line_items: []
   });
 
@@ -92,6 +93,7 @@ export default function PurchaseOrderDetail({ poId, onClose }) {
         project_id: po.project_id || "",
         delivery_method: po.delivery_method || "",
         notes: po.notes || "",
+        reference: po.po_number || "",
         line_items: items
       });
       setIsEditing(po.status === PO_STATUS.DRAFT);
@@ -115,6 +117,7 @@ export default function PurchaseOrderDetail({ poId, onClose }) {
           project_id: data.purchaseOrder.project_id || "",
           delivery_method: data.purchaseOrder.delivery_method || "",
           notes: data.purchaseOrder.notes || "",
+          reference: data.purchaseOrder.po_number || "",
           line_items: items
         });
       }
@@ -161,6 +164,7 @@ export default function PurchaseOrderDetail({ poId, onClose }) {
       project_id: formData.project_id,
       delivery_method: formData.delivery_method,
       notes: formData.notes,
+      reference: formData.reference,
       line_items: formData.line_items
     });
   };
@@ -265,11 +269,23 @@ export default function PurchaseOrderDetail({ poId, onClose }) {
             >
               <X className="w-5 h-5" />
             </button>
-            <div>
-              <h2 className="text-xl font-bold text-[#111827]">
-                PO #{po.po_number || po.id.slice(0, 8)}
-              </h2>
-              <Badge className={getStatusColor(po.status)}>{po.status}</Badge>
+            <div className="flex-1">
+              <div className="flex items-center gap-3">
+                <h2 className="text-xl font-bold text-[#111827]">Purchase Order</h2>
+                <Badge className={getStatusColor(po.status)}>{po.status}</Badge>
+              </div>
+              {isDraft ? (
+                <Input
+                  value={formData.reference}
+                  onChange={(e) => setFormData({ ...formData, reference: e.target.value })}
+                  placeholder="Enter PO reference/number..."
+                  className="mt-2 max-w-xs text-sm"
+                />
+              ) : (
+                <p className="text-sm text-[#6B7280] mt-1">
+                  {po.po_number || `ID: ${po.id.slice(0, 8)}`}
+                </p>
+              )}
             </div>
           </div>
           <div className="flex gap-2">
