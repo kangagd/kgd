@@ -187,7 +187,7 @@ export default function Logistics() {
     return jobs.reduce((acc, j) => ({ ...acc, [j.id]: j }), {});
   }, [jobs]);
 
-  // Update Mutations
+  // DEPRECATED: Direct part updates - use recordStockMovement for location changes
   const updatePartMutation = useMutation({
     mutationFn: ({ id, data }) => base44.entities.Part.update(id, data),
     onSuccess: () => {
@@ -195,6 +195,27 @@ export default function Logistics() {
       toast.success("Part updated successfully");
     },
     onError: () => toast.error("Failed to update part")
+  });
+
+  // NEW: Movement mutation using recordStockMovement
+  const movePartMutation = useMutation({
+    mutationFn: ({ part_ids, from_location, to_location }) => 
+      base44.functions.invoke('recordStockMovement', {
+        part_ids,
+        from_location,
+        to_location
+      }),
+    onSuccess: (response) => {
+      if (response.data?.success) {
+        queryClient.invalidateQueries({ queryKey: ['parts'] });
+        toast.success("Part moved successfully");
+      } else {
+        toast.error(response.data?.error || "Failed to move part");
+      }
+    },
+    onError: (error) => {
+      toast.error(error.message || "Failed to move part");
+    }
   });
 
   const updateJobMutation = useMutation({
@@ -206,13 +227,23 @@ export default function Logistics() {
     onError: () => toast.error("Failed to update job"),
   });
 
+  // DEPRECATED: Direct status updates - prefer recordStockMovement for location changes
   const handleStatusChange = useCallback((partId, newStatus) => {
     updatePartMutation.mutate({ id: partId, data: { status: newStatus } });
   }, [updatePartMutation]);
 
+  // UPDATED: Use recordStockMovement for location changes
   const handleLocationChange = useCallback((partId, newLocation) => {
-    updatePartMutation.mutate({ id: partId, data: { location: newLocation } });
-  }, [updatePartMutation]);
+    const part = parts.find(p => p.id === partId);
+    if (!part) return;
+    
+    const fromLocation = part.location || "Supplier";
+    movePartMutation.mutate({
+      part_ids: [partId],
+      from_location: fromLocation,
+      to_location: newLocation
+    });
+  }, [parts, movePartMutation]);
 
   // Filtering - use debounced search to avoid recomputation on every keystroke
   const filteredParts = useMemo(() => {

@@ -130,9 +130,10 @@ export default function PartsSection({ projectId, autoExpand = false }) {
     }
   };
 
-  // Quick Action: Mark Delivered
+  // DEPRECATED: Direct status update - kept for legacy parts compatibility
   const markDelivered = (e, part) => {
     e.stopPropagation();
+    // Old schema parts still need this direct update
     updatePartMutation.mutate({ 
       id: part.id, 
       data: { 
@@ -140,19 +141,6 @@ export default function PartsSection({ projectId, autoExpand = false }) {
         location: "At Delivery Bay" 
       } 
     });
-  };
-
-  // Quick Action: Update Location
-  const advanceLocation = (e, part) => {
-    e.stopPropagation();
-    const currentIndex = FLOW_STEPS.indexOf(part.location);
-    if (currentIndex !== -1 && currentIndex < FLOW_STEPS.length - 1) {
-      const nextLocation = FLOW_STEPS[currentIndex + 1];
-      updatePartMutation.mutate({ 
-        id: part.id, 
-        data: { location: nextLocation } 
-      });
-    }
   };
 
   const handleMovePart = (e, part, toLocation) => {
