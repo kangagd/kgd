@@ -205,6 +205,13 @@ export default function PartDetailModal({ open, part, onClose, onSave, isSubmitt
     enabled: open
   });
 
+  // Fetch price list items (already declared above before useEffect)
+  const { data: priceListItems = [] } = useQuery({
+    queryKey: ['priceListItems-for-parts'],
+    queryFn: () => base44.entities.PriceListItem.list('item'),
+    enabled: open
+  });
+
   // Get selected item name for display
   const selectedPriceListItem = priceListItems.find(item => item.id === formData.price_list_item_id);
   const displayValue = formData.price_list_item_id 
