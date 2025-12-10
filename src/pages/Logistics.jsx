@@ -216,7 +216,14 @@ export default function Logistics() {
     if (targetLane === "sent") {
       newStatus = PO_STATUS.SENT;
     } else if (targetLane === "confirmed") {
-      newStatus = PO_STATUS.CONFIRMED;
+      // Determine correct status based on delivery method
+      if (po.delivery_method === PO_DELIVERY_METHOD.DELIVERY) {
+        newStatus = PO_STATUS.DELIVERED;
+      } else if (po.delivery_method === PO_DELIVERY_METHOD.PICKUP) {
+        newStatus = PO_STATUS.READY_TO_PICK_UP;
+      } else {
+        newStatus = PO_STATUS.CONFIRMED;
+      }
     } else if (targetLane === "delivery_bay") {
       newStatus = PO_STATUS.DELIVERED_TO_DELIVERY_BAY;
     } else if (targetLane === "completed") {
