@@ -538,262 +538,41 @@ export default function Logistics() {
           </div>
         </div>
 
-        {/* Purchase Orders Kanban Board */}
-        <section className="mb-8">
-          <h2 className="mb-3 text-lg font-semibold text-[#111827]">
-            Purchase Orders – Logistics Board
-          </h2>
-          <div className="grid gap-4 md:grid-cols-4">
-            {/* Column: Sent */}
-            <div
-              className="flex flex-col rounded-xl border border-[#E5E7EB] bg-white p-3"
-              onDragOver={(e) => e.preventDefault()}
-              onDrop={(e) => {
-                e.preventDefault();
-                if (!draggingPoId) return;
-                const po = purchaseOrders.find((p) => p.id === draggingPoId);
-                if (po) {
-                  handleMovePoToLane(po, "sent");
-                }
-                setDraggingPoId(null);
-              }}
-            >
-              <div className="mb-2 flex items-center justify-between">
-                <span className="text-sm font-semibold text-[#111827]">
-                  Sent
-                </span>
-                <span className="text-xs text-[#6B7280]">{sentPOs.length}</span>
-              </div>
-              <div className="space-y-2">
-                {sentPOs.map((po) => (
-                  <div
-                    key={po.id}
-                    className="cursor-grab rounded-md border border-[#E5E7EB] bg-white px-3 py-2 text-xs shadow-sm hover:bg-[#F9FAFB] transition-colors"
-                    draggable
-                    onDragStart={() => setDraggingPoId(po.id)}
-                    onDragEnd={() => setDraggingPoId(null)}
-                    onClick={() =>
-                      navigate(
-                        createPageUrl("PurchaseOrders") + `?poId=${po.id}`
-                      )
-                    }
-                  >
-                    <div className="flex items-center justify-between">
-                      <span className="font-medium text-[#111827]">
-                        {po.po_number || `PO #${po.id.substring(0, 8)}`}
-                      </span>
-                    </div>
-                    <div className="mt-1 text-[11px] text-[#6B7280]">
-                      {po.supplier_name || "Supplier not set"}
-                    </div>
-                  </div>
-                ))}
-                {!sentPOs.length && (
-                  <div className="text-[11px] text-[#6B7280] text-center py-4">
-                    No POs
-                  </div>
-                )}
-              </div>
-            </div>
-
-            {/* Column: Confirmed */}
-            <div
-              className="flex flex-col rounded-xl border border-[#E5E7EB] bg-white p-3"
-              onDragOver={(e) => e.preventDefault()}
-              onDrop={(e) => {
-                e.preventDefault();
-                if (!draggingPoId) return;
-                const po = purchaseOrders.find((p) => p.id === draggingPoId);
-                if (po) {
-                  handleMovePoToLane(po, "confirmed");
-                }
-                setDraggingPoId(null);
-              }}
-            >
-              <div className="mb-2 flex items-center justify-between">
-                <span className="text-sm font-semibold text-[#111827]">
-                  Confirmed
-                </span>
-                <span className="text-xs text-[#6B7280]">
-                  {confirmedPOs.length}
-                </span>
-              </div>
-              <div className="space-y-2">
-                {confirmedPOs.map((po) => (
-                  <div
-                    key={po.id}
-                    className="cursor-grab rounded-md border border-[#E5E7EB] bg-white px-3 py-2 text-xs shadow-sm hover:bg-[#F9FAFB] transition-colors"
-                    draggable
-                    onDragStart={() => setDraggingPoId(po.id)}
-                    onDragEnd={() => setDraggingPoId(null)}
-                    onClick={() =>
-                      navigate(
-                        createPageUrl("PurchaseOrders") + `?poId=${po.id}`
-                      )
-                    }
-                  >
-                    <div className="flex items-center justify-between">
-                      <span className="font-medium text-[#111827]">
-                        {po.po_number || `PO #${po.id.substring(0, 8)}`}
-                      </span>
-                    </div>
-                    <div className="mt-1 text-[11px] text-[#6B7280]">
-                      {po.supplier_name || "Supplier not set"}
-                    </div>
-                    <div className="mt-1">
-                      <Badge
-                        variant="outline"
-                        className="text-[10px] px-1 py-0"
-                      >
-                        {po.status}
-                      </Badge>
-                    </div>
-                  </div>
-                ))}
-                {!confirmedPOs.length && (
-                  <div className="text-[11px] text-[#6B7280] text-center py-4">
-                    No POs
-                  </div>
-                )}
-              </div>
-            </div>
-
-            {/* Column: Delivery Bay */}
-            <div
-              className="flex flex-col rounded-xl border border-[#E5E7EB] bg-white p-3"
-              onDragOver={(e) => e.preventDefault()}
-              onDrop={(e) => {
-                e.preventDefault();
-                if (!draggingPoId) return;
-                const po = purchaseOrders.find((p) => p.id === draggingPoId);
-                if (po) {
-                  handleMovePoToLane(po, "delivery_bay");
-                }
-                setDraggingPoId(null);
-              }}
-            >
-              <div className="mb-2 flex items-center justify-between">
-                <span className="text-sm font-semibold text-[#111827]">
-                  Delivery Bay
-                </span>
-                <span className="text-xs text-[#6B7280]">
-                  {deliveryBayPOs.length}
-                </span>
-              </div>
-              <div className="space-y-2">
-                {deliveryBayPOs.map((po) => (
-                  <div
-                    key={po.id}
-                    className="cursor-grab rounded-md border border-[#E5E7EB] bg-white px-3 py-2 text-xs shadow-sm hover:bg-[#F9FAFB] transition-colors"
-                    draggable
-                    onDragStart={() => setDraggingPoId(po.id)}
-                    onDragEnd={() => setDraggingPoId(null)}
-                    onClick={() =>
-                      navigate(
-                        createPageUrl("PurchaseOrders") + `?poId=${po.id}`
-                      )
-                    }
-                  >
-                    <div className="flex items-center justify-between">
-                      <span className="font-medium text-[#111827]">
-                        {po.po_number || `PO #${po.id.substring(0, 8)}`}
-                      </span>
-                    </div>
-                    <div className="mt-1 text-[11px] text-[#6B7280]">
-                      {po.supplier_name || "Supplier not set"}
-                    </div>
-                  </div>
-                ))}
-                {!deliveryBayPOs.length && (
-                  <div className="text-[11px] text-[#6B7280] text-center py-4">
-                    No POs
-                  </div>
-                )}
-              </div>
-            </div>
-
-            {/* Column: Completed */}
-            <div
-              className="flex flex-col rounded-xl border border-[#E5E7EB] bg-white p-3"
-              onDragOver={(e) => e.preventDefault()}
-              onDrop={(e) => {
-                e.preventDefault();
-                if (!draggingPoId) return;
-                const po = purchaseOrders.find((p) => p.id === draggingPoId);
-                if (po) {
-                  handleMovePoToLane(po, "completed");
-                }
-                setDraggingPoId(null);
-              }}
-            >
-              <div className="mb-2 flex items-center justify-between">
-                <span className="text-sm font-semibold text-[#111827]">
-                  Completed
-                </span>
-                <span className="text-xs text-[#6B7280]">
-                  {completedPOs.length}
-                </span>
-              </div>
-              <div className="space-y-2">
-                {completedPOs.map((po) => (
-                  <div
-                    key={po.id}
-                    className="cursor-grab rounded-md border border-[#E5E7EB] bg-white px-3 py-2 text-xs shadow-sm hover:bg-[#F9FAFB] transition-colors"
-                    draggable
-                    onDragStart={() => setDraggingPoId(po.id)}
-                    onDragEnd={() => setDraggingPoId(null)}
-                    onClick={() =>
-                      navigate(
-                        createPageUrl("PurchaseOrders") + `?poId=${po.id}`
-                      )
-                    }
-                  >
-                    <div className="flex items-center justify-between">
-                      <span className="font-medium text-[#111827]">
-                        {po.po_number || `PO #${po.id.substring(0, 8)}`}
-                      </span>
-                    </div>
-                    <div className="mt-1 text-[11px] text-[#6B7280]">
-                      {po.supplier_name || "Supplier not set"}
-                    </div>
-                    <div className="mt-1">
-                      <Badge
-                        variant="outline"
-                        className="text-[10px] px-1 py-0"
-                      >
-                        {po.status}
-                      </Badge>
-                    </div>
-                  </div>
-                ))}
-                {!completedPOs.length && (
-                  <div className="text-[11px] text-[#6B7280] text-center py-4">
-                    No POs
-                  </div>
-                )}
-              </div>
-            </div>
-          </div>
-        </section>
-
-        {/* Board Layout: Incoming POs / Jobs / Loading Bay */}
-        <section className="mb-8">
-          <div className="grid gap-4 md:grid-cols-3">
-            {/* Column 1: Incoming POs */}
-            <Card className="h-full">
-              <CardHeader>
-                <CardTitle className="text-base">
-                  Incoming Purchase Orders
-                </CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-2">
-                {incomingPOs.length === 0 ? (
-                  <div className="text-sm text-[#6B7280]">No incoming POs.</div>
-                ) : (
-                  incomingPOs.map((po) => (
+        {/* Purchase Orders Kanban Board - Orders View Only */}
+        {viewMode === "orders" && (
+          <section className="mb-8">
+            <h2 className="mb-3 text-sm font-semibold text-[#111827]">
+              Purchase Orders – Logistics Board
+            </h2>
+            <div className="grid gap-4 md:grid-cols-4">
+              {/* Column: Sent */}
+              <div
+                className="flex flex-col rounded-xl border border-[#E5E7EB] bg-white p-3"
+                onDragOver={(e) => e.preventDefault()}
+                onDrop={(e) => {
+                  e.preventDefault();
+                  if (!draggingPoId) return;
+                  const po = purchaseOrders.find((p) => p.id === draggingPoId);
+                  if (po) {
+                    handleMovePoToLane(po, "sent");
+                  }
+                  setDraggingPoId(null);
+                }}
+              >
+                <div className="mb-2 flex items-center justify-between">
+                  <span className="text-sm font-semibold text-[#111827]">
+                    Sent
+                  </span>
+                  <span className="text-xs text-[#6B7280]">{sentPOs.length}</span>
+                </div>
+                <div className="space-y-2">
+                  {sentPOs.map((po) => (
                     <div
                       key={po.id}
-                      className="flex flex-col rounded-md border px-3 py-2 hover:bg-[#F3F4F6] cursor-pointer transition-colors"
+                      className="cursor-grab rounded-md border border-[#E5E7EB] bg-white px-3 py-2 text-xs shadow-sm hover:bg-[#F9FAFB] transition-colors"
+                      draggable
+                      onDragStart={() => setDraggingPoId(po.id)}
+                      onDragEnd={() => setDraggingPoId(null)}
                       onClick={() =>
                         navigate(
                           createPageUrl("PurchaseOrders") + `?poId=${po.id}`
@@ -801,46 +580,397 @@ export default function Logistics() {
                       }
                     >
                       <div className="flex items-center justify-between">
-                        <div className="flex flex-col">
+                        <span className="font-medium text-[#111827]">
+                          {po.po_number || `PO #${po.id.substring(0, 8)}`}
+                        </span>
+                      </div>
+                      <div className="mt-1 text-[11px] text-[#6B7280]">
+                        {po.supplier_name || "Supplier not set"}
+                      </div>
+                    </div>
+                  ))}
+                  {!sentPOs.length && (
+                    <div className="text-[11px] text-[#6B7280] text-center py-4">
+                      No POs
+                    </div>
+                  )}
+                </div>
+              </div>
+
+              {/* Column: Confirmed */}
+              <div
+                className="flex flex-col rounded-xl border border-[#E5E7EB] bg-white p-3"
+                onDragOver={(e) => e.preventDefault()}
+                onDrop={(e) => {
+                  e.preventDefault();
+                  if (!draggingPoId) return;
+                  const po = purchaseOrders.find((p) => p.id === draggingPoId);
+                  if (po) {
+                    handleMovePoToLane(po, "confirmed");
+                  }
+                  setDraggingPoId(null);
+                }}
+              >
+                <div className="mb-2 flex items-center justify-between">
+                  <span className="text-sm font-semibold text-[#111827]">
+                    Confirmed
+                  </span>
+                  <span className="text-xs text-[#6B7280]">
+                    {confirmedPOs.length}
+                  </span>
+                </div>
+                <div className="space-y-2">
+                  {confirmedPOs.map((po) => (
+                    <div
+                      key={po.id}
+                      className="cursor-grab rounded-md border border-[#E5E7EB] bg-white px-3 py-2 text-xs shadow-sm hover:bg-[#F9FAFB] transition-colors"
+                      draggable
+                      onDragStart={() => setDraggingPoId(po.id)}
+                      onDragEnd={() => setDraggingPoId(null)}
+                      onClick={() =>
+                        navigate(
+                          createPageUrl("PurchaseOrders") + `?poId=${po.id}`
+                        )
+                      }
+                    >
+                      <div className="flex items-center justify-between">
+                        <span className="font-medium text-[#111827]">
+                          {po.po_number || `PO #${po.id.substring(0, 8)}`}
+                        </span>
+                      </div>
+                      <div className="mt-1 text-[11px] text-[#6B7280]">
+                        {po.supplier_name || "Supplier not set"}
+                      </div>
+                      <div className="mt-1">
+                        <Badge
+                          variant="outline"
+                          className="text-[10px] px-1 py-0"
+                        >
+                          {po.status}
+                        </Badge>
+                      </div>
+                    </div>
+                  ))}
+                  {!confirmedPOs.length && (
+                    <div className="text-[11px] text-[#6B7280] text-center py-4">
+                      No POs
+                    </div>
+                  )}
+                </div>
+              </div>
+
+              {/* Column: Delivery Bay */}
+              <div
+                className="flex flex-col rounded-xl border border-[#E5E7EB] bg-white p-3"
+                onDragOver={(e) => e.preventDefault()}
+                onDrop={(e) => {
+                  e.preventDefault();
+                  if (!draggingPoId) return;
+                  const po = purchaseOrders.find((p) => p.id === draggingPoId);
+                  if (po) {
+                    handleMovePoToLane(po, "delivery_bay");
+                  }
+                  setDraggingPoId(null);
+                }}
+              >
+                <div className="mb-2 flex items-center justify-between">
+                  <span className="text-sm font-semibold text-[#111827]">
+                    Delivery Bay
+                  </span>
+                  <span className="text-xs text-[#6B7280]">
+                    {deliveryBayPOs.length}
+                  </span>
+                </div>
+                <div className="space-y-2">
+                  {deliveryBayPOs.map((po) => (
+                    <div
+                      key={po.id}
+                      className="cursor-grab rounded-md border border-[#E5E7EB] bg-white px-3 py-2 text-xs shadow-sm hover:bg-[#F9FAFB] transition-colors"
+                      draggable
+                      onDragStart={() => setDraggingPoId(po.id)}
+                      onDragEnd={() => setDraggingPoId(null)}
+                      onClick={() =>
+                        navigate(
+                          createPageUrl("PurchaseOrders") + `?poId=${po.id}`
+                        )
+                      }
+                    >
+                      <div className="flex items-center justify-between">
+                        <span className="font-medium text-[#111827]">
+                          {po.po_number || `PO #${po.id.substring(0, 8)}`}
+                        </span>
+                      </div>
+                      <div className="mt-1 text-[11px] text-[#6B7280]">
+                        {po.supplier_name || "Supplier not set"}
+                      </div>
+                    </div>
+                  ))}
+                  {!deliveryBayPOs.length && (
+                    <div className="text-[11px] text-[#6B7280] text-center py-4">
+                      No POs
+                    </div>
+                  )}
+                </div>
+              </div>
+
+              {/* Column: Completed */}
+              <div
+                className="flex flex-col rounded-xl border border-[#E5E7EB] bg-white p-3"
+                onDragOver={(e) => e.preventDefault()}
+                onDrop={(e) => {
+                  e.preventDefault();
+                  if (!draggingPoId) return;
+                  const po = purchaseOrders.find((p) => p.id === draggingPoId);
+                  if (po) {
+                    handleMovePoToLane(po, "completed");
+                  }
+                  setDraggingPoId(null);
+                }}
+              >
+                <div className="mb-2 flex items-center justify-between">
+                  <span className="text-sm font-semibold text-[#111827]">
+                    Completed
+                  </span>
+                  <span className="text-xs text-[#6B7280]">
+                    {completedPOs.length}
+                  </span>
+                </div>
+                <div className="space-y-2">
+                  {completedPOs.map((po) => (
+                    <div
+                      key={po.id}
+                      className="cursor-grab rounded-md border border-[#E5E7EB] bg-white px-3 py-2 text-xs shadow-sm hover:bg-[#F9FAFB] transition-colors"
+                      draggable
+                      onDragStart={() => setDraggingPoId(po.id)}
+                      onDragEnd={() => setDraggingPoId(null)}
+                      onClick={() =>
+                        navigate(
+                          createPageUrl("PurchaseOrders") + `?poId=${po.id}`
+                        )
+                      }
+                    >
+                      <div className="flex items-center justify-between">
+                        <span className="font-medium text-[#111827]">
+                          {po.po_number || `PO #${po.id.substring(0, 8)}`}
+                        </span>
+                      </div>
+                      <div className="mt-1 text-[11px] text-[#6B7280]">
+                        {po.supplier_name || "Supplier not set"}
+                      </div>
+                      <div className="mt-1">
+                        <Badge
+                          variant="outline"
+                          className="text-[10px] px-1 py-0"
+                        >
+                          {po.status}
+                        </Badge>
+                      </div>
+                    </div>
+                  ))}
+                  {!completedPOs.length && (
+                    <div className="text-[11px] text-[#6B7280] text-center py-4">
+                      No POs
+                    </div>
+                  )}
+                </div>
+              </div>
+            </div>
+          </section>
+        )}
+
+        {/* Orders View: 3-Column Board */}
+        {viewMode === "orders" && (
+          <section className="mb-8">
+            <div className="grid gap-4 md:grid-cols-3">
+              {/* Column 1: Incoming Purchase Orders */}
+              <Card className="h-full">
+                <CardHeader>
+                  <CardTitle className="text-sm font-semibold text-[#111827]">
+                    Incoming Purchase Orders
+                  </CardTitle>
+                </CardHeader>
+                <CardContent className="space-y-2">
+                  {incomingPOs.length === 0 ? (
+                    <div className="text-sm text-[#6B7280]">No incoming POs.</div>
+                  ) : (
+                    incomingPOs.map((po) => (
+                      <div
+                        key={po.id}
+                        className="flex flex-col rounded-md border px-3 py-2 hover:bg-[#F3F4F6] cursor-pointer transition-colors"
+                        onClick={() =>
+                          navigate(
+                            createPageUrl("PurchaseOrders") + `?poId=${po.id}`
+                          )
+                        }
+                      >
+                        <div className="flex items-center justify-between">
+                          <div className="flex flex-col">
+                            <span className="text-sm font-medium">
+                              {po.po_number ||
+                                po.reference ||
+                                `PO #${po.id.substring(0, 8)}`}
+                            </span>
+                            <span className="text-xs text-[#6B7280]">
+                              {po.supplier_name || "Supplier not set"}
+                            </span>
+                          </div>
+                          <StatusBadge type="poStatus" value={po.status} />
+                        </div>
+                        {!po.linked_logistics_job_id && (
+                          <div className="mt-2 flex justify-end">
+                            <Button
+                              size="sm"
+                              variant="outline"
+                              className="h-7 text-xs"
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                handleCreateLogisticsJobForPO(po);
+                              }}
+                            >
+                              Create Logistics Job
+                            </Button>
+                          </div>
+                        )}
+                      </div>
+                    ))
+                  )}
+                </CardContent>
+              </Card>
+
+              {/* Column 2: Logistics Jobs Preview */}
+              <Card className="h-full">
+                <CardHeader>
+                  <CardTitle className="text-sm font-semibold text-[#111827]">Logistics Jobs</CardTitle>
+                </CardHeader>
+                <CardContent className="space-y-3 text-sm">
+                  <div>
+                    <div className="mb-1 text-xs font-medium text-[#6B7280]">
+                      Open / Scheduled
+                    </div>
+                    <div className="space-y-1">
+                      {[
+                        ...(logisticsJobGroups.open || []),
+                        ...(logisticsJobGroups.scheduled || []),
+                      ].slice(0, 3).map((job) => (
+                        <div
+                          key={job.id}
+                          className="flex items-center justify-between rounded-md border px-3 py-2 hover:bg-[#F3F4F6] cursor-pointer transition-colors"
+                          onClick={() =>
+                            navigate(createPageUrl("Jobs") + `?jobId=${job.id}`)
+                          }
+                        >
+                          <div className="flex flex-col">
+                            <span className="text-sm font-medium">
+                              Job #{job.job_number || job.id.substring(0, 8)}
+                            </span>
+                            <span className="text-xs text-[#6B7280]">
+                              {job.scheduled_date
+                                ? format(
+                                    new Date(job.scheduled_date),
+                                    "MMM d, yyyy"
+                                  )
+                                : "No date"}
+                            </span>
+                          </div>
+                        </div>
+                      ))}
+                      {!logisticsJobGroups.open?.length &&
+                        !logisticsJobGroups.scheduled?.length && (
+                          <div className="text-xs text-[#6B7280]">
+                            No open logistics jobs.
+                          </div>
+                        )}
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+
+              {/* Column 3: Loading Bay Parts */}
+              <Card className="h-full">
+                <CardHeader>
+                  <CardTitle className="text-sm font-semibold text-[#111827]">Loading Bay</CardTitle>
+                </CardHeader>
+                <CardContent className="space-y-2 text-sm">
+                  {loadingBayParts.length === 0 ? (
+                    <div className="text-sm text-[#6B7280]">
+                      No items in Loading Bay.
+                    </div>
+                  ) : (
+                    loadingBayParts.map((part) => (
+                      <div
+                        key={part.id}
+                        className="flex flex-col rounded-md border px-3 py-2 cursor-pointer hover:bg-[#F3F4F6] transition-colors"
+                        onClick={() => setSelectedPart(part)}
+                      >
+                        <div className="flex items-center justify-between">
                           <span className="text-sm font-medium">
-                            {po.po_number ||
-                              po.reference ||
-                              `PO #${po.id.substring(0, 8)}`}
+                            {part.category || "Part"}
                           </span>
                           <span className="text-xs text-[#6B7280]">
-                            {po.supplier_name || "Supplier not set"}
+                            Qty: {part.quantity_required || part.quantity || 1}
                           </span>
                         </div>
-                        <StatusBadge type="poStatus" value={po.status} />
-                      </div>
-                      {!po.linked_logistics_job_id && (
-                        <div className="mt-2 flex justify-end">
+                        <div className="text-xs text-[#6B7280] mt-1">
+                          {(() => {
+                            const proj = projects.find(
+                              (p) => p.id === part.project_id
+                            );
+                            return proj
+                              ? proj.title
+                              : part.project_id
+                              ? `Project ${part.project_id.substring(0, 8)}`
+                              : "No project";
+                          })()}
+                        </div>
+                        <div className="mt-2 flex gap-2">
                           <Button
                             size="sm"
                             variant="outline"
-                            className="h-7 text-xs"
+                            className="h-7 text-xs flex-1"
                             onClick={(e) => {
                               e.stopPropagation();
-                              handleCreateLogisticsJobForPO(po);
+                              handleMoveLoadingBayPart(
+                                part,
+                                LOGISTICS_LOCATION.WAREHOUSE
+                              );
                             }}
                           >
-                            Create Logistics Job
+                            To Storage
+                          </Button>
+                          <Button
+                            size="sm"
+                            variant="outline"
+                            className="h-7 text-xs flex-1"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              handleMoveLoadingBayPart(
+                                part,
+                                LOGISTICS_LOCATION.WITH_TECHNICIAN
+                              );
+                            }}
+                          >
+                            To Vehicle
                           </Button>
                         </div>
-                      )}
-                    </div>
-                  ))
-                )}
-              </CardContent>
-            </Card>
+                      </div>
+                    ))
+                  )}
+                </CardContent>
+              </Card>
+            </div>
+          </section>
+        )}
 
-            {/* Column 2: Logistics Jobs */}
-            <Card className="h-full">
-              <CardHeader>
-                <CardTitle className="text-base">Logistics Jobs</CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-4 text-sm">
-                <>
+        {/* Jobs View: 2-Column Board */}
+        {viewMode === "jobs" && (
+          <section className="mb-8">
+            <div className="grid gap-4 md:grid-cols-2">
+              {/* Left: Logistics Jobs */}
+              <Card className="h-full">
+                <CardHeader>
+                  <CardTitle className="text-sm font-semibold text-[#111827]">Logistics Jobs</CardTitle>
+                </CardHeader>
+                <CardContent className="space-y-4 text-sm">
                   <div>
                     <div className="mb-1 font-medium text-[#111827]">
                       Open / Scheduled
@@ -959,84 +1089,84 @@ export default function Logistics() {
                       )}
                     </div>
                   </div>
-                </>
-              </CardContent>
-            </Card>
+                </CardContent>
+              </Card>
 
-            {/* Column 3: Loading Bay Parts */}
-            <Card className="h-full">
-              <CardHeader>
-                <CardTitle className="text-base">Loading Bay</CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-2 text-sm">
-                {loadingBayParts.length === 0 ? (
-                  <div className="text-sm text-[#6B7280]">
-                    No items in Loading Bay.
-                  </div>
-                ) : (
-                  loadingBayParts.map((part) => (
-                    <div
-                      key={part.id}
-                      className="flex flex-col rounded-md border px-3 py-2 cursor-pointer hover:bg-[#F3F4F6] transition-colors"
-                      onClick={() => setSelectedPart(part)}
-                    >
-                      <div className="flex items-center justify-between">
-                        <span className="text-sm font-medium">
-                          {part.category || "Part"}
-                        </span>
-                        <span className="text-xs text-[#6B7280]">
-                          Qty: {part.quantity_required || part.quantity || 1}
-                        </span>
-                      </div>
-                      <div className="text-xs text-[#6B7280] mt-1">
-                        {(() => {
-                          const proj = projects.find(
-                            (p) => p.id === part.project_id
-                          );
-                          return proj
-                            ? proj.title
-                            : part.project_id
-                            ? `Project ${part.project_id.substring(0, 8)}`
-                            : "No project";
-                        })()}
-                      </div>
-                      <div className="mt-2 flex gap-2">
-                        <Button
-                          size="sm"
-                          variant="outline"
-                          className="h-7 text-xs flex-1"
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            handleMoveLoadingBayPart(
-                              part,
-                              LOGISTICS_LOCATION.WAREHOUSE
-                            );
-                          }}
-                        >
-                          To Storage
-                        </Button>
-                        <Button
-                          size="sm"
-                          variant="outline"
-                          className="h-7 text-xs flex-1"
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            handleMoveLoadingBayPart(
-                              part,
-                              LOGISTICS_LOCATION.WITH_TECHNICIAN
-                            );
-                          }}
-                        >
-                          To Vehicle
-                        </Button>
-                      </div>
+              {/* Right: Loading Bay Parts */}
+              <Card className="h-full">
+                <CardHeader>
+                  <CardTitle className="text-sm font-semibold text-[#111827]">Loading Bay</CardTitle>
+                </CardHeader>
+                <CardContent className="space-y-2 text-sm">
+                  {loadingBayParts.length === 0 ? (
+                    <div className="text-sm text-[#6B7280]">
+                      No items in Loading Bay.
                     </div>
-                  ))
-                )}
-              </CardContent>
-            </Card>
-          </div>
-        </section>
+                  ) : (
+                    loadingBayParts.map((part) => (
+                      <div
+                        key={part.id}
+                        className="flex flex-col rounded-md border px-3 py-2 cursor-pointer hover:bg-[#F3F4F6] transition-colors"
+                        onClick={() => setSelectedPart(part)}
+                      >
+                        <div className="flex items-center justify-between">
+                          <span className="text-sm font-medium">
+                            {part.category || "Part"}
+                          </span>
+                          <span className="text-xs text-[#6B7280]">
+                            Qty: {part.quantity_required || part.quantity || 1}
+                          </span>
+                        </div>
+                        <div className="text-xs text-[#6B7280] mt-1">
+                          {(() => {
+                            const proj = projects.find(
+                              (p) => p.id === part.project_id
+                            );
+                            return proj
+                              ? proj.title
+                              : part.project_id
+                              ? `Project ${part.project_id.substring(0, 8)}`
+                              : "No project";
+                          })()}
+                        </div>
+                        <div className="mt-2 flex gap-2">
+                          <Button
+                            size="sm"
+                            variant="outline"
+                            className="h-7 text-xs flex-1"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              handleMoveLoadingBayPart(
+                                part,
+                                LOGISTICS_LOCATION.WAREHOUSE
+                              );
+                            }}
+                          >
+                            To Storage
+                          </Button>
+                          <Button
+                            size="sm"
+                            variant="outline"
+                            className="h-7 text-xs flex-1"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              handleMoveLoadingBayPart(
+                                part,
+                                LOGISTICS_LOCATION.WITH_TECHNICIAN
+                              );
+                            }}
+                          >
+                            To Vehicle
+                          </Button>
+                        </div>
+                      </div>
+                    ))
+                  )}
+                </CardContent>
+              </Card>
+            </div>
+          </section>
+        )}
 
         {/* Stock & Supplier Logistics Section */}
         {viewMode === "jobs" && stockLogisticsJobs.length > 0 && (
