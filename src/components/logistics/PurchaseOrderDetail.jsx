@@ -272,7 +272,13 @@ export default function PurchaseOrderDetail({ poId, onClose }) {
   }
 
   const isDraft = po.status === PO_STATUS.DRAFT;
-  const canCreateLogistics = [PO_STATUS.SENT, 'In Transit', 'Arrived'].includes(po.status);
+  const canCreateLogistics = [
+    PO_STATUS.SENT, 
+    PO_STATUS.CONFIRMED, 
+    PO_STATUS.DELIVERED, 
+    PO_STATUS.READY_TO_PICK_UP,
+    PO_STATUS.DELIVERED_TO_DELIVERY_BAY
+  ].includes(po.status);
 
   return (
     <div className="bg-white min-h-screen">
