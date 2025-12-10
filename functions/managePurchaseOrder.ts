@@ -56,6 +56,69 @@ async function linkPartsToPO(base44, purchaseOrderId, lineItems) {
     }
 }
 
+// Helper: Sync Parts with PurchaseOrder status
+async function syncPartsWithPurchaseOrderStatus(base44, purchaseOrder, vehicleId = null) {
+    try {
+        // Fetch Parts linked to this PO
+        const parts = await base44.asServiceRole.entities.Part.filter({
+            purchase_order_id: purchaseOrder.id
+        });
+
+        if (parts.length === 0) return;
+
+        for (const part of parts) {
+            const updateData = {};
+
+            // Apply status/location mapping based on PO status
+            switch (purchaseOrder.status) {
+                case PO_STATUS.SENT:
+                    // For Pending parts: mark as Ordered
+                    if (part.status === "Pending") {
+                        updateData.status = "Ordered";
+                    }
+                    // Set location if empty
+                    if (!part.location) {
+                        updateData.location = "On Order";
+                    }
+                    break;
+
+                case PO_STATUS.CONFIRMED:
+                    // Leave status as Ordered, update location
+                    if (part.location === "On Order") {
+                        updateData.location = "At Supplier";
+                    }
+                    break;
+
+                case PO_STATUS.DELIVERED_TO_DELIVERY_BAY:
+                    // For non-cancelled/returned parts
+                    if (part.status !== "Cancelled" && part.status !== "Returned") {
+                        updateData.status = "Delivered";
+                        updateData.location = "At Delivery Bay";
+                    }
+                    break;
+
+                case PO_STATUS.COMPLETED_IN_STORAGE:
+                    updateData.location = "In Warehouse Storage";
+                    break;
+
+                case PO_STATUS.COMPLETED_IN_VEHICLE:
+                    updateData.location = "With Technician";
+                    if (vehicleId) {
+                        updateData.assigned_vehicle_id = vehicleId;
+                    }
+                    break;
+            }
+
+            // Apply updates if any
+            if (Object.keys(updateData).length > 0) {
+                await base44.asServiceRole.entities.Part.update(part.id, updateData);
+            }
+        }
+    } catch (error) {
+        console.error(`Error syncing parts with PO ${purchaseOrder.id} status:`, error);
+    }
+}
+
 // Helper: Build line item data with auto-population from source entities
 async function buildLineItemData(base44, purchaseOrderId, item) {
     const sourceType = item.source_type || "custom";
@@ -258,6 +321,9 @@ Deno.serve(async (req) => {
             }
 
             const updatedPO = await base44.asServiceRole.entities.PurchaseOrder.update(id, updateData);
+
+            // Sync linked Parts status/location
+            await syncPartsWithPurchaseOrderStatus(base44, updatedPO);
 
             // Auto-create Logistics Job if conditions are met
             let logisticsJob = null;
