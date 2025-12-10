@@ -63,6 +63,10 @@ export default function PartDetailModal({ open, part, onClose, onSave, isSubmitt
     notes_to_supplier: ""
   });
   const [poError, setPoError] = useState("");
+
+  // Get selected item name for display
+  const selectedPriceListItem = priceListItems.find(item => item.id === formData.price_list_item_id);
+  const displayValue = selectedPriceListItem ? selectedPriceListItem.item : priceListSearch;
   const queryClient = useQueryClient();
 
   const movePartMutation = useMutation({
@@ -137,6 +141,8 @@ export default function PartDetailModal({ open, part, onClose, onSave, isSubmitt
       });
     }
     setPoError("");
+    setPriceListSearch("");
+    setPriceListOpen(false);
   }, [part, open]);
 
   // Fetch jobs for logistics linking
@@ -308,21 +314,26 @@ export default function PartDetailModal({ open, part, onClose, onSave, isSubmitt
                     <PopoverTrigger asChild>
                       <div className="relative">
                         <Input
-                          value={priceListSearch}
+                          value={displayValue}
                           onChange={(e) => {
                             setPriceListSearch(e.target.value);
+                            if (formData.price_list_item_id) {
+                              setFormData(prev => ({ ...prev, price_list_item_id: null }));
+                            }
                             if (!priceListOpen) setPriceListOpen(true);
                           }}
                           onFocus={() => setPriceListOpen(true)}
                           placeholder="Search or enter custom item name..."
                           className="bg-white pr-10"
                         />
-                        {formData.price_list_item_id && (
+                        {(formData.price_list_item_id || priceListSearch) && (
                           <button
                             type="button"
-                            onClick={() => {
+                            onClick={(e) => {
+                              e.stopPropagation();
                               setFormData(prev => ({ ...prev, price_list_item_id: null }));
                               setPriceListSearch("");
+                              setPriceListOpen(false);
                             }}
                             className="absolute right-3 top-1/2 -translate-y-1/2 text-[#6B7280] hover:text-[#111827]"
                           >
@@ -331,7 +342,7 @@ export default function PartDetailModal({ open, part, onClose, onSave, isSubmitt
                         )}
                       </div>
                     </PopoverTrigger>
-                    <PopoverContent className="w-[400px] p-0" align="start">
+                    <PopoverContent className="w-[400px] p-0" align="start" onOpenAutoFocus={(e) => e.preventDefault()}>
                       <div className="max-h-[300px] overflow-y-auto">
                         {priceListItems
                           .filter(item => 
@@ -354,7 +365,7 @@ export default function PartDetailModal({ open, part, onClose, onSave, isSubmitt
                                   supplier_id: selectedItem?.supplier_id || prev.supplier_id,
                                   supplier_name: selectedItem?.supplier_name || selectedItem?.brand || prev.supplier_name
                                 }));
-                                setPriceListSearch(item.item);
+                                setPriceListSearch("");
                                 setPriceListOpen(false);
                               }}
                               className="w-full text-left px-3 py-2 hover:bg-[#F3F4F6] transition-colors border-b border-[#E5E7EB] last:border-0"
@@ -371,9 +382,9 @@ export default function PartDetailModal({ open, part, onClose, onSave, isSubmitt
                           !priceListSearch || 
                           item.item?.toLowerCase().includes(priceListSearch.toLowerCase()) ||
                           item.sku?.toLowerCase().includes(priceListSearch.toLowerCase())
-                        ).length === 0 && (
+                        ).length === 0 && priceListSearch && (
                           <div className="p-3 text-sm text-[#6B7280] text-center">
-                            No items found. Type a custom item name.
+                            No matching items. Press Enter to use custom name.
                           </div>
                         )}
                       </div>
