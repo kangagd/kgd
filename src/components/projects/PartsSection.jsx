@@ -286,7 +286,7 @@ export default function PartsSection({ projectId, autoExpand = false }) {
                         <button
                           onClick={(e) => {
                             e.stopPropagation();
-                            setSelectedPoId(part.purchase_order_id);
+                            handleEditPart(part);
                           }}
                           className="inline-flex items-center gap-1 mt-1 px-2 py-0.5 rounded-md bg-blue-50 text-blue-700 hover:bg-blue-100 text-xs font-medium transition-colors"
                         >
