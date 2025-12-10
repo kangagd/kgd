@@ -182,6 +182,64 @@ export default function Logistics() {
   const logisticsJobGroups = useMemo(() => getLogisticsJobs(boardJobs), [boardJobs]);
   const summaryStats = useMemo(() => getLogisticsSummaryStats(boardPOs, boardJobs, boardParts), [boardPOs, boardJobs, boardParts]);
 
+  // Derive Kanban columns from purchase orders
+  const sentPOs = useMemo(() => 
+    purchaseOrders.filter((po) => po.status === PO_STATUS.SENT),
+    [purchaseOrders]
+  );
+
+  const readyPOs = useMemo(() =>
+    purchaseOrders.filter((po) => 
+      po.status === PO_STATUS.ACKNOWLEDGED ||
+      po.status === PO_STATUS.ARRIVED ||
+      po.status === PO_STATUS.IN_TRANSIT
+    ),
+    [purchaseOrders]
+  );
+
+  const completedPOs = useMemo(() =>
+    purchaseOrders.filter((po) => po.status === PO_STATUS.COMPLETED),
+    [purchaseOrders]
+  );
+
+  const handleMovePoToLane = async (po, targetLane) => {
+    let newStatus = po.status;
+
+    if (targetLane === "sent") {
+      newStatus = PO_STATUS.SENT;
+    } else if (targetLane === "ready") {
+      if (po.delivery_method === PO_DELIVERY_METHOD.DELIVERY) {
+        newStatus = PO_STATUS.ARRIVED;
+      } else if (po.delivery_method === PO_DELIVERY_METHOD.PICKUP) {
+        newStatus = PO_STATUS.ACKNOWLEDGED;
+      } else {
+        newStatus = PO_STATUS.ACKNOWLEDGED;
+      }
+    } else if (targetLane === "completed") {
+      newStatus = PO_STATUS.COMPLETED;
+    }
+
+    if (newStatus === po.status) return;
+
+    try {
+      const response = await base44.functions.invoke("managePurchaseOrder", {
+        action: "updateStatus",
+        id: po.id,
+        status: newStatus,
+      });
+
+      if (!response?.data?.success) {
+        toast.error(response?.data?.error || "Failed to move PO");
+        return;
+      }
+
+      toast.success(`PO moved to ${targetLane === "sent" ? "Sent" : targetLane === "ready" ? "Delivered / Acknowledged" : "Completed"}`);
+      queryClient.invalidateQueries({ queryKey: ['purchaseOrders'] });
+    } catch (error) {
+      toast.error("Error moving PO");
+    }
+  };
+
   const getRelevantTradesForJob = useCallback((job, trades) => {
     return (trades || []).filter((t) => {
       if (!t.is_required) return false;
