@@ -530,19 +530,41 @@ export default function Logistics() {
             <h1 className="text-2xl font-bold text-[#111827]">Delivery & Pickup Board</h1>
             <p className="text-sm text-[#6B7280] mt-1">Track incoming orders, logistics jobs, and parts movement</p>
           </div>
-          <div className="flex gap-6 text-sm">
-            <div className="flex flex-col">
-              <span className="font-semibold text-lg">{summaryStats.incomingPOCount}</span>
-              <span className="text-[#6B7280]">Incoming POs</span>
+          <div className="flex items-center gap-3">
+            <div className="inline-flex rounded-xl border border-gray-200 bg-gray-50 p-1">
+              <button
+                type="button"
+                onClick={() => setViewMode("orders")}
+                className={`px-3 py-1.5 text-xs font-medium rounded-lg transition-colors ${
+                  viewMode === "orders"
+                    ? "bg-white text-gray-900 shadow-sm"
+                    : "text-gray-500 hover:text-gray-900"
+                }`}
+              >
+                Orders
+              </button>
+              <button
+                type="button"
+                onClick={() => setViewMode("jobs")}
+                className={`px-3 py-1.5 text-xs font-medium rounded-lg transition-colors ${
+                  viewMode === "jobs"
+                    ? "bg-white text-gray-900 shadow-sm"
+                    : "text-gray-500 hover:text-gray-900"
+                }`}
+              >
+                Logistics Jobs
+              </button>
             </div>
-            <div className="flex flex-col">
-              <span className="font-semibold text-lg">{summaryStats.logisticsJobCount}</span>
-              <span className="text-[#6B7280]">Logistics Jobs</span>
-            </div>
-            <div className="flex flex-col">
-              <span className="font-semibold text-lg">{summaryStats.loadingBayPartCount}</span>
-              <span className="text-[#6B7280]">Loading Bay Items</span>
-            </div>
+            <Button
+              onClick={() => {
+                setTempSupplierSelection("");
+                setShowSupplierSelector(true);
+              }}
+              className="bg-[#FAE008] text-[#111827] hover:bg-[#E5CF07] font-semibold shadow-sm hover:shadow-md transition h-9 px-4 text-sm rounded-xl"
+            >
+              <Plus className="w-4 h-4 mr-2" />
+              Create Purchase Order
+            </Button>
           </div>
         </div>
 
@@ -954,101 +976,6 @@ export default function Logistics() {
 
         {/* Existing Content Section */}
         <section className="space-y-6">
-          <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
-            <div>
-              <h2 className="text-lg font-semibold text-[#111827]">Jobs & Calendar</h2>
-              <p className="text-sm text-[#6B7280] mt-1">Manage parts, orders, and locations across all projects</p>
-            </div>
-            <Button
-              onClick={() => {
-                setTempSupplierSelection("");
-                setShowSupplierSelector(true);
-              }}
-              className="bg-[#FAE008] text-[#111827] hover:bg-[#E5CF07] font-semibold shadow-sm hover:shadow-md transition h-10 px-4 text-sm rounded-xl"
-            >
-              <Plus className="w-4 h-4 mr-2" />
-              Create Purchase Order
-            </Button>
-          </div>
-
-        {/* View Mode Toggle */}
-        <div className="flex items-center justify-between mt-2 mb-4">
-          <div className="inline-flex rounded-xl border border-gray-200 bg-gray-50 p-1">
-            <button
-              type="button"
-              onClick={() => setViewMode("orders")}
-              className={`px-3 py-1.5 text-xs font-medium rounded-lg transition-colors ${
-                viewMode === "orders"
-                  ? "bg-white text-gray-900 shadow-sm"
-                  : "text-gray-500 hover:text-gray-900"
-              }`}
-            >
-              Orders
-            </button>
-            <button
-              type="button"
-              onClick={() => setViewMode("jobs")}
-              className={`px-3 py-1.5 text-xs font-medium rounded-lg transition-colors ${
-                viewMode === "jobs"
-                  ? "bg-white text-gray-900 shadow-sm"
-                  : "text-gray-500 hover:text-gray-900"
-              }`}
-            >
-              Logistics Jobs
-            </button>
-          </div>
-        </div>
-
-        {/* Stats Cards */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-          <Card className="border border-[#E5E7EB] shadow-sm hover:shadow-md transition-shadow duration-200">
-            <CardContent className="p-5 flex items-center gap-4">
-              <div className="w-12 h-12 rounded-xl bg-blue-50 flex items-center justify-center text-blue-600">
-                <Package className="w-6 h-6" />
-              </div>
-              <div>
-                <p className="text-sm font-medium text-[#6B7280]">Active Parts</p>
-                <h3 className="text-2xl font-bold text-[#111827]">{stats.totalActive}</h3>
-              </div>
-            </CardContent>
-          </Card>
-          
-          <Card className="border border-[#E5E7EB] shadow-sm hover:shadow-md transition-shadow duration-200">
-            <CardContent className="p-5 flex items-center gap-4">
-              <div className="w-12 h-12 rounded-xl bg-amber-50 flex items-center justify-center text-amber-600">
-                <MapPin className="w-6 h-6" />
-              </div>
-              <div>
-                <p className="text-sm font-medium text-[#6B7280]">Delivery Bay</p>
-                <h3 className="text-2xl font-bold text-[#111827]">{stats.readyForPickup}</h3>
-              </div>
-            </CardContent>
-          </Card>
-
-          <Card className="border border-[#E5E7EB] shadow-sm hover:shadow-md transition-shadow duration-200">
-            <CardContent className="p-5 flex items-center gap-4">
-              <div className="w-12 h-12 rounded-xl bg-purple-50 flex items-center justify-center text-purple-600">
-                <Truck className="w-6 h-6" />
-              </div>
-              <div>
-                <p className="text-sm font-medium text-[#6B7280]">With Technician</p>
-                <h3 className="text-2xl font-bold text-[#111827]">{stats.withTech}</h3>
-              </div>
-            </CardContent>
-          </Card>
-
-          <Card className="border border-[#E5E7EB] shadow-sm hover:shadow-md transition-shadow duration-200">
-            <CardContent className="p-5 flex items-center gap-4">
-              <div className="w-12 h-12 rounded-xl bg-red-50 flex items-center justify-center text-red-600">
-                <Clock className="w-6 h-6" />
-              </div>
-              <div>
-                <p className="text-sm font-medium text-[#6B7280]">Overdue ETA</p>
-                <h3 className="text-2xl font-bold text-[#111827]">{stats.overdue}</h3>
-              </div>
-            </CardContent>
-          </Card>
-        </div>
 
         {/* Stock & Supplier Logistics Section */}
         {viewMode === "jobs" && stockLogisticsJobs.length > 0 && (
