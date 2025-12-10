@@ -1,5 +1,60 @@
 import { createClientFromRequest } from 'npm:@base44/sdk@0.8.4';
 
+// Helper: Handle logistics job completion - move Parts accordingly
+async function handleLogisticsJobCompletion(base44, job) {
+    try {
+        // Fetch Parts linked to this PO
+        const parts = await base44.asServiceRole.entities.Part.filter({
+            purchase_order_id: job.purchase_order_id
+        });
+
+        if (parts.length === 0) return;
+
+        // Determine destination based on job type
+        const jobTypeName = (job.job_type_name || job.job_type || '').toLowerCase();
+        
+        let newLocation;
+        let vehicleId = null;
+
+        // Supplier → Warehouse / Delivery Bay (delivery jobs)
+        if (jobTypeName.includes('delivery') || jobTypeName.includes('supplier')) {
+            newLocation = "At Delivery Bay";
+        }
+        // Supplier → Vehicle or Warehouse → Vehicle (pickup to vehicle jobs)
+        else if (jobTypeName.includes('pickup') && jobTypeName.includes('vehicle')) {
+            newLocation = "With Technician";
+            // Get vehicle from job assignment if available
+            if (Array.isArray(job.assigned_to) && job.assigned_to.length > 0) {
+                try {
+                    const tech = await base44.asServiceRole.entities.User.get(job.assigned_to[0]);
+                    if (tech?.default_vehicle_id) {
+                        vehicleId = tech.default_vehicle_id;
+                    }
+                } catch (e) {
+                    console.error("Error fetching technician vehicle:", e);
+                }
+            }
+        }
+        // Warehouse pickup (default)
+        else {
+            newLocation = "In Warehouse Storage";
+        }
+
+        // Update all Parts
+        for (const part of parts) {
+            const updateData = { location: newLocation };
+            
+            if (vehicleId && newLocation === "With Technician") {
+                updateData.assigned_vehicle_id = vehicleId;
+            }
+
+            await base44.asServiceRole.entities.Part.update(part.id, updateData);
+        }
+    } catch (error) {
+        console.error(`Error handling logistics job completion for job ${job.id}:`, error);
+    }
+}
+
 Deno.serve(async (req) => {
     try {
         const base44 = createClientFromRequest(req);
@@ -101,6 +156,11 @@ Deno.serve(async (req) => {
             previousJob = await base44.asServiceRole.entities.Job.get(id);
             if (!previousJob) return Response.json({ error: 'Job not found' }, { status: 404 });
             job = await base44.asServiceRole.entities.Job.update(id, data);
+
+            // Move Parts when logistics job is completed
+            if (job.purchase_order_id && job.status === 'Completed' && previousJob.status !== 'Completed') {
+                await handleLogisticsJobCompletion(base44, job);
+            }
 
             // Auto-mark PO items as received when logistics job is completed
             if (job.purchase_order_id && job.status === 'Completed' && previousJob.status !== 'Completed') {

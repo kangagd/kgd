@@ -117,6 +117,20 @@ Deno.serve(async (req) => {
             linked_logistics_job_id: job.id
         });
 
+        // Link job to all Parts on this PO
+        const parts = await base44.asServiceRole.entities.Part.filter({
+            purchase_order_id: po.id
+        });
+
+        for (const part of parts) {
+            const currentLinks = Array.isArray(part.linked_logistics_jobs) ? part.linked_logistics_jobs : [];
+            if (!currentLinks.includes(job.id)) {
+                await base44.asServiceRole.entities.Part.update(part.id, {
+                    linked_logistics_jobs: [...currentLinks, job.id]
+                });
+            }
+        }
+
         return Response.json({
             success: true,
             job,
