@@ -215,16 +215,12 @@ export default function Logistics() {
 
     if (targetLane === "sent") {
       newStatus = PO_STATUS.SENT;
-    } else if (targetLane === "ready") {
-      if (po.delivery_method === PO_DELIVERY_METHOD.DELIVERY) {
-        newStatus = PO_STATUS.ARRIVED;
-      } else if (po.delivery_method === PO_DELIVERY_METHOD.PICKUP) {
-        newStatus = PO_STATUS.ACKNOWLEDGED;
-      } else {
-        newStatus = PO_STATUS.ACKNOWLEDGED;
-      }
+    } else if (targetLane === "confirmed") {
+      newStatus = PO_STATUS.CONFIRMED;
+    } else if (targetLane === "delivery_bay") {
+      newStatus = PO_STATUS.DELIVERED_TO_DELIVERY_BAY;
     } else if (targetLane === "completed") {
-      newStatus = PO_STATUS.COMPLETED;
+      newStatus = PO_STATUS.COMPLETED_IN_STORAGE;
     }
 
     if (newStatus === po.status) return;
@@ -241,7 +237,13 @@ export default function Logistics() {
         return;
       }
 
-      toast.success(`PO moved to ${targetLane === "sent" ? "Sent" : targetLane === "ready" ? "Delivered / Acknowledged" : "Completed"}`);
+      const laneNames = {
+        sent: "Sent",
+        confirmed: "Confirmed",
+        delivery_bay: "Delivery Bay",
+        completed: "Completed"
+      };
+      toast.success(`PO moved to ${laneNames[targetLane]}`);
       queryClient.invalidateQueries({ queryKey: ['purchaseOrders'] });
     } catch (error) {
       toast.error("Error moving PO");
