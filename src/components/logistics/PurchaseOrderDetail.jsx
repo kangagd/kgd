@@ -709,7 +709,7 @@ export default function PurchaseOrderDetail({ poId, onClose }) {
                             className="h-8 text-xs"
                           />
                           <div className="max-h-48 overflow-y-auto space-y-1">
-                            {priceListItems
+                            {priceListItems && priceListItems
                               .filter(item => 
                                 !priceListSearch || 
                                 item.item?.toLowerCase().includes(priceListSearch.toLowerCase()) ||
