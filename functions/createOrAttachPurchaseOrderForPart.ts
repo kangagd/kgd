@@ -144,8 +144,8 @@ Deno.serve(async (req) => {
 
         await base44.asServiceRole.entities.Part.update(part_id, partUpdateData);
 
-        // Sync PurchaseOrder status: if part is now Ordered and PO is still Draft, update PO to On Order
-        if (purchaseOrder.status === PO_STATUS.DRAFT && partUpdateData.status === "Ordered") {
+        // Sync PurchaseOrder status: if PO is still Draft, update to On Order when part is linked
+        if (purchaseOrder.status === PO_STATUS.DRAFT) {
             await base44.asServiceRole.entities.PurchaseOrder.update(purchaseOrder.id, { 
                 status: PO_STATUS.ON_ORDER 
             });
