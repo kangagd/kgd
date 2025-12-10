@@ -97,8 +97,8 @@ export default function Tasks() {
     }
   };
 
-  // Filter tasks
-  const filteredTasks = tasks.filter(task => {
+  // Memoized task filtering to avoid re-computation on every render
+  const filteredTasks = React.useMemo(() => tasks.filter(task => {
     // Status filter
     if (statusFilter === "open" && (task.status === "Completed" || task.status === "Cancelled")) return false;
     if (statusFilter === "in_progress" && task.status !== "In Progress") return false;
@@ -124,10 +124,10 @@ export default function Tasks() {
     if (isTechnician && task.assigned_to_user_id !== user?.id) return false;
 
     return true;
-  });
+  }), [tasks, statusFilter, dueFilter, assigneeFilter, isTechnician, user?.id]);
 
-  // Group tasks for technician mobile view
-  const groupedTasks = isTechnician ? {
+  // Memoized task grouping for technician view
+  const groupedTasks = React.useMemo(() => isTechnician ? {
     overdue: filteredTasks.filter(t => t.due_date && isPast(new Date(t.due_date)) && t.status !== "Completed"),
     today: filteredTasks.filter(t => t.due_date && isToday(new Date(t.due_date)) && t.status !== "Completed"),
     upcoming: filteredTasks.filter(t => {
@@ -136,7 +136,7 @@ export default function Tasks() {
       return !isPast(due) && !isToday(due);
     }),
     noDue: filteredTasks.filter(t => !t.due_date && t.status !== "Completed")
-  } : null;
+  } : null, [isTechnician, filteredTasks]);
 
   // Technician Mobile View
   if (isTechnician) {

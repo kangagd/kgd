@@ -166,7 +166,9 @@ export default function Customers() {
     setSelectedCustomer(customer);
   };
 
-  const filteredCustomers = customers.filter((customer) => {
+  // Memoized customer filtering to avoid re-computation on every render
+  // Potential optimisation: Debounce searchTerm for large customer lists
+  const filteredCustomers = React.useMemo(() => customers.filter((customer) => {
     const matchesSearch =
       customer.name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
       customer.phone?.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -178,7 +180,7 @@ export default function Customers() {
     const matchesDuplicateFilter = !showDuplicatesOnly || customer.is_potential_duplicate;
     
     return matchesSearch && matchesType && matchesDuplicateFilter;
-  });
+  }), [customers, searchTerm, customerTypeFilter, showDuplicatesOnly]);
 
   if (showForm) {
     return (

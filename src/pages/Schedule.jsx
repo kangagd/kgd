@@ -144,6 +144,7 @@ export default function Schedule() {
   const { checkConflicts } = useScheduleConflicts(allJobs, leaves, closedDays);
 
   // Filter jobs by scope (Mine vs All)
+  // Memoized to avoid re-filtering on every render
   const scopedJobs = useMemo(() => {
     if (!allJobs) return [];
     if (viewScope === "all") return allJobs;
@@ -325,9 +326,10 @@ export default function Schedule() {
 
   const handleToday = () => setSelectedDate(new Date());
 
-  // Filter jobs
-  const getFilteredJobs = (dateFilter) => {
-    return scopedJobs
+  // Memoized filtered jobs to avoid re-filtering on every render
+  // Potential optimisation: Server-side filtering for large datasets
+  const getFilteredJobs = useMemo(() => {
+    return (dateFilter) => scopedJobs
       .filter(job => {
         if (job.deleted_at) return false;
         
@@ -376,7 +378,8 @@ export default function Schedule() {
         const timeB = b.scheduled_time || '';
         return timeA.localeCompare(timeB);
       });
-  };
+    };
+  }, [scopedJobs, technicianFilter, statusFilter, contractFilter]);
 
   // Get date range text
   const getDateRangeText = () => {
