@@ -67,16 +67,13 @@ Deno.serve(async (req) => {
         const user = await base44.auth.me();
         if (!user) return Response.json({ error: 'Unauthorized' }, { status: 401 });
 
-        const { action, id, data, supplier_id, project_id, delivery_method, delivery_location, line_items, status } = await req.json();
+        const { action, id, data, supplier_id, project_id, delivery_method, delivery_location, line_items, status, supplier_name, notes, reference } = await req.json();
 
         // Action: create
         if (action === 'create') {
             if (!supplier_id || !line_items || line_items.length === 0) {
                 return Response.json({ error: 'supplier_id and non-empty line_items are required' }, { status: 400 });
             }
-
-            // Extract all potential fields from params
-            const { supplier_name, notes, delivery_location, reference } = await req.json();
 
             const poData = {
                 supplier_id,
@@ -128,9 +125,6 @@ Deno.serve(async (req) => {
             if (!po) {
                 return Response.json({ error: 'Purchase Order not found' }, { status: 404 });
             }
-
-            // Extract all potential update fields from params
-            const { supplier_name, notes, delivery_location, reference } = await req.json();
 
             const updateData = {};
             if (supplier_id !== undefined) updateData.supplier_id = supplier_id;
