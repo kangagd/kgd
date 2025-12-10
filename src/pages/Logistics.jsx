@@ -487,18 +487,35 @@ export default function Logistics() {
                   incomingPOs.map((po) => (
                     <div
                       key={po.id}
-                      className="flex items-center justify-between rounded-md border px-3 py-2 hover:bg-[#F3F4F6] cursor-pointer transition-colors"
+                      className="flex flex-col rounded-md border px-3 py-2 hover:bg-[#F3F4F6] cursor-pointer transition-colors"
                       onClick={() => navigate(createPageUrl("PurchaseOrders") + `?poId=${po.id}`)}
                     >
-                      <div className="flex flex-col">
-                        <span className="text-sm font-medium">
-                          {po.po_number || po.reference || `PO #${po.id.substring(0, 8)}`}
-                        </span>
-                        <span className="text-xs text-[#6B7280]">
-                          {po.supplier_name || "Supplier not set"}
-                        </span>
+                      <div className="flex items-center justify-between">
+                        <div className="flex flex-col">
+                          <span className="text-sm font-medium">
+                            {po.po_number || po.reference || `PO #${po.id.substring(0, 8)}`}
+                          </span>
+                          <span className="text-xs text-[#6B7280]">
+                            {po.supplier_name || "Supplier not set"}
+                          </span>
+                        </div>
+                        <StatusBadge value={po.status} />
                       </div>
-                      <StatusBadge value={po.status} />
+                      {!po.linked_logistics_job_id && (
+                        <div className="mt-2 flex justify-end">
+                          <Button
+                            size="sm"
+                            variant="outline"
+                            className="h-7 text-xs"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              handleCreateLogisticsJobForPO(po);
+                            }}
+                          >
+                            Create Logistics Job
+                          </Button>
+                        </div>
+                      )}
                     </div>
                   ))
                 )}
