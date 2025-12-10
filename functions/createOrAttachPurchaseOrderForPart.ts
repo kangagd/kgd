@@ -2,12 +2,13 @@ import { createClientFromRequest } from 'npm:@base44/sdk@0.8.4';
 
 const PO_STATUS = {
   DRAFT: "Draft",
+  ON_ORDER: "On Order",
   SENT: "Sent",
 };
 
 const PO_DELIVERY_METHOD = {
-  DELIVERY: "Supplier – Deliver to Warehouse",
-  PICKUP: "Supplier – Pickup Required",
+  DELIVERY: "delivery",
+  PICKUP: "pickup",
 };
 
 Deno.serve(async (req) => {
