@@ -360,15 +360,15 @@ export default function PurchaseOrderDetail({ poId, onClose }) {
             <div>
               <Label>Project (Optional)</Label>
               <Select
-                value={formData.project_id}
-                onValueChange={(value) => setFormData({ ...formData, project_id: value })}
+                value={formData.project_id || "none"}
+                onValueChange={(value) => setFormData({ ...formData, project_id: value === "none" ? "" : value })}
                 disabled={!isDraft}
               >
                 <SelectTrigger>
                   <SelectValue placeholder="Select project (optional)" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value={null}>None</SelectItem>
+                  <SelectItem value="none">None</SelectItem>
                   {projects.filter(p => !p.deleted_at).map((project) => (
                     <SelectItem key={project.id} value={project.id}>
                       {project.title}
@@ -381,14 +381,15 @@ export default function PurchaseOrderDetail({ poId, onClose }) {
             <div>
               <Label>Delivery Method</Label>
               <Select
-                value={formData.delivery_method}
-                onValueChange={(value) => setFormData({ ...formData, delivery_method: value })}
+                value={formData.delivery_method || "placeholder"}
+                onValueChange={(value) => setFormData({ ...formData, delivery_method: value === "placeholder" ? "" : value })}
                 disabled={!isDraft}
               >
                 <SelectTrigger>
                   <SelectValue placeholder="Select delivery method" />
                 </SelectTrigger>
                 <SelectContent>
+                  <SelectItem value="placeholder">Select delivery method</SelectItem>
                   {PO_DELIVERY_METHOD_OPTIONS.map((method) => (
                     <SelectItem key={method} value={method}>
                       {method}
