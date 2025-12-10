@@ -174,6 +174,12 @@ export default function Logistics() {
     return map;
   }, [allTradeRequirements]);
 
+  // Derived board data
+  const incomingPOs = useMemo(() => getIncomingPurchaseOrders(boardPOs), [boardPOs]);
+  const loadingBayParts = useMemo(() => getLoadingBayParts(boardParts), [boardParts]);
+  const logisticsJobGroups = useMemo(() => getLogisticsJobs(boardJobs), [boardJobs]);
+  const summaryStats = useMemo(() => getLogisticsSummaryStats(boardPOs, boardJobs, boardParts), [boardPOs, boardJobs, boardParts]);
+
   const getRelevantTradesForJob = useCallback((job, trades) => {
     return (trades || []).filter((t) => {
       if (!t.is_required) return false;
