@@ -27,6 +27,7 @@ import {
   getLogisticsJobs,
   getLogisticsSummaryStats,
 } from "@/components/domain/logisticsViewHelpers";
+import { LOGISTICS_LOCATION } from "@/components/domain/logisticsConfig";
 
 const STATUS_COLORS = {
   "Pending": "bg-slate-100 text-slate-800 border-slate-200",
