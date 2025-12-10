@@ -1163,6 +1163,7 @@ export default function Logistics() {
           </div>
         </div>
         )}
+        </section>
       </div>
 
       {/* Part Detail Modal */}
