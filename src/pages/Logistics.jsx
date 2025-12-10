@@ -602,16 +602,24 @@ export default function Logistics() {
                         className="cursor-pointer rounded-md border border-[#E5E7EB] bg-white px-3 py-2 text-xs shadow-sm hover:bg-[#F9FAFB] transition-colors"
                         onClick={() => setSelectedPoId(po.id)}
                       >
-                        <div className="flex items-center justify-between mb-2">
-                          <span className="font-medium text-[#111827]">
-                            {po.po_number || `PO #${po.id.substring(0, 8)}`}
-                          </span>
+                        <div className="font-medium text-[#111827] mb-2">
+                          {po.po_number || `PO #${po.id.substring(0, 8)}`}
+                        </div>
+                        <div className="mt-1 text-[11px] text-[#6B7280]">
+                          {po.supplier_name || "Supplier not set"}
+                        </div>
+                        {po.expected_date && (
+                          <div className="mt-1 text-[11px] text-[#6B7280]">
+                            ETA: {format(new Date(po.expected_date), "MMM d")}
+                          </div>
+                        )}
+                        <div className="mt-2">
                           <Select
                             value={po.status}
                             onValueChange={(value) => handleUpdatePoStatus(po, value)}
                             onClick={(e) => e.stopPropagation()}
                           >
-                            <SelectTrigger className={`h-6 w-auto min-w-[100px] text-[10px] px-2 border-0 ${po.status === PO_STATUS.SENT ? 'bg-blue-100 text-blue-700' : 'bg-purple-100 text-purple-700'}`}>
+                            <SelectTrigger className={`h-6 w-full text-[10px] px-2 border-0 ${po.status === PO_STATUS.SENT ? 'bg-blue-100 text-blue-700' : 'bg-purple-100 text-purple-700'}`}>
                               <SelectValue />
                             </SelectTrigger>
                             <SelectContent onClick={(e) => e.stopPropagation()}>
@@ -627,14 +635,6 @@ export default function Logistics() {
                             </SelectContent>
                           </Select>
                         </div>
-                        <div className="mt-1 text-[11px] text-[#6B7280]">
-                          {po.supplier_name || "Supplier not set"}
-                        </div>
-                        {po.expected_date && (
-                          <div className="mt-1 text-[11px] text-[#6B7280]">
-                            ETA: {format(new Date(po.expected_date), "MMM d")}
-                          </div>
-                        )}
                       </div>
                     ))}
                     {!sentPOs.length && (
@@ -662,16 +662,24 @@ export default function Logistics() {
                         className="cursor-pointer rounded-md border border-[#E5E7EB] bg-white px-3 py-2 text-xs shadow-sm hover:bg-[#F9FAFB] transition-colors"
                         onClick={() => setSelectedPoId(po.id)}
                       >
-                        <div className="flex items-center justify-between mb-2">
-                          <span className="font-medium text-[#111827]">
-                            {po.po_number || `PO #${po.id.substring(0, 8)}`}
-                          </span>
+                        <div className="font-medium text-[#111827] mb-2">
+                          {po.po_number || `PO #${po.id.substring(0, 8)}`}
+                        </div>
+                        <div className="mt-1 text-[11px] text-[#6B7280]">
+                          {po.supplier_name || "Supplier not set"}
+                        </div>
+                        {po.expected_date && (
+                          <div className="mt-1 text-[11px] text-[#6B7280]">
+                            ETA: {format(new Date(po.expected_date), "MMM d")}
+                          </div>
+                        )}
+                        <div className="mt-2">
                           <Select
                             value={po.status}
                             onValueChange={(value) => handleUpdatePoStatus(po, value)}
                             onClick={(e) => e.stopPropagation()}
                           >
-                            <SelectTrigger className={`h-6 w-auto min-w-[100px] text-[10px] px-2 border-0 ${po.status === PO_STATUS.READY_TO_PICK_UP ? 'bg-amber-100 text-amber-700' : 'bg-cyan-100 text-cyan-700'}`}>
+                            <SelectTrigger className={`h-6 w-full text-[10px] px-2 border-0 ${po.status === PO_STATUS.READY_TO_PICK_UP ? 'bg-amber-100 text-amber-700' : 'bg-cyan-100 text-cyan-700'}`}>
                               <SelectValue />
                             </SelectTrigger>
                             <SelectContent onClick={(e) => e.stopPropagation()}>
@@ -687,14 +695,6 @@ export default function Logistics() {
                             </SelectContent>
                           </Select>
                         </div>
-                        <div className="mt-1 text-[11px] text-[#6B7280]">
-                          {po.supplier_name || "Supplier not set"}
-                        </div>
-                        {po.expected_date && (
-                          <div className="mt-1 text-[11px] text-[#6B7280]">
-                            ETA: {format(new Date(po.expected_date), "MMM d")}
-                          </div>
-                        )}
                       </div>
                     ))}
                     {!deliveredPickedUpPOs.length && (
@@ -722,16 +722,24 @@ export default function Logistics() {
                         className="cursor-pointer rounded-md border border-[#E5E7EB] bg-white px-3 py-2 text-xs shadow-sm hover:bg-[#F9FAFB] transition-colors"
                         onClick={() => setSelectedPoId(po.id)}
                       >
-                        <div className="flex items-center justify-between mb-2">
-                          <span className="font-medium text-[#111827]">
-                            {po.po_number || `PO #${po.id.substring(0, 8)}`}
-                          </span>
+                        <div className="font-medium text-[#111827] mb-2">
+                          {po.po_number || `PO #${po.id.substring(0, 8)}`}
+                        </div>
+                        <div className="mt-1 text-[11px] text-[#6B7280]">
+                          {po.supplier_name || "Supplier not set"}
+                        </div>
+                        {po.expected_date && (
+                          <div className="mt-1 text-[11px] text-[#6B7280]">
+                            ETA: {format(new Date(po.expected_date), "MMM d")}
+                          </div>
+                        )}
+                        <div className="mt-2">
                           <Select
                             value={po.status}
                             onValueChange={(value) => handleUpdatePoStatus(po, value)}
                             onClick={(e) => e.stopPropagation()}
                           >
-                            <SelectTrigger className={`h-6 w-auto min-w-[100px] text-[10px] px-2 border-0 ${po.status === PO_STATUS.COMPLETED_IN_STORAGE ? 'bg-emerald-100 text-emerald-700' : 'bg-teal-100 text-teal-700'}`}>
+                            <SelectTrigger className={`h-6 w-full text-[10px] px-2 border-0 ${po.status === PO_STATUS.COMPLETED_IN_STORAGE ? 'bg-emerald-100 text-emerald-700' : 'bg-teal-100 text-teal-700'}`}>
                               <SelectValue />
                             </SelectTrigger>
                             <SelectContent onClick={(e) => e.stopPropagation()}>
@@ -747,14 +755,6 @@ export default function Logistics() {
                             </SelectContent>
                           </Select>
                         </div>
-                        <div className="mt-1 text-[11px] text-[#6B7280]">
-                          {po.supplier_name || "Supplier not set"}
-                        </div>
-                        {po.expected_date && (
-                          <div className="mt-1 text-[11px] text-[#6B7280]">
-                            ETA: {format(new Date(po.expected_date), "MMM d")}
-                          </div>
-                        )}
                       </div>
                     ))}
                     {!completedPOs.length && (
