@@ -188,17 +188,25 @@ export default function Logistics() {
     [purchaseOrders]
   );
 
-  const readyPOs = useMemo(() =>
+  const confirmedPOs = useMemo(() =>
     purchaseOrders.filter((po) => 
-      po.status === PO_STATUS.ACKNOWLEDGED ||
-      po.status === PO_STATUS.ARRIVED ||
-      po.status === PO_STATUS.IN_TRANSIT
+      po.status === PO_STATUS.CONFIRMED ||
+      po.status === PO_STATUS.DELIVERED ||
+      po.status === PO_STATUS.READY_TO_PICK_UP
     ),
     [purchaseOrders]
   );
 
+  const deliveryBayPOs = useMemo(() =>
+    purchaseOrders.filter((po) => po.status === PO_STATUS.DELIVERED_TO_DELIVERY_BAY),
+    [purchaseOrders]
+  );
+
   const completedPOs = useMemo(() =>
-    purchaseOrders.filter((po) => po.status === PO_STATUS.COMPLETED),
+    purchaseOrders.filter((po) => 
+      po.status === PO_STATUS.COMPLETED_IN_STORAGE ||
+      po.status === PO_STATUS.COMPLETED_IN_VEHICLE
+    ),
     [purchaseOrders]
   );
 
