@@ -129,10 +129,10 @@ Deno.serve(async (req) => {
             const updateData = {};
             if (supplier_id !== undefined) updateData.supplier_id = supplier_id;
             if (supplier_name !== undefined) updateData.supplier_name = supplier_name;
-            if (project_id !== undefined) updateData.project_id = project_id;
-            if (delivery_method !== undefined) updateData.delivery_method = delivery_method;
-            if (delivery_location !== undefined) updateData.delivery_location = delivery_location;
-            if (notes !== undefined) updateData.notes = notes;
+            if (project_id !== undefined) updateData.project_id = project_id || null;
+            if (delivery_method !== undefined) updateData.delivery_method = delivery_method || null;
+            if (delivery_location !== undefined) updateData.delivery_location = delivery_location || null;
+            if (notes !== undefined) updateData.notes = notes || null;
             
             // Only allow reference editing if not completed
             if (reference !== undefined && po.status !== PO_STATUS.COMPLETED) {
