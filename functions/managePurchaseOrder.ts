@@ -3,10 +3,12 @@ import { createClientFromRequest } from 'npm:@base44/sdk@0.8.4';
 const PO_STATUS = {
     DRAFT: "Draft",
     SENT: "Sent",
-    ACKNOWLEDGED: "Acknowledged",
-    IN_TRANSIT: "In Transit",
-    ARRIVED: "Arrived",
-    COMPLETED: "Completed",
+    CONFIRMED: "Confirmed",
+    DELIVERED: "Delivered",
+    READY_TO_PICK_UP: "Ready to Pick Up",
+    DELIVERED_TO_DELIVERY_BAY: "Delivered to Delivery Bay",
+    COMPLETED_IN_STORAGE: "Completed - In Storage",
+    COMPLETED_IN_VEHICLE: "Completed - In Vehicle",
 };
 
 const PO_DELIVERY_METHOD = {
