@@ -186,22 +186,70 @@ Deno.serve(async (req) => {
                 return Response.json({ error: `Invalid status. Must be one of: ${validStatuses.join(', ')}` }, { status: 400 });
             }
 
-            const po = await base44.asServiceRole.entities.PurchaseOrder.get(id);
-            if (!po) {
+            const existing = await base44.asServiceRole.entities.PurchaseOrder.get(id);
+            if (!existing) {
                 return Response.json({ error: 'Purchase Order not found' }, { status: 404 });
             }
 
-            const updateData = { status };
+            const oldStatus = existing.status;
+            const newStatus = status;
+
+            const updateData = { status: newStatus };
 
             // Set timestamps based on status
-            if (status === PO_STATUS.SENT) {
+            if (newStatus === PO_STATUS.SENT) {
                 updateData.sent_at = new Date().toISOString();
-            } else if (status === PO_STATUS.ARRIVED) {
+            } else if (newStatus === PO_STATUS.ARRIVED) {
                 updateData.arrived_at = new Date().toISOString();
             }
 
             const updatedPO = await base44.asServiceRole.entities.PurchaseOrder.update(id, updateData);
-            return Response.json({ success: true, purchaseOrder: updatedPO });
+
+            // Auto-create Logistics Job if conditions are met
+            let logisticsJob = null;
+
+            const shouldHaveLogisticsJob =
+                !updatedPO.linked_logistics_job_id && // only if no job linked yet
+                (
+                    // DELIVERY: create job when ARRIVED
+                    (updatedPO.delivery_method === PO_DELIVERY_METHOD.DELIVERY &&
+                     newStatus === PO_STATUS.ARRIVED) ||
+
+                    // PICKUP: create job when ACKNOWLEDGED (ready for collection)
+                    (updatedPO.delivery_method === PO_DELIVERY_METHOD.PICKUP &&
+                     newStatus === PO_STATUS.ACKNOWLEDGED)
+                );
+
+            if (shouldHaveLogisticsJob) {
+                try {
+                    const jobResponse = await base44.asServiceRole.functions.invoke("createLogisticsJobForPO", {
+                        purchase_order_id: updatedPO.id,
+                        scheduled_date: updatedPO.expected_date || new Date().toISOString().split("T")[0],
+                    });
+
+                    if (jobResponse?.data?.success && jobResponse.data?.job) {
+                        logisticsJob = jobResponse.data.job;
+
+                        // Update PO with logistics job link if not already set
+                        if (!updatedPO.linked_logistics_job_id) {
+                            await base44.asServiceRole.entities.PurchaseOrder.update(updatedPO.id, {
+                                linked_logistics_job_id: logisticsJob.id,
+                            });
+                            updatedPO.linked_logistics_job_id = logisticsJob.id;
+                        }
+                    } else {
+                        console.error("Auto logistics job creation failed for PO", updatedPO.id, jobResponse?.data?.error);
+                    }
+                } catch (error) {
+                    console.error("Error auto-creating logistics job for PO", updatedPO.id, error);
+                }
+            }
+
+            return Response.json({ 
+                success: true, 
+                purchaseOrder: updatedPO,
+                ...(logisticsJob ? { logisticsJob } : {})
+            });
         }
 
         // LEGACY ACTION - DEPRECATED in favor of updateStatus
