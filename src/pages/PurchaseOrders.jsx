@@ -9,7 +9,7 @@ import { Badge } from "@/components/ui/badge";
 import { Plus, Search, Package } from "lucide-react";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { createPageUrl } from "@/utils";
-import { PO_STATUS_OPTIONS, PO_STATUS } from "@/components/domain/logisticsConfig";
+import { PO_STATUS_OPTIONS, PO_STATUS, PO_DELIVERY_METHOD } from "@/components/domain/logisticsConfig";
 import BackButton from "../components/common/BackButton";
 import { format, parseISO } from "date-fns";
 import { toast } from "sonner";
@@ -264,7 +264,17 @@ export default function PurchaseOrders() {
                           <SelectValue />
                         </SelectTrigger>
                         <SelectContent onClick={(e) => e.stopPropagation()}>
-                          {PO_STATUS_OPTIONS.map((status) => (
+                          {PO_STATUS_OPTIONS.filter((status) => {
+                            // For DELIVERY: exclude "Ready to Pick Up"
+                            if (po.delivery_method === PO_DELIVERY_METHOD.DELIVERY && status === PO_STATUS.READY_TO_PICK_UP) {
+                              return false;
+                            }
+                            // For PICKUP: exclude "Delivered to Delivery Bay"
+                            if (po.delivery_method === PO_DELIVERY_METHOD.PICKUP && status === PO_STATUS.DELIVERED_TO_DELIVERY_BAY) {
+                              return false;
+                            }
+                            return true;
+                          }).map((status) => (
                             <SelectItem key={status} value={status}>
                               {status}
                             </SelectItem>
