@@ -291,7 +291,7 @@ export default function PartsSection({ projectId, autoExpand = false }) {
                           className="inline-flex items-center gap-1 mt-1 px-2 py-0.5 rounded-md bg-blue-50 text-blue-700 hover:bg-blue-100 text-xs font-medium transition-colors"
                         >
                           <FileText className="w-3 h-3" />
-                          {part.po_number ? `PO #${part.po_number}` : `PO #${part.purchase_order_id.substring(0, 8)}`}
+                          {part.order_reference || (part.po_number ? `PO #${part.po_number}` : `PO #${part.purchase_order_id.substring(0, 8)}`)}
                         </button>
                       ) : (
                         <div className="text-xs opacity-80">{part.source_type?.split(' – ')[0]}</div>
