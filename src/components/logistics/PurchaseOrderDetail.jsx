@@ -525,10 +525,23 @@ export default function PurchaseOrderDetail({ poId, onClose }) {
                     }
 
                     const updated = response.data.purchaseOrder || po;
-                    queryClient.invalidateQueries({ queryKey: ['purchaseOrder', poId] });
-                    queryClient.invalidateQueries({ queryKey: ['purchaseOrders'] });
+                    
+                    // Invalidate all relevant queries
+                    await Promise.all([
+                      queryClient.invalidateQueries({ queryKey: ['purchaseOrder', poId] }),
+                      queryClient.invalidateQueries({ queryKey: ['purchaseOrders'] }),
+                      queryClient.invalidateQueries({ queryKey: ['allJobs'] }),
+                      queryClient.invalidateQueries({ queryKey: ['linkedJob', updated.linked_logistics_job_id] })
+                    ]);
+                    
                     setFormData((prev) => ({ ...prev, status: updated.status ?? value }));
-                    toast.success("Status updated");
+                    
+                    // Show appropriate message
+                    if (response.data.logisticsJob) {
+                      toast.success("Status updated and logistics job created");
+                    } else {
+                      toast.success("Status updated");
+                    }
                   } catch (error) {
                     setFormData((prev) => ({ ...prev, status: po.status }));
                     toast.error("Error updating status");
