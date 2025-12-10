@@ -67,17 +67,17 @@ export default function PurchaseOrderDetail({ poId, onClose }) {
     enabled: !!poId
   });
 
-  const priceListQuery = useQuery({
-    queryKey: ['priceListItems'],
-    queryFn: () => base44.entities.PriceListItem.filter({ is_active: true })
-  });
-  const priceListItems = priceListQuery.data || [];
-
   const { data: projectParts = [] } = useQuery({
     queryKey: ['projectParts', formData.project_id],
     queryFn: () => base44.entities.Part.filter({ project_id: formData.project_id }),
     enabled: !!formData.project_id
   });
+
+  const priceListQuery = useQuery({
+    queryKey: ['priceListItems'],
+    queryFn: () => base44.entities.PriceListItem.filter({ is_active: true })
+  });
+  const priceListItems = priceListQuery.data || [];
 
   useEffect(() => {
     if (po) {
