@@ -440,7 +440,17 @@ export default function PurchaseOrderDetail({ poId, onClose }) {
                   <SelectValue placeholder="Select status" />
                 </SelectTrigger>
                 <SelectContent>
-                  {PO_STATUS_OPTIONS.map((status) => (
+                  {PO_STATUS_OPTIONS.filter((status) => {
+                    // For DELIVERY: exclude "Ready to Pick Up"
+                    if (formData.delivery_method === PO_DELIVERY_METHOD.PICKUP && status === PO_STATUS.DELIVERED_TO_DELIVERY_BAY) {
+                      return false;
+                    }
+                    // For PICKUP: exclude "Delivered to Delivery Bay"
+                    if (formData.delivery_method === PO_DELIVERY_METHOD.DELIVERY && status === PO_STATUS.READY_TO_PICK_UP) {
+                      return false;
+                    }
+                    return true;
+                  }).map((status) => (
                     <SelectItem key={status} value={status}>
                       {status}
                     </SelectItem>
