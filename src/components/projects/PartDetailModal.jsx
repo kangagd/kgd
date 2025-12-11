@@ -19,13 +19,15 @@ import {
 import { Badge } from "@/components/ui/badge";
 import { Textarea } from "@/components/ui/textarea";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
-import { X, Upload, FileText, Link as LinkIcon, Plus, Search, Trash2, Package, Truck, ArrowRight } from "lucide-react";
+import { X, Upload, FileText, Link as LinkIcon, Plus, Search, Trash2, Package, Truck, ArrowRight, ExternalLink } from "lucide-react";
 import { base44 } from "@/api/base44Client";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import RichTextEditor from "../common/RichTextEditor";
 import { format } from "date-fns";
 import { toast } from "sonner";
 import { PART_STATUS, PART_STATUS_OPTIONS, LOGISTICS_LOCATION } from "@/components/domain/logisticsConfig";
+import { createPageUrl } from "@/utils";
+import { useNavigate } from "react-router-dom";
 
 const CATEGORIES = [
   "Door", "Motor", "Posts", "Tracks", "Small Parts", "Hardware", "Other"
@@ -71,14 +73,18 @@ export default function PartDetailModal({ open, part, onClose, onSave, isSubmitt
   const [jobSearch, setJobSearch] = useState("");
   const [priceListSearch, setPriceListSearch] = useState("");
   const [priceListOpen, setPriceListOpen] = useState(false);
-  const [poDetails, setPoDetails] = useState({
-    supplier_id: "",
-    internal_reference: "",
-    requested_eta: "",
-    notes_to_supplier: ""
-  });
   const [poError, setPoError] = useState("");
   const queryClient = useQueryClient();
+  const navigate = useNavigate();
+
+  // Fetch linked PO if part has one
+  const { data: linkedPO } = useQuery({
+    queryKey: ['linkedPO', part?.purchase_order_id],
+    queryFn: () => part?.purchase_order_id 
+      ? base44.entities.PurchaseOrder.get(part.purchase_order_id)
+      : null,
+    enabled: !!part?.purchase_order_id && open
+  });
 
   // Fetch price list items FIRST (needed by useEffect below)
   const { data: priceListItems = [] } = useQuery({
@@ -139,38 +145,6 @@ export default function PartDetailModal({ open, part, onClose, onSave, isSubmitt
       console.log("Setting formData to:", mappedPart);
       setFormData(mappedPart);
       
-      // Initialize poDetails with defaults first
-      setPoDetails({
-        supplier_id: part.supplier_id || "",
-        internal_reference: part.po_number || part.order_reference || "",
-        requested_eta: part.eta || "",
-        notes_to_supplier: ""
-      });
-      
-      // If part is linked to a PurchaseOrder, fetch it and hydrate PO fields
-      if (part.purchase_order_id) {
-        base44.entities.PurchaseOrder.get(part.purchase_order_id)
-          .then((po) => {
-            if (!po) return;
-            
-            setPoDetails({
-              supplier_id: po.supplier_id || part.supplier_id || "",
-              internal_reference: po.po_number || "",
-              requested_eta: po.expected_date || "",
-              notes_to_supplier: po.notes || ""
-            });
-            
-            // Sync supplier_id to formData if needed
-            setFormData((prev) => ({
-              ...prev,
-              supplier_id: prev.supplier_id || po.supplier_id || ""
-            }));
-          })
-          .catch((err) => {
-            console.error("Failed to hydrate PO details:", err);
-          });
-      }
-      
       // If part has a price list item, set the search to display it
       if (part.price_list_item_id) {
         const linkedItem = priceListItems.find(item => item.id === part.price_list_item_id);
@@ -196,17 +170,11 @@ export default function PartDetailModal({ open, part, onClose, onSave, isSubmitt
         notes: "",
         tracking_url: ""
       });
-      setPoDetails({
-        supplier_id: "",
-        internal_reference: "",
-        requested_eta: "",
-        notes_to_supplier: ""
-      });
       setPriceListSearch("");
     }
     setPoError("");
     setPriceListOpen(false);
-  }, [part?.id, part?.purchase_order_id, open, priceListItems]);
+  }, [part?.id, open, priceListItems]);
 
   // Fetch jobs for logistics linking
   const { data: jobs = [] } = useQuery({
@@ -341,6 +309,38 @@ export default function PartDetailModal({ open, part, onClose, onSave, isSubmitt
           <DialogTitle className="text-[22px] font-semibold text-[#111827]">
             {part?.id ? 'Part Details' : 'New Part'}
           </DialogTitle>
+          
+          {/* PO Linkage Status */}
+          {part?.purchase_order_id ? (
+            <div className="mt-3 flex items-center justify-between gap-2 bg-blue-50 border border-blue-200 rounded-lg p-3">
+              <div className="flex items-center gap-2 flex-wrap">
+                <Badge variant="outline" className="text-xs bg-white">
+                  Linked to PO #{linkedPO?.po_number || part.purchase_order_id.slice(0, 8)}
+                </Badge>
+                {linkedPO?.status && (
+                  <Badge className="text-xs bg-slate-100 text-slate-700 border-slate-200">
+                    {linkedPO.status}
+                  </Badge>
+                )}
+              </div>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={(e) => {
+                  e.preventDefault();
+                  navigate(`${createPageUrl("PurchaseOrders")}?poId=${part.purchase_order_id}`);
+                }}
+                className="bg-white"
+              >
+                <ExternalLink className="w-3 h-3 mr-1" />
+                Open PO
+              </Button>
+            </div>
+          ) : part?.id ? (
+            <div className="mt-3 text-xs text-[#6B7280] bg-slate-50 border border-slate-200 rounded-lg p-3">
+              This part is not yet linked to a Purchase Order. To order it, use the "Create PO" button in the Project Parts section and add this part in the PO screen.
+            </div>
+          ) : null}
         </DialogHeader>
 
         <div className="flex-1 overflow-y-auto">
