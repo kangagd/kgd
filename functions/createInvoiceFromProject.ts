@@ -237,7 +237,7 @@ Deno.serve(async (req) => {
     });
 
     // Update project activity
-    await updateProjectActivity(base44, project.id);
+    await updateProjectActivity(base44, project.id, 'Invoice Created');
 
     return Response.json({
       success: true,

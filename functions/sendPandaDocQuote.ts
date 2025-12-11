@@ -125,7 +125,7 @@ Deno.serve(async (req) => {
 
     // Update project activity if quote is linked to a project
     if (quote.project_id) {
-      await updateProjectActivity(base44, quote.project_id);
+      await updateProjectActivity(base44, quote.project_id, 'Quote Sent');
     }
 
     return Response.json({

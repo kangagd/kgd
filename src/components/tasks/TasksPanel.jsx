@@ -44,7 +44,8 @@ export default function TasksPanel({
       if (newTask.project_id) {
         try {
           await base44.functions.invoke('updateProjectActivity', { 
-            project_id: newTask.project_id 
+            project_id: newTask.project_id,
+            activity_type: 'Task Created'
           });
         } catch (err) {
           console.error('Failed to update project activity:', err);
@@ -70,7 +71,8 @@ export default function TasksPanel({
       if (updatedTask.project_id) {
         try {
           await base44.functions.invoke('updateProjectActivity', { 
-            project_id: updatedTask.project_id 
+            project_id: updatedTask.project_id,
+            activity_type: 'Task Updated'
           });
         } catch (err) {
           console.error('Failed to update project activity:', err);
