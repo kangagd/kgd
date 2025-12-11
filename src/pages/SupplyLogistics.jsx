@@ -9,7 +9,9 @@ import { useNavigate } from "react-router-dom";
 import { createPageUrl } from "@/utils";
 import { toast } from "sonner";
 import { format, parseISO } from "date-fns";
-import { PO_STATUS, PO_DELIVERY_METHOD } from "@/components/domain/logisticsConfig";
+import { PO_STATUS, normaliseLegacyPoStatus } from "@/components/domain/purchaseOrderStatusConfig";
+import { DELIVERY_METHOD as PO_DELIVERY_METHOD } from "@/components/domain/supplierDeliveryConfig";
+import { PART_LOCATION, normaliseLegacyPartLocation } from "@/components/domain/partConfig";
 import PurchaseOrderModal from "../components/logistics/PurchaseOrderModal";
 import StatusBadge from "../components/common/StatusBadge";
 import BackButton from "../components/common/BackButton";
@@ -44,20 +46,36 @@ export default function SupplyLogistics() {
     queryFn: () => base44.entities.PurchaseOrderLine.list()
   });
 
-  // Group POs by status
-  const draftPOs = purchaseOrders.filter(po => po.status === PO_STATUS.DRAFT);
-  const onOrderPOs = purchaseOrders.filter(po => [PO_STATUS.ON_ORDER, PO_STATUS.IN_TRANSIT].includes(po.status));
-  const readyAtSupplierPOs = purchaseOrders.filter(po => po.status === PO_STATUS.READY_TO_PICK_UP);
-  const atDeliveryBayPOs = purchaseOrders.filter(po => [PO_STATUS.DELIVERED_LOADING_BAY, PO_STATUS.DELIVERED_TO_DELIVERY_BAY].includes(po.status));
-  const completedPOs = purchaseOrders.filter(po => [PO_STATUS.IN_STORAGE, PO_STATUS.IN_VEHICLE, PO_STATUS.INSTALLED].includes(po.status));
+  // Group POs by status (normalize legacy statuses)
+  const draftPOs = purchaseOrders.filter(po => normaliseLegacyPoStatus(po.status) === PO_STATUS.DRAFT);
+  const onOrderPOs = purchaseOrders.filter(po => {
+    const normalized = normaliseLegacyPoStatus(po.status);
+    return [PO_STATUS.SENT, PO_STATUS.ON_ORDER, PO_STATUS.IN_TRANSIT].includes(normalized);
+  });
+  const readyAtSupplierPOs = purchaseOrders.filter(po => {
+    const normalized = normaliseLegacyPoStatus(po.status);
+    return normalized === PO_STATUS.IN_LOADING_BAY && po.delivery_method === PO_DELIVERY_METHOD.PICKUP;
+  });
+  const atDeliveryBayPOs = purchaseOrders.filter(po => {
+    const normalized = normaliseLegacyPoStatus(po.status);
+    return normalized === PO_STATUS.IN_LOADING_BAY && po.delivery_method === PO_DELIVERY_METHOD.DELIVERY;
+  });
+  const completedPOs = purchaseOrders.filter(po => {
+    const normalized = normaliseLegacyPoStatus(po.status);
+    return [PO_STATUS.IN_STORAGE, PO_STATUS.IN_VEHICLE, PO_STATUS.INSTALLED].includes(normalized);
+  });
 
   // Loading bay summary
   const deliveredPOItems = purchaseOrderLines.filter(line => {
     const po = purchaseOrders.find(p => p.id === line.purchase_order_id);
-    return po && [PO_STATUS.DELIVERED_LOADING_BAY, PO_STATUS.DELIVERED_TO_DELIVERY_BAY].includes(po.status);
+    const normalized = normaliseLegacyPoStatus(po?.status);
+    return po && normalized === PO_STATUS.IN_LOADING_BAY;
   });
 
-  const loadingBayParts = parts.filter(p => p.location === 'Loading Bay' || p.location === 'At Delivery Bay');
+  const loadingBayParts = parts.filter(p => {
+    const normalized = normaliseLegacyPartLocation(p.location);
+    return normalized === PART_LOCATION.DELIVERY_BAY;
+  });
   const loadingBayTotal = deliveredPOItems.reduce((sum, item) => sum + (item.qty_ordered || 0), 0) + loadingBayParts.length;
 
   const handleCreatePO = async () => {
@@ -65,7 +83,7 @@ export default function SupplyLogistics() {
       const response = await base44.functions.invoke('managePurchaseOrder', {
         action: 'create',
         supplier_id: suppliers[0]?.id || 'temp',
-        line_items: [{ name: 'New Item', qty: 1, price: 0 }]
+        line_items: [{ name: 'New Item', quantity: 1, unit_price: 0 }]
       });
 
       if (response.data?.success && response.data?.purchaseOrder) {

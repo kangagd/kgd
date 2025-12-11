@@ -16,7 +16,7 @@ import { createPageUrl } from "@/utils";
 import { Link, useNavigate } from "react-router-dom";
 import PartDetailModal from "../components/projects/PartDetailModal";
 import { toast } from "sonner";
-import { INVENTORY_LOCATION } from "@/components/domain/inventoryLocationConfig";
+// Removed unused import
 import BackButton from "../components/common/BackButton";
 import StatusBadge from "../components/common/StatusBadge";
 import {
@@ -30,6 +30,22 @@ import { DELIVERY_METHOD as PO_DELIVERY_METHOD } from "@/components/domain/suppl
 import { PART_LOCATION } from "@/components/domain/partConfig";
 
 // Removed legacy status/location colors - use unified config
+
+const getPoStatusColor = (status) => {
+  const normalized = normaliseLegacyPoStatus(status);
+  const colors = {
+    draft: 'bg-slate-100 text-slate-700',
+    sent: 'bg-indigo-100 text-indigo-700',
+    on_order: 'bg-blue-100 text-blue-700',
+    in_transit: 'bg-purple-100 text-purple-700',
+    in_loading_bay: 'bg-cyan-100 text-cyan-700',
+    in_storage: 'bg-emerald-100 text-emerald-700',
+    in_vehicle: 'bg-teal-100 text-teal-700',
+    installed: 'bg-green-100 text-green-700',
+    cancelled: 'bg-red-100 text-red-700',
+  };
+  return colors[normalized] || 'bg-slate-100 text-slate-700';
+};
 
 export default function Logistics() {
   const queryClient = useQueryClient();
@@ -313,14 +329,7 @@ export default function Logistics() {
     [jobs]
   );
 
-  const updatePartMutation = useMutation({
-    mutationFn: ({ id, data }) => base44.entities.Part.update(id, data),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["parts"] });
-      toast.success("Part updated successfully");
-    },
-    onError: () => toast.error("Failed to update part"),
-  });
+  // Removed unused updatePartMutation
 
   const movePartMutation = useMutation({
     mutationFn: ({ part_ids, from_location, to_location }) =>
@@ -381,14 +390,7 @@ export default function Logistics() {
     }
   };
 
-  const updateJobMutation = useMutation({
-    mutationFn: ({ id, data }) => base44.entities.Job.update(id, data),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["jobs"] });
-      toast.success("Logistics job updated");
-    },
-    onError: () => toast.error("Failed to update job"),
-  });
+  // Removed unused updateJobMutation
 
   // Removed unused handleStatusChange
 
@@ -675,7 +677,7 @@ export default function Logistics() {
                             onValueChange={(value) => handleUpdatePoStatus(po, value)}
                             onClick={(e) => e.stopPropagation()}
                           >
-                            <SelectTrigger className={`h-6 w-full text-[10px] px-2 border-0 ${po.status === PO_STATUS.ON_ORDER ? 'bg-blue-100 text-blue-700' : po.status === PO_STATUS.IN_TRANSIT ? 'bg-purple-100 text-purple-700' : 'bg-blue-100 text-blue-700'}`}>
+                            <SelectTrigger className={`h-6 w-full text-[10px] px-2 border-0 ${getPoStatusColor(po.status)}`}>
                               <SelectValue>
                                 {getPoStatusLabel(po.status)}
                               </SelectValue>
@@ -745,7 +747,7 @@ export default function Logistics() {
                             onValueChange={(value) => handleUpdatePoStatus(po, value)}
                             onClick={(e) => e.stopPropagation()}
                           >
-                            <SelectTrigger className="h-6 w-full text-[10px] px-2 border-0 bg-amber-100 text-amber-700">
+                            <SelectTrigger className={`h-6 w-full text-[10px] px-2 border-0 ${getPoStatusColor(po.status)}`}>
                               <SelectValue>
                                 {getPoStatusLabel(po.status)}
                               </SelectValue>
@@ -883,7 +885,7 @@ export default function Logistics() {
                             onValueChange={(value) => handleUpdatePoStatus(po, value)}
                             onClick={(e) => e.stopPropagation()}
                           >
-                            <SelectTrigger className={`h-6 w-full text-[10px] px-2 border-0 ${po.status === PO_STATUS.IN_STORAGE ? 'bg-emerald-100 text-emerald-700' : po.status === PO_STATUS.IN_VEHICLE ? 'bg-teal-100 text-teal-700' : 'bg-green-100 text-green-700'}`}>
+                            <SelectTrigger className={`h-6 w-full text-[10px] px-2 border-0 ${getPoStatusColor(po.status)}`}>
                               <SelectValue>
                                 {getPoStatusLabel(po.status)}
                               </SelectValue>
