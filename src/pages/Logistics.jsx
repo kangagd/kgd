@@ -515,7 +515,6 @@ export default function Logistics() {
                     toast.error("Failed to create PO");
                   }
                 } catch (error) {
-                  console.error("Error creating PO:", error);
                   toast.error("Failed to create Purchase Order");
                 }
               }}
