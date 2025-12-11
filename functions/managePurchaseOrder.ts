@@ -293,7 +293,7 @@ Deno.serve(async (req) => {
 
             // Update project activity if PO is linked to a project
             if (po.project_id) {
-                await updateProjectActivity(base44, po.project_id);
+                await updateProjectActivity(base44, po.project_id, 'PO Created');
             }
 
             // Create line items with source type support
@@ -428,7 +428,11 @@ Deno.serve(async (req) => {
 
             // Update project activity if PO is linked to a project
             if (updatedPO.project_id) {
-                await updateProjectActivity(base44, updatedPO.project_id);
+                const activityType = newStatus === PO_STATUS.IN_LOADING_BAY ? 'PO Delivered' :
+                                   newStatus === PO_STATUS.IN_STORAGE ? 'PO in Storage' :
+                                   newStatus === PO_STATUS.IN_VEHICLE ? 'PO in Vehicle' :
+                                   'PO Status Updated';
+                await updateProjectActivity(base44, updatedPO.project_id, activityType);
             }
 
             // Sync linked Parts status/location
