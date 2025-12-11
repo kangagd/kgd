@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useMemo } from "react";
 import { base44 } from "@/api/base44Client";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
@@ -6,26 +6,24 @@ import ProjectForm from "../projects/ProjectForm";
 
 export default function CreateProjectFromEmailModal({ open, onClose, thread, onSuccess }) {
   const queryClient = useQueryClient();
-  const [initialData, setInitialData] = useState(null);
-
-  useEffect(() => {
-    if (open && thread) {
-      // Pre-fill form with AI suggested data
-      const aiSuggested = thread.ai_suggested_project_fields || {};
-      setInitialData({
-        title: aiSuggested.suggested_title || thread.subject || "",
-        customer_id: "",
-        customer_name: aiSuggested.suggested_customer_name || "",
-        customer_email: aiSuggested.suggested_customer_email || thread.from_address || "",
-        customer_phone: aiSuggested.suggested_customer_phone || "",
-        project_type: aiSuggested.suggested_project_type || "Garage Door Install",
-        status: "Lead",
-        description: aiSuggested.suggested_description || thread.last_message_snippet || "",
-        address_full: aiSuggested.suggested_address || "",
-        notes: `Created from email: ${thread.from_address}\n\n${thread.subject}`
-      });
-    }
-  }, [open, thread]);
+  
+  // Compute initial data once from thread
+  const initialData = useMemo(() => {
+    if (!thread) return null;
+    const aiSuggested = thread.ai_suggested_project_fields || {};
+    return {
+      title: aiSuggested.suggested_title || thread.subject || "",
+      customer_id: "",
+      customer_name: aiSuggested.suggested_customer_name || "",
+      customer_email: aiSuggested.suggested_customer_email || thread.from_address || "",
+      customer_phone: aiSuggested.suggested_customer_phone || "",
+      project_type: aiSuggested.suggested_project_type || "Garage Door Install",
+      status: "Lead",
+      description: aiSuggested.suggested_description || thread.last_message_snippet || "",
+      address_full: aiSuggested.suggested_address || "",
+      notes: `Created from email: ${thread.from_address}\n\n${thread.subject}`
+    };
+  }, [thread?.id]);
 
   const createProjectMutation = useMutation({
     mutationFn: async (data) => {
