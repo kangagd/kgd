@@ -465,69 +465,7 @@ export default function PurchaseOrderDetail({ poId, onClose, mode = "page" }) {
         </div>
       )}
 
-      {isModal && (
-        <div className="flex items-center justify-between mb-4">
-          <div className="flex-1">
-            <div className="flex items-center gap-3">
-              <h2 className="text-xl font-bold text-[#111827]">Purchase Order</h2>
-              <Badge className={getStatusColor(po.status)}>{po.status}</Badge>
-            </div>
-            {isDraft ? (
-              <Input
-                value={formData.reference}
-                onChange={(e) => setFormData({ ...formData, reference: e.target.value })}
-                placeholder="Enter PO reference/number..."
-                className="mt-2 max-w-xs text-sm"
-              />
-            ) : (
-              <p className="text-sm text-[#6B7280] mt-1">
-                {po.po_number || `ID: ${po.id.slice(0, 8)}`}
-              </p>
-            )}
-            {linkedProject && (
-              <p className="text-sm text-[#6B7280] mt-1">
-                Project: {linkedProject.title}
-              </p>
-            )}
-          </div>
-          <div className="flex gap-2">
-            {isDraft && (
-              <>
-                <Button
-                  onClick={handleDelete}
-                  disabled={deletePOMutation.isPending}
-                  variant="outline"
-                  className="text-red-600 hover:text-red-700 hover:bg-red-50"
-                  size="sm"
-                >
-                  <Trash className="w-4 h-4 mr-2" />
-                  Delete
-                </Button>
-                <Button
-                  onClick={handleSave}
-                  disabled={updatePOMutation.isPending}
-                  className="bg-[#F3F4F6] text-[#111827] hover:bg-[#E5E7EB]"
-                  size="sm"
-                >
-                  <Save className="w-4 h-4 mr-2" />
-                  Save
-                </Button>
-                <Button
-                  onClick={handleSendToSupplier}
-                  disabled={updatePOMutation.isPending}
-                  className="bg-[#FAE008] text-[#111827] hover:bg-[#E5CF07]"
-                  size="sm"
-                >
-                  <Send className="w-4 h-4 mr-2" />
-                  Send
-                </Button>
-              </>
-            )}
-          </div>
-        </div>
-      )}
-
-      <div className={isModal ? "p-4 space-y-6" : "p-6 space-y-6 max-w-4xl mx-auto"}>
+      <div className={isModal ? "space-y-6" : "p-6 space-y-6 max-w-4xl mx-auto"}>
         {/* Basic Info */}
         <Card>
           <CardHeader>
