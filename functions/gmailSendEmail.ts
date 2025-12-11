@@ -1,4 +1,5 @@
 import { createClientFromRequest } from 'npm:@base44/sdk@0.8.4';
+import { updateProjectActivity } from './updateProjectActivity.js';
 
 async function refreshTokenIfNeeded(base44, user) {
   // If no token expiry set or token is expired/close to expiring
@@ -190,6 +191,11 @@ Deno.serve(async (req) => {
       sent_at: new Date().toISOString(),
       message_id: gmailMessageId
     });
+    
+    // Update project activity if email is linked to a project
+    if (projectId) {
+      await updateProjectActivity(base44, projectId);
+    }
     
     return Response.json({ success: true, messageId: result.id, threadId: emailThreadId });
   } catch (error) {
