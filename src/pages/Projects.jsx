@@ -29,7 +29,7 @@ import EntityModal from "../components/common/EntityModal.jsx";
 import ProjectModalView from "../components/projects/ProjectModalView";
 import { createPageUrl } from "@/utils";
 import { DuplicateBadge } from "../components/common/DuplicateWarningCard";
-import AgeBadge from "../components/common/AgeBadge";
+import { getProjectFreshnessBadge } from "../components/utils/freshness";
 import { useLocation } from "react-router-dom";
 import EntityLink from "../components/common/EntityLink";
 import BackButton from "../components/common/BackButton";
@@ -515,6 +515,15 @@ export default function Projects() {
             const suburb = extractSuburb(project.address);
             const scopeSummary = buildScopeSummary(project);
             const createdAt = project.created_at || project.created_date || project.createdDate;
+            const freshness = getProjectFreshnessBadge(project.last_activity_at || createdAt);
+            
+            const freshnessColors = {
+              green: "bg-green-100 text-green-700",
+              blue: "bg-blue-100 text-blue-700",
+              yellow: "bg-yellow-100 text-yellow-700",
+              red: "bg-red-100 text-red-700",
+              gray: "bg-gray-100 text-gray-700"
+            };
 
             return (
               <EntityLink
@@ -549,7 +558,10 @@ export default function Projects() {
                       )}
                     </div>
                     <div className="flex items-center gap-2 flex-wrap">
-                      <AgeBadge date={project.opened_date || project.stage_start_date || project.created_date} />
+                      <Badge className={freshnessColors[freshness.color]}>
+                        {freshness.label}
+                      </Badge>
+                      <span className="text-[12px] text-[#6B7280]">Age: {freshness.days !== null ? `${freshness.days} days` : 'Unknown'}</span>
                       {project.organisation_type && (
                         <OrganisationTypeBadge value={project.organisation_type} />
                       )}

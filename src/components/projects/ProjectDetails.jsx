@@ -60,6 +60,7 @@ import HandoverReportModal from "../handover/HandoverReportModal";
 import ProjectContactsPanel from "./ProjectContactsPanel";
 import ThirdPartyTradesPanel from "./ThirdPartyTradesPanel";
 import BackButton from "../common/BackButton";
+import { getProjectFreshnessBadge } from "../utils/freshness";
 
 const statusColors = {
   "Lead": "bg-slate-100 text-slate-700",
@@ -913,6 +914,15 @@ Format as HTML bullet points using <ul> and <li> tags. Include only the most cri
   }, [project.status]);
 
   const effectiveOpenedDate = project.opened_date || project.created_date;
+  const freshness = getProjectFreshnessBadge(project.last_activity_at || effectiveOpenedDate);
+  
+  const freshnessColors = {
+    green: "bg-green-100 text-green-700",
+    blue: "bg-blue-100 text-blue-700",
+    yellow: "bg-yellow-100 text-yellow-700",
+    red: "bg-red-100 text-red-700",
+    gray: "bg-gray-100 text-gray-700"
+  };
 
   return (
     <div className="relative flex flex-col lg:flex-row gap-4 overflow-x-hidden items-start">
@@ -1287,12 +1297,12 @@ Format as HTML bullet points using <ul> and <li> tags. Include only the most cri
         <div className="flex items-center justify-between gap-3">
           <div className="flex items-center gap-2">
             <BackButton to={createPageUrl("Projects")} />
-            {effectiveOpenedDate && (
-              <div className="text-[12px] text-[#6B7280] leading-[1.35] hidden sm:block">
-                Opened on {new Date(effectiveOpenedDate).toLocaleDateString('en-AU', { day: 'numeric', month: 'short', year: 'numeric' })} 
-                {' '}({Math.floor((new Date() - new Date(effectiveOpenedDate)) / (1000 * 60 * 60 * 24))} days)
-              </div>
-            )}
+            <Badge className={freshnessColors[freshness.color]}>
+              {freshness.label}
+            </Badge>
+            <span className="text-[12px] text-[#6B7280] hidden sm:block">
+              Age: {freshness.days !== null ? `${freshness.days} days` : 'Unknown'}
+            </span>
           </div>
 
           <div className="flex gap-1 flex-shrink-0">
