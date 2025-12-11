@@ -62,6 +62,7 @@ import ThirdPartyTradesPanel from "./ThirdPartyTradesPanel";
 import BackButton from "../common/BackButton";
 import { getProjectFreshnessBadge } from "../utils/freshness";
 import LastActivityCard from "./LastActivityCard";
+import SamplesAtClientPanel from "./SamplesAtClientPanel";
 
 const statusColors = {
   "Lead": "bg-slate-100 text-slate-700",
@@ -1694,6 +1695,7 @@ Format as HTML bullet points using <ul> and <li> tags. Include only the most cri
           </TabsContent>
 
           <TabsContent value="parts" className="mt-3 space-y-6">
+            <SamplesAtClientPanel project={project} />
             <ProjectPartsPanel 
               project={project} 
               parts={parts} 
