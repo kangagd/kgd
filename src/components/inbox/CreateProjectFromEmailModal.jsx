@@ -1,29 +1,79 @@
-import React, { useMemo } from "react";
+import React, { useMemo, useState, useEffect } from "react";
 import { base44 } from "@/api/base44Client";
-import { useMutation, useQueryClient } from "@tanstack/react-query";
+import { useMutation, useQueryClient, useQuery } from "@tanstack/react-query";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import ProjectForm from "../projects/ProjectForm";
 
 export default function CreateProjectFromEmailModal({ open, onClose, thread, onSuccess }) {
   const queryClient = useQueryClient();
-  
-  // Compute initial data once from thread
-  const initialData = useMemo(() => {
-    if (!thread) return null;
-    const aiSuggested = thread.ai_suggested_project_fields || {};
-    return {
-      title: aiSuggested.suggested_title || thread.subject || "",
-      customer_id: "",
-      customer_name: aiSuggested.suggested_customer_name || "",
-      customer_email: aiSuggested.suggested_customer_email || thread.from_address || "",
-      customer_phone: aiSuggested.suggested_customer_phone || "",
-      project_type: aiSuggested.suggested_project_type || "Garage Door Install",
-      status: "Lead",
-      description: aiSuggested.suggested_description || thread.last_message_snippet || "",
-      address_full: aiSuggested.suggested_address || "",
-      notes: `Created from email: ${thread.from_address}\n\n${thread.subject}`
+  const [initialData, setInitialData] = useState(null);
+  const [isPreparingCustomer, setIsPreparingCustomer] = useState(false);
+
+  const { data: customers = [] } = useQuery({
+    queryKey: ['customers'],
+    queryFn: () => base44.entities.Customer.list(),
+    enabled: open
+  });
+
+  useEffect(() => {
+    if (!open || !thread) {
+      setInitialData(null);
+      return;
+    }
+
+    const prepareProjectData = async () => {
+      setIsPreparingCustomer(true);
+      const aiSuggested = thread.ai_suggested_project_fields || {};
+      const emailAddress = (aiSuggested.suggested_customer_email || thread.from_address || "").toLowerCase().trim();
+      const customerName = aiSuggested.suggested_customer_name || "";
+      const customerPhone = aiSuggested.suggested_customer_phone || "";
+
+      let customerId = "";
+
+      // Check if customer exists by email
+      if (emailAddress) {
+        const existingCustomer = customers.find(c => 
+          c.email?.toLowerCase().trim() === emailAddress && !c.deleted_at
+        );
+
+        if (existingCustomer) {
+          customerId = existingCustomer.id;
+        } else if (customerName) {
+          // Create new customer automatically
+          try {
+            const newCustomer = await base44.entities.Customer.create({
+              name: customerName,
+              email: emailAddress,
+              phone: customerPhone,
+              status: "active"
+            });
+            await queryClient.refetchQueries({ queryKey: ['customers'] });
+            customerId = newCustomer.id;
+          } catch (error) {
+            console.error("Error creating customer:", error);
+          }
+        }
+      }
+
+      setInitialData({
+        title: aiSuggested.suggested_title || thread.subject || "",
+        customer_id: customerId,
+        customer_name: customerName,
+        customer_email: emailAddress,
+        customer_phone: customerPhone,
+        project_type: aiSuggested.suggested_project_type || "Garage Door Install",
+        status: "Lead",
+        description: aiSuggested.suggested_description || thread.last_message_snippet || "",
+        address_full: aiSuggested.suggested_address || "",
+        notes: `Created from email: ${thread.from_address}\n\n${thread.subject}`
+      });
+      setIsPreparingCustomer(false);
     };
-  }, [thread?.id]);
+
+    if (customers.length > 0) {
+      prepareProjectData();
+    }
+  }, [open, thread, customers.length]);
 
   const createProjectMutation = useMutation({
     mutationFn: async (data) => {
