@@ -10,7 +10,7 @@ import { Badge } from "@/components/ui/badge";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Dialog, DialogContent } from "@/components/ui/dialog";
 import { Search, Truck, MapPin, AlertCircle, Link as LinkIcon, Plus, Briefcase, ExternalLink } from "lucide-react";
-import PurchaseOrderDetail from "../components/logistics/PurchaseOrderDetail";
+import PurchaseOrderModal from "../components/logistics/PurchaseOrderModal";
 import { format } from "date-fns";
 import { createPageUrl } from "@/utils";
 import { Link, useNavigate } from "react-router-dom";
@@ -1340,16 +1340,11 @@ export default function Logistics() {
       </div>
 
       {/* PO Detail Modal */}
-      {selectedPoId && (
-        <Dialog open={!!selectedPoId} onOpenChange={(open) => !open && setSelectedPoId(null)}>
-          <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto p-0">
-            <PurchaseOrderDetail
-              poId={selectedPoId}
-              onClose={() => setSelectedPoId(null)}
-            />
-          </DialogContent>
-        </Dialog>
-      )}
+      <PurchaseOrderModal
+        poId={selectedPoId}
+        open={!!selectedPoId}
+        onClose={() => setSelectedPoId(null)}
+      />
     </div>
   );
 }

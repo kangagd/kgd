@@ -71,8 +71,7 @@ const navigationSections = [
       { title: "Fleet", url: createPageUrl("Fleet"), icon: Car },
       { title: "Tools Admin", url: createPageUrl("ToolsAdmin"), icon: Wrench },
       { title: "Hardware Library", url: createPageUrl("PartsHardwareAdmin"), icon: Package },
-      { title: "Logistics", url: createPageUrl("Logistics"), icon: Truck },
-      { title: "Purchase Orders", url: createPageUrl("PurchaseOrders"), icon: FileText },
+      { title: "Supply & Logistics", url: createPageUrl("SupplyLogistics"), icon: Truck },
       { title: "Suppliers", url: createPageUrl("Suppliers"), icon: Package },
       { title: "Price List", url: createPageUrl("PriceList"), icon: DollarSign },
     ]

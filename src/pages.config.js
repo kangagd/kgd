@@ -24,6 +24,7 @@ import Suppliers from './pages/Suppliers';
 import EmailSettings from './pages/EmailSettings';
 import PartsHardwareAdmin from './pages/PartsHardwareAdmin';
 import PurchaseOrders from './pages/PurchaseOrders';
+import SupplyLogistics from './pages/SupplyLogistics';
 import __Layout from './Layout.jsx';
 
 
@@ -54,6 +55,7 @@ export const PAGES = {
     "EmailSettings": EmailSettings,
     "PartsHardwareAdmin": PartsHardwareAdmin,
     "PurchaseOrders": PurchaseOrders,
+    "SupplyLogistics": SupplyLogistics,
 }
 
 export const pagesConfig = {

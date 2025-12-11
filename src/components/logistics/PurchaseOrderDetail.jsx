@@ -19,9 +19,10 @@ import {
   PopoverTrigger,
 } from "@/components/ui/popover";
 
-export default function PurchaseOrderDetail({ poId, onClose }) {
+export default function PurchaseOrderDetail({ poId, onClose, mode = "page" }) {
   const navigate = useNavigate();
   const queryClient = useQueryClient();
+  const isModal = mode === "modal";
   const [isEditing, setIsEditing] = useState(false);
   const [formData, setFormData] = useState({
     supplier_id: "",
@@ -389,9 +390,14 @@ export default function PurchaseOrderDetail({ poId, onClose }) {
     PO_STATUS.DELIVERED_TO_DELIVERY_BAY
   ].includes(po.status);
 
+  const containerClass = isModal 
+    ? "bg-white"
+    : "bg-white min-h-screen";
+
   return (
-    <div className="bg-white min-h-screen">
-      <div className="sticky top-0 z-10 bg-white border-b border-[#E5E7EB] px-6 py-4">
+    <div className={containerClass}>
+      {!isModal && (
+        <div className="sticky top-0 z-10 bg-white border-b border-[#E5E7EB] px-6 py-4">
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-3">
             <button

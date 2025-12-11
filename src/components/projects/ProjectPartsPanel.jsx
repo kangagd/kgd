@@ -23,12 +23,14 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { toast } from "sonner";
+import PurchaseOrderModal from "../logistics/PurchaseOrderModal";
 
 export default function ProjectPartsPanel({ project, parts = [], inventoryByItem = {} }) {
   const [assignModalOpen, setAssignModalOpen] = useState(false);
   const [partToAssign, setPartToAssign] = useState(null);
   const [showCreatePODialog, setShowCreatePODialog] = useState(false);
   const [selectedSupplierId, setSelectedSupplierId] = useState("");
+  const [activePoId, setActivePoId] = useState(null);
   const queryClient = useQueryClient();
   const navigate = useNavigate();
 
@@ -115,7 +117,7 @@ export default function ProjectPartsPanel({ project, parts = [], inventoryByItem
             {projectPOs.map(po => (
               <button
                 key={po.id}
-                onClick={() => navigate(`${createPageUrl("PurchaseOrders")}?poId=${po.id}`)}
+                onClick={() => setActivePoId(po.id)}
                 className="w-full p-4 bg-white border border-[#E5E7EB] rounded-lg hover:border-[#FAE008] hover:shadow-sm transition-all text-left"
               >
                 <div className="flex items-center justify-between">
@@ -296,6 +298,12 @@ export default function ProjectPartsPanel({ project, parts = [], inventoryByItem
           </div>
         </DialogContent>
       </Dialog>
+
+      <PurchaseOrderModal
+        poId={activePoId}
+        open={!!activePoId}
+        onClose={() => setActivePoId(null)}
+      />
     </div>
   );
 }
