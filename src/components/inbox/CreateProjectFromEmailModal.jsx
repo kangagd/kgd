@@ -95,7 +95,18 @@ export default function CreateProjectFromEmailModal({ open, onClose, thread, onS
     createProjectMutation.mutate(data);
   };
 
-  if (!initialData) return null;
+  if (!initialData || isPreparingCustomer) return (
+    <Dialog open={open} onOpenChange={onClose}>
+      <DialogContent className="max-w-5xl max-h-[95vh] overflow-y-auto p-0">
+        <DialogHeader className="px-6 pt-6 pb-4 border-b border-slate-200">
+          <DialogTitle className="text-[22px] font-semibold">Create Project from Email</DialogTitle>
+        </DialogHeader>
+        <div className="px-6 py-12 text-center">
+          <p className="text-sm text-[#6B7280]">Preparing project data...</p>
+        </div>
+      </DialogContent>
+    </Dialog>
+  );
 
   return (
     <Dialog open={open} onOpenChange={onClose}>
