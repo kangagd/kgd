@@ -21,7 +21,7 @@ const PART_LOCATION = {
 
 function determinePartStatus(toLocation) {
     switch (toLocation) {
-        case PART_LOCATION.DELIVERY_BAY:
+        case PART_LOCATION.LOADING_BAY:
             return PART_STATUS.IN_LOADING_BAY;
         case PART_LOCATION.WAREHOUSE_STORAGE:
             return PART_STATUS.IN_STORAGE;
