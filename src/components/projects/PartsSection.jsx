@@ -2,7 +2,7 @@ import React, { useState, useEffect } from "react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Plus, Edit, Trash2, Link as LinkIcon, MapPin, Truck, CheckCircle2, AlertTriangle, Package, ArrowRight, FileText } from "lucide-react";
+import { Plus, Edit, Trash2, Link as LinkIcon, MapPin, Truck, CheckCircle2, AlertTriangle, Package, ArrowRight, FileText, ShoppingCart } from "lucide-react";
 import { base44 } from "@/api/base44Client";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import PartDetailModal from "./PartDetailModal";
@@ -12,6 +12,19 @@ import { toast } from "sonner";
 import { useNavigate } from "react-router-dom";
 import { createPageUrl } from "@/utils";
 import { PART_STATUS, LOGISTICS_LOCATION } from "@/components/domain/logisticsConfig";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 
 const statusColors = {
   [PART_STATUS.ON_ORDER]: "bg-slate-100 text-slate-700",
@@ -50,12 +63,19 @@ export default function PartsSection({ projectId, autoExpand = false }) {
   const [showModal, setShowModal] = useState(false);
   const [editingPart, setEditingPart] = useState(null);
   const [selectedPoId, setSelectedPoId] = useState(null);
+  const [showCreatePODialog, setShowCreatePODialog] = useState(false);
+  const [selectedSupplierId, setSelectedSupplierId] = useState("");
   const queryClient = useQueryClient();
   const navigate = useNavigate();
 
   const { data: parts = [] } = useQuery({
     queryKey: ['parts', projectId],
     queryFn: () => base44.entities.Part.filter({ project_id: projectId }, '-order_date')
+  });
+
+  const { data: suppliers = [] } = useQuery({
+    queryKey: ['suppliers-for-po'],
+    queryFn: () => base44.entities.Supplier.list('name')
   });
 
   const createPartMutation = useMutation({
@@ -174,6 +194,43 @@ export default function PartsSection({ projectId, autoExpand = false }) {
     });
   };
 
+  const openOrCreateProjectSupplierPO = async (supplierId) => {
+    if (!projectId || !supplierId) {
+      toast.error("Project and supplier must be set");
+      return;
+    }
+
+    try {
+      const response = await base44.functions.invoke("managePurchaseOrder", {
+        action: "getOrCreateProjectSupplierDraft",
+        project_id: projectId,
+        supplier_id: supplierId,
+      });
+
+      if (!response?.data?.success || !response.data.purchaseOrder) {
+        toast.error(response?.data?.error || "Failed to open/create Purchase Order");
+        return;
+      }
+
+      const po = response.data.purchaseOrder;
+      navigate(`${createPageUrl("PurchaseOrders")}?poId=${po.id}`);
+    } catch (error) {
+      console.error("Error in openOrCreateProjectSupplierPO:", error);
+      toast.error("Error opening/creating Purchase Order");
+    }
+  };
+
+  const handleCreatePO = async () => {
+    if (!selectedSupplierId) {
+      toast.error("Please select a supplier");
+      return;
+    }
+
+    setShowCreatePODialog(false);
+    await openOrCreateProjectSupplierPO(selectedSupplierId);
+    setSelectedSupplierId("");
+  };
+
   return (
     <div className="space-y-4">
       <div className="flex items-center justify-between">
@@ -181,15 +238,26 @@ export default function PartsSection({ projectId, autoExpand = false }) {
           <h3 className="text-[16px] font-semibold text-[#111827]">Project Parts & Ordering</h3>
           <p className="text-xs text-[#6B7280] mt-0.5">These Parts represent what this project needs. Supplier-type parts will be linked to Purchase Orders and logistics.</p>
         </div>
-        <Button
-          onClick={handleAddPart}
-          size="sm"
-          className="bg-[#FAE008] text-[#111827] hover:bg-[#E5CF07] font-semibold"
-          title="Add a Part required for this project (can be supplier, in-stock or client-supplied)"
-        >
-          <Plus className="w-4 h-4 mr-1" />
-          Add Part
-        </Button>
+        <div className="flex gap-2">
+          <Button
+            onClick={() => setShowCreatePODialog(true)}
+            size="sm"
+            variant="outline"
+            title="Create a Purchase Order for this project"
+          >
+            <ShoppingCart className="w-4 h-4 mr-1" />
+            Create PO
+          </Button>
+          <Button
+            onClick={handleAddPart}
+            size="sm"
+            className="bg-[#FAE008] text-[#111827] hover:bg-[#E5CF07] font-semibold"
+            title="Add a Part required for this project (can be supplier, in-stock or client-supplied)"
+          >
+            <Plus className="w-4 h-4 mr-1" />
+            Add Part
+          </Button>
+        </div>
       </div>
 
       {parts.length === 0 ? (
@@ -421,6 +489,42 @@ export default function PartsSection({ projectId, autoExpand = false }) {
           onClose={() => setSelectedPoId(null)}
         />
       )}
+
+      <Dialog open={showCreatePODialog} onOpenChange={setShowCreatePODialog}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Create Purchase Order</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4 py-4">
+            <div className="space-y-2">
+              <label className="text-sm font-medium">Select Supplier</label>
+              <Select value={selectedSupplierId} onValueChange={setSelectedSupplierId}>
+                <SelectTrigger>
+                  <SelectValue placeholder="Choose a supplier..." />
+                </SelectTrigger>
+                <SelectContent>
+                  {suppliers.filter(s => s.is_active).map(supplier => (
+                    <SelectItem key={supplier.id} value={supplier.id}>
+                      {supplier.name}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+              <p className="text-xs text-[#6B7280]">
+                A draft PO will be created (or opened if one already exists) for this project and supplier.
+              </p>
+            </div>
+          </div>
+          <div className="flex justify-end gap-2">
+            <Button variant="outline" onClick={() => setShowCreatePODialog(false)}>
+              Cancel
+            </Button>
+            <Button onClick={handleCreatePO} disabled={!selectedSupplierId}>
+              Create / Open PO
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
