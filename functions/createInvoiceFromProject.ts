@@ -1,4 +1,5 @@
 import { createClientFromRequest } from 'npm:@base44/sdk@0.8.4';
+import { updateProjectActivity } from './updateProjectActivity.js';
 
 async function refreshAndGetConnection(base44) {
   const connections = await base44.asServiceRole.entities.XeroConnection.list();
@@ -234,6 +235,9 @@ Deno.serve(async (req) => {
     await base44.asServiceRole.entities.Project.update(project.id, {
       xero_payment_url: onlinePaymentUrl // Public customer-facing URL
     });
+
+    // Update project activity
+    await updateProjectActivity(base44, project.id);
 
     return Response.json({
       success: true,
