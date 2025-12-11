@@ -1,4 +1,5 @@
 import { createClientFromRequest } from 'npm:@base44/sdk@0.8.4';
+import { updateProjectActivity } from './updateProjectActivity.js';
 
 // PO and Part status constants
 const PO_STATUS = {
@@ -184,10 +185,20 @@ Deno.serve(async (req) => {
             }
 
             job = await base44.asServiceRole.entities.Job.create(jobData);
+            
+            // Update project activity when job is created
+            if (job.project_id) {
+                await updateProjectActivity(base44, job.project_id);
+            }
         } else if (action === 'update') {
             previousJob = await base44.asServiceRole.entities.Job.get(id);
             if (!previousJob) return Response.json({ error: 'Job not found' }, { status: 404 });
             job = await base44.asServiceRole.entities.Job.update(id, data);
+            
+            // Update project activity when job is updated
+            if (job.project_id) {
+                await updateProjectActivity(base44, job.project_id);
+            }
 
             // Move Parts when logistics job is completed
             if (job.purchase_order_id && job.status === 'Completed' && previousJob.status !== 'Completed') {

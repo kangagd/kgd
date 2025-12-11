@@ -3,6 +3,7 @@
 // The CRUD operations (create/update/delete Part) are still valid.
 
 import { createClientFromRequest } from 'npm:@base44/sdk@0.8.4';
+import { updateProjectActivity } from './updateProjectActivity.js';
 
 Deno.serve(async (req) => {
     try {
@@ -148,6 +149,11 @@ Deno.serve(async (req) => {
             // Fetch previous state for logic comparison
             previousPart = await base44.asServiceRole.entities.Part.get(id);
             part = await base44.asServiceRole.entities.Part.update(id, data);
+            
+            // Update project activity when part is updated
+            if (part.project_id) {
+                await updateProjectActivity(base44, part.project_id);
+            }
         } else if (action === 'delete') {
             await base44.asServiceRole.entities.Part.delete(id);
             return Response.json({ success: true });

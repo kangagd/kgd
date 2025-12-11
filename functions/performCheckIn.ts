@@ -1,4 +1,5 @@
 import { createClientFromRequest } from 'npm:@base44/sdk@0.8.4';
+import { updateProjectActivity } from './updateProjectActivity.js';
 
 Deno.serve(async (req) => {
     try {
@@ -116,6 +117,11 @@ Deno.serve(async (req) => {
                      console.error("Failed to update job status (service role):", serviceError);
                  }
             }
+        }
+
+        // 8. Update project activity if job is linked to a project
+        if (job.project_id) {
+            await updateProjectActivity(base44, job.project_id);
         }
 
         return Response.json(checkIn);

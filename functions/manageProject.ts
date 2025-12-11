@@ -1,4 +1,5 @@
 import { createClientFromRequest } from 'npm:@base44/sdk@0.8.4';
+import { updateProjectActivity } from './updateProjectActivity.js';
 
 Deno.serve(async (req) => {
     try {
@@ -39,8 +40,14 @@ Deno.serve(async (req) => {
             await base44.asServiceRole.entities.Project.update(project.id, {
                 last_activity_at: project.created_date
             });
+            
+            // Refetch to get updated data
+            project = await base44.asServiceRole.entities.Project.get(project.id);
         } else if (action === 'update') {
             project = await base44.asServiceRole.entities.Project.update(id, data);
+            
+            // Update activity timestamp whenever project is updated
+            await updateProjectActivity(base44, id);
 
             // Auto-decline quotes if project is lost
             if (data.status === 'Lost') {
