@@ -243,40 +243,20 @@ export default function PartDetailModal({ open, part, onClose, onSave, isSubmitt
       formData.source_type === "Supplier – Deliver to Warehouse" ||
       formData.source_type === "Supplier – Pickup Required";
 
-    // Validate PO details if supplier source
-    if (isSupplierSource && !poDetails.supplier_id) {
+    // Validate supplier is set if supplier source
+    if (isSupplierSource && !formData.supplier_id) {
       setPoError("Supplier is required for this source type");
       return;
     }
 
     try {
-      // First save/create the Part
+      // Save/create the Part
       const savedPart = await onSave(formData);
       
-      // If supplier source, create/attach PO
-      if (isSupplierSource && savedPart?.id) {
-        const response = await base44.functions.invoke("createOrAttachPurchaseOrderForPart", {
-          part_id: savedPart.id,
-          supplier_id: poDetails.supplier_id,
-          project_id: projectId || savedPart.project_id,
-          source_type: savedPart.source_type,
-          internal_reference: poDetails.internal_reference || null,
-          requested_eta: poDetails.requested_eta || null,
-          notes_to_supplier: poDetails.notes_to_supplier || null
-        });
-
-        if (!response.data?.success) {
-          toast.error(response.data?.error || "Failed to create Purchase Order");
-          return;
-        }
-
-        // Invalidate PO queries
-        queryClient.invalidateQueries({ queryKey: ['purchaseOrders'] });
-        queryClient.invalidateQueries({ queryKey: ['parts'] });
-        
-        toast.success("Part and Purchase Order saved");
-      }
+      // No longer create PO here - user will use "Create PO" button from PartsSection
+      // or navigate to existing PO to add this part
       
+      toast.success("Part saved");
       onClose();
     } catch (error) {
       toast.error(error.message || "Failed to save part");
@@ -528,13 +508,13 @@ export default function PartDetailModal({ open, part, onClose, onSave, isSubmitt
 
 
 
-            {/* Embedded Purchase Order Details */}
+            {/* Supplier Selection for Supplier-type parts */}
             {(formData.source_type === "Supplier – Deliver to Warehouse" ||
               formData.source_type === "Supplier – Pickup Required") && (
               <section className="space-y-4">
-                <h3 className="text-[15px] font-semibold text-[#111827] uppercase tracking-wide">Purchase Order Details</h3>
+                <h3 className="text-[15px] font-semibold text-[#111827] uppercase tracking-wide">Supplier Details</h3>
                 <p className="text-sm text-[#6B7280]">
-                  This part will be added to a purchase order for the selected supplier.
+                  Select the supplier for this part. You can then add it to a Purchase Order from the Parts list.
                 </p>
 
                 {poError && (
@@ -547,10 +527,10 @@ export default function PartDetailModal({ open, part, onClose, onSave, isSubmitt
                   <div className="space-y-2">
                     <Label className="text-[#111827] font-medium">Supplier *</Label>
                     <Select
-                      value={poDetails.supplier_id || "none"}
+                      value={formData.supplier_id || "none"}
                       onValueChange={(val) => {
                         const supplierId = val === "none" ? "" : val;
-                        setPoDetails(prev => ({ ...prev, supplier_id: supplierId }));
+                        setFormData(prev => ({ ...prev, supplier_id: supplierId }));
                         setPoError("");
                       }}
                     >
@@ -567,16 +547,6 @@ export default function PartDetailModal({ open, part, onClose, onSave, isSubmitt
                   </div>
 
                   <div className="space-y-2">
-                    <Label className="text-[#6B7280] font-normal">Internal PO Reference</Label>
-                    <Input
-                      value={poDetails.internal_reference}
-                      onChange={(e) => setPoDetails(prev => ({ ...prev, internal_reference: e.target.value }))}
-                      placeholder="Optional internal reference"
-                      className="bg-white"
-                    />
-                  </div>
-
-                  <div className="space-y-2">
                     <Label className="text-[#6B7280] font-normal">Order Date</Label>
                     <Input
                       type="date"
@@ -587,16 +557,16 @@ export default function PartDetailModal({ open, part, onClose, onSave, isSubmitt
                   </div>
 
                   <div className="space-y-2">
-                    <Label className="text-[#6B7280] font-normal">Requested ETA</Label>
+                    <Label className="text-[#6B7280] font-normal">Expected ETA</Label>
                     <Input
                       type="date"
-                      value={poDetails.requested_eta}
-                      onChange={(e) => setPoDetails(prev => ({ ...prev, requested_eta: e.target.value }))}
+                      value={formData.eta || ""}
+                      onChange={(e) => setFormData({...formData, eta: e.target.value})}
                       className="bg-white"
                     />
                   </div>
 
-                  <div className="space-y-2 md:col-span-2">
+                  <div className="space-y-2">
                     <Label className="text-[#6B7280] font-normal">Tracking URL</Label>
                     <Input
                       type="url"
@@ -606,17 +576,6 @@ export default function PartDetailModal({ open, part, onClose, onSave, isSubmitt
                       className="bg-white"
                     />
                   </div>
-                </div>
-
-                <div className="space-y-2">
-                  <Label className="text-[#6B7280] font-normal">Notes to Supplier</Label>
-                  <Textarea
-                    value={poDetails.notes_to_supplier}
-                    onChange={(e) => setPoDetails(prev => ({ ...prev, notes_to_supplier: e.target.value }))}
-                    placeholder="Optional notes to include on the purchase order"
-                    rows={3}
-                    className="bg-white"
-                  />
                 </div>
               </section>
             )}
