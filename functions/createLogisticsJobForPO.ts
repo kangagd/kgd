@@ -2,17 +2,17 @@ import { createClientFromRequest } from 'npm:@base44/sdk@0.8.4';
 
 const LOGISTICS_JOB_TYPE_NAME = "Logistics";
 
-const LOGISTICS_LOCATION = {
-    SUPPLIER: "Supplier",
-    LOADING_BAY: "Loading Bay",
-    STORAGE: "Storage",
-    VEHICLE: "Vehicle",
-    SITE: "Site",
-};
-
 const PO_DELIVERY_METHOD = {
     DELIVERY: "delivery",
     PICKUP: "pickup",
+};
+
+const PART_LOCATION = {
+    SUPPLIER: "supplier",
+    DELIVERY_BAY: "delivery_bay",
+    WAREHOUSE_STORAGE: "warehouse_storage",
+    VEHICLE: "vehicle",
+    CLIENT_SITE: "client_site",
 };
 
 Deno.serve(async (req) => {
@@ -44,12 +44,12 @@ Deno.serve(async (req) => {
         // Determine origin and destination based on delivery method
         let origin, destination, jobAddress;
         if (po.delivery_method === PO_DELIVERY_METHOD.PICKUP) {
-            origin = LOGISTICS_LOCATION.SUPPLIER;
-            destination = LOGISTICS_LOCATION.STORAGE;
+            origin = PART_LOCATION.SUPPLIER;
+            destination = PART_LOCATION.WAREHOUSE_STORAGE;
         } else {
             // Default to DELIVERY
-            origin = LOGISTICS_LOCATION.SUPPLIER;
-            destination = LOGISTICS_LOCATION.LOADING_BAY;
+            origin = PART_LOCATION.SUPPLIER;
+            destination = PART_LOCATION.DELIVERY_BAY;
         }
 
         // Find or create JobType for Logistics
