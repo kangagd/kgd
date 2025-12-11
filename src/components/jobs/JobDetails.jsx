@@ -27,6 +27,7 @@ import CustomerEditModal from "../customers/CustomerEditModal";
 import RichTextField from "../common/RichTextField";
 import { determineJobStatus } from "./jobStatusHelper";
 import TechnicianAvatar, { TechnicianAvatarGroup } from "../common/TechnicianAvatar";
+import { PO_STATUS, LOGISTICS_LOCATION, getPoStatusLabel, normaliseLegacyPoStatus } from "../domain/logisticsConfig";
 
 import JobChat from "./JobChat";
 import JobMapView from "./JobMapView";
@@ -172,6 +173,7 @@ export default function JobDetails({ job: initialJob, onClose, onStatusChange, o
   const [nextSteps, setNextSteps] = useState(job.next_steps || "");
   const [communicationWithClient, setCommunicationWithClient] = useState(job.communication_with_client || "");
   const [outcome, setOutcome] = useState(job.outcome || "");
+  const [logisticsOutcome, setLogisticsOutcome] = useState(job.logistics_outcome || "none");
   const [validationError, setValidationError] = useState("");
   const [isGeneratingReport, setIsGeneratingReport] = useState(false);
   const [previousReportData, setPreviousReportData] = useState(null);
@@ -339,6 +341,47 @@ export default function JobDetails({ job: initialJob, onClose, onStatusChange, o
         // Save checked items state to job when completing logistics
         if (outcome === 'completed') {
           await base44.entities.Job.update(job.id, { checked_items: checkedItems });
+          
+          // Apply logistics outcome if set
+          if (job.purchase_order_id && logisticsOutcome && logisticsOutcome !== 'none') {
+            try {
+              // 1. Update PO status
+              const newPoStatus = logisticsOutcome === 'in_storage' ? PO_STATUS.IN_STORAGE : PO_STATUS.IN_VEHICLE;
+              await base44.functions.invoke("managePurchaseOrder", {
+                action: "updateStatus",
+                id: job.purchase_order_id,
+                status: newPoStatus,
+              });
+
+              // 2. Move parts from Loading Bay
+              const linkedParts = await base44.entities.Part.filter({
+                purchase_order_id: job.purchase_order_id
+              });
+              
+              const partsInLoadingBay = linkedParts.filter(p => 
+                p.location === LOGISTICS_LOCATION.LOADING_BAY || 
+                p.location === "At Delivery Bay"
+              );
+
+              if (partsInLoadingBay.length > 0) {
+                const targetLocation = logisticsOutcome === 'in_storage' 
+                  ? LOGISTICS_LOCATION.STORAGE 
+                  : LOGISTICS_LOCATION.VEHICLE;
+
+                await base44.functions.invoke("recordStockMovement", {
+                  part_ids: partsInLoadingBay.map(p => p.id),
+                  from_location: LOGISTICS_LOCATION.LOADING_BAY,
+                  to_location: targetLocation,
+                });
+              }
+
+              queryClient.invalidateQueries({ queryKey: ['purchaseOrders'] });
+              queryClient.invalidateQueries({ queryKey: ['parts'] });
+            } catch (error) {
+              console.error('Error applying logistics outcome:', error);
+              toast.error('Failed to apply logistics outcome');
+            }
+          }
         }
       }
 
@@ -707,7 +750,7 @@ export default function JobDetails({ job: initialJob, onClose, onStatusChange, o
     }
   };
 
-  const handleOutcomeChange = (value) => {
+  const handleOutcomeChange = async (value) => {
     setOutcome(value);
     logChange('outcome', job.outcome, value);
     updateJobMutation.mutate({ field: 'outcome', value });
@@ -722,6 +765,20 @@ export default function JobDetails({ job: initialJob, onClose, onStatusChange, o
     const newStatus = determineJobStatus(job.scheduled_date, value, !!activeCheckIn, job.status);
     if (newStatus !== job.status) {
       updateJobMutation.mutate({ field: 'status', value: newStatus });
+    }
+  };
+
+  const handleLogisticsOutcomeChange = async (value) => {
+    setLogisticsOutcome(value);
+    logChange('logistics_outcome', job.logistics_outcome, value);
+    
+    try {
+      await base44.entities.Job.update(job.id, { logistics_outcome: value });
+      queryClient.invalidateQueries({ queryKey: ['job', job.id] });
+      queryClient.invalidateQueries({ queryKey: ['jobs'] });
+      toast.success('Logistics outcome updated');
+    } catch (error) {
+      toast.error('Failed to update logistics outcome');
     }
   };
 
@@ -1428,6 +1485,44 @@ export default function JobDetails({ job: initialJob, onClose, onStatusChange, o
                           </div>
                         </div>
                       )}
+                    </div>
+                  )}
+
+                  {/* Logistics Outcome Selector */}
+                  {!activeCheckIn && job.status !== 'Completed' && (
+                    <Card className="border border-[#E5E7EB] shadow-sm rounded-lg">
+                      <CardHeader className="bg-white px-4 py-3 border-b border-[#E5E7EB]">
+                        <CardTitle className="text-[16px] font-semibold text-[#111827] leading-[1.2]">
+                          Stock Outcome
+                        </CardTitle>
+                      </CardHeader>
+                      <CardContent className="p-4">
+                        <Label className="block text-[13px] md:text-[14px] font-medium text-[#4B5563] mb-1.5">
+                          Where should stock go after completion?
+                        </Label>
+                        <Select value={logisticsOutcome} onValueChange={handleLogisticsOutcomeChange}>
+                          <SelectTrigger className="h-11 text-sm border-2 border-slate-300 focus:border-[#fae008] focus:ring-2 focus:ring-[#fae008]/20 rounded-xl font-medium">
+                            <SelectValue placeholder="Select destination" />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="none">No stock movement yet</SelectItem>
+                            <SelectItem value="in_storage">Move to Storage</SelectItem>
+                            <SelectItem value="in_vehicle">Move to Vehicle</SelectItem>
+                          </SelectContent>
+                        </Select>
+                      </CardContent>
+                    </Card>
+                  )}
+
+                  {/* Show applied outcome for completed jobs */}
+                  {job.status === 'Completed' && job.logistics_outcome && job.logistics_outcome !== 'none' && (
+                    <div className="bg-green-50 border border-green-200 rounded-lg p-3">
+                      <div className="flex items-center gap-2 text-green-700">
+                        <Package className="w-4 h-4" />
+                        <span className="text-sm font-semibold">
+                          Outcome applied: {job.logistics_outcome === 'in_storage' ? 'In Storage' : 'In Vehicle'} (PO updated & parts moved)
+                        </span>
+                      </div>
                     </div>
                   )}
 

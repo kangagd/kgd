@@ -24,7 +24,7 @@ import {
   getLoadingBayParts,
   getLogisticsJobs,
 } from "@/components/domain/logisticsViewHelpers";
-import { LOGISTICS_LOCATION, PO_STATUS, PO_DELIVERY_METHOD, PO_STATUS_OPTIONS } from "@/components/domain/logisticsConfig";
+import { LOGISTICS_LOCATION, PO_STATUS, PO_DELIVERY_METHOD, PO_STATUS_OPTIONS, getPoStatusLabel, normaliseLegacyPoStatus } from "@/components/domain/logisticsConfig";
 
 const STATUS_COLORS = {
   Pending: "bg-slate-100 text-slate-800 border-slate-200",
@@ -679,16 +679,14 @@ export default function Logistics() {
                             onClick={(e) => e.stopPropagation()}
                           >
                             <SelectTrigger className="h-6 w-full text-[10px] px-2 border-0 bg-slate-100 text-slate-700">
-                              <SelectValue />
+                              <SelectValue>
+                                {getPoStatusLabel(po.status)}
+                              </SelectValue>
                             </SelectTrigger>
                             <SelectContent onClick={(e) => e.stopPropagation()}>
-                              {PO_STATUS_OPTIONS.filter((status) => {
-                                if (po.delivery_method === PO_DELIVERY_METHOD.DELIVERY && status === PO_STATUS.READY_TO_PICK_UP) return false;
-                                if (po.delivery_method === PO_DELIVERY_METHOD.PICKUP && status === PO_STATUS.DELIVERED_TO_DELIVERY_BAY) return false;
-                                return true;
-                              }).map((status) => (
+                              {PO_STATUS_OPTIONS.map((status) => (
                                 <SelectItem key={status} value={status}>
-                                  {status}
+                                  {getPoStatusLabel(status)}
                                 </SelectItem>
                               ))}
                             </SelectContent>
@@ -749,16 +747,14 @@ export default function Logistics() {
                             onClick={(e) => e.stopPropagation()}
                           >
                             <SelectTrigger className={`h-6 w-full text-[10px] px-2 border-0 ${po.status === PO_STATUS.ON_ORDER ? 'bg-blue-100 text-blue-700' : po.status === PO_STATUS.IN_TRANSIT ? 'bg-purple-100 text-purple-700' : 'bg-blue-100 text-blue-700'}`}>
-                              <SelectValue />
+                              <SelectValue>
+                                {getPoStatusLabel(po.status)}
+                              </SelectValue>
                             </SelectTrigger>
                             <SelectContent onClick={(e) => e.stopPropagation()}>
-                              {PO_STATUS_OPTIONS.filter((status) => {
-                                if (po.delivery_method === PO_DELIVERY_METHOD.DELIVERY && status === PO_STATUS.READY_TO_PICK_UP) return false;
-                                if (po.delivery_method === PO_DELIVERY_METHOD.PICKUP && status === PO_STATUS.DELIVERED_TO_DELIVERY_BAY) return false;
-                                return true;
-                              }).map((status) => (
+                              {PO_STATUS_OPTIONS.map((status) => (
                                 <SelectItem key={status} value={status}>
-                                  {status}
+                                  {getPoStatusLabel(status)}
                                 </SelectItem>
                               ))}
                             </SelectContent>
@@ -821,16 +817,14 @@ export default function Logistics() {
                             onClick={(e) => e.stopPropagation()}
                           >
                             <SelectTrigger className="h-6 w-full text-[10px] px-2 border-0 bg-amber-100 text-amber-700">
-                              <SelectValue />
+                              <SelectValue>
+                                {getPoStatusLabel(po.status)}
+                              </SelectValue>
                             </SelectTrigger>
                             <SelectContent onClick={(e) => e.stopPropagation()}>
-                              {PO_STATUS_OPTIONS.filter((status) => {
-                                if (po.delivery_method === PO_DELIVERY_METHOD.DELIVERY && status === PO_STATUS.READY_TO_PICK_UP) return false;
-                                if (po.delivery_method === PO_DELIVERY_METHOD.PICKUP && status === PO_STATUS.DELIVERED_TO_DELIVERY_BAY) return false;
-                                return true;
-                              }).map((status) => (
+                              {PO_STATUS_OPTIONS.map((status) => (
                                 <SelectItem key={status} value={status}>
-                                  {status}
+                                  {getPoStatusLabel(status)}
                                 </SelectItem>
                               ))}
                             </SelectContent>
@@ -964,17 +958,15 @@ export default function Logistics() {
                             onValueChange={(value) => handleUpdatePoStatus(po, value)}
                             onClick={(e) => e.stopPropagation()}
                           >
-                            <SelectTrigger className={`h-6 w-full text-[10px] px-2 border-0 ${po.status === PO_STATUS.IN_STORAGE || po.status === PO_STATUS.COMPLETED_IN_STORAGE ? 'bg-emerald-100 text-emerald-700' : po.status === PO_STATUS.IN_VEHICLE || po.status === PO_STATUS.COMPLETED_IN_VEHICLE ? 'bg-teal-100 text-teal-700' : 'bg-green-100 text-green-700'}`}>
-                              <SelectValue />
+                            <SelectTrigger className={`h-6 w-full text-[10px] px-2 border-0 ${po.status === PO_STATUS.IN_STORAGE ? 'bg-emerald-100 text-emerald-700' : po.status === PO_STATUS.IN_VEHICLE ? 'bg-teal-100 text-teal-700' : 'bg-green-100 text-green-700'}`}>
+                              <SelectValue>
+                                {getPoStatusLabel(po.status)}
+                              </SelectValue>
                             </SelectTrigger>
                             <SelectContent onClick={(e) => e.stopPropagation()}>
-                              {PO_STATUS_OPTIONS.filter((status) => {
-                                if (po.delivery_method === PO_DELIVERY_METHOD.DELIVERY && status === PO_STATUS.READY_TO_PICK_UP) return false;
-                                if (po.delivery_method === PO_DELIVERY_METHOD.PICKUP && status === PO_STATUS.DELIVERED_TO_DELIVERY_BAY) return false;
-                                return true;
-                              }).map((status) => (
+                              {PO_STATUS_OPTIONS.map((status) => (
                                 <SelectItem key={status} value={status}>
-                                  {status}
+                                  {getPoStatusLabel(status)}
                                 </SelectItem>
                               ))}
                             </SelectContent>
