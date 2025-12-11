@@ -1,4 +1,5 @@
 import { createClientFromRequest } from 'npm:@base44/sdk@0.8.4';
+import { updateProjectActivity } from './updateProjectActivity.js';
 
 const PANDADOC_API_KEY = Deno.env.get("PANDADOC_API_KEY");
 const PANDADOC_API_URL = "https://api.pandadoc.com/public/v1";
@@ -121,6 +122,11 @@ Deno.serve(async (req) => {
       sent_at: new Date().toISOString(),
       pandadoc_public_url: publicUrl || quote.pandadoc_public_url
     });
+
+    // Update project activity if quote is linked to a project
+    if (quote.project_id) {
+      await updateProjectActivity(base44, quote.project_id);
+    }
 
     return Response.json({
       success: true,
