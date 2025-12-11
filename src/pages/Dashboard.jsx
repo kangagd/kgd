@@ -5,7 +5,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { ProjectStatusBadge } from "../components/common/StatusBadge";
-import { Plus, Clock, Briefcase, Calendar, CheckCircle, FolderKanban, CheckSquare, Truck, Package } from "lucide-react";
+import { Plus, Clock, Briefcase, Calendar, CheckCircle, FolderKanban, CheckSquare, Truck, Package, Trash2 } from "lucide-react";
 import { format, parseISO } from "date-fns";
 import { useNavigate } from "react-router-dom";
 import { createPageUrl } from "@/utils";
@@ -14,12 +14,14 @@ import XeroConnectButton from "../components/xero/XeroConnectButton";
 import MaintenanceRemindersCard from "../components/dashboard/MaintenanceRemindersCard";
 import EntityModal from "../components/common/EntityModal";
 import JobModalView from "../components/jobs/JobModalView";
+import { toast } from "sonner";
 
 
 
 export default function Dashboard() {
   const [user, setUser] = useState(null);
   const [modalJob, setModalJob] = useState(null);
+  const [isCleaningLinks, setIsCleaningLinks] = useState(false);
   const navigate = useNavigate();
 
   useEffect(() => {
@@ -138,7 +140,34 @@ export default function Dashboard() {
             </h1>
             <p className="text-sm text-[#4B5563] mt-1">Here's what's happening today</p>
           </div>
-          {user?.role === 'admin' && <XeroConnectButton />}
+          {user?.role === 'admin' && (
+            <div className="flex gap-2">
+              <XeroConnectButton />
+              <Button
+                onClick={async () => {
+                  setIsCleaningLinks(true);
+                  try {
+                    const response = await base44.functions.invoke('cleanupDeletedProjectLinks');
+                    if (response.data?.success) {
+                      toast.success(response.data.message || 'Email links cleaned up');
+                    } else {
+                      toast.error('Failed to cleanup links');
+                    }
+                  } catch (error) {
+                    toast.error('Error cleaning up links');
+                  } finally {
+                    setIsCleaningLinks(false);
+                  }
+                }}
+                disabled={isCleaningLinks}
+                variant="outline"
+                className="h-10 px-4 text-sm"
+              >
+                <Trash2 className="w-4 h-4 mr-2" />
+                {isCleaningLinks ? 'Cleaning...' : 'Cleanup Email Links'}
+              </Button>
+            </div>
+          )}
           <div className="flex flex-col md:flex-row gap-2 w-full md:w-auto">
             <Button
               onClick={() => window.location.href = '/Jobs?action=new'}
