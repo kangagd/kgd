@@ -992,9 +992,6 @@ Format as HTML bullet points using <ul> and <li> tags. Include only the most cri
               </Card>
             </Collapsible>
 
-            {/* Last Activity Card */}
-            <LastActivityCard project={project} />
-
             {/* Third-Party Trades */}
             <Collapsible open={tradesOpen} onOpenChange={setTradesOpen}>
               <Card className="border border-[#E5E7EB] shadow-sm rounded-lg overflow-hidden mt-4">
@@ -1025,6 +1022,9 @@ Format as HTML bullet points using <ul> and <li> tags. Include only the most cri
                 </CollapsibleContent>
               </Card>
             </Collapsible>
+
+            {/* Last Activity Card */}
+            <LastActivityCard project={project} />
 
             {/* Visits Section */}
             <Collapsible open={visitsOpen} onOpenChange={setVisitsOpen}>
