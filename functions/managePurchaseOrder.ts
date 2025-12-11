@@ -291,6 +291,11 @@ Deno.serve(async (req) => {
 
             const po = await base44.asServiceRole.entities.PurchaseOrder.create(poData);
 
+            // Update project activity if PO is linked to a project
+            if (po.project_id) {
+                await updateProjectActivity(base44, po.project_id);
+            }
+
             // Create line items with source type support
             for (const item of line_items) {
                 const lineData = await buildLineItemData(base44, po.id, item);
@@ -347,6 +352,11 @@ Deno.serve(async (req) => {
             }
 
             const updatedPO = await base44.asServiceRole.entities.PurchaseOrder.update(id, updateData);
+
+            // Update project activity if PO is linked to a project
+            if (updatedPO.project_id) {
+                await updateProjectActivity(base44, updatedPO.project_id);
+            }
 
             // Update line items if provided
             if (line_items && Array.isArray(line_items)) {
@@ -415,6 +425,11 @@ Deno.serve(async (req) => {
             }
 
             const updatedPO = await base44.asServiceRole.entities.PurchaseOrder.update(id, updateData);
+
+            // Update project activity if PO is linked to a project
+            if (updatedPO.project_id) {
+                await updateProjectActivity(base44, updatedPO.project_id);
+            }
 
             // Sync linked Parts status/location
             await syncPartsWithPurchaseOrderStatus(base44, updatedPO, vehicle_id);

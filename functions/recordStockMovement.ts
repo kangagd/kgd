@@ -1,4 +1,5 @@
 import { createClientFromRequest } from 'npm:@base44/sdk@0.8.4';
+import { updateProjectActivity } from './updateProjectActivity.js';
 
 const PART_STATUS = {
     PENDING: "pending",
