@@ -271,6 +271,12 @@ export default function ProjectDetails({ project: initialProject, onClose, onEdi
     enabled: !!project.id
   });
 
+  const { data: projectPurchaseOrders = [] } = useQuery({
+    queryKey: ['projectPurchaseOrders', project.id],
+    queryFn: () => base44.entities.PurchaseOrder.filter({ project_id: project.id }, '-created_date'),
+    enabled: !!project.id
+  });
+
   // Auto-expand panels based on content
   React.useEffect(() => {
     if (projectContacts.length > 0 && !contactsOpen) setContactsOpen(true);
@@ -1679,6 +1685,44 @@ Format as HTML bullet points using <ul> and <li> tags. Include only the most cri
           </TabsContent>
 
           <TabsContent value="parts" className="mt-3 space-y-6">
+            {/* Purchase Orders for this Project */}
+            {projectPurchaseOrders.length > 0 && (
+              <Card className="border border-[#E5E7EB] shadow-sm rounded-lg">
+                <CardHeader className="bg-white px-4 py-3 border-b border-[#E5E7EB]">
+                  <CardTitle className="text-[16px] font-semibold text-[#111827]">
+                    Purchase Orders ({projectPurchaseOrders.length})
+                  </CardTitle>
+                </CardHeader>
+                <CardContent className="p-4">
+                  <div className="space-y-2">
+                    {projectPurchaseOrders.map(po => (
+                      <button
+                        key={po.id}
+                        onClick={() => navigate(`${createPageUrl("PurchaseOrders")}?poId=${po.id}`)}
+                        className="w-full flex items-center justify-between p-3 bg-white border border-[#E5E7EB] rounded-lg hover:border-[#FAE008] hover:shadow-sm transition-all text-left"
+                      >
+                        <div className="flex-1">
+                          <div className="flex items-center gap-2 mb-1">
+                            <span className="font-medium text-sm">
+                              {po.po_number || `PO #${po.id.substring(0, 8)}`}
+                            </span>
+                            <Badge className="text-xs bg-slate-100 text-slate-700">
+                              {po.status}
+                            </Badge>
+                          </div>
+                          <div className="text-xs text-[#6B7280]">
+                            {po.supplier_name || 'Supplier'}
+                            {po.expected_date && ` • ETA: ${format(new Date(po.expected_date), 'MMM d, yyyy')}`}
+                          </div>
+                        </div>
+                        <ExternalLink className="w-4 h-4 text-[#6B7280]" />
+                      </button>
+                    ))}
+                  </div>
+                </CardContent>
+              </Card>
+            )}
+
             <ProjectPartsPanel 
               project={project} 
               parts={parts} 
