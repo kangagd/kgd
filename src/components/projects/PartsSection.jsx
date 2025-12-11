@@ -79,6 +79,12 @@ export default function PartsSection({ projectId, autoExpand = false }) {
     queryFn: () => base44.entities.Part.filter({ project_id: projectId }, '-order_date')
   });
 
+  const { data: projectPOs = [] } = useQuery({
+    queryKey: ['projectPOs-partsSection', projectId],
+    queryFn: () => base44.entities.PurchaseOrder.filter({ project_id: projectId }),
+    enabled: !!projectId
+  });
+
   const { data: suppliers = [] } = useQuery({
     queryKey: ['suppliers-for-po'],
     queryFn: () => base44.entities.Supplier.list('name')
@@ -255,7 +261,7 @@ export default function PartsSection({ projectId, autoExpand = false }) {
         </div>
       </div>
 
-      {parts.length === 0 ? (
+      {parts.length === 0 && projectPOs.length === 0 ? (
         <div className="text-center py-12 bg-slate-50 rounded-xl border border-dashed border-slate-200">
           <div className="bg-white p-3 rounded-full inline-block mb-3 shadow-sm">
             <Truck className="w-6 h-6 text-slate-400" />
@@ -263,7 +269,7 @@ export default function PartsSection({ projectId, autoExpand = false }) {
           <p className="text-slate-600 mb-4">No parts tracked for this project yet.</p>
           <Button variant="outline" onClick={handleAddPart}>Order First Part</Button>
         </div>
-      ) : (
+      ) : parts.length > 0 ? (
         <div className="border border-[#E5E7EB] rounded-xl overflow-hidden bg-white shadow-sm">
           {/* Desktop Table Header */}
           <div className="hidden md:grid grid-cols-12 gap-4 p-3 bg-slate-50 border-b border-[#E5E7EB] text-xs font-medium text-slate-500 uppercase tracking-wider">
@@ -451,7 +457,7 @@ export default function PartsSection({ projectId, autoExpand = false }) {
             })}
           </div>
         </div>
-      )}
+      ) : null}
 
       {showModal && (
         <PartDetailModal
