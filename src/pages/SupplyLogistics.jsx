@@ -253,10 +253,10 @@ export default function SupplyLogistics() {
                 </div>
               </div>
 
-              {/* Delivery Bay */}
+              {/* Loading Bay */}
               <div className="flex flex-col rounded-xl border border-[#E5E7EB] bg-white p-3">
                 <div className="mb-2 flex items-center justify-between">
-                  <span className="text-sm font-semibold text-[#111827]">Delivery Bay</span>
+                  <span className="text-sm font-semibold text-[#111827]">Loading Bay</span>
                   <span className="text-xs text-[#6B7280]">{atDeliveryBayPOs.length}</span>
                 </div>
                 <div className="space-y-2">
