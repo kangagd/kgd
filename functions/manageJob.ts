@@ -33,6 +33,40 @@ const PART_LOCATION = {
   CLIENT_SITE: "client_site",
 };
 
+// Helper: Handle sample pickup job completion - move samples to vehicle
+async function handleSamplePickupCompletion(base44, job) {
+    if (!job.sample_ids || job.sample_ids.length === 0) return;
+    
+    const jobTypeName = (job.job_type_name || job.job_type || '').toLowerCase();
+    const isSamplePickup = jobTypeName.includes('sample') && jobTypeName.includes('pickup');
+    
+    if (!isSamplePickup) return;
+
+    try {
+        // Import the helper function
+        const { moveSampleFromClientToVehicle } = await import('./recordSampleMovement.js');
+        
+        // Move samples from client to vehicle (or warehouse if no vehicle)
+        const vehicleId = job.vehicle_id || null;
+        
+        if (vehicleId) {
+            await moveSampleFromClientToVehicle(
+                base44,
+                job.sample_ids,
+                vehicleId,
+                null, // technician_id will be set by recordSampleMovement context
+                job.id
+            );
+        } else {
+            // No vehicle - move to warehouse
+            const { moveSampleToWarehouse } = await import('./recordSampleMovement.js');
+            await moveSampleToWarehouse(base44, job.sample_ids, null);
+        }
+    } catch (error) {
+        console.error(`Error handling sample pickup completion for job ${job.id}:`, error);
+    }
+}
+
 // Helper: Handle logistics job completion - update PO and Parts based on outcome
 async function handleLogisticsJobCompletion(base44, job) {
     if (!job.purchase_order_id) return;
@@ -200,9 +234,17 @@ Deno.serve(async (req) => {
                 await updateProjectActivity(base44, job.project_id, 'Job Updated');
             }
 
-            // Move Parts when logistics job is completed
-            if (job.purchase_order_id && job.status === 'Completed' && previousJob.status !== 'Completed') {
-                await handleLogisticsJobCompletion(base44, job);
+            // Handle logistics job completion
+            if (job.status === 'Completed' && previousJob.status !== 'Completed') {
+                // Move Parts when PO logistics job is completed
+                if (job.purchase_order_id) {
+                    await handleLogisticsJobCompletion(base44, job);
+                }
+                
+                // Move Samples when sample pickup job is completed
+                if (job.sample_ids && job.sample_ids.length > 0) {
+                    await handleSamplePickupCompletion(base44, job);
+                }
             }
 
             // Removed legacy PO receiving logic - now handled via logistics_outcome

@@ -23,3 +23,21 @@ export const JOB_PRIORITY = {
 };
 
 export const JOB_PRIORITY_OPTIONS = Object.values(JOB_PRIORITY);
+
+// Sample Logistics Job Types
+export const SAMPLE_JOB_TYPES = {
+  SAMPLE_DROP_OFF: "Sample Drop-Off",
+  SAMPLE_PICKUP: "Sample Pickup",
+};
+
+export const SAMPLE_JOB_TYPE_OPTIONS = Object.values(SAMPLE_JOB_TYPES);
+
+/**
+ * Check if a job is a sample logistics job
+ * @param {Object} job - Job object
+ * @returns {boolean}
+ */
+export function isSampleLogisticsJob(job) {
+  const jobTypeName = (job.job_type_name || job.job_type || '').toLowerCase();
+  return jobTypeName.includes('sample') && (jobTypeName.includes('drop') || jobTypeName.includes('pickup'));
+}
