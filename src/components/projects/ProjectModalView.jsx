@@ -17,7 +17,7 @@ export default function ProjectModalView({ project, jobCount = 0 }) {
     window.open(`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(project.address)}`, '_blank');
   };
 
-  const freshness = getProjectFreshnessBadge(project.last_activity_at || project.created_date);
+  const freshness = getProjectFreshnessBadge(project.last_activity_at || project.created_date, project.id);
   
   const freshnessColors = {
     green: "bg-green-100 text-green-700",
