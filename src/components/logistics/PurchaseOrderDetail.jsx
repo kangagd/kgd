@@ -398,37 +398,97 @@ export default function PurchaseOrderDetail({ poId, onClose, mode = "page" }) {
     <div className={containerClass}>
       {!isModal && (
         <div className="sticky top-0 z-10 bg-white border-b border-[#E5E7EB] px-6 py-4">
-        <div className="flex items-center justify-between">
-          <div className="flex items-center gap-3">
-            <button
-              onClick={onClose}
-              className="p-2 hover:bg-[#F3F4F6] rounded-lg transition-colors"
-            >
-              <X className="w-5 h-5" />
-            </button>
-            <div className="flex-1">
-              <div className="flex items-center gap-3">
-                <h2 className="text-xl font-bold text-[#111827]">Purchase Order</h2>
-                <Badge className={getStatusColor(po.status)}>{po.status}</Badge>
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-3">
+              <button
+                onClick={onClose}
+                className="p-2 hover:bg-[#F3F4F6] rounded-lg transition-colors"
+              >
+                <X className="w-5 h-5" />
+              </button>
+              <div className="flex-1">
+                <div className="flex items-center gap-3">
+                  <h2 className="text-xl font-bold text-[#111827]">Purchase Order</h2>
+                  <Badge className={getStatusColor(po.status)}>{po.status}</Badge>
+                </div>
+                {isDraft ? (
+                  <Input
+                    value={formData.reference}
+                    onChange={(e) => setFormData({ ...formData, reference: e.target.value })}
+                    placeholder="Enter PO reference/number..."
+                    className="mt-2 max-w-xs text-sm"
+                  />
+                ) : (
+                  <p className="text-sm text-[#6B7280] mt-1">
+                    {po.po_number || `ID: ${po.id.slice(0, 8)}`}
+                  </p>
+                )}
+                {linkedProject && (
+                  <p className="text-sm text-[#6B7280] mt-1">
+                    Project: {linkedProject.title}
+                  </p>
+                )}
               </div>
-              {isDraft ? (
-                <Input
-                  value={formData.reference}
-                  onChange={(e) => setFormData({ ...formData, reference: e.target.value })}
-                  placeholder="Enter PO reference/number..."
-                  className="mt-2 max-w-xs text-sm"
-                />
-              ) : (
-                <p className="text-sm text-[#6B7280] mt-1">
-                  {po.po_number || `ID: ${po.id.slice(0, 8)}`}
-                </p>
-              )}
-              {linkedProject && (
-                <p className="text-sm text-[#6B7280] mt-1">
-                  Project: {linkedProject.title}
-                </p>
+            </div>
+            <div className="flex gap-2">
+              {isDraft && (
+                <>
+                  <Button
+                    onClick={handleDelete}
+                    disabled={deletePOMutation.isPending}
+                    variant="outline"
+                    className="text-red-600 hover:text-red-700 hover:bg-red-50"
+                  >
+                    <Trash className="w-4 h-4 mr-2" />
+                    Delete
+                  </Button>
+                  <Button
+                    onClick={handleSave}
+                    disabled={updatePOMutation.isPending}
+                    className="bg-[#F3F4F6] text-[#111827] hover:bg-[#E5E7EB]"
+                  >
+                    <Save className="w-4 h-4 mr-2" />
+                    Save
+                  </Button>
+                  <Button
+                    onClick={handleSendToSupplier}
+                    disabled={updatePOMutation.isPending}
+                    className="bg-[#FAE008] text-[#111827] hover:bg-[#E5CF07]"
+                  >
+                    <Send className="w-4 h-4 mr-2" />
+                    Send to Supplier
+                  </Button>
+                </>
               )}
             </div>
+          </div>
+        </div>
+      )}
+
+      {isModal && (
+        <div className="flex items-center justify-between mb-4">
+          <div className="flex-1">
+            <div className="flex items-center gap-3">
+              <h2 className="text-xl font-bold text-[#111827]">Purchase Order</h2>
+              <Badge className={getStatusColor(po.status)}>{po.status}</Badge>
+            </div>
+            {isDraft ? (
+              <Input
+                value={formData.reference}
+                onChange={(e) => setFormData({ ...formData, reference: e.target.value })}
+                placeholder="Enter PO reference/number..."
+                className="mt-2 max-w-xs text-sm"
+              />
+            ) : (
+              <p className="text-sm text-[#6B7280] mt-1">
+                {po.po_number || `ID: ${po.id.slice(0, 8)}`}
+              </p>
+            )}
+            {linkedProject && (
+              <p className="text-sm text-[#6B7280] mt-1">
+                Project: {linkedProject.title}
+              </p>
+            )}
           </div>
           <div className="flex gap-2">
             {isDraft && (
@@ -438,6 +498,7 @@ export default function PurchaseOrderDetail({ poId, onClose, mode = "page" }) {
                   disabled={deletePOMutation.isPending}
                   variant="outline"
                   className="text-red-600 hover:text-red-700 hover:bg-red-50"
+                  size="sm"
                 >
                   <Trash className="w-4 h-4 mr-2" />
                   Delete
@@ -446,6 +507,7 @@ export default function PurchaseOrderDetail({ poId, onClose, mode = "page" }) {
                   onClick={handleSave}
                   disabled={updatePOMutation.isPending}
                   className="bg-[#F3F4F6] text-[#111827] hover:bg-[#E5E7EB]"
+                  size="sm"
                 >
                   <Save className="w-4 h-4 mr-2" />
                   Save
@@ -454,17 +516,18 @@ export default function PurchaseOrderDetail({ poId, onClose, mode = "page" }) {
                   onClick={handleSendToSupplier}
                   disabled={updatePOMutation.isPending}
                   className="bg-[#FAE008] text-[#111827] hover:bg-[#E5CF07]"
+                  size="sm"
                 >
                   <Send className="w-4 h-4 mr-2" />
-                  Send to Supplier
+                  Send
                 </Button>
               </>
             )}
           </div>
         </div>
-      </div>
+      )}
 
-      <div className="p-6 space-y-6 max-w-4xl mx-auto">
+      <div className={isModal ? "p-4 space-y-6" : "p-6 space-y-6 max-w-4xl mx-auto"}>
         {/* Basic Info */}
         <Card>
           <CardHeader>
