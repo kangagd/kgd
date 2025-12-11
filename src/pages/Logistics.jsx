@@ -9,14 +9,14 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Badge } from "@/components/ui/badge";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Dialog, DialogContent } from "@/components/ui/dialog";
-import { Search, Truck, MapPin, AlertCircle, Link as LinkIcon, Plus, Briefcase, ExternalLink } from "lucide-react";
+import { Search, Truck, MapPin, AlertCircle, Link as LinkIcon, Plus, Briefcase, ExternalLink, TestTube2 } from "lucide-react";
 import PurchaseOrderModal from "../components/logistics/PurchaseOrderModal";
 import { format } from "date-fns";
 import { createPageUrl } from "@/utils";
 import { Link, useNavigate } from "react-router-dom";
 import PartDetailModal from "../components/projects/PartDetailModal";
 import { toast } from "sonner";
-// Removed unused import
+
 import BackButton from "../components/common/BackButton";
 import StatusBadge from "../components/common/StatusBadge";
 import {
@@ -29,7 +29,7 @@ import { PO_STATUS, PO_STATUS_OPTIONS, getPoStatusLabel, normaliseLegacyPoStatus
 import { DELIVERY_METHOD as PO_DELIVERY_METHOD } from "@/components/domain/supplierDeliveryConfig";
 import { PART_LOCATION } from "@/components/domain/partConfig";
 
-// Removed legacy status/location colors - use unified config
+
 
 const getPoStatusColor = (status) => {
   const normalized = normaliseLegacyPoStatus(status);
@@ -309,7 +309,7 @@ export default function Logistics() {
     return map;
   }, [priceListItems, inventoryQuantities]);
 
-  // Removed unused detectShortage - logic handled in ProjectPartsPanel
+
 
   const projectMap = useMemo(
     () =>
@@ -329,7 +329,7 @@ export default function Logistics() {
     [jobs]
   );
 
-  // Removed unused updatePartMutation
+
 
   const movePartMutation = useMutation({
     mutationFn: ({ part_ids, from_location, to_location }) =>
@@ -390,11 +390,7 @@ export default function Logistics() {
     }
   };
 
-  // Removed unused updateJobMutation
 
-  // Removed unused handleStatusChange
-
-  // Removed unused handleLocationChange - use recordStockMovement directly
 
   const filteredParts = useMemo(() => {
     return parts
@@ -1118,6 +1114,9 @@ export default function Logistics() {
                     ].map((job) => {
                       const po = purchaseOrders.find(p => p.id === job.purchase_order_id);
                       const supplier = suppliers.find(s => s.id === po?.supplier_id);
+                      const isSampleJob = job.job_type_name === "Sample Drop-Off" || job.job_type_name === "Sample Pickup";
+                      const hasSamples = job.sample_ids && job.sample_ids.length > 0;
+                      
                       return (
                         <div
                           key={job.id}
@@ -1128,7 +1127,7 @@ export default function Logistics() {
                         >
                           <div className="flex items-center justify-between">
                             <span className="text-sm font-medium">
-                              {supplier?.name || po?.supplier_name || "Supplier"}
+                              {isSampleJob ? job.job_type_name : (supplier?.name || po?.supplier_name || "Supplier")}
                             </span>
                             <StatusBadge value={job.status} />
                           </div>
@@ -1138,14 +1137,24 @@ export default function Logistics() {
                                 ? format(new Date(job.scheduled_date), "MMM d, yyyy")
                                 : "No date"}
                             </span>
-                            <Badge variant="outline" className="text-xs h-5">
-                              {po?.delivery_method === PO_DELIVERY_METHOD.PICKUP ? "Pick Up" : "Delivery"}
-                            </Badge>
+                            <div className="flex items-center gap-1">
+                              {hasSamples && (
+                                <Badge variant="outline" className="text-[10px] h-5 bg-purple-50 text-purple-700 border-purple-200">
+                                  <TestTube2 className="w-3 h-3 mr-1" />
+                                  Samples
+                                </Badge>
+                              )}
+                              {po && (
+                                <Badge variant="outline" className="text-xs h-5">
+                                  {po?.delivery_method === PO_DELIVERY_METHOD.PICKUP ? "Pick Up" : "Delivery"}
+                                </Badge>
+                              )}
+                            </div>
                           </div>
                           <div className="text-xs text-[#6B7280] mt-1">
                             {po?.delivery_method === PO_DELIVERY_METHOD.PICKUP 
                               ? (supplier?.pickup_address || supplier?.address_full || "Supplier address")
-                              : "866 Bourke Street, Waterloo"}
+                              : job.address_full || "866 Bourke Street, Waterloo"}
                           </div>
                         </div>
                       );
@@ -1168,6 +1177,9 @@ export default function Logistics() {
                     (logisticsJobGroups.in_progress || []).map((job) => {
                       const po = purchaseOrders.find(p => p.id === job.purchase_order_id);
                       const supplier = suppliers.find(s => s.id === po?.supplier_id);
+                      const isSampleJob = job.job_type_name === "Sample Drop-Off" || job.job_type_name === "Sample Pickup";
+                      const hasSamples = job.sample_ids && job.sample_ids.length > 0;
+                      
                       return (
                         <div
                           key={job.id}
@@ -1178,7 +1190,7 @@ export default function Logistics() {
                         >
                           <div className="flex items-center justify-between">
                             <span className="text-sm font-medium">
-                              {supplier?.name || po?.supplier_name || "Supplier"}
+                              {isSampleJob ? job.job_type_name : (supplier?.name || po?.supplier_name || "Supplier")}
                             </span>
                             <StatusBadge value={job.status} />
                           </div>
@@ -1188,14 +1200,24 @@ export default function Logistics() {
                                 ? format(new Date(job.scheduled_date), "MMM d, yyyy")
                                 : "No date"}
                             </span>
-                            <Badge variant="outline" className="text-xs h-5">
-                              {po?.delivery_method === PO_DELIVERY_METHOD.PICKUP ? "Pick Up" : "Delivery"}
-                            </Badge>
+                            <div className="flex items-center gap-1">
+                              {hasSamples && (
+                                <Badge variant="outline" className="text-[10px] h-5 bg-purple-50 text-purple-700 border-purple-200">
+                                  <TestTube2 className="w-3 h-3 mr-1" />
+                                  Samples
+                                </Badge>
+                              )}
+                              {po && (
+                                <Badge variant="outline" className="text-xs h-5">
+                                  {po?.delivery_method === PO_DELIVERY_METHOD.PICKUP ? "Pick Up" : "Delivery"}
+                                </Badge>
+                              )}
+                            </div>
                           </div>
                           <div className="text-xs text-[#6B7280] mt-1">
                             {po?.delivery_method === PO_DELIVERY_METHOD.PICKUP 
                               ? (supplier?.pickup_address || supplier?.address_full || "Supplier address")
-                              : "866 Bourke Street, Waterloo"}
+                              : job.address_full || "866 Bourke Street, Waterloo"}
                           </div>
                         </div>
                       );
@@ -1218,6 +1240,9 @@ export default function Logistics() {
                     (logisticsJobGroups.completed || []).map((job) => {
                       const po = purchaseOrders.find(p => p.id === job.purchase_order_id);
                       const supplier = suppliers.find(s => s.id === po?.supplier_id);
+                      const isSampleJob = job.job_type_name === "Sample Drop-Off" || job.job_type_name === "Sample Pickup";
+                      const hasSamples = job.sample_ids && job.sample_ids.length > 0;
+                      
                       return (
                         <div
                           key={job.id}
@@ -1228,7 +1253,7 @@ export default function Logistics() {
                         >
                           <div className="flex items-center justify-between">
                             <span className="text-sm font-medium">
-                              {supplier?.name || po?.supplier_name || "Supplier"}
+                              {isSampleJob ? job.job_type_name : (supplier?.name || po?.supplier_name || "Supplier")}
                             </span>
                             <StatusBadge value={job.status} />
                           </div>
@@ -1238,14 +1263,24 @@ export default function Logistics() {
                                 ? format(new Date(job.scheduled_date), "MMM d, yyyy")
                                 : "No date"}
                             </span>
-                            <Badge variant="outline" className="text-xs h-5">
-                              {po?.delivery_method === PO_DELIVERY_METHOD.PICKUP ? "Pick Up" : "Delivery"}
-                            </Badge>
+                            <div className="flex items-center gap-1">
+                              {hasSamples && (
+                                <Badge variant="outline" className="text-[10px] h-5 bg-purple-50 text-purple-700 border-purple-200">
+                                  <TestTube2 className="w-3 h-3 mr-1" />
+                                  Samples
+                                </Badge>
+                              )}
+                              {po && (
+                                <Badge variant="outline" className="text-xs h-5">
+                                  {po?.delivery_method === PO_DELIVERY_METHOD.PICKUP ? "Pick Up" : "Delivery"}
+                                </Badge>
+                              )}
+                            </div>
                           </div>
                           <div className="text-xs text-[#6B7280] mt-1">
                             {po?.delivery_method === PO_DELIVERY_METHOD.PICKUP 
                               ? (supplier?.pickup_address || supplier?.address_full || "Supplier address")
-                              : "866 Bourke Street, Waterloo"}
+                              : job.address_full || "866 Bourke Street, Waterloo"}
                           </div>
                         </div>
                       );
