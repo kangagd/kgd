@@ -61,6 +61,7 @@ import ProjectContactsPanel from "./ProjectContactsPanel";
 import ThirdPartyTradesPanel from "./ThirdPartyTradesPanel";
 import BackButton from "../common/BackButton";
 import { getProjectFreshnessBadge } from "../utils/freshness";
+import LastActivityCard from "./LastActivityCard";
 
 const statusColors = {
   "Lead": "bg-slate-100 text-slate-700",
@@ -990,6 +991,9 @@ Format as HTML bullet points using <ul> and <li> tags. Include only the most cri
                 </CollapsibleContent>
               </Card>
             </Collapsible>
+
+            {/* Last Activity Card */}
+            <LastActivityCard project={project} />
 
             {/* Third-Party Trades */}
             <Collapsible open={tradesOpen} onOpenChange={setTradesOpen}>

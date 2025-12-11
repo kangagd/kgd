@@ -47,7 +47,7 @@ Deno.serve(async (req) => {
             project = await base44.asServiceRole.entities.Project.update(id, data);
             
             // Update activity timestamp whenever project is updated
-            await updateProjectActivity(base44, id);
+            await updateProjectActivity(base44, id, 'Project Updated');
 
             // Auto-decline quotes if project is lost
             if (data.status === 'Lost') {

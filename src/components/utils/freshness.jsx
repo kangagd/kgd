@@ -3,7 +3,7 @@
  * @param {string|Date} lastActivityAt - Last activity timestamp
  * @returns {Object} { label: string, color: string, days: number }
  */
-export function getProjectFreshnessBadge(lastActivityAt, projectId = null) {
+export function getProjectFreshnessBadge(lastActivityAt, projectId = 'unknown') {
   if (!lastActivityAt) {
     return { label: "Unknown", color: "gray", days: null };
   }
