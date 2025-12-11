@@ -385,6 +385,9 @@ CATEGORY RULES:
 
   } catch (error) {
     console.error('Error processing email thread with AI:', error);
-    return Response.json({ error: error.message }, { status: 500 });
+    return Response.json({ 
+      success: false,
+      error: error.message || 'An error occurred while processing the email with AI' 
+    }, { status: 200 });
   }
 });
