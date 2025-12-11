@@ -8,19 +8,25 @@ import { createClientFromRequest } from 'npm:@base44/sdk@0.8.4';
 Deno.serve(async (req) => {
     try {
         const base44 = createClientFromRequest(req);
-        const { project_id } = await req.json();
+        const { project_id, activity_type } = await req.json();
 
         if (!project_id) {
             return Response.json({ error: 'project_id is required' }, { status: 400 });
         }
 
-        // Update only last_activity_at field using service role to bypass RLS
+        // Update activity fields using service role to bypass RLS
         const timestamp = new Date().toISOString();
-        await base44.asServiceRole.entities.Project.update(project_id, {
+        const updates = {
             last_activity_at: timestamp
-        });
+        };
+        
+        if (activity_type) {
+            updates.last_activity_type = activity_type;
+        }
+        
+        await base44.asServiceRole.entities.Project.update(project_id, updates);
 
-        console.log(`Project freshness updated: ${project_id} → ${timestamp}`);
+        console.log(`Project freshness updated: ${project_id} → ${timestamp} [${activity_type || 'No type specified'}]`);
 
         return Response.json({ success: true });
     } catch (error) {
@@ -32,15 +38,21 @@ Deno.serve(async (req) => {
  * Helper function to be imported in other backend functions
  * Can be called with base44 client instance and project_id
  */
-export async function updateProjectActivity(base44, project_id) {
+export async function updateProjectActivity(base44, project_id, activity_type = null) {
     if (!project_id) return;
     
     try {
         const timestamp = new Date().toISOString();
-        await base44.asServiceRole.entities.Project.update(project_id, {
+        const updates = {
             last_activity_at: timestamp
-        });
-        console.log(`Project freshness updated: ${project_id} → ${timestamp}`);
+        };
+        
+        if (activity_type) {
+            updates.last_activity_type = activity_type;
+        }
+        
+        await base44.asServiceRole.entities.Project.update(project_id, updates);
+        console.log(`Project freshness updated: ${project_id} → ${timestamp} [${activity_type || 'No type specified'}]`);
     } catch (error) {
         console.error('Error updating project activity:', error);
         // Don't throw - this is a background update
