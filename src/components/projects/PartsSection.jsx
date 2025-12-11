@@ -57,7 +57,13 @@ const locationColors = {
 };
 
 // Flow steps for progress bar
-const FLOW_STEPS = ["On Order", "At Delivery Bay", "In Warehouse Storage", "With Technician", "At Client Site"];
+const FLOW_STEPS = [
+  "On Order", 
+  LOGISTICS_LOCATION.LOADING_BAY, 
+  LOGISTICS_LOCATION.STORAGE, 
+  LOGISTICS_LOCATION.VEHICLE, 
+  LOGISTICS_LOCATION.SITE
+];
 
 export default function PartsSection({ projectId, autoExpand = false }) {
   const [showModal, setShowModal] = useState(false);
@@ -171,18 +177,7 @@ export default function PartsSection({ projectId, autoExpand = false }) {
     });
   };
 
-  // DEPRECATED: Direct status update - kept for legacy parts compatibility
-  const markDelivered = (e, part) => {
-    e.stopPropagation();
-    // Old schema parts still need this direct update
-    updatePartMutation.mutate({ 
-      id: part.id, 
-      data: { 
-        status: "Delivered", 
-        location: "At Delivery Bay" 
-      } 
-    });
-  };
+
 
   const handleMovePart = (e, part, toLocation) => {
     e.stopPropagation();
@@ -436,18 +431,7 @@ export default function PartsSection({ projectId, autoExpand = false }) {
                           Site
                         </Button>
                       )}
-                      {/* Legacy mark delivered for old parts */}
-                      {part.status === 'Ordered' && !part.location?.includes('Bay') && !part.location?.includes('Loading') && (
-                        <Button 
-                          size="sm" 
-                          variant="ghost" 
-                          className="h-8 w-8 p-0 text-green-600 hover:bg-green-50"
-                          title="Mark Delivered"
-                          onClick={(e) => markDelivered(e, part)}
-                        >
-                          <CheckCircle2 className="w-4 h-4" />
-                        </Button>
-                      )}
+
                       <Button
                         variant="ghost"
                         size="icon"
