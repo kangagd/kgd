@@ -465,7 +465,7 @@ export default function PurchaseOrderDetail({ poId, onClose, mode = "page" }) {
         </div>
       )}
 
-      <div className={isModal ? "space-y-6" : "p-6 space-y-6 max-w-4xl mx-auto"}>
+      <div className={isModal ? "space-y-6 max-h-[calc(100vh-200px)] overflow-y-auto" : "p-6 space-y-6 max-w-4xl mx-auto"}>
         {/* Basic Info */}
         <Card>
           <CardHeader>
