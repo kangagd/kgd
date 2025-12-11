@@ -11,7 +11,7 @@ import { toast } from "sonner";
 import { format, parseISO } from "date-fns";
 import { PO_STATUS, normaliseLegacyPoStatus } from "@/components/domain/purchaseOrderStatusConfig";
 import { DELIVERY_METHOD as PO_DELIVERY_METHOD } from "@/components/domain/supplierDeliveryConfig";
-import { PART_LOCATION, normaliseLegacyPartLocation } from "@/components/domain/partConfig";
+import { PART_LOCATION, normaliseLegacyPartLocation, PART_STATUS } from "@/components/domain/partConfig";
 import PurchaseOrderModal from "../components/logistics/PurchaseOrderModal";
 import StatusBadge from "../components/common/StatusBadge";
 import BackButton from "../components/common/BackButton";
@@ -74,7 +74,7 @@ export default function SupplyLogistics() {
 
   const loadingBayParts = parts.filter(p => {
     const normalized = normaliseLegacyPartLocation(p.location);
-    return normalized === PART_LOCATION.DELIVERY_BAY;
+    return normalized === PART_LOCATION.LOADING_BAY;
   });
   const loadingBayTotal = deliveredPOItems.reduce((sum, item) => sum + (item.qty_ordered || 0), 0) + loadingBayParts.length;
 

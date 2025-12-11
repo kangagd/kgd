@@ -39,7 +39,7 @@ const statusColors = {
 
 const locationColors = {
   supplier: "bg-indigo-50 text-indigo-600",
-  delivery_bay: "bg-blue-50 text-blue-600",
+  loading_bay: "bg-blue-50 text-blue-600",
   warehouse_storage: "bg-purple-50 text-purple-600",
   vehicle: "bg-amber-50 text-amber-600",
   client_site: "bg-green-50 text-green-600",
@@ -48,7 +48,7 @@ const locationColors = {
 // Flow steps for progress bar
 const FLOW_STEPS = [
   "supplier", 
-  "delivery_bay", 
+  "loading_bay", 
   "warehouse_storage", 
   "vehicle", 
   "client_site"
@@ -326,7 +326,7 @@ export default function PartsSection({ projectId, autoExpand = false, registerAd
                     {/* Col 6: Quick Actions */}
                     <div className="col-span-12 md:col-span-2 flex items-center justify-end gap-2 mt-2 md:mt-0 flex-wrap">
                       {/* Show move buttons for parts in Loading Bay */}
-                      {normaliseLegacyPartLocation(part.location) === PART_LOCATION.DELIVERY_BAY && (
+                      {normaliseLegacyPartLocation(part.location) === PART_LOCATION.LOADING_BAY && (
                         <>
                           <Button 
                             size="sm" 

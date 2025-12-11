@@ -26,7 +26,7 @@ const PART_STATUS = {
 
 const PART_LOCATION = {
   SUPPLIER: "supplier",
-  DELIVERY_BAY: "delivery_bay",
+  LOADING_BAY: "loading_bay",
   WAREHOUSE_STORAGE: "warehouse_storage",
   VEHICLE: "vehicle",
   CLIENT_SITE: "client_site",
@@ -53,6 +53,10 @@ async function handleLogisticsJobCompletion(base44, job) {
             newPOStatus = PO_STATUS.IN_VEHICLE;
             newPartStatus = PART_STATUS.IN_VEHICLE;
             newPartLocation = PART_LOCATION.VEHICLE;
+        } else if (logisticsOutcome === 'in_loading_bay') {
+            newPOStatus = PO_STATUS.IN_LOADING_BAY;
+            newPartStatus = PART_STATUS.IN_LOADING_BAY;
+            newPartLocation = PART_LOCATION.LOADING_BAY;
         }
 
         if (newPOStatus) {

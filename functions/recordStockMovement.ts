@@ -12,11 +12,11 @@ const PART_STATUS = {
 };
 
 const PART_LOCATION = {
-    SUPPLIER: "supplier",
-    DELIVERY_BAY: "delivery_bay",
-    WAREHOUSE_STORAGE: "warehouse_storage",
-    VEHICLE: "vehicle",
-    CLIENT_SITE: "client_site",
+  SUPPLIER: "supplier",
+  LOADING_BAY: "loading_bay",
+  WAREHOUSE_STORAGE: "warehouse_storage",
+  VEHICLE: "vehicle",
+  CLIENT_SITE: "client_site",
 };
 
 function determinePartStatus(toLocation) {

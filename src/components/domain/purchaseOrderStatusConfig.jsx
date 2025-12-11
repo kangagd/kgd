@@ -68,12 +68,23 @@ export function normaliseLegacyPoStatus(status) {
       return PO_STATUS.IN_TRANSIT;
 
     case "received":
+    case "delivered":
     case "delivered - loading bay":
+    case "delivered_loading_bay":
     case "delivered to delivery bay":
+    case "delivered to loading bay":
+    case "delivered_to_delivery_bay":
     case "ready for pick up":
     case "ready to pick up":
+    case "ready_to_pick_up":
+    case "arrived":
+    case "at_delivery_bay":
+    case "at delivery bay":
+    case "in_delivery_bay":
+    case "in delivery bay":
     case "in_loading_bay":
     case "in loading bay":
+    case "loadingbay":
       return PO_STATUS.IN_LOADING_BAY;
 
     case "in_storage":

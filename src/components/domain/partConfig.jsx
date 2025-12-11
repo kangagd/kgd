@@ -33,7 +33,7 @@ export function getPartStatusLabel(status) {
 
 export const PART_LOCATION = {
   SUPPLIER: "supplier",
-  DELIVERY_BAY: "delivery_bay",
+  LOADING_BAY: "loading_bay",
   WAREHOUSE_STORAGE: "warehouse_storage",
   VEHICLE: "vehicle",
   CLIENT_SITE: "client_site",
@@ -43,7 +43,7 @@ export const PART_LOCATION_OPTIONS = Object.values(PART_LOCATION);
 
 export const PART_LOCATION_LABELS = {
   supplier: "At Supplier",
-  delivery_bay: "Delivery Bay",
+  loading_bay: "Loading Bay",
   warehouse_storage: "Warehouse Storage",
   vehicle: "In Vehicle",
   client_site: "At Client Site",
@@ -105,8 +105,8 @@ export function normaliseLegacyPartLocation(location) {
   if (normalized.includes("supplier") || normalized === "on_order") {
     return PART_LOCATION.SUPPLIER;
   }
-  if (normalized.includes("delivery_bay") || normalized.includes("loading_bay")) {
-    return PART_LOCATION.DELIVERY_BAY;
+  if (normalized.includes("delivery_bay") || normalized.includes("loading_bay") || normalized.includes("delivery") || normalized.includes("at_delivery")) {
+    return PART_LOCATION.LOADING_BAY;
   }
   if (normalized.includes("warehouse") || normalized.includes("storage")) {
     return PART_LOCATION.WAREHOUSE_STORAGE;
