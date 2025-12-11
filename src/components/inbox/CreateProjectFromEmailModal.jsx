@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from "react";
+import React, { useMemo } from "react";
 import { base44 } from "@/api/base44Client";
 import { useMutation, useQueryClient, useQuery } from "@tanstack/react-query";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
@@ -6,9 +6,6 @@ import ProjectForm from "../projects/ProjectForm";
 
 export default function CreateProjectFromEmailModal({ open, onClose, thread, onSuccess }) {
   const queryClient = useQueryClient();
-  const [initialData, setInitialData] = useState(null);
-  const [isPreparingCustomer, setIsPreparingCustomer] = useState(false);
-  const hasProcessedRef = useRef(false);
 
   const { data: customers = [] } = useQuery({
     queryKey: ['customers'],
@@ -16,74 +13,32 @@ export default function CreateProjectFromEmailModal({ open, onClose, thread, onS
     enabled: open
   });
 
-  useEffect(() => {
-    if (!open || !thread) {
-      setInitialData(null);
-      hasProcessedRef.current = false;
-      return;
-    }
+  const initialData = useMemo(() => {
+    if (!thread) return null;
 
-    if (hasProcessedRef.current) {
-      return;
-    }
+    const aiSuggested = thread.ai_suggested_project_fields || {};
+    const emailAddress = (aiSuggested.suggested_customer_email || thread.from_address || "").toLowerCase().trim();
+    const customerName = aiSuggested.suggested_customer_name || "";
+    const customerPhone = aiSuggested.suggested_customer_phone || "";
 
-    if (customers.length === 0) {
-      return;
-    }
+    // Find existing customer by email
+    const existingCustomer = customers.find(c => 
+      c.email?.toLowerCase().trim() === emailAddress && !c.deleted_at
+    );
 
-    const prepareProjectData = async () => {
-      hasProcessedRef.current = true;
-      setIsPreparingCustomer(true);
-      
-      const aiSuggested = thread.ai_suggested_project_fields || {};
-      const emailAddress = (aiSuggested.suggested_customer_email || thread.from_address || "").toLowerCase().trim();
-      const customerName = aiSuggested.suggested_customer_name || "";
-      const customerPhone = aiSuggested.suggested_customer_phone || "";
-
-      let customerId = "";
-
-      // Check if customer exists by email
-      if (emailAddress) {
-        const existingCustomer = customers.find(c => 
-          c.email?.toLowerCase().trim() === emailAddress && !c.deleted_at
-        );
-
-        if (existingCustomer) {
-          customerId = existingCustomer.id;
-        } else if (customerName) {
-          // Create new customer automatically
-          try {
-            const newCustomer = await base44.entities.Customer.create({
-              name: customerName,
-              email: emailAddress,
-              phone: customerPhone,
-              status: "active"
-            });
-            customerId = newCustomer.id;
-            queryClient.invalidateQueries({ queryKey: ['customers'] });
-          } catch (error) {
-            console.error("Error creating customer:", error);
-          }
-        }
-      }
-
-      setInitialData({
-        title: aiSuggested.suggested_title || thread.subject || "",
-        customer_id: customerId,
-        customer_name: customerName,
-        customer_email: emailAddress,
-        customer_phone: customerPhone,
-        project_type: aiSuggested.suggested_project_type || "Garage Door Install",
-        status: "Lead",
-        description: aiSuggested.suggested_description || thread.last_message_snippet || "",
-        address_full: aiSuggested.suggested_address || "",
-        notes: `Created from email: ${thread.from_address}\n\n${thread.subject}`
-      });
-      setIsPreparingCustomer(false);
+    return {
+      title: aiSuggested.suggested_title || thread.subject || "",
+      customer_id: existingCustomer?.id || "",
+      customer_name: customerName,
+      customer_email: emailAddress,
+      customer_phone: customerPhone,
+      project_type: aiSuggested.suggested_project_type || "Garage Door Install",
+      status: "Lead",
+      description: aiSuggested.suggested_description || thread.last_message_snippet || "",
+      address_full: aiSuggested.suggested_address || "",
+      notes: `Created from email: ${thread.from_address}\n\n${thread.subject}`
     };
-
-    prepareProjectData();
-  }, [open, thread?.id, customers.length > 0]);
+  }, [thread?.id, customers]);
 
   const createProjectMutation = useMutation({
     mutationFn: async (data) => {
