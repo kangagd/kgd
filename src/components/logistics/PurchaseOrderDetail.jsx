@@ -10,7 +10,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { X, Plus, Trash2, Package, Truck, Save, Send, ArrowRight, List, ShoppingCart, Upload, FileText, Calendar, Trash } from "lucide-react";
 import { toast } from "sonner";
-import { PO_STATUS, PO_STATUS_OPTIONS, PO_STATUS_OPTIONS_NON_PROJECT, PO_STATUS_OPTIONS_PROJECT, PO_DELIVERY_METHOD, PO_DELIVERY_METHOD_OPTIONS } from "@/components/domain/logisticsConfig";
+import { PO_STATUS, PO_STATUS_OPTIONS, PO_STATUS_OPTIONS_NON_PROJECT, PO_STATUS_OPTIONS_PROJECT, PO_DELIVERY_METHOD, PO_DELIVERY_METHOD_OPTIONS, getPoStatusLabel, normaliseLegacyPoStatus } from "@/components/domain/logisticsConfig";
 import { createPageUrl } from "@/utils";
 import { useNavigate } from "react-router-dom";
 import {
@@ -87,6 +87,9 @@ export default function PurchaseOrderDetail({ poId, onClose, mode = "page" }) {
         delivery_method: po.delivery_method 
       });
       
+      // Normalize legacy status
+      const normalizedStatus = normaliseLegacyPoStatus(po.status);
+      
       // Map line items from separate entity (source of truth)
       const items = lineItems.map(line => ({
         id: line.id,
@@ -106,12 +109,12 @@ export default function PurchaseOrderDetail({ poId, onClose, mode = "page" }) {
         delivery_method: po.delivery_method || "",
         notes: po.notes || "",
         reference: po.po_number || "",
-        status: po.status || PO_STATUS.DRAFT,
+        status: normalizedStatus,
         eta: po.expected_date || "",
         attachments: po.attachments || [],
         line_items: items
       });
-      setIsEditing(po.status === PO_STATUS.DRAFT);
+      setIsEditing(normalizedStatus === PO_STATUS.DRAFT);
     }
   }, [po, lineItems]);
 
@@ -334,21 +337,14 @@ export default function PurchaseOrderDetail({ poId, onClose, mode = "page" }) {
 
   const getStatusColor = (status) => {
     const colors = {
-      'Draft': 'bg-slate-100 text-slate-700',
-      'On Order': 'bg-blue-100 text-blue-700',
-      'In Transit': 'bg-purple-100 text-purple-700',
-      'Delivered - Loading Bay': 'bg-cyan-100 text-cyan-700',
-      'Ready for Pick up': 'bg-amber-100 text-amber-700',
-      'In Storage': 'bg-emerald-100 text-emerald-700',
-      'In Vehicle': 'bg-teal-100 text-teal-700',
-      'Installed': 'bg-green-100 text-green-700',
-      // Legacy support
-      'Sent': 'bg-blue-100 text-blue-700',
-      'Confirmed': 'bg-purple-100 text-purple-700',
-      'Ready to Pick Up': 'bg-amber-100 text-amber-700',
-      'Delivered to Delivery Bay': 'bg-cyan-100 text-cyan-700',
-      'Completed - In Storage': 'bg-emerald-100 text-emerald-700',
-      'Completed - In Vehicle': 'bg-teal-100 text-teal-700',
+      [PO_STATUS.DRAFT]: 'bg-slate-100 text-slate-700',
+      [PO_STATUS.ON_ORDER]: 'bg-blue-100 text-blue-700',
+      [PO_STATUS.IN_TRANSIT]: 'bg-purple-100 text-purple-700',
+      [PO_STATUS.IN_LOADING_BAY]: 'bg-cyan-100 text-cyan-700',
+      [PO_STATUS.IN_STORAGE]: 'bg-emerald-100 text-emerald-700',
+      [PO_STATUS.IN_VEHICLE]: 'bg-teal-100 text-teal-700',
+      [PO_STATUS.INSTALLED]: 'bg-green-100 text-green-700',
+      [PO_STATUS.CANCELLED]: 'bg-red-100 text-red-700',
     };
     return colors[status] || 'bg-slate-100 text-slate-700';
   };
@@ -382,13 +378,8 @@ export default function PurchaseOrderDetail({ poId, onClose, mode = "page" }) {
   const canCreateLogistics = [
     PO_STATUS.ON_ORDER,
     PO_STATUS.IN_TRANSIT,
-    PO_STATUS.READY_TO_PICK_UP,
-    PO_STATUS.DELIVERED_LOADING_BAY,
-    // Legacy
-    PO_STATUS.SENT, 
-    PO_STATUS.CONFIRMED, 
-    PO_STATUS.DELIVERED_TO_DELIVERY_BAY
-  ].includes(po.status);
+    PO_STATUS.IN_LOADING_BAY,
+  ].includes(formData.status);
 
   const containerClass = isModal 
     ? "bg-white"
@@ -409,7 +400,7 @@ export default function PurchaseOrderDetail({ poId, onClose, mode = "page" }) {
               <div className="flex-1">
                 <div className="flex items-center gap-3">
                   <h2 className="text-xl font-bold text-[#111827]">Purchase Order</h2>
-                  <Badge className={getStatusColor(po.status)}>{po.status}</Badge>
+                  <Badge className={getStatusColor(formData.status)}>{getPoStatusLabel(formData.status)}</Badge>
                 </div>
                 {isDraft ? (
                   <Input
@@ -580,24 +571,14 @@ export default function PurchaseOrderDetail({ poId, onClose, mode = "page" }) {
                 disabled={updatePOMutation.isPending}
               >
                 <SelectTrigger>
-                  <SelectValue placeholder="Select status" />
+                  <SelectValue placeholder="Select status">
+                    {getPoStatusLabel(formData.status)}
+                  </SelectValue>
                 </SelectTrigger>
                 <SelectContent>
-                  {availableStatuses.filter((status) => {
-                    // For PICKUP: exclude "Delivered - Loading Bay"
-                    if (formData.delivery_method === PO_DELIVERY_METHOD.PICKUP && 
-                        (status === PO_STATUS.DELIVERED_LOADING_BAY || status === PO_STATUS.DELIVERED_TO_DELIVERY_BAY)) {
-                      return false;
-                    }
-                    // For DELIVERY: exclude "Ready for Pick up"
-                    if (formData.delivery_method === PO_DELIVERY_METHOD.DELIVERY && 
-                        (status === PO_STATUS.READY_TO_PICK_UP || status === "Ready to Pick Up")) {
-                      return false;
-                    }
-                    return true;
-                  }).map((status) => (
+                  {availableStatuses.map((status) => (
                     <SelectItem key={status} value={status}>
-                      {status}
+                      {getPoStatusLabel(status)}
                     </SelectItem>
                   ))}
                 </SelectContent>
