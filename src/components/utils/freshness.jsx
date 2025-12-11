@@ -3,7 +3,7 @@
  * @param {string|Date} lastActivityAt - Last activity timestamp
  * @returns {Object} { label: string, color: string, days: number }
  */
-export function getProjectFreshnessBadge(lastActivityAt) {
+export function getProjectFreshnessBadge(lastActivityAt, projectId = null) {
   if (!lastActivityAt) {
     return { label: "Unknown", color: "gray", days: null };
   }
@@ -16,13 +16,18 @@ export function getProjectFreshnessBadge(lastActivityAt) {
   const diffTime = today.getTime() - lastActivity.getTime();
   const freshness_days = Math.floor(diffTime / (1000 * 60 * 60 * 24));
 
+  let result;
   if (freshness_days <= 3) {
-    return { label: "Fresh", color: "green", days: freshness_days };
+    result = { label: "Fresh", color: "green", days: freshness_days };
   } else if (freshness_days <= 14) {
-    return { label: "Active", color: "blue", days: freshness_days };
+    result = { label: "Active", color: "blue", days: freshness_days };
   } else if (freshness_days <= 30) {
-    return { label: "Idle", color: "yellow", days: freshness_days };
+    result = { label: "Idle", color: "yellow", days: freshness_days };
   } else {
-    return { label: "Stale", color: "red", days: freshness_days };
+    result = { label: "Stale", color: "red", days: freshness_days };
   }
+
+  console.warn(`Freshness badge computed for project ${projectId || 'unknown'}: ${result.label} (${result.days} days)`);
+  
+  return result;
 }

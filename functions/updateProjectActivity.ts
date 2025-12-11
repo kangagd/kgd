@@ -15,9 +15,12 @@ Deno.serve(async (req) => {
         }
 
         // Update only last_activity_at field using service role to bypass RLS
+        const timestamp = new Date().toISOString();
         await base44.asServiceRole.entities.Project.update(project_id, {
-            last_activity_at: new Date().toISOString()
+            last_activity_at: timestamp
         });
+
+        console.log(`Project freshness updated: ${project_id} → ${timestamp}`);
 
         return Response.json({ success: true });
     } catch (error) {
@@ -33,9 +36,11 @@ export async function updateProjectActivity(base44, project_id) {
     if (!project_id) return;
     
     try {
+        const timestamp = new Date().toISOString();
         await base44.asServiceRole.entities.Project.update(project_id, {
-            last_activity_at: new Date().toISOString()
+            last_activity_at: timestamp
         });
+        console.log(`Project freshness updated: ${project_id} → ${timestamp}`);
     } catch (error) {
         console.error('Error updating project activity:', error);
         // Don't throw - this is a background update
