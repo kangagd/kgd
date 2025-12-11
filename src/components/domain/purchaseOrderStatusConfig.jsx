@@ -29,6 +29,19 @@ export const PO_STATUS_LABELS = {
 
 export const PO_STATUS_OPTIONS = Object.values(PO_STATUS);
 
+// Status options for non-project POs (stops at In Storage)
+export const PO_STATUS_OPTIONS_NON_PROJECT = [
+  PO_STATUS.DRAFT,
+  PO_STATUS.SENT,
+  PO_STATUS.ON_ORDER,
+  PO_STATUS.IN_TRANSIT,
+  PO_STATUS.IN_LOADING_BAY,
+  PO_STATUS.IN_STORAGE,
+];
+
+// Status options for project POs (includes vehicle and installed)
+export const PO_STATUS_OPTIONS_PROJECT = PO_STATUS_OPTIONS;
+
 // Helper to get UI label for a status
 export function getPoStatusLabel(status) {
   return PO_STATUS_LABELS[status] || status || "Unknown";

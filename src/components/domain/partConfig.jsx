@@ -63,27 +63,22 @@ export function normaliseLegacyPartStatus(status) {
 
     case "ordered":
     case "on_order":
-    case "on_order":
       return PART_STATUS.ON_ORDER;
 
     case "back-ordered":
     case "back_ordered":
-    case "in_transit":
     case "in_transit":
       return PART_STATUS.IN_TRANSIT;
 
     case "delivered":
     case "arrived":
     case "in_loading_bay":
-    case "in_loading_bay":
       return PART_STATUS.IN_LOADING_BAY;
 
-    case "in_storage":
     case "in_storage":
       return PART_STATUS.IN_STORAGE;
 
     case "on_vehicle":
-    case "in_vehicle":
     case "in_vehicle":
     case "with_technician":
       return PART_STATUS.IN_VEHICLE;
@@ -93,7 +88,6 @@ export function normaliseLegacyPartStatus(status) {
       return PART_STATUS.INSTALLED;
 
     case "returned":
-    case "cancelled":
     case "cancelled":
       return PART_STATUS.CANCELLED;
 
@@ -106,33 +100,23 @@ export function normaliseLegacyPartStatus(status) {
 export function normaliseLegacyPartLocation(location) {
   if (!location) return PART_LOCATION.SUPPLIER;
 
-  switch (location.toLowerCase().replace(/\s+/g, "_")) {
-    case "on_order":
-    case "at_supplier":
-    case "supplier":
-      return PART_LOCATION.SUPPLIER;
-
-    case "at_delivery_bay":
-    case "delivery_bay":
-    case "loading_bay":
-      return PART_LOCATION.DELIVERY_BAY;
-
-    case "in_warehouse_storage":
-    case "warehouse_storage":
-    case "storage":
-      return PART_LOCATION.WAREHOUSE_STORAGE;
-
-    case "with_technician":
-    case "on_vehicle":
-    case "vehicle":
-      return PART_LOCATION.VEHICLE;
-
-    case "at_client_site":
-    case "client_site":
-    case "site":
-      return PART_LOCATION.CLIENT_SITE;
-
-    default:
-      return location;
+  const normalized = location.toLowerCase().replace(/\s+/g, "_");
+  
+  if (normalized.includes("supplier") || normalized === "on_order") {
+    return PART_LOCATION.SUPPLIER;
   }
+  if (normalized.includes("delivery_bay") || normalized.includes("loading_bay")) {
+    return PART_LOCATION.DELIVERY_BAY;
+  }
+  if (normalized.includes("warehouse") || normalized.includes("storage")) {
+    return PART_LOCATION.WAREHOUSE_STORAGE;
+  }
+  if (normalized.includes("technician") || normalized.includes("vehicle")) {
+    return PART_LOCATION.VEHICLE;
+  }
+  if (normalized.includes("client") || normalized.includes("site")) {
+    return PART_LOCATION.CLIENT_SITE;
+  }
+  
+  return location;
 }
