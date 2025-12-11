@@ -204,6 +204,17 @@ Return ONLY a JSON object.`,
       const savedCount = results.filter(r => r !== null).length;
       const rejectedCount = files.length - savedCount;
 
+      // Update project activity if photo is linked to a job with a project
+      if (selectedJob?.project_id) {
+        try {
+          await base44.functions.invoke('updateProjectActivity', { 
+            project_id: selectedJob.project_id 
+          });
+        } catch (err) {
+          console.error('Failed to update project activity:', err);
+        }
+      }
+
       if (rejectedCount > 0) {
         alert(`${savedCount} item${savedCount !== 1 ? 's' : ''} saved. ${rejectedCount} item${rejectedCount !== 1 ? 's were' : ' was'} rejected (not marketing quality).`);
       }
