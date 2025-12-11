@@ -1,4 +1,4 @@
-import React, { useMemo, useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import { base44 } from "@/api/base44Client";
 import { useMutation, useQueryClient, useQuery } from "@tanstack/react-query";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
@@ -8,6 +8,7 @@ export default function CreateProjectFromEmailModal({ open, onClose, thread, onS
   const queryClient = useQueryClient();
   const [initialData, setInitialData] = useState(null);
   const [isPreparingCustomer, setIsPreparingCustomer] = useState(false);
+  const hasProcessedRef = useRef(false);
 
   const { data: customers = [] } = useQuery({
     queryKey: ['customers'],
@@ -18,11 +19,22 @@ export default function CreateProjectFromEmailModal({ open, onClose, thread, onS
   useEffect(() => {
     if (!open || !thread) {
       setInitialData(null);
+      hasProcessedRef.current = false;
+      return;
+    }
+
+    if (hasProcessedRef.current) {
+      return;
+    }
+
+    if (customers.length === 0) {
       return;
     }
 
     const prepareProjectData = async () => {
+      hasProcessedRef.current = true;
       setIsPreparingCustomer(true);
+      
       const aiSuggested = thread.ai_suggested_project_fields || {};
       const emailAddress = (aiSuggested.suggested_customer_email || thread.from_address || "").toLowerCase().trim();
       const customerName = aiSuggested.suggested_customer_name || "";
@@ -47,8 +59,8 @@ export default function CreateProjectFromEmailModal({ open, onClose, thread, onS
               phone: customerPhone,
               status: "active"
             });
-            await queryClient.refetchQueries({ queryKey: ['customers'] });
             customerId = newCustomer.id;
+            queryClient.invalidateQueries({ queryKey: ['customers'] });
           } catch (error) {
             console.error("Error creating customer:", error);
           }
@@ -70,10 +82,8 @@ export default function CreateProjectFromEmailModal({ open, onClose, thread, onS
       setIsPreparingCustomer(false);
     };
 
-    if (customers.length > 0) {
-      prepareProjectData();
-    }
-  }, [open, thread, customers.length]);
+    prepareProjectData();
+  }, [open, thread?.id, customers.length > 0]);
 
   const createProjectMutation = useMutation({
     mutationFn: async (data) => {
