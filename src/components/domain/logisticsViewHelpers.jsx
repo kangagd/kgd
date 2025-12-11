@@ -3,27 +3,29 @@
  * Pure functions to organize Purchase Orders, Jobs, and Parts for the Logistics Board
  */
 
-import { PO_STATUS, PART_STATUS, LOGISTICS_JOB_TYPE_NAME } from "./logisticsConfig";
+import { PO_STATUS, normaliseLegacyPoStatus } from "./purchaseOrderStatusConfig";
+import { PART_STATUS, PART_LOCATION, normaliseLegacyPartStatus, normaliseLegacyPartLocation } from "./partConfig";
+import { LOGISTICS_JOB_TYPE_NAME } from "./logisticsConfig";
 
 /**
  * Filters purchase orders that are relevant for logistics tracking
  * @param {Array} purchaseOrders - Array of PO records
- * @returns {Array} Filtered POs in Sent, Acknowledged, In Transit, or Arrived status
+ * @returns {Array} Filtered POs in active logistics statuses
  */
 export function getIncomingPurchaseOrders(purchaseOrders) {
   if (!Array.isArray(purchaseOrders)) return [];
 
   const relevantStatuses = [
     PO_STATUS.SENT,
-    PO_STATUS.CONFIRMED,
-    PO_STATUS.DELIVERED,
-    PO_STATUS.READY_TO_PICK_UP,
-    PO_STATUS.DELIVERED_TO_DELIVERY_BAY,
+    PO_STATUS.ON_ORDER,
+    PO_STATUS.IN_TRANSIT,
+    PO_STATUS.IN_LOADING_BAY,
   ];
 
-  const filtered = purchaseOrders.filter(po => 
-    relevantStatuses.includes(po.status)
-  );
+  const filtered = purchaseOrders.filter(po => {
+    const normalized = normaliseLegacyPoStatus(po.status);
+    return relevantStatuses.includes(normalized);
+  });
 
   // Sort by created_at descending if available
   return filtered.sort((a, b) => {
@@ -35,14 +37,17 @@ export function getIncomingPurchaseOrders(purchaseOrders) {
 /**
  * Filters parts that are currently in the loading bay
  * @param {Array} parts - Array of part records
- * @returns {Array} Parts with status IN_LOADING_BAY
+ * @returns {Array} Parts with status/location IN_LOADING_BAY
  */
 export function getLoadingBayParts(parts) {
   if (!Array.isArray(parts)) return [];
 
-  return parts.filter(part => 
-    part.status === PART_STATUS.IN_LOADING_BAY
-  );
+  return parts.filter(part => {
+    const normalizedStatus = normaliseLegacyPartStatus(part.status);
+    const normalizedLocation = normaliseLegacyPartLocation(part.location);
+    return normalizedStatus === PART_STATUS.IN_LOADING_BAY || 
+           normalizedLocation === PART_LOCATION.DELIVERY_BAY;
+  });
 }
 
 /**
