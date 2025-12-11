@@ -37,7 +37,22 @@ export default function TasksPanel({
   });
 
   const createMutation = useMutation({
-    mutationFn: (data) => base44.entities.Task.create(data),
+    mutationFn: async (data) => {
+      const newTask = await base44.entities.Task.create(data);
+      
+      // Update project activity if task is linked to a project
+      if (newTask.project_id) {
+        try {
+          await base44.functions.invoke('updateProjectActivity', { 
+            project_id: newTask.project_id 
+          });
+        } catch (err) {
+          console.error('Failed to update project activity:', err);
+        }
+      }
+      
+      return newTask;
+    },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['tasks', entityType, entityId] });
       queryClient.invalidateQueries({ queryKey: ['tasks'] });
@@ -48,7 +63,22 @@ export default function TasksPanel({
   });
 
   const updateMutation = useMutation({
-    mutationFn: ({ id, data }) => base44.entities.Task.update(id, data),
+    mutationFn: async ({ id, data }) => {
+      const updatedTask = await base44.entities.Task.update(id, data);
+      
+      // Update project activity if task is linked to a project
+      if (updatedTask.project_id) {
+        try {
+          await base44.functions.invoke('updateProjectActivity', { 
+            project_id: updatedTask.project_id 
+          });
+        } catch (err) {
+          console.error('Failed to update project activity:', err);
+        }
+      }
+      
+      return updatedTask;
+    },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['tasks', entityType, entityId] });
       queryClient.invalidateQueries({ queryKey: ['tasks'] });
