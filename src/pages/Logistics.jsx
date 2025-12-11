@@ -374,7 +374,7 @@ export default function Logistics() {
     try {
       const response = await base44.functions.invoke("recordStockMovement", {
         part_ids: [part.id],
-        from_location: PART_LOCATION.DELIVERY_BAY,
+        from_location: PART_LOCATION.LOADING_BAY,
         to_location: destination,
       });
 
@@ -771,11 +771,11 @@ export default function Logistics() {
                   </div>
                 </div>
 
-                {/* Column: At Delivery Bay */}
+                {/* Column: In Loading Bay */}
                 <div className="flex flex-col rounded-xl border border-[#E5E7EB] bg-white p-3">
                   <div className="mb-2 flex items-center justify-between">
                     <span className="text-sm font-semibold text-[#111827]">
-                      At Delivery Bay
+                      In Loading Bay
                     </span>
                     <span className="text-xs text-[#6B7280]">
                       {atDeliveryBayPOs.length}
