@@ -915,7 +915,7 @@ Format as HTML bullet points using <ul> and <li> tags. Include only the most cri
   }, [project.status]);
 
   const effectiveOpenedDate = project.opened_date || project.created_date;
-  const freshness = getProjectFreshnessBadge(project.last_activity_at || effectiveOpenedDate);
+  const freshness = getProjectFreshnessBadge(project.last_activity_at || effectiveOpenedDate, project.id);
   
   const freshnessColors = {
     green: "bg-green-100 text-green-700",
