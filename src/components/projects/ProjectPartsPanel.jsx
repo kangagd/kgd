@@ -34,6 +34,49 @@ export default function ProjectPartsPanel({ project, parts = [], inventoryByItem
   const queryClient = useQueryClient();
   const navigate = useNavigate();
 
+  const handleAddPart = () => {
+    // Will trigger part modal from PartsSection
+    if (window.triggerAddPart) {
+      window.triggerAddPart();
+    }
+  };
+
+  const openOrCreateProjectSupplierPO = async (supplierId) => {
+    if (!project?.id || !supplierId) {
+      toast.error("Project and supplier must be set");
+      return;
+    }
+
+    try {
+      const response = await base44.functions.invoke("managePurchaseOrder", {
+        action: "getOrCreateProjectSupplierDraft",
+        project_id: project.id,
+        supplier_id: supplierId,
+      });
+
+      if (!response?.data?.success || !response.data.purchaseOrder) {
+        toast.error(response?.data?.error || "Failed to open/create Purchase Order");
+        return;
+      }
+
+      const po = response.data.purchaseOrder;
+      navigate(`${createPageUrl("PurchaseOrders")}?poId=${po.id}`);
+    } catch (error) {
+      toast.error("Error opening/creating Purchase Order");
+    }
+  };
+
+  const handleCreatePO = async () => {
+    if (!selectedSupplierId) {
+      toast.error("Please select a supplier");
+      return;
+    }
+
+    setShowCreatePODialog(false);
+    await openOrCreateProjectSupplierPO(selectedSupplierId);
+    setSelectedSupplierId("");
+  };
+
   const { data: projectPOs = [] } = useQuery({
     queryKey: ['projectPOs', project.id],
     queryFn: () => base44.entities.PurchaseOrder.filter({ project_id: project.id }, '-created_date'),
@@ -307,46 +350,3 @@ export default function ProjectPartsPanel({ project, parts = [], inventoryByItem
     </div>
   );
 }
-
-  const handleAddPart = () => {
-    // Will trigger part modal from PartsSection
-    if (window.triggerAddPart) {
-      window.triggerAddPart();
-    }
-  };
-
-  const openOrCreateProjectSupplierPO = async (supplierId) => {
-    if (!project?.id || !supplierId) {
-      toast.error("Project and supplier must be set");
-      return;
-    }
-
-    try {
-      const response = await base44.functions.invoke("managePurchaseOrder", {
-        action: "getOrCreateProjectSupplierDraft",
-        project_id: project.id,
-        supplier_id: supplierId,
-      });
-
-      if (!response?.data?.success || !response.data.purchaseOrder) {
-        toast.error(response?.data?.error || "Failed to open/create Purchase Order");
-        return;
-      }
-
-      const po = response.data.purchaseOrder;
-      navigate(`${createPageUrl("PurchaseOrders")}?poId=${po.id}`);
-    } catch (error) {
-      toast.error("Error opening/creating Purchase Order");
-    }
-  };
-
-  const handleCreatePO = async () => {
-    if (!selectedSupplierId) {
-      toast.error("Please select a supplier");
-      return;
-    }
-
-    setShowCreatePODialog(false);
-    await openOrCreateProjectSupplierPO(selectedSupplierId);
-    setSelectedSupplierId("");
-  };
