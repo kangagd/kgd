@@ -1,21 +1,73 @@
 import { createClientFromRequest } from 'npm:@base44/sdk@0.8.4';
 
+// Canonical PO status values (stored in DB)
 const PO_STATUS = {
-  DRAFT: "Draft",
-  ON_ORDER: "On Order",
-  IN_TRANSIT: "In Transit",
-  DELIVERED_LOADING_BAY: "Delivered - Loading Bay",
-  READY_TO_PICK_UP: "Ready for Pick up",
-  IN_STORAGE: "In Storage",
-  IN_VEHICLE: "In Vehicle",
-  INSTALLED: "Installed",
-  // Legacy aliases
-  SENT: "On Order",
-  CONFIRMED: "In Transit",
-  DELIVERED_TO_DELIVERY_BAY: "Delivered - Loading Bay",
-  COMPLETED_IN_STORAGE: "In Storage",
-  COMPLETED_IN_VEHICLE: "In Vehicle",
+  DRAFT: "draft",
+  ON_ORDER: "on_order",
+  IN_TRANSIT: "in_transit",
+  IN_LOADING_BAY: "in_loading_bay",
+  IN_STORAGE: "in_storage",
+  IN_VEHICLE: "in_vehicle",
+  INSTALLED: "installed",
+  CANCELLED: "cancelled",
 };
+
+// Normalize legacy status values to canonical ones
+function normaliseLegacyPoStatus(status) {
+  if (!status) return PO_STATUS.DRAFT;
+
+  switch (status) {
+    case "draft":
+    case PO_STATUS.DRAFT:
+      return PO_STATUS.DRAFT;
+
+    case "sent":
+    case "Sent":
+      return PO_STATUS.ON_ORDER;
+
+    case "partially_received":
+      return PO_STATUS.IN_TRANSIT;
+
+    case "received":
+      return PO_STATUS.IN_STORAGE;
+
+    case "cancelled":
+    case "Cancelled":
+    case PO_STATUS.CANCELLED:
+      return PO_STATUS.CANCELLED;
+
+    // Legacy display strings -> canonical
+    case "On Order":
+      return PO_STATUS.ON_ORDER;
+    case "In Transit":
+      return PO_STATUS.IN_TRANSIT;
+    case "Delivered - Loading Bay":
+    case "Delivered to Delivery Bay":
+    case "Ready for Pick up":
+    case "Ready to Pick Up":
+      return PO_STATUS.IN_LOADING_BAY;
+    case "In Storage":
+    case "Completed - In Storage":
+      return PO_STATUS.IN_STORAGE;
+    case "In Vehicle":
+    case "Completed - In Vehicle":
+      return PO_STATUS.IN_VEHICLE;
+    case "Installed":
+      return PO_STATUS.INSTALLED;
+
+    // If already canonical, pass through
+    case PO_STATUS.ON_ORDER:
+    case PO_STATUS.IN_TRANSIT:
+    case PO_STATUS.IN_LOADING_BAY:
+    case PO_STATUS.IN_STORAGE:
+    case PO_STATUS.IN_VEHICLE:
+    case PO_STATUS.INSTALLED:
+      return status;
+
+    default:
+      return status;
+  }
+}
 
 const PO_DELIVERY_METHOD = {
     DELIVERY: "delivery",
@@ -71,6 +123,9 @@ async function linkPartsToPO(base44, purchaseOrderId, lineItems) {
 // Helper: Sync Parts with PurchaseOrder status
 async function syncPartsWithPurchaseOrderStatus(base44, purchaseOrder, vehicleId = null) {
     try {
+        // Normalize the status first
+        const normalizedStatus = normaliseLegacyPoStatus(purchaseOrder.status);
+        
         // Fetch Parts linked to this PO
         const parts = await base44.asServiceRole.entities.Part.filter({
             purchase_order_id: purchaseOrder.id
@@ -82,39 +137,34 @@ async function syncPartsWithPurchaseOrderStatus(base44, purchaseOrder, vehicleId
             const updateData = {};
 
             // Apply status/location mapping based on PO status
-            switch (purchaseOrder.status) {
+            switch (normalizedStatus) {
+                case PO_STATUS.DRAFT:
+                    updateData.status = "Pending";
+                    updateData.location = "On Order";
+                    break;
+
                 case PO_STATUS.ON_ORDER:
-                case PO_STATUS.SENT:
                     updateData.status = "On Order";
                     updateData.location = "On Order";
                     break;
 
                 case PO_STATUS.IN_TRANSIT:
-                case PO_STATUS.CONFIRMED:
                     updateData.status = "In Transit";
                     updateData.location = "At Supplier";
                     break;
 
-                case PO_STATUS.DELIVERED_LOADING_BAY:
-                case PO_STATUS.DELIVERED_TO_DELIVERY_BAY:
+                case PO_STATUS.IN_LOADING_BAY:
                     updateData.status = "Arrived";
                     updateData.location = "Loading Bay";
                     break;
 
-                case PO_STATUS.READY_TO_PICK_UP:
-                    updateData.status = "Arrived";
-                    updateData.location = "At Supplier";
-                    break;
-
                 case PO_STATUS.IN_STORAGE:
-                case PO_STATUS.COMPLETED_IN_STORAGE:
                     updateData.status = "In Storage";
                     updateData.location = "Storage";
                     break;
 
                 case PO_STATUS.IN_VEHICLE:
-                case PO_STATUS.COMPLETED_IN_VEHICLE:
-                    updateData.status = "On Vehicle";
+                    updateData.status = "In Vehicle";
                     updateData.location = "Vehicle";
                     if (vehicleId) {
                         updateData.assigned_vehicle_id = vehicleId;
@@ -327,14 +377,14 @@ Deno.serve(async (req) => {
             }
 
             const oldStatus = existing.status;
-            const newStatus = status;
+            const newStatus = normaliseLegacyPoStatus(status);
 
             const updateData = { status: newStatus };
 
             // Set timestamps based on status
-            if (newStatus === PO_STATUS.ON_ORDER || newStatus === PO_STATUS.SENT) {
+            if (newStatus === PO_STATUS.ON_ORDER) {
                 updateData.sent_at = new Date().toISOString();
-            } else if (newStatus === PO_STATUS.DELIVERED_LOADING_BAY || newStatus === PO_STATUS.READY_TO_PICK_UP) {
+            } else if (newStatus === PO_STATUS.IN_LOADING_BAY) {
                 updateData.arrived_at = new Date().toISOString();
             }
 
@@ -349,13 +399,13 @@ Deno.serve(async (req) => {
             const shouldHaveLogisticsJob =
                 !updatedPO.linked_logistics_job_id && // only if no job linked yet
                 (
-                    // DELIVERY: create job when DELIVERED_LOADING_BAY
+                    // DELIVERY: create job when IN_LOADING_BAY
                     (updatedPO.delivery_method === PO_DELIVERY_METHOD.DELIVERY &&
-                     (newStatus === PO_STATUS.DELIVERED_LOADING_BAY || newStatus === PO_STATUS.DELIVERED_TO_DELIVERY_BAY)) ||
+                     newStatus === PO_STATUS.IN_LOADING_BAY) ||
 
-                    // PICKUP: create job when READY_TO_PICK_UP
+                    // PICKUP: create job when IN_LOADING_BAY (for pickup, this represents ready at supplier)
                     (updatedPO.delivery_method === PO_DELIVERY_METHOD.PICKUP &&
-                     newStatus === PO_STATUS.READY_TO_PICK_UP)
+                     newStatus === PO_STATUS.IN_LOADING_BAY)
                 );
 
             if (shouldHaveLogisticsJob) {
