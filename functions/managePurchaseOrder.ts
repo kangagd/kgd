@@ -418,6 +418,76 @@ Deno.serve(async (req) => {
             return Response.json({ success: true });
         }
 
+        // Action: getOrCreateProjectSupplierDraft
+        if (action === 'getOrCreateProjectSupplierDraft') {
+            if (!project_id || !supplier_id) {
+                return Response.json({ 
+                    success: false, 
+                    error: 'project_id and supplier_id are required' 
+                }, { status: 400 });
+            }
+
+            // Try to find existing DRAFT PO for this project + supplier
+            const existingPOs = await base44.asServiceRole.entities.PurchaseOrder.filter({
+                project_id,
+                supplier_id,
+                status: PO_STATUS.DRAFT
+            });
+
+            if (existingPOs.length > 0) {
+                const existingPO = existingPOs[0];
+                
+                // Load line items for the response
+                const lines = await base44.asServiceRole.entities.PurchaseOrderLine.filter({ 
+                    purchase_order_id: existingPO.id 
+                });
+                
+                existingPO.line_items = lines.map(line => ({
+                    id: line.id,
+                    source_type: line.source_type || "custom",
+                    source_id: line.source_id || null,
+                    part_id: line.part_id || null,
+                    name: line.item_name || line.description || '',
+                    quantity: line.qty_ordered || 0,
+                    unit_price: line.unit_cost_ex_tax || 0,
+                    unit: line.unit || null,
+                    notes: line.notes || null,
+                    price_list_item_id: line.price_list_item_id
+                }));
+
+                return Response.json({
+                    success: true,
+                    purchaseOrder: existingPO,
+                    reused: true
+                });
+            }
+
+            // Create new DRAFT PO
+            const poData = {
+                supplier_id,
+                supplier_name: supplier_name || null,
+                project_id,
+                status: PO_STATUS.DRAFT,
+                delivery_method: delivery_method || PO_DELIVERY_METHOD.DELIVERY,
+                delivery_location: delivery_location || null,
+                notes: notes || null,
+                po_number: reference || null,
+                created_by: user.email,
+                order_date: new Date().toISOString().split('T')[0],
+            };
+
+            const newPO = await base44.asServiceRole.entities.PurchaseOrder.create(poData);
+            
+            // Initialize with empty line_items array
+            newPO.line_items = [];
+
+            return Response.json({
+                success: true,
+                purchaseOrder: newPO,
+                reused: false
+            });
+        }
+
         // LEGACY ACTION - DEPRECATED in favor of updateStatus
         if (action === 'markAsSent') {
             const poId = id;
