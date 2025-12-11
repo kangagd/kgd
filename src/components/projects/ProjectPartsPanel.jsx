@@ -1,15 +1,26 @@
 import React, { useState } from "react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { AlertTriangle, CheckCircle2, Package, Truck } from "lucide-react";
+import { AlertTriangle, CheckCircle2, Package, Truck, ExternalLink } from "lucide-react";
 import AssignPartToVehicleModal from "./AssignPartToVehicleModal";
 import { INVENTORY_LOCATION } from "@/components/domain/inventoryLocationConfig";
-import { useQueryClient } from "@tanstack/react-query";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { base44 } from "@/api/base44Client";
+import { useNavigate } from "react-router-dom";
+import { createPageUrl } from "@/utils";
+import { format } from "date-fns";
 
 export default function ProjectPartsPanel({ project, parts = [], inventoryByItem = {} }) {
   const [assignModalOpen, setAssignModalOpen] = useState(false);
   const [partToAssign, setPartToAssign] = useState(null);
   const queryClient = useQueryClient();
+  const navigate = useNavigate();
+
+  const { data: projectPOs = [] } = useQuery({
+    queryKey: ['projectPOs', project.id],
+    queryFn: () => base44.entities.PurchaseOrder.filter({ project_id: project.id }, '-created_date'),
+    enabled: !!project.id
+  });
 
   const detectShortage = (part) => {
     // Not a shortage if status is beyond Pending or location is beyond On Order
@@ -42,9 +53,9 @@ export default function ProjectPartsPanel({ project, parts = [], inventoryByItem
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <div>
-          <h3 className="text-[16px] font-semibold text-[#111827] leading-[1.2]">Pick List</h3>
+          <h3 className="text-[16px] font-semibold text-[#111827] leading-[1.2]">Project Parts & Ordering</h3>
           <p className="text-xs text-[#6B7280] mt-0.5">
-            "Shortages" = Parts requiring ordering or not in stock. "Ready" = Parts delivered or assigned to vehicles.
+            Purchase orders and parts for this project. "Shortages" = Parts requiring ordering. "Ready" = Parts available to pick.
           </p>
         </div>
         <Button variant="outline" size="sm" className="h-8 text-xs">
@@ -52,9 +63,48 @@ export default function ProjectPartsPanel({ project, parts = [], inventoryByItem
         </Button>
       </div>
 
-      {parts.length === 0 && (
+      {/* Purchase Orders */}
+      {projectPOs.length > 0 && (
+        <div>
+          <h4 className="text-sm font-semibold text-[#111827] flex items-center gap-2 mb-3">
+            <Package className="w-4 h-4" />
+            Purchase Orders ({projectPOs.length})
+          </h4>
+          <div className="space-y-2">
+            {projectPOs.map(po => (
+              <button
+                key={po.id}
+                onClick={() => navigate(`${createPageUrl("PurchaseOrders")}?poId=${po.id}`)}
+                className="w-full p-4 bg-white border border-[#E5E7EB] rounded-lg hover:border-[#FAE008] hover:shadow-sm transition-all text-left"
+              >
+                <div className="flex items-center justify-between">
+                  <div className="flex-1">
+                    <div className="flex items-center gap-2 mb-1">
+                      <span className="font-medium text-sm">
+                        {po.po_number || `PO #${po.id.substring(0, 8)}`}
+                      </span>
+                      <Badge className="text-xs bg-slate-100 text-slate-700 hover:bg-slate-100">
+                        {po.status}
+                      </Badge>
+                    </div>
+                    <div className="text-xs text-[#6B7280]">
+                      {po.supplier_name || 'Supplier'}
+                      {po.expected_date && ` • ETA: ${format(new Date(po.expected_date), 'MMM d, yyyy')}`}
+                    </div>
+                  </div>
+                  <ExternalLink className="w-4 h-4 text-[#6B7280] flex-shrink-0 ml-2" />
+                </div>
+              </button>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {parts.length === 0 && projectPOs.length === 0 && (
         <div className="text-center py-6 bg-gray-50 rounded-lg border border-dashed border-gray-300">
-          <p className="text-sm text-gray-500">No parts required for this project.</p>
+          <Package className="w-12 h-12 text-gray-300 mx-auto mb-3" />
+          <p className="text-sm text-gray-500 mb-2">No parts tracked yet</p>
+          <p className="text-xs text-gray-400">Order your first part to get started</p>
         </div>
       )}
 
