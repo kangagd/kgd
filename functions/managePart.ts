@@ -18,6 +18,11 @@ Deno.serve(async (req) => {
 
         if (action === 'create') {
             part = await base44.asServiceRole.entities.Part.create(data);
+            
+            // Update project activity when part is created
+            if (part.project_id) {
+                await updateProjectActivity(base44, part.project_id, 'Part Created');
+            }
 
             // LOGISTICS AUTOMATION LOGIC
             // Only on create, if project_id exists and part is Ordered
@@ -152,7 +157,7 @@ Deno.serve(async (req) => {
             
             // Update project activity when part is updated
             if (part.project_id) {
-                await updateProjectActivity(base44, part.project_id);
+                await updateProjectActivity(base44, part.project_id, 'Part Updated');
             }
         } else if (action === 'delete') {
             await base44.asServiceRole.entities.Part.delete(id);
