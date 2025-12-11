@@ -1,4 +1,5 @@
 import { createClientFromRequest } from 'npm:@base44/sdk@0.8.4';
+import { updateProjectActivity } from './updateProjectActivity.js';
 
 Deno.serve(async (req) => {
   try {
@@ -56,6 +57,9 @@ Deno.serve(async (req) => {
         mentioned_users: mentionedUsers
       });
       
+      // Update project activity when message is sent
+      await updateProjectActivity(base44, entityId);
+      
       notificationTitle = `New mention in ${project.title}`;
       notificationBody = `${user.display_name || user.full_name} mentioned you: "${message.length > 50 ? message.substring(0, 50) + '...' : message}"`;
       relatedEntityType = 'Project';
@@ -73,6 +77,11 @@ Deno.serve(async (req) => {
         message: message,
         mentioned_users: mentionedUsers
       });
+
+      // Update project activity if job is linked to a project
+      if (job.project_id) {
+        await updateProjectActivity(base44, job.project_id);
+      }
 
       notificationTitle = `New mention in Job #${job.job_number}`;
       notificationBody = `${user.display_name || user.full_name} mentioned you: "${message.length > 50 ? message.substring(0, 50) + '...' : message}"`;
