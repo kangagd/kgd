@@ -3,7 +3,7 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { AlertTriangle, CheckCircle2, Package, Truck, ExternalLink, Plus, ShoppingCart } from "lucide-react";
 import AssignPartToVehicleModal from "./AssignPartToVehicleModal";
-import { INVENTORY_LOCATION } from "@/components/domain/inventoryLocationConfig";
+import { PART_LOCATION, normaliseLegacyPartLocation } from "@/components/domain/partConfig";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { base44 } from "@/api/base44Client";
 import { useNavigate } from "react-router-dom";
@@ -60,7 +60,7 @@ export default function ProjectPartsPanel({ project, parts = [], inventoryByItem
       }
 
       const po = response.data.purchaseOrder;
-      navigate(`${createPageUrl("PurchaseOrders")}?poId=${po.id}`);
+      setActivePoId(po.id);
     } catch (error) {
       toast.error("Error opening/creating Purchase Order");
     }
@@ -89,19 +89,20 @@ export default function ProjectPartsPanel({ project, parts = [], inventoryByItem
   });
 
   const detectShortage = (part) => {
-    // Not a shortage if status is beyond Pending or location is beyond On Order
-    if (part.status !== 'Pending') {
+    // Not a shortage if status is beyond pending
+    const normalizedStatus = part.status?.toLowerCase().replace(/\s+/g, "_");
+    if (normalizedStatus !== 'pending') {
       return false;
     }
 
-    const location = part.location;
-    const isOnOrder = !location || location === 'On Order';
+    const normalizedLocation = normaliseLegacyPartLocation(part.location);
+    const isOnOrder = !normalizedLocation || normalizedLocation === PART_LOCATION.SUPPLIER;
     
     if (!isOnOrder) {
       return false;
     }
 
-    // If Pending and On Order, check stock availability
+    // If pending and on order, check stock availability
     const requiredQty = part.quantity_required || 1;
     if (part.price_list_item_id) {
        const availableQty = inventoryByItem[part.price_list_item_id] || 0;
@@ -224,7 +225,7 @@ export default function ProjectPartsPanel({ project, parts = [], inventoryByItem
                      Qty: {part.quantity_required || 1}
                    </Badge>
                    
-                   {(part.location !== INVENTORY_LOCATION.WITH_TECHNICIAN) && (
+                   {normaliseLegacyPartLocation(part.location) !== PART_LOCATION.VEHICLE && (
                      <Button
                        variant="outline"
                        size="sm"
@@ -270,7 +271,7 @@ export default function ProjectPartsPanel({ project, parts = [], inventoryByItem
                     Qty: {part.quantity_required || 1}
                   </Badge>
                   
-                  {(part.location !== INVENTORY_LOCATION.WITH_TECHNICIAN || !part.assigned_vehicle_id) && (
+                  {(normaliseLegacyPartLocation(part.location) !== PART_LOCATION.VEHICLE || !part.assigned_vehicle_id) && (
                      <Button
                        variant="outline"
                        size="sm"

@@ -11,7 +11,7 @@ import { format, isPast, parseISO } from "date-fns";
 import { toast } from "sonner";
 import { useNavigate } from "react-router-dom";
 import { createPageUrl } from "@/utils";
-import { PART_STATUS, LOGISTICS_LOCATION } from "@/components/domain/logisticsConfig";
+import { PART_STATUS, PART_LOCATION, getPartStatusLabel, getPartLocationLabel, normaliseLegacyPartStatus, normaliseLegacyPartLocation } from "@/components/domain/partConfig";
 import {
   Dialog,
   DialogContent,
@@ -27,42 +27,31 @@ import {
 } from "@/components/ui/select";
 
 const statusColors = {
-  [PART_STATUS.ON_ORDER]: "bg-slate-100 text-slate-700",
-  [PART_STATUS.IN_TRANSIT]: "bg-blue-100 text-blue-700",
-  [PART_STATUS.ARRIVED]: "bg-green-100 text-green-700",
-  [PART_STATUS.IN_LOADING_BAY]: "bg-indigo-100 text-indigo-700",
-  [PART_STATUS.IN_STORAGE]: "bg-purple-100 text-purple-700",
-  [PART_STATUS.ON_VEHICLE]: "bg-amber-100 text-amber-700",
-  [PART_STATUS.INSTALLED]: "bg-emerald-100 text-emerald-700",
-  // Legacy statuses
-  "Pending": "bg-slate-100 text-slate-800 border-slate-200",
-  "Ordered": "bg-blue-100 text-blue-800 border-blue-200",
-  "Back-ordered": "bg-amber-100 text-amber-800 border-amber-200",
-  "Delivered": "bg-green-100 text-green-800 border-green-200",
-  "Returned": "bg-orange-100 text-orange-800 border-orange-200",
-  "Cancelled": "bg-red-100 text-red-800 border-red-200"
+  pending: "bg-slate-100 text-slate-700",
+  on_order: "bg-blue-100 text-blue-700",
+  in_transit: "bg-purple-100 text-purple-700",
+  in_loading_bay: "bg-cyan-100 text-cyan-700",
+  in_storage: "bg-emerald-100 text-emerald-700",
+  in_vehicle: "bg-teal-100 text-teal-700",
+  installed: "bg-green-100 text-green-700",
+  cancelled: "bg-red-100 text-red-700",
 };
 
 const locationColors = {
-  "On Order": "bg-slate-50 text-slate-600",
-  "At Supplier": "bg-indigo-50 text-indigo-600",
-  "At Delivery Bay": "bg-blue-50 text-blue-600",
-  "In Warehouse Storage": "bg-purple-50 text-purple-600",
-  "With Technician": "bg-amber-50 text-amber-600",
-  "At Client Site": "bg-green-50 text-green-600",
-  [LOGISTICS_LOCATION.LOADING_BAY]: "bg-blue-50 text-blue-600",
-  [LOGISTICS_LOCATION.STORAGE]: "bg-purple-50 text-purple-600",
-  [LOGISTICS_LOCATION.VEHICLE]: "bg-amber-50 text-amber-600",
-  [LOGISTICS_LOCATION.SITE]: "bg-green-50 text-green-600"
+  supplier: "bg-indigo-50 text-indigo-600",
+  delivery_bay: "bg-blue-50 text-blue-600",
+  warehouse_storage: "bg-purple-50 text-purple-600",
+  vehicle: "bg-amber-50 text-amber-600",
+  client_site: "bg-green-50 text-green-600",
 };
 
 // Flow steps for progress bar
 const FLOW_STEPS = [
-  "On Order", 
-  LOGISTICS_LOCATION.LOADING_BAY, 
-  LOGISTICS_LOCATION.STORAGE, 
-  LOGISTICS_LOCATION.VEHICLE, 
-  LOGISTICS_LOCATION.SITE
+  "supplier", 
+  "delivery_bay", 
+  "warehouse_storage", 
+  "vehicle", 
+  "client_site"
 ];
 
 export default function PartsSection({ projectId, autoExpand = false, registerAddPartTrigger }) {
@@ -186,7 +175,7 @@ export default function PartsSection({ projectId, autoExpand = false, registerAd
 
   const handleMovePart = (e, part, toLocation) => {
     e.stopPropagation();
-    const fromLocation = part.location || LOGISTICS_LOCATION.LOADING_BAY;
+    const fromLocation = normaliseLegacyPartLocation(part.location) || PART_LOCATION.DELIVERY_BAY;
     movePartMutation.mutate({
       part_ids: [part.id],
       from_location: fromLocation,
@@ -259,8 +248,8 @@ export default function PartsSection({ projectId, autoExpand = false, registerAd
 
                     {/* Col 2: Status */}
                     <div className="col-span-6 md:col-span-2 mb-2 md:mb-0">
-                      <Badge className={`${statusColors[part.status]} font-medium border px-2.5 py-0.5`}>
-                        {part.status}
+                      <Badge className={`${statusColors[normaliseLegacyPartStatus(part.status)]} font-medium border px-2.5 py-0.5`}>
+                        {getPartStatusLabel(normaliseLegacyPartStatus(part.status))}
                       </Badge>
                       {part.eta && (
                         <div className="text-xs text-slate-500 mt-1">
@@ -271,20 +260,24 @@ export default function PartsSection({ projectId, autoExpand = false, registerAd
 
                     {/* Col 3: Location + Progress */}
                     <div className="col-span-6 md:col-span-2 mb-2 md:mb-0">
-                      <Badge className={`${locationColors[part.location] || 'bg-slate-100 text-slate-600'} border-0 font-normal`}>
+                      <Badge className={`${locationColors[normaliseLegacyPartLocation(part.location)] || 'bg-slate-100 text-slate-600'} border-0 font-normal`}>
                         <MapPin className="w-3 h-3 mr-1 opacity-70" />
-                        {part.location}
+                        {getPartLocationLabel(normaliseLegacyPartLocation(part.location))}
                       </Badge>
                       
                       {/* Progress Trail (Desktop) */}
                       <div className="hidden md:flex items-center gap-1 mt-1.5">
-                        {FLOW_STEPS.map((step, idx) => (
-                          <div 
-                            key={step}
-                            className={`h-1 flex-1 rounded-full ${idx <= progressIndex ? 'bg-green-500' : 'bg-slate-200'}`}
-                            title={step}
-                          />
-                        ))}
+                        {FLOW_STEPS.map((step, idx) => {
+                          const normalizedLocation = normaliseLegacyPartLocation(part.location);
+                          const currentIndex = FLOW_STEPS.indexOf(normalizedLocation);
+                          return (
+                            <div 
+                              key={step}
+                              className={`h-1 flex-1 rounded-full ${idx <= currentIndex ? 'bg-green-500' : 'bg-slate-200'}`}
+                              title={getPartLocationLabel(step)}
+                            />
+                          );
+                        })}
                       </div>
                     </div>
 
@@ -333,14 +326,14 @@ export default function PartsSection({ projectId, autoExpand = false, registerAd
                     {/* Col 6: Quick Actions */}
                     <div className="col-span-12 md:col-span-2 flex items-center justify-end gap-2 mt-2 md:mt-0 flex-wrap">
                       {/* Show move buttons for parts in Loading Bay */}
-                      {(part.location === LOGISTICS_LOCATION.LOADING_BAY || part.location === "At Delivery Bay") && (
+                      {normaliseLegacyPartLocation(part.location) === PART_LOCATION.DELIVERY_BAY && (
                         <>
                           <Button 
                             size="sm" 
                             variant="outline" 
                             className="h-8 text-xs"
                             title="Move to Storage"
-                            onClick={(e) => handleMovePart(e, part, LOGISTICS_LOCATION.STORAGE)}
+                            onClick={(e) => handleMovePart(e, part, PART_LOCATION.WAREHOUSE_STORAGE)}
                             disabled={movePartMutation.isPending}
                           >
                             <Package className="w-3 h-3 mr-1" />
@@ -351,7 +344,7 @@ export default function PartsSection({ projectId, autoExpand = false, registerAd
                             variant="outline" 
                             className="h-8 text-xs"
                             title="Move to Vehicle"
-                            onClick={(e) => handleMovePart(e, part, LOGISTICS_LOCATION.VEHICLE)}
+                            onClick={(e) => handleMovePart(e, part, PART_LOCATION.VEHICLE)}
                             disabled={movePartMutation.isPending}
                           >
                             <Truck className="w-3 h-3 mr-1" />
@@ -360,13 +353,13 @@ export default function PartsSection({ projectId, autoExpand = false, registerAd
                         </>
                       )}
                       {/* Show move to site button for parts on vehicle */}
-                      {(part.location === LOGISTICS_LOCATION.VEHICLE || part.location === "With Technician") && (
+                      {normaliseLegacyPartLocation(part.location) === PART_LOCATION.VEHICLE && (
                         <Button 
                           size="sm" 
                           variant="outline" 
                           className="h-8 text-xs"
                           title="Move to Site"
-                          onClick={(e) => handleMovePart(e, part, LOGISTICS_LOCATION.SITE)}
+                          onClick={(e) => handleMovePart(e, part, PART_LOCATION.CLIENT_SITE)}
                           disabled={movePartMutation.isPending}
                         >
                           <ArrowRight className="w-3 h-3 mr-1" />

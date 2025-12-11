@@ -2,7 +2,7 @@ import React, { useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { base44 } from "@/api/base44Client";
 import { LOCATION_TYPE, MOVEMENT_TYPE } from "@/components/domain/inventoryConfig";
-import { INVENTORY_LOCATION } from "@/components/domain/inventoryLocationConfig";
+import { PART_LOCATION } from "@/components/domain/partConfig";
 import {
   Dialog,
   DialogContent,
@@ -49,9 +49,9 @@ export default function AssignPartToVehicleModal({
 
       // 1. Update Part
       await base44.entities.Part.update(part.id, {
-        location: INVENTORY_LOCATION.WITH_TECHNICIAN,
+        location: PART_LOCATION.VEHICLE,
         assigned_vehicle_id: selectedVehicleId,
-        status: "Delivered", // Assuming assigned means it's now with tech/delivered
+        status: "in_vehicle",
       });
 
       // 2. Create Stock Movement (Warehouse -> Vehicle)

@@ -25,7 +25,8 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import RichTextEditor from "../common/RichTextEditor";
 import { format } from "date-fns";
 import { toast } from "sonner";
-import { PART_STATUS, PART_STATUS_OPTIONS, LOGISTICS_LOCATION } from "@/components/domain/logisticsConfig";
+import { PART_STATUS, PART_STATUS_OPTIONS, PART_LOCATION, PART_LOCATION_OPTIONS, getPartStatusLabel, getPartLocationLabel, normaliseLegacyPartStatus, normaliseLegacyPartLocation } from "@/components/domain/partConfig";
+import { SOURCE_TYPE, SOURCE_TYPE_OPTIONS, SOURCE_TYPE_LABELS, getSourceTypeLabel, normaliseLegacySourceType } from "@/components/domain/supplierDeliveryConfig";
 import { createPageUrl } from "@/utils";
 import { useNavigate } from "react-router-dom";
 
@@ -33,31 +34,13 @@ const CATEGORIES = [
   "Door", "Motor", "Posts", "Tracks", "Small Parts", "Hardware", "Other"
 ];
 
-const STATUSES = PART_STATUS_OPTIONS;
-
-const SOURCE_TYPES = [
-  "Supplier – Deliver to Warehouse",
-  "Supplier – Pickup Required",
-  "In Stock (KGD)",
-  "Client Supplied"
-];
-
-const LOCATIONS = [
-  LOGISTICS_LOCATION.LOADING_BAY,
-  LOGISTICS_LOCATION.STORAGE,
-  LOGISTICS_LOCATION.VEHICLE,
-  LOGISTICS_LOCATION.SITE,
-  // Legacy locations
-  "On Order", "At Supplier", "At Delivery Bay", "In Warehouse Storage", "With Technician", "At Client Site"
-];
-
 export default function PartDetailModal({ open, part, onClose, onSave, isSubmitting, projectId }) {
   // Initialize with defaults to avoid blank fields
   const [formData, setFormData] = useState({
     category: "Other",
-    status: "Pending",
-    source_type: "Supplier – Deliver to Warehouse",
-    location: "On Order",
+    status: PART_STATUS.PENDING,
+    source_type: SOURCE_TYPE.SUPPLIER_DELIVERY,
+    location: PART_LOCATION.SUPPLIER,
     order_date: new Date().toISOString().split('T')[0],
     linked_logistics_jobs: [],
     attachments: [],
@@ -156,9 +139,9 @@ export default function PartDetailModal({ open, part, onClose, onSave, isSubmitt
       console.log("PartDetailModal: Creating new part (no part data)");
       setFormData({
         category: "Other",
-        status: "Pending",
-        source_type: "Supplier – Deliver to Warehouse",
-        location: "On Order",
+        status: PART_STATUS.PENDING,
+        source_type: SOURCE_TYPE.SUPPLIER_DELIVERY,
+        location: PART_LOCATION.SUPPLIER,
         order_date: new Date().toISOString().split('T')[0],
         linked_logistics_jobs: [],
         attachments: [],
@@ -208,8 +191,8 @@ export default function PartDetailModal({ open, part, onClose, onSave, isSubmitt
     setPoError("");
 
     const isSupplierSource = 
-      formData.source_type === "Supplier – Deliver to Warehouse" ||
-      formData.source_type === "Supplier – Pickup Required";
+      formData.source_type === SOURCE_TYPE.SUPPLIER_DELIVERY ||
+      formData.source_type === SOURCE_TYPE.SUPPLIER_PICKUP;
 
     // Validate supplier is set if supplier source
     if (isSupplierSource && !formData.supplier_id) {
@@ -291,7 +274,7 @@ export default function PartDetailModal({ open, part, onClose, onSave, isSubmitt
       toast.error("Save the part first before moving");
       return;
     }
-    const fromLocation = part.location || LOGISTICS_LOCATION.LOADING_BAY;
+    const fromLocation = normaliseLegacyPartLocation(part.location) || PART_LOCATION.DELIVERY_BAY;
     movePartMutation.mutate({
       part_ids: [part.id],
       from_location: fromLocation,
@@ -299,8 +282,8 @@ export default function PartDetailModal({ open, part, onClose, onSave, isSubmitt
     });
   };
 
-  const isInLoadingBay = part?.location === LOGISTICS_LOCATION.LOADING_BAY || part?.location === "At Delivery Bay";
-  const isOnVehicle = part?.location === LOGISTICS_LOCATION.VEHICLE || part?.location === "With Technician";
+  const isInLoadingBay = normaliseLegacyPartLocation(part?.location) === PART_LOCATION.DELIVERY_BAY;
+  const isOnVehicle = normaliseLegacyPartLocation(part?.location) === PART_LOCATION.VEHICLE;
 
   return (
     <Dialog open={open} onOpenChange={onClose}>
@@ -458,19 +441,16 @@ export default function PartDetailModal({ open, part, onClose, onSave, isSubmitt
                   <Label>Status</Label>
                   <Select 
                     value={formData.status} 
-                    onValueChange={(val) => {
-                      const updates = { status: val };
-                      // Auto-set order date if setting to Ordered for first time? 
-                      // Prompt says default today on new parts, handled in init.
-                      setFormData({...formData, ...updates});
-                    }}
+                    onValueChange={(val) => setFormData({...formData, status: val})}
                   >
                     <SelectTrigger className="bg-white">
                       <SelectValue placeholder="Select status" />
                     </SelectTrigger>
                     <SelectContent>
-                      {STATUSES.map(status => (
-                        <SelectItem key={status} value={status}>{status}</SelectItem>
+                      {PART_STATUS_OPTIONS.map(status => (
+                        <SelectItem key={status} value={status}>
+                          {getPartStatusLabel(status)}
+                        </SelectItem>
                       ))}
                     </SelectContent>
                   </Select>
@@ -486,8 +466,10 @@ export default function PartDetailModal({ open, part, onClose, onSave, isSubmitt
                       <SelectValue placeholder="Select source" />
                     </SelectTrigger>
                     <SelectContent>
-                      {SOURCE_TYPES.map(type => (
-                        <SelectItem key={type} value={type}>{type}</SelectItem>
+                      {SOURCE_TYPE_OPTIONS.map(type => (
+                        <SelectItem key={type} value={type}>
+                          {getSourceTypeLabel(type)}
+                        </SelectItem>
                       ))}
                     </SelectContent>
                   </Select>
@@ -509,8 +491,8 @@ export default function PartDetailModal({ open, part, onClose, onSave, isSubmitt
 
 
             {/* Supplier Selection for Supplier-type parts */}
-            {(formData.source_type === "Supplier – Deliver to Warehouse" ||
-              formData.source_type === "Supplier – Pickup Required") && (
+            {(formData.source_type === SOURCE_TYPE.SUPPLIER_DELIVERY ||
+              formData.source_type === SOURCE_TYPE.SUPPLIER_PICKUP) && (
               <section className="space-y-4">
                 <h3 className="text-[15px] font-semibold text-[#111827] uppercase tracking-wide">Supplier Details</h3>
                 <p className="text-sm text-[#6B7280]">
@@ -592,7 +574,7 @@ export default function PartDetailModal({ open, part, onClose, onSave, isSubmitt
                     <>
                       <Button
                         type="button"
-                        onClick={() => handleMovePart(LOGISTICS_LOCATION.STORAGE)}
+                        onClick={() => handleMovePart(PART_LOCATION.WAREHOUSE_STORAGE)}
                         disabled={movePartMutation.isPending}
                         variant="outline"
                         className="flex-1 min-w-[140px]"
@@ -602,7 +584,7 @@ export default function PartDetailModal({ open, part, onClose, onSave, isSubmitt
                       </Button>
                       <Button
                         type="button"
-                        onClick={() => handleMovePart(LOGISTICS_LOCATION.VEHICLE)}
+                        onClick={() => handleMovePart(PART_LOCATION.VEHICLE)}
                         disabled={movePartMutation.isPending}
                         variant="outline"
                         className="flex-1 min-w-[140px]"
@@ -615,7 +597,7 @@ export default function PartDetailModal({ open, part, onClose, onSave, isSubmitt
                   {isOnVehicle && (
                     <Button
                       type="button"
-                      onClick={() => handleMovePart(LOGISTICS_LOCATION.SITE)}
+                      onClick={() => handleMovePart(PART_LOCATION.CLIENT_SITE)}
                       disabled={movePartMutation.isPending}
                       variant="outline"
                       className="flex-1 min-w-[140px]"

@@ -24,25 +24,12 @@ import {
   getLoadingBayParts,
   getLogisticsJobs,
 } from "@/components/domain/logisticsViewHelpers";
-import { LOGISTICS_LOCATION, PO_STATUS, PO_DELIVERY_METHOD, PO_STATUS_OPTIONS, getPoStatusLabel, normaliseLegacyPoStatus } from "@/components/domain/logisticsConfig";
+import { LOGISTICS_LOCATION } from "@/components/domain/logisticsConfig";
+import { PO_STATUS, PO_STATUS_OPTIONS, getPoStatusLabel, normaliseLegacyPoStatus } from "@/components/domain/purchaseOrderStatusConfig";
+import { DELIVERY_METHOD as PO_DELIVERY_METHOD } from "@/components/domain/supplierDeliveryConfig";
+import { PART_LOCATION } from "@/components/domain/partConfig";
 
-const STATUS_COLORS = {
-  Pending: "bg-slate-100 text-slate-800 border-slate-200",
-  Ordered: "bg-blue-100 text-blue-800 border-blue-200",
-  "Back-ordered": "bg-amber-100 text-amber-800 border-amber-200",
-  Delivered: "bg-green-100 text-green-800 border-green-200",
-  Returned: "bg-orange-100 text-orange-800 border-orange-200",
-  Cancelled: "bg-red-100 text-red-800 border-red-200",
-};
-
-const LOCATION_COLORS = {
-  "On Order": "bg-slate-50 text-slate-600",
-  [INVENTORY_LOCATION.SUPPLIER]: "bg-indigo-50 text-indigo-600",
-  [INVENTORY_LOCATION.DELIVERY_BAY]: "bg-blue-50 text-blue-600",
-  [INVENTORY_LOCATION.WAREHOUSE]: "bg-purple-50 text-purple-600",
-  [INVENTORY_LOCATION.WITH_TECHNICIAN]: "bg-amber-50 text-amber-600",
-  [INVENTORY_LOCATION.AT_CLIENT_SITE]: "bg-green-50 text-green-600",
-};
+// Removed legacy status/location colors - use unified config
 
 export default function Logistics() {
   const queryClient = useQueryClient();
@@ -139,11 +126,12 @@ export default function Logistics() {
     [parts]
   );
 
-  // Get all PO line items for POs in Delivered to Delivery Bay status
+  // Get all PO line items for POs in Loading Bay status
   const deliveredPOItems = useMemo(() => {
-    const deliveredPOs = purchaseOrders.filter(
-      po => po.status === PO_STATUS.DELIVERED_TO_DELIVERY_BAY
-    );
+    const deliveredPOs = purchaseOrders.filter(po => {
+      const normalized = normaliseLegacyPoStatus(po.status);
+      return normalized === PO_STATUS.IN_LOADING_BAY && po.delivery_method === PO_DELIVERY_METHOD.DELIVERY;
+    });
     
     const items = [];
     for (const po of deliveredPOs) {
@@ -174,59 +162,45 @@ export default function Logistics() {
   );
 
   const activePOs = useMemo(
-    () => purchaseOrders.filter(po =>
-      po.status !== PO_STATUS.DRAFT &&
-      po.status !== PO_STATUS.IN_STORAGE &&
-      po.status !== PO_STATUS.IN_VEHICLE &&
-      po.status !== PO_STATUS.INSTALLED &&
-      po.status !== PO_STATUS.COMPLETED_IN_STORAGE &&
-      po.status !== PO_STATUS.COMPLETED_IN_VEHICLE
-    ),
+    () => purchaseOrders.filter(po => {
+      const normalized = normaliseLegacyPoStatus(po.status);
+      return normalized !== PO_STATUS.DRAFT &&
+        normalized !== PO_STATUS.IN_STORAGE &&
+        normalized !== PO_STATUS.IN_VEHICLE &&
+        normalized !== PO_STATUS.INSTALLED;
+    }),
     [purchaseOrders]
   );
 
   const onOrderPOs = useMemo(
-    () => purchaseOrders.filter(po =>
-      [PO_STATUS.SENT, PO_STATUS.ON_ORDER, PO_STATUS.IN_TRANSIT].includes(po.status)
-    ),
+    () => purchaseOrders.filter(po => {
+      const normalized = normaliseLegacyPoStatus(po.status);
+      return [PO_STATUS.SENT, PO_STATUS.ON_ORDER, PO_STATUS.IN_TRANSIT].includes(normalized);
+    }),
     [purchaseOrders]
   );
 
   const readyAtSupplierPOs = useMemo(
-    () => purchaseOrders.filter(po =>
-      [PO_STATUS.READY_TO_PICK_UP].includes(po.status)
-    ),
+    () => purchaseOrders.filter(po => {
+      const normalized = normaliseLegacyPoStatus(po.status);
+      return normalized === PO_STATUS.IN_LOADING_BAY && po.delivery_method === PO_DELIVERY_METHOD.PICKUP;
+    }),
     [purchaseOrders]
   );
 
   const atDeliveryBayPOs = useMemo(
-    () => purchaseOrders.filter(po =>
-      [PO_STATUS.DELIVERED_LOADING_BAY, PO_STATUS.DELIVERED_TO_DELIVERY_BAY].includes(po.status)
-    ),
-    [purchaseOrders]
-  );
-
-  const deliveredPickedUpPOs = useMemo(
-    () =>
-      purchaseOrders.filter(
-        (po) =>
-          po.status === PO_STATUS.DELIVERED ||
-          po.status === PO_STATUS.READY_TO_PICK_UP ||
-          po.status === PO_STATUS.DELIVERED_TO_DELIVERY_BAY
-      ),
+    () => purchaseOrders.filter(po => {
+      const normalized = normaliseLegacyPoStatus(po.status);
+      return normalized === PO_STATUS.IN_LOADING_BAY && po.delivery_method === PO_DELIVERY_METHOD.DELIVERY;
+    }),
     [purchaseOrders]
   );
 
   const completedPOs = useMemo(
-    () =>
-      purchaseOrders.filter(
-        (po) =>
-          po.status === PO_STATUS.IN_STORAGE ||
-          po.status === PO_STATUS.IN_VEHICLE ||
-          po.status === PO_STATUS.INSTALLED ||
-          po.status === PO_STATUS.COMPLETED_IN_STORAGE ||
-          po.status === PO_STATUS.COMPLETED_IN_VEHICLE
-      ),
+    () => purchaseOrders.filter(po => {
+      const normalized = normaliseLegacyPoStatus(po.status);
+      return [PO_STATUS.IN_STORAGE, PO_STATUS.IN_VEHICLE, PO_STATUS.INSTALLED].includes(normalized);
+    }),
     [purchaseOrders]
   );
 
@@ -319,33 +293,7 @@ export default function Logistics() {
     return map;
   }, [priceListItems, inventoryQuantities]);
 
-  const detectShortage = useCallback(
-    (part) => {
-      if (
-        [
-          "Ordered",
-          "Back-ordered",
-          "Delivered",
-          "At Supplier",
-          "At Delivery Bay",
-          "In Warehouse Storage",
-          "With Technician",
-          "At Client Site",
-        ].includes(part.status)
-      ) {
-        return false;
-      }
-      if (part.status === "Cancelled") return false;
-
-      const requiredQty = part.quantity_required || 1;
-      if (part.price_list_item_id) {
-        const availableQty = inventoryByItem[part.price_list_item_id] || 0;
-        return availableQty < requiredQty;
-      }
-      return true;
-    },
-    [inventoryByItem]
-  );
+  // Removed unused detectShortage - logic handled in ProjectPartsPanel
 
   const projectMap = useMemo(
     () =>
@@ -417,7 +365,7 @@ export default function Logistics() {
     try {
       const response = await base44.functions.invoke("recordStockMovement", {
         part_ids: [part.id],
-        from_location: LOGISTICS_LOCATION.LOADING_BAY,
+        from_location: PART_LOCATION.DELIVERY_BAY,
         to_location: destination,
       });
 
@@ -442,27 +390,9 @@ export default function Logistics() {
     onError: () => toast.error("Failed to update job"),
   });
 
-  const handleStatusChange = useCallback(
-    (partId, newStatus) => {
-      updatePartMutation.mutate({ id: partId, data: { status: newStatus } });
-    },
-    [updatePartMutation]
-  );
+  // Removed unused handleStatusChange
 
-  const handleLocationChange = useCallback(
-    (partId, newLocation) => {
-      const part = parts.find((p) => p.id === partId);
-      if (!part) return;
-
-      const fromLocation = part.location || "Supplier";
-      movePartMutation.mutate({
-        part_ids: [partId],
-        from_location: fromLocation,
-        to_location: newLocation,
-      });
-    },
-    [parts, movePartMutation]
-  );
+  // Removed unused handleLocationChange - use recordStockMovement directly
 
   const filteredParts = useMemo(() => {
     return parts
@@ -479,7 +409,8 @@ export default function Logistics() {
         if (!matchesSearch) return false;
 
         if (statusFilter === "active") {
-          if (["Delivered", "Cancelled", "Returned"].includes(part.status))
+          const normalized = part.status?.toLowerCase().replace(/\s+/g, "_");
+          if (["installed", "cancelled"].includes(normalized))
             return false;
         } else if (statusFilter !== "all") {
           if (part.status !== statusFilter) return false;
@@ -574,15 +505,13 @@ export default function Logistics() {
                     {
                       action: "create",
                       supplier_id: suppliers[0]?.id || "temp",
-                      line_items: [{ name: "New Item", qty: 1, price: 0 }],
+                      line_items: [{ name: "New Item", quantity: 1, unit_price: 0 }],
                     }
                   );
 
                   if (response.data?.success && response.data?.purchaseOrder) {
                     const newPO = response.data.purchaseOrder;
-                    navigate(
-                      `${createPageUrl("PurchaseOrders")}?poId=${newPO.id}`
-                    );
+                    setSelectedPoId(newPO.id);
                     toast.success("Draft Purchase Order created");
                   } else {
                     toast.error("Failed to create PO");
@@ -890,13 +819,9 @@ export default function Logistics() {
                               <SelectValue />
                             </SelectTrigger>
                             <SelectContent onClick={(e) => e.stopPropagation()}>
-                              {PO_STATUS_OPTIONS.filter((status) => {
-                                if (po.delivery_method === PO_DELIVERY_METHOD.DELIVERY && status === PO_STATUS.READY_TO_PICK_UP) return false;
-                                if (po.delivery_method === PO_DELIVERY_METHOD.PICKUP && status === PO_STATUS.DELIVERED_TO_DELIVERY_BAY) return false;
-                                return true;
-                              }).map((status) => (
+                              {PO_STATUS_OPTIONS.map((status) => (
                                 <SelectItem key={status} value={status}>
-                                  {status}
+                                  {getPoStatusLabel(status)}
                                 </SelectItem>
                               ))}
                             </SelectContent>
@@ -1076,11 +1001,11 @@ export default function Logistics() {
                                   variant="outline"
                                   className="h-7 text-xs flex-1"
                                   onClick={(e) => {
-                                    e.stopPropagation();
-                                    handleMoveLoadingBayPart(
-                                      part,
-                                      LOGISTICS_LOCATION.STORAGE
-                                    );
+                                   e.stopPropagation();
+                                   handleMoveLoadingBayPart(
+                                     part,
+                                     PART_LOCATION.WAREHOUSE_STORAGE
+                                   );
                                   }}
                                 >
                                   To Storage
@@ -1090,11 +1015,11 @@ export default function Logistics() {
                                   variant="outline"
                                   className="h-7 text-xs flex-1"
                                   onClick={(e) => {
-                                    e.stopPropagation();
-                                    handleMoveLoadingBayPart(
-                                      part,
-                                      LOGISTICS_LOCATION.VEHICLE
-                                    );
+                                   e.stopPropagation();
+                                   handleMoveLoadingBayPart(
+                                     part,
+                                     PART_LOCATION.VEHICLE
+                                   );
                                   }}
                                 >
                                   To Vehicle
