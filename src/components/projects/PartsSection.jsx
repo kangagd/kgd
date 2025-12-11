@@ -234,32 +234,6 @@ export default function PartsSection({ projectId, autoExpand = false }) {
 
   return (
     <div className="space-y-4">
-      <div className="flex items-center justify-between">
-        <div>
-          <h3 className="text-[16px] font-semibold text-[#111827]">Project Parts & Ordering</h3>
-          <p className="text-xs text-[#6B7280] mt-0.5">These Parts represent what this project needs. Supplier-type parts will be linked to Purchase Orders and logistics.</p>
-        </div>
-        <div className="flex gap-2">
-          <Button
-            onClick={() => setShowCreatePODialog(true)}
-            size="sm"
-            variant="outline"
-            title="Create a Purchase Order for this project"
-          >
-            <ShoppingCart className="w-4 h-4 mr-1" />
-            Create PO
-          </Button>
-          <Button
-            onClick={handleAddPart}
-            size="sm"
-            className="bg-[#FAE008] text-[#111827] hover:bg-[#E5CF07] font-semibold"
-            title="Add a Part required for this project (can be supplier, in-stock or client-supplied)"
-          >
-            <Plus className="w-4 h-4 mr-1" />
-            Add Part
-          </Button>
-        </div>
-      </div>
 
       {parts.length === 0 && projectPOs.length === 0 ? (
         <div className="text-center py-12 bg-slate-50 rounded-xl border border-dashed border-slate-200">
