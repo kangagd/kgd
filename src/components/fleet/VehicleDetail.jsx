@@ -14,6 +14,7 @@ import VehicleFormModal from "./VehicleFormModal";
 import { toast } from "sonner";
 import { Badge } from "@/components/ui/badge";
 import LocationBadge from "@/components/common/LocationBadge";
+import VehicleSamplesPanel from "./VehicleSamplesPanel";
 
 export default function VehicleDetail({ vehicle, onBack }) {
   const queryClient = useQueryClient();
@@ -165,6 +166,7 @@ export default function VehicleDetail({ vehicle, onBack }) {
       <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
         <TabsList className="bg-white border border-gray-200 p-1 h-auto">
           <TabsTrigger value="stock" className="px-6 py-2">Stock Inventory</TabsTrigger>
+          <TabsTrigger value="samples" className="px-6 py-2">Samples</TabsTrigger>
           <TabsTrigger value="tools" className="px-6 py-2">Tools</TabsTrigger>
           <TabsTrigger value="parts" className="px-6 py-2">Parts & Hardware</TabsTrigger>
           <TabsTrigger value="movements" className="px-6 py-2">History & Movements</TabsTrigger>
@@ -196,6 +198,10 @@ export default function VehicleDetail({ vehicle, onBack }) {
               />
             </CardContent>
           </Card>
+        </TabsContent>
+
+        <TabsContent value="samples">
+          <VehicleSamplesPanel vehicle={vehicle} />
         </TabsContent>
 
         <TabsContent value="tools">
