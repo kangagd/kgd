@@ -223,36 +223,8 @@ The summary should be a single paragraph, professional, and capture the key work
                     p.linked_logistics_jobs && p.linked_logistics_jobs.includes(jobId)
                 );
 
-                if (relevantParts.length > 0) {
-                    let updates = {};
-
-                    // C. When warehouse logistics job is completed → update Part location
-                    if (jobType === "Delivery – At Warehouse") {
-                        updates.location = "In Warehouse Storage";
-                    }
-                    // E. When Material Pickup – Warehouse job completes → update Part location
-                    else if (jobType === "Material Pickup – Warehouse") {
-                        updates.location = "With Technician";
-                    }
-                    // F. Delivery – To Client & Return to Supplier
-                    else if (jobType === "Delivery – To Client") {
-                        updates.location = "At Client Site";
-                    }
-                    else if (jobType === "Return to Supplier") {
-                        updates.status = "Returned";
-                        updates.location = "At Supplier";
-                    }
-
-                    if (Object.keys(updates).length > 0) {
-                        for (const part of relevantParts) {
-                            // Avoid overwriting if already set? Prompt says "if not already set" for C.
-                            // We'll apply updates.
-                            if (jobType === "Delivery – At Warehouse" && part.location === "In Warehouse Storage") continue;
-
-                            await base44.asServiceRole.entities.Part.update(part.id, updates);
-                        }
-                    }
-                }
+                // Logistics automation now handled by Job outcome logic
+                // Legacy logistics job types removed - use PO status sync instead
             }
         } catch (logisticsErr) {
             console.error("Logistics automation failed", logisticsErr);
