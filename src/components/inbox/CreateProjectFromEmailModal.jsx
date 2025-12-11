@@ -35,7 +35,14 @@ export default function CreateProjectFromEmailModal({ open, onClose, thread, onS
   });
 
   const createProjectMutation = useMutation({
-    mutationFn: (data) => base44.entities.Project.create(data),
+    mutationFn: async (data) => {
+      const newProject = await base44.entities.Project.create(data);
+      // Set last_activity_at to created_date
+      await base44.entities.Project.update(newProject.id, {
+        last_activity_at: newProject.created_date
+      });
+      return newProject;
+    },
     onSuccess: (newProject) => {
       onSuccess(newProject.id, newProject.title);
     }

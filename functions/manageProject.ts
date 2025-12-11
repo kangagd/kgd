@@ -34,6 +34,11 @@ Deno.serve(async (req) => {
             }
 
             project = await base44.asServiceRole.entities.Project.create(projectData);
+            
+            // Set last_activity_at to created_date
+            await base44.asServiceRole.entities.Project.update(project.id, {
+                last_activity_at: project.created_date
+            });
         } else if (action === 'update') {
             project = await base44.asServiceRole.entities.Project.update(id, data);
 
