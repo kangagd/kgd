@@ -1475,9 +1475,6 @@ export default function JobDetails({ job: initialJob, onClose, onStatusChange, o
                   {/* Job Contacts Panel */}
                   <JobContactsPanel job={job} />
 
-                  {/* Third-Party Trades Info */}
-                  {job.project_id && <ThirdPartyTradesInfo job={job} />}
-
                   {/* Tasks Panel */}
                   <Collapsible defaultOpen={false} className="border border-[#E5E7EB] shadow-sm rounded-lg bg-white">
                     <CollapsibleTrigger className="w-full flex items-center justify-between p-4 hover:bg-slate-50 transition-colors group">
