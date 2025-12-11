@@ -1,4 +1,5 @@
 import { createClientFromRequest } from 'npm:@base44/sdk@0.8.4';
+import { updateProjectActivity } from './updateProjectActivity.js';
 
 async function refreshTokenIfNeeded(user, base44) {
   const expiry = new Date(user.gmail_token_expiry);
@@ -332,6 +333,11 @@ Deno.serve(async (req) => {
           await base44.asServiceRole.entities.EmailThread.update(threadId, {
             message_count: (currentThread.message_count || 0) + 1
           });
+
+          // Update project activity if thread is linked to a project
+          if (currentThread.linked_project_id) {
+            await updateProjectActivity(base44, currentThread.linked_project_id);
+          }
 
           if (processedAttachments.length > 0) {
             if (currentThread.linked_project_id) {
