@@ -85,22 +85,25 @@ Deno.serve(async (req) => {
                 }
             }
         } else if (action === 'delete') {
-            // Handle unlink email thread logic here if needed, or keep it in frontend/Project.js for now
-            // But to be consistent, let's replicate it here if we want to fully move logic. 
-            // The frontend `deleteProjectMutation` does unlinking. I should keep it simple for now 
-            // and just use this for basic CRUD or move full logic.
-            // Since user asked to "Implement logic in backend functions" for auto-linking, 
-            // `manageProject` is primarily for that.
+            // Get project before deletion to check for linked email thread
+            const projectToDelete = await base44.asServiceRole.entities.Project.get(id);
             
-            if (data && data.deleted_at) {
-                 project = await base44.asServiceRole.entities.Project.update(id, { deleted_at: data.deleted_at });
-            } else {
-                 // Hard delete or soft delete?
-                 // Frontend sends { deleted_at: ... } usually for soft delete
-                 // If action is delete, assume soft delete or follow passed data
-                 await base44.asServiceRole.entities.Project.delete(id); 
-                 return Response.json({ success: true });
+            // Unlink from any email threads
+            if (projectToDelete?.source_email_thread_id) {
+                try {
+                    await base44.asServiceRole.entities.EmailThread.update(projectToDelete.source_email_thread_id, {
+                        linked_project_id: null,
+                        linked_project_title: null
+                    });
+                } catch (error) {
+                    console.error('Error unlinking email thread:', error);
+                }
             }
+            
+            // Soft delete the project
+            project = await base44.asServiceRole.entities.Project.update(id, { 
+                deleted_at: new Date().toISOString() 
+            });
         } else {
             return Response.json({ error: 'Invalid action' }, { status: 400 });
         }

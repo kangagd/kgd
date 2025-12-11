@@ -249,9 +249,32 @@ Deno.serve(async (req) => {
 
             // Removed legacy PO receiving logic - now handled via logistics_outcome
         } else if (action === 'delete') {
-             // Soft delete usually
-             await base44.asServiceRole.entities.Job.update(id, { deleted_at: new Date().toISOString() });
-             return Response.json({ success: true });
+            // Get job before deletion to check for linked email thread
+            const jobToDelete = await base44.asServiceRole.entities.Job.get(id);
+            
+            // Unlink from any email threads
+            if (jobToDelete) {
+                try {
+                    // Find email threads linked to this job
+                    const linkedThreads = await base44.asServiceRole.entities.EmailThread.filter({
+                        linked_job_id: id
+                    });
+                    
+                    // Unlink all threads
+                    for (const thread of linkedThreads) {
+                        await base44.asServiceRole.entities.EmailThread.update(thread.id, {
+                            linked_job_id: null,
+                            linked_job_number: null
+                        });
+                    }
+                } catch (error) {
+                    console.error('Error unlinking email threads from job:', error);
+                }
+            }
+            
+            // Soft delete the job
+            await base44.asServiceRole.entities.Job.update(id, { deleted_at: new Date().toISOString() });
+            return Response.json({ success: true });
         } else {
             return Response.json({ error: 'Invalid action' }, { status: 400 });
         }
