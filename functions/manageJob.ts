@@ -188,7 +188,7 @@ Deno.serve(async (req) => {
             
             // Update project activity when job is created
             if (job.project_id) {
-                await updateProjectActivity(base44, job.project_id);
+                await updateProjectActivity(base44, job.project_id, 'Job Created');
             }
         } else if (action === 'update') {
             previousJob = await base44.asServiceRole.entities.Job.get(id);
@@ -197,7 +197,7 @@ Deno.serve(async (req) => {
             
             // Update project activity when job is updated
             if (job.project_id) {
-                await updateProjectActivity(base44, job.project_id);
+                await updateProjectActivity(base44, job.project_id, 'Job Updated');
             }
 
             // Move Parts when logistics job is completed
