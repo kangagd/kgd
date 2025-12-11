@@ -12,6 +12,7 @@ export default function PurchaseOrdersList({ supplierId, onSelectPO }) {
   const queryClient = useQueryClient();
   const [receiveModalOpen, setReceiveModalOpen] = useState(false);
   const [selectedPOId, setSelectedPOId] = useState(null);
+  const selectedSupplierId = supplierId;
 
   const { data: purchaseOrders = [], isLoading } = useQuery({
     queryKey: ["purchase-orders-by-supplier", supplierId],
