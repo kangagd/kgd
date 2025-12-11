@@ -11,7 +11,6 @@ import { JobStatusBadge, JobTypeBadge, ProductTypeBadge } from "../common/Status
 import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
 import { DuplicateBadge } from "../common/DuplicateWarningCard";
-import AgeBadge from "../common/AgeBadge";
 
 
 
@@ -140,7 +139,6 @@ export default function JobCard({ job, onClick, onViewDetails, activeCheckIns = 
 
           {/* Schedule and Type */}
           <div className="flex items-center gap-4 text-[14px] text-[#4B5563] flex-wrap">
-            <AgeBadge date={job.created_date} prefix="Created" />
             {job.scheduled_date && (
               <div className="flex items-center gap-1.5">
                 <Calendar className="w-4 h-4 text-[#6B7280]" />
