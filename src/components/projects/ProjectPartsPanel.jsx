@@ -1,7 +1,7 @@
 import React, { useState } from "react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { AlertTriangle, CheckCircle2, Package, Truck, ExternalLink } from "lucide-react";
+import { AlertTriangle, CheckCircle2, Package, Truck, ExternalLink, Plus, ShoppingCart } from "lucide-react";
 import AssignPartToVehicleModal from "./AssignPartToVehicleModal";
 import { INVENTORY_LOCATION } from "@/components/domain/inventoryLocationConfig";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
@@ -9,10 +9,26 @@ import { base44 } from "@/api/base44Client";
 import { useNavigate } from "react-router-dom";
 import { createPageUrl } from "@/utils";
 import { format } from "date-fns";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import { toast } from "sonner";
 
 export default function ProjectPartsPanel({ project, parts = [], inventoryByItem = {} }) {
   const [assignModalOpen, setAssignModalOpen] = useState(false);
   const [partToAssign, setPartToAssign] = useState(null);
+  const [showCreatePODialog, setShowCreatePODialog] = useState(false);
+  const [selectedSupplierId, setSelectedSupplierId] = useState("");
   const queryClient = useQueryClient();
   const navigate = useNavigate();
 
@@ -20,6 +36,11 @@ export default function ProjectPartsPanel({ project, parts = [], inventoryByItem
     queryKey: ['projectPOs', project.id],
     queryFn: () => base44.entities.PurchaseOrder.filter({ project_id: project.id }, '-created_date'),
     enabled: !!project.id
+  });
+
+  const { data: suppliers = [] } = useQuery({
+    queryKey: ['suppliers-for-po-panel'],
+    queryFn: () => base44.entities.Supplier.list('name')
   });
 
   const detectShortage = (part) => {
@@ -58,9 +79,29 @@ export default function ProjectPartsPanel({ project, parts = [], inventoryByItem
             Purchase orders and parts for this project. "Shortages" = Parts requiring ordering. "Ready" = Parts available to pick.
           </p>
         </div>
-        <Button variant="outline" size="sm" className="h-8 text-xs">
-          Print Pick List
-        </Button>
+        <div className="flex gap-2">
+          <Button
+            onClick={() => setShowCreatePODialog(true)}
+            size="sm"
+            variant="outline"
+            title="Create a Purchase Order for this project"
+          >
+            <ShoppingCart className="w-4 h-4 mr-1" />
+            Create PO
+          </Button>
+          <Button
+            onClick={handleAddPart}
+            size="sm"
+            className="bg-[#FAE008] text-[#111827] hover:bg-[#E5CF07] font-semibold"
+            title="Add a Part required for this project"
+          >
+            <Plus className="w-4 h-4 mr-1" />
+            Add Part
+          </Button>
+          <Button variant="outline" size="sm" className="h-8 text-xs">
+            Print Pick List
+          </Button>
+        </div>
       </div>
 
       {/* Purchase Orders */}
@@ -219,6 +260,85 @@ export default function ProjectPartsPanel({ project, parts = [], inventoryByItem
           queryClient.invalidateQueries({ queryKey: ['parts'] });
         }}
       />
+
+      <Dialog open={showCreatePODialog} onOpenChange={setShowCreatePODialog}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Create Purchase Order</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4 py-4">
+            <div className="space-y-2">
+              <label className="text-sm font-medium">Select Supplier</label>
+              <Select value={selectedSupplierId} onValueChange={setSelectedSupplierId}>
+                <SelectTrigger>
+                  <SelectValue placeholder="Choose a supplier..." />
+                </SelectTrigger>
+                <SelectContent>
+                  {suppliers.filter(s => s.is_active).map(supplier => (
+                    <SelectItem key={supplier.id} value={supplier.id}>
+                      {supplier.name}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+              <p className="text-xs text-[#6B7280]">
+                A draft PO will be created (or opened if one already exists) for this project and supplier.
+              </p>
+            </div>
+          </div>
+          <div className="flex justify-end gap-2">
+            <Button variant="outline" onClick={() => setShowCreatePODialog(false)}>
+              Cancel
+            </Button>
+            <Button onClick={handleCreatePO} disabled={!selectedSupplierId}>
+              Create / Open PO
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
+
+  const handleAddPart = () => {
+    // Will trigger part modal from PartsSection
+    if (window.triggerAddPart) {
+      window.triggerAddPart();
+    }
+  };
+
+  const openOrCreateProjectSupplierPO = async (supplierId) => {
+    if (!project?.id || !supplierId) {
+      toast.error("Project and supplier must be set");
+      return;
+    }
+
+    try {
+      const response = await base44.functions.invoke("managePurchaseOrder", {
+        action: "getOrCreateProjectSupplierDraft",
+        project_id: project.id,
+        supplier_id: supplierId,
+      });
+
+      if (!response?.data?.success || !response.data.purchaseOrder) {
+        toast.error(response?.data?.error || "Failed to open/create Purchase Order");
+        return;
+      }
+
+      const po = response.data.purchaseOrder;
+      navigate(`${createPageUrl("PurchaseOrders")}?poId=${po.id}`);
+    } catch (error) {
+      toast.error("Error opening/creating Purchase Order");
+    }
+  };
+
+  const handleCreatePO = async () => {
+    if (!selectedSupplierId) {
+      toast.error("Please select a supplier");
+      return;
+    }
+
+    setShowCreatePODialog(false);
+    await openOrCreateProjectSupplierPO(selectedSupplierId);
+    setSelectedSupplierId("");
+  };

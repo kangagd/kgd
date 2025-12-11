@@ -2,7 +2,7 @@ import React, { useState, useEffect } from "react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Plus, Edit, Trash2, Link as LinkIcon, MapPin, Truck, CheckCircle2, AlertTriangle, Package, ArrowRight, FileText, ShoppingCart } from "lucide-react";
+import { Plus, Edit, Trash2, Link as LinkIcon, MapPin, Truck, CheckCircle2, AlertTriangle, Package, ArrowRight, FileText } from "lucide-react";
 import { base44 } from "@/api/base44Client";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import PartDetailModal from "./PartDetailModal";
@@ -65,12 +65,10 @@ const FLOW_STEPS = [
   LOGISTICS_LOCATION.SITE
 ];
 
-export default function PartsSection({ projectId, autoExpand = false }) {
+export default function PartsSection({ projectId, autoExpand = false, registerAddPartTrigger }) {
   const [showModal, setShowModal] = useState(false);
   const [editingPart, setEditingPart] = useState(null);
   const [selectedPoId, setSelectedPoId] = useState(null);
-  const [showCreatePODialog, setShowCreatePODialog] = useState(false);
-  const [selectedSupplierId, setSelectedSupplierId] = useState("");
   const queryClient = useQueryClient();
   const navigate = useNavigate();
 
@@ -83,11 +81,6 @@ export default function PartsSection({ projectId, autoExpand = false }) {
     queryKey: ['projectPOs-partsSection', projectId],
     queryFn: () => base44.entities.PurchaseOrder.filter({ project_id: projectId }),
     enabled: !!projectId
-  });
-
-  const { data: suppliers = [] } = useQuery({
-    queryKey: ['suppliers-for-po'],
-    queryFn: () => base44.entities.Supplier.list('name')
   });
 
   const createPartMutation = useMutation({
@@ -140,16 +133,22 @@ export default function PartsSection({ projectId, autoExpand = false }) {
     }
   });
 
+  const handleAddPart = () => {
+    setEditingPart(null); // null indicates new
+    setShowModal(true);
+  };
+
+  React.useEffect(() => {
+    if (registerAddPartTrigger) {
+      registerAddPartTrigger(handleAddPart);
+    }
+  }, [registerAddPartTrigger]);
+
   useEffect(() => {
     if (autoExpand && parts.length === 0) {
       handleAddPart();
     }
   }, [autoExpand, parts.length, projectId]);
-
-  const handleAddPart = () => {
-    setEditingPart(null); // null indicates new
-    setShowModal(true);
-  };
 
   const handleEditPart = (part) => {
     setEditingPart(part);
@@ -193,43 +192,6 @@ export default function PartsSection({ projectId, autoExpand = false }) {
       from_location: fromLocation,
       to_location: toLocation
     });
-  };
-
-  const openOrCreateProjectSupplierPO = async (supplierId) => {
-    if (!projectId || !supplierId) {
-      toast.error("Project and supplier must be set");
-      return;
-    }
-
-    try {
-      const response = await base44.functions.invoke("managePurchaseOrder", {
-        action: "getOrCreateProjectSupplierDraft",
-        project_id: projectId,
-        supplier_id: supplierId,
-      });
-
-      if (!response?.data?.success || !response.data.purchaseOrder) {
-        toast.error(response?.data?.error || "Failed to open/create Purchase Order");
-        return;
-      }
-
-      const po = response.data.purchaseOrder;
-      navigate(`${createPageUrl("PurchaseOrders")}?poId=${po.id}`);
-    } catch (error) {
-      console.error("Error in openOrCreateProjectSupplierPO:", error);
-      toast.error("Error opening/creating Purchase Order");
-    }
-  };
-
-  const handleCreatePO = async () => {
-    if (!selectedSupplierId) {
-      toast.error("Please select a supplier");
-      return;
-    }
-
-    setShowCreatePODialog(false);
-    await openOrCreateProjectSupplierPO(selectedSupplierId);
-    setSelectedSupplierId("");
   };
 
   return (
@@ -453,42 +415,6 @@ export default function PartsSection({ projectId, autoExpand = false }) {
           onClose={() => setSelectedPoId(null)}
         />
       )}
-
-      <Dialog open={showCreatePODialog} onOpenChange={setShowCreatePODialog}>
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle>Create Purchase Order</DialogTitle>
-          </DialogHeader>
-          <div className="space-y-4 py-4">
-            <div className="space-y-2">
-              <label className="text-sm font-medium">Select Supplier</label>
-              <Select value={selectedSupplierId} onValueChange={setSelectedSupplierId}>
-                <SelectTrigger>
-                  <SelectValue placeholder="Choose a supplier..." />
-                </SelectTrigger>
-                <SelectContent>
-                  {suppliers.filter(s => s.is_active).map(supplier => (
-                    <SelectItem key={supplier.id} value={supplier.id}>
-                      {supplier.name}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-              <p className="text-xs text-[#6B7280]">
-                A draft PO will be created (or opened if one already exists) for this project and supplier.
-              </p>
-            </div>
-          </div>
-          <div className="flex justify-end gap-2">
-            <Button variant="outline" onClick={() => setShowCreatePODialog(false)}>
-              Cancel
-            </Button>
-            <Button onClick={handleCreatePO} disabled={!selectedSupplierId}>
-              Create / Open PO
-            </Button>
-          </div>
-        </DialogContent>
-      </Dialog>
     </div>
   );
 }

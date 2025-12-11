@@ -1684,10 +1684,12 @@ Format as HTML bullet points using <ul> and <li> tags. Include only the most cri
               project={project} 
               parts={parts} 
               inventoryByItem={inventoryByItem} 
+              onAddPart={() => window.triggerAddPart?.()}
             />
             <PartsSection 
               projectId={project.id} 
-              autoExpand={project.status === "Parts Ordered"} 
+              autoExpand={project.status === "Parts Ordered"}
+              registerAddPartTrigger={(fn) => { window.triggerAddPart = fn; }}
             />
             <LogisticsTimeline project={project} />
           </TabsContent>
