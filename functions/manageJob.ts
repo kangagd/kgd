@@ -1,73 +1,81 @@
 import { createClientFromRequest } from 'npm:@base44/sdk@0.8.4';
 
-// Helper: Handle logistics job completion - move Parts accordingly
+// PO and Part status constants
+const PO_STATUS = {
+  DRAFT: "draft",
+  SENT: "sent",
+  ON_ORDER: "on_order",
+  IN_TRANSIT: "in_transit",
+  IN_LOADING_BAY: "in_loading_bay",
+  IN_STORAGE: "in_storage",
+  IN_VEHICLE: "in_vehicle",
+  INSTALLED: "installed",
+  CANCELLED: "cancelled",
+};
+
+const PART_STATUS = {
+  PENDING: "pending",
+  ON_ORDER: "on_order",
+  IN_TRANSIT: "in_transit",
+  IN_LOADING_BAY: "in_loading_bay",
+  IN_STORAGE: "in_storage",
+  IN_VEHICLE: "in_vehicle",
+  INSTALLED: "installed",
+  CANCELLED: "cancelled",
+};
+
+const PART_LOCATION = {
+  SUPPLIER: "supplier",
+  DELIVERY_BAY: "delivery_bay",
+  WAREHOUSE_STORAGE: "warehouse_storage",
+  VEHICLE: "vehicle",
+  CLIENT_SITE: "client_site",
+};
+
+// Helper: Handle logistics job completion - update PO and Parts based on outcome
 async function handleLogisticsJobCompletion(base44, job) {
     if (!job.purchase_order_id) return;
 
+    const logisticsOutcome = job.logistics_outcome;
+    if (!logisticsOutcome || logisticsOutcome === 'none') return;
+
     try {
-        // Fetch Parts linked to this PO
+        // Update PO status based on outcome
+        let newPOStatus;
+        let newPartStatus;
+        let newPartLocation;
+
+        if (logisticsOutcome === 'in_storage') {
+            newPOStatus = PO_STATUS.IN_STORAGE;
+            newPartStatus = PART_STATUS.IN_STORAGE;
+            newPartLocation = PART_LOCATION.WAREHOUSE_STORAGE;
+        } else if (logisticsOutcome === 'in_vehicle') {
+            newPOStatus = PO_STATUS.IN_VEHICLE;
+            newPartStatus = PART_STATUS.IN_VEHICLE;
+            newPartLocation = PART_LOCATION.VEHICLE;
+        }
+
+        if (newPOStatus) {
+            await base44.asServiceRole.entities.PurchaseOrder.update(job.purchase_order_id, {
+                status: newPOStatus
+            });
+        }
+
+        // Fetch Parts linked to this PO and update them
         const parts = await base44.asServiceRole.entities.Part.filter({
             purchase_order_id: job.purchase_order_id
         });
 
-        if (parts.length === 0) return;
-
-        // Determine destination based on job type and notes
-        const jobTypeName = (job.job_type_name || job.job_type || '').toLowerCase();
-        const jobNotes = (job.notes || '').toLowerCase();
-        
-        let updateData = {};
-        let vehicleId = job.vehicle_id || null;
-
-        // Supplier → Delivery Bay (delivery jobs)
-        if (jobTypeName.includes('delivery') || jobNotes.includes('delivery bay')) {
-            updateData = {
-                status: "Delivered",
-                location: "At Delivery Bay"
-            };
-        }
-        // Supplier → Storage (pickup to warehouse)
-        else if (jobNotes.includes('storage') || jobNotes.includes('warehouse')) {
-            updateData = {
-                status: "Delivered",
-                location: "In Warehouse Storage"
-            };
-        }
-        // Warehouse/Supplier → Vehicle (pickup to vehicle)
-        else if (jobTypeName.includes('pickup') && (jobTypeName.includes('vehicle') || jobNotes.includes('vehicle'))) {
-            updateData = {
-                status: "Delivered",
-                location: "With Technician"
-            };
-            
-            // Get vehicle from job assignment if available
-            if (!vehicleId && Array.isArray(job.assigned_to) && job.assigned_to.length > 0) {
-                try {
-                    const vehicles = await base44.asServiceRole.entities.Vehicle.filter({
-                        assigned_technician: job.assigned_to[0]
-                    });
-                    if (vehicles.length > 0) {
-                        vehicleId = vehicles[0].id;
-                    }
-                } catch (e) {
-                    console.error("Error fetching vehicle for technician:", e);
-                }
-            }
-            
-            if (vehicleId) {
-                updateData.assigned_vehicle_id = vehicleId;
-            }
-        }
-        // Default: delivery bay
-        else {
-            updateData = {
-                status: "Delivered",
-                location: "At Delivery Bay"
-            };
-        }
-
-        // Update all Parts
         for (const part of parts) {
+            const updateData = {
+                status: newPartStatus,
+                location: newPartLocation
+            };
+
+            if (logisticsOutcome === 'in_vehicle' && job.vehicle_id) {
+                updateData.assigned_vehicle_id = job.vehicle_id;
+            }
+
             await base44.asServiceRole.entities.Part.update(part.id, updateData);
         }
     } catch (error) {
@@ -182,45 +190,7 @@ Deno.serve(async (req) => {
                 await handleLogisticsJobCompletion(base44, job);
             }
 
-            // Auto-mark PO items as received when logistics job is completed
-            if (job.purchase_order_id && job.status === 'Completed' && previousJob.status !== 'Completed') {
-                const checkedItems = job.checked_items || {};
-                const checkedItemIds = Object.keys(checkedItems).filter(itemId => checkedItems[itemId]);
-
-                if (checkedItemIds.length > 0) {
-                    // Get all PO lines for this PO
-                    const poLines = await base44.asServiceRole.entities.PurchaseOrderLine.filter({
-                        purchase_order_id: job.purchase_order_id
-                    });
-
-                    // Mark checked items as received
-                    for (const line of poLines) {
-                        if (checkedItemIds.includes(line.id) && line.quantity_received < line.quantity_ordered) {
-                            await base44.asServiceRole.entities.PurchaseOrderLine.update(line.id, {
-                                quantity_received: line.quantity_ordered,
-                                received_at: new Date().toISOString()
-                            });
-                        }
-                    }
-
-                    // Update PO status if all lines are now received
-                    const allLines = await base44.asServiceRole.entities.PurchaseOrderLine.filter({
-                        purchase_order_id: job.purchase_order_id
-                    });
-                    const allReceived = allLines.every(line => line.quantity_received >= line.quantity_ordered);
-                    const someReceived = allLines.some(line => line.quantity_received > 0);
-
-                    if (allReceived) {
-                        await base44.asServiceRole.entities.PurchaseOrder.update(job.purchase_order_id, {
-                            status: 'received'
-                        });
-                    } else if (someReceived) {
-                        await base44.asServiceRole.entities.PurchaseOrder.update(job.purchase_order_id, {
-                            status: 'partially_received'
-                        });
-                    }
-                }
-            }
+            // Removed legacy PO receiving logic - now handled via logistics_outcome
         } else if (action === 'delete') {
              // Soft delete usually
              await base44.asServiceRole.entities.Job.update(id, { deleted_at: new Date().toISOString() });
@@ -245,11 +215,11 @@ Deno.serve(async (req) => {
         }
 
         if (isInstall && becameScheduled && job.project_id) {
-            // Check parts
+            // Check parts in warehouse storage
             const parts = await base44.asServiceRole.entities.Part.filter({
                 project_id: job.project_id,
-                status: 'Delivered',
-                location: 'In Warehouse Storage'
+                status: PART_STATUS.IN_STORAGE,
+                location: PART_LOCATION.WAREHOUSE_STORAGE
             });
 
             if (parts.length > 0) {
