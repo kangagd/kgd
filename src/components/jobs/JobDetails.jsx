@@ -252,11 +252,7 @@ export default function JobDetails({ job: initialJob, onClose, onStatusChange, o
     enabled: !!job.purchase_order_id && isLogisticsJob
   });
 
-  const { data: priceListItems = [] } = useQuery({
-    queryKey: ["price-list-items"],
-    queryFn: () => base44.entities.PriceListItem.list(),
-    enabled: isLogisticsJob && purchaseOrderLines.length > 0,
-  });
+
 
   // Fetch parts for logistics jobs
   const { data: jobParts = [] } = useQuery({
@@ -1345,8 +1341,7 @@ export default function JobDetails({ job: initialJob, onClose, onStatusChange, o
                       </CardHeader>
                       <CardContent className="p-4 space-y-2">
                         {purchaseOrderLines.map((line) => {
-                          const item = priceListItems.find(i => i.id === line.price_list_item_id);
-                          const itemName = item?.item || line.description || "Item";
+                          const itemName = line.item_name || line.description || "Item";
                           return (
                             <div key={line.id} className="flex items-center gap-3 p-2 hover:bg-[#F9FAFB] rounded-lg transition-colors">
                               <Checkbox
