@@ -1,33 +1,34 @@
 import { createClientFromRequest } from 'npm:@base44/sdk@0.8.4';
 
-const LOGISTICS_LOCATION = {
-    SUPPLIER: "Supplier",
-    LOADING_BAY: "Loading Bay",
-    STORAGE: "Storage",
-    VEHICLE: "Vehicle",
-    SITE: "Site",
+const PART_STATUS = {
+    PENDING: "pending",
+    ON_ORDER: "on_order",
+    IN_TRANSIT: "in_transit",
+    IN_LOADING_BAY: "in_loading_bay",
+    IN_STORAGE: "in_storage",
+    IN_VEHICLE: "in_vehicle",
+    INSTALLED: "installed",
+    CANCELLED: "cancelled",
 };
 
-const PART_STATUS = {
-    ON_ORDER: "On Order",
-    IN_TRANSIT: "In Transit",
-    ARRIVED: "Arrived",
-    IN_LOADING_BAY: "In Loading Bay",
-    IN_STORAGE: "In Storage",
-    ON_VEHICLE: "On Vehicle",
-    INSTALLED: "Installed",
+const PART_LOCATION = {
+    SUPPLIER: "supplier",
+    DELIVERY_BAY: "delivery_bay",
+    WAREHOUSE_STORAGE: "warehouse_storage",
+    VEHICLE: "vehicle",
+    CLIENT_SITE: "client_site",
 };
 
 function determinePartStatus(toLocation) {
     switch (toLocation) {
-        case LOGISTICS_LOCATION.LOADING_BAY:
+        case PART_LOCATION.DELIVERY_BAY:
             return PART_STATUS.IN_LOADING_BAY;
-        case LOGISTICS_LOCATION.STORAGE:
+        case PART_LOCATION.WAREHOUSE_STORAGE:
             return PART_STATUS.IN_STORAGE;
-        case LOGISTICS_LOCATION.VEHICLE:
-            return PART_STATUS.ON_VEHICLE;
-        case LOGISTICS_LOCATION.SITE:
-            return PART_STATUS.IN_TRANSIT;
+        case PART_LOCATION.VEHICLE:
+            return PART_STATUS.IN_VEHICLE;
+        case PART_LOCATION.CLIENT_SITE:
+            return PART_STATUS.INSTALLED;
         default:
             return null;
     }
@@ -51,7 +52,7 @@ Deno.serve(async (req) => {
             }, { status: 400 });
         }
 
-        const validLocations = Object.values(LOGISTICS_LOCATION);
+        const validLocations = Object.values(PART_LOCATION);
         if (!from_location || !validLocations.includes(from_location)) {
             return Response.json({ 
                 success: false, 

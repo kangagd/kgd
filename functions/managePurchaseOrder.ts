@@ -3,6 +3,7 @@ import { createClientFromRequest } from 'npm:@base44/sdk@0.8.4';
 // Canonical PO status values (stored in DB)
 const PO_STATUS = {
   DRAFT: "draft",
+  SENT: "sent",
   ON_ORDER: "on_order",
   IN_TRANSIT: "in_transit",
   IN_LOADING_BAY: "in_loading_bay",
@@ -16,53 +17,46 @@ const PO_STATUS = {
 function normaliseLegacyPoStatus(status) {
   if (!status) return PO_STATUS.DRAFT;
 
-  switch (status) {
+  switch (status.toLowerCase()) {
     case "draft":
-    case PO_STATUS.DRAFT:
       return PO_STATUS.DRAFT;
-
+    
     case "sent":
-    case "Sent":
+      return PO_STATUS.SENT;
+
+    case "on_order":
+    case "on order":
       return PO_STATUS.ON_ORDER;
 
     case "partially_received":
+    case "in_transit":
+    case "in transit":
       return PO_STATUS.IN_TRANSIT;
 
     case "received":
-      return PO_STATUS.IN_STORAGE;
-
-    case "cancelled":
-    case "Cancelled":
-    case PO_STATUS.CANCELLED:
-      return PO_STATUS.CANCELLED;
-
-    // Legacy display strings -> canonical
-    case "On Order":
-      return PO_STATUS.ON_ORDER;
-    case "In Transit":
-      return PO_STATUS.IN_TRANSIT;
-    case "Delivered - Loading Bay":
-    case "Delivered to Delivery Bay":
-    case "Ready for Pick up":
-    case "Ready to Pick Up":
+    case "delivered - loading bay":
+    case "delivered to delivery bay":
+    case "ready for pick up":
+    case "ready to pick up":
+    case "in_loading_bay":
+    case "in loading bay":
       return PO_STATUS.IN_LOADING_BAY;
-    case "In Storage":
-    case "Completed - In Storage":
+
+    case "in_storage":
+    case "in storage":
+    case "completed - in storage":
       return PO_STATUS.IN_STORAGE;
-    case "In Vehicle":
-    case "Completed - In Vehicle":
+
+    case "in_vehicle":
+    case "in vehicle":
+    case "completed - in vehicle":
       return PO_STATUS.IN_VEHICLE;
-    case "Installed":
+
+    case "installed":
       return PO_STATUS.INSTALLED;
 
-    // If already canonical, pass through
-    case PO_STATUS.ON_ORDER:
-    case PO_STATUS.IN_TRANSIT:
-    case PO_STATUS.IN_LOADING_BAY:
-    case PO_STATUS.IN_STORAGE:
-    case PO_STATUS.IN_VEHICLE:
-    case PO_STATUS.INSTALLED:
-      return status;
+    case "cancelled":
+      return PO_STATUS.CANCELLED;
 
     default:
       return status;
@@ -72,6 +66,25 @@ function normaliseLegacyPoStatus(status) {
 const PO_DELIVERY_METHOD = {
     DELIVERY: "delivery",
     PICKUP: "pickup",
+};
+
+const PART_STATUS = {
+  PENDING: "pending",
+  ON_ORDER: "on_order",
+  IN_TRANSIT: "in_transit",
+  IN_LOADING_BAY: "in_loading_bay",
+  IN_STORAGE: "in_storage",
+  IN_VEHICLE: "in_vehicle",
+  INSTALLED: "installed",
+  CANCELLED: "cancelled",
+};
+
+const PART_LOCATION = {
+  SUPPLIER: "supplier",
+  DELIVERY_BAY: "delivery_bay",
+  WAREHOUSE_STORAGE: "warehouse_storage",
+  VEHICLE: "vehicle",
+  CLIENT_SITE: "client_site",
 };
 
 // Helper: Link Parts to PO
@@ -98,9 +111,9 @@ async function linkPartsToPO(base44, purchaseOrderId, lineItems) {
                 purchase_order_id: purchaseOrderId
             };
 
-            // Update status if currently Pending
-            if (part.status === "Pending") {
-                updateData.status = "Ordered";
+            // Update status if currently pending
+            if (part.status === PART_STATUS.PENDING || part.status === "Pending") {
+                updateData.status = PART_STATUS.ON_ORDER;
             }
 
             // Set order_date if empty
@@ -110,7 +123,7 @@ async function linkPartsToPO(base44, purchaseOrderId, lineItems) {
 
             // Set location if empty
             if (!part.location) {
-                updateData.location = "On Order";
+                updateData.location = PART_LOCATION.SUPPLIER;
             }
 
             await base44.asServiceRole.entities.Part.update(partId, updateData);
@@ -139,41 +152,42 @@ async function syncPartsWithPurchaseOrderStatus(base44, purchaseOrder, vehicleId
             // Apply status/location mapping based on PO status
             switch (normalizedStatus) {
                 case PO_STATUS.DRAFT:
-                    updateData.status = "Pending";
-                    updateData.location = "On Order";
+                    updateData.status = PART_STATUS.PENDING;
+                    updateData.location = PART_LOCATION.SUPPLIER;
                     break;
 
+                case PO_STATUS.SENT:
                 case PO_STATUS.ON_ORDER:
-                    updateData.status = "On Order";
-                    updateData.location = "On Order";
+                    updateData.status = PART_STATUS.ON_ORDER;
+                    updateData.location = PART_LOCATION.SUPPLIER;
                     break;
 
                 case PO_STATUS.IN_TRANSIT:
-                    updateData.status = "In Transit";
-                    updateData.location = "At Supplier";
+                    updateData.status = PART_STATUS.IN_TRANSIT;
+                    updateData.location = PART_LOCATION.SUPPLIER;
                     break;
 
                 case PO_STATUS.IN_LOADING_BAY:
-                    updateData.status = "Arrived";
-                    updateData.location = "Loading Bay";
+                    updateData.status = PART_STATUS.IN_LOADING_BAY;
+                    updateData.location = PART_LOCATION.DELIVERY_BAY;
                     break;
 
                 case PO_STATUS.IN_STORAGE:
-                    updateData.status = "In Storage";
-                    updateData.location = "Storage";
+                    updateData.status = PART_STATUS.IN_STORAGE;
+                    updateData.location = PART_LOCATION.WAREHOUSE_STORAGE;
                     break;
 
                 case PO_STATUS.IN_VEHICLE:
-                    updateData.status = "In Vehicle";
-                    updateData.location = "Vehicle";
+                    updateData.status = PART_STATUS.IN_VEHICLE;
+                    updateData.location = PART_LOCATION.VEHICLE;
                     if (vehicleId) {
                         updateData.assigned_vehicle_id = vehicleId;
                     }
                     break;
 
                 case PO_STATUS.INSTALLED:
-                    updateData.status = "Installed";
-                    updateData.location = "Site";
+                    updateData.status = PART_STATUS.INSTALLED;
+                    updateData.location = PART_LOCATION.CLIENT_SITE;
                     break;
             }
 
