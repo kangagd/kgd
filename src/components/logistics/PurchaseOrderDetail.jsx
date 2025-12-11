@@ -10,7 +10,8 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { X, Plus, Trash2, Package, Truck, Save, Send, ArrowRight, List, ShoppingCart, Upload, FileText, Calendar, Trash } from "lucide-react";
 import { toast } from "sonner";
-import { PO_STATUS, PO_STATUS_OPTIONS, PO_STATUS_OPTIONS_NON_PROJECT, PO_STATUS_OPTIONS_PROJECT, PO_DELIVERY_METHOD, PO_DELIVERY_METHOD_OPTIONS, getPoStatusLabel, normaliseLegacyPoStatus } from "@/components/domain/logisticsConfig";
+import { PO_STATUS, PO_STATUS_OPTIONS, getPoStatusLabel, normalizeLegacyPoStatus } from "@/components/domain/purchaseOrderStatusConfig";
+import { PO_DELIVERY_METHOD, PO_DELIVERY_METHOD_OPTIONS } from "@/components/domain/logisticsConfig";
 import { createPageUrl } from "@/utils";
 import { useNavigate } from "react-router-dom";
 import {
@@ -88,7 +89,7 @@ export default function PurchaseOrderDetail({ poId, onClose, mode = "page" }) {
       });
       
       // Normalize legacy status
-      const normalizedStatus = normaliseLegacyPoStatus(po.status);
+      const normalizedStatus = normalizeLegacyPoStatus(po.status);
       
       // Map line items from separate entity (source of truth)
       const items = lineItems.map(line => ({
@@ -338,9 +339,10 @@ export default function PurchaseOrderDetail({ poId, onClose, mode = "page" }) {
   const getStatusColor = (status) => {
     const colors = {
       [PO_STATUS.DRAFT]: 'bg-slate-100 text-slate-700',
+      [PO_STATUS.SENT]: 'bg-blue-50 text-blue-700',
       [PO_STATUS.ON_ORDER]: 'bg-blue-100 text-blue-700',
       [PO_STATUS.IN_TRANSIT]: 'bg-purple-100 text-purple-700',
-      [PO_STATUS.IN_LOADING_BAY]: 'bg-cyan-100 text-cyan-700',
+      [PO_STATUS.DELIVERED_LOADING_BAY]: 'bg-cyan-100 text-cyan-700',
       [PO_STATUS.IN_STORAGE]: 'bg-emerald-100 text-emerald-700',
       [PO_STATUS.IN_VEHICLE]: 'bg-teal-100 text-teal-700',
       [PO_STATUS.INSTALLED]: 'bg-green-100 text-green-700',
@@ -372,13 +374,13 @@ export default function PurchaseOrderDetail({ poId, onClose, mode = "page" }) {
   }
 
   const isDraft = po.status === PO_STATUS.DRAFT;
-  const isProjectPO = !!formData.project_id;
-  const availableStatuses = isProjectPO ? PO_STATUS_OPTIONS_PROJECT : PO_STATUS_OPTIONS_NON_PROJECT;
+  const availableStatuses = PO_STATUS_OPTIONS;
   
   const canCreateLogistics = [
+    PO_STATUS.SENT,
     PO_STATUS.ON_ORDER,
     PO_STATUS.IN_TRANSIT,
-    PO_STATUS.IN_LOADING_BAY,
+    PO_STATUS.DELIVERED_LOADING_BAY,
   ].includes(formData.status);
 
   const containerClass = isModal 
