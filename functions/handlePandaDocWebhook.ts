@@ -1,4 +1,5 @@
 import { createClientFromRequest } from 'npm:@base44/sdk@0.8.4';
+import { updateProjectActivity } from './updateProjectActivity.js';
 
 Deno.serve(async (req) => {
   try {
@@ -124,6 +125,11 @@ Deno.serve(async (req) => {
       if (Object.keys(updates).length > 0) {
         await base44.asServiceRole.entities.Quote.update(quote.id, updates);
         console.log(`Updated quote ${quote.id}:`, updates);
+        
+        // Update project activity if quote is linked to a project
+        if (quote.project_id) {
+          await updateProjectActivity(base44, quote.project_id);
+        }
       }
     }
 
