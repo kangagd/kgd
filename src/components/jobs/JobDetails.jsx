@@ -209,13 +209,13 @@ export default function JobDetails({ job: initialJob, onClose, onStatusChange, o
     queryKey: ['projectJobSummaries', job.project_id],
     queryFn: async () => {
       if (!job.project_id) return [];
-      const allSummaries = await base44.entities.JobSummary.list('-check_out_time');
-      return allSummaries.filter(s => {
-        const summaryJob = allProjectJobs.find(j => j.id === s.job_id);
-        return summaryJob && summaryJob.project_id === job.project_id && s.job_id !== job.id;
-      });
+      const allSummaries = await base44.entities.JobSummary.filter({ 
+        project_id: job.project_id 
+      }, '-check_out_time');
+      // Exclude summaries for the current job
+      return allSummaries.filter(s => s.job_id !== job.id);
     },
-    enabled: !!job.project_id && allProjectJobs.length > 0
+    enabled: !!job.project_id
   });
 
   useEffect(() => {

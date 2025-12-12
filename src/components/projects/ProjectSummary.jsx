@@ -32,11 +32,12 @@ export default function ProjectSummary({ project, jobs, onUpdateNotes }) {
   const { data: allJobSummaries = [] } = useQuery({
     queryKey: ['allProjectJobSummaries', project.id],
     queryFn: async () => {
-      const allSummaries = await base44.entities.JobSummary.list('-check_out_time');
-      const jobIds = jobs.map(j => j.id);
-      return allSummaries.filter(s => jobIds.includes(s.job_id));
+      if (!project.id) return [];
+      return await base44.entities.JobSummary.filter({ 
+        project_id: project.id 
+      }, '-check_out_time');
     },
-    enabled: jobs.length > 0
+    enabled: !!project.id
   });
 
   const handleSaveNotes = () => {
