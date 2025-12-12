@@ -205,6 +205,7 @@ export default function PurchaseOrderDetail({ poId, onClose, mode = "page" }) {
       project_id: formData.project_id || null,
       delivery_method: formData.delivery_method || null,
       notes: formData.notes,
+      order_reference: poRef,
       reference: poRef,
       po_number: poRef,
       name: formData.name,
@@ -294,8 +295,10 @@ export default function PurchaseOrderDetail({ poId, onClose, mode = "page" }) {
       project_id: formData.project_id,
       delivery_method: formData.delivery_method,
       notes: formData.notes,
+      order_reference: poRef,
       reference: poRef,
       po_number: poRef,
+      name: formData.name,
       eta: formData.eta || null,
       attachments: formData.attachments,
       line_items: formData.line_items
