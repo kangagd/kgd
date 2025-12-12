@@ -15,23 +15,61 @@ const fixEncodingIssues = (text) => {
   fixed = fixed.replace(/&quot;/g, '"');
   fixed = fixed.replace(/&#39;/g, "'");
   fixed = fixed.replace(/&apos;/g, "'");
+  fixed = fixed.replace(/&#8217;/g, "'");
+  fixed = fixed.replace(/&#8216;/g, "'");
+  fixed = fixed.replace(/&#8220;/g, '"');
+  fixed = fixed.replace(/&#8221;/g, '"');
+  fixed = fixed.replace(/&#8211;/g, '–');
+  fixed = fixed.replace(/&#8212;/g, '—');
   
   // Fix common encoding issues (mojibake from Windows-1252 → UTF-8)
-  fixed = fixed.replace(/â€"/g, '—');  // em dash
-  fixed = fixed.replace(/â€"/g, '–');  // en dash
+  // Apostrophes and quotes
+  fixed = fixed.replace(/â€™/g, "'");  // right single quote/apostrophe
+  fixed = fixed.replace(/â€˜/g, "'");  // left single quote
   fixed = fixed.replace(/â€œ/g, '"');  // left double quote
   fixed = fixed.replace(/â€/g, '"');   // right double quote
-  fixed = fixed.replace(/â€™/g, "'");  // right single quote
-  fixed = fixed.replace(/â€˜/g, "'");  // left single quote
+  fixed = fixed.replace(/â€ž/g, '„');  // low double quote
+  
+  // Dashes
+  fixed = fixed.replace(/â€"/g, '—');  // em dash
+  fixed = fixed.replace(/â€"/g, '–');  // en dash
+  fixed = fixed.replace(/â€"/g, '-');  // hyphen variants
+  
+  // Spaces
   fixed = fixed.replace(/Â /g, ' ');   // non-breaking space
   fixed = fixed.replace(/Â/g, ' ');    // stray non-breaking space marker
+  fixed = fixed.replace(/â€‰/g, ' ');  // thin space
+  
+  // Other common characters
   fixed = fixed.replace(/â€¦/g, '…');  // ellipsis
   fixed = fixed.replace(/Ã¢â‚¬â„¢/g, "'");  // another single quote variant
   fixed = fixed.replace(/â€¢/g, '•');  // bullet point
-  fixed = fixed.replace(/Ã /g, 'à');   // à
-  fixed = fixed.replace(/Ã¨/g, 'è');   // è
-  fixed = fixed.replace(/Ã©/g, 'é');   // é
+  fixed = fixed.replace(/Â°/g, '°');   // degree symbol
   fixed = fixed.replace(/â‚¬/g, '€');  // euro sign
+  
+  // Accented characters
+  fixed = fixed.replace(/Ã /g, 'à');
+  fixed = fixed.replace(/Ã¡/g, 'á');
+  fixed = fixed.replace(/Ã¢/g, 'â');
+  fixed = fixed.replace(/Ã£/g, 'ã');
+  fixed = fixed.replace(/Ã¤/g, 'ä');
+  fixed = fixed.replace(/Ã¨/g, 'è');
+  fixed = fixed.replace(/Ã©/g, 'é');
+  fixed = fixed.replace(/Ãª/g, 'ê');
+  fixed = fixed.replace(/Ã«/g, 'ë');
+  fixed = fixed.replace(/Ã¬/g, 'ì');
+  fixed = fixed.replace(/Ã­/g, 'í');
+  fixed = fixed.replace(/Ã®/g, 'î');
+  fixed = fixed.replace(/Ã¯/g, 'ï');
+  fixed = fixed.replace(/Ã²/g, 'ò');
+  fixed = fixed.replace(/Ã³/g, 'ó');
+  fixed = fixed.replace(/Ã´/g, 'ô');
+  fixed = fixed.replace(/Ãµ/g, 'õ');
+  fixed = fixed.replace(/Ã¶/g, 'ö');
+  fixed = fixed.replace(/Ã¹/g, 'ù');
+  fixed = fixed.replace(/Ãº/g, 'ú');
+  fixed = fixed.replace(/Ã»/g, 'û');
+  fixed = fixed.replace(/Ã¼/g, 'ü');
   
   return fixed;
 };
