@@ -577,7 +577,7 @@ export default function Logistics() {
                       >
                         <div className="font-medium text-[#111827] mb-2">
                           {(() => {
-                            const poRef = po.order_reference || po.po_number || po.reference || po.id.substring(0, 8);
+                            const poRef = po.po_reference || po.order_reference || po.po_number || po.reference || po.id.substring(0, 8);
                             return `PO #${poRef}`;
                           })()}
                         </div>
@@ -648,7 +648,7 @@ export default function Logistics() {
                       >
                         <div className="font-medium text-[#111827] mb-2">
                           {(() => {
-                            const poRef = po.order_reference || po.po_number || po.reference || po.id.substring(0, 8);
+                            const poRef = po.po_reference || po.order_reference || po.po_number || po.reference || po.id.substring(0, 8);
                             return `PO #${poRef}`;
                           })()}
                         </div>
@@ -721,7 +721,7 @@ export default function Logistics() {
                       >
                         <div className="font-medium text-[#111827] mb-2">
                           {(() => {
-                            const poRef = po.order_reference || po.po_number || po.reference || po.id.substring(0, 8);
+                            const poRef = po.po_reference || po.order_reference || po.po_number || po.reference || po.id.substring(0, 8);
                             return `PO #${poRef}`;
                           })()}
                         </div>
@@ -794,7 +794,7 @@ export default function Logistics() {
                       >
                         <div className="font-medium text-[#111827] mb-2">
                           {(() => {
-                            const poRef = po.order_reference || po.po_number || po.reference || po.id.substring(0, 8);
+                            const poRef = po.po_reference || po.order_reference || po.po_number || po.reference || po.id.substring(0, 8);
                             return `PO #${poRef}`;
                           })()}
                         </div>
@@ -865,7 +865,7 @@ export default function Logistics() {
                       >
                         <div className="font-medium text-[#111827] mb-2">
                           {(() => {
-                            const poRef = po.order_reference || po.po_number || po.reference || po.id.substring(0, 8);
+                            const poRef = po.po_reference || po.order_reference || po.po_number || po.reference || po.id.substring(0, 8);
                             return `PO #${poRef}`;
                           })()}
                         </div>
@@ -962,7 +962,7 @@ export default function Logistics() {
                             <div className="text-xs text-[#6B7280] mt-1">
                               PO: {(() => {
                                 const po = purchaseOrders.find(p => p.id === item.po_id);
-                                const poRef = po?.order_reference || po?.po_number || po?.reference || item.po_id.substring(0, 8);
+                                const poRef = po?.po_reference || po?.order_reference || po?.po_number || po?.reference || item.po_id.substring(0, 8);
                                 return `#${poRef}`;
                               })()} • {item.supplier_name}
                             </div>
