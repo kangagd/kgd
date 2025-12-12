@@ -65,11 +65,24 @@ Deno.serve(async (req) => {
                             
                             console.log(`Checking job ${job.id}: "${jobNumberStr}" against old project number "${oldProjectStr}"`);
                             
-                            // Check if job number starts with old project number followed by hyphen
+                            // Handle both formats: "5001-A" and "5001A"
+                            let newJobNumber = null;
+                            
+                            // Format with hyphen: "5001-A"
                             if (jobNumberStr.includes('-') && jobNumberStr.startsWith(oldProjectStr + '-')) {
                                 const suffix = jobNumberStr.substring(oldProjectStr.length + 1);
-                                const newJobNumber = `${newProjectNumber}-${suffix}`;
-                                
+                                newJobNumber = `${newProjectNumber}-${suffix}`;
+                            }
+                            // Format without hyphen: "5001A" 
+                            else if (jobNumberStr.startsWith(oldProjectStr) && jobNumberStr.length > oldProjectStr.length) {
+                                const suffix = jobNumberStr.substring(oldProjectStr.length);
+                                // Only update if suffix is a letter (like A, B, C) to avoid false matches
+                                if (/^[A-Z]$/.test(suffix)) {
+                                    newJobNumber = `${newProjectNumber}${suffix}`;
+                                }
+                            }
+                            
+                            if (newJobNumber) {
                                 console.log(`Updating job ${job.id}: ${jobNumberStr} -> ${newJobNumber}`);
                                 
                                 await base44.asServiceRole.entities.Job.update(job.id, { 
