@@ -1770,6 +1770,23 @@ export default function JobDetails({ job: initialJob, onClose, onStatusChange, o
 
             {!isLogisticsJob && (
               <TabsContent value="visit" className="space-y-3 mt-2">
+                {/* Prior Job Summaries */}
+                {priorProjectJobs
+                  .sort((a, b) => new Date(a.updated_date || a.created_date) - new Date(b.updated_date || b.created_date))
+                  .map((priorJob, idx) => {
+                    const colors = ["blue", "green", "purple", "orange", "cyan"];
+                    const color = colors[idx % colors.length];
+                    return (
+                      <JobVisitSummary 
+                        key={priorJob.id}
+                        job={priorJob}
+                        title={priorJob.job_type_name || `Job #${priorJob.job_number}`}
+                        borderColor={color}
+                      />
+                    );
+                  })
+                }
+
                 <div className="space-y-3">
                   <div className="flex justify-end gap-2">
                     {previousReportData && (
