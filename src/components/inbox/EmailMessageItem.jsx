@@ -99,11 +99,19 @@ export default function EmailMessageItem({ message, isLast, totalMessages, getSe
           )}
 
           <div className="gmail-email-body prose prose-sm max-w-none overflow-hidden">
-            {message.body_html ? (
+            {message.body_html && !message.body_html.includes('<') ? (
+              <div className="whitespace-pre-wrap text-[14px] text-[#111827] leading-relaxed">
+                {fixEncodingIssues(message.body_html)}
+              </div>
+            ) : message.body_html ? (
               <div dangerouslySetInnerHTML={{ __html: sanitizeBodyHtml(message.body_html) }} />
+            ) : message.body_text && !message.body_text.includes('<') ? (
+              <div className="whitespace-pre-wrap text-[14px] text-[#111827] leading-relaxed">
+                {fixEncodingIssues(message.body_text)}
+              </div>
             ) : (
               <div className="whitespace-pre-wrap text-[14px] text-[#111827] leading-relaxed">
-                {fixEncodingIssues(message.body_text) || '(No content)'}
+                {fixEncodingIssues((message.body_text || '').replace(/<[^>]*>/g, ' ').replace(/\s+/g, ' ')) || '(No content)'}
               </div>
             )}
           </div>
