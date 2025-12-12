@@ -382,10 +382,14 @@ export default function PurchaseOrderDetail({ poId, onClose, mode = "page" }) {
       
       return created;
     },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['purchaseOrderLines', poId] });
-      queryClient.invalidateQueries({ queryKey: ['parts'] });
-      queryClient.invalidateQueries({ queryKey: ['projectParts', formData.project_id] });
+    onSuccess: async () => {
+      await Promise.all([
+        queryClient.invalidateQueries({ queryKey: ['purchaseOrderLines', poId] }),
+        queryClient.invalidateQueries({ queryKey: ['parts'] }),
+        queryClient.invalidateQueries({ queryKey: ['projectParts', formData.project_id] }),
+        queryClient.invalidateQueries({ queryKey: ['projectParts'] }),
+        queryClient.invalidateQueries({ queryKey: ['purchaseOrder', poId] })
+      ]);
       toast.success('Item added');
     },
     onError: (error) => {
