@@ -12,6 +12,7 @@ import { X, Plus, Trash2, Package, Truck, Save, Send, ArrowRight, List, Shopping
 import { toast } from "sonner";
 import { PO_STATUS, PO_STATUS_OPTIONS, PO_STATUS_OPTIONS_NON_PROJECT, PO_STATUS_OPTIONS_PROJECT, getPoStatusLabel, normaliseLegacyPoStatus } from "@/components/domain/purchaseOrderStatusConfig";
 import { DELIVERY_METHOD as PO_DELIVERY_METHOD, DELIVERY_METHOD_OPTIONS as PO_DELIVERY_METHOD_OPTIONS } from "@/components/domain/supplierDeliveryConfig";
+import { PART_CATEGORIES } from "@/components/domain/partConfig";
 import { createPageUrl } from "@/utils";
 import { useNavigate } from "react-router-dom";
 import {
@@ -100,7 +101,8 @@ export default function PurchaseOrderDetail({ poId, onClose, mode = "page" }) {
         quantity: line.qty_ordered || 0,
         unit_price: line.unit_cost_ex_tax || 0,
         unit: line.unit || null,
-        notes: line.notes || null
+        notes: line.notes || null,
+        category: line.category || "Other"
       }));
 
       // Only update if this is initial load or if PO ID changed
@@ -328,7 +330,8 @@ export default function PurchaseOrderDetail({ poId, onClose, mode = "page" }) {
         tax_rate_percent: 0,
         total_line_ex_tax: (newItem.quantity || 1) * (newItem.unit_price || 0),
         unit: newItem.unit || null,
-        notes: newItem.notes || null
+        notes: newItem.notes || null,
+        category: newItem.category || "Other"
       };
       
       const created = await base44.entities.PurchaseOrderLine.create(lineData);
@@ -338,18 +341,36 @@ export default function PurchaseOrderDetail({ poId, onClose, mode = "page" }) {
         // If part_id exists, update the Part
         await base44.entities.Part.update(newItem.part_id, {
           purchase_order_id: poId,
-          status: "on_order"
+          status: "on_order",
+          category: newItem.category || "Other",
+          price_list_item_id: lineData.price_list_item_id,
+          quantity_required: newItem.quantity || 1,
+          supplier_id: formData.supplier_id,
+          supplier_name: suppliers.find(s => s.id === formData.supplier_id)?.name || "",
+          order_date: po.order_date || po.created_date,
+          eta: formData.eta || po.expected_date,
+          order_reference: formData.po_number || formData.reference,
+          po_number: formData.po_number,
+          source_type: newItem.source_type || "supplier_delivery"
         });
       } else if (formData.project_id) {
         // If no part_id but we have a project, create a new Part
         const newPart = await base44.entities.Part.create({
           project_id: formData.project_id,
-          category: newItem.name || "Other",
+          category: newItem.category || "Other",
+          item_name: newItem.name || '',
+          price_list_item_id: lineData.price_list_item_id,
           quantity_required: newItem.quantity || 1,
           status: "on_order",
+          location: "supplier",
           purchase_order_id: poId,
           supplier_id: formData.supplier_id || null,
+          supplier_name: suppliers.find(s => s.id === formData.supplier_id)?.name || "",
+          order_date: po.order_date || po.created_date,
+          eta: formData.eta || po.expected_date,
           order_reference: formData.po_number || formData.reference || null,
+          po_number: formData.po_number,
+          source_type: newItem.source_type || "supplier_delivery",
           notes: newItem.notes || null
         });
         
@@ -381,7 +402,8 @@ export default function PurchaseOrderDetail({ poId, onClose, mode = "page" }) {
       quantity: sourceType === "project_part" ? (sourceItem?.quantity_required || 1) : 1, 
       unit_price: sourceItem?.unit_cost || sourceItem?.price || 0,
       unit: null,
-      notes: null
+      notes: null,
+      category: sourceItem?.category || "Other"
     };
     
     // Save immediately to database if not draft
@@ -433,7 +455,8 @@ export default function PurchaseOrderDetail({ poId, onClose, mode = "page" }) {
         qty_ordered: updates.quantity || 0,
         unit_cost_ex_tax: updates.unit_price || 0,
         total_line_ex_tax: (updates.quantity || 0) * (updates.unit_price || 0),
-        notes: updates.notes || null
+        notes: updates.notes || null,
+        category: updates.category || "Other"
       };
       
       await base44.entities.PurchaseOrderLine.update(lineId, lineData);
@@ -949,6 +972,25 @@ export default function PurchaseOrderDetail({ poId, onClose, mode = "page" }) {
                         disabled={!isDraft}
                         className="font-medium"
                       />
+                      <div>
+                        <Label className="text-xs text-[#6B7280]">Category</Label>
+                        <Select
+                          value={item.category || "Other"}
+                          onValueChange={(value) => updateLineItem(index, 'category', value)}
+                          disabled={!isDraft}
+                        >
+                          <SelectTrigger className="h-9">
+                            <SelectValue placeholder="Select category" />
+                          </SelectTrigger>
+                          <SelectContent>
+                            {PART_CATEGORIES.map((cat) => (
+                              <SelectItem key={cat} value={cat}>
+                                {cat}
+                              </SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                      </div>
                       <div className="grid grid-cols-3 gap-2">
                         <div>
                           <Label className="text-xs text-[#6B7280]">Quantity</Label>

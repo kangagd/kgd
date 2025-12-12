@@ -31,6 +31,16 @@ export function getPartStatusLabel(status) {
   return PART_STATUS_LABELS[status] || status || "Unknown";
 }
 
+export const PART_CATEGORIES = [
+  "Door",
+  "Motor",
+  "Posts",
+  "Tracks",
+  "Small Parts",
+  "Hardware",
+  "Other"
+];
+
 export const PART_LOCATION = {
   SUPPLIER: "supplier",
   LOADING_BAY: "loading_bay",

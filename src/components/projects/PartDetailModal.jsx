@@ -25,14 +25,11 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import RichTextEditor from "../common/RichTextEditor";
 import { format } from "date-fns";
 import { toast } from "sonner";
-import { PART_STATUS, PART_STATUS_OPTIONS, PART_LOCATION, PART_LOCATION_OPTIONS, getPartStatusLabel, getPartLocationLabel, normaliseLegacyPartStatus, normaliseLegacyPartLocation } from "@/components/domain/partConfig";
+import { PART_STATUS, PART_STATUS_OPTIONS, PART_LOCATION, PART_LOCATION_OPTIONS, PART_CATEGORIES, getPartStatusLabel, getPartLocationLabel, normaliseLegacyPartStatus, normaliseLegacyPartLocation } from "@/components/domain/partConfig";
 import { SOURCE_TYPE, SOURCE_TYPE_OPTIONS, SOURCE_TYPE_LABELS, getSourceTypeLabel, normaliseLegacySourceType } from "@/components/domain/supplierDeliveryConfig";
+import { getPoStatusLabel } from "@/components/domain/purchaseOrderStatusConfig";
 import { createPageUrl } from "@/utils";
 import { useNavigate } from "react-router-dom";
-
-const CATEGORIES = [
-  "Door", "Motor", "Posts", "Tracks", "Small Parts", "Hardware", "Other"
-];
 
 export default function PartDetailModal({ open, part, onClose, onSave, isSubmitting, projectId }) {
   // Initialize with defaults to avoid blank fields
@@ -99,54 +96,104 @@ export default function PartDetailModal({ open, part, onClose, onSave, isSubmitt
   });
 
   useEffect(() => {
-    if (!open) return; // Don't run if modal isn't open
-    
+    if (!open) return;
+
+    // Helper to get a yyyy-mm-dd string from any ISO date
+    const toDateOnly = (value) => {
+      if (!value) return "";
+      try {
+        const d = typeof value === "string" ? new Date(value) : value;
+        return d.toISOString().split("T")[0];
+      } catch {
+        return "";
+      }
+    };
+
     if (part) {
       console.log("PartDetailModal received part:", part);
-      // Map legacy fields if they exist and new ones are empty
+
+      // Prefer linked PO data where appropriate
+      const po = linkedPO || {};
+      const priceListItemId =
+        part.price_list_item_id ||
+        po.price_list_item_id ||
+        null;
+
       const mappedPart = {
         ...part,
-        // If eta is missing but estimated_arrival_date exists, use it
-        eta: part.eta || part.estimated_arrival_date || "",
-        // If attachments is missing but attachment_urls exists, use it
-        attachments: part.attachments || part.attachment_urls || [],
-        // Ensure arrays are initialized
+
+        // Core classification
+        category: part.category || po.category || "Other",
+        status: part.status || PART_STATUS.ON_ORDER,
+        source_type:
+          part.source_type ||
+          po.source_type ||
+          SOURCE_TYPE.SUPPLIER_DELIVERY,
+        location:
+          part.location ||
+          PART_LOCATION.SUPPLIER,
+
+        // Dates
+        order_date:
+          toDateOnly(part.order_date) ||
+          toDateOnly(po.order_date) ||
+          toDateOnly(po.created_date) ||
+          toDateOnly(new Date()),
+        eta:
+          part.eta ||
+          part.estimated_arrival_date ||
+          po.eta ||
+          po.expected_eta ||
+          po.expected_delivery_date ||
+          po.expected_date ||
+          "",
+
+        // Quantities
+        quantity_required:
+          part.quantity_required ||
+          part.qty_required ||
+          part.qty_ordered ||
+          1,
+
+        // Supplier
+        supplier_id:
+          part.supplier_id ||
+          po.supplier_id ||
+          (po.supplier && po.supplier.id) ||
+          null,
+        supplier_name:
+          part.supplier_name ||
+          po.supplier_name ||
+          (po.supplier && po.supplier.name) ||
+          "",
+
+        // Price list + misc
+        price_list_item_id: priceListItemId,
         linked_logistics_jobs: part.linked_logistics_jobs || [],
-        category: part.category || "Other",
-        status: part.status || "Pending",
-        source_type: part.source_type || "Supplier – Deliver to Warehouse",
-        location: part.location || "On Order",
-        order_date: part.order_date || (part.id ? "" : new Date().toISOString().split('T')[0]),
-        price_list_item_id: part.price_list_item_id || null,
-        assigned_vehicle_id: part.assigned_vehicle_id || null,
-        supplier_id: part.supplier_id || null,
-        supplier_name: part.supplier_name || "",
-        quantity_required: part.quantity_required || 1,
-        notes: part.notes || "",
+        attachments: part.attachments || part.attachment_urls || [],
         tracking_url: part.tracking_url || "",
-        item_name: part.item_name || ""
+        item_name: part.item_name || "",
       };
-      console.log("Setting formData to:", mappedPart);
+
       setFormData(mappedPart);
-      
-      // If part has a price list item, set the search to display it
-      if (part.price_list_item_id) {
-        const linkedItem = priceListItems.find(item => item.id === part.price_list_item_id);
-        if (linkedItem) {
-          setPriceListSearch(linkedItem.item);
-        }
-      } else if (part.item_name) {
-        // If no price list item but has custom item_name, show it
-        setPriceListSearch(part.item_name);
+
+      // If there is a linked price list item, set search text for it
+      if (priceListItemId) {
+        const linkedItem = priceListItems.find(
+          (item) => item.id === priceListItemId
+        );
+        setPriceListSearch(linkedItem ? linkedItem.item : "");
+      } else {
+        setPriceListSearch(part.item_name || "");
       }
     } else {
-      console.log("PartDetailModal: Creating new part (no part data)");
+      // New part defaults
       setFormData({
         category: "Other",
         status: PART_STATUS.PENDING,
         source_type: SOURCE_TYPE.SUPPLIER_DELIVERY,
         location: PART_LOCATION.SUPPLIER,
-        order_date: new Date().toISOString().split('T')[0],
+        order_date: toDateOnly(new Date()),
         linked_logistics_jobs: [],
         attachments: [],
         price_list_item_id: null,
@@ -160,9 +207,10 @@ export default function PartDetailModal({ open, part, onClose, onSave, isSubmitt
       });
       setPriceListSearch("");
     }
+
     setPoError("");
     setPriceListOpen(false);
-  }, [part?.id, open, priceListItems]);
+  }, [part?.id, open, priceListItems, linkedPO]);
 
   // Fetch jobs for logistics linking
   const { data: jobs = [] } = useQuery({
@@ -308,32 +356,50 @@ export default function PartDetailModal({ open, part, onClose, onSave, isSubmitt
           </DialogTitle>
           
           {/* PO Linkage Status */}
-          {part?.purchase_order_id ? (
-            <div className="mt-3 flex items-center justify-between gap-2 bg-blue-50 border border-blue-200 rounded-lg p-3">
-              <div className="flex items-center gap-2 flex-wrap">
-                <Badge variant="outline" className="text-xs bg-white">
-                  Linked to PO #{linkedPO?.po_number || part.purchase_order_id.slice(0, 8)}
-                </Badge>
-                {linkedPO?.status && (
-                  <Badge className="text-xs bg-slate-100 text-slate-700 border-slate-200">
-                    {linkedPO.status}
-                  </Badge>
-                )}
+          {part?.purchase_order_id ? (() => {
+            const poDisplayRef =
+              linkedPO?.order_reference ||
+              linkedPO?.po_number ||
+              part.order_reference ||
+              part.po_number ||
+              (part.purchase_order_id
+                ? String(part.purchase_order_id).slice(0, 8)
+                : "");
+            
+            return (
+              <div className="mt-3 flex items-center justify-between gap-2 bg-blue-50 border border-blue-200 rounded-lg p-3">
+                <div className="flex flex-col gap-1">
+                  <div className="flex items-center gap-2 flex-wrap">
+                    <Badge variant="outline" className="text-xs bg-white">
+                      {poDisplayRef ? `Linked to PO #${poDisplayRef}` : "Linked to PO"}
+                    </Badge>
+                    {(linkedPO?.status || part.status) && (
+                      <Badge className="text-xs bg-slate-100 text-slate-700 border-slate-200">
+                        {getPoStatusLabel(linkedPO?.status || part.status)}
+                      </Badge>
+                    )}
+                  </div>
+                  {(linkedPO?.supplier_name || part.supplier_name) && (
+                    <div className="text-xs text-slate-600">
+                      {linkedPO?.supplier_name || part.supplier_name}
+                    </div>
+                  )}
+                </div>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={(e) => {
+                    e.preventDefault();
+                    navigate(`${createPageUrl("PurchaseOrders")}?poId=${part.purchase_order_id}`);
+                  }}
+                  className="bg-white"
+                >
+                  <ExternalLink className="w-3 h-3 mr-1" />
+                  Open PO
+                </Button>
               </div>
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={(e) => {
-                  e.preventDefault();
-                  navigate(`${createPageUrl("PurchaseOrders")}?poId=${part.purchase_order_id}`);
-                }}
-                className="bg-white"
-              >
-                <ExternalLink className="w-3 h-3 mr-1" />
-                Open PO
-              </Button>
-            </div>
-          ) : part?.id ? (
+            );
+          })() : part?.id ? (
             <div className="mt-3 text-xs text-[#6B7280] bg-slate-50 border border-slate-200 rounded-lg p-3">
               This part is not yet linked to a Purchase Order. To order it, use the "Create PO" button in the Project Parts section and add this part in the PO screen.
             </div>
@@ -444,11 +510,12 @@ export default function PartDetailModal({ open, part, onClose, onSave, isSubmitt
                       <SelectValue placeholder="Select category" />
                     </SelectTrigger>
                     <SelectContent>
-                      {CATEGORIES.map(cat => (
+                      {PART_CATEGORIES.map(cat => (
                         <SelectItem key={cat} value={cat}>{cat}</SelectItem>
                       ))}
                     </SelectContent>
                   </Select>
+                  <p className="text-xs text-[#6B7280]">Choose from common part categories</p>
                 </div>
 
                 <div className="space-y-2">
