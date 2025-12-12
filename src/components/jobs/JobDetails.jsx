@@ -1802,22 +1802,30 @@ export default function JobDetails({ job: initialJob, onClose, onStatusChange, o
                           cyan: "border-cyan-100"
                         };
                         
+                        const isMinimized = minimizedVisits[summary.id] !== false; // Default to minimized
+
                         return (
-                          <Card key={summary.id} className={`border-2 ${borderColorMap[color]} shadow-sm rounded-xl overflow-hidden`}>
-                            <CardHeader className={`bg-${color}-100/50 pb-3`}>
-                              <div className="flex items-center justify-between">
-                                <CardTitle className="text-[16px] font-semibold text-slate-900 flex items-center gap-2">
-                                  <ClipboardCheck className={`w-5 h-5 text-${color}-600`} />
-                                  {summary.job_type || `Job #${summary.job_number}`}
-                                </CardTitle>
-                                <Link 
-                                  to={`${createPageUrl("Jobs")}?jobId=${summary.job_id}`}
-                                  className={`text-[12px] text-${color}-600 hover:opacity-80 font-medium flex items-center gap-1`}
-                                >
-                                  View Job
-                                  <ExternalLink className="w-3 h-3" />
-                                </Link>
-                              </div>
+                         <Card key={summary.id} className={`border-2 ${borderColorMap[color]} shadow-sm rounded-xl overflow-hidden`}>
+                           <CardHeader className={`bg-${color}-100/50 pb-3`}>
+                             <div className="flex items-center justify-between">
+                               <button
+                                 onClick={() => setMinimizedVisits(prev => ({ ...prev, [summary.id]: !isMinimized }))}
+                                 className="flex items-center gap-2 hover:opacity-80 transition-opacity"
+                               >
+                                 <CardTitle className="text-[16px] font-semibold text-slate-900 flex items-center gap-2">
+                                   <ClipboardCheck className={`w-5 h-5 text-${color}-600`} />
+                                   {summary.job_type || `Job #${summary.job_number}`}
+                                   <ChevronDown className={`w-4 h-4 text-${color}-600 transition-transform ${isMinimized ? '-rotate-90' : ''}`} />
+                                 </CardTitle>
+                               </button>
+                               <Link 
+                                 to={`${createPageUrl("Jobs")}?jobId=${summary.job_id}`}
+                                 className={`text-[12px] text-${color}-600 hover:opacity-80 font-medium flex items-center gap-1`}
+                               >
+                                 View Job
+                                 <ExternalLink className="w-3 h-3" />
+                               </Link>
+                             </div>
                               
                               <div className="flex items-center gap-4 text-[12px] text-slate-700 mt-2">
                                 <span className="flex items-center gap-1">
