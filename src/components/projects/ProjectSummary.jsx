@@ -33,9 +33,11 @@ export default function ProjectSummary({ project, jobs, onUpdateNotes }) {
     queryKey: ['allProjectJobSummaries', project.id],
     queryFn: async () => {
       if (!project.id) return [];
-      return await base44.entities.JobSummary.filter({ 
+      const summaries = await base44.entities.JobSummary.filter({ 
         project_id: project.id 
       }, '-check_out_time');
+      console.log('Project summaries loaded:', summaries.length);
+      return summaries;
     },
     enabled: !!project.id
   });
