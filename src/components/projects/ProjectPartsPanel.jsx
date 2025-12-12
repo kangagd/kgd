@@ -209,7 +209,10 @@ export default function ProjectPartsPanel({ project, parts = [], inventoryByItem
             {needed.map(part => {
               const partTitle = part.item_name || part.category || "Part";
               const normalizedStatus = normaliseLegacyPartStatus(part.status);
-              const poDisplay = part.order_reference || (part.po_number ? `PO #${part.po_number}` : null);
+              const poDisplay = (() => {
+                const poRef = part.order_reference || part.po_number || part.reference;
+                return poRef ? `PO #${poRef}` : null;
+              })();
               
               return (
                 <div key={part.id} className="p-3 bg-red-50 border border-red-100 rounded-lg flex justify-between items-center">
@@ -272,7 +275,10 @@ export default function ProjectPartsPanel({ project, parts = [], inventoryByItem
             {ready.map(part => {
               const partTitle = part.item_name || part.category || "Part";
               const normalizedStatus = normaliseLegacyPartStatus(part.status);
-              const poDisplay = part.order_reference || (part.po_number ? `PO #${part.po_number}` : null);
+              const poDisplay = (() => {
+                const poRef = part.order_reference || part.po_number || part.reference;
+                return poRef ? `PO #${poRef}` : null;
+              })();
               
               return (
                 <div key={part.id} className="p-3 bg-white border border-gray-200 rounded-lg flex justify-between items-center">
