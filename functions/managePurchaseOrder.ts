@@ -360,14 +360,27 @@ Deno.serve(async (req) => {
 
             // Update line items if provided
             if (line_items && Array.isArray(line_items)) {
-                // Delete existing lines
+                // Get existing lines to preserve part_id associations
                 const existingLines = await base44.asServiceRole.entities.PurchaseOrderLine.filter({ purchase_order_id: id });
+                const existingPartIdMap = new Map();
+                for (const line of existingLines) {
+                    if (line.part_id) {
+                        existingPartIdMap.set(line.part_id, line.id);
+                    }
+                }
+
+                // Delete existing lines
                 for (const line of existingLines) {
                     await base44.asServiceRole.entities.PurchaseOrderLine.delete(line.id);
                 }
-                // Create new lines with source type support
+
+                // Create new lines with source type support, preserving part_id
                 for (const item of line_items) {
+                    // Ensure part_id is preserved if it exists
                     const lineData = await buildLineItemData(base44, id, item);
+                    if (item.part_id && !lineData.part_id) {
+                        lineData.part_id = item.part_id;
+                    }
                     await base44.asServiceRole.entities.PurchaseOrderLine.create(lineData);
                 }
 
