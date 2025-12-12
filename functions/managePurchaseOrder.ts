@@ -80,6 +80,20 @@ const PO_DELIVERY_METHOD = {
     PICKUP: "pickup",
 };
 
+// Helper: Resolve PO reference from multiple sources
+function resolvePoRef({ data, po_reference, po_number, reference }) {
+  const ref =
+    data?.po_reference ??
+    data?.po_number ??
+    po_reference ??
+    po_number ??
+    reference ??
+    null;
+
+  const cleaned = typeof ref === "string" ? ref.trim() : ref;
+  return cleaned || null;
+}
+
 const PART_STATUS = {
   PENDING: "pending",
   ON_ORDER: "on_order",
@@ -268,7 +282,13 @@ Deno.serve(async (req) => {
         const user = await base44.auth.me();
         if (!user) return Response.json({ error: 'Unauthorized' }, { status: 401 });
 
-        const { action, id, data, supplier_id, project_id, delivery_method, delivery_location, line_items, status, supplier_name, notes, reference, po_number, name, eta, attachments, vehicle_id } = await req.json();
+        const {
+          action, id, data,
+          supplier_id, project_id, delivery_method, delivery_location,
+          line_items, status, supplier_name, notes,
+          reference, po_number, po_reference,
+          name, eta, attachments, vehicle_id
+        } = await req.json();
 
         // Action: create
         if (action === 'create') {
@@ -276,7 +296,7 @@ Deno.serve(async (req) => {
                 return Response.json({ error: 'supplier_id and non-empty line_items are required' }, { status: 400 });
             }
 
-            const poRef = po_number || reference || null;
+            const poRef = resolvePoRef({ data, po_reference, po_number, reference });
             const poData = {
                 supplier_id,
                 supplier_name: supplier_name || null,
@@ -285,6 +305,7 @@ Deno.serve(async (req) => {
                 delivery_method: delivery_method || PO_DELIVERY_METHOD.DELIVERY,
                 delivery_location: delivery_location || null,
                 notes: notes || null,
+                po_reference: poRef,
                 po_number: poRef,
                 order_reference: poRef,
                 reference: poRef,
@@ -351,17 +372,30 @@ Deno.serve(async (req) => {
             if (eta !== undefined) updateData.expected_date = eta || null;
             if (attachments !== undefined) updateData.attachments = attachments || [];
             
-            // Only allow po_number editing if not completed - updates all reference fields
-            if (data?.po_number !== undefined && po.status !== PO_STATUS.COMPLETED) {
-                updateData.po_number = data.po_number;
-                updateData.order_reference = data.po_number;
-                updateData.reference = data.po_number;
+            const poRef = resolvePoRef({ data, po_reference, po_number, reference });
+
+            // Only allow editing reference in DRAFT
+            if (poRef !== null && po.status === PO_STATUS.DRAFT) {
+                updateData.po_reference = poRef;
+                updateData.po_number = poRef;
+                updateData.order_reference = poRef;
+                updateData.reference = poRef;
             }
             if (data?.name !== undefined) {
                 updateData.name = data.name;
             }
 
+            console.log("PO update received:", { id, po_reference, po_number, reference, data });
+            console.log("Resolved poRef:", poRef);
+
             const updatedPO = await base44.asServiceRole.entities.PurchaseOrder.update(id, updateData);
+
+            console.log("Updated PO fields:", {
+              po_reference: updatedPO.po_reference,
+              po_number: updatedPO.po_number,
+              order_reference: updatedPO.order_reference,
+              reference: updatedPO.reference
+            });
 
             // Update project activity if PO is linked to a project
             if (updatedPO.project_id) {
@@ -592,7 +626,7 @@ Deno.serve(async (req) => {
             }
 
             // Create new DRAFT PO
-            const poRef = po_number || reference || null;
+            const poRef = resolvePoRef({ data, po_reference, po_number, reference });
             const poData = {
                 supplier_id,
                 supplier_name: supplier_name || null,
@@ -601,6 +635,7 @@ Deno.serve(async (req) => {
                 delivery_method: delivery_method || PO_DELIVERY_METHOD.DELIVERY,
                 delivery_location: delivery_location || null,
                 notes: notes || null,
+                po_reference: poRef,
                 po_number: poRef,
                 order_reference: poRef,
                 reference: poRef,
