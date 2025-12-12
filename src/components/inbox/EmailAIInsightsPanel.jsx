@@ -63,9 +63,16 @@ export default function EmailAIInsightsPanel({ thread, onThreadUpdated, onCreate
       await refetch();
       toast.success("AI insights regenerated successfully");
     } catch (err) {
-      toast.error("Failed to regenerate AI insights");
+      const errorMsg = err?.message || String(err);
+      if (errorMsg.includes("Rate limit")) {
+        toast.error("Rate limit exceeded. Please wait a moment and try again.");
+      } else {
+        toast.error("Failed to regenerate AI insights");
+      }
     }
   };
+
+  const isRateLimitError = isError && error?.message?.includes("Rate limit");
 
   return (
     <Card className="border border-slate-200 shadow-sm">
@@ -118,7 +125,11 @@ export default function EmailAIInsightsPanel({ thread, onThreadUpdated, onCreate
         {threadId && isError && !hasInsights && (
           <div className="flex items-center gap-2 text-xs text-red-600 py-2">
             <AlertCircle className="w-4 h-4" />
-            <span>Could not generate insights for this email. Try again.</span>
+            <span>
+              {isRateLimitError 
+                ? "Rate limit exceeded. Please wait a moment before trying again."
+                : "Could not generate insights for this email. Try again."}
+            </span>
           </div>
         )}
 
@@ -129,7 +140,7 @@ export default function EmailAIInsightsPanel({ thread, onThreadUpdated, onCreate
           </div>
         )}
 
-        {t?.ai_overview && (
+        {hasInsights && t?.ai_overview && (
           <div className="text-sm">
             <p className="font-medium text-xs text-slate-500 mb-1.5">Overview</p>
             <p className="text-slate-800 leading-relaxed">{t.ai_overview}</p>
