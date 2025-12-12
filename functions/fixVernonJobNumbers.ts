@@ -10,11 +10,14 @@ Deno.serve(async (req) => {
             return Response.json({ error: 'Unauthorized' }, { status: 401 });
         }
 
-        // Get Vernon project (ID from screenshot: 693b7500f1e1f3df79...)
-        const vernonProjectId = '693b7500f1e1f3df79c7adde'; // From the screenshot
+        // Get all jobs with job_number starting with 5001-
+        const allJobs = await base44.asServiceRole.entities.Job.list();
         
-        // Get jobs linked to Vernon project
-        const jobs = await base44.asServiceRole.entities.Job.filter({ project_id: vernonProjectId });
+        // Filter jobs that start with 5001- and are linked to Vernon project
+        const jobs = allJobs.filter(j => {
+            const jobNum = String(j.job_number || '').trim();
+            return jobNum.startsWith('5001-') && j.project_name?.includes('Vernon');
+        });
         
         console.log(`Found ${jobs.length} jobs for Vernon project`);
         
