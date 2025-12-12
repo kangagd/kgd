@@ -27,6 +27,7 @@ import { format } from "date-fns";
 import { toast } from "sonner";
 import { PART_STATUS, PART_STATUS_OPTIONS, PART_LOCATION, PART_LOCATION_OPTIONS, getPartStatusLabel, getPartLocationLabel, normaliseLegacyPartStatus, normaliseLegacyPartLocation } from "@/components/domain/partConfig";
 import { SOURCE_TYPE, SOURCE_TYPE_OPTIONS, SOURCE_TYPE_LABELS, getSourceTypeLabel, normaliseLegacySourceType } from "@/components/domain/supplierDeliveryConfig";
+import { getPoStatusLabel } from "@/components/domain/purchaseOrderStatusConfig";
 import { createPageUrl } from "@/utils";
 import { useNavigate } from "react-router-dom";
 
@@ -103,28 +104,38 @@ export default function PartDetailModal({ open, part, onClose, onSave, isSubmitt
     
     if (part) {
       console.log("PartDetailModal received part:", part);
+      console.log("Linked PO data:", linkedPO);
+      
+      // Pre-fill from PO if available and fields are empty
+      const poData = linkedPO ? {
+        supplier_id: part.supplier_id || linkedPO.supplier_id || null,
+        supplier_name: part.supplier_name || linkedPO.supplier_name || "",
+        order_date: part.order_date || linkedPO.created_date?.split('T')[0] || "",
+        eta: part.eta || linkedPO.expected_date || "",
+        category: part.category || "Other",
+        quantity_required: part.quantity_required || 1,
+      } : {};
+      
       // Map legacy fields if they exist and new ones are empty
       const mappedPart = {
         ...part,
+        ...poData,
         // If eta is missing but estimated_arrival_date exists, use it
-        eta: part.eta || part.estimated_arrival_date || "",
+        eta: poData.eta || part.eta || part.estimated_arrival_date || "",
         // If attachments is missing but attachment_urls exists, use it
         attachments: part.attachments || part.attachment_urls || [],
         // Ensure arrays are initialized
         linked_logistics_jobs: part.linked_logistics_jobs || [],
-        category: part.category || "Other",
         status: part.status || "Pending",
         source_type: part.source_type || "Supplier – Deliver to Warehouse",
         location: part.location || "On Order",
-        order_date: part.order_date || (part.id ? "" : new Date().toISOString().split('T')[0]),
+        order_date: poData.order_date || part.order_date || (part.id ? "" : new Date().toISOString().split('T')[0]),
         price_list_item_id: part.price_list_item_id || null,
         assigned_vehicle_id: part.assigned_vehicle_id || null,
-        supplier_id: part.supplier_id || null,
-        supplier_name: part.supplier_name || "",
-        quantity_required: part.quantity_required || 1,
         notes: part.notes || "",
         tracking_url: part.tracking_url || "",
-        item_name: part.item_name || ""
+        item_name: part.item_name || "",
+        po_number: part.po_number || linkedPO?.po_number || linkedPO?.reference || ""
       };
       console.log("Setting formData to:", mappedPart);
       setFormData(mappedPart);
@@ -162,7 +173,7 @@ export default function PartDetailModal({ open, part, onClose, onSave, isSubmitt
     }
     setPoError("");
     setPriceListOpen(false);
-  }, [part?.id, open, priceListItems]);
+  }, [part?.id, open, priceListItems, linkedPO]);
 
   // Fetch jobs for logistics linking
   const { data: jobs = [] } = useQuery({
@@ -312,12 +323,17 @@ export default function PartDetailModal({ open, part, onClose, onSave, isSubmitt
             <div className="mt-3 flex items-center justify-between gap-2 bg-blue-50 border border-blue-200 rounded-lg p-3">
               <div className="flex items-center gap-2 flex-wrap">
                 <Badge variant="outline" className="text-xs bg-white">
-                  Linked to PO #{linkedPO?.po_number || part.purchase_order_id.slice(0, 8)}
+                  Linked to PO #{linkedPO?.po_number || linkedPO?.reference || part.purchase_order_id.slice(0, 8)}
                 </Badge>
                 {linkedPO?.status && (
                   <Badge className="text-xs bg-slate-100 text-slate-700 border-slate-200">
-                    {linkedPO.status}
+                    {getPoStatusLabel(linkedPO.status)}
                   </Badge>
+                )}
+                {linkedPO?.supplier_name && (
+                  <span className="text-xs text-[#6B7280]">
+                    {linkedPO.supplier_name}
+                  </span>
                 )}
               </div>
               <Button
