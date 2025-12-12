@@ -372,29 +372,19 @@ Deno.serve(async (req) => {
             if (eta !== undefined) updateData.expected_date = eta || null;
             if (attachments !== undefined) updateData.attachments = attachments || [];
             
-            // Accept both top-level and data.* payloads for PO number/reference
-            const incomingPoNumber =
-              (data?.po_number !== undefined ? data.po_number : undefined) ??
-              (data?.po_reference !== undefined ? data.po_reference : undefined) ??
-              (po_reference !== undefined ? po_reference : undefined) ??
-              (po_number !== undefined ? po_number : undefined) ??
-              (reference !== undefined ? reference : undefined);
+            // Accept top-level po_number and name (primary), with data.* as fallback
+            const incomingPoNumber = po_number ?? data?.po_number ?? undefined;
+            const incomingName = name ?? data?.name ?? undefined;
 
-            // Accept both top-level and data.* payloads for name
-            const incomingName =
-              (data?.name !== undefined ? data.name : undefined) ??
-              (name !== undefined ? name : undefined);
-
-            // Determine if we can edit the reference (only for draft/sent/on_order/in_transit)
+            // Determine if we can edit the reference
             const normalizedStatus = normaliseLegacyPoStatus(po.status);
             const editableStatuses = [PO_STATUS.DRAFT, PO_STATUS.SENT, PO_STATUS.ON_ORDER, PO_STATUS.IN_TRANSIT];
             const canEditReference = editableStatuses.includes(normalizedStatus) ||
-              (!po.po_number && !po.order_reference && !po.reference); // Allow backfill for old POs
+              (!po.po_number && !po.order_reference && !po.reference);
 
             // Update all reference fields when PO number is provided
             if (incomingPoNumber !== undefined && canEditReference) {
                 const cleanedRef = incomingPoNumber?.trim() || null;
-                updateData.po_reference = cleanedRef;
                 updateData.po_number = cleanedRef;
                 updateData.order_reference = cleanedRef;
                 updateData.reference = cleanedRef;
@@ -405,7 +395,7 @@ Deno.serve(async (req) => {
                 updateData.name = incomingName?.trim() || null;
             }
 
-            console.log("managePurchaseOrder:update", { id, incoming: { po_reference, po_number, reference, data }, resolved: poRef, canEditReference });
+            console.log("managePurchaseOrder:update", { id, incoming: { po_number, name, data }, updateData });
 
             const updatedPO = await base44.asServiceRole.entities.PurchaseOrder.update(id, updateData);
 
