@@ -374,9 +374,15 @@ Deno.serve(async (req) => {
             
             const poRef = resolvePoRef({ data, po_reference, po_number, reference });
 
-            // Only allow editing reference in DRAFT
-            if (poRef !== null && po.status === PO_STATUS.DRAFT) {
-                updateData.po_reference = poRef;
+            // Allow setting reference if:
+            // - PO is draft OR
+            // - reference is currently empty (backfill old POs that were created without refs)
+            const canEditReference =
+              po.status === PO_STATUS.DRAFT ||
+              (!po.po_number && !po.order_reference && !po.reference);
+
+            if (poRef !== null && canEditReference) {
+                updateData.po_reference = poRef;   // ok if schema has it
                 updateData.po_number = poRef;
                 updateData.order_reference = poRef;
                 updateData.reference = poRef;
@@ -385,12 +391,11 @@ Deno.serve(async (req) => {
                 updateData.name = data.name;
             }
 
-            console.log("PO update received:", { id, po_reference, po_number, reference, data });
-            console.log("Resolved poRef:", poRef);
+            console.log("managePurchaseOrder:update", { id, incoming: { po_reference, po_number, reference, data }, resolved: poRef, canEditReference });
 
             const updatedPO = await base44.asServiceRole.entities.PurchaseOrder.update(id, updateData);
 
-            console.log("Updated PO fields:", {
+            console.log("managePurchaseOrder:update result", {
               po_reference: updatedPO.po_reference,
               po_number: updatedPO.po_number,
               order_reference: updatedPO.order_reference,
