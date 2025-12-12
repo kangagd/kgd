@@ -12,7 +12,17 @@ import { toast } from "sonner";
 export default function EmailAIInsightsPanel({ thread, onThreadUpdated, onCreateProjectFromAI }) {
   const threadId = thread?.id;
 
-  // Auto-fetch AI insights when thread changes
+  // Check if thread already has AI insights
+  const threadHasInsights = React.useMemo(() => {
+    return !!(
+      thread?.ai_overview ||
+      (Array.isArray(thread?.ai_labels) && thread.ai_labels.length > 0) ||
+      thread?.ai_category ||
+      thread?.ai_priority
+    );
+  }, [thread]);
+
+  // Auto-fetch AI insights when thread changes, but only if no insights exist
   const {
     data: aiData,
     isLoading,
@@ -22,7 +32,9 @@ export default function EmailAIInsightsPanel({ thread, onThreadUpdated, onCreate
     error,
   } = useQuery({
     queryKey: ["aiEmailInsights", threadId],
-    enabled: !!threadId,
+    enabled: !!threadId && !threadHasInsights,
+    staleTime: 5 * 60 * 1000, // Cache for 5 minutes
+    retry: false,
     queryFn: async () => {
       if (!threadId) return null;
 
@@ -63,9 +75,16 @@ export default function EmailAIInsightsPanel({ thread, onThreadUpdated, onCreate
       await refetch();
       toast.success("AI insights regenerated successfully");
     } catch (err) {
-      toast.error("Failed to regenerate AI insights");
+      const errorMsg = err?.message || String(err);
+      if (errorMsg.includes("Rate limit")) {
+        toast.error("Rate limit exceeded. Please wait a moment and try again.");
+      } else {
+        toast.error("Failed to regenerate AI insights");
+      }
     }
   };
+
+  const isRateLimitError = isError && error?.message?.includes("Rate limit");
 
   return (
     <Card className="border border-slate-200 shadow-sm">
@@ -118,7 +137,11 @@ export default function EmailAIInsightsPanel({ thread, onThreadUpdated, onCreate
         {threadId && isError && !hasInsights && (
           <div className="flex items-center gap-2 text-xs text-red-600 py-2">
             <AlertCircle className="w-4 h-4" />
-            <span>Could not generate insights for this email. Try again.</span>
+            <span>
+              {isRateLimitError 
+                ? "Rate limit exceeded. Please wait a moment before trying again."
+                : "Could not generate insights for this email. Try again."}
+            </span>
           </div>
         )}
 
