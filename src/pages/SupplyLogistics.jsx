@@ -122,14 +122,17 @@ export default function SupplyLogistics() {
     }
   };
 
+  const getPoDisplayRef = (po) =>
+    po?.po_number || po?.order_reference || po?.reference || po?.id?.substring(0, 8);
+
   const POCard = ({ po }) => (
     <div
       className="cursor-pointer rounded-md border border-[#E5E7EB] bg-white px-3 py-2 text-xs shadow-sm hover:bg-[#F9FAFB] transition-colors"
       onClick={() => setActivePoId(po.id)}
     >
       <div className="font-medium text-[#111827] mb-2">
-  PO #{po.po_number || po.order_reference || po.reference || po.id.substring(0, 8)}
-</div>
+        PO #{getPoDisplayRef(po)}
+      </div>
       <div className="mt-1 text-[11px] text-[#6B7280]">
         {po.supplier_name || "Supplier not set"}
       </div>
@@ -329,7 +332,7 @@ export default function SupplyLogistics() {
                             <span className="text-xs text-[#6B7280]">Qty: {item.qty_ordered}</span>
                           </div>
                           <div className="text-xs text-[#6B7280] mt-1">
-                            PO: #{po?.po_number || po?.order_reference || po?.reference || item.purchase_order_id.substring(0, 8)} • {po?.supplier_name}
+                            PO: #{getPoDisplayRef(po)} • {po?.supplier_name}
                           </div>
                         </div>
                       );
@@ -366,7 +369,7 @@ export default function SupplyLogistics() {
                       <div className="flex-1">
                         <div className="flex items-center gap-2 mb-1">
                           <span className="font-medium text-sm">
-                            PO #{po.po_number || po.order_reference || po.reference || po.id.substring(0, 8)}
+                            PO #{getPoDisplayRef(po)}
                           </span>
                           <Badge className="text-xs bg-slate-100 text-slate-700">
                             {po.status}
@@ -416,7 +419,7 @@ export default function SupplyLogistics() {
                           <div className="text-xs text-[#6B7280]">
                             {job.scheduled_date && `${format(parseISO(job.scheduled_date), 'MMM d, yyyy')}`}
                             {job.scheduled_time && ` at ${job.scheduled_time}`}
-                            {po && ` • PO: #${po.po_number || po.order_reference || po.reference || po.id.substring(0, 8)}`}
+                            {po && ` • PO: #${getPoDisplayRef(po)}`}
                           </div>
                         </div>
                       </div>
