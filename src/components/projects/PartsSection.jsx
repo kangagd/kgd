@@ -212,9 +212,42 @@ export default function PartsSection({ projectId, autoExpand = false, registerAd
               const isOverdue = (part.status === 'Ordered' || part.status === 'Back-ordered') && 
                                 part.eta && isPast(parseISO(part.eta));
               
-              // Determine progress index
-              const progressIndex = FLOW_STEPS.indexOf(part.location);
+              const normalizedStatus = normaliseLegacyPartStatus(part.status);
+              let displayLocation = normaliseLegacyPartLocation(part.location);
+
+              // If location is missing or still "supplier", derive a better display location from status
+              if (!displayLocation || displayLocation === PART_LOCATION.SUPPLIER) {
+                switch (normalizedStatus) {
+                  case PART_STATUS.IN_LOADING_BAY:
+                    displayLocation = PART_LOCATION.LOADING_BAY;
+                    break;
+                  case PART_STATUS.IN_STORAGE:
+                    displayLocation = PART_LOCATION.WAREHOUSE_STORAGE;
+                    break;
+                  case PART_STATUS.IN_VEHICLE:
+                    displayLocation = PART_LOCATION.VEHICLE;
+                    break;
+                  case PART_STATUS.IN_TRANSIT:
+                    // Treat in-transit as heading to loading bay for display purposes
+                    displayLocation = PART_LOCATION.LOADING_BAY;
+                    break;
+                  default:
+                    // leave as supplier or whatever it already was
+                    break;
+                }
+              }
+              
+              // Determine progress index using displayLocation
+              const progressIndex = FLOW_STEPS.indexOf(displayLocation);
               const progressPercent = progressIndex === -1 ? 0 : ((progressIndex + 1) / FLOW_STEPS.length) * 100;
+
+              const partTitle =
+                part.title ||
+                part.item_name ||
+                part.name ||
+                part.description ||
+                part.category ||
+                "Part";
 
               return (
                 <div 
@@ -231,13 +264,27 @@ export default function PartsSection({ projectId, autoExpand = false, registerAd
                           <Truck className="w-5 h-5" />
                         </div>
                         <div>
-                          <div className="font-semibold text-slate-900">{part.category}</div>
+                          <div className="flex items-center gap-2 flex-wrap">
+                            <span className="font-semibold text-slate-900">
+                              {partTitle}
+                            </span>
+                            {part.category && (
+                              <Badge
+                                variant="outline"
+                                className="text-[11px] bg-slate-100 text-slate-600 border-slate-200"
+                              >
+                                {part.category}
+                              </Badge>
+                            )}
+                          </div>
+
                           {isOverdue && (
                             <div className="flex items-center text-xs text-amber-600 font-medium mt-0.5">
                               <AlertTriangle className="w-3 h-3 mr-1" />
                               Overdue
                             </div>
                           )}
+
                           {/* Progress Bar (Mobile Only) */}
                           <div className="md:hidden mt-2 w-24 h-1 bg-slate-100 rounded-full overflow-hidden">
                             <div className="h-full bg-green-500" style={{ width: `${progressPercent}%` }}></div>
@@ -260,16 +307,19 @@ export default function PartsSection({ projectId, autoExpand = false, registerAd
 
                     {/* Col 3: Location + Progress */}
                     <div className="col-span-6 md:col-span-2 mb-2 md:mb-0">
-                      <Badge className={`${locationColors[normaliseLegacyPartLocation(part.location)] || 'bg-slate-100 text-slate-600'} border-0 font-normal`}>
+                      <Badge
+                        className={`${
+                          locationColors[displayLocation] || "bg-slate-100 text-slate-600"
+                        } border-0 font-normal`}
+                      >
                         <MapPin className="w-3 h-3 mr-1 opacity-70" />
-                        {getPartLocationLabel(normaliseLegacyPartLocation(part.location))}
+                        {getPartLocationLabel(displayLocation)}
                       </Badge>
                       
                       {/* Progress Trail (Desktop) */}
                       <div className="hidden md:flex items-center gap-1 mt-1.5">
                         {FLOW_STEPS.map((step, idx) => {
-                          const normalizedLocation = normaliseLegacyPartLocation(part.location);
-                          const currentIndex = FLOW_STEPS.indexOf(normalizedLocation);
+                          const currentIndex = FLOW_STEPS.indexOf(displayLocation);
                           return (
                             <div 
                               key={step}
@@ -283,20 +333,35 @@ export default function PartsSection({ projectId, autoExpand = false, registerAd
 
                     {/* Col 4: Supplier & PO */}
                     <div className="col-span-6 md:col-span-2 text-sm text-slate-600">
-                      <div className="font-medium">{part.supplier_name || "Unknown Supplier"}</div>
-                      {part.purchase_order_id ? (
-                        <button
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            handleEditPart(part);
-                          }}
-                          className="inline-flex items-center gap-1 mt-1 px-2 py-0.5 rounded-md bg-blue-50 text-blue-700 hover:bg-blue-100 text-xs font-medium transition-colors"
-                        >
-                          <FileText className="w-3 h-3" />
-                          {part.order_reference || (part.po_number ? `PO #${part.po_number}` : `PO #${part.purchase_order_id.substring(0, 8)}`)}
-                        </button>
+                      {(!part.supplier_name && !part.purchase_order_id) ? (
+                        <div className="text-sm text-slate-400">-</div>
                       ) : (
-                        <div className="text-xs opacity-80">{part.source_type?.split(' – ')[0]}</div>
+                        <>
+                          <div className="font-medium">
+                            {part.supplier_name || "-"}
+                          </div>
+
+                          {part.purchase_order_id ? (
+                            <button
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                handleEditPart(part);
+                              }}
+                              className="inline-flex items-center gap-1 mt-1 px-2 py-0.5 rounded-md bg-blue-50 text-blue-700 hover:bg-blue-100 text-xs font-medium transition-colors"
+                            >
+                              <FileText className="w-3 h-3" />
+                              {part.order_reference
+                                ? part.order_reference
+                                : part.po_number
+                                ? `PO #${part.po_number}`
+                                : `PO #${String(part.purchase_order_id).substring(0, 8)}`}
+                            </button>
+                          ) : (
+                            <div className="text-xs text-slate-400 mt-1">
+                              No PO linked
+                            </div>
+                          )}
+                        </>
                       )}
                     </div>
 
