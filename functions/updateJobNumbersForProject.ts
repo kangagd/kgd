@@ -20,15 +20,23 @@ Deno.serve(async (req) => {
         const relatedJobs = allJobs.filter(j => j.project_id === project_id && !j.deleted_at);
         const updatedJobs = [];
         
+        console.log('Found jobs for project:', relatedJobs.length);
+        
         for (const job of relatedJobs) {
+            console.log('Checking job:', job.id, 'job_number:', job.job_number, 'type:', typeof job.job_number);
+            
             if (job.job_number) {
                 const jobNumberStr = String(job.job_number);
                 const parts = jobNumberStr.split('-');
+                
+                console.log('Job number parts:', parts, 'comparing', parts[0], 'with', String(old_project_number));
                 
                 // Check if job number starts with old project number and has a suffix
                 if (parts.length > 1 && parts[0] === String(old_project_number)) {
                     const suffix = parts.slice(1).join('-');
                     const newJobNumber = `${new_project_number}-${suffix}`;
+                    
+                    console.log('Updating job', job.id, 'from', jobNumberStr, 'to', newJobNumber);
                     
                     await base44.asServiceRole.entities.Job.update(job.id, { 
                         job_number: newJobNumber,
