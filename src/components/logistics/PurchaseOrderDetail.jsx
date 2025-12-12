@@ -551,7 +551,9 @@ export default function PurchaseOrderDetail({ poId, onClose, mode = "page" }) {
                     // Invalidate all relevant queries
                     await Promise.all([
                       queryClient.invalidateQueries({ queryKey: ['purchaseOrder', poId] }),
+                      queryClient.invalidateQueries({ queryKey: ['purchaseOrderLines', poId] }),
                       queryClient.invalidateQueries({ queryKey: ['purchaseOrders'] }),
+                      queryClient.invalidateQueries({ queryKey: ['parts'] }),
                       queryClient.invalidateQueries({ queryKey: ['allJobs'] }),
                       queryClient.invalidateQueries({ queryKey: ['linkedJob', updated.linked_logistics_job_id] })
                     ]);
