@@ -54,9 +54,6 @@ export default function PurchaseOrders() {
       const matchesSearch =
         !searchTerm ||
         po.po_reference?.toLowerCase().includes(q) ||
-        po.order_reference?.toLowerCase().includes(q) ||
-        po.po_number?.toLowerCase().includes(q) ||
-        po.reference?.toLowerCase().includes(q) ||
         po.supplier_name?.toLowerCase().includes(q);
       
       const matchesStatus = statusFilter === "all" || po.status === statusFilter;
@@ -257,15 +254,7 @@ export default function PurchaseOrders() {
                   <div className="flex-1 min-w-0">
                     <div className="flex items-center gap-2 mb-2">
                       <h3 className="text-[18px] font-semibold text-[#111827] leading-[1.2]">
-                        {(() => {
-                          const poRef =
-                            po.po_reference ||
-                            po.order_reference ||
-                            po.po_number ||
-                            po.reference ||
-                            po.id.slice(0, 8);
-                          return `PO #${poRef}`;
-                        })()}
+                        PO #{po.po_reference || po.id.slice(0, 8)}
                       </h3>
                       <Select
                         value={po.status}
