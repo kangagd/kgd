@@ -85,9 +85,9 @@ Deno.serve(async (req) => {
 
         return Response.json({
             success: true,
-            project_id,
-            project_number: projectNumber,
-            jobs_updated: updates.length,
+            mode: project_id ? 'single' : 'batch',
+            projects_processed: projects.length,
+            jobs_updated: totalJobsUpdated,
             updates
         });
 
