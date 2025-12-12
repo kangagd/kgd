@@ -69,12 +69,17 @@ Deno.serve(async (req) => {
                         });
                         
                         updates.push({
+                            project_id: project.id,
+                            project_number: projectNumber,
                             job_id: job.id,
                             old_number: jobNumberStr,
                             new_number: newJobNumber
                         });
+                        
+                        totalJobsUpdated++;
                     }
                 }
+            }
             }
         }
 
