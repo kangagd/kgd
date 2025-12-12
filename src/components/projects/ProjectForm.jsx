@@ -255,11 +255,8 @@ export default function ProjectForm({ project, onSubmit, onCancel, isSubmitting 
               variant="ghost" 
               size="icon" 
               onClick={() => {
-                if (onCancel) {
-                  onCancel();
-                } else {
-                  navigate(-1);
-                }
+                if (onCancel) onCancel();
+                navigate(-1);
               }}
               className="hover:bg-slate-200 transition-colors"
             >
@@ -609,11 +606,8 @@ export default function ProjectForm({ project, onSubmit, onCancel, isSubmitting 
               type="button" 
               variant="outline" 
               onClick={() => {
-                if (onCancel) {
-                  onCancel();
-                } else {
-                  navigate(-1);
-                }
+                if (onCancel) onCancel();
+                navigate(-1);
               }}
               className="border-2 hover:bg-white font-semibold"
             >
