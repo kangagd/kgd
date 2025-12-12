@@ -342,21 +342,14 @@ export default function PurchaseOrderDetail({ poId, onClose, mode = "page" }) {
         });
       } else if (formData.project_id) {
         // If no part_id but we have a project, create a new Part
-        const supplier = suppliers.find(s => s.id === formData.supplier_id);
         const newPart = await base44.entities.Part.create({
           project_id: formData.project_id,
-          item_name: newItem.name || "",
           category: newItem.name || "Other",
           quantity_required: newItem.quantity || 1,
           status: "on_order",
           purchase_order_id: poId,
-          po_number: formData.po_number || formData.reference || "",
           supplier_id: formData.supplier_id || null,
-          supplier_name: supplier?.name || "",
-          order_date: formData.created_date || new Date().toISOString().split('T')[0],
-          eta: formData.eta || "",
           order_reference: formData.po_number || formData.reference || null,
-          price_list_item_id: newItem.source_type === "price_list" ? newItem.source_id : null,
           notes: newItem.notes || null
         });
         
@@ -380,15 +373,11 @@ export default function PurchaseOrderDetail({ poId, onClose, mode = "page" }) {
   });
 
   const addLineItem = (sourceType = "custom", sourceItem = null) => {
-    const itemName = sourceType === "price_list" 
-      ? (sourceItem?.category || sourceItem?.item || '')
-      : (sourceItem?.item || sourceItem?.category || '');
-      
     const newItem = { 
       source_type: sourceType,
       source_id: sourceItem?.id || null,
       part_id: sourceType === "project_part" ? sourceItem?.id : null,
-      name: itemName, 
+      name: sourceItem?.item || sourceItem?.category || '', 
       quantity: sourceType === "project_part" ? (sourceItem?.quantity_required || 1) : 1, 
       unit_price: sourceItem?.unit_cost || sourceItem?.price || 0,
       unit: null,
@@ -868,7 +857,7 @@ export default function PurchaseOrderDetail({ poId, onClose, mode = "page" }) {
                         <div className="space-y-1">
                           <div className="px-2 py-1 text-xs font-medium text-[#6B7280]">From Price List</div>
                           <Input
-                            placeholder="Search by name or category..."
+                            placeholder="Search items..."
                             value={priceListSearch}
                             onChange={(e) => setPriceListSearch(e.target.value)}
                             className="h-8 text-xs"
@@ -878,7 +867,6 @@ export default function PurchaseOrderDetail({ poId, onClose, mode = "page" }) {
                               .filter(item => 
                                 !priceListSearch || 
                                 item.item?.toLowerCase().includes(priceListSearch.toLowerCase()) ||
-                                item.category?.toLowerCase().includes(priceListSearch.toLowerCase()) ||
                                 item.sku?.toLowerCase().includes(priceListSearch.toLowerCase())
                               )
                               .map((item) => (
@@ -886,18 +874,14 @@ export default function PurchaseOrderDetail({ poId, onClose, mode = "page" }) {
                                   key={item.id}
                                   variant="ghost"
                                   size="sm"
-                                  className="w-full justify-start text-xs h-auto py-1.5"
+                                  className="w-full justify-start text-xs"
                                   onClick={() => {
                                     addLineItem("price_list", item);
                                     setPriceListSearch("");
                                   }}
                                 >
-                                  <div className="flex flex-col items-start gap-0.5 text-left">
-                                    <span className="font-medium">{item.item}</span>
-                                    {item.category && (
-                                      <span className="text-[10px] text-[#6B7280]">{item.category}</span>
-                                    )}
-                                  </div>
+                                  <List className="w-3 h-3 mr-2" />
+                                  {item.item}
                                 </Button>
                               ))}
                           </div>
