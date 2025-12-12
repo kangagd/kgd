@@ -431,14 +431,6 @@ export default function JobDetails({ job: initialJob, onClose, onStatusChange, o
     },
     onSuccess: () => {
       setValidationError("");
-      // Clear form fields
-      setOverview("");
-      setIssuesFound("");
-      setResolution("");
-      setNextSteps("");
-      setCommunicationWithClient("");
-      setOutcome("");
-
       // Invalidate queries to refresh data
       queryClient.invalidateQueries({ queryKey: ['checkIns', job.id] });
       queryClient.invalidateQueries({ queryKey: ['jobSummaries', job.id] });
