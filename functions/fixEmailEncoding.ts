@@ -121,7 +121,7 @@ Deno.serve(async (req) => {
     
     return Response.json({ 
       success: true, 
-      totalMessages: messages.length,
+      totalMessages: messageArray.length,
       updatedCount 
     });
   } catch (error) {
