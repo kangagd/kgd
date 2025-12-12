@@ -137,7 +137,6 @@ export default function PurchaseOrderDetail({ poId, onClose, mode = "page" }) {
       queryClient.invalidateQueries({ queryKey: ['purchaseOrder', poId] });
       queryClient.invalidateQueries({ queryKey: ['purchaseOrderLines', poId] });
       queryClient.invalidateQueries({ queryKey: ['purchaseOrders'] });
-      queryClient.invalidateQueries({ queryKey: ['projectPOs'] });
       toast.success('Purchase Order updated');
     },
     onError: (error) => {
