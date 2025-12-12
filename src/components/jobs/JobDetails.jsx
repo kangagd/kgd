@@ -163,6 +163,7 @@ export default function JobDetails({ job: initialJob, onClose, onStatusChange, o
   const [showLinkInvoiceModal, setShowLinkInvoiceModal] = useState(false);
   const [showItemsUsedModal, setShowItemsUsedModal] = useState(false);
   const [checkedItems, setCheckedItems] = useState(job.checked_items || {});
+  const [minimizedVisits, setMinimizedVisits] = useState({});
 
   const [user, setUser] = useState(null);
   const [measurements, setMeasurements] = useState(job.measurements || null);
