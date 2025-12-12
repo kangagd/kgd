@@ -252,7 +252,10 @@ export default function PurchaseOrders() {
                   <div className="flex-1 min-w-0">
                     <div className="flex items-center gap-2 mb-2">
                       <h3 className="text-[18px] font-semibold text-[#111827] leading-[1.2]">
-                        PO #{po.po_number || po.id.slice(0, 8)}
+                        {(() => {
+                          const poRef = po.order_reference || po.po_number || po.reference || po.id.slice(0, 8);
+                          return `PO #${poRef}`;
+                        })()}
                       </h3>
                       <Select
                         value={po.status}

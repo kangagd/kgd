@@ -945,7 +945,11 @@ export default function Logistics() {
                               </span>
                             </div>
                             <div className="text-xs text-[#6B7280] mt-1">
-                              PO: {item.po_number || `#${item.po_id.substring(0, 8)}`} • {item.supplier_name}
+                              PO: {(() => {
+                                const po = purchaseOrders.find(p => p.id === item.po_id);
+                                const poRef = po?.order_reference || po?.po_number || po?.reference || item.po_id.substring(0, 8);
+                                return `#${poRef}`;
+                              })()} • {item.supplier_name}
                             </div>
                             {item.expected_date && (
                               <div className="text-xs text-[#6B7280] mt-0.5">
