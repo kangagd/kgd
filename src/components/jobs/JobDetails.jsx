@@ -2040,7 +2040,7 @@ export default function JobDetails({ job: initialJob, onClose, onStatusChange, o
                                   </div>
                                 </div>
                               )}
-                            </CardContent>
+                            </CardContent>}
                           </Card>
                         );
                       })
