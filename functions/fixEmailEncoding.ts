@@ -81,50 +81,42 @@ Deno.serve(async (req) => {
 
     // Fetch all email messages
     const messages = await base44.asServiceRole.entities.EmailMessage.list();
+    const messageArray = Array.isArray(messages) ? messages : [];
     
     let updatedCount = 0;
-    const batchSize = 50;
     
-    for (let i = 0; i < messages.length; i += batchSize) {
-      const batch = messages.slice(i, i + batchSize);
+    for (const message of messageArray) {
+      const updates = {};
+      let hasChanges = false;
       
-      const updates = batch.map(async (message) => {
-        const updates = {};
-        let hasChanges = false;
-        
-        if (message.body_html) {
-          const fixed = fixEncodingIssues(message.body_html);
-          if (fixed !== message.body_html) {
-            updates.body_html = fixed;
-            hasChanges = true;
-          }
+      if (message.body_html) {
+        const fixed = fixEncodingIssues(message.body_html);
+        if (fixed !== message.body_html) {
+          updates.body_html = fixed;
+          hasChanges = true;
         }
-        
-        if (message.body_text) {
-          const fixed = fixEncodingIssues(message.body_text);
-          if (fixed !== message.body_text) {
-            updates.body_text = fixed;
-            hasChanges = true;
-          }
-        }
-        
-        if (message.subject) {
-          const fixed = fixEncodingIssues(message.subject);
-          if (fixed !== message.subject) {
-            updates.subject = fixed;
-            hasChanges = true;
-          }
-        }
-        
-        if (hasChanges) {
-          await base44.asServiceRole.entities.EmailMessage.update(message.id, updates);
-          return 1;
-        }
-        return 0;
-      });
+      }
       
-      const results = await Promise.all(updates);
-      updatedCount += results.reduce((sum, val) => sum + val, 0);
+      if (message.body_text) {
+        const fixed = fixEncodingIssues(message.body_text);
+        if (fixed !== message.body_text) {
+          updates.body_text = fixed;
+          hasChanges = true;
+        }
+      }
+      
+      if (message.subject) {
+        const fixed = fixEncodingIssues(message.subject);
+        if (fixed !== message.subject) {
+          updates.subject = fixed;
+          hasChanges = true;
+        }
+      }
+      
+      if (hasChanges) {
+        await base44.asServiceRole.entities.EmailMessage.update(message.id, updates);
+        updatedCount++;
+      }
     }
     
     return Response.json({ 
