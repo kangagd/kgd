@@ -170,7 +170,7 @@ export default function ProjectPartsPanel({ project, parts = [], inventoryByItem
                     <div className="flex items-center gap-2 mb-1">
                       <span className="font-medium text-sm">
                         {(() => {
-                          const poRef = po.order_reference || po.po_number || po.reference || po.id.substring(0, 8);
+                          const poRef = po.po_number || po.order_reference || po.reference || po.id.substring(0, 8);
                           return `PO #${poRef}`;
                         })()}
                       </span>
