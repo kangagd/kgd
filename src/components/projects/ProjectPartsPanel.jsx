@@ -210,7 +210,7 @@ export default function ProjectPartsPanel({ project, parts = [], inventoryByItem
               const partTitle = part.item_name || part.category || "Part";
               const normalizedStatus = normaliseLegacyPartStatus(part.status);
               const poDisplay = (() => {
-                const poRef = part.order_reference || part.po_number || part.reference;
+                const poRef = part.po_number || part.order_reference || part.reference;
                 return poRef ? `PO #${poRef}` : null;
               })();
               
@@ -276,7 +276,7 @@ export default function ProjectPartsPanel({ project, parts = [], inventoryByItem
               const partTitle = part.item_name || part.category || "Part";
               const normalizedStatus = normaliseLegacyPartStatus(part.status);
               const poDisplay = (() => {
-                const poRef = part.order_reference || part.po_number || part.reference;
+                const poRef = part.po_number || part.order_reference || part.reference;
                 return poRef ? `PO #${poRef}` : null;
               })();
               
