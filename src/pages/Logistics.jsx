@@ -34,17 +34,17 @@ import { PART_LOCATION } from "@/components/domain/partConfig";
 const getPoStatusColor = (status) => {
   const normalized = normaliseLegacyPoStatus(status);
   const colors = {
-    draft: 'bg-slate-100 text-slate-700',
-    sent: 'bg-indigo-100 text-indigo-700',
-    on_order: 'bg-blue-100 text-blue-700',
-    in_transit: 'bg-purple-100 text-purple-700',
-    in_loading_bay: 'bg-cyan-100 text-cyan-700',
-    in_storage: 'bg-emerald-100 text-emerald-700',
-    in_vehicle: 'bg-teal-100 text-teal-700',
-    installed: 'bg-green-100 text-green-700',
-    cancelled: 'bg-red-100 text-red-700',
+    draft: 'bg-gray-200 text-gray-800',
+    sent: 'bg-blue-200 text-blue-800',
+    on_order: 'bg-amber-200 text-amber-800',
+    in_transit: 'bg-purple-200 text-purple-800',
+    in_loading_bay: 'bg-orange-200 text-orange-800',
+    in_storage: 'bg-green-200 text-green-800',
+    in_vehicle: 'bg-indigo-200 text-indigo-800',
+    installed: 'bg-teal-200 text-teal-800',
+    cancelled: 'bg-red-200 text-red-800',
   };
-  return colors[normalized] || 'bg-slate-100 text-slate-700';
+  return colors[normalized] || 'bg-gray-200 text-gray-800';
 };
 
 export default function Logistics() {

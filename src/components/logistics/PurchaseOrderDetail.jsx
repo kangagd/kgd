@@ -313,6 +313,46 @@ export default function PurchaseOrderDetail({ poId, onClose, mode = "page" }) {
   const [addItemMenuOpen, setAddItemMenuOpen] = useState(false);
   const [priceListSearch, setPriceListSearch] = useState("");
 
+  const addLineItemMutation = useMutation({
+    mutationFn: async (newItem) => {
+      const lineData = {
+        purchase_order_id: poId,
+        source_type: newItem.source_type || "custom",
+        source_id: newItem.source_id || null,
+        part_id: newItem.part_id || null,
+        price_list_item_id: newItem.source_type === "price_list" ? newItem.source_id : null,
+        item_name: newItem.name || '',
+        description: newItem.name || '',
+        qty_ordered: newItem.quantity || 1,
+        unit_cost_ex_tax: newItem.unit_price || 0,
+        tax_rate_percent: 0,
+        total_line_ex_tax: (newItem.quantity || 1) * (newItem.unit_price || 0),
+        unit: newItem.unit || null,
+        notes: newItem.notes || null
+      };
+      
+      const created = await base44.entities.PurchaseOrderLine.create(lineData);
+      
+      // If this is from project part, link part to PO
+      if (newItem.part_id) {
+        await base44.entities.Part.update(newItem.part_id, {
+          purchase_order_id: poId,
+          status: "on_order"
+        });
+      }
+      
+      return created;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['purchaseOrderLines', poId] });
+      queryClient.invalidateQueries({ queryKey: ['parts'] });
+      toast.success('Item added');
+    },
+    onError: (error) => {
+      toast.error('Failed to add item');
+    }
+  });
+
   const addLineItem = (sourceType = "custom", sourceItem = null) => {
     const newItem = { 
       source_type: sourceType,
@@ -324,38 +364,99 @@ export default function PurchaseOrderDetail({ poId, onClose, mode = "page" }) {
       unit: null,
       notes: null
     };
-    setFormData({
-      ...formData,
-      line_items: [...formData.line_items, newItem]
-    });
+    
+    // Save immediately to database if not draft
+    if (isDraft) {
+      addLineItemMutation.mutate(newItem);
+    } else {
+      // For non-draft, just update UI state
+      setFormData({
+        ...formData,
+        line_items: [...formData.line_items, newItem]
+      });
+    }
     setAddItemMenuOpen(false);
   };
 
+  const removeLineItemMutation = useMutation({
+    mutationFn: async (lineId) => {
+      await base44.entities.PurchaseOrderLine.delete(lineId);
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['purchaseOrderLines', poId] });
+      queryClient.invalidateQueries({ queryKey: ['parts'] });
+      toast.success('Item removed');
+    },
+    onError: () => {
+      toast.error('Failed to remove item');
+    }
+  });
+
   const removeLineItem = (index) => {
-    setFormData({
-      ...formData,
-      line_items: formData.line_items.filter((_, i) => i !== index)
-    });
+    const item = formData.line_items[index];
+    
+    // If item has an ID, delete from database
+    if (item.id && isDraft) {
+      removeLineItemMutation.mutate(item.id);
+    } else {
+      // Otherwise just update UI state
+      setFormData({
+        ...formData,
+        line_items: formData.line_items.filter((_, i) => i !== index)
+      });
+    }
   };
+
+  const updateLineItemMutation = useMutation({
+    mutationFn: async ({ lineId, updates }) => {
+      const lineData = {
+        item_name: updates.name,
+        qty_ordered: updates.quantity || 0,
+        unit_cost_ex_tax: updates.unit_price || 0,
+        total_line_ex_tax: (updates.quantity || 0) * (updates.unit_price || 0),
+        notes: updates.notes || null
+      };
+      
+      await base44.entities.PurchaseOrderLine.update(lineId, lineData);
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['purchaseOrderLines', poId] });
+    }
+  });
 
   const updateLineItem = (index, field, value) => {
     const updatedItems = [...formData.line_items];
     updatedItems[index] = { ...updatedItems[index], [field]: value };
     setFormData({ ...formData, line_items: updatedItems });
+    
+    // Auto-save to database if item has ID (persisted) and we're in draft mode
+    const item = updatedItems[index];
+    if (item.id && isDraft) {
+      // Debounced save
+      clearTimeout(window._lineItemSaveTimeout);
+      window._lineItemSaveTimeout = setTimeout(() => {
+        updateLineItemMutation.mutate({
+          lineId: item.id,
+          updates: item
+        });
+      }, 500);
+    }
   };
 
   const getStatusColor = (status) => {
+    const normalized = normaliseLegacyPoStatus(status);
     const colors = {
-      [PO_STATUS.DRAFT]: 'bg-slate-100 text-slate-700',
-      [PO_STATUS.ON_ORDER]: 'bg-blue-100 text-blue-700',
-      [PO_STATUS.IN_TRANSIT]: 'bg-purple-100 text-purple-700',
-      [PO_STATUS.IN_LOADING_BAY]: 'bg-cyan-100 text-cyan-700',
-      [PO_STATUS.IN_STORAGE]: 'bg-emerald-100 text-emerald-700',
-      [PO_STATUS.IN_VEHICLE]: 'bg-teal-100 text-teal-700',
-      [PO_STATUS.INSTALLED]: 'bg-green-100 text-green-700',
-      [PO_STATUS.CANCELLED]: 'bg-red-100 text-red-700',
+      [PO_STATUS.DRAFT]: 'bg-gray-200 text-gray-800',
+      [PO_STATUS.SENT]: 'bg-blue-200 text-blue-800',
+      [PO_STATUS.ON_ORDER]: 'bg-amber-200 text-amber-800',
+      [PO_STATUS.IN_TRANSIT]: 'bg-purple-200 text-purple-800',
+      [PO_STATUS.IN_LOADING_BAY]: 'bg-orange-200 text-orange-800',
+      [PO_STATUS.IN_STORAGE]: 'bg-green-200 text-green-800',
+      [PO_STATUS.IN_VEHICLE]: 'bg-indigo-200 text-indigo-800',
+      [PO_STATUS.INSTALLED]: 'bg-teal-200 text-teal-800',
+      [PO_STATUS.CANCELLED]: 'bg-red-200 text-red-800',
     };
-    return colors[status] || 'bg-slate-100 text-slate-700';
+    return colors[normalized] || 'bg-gray-200 text-gray-800';
   };
 
   const calculateTotal = () => {
