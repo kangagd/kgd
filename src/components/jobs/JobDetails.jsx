@@ -2587,11 +2587,57 @@ export default function JobDetails({ job: initialJob, onClose, onStatusChange, o
                   isAdmin={isAdmin}
                 />
 
+                {/* Project-level Invoices */}
+                {projectInvoices.length > 0 && (
+                  <Card className="border border-[#E5E7EB] shadow-sm rounded-lg">
+                    <CardHeader className="bg-white px-4 py-3 border-b border-[#E5E7EB]">
+                      <CardTitle className="text-[16px] font-semibold text-[#111827] leading-[1.2] flex items-center gap-2">
+                        <FolderKanban className="w-4 h-4 text-[#6B7280]" />
+                        Project Invoices
+                      </CardTitle>
+                    </CardHeader>
+                    <CardContent className="p-4 space-y-3">
+                      {projectInvoices.map((invoice) => (
+                        <XeroInvoiceCard
+                          key={invoice.id}
+                          invoice={invoice}
+                          onRefreshStatus={() => {
+                            base44.functions.invoke('syncXeroInvoiceStatus', { 
+                              invoice_id: invoice.id 
+                            }).then(() => {
+                              queryClient.invalidateQueries({ queryKey: ['projectInvoices'] });
+                            });
+                          }}
+                          onViewInXero={() => window.open(invoice.pdf_url, '_blank')}
+                          onDownloadPdf={() => {
+                            base44.functions.invoke('getInvoicePdf', {
+                              xero_invoice_id: invoice.xero_invoice_id
+                            }).then((response) => {
+                              const blob = new Blob([response.data], { type: 'application/pdf' });
+                              const url = window.URL.createObjectURL(blob);
+                              const a = document.createElement('a');
+                              a.href = url;
+                              a.download = `invoice-${invoice.xero_invoice_number}.pdf`;
+                              document.body.appendChild(a);
+                              a.click();
+                              window.URL.revokeObjectURL(url);
+                              a.remove();
+                              toast.success('Invoice PDF downloaded');
+                            }).catch(() => toast.error('Failed to download PDF'));
+                          }}
+                          isRefreshing={false}
+                          isDownloading={false}
+                        />
+                      ))}
+                    </CardContent>
+                  </Card>
+                )}
+
                 {/* Xero Invoicing Section */}
                 <Card className="border border-[#E5E7EB] shadow-sm rounded-lg">
                   <CardHeader className="bg-white px-4 py-3 border-b border-[#E5E7EB]">
                     <CardTitle className="text-[16px] font-semibold text-[#111827] leading-[1.2]">
-                      Xero Invoice
+                      Job Invoice
                     </CardTitle>
                   </CardHeader>
                   <CardContent className="p-4">
