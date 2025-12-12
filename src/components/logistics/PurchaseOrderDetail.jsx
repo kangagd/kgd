@@ -129,8 +129,11 @@ export default function PurchaseOrderDetail({ poId, onClose, mode = "page" }) {
     mutationFn: async (data) => {
       const response = await base44.functions.invoke('managePurchaseOrder', data);
       console.log("managePurchaseOrder response:", response.data);
-      if (!response.data?.success) {
-        throw new Error(response.data?.error || 'Failed to update PO');
+      if (!response?.data?.success) {
+        const errorMsg = response?.data?.error || 'Failed to update PO';
+        toast.error(errorMsg);
+        console.error("PO save failed:", response);
+        throw new Error(errorMsg);
       }
       return response.data;
     },
@@ -144,7 +147,9 @@ export default function PurchaseOrderDetail({ poId, onClose, mode = "page" }) {
       toast.success('Purchase Order updated');
     },
     onError: (error) => {
-      toast.error(error.message || 'Failed to update Purchase Order');
+      const errMsg = error?.message || 'Save failed (network/rate limit)';
+      toast.error(errMsg);
+      console.error("PO save error:", error);
     }
   });
 
@@ -612,7 +617,7 @@ export default function PurchaseOrderDetail({ poId, onClose, mode = "page" }) {
                    className="bg-[#F3F4F6] text-[#111827] hover:bg-[#E5E7EB]"
                  >
                    <Save className="w-4 h-4 mr-2" />
-                   Save
+                   {updatePOMutation.isPending ? 'Saving...' : 'Save'}
                  </Button>
                  <Button
                    onClick={handleSendToSupplier}
@@ -620,7 +625,7 @@ export default function PurchaseOrderDetail({ poId, onClose, mode = "page" }) {
                    className="bg-[#FAE008] text-[#111827] hover:bg-[#E5CF07]"
                  >
                    <Send className="w-4 h-4 mr-2" />
-                   Send to Supplier
+                   {updatePOMutation.isPending ? 'Sending...' : 'Send to Supplier'}
                  </Button>
                 </>
                 )}

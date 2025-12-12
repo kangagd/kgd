@@ -62,35 +62,68 @@ export default function Logistics() {
   const [selectedPoId, setSelectedPoId] = useState(null);
   const [showAdvancedParts, setShowAdvancedParts] = useState(false);
 
-  // Fetch Data
-  const { data: parts = [], isLoading: partsLoading } = useQuery({
-    queryKey: ["parts"],
-    queryFn: () => base44.entities.Part.list(),
-  });
+  const isOrdersView = viewMode === "orders";
+  const isJobsView = viewMode === "jobs";
 
+  // Fetch Data - with caching and conditional loading
   const { data: purchaseOrders = [] } = useQuery({
     queryKey: ["purchaseOrders"],
     queryFn: () => base44.entities.PurchaseOrder.list(),
+    staleTime: 60_000,
+    refetchOnWindowFocus: false,
+    retry: (count, err) => err?.status !== 429 && count < 2,
   });
+
+  const { data: suppliers = [] } = useQuery({
+    queryKey: ["suppliers"],
+    queryFn: () => base44.entities.Supplier.list("name"),
+    staleTime: 120_000,
+    refetchOnWindowFocus: false,
+    retry: (count, err) => err?.status !== 429 && count < 2,
+  });
+
+  // Only load when orders view and loading bay has items
+  const hasLoadingBayPOs = useMemo(() => {
+    return purchaseOrders.some(po => {
+      const normalized = normaliseLegacyPoStatus(po.status);
+      return normalized === PO_STATUS.IN_LOADING_BAY;
+    });
+  }, [purchaseOrders]);
 
   const { data: purchaseOrderLines = [] } = useQuery({
     queryKey: ["purchaseOrderLines"],
     queryFn: () => base44.entities.PurchaseOrderLine.list(),
+    enabled: isOrdersView && hasLoadingBayPOs,
+    staleTime: 60_000,
+    refetchOnWindowFocus: false,
+    retry: (count, err) => err?.status !== 429 && count < 2,
   });
 
-  const { data: inventoryQuantities = [] } = useQuery({
-    queryKey: ["inventoryQuantities"],
-    queryFn: () => base44.entities.InventoryQuantity.list(),
+  const { data: parts = [], isLoading: partsLoading } = useQuery({
+    queryKey: ["parts"],
+    queryFn: () => base44.entities.Part.list(),
+    enabled: isOrdersView || showAdvancedParts,
+    staleTime: 60_000,
+    refetchOnWindowFocus: false,
+    retry: (count, err) => err?.status !== 429 && count < 2,
   });
 
   const { data: projects = [] } = useQuery({
     queryKey: ["projects"],
     queryFn: () => base44.entities.Project.list(),
+    enabled: isOrdersView && showAdvancedParts,
+    staleTime: 120_000,
+    refetchOnWindowFocus: false,
+    retry: (count, err) => err?.status !== 429 && count < 2,
   });
 
   const { data: jobs = [] } = useQuery({
     queryKey: ["jobs"],
     queryFn: () => base44.entities.Job.list(),
+    enabled: isJobsView,
+    staleTime: 60_000,
+    refetchOnWindowFocus: false,
+    retry: (count, err) => err?.status !== 429 && count < 2,
   });
 
   const { data: stockLogisticsJobs = [] } = useQuery({
@@ -99,26 +132,46 @@ export default function Logistics() {
       base44.entities.Job.filter({
         purchase_order_id: { $ne: null },
       }),
+    enabled: isJobsView,
+    staleTime: 60_000,
+    refetchOnWindowFocus: false,
+    retry: (count, err) => err?.status !== 429 && count < 2,
   });
 
   const { data: priceListItems = [] } = useQuery({
     queryKey: ["priceListItems-for-logistics"],
     queryFn: () => base44.entities.PriceListItem.list("item"),
+    enabled: showAdvancedParts,
+    staleTime: 120_000,
+    refetchOnWindowFocus: false,
+    retry: (count, err) => err?.status !== 429 && count < 2,
   });
 
   const { data: vehicles = [] } = useQuery({
     queryKey: ["vehicles-for-logistics"],
     queryFn: () => base44.entities.Vehicle.list("name"),
+    enabled: showAdvancedParts,
+    staleTime: 120_000,
+    refetchOnWindowFocus: false,
+    retry: (count, err) => err?.status !== 429 && count < 2,
+  });
+
+  const { data: inventoryQuantities = [] } = useQuery({
+    queryKey: ["inventoryQuantities"],
+    queryFn: () => base44.entities.InventoryQuantity.list(),
+    enabled: showAdvancedParts,
+    staleTime: 120_000,
+    refetchOnWindowFocus: false,
+    retry: (count, err) => err?.status !== 429 && count < 2,
   });
 
   const { data: allTradeRequirements = [] } = useQuery({
     queryKey: ["allTradeRequirements"],
     queryFn: () => base44.entities.ProjectTradeRequirement.list(),
-  });
-
-  const { data: suppliers = [] } = useQuery({
-    queryKey: ["suppliers"],
-    queryFn: () => base44.entities.Supplier.list("name"),
+    enabled: isJobsView,
+    staleTime: 120_000,
+    refetchOnWindowFocus: false,
+    retry: (count, err) => err?.status !== 429 && count < 2,
   });
 
   const tradesByProjectId = useMemo(() => {
