@@ -56,9 +56,10 @@ Deno.serve(async (req) => {
                 try {
                     const relatedJobs = await base44.asServiceRole.entities.Job.filter({ project_id: id });
                     for (const job of relatedJobs) {
-                        if (job.job_number && typeof job.job_number === 'string') {
-                            const parts = job.job_number.split('-');
-                            if (parts[0] == oldProjectNumber && parts.length > 1) {
+                        if (job.job_number) {
+                            const jobNumberStr = String(job.job_number);
+                            const parts = jobNumberStr.split('-');
+                            if (parts.length > 1 && parts[0] === String(oldProjectNumber)) {
                                 // Keep the suffix, update the prefix
                                 const suffix = parts.slice(1).join('-');
                                 const newJobNumber = `${newProjectNumber}-${suffix}`;
