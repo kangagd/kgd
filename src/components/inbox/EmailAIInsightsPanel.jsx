@@ -12,17 +12,7 @@ import { toast } from "sonner";
 export default function EmailAIInsightsPanel({ thread, onThreadUpdated, onCreateProjectFromAI }) {
   const threadId = thread?.id;
 
-  // Check if thread already has AI insights
-  const threadHasInsights = React.useMemo(() => {
-    return !!(
-      thread?.ai_overview ||
-      (Array.isArray(thread?.ai_labels) && thread.ai_labels.length > 0) ||
-      thread?.ai_category ||
-      thread?.ai_priority
-    );
-  }, [thread]);
-
-  // Auto-fetch AI insights when thread changes, but only if no insights exist
+  // Auto-fetch AI insights when thread changes
   const {
     data: aiData,
     isLoading,
@@ -32,9 +22,7 @@ export default function EmailAIInsightsPanel({ thread, onThreadUpdated, onCreate
     error,
   } = useQuery({
     queryKey: ["aiEmailInsights", threadId],
-    enabled: !!threadId && !threadHasInsights,
-    staleTime: 5 * 60 * 1000, // Cache for 5 minutes
-    retry: false,
+    enabled: !!threadId,
     queryFn: async () => {
       if (!threadId) return null;
 
@@ -75,16 +63,9 @@ export default function EmailAIInsightsPanel({ thread, onThreadUpdated, onCreate
       await refetch();
       toast.success("AI insights regenerated successfully");
     } catch (err) {
-      const errorMsg = err?.message || String(err);
-      if (errorMsg.includes("Rate limit")) {
-        toast.error("Rate limit exceeded. Please wait a moment and try again.");
-      } else {
-        toast.error("Failed to regenerate AI insights");
-      }
+      toast.error("Failed to regenerate AI insights");
     }
   };
-
-  const isRateLimitError = isError && error?.message?.includes("Rate limit");
 
   return (
     <Card className="border border-slate-200 shadow-sm">
@@ -137,11 +118,7 @@ export default function EmailAIInsightsPanel({ thread, onThreadUpdated, onCreate
         {threadId && isError && !hasInsights && (
           <div className="flex items-center gap-2 text-xs text-red-600 py-2">
             <AlertCircle className="w-4 h-4" />
-            <span>
-              {isRateLimitError 
-                ? "Rate limit exceeded. Please wait a moment before trying again."
-                : "Could not generate insights for this email. Try again."}
-            </span>
+            <span>Could not generate insights for this email. Try again.</span>
           </div>
         )}
 
@@ -159,7 +136,7 @@ export default function EmailAIInsightsPanel({ thread, onThreadUpdated, onCreate
           </div>
         )}
 
-        {Array.isArray(t?.ai_key_points) && t.ai_key_points.length > 0 && (
+        {hasInsights && Array.isArray(t?.ai_key_points) && t.ai_key_points.length > 0 && (
           <div>
             <p className="font-medium text-xs text-slate-500 mb-1.5">Key Points</p>
             <ul className="list-disc list-inside space-y-1 text-xs text-slate-700">
@@ -170,7 +147,7 @@ export default function EmailAIInsightsPanel({ thread, onThreadUpdated, onCreate
           </div>
         )}
 
-        {(t?.ai_labels || t?.ai_priority || t?.ai_category) && (
+        {hasInsights && (t?.ai_labels || t?.ai_priority || t?.ai_category) && (
           <div className="space-y-1.5">
             <p className="font-medium text-xs text-slate-500 mb-1.5">Classification</p>
             <div className="flex flex-wrap gap-1.5">
@@ -204,7 +181,7 @@ export default function EmailAIInsightsPanel({ thread, onThreadUpdated, onCreate
           </div>
         )}
 
-        {(projectLink || jobLink) && (
+        {hasInsights && (projectLink || jobLink) && (
           <div className="space-y-2 pt-2 border-t border-slate-100">
             <p className="font-medium text-xs text-slate-500 mb-1.5">
               Suggested Links
