@@ -194,7 +194,7 @@ export default function JobDetails({ job: initialJob, onClose, onStatusChange, o
 
   const { data: jobSummaries = [] } = useQuery({
     queryKey: ['jobSummaries', job.id],
-    queryFn: () => base44.entities.JobSummary.filter({ job_id: job.id }, '-checkout_time')
+    queryFn: () => base44.entities.JobSummary.filter({ job_id: job.id }, '-check_out_time')
   });
 
   const { data: allProjectJobs = [] } = useQuery({
@@ -203,14 +203,19 @@ export default function JobDetails({ job: initialJob, onClose, onStatusChange, o
     enabled: !!job.project_id
   });
 
+  // Fetch all JobSummary records for the project
+  const { data: allProjectJobSummaries = [] } = useQuery({
+    queryKey: ['projectJobSummaries', job.project_id],
+    queryFn: () => base44.entities.JobSummary.filter({ project_id: job.project_id }, '-check_out_time'),
+    enabled: !!job.project_id
+  });
+
   const projectJobs = allProjectJobs.filter((j) => j.id !== job.id);
   
-  // Prior completed jobs with content for visit summaries
-  const priorProjectJobs = allProjectJobs.filter(j => 
-    !j.deleted_at && 
-    j.status === "Completed" && 
-    j.id !== job.id &&
-    (j.overview || j.next_steps || j.communication_with_client || j.measurements || (j.image_urls && j.image_urls.length > 0))
+  // Prior completed jobs - filter summaries that belong to other jobs in this project
+  const priorProjectJobSummaries = allProjectJobSummaries.filter(summary => 
+    summary.job_id !== job.id &&
+    (summary.overview || summary.next_steps || summary.communication_with_client || summary.measurements || (summary.photo_urls && summary.photo_urls.length > 0))
   );
 
   useEffect(() => {
@@ -431,14 +436,6 @@ export default function JobDetails({ job: initialJob, onClose, onStatusChange, o
     },
     onSuccess: () => {
       setValidationError("");
-      // Clear form fields
-      setOverview("");
-      setIssuesFound("");
-      setResolution("");
-      setNextSteps("");
-      setCommunicationWithClient("");
-      setOutcome("");
-
       // Invalidate queries to refresh data
       queryClient.invalidateQueries({ queryKey: ['checkIns', job.id] });
       queryClient.invalidateQueries({ queryKey: ['jobSummaries', job.id] });
@@ -1779,20 +1776,77 @@ export default function JobDetails({ job: initialJob, onClose, onStatusChange, o
             {!isLogisticsJob && (
               <TabsContent value="visit" className="space-y-3 mt-2">
                 {/* Prior Job Summaries from Project */}
-                {priorProjectJobs.length > 0 && (
+                {priorProjectJobSummaries.length > 0 && (
                   <div className="space-y-3 mb-4">
-                    {priorProjectJobs
-                      .sort((a, b) => new Date(a.updated_date || a.created_date) - new Date(b.updated_date || b.created_date))
-                      .map((priorJob, idx) => {
+                    <div className="text-sm font-semibold text-slate-700 mb-2">Previous Visits on This Project:</div>
+                    {priorProjectJobSummaries
+                      .sort((a, b) => new Date(a.check_out_time) - new Date(b.check_out_time))
+                      .map((summary, idx) => {
                         const colors = ["blue", "green", "purple", "orange", "cyan"];
                         const color = colors[idx % colors.length];
                         return (
-                          <JobVisitSummary 
-                            key={priorJob.id}
-                            job={priorJob}
-                            title={priorJob.job_type_name || `Job #${priorJob.job_number}`}
-                            borderColor={color}
-                          />
+                          <div key={summary.id} className={`border-2 border-${color}-200 rounded-xl p-4 bg-${color}-50`}>
+                            <div className="flex items-center justify-between mb-3">
+                              <div>
+                                <span className="font-bold text-slate-900">{summary.job_type || `Job #${summary.job_number}`}</span>
+                                <span className="text-sm text-slate-600 ml-2">• {summary.technician_name}</span>
+                              </div>
+                              <span className="text-xs text-slate-500 font-medium">
+                                {format(new Date(summary.check_out_time), 'MMM d, yyyy')}
+                              </span>
+                            </div>
+                            
+                            {summary.outcome && (
+                              <Badge className={`${outcomeColors[summary.outcome]} mb-3 font-semibold border-2`}>
+                                {summary.outcome?.replace(/_/g, ' ')}
+                              </Badge>
+                            )}
+
+                            <div className="space-y-2">
+                              {summary.overview && (
+                                <div>
+                                  <div className="text-xs font-bold text-slate-700 mb-1">Work Performed:</div>
+                                  <div className="text-sm text-slate-800" dangerouslySetInnerHTML={{ __html: summary.overview }} />
+                                </div>
+                              )}
+
+                              {summary.next_steps && (
+                                <div>
+                                  <div className="text-xs font-bold text-slate-700 mb-1">Next Steps:</div>
+                                  <div className="text-sm text-slate-800" dangerouslySetInnerHTML={{ __html: summary.next_steps }} />
+                                </div>
+                              )}
+                              
+                              {summary.communication_with_client && (
+                                <div>
+                                  <div className="text-xs font-bold text-slate-700 mb-1">Communication:</div>
+                                  <div className="text-sm text-slate-800" dangerouslySetInnerHTML={{ __html: summary.communication_with_client }} />
+                                </div>
+                              )}
+
+                              {summary.measurements && Object.keys(summary.measurements).length > 0 && (
+                                <div>
+                                  <div className="text-xs font-bold text-slate-700 mb-1">Measurements:</div>
+                                  <div className="text-sm text-slate-800">
+                                    {Object.entries(summary.measurements).map(([key, value]) => (
+                                      <div key={key}><strong>{key}:</strong> {value}</div>
+                                    ))}
+                                  </div>
+                                </div>
+                              )}
+
+                              {summary.photo_urls && summary.photo_urls.length > 0 && (
+                                <div>
+                                  <div className="text-xs font-bold text-slate-700 mb-1">Photos:</div>
+                                  <div className="grid grid-cols-3 gap-2">
+                                    {summary.photo_urls.slice(0, 6).map((url, i) => (
+                                      <img key={i} src={url} alt="" className="w-full h-20 object-cover rounded" />
+                                    ))}
+                                  </div>
+                                </div>
+                              )}
+                            </div>
+                          </div>
                         );
                       })
                     }
