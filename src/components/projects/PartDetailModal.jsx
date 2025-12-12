@@ -123,7 +123,8 @@ export default function PartDetailModal({ open, part, onClose, onSave, isSubmitt
         supplier_name: part.supplier_name || "",
         quantity_required: part.quantity_required || 1,
         notes: part.notes || "",
-        tracking_url: part.tracking_url || ""
+        tracking_url: part.tracking_url || "",
+        item_name: part.item_name || ""
       };
       console.log("Setting formData to:", mappedPart);
       setFormData(mappedPart);
@@ -134,6 +135,9 @@ export default function PartDetailModal({ open, part, onClose, onSave, isSubmitt
         if (linkedItem) {
           setPriceListSearch(linkedItem.item);
         }
+      } else if (part.item_name) {
+        // If no price list item but has custom item_name, show it
+        setPriceListSearch(part.item_name);
       }
     } else {
       console.log("PartDetailModal: Creating new part (no part data)");
@@ -151,7 +155,8 @@ export default function PartDetailModal({ open, part, onClose, onSave, isSubmitt
         supplier_name: "",
         quantity_required: 1,
         notes: "",
-        tracking_url: ""
+        tracking_url: "",
+        item_name: ""
       });
       setPriceListSearch("");
     }
@@ -201,8 +206,17 @@ export default function PartDetailModal({ open, part, onClose, onSave, isSubmitt
     }
 
     try {
+      // Build the data to save
+      const dataToSave = {
+        ...formData,
+        // If user entered custom name (priceListSearch) and didn't select from price list
+        item_name: formData.price_list_item_id 
+          ? selectedPriceListItem?.item 
+          : priceListSearch || formData.item_name || ""
+      };
+
       // Save/create the Part
-      const savedPart = await onSave(formData);
+      const savedPart = await onSave(dataToSave);
       
       // No longer create PO here - user will use "Create PO" button from PartsSection
       // or navigate to existing PO to add this part

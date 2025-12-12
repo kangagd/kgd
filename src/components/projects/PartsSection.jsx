@@ -241,13 +241,7 @@ export default function PartsSection({ projectId, autoExpand = false, registerAd
               const progressIndex = FLOW_STEPS.indexOf(displayLocation);
               const progressPercent = progressIndex === -1 ? 0 : ((progressIndex + 1) / FLOW_STEPS.length) * 100;
 
-              const partTitle =
-                part.title ||
-                part.item_name ||
-                part.name ||
-                part.description ||
-                part.category ||
-                "Part";
+              const partTitle = part.item_name || part.category || "Part";
 
               return (
                 <div 
