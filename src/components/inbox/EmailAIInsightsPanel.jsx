@@ -1,5 +1,6 @@
-import React, { useState } from "react";
+import React from "react";
 import { base44 } from "@/api/base44Client";
+import { useQuery } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -9,36 +10,43 @@ import { Link } from "react-router-dom";
 import { toast } from "sonner";
 
 export default function EmailAIInsightsPanel({ thread, onThreadUpdated, onCreateProjectFromAI }) {
-  const [loading, setLoading] = useState(false);
-  const [localThread, setLocalThread] = useState(thread);
+  const threadId = thread?.id;
 
-  const effectiveThread = localThread || thread;
+  // Auto-fetch AI insights when thread changes
+  const {
+    data: aiData,
+    isLoading,
+    isFetching,
+    refetch,
+    isError,
+    error,
+  } = useQuery({
+    queryKey: ["aiEmailInsights", threadId],
+    enabled: !!threadId,
+    queryFn: async () => {
+      if (!threadId) return null;
 
-  const handleRunAI = async () => {
-    if (!thread?.id) return;
-    setLoading(true);
-    try {
       const res = await base44.functions.invoke("processEmailThreadWithAI", {
-        email_thread_id: thread.id,
+        email_thread_id: threadId,
       });
-      
+
       if (res.data?.error) {
         throw new Error(res.data.error);
       }
-      
-      const updated = res.data?.thread || res.data;
-      setLocalThread(updated);
-      if (onThreadUpdated) onThreadUpdated(updated);
-      toast.success("AI insights generated successfully");
-    } catch (err) {
-      console.error("Error running email AI", err);
-      toast.error("Failed to run AI on this email");
-    } finally {
-      setLoading(false);
-    }
-  };
 
-  const t = effectiveThread;
+      const updatedThread = res.data?.thread || res.data;
+      
+      // Notify parent of update
+      if (onThreadUpdated) {
+        onThreadUpdated(updatedThread);
+      }
+
+      return updatedThread;
+    },
+  });
+
+  // Use AI data if available, otherwise fall back to thread prop
+  const t = aiData || thread;
 
   const hasInsights =
     !!t?.ai_overview ||
@@ -48,6 +56,16 @@ export default function EmailAIInsightsPanel({ thread, onThreadUpdated, onCreate
 
   const projectLink = t?.ai_suggested_links?.project_id;
   const jobLink = t?.ai_suggested_links?.job_id;
+
+  const handleRerun = async () => {
+    if (!threadId) return;
+    try {
+      await refetch();
+      toast.success("AI insights regenerated successfully");
+    } catch (err) {
+      toast.error("Failed to regenerate AI insights");
+    }
+  };
 
   return (
     <Card className="border border-slate-200 shadow-sm">
@@ -65,10 +83,10 @@ export default function EmailAIInsightsPanel({ thread, onThreadUpdated, onCreate
           type="button"
           size="sm"
           className="text-xs rounded-lg bg-purple-600 hover:bg-purple-700 text-white"
-          disabled={loading}
-          onClick={handleRunAI}
+          disabled={!threadId || isFetching}
+          onClick={handleRerun}
         >
-          {loading ? (
+          {isFetching ? (
             <>
               <Loader2 className="w-3 h-3 mr-1 animate-spin" />
               Running…
@@ -83,7 +101,28 @@ export default function EmailAIInsightsPanel({ thread, onThreadUpdated, onCreate
       </CardHeader>
 
       <CardContent className="p-4 space-y-4">
-        {!hasInsights && !loading && (
+        {!threadId && (
+          <div className="flex items-center gap-2 text-xs text-slate-500 py-2">
+            <AlertCircle className="w-4 h-4 text-slate-400" />
+            <span>Select an email to see AI insights.</span>
+          </div>
+        )}
+
+        {threadId && (isLoading || isFetching) && !hasInsights && (
+          <div className="flex items-center justify-center gap-2 text-xs text-slate-500 py-8">
+            <Loader2 className="w-4 h-4 animate-spin text-purple-600" />
+            <span>Analyzing email with AI...</span>
+          </div>
+        )}
+
+        {threadId && isError && !hasInsights && (
+          <div className="flex items-center gap-2 text-xs text-red-600 py-2">
+            <AlertCircle className="w-4 h-4" />
+            <span>Could not generate insights for this email. Try again.</span>
+          </div>
+        )}
+
+        {!hasInsights && !isLoading && !isFetching && !isError && threadId && (
           <div className="flex items-center gap-2 text-xs text-slate-500 py-2">
             <AlertCircle className="w-4 h-4 text-slate-400" />
             <span>No AI insights yet. Click "Run AI" to analyze this email.</span>
