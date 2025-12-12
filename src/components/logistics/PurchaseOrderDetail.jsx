@@ -105,12 +105,7 @@ export default function PurchaseOrderDetail({ poId, onClose, mode = "page" }) {
       }));
 
       // Only update if this is initial load or if PO ID changed
-      const poReference =
-        po.po_reference ||
-        po.order_reference ||
-        po.po_number ||
-        po.reference ||
-        '';
+      const poReference = po.po_reference || '';
       if (!initialLoadDone.current || formData.po_reference !== poReference) {
         setFormData({
           supplier_id: po.supplier_id || "",
@@ -607,18 +602,11 @@ export default function PurchaseOrderDetail({ poId, onClose, mode = "page" }) {
                   />
                 ) : (
                   <div className="mt-2 space-y-1">
-                    {(() => {
-                      const poRef =
-                        po.po_reference ||
-                        po.order_reference ||
-                        po.po_number ||
-                        po.reference;
-                      return poRef ? (
-                        <p className="text-sm font-medium text-[#111827]">PO #: {poRef}</p>
-                      ) : (
-                        <p className="text-sm text-[#6B7280]">ID: {po.id.slice(0, 8)}</p>
-                      );
-                    })()}
+                    {po.po_reference ? (
+                      <p className="text-sm font-medium text-[#111827]">PO #: {po.po_reference}</p>
+                    ) : (
+                      <p className="text-sm text-[#6B7280]">ID: {po.id.slice(0, 8)}</p>
+                    )}
                   </div>
                 )}
                 {linkedProject && (
