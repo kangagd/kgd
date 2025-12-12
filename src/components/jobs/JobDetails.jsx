@@ -204,6 +204,14 @@ export default function JobDetails({ job: initialJob, onClose, onStatusChange, o
   });
 
   const projectJobs = allProjectJobs.filter((j) => j.id !== job.id);
+  
+  // Prior completed jobs with content for visit summaries
+  const priorProjectJobs = allProjectJobs.filter(j => 
+    !j.deleted_at && 
+    j.status === "Completed" && 
+    j.id !== job.id &&
+    (j.overview || j.next_steps || j.communication_with_client || j.measurements || (j.image_urls && j.image_urls.length > 0))
+  );
 
   useEffect(() => {
     const loadUser = async () => {
@@ -1770,22 +1778,26 @@ export default function JobDetails({ job: initialJob, onClose, onStatusChange, o
 
             {!isLogisticsJob && (
               <TabsContent value="visit" className="space-y-3 mt-2">
-                {/* Prior Job Summaries */}
-                {priorProjectJobs
-                  .sort((a, b) => new Date(a.updated_date || a.created_date) - new Date(b.updated_date || b.created_date))
-                  .map((priorJob, idx) => {
-                    const colors = ["blue", "green", "purple", "orange", "cyan"];
-                    const color = colors[idx % colors.length];
-                    return (
-                      <JobVisitSummary 
-                        key={priorJob.id}
-                        job={priorJob}
-                        title={priorJob.job_type_name || `Job #${priorJob.job_number}`}
-                        borderColor={color}
-                      />
-                    );
-                  })
-                }
+                {/* Prior Job Summaries from Project */}
+                {priorProjectJobs.length > 0 && (
+                  <div className="space-y-3 mb-4">
+                    {priorProjectJobs
+                      .sort((a, b) => new Date(a.updated_date || a.created_date) - new Date(b.updated_date || b.created_date))
+                      .map((priorJob, idx) => {
+                        const colors = ["blue", "green", "purple", "orange", "cyan"];
+                        const color = colors[idx % colors.length];
+                        return (
+                          <JobVisitSummary 
+                            key={priorJob.id}
+                            job={priorJob}
+                            title={priorJob.job_type_name || `Job #${priorJob.job_number}`}
+                            borderColor={color}
+                          />
+                        );
+                      })
+                    }
+                  </div>
+                )}
 
                 <div className="space-y-3">
                   <div className="flex justify-end gap-2">
