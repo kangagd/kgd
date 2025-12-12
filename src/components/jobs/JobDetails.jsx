@@ -298,6 +298,22 @@ export default function JobDetails({ job: initialJob, onClose, onStatusChange, o
     enabled: !!job.xero_invoice_id
   });
 
+  // Fetch project-level invoices if job is linked to a project
+  const { data: projectInvoices = [] } = useQuery({
+    queryKey: ['projectInvoices', job.project_id],
+    queryFn: async () => {
+      if (!job.project_id) return [];
+      const project = await base44.entities.Project.get(job.project_id);
+      if (!project.xero_invoices || project.xero_invoices.length === 0) return [];
+      
+      const invoices = await Promise.all(
+        project.xero_invoices.map(id => base44.entities.XeroInvoice.get(id).catch(() => null))
+      );
+      return invoices.filter(Boolean);
+    },
+    enabled: !!job.project_id
+  });
+
   const activeCheckIn = checkIns.find((c) => !c.check_out_time && c.technician_email?.toLowerCase() === user?.email?.toLowerCase());
   const completedCheckIns = checkIns.filter((c) => c.check_out_time);
   const totalJobTime = completedCheckIns.reduce((sum, c) => sum + (c.duration_hours || 0), 0);
