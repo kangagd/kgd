@@ -1,6 +1,6 @@
 import React, { useState } from "react";
 import { base44 } from "@/api/base44Client";
-import { useQuery, useMutation } from "@tanstack/react-query";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -13,8 +13,12 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { useNavigate } from "react-router-dom";
+import { createPageUrl } from "@/utils";
 
 export default function CreateJobFromEmailModal({ open, onClose, thread, onSuccess }) {
+  const queryClient = useQueryClient();
+  const navigate = useNavigate();
   const [formData, setFormData] = useState({
     customer_id: "",
     address: "",
@@ -47,8 +51,21 @@ export default function CreateJobFromEmailModal({ open, onClose, thread, onSucce
       
       return base44.entities.Job.create({ ...data, job_number: nextJobNumber });
     },
-    onSuccess: (newJob) => {
+    onSuccess: async (newJob) => {
+      // Link the email thread to the new job
+      await base44.entities.EmailThread.update(thread.id, {
+        linked_job_id: newJob.id,
+        linked_job_number: newJob.job_number
+      });
+      
+      queryClient.invalidateQueries({ queryKey: ['allJobs'] });
+      queryClient.invalidateQueries({ queryKey: ['emailThreads'] });
+      
       onSuccess(newJob.id, newJob.job_number);
+      onClose();
+      
+      // Navigate to the new job
+      navigate(`${createPageUrl("Jobs")}?jobId=${newJob.id}`);
     }
   });
 

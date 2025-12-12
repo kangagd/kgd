@@ -3,9 +3,12 @@ import { base44 } from "@/api/base44Client";
 import { useMutation, useQueryClient, useQuery } from "@tanstack/react-query";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import ProjectForm from "../projects/ProjectForm";
+import { useNavigate } from "react-router-dom";
+import { createPageUrl } from "@/utils";
 
 export default function CreateProjectFromEmailModal({ open, onClose, thread, onSuccess }) {
   const queryClient = useQueryClient();
+  const navigate = useNavigate();
 
   const { data: customers = [] } = useQuery({
     queryKey: ['customers'],
@@ -49,10 +52,21 @@ export default function CreateProjectFromEmailModal({ open, onClose, thread, onS
       if (response.data?.error) throw new Error(response.data.error);
       return response.data.project;
     },
-    onSuccess: (newProject) => {
+    onSuccess: async (newProject) => {
+      // Link the email thread to the new project
+      await base44.entities.EmailThread.update(thread.id, {
+        linked_project_id: newProject.id,
+        linked_project_title: newProject.title
+      });
+      
       queryClient.invalidateQueries({ queryKey: ['projects'] });
+      queryClient.invalidateQueries({ queryKey: ['emailThreads'] });
+      
       onSuccess(newProject.id, newProject.title);
       onClose();
+      
+      // Navigate to the new project
+      navigate(`${createPageUrl("Projects")}?projectId=${newProject.id}`);
     }
   });
 
