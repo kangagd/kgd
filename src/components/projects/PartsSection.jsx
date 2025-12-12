@@ -18,6 +18,20 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
+
+// Helper for consistent PO reference display
+function getPoDisplayRef(po, part) {
+  return (
+    po?.po_number ||
+    po?.po_reference ||
+    po?.order_reference ||
+    po?.reference ||
+    part?.po_number ||
+    part?.order_reference ||
+    (po?.id ? String(po.id).slice(0, 8) : "") ||
+    ""
+  );
+}
 import {
   Select,
   SelectContent,
@@ -212,7 +226,7 @@ export default function PartsSection({ projectId, autoExpand = false, registerAd
               const isOverdue = (part.status === 'Ordered' || part.status === 'Back-ordered') && 
                                 part.eta && isPast(parseISO(part.eta));
               
-              const normalizedStatus = normaliseLegacyPartStatus(part.status);
+              const normalizedStatus = normaliseLegacyPartStatus(part.status, part);
               let displayLocation = normaliseLegacyPartLocation(part.location);
 
               // If location is missing or still "supplier", derive a better display location from status
@@ -289,8 +303,8 @@ export default function PartsSection({ projectId, autoExpand = false, registerAd
 
                     {/* Col 2: Status */}
                     <div className="col-span-6 md:col-span-2 mb-2 md:mb-0">
-                      <Badge className={`${statusColors[normaliseLegacyPartStatus(part.status)]} font-medium border px-2.5 py-0.5`}>
-                        {getPartStatusLabel(normaliseLegacyPartStatus(part.status))}
+                      <Badge className={`${statusColors[normalizedStatus]} font-medium border px-2.5 py-0.5`}>
+                        {getPartStatusLabel(normalizedStatus)}
                       </Badge>
                       {part.eta && (
                         <div className="text-xs text-slate-500 mt-1">
@@ -345,8 +359,9 @@ export default function PartsSection({ projectId, autoExpand = false, registerAd
                             >
                               <FileText className="w-3 h-3" />
                               {(() => {
-                                const poRef = part.order_reference || part.po_number || part.reference || String(part.purchase_order_id).substring(0, 8);
-                                return `PO #${poRef}`;
+                                const linkedPO = projectPOs.find(po => po.id === part.purchase_order_id);
+                                const poRef = getPoDisplayRef(linkedPO, part);
+                                return poRef ? `PO #${poRef}` : `PO #${String(part.purchase_order_id).substring(0, 8)}`;
                               })()}
                             </button>
                           ) : (

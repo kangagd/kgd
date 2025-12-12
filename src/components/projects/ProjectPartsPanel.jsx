@@ -170,8 +170,8 @@ export default function ProjectPartsPanel({ project, parts = [], inventoryByItem
                     <div className="flex items-center gap-2 mb-1">
                       <span className="font-medium text-sm">
                         {(() => {
-                          const poRef = po.po_number || po.order_reference || po.reference || po.id.substring(0, 8);
-                          return `PO #${poRef}`;
+                          const poRef = getPoDisplayRef(po);
+                          return poRef ? `PO #${poRef}` : "PO";
                         })()}
                       </span>
                       <Badge className="text-xs bg-slate-100 text-slate-700 hover:bg-slate-100">
@@ -208,9 +208,10 @@ export default function ProjectPartsPanel({ project, parts = [], inventoryByItem
           <div className="space-y-2">
             {needed.map(part => {
               const partTitle = part.item_name || part.category || "Part";
-              const normalizedStatus = normaliseLegacyPartStatus(part.status);
+              const normalizedStatus = normaliseLegacyPartStatus(part.status, part);
+              const linkedPO = projectPOs.find(po => po.id === part.purchase_order_id);
               const poDisplay = (() => {
-                const poRef = part.po_number || part.order_reference || part.reference;
+                const poRef = getPoDisplayRef(linkedPO, part);
                 return poRef ? `PO #${poRef}` : null;
               })();
               
@@ -274,9 +275,10 @@ export default function ProjectPartsPanel({ project, parts = [], inventoryByItem
           <div className="space-y-2">
             {ready.map(part => {
               const partTitle = part.item_name || part.category || "Part";
-              const normalizedStatus = normaliseLegacyPartStatus(part.status);
+              const normalizedStatus = normaliseLegacyPartStatus(part.status, part);
+              const linkedPO = projectPOs.find(po => po.id === part.purchase_order_id);
               const poDisplay = (() => {
-                const poRef = part.po_number || part.order_reference || part.reference;
+                const poRef = getPoDisplayRef(linkedPO, part);
                 return poRef ? `PO #${poRef}` : null;
               })();
               

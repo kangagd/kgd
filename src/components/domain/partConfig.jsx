@@ -64,8 +64,14 @@ export function getPartLocationLabel(location) {
 }
 
 // Normalize legacy part status values
-export function normaliseLegacyPartStatus(status) {
-  if (!status) return PART_STATUS.PENDING;
+export function normaliseLegacyPartStatus(status, part = null) {
+  if (!status) {
+    // If no status but has PO info, default to on_order
+    if (part?.purchase_order_id || part?.po_number || part?.order_reference) {
+      return PART_STATUS.ON_ORDER;
+    }
+    return PART_STATUS.PENDING;
+  }
 
   switch (status.toLowerCase().replace(/\s+/g, "_")) {
     case "pending":
@@ -102,6 +108,10 @@ export function normaliseLegacyPartStatus(status) {
       return PART_STATUS.CANCELLED;
 
     default:
+      // If unknown status but has PO info, default to on_order
+      if (part?.purchase_order_id || part?.po_number || part?.order_reference) {
+        return PART_STATUS.ON_ORDER;
+      }
       return status;
   }
 }
