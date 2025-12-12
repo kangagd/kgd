@@ -105,7 +105,12 @@ export default function PurchaseOrderDetail({ poId, onClose, mode = "page" }) {
       }));
 
       // Only update if this is initial load or if PO ID changed
-      const poReference = po.po_number || po.order_reference || po.reference || '';
+      const poReference =
+        po.po_reference ||
+        po.order_reference ||
+        po.po_number ||
+        po.reference ||
+        '';
       if (!initialLoadDone.current || formData.po_reference !== poReference) {
         setFormData({
           supplier_id: po.supplier_id || "",
@@ -138,6 +143,7 @@ export default function PurchaseOrderDetail({ poId, onClose, mode = "page" }) {
       queryClient.invalidateQueries({ queryKey: ['purchaseOrderLines', poId] });
       queryClient.invalidateQueries({ queryKey: ['purchaseOrders'] });
       queryClient.invalidateQueries({ queryKey: ['projectPOs'] });
+      queryClient.refetchQueries({ queryKey: ["purchaseOrder", poId] });
       toast.success('Purchase Order updated');
     },
     onError: (error) => {
@@ -206,12 +212,26 @@ export default function PurchaseOrderDetail({ poId, onClose, mode = "page" }) {
       project_id: formData.project_id || null,
       delivery_method: formData.delivery_method || null,
       notes: formData.notes,
+
+      // Write to all reference fields for compatibility
+      po_reference: poRef,
       po_number: poRef,
+      order_reference: poRef,
+      reference: poRef,
+
       name: formData.name,
       eta: formData.eta ? new Date(formData.eta).toISOString() : null,
       attachments: formData.attachments,
       line_items: formData.line_items,
-      data: { po_number: poRef, name: formData.name }
+
+      // Keep data payload too if the function expects it
+      data: {
+        po_reference: poRef,
+        po_number: poRef,
+        order_reference: poRef,
+        reference: poRef,
+        name: formData.name,
+      }
     };
     console.log('Saving PO with data:', dataToSend);
     updatePOMutation.mutate(dataToSend);
@@ -295,12 +315,26 @@ export default function PurchaseOrderDetail({ poId, onClose, mode = "page" }) {
       project_id: formData.project_id,
       delivery_method: formData.delivery_method,
       notes: formData.notes,
+
+      // Write to all reference fields for compatibility
+      po_reference: poRef,
       po_number: poRef,
+      order_reference: poRef,
+      reference: poRef,
+
       name: formData.name,
       eta: formData.eta || null,
       attachments: formData.attachments,
       line_items: formData.line_items,
-      data: { po_number: poRef, name: formData.name }
+
+      // Keep data payload too if the function expects it
+      data: {
+        po_reference: poRef,
+        po_number: poRef,
+        order_reference: poRef,
+        reference: poRef,
+        name: formData.name,
+      }
     });
     
     // Then update status to On Order
@@ -572,7 +606,11 @@ export default function PurchaseOrderDetail({ poId, onClose, mode = "page" }) {
                 ) : (
                   <div className="mt-2 space-y-1">
                     {(() => {
-                      const poRef = po.po_number || po.order_reference || po.reference;
+                      const poRef =
+                        po.po_reference ||
+                        po.order_reference ||
+                        po.po_number ||
+                        po.reference;
                       return poRef ? (
                         <p className="text-sm font-medium text-[#111827]">PO #: {poRef}</p>
                       ) : (
