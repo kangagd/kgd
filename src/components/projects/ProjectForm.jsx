@@ -7,6 +7,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { ArrowLeft, Plus, Loader2, FileText, X, Image as ImageIcon, Upload, Trash2 } from "lucide-react";
 import { base44 } from "@/api/base44Client";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { useNavigate } from "react-router-dom";
 import { PROJECT_STAGES } from "@/components/domain/projectStages";
 import { PROJECT_TYPE_OPTIONS } from "@/components/domain/projectConfig";
 import {
@@ -20,6 +21,7 @@ import RichTextField from "../common/RichTextField";
 import AddressAutocomplete from "../common/AddressAutocomplete";
 
 export default function ProjectForm({ project, onSubmit, onCancel, isSubmitting }) {
+  const navigate = useNavigate();
   const [formData, setFormData] = useState(project || {
     customer_id: "",
     customer_name: "",
@@ -252,7 +254,13 @@ export default function ProjectForm({ project, onSubmit, onCancel, isSubmitting 
             <Button 
               variant="ghost" 
               size="icon" 
-              onClick={onCancel}
+              onClick={() => {
+                if (onCancel) {
+                  onCancel();
+                } else {
+                  navigate(-1);
+                }
+              }}
               className="hover:bg-slate-200 transition-colors"
             >
               <ArrowLeft className="w-5 h-5" />
@@ -600,7 +608,13 @@ export default function ProjectForm({ project, onSubmit, onCancel, isSubmitting 
             <Button 
               type="button" 
               variant="outline" 
-              onClick={onCancel}
+              onClick={() => {
+                if (onCancel) {
+                  onCancel();
+                } else {
+                  navigate(-1);
+                }
+              }}
               className="border-2 hover:bg-white font-semibold"
             >
               Cancel
