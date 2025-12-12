@@ -56,25 +56,39 @@ Deno.serve(async (req) => {
     const connection = await refreshAndGetConnection(base44);
 
     // Build Xero API URL with filters
-    // Fetch recent invoices only (Type=ACCREC), excluding voided and bills (Type=ACCPAY)
-    let url = `https://api.xero.com/api.xro/2.0/Invoices?Statuses=DRAFT,SUBMITTED,AUTHORISED,PAID&Type=ACCREC&order=UpdatedDateUTC DESC&page=${page}`;
+    // Fetch invoices (Type=ACCREC), excluding voided and bills (Type=ACCPAY)
+    // Fetch multiple pages to get more comprehensive results
+    const allInvoices = [];
+    const maxPages = 5; // Fetch up to 500 invoices (5 pages x 100)
     
-    // If search term provided, we'll filter client-side since Xero search is limited
-    const xeroResponse = await fetch(url, {
-      headers: {
-        'Authorization': `Bearer ${connection.access_token}`,
-        'xero-tenant-id': connection.xero_tenant_id,
-        'Accept': 'application/json'
-      }
-    });
+    for (let currentPage = 1; currentPage <= maxPages; currentPage++) {
+      const url = `https://api.xero.com/api.xro/2.0/Invoices?Statuses=DRAFT,SUBMITTED,AUTHORISED,PAID&Type=ACCREC&order=UpdatedDateUTC DESC&page=${currentPage}`;
+      
+      const xeroResponse = await fetch(url, {
+        headers: {
+          'Authorization': `Bearer ${connection.access_token}`,
+          'xero-tenant-id': connection.xero_tenant_id,
+          'Accept': 'application/json'
+        }
+      });
 
-    if (!xeroResponse.ok) {
-      const error = await xeroResponse.text();
-      throw new Error(`Xero API error: ${error}`);
+      if (!xeroResponse.ok) {
+        const error = await xeroResponse.text();
+        throw new Error(`Xero API error: ${error}`);
+      }
+
+      const xeroResult = await xeroResponse.json();
+      const pageInvoices = xeroResult.Invoices || [];
+      
+      if (pageInvoices.length === 0) break; // No more invoices
+      
+      allInvoices.push(...pageInvoices);
+      
+      // If we got less than 100, we're on the last page
+      if (pageInvoices.length < 100) break;
     }
 
-    const xeroResult = await xeroResponse.json();
-    let invoices = xeroResult.Invoices || [];
+    let invoices = allInvoices;
 
     // Filter by search term if provided
     if (search) {

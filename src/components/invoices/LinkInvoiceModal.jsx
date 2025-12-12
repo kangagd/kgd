@@ -119,7 +119,7 @@ export default function LinkInvoiceModal({ open, onClose, onSelect, isSubmitting
           </div>
 
           <p className="text-[12px] text-[#6B7280] flex-shrink-0">
-            Searching invoices directly from Xero
+            Searching invoices directly from Xero (loading up to 500 recent invoices)
           </p>
 
           <div className="flex-1 overflow-y-auto space-y-2 min-h-0">
