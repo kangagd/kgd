@@ -31,6 +31,8 @@ export default function PurchaseOrderDetail({ poId, onClose, mode = "page" }) {
     delivery_method: "",
     notes: "",
     reference: "",
+    po_number: "",
+    name: "",
     status: PO_STATUS.DRAFT,
     eta: "",
     attachments: [],
@@ -108,7 +110,9 @@ export default function PurchaseOrderDetail({ poId, onClose, mode = "page" }) {
           project_id: po.project_id || "",
           delivery_method: po.delivery_method || "",
           notes: po.notes || "",
-          reference: po.po_number || "",
+          reference: po.reference || "",
+          po_number: po.po_number || "",
+          name: po.name || "",
           status: normalizedStatus,
           eta: po.expected_date || "",
           attachments: po.attachments || [],
@@ -200,7 +204,9 @@ export default function PurchaseOrderDetail({ poId, onClose, mode = "page" }) {
       delivery_method: formData.delivery_method || null,
       notes: formData.notes,
       reference: formData.reference,
-      eta: formData.eta || null,
+      po_number: formData.po_number,
+      name: formData.name,
+      eta: formData.eta ? new Date(formData.eta).toISOString() : null,
       attachments: formData.attachments,
       line_items: formData.line_items
     };
@@ -295,7 +301,8 @@ export default function PurchaseOrderDetail({ poId, onClose, mode = "page" }) {
     updatePOMutation.mutate({
       action: 'updateStatus',
       id: poId,
-      status: PO_STATUS.ON_ORDER
+      status: PO_STATUS.ON_ORDER,
+      eta: formData.eta ? new Date(formData.eta).toISOString() : null
     });
   };
 
@@ -412,9 +419,11 @@ export default function PurchaseOrderDetail({ poId, onClose, mode = "page" }) {
                     className="mt-2 max-w-xs text-sm"
                   />
                 ) : (
-                  <p className="text-sm text-[#6B7280] mt-1">
-                    {po.po_number || `ID: ${po.id.slice(0, 8)}`}
-                  </p>
+                  <div className="mt-2 space-y-1">
+                    {po.po_number && <p className="text-sm font-medium text-[#111827]">PO #: {po.po_number}</p>}
+                    {po.reference && <p className="text-sm text-[#6B7280]">Ref: {po.reference}</p>}
+                    {!po.po_number && !po.reference && <p className="text-sm text-[#6B7280]">ID: {po.id.slice(0, 8)}</p>}
+                  </div>
                 )}
                 {linkedProject && (
                   <p className="text-sm text-[#6B7280] mt-1">
@@ -465,6 +474,36 @@ export default function PurchaseOrderDetail({ poId, onClose, mode = "page" }) {
             <CardTitle className="text-[18px]">Purchase Order Details</CardTitle>
           </CardHeader>
           <CardContent className="space-y-4">
+            <div>
+              <Label>PO Number</Label>
+              <Input
+                value={formData.po_number}
+                onChange={(e) => setFormData({ ...formData, po_number: e.target.value })}
+                disabled={!isDraft}
+                placeholder="e.g., PO-2024-001"
+              />
+            </div>
+
+            <div>
+              <Label>Reference</Label>
+              <Input
+                value={formData.reference}
+                onChange={(e) => setFormData({ ...formData, reference: e.target.value })}
+                disabled={!isDraft}
+                placeholder="Internal reference..."
+              />
+            </div>
+
+            <div>
+              <Label>Name/Description</Label>
+              <Input
+                value={formData.name}
+                onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+                disabled={!isDraft}
+                placeholder="e.g., Garage Door Parts Order"
+              />
+            </div>
+
             <div>
               <Label>Supplier *</Label>
               <Select

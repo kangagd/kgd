@@ -27,6 +27,18 @@ export const PO_STATUS_LABELS = {
   cancelled: "Cancelled",
 };
 
+export const PO_STATUS_COLORS = {
+  draft: "bg-gray-200 text-gray-800",
+  sent: "bg-blue-200 text-blue-800",
+  on_order: "bg-amber-200 text-amber-800",
+  in_transit: "bg-purple-200 text-purple-800",
+  in_loading_bay: "bg-orange-200 text-orange-800",
+  in_storage: "bg-green-200 text-green-800",
+  in_vehicle: "bg-indigo-200 text-indigo-800",
+  installed: "bg-teal-200 text-teal-800",
+  cancelled: "bg-red-200 text-red-800",
+};
+
 export const PO_STATUS_OPTIONS = Object.values(PO_STATUS);
 
 // Status options for non-project POs (stops at In Storage)

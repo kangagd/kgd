@@ -579,7 +579,7 @@ export default function Logistics() {
                           {po.po_number || `PO #${po.id.substring(0, 8)}`}
                         </div>
                         <div className="mt-1 text-[11px] text-[#6B7280]">
-                          {po.supplier_name || "Supplier not set"}
+                          {suppliers.find(s => s.id === po.supplier_id)?.name || po.supplier_name || "Supplier not set"}
                         </div>
                         {po.expected_date && (
                           <div className="mt-1 text-[11px] text-[#6B7280]">
@@ -647,7 +647,7 @@ export default function Logistics() {
                           {po.po_number || `PO #${po.id.substring(0, 8)}`}
                         </div>
                         <div className="mt-1 text-[11px] text-[#6B7280]">
-                          {po.supplier_name || "Supplier not set"}
+                          {suppliers.find(s => s.id === po.supplier_id)?.name || po.supplier_name || "Supplier not set"}
                         </div>
                         {po.expected_date && (
                           <div className="mt-1 text-[11px] text-[#6B7280]">
@@ -717,7 +717,7 @@ export default function Logistics() {
                           {po.po_number || `PO #${po.id.substring(0, 8)}`}
                         </div>
                         <div className="mt-1 text-[11px] text-[#6B7280]">
-                          {po.supplier_name || "Supplier not set"}
+                          {suppliers.find(s => s.id === po.supplier_id)?.name || po.supplier_name || "Supplier not set"}
                         </div>
                         {po.expected_date && (
                           <div className="mt-1 text-[11px] text-[#6B7280]">
@@ -787,7 +787,7 @@ export default function Logistics() {
                           {po.po_number || `PO #${po.id.substring(0, 8)}`}
                         </div>
                         <div className="mt-1 text-[11px] text-[#6B7280]">
-                          {po.supplier_name || "Supplier not set"}
+                          {suppliers.find(s => s.id === po.supplier_id)?.name || po.supplier_name || "Supplier not set"}
                         </div>
                         {po.expected_date && (
                           <div className="mt-1 text-[11px] text-[#6B7280]">
@@ -855,7 +855,7 @@ export default function Logistics() {
                           {po.po_number || `PO #${po.id.substring(0, 8)}`}
                         </div>
                         <div className="mt-1 text-[11px] text-[#6B7280]">
-                          {po.supplier_name || "Supplier not set"}
+                          {suppliers.find(s => s.id === po.supplier_id)?.name || po.supplier_name || "Supplier not set"}
                         </div>
                         {po.expected_date && (
                           <div className="mt-1 text-[11px] text-[#6B7280]">
