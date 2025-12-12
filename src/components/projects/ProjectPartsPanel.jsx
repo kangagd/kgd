@@ -4,6 +4,7 @@ import { Button } from "@/components/ui/button";
 import { AlertTriangle, CheckCircle2, Package, Truck, ExternalLink, Plus, ShoppingCart } from "lucide-react";
 import AssignPartToVehicleModal from "./AssignPartToVehicleModal";
 import { PART_LOCATION, normaliseLegacyPartLocation, getPartStatusLabel, normaliseLegacyPartStatus } from "@/components/domain/partConfig";
+import { getPoStatusLabel } from "@/components/domain/purchaseOrderStatusConfig";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { base44 } from "@/api/base44Client";
 import { useNavigate } from "react-router-dom";
@@ -168,10 +169,13 @@ export default function ProjectPartsPanel({ project, parts = [], inventoryByItem
                   <div className="flex-1">
                     <div className="flex items-center gap-2 mb-1">
                       <span className="font-medium text-sm">
-                        {po.po_number || `PO #${po.id.substring(0, 8)}`}
+                        {(() => {
+                          const poRef = po.order_reference || po.po_number || po.reference || po.id.substring(0, 8);
+                          return `PO #${poRef}`;
+                        })()}
                       </span>
                       <Badge className="text-xs bg-slate-100 text-slate-700 hover:bg-slate-100">
-                        {po.status}
+                        {getPoStatusLabel(po.status)}
                       </Badge>
                     </div>
                     <div className="text-xs text-[#6B7280]">
