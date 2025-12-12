@@ -80,7 +80,10 @@ async function safeEntitySearch(entityName, query, fallbackFields = []) {
  * @returns {Promise<{jobs: Array, projects: Array, customers: Array}>}
  */
 export async function searchAll(query) {
+  console.log("searchAll called with:", query); // DEBUG LOG
+
   if (!query || query.length < 2) {
+    console.log("searchAll: query too short, returning empty.");
     return { jobs: [], projects: [], customers: [] };
   }
 
@@ -110,9 +113,9 @@ export async function searchAll(query) {
       ]),
     ]);
 
+    console.log("searchAll results:", { jobs, projects, customers }); // DEBUG LOG
     return { jobs, projects, customers };
   } catch (error) {
-    // This should realistically never fire now
     console.error("Global search error:", error);
     return { jobs: [], projects: [], customers: [] };
   }
