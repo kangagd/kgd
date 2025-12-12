@@ -658,25 +658,33 @@ export default function PurchaseOrderDetail({ poId, onClose, mode = "page" }) {
               />
             </div>
 
-            <div>
-              <Label>Supplier *</Label>
-              <Select
-                value={formData.supplier_id}
-                onValueChange={(value) => setFormData({ ...formData, supplier_id: value })}
-                disabled={!isDraft}
-              >
-                <SelectTrigger>
-                  <SelectValue placeholder="Select supplier" />
-                </SelectTrigger>
-                <SelectContent>
-                  {suppliers.map((supplier) => (
-                    <SelectItem key={supplier.id} value={supplier.id}>
-                      {supplier.name}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
+            {isDraft && !po ? (
+              <div>
+                <Label>Supplier *</Label>
+                <Select
+                  value={formData.supplier_id}
+                  onValueChange={(value) => setFormData({ ...formData, supplier_id: value })}
+                >
+                  <SelectTrigger>
+                    <SelectValue placeholder="Select supplier" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {suppliers.map((supplier) => (
+                      <SelectItem key={supplier.id} value={supplier.id}>
+                        {supplier.name}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+            ) : (
+              <div>
+                <Label>Supplier</Label>
+                <div className="px-3 py-2.5 bg-[#F3F4F6] rounded-lg text-[#111827] text-sm">
+                  {suppliers.find(s => s.id === formData.supplier_id)?.name || 'No supplier selected'}
+                </div>
+              </div>
+            )}
 
             <div>
               <Label>Project (Optional)</Label>
