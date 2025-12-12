@@ -137,6 +137,7 @@ export default function PurchaseOrderDetail({ poId, onClose, mode = "page" }) {
       queryClient.invalidateQueries({ queryKey: ['purchaseOrder', poId] });
       queryClient.invalidateQueries({ queryKey: ['purchaseOrderLines', poId] });
       queryClient.invalidateQueries({ queryKey: ['purchaseOrders'] });
+      queryClient.invalidateQueries({ queryKey: ['projectPOs'] });
       toast.success('Purchase Order updated');
     },
     onError: (error) => {
@@ -205,13 +206,12 @@ export default function PurchaseOrderDetail({ poId, onClose, mode = "page" }) {
       project_id: formData.project_id || null,
       delivery_method: formData.delivery_method || null,
       notes: formData.notes,
-      order_reference: poRef,
-      reference: poRef,
       po_number: poRef,
       name: formData.name,
       eta: formData.eta ? new Date(formData.eta).toISOString() : null,
       attachments: formData.attachments,
-      line_items: formData.line_items
+      line_items: formData.line_items,
+      data: { po_number: poRef, name: formData.name }
     };
     console.log('Saving PO with data:', dataToSend);
     updatePOMutation.mutate(dataToSend);
@@ -295,13 +295,12 @@ export default function PurchaseOrderDetail({ poId, onClose, mode = "page" }) {
       project_id: formData.project_id,
       delivery_method: formData.delivery_method,
       notes: formData.notes,
-      order_reference: poRef,
-      reference: poRef,
       po_number: poRef,
       name: formData.name,
       eta: formData.eta || null,
       attachments: formData.attachments,
-      line_items: formData.line_items
+      line_items: formData.line_items,
+      data: { po_number: poRef, name: formData.name }
     });
     
     // Then update status to On Order

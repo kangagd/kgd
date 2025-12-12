@@ -276,6 +276,7 @@ Deno.serve(async (req) => {
                 return Response.json({ error: 'supplier_id and non-empty line_items are required' }, { status: 400 });
             }
 
+            const poRef = po_number || reference || null;
             const poData = {
                 supplier_id,
                 supplier_name: supplier_name || null,
@@ -284,8 +285,9 @@ Deno.serve(async (req) => {
                 delivery_method: delivery_method || PO_DELIVERY_METHOD.DELIVERY,
                 delivery_location: delivery_location || null,
                 notes: notes || null,
-                po_number: po_number || reference || null,
-                reference: reference || null,
+                po_number: poRef,
+                order_reference: poRef,
+                reference: poRef,
                 name: name || null,
                 created_by: user.email,
                 order_date: new Date().toISOString().split('T')[0],
@@ -349,12 +351,11 @@ Deno.serve(async (req) => {
             if (eta !== undefined) updateData.expected_date = eta || null;
             if (attachments !== undefined) updateData.attachments = attachments || [];
             
-            // Only allow reference/po_number editing if not completed
-            if (reference !== undefined && po.status !== PO_STATUS.COMPLETED) {
-                updateData.reference = reference;
-            }
+            // Only allow po_number editing if not completed - updates all reference fields
             if (data?.po_number !== undefined && po.status !== PO_STATUS.COMPLETED) {
                 updateData.po_number = data.po_number;
+                updateData.order_reference = data.po_number;
+                updateData.reference = data.po_number;
             }
             if (data?.name !== undefined) {
                 updateData.name = data.name;
@@ -591,6 +592,7 @@ Deno.serve(async (req) => {
             }
 
             // Create new DRAFT PO
+            const poRef = po_number || reference || null;
             const poData = {
                 supplier_id,
                 supplier_name: supplier_name || null,
@@ -599,8 +601,9 @@ Deno.serve(async (req) => {
                 delivery_method: delivery_method || PO_DELIVERY_METHOD.DELIVERY,
                 delivery_location: delivery_location || null,
                 notes: notes || null,
-                po_number: po_number || reference || null,
-                reference: reference || null,
+                po_number: poRef,
+                order_reference: poRef,
+                reference: poRef,
                 name: name || null,
                 created_by: user.email,
                 order_date: new Date().toISOString().split('T')[0],
