@@ -44,36 +44,7 @@ Deno.serve(async (req) => {
             // Refetch to get updated data
             project = await base44.asServiceRole.entities.Project.get(project.id);
         } else if (action === 'update') {
-            // Check if project_number is being updated
-            const oldProject = data.project_number ? await base44.asServiceRole.entities.Project.get(id) : null;
-            const oldProjectNumber = oldProject?.project_number;
-            const newProjectNumber = data.project_number;
-            
             project = await base44.asServiceRole.entities.Project.update(id, data);
-            
-            // Update related job numbers if project number changed
-            if (oldProjectNumber && newProjectNumber && oldProjectNumber !== newProjectNumber) {
-                try {
-                    const relatedJobs = await base44.asServiceRole.entities.Job.filter({ project_id: id });
-                    for (const job of relatedJobs) {
-                        if (job.job_number) {
-                            const jobNumberStr = String(job.job_number);
-                            const parts = jobNumberStr.split('-');
-                            if (parts.length > 1 && parts[0] === String(oldProjectNumber)) {
-                                // Keep the suffix, update the prefix
-                                const suffix = parts.slice(1).join('-');
-                                const newJobNumber = `${newProjectNumber}-${suffix}`;
-                                await base44.asServiceRole.entities.Job.update(job.id, { 
-                                    job_number: newJobNumber,
-                                    project_number: newProjectNumber
-                                });
-                            }
-                        }
-                    }
-                } catch (e) {
-                    console.error("Error updating related job numbers:", e);
-                }
-            }
             
             // Update activity timestamp whenever project is updated
             await updateProjectActivity(base44, id, 'Project Updated');
