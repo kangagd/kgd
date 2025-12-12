@@ -193,7 +193,7 @@ export default function JobDetails({ job: initialJob, onClose, onStatusChange, o
 
   const { data: jobSummaries = [] } = useQuery({
     queryKey: ['jobSummaries', job.id],
-    queryFn: () => base44.entities.JobSummary.filter({ job_id: job.id }, '-checkout_time')
+    queryFn: () => base44.entities.JobSummary.filter({ job_id: job.id }, '-check_out_time')
   });
 
   const { data: allProjectJobs = [] } = useQuery({
@@ -203,6 +203,20 @@ export default function JobDetails({ job: initialJob, onClose, onStatusChange, o
   });
 
   const projectJobs = allProjectJobs.filter((j) => j.id !== job.id);
+
+  // Fetch all job summaries for other jobs in the project
+  const { data: projectJobSummaries = [] } = useQuery({
+    queryKey: ['projectJobSummaries', job.project_id],
+    queryFn: async () => {
+      if (!job.project_id) return [];
+      const allSummaries = await base44.entities.JobSummary.list('-check_out_time');
+      return allSummaries.filter(s => {
+        const summaryJob = allProjectJobs.find(j => j.id === s.job_id);
+        return summaryJob && summaryJob.project_id === job.project_id && s.job_id !== job.id;
+      });
+    },
+    enabled: !!job.project_id && allProjectJobs.length > 0
+  });
 
   useEffect(() => {
     const loadUser = async () => {
@@ -1593,48 +1607,79 @@ export default function JobDetails({ job: initialJob, onClose, onStatusChange, o
                     </CollapsibleContent>
                   </Collapsible>
 
-                  {job.project_id && projectJobs.length > 0 && (
-                    <div className="bg-blue-50 border-2 border-blue-200 rounded-xl p-3 mb-4">
-                      <h3 className="text-[14px] font-semibold text-blue-900 leading-[1.4] mb-2 flex items-center gap-1.5">
-                        <FolderKanban className="w-4 h-4" />
-                        Project Job History ({projectJobs.length})
-                      </h3>
-                      <div className="space-y-2">
-                        {projectJobs.map((pJob) => (
-                          <div key={pJob.id} className="bg-white border border-blue-200 rounded-lg p-2.5 text-sm">
-                            <div className="flex items-start justify-between gap-2 mb-1.5">
-                              <div className="flex-1">
-                                <div className="font-bold text-slate-900">
-                                  {pJob.job_type_name || 'Job'} #{pJob.job_number}
-                                </div>
-                                {pJob.scheduled_date && (
-                                  <div className="text-xs text-slate-600 flex items-center gap-1 mt-0.5">
-                                    <Calendar className="w-3 h-3" />
-                                    {format(parseISO(pJob.scheduled_date), 'MMM d, yyyy')}
+                  {job.project_id && projectJobSummaries.length > 0 && (
+                    <Collapsible defaultOpen={true} className="border border-[#E5E7EB] shadow-sm rounded-lg bg-white mb-4">
+                      <CollapsibleTrigger className="w-full flex items-center justify-between p-4 hover:bg-slate-50 transition-colors group">
+                        <h3 className="text-[16px] font-semibold text-[#111827] leading-[1.2] flex items-center gap-1.5">
+                          <FolderKanban className="w-4 h-4" />
+                          Prior Jobs on This Project ({projectJobSummaries.length})
+                        </h3>
+                        <ChevronDown className="w-4 h-4 text-slate-500 transition-transform group-data-[state=open]:rotate-180" />
+                      </CollapsibleTrigger>
+                      <CollapsibleContent className="p-4 pt-0">
+                        <div className="space-y-3">
+                          {projectJobSummaries.map((summary) => {
+                            const summaryJob = allProjectJobs.find(j => j.id === summary.job_id);
+                            return (
+                              <div key={summary.id} className="bg-white border-2 border-slate-200 rounded-xl p-3">
+                                <div className="flex items-center justify-between mb-3">
+                                  <div>
+                                    <div className="font-bold text-[#000000] mb-1">
+                                      {summaryJob?.job_type_name || 'Job'} #{summaryJob?.job_number}
+                                    </div>
+                                    <div className="text-xs text-slate-500 font-medium">
+                                      {summary.technician_name} • {format(new Date(summary.check_out_time), 'MMM d, yyyy h:mm a')}
+                                    </div>
                                   </div>
-                                )}
+                                  {summary.outcome && (
+                                    <Badge className={`${outcomeColors[summary.outcome]} font-semibold border-2 hover:opacity-100`}>
+                                      {summary.outcome?.replace(/_/g, ' ') || summary.outcome}
+                                    </Badge>
+                                  )}
+                                </div>
+
+                                <div className="space-y-2">
+                                  {summary.overview && (
+                                    <div>
+                                      <div className="text-xs font-bold text-slate-500 mb-1">Work Performed:</div>
+                                      <div className="text-sm text-slate-700" dangerouslySetInnerHTML={{ __html: summary.overview }} />
+                                    </div>
+                                  )}
+
+                                  {summary.issues_found && (
+                                    <div>
+                                      <div className="text-xs font-bold text-slate-500 mb-1">Issues Found:</div>
+                                      <div className="text-sm text-slate-700" dangerouslySetInnerHTML={{ __html: summary.issues_found }} />
+                                    </div>
+                                  )}
+
+                                  {summary.resolution && (
+                                    <div>
+                                      <div className="text-xs font-bold text-slate-500 mb-1">Resolution:</div>
+                                      <div className="text-sm text-slate-700" dangerouslySetInnerHTML={{ __html: summary.resolution }} />
+                                    </div>
+                                  )}
+                                  
+                                  {summary.next_steps && (
+                                    <div>
+                                      <div className="text-xs font-bold text-slate-500 mb-1">Next Steps:</div>
+                                      <div className="text-sm text-slate-700" dangerouslySetInnerHTML={{ __html: summary.next_steps }} />
+                                    </div>
+                                  )}
+                                  
+                                  {summary.communication_with_client && (
+                                    <div>
+                                      <div className="text-xs font-bold text-slate-500 mb-1">Communication:</div>
+                                      <div className="text-sm text-slate-700" dangerouslySetInnerHTML={{ __html: summary.communication_with_client }} />
+                                    </div>
+                                  )}
+                                </div>
                               </div>
-                              {pJob.status && (
-                                <Badge className={`${statusColors[pJob.status]} text-xs font-semibold border hover:opacity-100`}>
-                                  {pJob.status}
-                                </Badge>
-                              )}
-                            </div>
-                            {pJob.notes && pJob.notes !== "<p><br></p>" && (
-                              <div className="text-xs text-slate-600 mt-2 pt-2 border-t border-blue-100">
-                                <div className="font-semibold mb-0.5">Notes:</div>
-                                <div className="line-clamp-2" dangerouslySetInnerHTML={{ __html: pJob.notes }} />
-                              </div>
-                            )}
-                            {pJob.outcome && (
-                              <Badge className={`${outcomeColors[pJob.outcome]} text-xs font-semibold border mt-1.5 hover:opacity-100`}>
-                                Outcome: {pJob.outcome?.replace(/_/g, ' ') || pJob.outcome}
-                              </Badge>
-                            )}
-                          </div>
-                        ))}
-                      </div>
-                    </div>
+                            );
+                          })}
+                        </div>
+                      </CollapsibleContent>
+                    </Collapsible>
                   )}
 
                   <div>
