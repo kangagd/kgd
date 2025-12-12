@@ -50,9 +50,14 @@ export default function PurchaseOrders() {
 
   const filteredPOs = useMemo(() => {
     return purchaseOrders.filter((po) => {
-      const matchesSearch = !searchTerm || 
-        po.po_number?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        po.supplier_name?.toLowerCase().includes(searchTerm.toLowerCase());
+      const q = searchTerm.toLowerCase();
+      const matchesSearch =
+        !searchTerm ||
+        po.po_reference?.toLowerCase().includes(q) ||
+        po.order_reference?.toLowerCase().includes(q) ||
+        po.po_number?.toLowerCase().includes(q) ||
+        po.reference?.toLowerCase().includes(q) ||
+        po.supplier_name?.toLowerCase().includes(q);
       
       const matchesStatus = statusFilter === "all" || po.status === statusFilter;
       
@@ -253,7 +258,12 @@ export default function PurchaseOrders() {
                     <div className="flex items-center gap-2 mb-2">
                       <h3 className="text-[18px] font-semibold text-[#111827] leading-[1.2]">
                         {(() => {
-                          const poRef = po.order_reference || po.po_number || po.reference || po.id.slice(0, 8);
+                          const poRef =
+                            po.po_reference ||
+                            po.order_reference ||
+                            po.po_number ||
+                            po.reference ||
+                            po.id.slice(0, 8);
                           return `PO #${poRef}`;
                         })()}
                       </h3>

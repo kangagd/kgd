@@ -133,6 +133,7 @@ export default function PurchaseOrderDetail({ poId, onClose, mode = "page" }) {
   const updatePOMutation = useMutation({
     mutationFn: async (data) => {
       const response = await base44.functions.invoke('managePurchaseOrder', data);
+      console.log("managePurchaseOrder response:", response.data);
       if (!response.data?.success) {
         throw new Error(response.data?.error || 'Failed to update PO');
       }
@@ -144,6 +145,7 @@ export default function PurchaseOrderDetail({ poId, onClose, mode = "page" }) {
       queryClient.invalidateQueries({ queryKey: ['purchaseOrders'] });
       queryClient.invalidateQueries({ queryKey: ['projectPOs'] });
       queryClient.refetchQueries({ queryKey: ["purchaseOrder", poId] });
+      queryClient.refetchQueries({ queryKey: ["purchaseOrders"] });
       toast.success('Purchase Order updated');
     },
     onError: (error) => {
