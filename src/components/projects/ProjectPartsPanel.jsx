@@ -5,6 +5,20 @@ import { AlertTriangle, CheckCircle2, Package, Truck, ExternalLink, Plus, Shoppi
 import AssignPartToVehicleModal from "./AssignPartToVehicleModal";
 import { PART_LOCATION, normaliseLegacyPartLocation, getPartStatusLabel, normaliseLegacyPartStatus } from "@/components/domain/partConfig";
 import { getPoStatusLabel } from "@/components/domain/purchaseOrderStatusConfig";
+
+// Helper for consistent PO reference display
+function getPoDisplayRef(po, part) {
+  return (
+    po?.po_number ||
+    po?.po_reference ||
+    po?.order_reference ||
+    po?.reference ||
+    part?.po_number ||
+    part?.order_reference ||
+    (po?.id ? String(po.id).slice(0, 8) : "") ||
+    ""
+  );
+}
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { base44 } from "@/api/base44Client";
 import { useNavigate } from "react-router-dom";
