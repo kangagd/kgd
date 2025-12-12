@@ -1,38 +1,73 @@
 import { base44 } from "@/api/base44Client";
 
 /**
+ * Normalise any entity list / filter response into an array.
+ */
+function normaliseRecords(res) {
+  if (!res) return [];
+  if (Array.isArray(res)) return res;
+  if (Array.isArray(res.data)) return res.data;
+  if (Array.isArray(res.results)) return res.results;
+  if (Array.isArray(res.items)) return res.items;
+  return [];
+}
+
+/**
  * Run a safe search against a single entity.
- * Fetches all records and filters client-side for reliability.
+ * Prefer server-side search via filter({ search }), but
+ * falls back to list() + client-side filtering.
  * Never throws – always returns an array.
  */
-async function safeEntitySearch(entityName, query, searchFields) {
+async function safeEntitySearch(entityName, query, fallbackFields = []) {
   try {
     const entity = base44?.entities?.[entityName];
-    if (!entity || typeof entity.list !== "function") {
-      console.warn(`Global search: entity "${entityName}" or its list() is not available`);
+    if (!entity) {
+      console.warn(`Global search: entity "${entityName}" is not available`);
       return [];
     }
 
-    // Fetch all records (server-side search filter not reliably supported)
-    const res = await entity.list();
-
-    // Normalise various possible return shapes
-    let records = [];
-    if (!res) return [];
-    if (Array.isArray(res)) records = res;
-    else if (Array.isArray(res.data)) records = res.data;
-    else if (Array.isArray(res.results)) records = res.results;
-    else return [];
-
-    // Client-side filtering
     const lowerQuery = query.toLowerCase();
-    return records.filter(record => {
-      return searchFields.some(field => {
-        const value = record[field];
-        if (!value) return false;
-        return value.toString().toLowerCase().includes(lowerQuery);
-      });
-    });
+
+    // 1) Prefer server-side search if filter() exists
+    if (typeof entity.filter === "function") {
+      try {
+        // Try the most modern signature first: filter(criteria, options)
+        let res = await entity.filter({ search: query }, { limit: 20 });
+        let records = normaliseRecords(res);
+
+        // If nothing came back, still fall back to list+client-filter
+        if (records.length > 0 || fallbackFields.length === 0) {
+          return records;
+        }
+
+        // continue below to list() if necessary
+      } catch (e) {
+        console.warn(`Global search: filter() failed for ${entityName}, falling back to list()`, e);
+      }
+    }
+
+    // 2) Fallback: list() + client-side filtering
+    if (typeof entity.list === "function") {
+      const res = await entity.list();
+      const records = normaliseRecords(res);
+
+      if (!fallbackFields.length) {
+        return records;
+      }
+
+      return records.filter((record) =>
+        fallbackFields.some((field) => {
+          const value = record[field];
+          if (!value) return false;
+          return value.toString().toLowerCase().includes(lowerQuery);
+        })
+      );
+    }
+
+    console.warn(
+      `Global search: neither filter() nor list() available for entity "${entityName}"`
+    );
+    return [];
   } catch (err) {
     console.error(`Error searching ${entityName}:`, err);
     return [];
@@ -51,9 +86,28 @@ export async function searchAll(query) {
 
   try {
     const [jobs, projects, customers] = await Promise.all([
-      safeEntitySearch("Job", query, ["job_number", "customer_name", "address", "address_full", "notes"]),
-      safeEntitySearch("Project", query, ["project_number", "customer_name", "title", "address", "address_full", "notes"]),
-      safeEntitySearch("Customer", query, ["name", "email", "phone", "address_full", "notes"]),
+      safeEntitySearch("Job", query, [
+        "job_number",
+        "customer_name",
+        "address",
+        "address_full",
+        "notes",
+      ]),
+      safeEntitySearch("Project", query, [
+        "project_number",
+        "customer_name",
+        "title",
+        "address",
+        "address_full",
+        "notes",
+      ]),
+      safeEntitySearch("Customer", query, [
+        "name",
+        "email",
+        "phone",
+        "address_full",
+        "notes",
+      ]),
     ]);
 
     return { jobs, projects, customers };
