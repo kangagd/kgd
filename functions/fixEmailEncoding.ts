@@ -89,6 +89,8 @@ const fixEncodingIssues = (text) => {
   return fixed;
 };
 
+const sleep = (ms) => new Promise(resolve => setTimeout(resolve, ms));
+
 Deno.serve(async (req) => {
   try {
     const base44 = createClientFromRequest(req);
@@ -103,38 +105,57 @@ Deno.serve(async (req) => {
     const messageArray = Array.isArray(messages) ? messages : [];
     
     let updatedCount = 0;
+    const BATCH_SIZE = 10;
+    const DELAY_MS = 1000;
     
-    for (const message of messageArray) {
-      const updates = {};
-      let hasChanges = false;
+    console.log(`Fixing encoding for ${messageArray.length} messages in batches of ${BATCH_SIZE}`);
+    
+    // Process in batches with delays to avoid rate limits
+    for (let i = 0; i < messageArray.length; i += BATCH_SIZE) {
+      const batch = messageArray.slice(i, i + BATCH_SIZE);
       
-      if (message.body_html) {
-        const fixed = fixEncodingIssues(message.body_html);
-        if (fixed !== message.body_html) {
-          updates.body_html = fixed;
-          hasChanges = true;
+      for (const message of batch) {
+        try {
+          const updates = {};
+          let hasChanges = false;
+          
+          if (message.body_html) {
+            const fixed = fixEncodingIssues(message.body_html);
+            if (fixed !== message.body_html) {
+              updates.body_html = fixed;
+              hasChanges = true;
+            }
+          }
+          
+          if (message.body_text) {
+            const fixed = fixEncodingIssues(message.body_text);
+            if (fixed !== message.body_text) {
+              updates.body_text = fixed;
+              hasChanges = true;
+            }
+          }
+          
+          if (message.subject) {
+            const fixed = fixEncodingIssues(message.subject);
+            if (fixed !== message.subject) {
+              updates.subject = fixed;
+              hasChanges = true;
+            }
+          }
+          
+          if (hasChanges) {
+            await base44.asServiceRole.entities.EmailMessage.update(message.id, updates);
+            updatedCount++;
+          }
+        } catch (msgError) {
+          console.error(`Error updating message ${message.id}:`, msgError.message);
         }
       }
       
-      if (message.body_text) {
-        const fixed = fixEncodingIssues(message.body_text);
-        if (fixed !== message.body_text) {
-          updates.body_text = fixed;
-          hasChanges = true;
-        }
-      }
-      
-      if (message.subject) {
-        const fixed = fixEncodingIssues(message.subject);
-        if (fixed !== message.subject) {
-          updates.subject = fixed;
-          hasChanges = true;
-        }
-      }
-      
-      if (hasChanges) {
-        await base44.asServiceRole.entities.EmailMessage.update(message.id, updates);
-        updatedCount++;
+      // Delay between batches
+      if (i + BATCH_SIZE < messageArray.length) {
+        console.log(`Processed ${Math.min(i + BATCH_SIZE, messageArray.length)}/${messageArray.length} messages`);
+        await sleep(DELAY_MS);
       }
     }
     
