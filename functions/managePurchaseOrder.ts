@@ -528,7 +528,13 @@ Deno.serve(async (req) => {
                 return Response.json({ error: 'Only Draft purchase orders can be deleted' }, { status: 400 });
             }
 
-            // Delete associated line items first
+            // Delete associated parts first
+            const linkedParts = await base44.asServiceRole.entities.Part.filter({ purchase_order_id: id });
+            for (const part of linkedParts) {
+                await base44.asServiceRole.entities.Part.delete(part.id);
+            }
+
+            // Delete associated line items
             const lines = await base44.asServiceRole.entities.PurchaseOrderLine.filter({ purchase_order_id: id });
             for (const line of lines) {
                 await base44.asServiceRole.entities.PurchaseOrderLine.delete(line.id);
