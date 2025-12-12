@@ -1844,7 +1844,7 @@ export default function JobDetails({ job: initialJob, onClose, onStatusChange, o
                               </div>
                             </CardHeader>
 
-                            <CardContent className="p-4 space-y-4">
+                            {!isMinimized && <CardContent className="p-4 space-y-4">
                               {summary.overview && (
                                 <div>
                                   <h4 className="text-[13px] font-semibold text-[#111827] mb-1.5 flex items-center gap-1.5">
