@@ -27,7 +27,7 @@ Deno.serve(async (req) => {
         for (const job of jobsToUpdate) {
             const oldNumber = String(job.job_number);
             const suffix = oldNumber.substring(5); // Everything after "5001-"
-            const newNumber = `4634${suffix}`;
+            const newNumber = `4634-${suffix.substring(1)}`; // Remove the hyphen from suffix, then add it back
             
             await base44.asServiceRole.entities.Job.update(job.id, {
                 job_number: newNumber,
