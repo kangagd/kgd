@@ -372,26 +372,37 @@ Deno.serve(async (req) => {
             if (eta !== undefined) updateData.expected_date = eta || null;
             if (attachments !== undefined) updateData.attachments = attachments || [];
             
-            const poRef = resolvePoRef({ data, po_reference, po_number, reference });
+            // Accept both top-level and data.* payloads for PO number/reference
+            const incomingPoNumber =
+              (data?.po_number !== undefined ? data.po_number : undefined) ??
+              (data?.po_reference !== undefined ? data.po_reference : undefined) ??
+              (po_reference !== undefined ? po_reference : undefined) ??
+              (po_number !== undefined ? po_number : undefined) ??
+              (reference !== undefined ? reference : undefined);
 
-            // Allow setting reference if:
-            // - PO is draft OR
-            // - reference is currently empty (backfill old POs that were created without refs)
-            const canEditReference =
-              po.status === PO_STATUS.DRAFT ||
-              (!po.po_number && !po.order_reference && !po.reference);
+            // Accept both top-level and data.* payloads for name
+            const incomingName =
+              (data?.name !== undefined ? data.name : undefined) ??
+              (name !== undefined ? name : undefined);
 
-            if (poRef !== null && canEditReference) {
-                updateData.po_reference = poRef;   // ok if schema has it
-                updateData.po_number = poRef;
-                updateData.order_reference = poRef;
-                updateData.reference = poRef;
+            // Determine if we can edit the reference (only for draft/sent/on_order/in_transit)
+            const normalizedStatus = normaliseLegacyPoStatus(po.status);
+            const editableStatuses = [PO_STATUS.DRAFT, PO_STATUS.SENT, PO_STATUS.ON_ORDER, PO_STATUS.IN_TRANSIT];
+            const canEditReference = editableStatuses.includes(normalizedStatus) ||
+              (!po.po_number && !po.order_reference && !po.reference); // Allow backfill for old POs
+
+            // Update all reference fields when PO number is provided
+            if (incomingPoNumber !== undefined && canEditReference) {
+                const cleanedRef = incomingPoNumber?.trim() || null;
+                updateData.po_reference = cleanedRef;
+                updateData.po_number = cleanedRef;
+                updateData.order_reference = cleanedRef;
+                updateData.reference = cleanedRef;
             }
-            // Accept name from either top-level or data object
-            if (name !== undefined) {
-                updateData.name = name;
-            } else if (data?.name !== undefined) {
-                updateData.name = data.name;
+
+            // Update name
+            if (incomingName !== undefined) {
+                updateData.name = incomingName?.trim() || null;
             }
 
             console.log("managePurchaseOrder:update", { id, incoming: { po_reference, po_number, reference, data }, resolved: poRef, canEditReference });

@@ -139,8 +139,8 @@ export default function PurchaseOrderDetail({ poId, onClose, mode = "page" }) {
       queryClient.invalidateQueries({ queryKey: ['purchaseOrderLines', poId] });
       queryClient.invalidateQueries({ queryKey: ['purchaseOrders'] });
       queryClient.invalidateQueries({ queryKey: ['projectPOs'] });
-      queryClient.refetchQueries({ queryKey: ["purchaseOrder", poId] });
-      queryClient.refetchQueries({ queryKey: ["purchaseOrders"] });
+      queryClient.invalidateQueries({ queryKey: ['parts'] });
+      queryClient.invalidateQueries({ queryKey: ['projectParts'] });
       toast.success('Purchase Order updated');
     },
     onError: (error) => {
@@ -209,25 +209,14 @@ export default function PurchaseOrderDetail({ poId, onClose, mode = "page" }) {
       project_id: formData.project_id || null,
       delivery_method: formData.delivery_method || null,
       notes: formData.notes,
-
-      // Write to all reference fields for compatibility
-      po_reference: poRef,
-      po_number: poRef,
-      order_reference: poRef,
-      reference: poRef,
-
-      name: formData.name,
       eta: formData.eta ? new Date(formData.eta).toISOString() : null,
       attachments: formData.attachments,
       line_items: formData.line_items,
 
-      // Keep data payload too if the function expects it
+      // Backend expects these in data.*
       data: {
-        po_reference: poRef,
         po_number: poRef,
-        order_reference: poRef,
-        reference: poRef,
-        name: formData.name,
+        name: formData.name || null,
       }
     };
     console.log('Saving PO with data:', dataToSend);
@@ -312,25 +301,14 @@ export default function PurchaseOrderDetail({ poId, onClose, mode = "page" }) {
       project_id: formData.project_id,
       delivery_method: formData.delivery_method,
       notes: formData.notes,
-
-      // Write to all reference fields for compatibility
-      po_reference: poRef,
-      po_number: poRef,
-      order_reference: poRef,
-      reference: poRef,
-
-      name: formData.name,
       eta: formData.eta || null,
       attachments: formData.attachments,
       line_items: formData.line_items,
 
-      // Keep data payload too if the function expects it
+      // Backend expects these in data.*
       data: {
-        po_reference: poRef,
         po_number: poRef,
-        order_reference: poRef,
-        reference: poRef,
-        name: formData.name,
+        name: formData.name || null,
       }
     });
     
