@@ -53,16 +53,25 @@ Deno.serve(async (req) => {
             
             // Update related job numbers if project number changed
             if (oldProjectNumber && newProjectNumber && oldProjectNumber !== newProjectNumber) {
+                console.log(`Updating job numbers: ${oldProjectNumber} -> ${newProjectNumber}`);
                 try {
                     const relatedJobs = await base44.asServiceRole.entities.Job.filter({ project_id: id });
+                    console.log(`Found ${relatedJobs.length} related jobs`);
+                    
                     for (const job of relatedJobs) {
                         if (job.job_number) {
-                            const jobNumberStr = String(job.job_number);
-                            const parts = jobNumberStr.split('-');
-                            if (parts.length > 1 && parts[0] === String(oldProjectNumber)) {
-                                // Keep the suffix, update the prefix
-                                const suffix = parts.slice(1).join('-');
+                            const jobNumberStr = String(job.job_number).trim();
+                            const oldProjectStr = String(oldProjectNumber).trim();
+                            
+                            console.log(`Checking job ${job.id}: "${jobNumberStr}" against old project number "${oldProjectStr}"`);
+                            
+                            // Check if job number starts with old project number followed by hyphen
+                            if (jobNumberStr.includes('-') && jobNumberStr.startsWith(oldProjectStr + '-')) {
+                                const suffix = jobNumberStr.substring(oldProjectStr.length + 1);
                                 const newJobNumber = `${newProjectNumber}-${suffix}`;
+                                
+                                console.log(`Updating job ${job.id}: ${jobNumberStr} -> ${newJobNumber}`);
+                                
                                 await base44.asServiceRole.entities.Job.update(job.id, { 
                                     job_number: newJobNumber,
                                     project_number: newProjectNumber

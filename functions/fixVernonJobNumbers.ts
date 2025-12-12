@@ -16,15 +16,22 @@ Deno.serve(async (req) => {
         // Get jobs linked to Vernon project
         const jobs = await base44.asServiceRole.entities.Job.filter({ project_id: vernonProjectId });
         
+        console.log(`Found ${jobs.length} jobs for Vernon project`);
+        
         const updates = [];
         
         for (const job of jobs) {
-            if (job.job_number && typeof job.job_number === 'string') {
-                const parts = job.job_number.split('-');
-                // If it starts with 5001 and has a suffix
-                if (parts.length > 1 && parts[0] === '5001') {
-                    const suffix = parts.slice(1).join('-');
+            console.log(`Job ${job.id}: job_number="${job.job_number}" (type: ${typeof job.job_number})`);
+            
+            if (job.job_number) {
+                const jobNumberStr = String(job.job_number).trim();
+                
+                // Check if it starts with 5001 followed by hyphen
+                if (jobNumberStr.startsWith('5001-')) {
+                    const suffix = jobNumberStr.substring(5); // Everything after "5001-"
                     const newJobNumber = `4634-${suffix}`;
+                    
+                    console.log(`Updating: ${jobNumberStr} -> ${newJobNumber}`);
                     
                     await base44.asServiceRole.entities.Job.update(job.id, { 
                         job_number: newJobNumber,
@@ -32,7 +39,7 @@ Deno.serve(async (req) => {
                     });
                     
                     updates.push({
-                        oldNumber: job.job_number,
+                        oldNumber: jobNumberStr,
                         newNumber: newJobNumber
                     });
                 }
