@@ -18,7 +18,14 @@ Deno.serve(async (req) => {
 
         const response = await base44.functions.invoke('getMyJobs');
         const allJobs = response.data || [];
-        const relatedJobs = allJobs.filter(j => j.project_id === project_id && !j.deleted_at);
+        
+        console.log('Total jobs:', allJobs.length);
+        console.log('Looking for project_id:', project_id);
+        
+        const relatedJobs = allJobs.filter(j => {
+            console.log('Job', j.id, 'project_id:', j.project_id, 'matches:', j.project_id === project_id);
+            return j.project_id === project_id && !j.deleted_at;
+        });
         const updatedJobs = [];
         
         console.log('Found jobs for project:', relatedJobs.length);
