@@ -45,6 +45,11 @@ export default function LogisticsTimeline({ project }) {
     queryFn: () => base44.entities.PurchaseOrder.list(),
   });
 
+  const { data: suppliers = [] } = useQuery({
+    queryKey: ["suppliers-for-logistics"],
+    queryFn: () => base44.entities.Supplier.list(),
+  });
+
   const getRelevantTradesForJob = (job, trades) => {
     return (trades || []).filter((t) => {
       if (!t.is_required) return false;
@@ -144,8 +149,11 @@ export default function LogisticsTimeline({ project }) {
                       <div className="text-xs text-slate-600 mt-1 font-medium">
                         {linkedPO ? (
                           <>
-                            {linkedPO.supplier_name && `Supplier: ${linkedPO.supplier_name}`}
-                            {!linkedPO.supplier_name && `PO ID: ${job.purchase_order_id}`}
+                            {(() => {
+                              const supplier = suppliers.find(s => s.id === linkedPO.supplier_id);
+                              const supplierName = supplier?.name || linkedPO.supplier_name;
+                              return supplierName ? `Supplier: ${supplierName}` : `PO ID: ${job.purchase_order_id}`;
+                            })()}
                           </>
                         ) : (
                           `PO ID: ${job.purchase_order_id} (not found)`
