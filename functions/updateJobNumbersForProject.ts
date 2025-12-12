@@ -16,7 +16,8 @@ Deno.serve(async (req) => {
             }, { status: 400 });
         }
 
-        const allJobs = await base44.asServiceRole.entities.Job.list();
+        const response = await base44.functions.invoke('getMyJobs');
+        const allJobs = response.data || [];
         const relatedJobs = allJobs.filter(j => j.project_id === project_id && !j.deleted_at);
         const updatedJobs = [];
         
