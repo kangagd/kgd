@@ -575,24 +575,26 @@ export default function PurchaseOrderDetail({ poId, onClose, mode = "page" }) {
             <CardTitle className="text-[18px]">Purchase Order Details</CardTitle>
           </CardHeader>
           <CardContent className="space-y-4">
-            <div>
-              <Label>PO Number</Label>
-              <Input
-                value={formData.po_number}
-                onChange={(e) => setFormData({ ...formData, po_number: e.target.value })}
-                disabled={!isDraft}
-                placeholder="e.g., PO-2024-001"
-              />
-            </div>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div>
+                <Label>PO Number</Label>
+                <Input
+                  value={formData.po_number}
+                  onChange={(e) => setFormData({ ...formData, po_number: e.target.value })}
+                  disabled={!isDraft}
+                  placeholder="e.g., PO-2024-001"
+                />
+              </div>
 
-            <div>
-              <Label>Reference</Label>
-              <Input
-                value={formData.reference}
-                onChange={(e) => setFormData({ ...formData, reference: e.target.value })}
-                disabled={!isDraft}
-                placeholder="Internal reference..."
-              />
+              <div>
+                <Label>Reference</Label>
+                <Input
+                  value={formData.reference}
+                  onChange={(e) => setFormData({ ...formData, reference: e.target.value })}
+                  disabled={!isDraft}
+                  placeholder="Internal reference..."
+                />
+              </div>
             </div>
 
             <div>
