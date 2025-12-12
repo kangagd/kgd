@@ -31,20 +31,22 @@ export const PO_STATUS_OPTIONS_NON_PROJECT = [
 // Status options for project POs (includes vehicle and installed)
 export const PO_STATUS_OPTIONS_PROJECT = PO_STATUS_OPTIONS;
 
+// Status labels constant for backward compatibility
+export const PO_STATUS_LABELS = {
+  draft: "Draft",
+  sent: "Sent",
+  on_order: "On Order",
+  in_transit: "In Transit",
+  in_loading_bay: "In Loading Bay",
+  in_storage: "In Storage",
+  in_vehicle: "In Vehicle",
+  installed: "Installed",
+  cancelled: "Cancelled",
+};
+
 // Status → Label mapping function
 export function getPoStatusLabel(status) {
-  const map = {
-    draft: "Draft",
-    sent: "Sent",
-    on_order: "On Order",
-    in_transit: "In Transit",
-    in_loading_bay: "In Loading Bay",
-    in_storage: "In Storage",
-    in_vehicle: "In Vehicle",
-    installed: "Installed",
-    cancelled: "Cancelled",
-  };
-  return map[status] || "Unknown";
+  return PO_STATUS_LABELS[status] || "Unknown";
 }
 
 // Status normaliser
@@ -123,6 +125,7 @@ export default {
   PO_STATUS_OPTIONS_NON_PROJECT,
   PO_STATUS_OPTIONS_PROJECT,
   getPoStatusLabel,
+  PO_STATUS_LABELS,
   normalizePoStatus,
   normaliseLegacyPoStatus,
   PO_STATUS_COLORS,
