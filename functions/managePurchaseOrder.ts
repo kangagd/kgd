@@ -268,7 +268,7 @@ Deno.serve(async (req) => {
         const user = await base44.auth.me();
         if (!user) return Response.json({ error: 'Unauthorized' }, { status: 401 });
 
-        const { action, id, data, supplier_id, project_id, delivery_method, delivery_location, line_items, status, supplier_name, notes, reference, eta, attachments, vehicle_id } = await req.json();
+        const { action, id, data, supplier_id, project_id, delivery_method, delivery_location, line_items, status, supplier_name, notes, reference, po_number, name, eta, attachments, vehicle_id } = await req.json();
 
         // Action: create
         if (action === 'create') {
@@ -284,9 +284,12 @@ Deno.serve(async (req) => {
                 delivery_method: delivery_method || PO_DELIVERY_METHOD.DELIVERY,
                 delivery_location: delivery_location || null,
                 notes: notes || null,
-                po_number: reference || null,
+                po_number: po_number || reference || null,
+                reference: reference || null,
+                name: name || null,
                 created_by: user.email,
                 order_date: new Date().toISOString().split('T')[0],
+                expected_date: eta || null,
             };
 
             const po = await base44.asServiceRole.entities.PurchaseOrder.create(poData);
@@ -346,9 +349,15 @@ Deno.serve(async (req) => {
             if (eta !== undefined) updateData.expected_date = eta || null;
             if (attachments !== undefined) updateData.attachments = attachments || [];
             
-            // Only allow reference editing if not completed
+            // Only allow reference/po_number editing if not completed
             if (reference !== undefined && po.status !== PO_STATUS.COMPLETED) {
-                updateData.po_number = reference;
+                updateData.reference = reference;
+            }
+            if (data?.po_number !== undefined && po.status !== PO_STATUS.COMPLETED) {
+                updateData.po_number = data.po_number;
+            }
+            if (data?.name !== undefined) {
+                updateData.name = data.name;
             }
 
             const updatedPO = await base44.asServiceRole.entities.PurchaseOrder.update(id, updateData);
@@ -435,6 +444,11 @@ Deno.serve(async (req) => {
                 updateData.sent_at = new Date().toISOString();
             } else if (newStatus === PO_STATUS.IN_LOADING_BAY) {
                 updateData.arrived_at = new Date().toISOString();
+            }
+            
+            // Update ETA if provided
+            if (eta !== undefined) {
+                updateData.expected_date = eta || null;
             }
 
             const updatedPO = await base44.asServiceRole.entities.PurchaseOrder.update(id, updateData);
@@ -579,9 +593,12 @@ Deno.serve(async (req) => {
                 delivery_method: delivery_method || PO_DELIVERY_METHOD.DELIVERY,
                 delivery_location: delivery_location || null,
                 notes: notes || null,
-                po_number: reference || null,
+                po_number: po_number || reference || null,
+                reference: reference || null,
+                name: name || null,
                 created_by: user.email,
                 order_date: new Date().toISOString().split('T')[0],
+                expected_date: eta || null,
             };
 
             const newPO = await base44.asServiceRole.entities.PurchaseOrder.create(poData);
