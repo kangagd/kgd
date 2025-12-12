@@ -9,23 +9,24 @@ Deno.serve(async (req) => {
             return Response.json({ error: 'Unauthorized - admin only' }, { status: 401 });
         }
 
-        const { project_id } = await req.json();
+        const body = await req.json().catch(() => ({}));
+        const { project_id } = body;
         
-        if (!project_id) {
-            return Response.json({ error: 'project_id is required' }, { status: 400 });
+        let projects = [];
+        
+        if (project_id) {
+            // Single project mode
+            const project = await base44.asServiceRole.entities.Project.get(project_id);
+            projects = [project];
+            console.log(`Syncing single project ${project_id}`);
+        } else {
+            // Batch mode - sync all projects
+            projects = await base44.asServiceRole.entities.Project.list();
+            console.log(`Syncing all ${projects.length} projects`);
         }
 
-        // Get the project
-        const project = await base44.asServiceRole.entities.Project.get(project_id);
-        const projectNumber = project.project_number;
-        
-        console.log(`Syncing jobs for project ${project_id} with number ${projectNumber}`);
-
-        // Get all jobs for this project
-        const jobs = await base44.asServiceRole.entities.Job.filter({ project_id });
-        console.log(`Found ${jobs.length} jobs`);
-
         const updates = [];
+        let totalJobsUpdated = 0;
 
         for (const job of jobs) {
             if (job.job_number) {
