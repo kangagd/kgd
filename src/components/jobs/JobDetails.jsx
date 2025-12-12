@@ -1829,7 +1829,9 @@ export default function JobDetails({ job: initialJob, onClose, onStatusChange, o
                                   <div className="text-xs font-bold text-slate-700 mb-1">Measurements:</div>
                                   <div className="text-sm text-slate-800">
                                     {Object.entries(summary.measurements).map(([key, value]) => (
-                                      <div key={key}><strong>{key}:</strong> {value}</div>
+                                      <div key={key}>
+                                        <strong>{key}:</strong> {typeof value === 'object' ? JSON.stringify(value) : value}
+                                      </div>
                                     ))}
                                   </div>
                                 </div>
