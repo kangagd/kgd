@@ -1784,71 +1784,255 @@ export default function JobDetails({ job: initialJob, onClose, onStatusChange, o
                       .map((summary, idx) => {
                         const colors = ["blue", "green", "purple", "orange", "cyan"];
                         const color = colors[idx % colors.length];
+                        
+                        const borderColorMap = {
+                          blue: "border-blue-200 bg-blue-50/50",
+                          green: "border-green-200 bg-green-50/50",
+                          purple: "border-purple-200 bg-purple-50/50",
+                          orange: "border-orange-200 bg-orange-50/50",
+                          cyan: "border-cyan-200 bg-cyan-50/50"
+                        };
+                        
+                        const contentBorderMap = {
+                          blue: "border-blue-100",
+                          green: "border-green-100",
+                          purple: "border-purple-100",
+                          orange: "border-orange-100",
+                          cyan: "border-cyan-100"
+                        };
+                        
                         return (
-                          <div key={summary.id} className={`border-2 border-${color}-200 rounded-xl p-4 bg-${color}-50`}>
-                            <div className="flex items-center justify-between mb-3">
-                              <div>
-                                <span className="font-bold text-slate-900">{summary.job_type || `Job #${summary.job_number}`}</span>
-                                <span className="text-sm text-slate-600 ml-2">• {summary.technician_name}</span>
+                          <Card key={summary.id} className={`border-2 ${borderColorMap[color]} shadow-sm rounded-xl overflow-hidden`}>
+                            <CardHeader className={`bg-${color}-100/50 pb-3`}>
+                              <div className="flex items-center justify-between">
+                                <CardTitle className="text-[16px] font-semibold text-slate-900 flex items-center gap-2">
+                                  <ClipboardCheck className={`w-5 h-5 text-${color}-600`} />
+                                  {summary.job_type || `Job #${summary.job_number}`}
+                                </CardTitle>
+                                <Link 
+                                  to={`${createPageUrl("Jobs")}?jobId=${summary.job_id}`}
+                                  className={`text-[12px] text-${color}-600 hover:opacity-80 font-medium flex items-center gap-1`}
+                                >
+                                  View Job
+                                  <ExternalLink className="w-3 h-3" />
+                                </Link>
                               </div>
-                              <span className="text-xs text-slate-500 font-medium">
-                                {format(new Date(summary.check_out_time), 'MMM d, yyyy')}
-                              </span>
-                            </div>
-                            
-                            {summary.outcome && (
-                              <Badge className={`${outcomeColors[summary.outcome]} mb-3 font-semibold border-2`}>
-                                {summary.outcome?.replace(/_/g, ' ')}
-                              </Badge>
-                            )}
+                              
+                              <div className="flex items-center gap-4 text-[12px] text-slate-700 mt-2">
+                                <span className="flex items-center gap-1">
+                                  <User className="w-3.5 h-3.5" />
+                                  {summary.technician_name}
+                                </span>
+                                <span className="flex items-center gap-1">
+                                  <Calendar className="w-3.5 h-3.5" />
+                                  {format(new Date(summary.check_out_time), 'd MMM yyyy, h:mm a')}
+                                </span>
+                                {summary.outcome && (
+                                  <Badge className={`${outcomeColors[summary.outcome] || 'bg-gray-100 text-gray-800'} text-[11px]`}>
+                                    {summary.outcome?.replace(/_/g, ' ')}
+                                  </Badge>
+                                )}
+                              </div>
+                            </CardHeader>
 
-                            <div className="space-y-2">
+                            <CardContent className="p-4 space-y-4">
                               {summary.overview && (
                                 <div>
-                                  <div className="text-xs font-bold text-slate-700 mb-1">Work Performed:</div>
-                                  <div className="text-sm text-slate-800" dangerouslySetInnerHTML={{ __html: summary.overview }} />
+                                  <h4 className="text-[13px] font-semibold text-[#111827] mb-1.5 flex items-center gap-1.5">
+                                    <FileText className="w-4 h-4 text-[#6B7280]" />
+                                    Overview
+                                  </h4>
+                                  <div className={`text-[14px] text-[#4B5563] bg-white rounded-lg p-3 border ${contentBorderMap[color]}`} dangerouslySetInnerHTML={{ __html: summary.overview }} />
                                 </div>
                               )}
 
                               {summary.next_steps && (
                                 <div>
-                                  <div className="text-xs font-bold text-slate-700 mb-1">Next Steps:</div>
-                                  <div className="text-sm text-slate-800" dangerouslySetInnerHTML={{ __html: summary.next_steps }} />
+                                  <h4 className="text-[13px] font-semibold text-[#111827] mb-1.5 flex items-center gap-1.5">
+                                    <ArrowRight className="w-4 h-4 text-[#6B7280]" />
+                                    Next Steps
+                                  </h4>
+                                  <div className={`text-[14px] text-[#4B5563] bg-white rounded-lg p-3 border ${contentBorderMap[color]}`} dangerouslySetInnerHTML={{ __html: summary.next_steps }} />
                                 </div>
                               )}
                               
                               {summary.communication_with_client && (
                                 <div>
-                                  <div className="text-xs font-bold text-slate-700 mb-1">Communication:</div>
-                                  <div className="text-sm text-slate-800" dangerouslySetInnerHTML={{ __html: summary.communication_with_client }} />
+                                  <h4 className="text-[13px] font-semibold text-[#111827] mb-1.5 flex items-center gap-1.5">
+                                    <MessageCircle className="w-4 h-4 text-[#6B7280]" />
+                                    Customer Communication
+                                  </h4>
+                                  <div className={`text-[14px] text-[#4B5563] bg-white rounded-lg p-3 border ${contentBorderMap[color]}`} dangerouslySetInnerHTML={{ __html: summary.communication_with_client }} />
                                 </div>
                               )}
 
                               {summary.measurements && Object.keys(summary.measurements).length > 0 && (
                                 <div>
-                                  <div className="text-xs font-bold text-slate-700 mb-1">Measurements:</div>
-                                  <div className="text-sm text-slate-800">
-                                    {Object.entries(summary.measurements).map(([key, value]) => (
-                                      <div key={key}>
-                                        <strong>{key}:</strong> {typeof value === 'object' ? JSON.stringify(value) : value}
+                                  <h4 className="text-[13px] font-semibold text-[#111827] mb-1.5 flex items-center gap-1.5">
+                                    <Ruler className="w-4 h-4 text-[#6B7280]" />
+                                    Measurements
+                                  </h4>
+                                  <div className={`bg-white rounded-lg p-3 border ${contentBorderMap[color]} space-y-4`}>
+                                    {summary.measurements.new_door && Object.keys(summary.measurements.new_door).some(k => summary.measurements.new_door[k]) && (
+                                      <div>
+                                        <h5 className="text-[12px] font-semibold text-[#4B5563] mb-2">New Door</h5>
+                                        <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3 text-[13px]">
+                                          {summary.measurements.new_door.height_left && (
+                                            <div>
+                                              <span className="text-[#6B7280]">Height L:</span>
+                                              <span className="ml-1 font-medium text-[#111827]">{summary.measurements.new_door.height_left}mm</span>
+                                            </div>
+                                          )}
+                                          {summary.measurements.new_door.height_mid && (
+                                            <div>
+                                              <span className="text-[#6B7280]">Height M:</span>
+                                              <span className="ml-1 font-medium text-[#111827]">{summary.measurements.new_door.height_mid}mm</span>
+                                            </div>
+                                          )}
+                                          {summary.measurements.new_door.height_right && (
+                                            <div>
+                                              <span className="text-[#6B7280]">Height R:</span>
+                                              <span className="ml-1 font-medium text-[#111827]">{summary.measurements.new_door.height_right}mm</span>
+                                            </div>
+                                          )}
+                                          {summary.measurements.new_door.width_top && (
+                                            <div>
+                                              <span className="text-[#6B7280]">Width T:</span>
+                                              <span className="ml-1 font-medium text-[#111827]">{summary.measurements.new_door.width_top}mm</span>
+                                            </div>
+                                          )}
+                                          {summary.measurements.new_door.width_mid && (
+                                            <div>
+                                              <span className="text-[#6B7280]">Width M:</span>
+                                              <span className="ml-1 font-medium text-[#111827]">{summary.measurements.new_door.width_mid}mm</span>
+                                            </div>
+                                          )}
+                                          {summary.measurements.new_door.width_bottom && (
+                                            <div>
+                                              <span className="text-[#6B7280]">Width B:</span>
+                                              <span className="ml-1 font-medium text-[#111827]">{summary.measurements.new_door.width_bottom}mm</span>
+                                            </div>
+                                          )}
+                                          {summary.measurements.new_door.headroom && (
+                                            <div>
+                                              <span className="text-[#6B7280]">Headroom:</span>
+                                              <span className="ml-1 font-medium text-[#111827]">{summary.measurements.new_door.headroom}mm</span>
+                                            </div>
+                                          )}
+                                          {summary.measurements.new_door.sideroom_left && (
+                                            <div>
+                                              <span className="text-[#6B7280]">Sideroom L:</span>
+                                              <span className="ml-1 font-medium text-[#111827]">{summary.measurements.new_door.sideroom_left}mm</span>
+                                            </div>
+                                          )}
+                                          {summary.measurements.new_door.sideroom_right && (
+                                            <div>
+                                              <span className="text-[#6B7280]">Sideroom R:</span>
+                                              <span className="ml-1 font-medium text-[#111827]">{summary.measurements.new_door.sideroom_right}mm</span>
+                                            </div>
+                                          )}
+                                          {summary.measurements.new_door.type && (
+                                            <div>
+                                              <span className="text-[#6B7280]">Type:</span>
+                                              <span className="ml-1 font-medium text-[#111827]">{summary.measurements.new_door.type}</span>
+                                            </div>
+                                          )}
+                                          {summary.measurements.new_door.finish && (
+                                            <div>
+                                              <span className="text-[#6B7280]">Finish:</span>
+                                              <span className="ml-1 font-medium text-[#111827]">{summary.measurements.new_door.finish}</span>
+                                            </div>
+                                          )}
+                                          {summary.measurements.new_door.colour && (
+                                            <div>
+                                              <span className="text-[#6B7280]">Colour:</span>
+                                              <span className="ml-1 font-medium text-[#111827]">{summary.measurements.new_door.colour}</span>
+                                            </div>
+                                          )}
+                                        </div>
                                       </div>
-                                    ))}
+                                    )}
+
+                                    {summary.measurements.existing_door && summary.measurements.existing_door.removal_required === "Y" && (
+                                      <div className={`pt-3 border-t ${contentBorderMap[color]}`}>
+                                        <h5 className="text-[12px] font-semibold text-[#4B5563] mb-2">Existing Door (Removal Required)</h5>
+                                        <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3 text-[13px]">
+                                          {summary.measurements.existing_door.height_left && (
+                                            <div>
+                                              <span className="text-[#6B7280]">Height L:</span>
+                                              <span className="ml-1 font-medium text-[#111827]">{summary.measurements.existing_door.height_left}mm</span>
+                                            </div>
+                                          )}
+                                          {summary.measurements.existing_door.height_right && (
+                                            <div>
+                                              <span className="text-[#6B7280]">Height R:</span>
+                                              <span className="ml-1 font-medium text-[#111827]">{summary.measurements.existing_door.height_right}mm</span>
+                                            </div>
+                                          )}
+                                          {summary.measurements.existing_door.width && (
+                                            <div>
+                                              <span className="text-[#6B7280]">Width:</span>
+                                              <span className="ml-1 font-medium text-[#111827]">{summary.measurements.existing_door.width}mm</span>
+                                            </div>
+                                          )}
+                                        </div>
+                                      </div>
+                                    )}
+
+                                    {!summary.measurements.new_door && (
+                                      <div className="grid grid-cols-2 md:grid-cols-3 gap-3 text-[13px]">
+                                        {summary.measurements.width && (
+                                          <div>
+                                            <span className="text-[#6B7280]">Width:</span>
+                                            <span className="ml-1 font-medium text-[#111827]">{summary.measurements.width}</span>
+                                          </div>
+                                        )}
+                                        {summary.measurements.height && (
+                                          <div>
+                                            <span className="text-[#6B7280]">Height:</span>
+                                            <span className="ml-1 font-medium text-[#111827]">{summary.measurements.height}</span>
+                                          </div>
+                                        )}
+                                        {summary.measurements.headroom && (
+                                          <div>
+                                            <span className="text-[#6B7280]">Headroom:</span>
+                                            <span className="ml-1 font-medium text-[#111827]">{summary.measurements.headroom}</span>
+                                          </div>
+                                        )}
+                                      </div>
+                                    )}
                                   </div>
                                 </div>
                               )}
 
                               {summary.photo_urls && summary.photo_urls.length > 0 && (
                                 <div>
-                                  <div className="text-xs font-bold text-slate-700 mb-1">Photos:</div>
-                                  <div className="grid grid-cols-3 gap-2">
+                                  <h4 className="text-[13px] font-semibold text-[#111827] mb-1.5 flex items-center gap-1.5">
+                                    <ImageIcon className="w-4 h-4 text-[#6B7280]" />
+                                    Site Photos ({summary.photo_urls.length})
+                                  </h4>
+                                  <div className="grid grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-2">
                                     {summary.photo_urls.slice(0, 6).map((url, i) => (
-                                      <img key={i} src={url} alt="" className="w-full h-20 object-cover rounded" />
+                                      <a 
+                                        key={i}
+                                        href={url}
+                                        target="_blank"
+                                        rel="noopener noreferrer"
+                                        className={`aspect-square rounded-lg overflow-hidden border ${contentBorderMap[color]} hover:border-${color}-400 transition-colors`}
+                                      >
+                                        <img src={url} alt="" className="w-full h-full object-cover" />
+                                      </a>
                                     ))}
+                                    {summary.photo_urls.length > 6 && (
+                                      <div className={`aspect-square rounded-lg bg-${color}-100 flex items-center justify-center text-${color}-700 font-medium text-[14px]`}>
+                                        +{summary.photo_urls.length - 6}
+                                      </div>
+                                    )}
                                   </div>
                                 </div>
                               )}
-                            </div>
-                          </div>
+                            </CardContent>
+                          </Card>
                         );
                       })
                     }
