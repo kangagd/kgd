@@ -576,7 +576,10 @@ export default function Logistics() {
                         onClick={() => setSelectedPoId(po.id)}
                       >
                         <div className="font-medium text-[#111827] mb-2">
-                          {po.po_number || `PO #${po.id.substring(0, 8)}`}
+                          {(() => {
+                            const poRef = po.order_reference || po.po_number || po.reference || po.id.substring(0, 8);
+                            return `PO #${poRef}`;
+                          })()}
                         </div>
                         <div className="mt-1 text-[11px] text-[#6B7280]">
                           {suppliers.find(s => s.id === po.supplier_id)?.name || po.supplier_name || "Supplier not set"}
@@ -644,7 +647,10 @@ export default function Logistics() {
                         onClick={() => setSelectedPoId(po.id)}
                       >
                         <div className="font-medium text-[#111827] mb-2">
-                          {po.po_number || `PO #${po.id.substring(0, 8)}`}
+                          {(() => {
+                            const poRef = po.order_reference || po.po_number || po.reference || po.id.substring(0, 8);
+                            return `PO #${poRef}`;
+                          })()}
                         </div>
                         <div className="mt-1 text-[11px] text-[#6B7280]">
                           {suppliers.find(s => s.id === po.supplier_id)?.name || po.supplier_name || "Supplier not set"}
@@ -714,7 +720,10 @@ export default function Logistics() {
                         onClick={() => setSelectedPoId(po.id)}
                       >
                         <div className="font-medium text-[#111827] mb-2">
-                          {po.po_number || `PO #${po.id.substring(0, 8)}`}
+                          {(() => {
+                            const poRef = po.order_reference || po.po_number || po.reference || po.id.substring(0, 8);
+                            return `PO #${poRef}`;
+                          })()}
                         </div>
                         <div className="mt-1 text-[11px] text-[#6B7280]">
                           {suppliers.find(s => s.id === po.supplier_id)?.name || po.supplier_name || "Supplier not set"}
@@ -784,7 +793,10 @@ export default function Logistics() {
                         onClick={() => setSelectedPoId(po.id)}
                       >
                         <div className="font-medium text-[#111827] mb-2">
-                          {po.po_number || `PO #${po.id.substring(0, 8)}`}
+                          {(() => {
+                            const poRef = po.order_reference || po.po_number || po.reference || po.id.substring(0, 8);
+                            return `PO #${poRef}`;
+                          })()}
                         </div>
                         <div className="mt-1 text-[11px] text-[#6B7280]">
                           {suppliers.find(s => s.id === po.supplier_id)?.name || po.supplier_name || "Supplier not set"}
@@ -852,7 +864,10 @@ export default function Logistics() {
                         onClick={() => setSelectedPoId(po.id)}
                       >
                         <div className="font-medium text-[#111827] mb-2">
-                          {po.po_number || `PO #${po.id.substring(0, 8)}`}
+                          {(() => {
+                            const poRef = po.order_reference || po.po_number || po.reference || po.id.substring(0, 8);
+                            return `PO #${poRef}`;
+                          })()}
                         </div>
                         <div className="mt-1 text-[11px] text-[#6B7280]">
                           {suppliers.find(s => s.id === po.supplier_id)?.name || po.supplier_name || "Supplier not set"}
