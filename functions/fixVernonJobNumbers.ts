@@ -19,12 +19,12 @@ Deno.serve(async (req) => {
             return (jobNum.startsWith('5001-') || jobNum.startsWith('5001')) && j.project_name?.includes('Vernon');
         });
         
-        console.log(`Found ${jobs.length} jobs for Vernon project`);
+        console.log(`Found ${jobs.length} jobs for Vernon project:`, jobs.map(j => ({id: j.id, num: j.job_number, name: j.project_name})));
         
         const updates = [];
         
         for (const job of jobs) {
-            console.log(`Job ${job.id}: job_number="${job.job_number}" (type: ${typeof job.job_number})`);
+            console.log(`Job ${job.id}: job_number="${job.job_number}" (type: ${typeof job.job_number}), project_name="${job.project_name}"`);
             
             if (job.job_number) {
                 const jobNumberStr = String(job.job_number).trim();
