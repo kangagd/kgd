@@ -3,7 +3,7 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { AlertTriangle, CheckCircle2, Package, Truck, ExternalLink, Plus, ShoppingCart } from "lucide-react";
 import AssignPartToVehicleModal from "./AssignPartToVehicleModal";
-import { PART_LOCATION, normaliseLegacyPartLocation } from "@/components/domain/partConfig";
+import { PART_LOCATION, normaliseLegacyPartLocation, getPartStatusLabel, normaliseLegacyPartStatus } from "@/components/domain/partConfig";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { base44 } from "@/api/base44Client";
 import { useNavigate } from "react-router-dom";
@@ -202,45 +202,58 @@ export default function ProjectPartsPanel({ project, parts = [], inventoryByItem
             Shortages ({needed.length})
           </h4>
           <div className="space-y-2">
-            {needed.map(part => (
-              <div key={part.id} className="p-3 bg-red-50 border border-red-100 rounded-lg flex justify-between items-center">
-                <div>
-                  <div className="text-sm font-medium text-red-900">{part.category}</div>
-                  <div className="text-xs text-red-700 mt-0.5">
-                    {part.supplier_name || 'No Supplier'} {part.order_reference ? `• ${part.order_reference}` : ''}
+            {needed.map(part => {
+              const partTitle = part.item_name || part.category || "Part";
+              const normalizedStatus = normaliseLegacyPartStatus(part.status);
+              const poDisplay = part.order_reference || (part.po_number ? `PO #${part.po_number}` : null);
+              
+              return (
+                <div key={part.id} className="p-3 bg-red-50 border border-red-100 rounded-lg flex justify-between items-center">
+                  <div>
+                    <div className="text-sm font-medium text-red-900">{partTitle}</div>
+                    <div className="flex items-center gap-2 mt-1 flex-wrap">
+                      {part.supplier_name && (
+                        <span className="text-xs text-red-700">
+                          {part.supplier_name}
+                        </span>
+                      )}
+                      <Badge className="bg-red-100 text-red-800 border-red-200 text-[11px] px-2 py-0">
+                        {getPartStatusLabel(normalizedStatus)}
+                      </Badge>
+                      {poDisplay && (
+                        <span className="text-xs text-red-700">
+                          {poDisplay}
+                        </span>
+                      )}
+                    </div>
+                    {part.price_list_item_id && (
+                      <div className="text-xs text-red-600 mt-0.5">
+                        Stock Available: {inventoryByItem[part.price_list_item_id] || 0}
+                      </div>
+                    )}
                   </div>
-                  {part.price_list_item_id && (
-                    <div className="text-xs text-red-600 mt-0.5">
-                      Stock Available: {inventoryByItem[part.price_list_item_id] || 0}
-                    </div>
-                  )}
-                  {part.purchase_order_id && (
-                    <div className="text-xs text-red-700 mt-0.5 opacity-75">
-                      Linked to PO #{part.purchase_order_id.substring(0, 8)}
-                    </div>
-                  )}
+                  <div className="text-right flex flex-col gap-2 items-end">
+                     <Badge variant="outline" className="bg-white border-red-200 text-red-800">
+                       Qty: {part.quantity_required || 1}
+                     </Badge>
+                     
+                     {normaliseLegacyPartLocation(part.location) !== PART_LOCATION.VEHICLE && (
+                       <Button
+                         variant="outline"
+                         size="sm"
+                         className="h-7 text-xs"
+                         onClick={() => {
+                           setPartToAssign(part);
+                           setAssignModalOpen(true);
+                         }}
+                       >
+                         Assign to vehicle
+                       </Button>
+                     )}
+                  </div>
                 </div>
-                <div className="text-right flex flex-col gap-2 items-end">
-                   <Badge variant="outline" className="bg-white border-red-200 text-red-800">
-                     Qty: {part.quantity_required || 1}
-                   </Badge>
-                   
-                   {normaliseLegacyPartLocation(part.location) !== PART_LOCATION.VEHICLE && (
-                     <Button
-                       variant="outline"
-                       size="sm"
-                       className="h-7 text-xs"
-                       onClick={() => {
-                         setPartToAssign(part);
-                         setAssignModalOpen(true);
-                       }}
-                     >
-                       Assign to vehicle
-                     </Button>
-                   )}
-                </div>
-              </div>
-            ))}
+              );
+            })}
           </div>
         </div>
       )}
@@ -252,42 +265,54 @@ export default function ProjectPartsPanel({ project, parts = [], inventoryByItem
             Ready to Pick / Assigned ({ready.length})
           </h4>
           <div className="space-y-2">
-            {ready.map(part => (
-              <div key={part.id} className="p-3 bg-white border border-gray-200 rounded-lg flex justify-between items-center">
-                <div>
-                  <div className="text-sm font-medium text-gray-900">{part.category}</div>
-                  <div className="text-xs text-gray-500 mt-0.5">
-                    {part.location}
-                    {part.status !== 'Pending' && ` • ${part.status}`}
-                  </div>
-                  {part.purchase_order_id && (
-                    <div className="text-xs text-gray-500 mt-0.5 opacity-75">
-                      Linked to PO #{part.purchase_order_id.substring(0, 8)}
+            {ready.map(part => {
+              const partTitle = part.item_name || part.category || "Part";
+              const normalizedStatus = normaliseLegacyPartStatus(part.status);
+              const poDisplay = part.order_reference || (part.po_number ? `PO #${part.po_number}` : null);
+              
+              return (
+                <div key={part.id} className="p-3 bg-white border border-gray-200 rounded-lg flex justify-between items-center">
+                  <div>
+                    <div className="text-sm font-medium text-gray-900">{partTitle}</div>
+                    <div className="flex items-center gap-2 mt-1 flex-wrap">
+                      {part.supplier_name && (
+                        <span className="text-xs text-gray-600">
+                          {part.supplier_name}
+                        </span>
+                      )}
+                      <Badge className="bg-slate-100 text-slate-700 border-slate-200 text-[11px] px-2 py-0">
+                        {getPartStatusLabel(normalizedStatus)}
+                      </Badge>
+                      {poDisplay && (
+                        <span className="text-xs text-gray-600">
+                          {poDisplay}
+                        </span>
+                      )}
                     </div>
-                  )}
+                  </div>
+                  <div className="flex flex-col gap-2 items-end">
+                    <Badge variant="outline" className="bg-gray-50">
+                      Qty: {part.quantity_required || 1}
+                    </Badge>
+                    
+                    {(normaliseLegacyPartLocation(part.location) !== PART_LOCATION.VEHICLE || !part.assigned_vehicle_id) && (
+                       <Button
+                         variant="outline"
+                         size="sm"
+                         className="h-7 text-xs border-blue-200 text-blue-700 hover:bg-blue-50"
+                         onClick={() => {
+                           setPartToAssign(part);
+                           setAssignModalOpen(true);
+                         }}
+                       >
+                         <Truck className="w-3 h-3 mr-1" />
+                         Assign to vehicle
+                       </Button>
+                     )}
+                  </div>
                 </div>
-                <div className="flex flex-col gap-2 items-end">
-                  <Badge variant="outline" className="bg-gray-50">
-                    Qty: {part.quantity_required || 1}
-                  </Badge>
-                  
-                  {(normaliseLegacyPartLocation(part.location) !== PART_LOCATION.VEHICLE || !part.assigned_vehicle_id) && (
-                     <Button
-                       variant="outline"
-                       size="sm"
-                       className="h-7 text-xs border-blue-200 text-blue-700 hover:bg-blue-50"
-                       onClick={() => {
-                         setPartToAssign(part);
-                         setAssignModalOpen(true);
-                       }}
-                     >
-                       <Truck className="w-3 h-3 mr-1" />
-                       Assign to vehicle
-                     </Button>
-                   )}
-                </div>
-              </div>
-            ))}
+              );
+            })}
           </div>
         </div>
       )}
