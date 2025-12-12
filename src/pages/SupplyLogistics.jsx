@@ -23,27 +23,52 @@ export default function SupplyLogistics() {
 
   const { data: purchaseOrders = [] } = useQuery({
     queryKey: ['purchaseOrders'],
-    queryFn: () => base44.entities.PurchaseOrder.list('-created_date')
+    queryFn: () => base44.entities.PurchaseOrder.list('-created_date'),
+    staleTime: 60_000,
+    refetchOnWindowFocus: false,
+    retry: (count, err) => err?.status !== 429 && count < 2,
   });
 
   const { data: suppliers = [] } = useQuery({
     queryKey: ['suppliers'],
-    queryFn: () => base44.entities.Supplier.list('name')
+    queryFn: () => base44.entities.Supplier.list('name'),
+    staleTime: 120_000,
+    refetchOnWindowFocus: false,
+    retry: (count, err) => err?.status !== 429 && count < 2,
   });
 
   const { data: stockLogisticsJobs = [] } = useQuery({
     queryKey: ['stockLogisticsJobs'],
-    queryFn: () => base44.entities.Job.filter({ purchase_order_id: { $ne: null } })
+    queryFn: () => base44.entities.Job.filter({ purchase_order_id: { $ne: null } }),
+    enabled: activeTab === 'jobs',
+    staleTime: 60_000,
+    refetchOnWindowFocus: false,
+    retry: (count, err) => err?.status !== 429 && count < 2,
   });
 
   const { data: parts = [] } = useQuery({
     queryKey: ['parts'],
-    queryFn: () => base44.entities.Part.list()
+    queryFn: () => base44.entities.Part.list(),
+    enabled: activeTab === 'board',
+    staleTime: 60_000,
+    refetchOnWindowFocus: false,
+    retry: (count, err) => err?.status !== 429 && count < 2,
   });
+
+  const hasLoadingBayPOs = React.useMemo(() => {
+    return purchaseOrders.some(po => {
+      const normalized = normaliseLegacyPoStatus(po.status);
+      return normalized === PO_STATUS.IN_LOADING_BAY;
+    });
+  }, [purchaseOrders]);
 
   const { data: purchaseOrderLines = [] } = useQuery({
     queryKey: ['purchaseOrderLines'],
-    queryFn: () => base44.entities.PurchaseOrderLine.list()
+    queryFn: () => base44.entities.PurchaseOrderLine.list(),
+    enabled: activeTab === 'board' && hasLoadingBayPOs,
+    staleTime: 60_000,
+    refetchOnWindowFocus: false,
+    retry: (count, err) => err?.status !== 429 && count < 2,
   });
 
   // Group POs by status (normalize legacy statuses)
