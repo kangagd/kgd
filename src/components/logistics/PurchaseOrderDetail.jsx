@@ -48,12 +48,18 @@ export default function PurchaseOrderDetail({ poId, onClose, mode = "page" }) {
 
   const { data: suppliers = [] } = useQuery({
     queryKey: ['suppliers'],
-    queryFn: () => base44.entities.Supplier.list()
+    queryFn: () => base44.entities.Supplier.list(),
+    staleTime: 60_000,
+    refetchOnWindowFocus: false,
+    retry: (count, err) => err?.status !== 429 && count < 2,
   });
 
   const { data: projects = [] } = useQuery({
     queryKey: ['projects'],
-    queryFn: () => base44.entities.Project.list('-created_date')
+    queryFn: () => base44.entities.Project.list('-created_date'),
+    staleTime: 60_000,
+    refetchOnWindowFocus: false,
+    retry: (count, err) => err?.status !== 429 && count < 2,
   });
 
   const linkedProject = projects.find(p => p.id === formData.project_id);
@@ -79,7 +85,10 @@ export default function PurchaseOrderDetail({ poId, onClose, mode = "page" }) {
 
   const priceListQuery = useQuery({
     queryKey: ['priceListItems'],
-    queryFn: () => base44.entities.PriceListItem.filter({ is_active: true })
+    queryFn: () => base44.entities.PriceListItem.filter({ is_active: true }),
+    staleTime: 120_000,
+    refetchOnWindowFocus: false,
+    retry: (count, err) => err?.status !== 429 && count < 2,
   });
   const priceListItems = priceListQuery.data || [];
 
@@ -104,8 +113,11 @@ export default function PurchaseOrderDetail({ poId, onClose, mode = "page" }) {
         category: line.category || "Other"
       }));
 
+      // Get PO reference from canonical field with fallbacks
+      const poReference = po.po_number || po.order_reference || po.reference || '';
+      const poName = po.name || '';
+      
       // Only update if this is initial load or if PO ID changed
-      const poReference = po.po_reference || '';
       if (!initialLoadDone.current || formData.po_reference !== poReference) {
         setFormData({
           supplier_id: po.supplier_id || "",
@@ -113,7 +125,7 @@ export default function PurchaseOrderDetail({ poId, onClose, mode = "page" }) {
           delivery_method: po.delivery_method || "",
           notes: po.notes || "",
           po_reference: poReference,
-          name: po.name || "",
+          name: poName,
           status: normalizedStatus,
           eta: po.expected_date || "",
           attachments: po.attachments || [],
@@ -584,13 +596,16 @@ export default function PurchaseOrderDetail({ poId, onClose, mode = "page" }) {
                     className="mt-2 max-w-xs text-sm"
                   />
                 ) : (
-                  <div className="mt-2 space-y-1">
-                    {po.po_reference ? (
-                      <p className="text-sm font-medium text-[#111827]">PO #: {po.po_reference}</p>
-                    ) : (
-                      <p className="text-sm text-[#6B7280]">ID: {po.id.slice(0, 8)}</p>
-                    )}
-                  </div>
+                 <div className="mt-2 space-y-1">
+                   {formData.po_reference ? (
+                     <p className="text-sm font-medium text-[#111827]">PO #: {formData.po_reference}</p>
+                   ) : (
+                     <p className="text-sm text-[#6B7280]">ID: {po.id.slice(0, 8)}</p>
+                   )}
+                   {formData.name && (
+                     <p className="text-sm text-[#6B7280]">{formData.name}</p>
+                   )}
+                 </div>
                 )}
                 {linkedProject && (
                  <p className="text-sm text-[#6B7280] mt-1">
