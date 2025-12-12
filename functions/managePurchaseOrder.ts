@@ -387,7 +387,10 @@ Deno.serve(async (req) => {
                 updateData.order_reference = poRef;
                 updateData.reference = poRef;
             }
-            if (data?.name !== undefined) {
+            // Accept name from either top-level or data object
+            if (name !== undefined) {
+                updateData.name = name;
+            } else if (data?.name !== undefined) {
                 updateData.name = data.name;
             }
 
