@@ -7,6 +7,15 @@ const fixEncodingIssues = (text) => {
   
   let fixed = text;
   
+  // Fix HTML entities first
+  fixed = fixed.replace(/&nbsp;/g, ' ');
+  fixed = fixed.replace(/&amp;/g, '&');
+  fixed = fixed.replace(/&lt;/g, '<');
+  fixed = fixed.replace(/&gt;/g, '>');
+  fixed = fixed.replace(/&quot;/g, '"');
+  fixed = fixed.replace(/&#39;/g, "'");
+  fixed = fixed.replace(/&apos;/g, "'");
+  
   // Fix common encoding issues (mojibake from Windows-1252 → UTF-8)
   fixed = fixed.replace(/â€"/g, '—');  // em dash
   fixed = fixed.replace(/â€"/g, '–');  // en dash
@@ -27,13 +36,56 @@ const fixEncodingIssues = (text) => {
   return fixed;
 };
 
-const sanitizeBodyHtml = (html) => {
+const convertHtmlToFormattedText = (html) => {
+  if (!html) return '';
+  
+  let text = html;
+  
+  // Replace common block elements with line breaks
+  text = text.replace(/<\/p>/gi, '\n\n');
+  text = text.replace(/<br\s*\/?>/gi, '\n');
+  text = text.replace(/<\/div>/gi, '\n');
+  text = text.replace(/<\/h[1-6]>/gi, '\n\n');
+  text = text.replace(/<\/li>/gi, '\n');
+  text = text.replace(/<\/tr>/gi, '\n');
+  
+  // Remove remaining HTML tags
+  text = text.replace(/<[^>]*>/g, '');
+  
+  // Fix HTML entities
+  text = text.replace(/&nbsp;/g, ' ');
+  text = text.replace(/&amp;/g, '&');
+  text = text.replace(/&lt;/g, '<');
+  text = text.replace(/&gt;/g, '>');
+  text = text.replace(/&quot;/g, '"');
+  text = text.replace(/&#39;/g, "'");
+  text = text.replace(/&apos;/g, "'");
+  
+  // Clean up excessive whitespace but preserve intentional line breaks
+  text = text.replace(/\n\s*\n\s*\n/g, '\n\n'); // Max 2 line breaks
+  text = text.replace(/[ \t]+/g, ' '); // Multiple spaces to single space
+  
+  return text.trim();
+};
+
+const sanitizeBodyHtml = (html, inlineImages = []) => {
   if (!html) return html;
   
   let sanitized = html;
   
   // Fix encoding issues first
   sanitized = fixEncodingIssues(sanitized);
+  
+  // Replace inline image references with actual URLs
+  if (inlineImages && inlineImages.length > 0) {
+    inlineImages.forEach(img => {
+      if (img.content_id && img.url) {
+        // Match cid: references
+        const cidPattern = new RegExp(`cid:${img.content_id}`, 'gi');
+        sanitized = sanitized.replace(cidPattern, img.url);
+      }
+    });
+  }
   
   // Remove dangerous tags
   sanitized = sanitized.replace(/<script[^>]*>.*?<\/script>/gi, '');
@@ -49,6 +101,17 @@ const sanitizeBodyHtml = (html) => {
 export default function EmailMessageItem({ message, isLast, totalMessages, getSenderInitials }) {
   // Collapse if it's not the last message and there are multiple messages
   const [expanded, setExpanded] = useState(isLast || totalMessages === 1);
+  
+  // Get inline images with URLs
+  const inlineImages = React.useMemo(() => {
+    if (!message.attachments) return [];
+    return message.attachments
+      .filter(att => att.is_inline && att.content_id && att.url)
+      .map(att => ({
+        content_id: att.content_id,
+        url: att.url
+      }));
+  }, [message.attachments]);
 
   return (
     <div className="bg-white">
@@ -99,20 +162,18 @@ export default function EmailMessageItem({ message, isLast, totalMessages, getSe
           )}
 
           <div className="gmail-email-body prose prose-sm max-w-none overflow-hidden">
-            {message.body_html && !message.body_html.includes('<') ? (
-              <div className="whitespace-pre-wrap text-[14px] text-[#111827] leading-relaxed">
-                {fixEncodingIssues(message.body_html)}
-              </div>
+            {message.body_html && message.body_html.includes('<') ? (
+              <div dangerouslySetInnerHTML={{ __html: sanitizeBodyHtml(message.body_html, inlineImages) }} />
             ) : message.body_html ? (
-              <div dangerouslySetInnerHTML={{ __html: sanitizeBodyHtml(message.body_html) }} />
-            ) : message.body_text && !message.body_text.includes('<') ? (
               <div className="whitespace-pre-wrap text-[14px] text-[#111827] leading-relaxed">
-                {fixEncodingIssues(message.body_text)}
+                {fixEncodingIssues(convertHtmlToFormattedText(message.body_html))}
+              </div>
+            ) : message.body_text ? (
+              <div className="whitespace-pre-wrap text-[14px] text-[#111827] leading-relaxed">
+                {fixEncodingIssues(convertHtmlToFormattedText(message.body_text))}
               </div>
             ) : (
-              <div className="whitespace-pre-wrap text-[14px] text-[#111827] leading-relaxed">
-                {fixEncodingIssues((message.body_text || '').replace(/<[^>]*>/g, ' ').replace(/\s+/g, ' ')) || '(No content)'}
-              </div>
+              <div className="text-[14px] text-[#6B7280]">(No content)</div>
             )}
           </div>
         </div>
