@@ -81,13 +81,10 @@ export default function PurchaseOrderDetail({ poId, onClose, mode = "page" }) {
   });
   const priceListItems = priceListQuery.data || [];
 
+  const initialLoadDone = React.useRef(false);
+
   useEffect(() => {
-    if (po) {
-      console.log('PO data from server:', { 
-        project_id: po.project_id, 
-        delivery_method: po.delivery_method 
-      });
-      
+    if (po && lineItems) {
       // Normalize legacy status
       const normalizedStatus = normaliseLegacyPoStatus(po.status);
       
@@ -104,20 +101,24 @@ export default function PurchaseOrderDetail({ poId, onClose, mode = "page" }) {
         notes: line.notes || null
       }));
 
-      setFormData({
-        supplier_id: po.supplier_id || "",
-        project_id: po.project_id || "",
-        delivery_method: po.delivery_method || "",
-        notes: po.notes || "",
-        reference: po.po_number || "",
-        status: normalizedStatus,
-        eta: po.expected_date || "",
-        attachments: po.attachments || [],
-        line_items: items
-      });
-      setIsEditing(normalizedStatus === PO_STATUS.DRAFT);
+      // Only update if this is initial load or if PO ID changed
+      if (!initialLoadDone.current || formData.reference !== (po.po_number || "")) {
+        setFormData({
+          supplier_id: po.supplier_id || "",
+          project_id: po.project_id || "",
+          delivery_method: po.delivery_method || "",
+          notes: po.notes || "",
+          reference: po.po_number || "",
+          status: normalizedStatus,
+          eta: po.expected_date || "",
+          attachments: po.attachments || [],
+          line_items: items
+        });
+        setIsEditing(normalizedStatus === PO_STATUS.DRAFT);
+        initialLoadDone.current = true;
+      }
     }
-  }, [po, lineItems]);
+  }, [po?.id, lineItems?.length]);
 
   const updatePOMutation = useMutation({
     mutationFn: async (data) => {
