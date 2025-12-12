@@ -241,14 +241,6 @@ export default function PartsSection({ projectId, autoExpand = false, registerAd
               const progressIndex = FLOW_STEPS.indexOf(displayLocation);
               const progressPercent = progressIndex === -1 ? 0 : ((progressIndex + 1) / FLOW_STEPS.length) * 100;
 
-              const partTitle =
-                part.title ||
-                part.item_name ||
-                part.name ||
-                part.description ||
-                part.category ||
-                "Part";
-
               return (
                 <div 
                   key={part.id} 
@@ -266,7 +258,7 @@ export default function PartsSection({ projectId, autoExpand = false, registerAd
                         <div>
                           <div className="flex items-center gap-2 flex-wrap">
                             <span className="font-semibold text-slate-900">
-                              {partTitle}
+                              {part.item_name || "Part"}
                             </span>
                             {part.category && (
                               <Badge
