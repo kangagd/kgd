@@ -333,11 +333,29 @@ export default function PurchaseOrderDetail({ poId, onClose, mode = "page" }) {
       
       const created = await base44.entities.PurchaseOrderLine.create(lineData);
       
-      // If this is from project part, link part to PO
+      // Sync with Part entity
       if (newItem.part_id) {
+        // If part_id exists, update the Part
         await base44.entities.Part.update(newItem.part_id, {
           purchase_order_id: poId,
           status: "on_order"
+        });
+      } else if (formData.project_id) {
+        // If no part_id but we have a project, create a new Part
+        const newPart = await base44.entities.Part.create({
+          project_id: formData.project_id,
+          category: newItem.name || "Other",
+          quantity_required: newItem.quantity || 1,
+          status: "on_order",
+          purchase_order_id: poId,
+          supplier_id: formData.supplier_id || null,
+          order_reference: formData.po_number || formData.reference || null,
+          notes: newItem.notes || null
+        });
+        
+        // Update the line item with the new part_id
+        await base44.entities.PurchaseOrderLine.update(created.id, {
+          part_id: newPart.id
         });
       }
       
@@ -346,6 +364,7 @@ export default function PurchaseOrderDetail({ poId, onClose, mode = "page" }) {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['purchaseOrderLines', poId] });
       queryClient.invalidateQueries({ queryKey: ['parts'] });
+      queryClient.invalidateQueries({ queryKey: ['projectParts', formData.project_id] });
       toast.success('Item added');
     },
     onError: (error) => {
