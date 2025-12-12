@@ -1,6 +1,95 @@
 import { createClientFromRequest } from 'npm:@base44/sdk@0.8.4';
 import { updateProjectActivity } from './updateProjectActivity.js';
 
+const fixEncodingIssues = (text) => {
+  if (text == null) return text;
+  let fixed = String(text);
+
+  // 1) Common HTML entities
+  fixed = fixed
+    .replace(/&nbsp;/g, " ")
+    .replace(/&amp;/g, "&")
+    .replace(/&lt;/g, "<")
+    .replace(/&gt;/g, ">")
+    .replace(/&quot;/g, '"')
+    .replace(/&#39;/g, "'")
+    .replace(/&apos;/g, "'")
+    .replace(/&#8217;/g, "'")   // '
+    .replace(/&#8216;/g, "'")   // '
+    .replace(/&#8220;/g, '"')   // "
+    .replace(/&#8221;/g, '"')   // "
+    .replace(/&#8211;/g, "–")  // –
+    .replace(/&#8212;/g, "—"); // —
+
+  // 2) UTF-8 → Windows-1252 mojibake patterns
+  const mojibakeReplacements = [
+    // Smart quotes & dashes (â… sequences)
+    [/â/g, "'"],
+    [/â/g, "'"],
+    [/â/g, """],
+    [/â/g, """],
+    [/â/g, "–"],
+    [/â/g, "—"],
+    [/â¦/g, "…"],
+
+    // Variants already in the old helper
+    [/â€™/g, "'"],
+    [/â€˜/g, "'"],
+    [/â€œ/g, """],
+    [/â€/g, """],
+    [/â€¢/g, "•"],
+
+    // Spaces / NBSP / odd spacing
+    [/Â /g, " "],
+    [/Â/g, " "],
+    [/â€‰/g, " "],
+    [/â €/g, " "],
+
+    // Misc symbols
+    [/Â°/g, "°"],
+    [/â‚¬/g, "€"],
+    [/â ·/g, "·"],
+    [/â ·â(\d+)/g, " ·$1"],
+    [/Ã¢â‚¬â„¢/g, "'"],
+  ];
+
+  for (const [pattern, replacement] of mojibakeReplacements) {
+    fixed = fixed.replace(pattern, replacement);
+  }
+
+  // 3) Accented characters (Ã… style patterns)
+  const accentReplacements = [
+    [/Ã /g, "à"],
+    [/Ã¡/g, "á"],
+    [/Ã¢/g, "â"],
+    [/Ã£/g, "ã"],
+    [/Ã¤/g, "ä"],
+    [/Ã¨/g, "è"],
+    [/Ã©/g, "é"],
+    [/Ãª/g, "ê"],
+    [/Ã«/g, "ë"],
+    [/Ã¬/g, "ì"],
+    [/Ã­/g, "í"],
+    [/Ã®/g, "î"],
+    [/Ã¯/g, "ï"],
+    [/Ã²/g, "ò"],
+    [/Ã³/g, "ó"],
+    [/Ã´/g, "ô"],
+    [/Ãµ/g, "õ"],
+    [/Ã¶/g, "ö"],
+    [/Ã¹/g, "ù"],
+    [/Ãº/g, "ú"],
+    [/Ã»/g, "û"],
+    [/Ã¼/g, "ü"],
+  ];
+
+  for (const [pattern, replacement] of accentReplacements) {
+    fixed = fixed.replace(pattern, replacement);
+  }
+
+  return fixed;
+};
+
 async function refreshTokenIfNeeded(user, base44) {
   const expiry = new Date(user.gmail_token_expiry);
   const now = new Date();
@@ -308,9 +397,9 @@ Deno.serve(async (req) => {
           from_address: fromAddress,
           to_addresses: toAddresses.length > 0 ? toAddresses : [fromAddress],
           sent_at: new Date(date).toISOString(),
-          subject: subject || '(No Subject)',
-          body_html: bodyHtml,
-          body_text: bodyText,
+          subject: fixEncodingIssues(subject || '(No Subject)'),
+          body_html: fixEncodingIssues(bodyHtml),
+          body_text: fixEncodingIssues(bodyText),
           message_id: effectiveMessageId,
           is_outbound: isOutbound,
           attachments: processedAttachments.length > 0 ? processedAttachments : undefined
