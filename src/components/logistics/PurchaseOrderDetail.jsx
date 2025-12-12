@@ -105,7 +105,7 @@ export default function PurchaseOrderDetail({ poId, onClose, mode = "page" }) {
       }));
 
       // Only update if this is initial load or if PO ID changed
-      const poReference = po.order_reference || po.po_number || po.reference || '';
+      const poReference = po.po_number || po.order_reference || po.reference || '';
       if (!initialLoadDone.current || formData.po_reference !== poReference) {
         setFormData({
           supplier_id: po.supplier_id || "",
@@ -353,8 +353,8 @@ export default function PurchaseOrderDetail({ poId, onClose, mode = "page" }) {
           supplier_name: suppliers.find(s => s.id === formData.supplier_id)?.name || "",
           order_date: po.order_date || po.created_date,
           eta: formData.eta || po.expected_date,
-          order_reference: formData.po_reference,
           po_number: formData.po_reference,
+          order_reference: formData.po_reference,
           source_type: newItem.source_type || "supplier_delivery"
         });
       } else if (formData.project_id) {
@@ -372,8 +372,8 @@ export default function PurchaseOrderDetail({ poId, onClose, mode = "page" }) {
           supplier_name: suppliers.find(s => s.id === formData.supplier_id)?.name || "",
           order_date: po.order_date || po.created_date,
           eta: formData.eta || po.expected_date,
+          po_number: formData.po_reference || null,
           order_reference: formData.po_reference || null,
-          po_number: formData.po_reference,
           source_type: newItem.source_type || "supplier_delivery",
           notes: newItem.notes || null
         });
@@ -572,7 +572,7 @@ export default function PurchaseOrderDetail({ poId, onClose, mode = "page" }) {
                 ) : (
                   <div className="mt-2 space-y-1">
                     {(() => {
-                      const poRef = po.order_reference || po.po_number || po.reference;
+                      const poRef = po.po_number || po.order_reference || po.reference;
                       return poRef ? (
                         <p className="text-sm font-medium text-[#111827]">PO #: {poRef}</p>
                       ) : (
@@ -582,42 +582,42 @@ export default function PurchaseOrderDetail({ poId, onClose, mode = "page" }) {
                   </div>
                 )}
                 {linkedProject && (
-                  <p className="text-sm text-[#6B7280] mt-1">
-                    Project: {linkedProject.title}
-                  </p>
+                 <p className="text-sm text-[#6B7280] mt-1">
+                   Project: {linkedProject.title}
+                 </p>
                 )}
-              </div>
-            </div>
-            <div className="flex gap-2">
-              {isDraft && (
+                </div>
+                </div>
+                <div className="flex gap-2">
+                {isDraft && (
                 <>
-                  <Button
-                    onClick={handleDelete}
-                    disabled={deletePOMutation.isPending}
-                    variant="outline"
-                    className="text-red-600 hover:text-red-700 hover:bg-red-50"
-                  >
-                    <Trash className="w-4 h-4 mr-2" />
-                    Delete
-                  </Button>
-                  <Button
-                    onClick={handleSave}
-                    disabled={updatePOMutation.isPending}
-                    className="bg-[#F3F4F6] text-[#111827] hover:bg-[#E5E7EB]"
-                  >
-                    <Save className="w-4 h-4 mr-2" />
-                    Save
-                  </Button>
-                  <Button
-                    onClick={handleSendToSupplier}
-                    disabled={updatePOMutation.isPending}
-                    className="bg-[#FAE008] text-[#111827] hover:bg-[#E5CF07]"
-                  >
-                    <Send className="w-4 h-4 mr-2" />
-                    Send to Supplier
-                  </Button>
+                 <Button
+                   onClick={handleDelete}
+                   disabled={deletePOMutation.isPending}
+                   variant="outline"
+                   className="text-red-600 hover:text-red-700 hover:bg-red-50"
+                 >
+                   <Trash className="w-4 h-4 mr-2" />
+                   Delete
+                 </Button>
+                 <Button
+                   onClick={handleSave}
+                   disabled={updatePOMutation.isPending || !formData.po_reference?.trim()}
+                   className="bg-[#F3F4F6] text-[#111827] hover:bg-[#E5E7EB]"
+                 >
+                   <Save className="w-4 h-4 mr-2" />
+                   Save
+                 </Button>
+                 <Button
+                   onClick={handleSendToSupplier}
+                   disabled={updatePOMutation.isPending || !formData.po_reference?.trim()}
+                   className="bg-[#FAE008] text-[#111827] hover:bg-[#E5CF07]"
+                 >
+                   <Send className="w-4 h-4 mr-2" />
+                   Send to Supplier
+                 </Button>
                 </>
-              )}
+                )}
             </div>
           </div>
         </div>
