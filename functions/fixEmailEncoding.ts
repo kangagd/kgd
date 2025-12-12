@@ -1,72 +1,91 @@
 import { createClientFromRequest } from 'npm:@base44/sdk@0.8.4';
 
 const fixEncodingIssues = (text) => {
-  if (!text) return text;
-  
-  let fixed = text;
-  
-  // Fix HTML entities first
-  fixed = fixed.replace(/&nbsp;/g, ' ');
-  fixed = fixed.replace(/&amp;/g, '&');
-  fixed = fixed.replace(/&lt;/g, '<');
-  fixed = fixed.replace(/&gt;/g, '>');
-  fixed = fixed.replace(/&quot;/g, '"');
-  fixed = fixed.replace(/&#39;/g, "'");
-  fixed = fixed.replace(/&apos;/g, "'");
-  fixed = fixed.replace(/&#8217;/g, "'");
-  fixed = fixed.replace(/&#8216;/g, "'");
-  fixed = fixed.replace(/&#8220;/g, '"');
-  fixed = fixed.replace(/&#8221;/g, '"');
-  fixed = fixed.replace(/&#8211;/g, '–');
-  fixed = fixed.replace(/&#8212;/g, '—');
-  
-  // Fix double-encoded UTF-8 mojibake patterns
-  fixed = fixed.replace(/â€™/g, "'");
-  fixed = fixed.replace(/â€˜/g, "'");
-  fixed = fixed.replace(/â€œ/g, '"');
-  fixed = fixed.replace(/â€/g, '"');
-  fixed = fixed.replace(/â€"/g, '—');
-  fixed = fixed.replace(/â€"/g, '–');
-  fixed = fixed.replace(/â€¦/g, '…');
-  fixed = fixed.replace(/â€¢/g, '•');
-  
-  // Space patterns
-  fixed = fixed.replace(/Â /g, ' ');
-  fixed = fixed.replace(/Â/g, ' ');
-  fixed = fixed.replace(/â€‰/g, ' ');
-  fixed = fixed.replace(/â €/g, ' ');
-  fixed = fixed.replace(/â ·/g, '·');
-  
-  // Other patterns
-  fixed = fixed.replace(/â ·â(\d+)/g, ' ·$1');
-  fixed = fixed.replace(/Ã¢â‚¬â„¢/g, "'");
-  fixed = fixed.replace(/Â°/g, '°');
-  fixed = fixed.replace(/â‚¬/g, '€');
-  
-  // Accented characters
-  fixed = fixed.replace(/Ã /g, 'à');
-  fixed = fixed.replace(/Ã¡/g, 'á');
-  fixed = fixed.replace(/Ã¢/g, 'â');
-  fixed = fixed.replace(/Ã£/g, 'ã');
-  fixed = fixed.replace(/Ã¤/g, 'ä');
-  fixed = fixed.replace(/Ã¨/g, 'è');
-  fixed = fixed.replace(/Ã©/g, 'é');
-  fixed = fixed.replace(/Ãª/g, 'ê');
-  fixed = fixed.replace(/Ã«/g, 'ë');
-  fixed = fixed.replace(/Ã¬/g, 'ì');
-  fixed = fixed.replace(/Ã­/g, 'í');
-  fixed = fixed.replace(/Ã®/g, 'î');
-  fixed = fixed.replace(/Ã¯/g, 'ï');
-  fixed = fixed.replace(/Ã²/g, 'ò');
-  fixed = fixed.replace(/Ã³/g, 'ó');
-  fixed = fixed.replace(/Ã´/g, 'ô');
-  fixed = fixed.replace(/Ãµ/g, 'õ');
-  fixed = fixed.replace(/Ã¶/g, 'ö');
-  fixed = fixed.replace(/Ã¹/g, 'ù');
-  fixed = fixed.replace(/Ãº/g, 'ú');
-  fixed = fixed.replace(/Ã»/g, 'û');
-  fixed = fixed.replace(/Ã¼/g, 'ü');
-  
+  if (text == null) return text;
+  let fixed = String(text);
+
+  // 1) Common HTML entities
+  fixed = fixed
+    .replace(/&nbsp;/g, " ")
+    .replace(/&amp;/g, "&")
+    .replace(/&lt;/g, "<")
+    .replace(/&gt;/g, ">")
+    .replace(/&quot;/g, '"')
+    .replace(/&#39;/g, "'")
+    .replace(/&apos;/g, "'")
+    .replace(/&#8217;/g, "'")   // '
+    .replace(/&#8216;/g, "'")   // '
+    .replace(/&#8220;/g, '"')   // "
+    .replace(/&#8221;/g, '"')   // "
+    .replace(/&#8211;/g, "–")  // –
+    .replace(/&#8212;/g, "—"); // —
+
+  // 2) UTF-8 → Windows-1252 mojibake patterns
+  const mojibakeReplacements = [
+    // Smart quotes & dashes (â… sequences)
+    [/â/g, "'"],
+    [/â/g, "'"],
+    [/â/g, """],
+    [/â/g, """],
+    [/â/g, "–"],
+    [/â/g, "—"],
+    [/â¦/g, "…"],
+
+    // Variants already in the old helper
+    [/â€™/g, "'"],
+    [/â€˜/g, "'"],
+    [/â€œ/g, """],
+    [/â€/g, """],
+    [/â€¢/g, "•"],
+
+    // Spaces / NBSP / odd spacing
+    [/Â /g, " "],
+    [/Â/g, " "],
+    [/â€‰/g, " "],
+    [/â €/g, " "],
+
+    // Misc symbols
+    [/Â°/g, "°"],
+    [/â‚¬/g, "€"],
+    [/â ·/g, "·"],
+    [/â ·â(\d+)/g, " ·$1"],
+    [/Ã¢â‚¬â„¢/g, "'"],
+  ];
+
+  for (const [pattern, replacement] of mojibakeReplacements) {
+    fixed = fixed.replace(pattern, replacement);
+  }
+
+  // 3) Accented characters (Ã… style patterns)
+  const accentReplacements = [
+    [/Ã /g, "à"],
+    [/Ã¡/g, "á"],
+    [/Ã¢/g, "â"],
+    [/Ã£/g, "ã"],
+    [/Ã¤/g, "ä"],
+    [/Ã¨/g, "è"],
+    [/Ã©/g, "é"],
+    [/Ãª/g, "ê"],
+    [/Ã«/g, "ë"],
+    [/Ã¬/g, "ì"],
+    [/Ã­/g, "í"],
+    [/Ã®/g, "î"],
+    [/Ã¯/g, "ï"],
+    [/Ã²/g, "ò"],
+    [/Ã³/g, "ó"],
+    [/Ã´/g, "ô"],
+    [/Ãµ/g, "õ"],
+    [/Ã¶/g, "ö"],
+    [/Ã¹/g, "ù"],
+    [/Ãº/g, "ú"],
+    [/Ã»/g, "û"],
+    [/Ã¼/g, "ü"],
+  ];
+
+  for (const [pattern, replacement] of accentReplacements) {
+    fixed = fixed.replace(pattern, replacement);
+  }
+
   return fixed;
 };
 
@@ -118,6 +137,8 @@ Deno.serve(async (req) => {
         updatedCount++;
       }
     }
+    
+    console.log("Email encoding fix completed", { totalMessages: messageArray.length, updatedCount });
     
     return Response.json({ 
       success: true, 
