@@ -31,8 +31,7 @@ export default function PurchaseOrderDetail({ poId, onClose, mode = "page" }) {
     project_id: "",
     delivery_method: "",
     notes: "",
-    reference: "",
-    po_number: "",
+    po_reference: "",
     name: "",
     status: PO_STATUS.DRAFT,
     eta: "",
@@ -106,14 +105,14 @@ export default function PurchaseOrderDetail({ poId, onClose, mode = "page" }) {
       }));
 
       // Only update if this is initial load or if PO ID changed
-      if (!initialLoadDone.current || formData.reference !== (po.po_number || "")) {
+      const poReference = po.order_reference || po.po_number || po.reference || '';
+      if (!initialLoadDone.current || formData.po_reference !== poReference) {
         setFormData({
           supplier_id: po.supplier_id || "",
           project_id: po.project_id || "",
           delivery_method: po.delivery_method || "",
           notes: po.notes || "",
-          reference: po.reference || "",
-          po_number: po.po_number || "",
+          po_reference: poReference,
           name: po.name || "",
           status: normalizedStatus,
           eta: po.expected_date || "",
@@ -197,6 +196,7 @@ export default function PurchaseOrderDetail({ poId, onClose, mode = "page" }) {
 
     const handleSave = () => {
     const supplier = suppliers.find(s => s.id === formData.supplier_id);
+    const poRef = formData.po_reference?.trim() || null;
     const dataToSend = {
       action: 'update',
       id: poId,
@@ -205,8 +205,8 @@ export default function PurchaseOrderDetail({ poId, onClose, mode = "page" }) {
       project_id: formData.project_id || null,
       delivery_method: formData.delivery_method || null,
       notes: formData.notes,
-      reference: formData.reference,
-      po_number: formData.po_number,
+      reference: poRef,
+      po_number: poRef,
       name: formData.name,
       eta: formData.eta ? new Date(formData.eta).toISOString() : null,
       attachments: formData.attachments,
@@ -285,6 +285,7 @@ export default function PurchaseOrderDetail({ poId, onClose, mode = "page" }) {
     
     // First save any pending changes
     const supplier = suppliers.find(s => s.id === formData.supplier_id);
+    const poRef = formData.po_reference?.trim() || null;
     await updatePOMutation.mutateAsync({
       action: 'update',
       id: poId,
@@ -293,7 +294,8 @@ export default function PurchaseOrderDetail({ poId, onClose, mode = "page" }) {
       project_id: formData.project_id,
       delivery_method: formData.delivery_method,
       notes: formData.notes,
-      reference: formData.reference,
+      reference: poRef,
+      po_number: poRef,
       eta: formData.eta || null,
       attachments: formData.attachments,
       line_items: formData.line_items
@@ -349,8 +351,8 @@ export default function PurchaseOrderDetail({ poId, onClose, mode = "page" }) {
           supplier_name: suppliers.find(s => s.id === formData.supplier_id)?.name || "",
           order_date: po.order_date || po.created_date,
           eta: formData.eta || po.expected_date,
-          order_reference: formData.po_number || formData.reference,
-          po_number: formData.po_number,
+          order_reference: formData.po_reference,
+          po_number: formData.po_reference,
           source_type: newItem.source_type || "supplier_delivery"
         });
       } else if (formData.project_id) {
@@ -368,8 +370,8 @@ export default function PurchaseOrderDetail({ poId, onClose, mode = "page" }) {
           supplier_name: suppliers.find(s => s.id === formData.supplier_id)?.name || "",
           order_date: po.order_date || po.created_date,
           eta: formData.eta || po.expected_date,
-          order_reference: formData.po_number || formData.reference || null,
-          po_number: formData.po_number,
+          order_reference: formData.po_reference || null,
+          po_number: formData.po_reference,
           source_type: newItem.source_type || "supplier_delivery",
           notes: newItem.notes || null
         });
@@ -560,16 +562,21 @@ export default function PurchaseOrderDetail({ poId, onClose, mode = "page" }) {
                 </div>
                 {isDraft ? (
                   <Input
-                    value={formData.reference}
-                    onChange={(e) => setFormData({ ...formData, reference: e.target.value })}
-                    placeholder="Enter PO reference/number..."
+                    value={formData.po_reference}
+                    onChange={(e) => setFormData({ ...formData, po_reference: e.target.value })}
+                    placeholder="Enter PO reference..."
                     className="mt-2 max-w-xs text-sm"
                   />
                 ) : (
                   <div className="mt-2 space-y-1">
-                    {po.po_number && <p className="text-sm font-medium text-[#111827]">PO #: {po.po_number}</p>}
-                    {po.reference && <p className="text-sm text-[#6B7280]">Ref: {po.reference}</p>}
-                    {!po.po_number && !po.reference && <p className="text-sm text-[#6B7280]">ID: {po.id.slice(0, 8)}</p>}
+                    {(() => {
+                      const poRef = po.order_reference || po.po_number || po.reference;
+                      return poRef ? (
+                        <p className="text-sm font-medium text-[#111827]">PO #: {poRef}</p>
+                      ) : (
+                        <p className="text-sm text-[#6B7280]">ID: {po.id.slice(0, 8)}</p>
+                      );
+                    })()}
                   </div>
                 )}
                 {linkedProject && (
@@ -623,22 +630,12 @@ export default function PurchaseOrderDetail({ poId, onClose, mode = "page" }) {
           <CardContent className="space-y-4">
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div>
-                <Label>PO Number</Label>
+                <Label>PO Reference</Label>
                 <Input
-                  value={formData.po_number}
-                  onChange={(e) => setFormData({ ...formData, po_number: e.target.value })}
+                  value={formData.po_reference}
+                  onChange={(e) => setFormData({ ...formData, po_reference: e.target.value })}
                   disabled={!isDraft}
-                  placeholder="e.g., PO-2024-001"
-                />
-              </div>
-
-              <div>
-                <Label>Reference</Label>
-                <Input
-                  value={formData.reference}
-                  onChange={(e) => setFormData({ ...formData, reference: e.target.value })}
-                  disabled={!isDraft}
-                  placeholder="Internal reference..."
+                  placeholder="e.g. KGD-RSH-4634"
                 />
               </div>
             </div>
