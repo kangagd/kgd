@@ -28,7 +28,13 @@ Deno.serve(async (req) => {
         const updates = [];
         let totalJobsUpdated = 0;
 
-        for (const job of jobs) {
+        for (const project of projects) {
+            if (!project.project_number) continue;
+            
+            const projectNumber = project.project_number;
+            const jobs = await base44.asServiceRole.entities.Job.filter({ project_id: project.id });
+            
+            for (const job of jobs) {
             if (job.job_number) {
                 const jobNumberStr = String(job.job_number).trim();
                 
