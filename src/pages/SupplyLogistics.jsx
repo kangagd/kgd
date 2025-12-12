@@ -103,8 +103,8 @@ export default function SupplyLogistics() {
       onClick={() => setActivePoId(po.id)}
     >
       <div className="font-medium text-[#111827] mb-2">
-        {po.po_number || `PO #${po.id.substring(0, 8)}`}
-      </div>
+  PO #{po.po_reference || po.id.substring(0, 8)}
+</div>
       <div className="mt-1 text-[11px] text-[#6B7280]">
         {po.supplier_name || "Supplier not set"}
       </div>
