@@ -4,7 +4,7 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
-import { ArrowLeft, Plus, Edit, Trash2, MapPin, Phone, Mail, FileText, Image as ImageIcon, User, Upload, X, Briefcase, History, ExternalLink, DollarSign, Eye, Link2, MessageCircle } from "lucide-react";
+import { ArrowLeft, Plus, Edit, Trash2, MapPin, Phone, Mail, FileText, Image as ImageIcon, User, Upload, X, Briefcase, History, ExternalLink, DollarSign, Eye, Link2, MessageCircle, Activity } from "lucide-react";
 import { format } from "date-fns";
 import { AddIconButton } from "@/components/ui/AddIconButton";
 import { base44 } from "@/api/base44Client";
@@ -123,6 +123,7 @@ export default function ProjectDetails({ project: initialProject, onClose, onEdi
   const [isChatOpen, setIsChatOpen] = useState(false);
   const [lastReadChat, setLastReadChat] = useState(() => localStorage.getItem(`lastReadChat-${initialProject.id}`) || new Date().toISOString());
   const [showHandoverModal, setShowHandoverModal] = useState(false);
+  const [showActivityModal, setShowActivityModal] = useState(false);
   const [contactsOpen, setContactsOpen] = useState(false);
   const [tradesOpen, setTradesOpen] = useState(false);
   const [tasksOpen, setTasksOpen] = useState(true);
@@ -1025,9 +1026,6 @@ Format as HTML bullet points using <ul> and <li> tags. Include only the most cri
               </Card>
             </Collapsible>
 
-            {/* Last Activity Card */}
-            <LastActivityCard project={project} />
-
             {/* Visits Section */}
             <Collapsible open={visitsOpen} onOpenChange={setVisitsOpen}>
               <Card className="border border-[#E5E7EB] shadow-sm rounded-lg overflow-hidden mt-4">
@@ -1327,6 +1325,15 @@ Format as HTML bullet points using <ul> and <li> tags. Include only the most cri
                 ))}
               </div>
             )}
+            <Button
+              variant="ghost"
+              size="icon"
+              onClick={() => setShowActivityModal(true)}
+              className="h-9 w-9 hover:bg-[#F3F4F6] text-[#6B7280] hover:text-[#111827] transition-all rounded-lg"
+              title="View Activity"
+            >
+              <Activity className="w-4 h-4" />
+            </Button>
             <Button
               variant="outline"
               size="sm"
@@ -1905,6 +1912,15 @@ Format as HTML bullet points using <ul> and <li> tags. Include only the most cri
         onClose={() => handleChatOpenChange(false)}
         projectId={project.id}
       />
+
+      {/* Activity Modal */}
+      <EntityModal
+        open={showActivityModal}
+        onClose={() => setShowActivityModal(false)}
+        title="Last Activity"
+      >
+        <LastActivityCard project={project} />
+      </EntityModal>
     </div>
   );
 }
