@@ -31,6 +31,7 @@ import { PO_STATUS, LOGISTICS_LOCATION, getPoStatusLabel, normaliseLegacyPoStatu
 
 import JobChat from "./JobChat";
 import JobMapView from "./JobMapView";
+import JobVisitSummary from "./JobVisitSummary";
 import XeroInvoiceCard from "../invoices/XeroInvoiceCard";
 import CreateInvoiceModal from "../invoices/CreateInvoiceModal";
 import TakePaymentModal from "../invoices/TakePaymentModal";

@@ -51,6 +51,7 @@ import TasksPanel from "../tasks/TasksPanel";
 import ProjectEmailSection from "./ProjectEmailSection";
 import QuotesSection from "../quotes/QuotesSection";
 import InitialVisitSummary from "./InitialVisitSummary";
+import JobVisitSummary from "../jobs/JobVisitSummary";
 import MarkAsLostModal from "./MarkAsLostModal";
 import LinkInvoiceModal from "../invoices/LinkInvoiceModal";
 import ProjectChatModal from "./ProjectChatModal";
@@ -1534,8 +1535,23 @@ Format as HTML bullet points using <ul> and <li> tags. Include only the most cri
             {/* Duplicate Warning */}
             <DuplicateWarningCard entityType="Project" record={project} />
 
-            {/* Initial Visit Summary */}
-            <InitialVisitSummary project={project} jobs={jobs} />
+            {/* Prior Job Summaries */}
+            {jobs
+              .filter(j => j.status === "Completed" && (j.overview || j.next_steps || j.communication_with_client || j.measurements || (j.image_urls && j.image_urls.length > 0)))
+              .sort((a, b) => new Date(a.updated_date || a.created_date) - new Date(b.updated_date || b.created_date))
+              .map((job, idx) => {
+                const colors = ["blue", "green", "purple", "orange", "cyan"];
+                const color = colors[idx % colors.length];
+                return (
+                  <JobVisitSummary 
+                    key={job.id}
+                    job={job}
+                    title={job.job_type_name || `Job #${job.job_number}`}
+                    borderColor={color}
+                  />
+                );
+              })
+            }
 
             <div>
               <RichTextField
