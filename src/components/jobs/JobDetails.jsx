@@ -59,6 +59,7 @@ import JobItemsUsedModal from "./JobItemsUsedModal";
 import JobContactsPanel from "./JobContactsPanel";
 import ThirdPartyTradesInfo from "./ThirdPartyTradesInfo";
 import BackButton from "../common/BackButton";
+import SampleQuickActionsPanel from "./SampleQuickActionsPanel";
 
 
 const statusColors = {
