@@ -123,7 +123,7 @@ export default function SupplyLogistics() {
   };
 
   const getPoDisplayRef = (po) =>
-    po?.po_number || po?.order_reference || po?.reference || po?.id?.substring(0, 8);
+    po?.po_reference || po?.po_number || po?.order_reference || po?.reference || po?.id?.substring(0, 8);
 
   const POCard = ({ po }) => (
     <div

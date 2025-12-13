@@ -1000,7 +1000,7 @@ export default function Logistics() {
                             <div className="text-xs text-[#6B7280] mt-1">
                               PO: {(() => {
                                 const po = purchaseOrders.find(p => p.id === item.po_id);
-                                return `#${po?.po_number || po?.order_reference || po?.reference || item.po_id.substring(0, 8)}`;
+                                return `#${po?.po_reference || po?.po_number || po?.order_reference || po?.reference || item.po_id.substring(0, 8)}`;
                               })()} • {item.supplier_name}
                             </div>
                             {item.expected_date && (
