@@ -465,7 +465,7 @@ export default function Dashboard() {
                         <div className="flex items-start justify-between mb-2">
                           <div className="flex-1">
                             <h4 className="text-[14px] font-medium text-[#111827] leading-[1.4]">
-                              {po.po_number || 'Draft PO'}
+                              {getPoDisplayReference(po)}
                             </h4>
                             <p className="text-[12px] text-[#6B7280] leading-[1.35]">{po.supplier_name}</p>
                           </div>
