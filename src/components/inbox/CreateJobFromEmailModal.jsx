@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useMemo } from "react";
 import { base44 } from "@/api/base44Client";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
@@ -19,7 +19,41 @@ import { createPageUrl } from "@/utils";
 export default function CreateJobFromEmailModal({ open, onClose, thread, onSuccess }) {
   const queryClient = useQueryClient();
   const navigate = useNavigate();
-  const [formData, setFormData] = useState({
+  
+  const { data: customers = [] } = useQuery({
+    queryKey: ['customers'],
+    queryFn: () => base44.entities.Customer.list(),
+    enabled: open
+  });
+
+  const initialData = useMemo(() => {
+    if (!thread) return null;
+
+    const aiSuggested = thread.ai_suggested_project_fields || {};
+    const emailAddress = (aiSuggested.suggested_customer_email || thread.from_address || "").toLowerCase().trim();
+    const customerName = aiSuggested.suggested_customer_name || "";
+    const customerPhone = aiSuggested.suggested_customer_phone || "";
+
+    // Find existing customer by email
+    const existingCustomer = customers.find(c => 
+      c.email?.toLowerCase().trim() === emailAddress && !c.deleted_at
+    );
+
+    return {
+      customer_id: existingCustomer?.id || "",
+      customer_name: customerName,
+      customer_email: emailAddress,
+      customer_phone: customerPhone,
+      address: aiSuggested.suggested_address || "",
+      address_full: aiSuggested.suggested_address || "",
+      scheduled_date: new Date().toISOString().split('T')[0],
+      scheduled_time: "",
+      status: "Open",
+      notes: `Created from email: ${thread.from_address}\n\n${thread.subject}\n\n${thread.last_message_snippet || ""}`
+    };
+  }, [thread?.id, customers]);
+
+  const [formData, setFormData] = useState(initialData || {
     customer_id: "",
     address: "",
     scheduled_date: new Date().toISOString().split('T')[0],
@@ -28,10 +62,7 @@ export default function CreateJobFromEmailModal({ open, onClose, thread, onSucce
     notes: `Created from email: ${thread?.from_address}\n\n${thread?.subject}\n\n${thread?.last_message_snippet || ""}`
   });
 
-  const { data: customers = [] } = useQuery({
-    queryKey: ['customers'],
-    queryFn: () => base44.entities.Customer.list()
-  });
+
 
   const { data: jobTypes = [] } = useQuery({
     queryKey: ['jobTypes'],
@@ -43,13 +74,21 @@ export default function CreateJobFromEmailModal({ open, onClose, thread, onSucce
     queryFn: () => base44.entities.Job.list()
   });
 
+  // Update form data when initialData changes
+  React.useEffect(() => {
+    if (initialData && open) {
+      setFormData(initialData);
+    }
+  }, [initialData, open]);
+
   const createJobMutation = useMutation({
     mutationFn: async (data) => {
-      // Get next job number
-      const jobNumbers = existingJobs.map(j => j.job_number).filter(n => n);
-      const nextJobNumber = jobNumbers.length > 0 ? Math.max(...jobNumbers) + 1 : 5000;
-      
-      return base44.entities.Job.create({ ...data, job_number: nextJobNumber });
+      const response = await base44.functions.invoke('manageJob', { 
+        action: 'create', 
+        data 
+      });
+      if (response.data?.error) throw new Error(response.data.error);
+      return response.data.job;
     },
     onSuccess: async (newJob) => {
       // Link the email thread to the new job
@@ -74,9 +113,9 @@ export default function CreateJobFromEmailModal({ open, onClose, thread, onSucce
     const customer = customers.find(c => c.id === formData.customer_id);
     const jobData = {
       ...formData,
-      customer_name: customer?.name,
-      customer_phone: customer?.phone,
-      customer_email: customer?.email
+      customer_name: customer?.name || formData.customer_name,
+      customer_phone: customer?.phone || formData.customer_phone,
+      customer_email: customer?.email || formData.customer_email
     };
     createJobMutation.mutate(jobData);
   };
@@ -85,15 +124,29 @@ export default function CreateJobFromEmailModal({ open, onClose, thread, onSucce
     <Dialog open={open} onOpenChange={onClose}>
       <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
         <DialogHeader>
-          <DialogTitle>Create Job from Email</DialogTitle>
+          <DialogTitle>Create Job from Email (AI Suggested)</DialogTitle>
         </DialogHeader>
 
         <form onSubmit={handleSubmit} className="space-y-4">
+          <div className="bg-purple-50 border border-purple-200 rounded-lg p-3 text-xs text-purple-700">
+            <p className="font-medium mb-1">✨ AI-populated fields</p>
+            <p className="text-purple-600">Review and adjust the pre-filled information below before creating the job.</p>
+          </div>
+
           <div className="space-y-2">
             <Label>Customer *</Label>
             <Select
               value={formData.customer_id}
-              onValueChange={(value) => setFormData({ ...formData, customer_id: value })}
+              onValueChange={(value) => {
+                const customer = customers.find(c => c.id === value);
+                setFormData({ 
+                  ...formData, 
+                  customer_id: value,
+                  customer_name: customer?.name || formData.customer_name,
+                  customer_phone: customer?.phone || formData.customer_phone,
+                  customer_email: customer?.email || formData.customer_email
+                });
+              }}
               required
             >
               <SelectTrigger>
@@ -107,6 +160,11 @@ export default function CreateJobFromEmailModal({ open, onClose, thread, onSucce
                 ))}
               </SelectContent>
             </Select>
+            {!formData.customer_id && formData.customer_name && (
+              <p className="text-xs text-amber-600 bg-amber-50 p-2 rounded">
+                ⚠ Customer "{formData.customer_name}" not found. Please select an existing customer or create one first.
+              </p>
+            )}
           </div>
 
           <div className="space-y-2">
