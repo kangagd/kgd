@@ -1,523 +1,510 @@
 import React, { useState, useMemo } from "react";
-import { Card, CardContent } from "@/components/ui/card";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import AISuggestedFlag from "./AISuggestedFlag";
-import { 
-  AlertTriangle, 
-  AlertCircle, 
-  Info, 
-  ChevronDown, 
-  ChevronUp,
-  MapPin,
-  DollarSign,
-  Key,
-  Wrench,
-  Truck,
-  Star,
-  Shield,
-  Plus,
-  X,
-  Check
-} from "lucide-react";
-import { Badge } from "@/components/ui/badge";
-import { cn } from "@/lib/utils";
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Label } from "@/components/ui/label";
+import { Checkbox } from "@/components/ui/checkbox";
+import { 
+  AlertTriangle, 
+  AlertCircle, 
+  Plus, 
+  Shield, 
+  Truck,
+  DollarSign,
+  Key,
+  Wrench,
+  Star,
+  Check,
+  ChevronDown,
+  ChevronUp,
+  Quote
+} from "lucide-react";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 
 const FLAG_TYPES = {
-  client_risk: { icon: AlertTriangle, label: "Client Risk", color: "text-red-600", template: "Sensitive client - handle with care" },
-  site_constraint: { icon: MapPin, label: "Site Constraint", color: "text-orange-600", template: "Site access challenges" },
-  payment_hold: { icon: DollarSign, label: "Payment Hold", color: "text-red-600", template: "Outstanding payment - verify before work" },
-  access_issue: { icon: Key, label: "Access Issue", color: "text-amber-600", template: "Access arrangements required" },
-  technical_risk: { icon: Wrench, label: "Technical Risk", color: "text-orange-600", template: "Technical complexity - review before scheduling" },
-  logistics_dependency: { icon: Truck, label: "Logistics Dependency", color: "text-blue-600", template: "Parts or logistics constraint" },
-  vip_client: { icon: Star, label: "VIP Client", color: "text-purple-600", template: "High-priority client" },
-  internal_warning: { icon: Shield, label: "Internal Warning", color: "text-gray-600", template: "Internal team note" }
+  client_risk: { icon: AlertTriangle, color: "border-red-200 bg-red-50", iconColor: "text-red-600", template: "Sensitive client" },
+  site_constraint: { icon: AlertCircle, color: "border-orange-200 bg-orange-50", iconColor: "text-orange-600", template: "Site access or physical constraint" },
+  payment_hold: { icon: DollarSign, color: "border-red-200 bg-red-50", iconColor: "text-red-600", template: "Invoice outstanding" },
+  access_issue: { icon: Key, color: "border-amber-200 bg-amber-50", iconColor: "text-amber-600", template: "Access or coordination required" },
+  technical_risk: { icon: Wrench, color: "border-orange-200 bg-orange-50", iconColor: "text-orange-600", template: "Technical risk — review before scheduling" },
+  logistics_dependency: { icon: Truck, color: "border-blue-200 bg-blue-50", iconColor: "text-blue-600", template: "Parts have not arrived" },
+  vip_client: { icon: Star, color: "border-purple-200 bg-purple-50", iconColor: "text-purple-600", template: "VIP client — prioritize" },
+  internal_warning: { icon: Shield, color: "border-gray-200 bg-gray-50", iconColor: "text-gray-600", template: "Internal note or warning" }
 };
 
-const SEVERITY_STYLES = {
-  info: {
-    border: "border-l-4 border-l-blue-500",
-    bg: "bg-blue-50",
-    badge: "bg-blue-100 text-blue-700"
-  },
-  warning: {
-    border: "border-l-4 border-l-amber-500",
-    bg: "bg-amber-50",
-    badge: "bg-amber-100 text-amber-700"
-  },
-  critical: {
-    border: "border-l-4 border-l-red-500",
-    bg: "bg-red-50",
-    badge: "bg-red-100 text-red-700"
-  }
+const generateCanonicalKey = (flag) => {
+  if (flag.canonical_key) return flag.canonical_key;
+  const normalizedLabel = (flag.label || '').toLowerCase().trim();
+  return `${flag.type}:${normalizedLabel}`;
 };
 
-/**
- * AttentionPanel Component
- * Displays high-importance signals for Jobs, Projects, and Customers
- * Supports inheritance, auto-generation, and role-based editing
- */
-export default function AttentionPanel({ 
-  flags = [], 
-  entityId,
-  entityType, // "job" | "project" | "customer"
-  onUpdate,
-  currentUser,
-  readonly = false
-}) {
-  const [isExpanded, setIsExpanded] = useState(false);
+export default function AttentionPanel({ flags = [], inheritedFlags = [], entityId, entityType, onUpdate, currentUser }) {
   const [showAddModal, setShowAddModal] = useState(false);
   const [showResolveModal, setShowResolveModal] = useState(false);
-  const [selectedFlag, setSelectedFlag] = useState(null);
-  const [showAISuggestions, setShowAISuggestions] = useState(true);
+  const [flagToResolve, setFlagToResolve] = useState(null);
+  const [showAllFlags, setShowAllFlags] = useState(false);
 
-  const canEdit = !readonly && (currentUser?.role === 'admin' || currentUser?.role === 'manager');
+  const isAdmin = currentUser?.role === 'admin';
+  const isManager = currentUser?.role === 'manager';
+  const canManageFlags = isAdmin || isManager;
 
-  // Split flags by origin
-  const { manualFlags, aiFlags } = useMemo(() => {
-    const active = flags.filter(f => !f.resolved_at && !f.dismissed_at);
-    
-    const manual = active
-      .filter(f => f.origin !== 'ai_suggested')
-      .sort((a, b) => {
-        if (a.severity === 'critical' && b.severity !== 'critical') return -1;
-        if (b.severity === 'critical' && a.severity !== 'critical') return 1;
-        if (a.pinned && !b.pinned) return -1;
-        if (b.pinned && !a.pinned) return 1;
-        return new Date(b.created_at) - new Date(a.created_at);
-      });
-    
-    const ai = active
-      .filter(f => f.origin === 'ai_suggested')
-      .sort((a, b) => (b.confidence || 0) - (a.confidence || 0));
-    
-    return { manualFlags: manual, aiFlags: ai };
-  }, [flags]);
+  // Build canonical keys for inherited flags
+  const inheritedCanonicalKeys = useMemo(() => {
+    return new Set(
+      inheritedFlags
+        .filter(f => !f.resolved_at && !f.dismissed_at)
+        .map(f => generateCanonicalKey(f))
+    );
+  }, [inheritedFlags]);
 
-  const hasCritical = manualFlags.some(f => f.severity === 'critical');
-  const shouldAutoExpand = hasCritical || manualFlags.some(f => f.pinned);
+  // Separate manual/accepted and AI-suggested flags
+  const manualFlags = flags.filter(f => f.origin === 'manual' && !f.resolved_at && !f.dismissed_at);
   
-  const visibleManualFlags = isExpanded ? manualFlags : manualFlags.slice(0, 3);
-  const totalFlags = manualFlags.length + aiFlags.length;
+  // Filter AI suggestions to exclude duplicates
+  const aiSuggestedFlags = useMemo(() => {
+    return flags
+      .filter(f => f.origin === 'ai_suggested' && !f.accepted_at && !f.dismissed_at)
+      .filter(f => {
+        const key = generateCanonicalKey(f);
+        return !inheritedCanonicalKeys.has(key);
+      });
+  }, [flags, inheritedCanonicalKeys]);
 
-  const handleAcknowledge = async (flag) => {
-    if (!currentUser) return;
-    
-    const acknowledged = flag.acknowledged_by || [];
-    if (acknowledged.includes(currentUser.email)) return;
-    
-    const updatedFlags = flags.map(f => 
-      f.id === flag.id 
-        ? { ...f, acknowledged_by: [...acknowledged, currentUser.email] }
-        : f
-    );
-    
-    await onUpdate(updatedFlags);
-  };
+  // Sort manual flags: pinned first, then severity (internal), then newest
+  const sortedManualFlags = useMemo(() => {
+    return [...manualFlags].sort((a, b) => {
+      if (a.pinned && !b.pinned) return -1;
+      if (!a.pinned && b.pinned) return 1;
+      
+      const severityOrder = { critical: 0, warning: 1, info: 2 };
+      const aSeverity = severityOrder[a.severity] ?? 3;
+      const bSeverity = severityOrder[b.severity] ?? 3;
+      if (aSeverity !== bSeverity) return aSeverity - bSeverity;
+      
+      return new Date(b.created_at || 0) - new Date(a.created_at || 0);
+    });
+  }, [manualFlags]);
 
-  const handleResolve = async (flag, reason) => {
-    const updatedFlags = flags.map(f => 
-      f.id === flag.id 
-        ? { 
-            ...f, 
-            resolved_at: new Date().toISOString(),
-            resolved_by: currentUser.email,
-            resolved_reason: reason
-          }
-        : f
-    );
-    
-    await onUpdate(updatedFlags);
-    setShowResolveModal(false);
-    setSelectedFlag(null);
-  };
+  // Sort inherited flags same way
+  const sortedInheritedFlags = useMemo(() => {
+    return [...inheritedFlags].filter(f => !f.resolved_at && !f.dismissed_at).sort((a, b) => {
+      if (a.pinned && !b.pinned) return -1;
+      if (!a.pinned && b.pinned) return 1;
+      
+      const severityOrder = { critical: 0, warning: 1, info: 2 };
+      const aSeverity = severityOrder[a.severity] ?? 3;
+      const bSeverity = severityOrder[b.severity] ?? 3;
+      if (aSeverity !== bSeverity) return aSeverity - bSeverity;
+      
+      return new Date(b.created_at || 0) - new Date(a.created_at || 0);
+    });
+  }, [inheritedFlags]);
+
+  // Combine manual and inherited for display (inherited don't count in total)
+  const allDisplayFlags = [...sortedManualFlags, ...sortedInheritedFlags];
+  const visibleFlags = showAllFlags ? allDisplayFlags : allDisplayFlags.slice(0, 3);
+  const hasMoreFlags = allDisplayFlags.length > 3;
+  const totalCount = sortedManualFlags.length;
 
   const handleAddFlag = async (newFlag) => {
-    const flagWithMeta = {
+    const flagWithId = {
       ...newFlag,
-      id: `flag_${Date.now()}`,
-      created_by: currentUser.email,
+      id: `flag-${Date.now()}`,
+      origin: 'manual',
+      canonical_key: generateCanonicalKey(newFlag),
+      scope_source: entityType,
+      created_by: currentUser?.email,
       created_at: new Date().toISOString(),
-      acknowledged_by: [],
-      auto_generated: false
+      acknowledged_by: []
     };
-    
-    await onUpdate([...flags, flagWithMeta]);
+
+    const updatedFlags = [...flags, flagWithId];
+    await onUpdate(updatedFlags);
     setShowAddModal(false);
   };
 
-  const handleRemoveFlag = async (flagId) => {
-    const updatedFlags = flags.filter(f => f.id !== flagId);
+  const handleResolveFlag = async (flag, reason) => {
+    const updatedFlag = {
+      ...flag,
+      resolved_at: new Date().toISOString(),
+      resolved_by: currentUser?.email,
+      resolved_reason: reason
+    };
+
+    const updatedFlags = flags.map(f => f.id === flag.id ? updatedFlag : f);
     await onUpdate(updatedFlags);
+    setShowResolveModal(false);
+    setFlagToResolve(null);
   };
 
-  const handleAcceptAIFlag = async (flag, editedData) => {
+  const handleAcceptAI = async (suggestion) => {
     const acceptedFlag = {
-      ...flag,
-      ...editedData,
+      ...suggestion,
       origin: 'manual',
+      canonical_key: generateCanonicalKey(suggestion),
+      scope_source: entityType,
       accepted_at: new Date().toISOString(),
-      accepted_by: currentUser.email,
-      original_ai_suggestion: {
-        label: flag.label,
-        details: flag.details,
-        severity: flag.severity,
-        confidence: flag.confidence,
-        source_refs: flag.source_refs
-      }
+      accepted_by: currentUser?.email,
+      original_ai_suggestion: { ...suggestion }
     };
-    
-    const updatedFlags = flags.map(f => f.id === flag.id ? acceptedFlag : f);
+
+    const updatedFlags = flags.map(f => f.id === suggestion.id ? acceptedFlag : f);
     await onUpdate(updatedFlags);
   };
 
-  const handleDismissAIFlag = async (flag, reason) => {
+  const handleDismissAI = async (suggestion) => {
     const dismissedFlag = {
-      ...flag,
+      ...suggestion,
       dismissed_at: new Date().toISOString(),
-      dismissed_by: currentUser.email,
-      dismissed_reason: reason
+      dismissed_by: currentUser?.email
     };
-    
-    const updatedFlags = flags.map(f => f.id === flag.id ? dismissedFlag : f);
+
+    const updatedFlags = flags.map(f => f.id === suggestion.id ? dismissedFlag : f);
     await onUpdate(updatedFlags);
   };
 
-  if (totalFlags === 0 && !canEdit) return null;
+  // Don't render if no flags
+  if (totalCount === 0 && sortedInheritedFlags.length === 0 && aiSuggestedFlags.length === 0) {
+    return null;
+  }
 
   return (
     <>
-      <Card className={cn(
-        "mb-6 border-2 transition-all",
-        hasCritical ? "border-red-200 shadow-md" : "border-amber-100"
-      )}>
-        <CardContent className="p-4">
-          <div className="flex items-center justify-between mb-3">
+      <Card className="border border-[#E5E7EB] bg-white shadow-sm rounded-lg">
+        <CardHeader className="pb-3 px-4 pt-4">
+          <div className="flex items-center justify-between">
             <div className="flex items-center gap-2">
-              <AlertCircle className={cn(
-                "w-5 h-5",
-                hasCritical ? "text-red-600" : "text-amber-600"
-              )} />
-              <h3 className="text-sm font-semibold text-gray-900">
-                Attention Required
-              </h3>
-              {manualFlags.length > 0 && (
-                <Badge variant="secondary" className="text-xs">
-                  {manualFlags.length}
-                </Badge>
-              )}
-              {aiFlags.length > 0 && (
-                <Badge className="text-xs bg-purple-100 text-purple-700">
-                  {aiFlags.length} AI
-                </Badge>
+              <CardTitle className="text-base font-semibold text-[#111827]">Attention</CardTitle>
+              {totalCount > 0 && (
+                <span className="inline-flex items-center rounded-full bg-slate-100 text-slate-700 px-2 py-0.5 text-xs font-medium">
+                  {totalCount}
+                </span>
               )}
             </div>
-            <div className="flex items-center gap-2">
-              {canEdit && (
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  onClick={() => setShowAddModal(true)}
-                  className="h-7 text-xs"
-                >
-                  <Plus className="w-3 h-3 mr-1" />
-                  Add Flag
-                </Button>
-              )}
-              {manualFlags.length > 3 && (
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  onClick={() => setIsExpanded(!isExpanded)}
-                  className="h-7"
-                >
-                  {isExpanded ? (
-                    <>
-                      <ChevronUp className="w-4 h-4 mr-1" />
-                      Show Less
-                    </>
-                  ) : (
-                    <>
-                      <ChevronDown className="w-4 h-4 mr-1" />
-                      Show All ({manualFlags.length})
-                    </>
-                  )}
-                </Button>
-              )}
-            </div>
-          </div>
-
-          <div className="space-y-3">
-            {/* Manual Flags */}
-            {visibleManualFlags.map((flag) => {
-              const typeConfig = FLAG_TYPES[flag.type] || FLAG_TYPES.internal_warning;
-              const Icon = typeConfig.icon;
-              const severityStyle = SEVERITY_STYLES[flag.severity] || SEVERITY_STYLES.info;
-              const isAcknowledged = flag.acknowledged_by?.includes(currentUser?.email);
-
-              return (
-                <div
-                  key={flag.id}
-                  className={cn(
-                    "rounded-lg p-3 transition-all",
-                    severityStyle.border,
-                    severityStyle.bg
-                  )}
-                >
-                  <div className="flex items-start justify-between gap-3">
-                    <div className="flex items-start gap-3 flex-1 min-w-0">
-                      <Icon className={cn("w-4 h-4 mt-0.5 flex-shrink-0", typeConfig.color)} />
-                      <div className="flex-1 min-w-0">
-                        <div className="flex items-center gap-2 mb-1 flex-wrap">
-                          <span className="font-medium text-sm text-gray-900">
-                            {flag.label}
-                          </span>
-                          <Badge className={severityStyle.badge}>
-                            {flag.severity}
-                          </Badge>
-                          {flag.pinned && (
-                            <Badge variant="outline" className="text-xs">
-                              Pinned
-                            </Badge>
-                          )}
-                          {flag.source && (
-                            <Badge variant="outline" className="text-xs text-gray-600">
-                              {flag.source.replace('inherited_from_', 'From ')}
-                            </Badge>
-                          )}
-                        </div>
-                        {flag.details && (
-                          <p className="text-xs text-gray-700 mb-2">{flag.details}</p>
-                        )}
-                        <div className="flex items-center gap-2 text-xs text-gray-600">
-                          {flag.origin === 'manual' && (
-                            <>
-                              <span>Added by {flag.created_by?.split('@')[0] || 'user'}</span>
-                              <span>•</span>
-                              <span>Internal</span>
-                            </>
-                          )}
-                          {flag.origin === 'ai_suggested' && flag.accepted_at && (
-                            <>
-                              <span>Accepted by {flag.accepted_by?.split('@')[0]}</span>
-                              <span>•</span>
-                              <span>Originally AI</span>
-                            </>
-                          )}
-                          <span>•</span>
-                          <span>{new Date(flag.created_at).toLocaleDateString()}</span>
-                          {flag.acknowledged_by?.length > 0 && (
-                            <>
-                              <span>•</span>
-                              <span className="text-green-600">
-                                Ack'd by {flag.acknowledged_by.length}
-                              </span>
-                            </>
-                          )}
-                        </div>
-                      </div>
-                    </div>
-                    <div className="flex items-center gap-1 flex-shrink-0">
-                      {!isAcknowledged && (
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          onClick={() => handleAcknowledge(flag)}
-                          className="h-7 text-xs"
-                          title="Acknowledge"
-                        >
-                          <Check className="w-3 h-3" />
-                        </Button>
-                      )}
-                      {canEdit && !flag.auto_generated && !flag.source && (
-                        <>
-                          <Button
-                            variant="ghost"
-                            size="sm"
-                            onClick={() => {
-                              setSelectedFlag(flag);
-                              setShowResolveModal(true);
-                            }}
-                            className="h-7 text-xs text-green-600 hover:text-green-700"
-                          >
-                            Resolve
-                          </Button>
-                          <Button
-                            variant="ghost"
-                            size="sm"
-                            onClick={() => handleRemoveFlag(flag.id)}
-                            className="h-7 text-xs text-red-600 hover:text-red-700"
-                          >
-                            <X className="w-3 h-3" />
-                          </Button>
-                        </>
-                      )}
-                    </div>
-                  </div>
-                </div>
-              );
-            })}
-
-            {/* AI-Suggested Flags */}
-            {canEdit && aiFlags.length > 0 && (
-              <div className="mt-4">
-                <button
-                  onClick={() => setShowAISuggestions(!showAISuggestions)}
-                  className="flex items-center gap-2 text-xs font-medium text-purple-700 hover:text-purple-800 mb-2"
-                >
-                  {showAISuggestions ? (
-                    <ChevronUp className="w-3 h-3" />
-                  ) : (
-                    <ChevronDown className="w-3 h-3" />
-                  )}
-                  AI Suggestions ({aiFlags.length})
-                </button>
-                
-                {showAISuggestions && (
-                  <div className="space-y-2">
-                    {aiFlags.map((flag) => (
-                      <AISuggestedFlag
-                        key={flag.id}
-                        flag={flag}
-                        onAccept={(editedData) => handleAcceptAIFlag(flag, editedData)}
-                        onDismiss={(reason) => handleDismissAIFlag(flag, reason)}
-                      />
-                    ))}
-                  </div>
-                )}
-              </div>
+            {canManageFlags && (
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={() => setShowAddModal(true)}
+                className="h-8 gap-1.5 text-xs font-medium hover:bg-[#F3F4F6]"
+              >
+                <Plus className="w-3.5 h-3.5" />
+                Add Flag
+              </Button>
             )}
           </div>
+        </CardHeader>
+
+        <CardContent className="space-y-3 px-4 pb-4">
+          {/* Manual & Inherited Flags */}
+          {visibleFlags.length > 0 && (
+            <div className="space-y-2">
+              {visibleFlags.map(flag => {
+                const isInherited = inheritedFlags.some(f => f.id === flag.id);
+                return isInherited ? (
+                  <InheritedFlagItem key={flag.id} flag={flag} />
+                ) : (
+                  <FlagItem
+                    key={flag.id}
+                    flag={flag}
+                    onUpdate={onUpdate}
+                    allFlags={flags}
+                    onResolve={() => {
+                      setFlagToResolve(flag);
+                      setShowResolveModal(true);
+                    }}
+                    currentUser={currentUser}
+                    canManageFlags={canManageFlags}
+                  />
+                );
+              })}
+            </div>
+          )}
+
+          {hasMoreFlags && (
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={() => setShowAllFlags(!showAllFlags)}
+              className="w-full text-xs text-[#6B7280] hover:text-[#111827] hover:bg-[#F3F4F6]"
+            >
+              {showAllFlags ? (
+                <>
+                  <ChevronUp className="w-4 h-4 mr-1" />
+                  Show less
+                </>
+              ) : (
+                <>
+                  <ChevronDown className="w-4 h-4 mr-1" />
+                  Show all ({allDisplayFlags.length})
+                </>
+              )}
+            </Button>
+          )}
+
+          {/* AI Suggested Flags - Only show if there are suggestions after dedupe */}
+          {aiSuggestedFlags.length > 0 && (
+            <div className="pt-3 border-t border-[#E5E7EB] space-y-2">
+              <div className="text-xs font-medium text-[#6B7280] mb-2">Suggested</div>
+              {aiSuggestedFlags.map(suggestion => (
+                <AISuggestedFlag
+                  key={suggestion.id}
+                  suggestion={suggestion}
+                  onAccept={() => handleAcceptAI(suggestion)}
+                  onDismiss={() => handleDismissAI(suggestion)}
+                  onEditAccept={(editedSuggestion) => handleAcceptAI(editedSuggestion)}
+                  allFlags={flags}
+                  onUpdate={onUpdate}
+                />
+              ))}
+            </div>
+          )}
         </CardContent>
       </Card>
 
-      {/* Add Flag Modal */}
       <AddFlagModal
         open={showAddModal}
         onClose={() => setShowAddModal(false)}
-        onAdd={handleAddFlag}
+        onSubmit={handleAddFlag}
       />
 
-      {/* Resolve Flag Modal */}
       <ResolveFlagModal
         open={showResolveModal}
-        flag={selectedFlag}
+        flag={flagToResolve}
         onClose={() => {
           setShowResolveModal(false);
-          setSelectedFlag(null);
+          setFlagToResolve(null);
         }}
-        onResolve={handleResolve}
+        onResolve={handleResolveFlag}
       />
     </>
   );
 }
 
-function AddFlagModal({ open, onClose, onAdd }) {
-  const [useTemplate, setUseTemplate] = useState(null);
+function FlagItem({ flag, onUpdate, allFlags, onResolve, currentUser, canManageFlags }) {
+  const flagType = FLAG_TYPES[flag.type] || FLAG_TYPES.internal_warning;
+  const Icon = flagType.icon;
+  const [showAllSources, setShowAllSources] = useState(false);
+  
+  const isAcknowledgedByMe = flag.acknowledged_by?.includes(currentUser?.email);
+  const sourceRefs = Array.isArray(flag.source_refs) ? flag.source_refs : [];
+  const visibleSources = showAllSources ? sourceRefs : sourceRefs.slice(0, 1);
+
+  const handleAcknowledge = async () => {
+    if (isAcknowledgedByMe) return;
+    
+    const updatedFlag = {
+      ...flag,
+      acknowledged_by: [...(flag.acknowledged_by || []), currentUser.email]
+    };
+    
+    const updatedFlags = allFlags.map(f => f.id === flag.id ? updatedFlag : f);
+    await onUpdate(updatedFlags);
+  };
+
+  return (
+    <div className={`border ${flagType.color} rounded-lg p-3 relative`}>
+      <div className="flex items-start gap-3">
+        <Icon className={`w-5 h-5 ${flagType.iconColor} flex-shrink-0 mt-0.5`} />
+        <div className="flex-1 min-w-0 space-y-2">
+          <div className="font-semibold text-[#111827] text-sm leading-tight">
+            {flag.label}
+          </div>
+          {flag.details && (
+            <p className="text-sm text-[#4B5563] leading-snug">{flag.details}</p>
+          )}
+          
+          {/* Evidence Block */}
+          {sourceRefs.length > 0 ? (
+            <div className="space-y-1.5 mt-2">
+              {visibleSources.map((ref, idx) => (
+                <div key={idx} className="bg-white/60 border border-slate-200 rounded-md p-2">
+                  <div className="flex items-start gap-1.5">
+                    <Quote className="w-3 h-3 text-slate-400 flex-shrink-0 mt-0.5" />
+                    <div className="flex-1 min-w-0">
+                      <p className="text-xs text-slate-700 italic leading-relaxed">{ref.excerpt}</p>
+                      <div className="flex items-center gap-2 mt-1 text-[10px] text-slate-500">
+                        {ref.label && <span className="font-medium">{ref.label}</span>}
+                        {ref.meta?.date && <span>• {new Date(ref.meta.date).toLocaleDateString()}</span>}
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              ))}
+              {sourceRefs.length > 1 && (
+                <button
+                  onClick={() => setShowAllSources(!showAllSources)}
+                  className="text-xs text-slate-600 hover:text-slate-900 font-medium"
+                >
+                  {showAllSources ? 'Hide sources' : `Show ${sourceRefs.length - 1} more source${sourceRefs.length - 1 > 1 ? 's' : ''}`}
+                </button>
+              )}
+            </div>
+          ) : (
+            canManageFlags && (
+              <p className="text-xs text-slate-400 italic">No reference available</p>
+            )
+          )}
+        </div>
+        
+        <div className="flex items-center gap-1 flex-shrink-0">
+          {!isAcknowledgedByMe && (
+            <button
+              onClick={handleAcknowledge}
+              className="p-1.5 hover:bg-green-50 rounded-md transition-colors"
+              title="Acknowledge"
+            >
+              <Check className="w-4 h-4 text-green-600" />
+            </button>
+          )}
+          {canManageFlags && (
+            <button
+              onClick={onResolve}
+              className="p-1.5 hover:bg-blue-50 rounded-md transition-colors text-blue-600"
+              title="Resolve"
+            >
+              <Check className="w-4 h-4" />
+            </button>
+          )}
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function InheritedFlagItem({ flag }) {
+  const flagType = FLAG_TYPES[flag.type] || FLAG_TYPES.internal_warning;
+  const Icon = flagType.icon;
+  const [showAllSources, setShowAllSources] = useState(false);
+  
+  const sourceRefs = Array.isArray(flag.source_refs) ? flag.source_refs : [];
+  const visibleSources = showAllSources ? sourceRefs : sourceRefs.slice(0, 1);
+
+  return (
+    <div className={`border ${flagType.color} rounded-lg p-3 opacity-75`}>
+      <div className="flex items-start gap-3">
+        <Icon className={`w-5 h-5 ${flagType.iconColor} flex-shrink-0 mt-0.5`} />
+        <div className="flex-1 min-w-0 space-y-2">
+          <div className="flex items-center gap-2 flex-wrap">
+            <span className="inline-flex items-center text-xs text-slate-600 font-medium">
+              🔁 From Project
+            </span>
+          </div>
+          <div className="font-medium text-[#111827] text-sm leading-tight">
+            {flag.label}
+          </div>
+          
+          {/* Evidence Block (read-only) */}
+          {sourceRefs.length > 0 && (
+            <div className="space-y-1.5 mt-2">
+              {visibleSources.map((ref, idx) => (
+                <div key={idx} className="bg-white/40 border border-slate-200 rounded-md p-2">
+                  <div className="flex items-start gap-1.5">
+                    <Quote className="w-3 h-3 text-slate-400 flex-shrink-0 mt-0.5" />
+                    <div className="flex-1 min-w-0">
+                      <p className="text-xs text-slate-600 italic leading-relaxed">{ref.excerpt}</p>
+                      {ref.label && (
+                        <div className="text-[10px] text-slate-400 mt-1">{ref.label}</div>
+                      )}
+                    </div>
+                  </div>
+                </div>
+              ))}
+              {sourceRefs.length > 1 && (
+                <button
+                  onClick={() => setShowAllSources(!showAllSources)}
+                  className="text-xs text-slate-500 hover:text-slate-700 font-medium"
+                >
+                  {showAllSources ? 'Hide sources' : `Show ${sourceRefs.length - 1} more`}
+                </button>
+              )}
+            </div>
+          )}
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function AddFlagModal({ open, onClose, onSubmit }) {
   const [formData, setFormData] = useState({
-    type: 'internal_warning',
-    label: '',
-    details: '',
-    severity: 'warning',
+    type: "internal_warning",
+    label: "",
+    details: "",
+    severity: "warning",
     pinned: false
   });
-
-  // Apply template when selected
-  const applyTemplate = (type) => {
-    const template = FLAG_TYPES[type];
-    setFormData({
-      ...formData,
-      type,
-      label: template.template || template.label
-    });
-    setUseTemplate(type);
-  };
 
   const handleSubmit = (e) => {
     e.preventDefault();
     if (!formData.label.trim()) return;
-    
-    onAdd(formData);
+    onSubmit(formData);
     setFormData({
-      type: 'internal_warning',
-      label: '',
-      details: '',
-      severity: 'warning',
+      type: "internal_warning",
+      label: "",
+      details: "",
+      severity: "warning",
       pinned: false
     });
   };
 
   return (
     <Dialog open={open} onOpenChange={onClose}>
-      <DialogContent>
+      <DialogContent className="max-w-md">
         <DialogHeader>
           <DialogTitle>Add Attention Flag</DialogTitle>
         </DialogHeader>
         <form onSubmit={handleSubmit} className="space-y-4">
-          {/* Quick Templates */}
           <div>
-            <Label>Quick Templates (Optional)</Label>
-            <div className="grid grid-cols-2 gap-2 mt-2">
-              {Object.entries(FLAG_TYPES).slice(0, 6).map(([type, config]) => {
-                const Icon = config.icon;
-                return (
-                  <button
-                    key={type}
-                    type="button"
-                    onClick={() => applyTemplate(type)}
-                    className={cn(
-                      "flex items-center gap-2 p-2 rounded-lg border text-left text-xs hover:bg-gray-50 transition",
-                      useTemplate === type ? "border-[#FAE008] bg-[#FAE008]/10" : "border-gray-200"
-                    )}
-                  >
-                    <Icon className={cn("w-3 h-3", config.color)} />
-                    <span>{config.label}</span>
-                  </button>
-                );
-              })}
-            </div>
-          </div>
-
-          <div>
-            <Label>Flag Type</Label>
+            <Label>Type</Label>
             <Select
               value={formData.type}
-              onValueChange={(value) => setFormData({ ...formData, type: value })}
+              onValueChange={(val) => {
+                const flagType = FLAG_TYPES[val];
+                setFormData({ 
+                  ...formData, 
+                  type: val,
+                  label: flagType?.template || ""
+                });
+              }}
             >
               <SelectTrigger>
                 <SelectValue />
               </SelectTrigger>
               <SelectContent>
-                {Object.entries(FLAG_TYPES).map(([value, config]) => (
-                  <SelectItem key={value} value={value}>
-                    {config.label}
-                  </SelectItem>
-                ))}
+                <SelectItem value="client_risk">Client Risk</SelectItem>
+                <SelectItem value="site_constraint">Site Constraint</SelectItem>
+                <SelectItem value="payment_hold">Payment Hold</SelectItem>
+                <SelectItem value="access_issue">Access Issue</SelectItem>
+                <SelectItem value="technical_risk">Technical Risk</SelectItem>
+                <SelectItem value="logistics_dependency">Logistics Dependency</SelectItem>
+                <SelectItem value="vip_client">VIP Client</SelectItem>
+                <SelectItem value="internal_warning">Internal Warning</SelectItem>
               </SelectContent>
             </Select>
           </div>
 
           <div>
-            <Label>Label (Required)</Label>
+            <Label>Label (max 48 chars)</Label>
             <Input
               value={formData.label}
               onChange={(e) => setFormData({ ...formData, label: e.target.value })}
-              placeholder="Brief description"
+              placeholder="Brief factual statement"
+              maxLength={48}
               required
             />
           </div>
 
           <div>
-            <Label>Details (Optional)</Label>
+            <Label>Details (max 120 chars, optional)</Label>
             <Textarea
               value={formData.details}
               onChange={(e) => setFormData({ ...formData, details: e.target.value })}
-              placeholder="Additional context for internal use"
-              rows={3}
+              placeholder="One-line context..."
+              className="min-h-[60px]"
+              maxLength={120}
             />
           </div>
 
@@ -525,7 +512,7 @@ function AddFlagModal({ open, onClose, onAdd }) {
             <Label>Severity</Label>
             <Select
               value={formData.severity}
-              onValueChange={(value) => setFormData({ ...formData, severity: value })}
+              onValueChange={(val) => setFormData({ ...formData, severity: val })}
             >
               <SelectTrigger>
                 <SelectValue />
@@ -539,15 +526,13 @@ function AddFlagModal({ open, onClose, onAdd }) {
           </div>
 
           <div className="flex items-center gap-2">
-            <input
-              type="checkbox"
+            <Checkbox
               id="pinned"
               checked={formData.pinned}
-              onChange={(e) => setFormData({ ...formData, pinned: e.target.checked })}
-              className="rounded"
+              onCheckedChange={(checked) => setFormData({ ...formData, pinned: checked })}
             />
-            <Label htmlFor="pinned" className="cursor-pointer">
-              Pin this flag (always visible)
+            <Label htmlFor="pinned" className="text-sm cursor-pointer">
+              Pin to top
             </Label>
           </div>
 
@@ -566,29 +551,29 @@ function AddFlagModal({ open, onClose, onAdd }) {
 }
 
 function ResolveFlagModal({ open, flag, onClose, onResolve }) {
-  const [reason, setReason] = useState('');
+  const [reason, setReason] = useState("");
 
   const handleSubmit = (e) => {
     e.preventDefault();
-    if (!reason.trim()) return;
+    if (!reason.trim() || !flag) return;
     
     onResolve(flag, reason);
-    setReason('');
+    setReason("");
   };
 
   if (!flag) return null;
 
   return (
     <Dialog open={open} onOpenChange={onClose}>
-      <DialogContent>
+      <DialogContent className="max-w-md">
         <DialogHeader>
           <DialogTitle>Resolve Attention Flag</DialogTitle>
         </DialogHeader>
         <form onSubmit={handleSubmit} className="space-y-4">
-          <div className="bg-gray-50 p-3 rounded-lg">
-            <p className="font-medium text-sm text-gray-900 mb-1">{flag.label}</p>
+          <div className="bg-slate-50 rounded-lg p-3">
+            <p className="font-medium text-sm text-[#111827] mb-1">{flag.label}</p>
             {flag.details && (
-              <p className="text-xs text-gray-600">{flag.details}</p>
+              <p className="text-xs text-[#6B7280]">{flag.details}</p>
             )}
           </div>
 

@@ -1,314 +1,250 @@
 import React, { useState } from "react";
 import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Label } from "@/components/ui/label";
 import { 
-  Sparkles, 
-  Check, 
-  X, 
-  Edit, 
-  ChevronDown, 
-  ChevronUp,
+  ThumbsUp,
+  ThumbsDown,
+  Edit,
   AlertTriangle,
-  MapPin,
+  Shield,
+  AlertCircle,
+  Truck,
   DollarSign,
   Key,
   Wrench,
-  Truck,
   Star,
-  Shield
+  Quote
 } from "lucide-react";
-import { cn } from "@/lib/utils";
 
 const FLAG_TYPES = {
-  client_risk: { icon: AlertTriangle, label: "Client Risk", color: "text-red-600" },
-  site_constraint: { icon: MapPin, label: "Site Constraint", color: "text-orange-600" },
-  payment_hold: { icon: DollarSign, label: "Payment Hold", color: "text-red-600" },
-  access_issue: { icon: Key, label: "Access Issue", color: "text-amber-600" },
-  technical_risk: { icon: Wrench, label: "Technical Risk", color: "text-orange-600" },
-  logistics_dependency: { icon: Truck, label: "Logistics Dependency", color: "text-blue-600" },
-  vip_client: { icon: Star, label: "VIP Client", color: "text-purple-600" },
-  internal_warning: { icon: Shield, label: "Internal Warning", color: "text-gray-600" }
+  client_risk: { icon: AlertTriangle, color: "border-red-200 bg-red-50", iconColor: "text-red-600" },
+  site_constraint: { icon: AlertCircle, color: "border-orange-200 bg-orange-50", iconColor: "text-orange-600" },
+  payment_hold: { icon: DollarSign, color: "border-red-200 bg-red-50", iconColor: "text-red-600" },
+  access_issue: { icon: Key, color: "border-amber-200 bg-amber-50", iconColor: "text-amber-600" },
+  technical_risk: { icon: Wrench, color: "border-orange-200 bg-orange-50", iconColor: "text-orange-600" },
+  logistics_dependency: { icon: Truck, color: "border-blue-200 bg-blue-50", iconColor: "text-blue-600" },
+  vip_client: { icon: Star, color: "border-purple-200 bg-purple-50", iconColor: "text-purple-600" },
+  internal_warning: { icon: Shield, color: "border-gray-200 bg-gray-50", iconColor: "text-gray-600" }
 };
 
-/**
- * AISuggestedFlag Component
- * Displays AI-suggested flags with Accept/Dismiss actions
- * Allows editing before acceptance
- */
-export default function AISuggestedFlag({ flag, onAccept, onDismiss }) {
+export default function AISuggestedFlag({ suggestion, onAccept, onDismiss, onEditAccept, allFlags, onUpdate }) {
   const [isEditing, setIsEditing] = useState(false);
   const [isDismissing, setIsDismissing] = useState(false);
-  const [showDetails, setShowDetails] = useState(false);
-  const [dismissReason, setDismissReason] = useState("");
-  
-  const [editedData, setEditedData] = useState({
-    type: flag.type,
-    label: flag.label,
-    details: flag.details || '',
-    severity: flag.severity,
-    pinned: false
-  });
+  const [showAllSources, setShowAllSources] = useState(false);
+  const [editedSuggestion, setEditedSuggestion] = useState(suggestion);
 
-  const typeConfig = FLAG_TYPES[flag.type] || FLAG_TYPES.internal_warning;
-  const Icon = typeConfig.icon;
-  const confidencePercent = Math.round((flag.confidence || 0) * 100);
+  const flagType = FLAG_TYPES[suggestion.type] || FLAG_TYPES.internal_warning;
+  const Icon = flagType.icon;
+  const sourceRefs = Array.isArray(suggestion.source_refs) ? suggestion.source_refs : [];
+  const visibleSources = showAllSources ? sourceRefs : sourceRefs.slice(0, 1);
 
-  const handleAccept = () => {
+  const handleAcceptClick = () => {
     if (isEditing) {
-      onAccept(editedData);
+      onEditAccept(editedSuggestion);
     } else {
-      onAccept({
-        type: flag.type,
-        label: flag.label,
-        details: flag.details,
-        severity: flag.severity,
-        pinned: false
-      });
+      onAccept(suggestion);
     }
   };
 
-  const handleDismiss = () => {
-    if (!dismissReason.trim()) return;
-    onDismiss(dismissReason);
+  const handleDismissConfirm = async () => {
+    const dismissedFlag = {
+      ...suggestion,
+      dismissed_at: new Date().toISOString(),
+      dismissed_by: "current_user"
+    };
+    
+    const updatedFlags = allFlags.map(f => f.id === suggestion.id ? dismissedFlag : f);
+    await onUpdate(updatedFlags);
     setIsDismissing(false);
-    setDismissReason("");
   };
 
   return (
-    <div className="border-l-4 border-l-purple-400 bg-purple-50 rounded-r-lg p-3">
-      <div className="flex items-start justify-between gap-3 mb-2">
-        <div className="flex items-start gap-3 flex-1 min-w-0">
-          <Icon className={cn("w-4 h-4 mt-0.5 flex-shrink-0", typeConfig.color)} />
-          <div className="flex-1 min-w-0">
-            <div className="flex items-center gap-2 mb-1 flex-wrap">
-              <Sparkles className="w-3 h-3 text-purple-600" />
-              {!isEditing ? (
-                <>
-                  <span className="font-medium text-sm text-gray-900">{flag.label}</span>
-                  <Badge className="bg-purple-100 text-purple-700 text-xs">
-                    {flag.severity}
-                  </Badge>
-                  <Badge className="bg-purple-100 text-purple-700 text-xs">
-                    {confidencePercent}% confidence
-                  </Badge>
-                </>
-              ) : (
-                <span className="text-xs text-purple-700 font-medium">Editing suggestion</span>
-              )}
-            </div>
-
-            {!isEditing && flag.details && (
-              <p className="text-xs text-gray-700 mb-2">{flag.details}</p>
-            )}
-
-            {isEditing && (
-              <div className="space-y-2 mt-2">
-                <div>
-                  <Label className="text-xs">Type</Label>
-                  <Select
-                    value={editedData.type}
-                    onValueChange={(value) => setEditedData({ ...editedData, type: value })}
-                  >
-                    <SelectTrigger className="h-8 text-xs">
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {Object.entries(FLAG_TYPES).map(([value, config]) => (
-                        <SelectItem key={value} value={value} className="text-xs">
-                          {config.label}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </div>
-
-                <div>
-                  <Label className="text-xs">Label</Label>
-                  <Input
-                    value={editedData.label}
-                    onChange={(e) => setEditedData({ ...editedData, label: e.target.value })}
-                    className="h-8 text-xs"
-                  />
-                </div>
-
-                <div>
-                  <Label className="text-xs">Details</Label>
-                  <Textarea
-                    value={editedData.details}
-                    onChange={(e) => setEditedData({ ...editedData, details: e.target.value })}
-                    rows={2}
-                    className="text-xs"
-                  />
-                </div>
-
-                <div>
-                  <Label className="text-xs">Severity</Label>
-                  <Select
-                    value={editedData.severity}
-                    onValueChange={(value) => setEditedData({ ...editedData, severity: value })}
-                  >
-                    <SelectTrigger className="h-8 text-xs">
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="info" className="text-xs">Info</SelectItem>
-                      <SelectItem value="warning" className="text-xs">Warning</SelectItem>
-                      <SelectItem value="critical" className="text-xs">Critical</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
-
-                <div className="flex items-center gap-2">
-                  <input
-                    type="checkbox"
-                    id={`pinned-${flag.id}`}
-                    checked={editedData.pinned}
-                    onChange={(e) => setEditedData({ ...editedData, pinned: e.target.checked })}
-                    className="rounded"
-                  />
-                  <Label htmlFor={`pinned-${flag.id}`} className="text-xs cursor-pointer">
-                    Pin this flag
-                  </Label>
-                </div>
-              </div>
-            )}
-
-            {isDismissing && (
-              <div className="space-y-2 mt-2">
-                <Label className="text-xs">Why dismiss this suggestion?</Label>
-                <Textarea
-                  value={dismissReason}
-                  onChange={(e) => setDismissReason(e.target.value)}
-                  placeholder="Help improve AI suggestions..."
-                  rows={2}
-                  className="text-xs"
-                />
-              </div>
-            )}
-
-            {/* Source References */}
-            {!isEditing && flag.source_refs && (
-              <button
-                onClick={() => setShowDetails(!showDetails)}
-                className="flex items-center gap-1 text-xs text-purple-700 hover:text-purple-800 mt-2"
-              >
-                {showDetails ? (
-                  <>
-                    <ChevronUp className="w-3 h-3" />
-                    Hide source
-                  </>
-                ) : (
-                  <>
-                    <ChevronDown className="w-3 h-3" />
-                    Show source
-                  </>
-                )}
-              </button>
-            )}
-
-            {showDetails && flag.source_refs && (
-              <div className="mt-2 p-2 bg-white/50 rounded text-xs text-gray-600">
-                {flag.source_refs.email_thread_id && (
-                  <div>📧 From email thread</div>
-                )}
-                {flag.source_refs.note_excerpt && (
-                  <div className="italic mt-1">"{flag.source_refs.note_excerpt}"</div>
-                )}
-              </div>
-            )}
-
-            <div className="flex items-center gap-2 text-xs text-gray-600 mt-2">
-              <Sparkles className="w-3 h-3" />
-              <span>Suggested by AI</span>
-              <span>•</span>
-              <span>Review before applying</span>
-            </div>
+    <div className={`border ${flagType.color} rounded-lg p-3`}>
+      {isDismissing ? (
+        <div className="space-y-3">
+          <p className="text-sm font-medium text-[#111827]">
+            Dismiss this suggestion? This cannot be undone.
+          </p>
+          <div className="flex gap-2">
+            <Button
+              size="sm"
+              variant="outline"
+              onClick={() => setIsDismissing(false)}
+              className="flex-1"
+            >
+              Cancel
+            </Button>
+            <Button
+              size="sm"
+              onClick={handleDismissConfirm}
+              className="flex-1 bg-red-600 hover:bg-red-700 text-white"
+            >
+              Confirm
+            </Button>
           </div>
         </div>
-      </div>
+      ) : (
+        <div className="space-y-3">
+          <div className="flex items-start gap-3">
+            <Icon className={`w-5 h-5 ${flagType.iconColor} flex-shrink-0 mt-0.5`} />
+            <div className="flex-1 min-w-0 space-y-2">
+              {!isEditing ? (
+                <>
+                  <div className="font-semibold text-[#111827] text-sm leading-tight">
+                    {suggestion.label}
+                  </div>
+                  {suggestion.details && (
+                    <p className="text-sm text-[#4B5563] leading-snug">{suggestion.details}</p>
+                  )}
+                  
+                  {/* Evidence Block */}
+                  {sourceRefs.length > 0 && (
+                    <div className="space-y-1.5 mt-2">
+                      {visibleSources.map((ref, idx) => (
+                        <div key={idx} className="bg-white/60 border border-slate-200 rounded-md p-2">
+                          <div className="flex items-start gap-1.5">
+                            <Quote className="w-3 h-3 text-slate-400 flex-shrink-0 mt-0.5" />
+                            <div className="flex-1 min-w-0">
+                              <p className="text-xs text-slate-700 italic leading-relaxed">{ref.excerpt}</p>
+                              <div className="flex items-center gap-2 mt-1 text-[10px] text-slate-500">
+                                {ref.label && <span className="font-medium">{ref.label}</span>}
+                                {ref.meta?.date && <span>• {new Date(ref.meta.date).toLocaleDateString()}</span>}
+                              </div>
+                            </div>
+                          </div>
+                        </div>
+                      ))}
+                      {sourceRefs.length > 1 && (
+                        <button
+                          onClick={() => setShowAllSources(!showAllSources)}
+                          className="text-xs text-slate-600 hover:text-slate-900 font-medium"
+                        >
+                          {showAllSources ? 'Hide sources' : `Show ${sourceRefs.length - 1} more source${sourceRefs.length - 1 > 1 ? 's' : ''}`}
+                        </button>
+                      )}
+                    </div>
+                  )}
+                </>
+              ) : (
+                <div className="space-y-3">
+                  <div>
+                    <Label className="text-xs mb-1">Type</Label>
+                    <Select
+                      value={editedSuggestion.type}
+                      onValueChange={(val) => setEditedSuggestion({ ...editedSuggestion, type: val })}
+                    >
+                      <SelectTrigger className="h-9 text-sm">
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="client_risk">Client Risk</SelectItem>
+                        <SelectItem value="site_constraint">Site Constraint</SelectItem>
+                        <SelectItem value="payment_hold">Payment Hold</SelectItem>
+                        <SelectItem value="access_issue">Access Issue</SelectItem>
+                        <SelectItem value="technical_risk">Technical Risk</SelectItem>
+                        <SelectItem value="logistics_dependency">Logistics Dependency</SelectItem>
+                        <SelectItem value="vip_client">VIP Client</SelectItem>
+                        <SelectItem value="internal_warning">Internal Warning</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  <div>
+                    <Label className="text-xs mb-1">Label (max 48 chars)</Label>
+                    <Input
+                      value={editedSuggestion.label}
+                      onChange={(e) => setEditedSuggestion({ ...editedSuggestion, label: e.target.value })}
+                      className="h-9 text-sm"
+                      maxLength={48}
+                    />
+                  </div>
+                  <div>
+                    <Label className="text-xs mb-1">Details (max 120 chars, optional)</Label>
+                    <Textarea
+                      value={editedSuggestion.details}
+                      onChange={(e) => setEditedSuggestion({ ...editedSuggestion, details: e.target.value })}
+                      className="text-sm min-h-[60px]"
+                      maxLength={120}
+                    />
+                  </div>
+                  <div>
+                    <Label className="text-xs mb-1">Severity</Label>
+                    <Select
+                      value={editedSuggestion.severity}
+                      onValueChange={(val) => setEditedSuggestion({ ...editedSuggestion, severity: val })}
+                    >
+                      <SelectTrigger className="h-9 text-sm">
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="info">Info</SelectItem>
+                        <SelectItem value="warning">Warning</SelectItem>
+                        <SelectItem value="critical">Critical</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+                </div>
+              )}
+            </div>
+          </div>
 
-      {/* Actions */}
-      <div className="flex items-center gap-2 mt-3">
-        {!isEditing && !isDismissing && (
-          <>
-            <Button
-              size="sm"
-              onClick={handleAccept}
-              className="h-7 text-xs bg-purple-600 hover:bg-purple-700"
-            >
-              <Check className="w-3 h-3 mr-1" />
-              Accept
-            </Button>
-            <Button
-              size="sm"
-              variant="outline"
-              onClick={() => setIsEditing(true)}
-              className="h-7 text-xs"
-            >
-              <Edit className="w-3 h-3 mr-1" />
-              Edit & Accept
-            </Button>
-            <Button
-              size="sm"
-              variant="ghost"
-              onClick={() => setIsDismissing(true)}
-              className="h-7 text-xs text-gray-600"
-            >
-              <X className="w-3 h-3 mr-1" />
-              Dismiss
-            </Button>
-          </>
-        )}
-
-        {isEditing && (
-          <>
-            <Button
-              size="sm"
-              onClick={handleAccept}
-              disabled={!editedData.label.trim()}
-              className="h-7 text-xs bg-purple-600 hover:bg-purple-700"
-            >
-              Accept Changes
-            </Button>
-            <Button
-              size="sm"
-              variant="outline"
-              onClick={() => setIsEditing(false)}
-              className="h-7 text-xs"
-            >
-              Cancel
-            </Button>
-          </>
-        )}
-
-        {isDismissing && (
-          <>
-            <Button
-              size="sm"
-              onClick={handleDismiss}
-              disabled={!dismissReason.trim()}
-              className="h-7 text-xs"
-            >
-              Confirm Dismiss
-            </Button>
-            <Button
-              size="sm"
-              variant="outline"
-              onClick={() => {
-                setIsDismissing(false);
-                setDismissReason("");
-              }}
-              className="h-7 text-xs"
-            >
-              Cancel
-            </Button>
-          </>
-        )}
-      </div>
+          <div className="flex items-center gap-2">
+            {!isEditing ? (
+              <>
+                <Button
+                  size="sm"
+                  onClick={handleAcceptClick}
+                  className="bg-blue-600 hover:bg-blue-700 text-white h-8 text-xs font-medium flex-1"
+                >
+                  <ThumbsUp className="w-3.5 h-3.5 mr-1" />
+                  Accept
+                </Button>
+                <Button
+                  size="sm"
+                  variant="outline"
+                  onClick={() => setIsEditing(true)}
+                  className="h-8 text-xs font-medium"
+                >
+                  <Edit className="w-3.5 h-3.5 mr-1" />
+                  Edit
+                </Button>
+                <Button
+                  size="sm"
+                  variant="ghost"
+                  onClick={() => setIsDismissing(true)}
+                  className="h-8 text-xs text-slate-600 hover:text-slate-900"
+                >
+                  <ThumbsDown className="w-3.5 h-3.5 mr-1" />
+                  Dismiss
+                </Button>
+              </>
+            ) : (
+              <>
+                <Button
+                  size="sm"
+                  onClick={handleAcceptClick}
+                  className="bg-blue-600 hover:bg-blue-700 text-white h-8 text-xs font-medium flex-1"
+                >
+                  Accept Changes
+                </Button>
+                <Button
+                  size="sm"
+                  variant="outline"
+                  onClick={() => {
+                    setIsEditing(false);
+                    setEditedSuggestion(suggestion);
+                  }}
+                  className="h-8 text-xs font-medium"
+                >
+                  Cancel
+                </Button>
+              </>
+            )}
+          </div>
+        </div>
+      )}
     </div>
   );
 }
