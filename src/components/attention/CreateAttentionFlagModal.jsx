@@ -12,7 +12,15 @@ import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Switch } from "@/components/ui/switch";
 import { base44 } from "@/api/base44Client";
-import { v4 as uuidv4 } from 'uuid';
+
+// UUID polyfill for browser
+function generateId() {
+  return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function(c) {
+    const r = Math.random() * 16 | 0;
+    const v = c === 'x' ? r : (r & 0x3 | 0x8);
+    return v.toString(16);
+  });
+}
 
 export default function CreateAttentionFlagModal({ 
   entity, 
@@ -38,7 +46,7 @@ export default function CreateAttentionFlagModal({
       const user = await base44.auth.me();
       
       const newFlag = {
-        id: uuidv4(),
+        id: generateId(),
         ...formData,
         created_by: user.email,
         created_at: new Date().toISOString(),
@@ -161,13 +169,4 @@ export default function CreateAttentionFlagModal({
       </DialogContent>
     </Dialog>
   );
-}
-
-// Polyfill for uuid in browser
-function uuidv4() {
-  return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function(c) {
-    const r = Math.random() * 16 | 0;
-    const v = c === 'x' ? r : (r & 0x3 | 0x8);
-    return v.toString(16);
-  });
 }
