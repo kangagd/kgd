@@ -1,33 +1,42 @@
 /**
- * Calculate project freshness based on last activity
- * @param {string|Date} lastActivityAt - Last activity timestamp
+ * Get the effective opened date for a project
+ * @param {Object} project - Project object
+ * @returns {string|null} - ISO date string
+ */
+export function getProjectEffectiveOpenedDate(project) {
+  return project?.opened_date || project?.created_date || null;
+}
+
+/**
+ * Calculate project age/freshness based on opened date
+ * @param {Object} project - Project object
  * @returns {Object} { label: string, color: string, days: number }
  */
-export function getProjectFreshnessBadge(lastActivityAt, projectId = 'unknown') {
-  if (!lastActivityAt) {
+export function getProjectFreshnessBadge(project) {
+  const effectiveOpenedDate = getProjectEffectiveOpenedDate(project);
+  
+  if (!effectiveOpenedDate) {
     return { label: "Unknown", color: "gray", days: null };
   }
 
-  const lastActivity = typeof lastActivityAt === 'string' 
-    ? new Date(lastActivityAt) 
-    : lastActivityAt;
+  const openedDate = typeof effectiveOpenedDate === 'string' 
+    ? new Date(effectiveOpenedDate) 
+    : effectiveOpenedDate;
   
   const today = new Date();
-  const diffTime = today.getTime() - lastActivity.getTime();
-  const freshness_days = Math.floor(diffTime / (1000 * 60 * 60 * 24));
+  const diffTime = today.getTime() - openedDate.getTime();
+  const ageDays = Math.floor(diffTime / (1000 * 60 * 60 * 24));
 
   let result;
-  if (freshness_days <= 3) {
-    result = { label: "Fresh", color: "green", days: freshness_days };
-  } else if (freshness_days <= 14) {
-    result = { label: "Active", color: "blue", days: freshness_days };
-  } else if (freshness_days <= 30) {
-    result = { label: "Idle", color: "yellow", days: freshness_days };
+  if (ageDays <= 3) {
+    result = { label: "Fresh", color: "green", days: ageDays };
+  } else if (ageDays <= 14) {
+    result = { label: "Active", color: "blue", days: ageDays };
+  } else if (ageDays <= 30) {
+    result = { label: "Idle", color: "yellow", days: ageDays };
   } else {
-    result = { label: "Stale", color: "red", days: freshness_days };
+    result = { label: "Stale", color: "red", days: ageDays };
   }
-
-  console.warn(`Freshness badge computed for project ${projectId || 'unknown'}: ${result.label} (${result.days} days)`);
   
   return result;
 }

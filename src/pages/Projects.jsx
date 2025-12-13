@@ -514,8 +514,7 @@ export default function Projects() {
             const nextJob = getNextJob(project.id);
             const suburb = extractSuburb(project.address);
             const scopeSummary = buildScopeSummary(project);
-            const createdAt = project.created_at || project.created_date || project.createdDate;
-            const freshness = getProjectFreshnessBadge(project.last_activity_at || createdAt, project.id);
+            const freshness = getProjectFreshnessBadge(project);
             
             const freshnessColors = {
               green: "bg-green-100 text-green-700",
