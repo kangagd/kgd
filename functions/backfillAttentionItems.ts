@@ -62,20 +62,41 @@ Deno.serve(async (req) => {
         // Skip if no meaningful context
         if (!context.notes && !context.recentNotes) continue;
 
-        // Call AI with strict exception-only guidelines
+        // Call AI with STRICT minimal guidelines
         const aiResponse = await base44.asServiceRole.integrations.Core.InvokeLLM({
           prompt: `You are generating "Attention Items" for KangarooGD (KGD).
-ATTENTION ITEMS ARE EXCEPTIONS ONLY — NOT summaries, reminders, or general advice.
+This system must feel minimal: at most a few high-signal alerts.
 
-Create an Attention Item ONLY if it will materially change how the team should:
-1) Schedule/plan a visit (timing, parts, resourcing, pre-work)
-2) Attend site (access, safety, keys, parking, pets, strata rules)
-3) Communicate (customer frustration, strict requirements, escalation risk)
-4) Handle payments/credit risk (overdue invoice, payment dispute, stop-work)
-5) Handle technical constraints (low headroom, noggins missing, wrong structure, compatibility issues)
-6) Handle supplier/logistics constraints that block delivery/installation (critical backorder, wrong item delivered)
+HARD OUTPUT LIMITS (non-negotiable):
+- Return at most 2 items for customer
+- Max 1 item per category per entity
+- If nothing qualifies, return empty items array
 
-If the content is "normal" or "nice-to-have", DO NOT create an attention item.
+STRICT SEVERITY POLICY:
+- ONLY create items with severity: "critical" or "high"
+- NEVER create "medium" or "low"
+- Confidence must be >= 0.88 (otherwise drop)
+
+STRICT ALLOWLIST (ONLY these may create items):
+A) PAYMENTS / STOP WORK (category="Payments", audience="office")
+   - overdue invoice preventing work, "will not pay", "dispute", "stop work", "do not proceed until paid"
+B) CUSTOMER ESCALATION RISK (category="Customer Sentiment", audience="office")
+   - "unacceptable", "disgusting", "furious", "angry", "disappointed", "constant delays", "going elsewhere", "cancel", "complaint", "NCAT"
+   - Merge all sentiment into ONE item max
+C) ACCESS / KEYS / SITE ENTRY (category="Access & Site", audience="tech" or "both")
+   - keys to collect/return, lockbox/code, tenant contact, restricted hours, strata booking, parking constraints, pets, alarms
+D) SAFETY HAZARD (category="Safety", audience="tech")
+   - asbestos, unsafe ceiling/ladder access, live electrical hazard, unstable structure
+E) HARD TECHNICAL BLOCKER (category="Technical Constraint", audience="tech" or "both")
+   - noggins/blocking missing, "no fixing points", "low headroom", "front mount required", powdercoat defect, motor compatibility blocker
+F) LOGISTICS BLOCKER (category="Logistics Blocker", audience="office")
+   - parts not shipped, backorder blocking scheduling, wrong items delivered, ETA missed
+G) HARD DEADLINE (category="Deadline", audience="both")
+   - tenant move-in, builder handover, strata deadline (must include explicit date)
+
+BAN LIST (auto-drop):
+- "ensure remote works", "communicate with client", "confirm timeline", "recommend new remotes", "verify X"
+- generic quality reminders, job summaries
 
 Customer: ${customer.name}
 Type: ${context.customer_type || 'N/A'}
@@ -83,18 +104,7 @@ Notes: ${context.notes}
 Projects: ${context.totalProjects} total, ${context.lostProjects} lost, ${context.completedProjects} completed
 Recent Project Notes: ${context.recentNotes || 'None'}
 
-Rules:
-- Max 3 items for customer
-- Only create if confidence >= 0.72
-- Never create "low" severity items (only critical/high/medium)
-- Must have exact evidence quote (max 180 chars)
-- Ban list: do NOT create items for generic advice like "ensure good communication", "verify remote functionality", "confirm timeline"
-- Title: 3-7 words, plain English, no punctuation at end
-- Summary: 1-2 bullet points, actionable
-- Categories: ["Access & Site","Customer Sentiment","Payments","Technical Constraint","Safety","Logistics Blocker","Deadline","Risk","Other"]
-- Audience: "tech" | "office" | "both"
-
-Return ONLY exception-level items with confidence >= 0.72.`,
+Return ONLY items matching allowlist with confidence >= 0.88. Usually 0-2 items.`,
           response_json_schema: {
             type: 'object',
             properties: {
@@ -130,11 +140,14 @@ Return ONLY exception-level items with confidence >= 0.72.`,
 
         const items = aiResponse?.items || [];
         
-        // Filter by confidence threshold
-        const validItems = items.filter(item => item.confidence >= 0.72);
+        // Filter by confidence threshold and severity
+        const validItems = items.filter(item => 
+          item.confidence >= 0.88 && 
+          (item.severity === 'critical' || item.severity === 'high')
+        );
         
-        // Create attention items
-        for (const item of validItems.slice(0, 3)) {
+        // Create attention items (max 2 for customer)
+        for (const item of validItems.slice(0, 2)) {
           if (!dryRun) {
             await base44.asServiceRole.entities.AttentionItem.create({
               entity_type: 'customer',
@@ -203,15 +216,19 @@ Return ONLY exception-level items with confidence >= 0.72.`,
 
         const aiResponse = await base44.asServiceRole.integrations.Core.InvokeLLM({
           prompt: `You are generating "Attention Items" for KangarooGD (KGD).
-ATTENTION ITEMS ARE EXCEPTIONS ONLY — NOT summaries, reminders, or general advice.
+This system must feel minimal: at most a few high-signal alerts.
 
-Create an Attention Item ONLY if it will materially change how the team should:
-1) Schedule/plan a visit (timing, parts, resourcing, pre-work)
-2) Attend site (access, safety, keys, parking, pets, strata rules)
-3) Communicate (customer frustration, strict requirements, escalation risk)
-4) Handle payments/credit risk (overdue invoice, payment dispute, stop-work)
-5) Handle technical constraints (low headroom, noggins missing, wrong structure, compatibility issues)
-6) Handle supplier/logistics constraints that block delivery/installation (critical backorder, wrong item delivered)
+HARD OUTPUT LIMITS: Max 3 items for project, max 1 item per category
+STRICT SEVERITY: ONLY "critical" or "high", confidence >= 0.88
+
+STRICT ALLOWLIST (ONLY these may create items):
+A) PAYMENTS / STOP WORK - overdue invoice preventing work
+B) CUSTOMER ESCALATION RISK - explicit strong negative language: "unacceptable", "furious", "angry", "cancel", "complaint"
+C) ACCESS / KEYS / SITE ENTRY - keys, codes, tenant contact, restricted hours, parking
+D) SAFETY HAZARD - asbestos, unsafe access, electrical hazard
+E) HARD TECHNICAL BLOCKER - noggins missing, low headroom, motor compatibility blocker
+F) LOGISTICS BLOCKER - parts not shipped blocking scheduling
+G) HARD DEADLINE - tenant move-in, builder handover with explicit date
 
 Project: ${project.title}
 Status: ${context.status}
@@ -221,15 +238,7 @@ Notes: ${context.notes}
 Parts Issues: ${context.partsIssues}
 Job Outcomes: ${context.jobOutcomes.join(', ')}
 
-Rules:
-- Max 5 items for project
-- Only create if confidence >= 0.72
-- Never create "low" severity items
-- Must have exact evidence quote (max 180 chars)
-- Ban list: do NOT create generic advice items
-- Categories: ["Access & Site","Customer Sentiment","Payments","Technical Constraint","Safety","Logistics Blocker","Deadline","Risk","Other"]
-
-Return ONLY exception-level items with confidence >= 0.72.`,
+Return ONLY items matching allowlist with confidence >= 0.88. Usually 0-3 items.`,
           response_json_schema: {
             type: 'object',
             properties: {
@@ -254,9 +263,12 @@ Return ONLY exception-level items with confidence >= 0.72.`,
         });
 
         const items = aiResponse?.items || [];
-        const validItems = items.filter(item => item.confidence >= 0.72);
+        const validItems = items.filter(item => 
+          item.confidence >= 0.88 && 
+          (item.severity === 'critical' || item.severity === 'high')
+        );
         
-        for (const item of validItems.slice(0, 5)) {
+        for (const item of validItems.slice(0, 3)) {
           if (!dryRun) {
             await base44.asServiceRole.entities.AttentionItem.create({
               entity_type: 'project',
@@ -320,15 +332,21 @@ Return ONLY exception-level items with confidence >= 0.72.`,
 
         const aiResponse = await base44.asServiceRole.integrations.Core.InvokeLLM({
           prompt: `You are generating "Attention Items" for KangarooGD (KGD).
-ATTENTION ITEMS ARE EXCEPTIONS ONLY — NOT summaries, reminders, or general advice.
+This system must feel minimal: at most a few high-signal alerts.
 
-Create an Attention Item ONLY if it will materially change how the team should:
-1) Schedule/plan a visit (timing, parts, resourcing, pre-work)
-2) Attend site (access, safety, keys, parking, pets, strata rules)
-3) Communicate (customer frustration, strict requirements, escalation risk)
-4) Handle payments/credit risk (overdue invoice, payment dispute, stop-work)
-5) Handle technical constraints (low headroom, noggins missing, wrong structure, compatibility issues)
-6) Handle supplier/logistics constraints that block delivery/installation (critical backorder, wrong item delivered)
+HARD OUTPUT LIMITS: Max 2 items for job, max 1 item per category
+STRICT SEVERITY: ONLY "critical" or "high", confidence >= 0.88
+
+STRICT ALLOWLIST (ONLY these may create items):
+A) PAYMENTS / STOP WORK - overdue invoice preventing work
+B) CUSTOMER ESCALATION RISK - "unacceptable", "furious", "angry", "cancel", "complaint", "NCAT"
+C) ACCESS / KEYS / SITE ENTRY - keys to collect/return, lockbox/code, tenant contact, restricted hours
+D) SAFETY HAZARD - asbestos, unsafe ceiling/ladder access, live electrical hazard
+E) HARD TECHNICAL BLOCKER - noggins missing, "no fixing points", "low headroom", "60mm headroom", "front mount required", motor compatibility blocker
+F) LOGISTICS BLOCKER - parts not shipped blocking scheduled job
+G) HARD DEADLINE - tenant move-in, builder handover with explicit date
+
+BAN LIST: "ensure remote works", "communicate with client", "confirm timeline", "verify X"
 
 Job: #${job.job_number}
 Overview: ${context.overview}
@@ -337,20 +355,7 @@ Next Steps: ${context.next_steps}
 Communication: ${context.communication}
 Completion Notes: ${context.completion_notes}
 
-KGD-specific high-signal triggers:
-A) Access & site constraints (keys, codes, pets, parking, strata, tenant, safety hazards)
-B) Customer sentiment risk (frustrated/angry/threatening cancellation)
-C) Payment/credit risk (overdue invoice, stop-work condition)
-D) Technical blockers: "low headroom", "60mm headroom", "front mount", "noggins", "blocking", "structure required", "no fixing points", motor compatibility issues
-E) Hard deadlines / move-in dates (tenant moving in, builder handover) ONLY if date-bound
-
-Rules:
-- Max 3 items for job
-- Only create if confidence >= 0.72
-- Never create "low" severity items
-- Must have exact evidence quote (max 180 chars)
-
-Return ONLY exception-level items with confidence >= 0.72.`,
+Return ONLY items matching allowlist with confidence >= 0.88. Usually 0-2 items.`,
           response_json_schema: {
             type: 'object',
             properties: {
@@ -375,9 +380,12 @@ Return ONLY exception-level items with confidence >= 0.72.`,
         });
 
         const items = aiResponse?.items || [];
-        const validItems = items.filter(item => item.confidence >= 0.72);
+        const validItems = items.filter(item => 
+          item.confidence >= 0.88 && 
+          (item.severity === 'critical' || item.severity === 'high')
+        );
         
-        for (const item of validItems.slice(0, 3)) {
+        for (const item of validItems.slice(0, 2)) {
           if (!dryRun) {
             await base44.asServiceRole.entities.AttentionItem.create({
               entity_type: 'job',
