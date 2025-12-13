@@ -11,7 +11,7 @@ import { format, isPast, parseISO } from "date-fns";
 import { toast } from "sonner";
 import { useNavigate } from "react-router-dom";
 import { createPageUrl } from "@/utils";
-import { PART_STATUS, PART_LOCATION, getPartStatusLabel, getPartLocationLabel, normaliseLegacyPartStatus, normaliseLegacyPartLocation } from "@/components/domain/partConfig";
+import { PART_STATUS, PART_LOCATION, getPartStatusLabel, getPartLocationLabel, normaliseLegacyPartStatus, normaliseLegacyPartLocation, isPartAvailable } from "@/components/domain/partConfig";
 import {
   Dialog,
   DialogContent,
@@ -75,10 +75,21 @@ export default function PartsSection({ projectId, autoExpand = false, registerAd
   const queryClient = useQueryClient();
   const navigate = useNavigate();
 
-  const { data: parts = [] } = useQuery({
+  const { data: allParts = [] } = useQuery({
     queryKey: ['parts', projectId],
     queryFn: () => base44.entities.Part.filter({ project_id: projectId }, '-order_date')
   });
+
+  // Split parts: Ready to pick (available) vs Not ready (unavailable)
+  const partsReadyToPick = allParts.filter(part => {
+    const normalized = { ...part, status: normaliseLegacyPartStatus(part.status, part), location: normaliseLegacyPartLocation(part.location) };
+    return isPartAvailable(normalized);
+  });
+  const partsNotReady = allParts.filter(part => {
+    const normalized = { ...part, status: normaliseLegacyPartStatus(part.status, part), location: normaliseLegacyPartLocation(part.location) };
+    return !isPartAvailable(normalized);
+  });
+  const parts = [...partsReadyToPick, ...partsNotReady]; // Show ready parts first
 
   const { data: projectPOs = [] } = useQuery({
     queryKey: ['projectPOs-partsSection', projectId],
