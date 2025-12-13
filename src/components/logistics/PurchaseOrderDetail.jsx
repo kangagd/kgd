@@ -13,6 +13,7 @@ import { toast } from "sonner";
 import { PO_STATUS, PO_STATUS_OPTIONS, PO_STATUS_OPTIONS_NON_PROJECT, PO_STATUS_OPTIONS_PROJECT, getPoStatusLabel, normaliseLegacyPoStatus } from "@/components/domain/purchaseOrderStatusConfig";
 import { DELIVERY_METHOD as PO_DELIVERY_METHOD, DELIVERY_METHOD_OPTIONS as PO_DELIVERY_METHOD_OPTIONS } from "@/components/domain/supplierDeliveryConfig";
 import { PART_CATEGORIES } from "@/components/domain/partConfig";
+import { getPoDisplayReference, validatePoIdentityFields } from "@/components/domain/poDisplayHelpers";
 import { createPageUrl } from "@/utils";
 import { useNavigate } from "react-router-dom";
 import {
