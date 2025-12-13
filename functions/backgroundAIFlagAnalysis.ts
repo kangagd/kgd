@@ -52,10 +52,28 @@ Deno.serve(async (req) => {
         try {
           results.processed++;
           
-          // Call generateAIFlags
+          // Get existing flags and parent flags for deduplication
+          const existingFlags = entity.attention_flags || [];
+          
+          // If this is a job, also get project flags for hierarchy checking
+          let parentFlags = [];
+          if (type === 'job' && entity.project_id) {
+            try {
+              const project = await base44.asServiceRole.entities.Project.get(entity.project_id);
+              parentFlags = project?.attention_flags || [];
+            } catch (err) {
+              console.log(`Could not fetch parent project for job ${entity.id}`);
+            }
+          }
+          
+          // Combine existing and parent flags for deduplication
+          const allExistingFlags = [...existingFlags, ...parentFlags];
+          
+          // Call generateAIFlags with deduplication context
           const response = await base44.asServiceRole.functions.invoke('generateAIFlags', {
             entityType: type,
-            entityId: entity.id
+            entityId: entity.id,
+            existingFlags: allExistingFlags
           });
           
           if (response.data?.success && response.data?.suggestedFlags?.length > 0) {
