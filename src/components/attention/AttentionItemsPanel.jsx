@@ -1,6 +1,6 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { base44 } from "@/api/base44Client";
-import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -8,6 +8,7 @@ import { AlertTriangle, AlertCircle, Info, Plus, ChevronDown, ChevronUp, Eye } f
 import CreateAttentionItemModal from "./CreateAttentionItemModal";
 import EvidenceModal from "./EvidenceModal";
 import ResolveAttentionItemModal from "./ResolveAttentionItemModal";
+import { useAttentionItemsForEntity } from "./useAttentionItemsForEntity";
 
 const CATEGORY_COLORS = {
   "Customer Sentiment": "bg-purple-100 text-purple-800 border-purple-200",
@@ -27,52 +28,56 @@ const AUDIENCE_LABELS = {
 
 export default function AttentionItemsPanel({ 
   entity_type, 
-  entity_id, 
-  inherited = [],
+  entity_id,
+  project_id = null,
+  customer_id = null,
   showCreateButton = true 
 }) {
+  const [user, setUser] = useState(null);
   const [showCreateModal, setShowCreateModal] = useState(false);
   const [evidenceItem, setEvidenceItem] = useState(null);
   const [resolvingItem, setResolvingItem] = useState(null);
   const [showResolved, setShowResolved] = useState(false);
   const queryClient = useQueryClient();
 
-  // Fetch active items for this entity
-  const { data: activeItems = [] } = useQuery({
-    queryKey: ['attentionItems', entity_type, entity_id, 'active'],
-    queryFn: () => base44.entities.AttentionItem.filter({ 
-      entity_type, 
-      entity_id, 
-      status: 'active' 
-    }, '-created_date'),
-    refetchInterval: 30000 // Refresh every 30s
-  });
+  useEffect(() => {
+    const loadUser = async () => {
+      try {
+        const currentUser = await base44.auth.me();
+        setUser(currentUser);
+      } catch (error) {
+        console.error('Error loading user:', error);
+      }
+    };
+    loadUser();
+  }, []);
 
-  // Fetch resolved items (only when expanded)
-  const { data: resolvedItems = [] } = useQuery({
-    queryKey: ['attentionItems', entity_type, entity_id, 'resolved'],
-    queryFn: () => base44.entities.AttentionItem.filter({ 
-      entity_type, 
-      entity_id, 
-      status: 'resolved' 
-    }, '-resolved_at'),
-    enabled: showResolved
+  // Use hook to fetch items with inheritance
+  const activeItems = useAttentionItemsForEntity({
+    entityType: entity_type,
+    entityId: entity_id,
+    projectId: project_id,
+    customerId: customer_id
   });
 
   const resolveMutation = useMutation({
-    mutationFn: ({ id, notes }) => 
-      base44.entities.AttentionItem.update(id, {
+    mutationFn: async ({ id, notes }) => {
+      const currentUser = await base44.auth.me();
+      return base44.entities.AttentionItem.update(id, {
         status: 'resolved',
         resolved_at: new Date().toISOString(),
-        resolved_by: base44.auth.me().then(u => u.email),
-        resolved_by_name: base44.auth.me().then(u => u.full_name),
+        resolved_by: currentUser.email,
+        resolved_by_name: currentUser.full_name,
         resolution_notes: notes
-      }),
+      });
+    },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['attentionItems'] });
       setResolvingItem(null);
     }
   });
+
+  const isAdminOrManager = user?.role === 'admin' || user?.role === 'manager';
 
   const getSeverityIcon = (severity) => {
     switch (severity) {
@@ -87,11 +92,15 @@ export default function AttentionItemsPanel({
     }
   };
 
-  const allActiveItems = [...inherited.filter(i => i.status === 'active'), ...activeItems];
-
-  if (allActiveItems.length === 0 && !showCreateButton) {
+  if (activeItems.length === 0 && !showCreateButton) {
     return null;
   }
+
+  const getInheritedLabel = (inheritedFrom) => {
+    if (inheritedFrom === 'customer') return 'Inherited from Customer';
+    if (inheritedFrom === 'project') return 'Inherited from Project';
+    return null;
+  };
 
   return (
     <>
@@ -101,9 +110,9 @@ export default function AttentionItemsPanel({
             <CardTitle className="text-lg flex items-center gap-2">
               <AlertTriangle className="w-5 h-5 text-amber-600" />
               Attention Items
-              {allActiveItems.length > 0 && (
+              {activeItems.length > 0 && (
                 <Badge variant="destructive" className="ml-2">
-                  {allActiveItems.length}
+                  {activeItems.length}
                 </Badge>
               )}
             </CardTitle>
@@ -121,11 +130,12 @@ export default function AttentionItemsPanel({
           </div>
         </CardHeader>
         <CardContent className="space-y-3">
-          {allActiveItems.length === 0 ? (
+          {activeItems.length === 0 ? (
             <p className="text-sm text-gray-500">No active attention items</p>
           ) : (
-            allActiveItems.map((item) => {
-              const isInherited = inherited.some(i => i.id === item.id);
+            activeItems.map((item) => {
+              const isInherited = !!item.inherited_from;
+              const canResolve = isAdminOrManager && !isInherited;
               
               return (
                 <div
@@ -148,7 +158,7 @@ export default function AttentionItemsPanel({
                           </Badge>
                           {isInherited && (
                             <Badge variant="secondary" className="text-xs">
-                              Inherited
+                              {getInheritedLabel(item.inherited_from)}
                             </Badge>
                           )}
                         </div>
@@ -168,19 +178,19 @@ export default function AttentionItemsPanel({
                     </div>
                   </div>
                   
-                  {!isInherited && (
-                    <div className="flex gap-2 mt-3">
-                      {item.evidence && item.evidence.length > 0 && (
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          onClick={() => setEvidenceItem(item)}
-                          className="text-xs gap-1"
-                        >
-                          <Eye className="w-3 h-3" />
-                          View Evidence
-                        </Button>
-                      )}
+                  <div className="flex gap-2 mt-3">
+                    {item.evidence && item.evidence.length > 0 && (
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => setEvidenceItem(item)}
+                        className="text-xs gap-1"
+                      >
+                        <Eye className="w-3 h-3" />
+                        View Evidence
+                      </Button>
+                    )}
+                    {canResolve && (
                       <Button
                         variant="outline"
                         size="sm"
@@ -189,14 +199,12 @@ export default function AttentionItemsPanel({
                       >
                         Mark Resolved
                       </Button>
-                    </div>
-                  )}
+                    )}
+                  </div>
                 </div>
               );
             })
           )}
-
-          {resolvedItems.length > 0 && (
             <div className="pt-3 border-t">
               <button
                 onClick={() => setShowResolved(!showResolved)}
@@ -235,6 +243,7 @@ export default function AttentionItemsPanel({
               )}
             </div>
           )}
+        </CardContent>
         </CardContent>
       </Card>
 
