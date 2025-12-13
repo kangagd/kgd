@@ -296,6 +296,7 @@ Deno.serve(async (req) => {
                 return Response.json({ error: 'supplier_id and non-empty line_items are required' }, { status: 400 });
             }
 
+            // 🔒 STRIP LEGACY FIELDS - Never allow writes
             // Normalize PO reference from all possible inputs (canonical: po_reference)
             const normalizedPoRef =
                 po_reference ??
@@ -307,6 +308,16 @@ Deno.serve(async (req) => {
                 reference ??
                 data?.reference ??
                 null;
+
+            // Dev-only guard
+            if (po_number || data?.po_number || order_reference || data?.order_reference || reference || data?.reference) {
+                console.warn('⚠️ Blocked legacy PO field write attempt on create', {
+                    po_number,
+                    order_reference,
+                    reference,
+                    data_fields: { po_number: data?.po_number, order_reference: data?.order_reference, reference: data?.reference }
+                });
+            }
 
             // Normalize name
             const normalizedName = name ?? data?.name ?? null;
@@ -320,13 +331,18 @@ Deno.serve(async (req) => {
                 delivery_location: delivery_location || null,
                 notes: notes || null,
                 po_reference: normalizedPoRef,
-                po_number: normalizedPoRef,
-                order_reference: normalizedPoRef,
                 name: normalizedName,
                 created_by: user.email,
                 order_date: new Date().toISOString().split('T')[0],
                 expected_date: eta || null,
             };
+
+            // 🔁 ONE-WAY BACKFILL - Backend writes legacy fields for consistency
+            if (normalizedPoRef) {
+                poData.po_number = normalizedPoRef;
+                poData.order_reference = normalizedPoRef;
+                poData.reference = normalizedPoRef;
+            }
 
             const po = await base44.asServiceRole.entities.PurchaseOrder.create(poData);
 
@@ -375,6 +391,17 @@ Deno.serve(async (req) => {
                 return Response.json({ error: 'Purchase Order not found' }, { status: 404 });
             }
 
+            // 🔒 STRIP LEGACY FIELDS - Never allow writes (dev guard)
+            if (po_number || data?.po_number || order_reference || data?.order_reference || reference || data?.reference) {
+                console.warn('⚠️ Blocked legacy PO field write attempt on update', {
+                    poId: id,
+                    po_number,
+                    order_reference,
+                    reference,
+                    data_fields: { po_number: data?.po_number, order_reference: data?.order_reference, reference: data?.reference }
+                });
+            }
+
             const updateData = {};
             if (supplier_id !== undefined) updateData.supplier_id = supplier_id;
             if (supplier_name !== undefined) updateData.supplier_name = supplier_name;
@@ -400,8 +427,11 @@ Deno.serve(async (req) => {
             if (incomingPoRef !== null) {
                 const cleanedRef = typeof incomingPoRef === 'string' ? incomingPoRef.trim() : incomingPoRef;
                 updateData.po_reference = cleanedRef || null;
+                
+                // 🔁 ONE-WAY BACKFILL - Backend writes legacy fields for consistency
                 updateData.po_number = cleanedRef || null;
                 updateData.order_reference = cleanedRef || null;
+                updateData.reference = cleanedRef || null;
             }
 
             // --- Normalize Name from all possible inputs (canonical: name) ---
@@ -496,6 +526,16 @@ Deno.serve(async (req) => {
             const existing = await base44.asServiceRole.entities.PurchaseOrder.get(id);
             if (!existing) {
                 return Response.json({ error: 'Purchase Order not found' }, { status: 404 });
+            }
+
+            // 🔒 STRIP LEGACY FIELDS - Never allow writes (dev guard)
+            if (po_number || data?.po_number || order_reference || data?.order_reference || reference || data?.reference) {
+                console.warn('⚠️ Blocked legacy PO field write attempt on updateStatus', {
+                    poId: id,
+                    po_number,
+                    order_reference,
+                    reference
+                });
             }
 
             const oldStatus = existing.status;
@@ -655,6 +695,7 @@ Deno.serve(async (req) => {
             }
 
             // Create new DRAFT PO
+            // 🔒 STRIP LEGACY FIELDS - Never allow writes
             const normalizedPoRef =
                 po_reference ??
                 data?.po_reference ??
@@ -665,6 +706,15 @@ Deno.serve(async (req) => {
                 reference ??
                 data?.reference ??
                 null;
+
+            // Dev-only guard
+            if (po_number || data?.po_number || order_reference || data?.order_reference || reference || data?.reference) {
+                console.warn('⚠️ Blocked legacy PO field write attempt on getOrCreateProjectSupplierDraft', {
+                    po_number,
+                    order_reference,
+                    reference
+                });
+            }
 
             const normalizedName = name ?? data?.name ?? null;
 
@@ -677,13 +727,18 @@ Deno.serve(async (req) => {
                 delivery_location: delivery_location || null,
                 notes: notes || null,
                 po_reference: normalizedPoRef,
-                po_number: normalizedPoRef,
-                order_reference: normalizedPoRef,
                 name: normalizedName,
                 created_by: user.email,
                 order_date: new Date().toISOString().split('T')[0],
                 expected_date: eta || null,
             };
+
+            // 🔁 ONE-WAY BACKFILL - Backend writes legacy fields for consistency
+            if (normalizedPoRef) {
+                poData.po_number = normalizedPoRef;
+                poData.order_reference = normalizedPoRef;
+                poData.reference = normalizedPoRef;
+            }
 
             const newPO = await base44.asServiceRole.entities.PurchaseOrder.create(poData);
             
