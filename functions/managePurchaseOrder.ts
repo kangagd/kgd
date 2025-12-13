@@ -367,13 +367,6 @@ Deno.serve(async (req) => {
                 expected_date: eta || null,
             };
 
-            // 🔁 ONE-WAY BACKFILL - Backend writes legacy fields for consistency
-            if (normalizedPoRef) {
-                poData.po_number = normalizedPoRef;
-                poData.order_reference = normalizedPoRef;
-                poData.reference = normalizedPoRef;
-            }
-
             const po = await base44.asServiceRole.entities.PurchaseOrder.create(poData);
 
             // Update project activity if PO is linked to a project
