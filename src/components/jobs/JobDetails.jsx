@@ -1380,16 +1380,16 @@ export default function JobDetails({ job: initialJob, onClose, onStatusChange, o
           {/* Attention Panel */}
           {job && (
             <AttentionPanel
-              flags={[
-                ...(job.attention_flags || []),
-                ...(customer?.attention_flags || []).filter(f => f.origin === 'manual' && !f.resolved_at && !f.dismissed_at).map(f => ({ ...f, source: 'customer' })),
-                ...(project?.attention_flags || []).filter(f => f.origin === 'manual' && !f.resolved_at && !f.dismissed_at).map(f => ({ ...f, source: 'project' }))
+              flags={job.attention_flags || []}
+              inheritedFlags={[
+                ...(customer?.attention_flags || []).filter(f => f.origin === 'manual' && !f.resolved_at && !f.dismissed_at),
+                ...(project?.attention_flags || []).filter(f => f.origin === 'manual' && !f.resolved_at && !f.dismissed_at)
               ]}
               entityId={job.id}
               entityType="job"
               onUpdate={async (updatedFlags) => {
                 await base44.entities.Job.update(job.id, { 
-                  attention_flags: updatedFlags.filter(f => !f.source) 
+                  attention_flags: updatedFlags
                 });
                 queryClient.invalidateQueries({ queryKey: ['job', job.id] });
               }}
