@@ -67,7 +67,8 @@ export default function AttentionPanel({
   entityType, // "job" | "project" | "customer"
   onUpdate,
   currentUser,
-  readonly = false
+  readonly = false,
+  inheritedFlags = [] // Flags from parent entity (e.g., Project flags on a Job)
 }) {
   const [isExpanded, setIsExpanded] = useState(false);
   const [showAddModal, setShowAddModal] = useState(false);
@@ -78,11 +79,23 @@ export default function AttentionPanel({
   const canEdit = !readonly && (currentUser?.role === 'admin' || currentUser?.role === 'manager');
 
   // Split flags by origin and category
-  const { systemFlags, warningFlags, aiFlags } = useMemo(() => {
+  const { systemFlags, warningFlags, aiFlags, inheritedSystemFlags, inheritedWarningFlags } = useMemo(() => {
     const active = flags.filter(f => !f.resolved_at && !f.dismissed_at);
+    const activeInherited = inheritedFlags.filter(f => !f.resolved_at && !f.dismissed_at);
     
     const manual = active.filter(f => f.origin !== 'ai_suggested');
-    const ai = active.filter(f => f.origin === 'ai_suggested').sort((a, b) => (b.confidence || 0) - (a.confidence || 0));
+    
+    // Filter AI suggestions: Remove if equivalent manual flag exists (deduplication)
+    const existingCategories = new Set(manual.map(f => `${f.type}_${f.severity}`));
+    const inheritedCategories = new Set(activeInherited.map(f => `${f.type}_${f.severity}`));
+    
+    const ai = active
+      .filter(f => f.origin === 'ai_suggested')
+      .filter(f => {
+        const key = `${f.type}_${f.severity}`;
+        return !existingCategories.has(key) && !inheritedCategories.has(key);
+      })
+      .sort((a, b) => (b.confidence || 0) - (a.confidence || 0));
     
     // System issues (critical, blocking)
     const system = manual
@@ -104,16 +117,28 @@ export default function AttentionPanel({
         return new Date(b.created_at) - new Date(a.created_at);
       });
     
-    return { systemFlags: system, warningFlags: warnings, aiFlags: ai };
-  }, [flags]);
+    // Inherited flags (from parent entity)
+    const inheritedSystem = activeInherited.filter(f => f.severity === 'critical');
+    const inheritedWarning = activeInherited.filter(f => f.severity !== 'critical');
+    
+    return { 
+      systemFlags: system, 
+      warningFlags: warnings, 
+      aiFlags: ai,
+      inheritedSystemFlags: inheritedSystem,
+      inheritedWarningFlags: inheritedWarning
+    };
+  }, [flags, inheritedFlags]);
 
   const manualFlags = [...systemFlags, ...warningFlags];
+  const totalInheritedCount = inheritedSystemFlags.length + inheritedWarningFlags.length;
 
-  const hasCritical = manualFlags.some(f => f.severity === 'critical');
+  const hasCritical = manualFlags.some(f => f.severity === 'critical') || inheritedSystemFlags.length > 0;
   const shouldAutoExpand = hasCritical || manualFlags.some(f => f.pinned);
   
   const visibleManualFlags = isExpanded ? manualFlags : manualFlags.slice(0, 3);
-  const totalFlags = manualFlags.length + aiFlags.length;
+  // Don't double-count inherited flags
+  const totalFlags = manualFlags.length + totalInheritedCount + aiFlags.length;
 
   const handleAcknowledge = async (flag) => {
     if (!currentUser) return;
@@ -263,6 +288,22 @@ export default function AttentionPanel({
           </div>
 
           <div className="space-y-3">
+            {/* Inherited System Issues */}
+            {inheritedSystemFlags.length > 0 && (
+              <div className="mb-2">
+                <div className="flex items-center gap-1.5 mb-2">
+                  <div className="w-2 h-2 rounded-full bg-red-500" />
+                  <span className="text-xs font-semibold text-red-700 uppercase tracking-wide">System Issues</span>
+                  <Badge variant="outline" className="text-xs">From {entityType === 'job' ? 'Project' : 'Parent'}</Badge>
+                </div>
+                <div className="space-y-2">
+                  {inheritedSystemFlags.map((flag) => (
+                    <InheritedFlagItem key={flag.id} flag={flag} parentType={entityType === 'job' ? 'Project' : 'Parent'} />
+                  ))}
+                </div>
+              </div>
+            )}
+
             {/* System Issues */}
             {systemFlags.length > 0 && (
               <div className="mb-2">
@@ -273,6 +314,22 @@ export default function AttentionPanel({
                 <div className="space-y-2">
                   {systemFlags.map((flag) => (
                     <FlagItem key={flag.id} flag={flag} {...{ canEdit, currentUser, handleAcknowledge, setSelectedFlag, setShowResolveModal, handleRemoveFlag }} />
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {/* Inherited Warnings */}
+            {inheritedWarningFlags.length > 0 && (
+              <div className="mb-2">
+                <div className="flex items-center gap-1.5 mb-2">
+                  <div className="w-2 h-2 rounded-full bg-amber-500" />
+                  <span className="text-xs font-semibold text-amber-700 uppercase tracking-wide">Warnings</span>
+                  <Badge variant="outline" className="text-xs">From {entityType === 'job' ? 'Project' : 'Parent'}</Badge>
+                </div>
+                <div className="space-y-2">
+                  {inheritedWarningFlags.map((flag) => (
+                    <InheritedFlagItem key={flag.id} flag={flag} parentType={entityType === 'job' ? 'Project' : 'Parent'} />
                   ))}
                 </div>
               </div>
@@ -648,6 +705,32 @@ function FlagItem({ flag, canEdit, currentUser, handleAcknowledge, setSelectedFl
               <Button variant="ghost" size="sm" onClick={() => handleRemoveFlag(flag.id)} className="h-7 text-xs text-red-600 hover:text-red-700"><X className="w-3 h-3" /></Button>
             </>
           )}
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function InheritedFlagItem({ flag, parentType }) {
+  const typeConfig = FLAG_TYPES[flag.type] || FLAG_TYPES.internal_warning;
+  const Icon = typeConfig.icon;
+  const severityStyle = SEVERITY_STYLES[flag.severity] || SEVERITY_STYLES.info;
+  
+  const label = flag.label.length > 140 ? flag.label.substring(0, 137) + '...' : flag.label;
+
+  return (
+    <div className={cn("rounded-lg p-3 transition-all opacity-75", severityStyle.border, severityStyle.bg)}>
+      <div className="flex items-start gap-3">
+        <Icon className={cn("w-4 h-4 mt-0.5 flex-shrink-0", typeConfig.color)} />
+        <div className="flex-1 min-w-0">
+          <div className="flex items-center gap-2 mb-1 flex-wrap">
+            <span className="font-medium text-sm text-gray-900">🔁 From {parentType}: {label}</span>
+          </div>
+          <div className="flex items-center gap-2 text-xs text-gray-600">
+            <span>Read-only</span>
+            <span>•</span>
+            <span>Internal</span>
+          </div>
         </div>
       </div>
     </div>
