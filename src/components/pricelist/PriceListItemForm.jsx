@@ -9,7 +9,7 @@ import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Checkbox } from "@/components/ui/checkbox";
 import { ArrowLeft } from "lucide-react";
-import { exToGstAmount, exToInc, GST_HELPER_TEXT } from "@/components/gst";
+import { exToGstAmount, exToInc } from "@/components/gst";
 
 export default function PriceListItemForm({ item, onSubmit, onCancel, isSubmitting, canViewCosts = false }) {
   const [formData, setFormData] = useState(item || {
@@ -119,7 +119,7 @@ export default function PriceListItemForm({ item, onSubmit, onCancel, isSubmitti
               <div className={`grid ${canViewCosts ? 'grid-cols-3' : 'grid-cols-1'} gap-4`}>
                 {canViewCosts && (
                 <div>
-                  <Label>Unit Cost <span className="text-[11px] text-gray-500 uppercase font-medium">(ex GST)</span></Label>
+                  <Label>Unit Cost (ex GST)</Label>
                   <Input
                     type="number"
                     step="0.01"
@@ -127,18 +127,15 @@ export default function PriceListItemForm({ item, onSubmit, onCancel, isSubmitti
                     onChange={(e) => setFormData({ ...formData, unit_cost: e.target.value })}
                     placeholder="0.00"
                   />
-                  <p className="text-[11px] text-gray-500 mt-1">
-                    {GST_HELPER_TEXT}
-                  </p>
                   {formData.unit_cost && !isNaN(parseFloat(formData.unit_cost)) && (
-                    <p className="text-[11px] text-gray-500 mt-0.5">
+                    <p className="text-[11px] text-gray-500 mt-1">
                       GST: ${exToGstAmount(parseFloat(formData.unit_cost)).toFixed(2)} • Inc: ${exToInc(parseFloat(formData.unit_cost)).toFixed(2)}
                     </p>
                   )}
                 </div>
                 )}
                 <div>
-                  <Label>Sell Price <span className="text-[11px] text-gray-500 uppercase font-medium">(ex GST)</span> *</Label>
+                  <Label>Sell Price (ex GST) *</Label>
                   <Input
                     type="number"
                     step="0.01"
@@ -147,11 +144,8 @@ export default function PriceListItemForm({ item, onSubmit, onCancel, isSubmitti
                     placeholder="0.00"
                     required
                   />
-                  <p className="text-[11px] text-gray-500 mt-1">
-                    {GST_HELPER_TEXT}
-                  </p>
                   {formData.price && !isNaN(parseFloat(formData.price)) && (
-                    <p className="text-[11px] text-gray-500 mt-0.5">
+                    <p className="text-[11px] text-gray-500 mt-1">
                       GST: ${exToGstAmount(parseFloat(formData.price)).toFixed(2)} • Inc: ${exToInc(parseFloat(formData.price)).toFixed(2)}
                     </p>
                   )}

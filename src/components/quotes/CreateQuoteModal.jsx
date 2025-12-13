@@ -8,7 +8,6 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { base44 } from "@/api/base44Client";
 import { toast } from "sonner";
 import { Plus, Trash2, Loader2, FileText } from "lucide-react";
-import { GST_HELPER_TEXT } from "@/components/gst";
 
 export default function CreateQuoteModal({ 
   isOpen, 
@@ -176,14 +175,14 @@ export default function CreateQuoteModal({
           {/* Line Items */}
           <div className="space-y-2">
             <div className="flex items-center justify-between">
-              <Label>Line Items <span className="text-[11px] text-gray-500 uppercase font-medium">(ex GST)</span></Label>
+              <Label>Line Items (Optional)</Label>
               <Button type="button" variant="outline" size="sm" onClick={addLineItem}>
                 <Plus className="w-4 h-4 mr-1" />
                 Add Item
               </Button>
             </div>
             <p className="text-[12px] text-[#6B7280]">
-              {GST_HELPER_TEXT}
+              These will populate the pricing table in your PandaDoc template.
             </p>
 
             <div className="space-y-3">
@@ -215,7 +214,7 @@ export default function CreateQuoteModal({
                   <div className="col-span-2">
                     <Input
                       type="number"
-                      placeholder="Price (ex)"
+                      placeholder="Price"
                       value={item.price}
                       onChange={(e) => updateLineItem(index, 'price', parseFloat(e.target.value) || 0)}
                       min={0}
@@ -241,7 +240,7 @@ export default function CreateQuoteModal({
 
             {lineItems.some(item => item.name) && (
               <div className="text-right text-[14px] font-medium text-[#111827]">
-                Total <span className="text-[11px] text-gray-500 uppercase font-medium">(ex GST)</span>: ${calculateTotal().toFixed(2)} AUD
+                Total: ${calculateTotal().toFixed(2)} AUD
               </div>
             )}
           </div>
