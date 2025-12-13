@@ -4,7 +4,7 @@ import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { AlertTriangle, AlertCircle, Info, Plus, ChevronDown, ChevronUp, Eye } from "lucide-react";
+import { AlertTriangle, AlertCircle, Info, Plus, Eye } from "lucide-react";
 import CreateAttentionItemModal from "./CreateAttentionItemModal";
 import EvidenceModal from "./EvidenceModal";
 import ResolveAttentionItemModal from "./ResolveAttentionItemModal";
@@ -37,7 +37,6 @@ export default function AttentionItemsPanel({
   const [showCreateModal, setShowCreateModal] = useState(false);
   const [evidenceItem, setEvidenceItem] = useState(null);
   const [resolvingItem, setResolvingItem] = useState(null);
-  const [showResolved, setShowResolved] = useState(false);
   const queryClient = useQueryClient();
 
   useEffect(() => {
@@ -52,7 +51,6 @@ export default function AttentionItemsPanel({
     loadUser();
   }, []);
 
-  // Use hook to fetch items with inheritance
   const activeItems = useAttentionItemsForEntity({
     entityType: entity_type,
     entityId: entity_id,
