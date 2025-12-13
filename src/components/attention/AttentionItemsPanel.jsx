@@ -156,7 +156,7 @@ export default function AttentionItemsPanel({ entity_type, entity_id, context_id
   }, []);
 
   const { data: items = [] } = useQuery({
-    queryKey: ['attentionItems', entity_type, entity_id, context_ids],
+    queryKey: ['attentionItems', entity_type, entity_id, JSON.stringify(context_ids)],
     queryFn: async () => {
       const allItems = [];
       const seenFingerprints = new Set();
