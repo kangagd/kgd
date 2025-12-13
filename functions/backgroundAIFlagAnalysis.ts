@@ -5,13 +5,12 @@ Deno.serve(async (req) => {
     const base44 = createClientFromRequest(req);
     
     // Service role for background processing
-    const { hoursAgo = 24 } = await req.json().catch(() => ({}));
+    const { hoursAgo = 168 } = await req.json().catch(() => ({})); // Default to 7 days
     
     const cutoffDate = new Date();
     cutoffDate.setHours(cutoffDate.getHours() - hoursAgo);
-    const cutoffISO = cutoffDate.toISOString();
     
-    console.log(`[Background AI] Analyzing entities updated since ${cutoffISO}`);
+    console.log(`[Background AI] Analyzing entities updated in last ${hoursAgo} hours`);
     
     const results = {
       processed: 0,
@@ -20,22 +19,27 @@ Deno.serve(async (req) => {
       entities: []
     };
     
-    // Fetch recently updated entities
+    // Fetch all active entities (can't reliably filter by updated_at across all entities)
+    // Instead, we'll fetch all and process them
     const [jobs, projects, customers] = await Promise.all([
       base44.asServiceRole.entities.Job.filter({
-        updated_date: { $gte: cutoffISO },
-        deleted_at: null,
         status: { $ne: 'Cancelled' }
       }),
       base44.asServiceRole.entities.Project.filter({
-        updated_date: { $gte: cutoffISO },
-        deleted_at: null
+        status: { $ne: 'Lost' }
       }),
       base44.asServiceRole.entities.Customer.filter({
-        updated_date: { $gte: cutoffISO },
-        deleted_at: null
+        status: 'active'
       })
-    ]);
+    ]).then(([j, p, c]) => {
+      // Filter by update time in memory since field names vary
+      const cutoff = cutoffDate.getTime();
+      return [
+        j.filter(e => !e.deleted_at && (new Date(e.updated_at || e.created_at).getTime() > cutoff)),
+        p.filter(e => !e.deleted_at && (new Date(e.updated_at || e.created_at).getTime() > cutoff)),
+        c.filter(e => !e.deleted_at && (new Date(e.updated_at || e.created_at).getTime() > cutoff))
+      ];
+    });
     
     console.log(`[Background AI] Found ${jobs.length} jobs, ${projects.length} projects, ${customers.length} customers`);
     
