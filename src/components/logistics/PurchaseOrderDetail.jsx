@@ -113,7 +113,7 @@ export default function PurchaseOrderDetail({ poId, onClose, mode = "page" }) {
         category: line.category || "Other"
       }));
 
-      // Get PO reference from canonical field with fallbacks
+      // Get PO reference and name from canonical fields with fallbacks
       const poNumber = po.po_number || po.order_reference || po.reference || '';
       const poName = po.name || '';
       
@@ -137,9 +137,28 @@ export default function PurchaseOrderDetail({ poId, onClose, mode = "page" }) {
     }
   }, [po?.id, lineItems?.length]);
 
+  // Helper: retry with backoff on 429
+  const invokeWithBackoff = async (fn, attempts = 3) => {
+    let delay = 600;
+    for (let i = 0; i < attempts; i++) {
+      try {
+        return await fn();
+      } catch (e) {
+        if (e?.status === 429 && i < attempts - 1) {
+          await new Promise(r => setTimeout(r, delay));
+          delay *= 2;
+          continue;
+        }
+        throw e;
+      }
+    }
+  };
+
   const updatePOMutation = useMutation({
     mutationFn: async (data) => {
-      const response = await base44.functions.invoke('managePurchaseOrder', data);
+      const response = await invokeWithBackoff(() =>
+        base44.functions.invoke('managePurchaseOrder', data)
+      );
       console.log("managePurchaseOrder response:", response.data);
       if (!response?.data?.success) {
         const errorMsg = response?.data?.error || 'Failed to update PO';
@@ -220,6 +239,17 @@ export default function PurchaseOrderDetail({ poId, onClose, mode = "page" }) {
     const dataToSend = {
       action: 'update',
       id: poId,
+      
+      // Send top-level for backend to pick up reliably
+      po_number: formData.po_number?.trim() || null,
+      name: formData.name?.trim() || null,
+      
+      // Also send in data object for backward compatibility
+      data: {
+        po_number: formData.po_number?.trim() || null,
+        name: formData.name?.trim() || null,
+      },
+      
       supplier_id: formData.supplier_id,
       supplier_name: supplier?.name || "",
       project_id: formData.project_id || null,
@@ -228,8 +258,6 @@ export default function PurchaseOrderDetail({ poId, onClose, mode = "page" }) {
       eta: formData.eta || null,
       attachments: formData.attachments,
       line_items: formData.line_items,
-      po_number: formData.po_number?.trim() || null,
-      name: formData.name?.trim() || null,
     };
     console.log('Saving PO with data:', dataToSend);
     updatePOMutation.mutate(dataToSend);
@@ -307,6 +335,17 @@ export default function PurchaseOrderDetail({ poId, onClose, mode = "page" }) {
     await updatePOMutation.mutateAsync({
       action: 'update',
       id: poId,
+      
+      // Send top-level
+      po_number: formData.po_number?.trim() || null,
+      name: formData.name?.trim() || null,
+      
+      // Send in data object too
+      data: {
+        po_number: formData.po_number?.trim() || null,
+        name: formData.name?.trim() || null,
+      },
+      
       supplier_id: formData.supplier_id,
       supplier_name: supplier?.name || "",
       project_id: formData.project_id,
@@ -315,8 +354,6 @@ export default function PurchaseOrderDetail({ poId, onClose, mode = "page" }) {
       eta: formData.eta || null,
       attachments: formData.attachments,
       line_items: formData.line_items,
-      po_number: formData.po_number?.trim() || null,
-      name: formData.name?.trim() || null,
     });
     
     // Then update status to On Order
