@@ -5,43 +5,40 @@ Deno.serve(async (req) => {
     const base44 = createClientFromRequest(req);
     
     // Service role for background processing
-    const { hoursAgo = 168 } = await req.json().catch(() => ({})); // Default to 7 days
+    const body = await req.json().catch(() => ({}));
+    const { hoursAgo = 168, limit = 10 } = body; // Default to 7 days, limit 10 entities
     
-    const cutoffDate = new Date();
-    cutoffDate.setHours(cutoffDate.getHours() - hoursAgo);
-    
-    console.log(`[Background AI] Analyzing entities updated in last ${hoursAgo} hours`);
+    console.log(`[Background AI] Starting analysis - hoursAgo: ${hoursAgo}, limit: ${limit}`);
     
     const results = {
       processed: 0,
       flagsAdded: 0,
       errors: 0,
-      entities: []
+      entities: [],
+      debug: {
+        totalJobs: 0,
+        totalProjects: 0,
+        totalCustomers: 0
+      }
     };
     
-    // Fetch all active entities (can't reliably filter by updated_at across all entities)
-    // Instead, we'll fetch all and process them
-    const [jobs, projects, customers] = await Promise.all([
-      base44.asServiceRole.entities.Job.filter({
-        status: { $ne: 'Cancelled' }
-      }),
-      base44.asServiceRole.entities.Project.filter({
-        status: { $ne: 'Lost' }
-      }),
-      base44.asServiceRole.entities.Customer.filter({
-        status: 'active'
-      })
-    ]).then(([j, p, c]) => {
-      // Filter by update time in memory since field names vary
-      const cutoff = cutoffDate.getTime();
-      return [
-        j.filter(e => !e.deleted_at && (new Date(e.updated_at || e.created_at).getTime() > cutoff)),
-        p.filter(e => !e.deleted_at && (new Date(e.updated_at || e.created_at).getTime() > cutoff)),
-        c.filter(e => !e.deleted_at && (new Date(e.updated_at || e.created_at).getTime() > cutoff))
-      ];
-    });
+    // Fetch recent entities - just get all and limit in memory
+    const [allJobs, allProjects, allCustomers] = await Promise.all([
+      base44.asServiceRole.entities.Job.list('-created_date', 50),
+      base44.asServiceRole.entities.Project.list('-created_date', 50),
+      base44.asServiceRole.entities.Customer.list('-created_date', 50)
+    ]);
     
-    console.log(`[Background AI] Found ${jobs.length} jobs, ${projects.length} projects, ${customers.length} customers`);
+    // Filter out deleted/cancelled and limit
+    const jobs = allJobs.filter(e => !e.deleted_at && e.status !== 'Cancelled').slice(0, limit);
+    const projects = allProjects.filter(e => !e.deleted_at && e.status !== 'Lost').slice(0, limit);
+    const customers = allCustomers.filter(e => !e.deleted_at).slice(0, limit);
+    
+    results.debug.totalJobs = jobs.length;
+    results.debug.totalProjects = projects.length;
+    results.debug.totalCustomers = customers.length;
+    
+    console.log(`[Background AI] Processing ${jobs.length} jobs, ${projects.length} projects, ${customers.length} customers`);
     
     // Process each entity type
     const entityTypes = [
