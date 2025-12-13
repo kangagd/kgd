@@ -61,7 +61,6 @@ import JobContactsPanel from "./JobContactsPanel";
 import ThirdPartyTradesInfo from "./ThirdPartyTradesInfo";
 import BackButton from "../common/BackButton";
 import SampleQuickActionsPanel from "./SampleQuickActionsPanel";
-import AttentionItemsDisplay from "@/components/attention/AttentionItemsDisplay";
 
 
 const statusColors = {
@@ -1371,14 +1370,6 @@ export default function JobDetails({ job: initialJob, onClose, onStatusChange, o
         }
         
         <CardContent className={`p-3 md:p-4 space-y-3 ${isTechnician ? 'pb-32' : ''}`}>
-          <AttentionItemsDisplay
-            entityType="job"
-            entityId={job.id}
-            projectId={job.project_id}
-            customerId={job.customer_id}
-            user={user}
-          />
-
           <Tabs defaultValue="details" className="w-full">
             <TabsList className="w-full justify-start mb-3 overflow-x-auto flex-nowrap">
               <TabsTrigger value="details" className="flex-1">Details</TabsTrigger>

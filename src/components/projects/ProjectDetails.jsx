@@ -65,7 +65,6 @@ import { getProjectFreshnessBadge } from "../utils/freshness";
 import DocumentListItem from "./DocumentListItem";
 import LastActivityCard from "./LastActivityCard";
 import SamplesAtClientPanel from "./SamplesAtClientPanel";
-import AttentionItemsDisplay from "@/components/attention/AttentionItemsDisplay";
 
 const statusColors = {
   "Lead": "bg-slate-100 text-slate-700",
@@ -1533,13 +1532,6 @@ Format as HTML bullet points using <ul> and <li> tags. Include only the most cri
         </CardHeader>
 
       <CardContent className="p-3 md:p-4">
-        <AttentionItemsDisplay
-          entityType="project"
-          entityId={project.id}
-          customerId={project.customer_id}
-          user={user}
-        />
-
         <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
             <div className="sticky top-0 z-10 bg-white pb-3">
               <div className="overflow-x-auto -mx-3 px-3 md:mx-0 md:px-0 mb-3">

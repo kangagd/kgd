@@ -237,17 +237,6 @@ Deno.serve(async (req) => {
                 await updateProjectActivity(base44, job.project_id, 'Job Updated');
             }
 
-            // Evaluate attention items
-            try {
-                await base44.asServiceRole.functions.invoke('evaluateAttentionItems', {
-                    entityType: 'job',
-                    entityId: job.id,
-                    eventType: 'job.updated'
-                });
-            } catch (evalError) {
-                console.error('Failed to evaluate attention items:', evalError);
-            }
-
             // Handle logistics job completion
             if (job.status === 'Completed' && previousJob.status !== 'Completed') {
                 // Move Parts when PO logistics job is completed
