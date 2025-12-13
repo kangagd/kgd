@@ -31,7 +31,7 @@ export default function PurchaseOrderDetail({ poId, onClose, mode = "page" }) {
     project_id: "",
     delivery_method: "",
     notes: "",
-    po_number: "",
+    po_reference: "",
     name: "",
     status: PO_STATUS.DRAFT,
     eta: "",
@@ -113,18 +113,18 @@ export default function PurchaseOrderDetail({ poId, onClose, mode = "page" }) {
         category: line.category || "Other"
       }));
 
-      // Get PO reference and name from canonical field (po_number) with legacy fallbacks
-      const poNumber = po.po_number || po.order_reference || po.reference || '';
+      // Get PO reference and name from canonical field (po_reference) with legacy fallbacks
+      const poReference = po.po_reference || po.po_number || po.order_reference || po.reference || '';
       const poName = po.name || '';
       
       // Only update if this is initial load or if PO ID changed
-      if (!initialLoadDone.current || formData.po_number !== poNumber) {
+      if (!initialLoadDone.current || formData.po_reference !== poReference) {
         setFormData({
           supplier_id: po.supplier_id || "",
           project_id: po.project_id || "",
           delivery_method: po.delivery_method || "",
           notes: po.notes || "",
-          po_number: poNumber,
+          po_reference: poReference,
           name: poName,
           status: normalizedStatus,
           eta: po.expected_date || "",
@@ -207,10 +207,20 @@ export default function PurchaseOrderDetail({ poId, onClose, mode = "page" }) {
     }
     };
 
-    const handleSave = () => {
+    const handleSave = async () => {
     const supplier = suppliers.find(s => s.id === formData.supplier_id);
+    
+    // First: directly update entity to ensure po_reference and name persist
+    await base44.entities.PurchaseOrder.update(poId, {
+      po_reference: formData.po_reference?.trim() || null,
+      name: formData.name?.trim() || null,
+      po_number: formData.po_reference?.trim() || null,
+      order_reference: formData.po_reference?.trim() || null,
+    });
+    
+    // Then: update other fields
     updatePOMutation.mutate({
-      po_number: formData.po_number?.trim() || null,
+      po_reference: formData.po_reference?.trim() || null,
       name: formData.name?.trim() || null,
       supplier_id: formData.supplier_id || null,
       supplier_name: supplier?.name || "",
@@ -289,10 +299,18 @@ export default function PurchaseOrderDetail({ poId, onClose, mode = "page" }) {
       return;
     }
     
-    // First save any pending changes
+    // First: directly update entity to ensure po_reference and name persist
+    await base44.entities.PurchaseOrder.update(poId, {
+      po_reference: formData.po_reference?.trim() || null,
+      name: formData.name?.trim() || null,
+      po_number: formData.po_reference?.trim() || null,
+      order_reference: formData.po_reference?.trim() || null,
+    });
+    
+    // Then save other pending changes
     const supplier = suppliers.find(s => s.id === formData.supplier_id);
     await updatePOMutation.mutateAsync({
-      po_number: formData.po_number?.trim() || null,
+      po_reference: formData.po_reference?.trim() || null,
       name: formData.name?.trim() || null,
       supplier_id: formData.supplier_id || null,
       supplier_name: supplier?.name || "",
@@ -303,7 +321,7 @@ export default function PurchaseOrderDetail({ poId, onClose, mode = "page" }) {
       attachments: formData.attachments || [],
     });
     
-    // Then update status using managePurchaseOrder for side effects
+    // Finally update status using managePurchaseOrder for side effects
     const response = await base44.functions.invoke('managePurchaseOrder', {
       action: 'updateStatus',
       id: poId,
@@ -361,8 +379,8 @@ export default function PurchaseOrderDetail({ poId, onClose, mode = "page" }) {
           supplier_name: suppliers.find(s => s.id === formData.supplier_id)?.name || "",
           order_date: po.order_date || po.created_date,
           eta: formData.eta || po.expected_date,
-          po_number: formData.po_number,
-          order_reference: formData.po_number,
+          po_number: formData.po_reference,
+          order_reference: formData.po_reference,
           source_type: newItem.source_type || "supplier_delivery"
         });
       } else if (formData.project_id) {
@@ -380,8 +398,8 @@ export default function PurchaseOrderDetail({ poId, onClose, mode = "page" }) {
           supplier_name: suppliers.find(s => s.id === formData.supplier_id)?.name || "",
           order_date: po.order_date || po.created_date,
           eta: formData.eta || po.expected_date,
-          po_number: formData.po_number || null,
-          order_reference: formData.po_number || null,
+          po_number: formData.po_reference || null,
+          order_reference: formData.po_reference || null,
           source_type: newItem.source_type || "supplier_delivery",
           notes: newItem.notes || null
         });
@@ -572,15 +590,15 @@ export default function PurchaseOrderDetail({ poId, onClose, mode = "page" }) {
                 </div>
                 {isDraft ? (
                  <Input
-                   value={formData.po_number}
-                   onChange={(e) => setFormData({ ...formData, po_number: e.target.value })}
+                   value={formData.po_reference}
+                   onChange={(e) => setFormData({ ...formData, po_reference: e.target.value })}
                    placeholder="Enter PO reference..."
                    className="mt-2 max-w-xs text-sm"
                  />
                 ) : (
                  <div className="mt-2 space-y-1">
-                   {formData.po_number ? (
-                     <p className="text-sm font-medium text-[#111827]">PO #: {formData.po_number}</p>
+                   {formData.po_reference ? (
+                     <p className="text-sm font-medium text-[#111827]">PO #: {formData.po_reference}</p>
                    ) : (
                      <p className="text-sm text-[#6B7280]">ID: {po.id.slice(0, 8)}</p>
                    )}
@@ -610,7 +628,7 @@ export default function PurchaseOrderDetail({ poId, onClose, mode = "page" }) {
                  </Button>
                  <Button
                    onClick={handleSave}
-                   disabled={updatePOMutation.isPending || !formData.po_number?.trim()}
+                   disabled={updatePOMutation.isPending || !formData.po_reference?.trim()}
                    className="bg-[#F3F4F6] text-[#111827] hover:bg-[#E5E7EB]"
                  >
                    <Save className="w-4 h-4 mr-2" />
@@ -618,7 +636,7 @@ export default function PurchaseOrderDetail({ poId, onClose, mode = "page" }) {
                  </Button>
                  <Button
                    onClick={handleSendToSupplier}
-                   disabled={updatePOMutation.isPending || !formData.po_number?.trim()}
+                   disabled={updatePOMutation.isPending || !formData.po_reference?.trim()}
                    className="bg-[#FAE008] text-[#111827] hover:bg-[#E5CF07]"
                  >
                    <Send className="w-4 h-4 mr-2" />
@@ -642,8 +660,8 @@ export default function PurchaseOrderDetail({ poId, onClose, mode = "page" }) {
               <div>
                 <Label>PO Reference</Label>
                 <Input
-                  value={formData.po_number}
-                  onChange={(e) => setFormData({ ...formData, po_number: e.target.value })}
+                  value={formData.po_reference}
+                  onChange={(e) => setFormData({ ...formData, po_reference: e.target.value })}
                   disabled={!isDraft}
                   placeholder="e.g. KGD-RSH-4634"
                 />

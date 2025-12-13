@@ -296,12 +296,14 @@ Deno.serve(async (req) => {
                 return Response.json({ error: 'supplier_id and non-empty line_items are required' }, { status: 400 });
             }
 
-            // Normalize PO reference from all possible inputs (canonical: po_number)
-            const normalizedPoNumber =
-                po_number ??
-                data?.po_number ??
+            // Normalize PO reference from all possible inputs (canonical: po_reference)
+            const normalizedPoRef =
                 po_reference ??
                 data?.po_reference ??
+                po_number ??
+                data?.po_number ??
+                order_reference ??
+                data?.order_reference ??
                 reference ??
                 data?.reference ??
                 null;
@@ -317,7 +319,9 @@ Deno.serve(async (req) => {
                 delivery_method: delivery_method || PO_DELIVERY_METHOD.DELIVERY,
                 delivery_location: delivery_location || null,
                 notes: notes || null,
-                po_number: normalizedPoNumber,
+                po_reference: normalizedPoRef,
+                po_number: normalizedPoRef,
+                order_reference: normalizedPoRef,
                 name: normalizedName,
                 created_by: user.email,
                 order_date: new Date().toISOString().split('T')[0],
@@ -381,19 +385,23 @@ Deno.serve(async (req) => {
             if (eta !== undefined) updateData.expected_date = eta || null;
             if (attachments !== undefined) updateData.attachments = attachments || [];
             
-            // --- Normalize PO Reference from all possible inputs (canonical: po_number) ---
-            const incomingPoNumber =
-                po_number ??
-                data?.po_number ??
+            // --- Normalize PO Reference from all possible inputs (canonical: po_reference) ---
+            const incomingPoRef =
                 po_reference ??
                 data?.po_reference ??
+                po_number ??
+                data?.po_number ??
+                order_reference ??
+                data?.order_reference ??
                 reference ??
                 data?.reference ??
                 null;
 
-            if (incomingPoNumber !== null) {
-                const cleanedRef = typeof incomingPoNumber === 'string' ? incomingPoNumber.trim() : incomingPoNumber;
+            if (incomingPoRef !== null) {
+                const cleanedRef = typeof incomingPoRef === 'string' ? incomingPoRef.trim() : incomingPoRef;
+                updateData.po_reference = cleanedRef || null;
                 updateData.po_number = cleanedRef || null;
+                updateData.order_reference = cleanedRef || null;
             }
 
             // --- Normalize Name from all possible inputs (canonical: name) ---
@@ -647,11 +655,13 @@ Deno.serve(async (req) => {
             }
 
             // Create new DRAFT PO
-            const normalizedPoNumber =
-                po_number ??
-                data?.po_number ??
+            const normalizedPoRef =
                 po_reference ??
                 data?.po_reference ??
+                po_number ??
+                data?.po_number ??
+                order_reference ??
+                data?.order_reference ??
                 reference ??
                 data?.reference ??
                 null;
@@ -666,7 +676,9 @@ Deno.serve(async (req) => {
                 delivery_method: delivery_method || PO_DELIVERY_METHOD.DELIVERY,
                 delivery_location: delivery_location || null,
                 notes: notes || null,
-                po_number: normalizedPoNumber,
+                po_reference: normalizedPoRef,
+                po_number: normalizedPoRef,
+                order_reference: normalizedPoRef,
                 name: normalizedName,
                 created_by: user.email,
                 order_date: new Date().toISOString().split('T')[0],

@@ -28,12 +28,23 @@ Deno.serve(async (req) => {
                     continue;
                 }
 
-                // Copy from order_reference or reference to po_number
-                const legacyRef = po.order_reference || po.reference;
-                if (legacyRef) {
-                    await base44.asServiceRole.entities.PurchaseOrder.update(po.id, {
-                        po_number: legacyRef,
-                    });
+                // Copy from legacy fields to po_reference
+                const legacyRef = po.po_number || po.order_reference || po.reference;
+                const updateData = {};
+                
+                if (!po.po_reference && legacyRef) {
+                    updateData.po_reference = legacyRef;
+                }
+                
+                // Mirror to po_number for compatibility
+                if (po.po_reference && !po.po_number) {
+                    updateData.po_number = po.po_reference;
+                } else if (!po.po_number && legacyRef) {
+                    updateData.po_number = legacyRef;
+                }
+                
+                if (Object.keys(updateData).length > 0) {
+                    await base44.asServiceRole.entities.PurchaseOrder.update(po.id, updateData);
                     updated++;
                 } else {
                     skipped++;
