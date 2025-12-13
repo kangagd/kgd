@@ -62,7 +62,7 @@ Deno.serve(async (req) => {
   try {
     const base44 = createClientFromRequest(req);
 
-    const { entityType, entityId } = await req.json();
+    const { entityType, entityId, existingFlags = [] } = await req.json();
 
     if (!entityType || !entityId) {
       return Response.json({ error: 'entityType and entityId required' }, { status: 400 });
@@ -126,15 +126,30 @@ Deno.serve(async (req) => {
       }
     });
 
+    // DEDUPLICATION: Check existing flags to prevent duplicates
+    const existingKeys = new Set(
+      existingFlags
+        .filter(f => !f.resolved_at && !f.dismissed_at)
+        .map(f => `${f.type}_${f.severity}`)
+    );
+
     // Filter suggestions by confidence and validate
     const validSuggestions = (aiResponse.suggested_flags || [])
-      .filter(flag => flag.confidence >= 0.65)
+      .filter(flag => {
+        if (flag.confidence < 0.65) return false;
+        
+        // CRITICAL: Don't suggest if equivalent flag already exists
+        const key = `${flag.type}_${flag.severity}`;
+        if (existingKeys.has(key)) return false;
+        
+        return true;
+      })
       .map(flag => ({
         id: `ai-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
         origin: 'ai_suggested',
         type: flag.type,
-        label: flag.label,
-        details: flag.details,
+        label: flag.label.length > 140 ? flag.label.substring(0, 137) + '...' : flag.label,
+        details: flag.details.length > 140 ? flag.details.substring(0, 137) + '...' : flag.details,
         severity: flag.severity,
         confidence: flag.confidence,
         source_refs: flag.source_refs || {},
