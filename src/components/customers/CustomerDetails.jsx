@@ -2,12 +2,10 @@ import React, { useState } from "react";
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { ArrowLeft, Edit, Phone, Mail, Briefcase, Plus, Tag, Trash2, Building2, MapPin, Users, FolderKanban } from "lucide-react";
-import AttentionItemsPanel from "../attention/AttentionItemsPanel";
 import { StatusBadge, CustomerTypeBadge, JobStatusBadge, ProjectStatusBadge } from "../common/StatusBadge";
 import { useQuery } from "@tanstack/react-query";
 import { base44 } from "@/api/base44Client";
 import { Link, useNavigate } from "react-router-dom";
-import { useEffect } from "react";
 import { createPageUrl } from "@/utils";
 import { format, parseISO } from "date-fns";
 import DuplicateWarningCard, { DuplicateBadge } from "../common/DuplicateWarningCard";
@@ -27,20 +25,7 @@ import BackButton from "../common/BackButton";
 
 export default function CustomerDetails({ customer, onClose, onEdit, onDelete }) {
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
-  const [user, setUser] = useState(null);
   const navigate = useNavigate();
-
-  useEffect(() => {
-    const loadUser = async () => {
-      try {
-        const currentUser = await base44.auth.me();
-        setUser(currentUser);
-      } catch (error) {
-        console.error("Error loading user:", error);
-      }
-    };
-    loadUser();
-  }, []);
 
   const { data: jobs = [] } = useQuery({
     queryKey: ['customerJobs', customer.id],
@@ -75,17 +60,9 @@ export default function CustomerDetails({ customer, onClose, onEdit, onDelete })
     setShowDeleteConfirm(false);
   };
 
-  const isAdminOrManager = user?.role === 'admin' || user?.role === 'manager';
-
   return (
     <>
-      <AttentionItemsPanel
-        entity_type="customer"
-        entity_id={customer.id}
-        showCreateButton={isAdminOrManager}
-      />
-
-      <Card className="border-2 border-slate-200 shadow-lg rounded-2xl mt-4">
+      <Card className="border-2 border-slate-200 shadow-lg rounded-2xl">
         <CardHeader className="border-b-2 border-slate-200 bg-gradient-to-r from-slate-50 to-white p-4 md:p-6">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-4 flex-1 min-w-0">

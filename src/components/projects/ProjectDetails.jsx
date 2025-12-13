@@ -65,7 +65,6 @@ import { getProjectFreshnessBadge } from "../utils/freshness";
 import DocumentListItem from "./DocumentListItem";
 import LastActivityCard from "./LastActivityCard";
 import SamplesAtClientPanel from "./SamplesAtClientPanel";
-import AttentionItemsPanel from "../attention/AttentionItemsPanel";
 
 const statusColors = {
   "Lead": "bg-slate-100 text-slate-700",
@@ -934,14 +933,7 @@ Format as HTML bullet points using <ul> and <li> tags. Include only the most cri
   };
 
   return (
-    <>
-      <AttentionItemsPanel
-        entity_type="project"
-        entity_id={project.id}
-        customer_id={project.customer_id}
-        showCreateButton={isAdminOrManager}
-      />
-      <div className="relative flex flex-col lg:flex-row gap-4 overflow-x-hidden items-start mt-4">
+    <div className="relative flex flex-col lg:flex-row gap-4 overflow-x-hidden items-start">
       {/* Customer Sidebar */}
       <aside className="w-full lg:w-72 flex-shrink-0 lg:sticky lg:top-4">
         <Card className="border border-[#E5E7EB] shadow-sm rounded-lg overflow-hidden">
@@ -1971,7 +1963,6 @@ Format as HTML bullet points using <ul> and <li> tags. Include only the most cri
       >
         <LastActivityCard project={project} />
       </EntityModal>
-      </div>
-    </>
+    </div>
   );
 }

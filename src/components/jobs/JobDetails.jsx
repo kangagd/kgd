@@ -61,7 +61,6 @@ import JobContactsPanel from "./JobContactsPanel";
 import ThirdPartyTradesInfo from "./ThirdPartyTradesInfo";
 import BackButton from "../common/BackButton";
 import SampleQuickActionsPanel from "./SampleQuickActionsPanel";
-import AttentionItemsPanel from "../attention/AttentionItemsPanel";
 
 
 const statusColors = {
@@ -518,7 +517,6 @@ export default function JobDetails({ job: initialJob, onClose, onStatusChange, o
 
   const isTechnician = user?.is_field_technician && user?.role !== 'admin';
   const isAdmin = user?.role === 'admin';
-  const isAdminOrManager = user?.role === 'admin' || user?.role === 'manager';
 
   const createInvoiceMutation = useMutation({
     mutationFn: async (invoiceData) => {
@@ -911,15 +909,7 @@ export default function JobDetails({ job: initialJob, onClose, onStatusChange, o
 
   return (
     <>
-      <AttentionItemsPanel
-        entity_type="job"
-        entity_id={job.id}
-        project_id={job.project_id}
-        customer_id={job.customer_id}
-        showCreateButton={isAdminOrManager}
-      />
-
-      <Card className={`border border-[#E5E7EB] shadow-sm ${isTechnician ? 'rounded-none' : 'rounded-lg'} overflow-hidden mt-4`}>
+      <Card className={`border border-[#E5E7EB] shadow-sm ${isTechnician ? 'rounded-none' : 'rounded-lg'} overflow-hidden`}>
         <CardHeader className="border-b border-[#E5E7EB] bg-white p-3 md:p-4 space-y-3">
           {job.sla_due_at && isPast(parseISO(job.sla_due_at)) && job.status !== 'Completed' && (
             <div className="bg-red-50 border border-red-200 text-red-800 p-2.5 rounded-lg flex items-center gap-2 text-sm font-bold">
