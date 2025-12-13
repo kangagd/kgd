@@ -14,7 +14,6 @@ import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 import { base44 } from "@/api/base44Client";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import AttentionPanel from "../common/AttentionPanel";
 import { Link, useNavigate } from "react-router-dom";
 import { createPageUrl } from "@/utils";
 import { toast } from "sonner";
@@ -247,12 +246,6 @@ export default function JobDetails({ job: initialJob, onClose, onStatusChange, o
     queryKey: ['customer', job.customer_id],
     queryFn: () => base44.entities.Customer.get(job.customer_id),
     enabled: !!job.customer_id
-  });
-
-  const { data: project } = useQuery({
-    queryKey: ['project', job.project_id],
-    queryFn: () => base44.entities.Project.get(job.project_id),
-    enabled: !!job.project_id
   });
 
   const { data: contract } = useQuery({
@@ -1377,26 +1370,6 @@ export default function JobDetails({ job: initialJob, onClose, onStatusChange, o
         }
         
         <CardContent className={`p-3 md:p-4 space-y-3 ${isTechnician ? 'pb-32' : ''}`}>
-          {/* Attention Panel */}
-          {job && (
-            <AttentionPanel
-              flags={job.attention_flags || []}
-              inheritedFlags={[
-                ...(customer?.attention_flags || []).filter(f => f.origin === 'manual' && !f.resolved_at && !f.dismissed_at),
-                ...(project?.attention_flags || []).filter(f => f.origin === 'manual' && !f.resolved_at && !f.dismissed_at)
-              ]}
-              entityId={job.id}
-              entityType="job"
-              onUpdate={async (updatedFlags) => {
-                await base44.entities.Job.update(job.id, { 
-                  attention_flags: updatedFlags
-                });
-                queryClient.invalidateQueries({ queryKey: ['job', job.id] });
-              }}
-              currentUser={user}
-            />
-          )}
-
           <Tabs defaultValue="details" className="w-full">
             <TabsList className="w-full justify-start mb-3 overflow-x-auto flex-nowrap">
               <TabsTrigger value="details" className="flex-1">Details</TabsTrigger>

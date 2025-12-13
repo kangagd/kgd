@@ -1,7 +1,6 @@
 import React, { useState } from "react";
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import AttentionPanel from "../common/AttentionPanel";
 import { ArrowLeft, Edit, Phone, Mail, Briefcase, Plus, Tag, Trash2, Building2, MapPin, Users, FolderKanban } from "lucide-react";
 import { StatusBadge, CustomerTypeBadge, JobStatusBadge, ProjectStatusBadge } from "../common/StatusBadge";
 import { useQuery } from "@tanstack/react-query";
@@ -26,20 +25,7 @@ import BackButton from "../common/BackButton";
 
 export default function CustomerDetails({ customer, onClose, onEdit, onDelete }) {
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
-  const [user, setUser] = useState(null);
   const navigate = useNavigate();
-
-  React.useEffect(() => {
-    const loadUser = async () => {
-      try {
-        const currentUser = await base44.auth.me();
-        setUser(currentUser);
-      } catch (error) {
-        console.error("Error loading user:", error);
-      }
-    };
-    loadUser();
-  }, []);
 
   const { data: jobs = [] } = useQuery({
     queryKey: ['customerJobs', customer.id],
@@ -122,21 +108,6 @@ export default function CustomerDetails({ customer, onClose, onEdit, onDelete })
           </div>
         </CardHeader>
         <CardContent className="p-4 md:p-6 space-y-6">
-          {/* Attention Panel */}
-          <AttentionPanel
-            flags={customer.attention_flags || []}
-            entityId={customer.id}
-            entityType="customer"
-            onUpdate={async (updatedFlags) => {
-              await base44.entities.Customer.update(customer.id, { 
-                attention_flags: updatedFlags 
-              });
-              // Trigger parent refetch
-              window.location.reload();
-            }}
-            currentUser={user}
-          />
-
           {/* Duplicate Warning */}
           <DuplicateWarningCard entityType="Customer" record={customer} />
 
