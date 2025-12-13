@@ -21,7 +21,15 @@ import MultiTechnicianSelect from "./MultiTechnicianSelect";
 import RichTextField from "../common/RichTextField";
 import AddressAutocomplete from "../common/AddressAutocomplete";
 
-export default function JobForm({ job, technicians, onSubmit, onCancel, isSubmitting, preselectedCustomerId, preselectedProjectId }) {
+export default function JobForm({ job, technicians, onSubmit, onCancel, isSubmitting, preselectedCustomerId, preselectedProjectId, createJobContext }) {
+  // Detect logistics context from URL params or props
+  const urlParams = new URLSearchParams(window.location.search);
+  const sourceParam = urlParams.get('source');
+  const isLogisticsContext = createJobContext === 'purchase_order' || 
+                             createJobContext === 'logistics_timeline' ||
+                             sourceParam === 'purchase_order' || 
+                             sourceParam === 'logistics_timeline';
+
   const [formData, setFormData] = useState(job || {
     job_number: null,
     project_id: preselectedProjectId || "",
@@ -60,7 +68,7 @@ export default function JobForm({ job, technicians, onSubmit, onCancel, isSubmit
     invoice_url: "",
   });
 
-  const [isLogisticsJob, setIsLogisticsJob] = useState(false);
+  const [isLogisticsJob, setIsLogisticsJob] = useState(isLogisticsContext);
   const [uploadingImages, setUploadingImages] = useState(false);
   const [uploadingQuote, setUploadingQuote] = useState(false);
   const [uploadingInvoice, setUploadingInvoice] = useState(false);
@@ -194,6 +202,18 @@ export default function JobForm({ job, technicians, onSubmit, onCancel, isSubmit
       // Don't auto-save if no customer is selected
       onCancel();
       return;
+    }
+
+    // Validate job type matches logistics mode
+    if (!job && formData.job_type_id) {
+      const selectedJobType = allJobTypes.find(jt => jt.id === formData.job_type_id);
+      if (selectedJobType) {
+        const isSelectedLogistics = selectedJobType.is_logistics === true;
+        if (isLogisticsJob !== isSelectedLogistics) {
+          alert('Please select a job type that matches the logistics mode, or clear the job type selection.');
+          return;
+        }
+      }
     }
 
     if (!job) {
@@ -499,14 +519,14 @@ export default function JobForm({ job, technicians, onSubmit, onCancel, isSubmit
             {/* Logistics Toggle - Only show when creating new job */}
             {!job && (
               <div className="flex items-center justify-between p-4 bg-slate-50 border-2 border-slate-200 rounded-xl">
-                <div className="flex items-center gap-3">
+                <div className="flex items-center gap-3 flex-1">
                   <Truck className="w-5 h-5 text-[#6B7280]" />
-                  <div>
+                  <div className="flex-1">
                     <Label htmlFor="logistics-toggle" className="text-[14px] font-semibold text-[#111827] cursor-pointer">
                       Is this a logistics job?
                     </Label>
-                    <p className="text-[12px] text-[#6B7280] mt-0.5">
-                      Enable for stock movement, deliveries, or warehouse tasks
+                    <p className="text-[12px] text-[#6B7280] mt-1">
+                      Logistics jobs are for deliveries, pickups, and stock movement only
                     </p>
                   </div>
                 </div>
@@ -515,8 +535,14 @@ export default function JobForm({ job, technicians, onSubmit, onCancel, isSubmit
                   checked={isLogisticsJob}
                   onCheckedChange={(checked) => {
                     setIsLogisticsJob(checked);
-                    // Reset job type when toggling
-                    setFormData(prev => ({ ...prev, job_type_id: "", job_type: "" }));
+                    // Reset job type when toggling if current selection is invalid
+                    const currentJobType = allJobTypes.find(jt => jt.id === formData.job_type_id);
+                    if (currentJobType) {
+                      const isCurrentLogistics = currentJobType.is_logistics === true;
+                      if (checked !== isCurrentLogistics) {
+                        setFormData(prev => ({ ...prev, job_type_id: "", job_type: "" }));
+                      }
+                    }
                   }}
                   className="scale-110"
                 />
