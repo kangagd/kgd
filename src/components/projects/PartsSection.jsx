@@ -220,20 +220,27 @@ export default function PartsSection({ projectId, autoExpand = false, registerAd
           <Button variant="outline" onClick={handleAddPart}>Order First Part</Button>
         </div>
       ) : parts.length > 0 ? (
-        <div className="border border-[#E5E7EB] rounded-xl overflow-hidden bg-white shadow-sm">
-          {/* Desktop Table Header */}
-          <div className="hidden md:grid grid-cols-12 gap-4 p-3 bg-slate-50 border-b border-[#E5E7EB] text-xs font-medium text-slate-500 uppercase tracking-wider">
-            <div className="col-span-2">Part / Category</div>
-            <div className="col-span-2">Status</div>
-            <div className="col-span-2">Location</div>
-            <div className="col-span-2">Supplier / PO</div>
-            <div className="col-span-2">Logistics</div>
-            <div className="col-span-2 text-right">Quick Actions</div>
-          </div>
+        <div className="space-y-4">
+          {/* Ready to Pick Section */}
+          {partsReadyToPick.length > 0 && (
+            <div className="border border-[#E5E7EB] rounded-xl overflow-hidden bg-white shadow-sm">
+              <div className="flex items-center gap-2 p-3 bg-emerald-50 border-b border-emerald-100">
+                <CheckCircle2 className="w-5 h-5 text-emerald-600" />
+                <h3 className="font-semibold text-emerald-900">Ready to Pick / Assigned ({partsReadyToPick.length})</h3>
+              </div>
 
-          {/* Parts List */}
-          <div className="divide-y divide-[#E5E7EB]">
-            {parts.map((part) => {
+              {/* Desktop Table Header */}
+              <div className="hidden md:grid grid-cols-12 gap-4 p-3 bg-slate-50 border-b border-[#E5E7EB] text-xs font-medium text-slate-500 uppercase tracking-wider">
+                <div className="col-span-2">Part / Category</div>
+                <div className="col-span-2">Status</div>
+                <div className="col-span-2">Location</div>
+                <div className="col-span-2">Supplier / PO</div>
+                <div className="col-span-2">Logistics</div>
+                <div className="col-span-2 text-right">Quick Actions</div>
+              </div>
+
+              <div className="divide-y divide-[#E5E7EB]">
+                {partsReadyToPick.map((part) => {
               const isOverdue = (part.status === 'Ordered' || part.status === 'Back-ordered') && 
                                 part.eta && isPast(parseISO(part.eta));
               
@@ -467,8 +474,268 @@ export default function PartsSection({ projectId, autoExpand = false, registerAd
                   </div>
                 </div>
               );
-            })}
-          </div>
+                })}
+              </div>
+            </div>
+          )}
+
+          {/* Shortages Section */}
+          {partsNotReady.length > 0 && (
+            <div className="border border-[#E5E7EB] rounded-xl overflow-hidden bg-white shadow-sm">
+              <div className="flex items-center gap-2 p-3 bg-red-50 border-b border-red-100">
+                <AlertTriangle className="w-5 h-5 text-red-600" />
+                <h3 className="font-semibold text-red-900">Shortages ({partsNotReady.length})</h3>
+              </div>
+
+              {/* Desktop Table Header */}
+              <div className="hidden md:grid grid-cols-12 gap-4 p-3 bg-slate-50 border-b border-[#E5E7EB] text-xs font-medium text-slate-500 uppercase tracking-wider">
+                <div className="col-span-2">Part / Category</div>
+                <div className="col-span-2">Status</div>
+                <div className="col-span-2">Location</div>
+                <div className="col-span-2">Supplier / PO</div>
+                <div className="col-span-2">Logistics</div>
+                <div className="col-span-2 text-right">Quick Actions</div>
+              </div>
+
+              <div className="divide-y divide-[#E5E7EB]">
+                {partsNotReady.map((part) => {
+              const isOverdue = (part.status === 'Ordered' || part.status === 'Back-ordered') && 
+                                part.eta && isPast(parseISO(part.eta));
+              
+              const normalizedStatus = normaliseLegacyPartStatus(part.status, part);
+              let displayLocation = normaliseLegacyPartLocation(part.location);
+
+              // If location is missing or still "supplier", derive a better display location from status
+              if (!displayLocation || displayLocation === PART_LOCATION.SUPPLIER) {
+                switch (normalizedStatus) {
+                  case PART_STATUS.IN_LOADING_BAY:
+                    displayLocation = PART_LOCATION.LOADING_BAY;
+                    break;
+                  case PART_STATUS.IN_STORAGE:
+                    displayLocation = PART_LOCATION.WAREHOUSE_STORAGE;
+                    break;
+                  case PART_STATUS.IN_VEHICLE:
+                    displayLocation = PART_LOCATION.VEHICLE;
+                    break;
+                  case PART_STATUS.IN_TRANSIT:
+                    // Treat in-transit as heading to loading bay for display purposes
+                    displayLocation = PART_LOCATION.LOADING_BAY;
+                    break;
+                  default:
+                    // leave as supplier or whatever it already was
+                    break;
+                }
+              }
+              
+              // Determine progress index using displayLocation
+              const progressIndex = FLOW_STEPS.indexOf(displayLocation);
+              const progressPercent = progressIndex === -1 ? 0 : ((progressIndex + 1) / FLOW_STEPS.length) * 100;
+
+              const partTitle = part.item_name || part.category || "Part";
+
+              return (
+                <div 
+                  key={part.id} 
+                  onClick={() => handleEditPart(part)}
+                  className={`group hover:bg-blue-50/50 transition-colors cursor-pointer ${isOverdue ? 'bg-amber-50/30' : ''}`}
+                >
+                  <div className="md:grid grid-cols-12 gap-4 p-4 items-center">
+                    
+                    {/* Col 1: Part Info */}
+                    <div className="col-span-12 md:col-span-2 mb-2 md:mb-0">
+                      <div className="flex items-center gap-3">
+                        <div className="bg-slate-100 p-2 rounded-lg text-slate-500">
+                          <Truck className="w-5 h-5" />
+                        </div>
+                        <div>
+                          <div className="flex items-center gap-2 flex-wrap">
+                            <span className="font-semibold text-slate-900">
+                              {partTitle}
+                            </span>
+                            {part.category && (
+                              <Badge
+                                variant="outline"
+                                className="text-[11px] bg-slate-100 text-slate-600 border-slate-200"
+                              >
+                                {part.category}
+                              </Badge>
+                            )}
+                          </div>
+
+                          {isOverdue && (
+                            <div className="flex items-center text-xs text-amber-600 font-medium mt-0.5">
+                              <AlertTriangle className="w-3 h-3 mr-1" />
+                              Overdue
+                            </div>
+                          )}
+
+                          {/* Progress Bar (Mobile Only) */}
+                          <div className="md:hidden mt-2 w-24 h-1 bg-slate-100 rounded-full overflow-hidden">
+                            <div className="h-full bg-green-500" style={{ width: `${progressPercent}%` }}></div>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* Col 2: Status */}
+                    <div className="col-span-6 md:col-span-2 mb-2 md:mb-0">
+                      <Badge className={`${statusColors[normalizedStatus]} font-medium border px-2.5 py-0.5`}>
+                        {getPartStatusLabel(normalizedStatus)}
+                      </Badge>
+                      {part.eta && (
+                        <div className="text-xs text-slate-500 mt-1">
+                          ETA: {format(parseISO(part.eta), 'MMM d')}
+                        </div>
+                      )}
+                    </div>
+
+                    {/* Col 3: Location + Progress */}
+                    <div className="col-span-6 md:col-span-2 mb-2 md:mb-0">
+                      <Badge
+                        className={`${
+                          locationColors[displayLocation] || "bg-slate-100 text-slate-600"
+                        } border-0 font-normal`}
+                      >
+                        <MapPin className="w-3 h-3 mr-1 opacity-70" />
+                        {getPartLocationLabel(displayLocation)}
+                      </Badge>
+                      
+                      {/* Progress Trail (Desktop) */}
+                      <div className="hidden md:flex items-center gap-1 mt-1.5">
+                        {FLOW_STEPS.map((step, idx) => {
+                          const currentIndex = FLOW_STEPS.indexOf(displayLocation);
+                          return (
+                            <div 
+                              key={step}
+                              className={`h-1 flex-1 rounded-full ${idx <= currentIndex ? 'bg-green-500' : 'bg-slate-200'}`}
+                              title={getPartLocationLabel(step)}
+                            />
+                          );
+                        })}
+                      </div>
+                    </div>
+
+                    {/* Col 4: Supplier & PO */}
+                    <div className="col-span-6 md:col-span-2 text-sm text-slate-600">
+                      {(!part.supplier_name && !part.purchase_order_id) ? (
+                        <div className="text-sm text-slate-400">-</div>
+                      ) : (
+                        <>
+                          <div className="font-medium">
+                            {part.supplier_name || "-"}
+                          </div>
+
+                          {part.purchase_order_id ? (
+                            <button
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                handleEditPart(part);
+                              }}
+                              className="inline-flex items-center gap-1 mt-1 px-2 py-0.5 rounded-md bg-blue-50 text-blue-700 hover:bg-blue-100 text-xs font-medium transition-colors"
+                            >
+                              <FileText className="w-3 h-3" />
+                              {(() => {
+                                const linkedPO = projectPOs.find(po => po.id === part.purchase_order_id);
+                                const poRef = getPoDisplayRef(linkedPO, part);
+                                return poRef ? `PO #${poRef}` : `PO #${String(part.purchase_order_id).substring(0, 8)}`;
+                              })()}
+                            </button>
+                          ) : (
+                            <div className="text-xs text-slate-400 mt-1">
+                              No PO linked
+                            </div>
+                          )}
+                        </>
+                      )}
+                    </div>
+
+                    {/* Col 5: Logistics Chips */}
+                    <div className="col-span-6 md:col-span-2">
+                      <div className="flex flex-wrap gap-1">
+                        {(part.linked_logistics_jobs || []).length > 0 ? (
+                          part.linked_logistics_jobs.map((jobId) => (
+                            <button
+                              key={jobId}
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                navigate(`${createPageUrl("Jobs")}?jobId=${jobId}`);
+                              }}
+                              className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-medium transition-colors"
+                            >
+                              <LinkIcon className="w-3 h-3" />
+                              Job #{jobId.substring(0, 8)}
+                            </button>
+                          ))
+                        ) : (
+                          <span className="text-xs text-slate-400 italic">No linked jobs</span>
+                        )}
+                      </div>
+                    </div>
+
+                    {/* Col 6: Quick Actions */}
+                    <div className="col-span-12 md:col-span-2 flex items-center justify-end gap-2 mt-2 md:mt-0 flex-wrap">
+                      {/* Show move buttons for parts in Loading Bay */}
+                      {normaliseLegacyPartLocation(part.location) === PART_LOCATION.LOADING_BAY && (
+                        <>
+                          <Button 
+                            size="sm" 
+                            variant="outline" 
+                            className="h-8 text-xs"
+                            title="Move to Storage"
+                            onClick={(e) => handleMovePart(e, part, PART_LOCATION.WAREHOUSE_STORAGE)}
+                            disabled={movePartMutation.isPending}
+                          >
+                            <Package className="w-3 h-3 mr-1" />
+                            Storage
+                          </Button>
+                          <Button 
+                            size="sm" 
+                            variant="outline" 
+                            className="h-8 text-xs"
+                            title="Move to Vehicle"
+                            onClick={(e) => handleMovePart(e, part, PART_LOCATION.VEHICLE)}
+                            disabled={movePartMutation.isPending}
+                          >
+                            <Truck className="w-3 h-3 mr-1" />
+                            Vehicle
+                          </Button>
+                        </>
+                      )}
+                      {/* Show move to site button for parts on vehicle */}
+                      {normaliseLegacyPartLocation(part.location) === PART_LOCATION.VEHICLE && (
+                        <Button 
+                          size="sm" 
+                          variant="outline" 
+                          className="h-8 text-xs"
+                          title="Move to Site"
+                          onClick={(e) => handleMovePart(e, part, PART_LOCATION.CLIENT_SITE)}
+                          disabled={movePartMutation.isPending}
+                        >
+                          <ArrowRight className="w-3 h-3 mr-1" />
+                          Site
+                        </Button>
+                      )}
+
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          if (confirm('Delete this part?')) deletePartMutation.mutate(part.id);
+                        }}
+                        className="h-8 w-8 text-slate-400 hover:text-red-600 hover:bg-red-50"
+                      >
+                        <Trash2 className="w-4 h-4" />
+                      </Button>
+                    </div>
+
+                  </div>
+                </div>
+              );
+                })}
+              </div>
+            </div>
+          )}
         </div>
       ) : null}
 
