@@ -1,6 +1,7 @@
 import React, { useState, useMemo } from "react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
+import AISuggestedFlag from "./AISuggestedFlag";
 import { 
   AlertTriangle, 
   AlertCircle, 
@@ -27,14 +28,14 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Label } from "@/components/ui/label";
 
 const FLAG_TYPES = {
-  client_risk: { icon: AlertTriangle, label: "Client Risk", color: "text-red-600" },
-  site_constraint: { icon: MapPin, label: "Site Constraint", color: "text-orange-600" },
-  payment_hold: { icon: DollarSign, label: "Payment Hold", color: "text-red-600" },
-  access_issue: { icon: Key, label: "Access Issue", color: "text-amber-600" },
-  technical_risk: { icon: Wrench, label: "Technical Risk", color: "text-orange-600" },
-  logistics_dependency: { icon: Truck, label: "Logistics Dependency", color: "text-blue-600" },
-  vip_client: { icon: Star, label: "VIP Client", color: "text-purple-600" },
-  internal_warning: { icon: Shield, label: "Internal Warning", color: "text-gray-600" }
+  client_risk: { icon: AlertTriangle, label: "Client Risk", color: "text-red-600", template: "Sensitive client - handle with care" },
+  site_constraint: { icon: MapPin, label: "Site Constraint", color: "text-orange-600", template: "Site access challenges" },
+  payment_hold: { icon: DollarSign, label: "Payment Hold", color: "text-red-600", template: "Outstanding payment - verify before work" },
+  access_issue: { icon: Key, label: "Access Issue", color: "text-amber-600", template: "Access arrangements required" },
+  technical_risk: { icon: Wrench, label: "Technical Risk", color: "text-orange-600", template: "Technical complexity - review before scheduling" },
+  logistics_dependency: { icon: Truck, label: "Logistics Dependency", color: "text-blue-600", template: "Parts or logistics constraint" },
+  vip_client: { icon: Star, label: "VIP Client", color: "text-purple-600", template: "High-priority client" },
+  internal_warning: { icon: Shield, label: "Internal Warning", color: "text-gray-600", template: "Internal team note" }
 };
 
 const SEVERITY_STYLES = {
@@ -72,33 +73,36 @@ export default function AttentionPanel({
   const [showAddModal, setShowAddModal] = useState(false);
   const [showResolveModal, setShowResolveModal] = useState(false);
   const [selectedFlag, setSelectedFlag] = useState(null);
+  const [showAISuggestions, setShowAISuggestions] = useState(true);
 
   const canEdit = !readonly && (currentUser?.role === 'admin' || currentUser?.role === 'manager');
 
-  // Sort flags: critical first, then pinned, then by created date
-  const sortedFlags = useMemo(() => {
-    const resolved = flags.filter(f => f.resolved_at);
-    const active = flags.filter(f => !f.resolved_at);
+  // Split flags by origin
+  const { manualFlags, aiFlags } = useMemo(() => {
+    const active = flags.filter(f => !f.resolved_at && !f.dismissed_at);
     
-    return active.sort((a, b) => {
-      // Critical severity first
-      if (a.severity === 'critical' && b.severity !== 'critical') return -1;
-      if (b.severity === 'critical' && a.severity !== 'critical') return 1;
-      
-      // Then pinned
-      if (a.pinned && !b.pinned) return -1;
-      if (b.pinned && !a.pinned) return 1;
-      
-      // Then by date
-      return new Date(b.created_at) - new Date(a.created_at);
-    });
+    const manual = active
+      .filter(f => f.origin !== 'ai_suggested')
+      .sort((a, b) => {
+        if (a.severity === 'critical' && b.severity !== 'critical') return -1;
+        if (b.severity === 'critical' && a.severity !== 'critical') return 1;
+        if (a.pinned && !b.pinned) return -1;
+        if (b.pinned && !a.pinned) return 1;
+        return new Date(b.created_at) - new Date(a.created_at);
+      });
+    
+    const ai = active
+      .filter(f => f.origin === 'ai_suggested')
+      .sort((a, b) => (b.confidence || 0) - (a.confidence || 0));
+    
+    return { manualFlags: manual, aiFlags: ai };
   }, [flags]);
 
-  const activeFlags = sortedFlags.filter(f => !f.resolved_at);
-  const hasCritical = activeFlags.some(f => f.severity === 'critical');
-  const shouldAutoExpand = hasCritical || activeFlags.some(f => f.pinned);
-
-  const visibleFlags = isExpanded ? activeFlags : activeFlags.slice(0, 3);
+  const hasCritical = manualFlags.some(f => f.severity === 'critical');
+  const shouldAutoExpand = hasCritical || manualFlags.some(f => f.pinned);
+  
+  const visibleManualFlags = isExpanded ? manualFlags : manualFlags.slice(0, 3);
+  const totalFlags = manualFlags.length + aiFlags.length;
 
   const handleAcknowledge = async (flag) => {
     if (!currentUser) return;
@@ -151,7 +155,39 @@ export default function AttentionPanel({
     await onUpdate(updatedFlags);
   };
 
-  if (activeFlags.length === 0 && !canEdit) return null;
+  const handleAcceptAIFlag = async (flag, editedData) => {
+    const acceptedFlag = {
+      ...flag,
+      ...editedData,
+      origin: 'manual',
+      accepted_at: new Date().toISOString(),
+      accepted_by: currentUser.email,
+      original_ai_suggestion: {
+        label: flag.label,
+        details: flag.details,
+        severity: flag.severity,
+        confidence: flag.confidence,
+        source_refs: flag.source_refs
+      }
+    };
+    
+    const updatedFlags = flags.map(f => f.id === flag.id ? acceptedFlag : f);
+    await onUpdate(updatedFlags);
+  };
+
+  const handleDismissAIFlag = async (flag, reason) => {
+    const dismissedFlag = {
+      ...flag,
+      dismissed_at: new Date().toISOString(),
+      dismissed_by: currentUser.email,
+      dismissed_reason: reason
+    };
+    
+    const updatedFlags = flags.map(f => f.id === flag.id ? dismissedFlag : f);
+    await onUpdate(updatedFlags);
+  };
+
+  if (totalFlags === 0 && !canEdit) return null;
 
   return (
     <>
@@ -169,9 +205,14 @@ export default function AttentionPanel({
               <h3 className="text-sm font-semibold text-gray-900">
                 Attention Required
               </h3>
-              {activeFlags.length > 0 && (
+              {manualFlags.length > 0 && (
                 <Badge variant="secondary" className="text-xs">
-                  {activeFlags.length}
+                  {manualFlags.length}
+                </Badge>
+              )}
+              {aiFlags.length > 0 && (
+                <Badge className="text-xs bg-purple-100 text-purple-700">
+                  {aiFlags.length} AI
                 </Badge>
               )}
             </div>
@@ -187,7 +228,7 @@ export default function AttentionPanel({
                   Add Flag
                 </Button>
               )}
-              {activeFlags.length > 3 && (
+              {manualFlags.length > 3 && (
                 <Button
                   variant="ghost"
                   size="sm"
@@ -202,7 +243,7 @@ export default function AttentionPanel({
                   ) : (
                     <>
                       <ChevronDown className="w-4 h-4 mr-1" />
-                      Show All ({activeFlags.length})
+                      Show All ({manualFlags.length})
                     </>
                   )}
                 </Button>
@@ -210,8 +251,9 @@ export default function AttentionPanel({
             </div>
           </div>
 
-          <div className="space-y-2">
-            {visibleFlags.map((flag) => {
+          <div className="space-y-3">
+            {/* Manual Flags */}
+            {visibleManualFlags.map((flag) => {
               const typeConfig = FLAG_TYPES[flag.type] || FLAG_TYPES.internal_warning;
               const Icon = typeConfig.icon;
               const severityStyle = SEVERITY_STYLES[flag.severity] || SEVERITY_STYLES.info;
@@ -306,6 +348,36 @@ export default function AttentionPanel({
                 </div>
               );
             })}
+
+            {/* AI-Suggested Flags */}
+            {canEdit && aiFlags.length > 0 && (
+              <div className="mt-4">
+                <button
+                  onClick={() => setShowAISuggestions(!showAISuggestions)}
+                  className="flex items-center gap-2 text-xs font-medium text-purple-700 hover:text-purple-800 mb-2"
+                >
+                  {showAISuggestions ? (
+                    <ChevronUp className="w-3 h-3" />
+                  ) : (
+                    <ChevronDown className="w-3 h-3" />
+                  )}
+                  AI Suggestions ({aiFlags.length})
+                </button>
+                
+                {showAISuggestions && (
+                  <div className="space-y-2">
+                    {aiFlags.map((flag) => (
+                      <AISuggestedFlag
+                        key={flag.id}
+                        flag={flag}
+                        onAccept={(editedData) => handleAcceptAIFlag(flag, editedData)}
+                        onDismiss={(reason) => handleDismissAIFlag(flag, reason)}
+                      />
+                    ))}
+                  </div>
+                )}
+              </div>
+            )}
           </div>
         </CardContent>
       </Card>
@@ -332,6 +404,7 @@ export default function AttentionPanel({
 }
 
 function AddFlagModal({ open, onClose, onAdd }) {
+  const [useTemplate, setUseTemplate] = useState(null);
   const [formData, setFormData] = useState({
     type: 'internal_warning',
     label: '',
@@ -339,6 +412,17 @@ function AddFlagModal({ open, onClose, onAdd }) {
     severity: 'warning',
     pinned: false
   });
+
+  // Apply template when selected
+  const applyTemplate = (type) => {
+    const template = FLAG_TYPES[type];
+    setFormData({
+      ...formData,
+      type,
+      label: template.template || template.label
+    });
+    setUseTemplate(type);
+  };
 
   const handleSubmit = (e) => {
     e.preventDefault();
@@ -361,6 +445,30 @@ function AddFlagModal({ open, onClose, onAdd }) {
           <DialogTitle>Add Attention Flag</DialogTitle>
         </DialogHeader>
         <form onSubmit={handleSubmit} className="space-y-4">
+          {/* Quick Templates */}
+          <div>
+            <Label>Quick Templates (Optional)</Label>
+            <div className="grid grid-cols-2 gap-2 mt-2">
+              {Object.entries(FLAG_TYPES).slice(0, 6).map(([type, config]) => {
+                const Icon = config.icon;
+                return (
+                  <button
+                    key={type}
+                    type="button"
+                    onClick={() => applyTemplate(type)}
+                    className={cn(
+                      "flex items-center gap-2 p-2 rounded-lg border text-left text-xs hover:bg-gray-50 transition",
+                      useTemplate === type ? "border-[#FAE008] bg-[#FAE008]/10" : "border-gray-200"
+                    )}
+                  >
+                    <Icon className={cn("w-3 h-3", config.color)} />
+                    <span>{config.label}</span>
+                  </button>
+                );
+              })}
+            </div>
+          </div>
+
           <div>
             <Label>Flag Type</Label>
             <Select
