@@ -1533,6 +1533,25 @@ Format as HTML bullet points using <ul> and <li> tags. Include only the most cri
         </CardHeader>
 
       <CardContent className="p-3 md:p-4">
+        {/* Attention Panel */}
+        {project && (
+          <AttentionPanel
+            flags={[
+              ...(project.attention_flags || []),
+              ...(customer?.attention_flags || []).filter(f => f.origin === 'manual' && !f.resolved_at && !f.dismissed_at).map(f => ({ ...f, source: 'customer' }))
+            ]}
+            entityId={project.id}
+            entityType="project"
+            onUpdate={async (updatedFlags) => {
+              await base44.entities.Project.update(project.id, { 
+                attention_flags: updatedFlags.filter(f => !f.source) 
+              });
+              queryClient.invalidateQueries({ queryKey: ['project', project.id] });
+            }}
+            currentUser={user}
+          />
+        )}
+
         <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
             <div className="sticky top-0 z-10 bg-white pb-3">
               <div className="overflow-x-auto -mx-3 px-3 md:mx-0 md:px-0 mb-3">
