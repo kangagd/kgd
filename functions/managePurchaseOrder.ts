@@ -80,18 +80,56 @@ const PO_DELIVERY_METHOD = {
     PICKUP: "pickup",
 };
 
-// Helper: Resolve PO reference from multiple sources
-function resolvePoRef({ data, po_reference, po_number, reference }) {
-  const ref =
-    data?.po_reference ??
-    data?.po_number ??
-    po_reference ??
-    po_number ??
-    reference ??
-    null;
+// Helper: firstNonEmpty for reference resolution
+function firstNonEmpty(...values) {
+  for (const val of values) {
+    if (val && typeof val === 'string' && val.trim()) {
+      return val.trim();
+    }
+  }
+  return null;
+}
 
-  const cleaned = typeof ref === "string" ? ref.trim() : ref;
-  return cleaned || null;
+// Resolve and normalize PO reference - CANONICAL FIELD ENFORCER
+// This ensures po_reference is the single source of truth
+function resolvePoRef({ data, po_reference, po_number, reference, order_reference }) {
+  const canonical = firstNonEmpty(
+    po_reference,
+    data?.po_reference,
+    po_number,
+    data?.po_number,
+    order_reference,
+    data?.order_reference,
+    reference,
+    data?.reference
+  );
+  return canonical;
+}
+
+// Normalize PO data to enforce canonical reference
+// Sets po_reference as canonical and mirrors to all legacy fields
+function normalizePOReferences(poData) {
+  const canonical = resolvePoRef(poData);
+  
+  if (!canonical) {
+    // If no reference provided, leave fields as-is or null
+    return {
+      ...poData,
+      po_reference: poData.po_reference || null,
+      po_number: poData.po_reference || null,
+      order_reference: poData.po_reference || null,
+      reference: poData.po_reference || null,
+    };
+  }
+  
+  // Set canonical and mirror to all legacy fields
+  return {
+    ...poData,
+    po_reference: canonical,
+    po_number: canonical,
+    order_reference: canonical,
+    reference: canonical,
+  };
 }
 
 const PART_STATUS = {
@@ -254,6 +292,39 @@ async function syncPartsWithPurchaseOrderStatus(base44, purchaseOrder, vehicleId
         }
     } catch (error) {
         console.error(`Error syncing parts with PO ${purchaseOrder.id} status:`, error);
+    }
+}
+
+/**
+ * Sync Part references when PO reference changes
+ * PERMANENT GUARDRAIL: Keeps part.po_number and part.order_reference in sync with PO.po_reference
+ */
+async function syncPartReferencesWithPO(base44, po) {
+    if (!po?.id) return;
+
+    try {
+        const parts = await base44.asServiceRole.entities.Part.filter({
+            purchase_order_id: po.id,
+        });
+
+        const canonicalRef = po.po_reference || null;
+
+        for (const part of parts) {
+            // Only update if references don't match
+            if (part.po_number === canonicalRef && part.order_reference === canonicalRef) {
+                continue;
+            }
+
+            const updates = {
+                po_number: canonicalRef,
+                order_reference: canonicalRef,
+            };
+
+            await base44.asServiceRole.entities.Part.update(part.id, updates);
+            console.log(`[PO] Synced Part ${part.id} reference to ${canonicalRef} (PO: ${po.id})`);
+        }
+    } catch (error) {
+        console.error(`[PO] Error syncing Part references for PO ${po.id}:`, error);
     }
 }
 
@@ -435,21 +506,21 @@ Deno.serve(async (req) => {
             if (eta !== undefined) updateData.expected_date = eta || null;
             if (attachments !== undefined) updateData.attachments = attachments || [];
             
-            // --- Normalize PO Reference from all possible inputs (canonical: po_reference) ---
-            const incomingPoRef =
-                po_reference ??
-                data?.po_reference ??
-                po_number ??
-                data?.po_number ??
-                order_reference ??
-                data?.order_reference ??
-                reference ??
-                data?.reference ??
-                null;
-
-            if (incomingPoRef !== null) {
-                const cleanedRef = typeof incomingPoRef === 'string' ? incomingPoRef.trim() : incomingPoRef;
-                updateData.po_reference = cleanedRef || null;
+            // --- PERMANENT GUARDRAIL: Normalize references ---
+            const incomingRefs = normalizePOReferences({
+                po_reference,
+                po_number,
+                order_reference,
+                reference,
+                data
+            });
+            
+            // Only update if a reference was provided
+            if (incomingRefs.po_reference !== null) {
+                updateData.po_reference = incomingRefs.po_reference;
+                updateData.po_number = incomingRefs.po_reference;
+                updateData.order_reference = incomingRefs.po_reference;
+                updateData.reference = incomingRefs.po_reference;
             }
 
             // --- Normalize Name from all possible inputs (canonical: name) ---
@@ -474,8 +545,9 @@ Deno.serve(async (req) => {
               reference: updatedPO.reference
             });
 
-            // Sync linked parts status/location with PO
+            // Sync linked parts status/location and references with PO
             await syncPartsWithPurchaseOrderStatus(base44, updatedPO);
+            await syncPartReferencesWithPO(base44, updatedPO);
 
             // Update project activity if PO is linked to a project
             if (updatedPO.project_id) {
@@ -594,8 +666,9 @@ Deno.serve(async (req) => {
                 await updateProjectActivity(base44, updatedPO.project_id, activityType);
             }
 
-            // Sync linked Parts status/location
+            // Sync linked Parts status/location and references
             await syncPartsWithPurchaseOrderStatus(base44, updatedPO, vehicle_id);
+            await syncPartReferencesWithPO(base44, updatedPO);
 
             // Auto-create Logistics Job if conditions are met
             let logisticsJob = null;
