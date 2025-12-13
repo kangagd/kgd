@@ -9,6 +9,7 @@ import { format } from "date-fns";
 import { AddIconButton } from "@/components/ui/AddIconButton";
 import { base44 } from "@/api/base44Client";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import AttentionPanel from "../common/AttentionPanel";
 import { useNavigate, Link } from "react-router-dom";
 import { createPageUrl } from "@/utils";
 import { toast } from "sonner";
