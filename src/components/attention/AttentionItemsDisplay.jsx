@@ -6,6 +6,7 @@ import { Button } from "@/components/ui/button";
 import { AlertTriangle, Info, AlertCircle, X, Plus } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import CreateAttentionItemModal from "./CreateAttentionItemModal";
+import AISuggestionsPanel from "./AISuggestionsPanel";
 
 const severityConfig = {
   critical: {
@@ -122,16 +123,23 @@ export default function AttentionItemsDisplay({
 
   if (allItems.length === 0 && !showCreateModal) {
     return (
-      <div className="mb-4">
-        <Button
-          variant="outline"
-          size="sm"
-          onClick={() => setShowCreateModal(true)}
-          className="gap-2"
-        >
-          <Plus className="w-4 h-4" />
-          Add Attention Item
-        </Button>
+      <div className="mb-4 space-y-3">
+        <div className="flex gap-2">
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => setShowCreateModal(true)}
+            className="gap-2"
+          >
+            <Plus className="w-4 h-4" />
+            Add Attention Item
+          </Button>
+        </div>
+        <AISuggestionsPanel
+          entityType={entityType}
+          entityId={entityId}
+          onSuggestionsApplied={() => queryClient.invalidateQueries({ queryKey: ['attentionItems'] })}
+        />
         {showCreateModal && (
           <CreateAttentionItemModal
             entityType={entityType}
@@ -160,6 +168,12 @@ export default function AttentionItemsDisplay({
           Add
         </Button>
       </div>
+
+      <AISuggestionsPanel
+        entityType={entityType}
+        entityId={entityId}
+        onSuggestionsApplied={() => queryClient.invalidateQueries({ queryKey: ['attentionItems'] })}
+      />
 
       {allItems.map((item) => {
         const config = severityConfig[item.severity] || severityConfig.info;
