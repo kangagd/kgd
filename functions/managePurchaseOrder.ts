@@ -372,27 +372,31 @@ Deno.serve(async (req) => {
             if (eta !== undefined) updateData.expected_date = eta || null;
             if (attachments !== undefined) updateData.attachments = attachments || [];
             
-            // Accept top-level po_number and name (primary), with data.* as fallback
-            const incomingPoNumber = po_number ?? data?.po_number ?? undefined;
-            const incomingName = name ?? data?.name ?? undefined;
+            // --- PO Reference (accept data object OR top-level, prioritize data) ---
+            const incomingPoNumber =
+                data?.po_number ??
+                po_number ??
+                reference ??
+                null;
 
-            // Determine if we can edit the reference
-            const normalizedStatus = normaliseLegacyPoStatus(po.status);
-            const editableStatuses = [PO_STATUS.DRAFT, PO_STATUS.SENT, PO_STATUS.ON_ORDER, PO_STATUS.IN_TRANSIT];
-            const canEditReference = editableStatuses.includes(normalizedStatus) ||
-              (!po.po_number && !po.order_reference && !po.reference);
-
-            // Update all reference fields when PO number is provided
-            if (incomingPoNumber !== undefined && canEditReference) {
-                const cleanedRef = incomingPoNumber?.trim() || null;
-                updateData.po_number = cleanedRef;
-                updateData.order_reference = cleanedRef;
-                updateData.reference = cleanedRef;
+            if (incomingPoNumber !== null) {
+                const cleanedRef = typeof incomingPoNumber === 'string' ? incomingPoNumber.trim() : incomingPoNumber;
+                if (cleanedRef) {
+                    updateData.po_number = cleanedRef;
+                    updateData.order_reference = cleanedRef;
+                    updateData.reference = cleanedRef;
+                }
             }
 
-            // Update name
-            if (incomingName !== undefined) {
-                updateData.name = incomingName?.trim() || null;
+            // --- PO Name / Description (accept data object OR top-level, prioritize data) ---
+            const incomingName =
+                data?.name ??
+                name ??
+                null;
+
+            if (incomingName !== null) {
+                const cleanedName = typeof incomingName === 'string' ? incomingName.trim() : incomingName;
+                updateData.name = cleanedName || null;
             }
 
             console.log("managePurchaseOrder:update", { id, incoming: { po_number, name, data }, updateData });
