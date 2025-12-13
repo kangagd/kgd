@@ -69,6 +69,21 @@ export default function ProjectForm({ project, onSubmit, onCancel, isSubmitting 
     address_country: "Australia",
     google_place_id: "",
     latitude: null,
+    longitude: null,
+    organisation_id: ""
+  });
+  const [showNewOrgDialog, setShowNewOrgDialog] = useState(false);
+  const [newOrgData, setNewOrgData] = useState({
+    name: "",
+    organisation_type: undefined,
+    address_full: "",
+    address_street: "",
+    address_suburb: "",
+    address_state: "",
+    address_postcode: "",
+    address_country: "Australia",
+    google_place_id: "",
+    latitude: null,
     longitude: null
   });
   const [uploadingImages, setUploadingImages] = useState(false);
@@ -92,6 +107,13 @@ export default function ProjectForm({ project, onSubmit, onCancel, isSubmitting 
     queryKey: ['contracts'],
     queryFn: () => base44.entities.Contract.list()
   });
+
+  const { data: allOrganisations = [] } = useQuery({
+    queryKey: ['organisations'],
+    queryFn: () => base44.entities.Organisation.list()
+  });
+
+  const organisations = allOrganisations.filter(org => !org.deleted_at && org.status === 'active');
 
   const createCustomerMutation = useMutation({
     mutationFn: (data) => base44.entities.Customer.create(data),
@@ -181,6 +203,58 @@ export default function ProjectForm({ project, onSubmit, onCancel, isSubmitting 
 
   const handleCreateCustomer = () => {
     createCustomerMutation.mutate({ ...newCustomerData, status: "active" });
+  };
+
+  const createOrganisationMutation = useMutation({
+    mutationFn: (data) => base44.entities.Organisation.create(data),
+    onSuccess: async (newOrg) => {
+      await queryClient.refetchQueries({ queryKey: ['organisations'] });
+      setNewCustomerData(prev => ({
+        ...prev,
+        organisation_id: newOrg.id
+      }));
+      setShowNewOrgDialog(false);
+      setNewOrgData({
+        name: "",
+        organisation_type: undefined,
+        address_full: "",
+        address_street: "",
+        address_suburb: "",
+        address_state: "",
+        address_postcode: "",
+        address_country: "Australia",
+        google_place_id: "",
+        latitude: null,
+        longitude: null
+      });
+    }
+  });
+
+  const handleCreateOrganisation = () => {
+    if (!newOrgData.name?.trim()) return;
+    
+    const submitData = {
+      name: newOrgData.name.trim(),
+      status: 'active'
+    };
+    
+    if (newOrgData.organisation_type) {
+      submitData.organisation_type = newOrgData.organisation_type;
+    }
+    if (newOrgData.address_full) {
+      submitData.address_full = newOrgData.address_full;
+      submitData.address = newOrgData.address_full;
+      submitData.address_street = newOrgData.address_street;
+      submitData.address_suburb = newOrgData.address_suburb;
+      submitData.address_state = newOrgData.address_state;
+      submitData.address_postcode = newOrgData.address_postcode;
+      submitData.address_country = newOrgData.address_country || "Australia";
+      submitData.google_place_id = newOrgData.google_place_id;
+      submitData.latitude = newOrgData.latitude;
+      submitData.longitude = newOrgData.longitude;
+    }
+    
+    createOrganisationMutation.mutate(submitData);
   };
 
   const handleImageUpload = async (e) => {
@@ -680,6 +754,32 @@ export default function ProjectForm({ project, onSubmit, onCancel, isSubmitting 
               />
             </div>
             <div className="space-y-2">
+              <Label htmlFor="new_customer_organisation">Organisation (Optional)</Label>
+              <div className="flex gap-2">
+                <Select value={newCustomerData.organisation_id || "none"} onValueChange={(val) => setNewCustomerData({ ...newCustomerData, organisation_id: val === "none" ? "" : val })}>
+                  <SelectTrigger className="border-2 border-slate-300 flex-1">
+                    <SelectValue placeholder="Select organisation" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="none">None</SelectItem>
+                    {organisations.map((org) => (
+                      <SelectItem key={org.id} value={org.id}>
+                        {org.name}{org.organisation_type ? ` (${org.organisation_type})` : ''}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+                <Button
+                  type="button"
+                  variant="outline"
+                  onClick={() => setShowNewOrgDialog(true)}
+                  className="border-2 border-slate-300"
+                >
+                  <Plus className="w-4 h-4" />
+                </Button>
+              </div>
+            </div>
+            <div className="space-y-2">
               <Label htmlFor="new_customer_address">Address</Label>
               <AddressAutocomplete
                 id="new_customer_address"
@@ -707,6 +807,69 @@ export default function ProjectForm({ project, onSubmit, onCancel, isSubmitting 
               className="bg-[#fae008] hover:bg-[#e5d007] text-[#000000] font-bold"
             >
               {createCustomerMutation.isPending ? 'Creating...' : 'Create Customer'}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      <Dialog open={showNewOrgDialog} onOpenChange={setShowNewOrgDialog}>
+        <DialogContent className="rounded-2xl border-2 border-slate-200">
+          <DialogHeader>
+            <DialogTitle className="text-xl font-bold">New Organisation</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4">
+            <div className="space-y-2">
+              <Label htmlFor="new_org_name">Name *</Label>
+              <Input
+                id="new_org_name"
+                value={newOrgData.name}
+                onChange={(e) => setNewOrgData({ ...newOrgData, name: e.target.value })}
+                className="border-2 border-slate-300"
+              />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="new_org_type">Type</Label>
+              <Select value={newOrgData.organisation_type || ""} onValueChange={(val) => setNewOrgData({ ...newOrgData, organisation_type: val || undefined })}>
+                <SelectTrigger className="border-2 border-slate-300">
+                  <SelectValue placeholder="Select type" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="Strata">Strata</SelectItem>
+                  <SelectItem value="Builder">Builder</SelectItem>
+                  <SelectItem value="Real Estate">Real Estate</SelectItem>
+                  <SelectItem value="Supplier">Supplier</SelectItem>
+                  <SelectItem value="Other">Other</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="new_org_address">Address</Label>
+              <AddressAutocomplete
+                id="new_org_address"
+                value={newOrgData.address_full || ""}
+                onChange={(addressData) => setNewOrgData({ 
+                  ...newOrgData, 
+                  ...addressData
+                })}
+                className="border-2 border-slate-300"
+              />
+            </div>
+          </div>
+          <DialogFooter>
+            <Button 
+              variant="outline" 
+              onClick={() => setShowNewOrgDialog(false)}
+              className="border-2 font-semibold"
+              disabled={createOrganisationMutation.isPending}
+            >
+              Cancel
+            </Button>
+            <Button 
+              onClick={handleCreateOrganisation}
+              disabled={!newOrgData.name || createOrganisationMutation.isPending}
+              className="bg-[#fae008] hover:bg-[#e5d007] text-[#000000] font-bold"
+            >
+              {createOrganisationMutation.isPending ? 'Creating...' : 'Create Organisation'}
             </Button>
           </DialogFooter>
         </DialogContent>
