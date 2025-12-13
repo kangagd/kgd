@@ -517,6 +517,7 @@ export default function JobDetails({ job: initialJob, onClose, onStatusChange, o
 
   const isTechnician = user?.is_field_technician && user?.role !== 'admin';
   const isAdmin = user?.role === 'admin';
+  const isAdminOrManager = user?.role === 'admin' || user?.role === 'manager';
 
   const createInvoiceMutation = useMutation({
     mutationFn: async (invoiceData) => {
