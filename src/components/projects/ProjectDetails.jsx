@@ -934,23 +934,13 @@ Format as HTML bullet points using <ul> and <li> tags. Include only the most cri
 
   return (
     <>
-      <div className="w-full lg:hidden mb-4">
-        <AttentionItemsPanel
-          entity_type="project"
-          entity_id={project.id}
-          customer_id={project.customer_id}
-          showCreateButton={isAdminOrManager}
-        />
-      </div>
-      <div className="relative flex flex-col lg:flex-row gap-4 overflow-x-hidden items-start">
-      <div className="w-full lg:hidden mb-4">
-        <AttentionItemsPanel
-          entity_type="project"
-          entity_id={project.id}
-          customer_id={project.customer_id}
-          showCreateButton={isAdminOrManager}
-        />
-      </div>
+      <AttentionItemsPanel
+        entity_type="project"
+        entity_id={project.id}
+        customer_id={project.customer_id}
+        showCreateButton={isAdminOrManager}
+      />
+      <div className="relative flex flex-col lg:flex-row gap-4 overflow-x-hidden items-start mt-4">
       {/* Customer Sidebar */}
       <aside className="w-full lg:w-72 flex-shrink-0 lg:sticky lg:top-4">
         <Card className="border border-[#E5E7EB] shadow-sm rounded-lg overflow-hidden">
@@ -1320,14 +1310,6 @@ Format as HTML bullet points using <ul> and <li> tags. Include only the most cri
 
             {/* Main Content */}
             <div className="flex-1 w-full lg:min-w-0">
-      <div className="hidden lg:block mb-4">
-        <AttentionItemsPanel
-          entity_type="project"
-          entity_id={project.id}
-          customer_id={project.customer_id}
-          showCreateButton={isAdminOrManager}
-        />
-      </div>
       <Card className="border border-[#E5E7EB] shadow-sm rounded-lg overflow-hidden">
         <CardHeader className="border-b border-[#E5E7EB] bg-white p-3 md:p-4 space-y-3">
         <div className="flex items-center justify-between gap-3">
@@ -1988,15 +1970,6 @@ Format as HTML bullet points using <ul> and <li> tags. Include only the most cri
       >
         <LastActivityCard project={project} />
       </EntityModal>
-      </div>
-
-      <div className="hidden lg:block w-full mb-4">
-        <AttentionItemsPanel
-          entity_type="project"
-          entity_id={project.id}
-          customer_id={project.customer_id}
-          showCreateButton={isAdminOrManager}
-        />
       </div>
     </>
   );
