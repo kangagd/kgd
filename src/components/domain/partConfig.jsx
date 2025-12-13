@@ -15,26 +15,72 @@ export const PART_STATUS = {
 };
 
 /**
- * Check if a part is physically available for picking/installation
- * Parts are only available when they've physically arrived at warehouse or vehicle
+ * STRICT RULES FOR INVENTORY READINESS
+ * 
+ * READY TO PICK means:
+ * - The item is physically available
+ * - AND can be assigned to a vehicle immediately
+ * - AND requires no supplier interaction
+ * 
+ * An item is READY TO PICK only if ALL of these conditions are met:
+ * 1. status IN ("in_storage", "in_vehicle")
+ * 2. location IN ("warehouse_storage", "vehicle") AND NOT "supplier"
+ * 3. If PO exists: status NOT IN ("Draft", "Sent", "On Order")
+ * 4. If PO exists: received_date IS NOT NULL (physically received)
+ * 
+ * SAFETY RULE: If there is any ambiguity, default to NOT READY TO PICK
  */
 export function isPartAvailable(part) {
   if (!part) return false;
   
-  // Must be in storage or vehicle to be available
-  const isInUsableLocation = 
+  // RULE 1: Status must be in usable state (physically available)
+  const hasUsableStatus = 
     part.status === PART_STATUS.IN_STORAGE || 
     part.status === PART_STATUS.IN_VEHICLE;
   
-  // Must NOT be at supplier
-  const notAtSupplier = part.location !== PART_LOCATION.SUPPLIER;
+  if (!hasUsableStatus) return false;
   
-  return isInUsableLocation && notAtSupplier;
+  // RULE 2: Must NOT be at supplier
+  if (part.location === PART_LOCATION.SUPPLIER) return false;
+  
+  // RULE 3: If linked to a PO, check PO status
+  if (part.purchase_order_id || part.po_number) {
+    // DISALLOWED PO statuses for picking
+    const disallowedStatuses = ["draft", "sent", "on_order", "confirmed", "on order"];
+    
+    // If we have PO status info, check it
+    if (part.po_status) {
+      const normalizedPOStatus = part.po_status.toLowerCase().trim();
+      if (disallowedStatuses.includes(normalizedPOStatus)) {
+        return false;
+      }
+    }
+    
+    // RULE 4: If PO has received_date field, it must be set
+    // (null received_date means not physically received yet)
+    if ('received_date' in part && !part.received_date) {
+      return false;
+    }
+  }
+  
+  // RULE 5: Special handling for supplier pickup
+  if (part.supplier_pickup_required === true && part.pickup_confirmed !== true) {
+    return false;
+  }
+  
+  return true;
 }
 
 /**
- * Check if a part represents a shortage
- * Parts are considered shortage if they're needed but not physically available
+ * SHORTAGES LOGIC
+ * 
+ * An item appears under SHORTAGES if:
+ * - Required quantity > available quantity
+ * - OR status = "Pending"
+ * - OR status = "On Order"
+ * - OR any condition that makes it not Ready to Pick
+ * 
+ * Excludes: Cancelled and Installed items
  */
 export function isPartShortage(part) {
   if (!part) return false;
@@ -44,7 +90,12 @@ export function isPartShortage(part) {
     return false;
   }
   
-  // If not available, it's a shortage
+  // Explicitly treat "pending" and "on_order" as shortages
+  if (part.status === PART_STATUS.PENDING || part.status === PART_STATUS.ON_ORDER) {
+    return true;
+  }
+  
+  // If not physically available, it's a shortage
   return !isPartAvailable(part);
 }
 
