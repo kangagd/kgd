@@ -38,13 +38,10 @@ Deno.serve(async (req) => {
       product_type: p.product_type
     }));
 
-    // Fetch Parts
+    // Fetch Parts (supporting context only)
     let parts = [];
     if (job.project_id) {
       const allParts = await base44.entities.Part.filter({ project_id: job.project_id });
-      // Filter parts linked to this job via linked_logistics_jobs or if we can infer usage
-      // Assuming parts used might be relevant. For now, send all project parts as context or try to filter.
-      // If line items exist, use those.
       const lineItems = await base44.entities.LineItem.filter({ job_id: jobId });
       if (lineItems.length > 0) {
         parts = lineItems.map(li => `${li.item_name} (Qty: ${li.quantity})`);
@@ -53,36 +50,80 @@ Deno.serve(async (req) => {
       }
     }
 
-    // Fetch previous messages/notes
-    // job.notes contains instructions. job.completion_notes might be empty yet.
+    // Build Technician Context Block (PRIMARY SOURCE OF TRUTH)
+    const techContextSections = [];
+
+    if (job.overview) {
+      techContextSections.push(`OVERVIEW (Technician):\n${job.overview}`);
+    }
+
+    if (job.outcome) {
+      techContextSections.push(`OUTCOME (Technician):\n${job.outcome}`);
+    }
+
+    if (job.additional_info) {
+      techContextSections.push(`ADDITIONAL INFO (Technician):\n${job.additional_info}`);
+    }
+
+    if (job.communication_with_client) {
+      techContextSections.push(`COMMUNICATION WITH CLIENT (Technician):\n${job.communication_with_client}`);
+    }
+
+    if (job.next_steps) {
+      techContextSections.push(`NEXT STEPS (Technician):\n${job.next_steps}`);
+    }
+
+    const technicianSourceOfTruth = techContextSections.length
+      ? techContextSections.join("\n\n")
+      : "No technician-entered notes were provided.";
+
+    const techNotesUsed = [
+      job.overview && "overview",
+      job.outcome && "outcome",
+      job.additional_info && "additional_info",
+      job.communication_with_client && "communication_with_client",
+      job.next_steps && "next_steps",
+    ].filter(Boolean).join(" + ");
     
     const prompt = `
-    You are an expert field service technician assistant.
-    Generate a comprehensive Service Report for the following job.
-    
-    Job Details:
-    - Type: ${job.job_type_name || job.job_type}
-    - Product: ${job.product}
-    - Description/Notes: ${job.notes}
-    - Customer: ${job.customer_name}
-    
-    Photos Analysis:
-    ${JSON.stringify(photoContext, null, 2)}
-    
-    Parts/Materials Used:
-    ${parts.join(', ') || 'None specified'}
-    
-    Please draft the following sections for the report based on the above data and photos:
-    1. Work Performed (Detailed description of tasks completed)
-    2. Issues Found (Diagnosis of problems identified)
-    3. Resolution (How the issues were resolved)
-    4. Next Steps/Recommendations (Any follow-up actions or advice)
-    
-    Format the output as a JSON object with keys: "work_performed", "issues_found", "resolution", "next_steps".
-    The content should be professional, clear, and ready for the client.
-    `;
+You are generating a CLIENT-READY SERVICE HANDOVER REPORT
+for a professional garage door / shutter company.
 
-    const response = await base44.integrations.Core.InvokeLLM({
+CRITICAL RULES:
+- The section titled "TECHNICIAN SOURCE OF TRUTH" is what actually happened on site.
+- Your task is to REVIEW, REFINE, and REWRITE it into clear, professional language.
+- DO NOT invent work, issues, or resolutions.
+- If something is unclear or missing, state "Not specified by technician"
+  and add a clarification question to missing_info_questions.
+
+JOB CONTEXT:
+- Job Type: ${job.job_type_name || job.job_type || ""}
+- Product: ${job.product || ""}
+- Customer: ${job.customer_name || ""}
+- Site: ${job.address || job.site_address || ""}
+
+TECHNICIAN SOURCE OF TRUTH:
+${technicianSourceOfTruth}
+
+SUPPORTING PHOTOS (context only):
+${JSON.stringify(photoContext, null, 2)}
+
+SUPPORTING PARTS (context only):
+${parts.join(", ") || "None specified"}
+
+OUTPUT REQUIREMENTS:
+Return JSON with:
+- work_performed: rewritten technician overview/outcome
+- issues_found: rewritten issues mentioned by technician
+- resolution: rewritten outcome/resolution
+- next_steps: rewritten technician next steps (client-friendly)
+- tech_notes_used: brief summary of which fields were used
+- missing_info_questions: array of questions if anything is unclear
+
+Tone: professional, clear, client-facing.
+`;
+
+    const llmResponse = await base44.integrations.Core.InvokeLLM({
       prompt: prompt,
       response_json_schema: {
         type: "object",
@@ -90,13 +131,23 @@ Deno.serve(async (req) => {
           work_performed: { type: "string" },
           issues_found: { type: "string" },
           resolution: { type: "string" },
-          next_steps: { type: "string" }
+          next_steps: { type: "string" },
+          tech_notes_used: { type: "string" },
+          missing_info_questions: {
+            type: "array",
+            items: { type: "string" }
+          }
         },
-        required: ["work_performed", "issues_found", "resolution", "next_steps"]
+        required: ["work_performed", "issues_found", "resolution", "next_steps", "tech_notes_used", "missing_info_questions"]
       }
     });
 
-    return Response.json(response);
+    // Ensure tech_notes_used is populated
+    if (!llmResponse.tech_notes_used) {
+      llmResponse.tech_notes_used = techNotesUsed || "none";
+    }
+
+    return Response.json(llmResponse);
 
   } catch (error) {
     console.error("generateServiceReport error:", error);
