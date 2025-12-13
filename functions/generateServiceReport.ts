@@ -97,11 +97,11 @@ CRITICAL RULES:
   and add a clarification question to missing_info_questions.
 
 OUTPUT STYLE (MANDATORY):
-- Use BULLET POINTS only (3-6 bullets per section minimum)
-- Be DETAILED and SPECIFIC - include measurements, quantities, part names, locations
-- Each bullet should be comprehensive and informative
-- Use clear, plain English suitable for clients, technicians, and office staff
-- No vague statements - provide concrete details from the technician's notes
+- Use BULLET POINTS only
+- Use clear, plain English
+- Each bullet should be one clear idea
+- Suitable for clients, technicians, and office staff
+- No long paragraphs
 
 JOB CONTEXT:
 - Job Type: ${job.job_type_name || job.job_type || ""}
@@ -121,25 +121,19 @@ ${parts.join(", ") || "None specified"}
 STRUCTURE YOUR OUTPUT EXACTLY AS FOLLOWS:
 
 WORK PERFORMED:
-- Detailed bullet points summarising what was done on site
-- Include specific actions, parts used, measurements taken, adjustments made
-- Aim for 3-6 comprehensive bullet points
+- Bullet points summarising what was done on site
 
 ISSUES FOUND:
-- Detailed bullet points describing any faults, damage, or concerns identified
-- Be specific about what was wrong, where it was located, severity
-- If none were mentioned, provide 1 bullet stating "No issues identified during this visit"
+- Bullet points describing any faults, damage, or concerns identified
+- If none were mentioned, state that clearly
 
 RESOLUTION / OUTCOME:
-- Detailed bullet points explaining how issues were resolved
-- Include what was repaired, replaced, adjusted, or installed
-- Describe the final state of the system
-- Aim for 3-5 comprehensive bullet points
+- Bullet points explaining how issues were resolved
+- Or what state the system was left in
 
 NEXT STEPS / RECOMMENDATIONS:
-- Detailed bullet points outlining follow-up actions or advice
-- Be specific about what needs to happen, who needs to do it, timeframes
-- If none are required, provide 1 bullet stating "No further action required at this time"
+- Bullet points outlining follow-up actions or advice
+- If none are required, state that clearly
 
 Also return:
 - tech_notes_used: which technician fields were referenced
