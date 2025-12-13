@@ -266,6 +266,8 @@ Output JSON ONLY in this format:
         ...item,
         entity_type,
         entity_id,
+        root_entity_type: entity_type,
+        root_entity_id: entity_id,
         status: 'open',
         created_by_type: 'ai',
         created_by_name: 'System AI',

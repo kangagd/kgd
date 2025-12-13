@@ -69,7 +69,9 @@ export default function AttentionItemModal({
       ...formData,
       summary_bullets: cleanedBullets,
       entity_type,
-      entity_id
+      entity_id,
+      root_entity_type: entity_type,
+      root_entity_id: entity_id
     };
 
     // Remove empty optional fields

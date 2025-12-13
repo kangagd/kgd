@@ -53,7 +53,14 @@ function AttentionItemCard({ item, onResolve, onEdit, canEdit }) {
           </div>
           
           <div className="flex-1 min-w-0">
-            <h4 className="font-semibold text-[#111827] text-[15px] mb-2">{item.title}</h4>
+            <div className="flex items-center gap-2 mb-2">
+              <h4 className="font-semibold text-[#111827] text-[15px]">{item.title}</h4>
+              {item._isInherited && (
+                <Badge variant="outline" className="text-[10px] px-1.5 py-0">
+                  From {item._inheritedFrom === 'project' ? 'Project' : item._inheritedFrom === 'customer' ? 'Customer' : 'Job'}
+                </Badge>
+              )}
+            </div>
             
             <div className="flex flex-wrap gap-2 mb-3">
               <Badge className={getCategoryColor(item.category)}>
@@ -130,7 +137,7 @@ function AttentionItemCard({ item, onResolve, onEdit, canEdit }) {
   );
 }
 
-export default function AttentionItemsPanel({ entity_type, entity_id }) {
+export default function AttentionItemsPanel({ entity_type, entity_id, context_ids = {} }) {
   const queryClient = useQueryClient();
   const [user, setUser] = useState(null);
   const [showModal, setShowModal] = useState(false);
@@ -149,14 +156,74 @@ export default function AttentionItemsPanel({ entity_type, entity_id }) {
   }, []);
 
   const { data: items = [] } = useQuery({
-    queryKey: ['attentionItems', entity_type, entity_id],
+    queryKey: ['attentionItems', entity_type, entity_id, context_ids],
     queryFn: async () => {
-      const results = await base44.entities.AttentionItem.filter({
-        entity_type,
-        entity_id,
-        status: 'open'
-      }, '-created_at', 3);
-      return results;
+      const allItems = [];
+      const seenFingerprints = new Set();
+      
+      // Determine which entities to query based on entity_type
+      const entitiesToQuery = [];
+      
+      if (entity_type === 'job') {
+        // For jobs: show job items, then project items, then customer items
+        if (entity_id) {
+          entitiesToQuery.push({ type: 'job', id: entity_id });
+        }
+        if (context_ids.project_id) {
+          entitiesToQuery.push({ type: 'project', id: context_ids.project_id });
+        }
+        if (context_ids.customer_id) {
+          entitiesToQuery.push({ type: 'customer', id: context_ids.customer_id });
+        }
+      } else if (entity_type === 'project') {
+        // For projects: show project items, then customer items
+        if (entity_id) {
+          entitiesToQuery.push({ type: 'project', id: entity_id });
+        }
+        if (context_ids.customer_id) {
+          entitiesToQuery.push({ type: 'customer', id: context_ids.customer_id });
+        }
+      } else if (entity_type === 'customer') {
+        // For customers: show only customer items
+        if (entity_id) {
+          entitiesToQuery.push({ type: 'customer', id: entity_id });
+        }
+      }
+      
+      // Fetch items in priority order (most specific first)
+      for (const entity of entitiesToQuery) {
+        try {
+          const entityItems = await base44.entities.AttentionItem.filter({
+            entity_type: entity.type,
+            entity_id: entity.id,
+            status: 'open'
+          }, '-created_at');
+          
+          // Add items only if fingerprint not seen (dedupe)
+          for (const item of entityItems) {
+            if (item.fingerprint && seenFingerprints.has(item.fingerprint)) {
+              continue; // Skip duplicate
+            }
+            
+            // Mark as inherited if not from current entity
+            const isInherited = item.entity_type !== entity_type || item.entity_id !== entity_id;
+            allItems.push({
+              ...item,
+              _isInherited: isInherited,
+              _inheritedFrom: isInherited ? item.entity_type : null
+            });
+            
+            if (item.fingerprint) {
+              seenFingerprints.add(item.fingerprint);
+            }
+          }
+        } catch (e) {
+          console.error(`Error fetching items for ${entity.type}:`, e);
+        }
+      }
+      
+      // Limit to 3 items
+      return allItems.slice(0, 3);
     },
     enabled: !!entity_type && !!entity_id
   });
