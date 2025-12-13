@@ -122,8 +122,7 @@ export default function SupplyLogistics() {
     }
   };
 
-  const getPoDisplayRef = (po) =>
-    po?.po_reference || po?.po_number || po?.order_reference || po?.reference || po?.id?.substring(0, 8);
+import { getPoDisplayReference, getPoDisplayTitle } from "@/components/domain/poDisplayHelpers";
 
   const POCard = ({ po }) => (
     <div

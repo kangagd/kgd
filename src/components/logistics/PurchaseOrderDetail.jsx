@@ -113,19 +113,15 @@ export default function PurchaseOrderDetail({ poId, onClose, mode = "page" }) {
         category: line.category || "Other"
       }));
 
-      // Get PO reference and name from canonical field (po_reference) with legacy fallbacks
-      const poReference = po.po_reference || po.po_number || po.order_reference || po.reference || '';
-      const poName = po.name || '';
-      
-      // Only update if this is initial load or if PO ID changed
-      if (!initialLoadDone.current || formData.po_reference !== poReference) {
+      // Only rehydrate on initial load - never overwrite user input
+      if (!initialLoadDone.current) {
         setFormData({
           supplier_id: po.supplier_id || "",
           project_id: po.project_id || "",
           delivery_method: po.delivery_method || "",
           notes: po.notes || "",
-          po_reference: poReference,
-          name: poName,
+          po_reference: po.po_reference || "",
+          name: po.name || "",
           status: normalizedStatus,
           eta: po.expected_date || "",
           attachments: po.attachments || [],
@@ -142,12 +138,13 @@ export default function PurchaseOrderDetail({ poId, onClose, mode = "page" }) {
       await base44.entities.PurchaseOrder.update(poId, updateData);
     },
     onSuccess: () => {
+      // Standardised invalidation set for PO updates
       queryClient.invalidateQueries({ queryKey: ['purchaseOrder', poId] });
-      queryClient.invalidateQueries({ queryKey: ['purchaseOrderLines', poId] });
       queryClient.invalidateQueries({ queryKey: ['purchaseOrders'] });
-      queryClient.invalidateQueries({ queryKey: ['projectPOs'] });
+      queryClient.invalidateQueries({ queryKey: ['purchaseOrderLines', poId] });
       queryClient.invalidateQueries({ queryKey: ['parts'] });
       queryClient.invalidateQueries({ queryKey: ['projectParts'] });
+      queryClient.invalidateQueries({ queryKey: ['projectPOs'] });
       toast.success('Purchase Order updated');
     },
     onError: (error) => {
@@ -208,23 +205,30 @@ export default function PurchaseOrderDetail({ poId, onClose, mode = "page" }) {
     };
 
     const handleSave = async () => {
+    // Validate identity fields
+    const validation = validatePoIdentityFields({
+      po_reference: formData.po_reference,
+      supplier_id: formData.supplier_id
+    });
+    
+    if (!validation.valid) {
+      validation.errors.forEach(err => toast.error(err));
+      return;
+    }
+    
     const supplier = suppliers.find(s => s.id === formData.supplier_id);
     
-    // First: directly update entity to ensure po_reference and name persist
+    // Golden Rule: persist identity fields via entity update FIRST
     await base44.entities.PurchaseOrder.update(poId, {
-      po_reference: formData.po_reference?.trim() || null,
+      po_reference: formData.po_reference.trim(),
       name: formData.name?.trim() || null,
-      po_number: formData.po_reference?.trim() || null,
-      order_reference: formData.po_reference?.trim() || null,
+      supplier_id: formData.supplier_id,
+      project_id: formData.project_id || null,
     });
     
     // Then: update other fields
     updatePOMutation.mutate({
-      po_reference: formData.po_reference?.trim() || null,
-      name: formData.name?.trim() || null,
-      supplier_id: formData.supplier_id || null,
       supplier_name: supplier?.name || "",
-      project_id: formData.project_id || null,
       delivery_method: formData.delivery_method || null,
       notes: formData.notes || "",
       expected_date: formData.eta || null,
@@ -290,31 +294,35 @@ export default function PurchaseOrderDetail({ poId, onClose, mode = "page" }) {
   };
 
   const handleSendToSupplier = async () => {
-    if (!formData.supplier_id) {
-      toast.error('Please select a supplier before sending');
+    // Validate identity fields
+    const validation = validatePoIdentityFields({
+      po_reference: formData.po_reference,
+      supplier_id: formData.supplier_id
+    });
+    
+    if (!validation.valid) {
+      validation.errors.forEach(err => toast.error(err));
       return;
     }
+    
     if (formData.line_items.length === 0) {
       toast.error('Please add at least one line item');
       return;
     }
     
-    // First: directly update entity to ensure po_reference and name persist
+    const supplier = suppliers.find(s => s.id === formData.supplier_id);
+    
+    // Golden Rule: persist identity fields via entity update FIRST
     await base44.entities.PurchaseOrder.update(poId, {
-      po_reference: formData.po_reference?.trim() || null,
+      po_reference: formData.po_reference.trim(),
       name: formData.name?.trim() || null,
-      po_number: formData.po_reference?.trim() || null,
-      order_reference: formData.po_reference?.trim() || null,
+      supplier_id: formData.supplier_id,
+      project_id: formData.project_id || null,
     });
     
     // Then save other pending changes
-    const supplier = suppliers.find(s => s.id === formData.supplier_id);
     await updatePOMutation.mutateAsync({
-      po_reference: formData.po_reference?.trim() || null,
-      name: formData.name?.trim() || null,
-      supplier_id: formData.supplier_id || null,
       supplier_name: supplier?.name || "",
-      project_id: formData.project_id || null,
       delivery_method: formData.delivery_method || null,
       notes: formData.notes || "",
       expected_date: formData.eta || null,
@@ -379,8 +387,7 @@ export default function PurchaseOrderDetail({ poId, onClose, mode = "page" }) {
           supplier_name: suppliers.find(s => s.id === formData.supplier_id)?.name || "",
           order_date: po.order_date || po.created_date,
           eta: formData.eta || po.expected_date,
-          po_number: formData.po_reference,
-          order_reference: formData.po_reference,
+          po_number: formData.po_reference || getPoDisplayReference(po),
           source_type: newItem.source_type || "supplier_delivery"
         });
       } else if (formData.project_id) {
@@ -398,8 +405,7 @@ export default function PurchaseOrderDetail({ poId, onClose, mode = "page" }) {
           supplier_name: suppliers.find(s => s.id === formData.supplier_id)?.name || "",
           order_date: po.order_date || po.created_date,
           eta: formData.eta || po.expected_date,
-          po_number: formData.po_reference || null,
-          order_reference: formData.po_reference || null,
+          po_number: formData.po_reference || getPoDisplayReference(po),
           source_type: newItem.source_type || "supplier_delivery",
           notes: newItem.notes || null
         });
@@ -597,13 +603,11 @@ export default function PurchaseOrderDetail({ poId, onClose, mode = "page" }) {
                  />
                 ) : (
                  <div className="mt-2 space-y-1">
-                   {formData.po_reference ? (
-                     <p className="text-sm font-medium text-[#111827]">PO #: {formData.po_reference}</p>
-                   ) : (
-                     <p className="text-sm text-[#6B7280]">ID: {po.id.slice(0, 8)}</p>
-                   )}
-                   {formData.name && (
-                     <p className="text-sm text-[#6B7280]">{formData.name}</p>
+                   <p className="text-sm font-medium text-[#111827]">
+                     {getPoDisplayReference(po)}
+                   </p>
+                   {po.name && (
+                     <p className="text-sm text-[#6B7280]">{po.name}</p>
                    )}
                  </div>
                 )}
