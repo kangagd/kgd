@@ -16,8 +16,8 @@ Deno.serve(async (req) => {
       return Response.json({ error: 'entity_type and entity_id required' }, { status: 400 });
     }
 
-    if (!['job', 'project'].includes(entity_type)) {
-      return Response.json({ error: 'entity_type must be job or project' }, { status: 400 });
+    if (!['job', 'project', 'customer'].includes(entity_type)) {
+      return Response.json({ error: 'entity_type must be job, project, or customer' }, { status: 400 });
     }
 
     // STEP 1: Load context for the specific entity
@@ -138,6 +138,47 @@ Deno.serve(async (req) => {
         } catch (e) {
           // Continue without invoice
         }
+      }
+    } else if (entity_type === 'customer') {
+      const customer = await base44.entities.Customer.get(entity_id);
+      if (!customer) {
+        return Response.json({ error: 'Customer not found' }, { status: 404 });
+      }
+
+      contextData = {
+        entity_type: 'customer',
+        entity_id: customer.id,
+        customer_name: customer.name,
+        customer_type: customer.customer_type,
+        notes: customer.notes,
+        status: customer.status,
+        address_full: customer.address_full,
+        email: customer.email,
+        phone: customer.phone
+      };
+
+      // Load related projects (read-only)
+      try {
+        const projects = await base44.entities.Project.filter({ customer_id: entity_id });
+        contextData.projects = projects.slice(0, 5).map(p => ({
+          title: p.title,
+          status: p.status,
+          financial_status: p.financial_status
+        }));
+      } catch (e) {
+        contextData.projects = [];
+      }
+
+      // Load related jobs (read-only)
+      try {
+        const jobs = await base44.entities.Job.filter({ customer_id: entity_id });
+        contextData.jobs = jobs.slice(0, 5).map(j => ({
+          job_number: j.job_number,
+          status: j.status,
+          outcome: j.outcome
+        }));
+      } catch (e) {
+        contextData.jobs = [];
       }
     }
 
