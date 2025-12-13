@@ -254,7 +254,7 @@ export default function PurchaseOrders() {
                   <div className="flex-1 min-w-0">
                     <div className="flex items-center gap-2 mb-2">
                       <h3 className="text-[18px] font-semibold text-[#111827] leading-[1.2]">
-                        PO #{po.po_reference || po.id.slice(0, 8)}
+                        {getPoDisplayReference(po)}
                       </h3>
                       <Select
                         value={po.status}
@@ -264,7 +264,9 @@ export default function PurchaseOrders() {
                           className={`h-6 w-auto min-w-[100px] text-xs ${getStatusColor(po.status)} border-0`}
                           onClick={(e) => e.stopPropagation()}
                         >
-                          <SelectValue />
+                          <SelectValue>
+                            {getPoStatusLabel(po.status)}
+                          </SelectValue>
                         </SelectTrigger>
                         <SelectContent onClick={(e) => e.stopPropagation()}>
                           {PO_STATUS_OPTIONS.filter((status) => {
@@ -279,7 +281,7 @@ export default function PurchaseOrders() {
                             return true;
                           }).map((status) => (
                             <SelectItem key={status} value={status}>
-                              {status}
+                              {getPoStatusLabel(status)}
                             </SelectItem>
                           ))}
                         </SelectContent>

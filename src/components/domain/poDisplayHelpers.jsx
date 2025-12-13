@@ -5,13 +5,14 @@
 
 /**
  * Get the display reference for a Purchase Order
- * Always use this helper instead of accessing fields directly
+ * CANONICAL DISPLAY RULE: Always use po_reference, never legacy fields
  * @param {Object} po - Purchase Order object
  * @returns {string} Display reference (canonical po_reference or fallback)
  */
 export function getPoDisplayReference(po) {
   if (!po) return 'Unknown PO';
-  return po.po_reference || `PO-${po.id?.slice(0, 8)}`;
+  // Only use po_reference (canonical field), fallback to ID slice if empty
+  return po.po_reference?.trim() || `PO-${po.id?.slice(0, 8)}`;
 }
 
 /**
