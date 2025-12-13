@@ -97,11 +97,11 @@ CRITICAL RULES:
   and add a clarification question to missing_info_questions.
 
 OUTPUT STYLE (MANDATORY):
-- Use BULLET POINTS only
-- Use clear, plain English
-- Each bullet should be one clear idea
-- Suitable for clients, technicians, and office staff
-- No long paragraphs
+- Use BULLET POINTS only (3-6 bullets per section minimum)
+- Be DETAILED and SPECIFIC - include measurements, quantities, part names, locations
+- Each bullet should be comprehensive and informative
+- Use clear, plain English suitable for clients, technicians, and office staff
+- No vague statements - provide concrete details from the technician's notes
 
 JOB CONTEXT:
 - Job Type: ${job.job_type_name || job.job_type || ""}
