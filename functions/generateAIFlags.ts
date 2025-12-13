@@ -3,66 +3,48 @@ import { createClientFromRequest } from 'npm:@base44/sdk@0.8.4';
 const TIER_1_RULES = `
 TIER 1 — AI SHOULD SUGGEST FLAGS (Only when 2+ corroborating signals exist)
 
-CRITICAL: All attention messages MUST be under 140 characters.
-
-A) SITE ACCESS CONSTRAINTS
+A) ACCESS / SITE RISK
 - Repeated mentions of: stairs, narrow access, tight driveway, low headroom, no parking, shared access, strata constraints
-- Label: "Site access constraints – review before visit" (type: site_constraint, severity: warning)
-- Keep message factual and under 140 chars
+- Flag: "Site access constraints – review before visit" (type: site_constraint, severity: warning)
 
 B) LOGISTICS DEPENDENCY
 - Delivery timing mentioned multiple times
 - Job blocked by: supplier, freight, pickup, PO status, third-party trade
-- Label: "Job depends on logistics" (type: logistics_dependency, severity: warning)
-- Details: "Cannot proceed until parts or delivery are resolved" (under 140 chars)
+- Flag: "Logistics-dependent job – timing critical" (type: logistics_dependency, severity: warning)
 
-C) PAYMENT RISK
-CRITICAL PAYMENT LOGIC:
-- DO NOT suggest payment flag if ANY of these are true:
-  * payment_status = "Paid"
-  * payment_received = true
-  * notes/communication includes: "paid on site", "paid in full", "payment received", "EFT received", "card charged"
-  
-- ONLY suggest if:
-  * requires_payment = true
-  * payment_status is empty, pending, or disputed
-  * job status is progressing or scheduled
+C) PAYMENT / COMMERCIAL RISK
+- Payment delays referenced more than once
+- Prior project shows late payment
+- Conditional payment language
+- Flag: "Payment risk – confirm before proceeding" (type: payment_hold, severity: warning)
 
-- Label: "Payment not confirmed" (type: payment_hold, severity: warning)
-- Details: "Payment has not been recorded for this job" (under 140 chars)
-
-D) URGENCY / EMERGENCY
+D) EMERGENCY / URGENCY CONTEXT
 - After-hours messages
 - Words: urgent, stuck, won't close, unsafe, security issue
 - Same-day scheduling pressure
-- Label: "Urgent service required" (type: technical_risk, severity: critical)
-- Keep under 140 chars
+- Flag: "Urgent / emergency context" (type: technical_risk, severity: critical)
 
 E) SAFETY RISK
 - Mentions of: heavy doors, unstable structures, damaged brackets, electrical exposure
 - Photos tagged as unsafe
-- Label: "Safety risk identified" (type: technical_risk, severity: critical)
-- Details: Brief summary under 140 chars
+- Flag: "Safety risk – caution on site" (type: technical_risk, severity: critical)
 
 REQUIREMENTS:
-- ALL labels and details MUST be under 140 characters
 - Minimum confidence: 0.65
 - Minimum sources: 2
 - At least 1 operational source (job, PO, logistics, email)
-- Use plain operational language - no speculation
-- Must have operational impact
+- Must have operational impact (changes scheduling, prep, communication, or reduces risk)
 
-NEVER SUGGEST:
-- Client sensitivity, tone, personality flags
-- "Difficult client" or subjective assessments
-- Anything not backed by factual data
+TIER 2 (ENRICH ONLY) & TIER 3 (IGNORE):
+- NEVER suggest flags for: client sensitivity, tone, personality, cultural differences
+- NEVER suggest "difficult client" or similar subjective assessments
 `;
 
 Deno.serve(async (req) => {
   try {
     const base44 = createClientFromRequest(req);
 
-    const { entityType, entityId, existingFlags = [] } = await req.json();
+    const { entityType, entityId } = await req.json();
 
     if (!entityType || !entityId) {
       return Response.json({ error: 'entityType and entityId required' }, { status: 400 });
@@ -126,30 +108,15 @@ Deno.serve(async (req) => {
       }
     });
 
-    // DEDUPLICATION: Check existing flags to prevent duplicates
-    const existingKeys = new Set(
-      existingFlags
-        .filter(f => !f.resolved_at && !f.dismissed_at)
-        .map(f => `${f.type}_${f.severity}`)
-    );
-
     // Filter suggestions by confidence and validate
     const validSuggestions = (aiResponse.suggested_flags || [])
-      .filter(flag => {
-        if (flag.confidence < 0.65) return false;
-        
-        // CRITICAL: Don't suggest if equivalent flag already exists
-        const key = `${flag.type}_${flag.severity}`;
-        if (existingKeys.has(key)) return false;
-        
-        return true;
-      })
+      .filter(flag => flag.confidence >= 0.65)
       .map(flag => ({
         id: `ai-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
         origin: 'ai_suggested',
         type: flag.type,
-        label: flag.label.length > 140 ? flag.label.substring(0, 137) + '...' : flag.label,
-        details: flag.details.length > 140 ? flag.details.substring(0, 137) + '...' : flag.details,
+        label: flag.label,
+        details: flag.details,
         severity: flag.severity,
         confidence: flag.confidence,
         source_refs: flag.source_refs || {},
