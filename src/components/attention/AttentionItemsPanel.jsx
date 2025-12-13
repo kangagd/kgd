@@ -205,45 +205,6 @@ export default function AttentionItemsPanel({
               );
             })
           )}
-            <div className="pt-3 border-t">
-              <button
-                onClick={() => setShowResolved(!showResolved)}
-                className="flex items-center gap-2 text-sm text-gray-600 hover:text-gray-900 w-full"
-              >
-                {showResolved ? (
-                  <ChevronUp className="w-4 h-4" />
-                ) : (
-                  <ChevronDown className="w-4 h-4" />
-                )}
-                {resolvedItems.length} Resolved Item{resolvedItems.length !== 1 && 's'}
-              </button>
-              
-              {showResolved && (
-                <div className="mt-3 space-y-2">
-                  {resolvedItems.map((item) => (
-                    <div
-                      key={item.id}
-                      className="p-3 rounded-lg bg-gray-50 border border-gray-200 opacity-60"
-                    >
-                      <div className="flex items-start gap-2">
-                        {getSeverityIcon(item.severity)}
-                        <div className="flex-1 min-w-0">
-                          <h4 className="font-medium text-sm text-gray-700 line-through">
-                            {item.title}
-                          </h4>
-                          <div className="text-xs text-gray-500 mt-1">
-                            Resolved by {item.resolved_by_name} on{' '}
-                            {new Date(item.resolved_at).toLocaleDateString()}
-                          </div>
-                        </div>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              )}
-            </div>
-          )}
-        </CardContent>
         </CardContent>
       </Card>
 

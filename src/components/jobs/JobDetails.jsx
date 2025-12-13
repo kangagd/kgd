@@ -908,8 +908,6 @@ export default function JobDetails({ job: initialJob, onClose, onStatusChange, o
     setShowDeleteConfirm(false);
   };
 
-  const isAdminOrManager = user?.role === 'admin' || user?.role === 'manager';
-
   return (
     <>
       <AttentionItemsPanel
