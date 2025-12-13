@@ -2102,10 +2102,17 @@ export default function JobDetails({ job: initialJob, onClose, onStatusChange, o
                           
                           const response = await base44.functions.invoke('generateServiceReport', { jobId: job.id });
                           const data = response.data;
-                          setOverview(data.work_performed || "");
-                          setIssuesFound(data.issues_found || "");
-                          setResolution(data.resolution || "");
-                          setNextSteps(data.next_steps || "");
+                          
+                          // Convert arrays to bullet-point HTML
+                          const formatBulletPoints = (arr) => {
+                            if (!arr || !Array.isArray(arr) || arr.length === 0) return "";
+                            return "<ul>" + arr.map(item => `<li>${item}</li>`).join("") + "</ul>";
+                          };
+                          
+                          setOverview(formatBulletPoints(data.work_performed));
+                          setIssuesFound(formatBulletPoints(data.issues_found));
+                          setResolution(formatBulletPoints(data.resolution));
+                          setNextSteps(formatBulletPoints(data.next_steps));
                           toast.success("Report generated successfully");
                         } catch (error) {
                           toast.error("Failed to generate report");
