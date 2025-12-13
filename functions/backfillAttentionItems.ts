@@ -31,14 +31,19 @@ Deno.serve(async (req) => {
     for (const customer of customers) {
       stats.customersScanned++;
       
-      // Skip if already has backfill items
+      // Delete existing AI-created items to override them
       const existing = await base44.asServiceRole.entities.AttentionItem.filter({
         entity_type: 'customer',
         entity_id: customer.id,
-        created_by: 'ai'
+        created_by: 'ai',
+        status: 'active'
       });
       
-      if (existing.length > 0) continue;
+      for (const item of existing) {
+        if (!dryRun) {
+          await base44.asServiceRole.entities.AttentionItem.delete(item.id);
+        }
+      }
 
       try {
         // Gather context
@@ -169,10 +174,15 @@ Return ONLY exception-level items with confidence >= 0.72.`,
       const existing = await base44.asServiceRole.entities.AttentionItem.filter({
         entity_type: 'project',
         entity_id: project.id,
-        created_by: 'ai'
+        created_by: 'ai',
+        status: 'active'
       });
       
-      if (existing.length > 0) continue;
+      for (const item of existing) {
+        if (!dryRun) {
+          await base44.asServiceRole.entities.AttentionItem.delete(item.id);
+        }
+      }
 
       try {
         const projectJobs = jobs.filter(j => j.project_id === project.id);
@@ -285,10 +295,15 @@ Return ONLY exception-level items with confidence >= 0.72.`,
       const existing = await base44.asServiceRole.entities.AttentionItem.filter({
         entity_type: 'job',
         entity_id: job.id,
-        created_by: 'ai'
+        created_by: 'ai',
+        status: 'active'
       });
       
-      if (existing.length > 0) continue;
+      for (const item of existing) {
+        if (!dryRun) {
+          await base44.asServiceRole.entities.AttentionItem.delete(item.id);
+        }
+      }
 
       try {
         const context = {
