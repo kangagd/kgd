@@ -375,21 +375,27 @@ export default function PurchaseOrderDetail({ poId, onClose, mode = "page" }) {
       
       const created = await base44.entities.PurchaseOrderLine.create(lineData);
       
-      // Sync with Part entity
+      // Sync with Part entity - use PO status to determine part status
+      const isDraftPO = po.status === 'draft';
+      const partStatus = isDraftPO ? 'pending' : 'on_order';
+      const partOrderData = isDraftPO ? {} : {
+        order_date: po.order_date || po.created_date,
+        eta: formData.eta || po.expected_date,
+      };
+      
       if (newItem.part_id) {
         // If part_id exists, update the Part
         await base44.entities.Part.update(newItem.part_id, {
           purchase_order_id: poId,
-          status: "on_order",
+          status: partStatus,
           category: newItem.category || "Other",
           price_list_item_id: lineData.price_list_item_id,
           quantity_required: newItem.quantity || 1,
           supplier_id: formData.supplier_id,
           supplier_name: suppliers.find(s => s.id === formData.supplier_id)?.name || "",
-          order_date: po.order_date || po.created_date,
-          eta: formData.eta || po.expected_date,
           po_number: formData.po_reference || getPoDisplayReference(po),
-          source_type: newItem.source_type || "supplier_delivery"
+          source_type: newItem.source_type || "supplier_delivery",
+          ...partOrderData
         });
       } else if (formData.project_id) {
         // If no part_id but we have a project, create a new Part
@@ -399,16 +405,15 @@ export default function PurchaseOrderDetail({ poId, onClose, mode = "page" }) {
           item_name: newItem.name || '',
           price_list_item_id: lineData.price_list_item_id,
           quantity_required: newItem.quantity || 1,
-          status: "on_order",
+          status: partStatus,
           location: "supplier",
           purchase_order_id: poId,
           supplier_id: formData.supplier_id || null,
           supplier_name: suppliers.find(s => s.id === formData.supplier_id)?.name || "",
-          order_date: po.order_date || po.created_date,
-          eta: formData.eta || po.expected_date,
           po_number: formData.po_reference || getPoDisplayReference(po),
           source_type: newItem.source_type || "supplier_delivery",
-          notes: newItem.notes || null
+          notes: newItem.notes || null,
+          ...partOrderData
         });
         
         // Update the line item with the new part_id

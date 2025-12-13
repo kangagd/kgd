@@ -159,6 +159,41 @@ async function linkPartsToPO(base44, purchaseOrderId, lineItems) {
     }
 }
 
+// Helper: Map PO status to Part status
+function mapPoStatusToPartStatus(poStatus) {
+    const normalized = normaliseLegacyPoStatus(poStatus);
+    
+    switch (normalized) {
+        case PO_STATUS.DRAFT:
+            return PART_STATUS.PENDING;
+        
+        case PO_STATUS.SENT:
+        case PO_STATUS.ON_ORDER:
+            return PART_STATUS.ON_ORDER;
+        
+        case PO_STATUS.IN_TRANSIT:
+            return PART_STATUS.IN_TRANSIT;
+        
+        case PO_STATUS.IN_LOADING_BAY:
+            return PART_STATUS.IN_LOADING_BAY;
+        
+        case PO_STATUS.IN_STORAGE:
+            return PART_STATUS.IN_STORAGE;
+        
+        case PO_STATUS.IN_VEHICLE:
+            return PART_STATUS.IN_VEHICLE;
+        
+        case PO_STATUS.INSTALLED:
+            return PART_STATUS.INSTALLED;
+        
+        case PO_STATUS.CANCELLED:
+            return PART_STATUS.PENDING;
+        
+        default:
+            return PART_STATUS.PENDING;
+    }
+}
+
 // Helper: Sync Parts with PurchaseOrder status
 async function syncPartsWithPurchaseOrderStatus(base44, purchaseOrder, vehicleId = null) {
     try {
@@ -172,39 +207,38 @@ async function syncPartsWithPurchaseOrderStatus(base44, purchaseOrder, vehicleId
 
         if (parts.length === 0) return;
 
-        for (const part of parts) {
-            const updateData = {};
+        // Determine target part status from PO status
+        const targetPartStatus = mapPoStatusToPartStatus(normalizedStatus);
 
-            // Apply status/location mapping based on PO status
+        for (const part of parts) {
+            const updateData = {
+                status: targetPartStatus
+            };
+
+            // Clear ordering metadata if reverting to pending (draft)
+            if (targetPartStatus === PART_STATUS.PENDING) {
+                updateData.order_date = null;
+                updateData.eta = null;
+            }
+
+            // Apply location mapping based on PO status
             switch (normalizedStatus) {
                 case PO_STATUS.DRAFT:
-                    updateData.status = PART_STATUS.PENDING;
-                    updateData.location = PART_LOCATION.SUPPLIER;
-                    break;
-
                 case PO_STATUS.SENT:
                 case PO_STATUS.ON_ORDER:
-                    updateData.status = PART_STATUS.ON_ORDER;
-                    updateData.location = PART_LOCATION.SUPPLIER;
-                    break;
-
                 case PO_STATUS.IN_TRANSIT:
-                    updateData.status = PART_STATUS.IN_TRANSIT;
                     updateData.location = PART_LOCATION.SUPPLIER;
                     break;
 
                 case PO_STATUS.IN_LOADING_BAY:
-                    updateData.status = PART_STATUS.IN_LOADING_BAY;
                     updateData.location = PART_LOCATION.LOADING_BAY;
                     break;
 
                 case PO_STATUS.IN_STORAGE:
-                    updateData.status = PART_STATUS.IN_STORAGE;
                     updateData.location = PART_LOCATION.WAREHOUSE_STORAGE;
                     break;
 
                 case PO_STATUS.IN_VEHICLE:
-                    updateData.status = PART_STATUS.IN_VEHICLE;
                     updateData.location = PART_LOCATION.VEHICLE;
                     if (vehicleId) {
                         updateData.assigned_vehicle_id = vehicleId;
@@ -212,15 +246,11 @@ async function syncPartsWithPurchaseOrderStatus(base44, purchaseOrder, vehicleId
                     break;
 
                 case PO_STATUS.INSTALLED:
-                    updateData.status = PART_STATUS.INSTALLED;
                     updateData.location = PART_LOCATION.CLIENT_SITE;
                     break;
             }
 
-            // Apply updates if any
-            if (Object.keys(updateData).length > 0) {
-                await base44.asServiceRole.entities.Part.update(part.id, updateData);
-            }
+            await base44.asServiceRole.entities.Part.update(part.id, updateData);
         }
     } catch (error) {
         console.error(`Error syncing parts with PO ${purchaseOrder.id} status:`, error);
@@ -455,6 +485,9 @@ Deno.serve(async (req) => {
               order_reference: updatedPO.order_reference,
               reference: updatedPO.reference
             });
+
+            // Sync linked parts status/location with PO
+            await syncPartsWithPurchaseOrderStatus(base44, updatedPO);
 
             // Update project activity if PO is linked to a project
             if (updatedPO.project_id) {
