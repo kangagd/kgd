@@ -28,12 +28,12 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Label } from "@/components/ui/label";
 
 const FLAG_TYPES = {
-  client_risk: { icon: AlertTriangle, label: "Client Risk", color: "text-red-600", template: "Sensitive client - handle with care" },
-  site_constraint: { icon: MapPin, label: "Site Constraint", color: "text-orange-600", template: "Site access challenges" },
-  payment_hold: { icon: DollarSign, label: "Payment Hold", color: "text-red-600", template: "Outstanding payment - verify before work" },
-  access_issue: { icon: Key, label: "Access Issue", color: "text-amber-600", template: "Access arrangements required" },
-  technical_risk: { icon: Wrench, label: "Technical Risk", color: "text-orange-600", template: "Technical complexity - review before scheduling" },
-  logistics_dependency: { icon: Truck, label: "Logistics Dependency", color: "text-blue-600", template: "Parts or logistics constraint" },
+  client_risk: { icon: AlertTriangle, label: "Client Risk", color: "text-red-600", template: "Client requires careful handling" },
+  site_constraint: { icon: MapPin, label: "Site Constraint", color: "text-orange-600", template: "Site access constraints – review before visit" },
+  payment_hold: { icon: DollarSign, label: "Payment not confirmed", color: "text-red-600", template: "Payment has not been recorded" },
+  access_issue: { icon: Key, label: "Access Issue", color: "text-amber-600", template: "Access arrangements needed" },
+  technical_risk: { icon: Wrench, label: "Technical Risk", color: "text-orange-600", template: "Review technical complexity" },
+  logistics_dependency: { icon: Truck, label: "Job depends on logistics", color: "text-blue-600", template: "Cannot proceed until parts/delivery resolved" },
   vip_client: { icon: Star, label: "VIP Client", color: "text-purple-600", template: "High-priority client" },
   internal_warning: { icon: Shield, label: "Internal Warning", color: "text-gray-600", template: "Internal team note" }
 };
@@ -77,26 +77,37 @@ export default function AttentionPanel({
 
   const canEdit = !readonly && (currentUser?.role === 'admin' || currentUser?.role === 'manager');
 
-  // Split flags by origin
-  const { manualFlags, aiFlags } = useMemo(() => {
+  // Split flags by origin and category
+  const { systemFlags, warningFlags, aiFlags } = useMemo(() => {
     const active = flags.filter(f => !f.resolved_at && !f.dismissed_at);
     
-    const manual = active
-      .filter(f => f.origin !== 'ai_suggested')
+    const manual = active.filter(f => f.origin !== 'ai_suggested');
+    const ai = active.filter(f => f.origin === 'ai_suggested').sort((a, b) => (b.confidence || 0) - (a.confidence || 0));
+    
+    // System issues (critical, blocking)
+    const system = manual
+      .filter(f => f.severity === 'critical')
       .sort((a, b) => {
-        if (a.severity === 'critical' && b.severity !== 'critical') return -1;
-        if (b.severity === 'critical' && a.severity !== 'critical') return 1;
         if (a.pinned && !b.pinned) return -1;
         if (b.pinned && !a.pinned) return 1;
         return new Date(b.created_at) - new Date(a.created_at);
       });
     
-    const ai = active
-      .filter(f => f.origin === 'ai_suggested')
-      .sort((a, b) => (b.confidence || 0) - (a.confidence || 0));
+    // Warnings (action recommended)
+    const warnings = manual
+      .filter(f => f.severity !== 'critical')
+      .sort((a, b) => {
+        if (a.severity === 'warning' && b.severity !== 'warning') return -1;
+        if (b.severity === 'warning' && a.severity !== 'warning') return 1;
+        if (a.pinned && !b.pinned) return -1;
+        if (b.pinned && !a.pinned) return 1;
+        return new Date(b.created_at) - new Date(a.created_at);
+      });
     
-    return { manualFlags: manual, aiFlags: ai };
+    return { systemFlags: system, warningFlags: warnings, aiFlags: ai };
   }, [flags]);
+
+  const manualFlags = [...systemFlags, ...warningFlags];
 
   const hasCritical = manualFlags.some(f => f.severity === 'critical');
   const shouldAutoExpand = hasCritical || manualFlags.some(f => f.pinned);
@@ -252,7 +263,38 @@ export default function AttentionPanel({
           </div>
 
           <div className="space-y-3">
-            {/* Manual Flags */}
+            {/* System Issues */}
+            {systemFlags.length > 0 && (
+              <div className="mb-2">
+                <div className="flex items-center gap-1.5 mb-2">
+                  <div className="w-2 h-2 rounded-full bg-red-500" />
+                  <span className="text-xs font-semibold text-red-700 uppercase tracking-wide">System Issues</span>
+                </div>
+                <div className="space-y-2">
+                  {systemFlags.map((flag) => (
+                    <FlagItem key={flag.id} flag={flag} {...{ canEdit, currentUser, handleAcknowledge, setSelectedFlag, setShowResolveModal, handleRemoveFlag }} />
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {/* Warnings */}
+            {warningFlags.length > 0 && (
+              <div className="mb-2">
+                <div className="flex items-center gap-1.5 mb-2">
+                  <div className="w-2 h-2 rounded-full bg-amber-500" />
+                  <span className="text-xs font-semibold text-amber-700 uppercase tracking-wide">Warnings</span>
+                </div>
+                <div className="space-y-2">
+                  {warningFlags.slice(0, isExpanded ? warningFlags.length : 3).map((flag) => (
+                    <FlagItem key={flag.id} flag={flag} {...{ canEdit, currentUser, handleAcknowledge, setSelectedFlag, setShowResolveModal, handleRemoveFlag }} />
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {/* Old implementation kept for fallback */}
+            <div className="hidden">
             {visibleManualFlags.map((flag) => {
               const typeConfig = FLAG_TYPES[flag.type] || FLAG_TYPES.internal_warning;
               const Icon = typeConfig.icon;
@@ -362,19 +404,25 @@ export default function AttentionPanel({
               );
             })}
 
+            </div>
+
             {/* AI-Suggested Flags */}
             {canEdit && aiFlags.length > 0 && (
-              <div className="mt-4">
+              <div className="mt-4 pt-3 border-t border-purple-200">
                 <button
                   onClick={() => setShowAISuggestions(!showAISuggestions)}
-                  className="flex items-center gap-2 text-xs font-medium text-purple-700 hover:text-purple-800 mb-2"
+                  className="flex items-center gap-2 mb-2"
                 >
+                  <div className="w-2 h-2 rounded-full bg-purple-500" />
+                  <span className="text-xs font-semibold text-purple-700 uppercase tracking-wide">AI Suggestions</span>
+                  <Badge className="bg-purple-100 text-purple-700 text-xs ml-auto">
+                    {aiFlags.length}
+                  </Badge>
                   {showAISuggestions ? (
-                    <ChevronUp className="w-3 h-3" />
+                    <ChevronUp className="w-3 h-3 text-purple-600" />
                   ) : (
-                    <ChevronDown className="w-3 h-3" />
+                    <ChevronDown className="w-3 h-3 text-purple-600" />
                   )}
-                  AI Suggestions ({aiFlags.length})
                 </button>
                 
                 {showAISuggestions && (

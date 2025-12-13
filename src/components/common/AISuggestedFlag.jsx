@@ -88,21 +88,22 @@ export default function AISuggestedFlag({ flag, onAccept, onDismiss }) {
               <Sparkles className="w-3 h-3 text-purple-600" />
               {!isEditing ? (
                 <>
-                  <span className="font-medium text-sm text-gray-900">{flag.label}</span>
-                  <Badge className="bg-purple-100 text-purple-700 text-xs">
-                    {flag.severity}
-                  </Badge>
-                  <Badge className="bg-purple-100 text-purple-700 text-xs">
-                    {confidencePercent}% confidence
-                  </Badge>
+                  <span className="text-xs text-purple-700 font-medium">Possible {typeConfig.label.toLowerCase()}</span>
                 </>
               ) : (
                 <span className="text-xs text-purple-700 font-medium">Editing suggestion</span>
               )}
             </div>
 
-            {!isEditing && flag.details && (
-              <p className="text-xs text-gray-700 mb-2">{flag.details}</p>
+            {!isEditing && (
+              <>
+                <p className="text-sm text-gray-900 mb-1 font-medium">
+                  {flag.label.length > 140 ? flag.label.substring(0, 137) + '...' : flag.label}
+                </p>
+                {flag.details && (
+                  <p className="text-xs text-gray-700 mb-2">{flag.details}</p>
+                )}
+              </>
             )}
 
             {isEditing && (
@@ -210,18 +211,23 @@ export default function AISuggestedFlag({ flag, onAccept, onDismiss }) {
               </button>
             )}
 
-            {showDetails && flag.source_refs && (
-              <div className="mt-2 p-2 bg-white/50 rounded text-xs text-gray-600">
-                {flag.source_refs.email_thread_id && (
+            {showDetails && (
+              <div className="mt-2 p-2 bg-white/50 rounded text-xs text-gray-600 space-y-1">
+                {flag.source_refs?.email_thread_id && (
                   <div>📧 From email thread</div>
                 )}
-                {flag.source_refs.note_excerpt && (
+                {flag.source_refs?.note_excerpt && (
                   <div className="italic mt-1">"{flag.source_refs.note_excerpt}"</div>
+                )}
+                {flag.confidence && (
+                  <div className="text-purple-700 font-medium">
+                    {confidencePercent}% confidence
+                  </div>
                 )}
               </div>
             )}
 
-            <div className="flex items-center gap-2 text-xs text-gray-600 mt-2">
+            <div className="flex items-center gap-2 text-xs text-purple-700 mt-2 font-medium">
               <Sparkles className="w-3 h-3" />
               <span>Suggested by AI</span>
               <span>•</span>

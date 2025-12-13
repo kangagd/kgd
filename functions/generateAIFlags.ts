@@ -3,41 +3,59 @@ import { createClientFromRequest } from 'npm:@base44/sdk@0.8.4';
 const TIER_1_RULES = `
 TIER 1 — AI SHOULD SUGGEST FLAGS (Only when 2+ corroborating signals exist)
 
-A) ACCESS / SITE RISK
+CRITICAL: All attention messages MUST be under 140 characters.
+
+A) SITE ACCESS CONSTRAINTS
 - Repeated mentions of: stairs, narrow access, tight driveway, low headroom, no parking, shared access, strata constraints
-- Flag: "Site access constraints – review before visit" (type: site_constraint, severity: warning)
+- Label: "Site access constraints – review before visit" (type: site_constraint, severity: warning)
+- Keep message factual and under 140 chars
 
 B) LOGISTICS DEPENDENCY
 - Delivery timing mentioned multiple times
 - Job blocked by: supplier, freight, pickup, PO status, third-party trade
-- Flag: "Logistics-dependent job – timing critical" (type: logistics_dependency, severity: warning)
+- Label: "Job depends on logistics" (type: logistics_dependency, severity: warning)
+- Details: "Cannot proceed until parts or delivery are resolved" (under 140 chars)
 
-C) PAYMENT / COMMERCIAL RISK
-- Payment delays referenced more than once
-- Prior project shows late payment
-- Conditional payment language
-- Flag: "Payment risk – confirm before proceeding" (type: payment_hold, severity: warning)
+C) PAYMENT RISK
+CRITICAL PAYMENT LOGIC:
+- DO NOT suggest payment flag if ANY of these are true:
+  * payment_status = "Paid"
+  * payment_received = true
+  * notes/communication includes: "paid on site", "paid in full", "payment received", "EFT received", "card charged"
+  
+- ONLY suggest if:
+  * requires_payment = true
+  * payment_status is empty, pending, or disputed
+  * job status is progressing or scheduled
 
-D) EMERGENCY / URGENCY CONTEXT
+- Label: "Payment not confirmed" (type: payment_hold, severity: warning)
+- Details: "Payment has not been recorded for this job" (under 140 chars)
+
+D) URGENCY / EMERGENCY
 - After-hours messages
 - Words: urgent, stuck, won't close, unsafe, security issue
 - Same-day scheduling pressure
-- Flag: "Urgent / emergency context" (type: technical_risk, severity: critical)
+- Label: "Urgent service required" (type: technical_risk, severity: critical)
+- Keep under 140 chars
 
 E) SAFETY RISK
 - Mentions of: heavy doors, unstable structures, damaged brackets, electrical exposure
 - Photos tagged as unsafe
-- Flag: "Safety risk – caution on site" (type: technical_risk, severity: critical)
+- Label: "Safety risk identified" (type: technical_risk, severity: critical)
+- Details: Brief summary under 140 chars
 
 REQUIREMENTS:
+- ALL labels and details MUST be under 140 characters
 - Minimum confidence: 0.65
 - Minimum sources: 2
 - At least 1 operational source (job, PO, logistics, email)
-- Must have operational impact (changes scheduling, prep, communication, or reduces risk)
+- Use plain operational language - no speculation
+- Must have operational impact
 
-TIER 2 (ENRICH ONLY) & TIER 3 (IGNORE):
-- NEVER suggest flags for: client sensitivity, tone, personality, cultural differences
-- NEVER suggest "difficult client" or similar subjective assessments
+NEVER SUGGEST:
+- Client sensitivity, tone, personality flags
+- "Difficult client" or subjective assessments
+- Anything not backed by factual data
 `;
 
 Deno.serve(async (req) => {
