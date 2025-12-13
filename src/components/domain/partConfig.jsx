@@ -14,6 +14,40 @@ export const PART_STATUS = {
   CANCELLED: "cancelled",
 };
 
+/**
+ * Check if a part is physically available for picking/installation
+ * Parts are only available when they've physically arrived at warehouse or vehicle
+ */
+export function isPartAvailable(part) {
+  if (!part) return false;
+  
+  // Must be in storage or vehicle to be available
+  const isInUsableLocation = 
+    part.status === PART_STATUS.IN_STORAGE || 
+    part.status === PART_STATUS.IN_VEHICLE;
+  
+  // Must NOT be at supplier
+  const notAtSupplier = part.location !== PART_LOCATION.SUPPLIER;
+  
+  return isInUsableLocation && notAtSupplier;
+}
+
+/**
+ * Check if a part represents a shortage
+ * Parts are considered shortage if they're needed but not physically available
+ */
+export function isPartShortage(part) {
+  if (!part) return false;
+  
+  // Cancelled or installed parts are not shortages
+  if (part.status === PART_STATUS.CANCELLED || part.status === PART_STATUS.INSTALLED) {
+    return false;
+  }
+  
+  // If not available, it's a shortage
+  return !isPartAvailable(part);
+}
+
 export const PART_STATUS_OPTIONS = Object.values(PART_STATUS);
 
 export const PART_STATUS_LABELS = {

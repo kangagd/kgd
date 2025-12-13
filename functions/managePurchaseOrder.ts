@@ -259,24 +259,29 @@ async function syncPartsWithPurchaseOrderStatus(base44, purchaseOrder, vehicleId
                 updateData.eta = null;
             }
 
+            // CRITICAL: Parts must stay at supplier until physically received
             // Apply location mapping based on PO status
             switch (normalizedStatus) {
                 case PO_STATUS.DRAFT:
                 case PO_STATUS.SENT:
                 case PO_STATUS.ON_ORDER:
                 case PO_STATUS.IN_TRANSIT:
+                    // Parts remain at supplier - NOT AVAILABLE for picking
                     updateData.location = PART_LOCATION.SUPPLIER;
                     break;
 
                 case PO_STATUS.IN_LOADING_BAY:
+                    // Arrived but not put away - NOT YET AVAILABLE for picking
                     updateData.location = PART_LOCATION.LOADING_BAY;
                     break;
 
                 case PO_STATUS.IN_STORAGE:
+                    // AVAILABLE - parts can now be picked
                     updateData.location = PART_LOCATION.WAREHOUSE_STORAGE;
                     break;
 
                 case PO_STATUS.IN_VEHICLE:
+                    // AVAILABLE - parts loaded in vehicle
                     updateData.location = PART_LOCATION.VEHICLE;
                     if (vehicleId) {
                         updateData.assigned_vehicle_id = vehicleId;

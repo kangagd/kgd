@@ -124,18 +124,19 @@ export default function Projects() {
   }, [priceListItems, inventoryQuantities]);
 
   const detectShortage = useCallback((part) => {
-    if (['Ordered', 'Back-ordered', 'Delivered', 'At Supplier', 'At Delivery Bay', 'In Warehouse Storage', 'With Technician', 'At Client Site'].includes(part.status)) {
+    // Cancelled or installed parts are not shortages
+    if (part.status === 'cancelled' || part.status === 'installed') {
       return false;
     }
-    if (part.status === 'Cancelled') return false;
     
-    const requiredQty = part.quantity_required || 1;
-    if (part.price_list_item_id) {
-       const availableQty = inventoryByItem[part.price_list_item_id] || 0;
-       return availableQty < requiredQty;
-    }
-    return true;
-  }, [inventoryByItem]);
+    // CRITICAL: Part is only available if physically at warehouse or vehicle
+    const isAvailable = 
+      (part.status === 'in_storage' || part.status === 'in_vehicle') &&
+      part.location !== 'supplier';
+    
+    // If not available, it's a shortage
+    return !isAvailable;
+  }, []);
 
   const createProjectMutation = useMutation({
     mutationFn: async (data) => {

@@ -81,14 +81,17 @@ async function handleLogisticsJobCompletion(base44, job) {
         let newPartLocation;
 
         if (logisticsOutcome === 'in_storage') {
+            // CRITICAL: Parts now physically at warehouse - AVAILABLE for picking
             newPOStatus = PO_STATUS.IN_STORAGE;
             newPartStatus = PART_STATUS.IN_STORAGE;
             newPartLocation = PART_LOCATION.WAREHOUSE_STORAGE;
         } else if (logisticsOutcome === 'in_vehicle') {
+            // CRITICAL: Parts loaded in vehicle - AVAILABLE for installation
             newPOStatus = PO_STATUS.IN_VEHICLE;
             newPartStatus = PART_STATUS.IN_VEHICLE;
             newPartLocation = PART_LOCATION.VEHICLE;
         } else if (logisticsOutcome === 'in_loading_bay') {
+            // Parts arrived but not put away - NOT YET AVAILABLE
             newPOStatus = PO_STATUS.IN_LOADING_BAY;
             newPartStatus = PART_STATUS.IN_LOADING_BAY;
             newPartLocation = PART_LOCATION.LOADING_BAY;
@@ -100,7 +103,7 @@ async function handleLogisticsJobCompletion(base44, job) {
             });
         }
 
-        // Fetch Parts linked to this PO and update them
+        // Fetch Parts linked to this PO and update them to match physical reality
         const parts = await base44.asServiceRole.entities.Part.filter({
             purchase_order_id: job.purchase_order_id
         });
