@@ -613,6 +613,47 @@ function AddFlagModal({ open, onClose, onAdd }) {
   );
 }
 
+function FlagItem({ flag, canEdit, currentUser, handleAcknowledge, setSelectedFlag, setShowResolveModal, handleRemoveFlag }) {
+  const typeConfig = FLAG_TYPES[flag.type] || FLAG_TYPES.internal_warning;
+  const Icon = typeConfig.icon;
+  const severityStyle = SEVERITY_STYLES[flag.severity] || SEVERITY_STYLES.info;
+  const isAcknowledged = flag.acknowledged_by?.includes(currentUser?.email);
+  
+  const label = flag.label.length > 140 ? flag.label.substring(0, 137) + '...' : flag.label;
+
+  return (
+    <div className={cn("rounded-lg p-3 transition-all", severityStyle.border, severityStyle.bg)}>
+      <div className="flex items-start justify-between gap-3">
+        <div className="flex items-start gap-3 flex-1 min-w-0">
+          <Icon className={cn("w-4 h-4 mt-0.5 flex-shrink-0", typeConfig.color)} />
+          <div className="flex-1 min-w-0">
+            <div className="flex items-center gap-2 mb-1 flex-wrap">
+              <span className="font-medium text-sm text-gray-900">{label}</span>
+              {flag.origin === 'manual' && <Badge variant="outline" className="text-xs">System</Badge>}
+              {flag.pinned && <Badge variant="outline" className="text-xs">Pinned</Badge>}
+              {flag.source && <Badge variant="outline" className="text-xs text-gray-600">{flag.source.replace('inherited_from_', 'From ')}</Badge>}
+            </div>
+            {flag.details && <p className="text-xs text-gray-700 mb-2">{flag.details}</p>}
+            <div className="flex items-center gap-2 text-xs text-gray-600">
+              {flag.origin === 'manual' && <><span>Added by system</span><span>•</span><span>Internal</span></>}
+              {flag.acknowledged_by?.length > 0 && <><span>•</span><span className="text-green-600">Ack'd by {flag.acknowledged_by.length}</span></>}
+            </div>
+          </div>
+        </div>
+        <div className="flex items-center gap-1 flex-shrink-0">
+          {!isAcknowledged && <Button variant="ghost" size="sm" onClick={() => handleAcknowledge(flag)} className="h-7 text-xs" title="Acknowledge"><Check className="w-3 h-3" /></Button>}
+          {canEdit && !flag.auto_generated && !flag.source && (
+            <>
+              <Button variant="ghost" size="sm" onClick={() => { setSelectedFlag(flag); setShowResolveModal(true); }} className="h-7 text-xs text-green-600 hover:text-green-700">Resolve</Button>
+              <Button variant="ghost" size="sm" onClick={() => handleRemoveFlag(flag.id)} className="h-7 text-xs text-red-600 hover:text-red-700"><X className="w-3 h-3" /></Button>
+            </>
+          )}
+        </div>
+      </div>
+    </div>
+  );
+}
+
 function ResolveFlagModal({ open, flag, onClose, onResolve }) {
   const [reason, setReason] = useState('');
 
