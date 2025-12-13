@@ -100,6 +100,17 @@ Deno.serve(async (req) => {
             // Update activity timestamp whenever project is updated
             await updateProjectActivity(base44, id, 'Project Updated');
 
+            // Evaluate attention items
+            try {
+                await base44.asServiceRole.functions.invoke('evaluateAttentionItems', {
+                    entityType: 'project',
+                    entityId: id,
+                    eventType: 'project.updated'
+                });
+            } catch (evalError) {
+                console.error('Failed to evaluate attention items:', evalError);
+            }
+
             // Auto-decline quotes if project is lost
             if (data.status === 'Lost') {
                 try {
