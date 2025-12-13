@@ -4,7 +4,8 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { ArrowLeft, Upload, X, FileText, Image as ImageIcon, Loader2, Plus, Sparkles } from "lucide-react";
+import { Switch } from "@/components/ui/switch";
+import { ArrowLeft, Upload, X, FileText, Image as ImageIcon, Loader2, Plus, Sparkles, Truck } from "lucide-react";
 import { base44 } from "@/api/base44Client";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { JOB_STATUS, JOB_STATUS_OPTIONS } from "@/components/domain/jobConfig";
@@ -59,6 +60,7 @@ export default function JobForm({ job, technicians, onSubmit, onCancel, isSubmit
     invoice_url: "",
   });
 
+  const [isLogisticsJob, setIsLogisticsJob] = useState(false);
   const [uploadingImages, setUploadingImages] = useState(false);
   const [uploadingQuote, setUploadingQuote] = useState(false);
   const [uploadingInvoice, setUploadingInvoice] = useState(false);
@@ -85,10 +87,15 @@ export default function JobForm({ job, technicians, onSubmit, onCancel, isSubmit
 
   const projects = allProjects.filter(p => !p.deleted_at);
 
-  const { data: jobTypes = [] } = useQuery({
+  const { data: allJobTypes = [] } = useQuery({
     queryKey: ['jobTypes'],
     queryFn: () => base44.entities.JobType.filter({ is_active: true })
   });
+
+  // Filter job types based on logistics toggle (only when creating new job)
+  const jobTypes = !job ? allJobTypes.filter(jt => 
+    isLogisticsJob ? (jt.is_logistics === true) : (jt.is_logistics !== true)
+  ).sort((a, b) => (a.sort_order || 999) - (b.sort_order || 999)) : allJobTypes;
 
   useEffect(() => {
     if (preselectedCustomerId && customers.length > 0 && !job) {
@@ -489,6 +496,33 @@ export default function JobForm({ job, technicians, onSubmit, onCancel, isSubmit
         </CardHeader>
         <form onSubmit={handleSubmit}>
           <CardContent className="p-6 space-y-6">
+            {/* Logistics Toggle - Only show when creating new job */}
+            {!job && (
+              <div className="flex items-center justify-between p-4 bg-slate-50 border-2 border-slate-200 rounded-xl">
+                <div className="flex items-center gap-3">
+                  <Truck className="w-5 h-5 text-[#6B7280]" />
+                  <div>
+                    <Label htmlFor="logistics-toggle" className="text-[14px] font-semibold text-[#111827] cursor-pointer">
+                      Is this a logistics job?
+                    </Label>
+                    <p className="text-[12px] text-[#6B7280] mt-0.5">
+                      Enable for stock movement, deliveries, or warehouse tasks
+                    </p>
+                  </div>
+                </div>
+                <Switch
+                  id="logistics-toggle"
+                  checked={isLogisticsJob}
+                  onCheckedChange={(checked) => {
+                    setIsLogisticsJob(checked);
+                    // Reset job type when toggling
+                    setFormData(prev => ({ ...prev, job_type_id: "", job_type: "" }));
+                  }}
+                  className="scale-110"
+                />
+              </div>
+            )}
+
             {/* Contract Banner */}
             {/* We don't have contract data fetched directly here, but if customer has contract_id we can infer. 
                 However, JobForm doesn't query full customer details for all dropdown items deeply. 
