@@ -298,26 +298,27 @@ export default function FinancialsTab({ project, onUpdate }) {
   // For future Health strip
   const quotedValue = autoQuoteValue || 0;
 
+  // Use refs to prevent infinite loops
+  const hasAppliedQuoteValue = React.useRef(false);
+  const hasAppliedXeroStatus = React.useRef(false);
+  const hasAppliedSuggestedStatus = React.useRef(false);
+
   // Auto-apply project value from quotes when not locked
   useEffect(() => {
     if (!project || autoQuoteValue <= 0) return;
-
-    // If user has locked the value, do not auto-update
     if (project.financial_value_locked) return;
 
     const currentValue = project.total_project_value || 0;
-
-    // If already in sync, do nothing
     if (currentValue === autoQuoteValue) return;
+    if (hasAppliedQuoteValue.current) return;
 
+    hasAppliedQuoteValue.current = true;
     base44.entities.Project.update(project.id, {
       total_project_value: autoQuoteValue,
+    }).finally(() => {
+      setTimeout(() => { hasAppliedQuoteValue.current = false; }, 1000);
     });
-  }, [
-    project?.id,
-    project?.financial_value_locked,
-    autoQuoteValue,
-  ]);
+  }, [project?.id, project?.financial_value_locked, project?.total_project_value, autoQuoteValue]);
 
   // Auto-mark financial status if Xero shows fully paid (with guardrails)
   useEffect(() => {
@@ -329,15 +330,15 @@ export default function FinancialsTab({ project, onUpdate }) {
       currentStatus === "Initial Payment Made" ||
       currentStatus === "Second Payment Made";
     
-    // Only auto-update if status allows and it's not already set
-    if (allowedToAutoUpdate && currentStatus !== "Balance Paid in Full") {
-      // Update project financial status
-      onUpdate({ financial_status: "Balance Paid in Full" });
-    }
+    if (!allowedToAutoUpdate || currentStatus === "Balance Paid in Full") return;
+    if (hasAppliedXeroStatus.current) return;
+
+    hasAppliedXeroStatus.current = true;
+    onUpdate({ financial_status: "Balance Paid in Full" });
+    setTimeout(() => { hasAppliedXeroStatus.current = false; }, 1000);
   }, [xeroFullyPaid, project?.id, project?.financial_status]);
 
   // Suggest financial status based on % paid
-  // Payment model: Initial 50%, Second 30%, Balance 20%
   const baseValue = project.total_project_value || 0;
   const effectivePaid = xeroTotalPaid > 0 ? xeroTotalPaid : totalPaid;
   
@@ -347,27 +348,25 @@ export default function FinancialsTab({ project, onUpdate }) {
     if (ratio >= 0.95) {
       suggestedStatus = "Balance Paid in Full";
     } else if (ratio >= 0.8) {
-      suggestedStatus = "Second Payment Made"; // 50% + 30% = 80%
+      suggestedStatus = "Second Payment Made";
     } else if (ratio >= 0.5) {
-      suggestedStatus = "Initial Payment Made"; // 50%
+      suggestedStatus = "Initial Payment Made";
     }
   }
 
   // Auto-apply suggested financial status (unless locked)
   useEffect(() => {
     if (!suggestedStatus || !project?.id) return;
-    
-    // If user has locked the status, do not auto-update
     if (project.financial_status_locked) return;
     
     const currentStatus = project.financial_status;
-    
-    // If already matches suggestion, do nothing
     if (currentStatus === suggestedStatus) return;
+    if (hasAppliedSuggestedStatus.current) return;
     
-    // Auto-apply the suggested status
+    hasAppliedSuggestedStatus.current = true;
     onUpdate({ financial_status: suggestedStatus });
-  }, [suggestedStatus, project?.id, project?.financial_status_locked]);
+    setTimeout(() => { hasAppliedSuggestedStatus.current = false; }, 1000);
+  }, [suggestedStatus, project?.id, project?.financial_status_locked, project?.financial_status]);
 
   // Handler for manual total project value changes - locks the value
   const handleTotalProjectValueChange = (newValue) => {
