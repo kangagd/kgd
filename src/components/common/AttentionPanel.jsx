@@ -294,7 +294,20 @@ export default function AttentionPanel({
                           <p className="text-xs text-gray-700 mb-2">{flag.details}</p>
                         )}
                         <div className="flex items-center gap-2 text-xs text-gray-600">
-                          <span>by {flag.created_by}</span>
+                          {flag.origin === 'manual' && (
+                            <>
+                              <span>Added by {flag.created_by?.split('@')[0] || 'user'}</span>
+                              <span>•</span>
+                              <span>Internal</span>
+                            </>
+                          )}
+                          {flag.origin === 'ai_suggested' && flag.accepted_at && (
+                            <>
+                              <span>Accepted by {flag.accepted_by?.split('@')[0]}</span>
+                              <span>•</span>
+                              <span>Originally AI</span>
+                            </>
+                          )}
                           <span>•</span>
                           <span>{new Date(flag.created_at).toLocaleDateString()}</span>
                           {flag.acknowledged_by?.length > 0 && (
