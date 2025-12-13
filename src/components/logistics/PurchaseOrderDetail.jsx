@@ -419,7 +419,26 @@ export default function PurchaseOrderDetail({ poId, onClose, mode = "page" }) {
       
       return created;
     },
-    onSuccess: async () => {
+    onSuccess: async (created) => {
+      // Immediately update local state with the new line item
+      const newLineItem = {
+        id: created.id,
+        source_type: created.source_type || "custom",
+        source_id: created.source_id || null,
+        part_id: created.part_id || null,
+        name: created.item_name || '',
+        quantity: created.qty_ordered || 0,
+        unit_price: created.unit_cost_ex_tax || 0,
+        unit: created.unit || null,
+        notes: created.notes || null,
+        category: created.category || "Other"
+      };
+      
+      setFormData(prev => ({
+        ...prev,
+        line_items: [...prev.line_items, newLineItem]
+      }));
+      
       await Promise.all([
         queryClient.invalidateQueries({ queryKey: ['purchaseOrderLines', poId] }),
         queryClient.invalidateQueries({ queryKey: ['parts'] }),
@@ -463,8 +482,15 @@ export default function PurchaseOrderDetail({ poId, onClose, mode = "page" }) {
   const removeLineItemMutation = useMutation({
     mutationFn: async (lineId) => {
       await base44.entities.PurchaseOrderLine.delete(lineId);
+      return lineId;
     },
-    onSuccess: () => {
+    onSuccess: (deletedLineId) => {
+      // Immediately update local state
+      setFormData(prev => ({
+        ...prev,
+        line_items: prev.line_items.filter(item => item.id !== deletedLineId)
+      }));
+      
       queryClient.invalidateQueries({ queryKey: ['purchaseOrderLines', poId] });
       queryClient.invalidateQueries({ queryKey: ['parts'] });
       toast.success('Item removed');
