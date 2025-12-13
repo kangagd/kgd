@@ -13,7 +13,6 @@ import { toast } from "sonner";
 import { PO_STATUS, PO_STATUS_OPTIONS, PO_STATUS_OPTIONS_NON_PROJECT, PO_STATUS_OPTIONS_PROJECT, getPoStatusLabel, normaliseLegacyPoStatus } from "@/components/domain/purchaseOrderStatusConfig";
 import { DELIVERY_METHOD as PO_DELIVERY_METHOD, DELIVERY_METHOD_OPTIONS as PO_DELIVERY_METHOD_OPTIONS } from "@/components/domain/supplierDeliveryConfig";
 import { PART_CATEGORIES } from "@/components/domain/partConfig";
-import { GST_HELPER_TEXT } from "@/components/gst";
 import { getPoDisplayReference, validatePoIdentityFields } from "@/components/domain/poDisplayHelpers";
 import { createPageUrl } from "@/utils";
 import { useNavigate } from "react-router-dom";
@@ -925,9 +924,7 @@ export default function PurchaseOrderDetail({ poId, onClose, mode = "page" }) {
         <Card>
           <CardHeader>
             <div className="flex items-center justify-between">
-              <CardTitle className="text-[18px]">
-                Line Items <span className="text-[11px] text-gray-500 uppercase font-medium">(ex GST)</span>
-              </CardTitle>
+              <CardTitle className="text-[18px]">Line Items</CardTitle>
               {isDraft && (
                 <Popover open={addItemMenuOpen} onOpenChange={setAddItemMenuOpen}>
                   <PopoverTrigger asChild>
@@ -1079,7 +1076,7 @@ export default function PurchaseOrderDetail({ poId, onClose, mode = "page" }) {
                           />
                         </div>
                         <div>
-                          <Label className="text-xs text-[#6B7280]">Unit Cost <span className="text-[10px] uppercase">(ex GST)</span></Label>
+                          <Label className="text-xs text-[#6B7280]">Unit Price</Label>
                           <Input
                             type="number"
                             value={item.unit_price || ''}
@@ -1109,18 +1106,13 @@ export default function PurchaseOrderDetail({ poId, onClose, mode = "page" }) {
                     </div>
                   </div>
                 ))}
-                <div className="flex flex-col items-end pt-3 border-t space-y-1">
+                <div className="flex justify-end pt-3 border-t">
                   <div className="text-right">
-                    <span className="text-sm text-[#6B7280]">Total </span>
-                    <span className="text-[11px] text-gray-500 uppercase font-medium">(ex GST)</span>
-                    <span className="text-sm text-[#6B7280]">: </span>
+                    <span className="text-sm text-[#6B7280]">Total: </span>
                     <span className="text-lg font-bold text-[#111827]">
                       ${calculateTotal().toFixed(2)}
                     </span>
                   </div>
-                  <p className="text-[11px] text-gray-500 italic">
-                    GST is excluded. Supplier invoices may include GST separately.
-                  </p>
                 </div>
               </div>
             )}

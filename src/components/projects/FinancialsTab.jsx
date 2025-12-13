@@ -6,13 +6,11 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Plus, Upload, X, DollarSign, TrendingUp, FileText, ExternalLink, Link as LinkIcon, Loader2, Info } from "lucide-react";
+import { Plus, Upload, X, DollarSign, TrendingUp, FileText, ExternalLink, Link as LinkIcon, Loader2 } from "lucide-react";
 import { base44 } from "@/api/base44Client";
 import RichTextField from "../common/RichTextField";
 import { usePermissions } from "../common/PermissionsContext";
-import { exToGstAmount, exToInc, GST_TOOLTIP } from "@/components/gst";
-import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
-import { Info } from "lucide-react";
+import { exToGstAmount, exToInc } from "@/components/gst";
 
 const getFinancialStatusOptions = (projectType) => {
   if (projectType === "Repair" || projectType === "Motor/Accessory") {
@@ -394,17 +392,7 @@ export default function FinancialsTab({ project, onUpdate }) {
         <CardHeader className="bg-white px-4 py-3 border-b border-[#E5E7EB]">
           <CardTitle className="text-[16px] font-semibold text-[#111827] leading-[1.2] flex items-center gap-2">
             <DollarSign className="w-5 h-5" />
-            Financial Summary <span className="text-[11px] text-gray-500 uppercase font-medium">(ex GST)</span>
-            <TooltipProvider>
-              <Tooltip>
-                <TooltipTrigger>
-                  <Info className="w-4 h-4 text-gray-400" />
-                </TooltipTrigger>
-                <TooltipContent>
-                  <p className="text-xs">{GST_TOOLTIP}</p>
-                </TooltipContent>
-              </Tooltip>
-            </TooltipProvider>
+            Financial Summary
           </CardTitle>
         </CardHeader>
         <CardContent className="p-3 md:p-4 space-y-4">
@@ -584,13 +572,13 @@ export default function FinancialsTab({ project, onUpdate }) {
             <div className="border-t border-[#E5E7EB] pt-4 bg-[#F8F9FA] -mx-4 -mb-4 px-4 py-3">
             <div className="grid grid-cols-3 gap-4">
               <div>
-                <div className="text-[12px] text-[#6B7280] mb-0.5">Total Cost <span className="text-[10px] uppercase">(ex GST)</span></div>
+                <div className="text-[12px] text-[#6B7280] mb-0.5">Total Cost</div>
                 <div className="text-[18px] font-bold text-[#111827]">
                   ${totalCosts.toLocaleString('en-AU', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                 </div>
               </div>
               <div>
-                <div className="text-[12px] text-[#6B7280] mb-0.5">Profit <span className="text-[10px] uppercase">(ex GST)</span></div>
+                <div className="text-[12px] text-[#6B7280] mb-0.5">Profit</div>
                 <div className={`text-[18px] font-bold ${profit >= 0 ? 'text-[#16A34A]' : 'text-[#DC2626]'}`}>
                   ${profit.toLocaleString('en-AU', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                 </div>
@@ -693,7 +681,7 @@ export default function FinancialsTab({ project, onUpdate }) {
                 </div>
                 <div>
                   <label className="block text-[13px] md:text-[14px] font-medium text-[#4B5563] mb-1.5">
-                    Amount <span className="text-[11px] text-gray-500 uppercase font-medium">(ex GST)</span>
+                    Amount
                   </label>
                   <div className="relative">
                     <span className="absolute left-3 top-1/2 -translate-y-1/2 text-[#6B7280]">$</span>
@@ -851,7 +839,7 @@ export default function FinancialsTab({ project, onUpdate }) {
           {project.payments && project.payments.length > 0 && (
             <div className="border-t border-[#E5E7EB] pt-3 bg-[#F8F9FA] -mx-4 -mb-4 px-4 py-3">
               <div className="flex justify-between items-center">
-                <span className="text-[14px] font-semibold text-[#111827]">Total Paid <span className="text-[11px] text-gray-500 uppercase font-medium">(ex GST)</span></span>
+                <span className="text-[14px] font-semibold text-[#111827]">Total Paid</span>
                 <span className="text-[18px] font-bold text-[#16A34A]">
                   ${totalPaid.toLocaleString('en-AU', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                 </span>
