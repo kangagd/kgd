@@ -140,3 +140,51 @@ export function normaliseLegacyPartLocation(location) {
   
   return location;
 }
+
+/**
+ * Map PO status to Part status
+ * Ensures parts always reflect their linked PO's state
+ */
+export function mapPoStatusToPartStatus(poStatus) {
+  if (!poStatus) return PART_STATUS.PENDING;
+  
+  const normalized = poStatus.toLowerCase().trim();
+  
+  switch (normalized) {
+    case "draft":
+      return PART_STATUS.PENDING;
+    
+    case "sent":
+    case "on_order":
+    case "on order":
+      return PART_STATUS.ON_ORDER;
+    
+    case "in_transit":
+    case "in transit":
+    case "partially_received":
+      return PART_STATUS.IN_TRANSIT;
+    
+    case "in_loading_bay":
+    case "in loading bay":
+    case "received":
+    case "delivered":
+      return PART_STATUS.IN_LOADING_BAY;
+    
+    case "in_storage":
+    case "in storage":
+      return PART_STATUS.IN_STORAGE;
+    
+    case "in_vehicle":
+    case "in vehicle":
+      return PART_STATUS.IN_VEHICLE;
+    
+    case "installed":
+      return PART_STATUS.INSTALLED;
+    
+    case "cancelled":
+      return PART_STATUS.PENDING;
+    
+    default:
+      return PART_STATUS.PENDING;
+  }
+}
