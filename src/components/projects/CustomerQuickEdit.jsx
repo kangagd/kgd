@@ -3,16 +3,39 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Edit, Check, X, Phone, Mail, Building2, Users } from "lucide-react";
+import { Edit, Check, X, Phone, Mail, Building2, Users, Plus } from "lucide-react";
 import { base44 } from "@/api/base44Client";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogFooter,
+} from "@/components/ui/dialog";
+import AddressAutocomplete from "../common/AddressAutocomplete";
 
 export default function CustomerQuickEdit({ customerId, projectId, onCustomerUpdate }) {
   const queryClient = useQueryClient();
   const [isEditing, setIsEditing] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
   const [formData, setFormData] = useState({});
+  const [showNewOrgDialog, setShowNewOrgDialog] = useState(false);
+  const [newOrgData, setNewOrgData] = useState({
+    name: "",
+    organisation_type: undefined,
+    address_full: "",
+    address_street: "",
+    address_suburb: "",
+    address_state: "",
+    address_postcode: "",
+    address_country: "Australia",
+    google_place_id: "",
+    latitude: null,
+    longitude: null
+  });
+  const [isCreatingOrg, setIsCreatingOrg] = useState(false);
 
   const { data: customer, isLoading } = useQuery({
     queryKey: ['customer', customerId],
@@ -109,6 +132,65 @@ export default function CustomerQuickEdit({ customerId, projectId, onCustomerUpd
         organisation_id: orgId,
         organisation_name: org?.name || ""
       });
+    }
+  };
+
+  const handleCreateOrganisation = async () => {
+    if (!newOrgData.name?.trim()) return;
+    
+    setIsCreatingOrg(true);
+    try {
+      const submitData = {
+        name: newOrgData.name.trim(),
+        status: 'active'
+      };
+      
+      if (newOrgData.organisation_type) {
+        submitData.organisation_type = newOrgData.organisation_type;
+      }
+      if (newOrgData.address_full) {
+        submitData.address_full = newOrgData.address_full;
+        submitData.address = newOrgData.address_full;
+        submitData.address_street = newOrgData.address_street;
+        submitData.address_suburb = newOrgData.address_suburb;
+        submitData.address_state = newOrgData.address_state;
+        submitData.address_postcode = newOrgData.address_postcode;
+        submitData.address_country = newOrgData.address_country || "Australia";
+        submitData.google_place_id = newOrgData.google_place_id;
+        submitData.latitude = newOrgData.latitude;
+        submitData.longitude = newOrgData.longitude;
+      }
+      
+      const newOrg = await base44.entities.Organisation.create(submitData);
+      
+      setShowNewOrgDialog(false);
+      setFormData(prev => ({
+        ...prev,
+        organisation_id: newOrg.id,
+        organisation_name: newOrg.name
+      }));
+      
+      setNewOrgData({
+        name: "",
+        organisation_type: undefined,
+        address_full: "",
+        address_street: "",
+        address_suburb: "",
+        address_state: "",
+        address_postcode: "",
+        address_country: "Australia",
+        google_place_id: "",
+        latitude: null,
+        longitude: null
+      });
+      
+      queryClient.invalidateQueries({ queryKey: ['organisations'] });
+      toast.success('Organisation created');
+    } catch (error) {
+      console.error("Error creating organisation:", error);
+      toast.error("Failed to create organisation");
+    } finally {
+      setIsCreatingOrg(false);
     }
   };
 
@@ -258,22 +340,33 @@ export default function CustomerQuickEdit({ customerId, projectId, onCustomerUpd
 
         <div>
           <Label className="text-[12px] text-[#6B7280]">Organisation</Label>
-          <Select
-            value={formData.organisation_id || "none"}
-            onValueChange={handleOrganisationChange}
-          >
-            <SelectTrigger className="h-9 text-[14px]">
-              <SelectValue placeholder="Select organisation" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="none">None</SelectItem>
-              {organisations.map((org) => (
-                <SelectItem key={org.id} value={org.id}>
-                  {org.name}{org.organisation_type ? ` (${org.organisation_type})` : ''}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
+          <div className="flex gap-2">
+            <Select
+              value={formData.organisation_id || "none"}
+              onValueChange={handleOrganisationChange}
+            >
+              <SelectTrigger className="h-9 text-[14px] flex-1">
+                <SelectValue placeholder="Select organisation" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="none">None</SelectItem>
+                {organisations.map((org) => (
+                  <SelectItem key={org.id} value={org.id}>
+                    {org.name}{org.organisation_type ? ` (${org.organisation_type})` : ''}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+            <Button
+              type="button"
+              variant="outline"
+              size="icon"
+              onClick={() => setShowNewOrgDialog(true)}
+              className="h-9 w-9 flex-shrink-0"
+            >
+              <Plus className="w-4 h-4" />
+            </Button>
+          </div>
         </div>
 
         <div>
@@ -376,6 +469,69 @@ export default function CustomerQuickEdit({ customerId, projectId, onCustomerUpd
           Cancel
         </Button>
       </div>
+
+      <Dialog open={showNewOrgDialog} onOpenChange={setShowNewOrgDialog}>
+        <DialogContent className="rounded-2xl">
+          <DialogHeader>
+            <DialogTitle className="text-xl font-bold">New Organisation</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4">
+            <div className="space-y-2">
+              <Label htmlFor="new_org_name">Name *</Label>
+              <Input
+                id="new_org_name"
+                value={newOrgData.name}
+                onChange={(e) => setNewOrgData({ ...newOrgData, name: e.target.value })}
+                className="border-2 border-slate-300"
+              />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="new_org_type">Type</Label>
+              <Select value={newOrgData.organisation_type || ""} onValueChange={(val) => setNewOrgData({ ...newOrgData, organisation_type: val || undefined })}>
+                <SelectTrigger className="border-2 border-slate-300">
+                  <SelectValue placeholder="Select type" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="Strata">Strata</SelectItem>
+                  <SelectItem value="Builder">Builder</SelectItem>
+                  <SelectItem value="Real Estate">Real Estate</SelectItem>
+                  <SelectItem value="Supplier">Supplier</SelectItem>
+                  <SelectItem value="Other">Other</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="new_org_address">Address</Label>
+              <AddressAutocomplete
+                id="new_org_address"
+                value={newOrgData.address_full || ""}
+                onChange={(addressData) => setNewOrgData({ 
+                  ...newOrgData, 
+                  ...addressData
+                })}
+                className="border-2 border-slate-300"
+              />
+            </div>
+          </div>
+          <DialogFooter>
+            <Button 
+              variant="outline" 
+              onClick={() => setShowNewOrgDialog(false)}
+              className="border-2 font-semibold"
+              disabled={isCreatingOrg}
+            >
+              Cancel
+            </Button>
+            <Button 
+              onClick={handleCreateOrganisation}
+              disabled={!newOrgData.name || isCreatingOrg}
+              className="bg-[#fae008] hover:bg-[#e5d007] text-[#000000] font-bold"
+            >
+              {isCreatingOrg ? 'Creating...' : 'Create Organisation'}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
