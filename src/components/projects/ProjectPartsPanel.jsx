@@ -3,7 +3,7 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { AlertTriangle, CheckCircle2, Package, Truck, ExternalLink, Plus, ShoppingCart } from "lucide-react";
 import AssignPartToVehicleModal from "./AssignPartToVehicleModal";
-import { PART_LOCATION, normaliseLegacyPartLocation, getPartStatusLabel, normaliseLegacyPartStatus } from "@/components/domain/partConfig";
+import { PART_LOCATION, normaliseLegacyPartLocation, getPartStatusLabel, normaliseLegacyPartStatus, isPartAvailable, isPartShortage } from "@/components/domain/partConfig";
 import { getPoStatusLabel } from "@/components/domain/purchaseOrderStatusConfig";
 
 // Helper for consistent PO reference display
@@ -103,33 +103,24 @@ export default function ProjectPartsPanel({ project, parts = [], inventoryByItem
     queryFn: () => base44.entities.Supplier.list('name')
   });
 
-  const detectShortage = (part) => {
-    // Not a shortage if status is beyond pending
-    const normalizedStatus = part.status?.toLowerCase().replace(/\s+/g, "_");
-    if (normalizedStatus !== 'pending') {
-      return false;
-    }
-
-    const normalizedLocation = normaliseLegacyPartLocation(part.location);
-    const isOnOrder = !normalizedLocation || normalizedLocation === PART_LOCATION.SUPPLIER;
-    
-    if (!isOnOrder) {
-      return false;
-    }
-
-    // If pending and on order, check stock availability
-    const requiredQty = part.quantity_required || 1;
-    if (part.price_list_item_id) {
-       const availableQty = inventoryByItem[part.price_list_item_id] || 0;
-       return availableQty < requiredQty;
-    }
-    
-    // No price list item linked = unknown stock, treat as shortage
-    return true; 
-  };
-
-  const needed = parts.filter(p => detectShortage(p));
-  const ready = parts.filter(p => !detectShortage(p));
+  // Use standardized shortage and availability logic
+  const needed = parts.filter(part => {
+    const normalized = { 
+      ...part, 
+      status: normaliseLegacyPartStatus(part.status, part), 
+      location: normaliseLegacyPartLocation(part.location) 
+    };
+    return isPartShortage(normalized);
+  });
+  
+  const ready = parts.filter(part => {
+    const normalized = { 
+      ...part, 
+      status: normaliseLegacyPartStatus(part.status, part), 
+      location: normaliseLegacyPartLocation(part.location) 
+    };
+    return isPartAvailable(normalized);
+  });
 
   return (
     <div className="space-y-6">
