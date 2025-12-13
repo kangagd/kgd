@@ -9,7 +9,7 @@ import { createPageUrl } from "@/utils";
 import { Link } from "react-router-dom";
 import { toast } from "sonner";
 
-export default function EmailAIInsightsPanel({ thread, onThreadUpdated, onCreateProjectFromAI }) {
+export default function EmailAIInsightsPanel({ thread, onThreadUpdated, onCreateProjectFromAI, onCreateJobFromAI }) {
   const threadId = thread?.id;
 
   // Auto-fetch AI insights when thread changes
@@ -242,6 +242,17 @@ export default function EmailAIInsightsPanel({ thread, onThreadUpdated, onCreate
               }}
             >
               Create Project from AI
+            </Button>
+            <Button
+              type="button"
+              variant="outline"
+              size="sm"
+              className="text-xs rounded-lg"
+              onClick={() => {
+                if (onCreateJobFromAI) onCreateJobFromAI();
+              }}
+            >
+              Create Job from AI
             </Button>
           </div>
         )}

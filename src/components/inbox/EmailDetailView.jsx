@@ -40,6 +40,7 @@ import EmailMessageItem from "./EmailMessageItem";
 
 import EmailAIInsightsPanel from "./EmailAIInsightsPanel";
 import CreateProjectFromEmailModal from "./CreateProjectFromEmailModal";
+import CreateJobFromEmailModal from "./CreateJobFromEmailModal";
 
 export default function EmailDetailView({
   thread,
@@ -62,6 +63,7 @@ export default function EmailDetailView({
   const [updatingPriority, setUpdatingPriority] = useState(false);
 
   const [showCreateProjectModal, setShowCreateProjectModal] = useState(false);
+  const [showCreateJobModal, setShowCreateJobModal] = useState(false);
   const [aiThread, setAiThread] = useState(thread);
 
   // Update aiThread when thread prop changes
@@ -160,6 +162,7 @@ export default function EmailDetailView({
                 handleThreadUpdate();
               }}
               onCreateProjectFromAI={() => setShowCreateProjectModal(true)}
+              onCreateJobFromAI={() => setShowCreateJobModal(true)}
             />
           </div>
 
@@ -472,6 +475,20 @@ export default function EmailDetailView({
           onSuccess={(projectId, projectTitle) => {
             toast.success('Project created successfully');
             setShowCreateProjectModal(false);
+            handleThreadUpdate();
+          }}
+        />
+      )}
+
+      {/* Create Job From Email Modal */}
+      {showCreateJobModal && (
+        <CreateJobFromEmailModal
+          open={showCreateJobModal}
+          onClose={() => setShowCreateJobModal(false)}
+          thread={aiThread}
+          onSuccess={(jobId, jobNumber) => {
+            toast.success('Job created successfully');
+            setShowCreateJobModal(false);
             handleThreadUpdate();
           }}
         />
