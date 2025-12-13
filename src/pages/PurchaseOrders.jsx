@@ -11,6 +11,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { createPageUrl } from "@/utils";
 import { PO_STATUS_OPTIONS, PO_STATUS, getPoStatusLabel } from "@/components/domain/purchaseOrderStatusConfig";
 import { DELIVERY_METHOD as PO_DELIVERY_METHOD } from "@/components/domain/supplierDeliveryConfig";
+import { getPoDisplayReference } from "@/components/domain/poDisplayHelpers";
 import BackButton from "../components/common/BackButton";
 import { format, parseISO } from "date-fns";
 import { toast } from "sonner";
