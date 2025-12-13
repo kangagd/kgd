@@ -15,6 +15,7 @@ import { PART_LOCATION, normaliseLegacyPartLocation, PART_STATUS } from "@/compo
 import PurchaseOrderModal from "../components/logistics/PurchaseOrderModal";
 import StatusBadge from "../components/common/StatusBadge";
 import BackButton from "../components/common/BackButton";
+import { getPoDisplayReference, getPoDisplayTitle } from "@/components/domain/poDisplayHelpers";
 
 export default function SupplyLogistics() {
   const [activeTab, setActiveTab] = useState("board");
@@ -119,12 +120,10 @@ export default function SupplyLogistics() {
       }
     } catch (error) {
       toast.error('Failed to create Purchase Order');
-    }
-  };
+      }
+      };
 
-import { getPoDisplayReference, getPoDisplayTitle } from "@/components/domain/poDisplayHelpers";
-
-  const POCard = ({ po }) => (
+      const POCard = ({ po }) => (
     <div
       className="cursor-pointer rounded-md border border-[#E5E7EB] bg-white px-3 py-2 text-xs shadow-sm hover:bg-[#F9FAFB] transition-colors"
       onClick={() => setActivePoId(po.id)}
@@ -331,7 +330,7 @@ import { getPoDisplayReference, getPoDisplayTitle } from "@/components/domain/po
                             <span className="text-xs text-[#6B7280]">Qty: {item.qty_ordered}</span>
                           </div>
                           <div className="text-xs text-[#6B7280] mt-1">
-                            PO: #{getPoDisplayRef(po)} • {po?.supplier_name}
+                            PO: {getPoDisplayReference(po)} • {po?.supplier_name}
                           </div>
                         </div>
                       );
@@ -368,7 +367,7 @@ import { getPoDisplayReference, getPoDisplayTitle } from "@/components/domain/po
                       <div className="flex-1">
                         <div className="flex items-center gap-2 mb-1">
                           <span className="font-medium text-sm">
-                            PO #{getPoDisplayRef(po)}
+                            PO #{getPoDisplayReference(po)}
                           </span>
                           <Badge className="text-xs bg-slate-100 text-slate-700">
                             {po.status}
@@ -418,7 +417,7 @@ import { getPoDisplayReference, getPoDisplayTitle } from "@/components/domain/po
                           <div className="text-xs text-[#6B7280]">
                             {job.scheduled_date && `${format(parseISO(job.scheduled_date), 'MMM d, yyyy')}`}
                             {job.scheduled_time && ` at ${job.scheduled_time}`}
-                            {po && ` • PO: #${getPoDisplayRef(po)}`}
+                            {po && ` • PO: ${getPoDisplayReference(po)}`}
                           </div>
                         </div>
                       </div>

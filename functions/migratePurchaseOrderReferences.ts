@@ -1,5 +1,9 @@
 import { createClientFromRequest } from 'npm:@base44/sdk@0.8.4';
 
+/**
+ * One-time migration script to populate po_reference from legacy fields
+ * Run once by admin to clean up existing Purchase Order data
+ */
 Deno.serve(async (req) => {
     try {
         const base44 = createClientFromRequest(req);
@@ -21,24 +25,31 @@ Deno.serve(async (req) => {
                 const updateData = {};
                 let needsUpdate = false;
                 
-                // Backfill po_reference from legacy fields
-                if (!po.po_reference) {
+                // Backfill po_reference from legacy fields (priority order)
+                if (!po.po_reference || !po.po_reference.trim()) {
                     const legacyRef = po.po_number || po.order_reference || po.reference;
-                    if (legacyRef) {
-                        updateData.po_reference = legacyRef;
+                    if (legacyRef && legacyRef.trim()) {
+                        updateData.po_reference = legacyRef.trim();
                         needsUpdate = true;
                     }
                 }
                 
-                // Mirror po_reference to po_number for compatibility
-                if (po.po_reference && !po.po_number) {
+                // Mirror po_reference to po_number for legacy compatibility
+                if (po.po_reference && (!po.po_number || !po.po_number.trim())) {
                     updateData.po_number = po.po_reference;
+                    needsUpdate = true;
+                }
+                
+                // Mirror po_reference to order_reference if empty
+                if (po.po_reference && (!po.order_reference || !po.order_reference.trim())) {
+                    updateData.order_reference = po.po_reference;
                     needsUpdate = true;
                 }
                 
                 if (needsUpdate) {
                     await base44.asServiceRole.entities.PurchaseOrder.update(po.id, updateData);
                     updated++;
+                    console.log(`✅ Updated PO ${po.id}: po_reference = ${updateData.po_reference || po.po_reference}`);
                 } else {
                     skipped++;
                 }
@@ -47,6 +58,7 @@ Deno.serve(async (req) => {
                     po_id: po.id,
                     error: error.message
                 });
+                console.error(`❌ Error updating PO ${po.id}:`, error.message);
             }
         }
         
@@ -58,7 +70,8 @@ Deno.serve(async (req) => {
                 skipped,
                 errors: errors.length
             },
-            errors: errors.length > 0 ? errors : undefined
+            errors: errors.length > 0 ? errors : undefined,
+            message: `Migration complete: ${updated} POs updated, ${skipped} skipped, ${errors.length} errors`
         });
         
     } catch (error) {
