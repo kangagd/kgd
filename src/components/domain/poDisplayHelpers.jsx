@@ -11,18 +11,7 @@
  */
 export function getPoDisplayReference(po) {
   if (!po) return 'Unknown PO';
-  
-  // ✅ CANONICAL: Only use po_reference (single source of truth)
-  const ref = po.po_reference;
-  
-  if (ref?.trim()) return ref.trim();
-  
-  // Dev warning: PO without po_reference (should not happen after migration)
-  if (process.env.NODE_ENV === 'development') {
-    console.warn('⚠️ PO displayed without po_reference, falling back to ID:', po.id);
-  }
-  
-  return `PO #${po.id?.slice(0, 8)}`;
+  return po.po_reference || `PO-${po.id?.slice(0, 8)}`;
 }
 
 /**

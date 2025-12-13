@@ -457,11 +457,6 @@ Deno.serve(async (req) => {
             if (incomingPoRef !== null) {
                 const cleanedRef = typeof incomingPoRef === 'string' ? incomingPoRef.trim() : incomingPoRef;
                 updateData.po_reference = cleanedRef || null;
-                
-                // 🔁 ONE-WAY BACKFILL - Backend writes legacy fields for consistency
-                updateData.po_number = cleanedRef || null;
-                updateData.order_reference = cleanedRef || null;
-                updateData.reference = cleanedRef || null;
             }
 
             // --- Normalize Name from all possible inputs (canonical: name) ---
@@ -575,6 +570,13 @@ Deno.serve(async (req) => {
             const newStatus = normaliseLegacyPoStatus(status);
 
             const updateData = { status: newStatus };
+
+            // Enforce po_reference constraint: required once status ≠ draft
+            if (newStatus !== PO_STATUS.DRAFT && !existing.po_reference) {
+                return Response.json({ 
+                    error: 'po_reference is required when status is not draft' 
+                }, { status: 400 });
+            }
 
             // Set timestamps based on status
             if (newStatus === PO_STATUS.ON_ORDER) {
@@ -765,13 +767,6 @@ Deno.serve(async (req) => {
                 order_date: new Date().toISOString().split('T')[0],
                 expected_date: eta || null,
             };
-
-            // 🔁 ONE-WAY BACKFILL - Backend writes legacy fields for consistency
-            if (normalizedPoRef) {
-                poData.po_number = normalizedPoRef;
-                poData.order_reference = normalizedPoRef;
-                poData.reference = normalizedPoRef;
-            }
 
             const newPO = await base44.asServiceRole.entities.PurchaseOrder.create(poData);
             
