@@ -28,13 +28,11 @@ Deno.serve(async (req) => {
                     continue;
                 }
 
-                // Copy from reference or order_reference to po_number
-                const legacyRef = po.reference || po.order_reference;
+                // Copy from order_reference or reference to po_number
+                const legacyRef = po.order_reference || po.reference;
                 if (legacyRef) {
                     await base44.asServiceRole.entities.PurchaseOrder.update(po.id, {
                         po_number: legacyRef,
-                        order_reference: legacyRef,
-                        reference: legacyRef,
                     });
                     updated++;
                 } else {
