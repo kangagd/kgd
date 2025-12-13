@@ -163,6 +163,9 @@ export default function CustomerQuickEdit({ customerId, projectId, onCustomerUpd
       
       const newOrg = await base44.entities.Organisation.create(submitData);
       
+      // Immediately update the cache with the new organisation
+      queryClient.setQueryData(['organisations'], (old = []) => [...old, newOrg]);
+      
       setShowNewOrgDialog(false);
       setFormData(prev => ({
         ...prev,
@@ -184,7 +187,6 @@ export default function CustomerQuickEdit({ customerId, projectId, onCustomerUpd
         longitude: null
       });
       
-      queryClient.invalidateQueries({ queryKey: ['organisations'] });
       toast.success('Organisation created');
     } catch (error) {
       console.error("Error creating organisation:", error);
