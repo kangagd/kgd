@@ -22,10 +22,24 @@ import {
 import TasksPanel from "../tasks/TasksPanel";
 import { Badge } from "@/components/ui/badge";
 import BackButton from "../common/BackButton";
+import AttentionItemsPanel from "../attention/AttentionItemsPanel";
 
 export default function CustomerDetails({ customer, onClose, onEdit, onDelete }) {
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
+  const [user, setUser] = useState(null);
   const navigate = useNavigate();
+
+  React.useEffect(() => {
+    const loadUser = async () => {
+      try {
+        const currentUser = await base44.auth.me();
+        setUser(currentUser);
+      } catch (error) {
+        // Error loading user
+      }
+    };
+    loadUser();
+  }, []);
 
   const { data: jobs = [] } = useQuery({
     queryKey: ['customerJobs', customer.id],
@@ -108,6 +122,17 @@ export default function CustomerDetails({ customer, onClose, onEdit, onDelete })
           </div>
         </CardHeader>
         <CardContent className="p-4 md:p-6 space-y-6">
+          {/* Attention Items Panel */}
+          <AttentionItemsPanel
+            entity_type="customer"
+            entity_id={customer.id}
+            context_ids={{
+              customer_id: customer.id,
+              project_id: null,
+              job_id: null
+            }}
+          />
+
           {/* Duplicate Warning */}
           <DuplicateWarningCard entityType="Customer" record={customer} />
 
