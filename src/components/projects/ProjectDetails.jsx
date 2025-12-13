@@ -4,7 +4,7 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
-import { ArrowLeft, Plus, Edit, Trash2, MapPin, Phone, Mail, FileText, Image as ImageIcon, User, Upload, X, Briefcase, History, ExternalLink, DollarSign, Eye, Link2, MessageCircle, Activity } from "lucide-react";
+import { ArrowLeft, Plus, Edit, Trash2, MapPin, Phone, Mail, FileText, Image as ImageIcon, User, Upload, X, Briefcase, History, ExternalLink, DollarSign, Eye, Link2, MessageCircle, Activity, Loader2 } from "lucide-react";
 import { format } from "date-fns";
 import { AddIconButton } from "@/components/ui/AddIconButton";
 import { base44 } from "@/api/base44Client";
@@ -123,6 +123,7 @@ export default function ProjectDetails({ project: initialProject, onClose, onEdi
   const [isChatOpen, setIsChatOpen] = useState(false);
   const [lastReadChat, setLastReadChat] = useState(() => localStorage.getItem(`lastReadChat-${initialProject.id}`) || new Date().toISOString());
   const [showHandoverModal, setShowHandoverModal] = useState(false);
+  const [isGeneratingHandover, setIsGeneratingHandover] = useState(false);
   const [showActivityModal, setShowActivityModal] = useState(false);
   const [contactsOpen, setContactsOpen] = useState(false);
   const [tradesOpen, setTradesOpen] = useState(false);
@@ -1337,10 +1338,43 @@ Format as HTML bullet points using <ul> and <li> tags. Include only the most cri
             <Button
               variant="outline"
               size="sm"
-              onClick={() => setShowHandoverModal(true)}
+              onClick={async () => {
+                if (project.handover_locked && project.handover_pdf_url) {
+                  window.open(project.handover_pdf_url, '_blank');
+                  return;
+                }
+                
+                setIsGeneratingHandover(true);
+                try {
+                  const response = await base44.functions.invoke('generateProjectHandoverReport', {
+                    projectId: project.id
+                  });
+                  
+                  if (response.data.success && response.data.pdf_url) {
+                    queryClient.invalidateQueries({ queryKey: ['project', project.id] });
+                    toast.success('Handover report generated successfully');
+                    window.open(response.data.pdf_url, '_blank');
+                  }
+                } catch (error) {
+                  const errorMsg = error?.response?.data?.error || error.message;
+                  toast.error(`Failed to generate handover: ${errorMsg}`);
+                } finally {
+                  setIsGeneratingHandover(false);
+                }
+              }}
+              disabled={isGeneratingHandover}
               className="h-9 text-xs"
             >
-              Handover Report
+              {isGeneratingHandover ? (
+                <>
+                  <Loader2 className="w-4 h-4 mr-1 animate-spin" />
+                  Generating...
+                </>
+              ) : project.handover_locked && project.handover_pdf_url ? (
+                'View Handover Report'
+              ) : (
+                'Generate Handover Report'
+              )}
             </Button>
             <Button
               variant="ghost"
@@ -1900,12 +1934,14 @@ Format as HTML bullet points using <ul> and <li> tags. Include only the most cri
         isSubmitting={isLinkingInvoice}
       />
 
+      {/* Old handover modal - replaced with new function
       <HandoverReportModal
         open={showHandoverModal}
         onClose={() => setShowHandoverModal(false)}
         project={project}
         jobs={jobs}
       />
+      */}
 
       <ProjectChatModal
         open={isChatOpen}
