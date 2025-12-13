@@ -90,11 +90,18 @@ You are generating a CLIENT-READY SERVICE HANDOVER REPORT
 for a professional garage door / shutter company.
 
 CRITICAL RULES:
-- The section titled "TECHNICIAN SOURCE OF TRUTH" is what actually happened on site.
-- Your task is to REVIEW, REFINE, and REWRITE it into clear, professional language.
-- DO NOT invent work, issues, or resolutions.
-- If something is unclear or missing, state "Not specified by technician"
+- The section titled "TECHNICIAN SOURCE OF TRUTH" describes what actually happened on site.
+- Your task is to REVIEW, REFINE, and REWRITE the technician's notes.
+- DO NOT invent work, issues, or outcomes.
+- If information is missing or unclear, say "Not specified by technician"
   and add a clarification question to missing_info_questions.
+
+OUTPUT STYLE (MANDATORY):
+- Use BULLET POINTS only
+- Use clear, plain English
+- Each bullet should be one clear idea
+- Suitable for clients, technicians, and office staff
+- No long paragraphs
 
 JOB CONTEXT:
 - Job Type: ${job.job_type_name || job.job_type || ""}
@@ -105,22 +112,34 @@ JOB CONTEXT:
 TECHNICIAN SOURCE OF TRUTH:
 ${technicianSourceOfTruth}
 
-SUPPORTING PHOTOS (context only):
+SUPPORTING PHOTOS (reference only):
 ${JSON.stringify(photoContext, null, 2)}
 
-SUPPORTING PARTS (context only):
+SUPPORTING PARTS (reference only):
 ${parts.join(", ") || "None specified"}
 
-OUTPUT REQUIREMENTS:
-Return JSON with:
-- work_performed: rewritten technician overview/outcome
-- issues_found: rewritten issues mentioned by technician
-- resolution: rewritten outcome/resolution
-- next_steps: rewritten technician next steps (client-friendly)
-- tech_notes_used: brief summary of which fields were used
-- missing_info_questions: array of questions if anything is unclear
+STRUCTURE YOUR OUTPUT EXACTLY AS FOLLOWS:
 
-Tone: professional, clear, client-facing.
+WORK PERFORMED:
+- Bullet points summarising what was done on site
+
+ISSUES FOUND:
+- Bullet points describing any faults, damage, or concerns identified
+- If none were mentioned, state that clearly
+
+RESOLUTION / OUTCOME:
+- Bullet points explaining how issues were resolved
+- Or what state the system was left in
+
+NEXT STEPS / RECOMMENDATIONS:
+- Bullet points outlining follow-up actions or advice
+- If none are required, state that clearly
+
+Also return:
+- tech_notes_used: which technician fields were referenced
+- missing_info_questions: questions if anything was unclear
+
+Do not add sections or extra commentary.
 `;
 
     const llmResponse = await base44.integrations.Core.InvokeLLM({
@@ -128,11 +147,25 @@ Tone: professional, clear, client-facing.
       response_json_schema: {
         type: "object",
         properties: {
-          work_performed: { type: "string" },
-          issues_found: { type: "string" },
-          resolution: { type: "string" },
-          next_steps: { type: "string" },
-          tech_notes_used: { type: "string" },
+          work_performed: {
+            type: "array",
+            items: { type: "string" }
+          },
+          issues_found: {
+            type: "array",
+            items: { type: "string" }
+          },
+          resolution: {
+            type: "array",
+            items: { type: "string" }
+          },
+          next_steps: {
+            type: "array",
+            items: { type: "string" }
+          },
+          tech_notes_used: {
+            type: "string"
+          },
           missing_info_questions: {
             type: "array",
             items: { type: "string" }
