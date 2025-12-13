@@ -5,6 +5,7 @@ import { MapPin, Calendar, Clock, Phone, Navigation, User } from "lucide-react";
 import { format, parseISO } from "date-fns";
 import { TechnicianAvatarGroup } from "../common/TechnicianAvatar";
 import { createPageUrl } from "@/utils";
+import AttentionItemsPanel from "../attention/AttentionItemsPanel";
 
 const statusColors = {
   "Open": "bg-slate-100 text-slate-700",
@@ -34,6 +35,17 @@ export default function JobModalView({ job }) {
 
   return (
     <div className="space-y-4">
+      {/* Attention Items Panel */}
+      <AttentionItemsPanel
+        entity_type="job"
+        entity_id={job.id}
+        context_ids={{
+          customer_id: job.customer_id,
+          project_id: job.project_id,
+          job_id: job.id
+        }}
+      />
+
       {/* Header Info */}
       <div className="space-y-3">
         <div className="flex items-center justify-between gap-2 flex-wrap">
