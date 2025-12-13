@@ -65,6 +65,7 @@ import { getProjectFreshnessBadge } from "../utils/freshness";
 import DocumentListItem from "./DocumentListItem";
 import LastActivityCard from "./LastActivityCard";
 import SamplesAtClientPanel from "./SamplesAtClientPanel";
+import AttentionItemsPanel from "../attention/AttentionItemsPanel";
 
 const statusColors = {
   "Lead": "bg-slate-100 text-slate-700",
