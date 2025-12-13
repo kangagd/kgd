@@ -907,9 +907,19 @@ export default function JobDetails({ job: initialJob, onClose, onStatusChange, o
     setShowDeleteConfirm(false);
   };
 
+  const isAdminOrManager = user?.role === 'admin' || user?.role === 'manager';
+
   return (
     <>
-      <Card className={`border border-[#E5E7EB] shadow-sm ${isTechnician ? 'rounded-none' : 'rounded-lg'} overflow-hidden`}>
+      <AttentionItemsPanel
+        entity_type="job"
+        entity_id={job.id}
+        project_id={job.project_id}
+        customer_id={job.customer_id}
+        showCreateButton={isAdminOrManager}
+      />
+
+      <Card className={`border border-[#E5E7EB] shadow-sm ${isTechnician ? 'rounded-none' : 'rounded-lg'} overflow-hidden mt-4`}>
         <CardHeader className="border-b border-[#E5E7EB] bg-white p-3 md:p-4 space-y-3">
           {job.sla_due_at && isPast(parseISO(job.sla_due_at)) && job.status !== 'Completed' && (
             <div className="bg-red-50 border border-red-200 text-red-800 p-2.5 rounded-lg flex items-center gap-2 text-sm font-bold">
