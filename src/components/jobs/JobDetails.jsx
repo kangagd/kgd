@@ -61,6 +61,7 @@ import JobContactsPanel from "./JobContactsPanel";
 import ThirdPartyTradesInfo from "./ThirdPartyTradesInfo";
 import BackButton from "../common/BackButton";
 import SampleQuickActionsPanel from "./SampleQuickActionsPanel";
+import AttentionItemsPanel from "../attention/AttentionItemsPanel";
 
 
 const statusColors = {
