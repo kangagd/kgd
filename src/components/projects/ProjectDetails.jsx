@@ -62,6 +62,7 @@ import ProjectContactsPanel from "./ProjectContactsPanel";
 import ThirdPartyTradesPanel from "./ThirdPartyTradesPanel";
 import BackButton from "../common/BackButton";
 import { getProjectFreshnessBadge } from "../utils/freshness";
+import DocumentListItem from "./DocumentListItem";
 import LastActivityCard from "./LastActivityCard";
 import SamplesAtClientPanel from "./SamplesAtClientPanel";
 
@@ -1193,73 +1194,34 @@ Format as HTML bullet points using <ul> and <li> tags. Include only the most cri
                     {project.other_documents.map((doc, index) => {
                       const docUrl = typeof doc === 'string' ? doc : doc.url;
                       const docName = typeof doc === 'string' ? `Document ${index + 1}` : (doc.name || `Document ${index + 1}`);
-                      const [isEditingName, setIsEditingName] = useState(false);
-                      const [editedName, setEditedName] = useState(docName);
 
                       return (
-                        <div key={index} className="relative group">
-                          <button
-                            onClick={() => setPreviewFile({
-                              url: docUrl,
-                              name: docName,
-                              type: 'pdf',
-                              projectName: project.title
-                            })}
-                            className="w-full flex items-center gap-2 px-3 py-2 bg-white border border-[#E5E7EB] rounded-lg hover:border-[#FAE008] transition-all cursor-pointer"
-                          >
-                            <FileText className="w-4 h-4 text-purple-600 flex-shrink-0" />
-                            {isEditingName ? (
-                              <Input
-                                value={editedName}
-                                onChange={(e) => setEditedName(e.target.value)}
-                                onKeyDown={(e) => {
-                                  if (e.key === 'Enter') {
-                                    e.preventDefault();
-                                    e.stopPropagation();
-                                    const updatedDocs = [...project.other_documents];
-                                    updatedDocs[index] = typeof updatedDocs[index] === 'string' 
-                                      ? { url: updatedDocs[index], name: editedName }
-                                      : { ...updatedDocs[index], name: editedName };
-                                    updateProjectMutation.mutate({ field: 'other_documents', value: updatedDocs });
-                                    setIsEditingName(false);
-                                  } else if (e.key === 'Escape') {
-                                    setIsEditingName(false);
-                                    setEditedName(docName);
-                                  }
-                                }}
-                                onClick={(e) => e.stopPropagation()}
-                                className="h-7 text-[12px]"
-                                autoFocus
-                              />
-                            ) : (
-                              <span 
-                                className="text-[12px] font-medium text-[#111827] truncate flex-1 text-left"
-                                onDoubleClick={(e) => {
-                                  if (canEdit) {
-                                    e.stopPropagation();
-                                    setIsEditingName(true);
-                                  }
-                                }}
-                              >
-                                {docName}
-                              </span>
-                            )}
-                          </button>
-                          {canEdit && (
-                            <button
-                              onClick={(e) => {
-                                e.stopPropagation();
-                                const updatedDocs = project.other_documents.filter((_, i) => i !== index);
-                                updateProjectMutation.mutate({ field: 'other_documents', value: updatedDocs });
-                                toast.success('Document deleted');
-                              }}
-                              className="absolute -top-1 -right-1 bg-red-500 text-white rounded-full w-5 h-5 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity z-10"
-                              title="Delete document"
-                            >
-                              <X className="w-3 h-3" />
-                            </button>
-                          )}
-                        </div>
+                        <DocumentListItem
+                          key={index}
+                          doc={doc}
+                          docUrl={docUrl}
+                          docName={docName}
+                          index={index}
+                          onPreview={() => setPreviewFile({
+                            url: docUrl,
+                            name: docName,
+                            type: 'pdf',
+                            projectName: project.title
+                          })}
+                          onRename={(newName) => {
+                            const updatedDocs = [...project.other_documents];
+                            updatedDocs[index] = typeof updatedDocs[index] === 'string' 
+                              ? { url: updatedDocs[index], name: newName }
+                              : { ...updatedDocs[index], name: newName };
+                            updateProjectMutation.mutate({ field: 'other_documents', value: updatedDocs });
+                          }}
+                          onDelete={() => {
+                            const updatedDocs = project.other_documents.filter((_, i) => i !== index);
+                            updateProjectMutation.mutate({ field: 'other_documents', value: updatedDocs });
+                            toast.success('Document deleted');
+                          }}
+                          canEdit={canEdit}
+                        />
                       );
                     })}
                   </div>
