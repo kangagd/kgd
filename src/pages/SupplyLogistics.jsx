@@ -120,17 +120,20 @@ export default function SupplyLogistics() {
       }
     } catch (error) {
       toast.error('Failed to create Purchase Order');
-      }
-      };
+    }
+  };
 
-      const POCard = ({ po }) => (
+  const POCard = ({ po }) => (
     <div
       className="cursor-pointer rounded-md border border-[#E5E7EB] bg-white px-3 py-2 text-xs shadow-sm hover:bg-[#F9FAFB] transition-colors"
       onClick={() => setActivePoId(po.id)}
     >
-      <div className="font-medium text-[#111827] mb-2">
-        PO #{getPoDisplayRef(po)}
+      <div className="font-medium text-[#111827] mb-1">
+        {getPoDisplayReference(po)}
       </div>
+      {po.name && (
+        <div className="text-[11px] text-[#4B5563] mb-1">{po.name}</div>
+      )}
       <div className="mt-1 text-[11px] text-[#6B7280]">
         {po.supplier_name || "Supplier not set"}
       </div>
@@ -365,17 +368,19 @@ export default function SupplyLogistics() {
                   >
                     <div className="flex items-center justify-between">
                       <div className="flex-1">
-                        <div className="flex items-center gap-2 mb-1">
-                          <span className="font-medium text-sm">
-                            {getPoDisplayReference(po)}
-                          </span>
-                          <Badge className="text-xs bg-slate-100 text-slate-700">
-                            {po.status}
-                          </Badge>
+                        <div className="space-y-1 mb-1">
+                          <div className="flex items-center gap-2">
+                            <span className="font-medium text-sm">
+                              {getPoDisplayReference(po)}
+                            </span>
+                            <Badge className="text-xs bg-slate-100 text-slate-700">
+                              {po.status}
+                            </Badge>
+                          </div>
+                          {po.name && (
+                            <div className="text-xs text-[#4B5563]">{po.name}</div>
+                          )}
                         </div>
-                        {po.name && (
-                          <div className="text-xs text-[#4B5563] mb-1">{po.name}</div>
-                        )}
                         <div className="text-xs text-[#6B7280]">
                           {po.supplier_name || 'Supplier'}
                           {po.project_name && ` • Project: ${po.project_name}`}
