@@ -5,8 +5,7 @@ import { createHash } from 'node:crypto';
 const HARD_TRIGGERS = {
   'Access & Site': {
     keywords: ['key', 'keys', 'lockbox', 'code', 'gate code', 'access', 'intercom', 'parking', 
-               'height restriction', 'steep driveway', 'no access', 'call on arrival'],
-    must_include: ['code', 'lockbox', 'key', 'access', 'gate']
+               'height restriction', 'steep driveway', 'no access', 'call on arrival']
   },
   'Payments': {
     keywords: ['overdue', 'unpaid', 'payment reminder', 'final notice', 'stop work', 'not paying', 
@@ -14,20 +13,10 @@ const HARD_TRIGGERS = {
   },
   'Customer Risk': {
     keywords: ['unhappy', 'frustrated', 'disappointed', 'angry', 'complaint', 'escalate', 'refund', 
-               'cancel', 'unacceptable', 'fed up', 'terrible', 'poor communication', 'constant delays'],
+               'cancel', 'unacceptable', 'fed up', 'terrible', 'poor communication', 'constant delays', 'delay'],
     strong_negatives: ['unhappy', 'frustrated', 'disappointed', 'angry', 'complaint', 'unacceptable', 
                       'refund', 'cancel', 'escalate', 'chargeback', 'dispute'],
     exclude_positive: ['soon', 'one step away', 'excited', 'ready', 'thanks', 'thank']
-  },
-  'Safety': {
-    keywords: ['unsafe', 'hazard', 'asbestos', 'electrical', 'live wires', 'no isolator', 
-               'ladder required', 'fall risk', 'aggressive dog', 'security risk']
-  },
-  'Hard Blocker': {
-    keywords: ['powdercoat issue', 'powder coating issue', 'wrong colour', 'damaged', 'defective', 
-               'parts missing', 'incorrect parts', 'no power', 'needs electrician', 'noggin', 'noggins', 
-               'blocking required', 'no structure', 'low headroom', 'front mount', 'cannot fit', 
-               'merlin not compatible', 'grifco', 'lr drive', 'motor issue', 'remotes not compatible']
   }
 };
 
@@ -55,11 +44,6 @@ function checkTriggers(text, category) {
   const hasKeyword = triggers.keywords.some(kw => lowerText.includes(kw));
   if (!hasKeyword) return false;
   
-  // For Access & Site, must include specific words
-  if (triggers.must_include) {
-    return triggers.must_include.some(word => lowerText.includes(word));
-  }
-  
   // For Customer Risk, require strong negative word
   if (category === 'Customer Risk' && triggers.strong_negatives) {
     return triggers.strong_negatives.some(word => lowerText.includes(word));
@@ -86,11 +70,9 @@ function normalizeCategory(category) {
   if (!category) return null;
   const normalized = category.trim().toLowerCase();
   
-  if (['hard blocker', 'blocker', 'critical blocker'].includes(normalized)) return 'Hard Blocker';
   if (['customer risk', 'customer concern', 'customer sentiment'].includes(normalized)) return 'Customer Risk';
   if (['access', 'access & site', 'site access'].includes(normalized)) return 'Access & Site';
   if (['payments', 'payment', 'payment risk'].includes(normalized)) return 'Payments';
-  if (['safety', 'safety risk', 'safety hazard'].includes(normalized)) return 'Safety';
   
   return null;
 }
@@ -105,10 +87,6 @@ function getCanonicalIntent(title, summaryBullets, category) {
     return 'payment_stop_work';
   } else if (category === 'Customer Risk') {
     return 'explicit_customer_dissatisfaction';
-  } else if (category === 'Safety') {
-    return 'safety_hazard';
-  } else if (category === 'Hard Blocker') {
-    return 'job_blocker_parts_or_structure';
   }
   
   return 'generic';
@@ -264,8 +242,6 @@ CRITICAL RULES:
    - Access restrictions with specific codes/keys mentioned
    - Payment issues explicitly blocking work
    - Customer expressing STRONG dissatisfaction (unhappy, angry, frustrated, complaint)
-   - Safety hazards (unsafe conditions, electrical issues)
-   - Hard blockers (wrong parts, structural issues preventing work)
 
 DO NOT CREATE ITEMS FOR:
 - Generic notes or status updates
