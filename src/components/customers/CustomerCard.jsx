@@ -5,10 +5,14 @@ import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/component
 import { CustomerTypeBadge } from "../common/StatusBadge";
 import { Button } from "@/components/ui/button";
 import { DuplicateBadge } from "../common/DuplicateWarningCard";
+import FreshnessBadge from "../common/FreshnessBadge";
+import { computeSimpleFreshness } from "../utils/computeFreshness";
 
 
 
 export default function CustomerCard({ customer, onClick, onViewDetails }) {
+  const freshness = computeSimpleFreshness(customer);
+  
   const handleClick = (e) => {
     e.stopPropagation();
     if (onClick) {
@@ -48,9 +52,12 @@ export default function CustomerCard({ customer, onClick, onViewDetails }) {
                   </h3>
                   <DuplicateBadge record={customer} size="sm" />
                 </div>
-                {customer.customer_type && (
-                  <CustomerTypeBadge value={customer.customer_type} />
-                )}
+                <div className="flex items-center gap-2">
+                  <FreshnessBadge {...freshness} />
+                  {customer.customer_type && (
+                    <CustomerTypeBadge value={customer.customer_type} />
+                  )}
+                </div>
               </div>
             </div>
 

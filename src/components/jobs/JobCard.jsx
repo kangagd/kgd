@@ -11,6 +11,8 @@ import { JobStatusBadge, JobTypeBadge, ProductTypeBadge } from "../common/Status
 import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
 import { DuplicateBadge } from "../common/DuplicateWarningCard";
+import FreshnessBadge from "../common/FreshnessBadge";
+import { computeSimpleFreshness } from "../utils/computeFreshness";
 
 
 
@@ -68,6 +70,8 @@ export default function JobCard({ job, onClick, onViewDetails, activeCheckIns = 
     queryFn: () => base44.entities.JobSummary.filter({ job_id: job.id }, '-check_out_time', 1).then(res => res[0] || null),
     enabled: !!job.id
   });
+
+  const freshness = computeSimpleFreshness(job);
 
   const handleClick = (e) => {
     e.stopPropagation();
@@ -128,6 +132,7 @@ export default function JobCard({ job, onClick, onViewDetails, activeCheckIns = 
                 {job.status && (
                   <JobStatusBadge value={job.status} className="pointer-events-none" />
                 )}
+                <FreshnessBadge {...freshness} className="pointer-events-none" />
                 <DuplicateBadge record={job} size="sm" />
               </div>
             </div>

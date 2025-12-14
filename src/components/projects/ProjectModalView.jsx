@@ -4,7 +4,8 @@ import { Badge } from "@/components/ui/badge";
 import { MapPin, Phone, Briefcase } from "lucide-react";
 import { TechnicianAvatarGroup } from "../common/TechnicianAvatar";
 import { ProjectStatusBadge, ProjectTypeBadge } from "../common/StatusBadge";
-import { getProjectFreshnessBadge } from "../utils/freshness";
+import FreshnessBadge from "../common/FreshnessBadge";
+import { computeSimpleFreshness } from "../utils/computeFreshness";
 
 export default function ProjectModalView({ project, jobCount = 0 }) {
   const handleCall = () => {
@@ -17,25 +18,14 @@ export default function ProjectModalView({ project, jobCount = 0 }) {
     window.open(`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(project.address)}`, '_blank');
   };
 
-  const freshness = getProjectFreshnessBadge(project.last_activity_at || project.created_date, project.id);
-  
-  const freshnessColors = {
-    green: "bg-green-100 text-green-700",
-    blue: "bg-blue-100 text-blue-700",
-    yellow: "bg-yellow-100 text-yellow-700",
-    red: "bg-red-100 text-red-700",
-    gray: "bg-gray-100 text-gray-700"
-  };
+  const freshness = computeSimpleFreshness(project);
 
   return (
     <div className="space-y-4">
       {/* Header Info */}
       <div className="space-y-3">
         <div className="flex items-center gap-2 flex-wrap">
-          <Badge className={freshnessColors[freshness.color]}>
-            {freshness.label}
-          </Badge>
-          <span className="text-[12px] text-[#6B7280]">Age: {freshness.days !== null ? `${freshness.days} days` : 'Unknown'}</span>
+          <FreshnessBadge {...freshness} />
           {project.status && (
             <ProjectStatusBadge value={project.status} />
           )}
