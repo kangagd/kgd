@@ -261,7 +261,7 @@ Output JSON ONLY in this format:
     console.log('AI Generated Items:', JSON.stringify(items, null, 2));
 
     // STEP 3: Post-processing (MANDATORY)
-    const validCategories = ["Access & Site", "Payments", "Customer Risk", "Customer Concern", "Safety", "Hard Blocker"];
+    const validCategories = ["Access & Site", "Payments", "Customer Risk", "Safety", "Hard Blocker"];
     const categoryCount = {};
     const processedItems = [];
     const rejectionReasons = [];
