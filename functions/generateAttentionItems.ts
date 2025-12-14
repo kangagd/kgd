@@ -257,20 +257,25 @@ Output JSON ONLY in this format:
     });
 
     let items = aiResponse?.items || [];
+    
+    console.log('AI Generated Items:', JSON.stringify(items, null, 2));
 
     // STEP 3: Post-processing (MANDATORY)
     const validCategories = ["Access & Site", "Payments", "Customer Risk", "Safety", "Hard Blocker"];
     const categoryCount = {};
     const processedItems = [];
+    const rejectionReasons = [];
 
     for (const item of items) {
       // Reject items without evidence
       if (!item.evidence_excerpt || item.evidence_excerpt.trim().length === 0) {
+        rejectionReasons.push({ item: item.title, reason: 'Missing evidence_excerpt' });
         continue;
       }
 
       // Reject invalid categories
       if (!validCategories.includes(item.category)) {
+        rejectionReasons.push({ item: item.title, reason: `Invalid category: ${item.category}` });
         continue;
       }
 
@@ -336,7 +341,11 @@ Output JSON ONLY in this format:
       success: true,
       created_count: mode === 'persist' ? created.length : 0,
       skipped_count: items.length - processedItems.length,
-      items: mode === 'dry_run' ? processedItems : created
+      items: mode === 'dry_run' ? processedItems : created,
+      debug: {
+        raw_ai_items: items,
+        rejection_reasons: rejectionReasons
+      }
     });
 
   } catch (error) {
