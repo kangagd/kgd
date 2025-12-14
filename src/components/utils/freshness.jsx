@@ -1,3 +1,5 @@
+import { computeFreshness } from "./computeFreshness";
+
 /**
  * Get the effective opened date for a project
  * @param {Object} project - Project object
@@ -8,35 +10,25 @@ export function getProjectEffectiveOpenedDate(project) {
 }
 
 /**
- * Calculate project age/freshness based on opened date
+ * Calculate project age/freshness based on last activity
  * @param {Object} project - Project object
  * @returns {Object} { label: string, color: string, days: number }
  */
 export function getProjectFreshnessBadge(project) {
-  const effectiveOpenedDate = getProjectEffectiveOpenedDate(project);
+  const { status, daysSinceAction } = computeFreshness(project);
   
-  if (!effectiveOpenedDate) {
-    return { label: "Unknown", color: "gray", days: null };
-  }
-
-  const openedDate = typeof effectiveOpenedDate === 'string' 
-    ? new Date(effectiveOpenedDate) 
-    : effectiveOpenedDate;
+  const statusMap = {
+    fresh: { label: "Fresh", color: "green" },
+    active: { label: "Active", color: "blue" },
+    aging: { label: "Idle", color: "yellow" },
+    stale: { label: "Stale", color: "red" }
+  };
   
-  const today = new Date();
-  const diffTime = today.getTime() - openedDate.getTime();
-  const ageDays = Math.floor(diffTime / (1000 * 60 * 60 * 24));
-
-  let result;
-  if (ageDays <= 3) {
-    result = { label: "Fresh", color: "green", days: ageDays };
-  } else if (ageDays <= 14) {
-    result = { label: "Active", color: "blue", days: ageDays };
-  } else if (ageDays <= 30) {
-    result = { label: "Idle", color: "yellow", days: ageDays };
-  } else {
-    result = { label: "Stale", color: "red", days: ageDays };
-  }
+  const mapped = statusMap[status] || { label: "Unknown", color: "gray" };
   
-  return result;
+  return {
+    label: mapped.label,
+    color: mapped.color,
+    days: daysSinceAction
+  };
 }
