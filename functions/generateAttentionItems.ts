@@ -243,6 +243,12 @@ Deno.serve(async (req) => {
     }
 
     // STEP 2: Call AI with STRICT PROMPT
+    const evidenceTypeGuidance = entity_type === 'job' 
+      ? 'Use evidence_type: "job_field" for job notes/fields'
+      : entity_type === 'project'
+        ? 'Use evidence_type: "project_field" for project notes/fields'
+        : 'Use evidence_type: "customer_field" for customer notes/fields';
+
     const aiPrompt = `You are generating Attention Items for a garage door installation and
 repair company (KangarooGD).
 
@@ -253,7 +259,7 @@ Rules:
 - Generate 0–3 items only
 - If nothing is truly important, return an empty array
 - Each item MUST:
-  - Be specific to THIS job or project
+  - Be specific to THIS ${entity_type}
   - Have direct evidence
   - Be actionable or risk-based
 
@@ -262,7 +268,7 @@ DO NOT generate:
 - Installation steps
 - Suggestions or recommendations
 - Normal operational notes
-- Duplicates of obvious job details
+- Duplicates of obvious details
 
 Valid triggers include ONLY:
 - Access restrictions (keys, codes, unsafe access) -> category: "Access & Site"
@@ -270,6 +276,8 @@ Valid triggers include ONLY:
 - Explicit customer frustration or dispute -> category: "Customer Risk"
 - Safety hazards -> category: "Safety"
 - Hard blockers that could stop the job -> category: "Hard Blocker"
+
+IMPORTANT: ${evidenceTypeGuidance}
 
 Context data:
 ${JSON.stringify(contextData, null, 2)}
@@ -338,6 +346,25 @@ Valid severity values: "high", "critical"`;
       if (!item.category) {
         rejectionReasons.push({ item: item.title, reason: `Invalid category: ${originalCategory}` });
         continue;
+      }
+      
+      // Normalize evidence_type to match entity_type
+      if (item.evidence_type) {
+        const evidenceType = item.evidence_type.toLowerCase();
+        if (entity_type === 'customer' && !evidenceType.includes('customer')) {
+          // Correct mismatched evidence types for customer entities
+          if (evidenceType.includes('project') || evidenceType.includes('job')) {
+            item.evidence_type = 'customer_field';
+          }
+        } else if (entity_type === 'project' && !evidenceType.includes('project')) {
+          if (evidenceType.includes('customer') || evidenceType.includes('job')) {
+            item.evidence_type = 'project_field';
+          }
+        } else if (entity_type === 'job' && !evidenceType.includes('job')) {
+          if (evidenceType.includes('customer') || evidenceType.includes('project')) {
+            item.evidence_type = 'job_field';
+          }
+        }
       }
       
       // Handle evidence based on strictness
