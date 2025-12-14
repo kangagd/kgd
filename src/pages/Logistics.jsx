@@ -28,6 +28,7 @@ import { LOGISTICS_LOCATION } from "@/components/domain/logisticsConfig";
 import { PO_STATUS, PO_STATUS_OPTIONS, getPoStatusLabel, normaliseLegacyPoStatus } from "@/components/domain/purchaseOrderStatusConfig";
 import { DELIVERY_METHOD as PO_DELIVERY_METHOD } from "@/components/domain/supplierDeliveryConfig";
 import { PART_LOCATION } from "@/components/domain/partConfig";
+import { getPoDisplayReference } from "@/components/domain/poDisplayHelpers";
 
 
 
@@ -319,7 +320,17 @@ export default function Logistics() {
         return;
       }
 
-      toast.success(`Status updated to ${newStatus}`);
+      const updatedPO = response.data.purchaseOrder;
+      
+      // Optimistically update cache
+      queryClient.setQueryData(['purchaseOrders'], (prev = []) => {
+        const next = [...prev];
+        const idx = next.findIndex(p => p.id === po.id);
+        if (idx >= 0) next[idx] = updatedPO;
+        return next;
+      });
+
+      toast.success(`Status updated to ${getPoStatusLabel(newStatus)}`);
       queryClient.invalidateQueries({ queryKey: ["purchaseOrders"] });
     } catch (error) {
       toast.error("Error updating PO status");
@@ -562,8 +573,15 @@ export default function Logistics() {
 
                   if (response.data?.success && response.data?.purchaseOrder) {
                     const newPO = response.data.purchaseOrder;
+                    
+                    // Optimistically add to cache
+                    queryClient.setQueryData(['purchaseOrders'], (prev = []) => {
+                      return [newPO, ...prev];
+                    });
+                    
                     setSelectedPoId(newPO.id);
                     toast.success("Draft Purchase Order created");
+                    queryClient.invalidateQueries({ queryKey: ["purchaseOrders"] });
                   } else {
                     toast.error("Failed to create PO");
                   }
@@ -998,10 +1016,7 @@ export default function Logistics() {
                               </span>
                             </div>
                             <div className="text-xs text-[#6B7280] mt-1">
-                              PO: {(() => {
-                                const po = purchaseOrders.find(p => p.id === item.po_id);
-                                return `#${po?.po_reference || po?.po_number || po?.order_reference || po?.reference || item.po_id.substring(0, 8)}`;
-                              })()} • {item.supplier_name}
+                              PO: #{getPoDisplayReference(purchaseOrders.find(p => p.id === item.po_id))} • {item.supplier_name}
                             </div>
                             {item.expected_date && (
                               <div className="text-xs text-[#6B7280] mt-0.5">

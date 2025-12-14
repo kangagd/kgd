@@ -428,9 +428,20 @@ Deno.serve(async (req) => {
             // Normalize name
             const normalizedName = name ?? data?.name ?? null;
 
+            // Fetch supplier to ensure supplier_name persistence
+            let resolvedSupplierName = supplier_name || null;
+            if (!resolvedSupplierName && supplier_id) {
+                try {
+                    const supplier = await base44.asServiceRole.entities.Supplier.get(supplier_id);
+                    resolvedSupplierName = supplier?.name || null;
+                } catch (err) {
+                    console.error('Failed to fetch supplier for name:', err);
+                }
+            }
+
             const poData = {
                 supplier_id,
-                supplier_name: supplier_name || null,
+                supplier_name: resolvedSupplierName,
                 project_id: project_id || null,
                 status: PO_STATUS.DRAFT,
                 delivery_method: delivery_method || PO_DELIVERY_METHOD.DELIVERY,
@@ -444,6 +455,13 @@ Deno.serve(async (req) => {
             };
 
             const po = await base44.asServiceRole.entities.PurchaseOrder.create(poData);
+            
+            console.log('[managePurchaseOrder:create] Created PO:', {
+                id: po.id,
+                po_reference: po.po_reference,
+                supplier_name: po.supplier_name,
+                name: po.name
+            });
 
             // Update project activity if PO is linked to a project
             if (po.project_id) {
@@ -502,7 +520,18 @@ Deno.serve(async (req) => {
             }
 
             const updateData = {};
-            if (supplier_id !== undefined) updateData.supplier_id = supplier_id;
+            if (supplier_id !== undefined) {
+                updateData.supplier_id = supplier_id;
+                // If supplier changed, update supplier_name
+                if (supplier_id && !supplier_name) {
+                    try {
+                        const supplier = await base44.asServiceRole.entities.Supplier.get(supplier_id);
+                        updateData.supplier_name = supplier?.name || null;
+                    } catch (err) {
+                        console.error('Failed to fetch supplier for name on update:', err);
+                    }
+                }
+            }
             if (supplier_name !== undefined) updateData.supplier_name = supplier_name;
             if (project_id !== undefined) updateData.project_id = project_id || null;
             if (delivery_method !== undefined) updateData.delivery_method = delivery_method || null;
@@ -539,15 +568,14 @@ Deno.serve(async (req) => {
                 updateData.name = cleanedName || null;
             }
 
-            console.log("managePurchaseOrder:update", { id, incoming: { po_number, name, data }, updateData });
+            console.log("[managePurchaseOrder:update] Incoming:", { id, incoming: { po_reference, po_number, name, supplier_name, data }, updateData });
 
             const updatedPO = await base44.asServiceRole.entities.PurchaseOrder.update(id, updateData);
 
-            console.log("managePurchaseOrder:update result", {
+            console.log("[managePurchaseOrder:update] Result:", {
               po_reference: updatedPO.po_reference,
-              po_number: updatedPO.po_number,
-              order_reference: updatedPO.order_reference,
-              reference: updatedPO.reference
+              supplier_name: updatedPO.supplier_name,
+              name: updatedPO.name
             });
 
             // Sync linked parts status/location and references with PO

@@ -219,17 +219,30 @@ export default function PurchaseOrderDetail({ poId, onClose, mode = "page" }) {
     
     const supplier = suppliers.find(s => s.id === formData.supplier_id);
     
+    console.log('[PurchaseOrderDetail:handleSave] Saving PO:', {
+      poId,
+      po_reference: formData.po_reference.trim(),
+      supplier_name: supplier?.name,
+      name: formData.name?.trim()
+    });
+    
     // Golden Rule: persist identity fields via entity update FIRST
-    await base44.entities.PurchaseOrder.update(poId, {
+    const directUpdate = await base44.entities.PurchaseOrder.update(poId, {
       po_reference: formData.po_reference.trim(),
       name: formData.name?.trim() || null,
       supplier_id: formData.supplier_id,
+      supplier_name: supplier?.name || "",
       project_id: formData.project_id || null,
+    });
+    
+    console.log('[PurchaseOrderDetail:handleSave] Direct update result:', {
+      po_reference: directUpdate.po_reference,
+      supplier_name: directUpdate.supplier_name,
+      name: directUpdate.name
     });
     
     // Then: update other fields
     updatePOMutation.mutate({
-      supplier_name: supplier?.name || "",
       delivery_method: formData.delivery_method || null,
       notes: formData.notes || "",
       expected_date: formData.eta || null,
@@ -313,17 +326,30 @@ export default function PurchaseOrderDetail({ poId, onClose, mode = "page" }) {
     
     const supplier = suppliers.find(s => s.id === formData.supplier_id);
     
+    console.log('[PurchaseOrderDetail:handleSendToSupplier] Sending PO:', {
+      poId,
+      po_reference: formData.po_reference.trim(),
+      supplier_name: supplier?.name,
+      name: formData.name?.trim()
+    });
+    
     // Golden Rule: persist identity fields via entity update FIRST
-    await base44.entities.PurchaseOrder.update(poId, {
+    const directUpdate = await base44.entities.PurchaseOrder.update(poId, {
       po_reference: formData.po_reference.trim(),
       name: formData.name?.trim() || null,
       supplier_id: formData.supplier_id,
+      supplier_name: supplier?.name || "",
       project_id: formData.project_id || null,
+    });
+    
+    console.log('[PurchaseOrderDetail:handleSendToSupplier] Direct update result:', {
+      po_reference: directUpdate.po_reference,
+      supplier_name: directUpdate.supplier_name,
+      name: directUpdate.name
     });
     
     // Then save other pending changes
     await updatePOMutation.mutateAsync({
-      supplier_name: supplier?.name || "",
       delivery_method: formData.delivery_method || null,
       notes: formData.notes || "",
       expected_date: formData.eta || null,
