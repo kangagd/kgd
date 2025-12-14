@@ -265,11 +265,11 @@ DO NOT generate:
 - Duplicates of obvious job details
 
 Valid triggers include ONLY:
-- Access restrictions (keys, codes, unsafe access)
-- Payment risk blocking work
-- Explicit customer frustration or dispute
-- Safety hazards
-- Hard blockers that could stop the job
+- Access restrictions (keys, codes, unsafe access) -> category: "Access & Site"
+- Payment risk blocking work -> category: "Payments"
+- Explicit customer frustration or dispute -> category: "Customer Risk"
+- Safety hazards -> category: "Safety"
+- Hard blockers that could stop the job -> category: "Hard Blocker"
 
 Context data:
 ${JSON.stringify(contextData, null, 2)}
@@ -279,17 +279,21 @@ Output JSON ONLY in this format:
 {
   "items": [
     {
-      "category": "",
-      "audience": "",
-      "severity": "",
-      "title": "",
-      "summary_bullets": ["", ""],
-      "evidence_type": "",
-      "evidence_entity_id": "",
-      "evidence_excerpt": ""
+      "category": "Customer Risk",
+      "audience": "both",
+      "severity": "high",
+      "title": "Short factual title",
+      "summary_bullets": ["Bullet 1", "Bullet 2"],
+      "evidence_type": "project_field",
+      "evidence_entity_id": "project_id",
+      "evidence_excerpt": "Verbatim quote from notes"
     }
   ]
-}`;
+}
+
+Valid category values: "Access & Site", "Payments", "Customer Risk", "Safety", "Hard Blocker"
+Valid audience values: "tech", "office", "both"
+Valid severity values: "high", "critical"`;
 
     const aiResponse = await base44.integrations.Core.InvokeLLM({
       prompt: aiPrompt,
