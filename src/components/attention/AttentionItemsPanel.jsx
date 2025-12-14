@@ -160,18 +160,31 @@ export default function AttentionItemsPanel({ entity_type, entity_id, context_id
     queryKey: ['attentionItems', entity_type, entity_id, JSON.stringify(context_ids)],
     queryFn: async () => {
       // Fetch items from all relevant levels
-      const customerItems = [];
-      const projectItems = [];
-      const jobItems = [];
+      const allItems = [];
       
-      // Determine which levels to fetch based on entity_type
+      // Helper to assign entity level priority
+      const getEntityPriority = (eType) => {
+        if (eType === 'job') return 3;
+        if (eType === 'project') return 2;
+        if (eType === 'customer') return 1;
+        return 0;
+      };
+      
+      const getSeverityPriority = (severity) => {
+        if (severity === 'critical') return 3;
+        if (severity === 'high') return 2;
+        if (severity === 'medium') return 1;
+        return 0;
+      };
+      
+      // Fetch based on entity_type
       if (entity_type === 'customer' && entity_id) {
         const items = await base44.entities.AttentionItem.filter({
           entity_type: 'customer',
           entity_id: entity_id,
           status: 'open'
-        }, '-created_at');
-        customerItems.push(...(items || []));
+        }, '-created_date');
+        allItems.push(...(items || []));
       } else if (entity_type === 'project') {
         // Fetch project items
         if (entity_id) {
@@ -179,8 +192,8 @@ export default function AttentionItemsPanel({ entity_type, entity_id, context_id
             entity_type: 'project',
             entity_id: entity_id,
             status: 'open'
-          }, '-created_at');
-          projectItems.push(...(items || []));
+          }, '-created_date');
+          allItems.push(...(items || []));
         }
         // Fetch customer items
         if (context_ids.customer_id) {
@@ -188,8 +201,8 @@ export default function AttentionItemsPanel({ entity_type, entity_id, context_id
             entity_type: 'customer',
             entity_id: context_ids.customer_id,
             status: 'open'
-          }, '-created_at');
-          customerItems.push(...(items || []));
+          }, '-created_date');
+          allItems.push(...(items || []));
         }
       } else if (entity_type === 'job') {
         // Fetch job items
@@ -198,8 +211,8 @@ export default function AttentionItemsPanel({ entity_type, entity_id, context_id
             entity_type: 'job',
             entity_id: entity_id,
             status: 'open'
-          }, '-created_at');
-          jobItems.push(...(items || []));
+          }, '-created_date');
+          allItems.push(...(items || []));
         }
         // Fetch project items
         if (context_ids.project_id) {
@@ -207,8 +220,8 @@ export default function AttentionItemsPanel({ entity_type, entity_id, context_id
             entity_type: 'project',
             entity_id: context_ids.project_id,
             status: 'open'
-          }, '-created_at');
-          projectItems.push(...(items || []));
+          }, '-created_date');
+          allItems.push(...(items || []));
         }
         // Fetch customer items
         if (context_ids.customer_id) {
@@ -216,47 +229,72 @@ export default function AttentionItemsPanel({ entity_type, entity_id, context_id
             entity_type: 'customer',
             entity_id: context_ids.customer_id,
             status: 'open'
-          }, '-created_at');
-          customerItems.push(...(items || []));
+          }, '-created_date');
+          allItems.push(...(items || []));
         }
       }
       
-      // Merge with shadowing: job > project > customer
-      // Items with same dedupe_key are shadowed by more specific level
-      const dedupeMap = new Map();
+      // De-duplicate by canonical_key with winner selection
+      const keyMap = new Map();
       
-      // Insert customer items first (lowest priority)
-      for (const item of customerItems) {
-        const key = item.dedupe_key || item.id;
-        dedupeMap.set(key, {
-          ...item,
-          _isInherited: entity_type !== 'customer',
-          _inheritedFrom: entity_type !== 'customer' ? 'customer' : null
-        });
+      for (const item of allItems) {
+        const key = item.canonical_key || item.dedupe_key || item.id;
+        
+        if (!keyMap.has(key)) {
+          keyMap.set(key, item);
+        } else {
+          const existing = keyMap.get(key);
+          
+          // Winner selection logic
+          const itemPriority = getEntityPriority(item.entity_type);
+          const existingPriority = getEntityPriority(existing.entity_type);
+          
+          // Prefer most specific entity (job > project > customer)
+          if (itemPriority > existingPriority) {
+            keyMap.set(key, item);
+          } else if (itemPriority === existingPriority) {
+            // Same entity level: prefer higher severity
+            const itemSeverity = getSeverityPriority(item.severity);
+            const existingSeverity = getSeverityPriority(existing.severity);
+            
+            if (itemSeverity > existingSeverity) {
+              keyMap.set(key, item);
+            } else if (itemSeverity === existingSeverity) {
+              // Tie: prefer most recent
+              const itemDate = new Date(item.created_date || item.created_at || 0);
+              const existingDate = new Date(existing.created_date || existing.created_at || 0);
+              
+              if (itemDate > existingDate) {
+                keyMap.set(key, item);
+              }
+            }
+          }
+        }
       }
       
-      // Insert project items (overrides customer)
-      for (const item of projectItems) {
-        const key = item.dedupe_key || item.id;
-        dedupeMap.set(key, {
+      // Convert to array and mark inherited items
+      const dedupedItems = Array.from(keyMap.values()).map(item => {
+        const isInherited = item.entity_type !== entity_type || item.entity_id !== entity_id;
+        return {
           ...item,
-          _isInherited: entity_type !== 'project',
-          _inheritedFrom: entity_type !== 'project' ? 'project' : null
-        });
-      }
+          _isInherited: isInherited,
+          _inheritedFrom: isInherited ? item.entity_type : null
+        };
+      });
       
-      // Insert job items (overrides project and customer)
-      for (const item of jobItems) {
-        const key = item.dedupe_key || item.id;
-        dedupeMap.set(key, {
-          ...item,
-          _isInherited: false,
-          _inheritedFrom: null
-        });
-      }
+      // Sort by severity (critical first), then created_date
+      dedupedItems.sort((a, b) => {
+        const severityA = getSeverityPriority(a.severity);
+        const severityB = getSeverityPriority(b.severity);
+        if (severityA !== severityB) return severityB - severityA;
+        
+        const dateA = new Date(a.created_date || a.created_at || 0);
+        const dateB = new Date(b.created_date || b.created_at || 0);
+        return dateB - dateA;
+      });
       
-      // Convert map to array and limit to 3 items
-      return Array.from(dedupeMap.values()).slice(0, 3);
+      // Limit to 3 items
+      return dedupedItems.slice(0, 3);
     },
     enabled: !!entity_type && !!entity_id
   });
