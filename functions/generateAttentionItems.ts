@@ -1,6 +1,40 @@
 import { createClientFromRequest } from 'npm:@base44/sdk@0.8.4';
 import { createHash } from 'node:crypto';
 
+// Category normalization function
+function normalizeCategory(category) {
+  if (!category) return null;
+  
+  const normalized = category.trim().toLowerCase();
+  
+  // Hard Blocker variations
+  if (['hard blocker', 'blocker', 'critical blocker'].includes(normalized)) {
+    return 'Hard Blocker';
+  }
+  
+  // Customer Risk variations
+  if (['customer risk', 'customer concern', 'customer sentiment', 'client relations', 'client risk'].includes(normalized)) {
+    return 'Customer Risk';
+  }
+  
+  // Access & Site variations
+  if (['access', 'access & site', 'site access', 'access and site'].includes(normalized)) {
+    return 'Access & Site';
+  }
+  
+  // Payments variations
+  if (['payments', 'payment', 'payment risk', 'payments / stop work', 'financial risk'].includes(normalized)) {
+    return 'Payments';
+  }
+  
+  // Safety variations
+  if (['safety', 'safety risk', 'safety hazard'].includes(normalized)) {
+    return 'Safety';
+  }
+  
+  return null; // Invalid category
+}
+
 Deno.serve(async (req) => {
   try {
     const base44 = createClientFromRequest(req);
@@ -10,7 +44,7 @@ Deno.serve(async (req) => {
       return Response.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
-    const { entity_type, entity_id, mode = "persist" } = await req.json();
+    const { entity_type, entity_id, mode = "persist", strictness = mode === "persist" ? "balanced" : "strict" } = await req.json();
 
     if (!entity_type || !entity_id) {
       return Response.json({ error: 'entity_type and entity_id required' }, { status: 400 });
@@ -58,16 +92,29 @@ Deno.serve(async (req) => {
         }
       }
 
-      // Load linked emails/messages
+      // Load linked emails/messages (increased to 10)
       try {
-        const messages = await base44.entities.JobMessage.filter({ job_id: entity_id });
-        contextData.messages = messages.slice(0, 5).map(m => ({
+        const messages = await base44.entities.JobMessage.filter({ job_id: entity_id }, '-created_at');
+        contextData.messages = messages.slice(0, 10).map(m => ({
           content: m.message,
           sender: m.sender_name,
           created_at: m.created_at
         }));
       } catch (e) {
         contextData.messages = [];
+      }
+      
+      // Load job emails if available
+      try {
+        const emails = await base44.entities.ProjectEmail.filter({ job_id: entity_id }, '-created_at');
+        contextData.emails = emails.slice(0, 5).map(e => ({
+          subject: e.subject,
+          from: e.from_address,
+          excerpt: e.body_text?.substring(0, 200),
+          created_at: e.created_at
+        }));
+      } catch (e) {
+        contextData.emails = [];
       }
 
       // Load invoice status if exists
@@ -114,16 +161,29 @@ Deno.serve(async (req) => {
         contextData.jobs = [];
       }
 
-      // Load linked emails
+      // Load linked emails/messages (increased to 10)
       try {
-        const messages = await base44.entities.ProjectMessage.filter({ project_id: entity_id });
-        contextData.messages = messages.slice(0, 5).map(m => ({
+        const messages = await base44.entities.ProjectMessage.filter({ project_id: entity_id }, '-created_at');
+        contextData.messages = messages.slice(0, 10).map(m => ({
           content: m.message,
           sender: m.sender_name,
           created_at: m.created_at
         }));
       } catch (e) {
         contextData.messages = [];
+      }
+      
+      // Load project emails if available
+      try {
+        const emails = await base44.entities.ProjectEmail.filter({ project_id: entity_id }, '-created_at');
+        contextData.emails = emails.slice(0, 5).map(e => ({
+          subject: e.subject,
+          from: e.from_address,
+          excerpt: e.body_text?.substring(0, 200),
+          created_at: e.created_at
+        }));
+      } catch (e) {
+        contextData.emails = [];
       }
 
       // Load invoice status
@@ -261,22 +321,39 @@ Output JSON ONLY in this format:
     console.log('AI Generated Items:', JSON.stringify(items, null, 2));
 
     // STEP 3: Post-processing (MANDATORY)
-    const validCategories = ["Access & Site", "Payments", "Customer Risk", "Safety", "Hard Blocker"];
+    const validCategories = ["Access & Site", "Payments", "Customer Risk", "Customer Concern", "Safety", "Hard Blocker"];
     const categoryCount = {};
     const processedItems = [];
     const rejectionReasons = [];
 
     for (const item of items) {
-      // Reject items without evidence
-      if (!item.evidence_excerpt || item.evidence_excerpt.trim().length === 0) {
-        rejectionReasons.push({ item: item.title, reason: 'Missing evidence_excerpt' });
+      // Normalize category first
+      const originalCategory = item.category;
+      item.category = normalizeCategory(item.category);
+      
+      if (!item.category) {
+        rejectionReasons.push({ item: item.title, reason: `Invalid category: ${originalCategory}` });
         continue;
       }
-
-      // Reject invalid categories
-      if (!validCategories.includes(item.category)) {
-        rejectionReasons.push({ item: item.title, reason: `Invalid category: ${item.category}` });
-        continue;
+      
+      // Handle evidence based on strictness
+      if (strictness === "strict") {
+        // Strict: Reject if no evidence or empty
+        if (!item.evidence_excerpt || item.evidence_excerpt.trim().length === 0) {
+          rejectionReasons.push({ item: item.title, reason: 'Missing evidence_excerpt (strict mode)' });
+          continue;
+        }
+      } else {
+        // Balanced: Allow shorter excerpts and create fallbacks
+        if (!item.evidence_excerpt || item.evidence_excerpt.trim().length < 20) {
+          // Try to create a fallback excerpt
+          if (item.evidence_type && item.evidence_entity_id) {
+            item.evidence_excerpt = `Evidence linked: ${item.evidence_type} (${item.evidence_entity_id.substring(0, 8)})`;
+          } else {
+            rejectionReasons.push({ item: item.title, reason: 'Evidence too short and no fallback available' });
+            continue;
+          }
+        }
       }
 
       // Maximum 1 per category
@@ -342,6 +419,7 @@ Output JSON ONLY in this format:
       created_count: mode === 'persist' ? created.length : 0,
       skipped_count: items.length - processedItems.length,
       items: mode === 'dry_run' ? processedItems : created,
+      strictness_mode: strictness,
       debug: {
         raw_ai_items: items,
         rejection_reasons: rejectionReasons
