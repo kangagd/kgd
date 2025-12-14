@@ -1,84 +1,117 @@
 import { createClientFromRequest } from 'npm:@base44/sdk@0.8.4';
 import { createHash } from 'node:crypto';
 
-// Category normalization function
-function normalizeCategory(category) {
-  if (!category) return null;
+// Hard trigger dictionary for pre-filtering
+const HARD_TRIGGERS = {
+  'Access & Site': {
+    keywords: ['key', 'keys', 'lockbox', 'code', 'gate code', 'access', 'intercom', 'parking', 
+               'height restriction', 'steep driveway', 'no access', 'call on arrival'],
+    must_include: ['code', 'lockbox', 'key', 'access', 'gate']
+  },
+  'Payments': {
+    keywords: ['overdue', 'unpaid', 'payment reminder', 'final notice', 'stop work', 'not paying', 
+               'chargeback', 'dispute invoice', 'balance outstanding', 'past due']
+  },
+  'Customer Risk': {
+    keywords: ['unhappy', 'frustrated', 'disappointed', 'angry', 'complaint', 'escalate', 'refund', 
+               'cancel', 'unacceptable', 'fed up', 'terrible', 'poor communication', 'constant delays'],
+    strong_negatives: ['unhappy', 'frustrated', 'disappointed', 'angry', 'complaint', 'unacceptable', 
+                      'refund', 'cancel', 'escalate', 'chargeback', 'dispute'],
+    exclude_positive: ['soon', 'one step away', 'excited', 'ready', 'thanks', 'thank']
+  },
+  'Safety': {
+    keywords: ['unsafe', 'hazard', 'asbestos', 'electrical', 'live wires', 'no isolator', 
+               'ladder required', 'fall risk', 'aggressive dog', 'security risk']
+  },
+  'Hard Blocker': {
+    keywords: ['powdercoat issue', 'powder coating issue', 'wrong colour', 'damaged', 'defective', 
+               'parts missing', 'incorrect parts', 'no power', 'needs electrician', 'noggin', 'noggins', 
+               'blocking required', 'no structure', 'low headroom', 'front mount', 'cannot fit', 
+               'merlin not compatible', 'grifco', 'lr drive', 'motor issue', 'remotes not compatible']
+  }
+};
+
+const ALLOWED_EVIDENCE_TYPES = ['email', 'project_message', 'job_message', 'note', 'call_log', 'sms'];
+
+// Check if text contains hard triggers for a category
+function checkTriggers(text, category) {
+  if (!text) return false;
+  const lowerText = text.toLowerCase();
+  const triggers = HARD_TRIGGERS[category];
+  if (!triggers) return false;
   
-  const normalized = category.trim().toLowerCase();
-  
-  // Hard Blocker variations
-  if (['hard blocker', 'blocker', 'critical blocker'].includes(normalized)) {
-    return 'Hard Blocker';
+  // Check for positive words that should exclude Customer Risk
+  if (category === 'Customer Risk' && triggers.exclude_positive) {
+    for (const positive of triggers.exclude_positive) {
+      if (lowerText.includes(positive)) {
+        // Check if there's also a strong negative - if not, reject
+        const hasStrongNegative = triggers.strong_negatives.some(neg => lowerText.includes(neg));
+        if (!hasStrongNegative) return false;
+      }
+    }
   }
   
-  // Customer Risk variations
-  if (['customer risk', 'customer concern', 'customer sentiment', 'client relations', 'client risk'].includes(normalized)) {
-    return 'Customer Risk';
+  // Check if any keyword matches
+  const hasKeyword = triggers.keywords.some(kw => lowerText.includes(kw));
+  if (!hasKeyword) return false;
+  
+  // For Access & Site, must include specific words
+  if (triggers.must_include) {
+    return triggers.must_include.some(word => lowerText.includes(word));
   }
   
-  // Access & Site variations
-  if (['access', 'access & site', 'site access', 'access and site'].includes(normalized)) {
-    return 'Access & Site';
+  // For Customer Risk, require strong negative word
+  if (category === 'Customer Risk' && triggers.strong_negatives) {
+    return triggers.strong_negatives.some(word => lowerText.includes(word));
   }
   
-  // Payments variations
-  if (['payments', 'payment', 'payment risk', 'payments / stop work', 'financial risk'].includes(normalized)) {
-    return 'Payments';
-  }
-  
-  // Safety variations
-  if (['safety', 'safety risk', 'safety hazard'].includes(normalized)) {
-    return 'Safety';
-  }
-  
-  return null; // Invalid category
+  return true;
 }
 
-// Intent normalization for deduplication
-function normalizeIntent(title, summaryBullets, category) {
+// Pre-filter: check if ANY evidence has triggers
+function hasAnyTriggers(evidenceRecords) {
+  for (const record of evidenceRecords) {
+    const text = record.content || record.body_text || record.message || '';
+    for (const category of Object.keys(HARD_TRIGGERS)) {
+      if (checkTriggers(text, category)) {
+        return true;
+      }
+    }
+  }
+  return false;
+}
+
+// Normalize category
+function normalizeCategory(category) {
+  if (!category) return null;
+  const normalized = category.trim().toLowerCase();
+  
+  if (['hard blocker', 'blocker', 'critical blocker'].includes(normalized)) return 'Hard Blocker';
+  if (['customer risk', 'customer concern', 'customer sentiment'].includes(normalized)) return 'Customer Risk';
+  if (['access', 'access & site', 'site access'].includes(normalized)) return 'Access & Site';
+  if (['payments', 'payment', 'payment risk'].includes(normalized)) return 'Payments';
+  if (['safety', 'safety risk', 'safety hazard'].includes(normalized)) return 'Safety';
+  
+  return null;
+}
+
+// Canonical intent normalization
+function getCanonicalIntent(title, summaryBullets, category) {
   const text = (title + ' ' + (summaryBullets || []).join(' ')).toLowerCase();
   
-  // Customer Risk intents
-  if (text.match(/frustrat|unhappy|dissatisf|upset|angry|disappoint|concern/)) {
-    return 'customer_frustration';
-  }
-  if (text.match(/complaint|dispute|conflict|disagree/)) {
-    return 'customer_complaint';
-  }
-  
-  // Payment intents
-  if (text.match(/overdue|outstanding|unpaid|stop work|hold/)) {
-    return 'payment_blocker';
-  }
-  if (text.match(/payment.*(risk|issue|problem)/)) {
-    return 'payment_risk';
-  }
-  
-  // Access intents
-  if (text.match(/access.*(code|key|restriction|require)/)) {
-    return 'access_requirement';
-  }
-  if (text.match(/site.*(unsafe|hazard|restrict)/)) {
-    return 'site_restriction';
-  }
-  
-  // Safety intents
-  if (text.match(/safety|hazard|dangerous|risk.*injury/)) {
+  if (category === 'Access & Site') {
+    return 'access_code_or_keys';
+  } else if (category === 'Payments') {
+    return 'payment_stop_work';
+  } else if (category === 'Customer Risk') {
+    return 'explicit_customer_dissatisfaction';
+  } else if (category === 'Safety') {
     return 'safety_hazard';
+  } else if (category === 'Hard Blocker') {
+    return 'job_blocker_parts_or_structure';
   }
   
-  // Hard Blocker intents
-  if (text.match(/deadline|urgent|critical|blocker/)) {
-    return 'hard_deadline';
-  }
-  if (text.match(/cannot.*proceed|blocked|stuck/)) {
-    return 'hard_blocker';
-  }
-  
-  // Fallback: use first 2 words of title as intent
-  const words = title.trim().split(/\s+/).slice(0, 2).join('_').toLowerCase().replace(/[^a-z_]/g, '');
-  return words || 'generic';
+  return 'generic';
 }
 
 Deno.serve(async (req) => {
@@ -90,7 +123,7 @@ Deno.serve(async (req) => {
       return Response.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
-    const { entity_type, entity_id, mode = "persist", strictness = mode === "persist" ? "balanced" : "strict" } = await req.json();
+    const { entity_type, entity_id, mode = "persist" } = await req.json();
 
     if (!entity_type || !entity_id) {
       return Response.json({ error: 'entity_type and entity_id required' }, { status: 400 });
@@ -100,236 +133,150 @@ Deno.serve(async (req) => {
       return Response.json({ error: 'entity_type must be job, project, or customer' }, { status: 400 });
     }
 
-    // STEP 1: Load context for the specific entity
-    let contextData = {};
+    const rejectionCounts = {
+      no_trigger: 0,
+      bad_evidence: 0,
+      weak_sentiment: 0,
+      invalid_category: 0,
+      upstream_exists: 0,
+      duplicate: 0
+    };
+
+    // STEP 1: Load ONLY real comms evidence
+    let evidenceRecords = [];
+    let job = null;
+    let project = null;
+    let customer = null;
     
     if (entity_type === 'job') {
-      const job = await base44.entities.Job.get(entity_id);
-      if (!job) {
-        return Response.json({ error: 'Job not found' }, { status: 404 });
-      }
-
-      contextData = {
-        entity_type: 'job',
-        entity_id: job.id,
-        job_number: job.job_number,
-        job_type_name: job.job_type_name,
-        overview: job.overview,
-        outcome: job.outcome,
-        next_steps: job.next_steps,
-        communication_with_client: job.communication_with_client,
-        additional_info: job.additional_info,
-        notes: job.notes,
-        status: job.status,
-        customer_name: job.customer_name
-      };
-
-      // Load related project if exists (read-only)
-      if (job.project_id) {
-        try {
-          const project = await base44.entities.Project.get(job.project_id);
-          contextData.related_project = {
-            title: project.title,
-            status: project.status,
-            financial_status: project.financial_status
-          };
-        } catch (e) {
-          // Continue without project
-        }
-      }
-
-      // Load linked emails/messages (increased to 10)
+      job = await base44.entities.Job.get(entity_id);
+      if (!job) return Response.json({ error: 'Job not found' }, { status: 404 });
+      
+      // Load JobMessages
       try {
         const messages = await base44.entities.JobMessage.filter({ job_id: entity_id }, '-created_at');
-        contextData.messages = messages.slice(0, 10).map(m => ({
+        evidenceRecords.push(...messages.slice(0, 15).map(m => ({
+          id: m.id,
+          type: 'job_message',
           content: m.message,
           sender: m.sender_name,
           created_at: m.created_at
-        }));
-      } catch (e) {
-        contextData.messages = [];
-      }
+        })));
+      } catch (e) {}
       
-      // Load job emails if available
+      // Load emails linked to job
       try {
         const emails = await base44.entities.ProjectEmail.filter({ job_id: entity_id }, '-created_at');
-        contextData.emails = emails.slice(0, 5).map(e => ({
+        evidenceRecords.push(...emails.slice(0, 10).map(e => ({
+          id: e.id,
+          type: 'email',
+          content: e.body_text || '',
           subject: e.subject,
           from: e.from_address,
-          excerpt: e.body_text?.substring(0, 200),
           created_at: e.created_at
-        }));
-      } catch (e) {
-        contextData.emails = [];
-      }
-
-      // Load invoice status if exists
-      if (job.xero_invoice_id) {
-        try {
-          const invoice = await base44.entities.XeroInvoice.get(job.xero_invoice_id);
-          contextData.invoice_status = {
-            status: invoice.status,
-            amount_due: invoice.amount_due,
-            due_date: invoice.due_date
-          };
-        } catch (e) {
-          // Continue without invoice
-        }
-      }
-
+        })));
+      } catch (e) {}
+      
     } else if (entity_type === 'project') {
-      const project = await base44.entities.Project.get(entity_id);
-      if (!project) {
-        return Response.json({ error: 'Project not found' }, { status: 404 });
-      }
-
-      contextData = {
-        entity_type: 'project',
-        entity_id: project.id,
-        project_number: project.project_number,
-        title: project.title,
-        description: project.description,
-        notes: project.notes,
-        status: project.status,
-        financial_status: project.financial_status,
-        customer_name: project.customer_name
-      };
-
-      // Load jobs within project (read-only)
-      try {
-        const jobs = await base44.entities.Job.filter({ project_id: entity_id });
-        contextData.jobs = jobs.slice(0, 5).map(j => ({
-          job_number: j.job_number,
-          status: j.status,
-          outcome: j.outcome
-        }));
-      } catch (e) {
-        contextData.jobs = [];
-      }
-
-      // Load linked emails/messages (increased to 10)
+      project = await base44.entities.Project.get(entity_id);
+      if (!project) return Response.json({ error: 'Project not found' }, { status: 404 });
+      
+      // Load ProjectMessages
       try {
         const messages = await base44.entities.ProjectMessage.filter({ project_id: entity_id }, '-created_at');
-        contextData.messages = messages.slice(0, 10).map(m => ({
+        evidenceRecords.push(...messages.slice(0, 15).map(m => ({
+          id: m.id,
+          type: 'project_message',
           content: m.message,
           sender: m.sender_name,
           created_at: m.created_at
-        }));
-      } catch (e) {
-        contextData.messages = [];
-      }
+        })));
+      } catch (e) {}
       
-      // Load project emails if available
+      // Load emails linked to project
       try {
         const emails = await base44.entities.ProjectEmail.filter({ project_id: entity_id }, '-created_at');
-        contextData.emails = emails.slice(0, 5).map(e => ({
+        evidenceRecords.push(...emails.slice(0, 10).map(e => ({
+          id: e.id,
+          type: 'email',
+          content: e.body_text || '',
           subject: e.subject,
           from: e.from_address,
-          excerpt: e.body_text?.substring(0, 200),
           created_at: e.created_at
-        }));
-      } catch (e) {
-        contextData.emails = [];
-      }
-
-      // Load invoice status
-      if (project.primary_xero_invoice_id) {
-        try {
-          const invoice = await base44.entities.XeroInvoice.get(project.primary_xero_invoice_id);
-          contextData.invoice_status = {
-            status: invoice.status,
-            amount_due: invoice.amount_due,
-            due_date: invoice.due_date
-          };
-        } catch (e) {
-          // Continue without invoice
-        }
-      }
+        })));
+      } catch (e) {}
+      
     } else if (entity_type === 'customer') {
-      const customer = await base44.entities.Customer.get(entity_id);
-      if (!customer) {
-        return Response.json({ error: 'Customer not found' }, { status: 404 });
-      }
-
-      contextData = {
-        entity_type: 'customer',
-        entity_id: customer.id,
-        customer_name: customer.name,
-        customer_type: customer.customer_type,
-        notes: customer.notes,
-        status: customer.status,
-        address_full: customer.address_full,
-        email: customer.email,
-        phone: customer.phone
-      };
-
-      // Load related projects (read-only)
+      customer = await base44.entities.Customer.get(entity_id);
+      if (!customer) return Response.json({ error: 'Customer not found' }, { status: 404 });
+      
+      // For customers, load recent project/job messages
       try {
         const projects = await base44.entities.Project.filter({ customer_id: entity_id });
-        contextData.projects = projects.slice(0, 5).map(p => ({
-          title: p.title,
-          status: p.status,
-          financial_status: p.financial_status
-        }));
-      } catch (e) {
-        contextData.projects = [];
-      }
-
-      // Load related jobs (read-only)
-      try {
-        const jobs = await base44.entities.Job.filter({ customer_id: entity_id });
-        contextData.jobs = jobs.slice(0, 5).map(j => ({
-          job_number: j.job_number,
-          status: j.status,
-          outcome: j.outcome
-        }));
-      } catch (e) {
-        contextData.jobs = [];
-      }
+        for (const proj of projects.slice(0, 3)) {
+          const messages = await base44.entities.ProjectMessage.filter({ project_id: proj.id }, '-created_at');
+          evidenceRecords.push(...messages.slice(0, 5).map(m => ({
+            id: m.id,
+            type: 'project_message',
+            content: m.message,
+            sender: m.sender_name,
+            created_at: m.created_at
+          })));
+        }
+      } catch (e) {}
     }
 
-    // STEP 2: Call AI with STRICT PROMPT
-    const evidenceTypeGuidance = entity_type === 'job' 
-      ? 'Use evidence_type: "job_field" for job notes/fields'
-      : entity_type === 'project'
-        ? 'Use evidence_type: "project_field" for project notes/fields'
-        : 'Use evidence_type: "customer_field" for customer notes/fields';
+    // STEP 2: PRE-FILTER - Check for hard triggers
+    if (!hasAnyTriggers(evidenceRecords)) {
+      rejectionCounts.no_trigger = 1;
+      return Response.json({
+        success: true,
+        created_count: 0,
+        skipped_count: 0,
+        items: [],
+        rejected_reasons: rejectionCounts,
+        message: 'No hard triggers found in evidence'
+      });
+    }
 
-    const aiPrompt = `You are generating Attention Items for a garage door installation and
-repair company (KangarooGD).
+    // STEP 3: Call LLM with strict evidence requirements
+    const contextForAI = {
+      entity_type,
+      entity_id,
+      evidence_records: evidenceRecords.map(e => ({
+        id: e.id,
+        type: e.type,
+        content: e.content?.substring(0, 500),
+        sender: e.sender,
+        created_at: e.created_at
+      }))
+    };
 
-Your job is to identify ONLY critical information that would change
-how a technician or office manager behaves.
+    const aiPrompt = `You are generating Attention Items for KangarooGD garage door company.
 
-Rules:
-- Generate 0–3 items only
-- If nothing is truly important, return an empty array
-- Each item MUST:
-  - Be specific to THIS ${entity_type}
-  - Have direct evidence
-  - Be actionable or risk-based
+CRITICAL RULES:
+1. Generate 0-2 items maximum (only if CRITICAL)
+2. Each item MUST cite a real evidence record from the provided evidence_records
+3. evidence_type must be one of: ["email", "project_message", "job_message", "note", "call_log", "sms"]
+4. evidence_entity_id must be the id of an evidence record
+5. evidence_excerpt must be a verbatim quote (exact substring) from that record
+6. Only create items for:
+   - Access restrictions with specific codes/keys mentioned
+   - Payment issues explicitly blocking work
+   - Customer expressing STRONG dissatisfaction (unhappy, angry, frustrated, complaint)
+   - Safety hazards (unsafe conditions, electrical issues)
+   - Hard blockers (wrong parts, structural issues preventing work)
 
-DO NOT generate:
-- Best practice reminders
-- Installation steps
-- Suggestions or recommendations
-- Normal operational notes
-- Duplicates of obvious details
+DO NOT CREATE ITEMS FOR:
+- Generic notes or status updates
+- Normal operational information
+- Positive/neutral customer sentiment
+- Inferred problems without explicit evidence
 
-Valid triggers include ONLY:
-- Access restrictions (keys, codes, unsafe access) -> category: "Access & Site"
-- Payment risk blocking work -> category: "Payments"
-- Explicit customer frustration or dispute -> category: "Customer Risk"
-- Safety hazards -> category: "Safety"
-- Hard blockers that could stop the job -> category: "Hard Blocker"
+Evidence records:
+${JSON.stringify(contextForAI.evidence_records, null, 2)}
 
-IMPORTANT: ${evidenceTypeGuidance}
-
-Context data:
-${JSON.stringify(contextData, null, 2)}
-
-Output JSON ONLY in this format:
-
+Output JSON ONLY:
 {
   "items": [
     {
@@ -338,16 +285,12 @@ Output JSON ONLY in this format:
       "severity": "high",
       "title": "Short factual title",
       "summary_bullets": ["Bullet 1", "Bullet 2"],
-      "evidence_type": "project_field",
-      "evidence_entity_id": "project_id",
-      "evidence_excerpt": "Verbatim quote from notes"
+      "evidence_type": "project_message",
+      "evidence_entity_id": "actual_message_id",
+      "evidence_excerpt": "Exact verbatim quote from the message"
     }
   ]
-}
-
-Valid category values: "Access & Site", "Payments", "Customer Risk", "Safety", "Hard Blocker"
-Valid audience values: "tech", "office", "both"
-Valid severity values: "high", "critical"`;
+}`;
 
     const aiResponse = await base44.integrations.Core.InvokeLLM({
       prompt: aiPrompt,
@@ -375,97 +318,83 @@ Valid severity values: "high", "critical"`;
     });
 
     let items = aiResponse?.items || [];
-    
-    console.log('AI Generated Items:', JSON.stringify(items, null, 2));
-
-    // STEP 3: Post-processing (MANDATORY)
-    const validCategories = ["Access & Site", "Payments", "Customer Risk", "Customer Concern", "Safety", "Hard Blocker"];
-    const categoryCount = {};
     const processedItems = [];
-    const rejectionReasons = [];
 
+    // STEP 4: POST-VALIDATION (strict)
     for (const item of items) {
-      // Normalize category first
+      // Validate category
       const originalCategory = item.category;
       item.category = normalizeCategory(item.category);
-      
       if (!item.category) {
-        rejectionReasons.push({ item: item.title, reason: `Invalid category: ${originalCategory}` });
+        rejectionCounts.invalid_category++;
         continue;
       }
-      
-      // Normalize evidence_type to match entity_type
-      if (item.evidence_type) {
-        const evidenceType = item.evidence_type.toLowerCase();
-        if (entity_type === 'customer' && !evidenceType.includes('customer')) {
-          // Correct mismatched evidence types for customer entities
-          if (evidenceType.includes('project') || evidenceType.includes('job')) {
-            item.evidence_type = 'customer_field';
-          }
-        } else if (entity_type === 'project' && !evidenceType.includes('project')) {
-          if (evidenceType.includes('customer') || evidenceType.includes('job')) {
-            item.evidence_type = 'project_field';
-          }
-        } else if (entity_type === 'job' && !evidenceType.includes('job')) {
-          if (evidenceType.includes('customer') || evidenceType.includes('project')) {
-            item.evidence_type = 'job_field';
-          }
-        }
+
+      // Validate evidence_type
+      if (!item.evidence_type || !ALLOWED_EVIDENCE_TYPES.includes(item.evidence_type)) {
+        rejectionCounts.bad_evidence++;
+        continue;
       }
-      
-      // Handle evidence based on strictness
-      if (strictness === "strict") {
-        // Strict: Reject if no evidence or empty
-        if (!item.evidence_excerpt || item.evidence_excerpt.trim().length === 0) {
-          rejectionReasons.push({ item: item.title, reason: 'Missing evidence_excerpt (strict mode)' });
+
+      // Validate evidence_entity_id exists
+      const evidenceRecord = evidenceRecords.find(e => e.id === item.evidence_entity_id);
+      if (!evidenceRecord) {
+        rejectionCounts.bad_evidence++;
+        continue;
+      }
+
+      // Validate evidence_excerpt is substring of evidence content
+      if (!item.evidence_excerpt || !evidenceRecord.content.includes(item.evidence_excerpt.trim())) {
+        rejectionCounts.bad_evidence++;
+        continue;
+      }
+
+      // For Customer Risk: require strong negative word in excerpt
+      if (item.category === 'Customer Risk') {
+        const hasStrongNegative = HARD_TRIGGERS['Customer Risk'].strong_negatives.some(
+          word => item.evidence_excerpt.toLowerCase().includes(word)
+        );
+        if (!hasStrongNegative) {
+          rejectionCounts.weak_sentiment++;
           continue;
         }
-      } else {
-        // Balanced: Allow shorter excerpts and create fallbacks
-        if (!item.evidence_excerpt || item.evidence_excerpt.trim().length < 20) {
-          // Try to create a fallback excerpt
-          if (item.evidence_type && item.evidence_entity_id) {
-            item.evidence_excerpt = `Evidence linked: ${item.evidence_type} (${item.evidence_entity_id.substring(0, 8)})`;
-          } else {
-            rejectionReasons.push({ item: item.title, reason: 'Evidence too short and no fallback available' });
-            continue;
-          }
-        }
       }
 
-      // Maximum 1 per category
-      if (categoryCount[item.category]) {
+      // Validate that excerpt contains trigger keywords for category
+      if (!checkTriggers(item.evidence_excerpt, item.category)) {
+        rejectionCounts.bad_evidence++;
         continue;
       }
 
-      // Limit summary bullets to 2
+      // Limit bullets to 2
       if (item.summary_bullets) {
         item.summary_bullets = item.summary_bullets.slice(0, 2);
       }
 
-      // Truncate evidence excerpt to 160 chars
-      if (item.evidence_excerpt && item.evidence_excerpt.length > 160) {
+      // Truncate excerpt to 160 chars
+      if (item.evidence_excerpt.length > 160) {
         item.evidence_excerpt = item.evidence_excerpt.substring(0, 157) + '...';
       }
 
-      // Generate dedupe_key for inheritance
-      const normalizedIntent = normalizeIntent(item.title, item.summary_bullets, item.category);
-      const dedupe_key = `${item.category.toLowerCase().replace(/[^a-z]/g, '_')}:${normalizedIntent}`;
+      // Generate canonical dedupe_key
+      const canonicalIntent = getCanonicalIntent(item.title, item.summary_bullets, item.category);
+      const canonicalKeyString = `${item.category.toLowerCase()}|${canonicalIntent}`;
+      const canonical_key = createHash('sha256').update(canonicalKeyString).digest('hex');
+      const dedupe_key = `${item.category.toLowerCase().replace(/[^a-z]/g, '_')}:${canonicalIntent}`;
 
-      // Check for upstream duplicates (inheritance check)
+      // Check for upstream duplicates
       let upstreamExists = false;
-      if (entity_type === 'project' && contextData.customer_id) {
-        const upstreamItems = await base44.entities.AttentionItem.filter({
+      if (entity_type === 'project' && project?.customer_id) {
+        const upstream = await base44.entities.AttentionItem.filter({
           entity_type: 'customer',
-          entity_id: contextData.customer_id,
+          entity_id: project.customer_id,
           dedupe_key,
           status: 'open'
         });
-        upstreamExists = upstreamItems && upstreamItems.length > 0;
+        upstreamExists = upstream && upstream.length > 0;
       } else if (entity_type === 'job') {
-        // Check both project and customer level
         const checks = [];
-        if (job.project_id) {
+        if (job?.project_id) {
           checks.push(base44.entities.AttentionItem.filter({
             entity_type: 'project',
             entity_id: job.project_id,
@@ -473,7 +402,7 @@ Valid severity values: "high", "critical"`;
             status: 'open'
           }));
         }
-        if (job.customer_id) {
+        if (job?.customer_id) {
           checks.push(base44.entities.AttentionItem.filter({
             entity_type: 'customer',
             entity_id: job.customer_id,
@@ -481,20 +410,21 @@ Valid severity values: "high", "critical"`;
             status: 'open'
           }));
         }
-        const results = await Promise.all(checks);
-        upstreamExists = results.some(r => r && r.length > 0);
+        if (checks.length > 0) {
+          const results = await Promise.all(checks);
+          upstreamExists = results.some(r => r && r.length > 0);
+        }
       }
 
       if (upstreamExists) {
-        rejectionReasons.push({ item: item.title, reason: 'Upstream item exists (inherited)' });
-        continue; // Don't create, rely on inheritance
+        rejectionCounts.upstream_exists++;
+        continue;
       }
 
-      // Generate fingerprint using dedupe_key
+      // Check for exact duplicates at this level
       const fingerprintString = `${entity_type}|${entity_id}|${dedupe_key}`;
       const fingerprint = createHash('sha256').update(fingerprintString).digest('hex');
-
-      // Check for exact duplicates at this level
+      
       const existing = await base44.entities.AttentionItem.filter({
         entity_type,
         entity_id,
@@ -503,7 +433,8 @@ Valid severity values: "high", "critical"`;
       });
 
       if (existing && existing.length > 0) {
-        continue; // Skip duplicate
+        rejectionCounts.duplicate++;
+        continue;
       }
 
       processedItems.push({
@@ -516,18 +447,15 @@ Valid severity values: "high", "critical"`;
         created_by_type: 'ai',
         created_by_name: 'System AI',
         fingerprint,
-        dedupe_key
+        dedupe_key,
+        canonical_key
       });
 
-      categoryCount[item.category] = true;
-
-      // Maximum 3 items total
-      if (processedItems.length >= 3) {
-        break;
-      }
+      // Max 2 items
+      if (processedItems.length >= 2) break;
     }
 
-    // STEP 4: Persist if not dry_run
+    // STEP 5: Persist
     let created = [];
     if (mode === 'persist') {
       for (const item of processedItems) {
@@ -541,11 +469,7 @@ Valid severity values: "high", "critical"`;
       created_count: mode === 'persist' ? created.length : 0,
       skipped_count: items.length - processedItems.length,
       items: mode === 'dry_run' ? processedItems : created,
-      strictness_mode: strictness,
-      debug: {
-        raw_ai_items: items,
-        rejection_reasons: rejectionReasons
-      }
+      rejected_reasons: rejectionCounts
     });
 
   } catch (error) {
