@@ -217,37 +217,34 @@ export default function PurchaseOrderDetail({ poId, onClose, mode = "page" }) {
       return;
     }
     
-    const supplier = suppliers.find(s => s.id === formData.supplier_id);
-    
-    console.log('[PurchaseOrderDetail:handleSave] Saving PO:', {
-      poId,
-      po_reference: formData.po_reference.trim(),
-      supplier_name: supplier?.name,
-      name: formData.name?.trim()
-    });
-    
-    // Golden Rule: persist identity fields via entity update FIRST
-    const directUpdate = await base44.entities.PurchaseOrder.update(poId, {
-      po_reference: formData.po_reference.trim(),
+    const payload = {
+      action: "update",
+      id: poId,
+      po_reference: formData.po_reference?.trim(),
       name: formData.name?.trim() || null,
-      supplier_id: formData.supplier_id,
-      supplier_name: supplier?.name || "",
+      supplier_id: formData.supplier_id || null,
       project_id: formData.project_id || null,
-    });
-    
-    console.log('[PurchaseOrderDetail:handleSave] Direct update result:', {
-      po_reference: directUpdate.po_reference,
-      supplier_name: directUpdate.supplier_name,
-      name: directUpdate.name
-    });
-    
-    // Then: update other fields
-    updatePOMutation.mutate({
       delivery_method: formData.delivery_method || null,
       notes: formData.notes || "",
-      expected_date: formData.eta || null,
+      eta: formData.eta || null,
       attachments: formData.attachments || [],
-    });
+    };
+
+    const res = await base44.functions.invoke("managePurchaseOrder", payload);
+
+    if (!res?.data?.success) {
+      toast.error(res?.data?.error || "Failed to save PO");
+      return;
+    }
+
+    await Promise.all([
+      queryClient.invalidateQueries({ queryKey: ["purchaseOrders"] }),
+      queryClient.invalidateQueries({ queryKey: ["purchaseOrder", poId] }),
+      queryClient.invalidateQueries({ queryKey: ["purchaseOrderLines", poId] }),
+      queryClient.invalidateQueries({ queryKey: ["parts"] }),
+    ]);
+
+    toast.success("Purchase Order saved");
   };
 
   const handleFileUpload = async (e) => {
@@ -324,39 +321,28 @@ export default function PurchaseOrderDetail({ poId, onClose, mode = "page" }) {
       return;
     }
     
-    const supplier = suppliers.find(s => s.id === formData.supplier_id);
-    
-    console.log('[PurchaseOrderDetail:handleSendToSupplier] Sending PO:', {
-      poId,
-      po_reference: formData.po_reference.trim(),
-      supplier_name: supplier?.name,
-      name: formData.name?.trim()
-    });
-    
-    // Golden Rule: persist identity fields via entity update FIRST
-    const directUpdate = await base44.entities.PurchaseOrder.update(poId, {
-      po_reference: formData.po_reference.trim(),
+    // Save all fields via managePurchaseOrder first
+    const updatePayload = {
+      action: "update",
+      id: poId,
+      po_reference: formData.po_reference?.trim(),
       name: formData.name?.trim() || null,
-      supplier_id: formData.supplier_id,
-      supplier_name: supplier?.name || "",
+      supplier_id: formData.supplier_id || null,
       project_id: formData.project_id || null,
-    });
-    
-    console.log('[PurchaseOrderDetail:handleSendToSupplier] Direct update result:', {
-      po_reference: directUpdate.po_reference,
-      supplier_name: directUpdate.supplier_name,
-      name: directUpdate.name
-    });
-    
-    // Then save other pending changes
-    await updatePOMutation.mutateAsync({
       delivery_method: formData.delivery_method || null,
       notes: formData.notes || "",
-      expected_date: formData.eta || null,
+      eta: formData.eta || null,
       attachments: formData.attachments || [],
-    });
+    };
+
+    const updateRes = await base44.functions.invoke("managePurchaseOrder", updatePayload);
+
+    if (!updateRes?.data?.success) {
+      toast.error(updateRes?.data?.error || "Failed to save PO");
+      return;
+    }
     
-    // Finally update status using managePurchaseOrder for side effects
+    // Then update status using managePurchaseOrder for side effects
     const response = await base44.functions.invoke('managePurchaseOrder', {
       action: 'updateStatus',
       id: poId,
@@ -365,8 +351,12 @@ export default function PurchaseOrderDetail({ poId, onClose, mode = "page" }) {
     });
     
     if (response?.data?.success) {
-      queryClient.invalidateQueries({ queryKey: ['purchaseOrder', poId] });
-      queryClient.invalidateQueries({ queryKey: ['purchaseOrders'] });
+      await Promise.all([
+        queryClient.invalidateQueries({ queryKey: ['purchaseOrders'] }),
+        queryClient.invalidateQueries({ queryKey: ['purchaseOrder', poId] }),
+        queryClient.invalidateQueries({ queryKey: ['purchaseOrderLines', poId] }),
+        queryClient.invalidateQueries({ queryKey: ['parts'] }),
+      ]);
       toast.success('Purchase Order sent to supplier');
     } else {
       toast.error('Failed to update status');
