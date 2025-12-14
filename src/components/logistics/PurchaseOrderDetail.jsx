@@ -262,8 +262,24 @@ export default function PurchaseOrderDetail({ poId, onClose, mode = "page" }) {
       return;
     }
 
-    const returnedPO = res.data.purchaseOrder;
-    applyReturnedPO(returnedPO);
+    const updatedPO = res.data.purchaseOrder;
+    
+    // Write to cache immediately
+    queryClient.setQueryData(['purchaseOrder', poId], updatedPO);
+    
+    // Update formData to stay in sync
+    setFormData(prev => ({
+      ...prev,
+      po_reference: updatedPO.po_reference ?? prev.po_reference,
+      name: updatedPO.name ?? prev.name,
+      supplier_id: updatedPO.supplier_id ?? prev.supplier_id,
+      project_id: updatedPO.project_id ?? prev.project_id,
+      status: normaliseLegacyPoStatus(updatedPO.status ?? prev.status),
+      delivery_method: updatedPO.delivery_method ?? prev.delivery_method,
+      notes: updatedPO.notes ?? prev.notes,
+      eta: updatedPO.expected_date ?? prev.eta,
+      attachments: updatedPO.attachments ?? prev.attachments,
+    }));
 
     // still invalidate list queries
     await Promise.all([
@@ -370,7 +386,18 @@ export default function PurchaseOrderDetail({ poId, onClose, mode = "page" }) {
       return;
     }
     
-    applyReturnedPO(updateRes.data.purchaseOrder);
+    // Write update to cache
+    const updatedPO = updateRes.data.purchaseOrder;
+    queryClient.setQueryData(['purchaseOrder', poId], updatedPO);
+    
+    // Update formData
+    setFormData(prev => ({
+      ...prev,
+      po_reference: updatedPO.po_reference ?? prev.po_reference,
+      name: updatedPO.name ?? prev.name,
+      supplier_id: updatedPO.supplier_id ?? prev.supplier_id,
+      project_id: updatedPO.project_id ?? prev.project_id,
+    }));
     
     // Then update status using managePurchaseOrder for side effects
     const response = await base44.functions.invoke('managePurchaseOrder', {
@@ -381,7 +408,18 @@ export default function PurchaseOrderDetail({ poId, onClose, mode = "page" }) {
     });
     
     if (response?.data?.success) {
-      applyReturnedPO(response.data.purchaseOrder);
+      const statusUpdatedPO = response.data.purchaseOrder;
+      
+      // Write status update to cache
+      queryClient.setQueryData(['purchaseOrder', poId], statusUpdatedPO);
+      
+      // Update formData
+      setFormData(prev => ({
+        ...prev,
+        status: normaliseLegacyPoStatus(statusUpdatedPO.status ?? value),
+        po_reference: statusUpdatedPO.po_reference ?? prev.po_reference,
+        name: statusUpdatedPO.name ?? prev.name,
+      }));
       
       await Promise.all([
         queryClient.invalidateQueries({ queryKey: ['purchaseOrders'] }),
@@ -643,9 +681,9 @@ export default function PurchaseOrderDetail({ poId, onClose, mode = "page" }) {
   }
 
   // Debug: Pinpoint render-time data source
-  console.log("[PO DETAIL RENDER]", {
-    po_ref_from_query: po?.po_reference,
-    po_ref_from_form: formData.po_reference,
+  console.log("[PO DETAIL]", {
+    po_ref_from_query: po?.po_reference ?? null,
+    po_ref_from_form: formData.po_reference ?? '',
     display: getPoDisplayReference(po),
   });
 
@@ -858,19 +896,27 @@ export default function PurchaseOrderDetail({ poId, onClose, mode = "page" }) {
                       return;
                     }
 
-                    const updated = response.data.purchaseOrder || po;
+                    const updatedPO = response.data.purchaseOrder;
+                    
+                    // Write to cache immediately
+                    queryClient.setQueryData(['purchaseOrder', poId], updatedPO);
+                    
+                    // Update formData
+                    setFormData((prev) => ({ 
+                      ...prev, 
+                      status: updatedPO.status ?? value,
+                      po_reference: updatedPO.po_reference ?? prev.po_reference,
+                      name: updatedPO.name ?? prev.name,
+                    }));
                     
                     // Invalidate all relevant queries
                     await Promise.all([
-                      queryClient.invalidateQueries({ queryKey: ['purchaseOrder', poId] }),
-                      queryClient.invalidateQueries({ queryKey: ['purchaseOrderLines', poId] }),
                       queryClient.invalidateQueries({ queryKey: ['purchaseOrders'] }),
+                      queryClient.invalidateQueries({ queryKey: ['purchaseOrderLines', poId] }),
                       queryClient.invalidateQueries({ queryKey: ['parts'] }),
                       queryClient.invalidateQueries({ queryKey: ['allJobs'] }),
-                      queryClient.invalidateQueries({ queryKey: ['linkedJob', updated.linked_logistics_job_id] })
+                      queryClient.invalidateQueries({ queryKey: ['linkedJob', updatedPO.linked_logistics_job_id] })
                     ]);
-                    
-                    setFormData((prev) => ({ ...prev, status: updated.status ?? value }));
                     
                     // Show appropriate message
                     if (response.data.logisticsJob) {
