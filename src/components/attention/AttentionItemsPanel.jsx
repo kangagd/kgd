@@ -14,6 +14,7 @@ const getCategoryIcon = (category) => {
     case "Access & Site": return Lock;
     case "Payments": return DollarSign;
     case "Customer Risk": return AlertTriangle;
+    case "Customer Concern": return AlertCircle;
     case "Safety": return Shield;
     case "Hard Blocker": return Ban;
     default: return AlertCircle;
@@ -25,6 +26,7 @@ const getCategoryColor = (category) => {
     case "Access & Site": return "bg-purple-100 text-purple-700";
     case "Payments": return "bg-green-100 text-green-700";
     case "Customer Risk": return "bg-orange-100 text-orange-700";
+    case "Customer Concern": return "bg-yellow-100 text-yellow-700";
     case "Safety": return "bg-red-100 text-red-700";
     case "Hard Blocker": return "bg-gray-900 text-white";
     default: return "bg-gray-100 text-gray-700";
