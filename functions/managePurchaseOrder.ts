@@ -454,7 +454,19 @@ Deno.serve(async (req) => {
                 expected_date: eta || null,
             };
 
-            const po = await base44.asServiceRole.entities.PurchaseOrder.create(poData);
+            let po = await base44.asServiceRole.entities.PurchaseOrder.create(poData);
+            
+            // If po_reference was not provided, generate from ID and update PO
+            if (!po.po_reference) {
+                const generatedRef = `PO-${po.id.slice(0, 8)}`;
+                po = await base44.asServiceRole.entities.PurchaseOrder.update(po.id, {
+                    po_reference: generatedRef,
+                    po_number: generatedRef,
+                    order_reference: generatedRef,
+                    reference: generatedRef,
+                });
+                console.log('[managePurchaseOrder:create] Generated PO Reference:', generatedRef);
+            }
             
             console.log('[managePurchaseOrder:create] Created PO:', {
                 id: po.id,
@@ -666,19 +678,25 @@ Deno.serve(async (req) => {
             const newStatus = normaliseLegacyPoStatus(status);
 
             // Normalize canonical reference once from existing data
-            const normalizedRef = resolvePoRef({
+            let normalizedRef = resolvePoRef({
                 po_reference: existing.po_reference,
             });
+
+            // If still no reference, generate one from ID
+            if (!normalizedRef) {
+                normalizedRef = `PO-${existing.id.slice(0, 8)}`;
+                console.log('[managePurchaseOrder:updateStatus] Generated missing po_reference:', normalizedRef);
+            }
 
             // 🔒 PERMANENT IDENTITY PRESERVATION - Explicit carry-forward
             const updateData = {
                 status: newStatus,
                 
                 // Preserve identity fields explicitly (safety against destructive updates)
-                po_reference: normalizedRef || null,
-                po_number: normalizedRef || null,
-                order_reference: normalizedRef || null,
-                reference: normalizedRef || null,
+                po_reference: normalizedRef,
+                po_number: normalizedRef,
+                order_reference: normalizedRef,
+                reference: normalizedRef,
                 
                 name: existing.name || null,
                 supplier_name: existing.supplier_name || null,
@@ -896,7 +914,19 @@ Deno.serve(async (req) => {
                 expected_date: eta || null,
             };
 
-            const newPO = await base44.asServiceRole.entities.PurchaseOrder.create(poData);
+            let newPO = await base44.asServiceRole.entities.PurchaseOrder.create(poData);
+            
+            // If po_reference was not provided, generate from ID and update PO
+            if (!newPO.po_reference) {
+                const generatedRef = `PO-${newPO.id.slice(0, 8)}`;
+                newPO = await base44.asServiceRole.entities.PurchaseOrder.update(newPO.id, {
+                    po_reference: generatedRef,
+                    po_number: generatedRef,
+                    order_reference: generatedRef,
+                    reference: generatedRef,
+                });
+                console.log('[managePurchaseOrder:getOrCreateProjectSupplierDraft] Generated PO Reference:', generatedRef);
+            }
             
             // Initialize with empty line_items array
             newPO.line_items = [];

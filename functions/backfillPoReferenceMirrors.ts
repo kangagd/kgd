@@ -1,8 +1,8 @@
 import { createClientFromRequest } from 'npm:@base44/sdk@0.8.4';
 
 /**
- * One-off backfill: Mirror po_reference to legacy fields
- * Ensures old PO rows have consistent legacy fields for any fallback UI
+ * One-off backfill: Generate missing po_reference and mirror to legacy fields
+ * Ensures all PO rows have po_reference and consistent legacy fields
  */
 Deno.serve(async (req) => {
   try {
@@ -22,25 +22,33 @@ Deno.serve(async (req) => {
     const updates = [];
     
     for (const po of allPOs) {
+      let currentPoReference = po.po_reference;
+
+      // Ensure po_reference exists, if not, generate one from ID
+      if (!currentPoReference) {
+        currentPoReference = `PO-${po.id.slice(0, 8)}`;
+        console.log(`[backfillPoReferenceMirrors] Generated missing po_reference for PO ${po.id}: ${currentPoReference}`);
+      }
+
       const needsUpdate = 
-        po.po_reference && (
-          po.po_number !== po.po_reference ||
-          po.order_reference !== po.po_reference ||
-          po.reference !== po.po_reference
-        );
+        !po.po_reference ||
+        po.po_number !== currentPoReference ||
+        po.order_reference !== currentPoReference ||
+        po.reference !== currentPoReference;
       
       if (needsUpdate) {
         console.log(`[backfillPoReferenceMirrors] Mirroring for PO ${po.id}:`, {
-          po_reference: po.po_reference,
+          po_reference: currentPoReference,
           old_po_number: po.po_number,
           old_order_reference: po.order_reference,
           old_reference: po.reference
         });
         
         await base44.asServiceRole.entities.PurchaseOrder.update(po.id, {
-          po_number: po.po_reference,
-          order_reference: po.po_reference,
-          reference: po.po_reference
+          po_reference: currentPoReference,
+          po_number: currentPoReference,
+          order_reference: currentPoReference,
+          reference: currentPoReference
         });
         
         updates.push(po.id);
