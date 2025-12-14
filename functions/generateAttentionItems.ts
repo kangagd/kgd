@@ -1,68 +1,89 @@
 import { createClientFromRequest } from 'npm:@base44/sdk@0.8.4';
 import { createHash } from 'node:crypto';
 
-// Hard trigger dictionary for pre-filtering
-const HARD_TRIGGERS = {
-  'Access & Site': {
-    keywords: ['key', 'keys', 'lockbox', 'code', 'gate code', 'access', 'intercom', 'parking', 
-               'height restriction', 'steep driveway', 'no access', 'call on arrival']
-  },
+// Scoring keywords per category
+const SCORING_KEYWORDS = {
   'Payments': {
-    keywords: ['overdue', 'unpaid', 'payment reminder', 'final notice', 'stop work', 'not paying', 
-               'chargeback', 'dispute invoice', 'balance outstanding', 'past due']
+    strong: ['payment demand', 'final notice', 'unpaid', 'payment outstanding', 'chargeback', 'dispute invoice'],
+    medium: ['payment reminder', 'follow up payment', 'past due', 'balance owing', 'overdue'],
+    threshold: 2
+  },
+  'Access & Site': {
+    strong: ['lockbox', 'key code', 'gate code', 'no access', 'call on arrival', 'keys need collecting', 'access code'],
+    medium: ['intercom', 'parking', 'height restriction', 'after hours'],
+    threshold: 2
+  },
+  'Hard Blocker': {
+    strong: ['parts missing', 'incorrect parts', 'defective'],
+    medium: ['waiting on parts'],
+    threshold: 2
+  },
+  'Safety': {
+    strong: ['unsafe', 'hazard', 'asbestos', 'live wires', 'fall risk', 'aggressive dog'],
+    medium: ['ladder required', 'tight access', 'security concern'],
+    threshold: 2
   },
   'Customer Risk': {
-    keywords: ['unhappy', 'frustrated', 'disappointed', 'angry', 'complaint', 'escalate', 'refund', 
-               'cancel', 'unacceptable', 'fed up', 'terrible', 'poor communication', 'constant delays', 'delay'],
-    strong_negatives: ['unhappy', 'frustrated', 'disappointed', 'angry', 'complaint', 'unacceptable', 
-                      'refund', 'cancel', 'escalate', 'chargeback', 'dispute'],
-    exclude_positive: ['soon', 'one step away', 'excited', 'ready', 'thanks', 'thank']
+    strong: ['unhappy', 'frustrated', 'disappointed', 'angry', 'complaint', 'unacceptable', 'refund', 'cancel', 'escalate', 'chargeback', 'dispute', 'ongoing delays'],
+    medium: ['delays'],
+    threshold: 3,
+    strong_required: true
   }
 };
 
-const ALLOWED_EVIDENCE_TYPES = ['email', 'project_message', 'job_message', 'note', 'call_log', 'sms'];
+const CUSTOMER_RISK_STRONG_NEGATIVES = ['unhappy', 'frustrated', 'disappointed', 'angry', 'complaint', 'unacceptable', 'refund', 'cancel', 'escalate', 'chargeback', 'dispute', 'ongoing delays'];
 
-// Check if text contains hard triggers for a category
-function checkTriggers(text, category) {
-  if (!text) return false;
-  const lowerText = text.toLowerCase();
-  const triggers = HARD_TRIGGERS[category];
-  if (!triggers) return false;
+const ALLOWED_EVIDENCE_TYPES = ['email', 'project_message', 'job_message', 'note', 'call_log', 'sms', 'field'];
+
+const ALLOWED_FIELD_EVIDENCE = {
+  'Job': ['overview', 'outcome', 'next_steps', 'communication_with_client', 'additional_info', 'notes'],
+  'Project': ['description', 'notes'],
+  'Customer': ['notes']
+};
+
+// Score evidence records for each category
+function scoreEvidence(evidenceRecords) {
+  const scores = {};
+  const contributingEvidence = {};
   
-  // Check for positive words that should exclude Customer Risk
-  if (category === 'Customer Risk' && triggers.exclude_positive) {
-    for (const positive of triggers.exclude_positive) {
-      if (lowerText.includes(positive)) {
-        // Check if there's also a strong negative - if not, reject
-        const hasStrongNegative = triggers.strong_negatives.some(neg => lowerText.includes(neg));
-        if (!hasStrongNegative) return false;
+  for (const category of Object.keys(SCORING_KEYWORDS)) {
+    scores[category] = 0;
+    contributingEvidence[category] = [];
+    
+    const config = SCORING_KEYWORDS[category];
+    
+    for (const record of evidenceRecords) {
+      const text = (record.content || '').toLowerCase();
+      let recordScore = 0;
+      
+      // Check strong keywords (+2 or +3)
+      for (const keyword of config.strong) {
+        if (text.includes(keyword)) {
+          recordScore += (category === 'Customer Risk' ? 3 : 2);
+        }
+      }
+      
+      // Check medium keywords (+1)
+      for (const keyword of config.medium) {
+        if (text.includes(keyword)) {
+          // Special rule: "delays" only counts if strong negative present
+          if (category === 'Customer Risk' && keyword === 'delays') {
+            const hasStrongNegative = CUSTOMER_RISK_STRONG_NEGATIVES.some(neg => text.includes(neg));
+            if (hasStrongNegative) recordScore += 1;
+          } else {
+            recordScore += 1;
+          }
+        }
+      }
+      
+      if (recordScore > 0) {
+        scores[category] += recordScore;
+        contributingEvidence[category].push({ record, score: recordScore });
       }
     }
   }
   
-  // Check if any keyword matches
-  const hasKeyword = triggers.keywords.some(kw => lowerText.includes(kw));
-  if (!hasKeyword) return false;
-  
-  // For Customer Risk, require strong negative word
-  if (category === 'Customer Risk' && triggers.strong_negatives) {
-    return triggers.strong_negatives.some(word => lowerText.includes(word));
-  }
-  
-  return true;
-}
-
-// Pre-filter: check if ANY evidence has triggers
-function hasAnyTriggers(evidenceRecords) {
-  for (const record of evidenceRecords) {
-    const text = record.content || record.body_text || record.message || '';
-    for (const category of Object.keys(HARD_TRIGGERS)) {
-      if (checkTriggers(text, category)) {
-        return true;
-      }
-    }
-  }
-  return false;
+  return { scores, contributingEvidence };
 }
 
 // Normalize category
@@ -73,21 +94,19 @@ function normalizeCategory(category) {
   if (['customer risk', 'customer concern', 'customer sentiment'].includes(normalized)) return 'Customer Risk';
   if (['access', 'access & site', 'site access'].includes(normalized)) return 'Access & Site';
   if (['payments', 'payment', 'payment risk'].includes(normalized)) return 'Payments';
+  if (['safety', 'safety risk', 'safety hazard'].includes(normalized)) return 'Safety';
+  if (['hard blocker', 'blocker', 'critical blocker'].includes(normalized)) return 'Hard Blocker';
   
   return null;
 }
 
 // Canonical intent normalization
 function getCanonicalIntent(title, summaryBullets, category) {
-  const text = (title + ' ' + (summaryBullets || []).join(' ')).toLowerCase();
-  
-  if (category === 'Access & Site') {
-    return 'access_code_or_keys';
-  } else if (category === 'Payments') {
-    return 'payment_stop_work';
-  } else if (category === 'Customer Risk') {
-    return 'explicit_customer_dissatisfaction';
-  }
+  if (category === 'Access & Site') return 'access_code_keys_or_entry';
+  if (category === 'Payments') return 'payment_block_or_overdue';
+  if (category === 'Customer Risk') return 'explicit_customer_dissatisfaction';
+  if (category === 'Safety') return 'site_safety_hazard';
+  if (category === 'Hard Blocker') return 'job_blocker_parts_structure_power_fit';
   
   return 'generic';
 }
@@ -112,23 +131,29 @@ Deno.serve(async (req) => {
     }
 
     const rejectionCounts = {
-      no_trigger: 0,
       bad_evidence: 0,
       weak_sentiment: 0,
       invalid_category: 0,
       upstream_exists: 0,
-      duplicate: 0
+      duplicate: 0,
+      not_verbatim: 0
     };
 
-    // STEP 1: Load ONLY real comms evidence
+    // STEP 1: Load evidence (messages + allowed fields)
     let evidenceRecords = [];
     let job = null;
     let project = null;
     let customer = null;
+    let entityContext = {};
     
     if (entity_type === 'job') {
       job = await base44.entities.Job.get(entity_id);
       if (!job) return Response.json({ error: 'Job not found' }, { status: 404 });
+      
+      entityContext = {
+        job_number: job.job_number,
+        job_type: job.job_type_name || job.job_type
+      };
       
       // Load JobMessages
       try {
@@ -137,7 +162,6 @@ Deno.serve(async (req) => {
           id: m.id,
           type: 'job_message',
           content: m.message,
-          sender: m.sender_name,
           created_at: m.created_at
         })));
       } catch (e) {}
@@ -149,15 +173,31 @@ Deno.serve(async (req) => {
           id: e.id,
           type: 'email',
           content: e.body_text || '',
-          subject: e.subject,
-          from: e.from_address,
           created_at: e.created_at
         })));
       } catch (e) {}
       
+      // Add field evidence
+      for (const field of ALLOWED_FIELD_EVIDENCE['Job']) {
+        if (job[field] && job[field].trim()) {
+          evidenceRecords.push({
+            id: `Job:${entity_id}:${field}`,
+            type: 'field',
+            content: job[field],
+            field_name: field,
+            entity_type: 'Job'
+          });
+        }
+      }
+      
     } else if (entity_type === 'project') {
       project = await base44.entities.Project.get(entity_id);
       if (!project) return Response.json({ error: 'Project not found' }, { status: 404 });
+      
+      entityContext = {
+        project_number: project.project_number,
+        project_title: project.title
+      };
       
       // Load ProjectMessages
       try {
@@ -166,7 +206,6 @@ Deno.serve(async (req) => {
           id: m.id,
           type: 'project_message',
           content: m.message,
-          sender: m.sender_name,
           created_at: m.created_at
         })));
       } catch (e) {}
@@ -178,15 +217,30 @@ Deno.serve(async (req) => {
           id: e.id,
           type: 'email',
           content: e.body_text || '',
-          subject: e.subject,
-          from: e.from_address,
           created_at: e.created_at
         })));
       } catch (e) {}
       
+      // Add field evidence
+      for (const field of ALLOWED_FIELD_EVIDENCE['Project']) {
+        if (project[field] && project[field].trim()) {
+          evidenceRecords.push({
+            id: `Project:${entity_id}:${field}`,
+            type: 'field',
+            content: project[field],
+            field_name: field,
+            entity_type: 'Project'
+          });
+        }
+      }
+      
     } else if (entity_type === 'customer') {
       customer = await base44.entities.Customer.get(entity_id);
       if (!customer) return Response.json({ error: 'Customer not found' }, { status: 404 });
+      
+      entityContext = {
+        customer_name: customer.name
+      };
       
       // For customers, load recent project/job messages
       try {
@@ -197,57 +251,85 @@ Deno.serve(async (req) => {
             id: m.id,
             type: 'project_message',
             content: m.message,
-            sender: m.sender_name,
             created_at: m.created_at
           })));
         }
       } catch (e) {}
+      
+      // Add field evidence
+      for (const field of ALLOWED_FIELD_EVIDENCE['Customer']) {
+        if (customer[field] && customer[field].trim()) {
+          evidenceRecords.push({
+            id: `Customer:${entity_id}:${field}`,
+            type: 'field',
+            content: customer[field],
+            field_name: field,
+            entity_type: 'Customer'
+          });
+        }
+      }
     }
 
-    // STEP 2: PRE-FILTER - Check for hard triggers
-    if (!hasAnyTriggers(evidenceRecords)) {
-      rejectionCounts.no_trigger = 1;
+    // STEP 2: Score evidence by category
+    const { scores, contributingEvidence } = scoreEvidence(evidenceRecords);
+    
+    // Check which categories meet threshold
+    const thresholdsMet = [];
+    for (const [category, score] of Object.entries(scores)) {
+      const config = SCORING_KEYWORDS[category];
+      if (score >= config.threshold) {
+        thresholdsMet.push(category);
+      }
+    }
+    
+    // If no thresholds met, return early
+    if (thresholdsMet.length === 0) {
       return Response.json({
         success: true,
         created_count: 0,
         skipped_count: 0,
         items: [],
         rejected_reasons: rejectionCounts,
-        message: 'No hard triggers found in evidence'
+        scored_categories: scores,
+        thresholds_met: [],
+        message: 'No categories reached scoring threshold'
       });
     }
+    
+    // Build top evidence for LLM (max 8 snippets)
+    const topEvidence = [];
+    for (const category of thresholdsMet) {
+      const sorted = contributingEvidence[category].sort((a, b) => b.score - a.score);
+      topEvidence.push(...sorted.slice(0, 3).map(e => e.record));
+    }
+    const uniqueEvidence = Array.from(new Map(topEvidence.map(e => [e.id, e])).values()).slice(0, 8);
 
-    // STEP 3: Call LLM with strict evidence requirements
+    // STEP 3: Call LLM with top evidence
     const contextForAI = {
-      entity_type,
-      entity_id,
-      evidence_records: evidenceRecords.map(e => ({
+      entity_context: entityContext,
+      categories_above_threshold: thresholdsMet,
+      evidence_records: uniqueEvidence.map(e => ({
         id: e.id,
         type: e.type,
         content: e.content?.substring(0, 500),
-        sender: e.sender,
-        created_at: e.created_at
+        field_name: e.field_name,
+        entity_type: e.entity_type
       }))
     };
 
     const aiPrompt = `You are generating Attention Items for KangarooGD garage door company.
 
-CRITICAL RULES:
-1. Generate 0-2 items maximum (only if CRITICAL)
-2. Each item MUST cite a real evidence record from the provided evidence_records
-3. evidence_type must be one of: ["email", "project_message", "job_message", "note", "call_log", "sms"]
-4. evidence_entity_id must be the id of an evidence record
-5. evidence_excerpt must be a verbatim quote (exact substring) from that record
-6. Only create items for:
-   - Access restrictions with specific codes/keys mentioned
-   - Payment issues explicitly blocking work
-   - Customer expressing STRONG dissatisfaction (unhappy, angry, frustrated, complaint)
+Entity context: ${JSON.stringify(entityContext)}
+Categories that scored above threshold: ${thresholdsMet.join(', ')}
 
-DO NOT CREATE ITEMS FOR:
-- Generic notes or status updates
-- Normal operational information
-- Positive/neutral customer sentiment
-- Inferred problems without explicit evidence
+RULES:
+1. Generate 0-2 items (max 3 if at least one is severity="high")
+2. Each item MUST cite a real evidence record from evidence_records below
+3. evidence_type can be: "email", "project_message", "job_message", "field"
+4. evidence_entity_id must match an evidence record id
+5. evidence_excerpt MUST be verbatim text from that record (no paraphrasing)
+6. Titles must be plain and specific, no drama, no "potential" unless justified
+7. Only create items for: Payments, Access & Site, Hard Blocker, Safety, Customer Risk
 
 Evidence records:
 ${JSON.stringify(contextForAI.evidence_records, null, 2)}
@@ -256,14 +338,14 @@ Output JSON ONLY:
 {
   "items": [
     {
-      "category": "Customer Risk",
+      "category": "Payments",
       "audience": "both",
       "severity": "high",
-      "title": "Short factual title",
+      "title": "Plain factual title",
       "summary_bullets": ["Bullet 1", "Bullet 2"],
-      "evidence_type": "project_message",
-      "evidence_entity_id": "actual_message_id",
-      "evidence_excerpt": "Exact verbatim quote from the message"
+      "evidence_type": "field",
+      "evidence_entity_id": "Job:abc:notes",
+      "evidence_excerpt": "Exact verbatim substring from evidence"
     }
   ]
 }`;
@@ -299,7 +381,6 @@ Output JSON ONLY:
     // STEP 4: POST-VALIDATION (strict)
     for (const item of items) {
       // Validate category
-      const originalCategory = item.category;
       item.category = normalizeCategory(item.category);
       if (!item.category) {
         rejectionCounts.invalid_category++;
@@ -311,6 +392,12 @@ Output JSON ONLY:
         rejectionCounts.bad_evidence++;
         continue;
       }
+      
+      // Validate evidence_excerpt not empty
+      if (!item.evidence_excerpt || !item.evidence_excerpt.trim()) {
+        rejectionCounts.bad_evidence++;
+        continue;
+      }
 
       // Validate evidence_entity_id exists
       const evidenceRecord = evidenceRecords.find(e => e.id === item.evidence_entity_id);
@@ -319,27 +406,21 @@ Output JSON ONLY:
         continue;
       }
 
-      // Validate evidence_excerpt is substring of evidence content
-      if (!item.evidence_excerpt || !evidenceRecord.content.includes(item.evidence_excerpt.trim())) {
-        rejectionCounts.bad_evidence++;
+      // Validate evidence_excerpt is verbatim substring
+      if (!evidenceRecord.content.includes(item.evidence_excerpt.trim())) {
+        rejectionCounts.not_verbatim++;
         continue;
       }
 
       // For Customer Risk: require strong negative word in excerpt
       if (item.category === 'Customer Risk') {
-        const hasStrongNegative = HARD_TRIGGERS['Customer Risk'].strong_negatives.some(
+        const hasStrongNegative = CUSTOMER_RISK_STRONG_NEGATIVES.some(
           word => item.evidence_excerpt.toLowerCase().includes(word)
         );
         if (!hasStrongNegative) {
           rejectionCounts.weak_sentiment++;
           continue;
         }
-      }
-
-      // Validate that excerpt contains trigger keywords for category
-      if (!checkTriggers(item.evidence_excerpt, item.category)) {
-        rejectionCounts.bad_evidence++;
-        continue;
       }
 
       // Limit bullets to 2
@@ -427,8 +508,11 @@ Output JSON ONLY:
         canonical_key
       });
 
-      // Max 2 items
-      if (processedItems.length >= 2) break;
+      // Max 3 items (only if at least one is high severity)
+      if (processedItems.length >= 2) {
+        const hasHighSeverity = processedItems.some(i => i.severity === 'high');
+        if (!hasHighSeverity || processedItems.length >= 3) break;
+      }
     }
 
     // STEP 5: Persist
@@ -445,7 +529,9 @@ Output JSON ONLY:
       created_count: mode === 'persist' ? created.length : 0,
       skipped_count: items.length - processedItems.length,
       items: mode === 'dry_run' ? processedItems : created,
-      rejected_reasons: rejectionCounts
+      rejected_reasons: rejectionCounts,
+      scored_categories: scores,
+      thresholds_met: thresholdsMet
     });
 
   } catch (error) {
