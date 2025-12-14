@@ -654,23 +654,39 @@ Deno.serve(async (req) => {
                 return Response.json({ error: 'Purchase Order not found' }, { status: 404 });
             }
 
-            // 🔒 STRIP LEGACY FIELDS - Never allow writes (dev guard)
-            if (po_number || data?.po_number || order_reference || data?.order_reference || reference || data?.reference) {
-                console.warn('⚠️ Blocked legacy PO field write attempt on updateStatus', {
+            // 🔒 DEV GUARD: Block any attempt to modify identity fields via updateStatus
+            if (po_reference || po_number || reference || order_reference || name || supplier_name || data?.po_reference || data?.po_number || data?.name || data?.supplier_name) {
+                console.warn('⚠️ updateStatus attempted to modify identity fields — blocked', {
                     poId: id,
-                    po_number,
-                    order_reference,
-                    reference
+                    blocked: { po_reference, po_number, reference, order_reference, name, supplier_name }
                 });
             }
 
             const oldStatus = existing.status;
             const newStatus = normaliseLegacyPoStatus(status);
 
-            const updateData = { status: newStatus };
+            // Normalize canonical reference once from existing data
+            const normalizedRef = resolvePoRef({
+                po_reference: existing.po_reference,
+            });
+
+            // 🔒 PERMANENT IDENTITY PRESERVATION - Explicit carry-forward
+            const updateData = {
+                status: newStatus,
+                
+                // Preserve identity fields explicitly (safety against destructive updates)
+                po_reference: normalizedRef || null,
+                po_number: normalizedRef || null,
+                order_reference: normalizedRef || null,
+                reference: normalizedRef || null,
+                
+                name: existing.name || null,
+                supplier_name: existing.supplier_name || null,
+                supplier_id: existing.supplier_id || null,
+            };
 
             // Enforce po_reference constraint: required once status ≠ draft
-            if (newStatus !== PO_STATUS.DRAFT && !existing.po_reference) {
+            if (newStatus !== PO_STATUS.DRAFT && !normalizedRef) {
                 return Response.json({ 
                     error: 'po_reference is required when status is not draft' 
                 }, { status: 400 });
@@ -683,12 +699,25 @@ Deno.serve(async (req) => {
                 updateData.arrived_at = new Date().toISOString();
             }
             
-            // Update ETA if provided
+            // Update ETA if provided (only mutable field allowed)
             if (eta !== undefined) {
                 updateData.expected_date = eta || null;
             }
 
+            console.log('[managePurchaseOrder:updateStatus] Preserving identity:', {
+                poId: id,
+                po_reference: updateData.po_reference,
+                supplier_name: updateData.supplier_name,
+                name: updateData.name
+            });
+
             const updatedPO = await base44.asServiceRole.entities.PurchaseOrder.update(id, updateData);
+            
+            console.log('[managePurchaseOrder:updateStatus] Result:', {
+                po_reference: updatedPO.po_reference,
+                supplier_name: updatedPO.supplier_name,
+                name: updatedPO.name
+            });
 
             // Update project activity if PO is linked to a project
             if (updatedPO.project_id) {
