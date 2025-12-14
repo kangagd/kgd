@@ -159,72 +159,104 @@ export default function AttentionItemsPanel({ entity_type, entity_id, context_id
   const { data: items = [] } = useQuery({
     queryKey: ['attentionItems', entity_type, entity_id, JSON.stringify(context_ids)],
     queryFn: async () => {
-      const allItems = [];
-      const seenFingerprints = new Set();
+      // Fetch items from all relevant levels
+      const customerItems = [];
+      const projectItems = [];
+      const jobItems = [];
       
-      // Determine which entities to query based on entity_type
-      const entitiesToQuery = [];
-      
-      if (entity_type === 'job') {
-        // For jobs: show job items, then project items, then customer items
-        if (entity_id) {
-          entitiesToQuery.push({ type: 'job', id: entity_id });
-        }
-        if (context_ids.project_id) {
-          entitiesToQuery.push({ type: 'project', id: context_ids.project_id });
-        }
-        if (context_ids.customer_id) {
-          entitiesToQuery.push({ type: 'customer', id: context_ids.customer_id });
-        }
+      // Determine which levels to fetch based on entity_type
+      if (entity_type === 'customer' && entity_id) {
+        const items = await base44.entities.AttentionItem.filter({
+          entity_type: 'customer',
+          entity_id: entity_id,
+          status: 'open'
+        }, '-created_at');
+        customerItems.push(...(items || []));
       } else if (entity_type === 'project') {
-        // For projects: show project items, then customer items
+        // Fetch project items
         if (entity_id) {
-          entitiesToQuery.push({ type: 'project', id: entity_id });
-        }
-        if (context_ids.customer_id) {
-          entitiesToQuery.push({ type: 'customer', id: context_ids.customer_id });
-        }
-      } else if (entity_type === 'customer') {
-        // For customers: show only customer items
-        if (entity_id) {
-          entitiesToQuery.push({ type: 'customer', id: entity_id });
-        }
-      }
-      
-      // Fetch items in priority order (most specific first)
-      for (const entity of entitiesToQuery) {
-        try {
-          const entityItems = await base44.entities.AttentionItem.filter({
-            entity_type: entity.type,
-            entity_id: entity.id,
+          const items = await base44.entities.AttentionItem.filter({
+            entity_type: 'project',
+            entity_id: entity_id,
             status: 'open'
           }, '-created_at');
-          
-          // Add items only if fingerprint not seen (dedupe)
-          for (const item of entityItems) {
-            if (item.fingerprint && seenFingerprints.has(item.fingerprint)) {
-              continue; // Skip duplicate
-            }
-            
-            // Mark as inherited if not from current entity
-            const isInherited = item.entity_type !== entity_type || item.entity_id !== entity_id;
-            allItems.push({
-              ...item,
-              _isInherited: isInherited,
-              _inheritedFrom: isInherited ? item.entity_type : null
-            });
-            
-            if (item.fingerprint) {
-              seenFingerprints.add(item.fingerprint);
-            }
-          }
-        } catch (e) {
-          console.error(`Error fetching items for ${entity.type}:`, e);
+          projectItems.push(...(items || []));
+        }
+        // Fetch customer items
+        if (context_ids.customer_id) {
+          const items = await base44.entities.AttentionItem.filter({
+            entity_type: 'customer',
+            entity_id: context_ids.customer_id,
+            status: 'open'
+          }, '-created_at');
+          customerItems.push(...(items || []));
+        }
+      } else if (entity_type === 'job') {
+        // Fetch job items
+        if (entity_id) {
+          const items = await base44.entities.AttentionItem.filter({
+            entity_type: 'job',
+            entity_id: entity_id,
+            status: 'open'
+          }, '-created_at');
+          jobItems.push(...(items || []));
+        }
+        // Fetch project items
+        if (context_ids.project_id) {
+          const items = await base44.entities.AttentionItem.filter({
+            entity_type: 'project',
+            entity_id: context_ids.project_id,
+            status: 'open'
+          }, '-created_at');
+          projectItems.push(...(items || []));
+        }
+        // Fetch customer items
+        if (context_ids.customer_id) {
+          const items = await base44.entities.AttentionItem.filter({
+            entity_type: 'customer',
+            entity_id: context_ids.customer_id,
+            status: 'open'
+          }, '-created_at');
+          customerItems.push(...(items || []));
         }
       }
       
-      // Limit to 3 items
-      return allItems.slice(0, 3);
+      // Merge with shadowing: job > project > customer
+      // Items with same dedupe_key are shadowed by more specific level
+      const dedupeMap = new Map();
+      
+      // Insert customer items first (lowest priority)
+      for (const item of customerItems) {
+        const key = item.dedupe_key || item.id;
+        dedupeMap.set(key, {
+          ...item,
+          _isInherited: entity_type !== 'customer',
+          _inheritedFrom: entity_type !== 'customer' ? 'customer' : null
+        });
+      }
+      
+      // Insert project items (overrides customer)
+      for (const item of projectItems) {
+        const key = item.dedupe_key || item.id;
+        dedupeMap.set(key, {
+          ...item,
+          _isInherited: entity_type !== 'project',
+          _inheritedFrom: entity_type !== 'project' ? 'project' : null
+        });
+      }
+      
+      // Insert job items (overrides project and customer)
+      for (const item of jobItems) {
+        const key = item.dedupe_key || item.id;
+        dedupeMap.set(key, {
+          ...item,
+          _isInherited: false,
+          _inheritedFrom: null
+        });
+      }
+      
+      // Convert map to array and limit to 3 items
+      return Array.from(dedupeMap.values()).slice(0, 3);
     },
     enabled: !!entity_type && !!entity_id
   });

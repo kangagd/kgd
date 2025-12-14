@@ -35,6 +35,52 @@ function normalizeCategory(category) {
   return null; // Invalid category
 }
 
+// Intent normalization for deduplication
+function normalizeIntent(title, summaryBullets, category) {
+  const text = (title + ' ' + (summaryBullets || []).join(' ')).toLowerCase();
+  
+  // Customer Risk intents
+  if (text.match(/frustrat|unhappy|dissatisf|upset|angry|disappoint|concern/)) {
+    return 'customer_frustration';
+  }
+  if (text.match(/complaint|dispute|conflict|disagree/)) {
+    return 'customer_complaint';
+  }
+  
+  // Payment intents
+  if (text.match(/overdue|outstanding|unpaid|stop work|hold/)) {
+    return 'payment_blocker';
+  }
+  if (text.match(/payment.*(risk|issue|problem)/)) {
+    return 'payment_risk';
+  }
+  
+  // Access intents
+  if (text.match(/access.*(code|key|restriction|require)/)) {
+    return 'access_requirement';
+  }
+  if (text.match(/site.*(unsafe|hazard|restrict)/)) {
+    return 'site_restriction';
+  }
+  
+  // Safety intents
+  if (text.match(/safety|hazard|dangerous|risk.*injury/)) {
+    return 'safety_hazard';
+  }
+  
+  // Hard Blocker intents
+  if (text.match(/deadline|urgent|critical|blocker/)) {
+    return 'hard_deadline';
+  }
+  if (text.match(/cannot.*proceed|blocked|stuck/)) {
+    return 'hard_blocker';
+  }
+  
+  // Fallback: use first 2 words of title as intent
+  const words = title.trim().split(/\s+/).slice(0, 2).join('_').toLowerCase().replace(/[^a-z_]/g, '');
+  return words || 'generic';
+}
+
 Deno.serve(async (req) => {
   try {
     const base44 = createClientFromRequest(req);
@@ -402,12 +448,56 @@ Valid severity values: "high", "critical"`;
         item.evidence_excerpt = item.evidence_excerpt.substring(0, 157) + '...';
       }
 
-      // Generate fingerprint for deduplication
-      const fingerprintString = `${entity_type}|${entity_id}|${item.category}|${item.title.toLowerCase().trim()}`;
+      // Generate dedupe_key for inheritance
+      const normalizedIntent = normalizeIntent(item.title, item.summary_bullets, item.category);
+      const dedupe_key = `${item.category.toLowerCase().replace(/[^a-z]/g, '_')}:${normalizedIntent}`;
+
+      // Check for upstream duplicates (inheritance check)
+      let upstreamExists = false;
+      if (entity_type === 'project' && contextData.customer_id) {
+        const upstreamItems = await base44.entities.AttentionItem.filter({
+          entity_type: 'customer',
+          entity_id: contextData.customer_id,
+          dedupe_key,
+          status: 'open'
+        });
+        upstreamExists = upstreamItems && upstreamItems.length > 0;
+      } else if (entity_type === 'job') {
+        // Check both project and customer level
+        const checks = [];
+        if (job.project_id) {
+          checks.push(base44.entities.AttentionItem.filter({
+            entity_type: 'project',
+            entity_id: job.project_id,
+            dedupe_key,
+            status: 'open'
+          }));
+        }
+        if (job.customer_id) {
+          checks.push(base44.entities.AttentionItem.filter({
+            entity_type: 'customer',
+            entity_id: job.customer_id,
+            dedupe_key,
+            status: 'open'
+          }));
+        }
+        const results = await Promise.all(checks);
+        upstreamExists = results.some(r => r && r.length > 0);
+      }
+
+      if (upstreamExists) {
+        rejectionReasons.push({ item: item.title, reason: 'Upstream item exists (inherited)' });
+        continue; // Don't create, rely on inheritance
+      }
+
+      // Generate fingerprint using dedupe_key
+      const fingerprintString = `${entity_type}|${entity_id}|${dedupe_key}`;
       const fingerprint = createHash('sha256').update(fingerprintString).digest('hex');
 
-      // Check for duplicates
+      // Check for exact duplicates at this level
       const existing = await base44.entities.AttentionItem.filter({
+        entity_type,
+        entity_id,
         fingerprint,
         status: 'open'
       });
@@ -425,7 +515,8 @@ Valid severity values: "high", "critical"`;
         status: 'open',
         created_by_type: 'ai',
         created_by_name: 'System AI',
-        fingerprint
+        fingerprint,
+        dedupe_key
       });
 
       categoryCount[item.category] = true;
