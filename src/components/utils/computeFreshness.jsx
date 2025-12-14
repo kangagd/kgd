@@ -9,13 +9,7 @@ export function computeFreshness(entity, relatedData = {}) {
   
   // Priority 1: last_activity_at (tracked by system for all meaningful actions)
   if (entity.last_activity_at) {
-    const timestamp = entity.last_activity_at;
-    // Handle malformed timestamps (missing Z or timezone)
-    if (typeof timestamp === 'string' && !timestamp.endsWith('Z') && !timestamp.includes('+') && !timestamp.includes('T00:00:00')) {
-      mostRecent = new Date(timestamp + 'Z');
-    } else {
-      mostRecent = new Date(timestamp);
-    }
+    mostRecent = new Date(entity.last_activity_at);
   }
   // Priority 2: updated_at
   else if (entity.updated_at) {
@@ -26,7 +20,7 @@ export function computeFreshness(entity, relatedData = {}) {
     mostRecent = new Date(entity.created_at || entity.created_date);
   }
   
-  if (!mostRecent || isNaN(mostRecent.getTime())) {
+  if (!mostRecent) {
     return { status: 'stale', lastActionDate: null, daysSinceAction: null };
   }
   
