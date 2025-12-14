@@ -48,7 +48,8 @@ Deno.serve(async (req) => {
         const response = await base44.asServiceRole.functions.invoke('generateAttentionItems', {
           entity_type: 'project',
           entity_id: project.id,
-          mode: 'persist'
+          mode: 'persist',
+          strictness: 'balanced'
         });
         
         results.projects_processed++;
@@ -70,7 +71,8 @@ Deno.serve(async (req) => {
         const response = await base44.asServiceRole.functions.invoke('generateAttentionItems', {
           entity_type: 'job',
           entity_id: job.id,
-          mode: 'persist'
+          mode: 'persist',
+          strictness: 'balanced'
         });
         
         results.jobs_processed++;
@@ -92,7 +94,8 @@ Deno.serve(async (req) => {
         const response = await base44.asServiceRole.functions.invoke('generateAttentionItems', {
           entity_type: 'customer',
           entity_id: customer.id,
-          mode: 'persist'
+          mode: 'persist',
+          strictness: 'balanced'
         });
         
         results.customers_processed++;
