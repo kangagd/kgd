@@ -640,7 +640,17 @@ export default function Logistics() {
                     <span className="text-xs text-[#6B7280]">{draftPOs.length}</span>
                   </div>
                   <div className="space-y-2">
-                    {draftPOs.map((po) => (
+                    {draftPOs.map((po) => {
+                      console.log("[LOGISTICS PO RENDER]", {
+                        id: po?.id,
+                        po_reference: po?.po_reference,
+                        po_number: po?.po_number,
+                        order_reference: po?.order_reference,
+                        reference: po?.reference,
+                        display: getPoDisplayReference(po),
+                      });
+                      
+                      return (
                       <div
                         key={po.id}
                         className="cursor-pointer rounded-md border border-[#E5E7EB] bg-white px-3 py-2 text-xs shadow-sm hover:bg-[#F9FAFB] transition-colors"
@@ -690,7 +700,8 @@ export default function Logistics() {
                           </Select>
                         </div>
                       </div>
-                    ))}
+                      );
+                    })}
                     {!draftPOs.length && (
                       <div className="text-[11px] text-[#6B7280] text-center py-4">
                         No POs
