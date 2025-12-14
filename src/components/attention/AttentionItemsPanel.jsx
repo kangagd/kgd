@@ -1,11 +1,14 @@
 import React, { useState, useEffect } from "react";
 import { base44 } from "@/api/base44Client";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
-import { AlertTriangle, AlertCircle, Lock, DollarSign, Shield, Ban, ChevronDown, ChevronUp, Check, Plus, Pencil } from "lucide-react";
-import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
+import { AlertTriangle, AlertCircle, Lock, DollarSign, Shield, Ban, ChevronDown, ChevronRight, CheckCircle, Plus, Pencil, X } from "lucide-react";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
 import AttentionItemModal from "./AttentionItemModal";
 import ResolveModal from "./ResolveModal";
 
@@ -21,121 +24,117 @@ const getCategoryIcon = (category) => {
   }
 };
 
-const getCategoryColor = (category) => {
-  switch (category) {
-    case "Access & Site": return "bg-purple-100 text-purple-700";
-    case "Payments": return "bg-green-100 text-green-700";
-    case "Customer Risk": return "bg-orange-100 text-orange-700";
-    case "Customer Concern": return "bg-yellow-100 text-yellow-700";
-    case "Safety": return "bg-red-100 text-red-700";
-    case "Hard Blocker": return "bg-gray-900 text-white";
-    default: return "bg-gray-100 text-gray-700";
-  }
+const getSeverityBorderColor = (severity) => {
+  return severity === 'critical' ? 'border-l-orange-400' : 'border-l-yellow-400';
 };
 
-const getAudienceColor = (audience) => {
-  switch (audience) {
-    case "tech": return "bg-blue-100 text-blue-700";
-    case "office": return "bg-indigo-100 text-indigo-700";
-    case "both": return "bg-purple-100 text-purple-700";
-    default: return "bg-gray-100 text-gray-700";
-  }
+const getSeverityBgColor = (severity) => {
+  return severity === 'critical' ? 'bg-orange-50/30' : 'bg-yellow-50/30';
 };
 
 function AttentionItemCard({ item, onResolve, onEdit, canEdit }) {
+  const [isExpanded, setIsExpanded] = useState(item.severity === 'critical');
   const [showEvidence, setShowEvidence] = useState(false);
   const Icon = getCategoryIcon(item.category);
 
   return (
-    <Card className={`border-l-4 ${item.severity === 'critical' ? 'border-l-red-500' : 'border-l-orange-500'}`}>
-      <CardContent className="p-4">
-        <div className="flex items-start gap-3">
-          <div className={`p-2 rounded-lg ${item.severity === 'critical' ? 'bg-red-100' : 'bg-orange-100'}`}>
-            <Icon className={`w-5 h-5 ${item.severity === 'critical' ? 'text-red-600' : 'text-orange-600'}`} />
-          </div>
-          
-          <div className="flex-1 min-w-0">
-            <div className="flex items-center gap-2 mb-2">
-              <h4 className="font-semibold text-[#111827] text-[15px]">{item.title}</h4>
-              {item._isInherited && (
-                <Badge variant="outline" className="text-[10px] px-1.5 py-0">
-                  From {item._inheritedFrom === 'project' ? 'Project' : item._inheritedFrom === 'customer' ? 'Customer' : 'Job'}
-                </Badge>
-              )}
-            </div>
-            
-            <div className="flex flex-wrap gap-2 mb-3">
-              <Badge className={getCategoryColor(item.category)}>
-                {item.category}
-              </Badge>
-              <Badge className={getAudienceColor(item.audience)}>
-                {item.audience === 'both' ? 'Tech & Office' : item.audience === 'tech' ? 'Technician' : 'Office'}
-              </Badge>
-              {item.severity === 'critical' && (
-                <Badge className="bg-red-100 text-red-700">
-                  Critical
-                </Badge>
-              )}
-            </div>
-
-            {item.summary_bullets && item.summary_bullets.length > 0 && (
-              <ul className="list-disc list-inside space-y-1 text-[14px] text-[#4B5563] mb-3">
-                {item.summary_bullets.map((bullet, idx) => (
-                  <li key={idx}>{bullet}</li>
-                ))}
-              </ul>
-            )}
-
-            {item.evidence_excerpt && (
-              <Collapsible open={showEvidence} onOpenChange={setShowEvidence}>
-                <CollapsibleTrigger className="flex items-center gap-1 text-[13px] text-[#6B7280] hover:text-[#111827] transition-colors">
-                  {showEvidence ? <ChevronUp className="w-3 h-3" /> : <ChevronDown className="w-3 h-3" />}
-                  View evidence
-                </CollapsibleTrigger>
-                <CollapsibleContent className="mt-2">
-                  <div className="bg-[#F9FAFB] border border-[#E5E7EB] rounded-lg p-3">
-                    <p className="text-[13px] text-[#4B5563] italic">"{item.evidence_excerpt}"</p>
-                    {item.evidence_type && (
-                      <p className="text-[11px] text-[#6B7280] mt-1">
-                        Source: {item.evidence_type.replace(/_/g, ' ')}
-                      </p>
-                    )}
-                  </div>
-                </CollapsibleContent>
-              </Collapsible>
-            )}
-
-            <div className="flex items-center justify-between mt-3">
-              <div className="flex items-center gap-2">
-                <Button
+    <div className={`border-l-2 ${getSeverityBorderColor(item.severity)} ${getSeverityBgColor(item.severity)} rounded-md p-3 transition-all hover:shadow-sm group`}>
+      {/* Header Row */}
+      <div className="flex items-center gap-2">
+        <Icon className="w-4 h-4 text-slate-500 flex-shrink-0" />
+        <button
+          onClick={() => setIsExpanded(!isExpanded)}
+          className="flex items-center gap-2 flex-1 min-w-0 text-left"
+        >
+          <h4 className="font-semibold text-slate-900 text-sm truncate">{item.title}</h4>
+          <span className="text-slate-400">·</span>
+          <Badge variant="outline" className="bg-slate-100 text-slate-600 text-xs border-0 flex-shrink-0">
+            {item.category}
+          </Badge>
+          <Badge variant="outline" className="bg-slate-100 text-slate-600 text-xs border-0 flex-shrink-0">
+            {item.audience === 'both' ? 'Tech & Office' : item.audience === 'tech' ? 'Tech' : 'Office'}
+          </Badge>
+          {item._isInherited && (
+            <Badge variant="outline" className="text-[10px] px-1.5 py-0 flex-shrink-0">
+              From {item._inheritedFrom === 'project' ? 'Project' : item._inheritedFrom === 'customer' ? 'Customer' : 'Job'}
+            </Badge>
+          )}
+        </button>
+        
+        {/* Actions */}
+        <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+          <TooltipProvider>
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <button
                   onClick={() => onResolve(item)}
-                  variant="outline"
-                  size="sm"
-                  className="text-[13px] h-8"
+                  className="p-1 hover:bg-slate-200 rounded transition-colors"
                 >
-                  <Check className="w-3 h-3 mr-1" />
-                  Mark Resolved
-                </Button>
-                {canEdit && item.created_by_type === 'user' && (
-                  <Button
+                  <CheckCircle className="w-4 h-4 text-slate-500" />
+                </button>
+              </TooltipTrigger>
+              <TooltipContent>Mark Resolved</TooltipContent>
+            </Tooltip>
+          </TooltipProvider>
+          
+          {canEdit && item.created_by_type === 'user' && (
+            <TooltipProvider>
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <button
                     onClick={() => onEdit(item)}
-                    variant="ghost"
-                    size="sm"
-                    className="text-[13px] h-8"
+                    className="p-1 hover:bg-slate-200 rounded transition-colors"
                   >
-                    <Pencil className="w-3 h-3 mr-1" />
-                    Edit
-                  </Button>
-                )}
-              </div>
-              <span className="text-[11px] text-[#9CA3AF]">
-                {item.created_by_type === 'ai' ? 'AI Generated' : `Added by ${item.created_by_name}`}
-              </span>
+                    <Pencil className="w-4 h-4 text-slate-500" />
+                  </button>
+                </TooltipTrigger>
+                <TooltipContent>Edit</TooltipContent>
+              </Tooltip>
+            </TooltipProvider>
+          )}
+        </div>
+      </div>
+
+      {/* Expandable Content */}
+      {isExpanded && (
+        <div className="mt-2 space-y-2">
+          {item.summary_bullets && item.summary_bullets.length > 0 && (
+            <ul className="list-disc list-inside space-y-1 text-sm text-slate-700 ml-6">
+              {item.summary_bullets.slice(0, 2).map((bullet, idx) => (
+                <li key={idx}>{bullet}</li>
+              ))}
+            </ul>
+          )}
+
+          {item.evidence_excerpt && (
+            <div className="ml-6">
+              <button
+                onClick={() => setShowEvidence(!showEvidence)}
+                className="flex items-center gap-1 text-xs text-slate-500 hover:text-slate-700 transition-colors"
+              >
+                {showEvidence ? <ChevronDown className="w-3 h-3" /> : <ChevronRight className="w-3 h-3" />}
+                Evidence
+              </button>
+              {showEvidence && (
+                <div className="mt-1 bg-white/50 border border-slate-200 rounded p-2">
+                  <p className="text-xs text-slate-600 italic">"{item.evidence_excerpt}"</p>
+                  {item.evidence_type && (
+                    <p className="text-[10px] text-slate-400 mt-1">
+                      Source: {item.evidence_type.replace(/_/g, ' ')}
+                    </p>
+                  )}
+                </div>
+              )}
             </div>
+          )}
+
+          {/* Footer Meta */}
+          <div className="text-xs text-slate-400 ml-6">
+            {item.created_by_type === 'ai' ? 'AI' : item.created_by_name} · {new Date(item.created_at || item.created_date).toLocaleDateString('en-GB', { day: 'numeric', month: 'numeric', year: 'numeric' })}
           </div>
         </div>
-      </CardContent>
-    </Card>
+      )}
+    </div>
   );
 }
 
@@ -312,41 +311,40 @@ export default function AttentionItemsPanel({ entity_type, entity_id, context_id
   }
 
   return (
-    <div className="space-y-3">
+    <div className="space-y-2">
       <div className="flex items-center gap-2">
-        <AlertCircle className="w-5 h-5 text-[#D97706]" />
-        <h3 className="text-[16px] font-semibold text-[#111827]">Attention Items</h3>
+        <AlertCircle className="w-4 h-4 text-slate-500" />
+        <h3 className="text-sm font-semibold text-slate-900">Attention Items</h3>
         {items.length > 0 && (
-          <Badge variant="outline">{items.length}</Badge>
+          <Badge variant="outline" className="bg-slate-100 text-slate-600 text-xs border-0">{items.length}</Badge>
         )}
         {canManageItems && (
-          <Button
+          <button
             onClick={() => {
               setEditingItem(null);
               setShowModal(true);
             }}
-            variant="ghost"
-            size="sm"
-            className="ml-auto h-7 text-[13px]"
+            className="ml-auto p-1 hover:bg-slate-100 rounded transition-colors"
           >
-            <Plus className="w-3 h-3 mr-1" />
-            Add
-          </Button>
+            <Plus className="w-4 h-4 text-slate-500" />
+          </button>
         )}
       </div>
       
       {items.length === 0 ? (
-        <p className="text-[13px] text-[#6B7280] italic">No attention items</p>
+        <p className="text-xs text-slate-500 italic ml-6">No attention items</p>
       ) : (
-        items.map((item) => (
-          <AttentionItemCard
-            key={item.id}
-            item={item}
-            onResolve={handleResolve}
-            onEdit={handleEdit}
-            canEdit={canManageItems}
-          />
-        ))
+        <div className="space-y-2">
+          {items.map((item) => (
+            <AttentionItemCard
+              key={item.id}
+              item={item}
+              onResolve={handleResolve}
+              onEdit={handleEdit}
+              canEdit={canManageItems}
+            />
+          ))}
+        </div>
       )}
 
       <AttentionItemModal
