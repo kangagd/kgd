@@ -116,6 +116,39 @@ export function getPartStatusLabel(status) {
   return PART_STATUS_LABELS[status] || status || "Unknown";
 }
 
+/**
+ * PICKABLE STATUSES - Strict eligibility check for pick list
+ * Parts can only appear in "Ready to Pick / Assigned" if their normalized status is in this set
+ */
+const PICKABLE_STATUSES = new Set([
+  PART_STATUS.IN_LOADING_BAY,
+  PART_STATUS.IN_STORAGE,
+  PART_STATUS.IN_VEHICLE,
+]);
+
+/**
+ * Get normalized part status (always use this for status checks)
+ */
+export function getNormalizedPartStatus(part) {
+  return normaliseLegacyPartStatus(part?.status, part);
+}
+
+/**
+ * Check if a part is pickable (can appear in "Ready to Pick / Assigned")
+ * This is the single source of truth for pick list eligibility
+ */
+export function isPickablePart(part) {
+  if (!part) return false;
+  
+  // Cancelled and installed parts are never pickable
+  if (part.status === PART_STATUS.CANCELLED || part.status === PART_STATUS.INSTALLED) {
+    return false;
+  }
+  
+  const normalizedStatus = getNormalizedPartStatus(part);
+  return PICKABLE_STATUSES.has(normalizedStatus);
+}
+
 export const PART_CATEGORIES = [
   "Door",
   "Motor",

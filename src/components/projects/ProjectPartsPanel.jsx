@@ -3,7 +3,7 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { AlertTriangle, CheckCircle2, Package, Truck, ExternalLink, Plus, ShoppingCart } from "lucide-react";
 import AssignPartToVehicleModal from "./AssignPartToVehicleModal";
-import { PART_LOCATION, normaliseLegacyPartLocation, getPartStatusLabel, normaliseLegacyPartStatus } from "@/components/domain/partConfig";
+import { PART_LOCATION, normaliseLegacyPartLocation, getPartStatusLabel, normaliseLegacyPartStatus, getNormalizedPartStatus, isPickablePart, PICKABLE_STATUSES } from "@/components/domain/partConfig";
 import { getPoStatusLabel } from "@/components/domain/purchaseOrderStatusConfig";
 
 // Helper for consistent PO reference display
@@ -103,33 +103,40 @@ export default function ProjectPartsPanel({ project, parts = [], inventoryByItem
     queryFn: () => base44.entities.Supplier.list('name')
   });
 
-  const detectShortage = (part) => {
-    // Not a shortage if status is beyond pending
-    const normalizedStatus = part.status?.toLowerCase().replace(/\s+/g, "_");
-    if (normalizedStatus !== 'pending') {
-      return false;
-    }
+  const { data: allPOLines = [] } = useQuery({
+    queryKey: ['projectPOLines', project.id],
+    queryFn: () => base44.entities.PurchaseOrderLine.filter({ project_id: project.id }),
+    enabled: !!project.id
+  });
 
-    const normalizedLocation = normaliseLegacyPartLocation(part.location);
-    const isOnOrder = !normalizedLocation || normalizedLocation === PART_LOCATION.SUPPLIER;
-    
-    if (!isOnOrder) {
-      return false;
+  // Build map: PO line ID → PO ID
+  const poLineToPoMap = React.useMemo(() => {
+    const map = new Map();
+    for (const line of allPOLines) {
+      if (line.id && line.purchase_order_id) {
+        map.set(line.id, line.purchase_order_id);
+      }
     }
+    return map;
+  }, [allPOLines]);
 
-    // If pending and on order, check stock availability
-    const requiredQty = part.quantity_required || 1;
-    if (part.price_list_item_id) {
-       const availableQty = inventoryByItem[part.price_list_item_id] || 0;
-       return availableQty < requiredQty;
+  // Helper to resolve PO for a part (handles both direct PO ID and PO line ID)
+  const resolvePartPO = (part) => {
+    if (part.purchase_order_id) {
+      return projectPOs.find(po => po.id === part.purchase_order_id);
     }
-    
-    // No price list item linked = unknown stock, treat as shortage
-    return true; 
+    if (part.purchase_order_line_id) {
+      const poId = poLineToPoMap.get(part.purchase_order_line_id);
+      if (poId) {
+        return projectPOs.find(po => po.id === poId);
+      }
+    }
+    return null;
   };
 
-  const needed = parts.filter(p => detectShortage(p));
-  const ready = parts.filter(p => !detectShortage(p));
+  // STRICT FILTERING: ready = only parts that pass isPickablePart
+  const ready = parts.filter(isPickablePart);
+  const needed = parts.filter(p => !isPickablePart(p) && getNormalizedPartStatus(p) !== 'cancelled' && getNormalizedPartStatus(p) !== 'installed');
 
   return (
     <div className="space-y-6">
@@ -222,8 +229,8 @@ export default function ProjectPartsPanel({ project, parts = [], inventoryByItem
           <div className="space-y-2">
             {needed.map(part => {
               const partTitle = part.item_name || part.category || "Part";
-              const normalizedStatus = normaliseLegacyPartStatus(part.status, part);
-              const linkedPO = projectPOs.find(po => po.id === part.purchase_order_id);
+              const normalizedStatus = getNormalizedPartStatus(part);
+              const linkedPO = resolvePartPO(part);
               const poDisplay = (() => {
                 const poRef = getPoDisplayRef(linkedPO, part);
                 return poRef ? `PO #${poRef}` : null;
@@ -289,8 +296,15 @@ export default function ProjectPartsPanel({ project, parts = [], inventoryByItem
           <div className="space-y-2">
             {ready.map(part => {
               const partTitle = part.item_name || part.category || "Part";
-              const normalizedStatus = normaliseLegacyPartStatus(part.status, part);
-              const linkedPO = projectPOs.find(po => po.id === part.purchase_order_id);
+              const normalizedStatus = getNormalizedPartStatus(part);
+              
+              // DEFENSIVE GUARD: Double-check pickability (safety net)
+              if (!isPickablePart(part)) {
+                console.warn('[ProjectPartsPanel] Non-pickable part in ready list:', part.id, normalizedStatus);
+                return null;
+              }
+              
+              const linkedPO = resolvePartPO(part);
               const poDisplay = (() => {
                 const poRef = getPoDisplayRef(linkedPO, part);
                 return poRef ? `PO #${poRef}` : null;
