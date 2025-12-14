@@ -95,6 +95,31 @@ export default function PurchaseOrderDetail({ poId, onClose, mode = "page" }) {
 
   const initialLoadDone = React.useRef(false);
 
+  // Helper: Apply returned PO to both cache and formData
+  const applyReturnedPO = (returnedPO) => {
+    if (!returnedPO?.id) return;
+
+    // 1) Update the query cache so `po` in render updates immediately
+    queryClient.setQueryData(["purchaseOrder", poId], returnedPO);
+
+    // 2) Keep formData aligned (especially po_reference + name)
+    setFormData(prev => ({
+      ...prev,
+      supplier_id: returnedPO.supplier_id ?? prev.supplier_id,
+      project_id: returnedPO.project_id ?? prev.project_id,
+      delivery_method: returnedPO.delivery_method ?? prev.delivery_method,
+      notes: returnedPO.notes ?? prev.notes,
+      po_reference: returnedPO.po_reference ?? prev.po_reference,
+      name: returnedPO.name ?? prev.name,
+      status: normaliseLegacyPoStatus(returnedPO.status ?? prev.status),
+      eta: returnedPO.expected_date ?? prev.eta,
+      attachments: returnedPO.attachments ?? prev.attachments,
+    }));
+
+    // 3) Allow re-hydration logic to run again if needed
+    initialLoadDone.current = true;
+  };
+
   useEffect(() => {
     if (po && lineItems) {
       // Normalize legacy status
@@ -237,9 +262,12 @@ export default function PurchaseOrderDetail({ poId, onClose, mode = "page" }) {
       return;
     }
 
+    const returnedPO = res.data.purchaseOrder;
+    applyReturnedPO(returnedPO);
+
+    // still invalidate list queries
     await Promise.all([
       queryClient.invalidateQueries({ queryKey: ["purchaseOrders"] }),
-      queryClient.invalidateQueries({ queryKey: ["purchaseOrder", poId] }),
       queryClient.invalidateQueries({ queryKey: ["purchaseOrderLines", poId] }),
       queryClient.invalidateQueries({ queryKey: ["parts"] }),
     ]);
@@ -342,6 +370,8 @@ export default function PurchaseOrderDetail({ poId, onClose, mode = "page" }) {
       return;
     }
     
+    applyReturnedPO(updateRes.data.purchaseOrder);
+    
     // Then update status using managePurchaseOrder for side effects
     const response = await base44.functions.invoke('managePurchaseOrder', {
       action: 'updateStatus',
@@ -351,9 +381,10 @@ export default function PurchaseOrderDetail({ poId, onClose, mode = "page" }) {
     });
     
     if (response?.data?.success) {
+      applyReturnedPO(response.data.purchaseOrder);
+      
       await Promise.all([
         queryClient.invalidateQueries({ queryKey: ['purchaseOrders'] }),
-        queryClient.invalidateQueries({ queryKey: ['purchaseOrder', poId] }),
         queryClient.invalidateQueries({ queryKey: ['purchaseOrderLines', poId] }),
         queryClient.invalidateQueries({ queryKey: ['parts'] }),
       ]);
@@ -611,6 +642,13 @@ export default function PurchaseOrderDetail({ poId, onClose, mode = "page" }) {
     );
   }
 
+  // Debug: Pinpoint render-time data source
+  console.log("[PO DETAIL RENDER]", {
+    po_ref_from_query: po?.po_reference,
+    po_ref_from_form: formData.po_reference,
+    display: getPoDisplayReference(po),
+  });
+
   const isDraft = po.status === PO_STATUS.DRAFT;
   const isProjectPO = !!formData.project_id;
   const availableStatuses = isProjectPO ? PO_STATUS_OPTIONS_PROJECT : PO_STATUS_OPTIONS_NON_PROJECT;
@@ -652,10 +690,10 @@ export default function PurchaseOrderDetail({ poId, onClose, mode = "page" }) {
                 ) : (
                  <div className="mt-2 space-y-1">
                    <p className="text-sm font-medium text-[#111827]">
-                     {getPoDisplayReference(po)}
+                     {formData.po_reference?.trim() || getPoDisplayReference(po)}
                    </p>
-                   {po.name && (
-                     <p className="text-sm text-[#6B7280]">{po.name}</p>
+                   {(formData.name || po.name) && (
+                     <p className="text-sm text-[#6B7280]">{formData.name || po.name}</p>
                    )}
                  </div>
                 )}
