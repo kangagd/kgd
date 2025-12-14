@@ -120,7 +120,7 @@ export function getPartStatusLabel(status) {
  * PICKABLE STATUSES - Strict eligibility check for pick list
  * Parts can only appear in "Ready to Pick / Assigned" if their normalized status is in this set
  */
-const PICKABLE_STATUSES = new Set([
+export const PICKABLE_STATUSES = new Set([
   PART_STATUS.IN_LOADING_BAY,
   PART_STATUS.IN_STORAGE,
   PART_STATUS.IN_VEHICLE,
