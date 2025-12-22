@@ -1,10 +1,11 @@
 import React from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { CheckCircle2, Calendar } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { CheckCircle2, Calendar, Image as ImageIcon, FileText } from "lucide-react";
 import { format } from "date-fns";
 
-export default function LatestVisitCard({ jobs = [] }) {
+export default function LatestVisitCard({ jobs = [], onOpenMediaDrawer }) {
   // Get the most recently completed job
   const latestCompletedJob = jobs
     .filter(j => j.status === "Completed" && j.updated_date)
@@ -65,6 +66,34 @@ export default function LatestVisitCard({ jobs = [] }) {
               className="text-[13px] text-[#4B5563] line-clamp-3"
               dangerouslySetInnerHTML={{ __html: latestCompletedJob.overview }}
             />
+          </div>
+        )}
+
+        {/* Quick Links to Media/Docs if available */}
+        {(latestCompletedJob.image_urls?.length > 0 || latestCompletedJob.other_documents?.length > 0) && (
+          <div className="pt-3 border-t border-[#E5E7EB] flex gap-2">
+            {latestCompletedJob.image_urls?.length > 0 && (
+              <Button
+                onClick={() => onOpenMediaDrawer?.('photos')}
+                variant="outline"
+                size="sm"
+                className="flex-1 text-[12px] h-7"
+              >
+                <ImageIcon className="w-3 h-3 mr-1" />
+                Photos ({latestCompletedJob.image_urls.length})
+              </Button>
+            )}
+            {latestCompletedJob.other_documents?.length > 0 && (
+              <Button
+                onClick={() => onOpenMediaDrawer?.('documents')}
+                variant="outline"
+                size="sm"
+                className="flex-1 text-[12px] h-7"
+              >
+                <FileText className="w-3 h-3 mr-1" />
+                Docs ({latestCompletedJob.other_documents.length})
+              </Button>
+            )}
           </div>
         )}
       </CardContent>

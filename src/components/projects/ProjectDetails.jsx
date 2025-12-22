@@ -1504,8 +1504,22 @@ Format as HTML bullet points using <ul> and <li> tags. Include only the most cri
 
             {/* Row 3: Upcoming Visits + Latest Visit */}
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <UpcomingVisitsCard jobs={jobs} />
-              <LatestVisitCard jobs={jobs} />
+              <UpcomingVisitsCard 
+                jobs={jobs}
+                onScheduleVisit={() => {
+                  setActiveTab('requirements');
+                  setTimeout(() => {
+                    document.getElementById('tab-requirements')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                  }, 100);
+                }}
+              />
+              <LatestVisitCard 
+                jobs={jobs}
+                onOpenMediaDrawer={(tab) => {
+                  setMediaDrawerTab(tab);
+                  setMediaDrawerOpen(true);
+                }}
+              />
             </div>
 
             {/* Row 4: Collapsible Project Info */}
