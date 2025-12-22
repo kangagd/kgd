@@ -68,6 +68,10 @@ import LastActivityCard from "./LastActivityCard";
 import SamplesAtClientPanel from "./SamplesAtClientPanel";
 import AttentionItemsPanel from "../attention/AttentionItemsPanel";
 import MediaDocumentsDrawer from "./MediaDocumentsDrawer";
+import CommercialStatusCard from "./CommercialStatusCard";
+import TasksCompactCard from "./TasksCompactCard";
+import UpcomingVisitsCard from "./UpcomingVisitsCard";
+import LatestVisitCard from "./LatestVisitCard";
 
 const statusColors = {
   "Lead": "bg-slate-100 text-slate-700",
@@ -137,6 +141,7 @@ export default function ProjectDetails({ project: initialProject, onClose, onEdi
   const [showAllContactsModal, setShowAllContactsModal] = useState(false);
   const [mediaDrawerOpen, setMediaDrawerOpen] = useState(false);
   const [mediaDrawerTab, setMediaDrawerTab] = useState("photos");
+  const [projectInfoOpen, setProjectInfoOpen] = useState(false);
   const addTradeRef = React.useRef(null);
 
   // Get email thread ID from props, URL params, or project's source
@@ -314,6 +319,12 @@ export default function ProjectDetails({ project: initialProject, onClose, onEdi
       
       return uniqueInvoices;
     },
+    enabled: !!project.id
+  });
+
+  const { data: quotes = [] } = useQuery({
+    queryKey: ['projectQuotes', project.id],
+    queryFn: () => base44.entities.Quote.filter({ project_id: project.id }),
     enabled: !!project.id
   });
 
@@ -1436,156 +1447,197 @@ Format as HTML bullet points using <ul> and <li> tags. Include only the most cri
               </div>
             </div>
 
-          <TabsContent value="overview" className="space-y-3 mt-3">
+          <TabsContent value="overview" className="space-y-4 mt-3">
             {/* Duplicate Warning */}
             <DuplicateWarningCard entityType="Project" record={project} />
 
-            {/* Prior Job Summaries */}
-            {jobs
-              .filter(j => j.status === "Completed" && (j.overview || j.next_steps || j.communication_with_client || j.measurements || (j.image_urls && j.image_urls.length > 0)))
-              .sort((a, b) => new Date(a.updated_date || a.created_date) - new Date(b.updated_date || b.created_date))
-              .map((job, idx) => {
-                const colors = ["blue", "green", "purple", "orange", "cyan"];
-                const color = colors[idx % colors.length];
-                return (
-                  <JobVisitSummary 
-                    key={job.id}
-                    job={job}
-                    title={job.job_type_name || `Job #${job.job_number}`}
-                    borderColor={color}
-                  />
-                );
-              })
-            }
-
-            <div>
-              <RichTextField
-                label="Description"
-                value={description}
-                onChange={setDescription}
-                onBlur={handleDescriptionBlur}
-                placeholder="Add a clear summary of this project…"
+            {/* Row 1: Commercial Status + Tasks */}
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <CommercialStatusCard 
+                project={project}
+                quotes={quotes}
+                invoices={xeroInvoices}
+              />
+              <TasksCompactCard 
+                tasks={projectTasks}
+                onViewAll={() => {
+                  setTimeout(() => {
+                    document.getElementById('tasks-panel')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                  }, 100);
+                }}
+                onAddTask={() => {
+                  window.dispatchEvent(new CustomEvent('openTaskModal', { 
+                    detail: { 
+                      entityType: 'project',
+                      entityId: project.id,
+                      entityName: project.title
+                    } 
+                  }));
+                }}
               />
             </div>
 
-            <div>
-              <RichTextField
-                label="Notes"
-                value={notes}
-                onChange={setNotes}
-                onBlur={handleNotesBlur}
-                placeholder="Add any extra notes or context for the team…"
-                helperText="Internal only"
-              />
+            {/* Row 2: What's Next / Latest Activity */}
+            <Card className="border border-[#E5E7EB] shadow-sm">
+              <CardHeader className="pb-3">
+                <CardTitle className="text-[16px] font-semibold text-[#111827]">What's Next</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <LastActivityCard project={project} />
+              </CardContent>
+            </Card>
+
+            {/* Row 3: Upcoming Visits + Latest Visit */}
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <UpcomingVisitsCard jobs={jobs} />
+              <LatestVisitCard jobs={jobs} />
             </div>
 
-            {isInstallType && (
-              <div>
-                <div className="flex items-center justify-between mb-1.5">
-                  <label className="block text-[13px] md:text-[14px] font-medium text-[#4B5563]">
-                    Measurements Provided
-                  </label>
-                  {!showAddDoor && (
-                    <AddIconButton
-                      onClick={() => setShowAddDoor(true)}
-                      title="Add Door"
-                    />
-                  )}
-                </div>
-                
-                <div className="bg-white rounded-lg p-4 border border-[#E5E7EB]">
-                  {project.doors && project.doors.length > 0 ? (
-                    <div className="flex flex-wrap gap-2">
-                      {project.doors.map((door, idx) => (
-                        <div key={idx} className="relative group">
-                          <Badge variant="outline" className="bg-blue-50 border-blue-200 text-blue-700 font-medium px-3 py-1.5 text-sm pr-8">
-                            Door {idx + 1}: {door.height && door.width ? `${door.height} × ${door.width}` : 'Pending specs'}
-                            {door.type && ` • ${door.type}`}
-                            {door.style && ` • ${door.style}`}
-                          </Badge>
-                          <button
-                            onClick={() => handleRemoveDoor(idx)}
-                            className="absolute -top-1 -right-1 bg-red-500 text-white rounded-full w-5 h-5 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity"
-                          >
-                            <X className="w-3 h-3" />
-                          </button>
+            {/* Row 4: Collapsible Project Info */}
+            <Collapsible open={projectInfoOpen} onOpenChange={setProjectInfoOpen}>
+              <Card className="border border-[#E5E7EB] shadow-sm">
+                <CollapsibleTrigger className="w-full">
+                  <CardHeader className="pb-3">
+                    <div className="flex items-center justify-between">
+                      <CardTitle className="text-[16px] font-semibold text-[#111827]">Project Info</CardTitle>
+                      <ChevronDown className={`w-4 h-4 text-[#6B7280] transition-transform ${projectInfoOpen ? 'transform rotate-180' : ''}`} />
+                    </div>
+                  </CardHeader>
+                </CollapsibleTrigger>
+                <CollapsibleContent>
+                  <CardContent className="space-y-4 pt-3 border-t border-[#E5E7EB]">
+                    <div>
+                      <RichTextField
+                        label="Description"
+                        value={description}
+                        onChange={setDescription}
+                        onBlur={handleDescriptionBlur}
+                        placeholder="Add a clear summary of this project…"
+                      />
+                    </div>
+
+                    <div>
+                      <RichTextField
+                        label="Notes"
+                        value={notes}
+                        onChange={setNotes}
+                        onBlur={handleNotesBlur}
+                        placeholder="Add any extra notes or context for the team…"
+                        helperText="Internal only"
+                      />
+                    </div>
+
+                    {isInstallType && (
+                      <div>
+                        <div className="flex items-center justify-between mb-1.5">
+                          <label className="block text-[13px] md:text-[14px] font-medium text-[#4B5563]">
+                            Measurements Provided
+                          </label>
+                          {!showAddDoor && (
+                            <AddIconButton
+                              onClick={() => setShowAddDoor(true)}
+                              title="Add Door"
+                            />
+                          )}
                         </div>
-                      ))}
-                    </div>
-                  ) : !showAddDoor && (
-                    <p className="text-[14px] text-[#9CA3AF]">No doors added yet</p>
-                  )}
-                  
-                  {showAddDoor && (
-                    <div className="border border-[#E5E7EB] rounded-lg p-3 bg-[#F8F9FA] mt-3">
-                      <div className="grid grid-cols-1 md:grid-cols-2 gap-2 mb-2">
-                        <Input
-                          placeholder="Height"
-                          value={newDoor.height}
-                          onChange={(e) => setNewDoor({ ...newDoor, height: e.target.value })}
-                          onKeyDown={(e) => {
-                            if (e.key === 'Enter') {
-                              e.preventDefault();
-                              e.stopPropagation();
-                            }
-                          }}
-                        />
-                        <Input
-                          placeholder="Width"
-                          value={newDoor.width}
-                          onChange={(e) => setNewDoor({ ...newDoor, width: e.target.value })}
-                          onKeyDown={(e) => {
-                            if (e.key === 'Enter') {
-                              e.preventDefault();
-                              e.stopPropagation();
-                            }
-                          }}
-                        />
-                        <Input
-                          placeholder="Type (e.g. Sectional, Roller)"
-                          value={newDoor.type}
-                          onChange={(e) => setNewDoor({ ...newDoor, type: e.target.value })}
-                          onKeyDown={(e) => {
-                            if (e.key === 'Enter') {
-                              e.preventDefault();
-                              e.stopPropagation();
-                            }
-                          }}
-                        />
-                        <Input
-                          placeholder="Style"
-                          value={newDoor.style}
-                          onChange={(e) => setNewDoor({ ...newDoor, style: e.target.value })}
-                          onKeyDown={(e) => {
-                            if (e.key === 'Enter') {
-                              e.preventDefault();
-                              e.stopPropagation();
-                            }
-                          }}
-                        />
+                        
+                        <div className="bg-white rounded-lg p-4 border border-[#E5E7EB]">
+                          {project.doors && project.doors.length > 0 ? (
+                            <div className="flex flex-wrap gap-2">
+                              {project.doors.map((door, idx) => (
+                                <div key={idx} className="relative group">
+                                  <Badge variant="outline" className="bg-blue-50 border-blue-200 text-blue-700 font-medium px-3 py-1.5 text-sm pr-8">
+                                    Door {idx + 1}: {door.height && door.width ? `${door.height} × ${door.width}` : 'Pending specs'}
+                                    {door.type && ` • ${door.type}`}
+                                    {door.style && ` • ${door.style}`}
+                                  </Badge>
+                                  <button
+                                    onClick={() => handleRemoveDoor(idx)}
+                                    className="absolute -top-1 -right-1 bg-red-500 text-white rounded-full w-5 h-5 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity"
+                                  >
+                                    <X className="w-3 h-3" />
+                                  </button>
+                                </div>
+                              ))}
+                            </div>
+                          ) : !showAddDoor && (
+                            <p className="text-[14px] text-[#9CA3AF]">No doors added yet</p>
+                          )}
+                          
+                          {showAddDoor && (
+                            <div className="border border-[#E5E7EB] rounded-lg p-3 bg-[#F8F9FA] mt-3">
+                              <div className="grid grid-cols-1 md:grid-cols-2 gap-2 mb-2">
+                                <Input
+                                  placeholder="Height"
+                                  value={newDoor.height}
+                                  onChange={(e) => setNewDoor({ ...newDoor, height: e.target.value })}
+                                  onKeyDown={(e) => {
+                                    if (e.key === 'Enter') {
+                                      e.preventDefault();
+                                      e.stopPropagation();
+                                    }
+                                  }}
+                                />
+                                <Input
+                                  placeholder="Width"
+                                  value={newDoor.width}
+                                  onChange={(e) => setNewDoor({ ...newDoor, width: e.target.value })}
+                                  onKeyDown={(e) => {
+                                    if (e.key === 'Enter') {
+                                      e.preventDefault();
+                                      e.stopPropagation();
+                                    }
+                                  }}
+                                />
+                                <Input
+                                  placeholder="Type (e.g. Sectional, Roller)"
+                                  value={newDoor.type}
+                                  onChange={(e) => setNewDoor({ ...newDoor, type: e.target.value })}
+                                  onKeyDown={(e) => {
+                                    if (e.key === 'Enter') {
+                                      e.preventDefault();
+                                      e.stopPropagation();
+                                    }
+                                  }}
+                                />
+                                <Input
+                                  placeholder="Style"
+                                  value={newDoor.style}
+                                  onChange={(e) => setNewDoor({ ...newDoor, style: e.target.value })}
+                                  onKeyDown={(e) => {
+                                    if (e.key === 'Enter') {
+                                      e.preventDefault();
+                                      e.stopPropagation();
+                                    }
+                                  }}
+                                />
+                              </div>
+                              <div className="flex gap-2">
+                                <Button
+                                  onClick={handleAddDoor}
+                                  size="sm"
+                                  className="bg-[#FAE008] text-[#111827] hover:bg-[#E5CF07] font-semibold"
+                                >
+                                  <Plus className="w-4 h-4 mr-1" />
+                                  Add Door
+                                </Button>
+                                <Button
+                                  onClick={() => setShowAddDoor(false)}
+                                  size="sm"
+                                  variant="outline"
+                                >
+                                  Cancel
+                                </Button>
+                              </div>
+                            </div>
+                          )}
+                        </div>
                       </div>
-                      <div className="flex gap-2">
-                        <Button
-                          onClick={handleAddDoor}
-                          size="sm"
-                          className="bg-[#FAE008] text-[#111827] hover:bg-[#E5CF07] font-semibold"
-                        >
-                          <Plus className="w-4 h-4 mr-1" />
-                          Add Door
-                        </Button>
-                        <Button
-                          onClick={() => setShowAddDoor(false)}
-                          size="sm"
-                          variant="outline"
-                        >
-                          Cancel
-                        </Button>
-                      </div>
-                    </div>
-                  )}
-                </div>
-              </div>
-            )}
+                    )}
+                  </CardContent>
+                </CollapsibleContent>
+              </Card>
+            </Collapsible>
           </TabsContent>
 
           <TabsContent value="summary" className="mt-3">
