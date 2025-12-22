@@ -15,6 +15,8 @@ import {
   TooltipProvider,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
+import { recordStockMovement } from "@/components/utils/stockHelpers";
+import { toast } from "sonner";
 
 export default function StockAdjustmentModal({ item, open, onClose }) {
   const [movementType, setMovementType] = useState("stock_in");
@@ -27,30 +29,47 @@ export default function StockAdjustmentModal({ item, open, onClose }) {
     mutationFn: async (data) => {
       const quantityValue = parseInt(data.quantity);
       const adjustedQuantity = data.movementType === 'stock_out' ? -quantityValue : quantityValue;
-      const newStock = item.stock_level + adjustedQuantity;
 
-      // Log the movement
+      // Map movement type to reason
+      const reasonMap = {
+        stock_in: "stock_in",
+        stock_out: "stock_out",
+        adjustment: "correction"
+      };
+
+      // Use new StockMovement system
+      const result = await recordStockMovement({
+        stock_item_id: item.id,
+        quantity_delta: adjustedQuantity,
+        reason: reasonMap[data.movementType] || "manual_adjustment",
+        to_location: data.movementType === 'stock_in' ? 'warehouse' : null,
+        from_location: data.movementType === 'stock_out' ? 'warehouse' : null,
+        notes: data.notes
+      });
+
+      // Also create legacy InventoryMovement for backward compatibility (deprecated)
       await base44.entities.InventoryMovement.create({
         price_list_item_id: item.id,
         item_name: item.item,
         movement_type: data.movementType,
         quantity: adjustedQuantity,
-        previous_stock: item.stock_level,
-        new_stock: newStock,
+        previous_stock: result.previousStock,
+        new_stock: result.newStock,
         notes: data.notes
       });
 
-      // Update the item stock
-      await base44.entities.PriceListItem.update(item.id, {
-        stock_level: newStock
-      });
+      return result;
     },
-    onSuccess: () => {
+    onSuccess: (result) => {
       queryClient.invalidateQueries({ queryKey: ['priceListItems'] });
+      toast.success(`Stock adjusted: ${result.previousStock} → ${result.newStock}`);
       setQuantity("");
       setNotes("");
       setMovementType("stock_in");
       onClose();
+    },
+    onError: (error) => {
+      toast.error(error.message || "Failed to adjust stock");
     }
   });
 
