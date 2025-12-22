@@ -29,6 +29,13 @@ import {
   AlertDialogTitle,
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
+import {
+  Drawer,
+  DrawerContent,
+  DrawerHeader,
+  DrawerTitle,
+  DrawerTrigger,
+} from "@/components/ui/drawer";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 import { ChevronDown } from "lucide-react";
 import ProjectChangeHistoryModal from "./ProjectChangeHistoryModal";
@@ -62,15 +69,12 @@ import HandoverReportModal from "../handover/HandoverReportModal";
 import ProjectContactsPanel from "./ProjectContactsPanel";
 import ThirdPartyTradesPanel from "./ThirdPartyTradesPanel";
 import BackButton from "../common/BackButton";
+import ProjectContextPanel from "./ProjectContextPanel";
 import { getProjectFreshnessBadge } from "../utils/freshness";
 import DocumentListItem from "./DocumentListItem";
 import LastActivityCard from "./LastActivityCard";
 import SamplesAtClientPanel from "./SamplesAtClientPanel";
 import AttentionItemsPanel from "../attention/AttentionItemsPanel";
-import ProjectSnapshotZone from "./ProjectSnapshotZone";
-import ProjectNextActionsZone from "./ProjectNextActionsZone";
-import ProjectSummaryZone from "./ProjectSummaryZone";
-import ActivityTab from "./ActivityTab";
 
 const statusColors = {
   "Lead": "bg-slate-100 text-slate-700",
@@ -132,12 +136,9 @@ export default function ProjectDetails({ project: initialProject, onClose, onEdi
   const [showHandoverModal, setShowHandoverModal] = useState(false);
   const [isGeneratingHandover, setIsGeneratingHandover] = useState(false);
   const [showActivityModal, setShowActivityModal] = useState(false);
-  const [contactsOpen, setContactsOpen] = useState(false);
-  const [tradesOpen, setTradesOpen] = useState(false);
   const [tasksOpen, setTasksOpen] = useState(true);
-  const [visitsOpen, setVisitsOpen] = useState(true);
-  const [mediaDocsOpen, setMediaDocsOpen] = useState(false);
   const addTradeRef = React.useRef(null);
+  const [showCustomerDrawer, setShowCustomerDrawer] = useState(false);
 
   // Get email thread ID from props, URL params, or project's source
   const urlParams = new URLSearchParams(window.location.search);
@@ -285,12 +286,7 @@ export default function ProjectDetails({ project: initialProject, onClose, onEdi
     enabled: !!project.id
   });
 
-  // Auto-expand panels based on content
-  React.useEffect(() => {
-    if (projectContacts.length > 0 && !contactsOpen) setContactsOpen(true);
-    if (tradeRequirements.length > 0 && !tradesOpen) setTradesOpen(true);
-    if (((project.image_urls && project.image_urls.length > 0) || project.quote_url || project.invoice_url || (project.other_documents && project.other_documents.length > 0) || handoverReports.length > 0) && !mediaDocsOpen) setMediaDocsOpen(true);
-  }, [projectContacts, tradeRequirements, project.image_urls, project.quote_url, project.invoice_url, project.other_documents, handoverReports]);
+
 
   const { data: xeroInvoices = [] } = useQuery({
     queryKey: ['projectXeroInvoices', project.id],
@@ -940,283 +936,22 @@ Format as HTML bullet points using <ul> and <li> tags. Include only the most cri
 
   return (
     <div className="relative flex flex-col lg:flex-row gap-4 overflow-x-hidden items-start">
-      {/* Customer Sidebar */}
-      <aside className="w-full lg:w-72 flex-shrink-0 lg:sticky lg:top-4">
-        <Card className="border border-[#E5E7EB] shadow-sm rounded-lg overflow-hidden">
-          <CardHeader className="bg-white px-4 py-3 border-b border-[#E5E7EB]">
-            <h3 className="text-[16px] font-semibold text-[#111827] leading-[1.2]">Customer</h3>
-          </CardHeader>
-          <CardContent className="p-4 space-y-4">
-            <CustomerQuickEdit
-              customerId={project.customer_id}
-              projectId={project.id}
-              onCustomerUpdate={(updatedData) => {
-                queryClient.invalidateQueries({ queryKey: ['project', project.id] });
-              }}
-            />
-
-            <div className="pt-3 border-t border-[#E5E7EB]">
-              <div className="flex items-start gap-2.5">
-                <MapPin className="w-5 h-5 text-[#4B5563] flex-shrink-0 mt-1" />
-                <div className="flex-1 min-w-0">
-                  <div className="text-[14px] text-[#6B7280] font-normal leading-[1.4] mb-0.5">Address</div>
-                  <AddressAutocomplete
-                    value={project.address_full || project.address}
-                    onChange={(addressData) => {
-                      // Update all address fields
-                      base44.entities.Project.update(project.id, {
-                        address: addressData.address_full,
-                        address_full: addressData.address_full,
-                        address_street: addressData.address_street,
-                        address_suburb: addressData.address_suburb,
-                        address_state: addressData.address_state,
-                        address_postcode: addressData.address_postcode,
-                        address_country: addressData.address_country,
-                        google_place_id: addressData.google_place_id,
-                        latitude: addressData.latitude,
-                        longitude: addressData.longitude
-                      }).then(() => {
-                        queryClient.invalidateQueries({ queryKey: ['project', project.id] });
-                        queryClient.invalidateQueries({ queryKey: ['projects'] });
-                      });
-                    }}
-                    placeholder="Search for address..."
-                    className="text-[14px]"
-                  />
-                </div>
-              </div>
-            </div>
-            </CardContent>
-            </Card>
-
-            <Collapsible open={contactsOpen} onOpenChange={setContactsOpen}>
-              <Card className="border border-[#E5E7EB] shadow-sm rounded-lg overflow-hidden mt-4">
-                <CollapsibleTrigger className="w-full">
-                  <CardHeader className="bg-white px-4 py-3 border-b border-[#E5E7EB] flex flex-row items-center justify-between">
-                    <h3 className="text-[16px] font-semibold text-[#111827] leading-[1.2]">Contacts</h3>
-                    <ChevronDown className={`w-4 h-4 text-[#6B7280] transition-transform ${contactsOpen ? 'transform rotate-180' : ''}`} />
-                  </CardHeader>
-                </CollapsibleTrigger>
-                <CollapsibleContent>
-                  <CardContent className="p-3">
-                    <ProjectContactsPanel project={project} />
-                  </CardContent>
-                </CollapsibleContent>
-              </Card>
-            </Collapsible>
-
-            {/* Third-Party Trades */}
-            <Collapsible open={tradesOpen} onOpenChange={setTradesOpen}>
-              <Card className="border border-[#E5E7EB] shadow-sm rounded-lg overflow-hidden mt-4">
-                <CardHeader className="bg-white px-4 py-3 border-b border-[#E5E7EB]">
-                  <div className="flex items-center justify-between w-full">
-                    <CollapsibleTrigger className="flex items-center flex-1 justify-between">
-                      <div>
-                        <h3 className="text-[16px] font-semibold text-[#111827] leading-[1.2]">Third-Party Trades</h3>
-                        {tradeRequirements.length > 0 && (
-                          <p className="text-xs text-[#6B7280] mt-0.5">
-                            {tradeRequirements.filter(t => t.is_required && t.is_booked).length} of {tradeRequirements.filter(t => t.is_required).length} booked
-                          </p>
-                        )}
-                      </div>
-                      <ChevronDown className={`w-4 h-4 text-[#6B7280] mr-2 transition-transform ${tradesOpen ? 'transform rotate-180' : ''}`} />
-                    </CollapsibleTrigger>
-                    <AddIconButton
-                      onClick={() => addTradeRef.current?.()}
-                      title="Add Trade"
-                      className="flex-shrink-0 ml-2"
-                    />
-                  </div>
-                </CardHeader>
-                <CollapsibleContent>
-                  <CardContent className="p-3">
-                    <ThirdPartyTradesPanel project={project} onAddTrade={addTradeRef} />
-                  </CardContent>
-                </CollapsibleContent>
-              </Card>
-            </Collapsible>
-
-            {/* Media & Documents Section */}
-            <Collapsible open={mediaDocsOpen} onOpenChange={setMediaDocsOpen}>
-              <Card className="border border-[#E5E7EB] shadow-sm rounded-lg overflow-hidden mt-4">
-                <CollapsibleTrigger className="w-full">
-                  <CardHeader className="bg-white px-4 py-3 border-b border-[#E5E7EB] flex flex-row items-center justify-between">
-                    <h3 className="text-[16px] font-semibold text-[#111827] leading-[1.2]">Media & Documents</h3>
-                    <ChevronDown className={`w-4 h-4 text-[#6B7280] transition-transform ${mediaDocsOpen ? 'transform rotate-180' : ''}`} />
-                  </CardHeader>
-                </CollapsibleTrigger>
-                <CollapsibleContent>
-                  <CardContent className="p-3 space-y-3">
-                    <div>
-                      <div className="text-xs font-medium text-[#6B7280] mb-2">Photos & Videos</div>
-                      <EditableFileUpload
-                        files={project.image_urls || []}
-                        onFilesChange={handleImagesChange}
-                        accept="image/*,video/*"
-                        multiple={true}
-                        icon={ImageIcon}
-                        label=""
-                        emptyText="Upload media" 
-                      />
-                    </div>
-
-                    <div className="border-t border-[#E5E7EB] pt-3">
-                      <div className="text-xs font-medium text-[#6B7280] mb-2">Documents</div>
-                      <div className="space-y-2">
-                {project.quote_url && (
-                  <button
-                    onClick={() => setPreviewFile({
-                      url: project.quote_url,
-                      name: 'Quote',
-                      type: 'pdf',
-                      projectName: project.title
-                    })}
-                    className="w-full flex items-center gap-2 px-3 py-2 bg-white border border-[#E5E7EB] rounded-lg hover:border-[#FAE008] transition-all cursor-pointer"
-                  >
-                    <FileText className="w-4 h-4 text-blue-600 flex-shrink-0" />
-                    <span className="text-[12px] font-medium text-[#111827] truncate">Quote</span>
-                  </button>
-                )}
-                {project.invoice_url && (
-                  <button
-                    onClick={() => setPreviewFile({
-                      url: project.invoice_url,
-                      name: 'Invoice',
-                      type: 'pdf',
-                      projectName: project.title
-                    })}
-                    className="w-full flex items-center gap-2 px-3 py-2 bg-white border border-[#E5E7EB] rounded-lg hover:border-[#FAE008] transition-all cursor-pointer"
-                  >
-                    <FileText className="w-4 h-4 text-green-600 flex-shrink-0" />
-                    <span className="text-[12px] font-medium text-[#111827] truncate">Invoice</span>
-                  </button>
-                )}
-                {handoverReports.length > 0 && handoverReports[handoverReports.length - 1].pdf_url && (
-                  <button
-                    onClick={() => setPreviewFile({
-                      url: handoverReports[handoverReports.length - 1].pdf_url,
-                      name: 'Handover Report',
-                      type: 'pdf',
-                      projectName: project.title
-                    })}
-                    className="w-full flex items-center gap-2 px-3 py-2 bg-white border border-[#E5E7EB] rounded-lg hover:border-[#FAE008] transition-all cursor-pointer"
-                  >
-                    <FileText className="w-4 h-4 text-orange-600 flex-shrink-0" />
-                    <span className="text-[12px] font-medium text-[#111827] truncate">Handover Report</span>
-                  </button>
-                )}
-
-                {project.other_documents && project.other_documents.length > 0 && (
-                  <div className="space-y-1 pt-1 border-t border-[#E5E7EB]">
-                    {project.other_documents.map((doc, index) => {
-                      const docUrl = typeof doc === 'string' ? doc : doc.url;
-                      const docName = typeof doc === 'string' ? `Document ${index + 1}` : (doc.name || `Document ${index + 1}`);
-
-                      return (
-                        <DocumentListItem
-                          key={index}
-                          doc={doc}
-                          docUrl={docUrl}
-                          docName={docName}
-                          index={index}
-                          onPreview={() => setPreviewFile({
-                            url: docUrl,
-                            name: docName,
-                            type: 'pdf',
-                            projectName: project.title
-                          })}
-                          onRename={(newName) => {
-                            const updatedDocs = [...project.other_documents];
-                            updatedDocs[index] = typeof updatedDocs[index] === 'string' 
-                              ? { url: updatedDocs[index], name: newName }
-                              : { ...updatedDocs[index], name: newName };
-                            updateProjectMutation.mutate({ field: 'other_documents', value: updatedDocs });
-                          }}
-                          onDelete={() => {
-                            const updatedDocs = project.other_documents.filter((_, i) => i !== index);
-                            updateProjectMutation.mutate({ field: 'other_documents', value: updatedDocs });
-                            toast.success('Document deleted');
-                          }}
-                          canEdit={canEdit}
-                        />
-                      );
-                    })}
-                  </div>
-                )}
-
-                        <div className="grid grid-cols-2 gap-2 pt-2 border-t border-[#E5E7EB] mt-2">
-                          <label className="block">
-                            <Button
-                              type="button"
-                              variant="outline"
-                              size="sm"
-                              className="w-full h-8 text-xs"
-                              disabled={uploading}
-                              asChild
-                            >
-                              <span>
-                                <FileText className="w-3 h-3 mr-1" />
-                                Quote
-                              </span>
-                            </Button>
-                            <input
-                              type="file"
-                              accept=".pdf,.doc,.docx"
-                              className="hidden"
-                              onChange={(e) => handleFileUpload(e, 'quote')}
-                            />
-                          </label>
-                          <label className="block">
-                            <Button
-                              type="button"
-                              variant="outline"
-                              size="sm"
-                              className="w-full h-8 text-xs"
-                              disabled={uploading}
-                              asChild
-                            >
-                              <span>
-                                <FileText className="w-3 h-3 mr-1" />
-                                Invoice
-                              </span>
-                            </Button>
-                            <input
-                              type="file"
-                              accept=".pdf,.doc,.docx"
-                              className="hidden"
-                              onChange={(e) => handleFileUpload(e, 'invoice')}
-                            />
-                          </label>
-                          <label className="block col-span-2">
-                            <Button
-                              type="button"
-                              variant="outline"
-                              size="sm"
-                              className="w-full h-8 text-xs"
-                              disabled={uploading}
-                              asChild
-                            >
-                              <span>
-                                <Upload className="w-3 h-3 mr-1" />
-                                Other Docs
-                              </span>
-                            </Button>
-                            <input
-                              type="file"
-                              multiple
-                              accept=".pdf,.doc,.docx,.xls,.xlsx,.txt"
-                              className="hidden"
-                              onChange={(e) => handleFileUpload(e, 'other')}
-                            />
-                          </label>
-                        </div>
-                      </div>
-                    </div>
-                  </CardContent>
-                </CollapsibleContent>
-              </Card>
-            </Collapsible>
+      {/* Customer Sidebar - Desktop Only */}
+      <aside className="hidden lg:block w-72 flex-shrink-0 lg:sticky lg:top-4">
+        <ProjectContextPanel project={project} />
       </aside>
+
+      {/* Customer Drawer - Mobile Only */}
+      <Drawer open={showCustomerDrawer} onOpenChange={setShowCustomerDrawer}>
+        <DrawerContent className="max-h-[85vh]">
+          <DrawerHeader>
+            <DrawerTitle>Customer Details</DrawerTitle>
+          </DrawerHeader>
+          <div className="overflow-y-auto px-4 pb-4">
+            <ProjectContextPanel project={project} />
+          </div>
+        </DrawerContent>
+      </Drawer>
 
             {/* Main Content */}
             <div className="flex-1 w-full lg:min-w-0">
@@ -1362,6 +1097,18 @@ Format as HTML bullet points using <ul> and <li> tags. Include only the most cri
         </div>
 
         <div className="space-y-3">
+          {/* Mobile Customer Button */}
+          <div className="lg:hidden">
+            <Button
+              variant="outline"
+              onClick={() => setShowCustomerDrawer(true)}
+              className="w-full justify-start gap-2"
+            >
+              <User className="w-4 h-4" />
+              Customer Details
+            </Button>
+          </div>
+
           <div className="flex items-center justify-between gap-3 flex-wrap">
             <div className="flex items-center gap-2">
               <h2 className="text-[22px] font-semibold text-[#111827] leading-[1.2]">
@@ -1456,7 +1203,7 @@ Format as HTML bullet points using <ul> and <li> tags. Include only the most cri
                   <TabsTrigger value="overview" className="flex-1 whitespace-nowrap">
                     Overview
                   </TabsTrigger>
-                  <TabsTrigger value="activity" className="flex-1 whitespace-nowrap">Activity</TabsTrigger>
+                  <TabsTrigger value="emails" className="flex-1 whitespace-nowrap">Emails</TabsTrigger>
                   <TabsTrigger value="quoting" className="flex-1 whitespace-nowrap">Quoting</TabsTrigger>
                   <TabsTrigger value="parts" className="flex-1 whitespace-nowrap">Parts</TabsTrigger>
                   <TabsTrigger value="invoices" className="flex-1 whitespace-nowrap">Invoices</TabsTrigger>
@@ -1471,43 +1218,31 @@ Format as HTML bullet points using <ul> and <li> tags. Include only the most cri
                   )}
                 </TabsList>
               </div>
+
+              {/* Tasks Section - Sticky Below Tabs */}
+              <div className="border border-[#E5E7EB] rounded-lg bg-white shadow-sm">
+                <Collapsible open={tasksOpen} onOpenChange={setTasksOpen}>
+                  <CollapsibleTrigger className="w-full">
+                    <div className="px-4 py-2.5 flex items-center justify-between hover:bg-[#F9FAFB] transition-colors">
+                      <h3 className="text-[14px] font-semibold text-[#111827]">Tasks</h3>
+                      <ChevronDown className={`w-4 h-4 text-[#6B7280] transition-transform ${tasksOpen ? 'transform rotate-180' : ''}`} />
+                    </div>
+                  </CollapsibleTrigger>
+                  <CollapsibleContent>
+                    <div className="px-3 pb-3 pt-1 border-t border-[#E5E7EB]">
+                      <TasksPanel
+                        entityType="project"
+                        entityId={project.id}
+                        entityName={project.title}
+                        compact={true}
+                      />
+                    </div>
+                  </CollapsibleContent>
+                </Collapsible>
+              </div>
             </div>
 
           <TabsContent value="overview" className="space-y-3 mt-3">
-            {/* ZONE 1: Project Snapshot - Blockers */}
-            <ProjectSnapshotZone project={project} parts={parts} jobs={jobs} />
-
-            {/* ZONE 2: Attention Items */}
-            <AttentionItemsPanel
-              entity_type="project"
-              entity_id={project.id}
-              context_ids={{
-                customer_id: project.customer_id,
-                project_id: project.id,
-                job_id: null
-              }}
-            />
-
-            {/* ZONE 3: What's Next - Combined Tasks & Visits */}
-            <ProjectNextActionsZone
-              project={project}
-              jobs={jobs}
-              onAddJob={handleAddJob}
-              onJobClick={handleJobClick}
-              onPreviewJob={setPreviewJob}
-              canCreateJobs={canCreateJobs}
-            />
-
-            {/* ZONE 4: Project Summary - Description & Notes */}
-            <ProjectSummaryZone
-              description={description}
-              notes={notes}
-              onDescriptionChange={setDescription}
-              onNotesChange={setNotes}
-              onDescriptionBlur={handleDescriptionBlur}
-              onNotesBlur={handleNotesBlur}
-            />
-
             {/* Duplicate Warning */}
             <DuplicateWarningCard entityType="Project" record={project} />
 
@@ -1528,6 +1263,27 @@ Format as HTML bullet points using <ul> and <li> tags. Include only the most cri
                 );
               })
             }
+
+            <div>
+              <RichTextField
+                label="Description"
+                value={description}
+                onChange={setDescription}
+                onBlur={handleDescriptionBlur}
+                placeholder="Add a clear summary of this project…"
+              />
+            </div>
+
+            <div>
+              <RichTextField
+                label="Notes"
+                value={notes}
+                onChange={setNotes}
+                onBlur={handleNotesBlur}
+                placeholder="Add any extra notes or context for the team…"
+                helperText="Internal only"
+              />
+            </div>
 
             {isInstallType && (
               <div>
@@ -1681,8 +1437,13 @@ Format as HTML bullet points using <ul> and <li> tags. Include only the most cri
             <LogisticsTimeline project={project} />
           </TabsContent>
 
-          <TabsContent value="activity" className="mt-3">
-            <ActivityTab project={project} />
+          <TabsContent value="emails" className="mt-3">
+            <ProjectEmailSection 
+              project={project}
+              onThreadLinked={() => {
+                queryClient.invalidateQueries({ queryKey: ['project', project.id] });
+              }}
+            />
           </TabsContent>
 
           <TabsContent value="invoices" className="mt-3">

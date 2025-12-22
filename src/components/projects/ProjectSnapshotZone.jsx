@@ -1,88 +1,61 @@
 import React from "react";
-import { Card, CardContent } from "@/components/ui/card";
-import { AlertCircle, CheckCircle, Clock } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
+import ProjectStageSelector from "./ProjectStageSelector";
 
-export default function ProjectSnapshotZone({ project, parts = [], jobs = [] }) {
-  // Determine blockers
-  const blockers = [];
+const projectTypeColors = {
+  "Garage Door Install": "bg-blue-100 text-blue-700",
+  "Gate Install": "bg-green-100 text-green-700",
+  "Roller Shutter Install": "bg-purple-100 text-purple-700",
+  "Multiple": "bg-pink-100 text-pink-700",
+  "Motor/Accessory": "bg-cyan-100 text-cyan-700",
+  "Repair": "bg-orange-100 text-orange-700",
+  "Maintenance": "bg-indigo-100 text-indigo-700"
+};
 
-  // Check for parts not yet arrived
-  const partsNotArrived = parts.filter(p => {
-    const status = (p.status || '').toLowerCase().replace(/\s+/g, '_');
-    return !['in_storage', 'in_vehicle', 'installed', 'cancelled'].includes(status);
-  });
-
-  if (partsNotArrived.length > 0) {
-    blockers.push(`${partsNotArrived.length} part${partsNotArrived.length > 1 ? 's' : ''} not yet arrived`);
-  }
-
-  // Check for unscheduled jobs
-  const unscheduledJobs = jobs.filter(j => j.status === "Open" && !j.scheduled_date);
-  if (unscheduledJobs.length > 0) {
-    blockers.push(`${unscheduledJobs.length} visit${unscheduledJobs.length > 1 ? 's' : ''} not yet scheduled`);
-  }
-
-  // Check project-level blockers from notes/description
-  const descriptionLower = (project.description || '').toLowerCase();
-  const notesLower = (project.notes || '').toLowerCase();
-  const combinedText = descriptionLower + ' ' + notesLower;
-
-  if (combinedText.includes('waiting on') || combinedText.includes('blocked by') || combinedText.includes('pending approval')) {
-    // Extract blocker text if possible
-    const waitingMatch = (project.description || project.notes || '').match(/waiting on[^.!?\n]*/i);
-    if (waitingMatch) {
-      blockers.push(waitingMatch[0].trim());
-    }
-  }
-
-  // Determine overall status
-  let status = 'Ready';
-  let statusIcon = CheckCircle;
-  let statusColor = 'bg-green-100 text-green-700';
-
-  if (blockers.length > 0) {
-    status = 'Blocked';
-    statusIcon = AlertCircle;
-    statusColor = 'bg-red-100 text-red-700';
-  } else if (partsNotArrived.length === 0 && jobs.some(j => j.status === "Open")) {
-    status = 'Partial';
-    statusIcon = Clock;
-    statusColor = 'bg-amber-100 text-amber-700';
-  }
-
-  const StatusIcon = statusIcon;
-
-  // If no blockers, hide the entire zone
-  if (blockers.length === 0) {
-    return null;
-  }
-
+export default function ProjectSnapshotZone({ project }) {
   return (
-    <Card className="border-2 border-red-200 bg-red-50/50 shadow-sm rounded-lg overflow-hidden">
-      <CardContent className="p-4 space-y-3">
-        <div className="flex items-center gap-2">
-          <StatusIcon className={`w-5 h-5 ${status === 'Ready' ? 'text-green-600' : status === 'Blocked' ? 'text-red-600' : 'text-amber-600'}`} />
-          <h3 className="text-[16px] font-semibold text-[#111827]">Project Status</h3>
-          <Badge className={`${statusColor} font-semibold`}>
-            {status}
+    <div className="space-y-3">
+      {/* Job Type Chip */}
+      {project.project_type && (
+        <div>
+          <Badge className={`${projectTypeColors[project.project_type]} font-medium border-0 px-2.5 py-0.5 rounded-lg text-[12px] leading-[1.35]`}>
+            {project.project_type}
           </Badge>
         </div>
+      )}
 
-        {blockers.length > 0 && (
-          <div>
-            <div className="text-[13px] font-medium text-red-700 mb-2">Blockers:</div>
-            <ul className="space-y-1.5">
-              {blockers.map((blocker, idx) => (
-                <li key={idx} className="flex items-start gap-2 text-[14px] text-red-800">
-                  <span className="text-red-600 mt-0.5">•</span>
-                  <span>{blocker}</span>
-                </li>
-              ))}
-            </ul>
+      {/* Current Stage Pills (Read-Only) */}
+      <div className="bg-white p-3 rounded-lg border border-[#E5E7EB]">
+        <div className="text-[12px] font-medium text-[#4B5563] leading-[1.35] mb-2 uppercase tracking-wide">
+          Project Stage
+        </div>
+        <ProjectStageSelector
+          currentStage={project.status}
+          onStageChange={undefined}
+          onMarkAsLost={undefined}
+          disabled={true}
+        />
+        {project.status === "Lost" && (
+          <div className="mt-3 p-3 bg-red-50 border border-red-200 rounded-lg">
+            <div className="flex items-start gap-2">
+              <span className="text-[13px] font-medium text-red-700">Lost Reason:</span>
+              <span className="text-[13px] text-red-600">
+                {project.lost_reason}
+                {project.lost_reason_notes && ` - ${project.lost_reason_notes}`}
+              </span>
+            </div>
+            {project.lost_date && (
+              <div className="text-[12px] text-red-500 mt-1">
+                Lost on {new Date(project.lost_date).toLocaleDateString('en-AU', { 
+                  day: 'numeric', 
+                  month: 'short', 
+                  year: 'numeric' 
+                })}
+              </div>
+            )}
           </div>
         )}
-      </CardContent>
-    </Card>
+      </div>
+    </div>
   );
 }
