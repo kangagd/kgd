@@ -1,96 +1,7 @@
 import React, { useState } from "react";
 import { format, parseISO } from "date-fns";
 import AttachmentCard from "./AttachmentCard";
-
-const fixEncodingIssues = (text) => {
-  if (!text) return text;
-  
-  let fixed = text;
-  
-  // Fix HTML entities first
-  fixed = fixed.replace(/&nbsp;/g, ' ');
-  fixed = fixed.replace(/&amp;/g, '&');
-  fixed = fixed.replace(/&lt;/g, '<');
-  fixed = fixed.replace(/&gt;/g, '>');
-  fixed = fixed.replace(/&quot;/g, '"');
-  fixed = fixed.replace(/&#39;/g, "'");
-  fixed = fixed.replace(/&apos;/g, "'");
-  fixed = fixed.replace(/&#8217;/g, "'");
-  fixed = fixed.replace(/&#8216;/g, "'");
-  fixed = fixed.replace(/&#8220;/g, '"');
-  fixed = fixed.replace(/&#8221;/g, '"');
-  fixed = fixed.replace(/&#8211;/g, '–');
-  fixed = fixed.replace(/&#8212;/g, '—');
-  
-  // Fix double-encoded UTF-8 mojibake patterns
-  // These patterns occur when UTF-8 text is incorrectly interpreted as Windows-1252 and then re-encoded as UTF-8
-  
-  // Pattern "â€™" = right single quote (')
-  fixed = fixed.replace(/â€™/g, "'");
-  fixed = fixed.replace(/â€˜/g, "'");
-  
-  // Pattern "â€œ" and "â€" = double quotes
-  fixed = fixed.replace(/â€œ/g, '"');
-  fixed = fixed.replace(/â€/g, '"');
-  
-  // Pattern "â€"" = em dash (—)
-  fixed = fixed.replace(/â€"/g, '—');
-  
-  // Pattern "â€"" = en dash (–)
-  fixed = fixed.replace(/â€"/g, '–');
-  
-  // Pattern "â€¦" = ellipsis (…)
-  fixed = fixed.replace(/â€¦/g, '…');
-  
-  // Pattern "â€¢" = bullet (•)
-  fixed = fixed.replace(/â€¢/g, '•');
-  
-  // Common space patterns
-  fixed = fixed.replace(/Â /g, ' ');     // non-breaking space
-  fixed = fixed.replace(/Â/g, ' ');      // stray Â character
-  fixed = fixed.replace(/â€‰/g, ' ');   // thin space
-  fixed = fixed.replace(/â €/g, ' ');    // en space
-  fixed = fixed.replace(/â ·/g, '·');    // middle dot
-  
-  // Fix the specific pattern "Weâ€™re" → "We're"
-  // Pattern when apostrophe/quote is at end: "â€™" or standalone "â€"
-  fixed = fixed.replace(/â€™/g, "'");
-  fixed = fixed.replace(/â€˜/g, "'");
-  
-  // Pattern for numbers with dot: "â ·â" followed by digits
-  fixed = fixed.replace(/â ·â(\d+)/g, ' ·$1');
-  
-  // Other common mojibake patterns
-  fixed = fixed.replace(/Ã¢â‚¬â„¢/g, "'");
-  fixed = fixed.replace(/Â°/g, '°');
-  fixed = fixed.replace(/â‚¬/g, '€');
-  
-  // Accented characters
-  fixed = fixed.replace(/Ã /g, 'à');
-  fixed = fixed.replace(/Ã¡/g, 'á');
-  fixed = fixed.replace(/Ã¢/g, 'â');
-  fixed = fixed.replace(/Ã£/g, 'ã');
-  fixed = fixed.replace(/Ã¤/g, 'ä');
-  fixed = fixed.replace(/Ã¨/g, 'è');
-  fixed = fixed.replace(/Ã©/g, 'é');
-  fixed = fixed.replace(/Ãª/g, 'ê');
-  fixed = fixed.replace(/Ã«/g, 'ë');
-  fixed = fixed.replace(/Ã¬/g, 'ì');
-  fixed = fixed.replace(/Ã­/g, 'í');
-  fixed = fixed.replace(/Ã®/g, 'î');
-  fixed = fixed.replace(/Ã¯/g, 'ï');
-  fixed = fixed.replace(/Ã²/g, 'ò');
-  fixed = fixed.replace(/Ã³/g, 'ó');
-  fixed = fixed.replace(/Ã´/g, 'ô');
-  fixed = fixed.replace(/Ãµ/g, 'õ');
-  fixed = fixed.replace(/Ã¶/g, 'ö');
-  fixed = fixed.replace(/Ã¹/g, 'ù');
-  fixed = fixed.replace(/Ãº/g, 'ú');
-  fixed = fixed.replace(/Ã»/g, 'û');
-  fixed = fixed.replace(/Ã¼/g, 'ü');
-  
-  return fixed;
-};
+import { sanitizeInboundText } from "@/components/utils/textSanitizers";
 
 const convertHtmlToFormattedText = (html) => {
   if (!html) return '';
@@ -130,7 +41,7 @@ const sanitizeBodyHtml = (html, inlineImages = []) => {
   let sanitized = html;
   
   // Fix encoding issues first
-  sanitized = fixEncodingIssues(sanitized);
+  sanitized = sanitizeInboundText(sanitized);
   
   // Replace inline image references with actual URLs
   if (inlineImages && inlineImages.length > 0) {
@@ -222,11 +133,11 @@ export default function EmailMessageItem({ message, isLast, totalMessages, getSe
               <div dangerouslySetInnerHTML={{ __html: sanitizeBodyHtml(message.body_html, inlineImages) }} />
             ) : message.body_html ? (
               <div className="whitespace-pre-wrap text-[14px] text-[#111827] leading-relaxed">
-                {fixEncodingIssues(convertHtmlToFormattedText(message.body_html))}
+                {sanitizeInboundText(convertHtmlToFormattedText(message.body_html))}
               </div>
             ) : message.body_text ? (
               <div className="whitespace-pre-wrap text-[14px] text-[#111827] leading-relaxed">
-                {fixEncodingIssues(convertHtmlToFormattedText(message.body_text))}
+                {sanitizeInboundText(convertHtmlToFormattedText(message.body_text))}
               </div>
             ) : (
               <div className="text-[14px] text-[#6B7280]">(No content)</div>
