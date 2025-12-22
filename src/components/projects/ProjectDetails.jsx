@@ -1405,7 +1405,7 @@ Format as HTML bullet points using <ul> and <li> tags. Include only the most cri
               </div>
 
               {/* Tasks Section - Sticky Below Tabs */}
-              <div className="border border-[#E5E7EB] rounded-lg bg-white shadow-sm">
+              <div id="tasks-panel" className="border border-[#E5E7EB] rounded-lg bg-white shadow-sm">
                 <Collapsible open={tasksOpen} onOpenChange={setTasksOpen}>
                   <CollapsibleTrigger className="w-full">
                     <div className="px-4 py-2.5 flex items-center justify-between hover:bg-[#F9FAFB] transition-colors">
