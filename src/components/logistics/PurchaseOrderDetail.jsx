@@ -420,6 +420,7 @@ export default function PurchaseOrderDetail({ poId, onClose, mode = "page" }) {
         status: normaliseLegacyPoStatus(statusUpdatedPO.status ?? value),
         po_reference: statusUpdatedPO.po_reference ?? prev.po_reference,
         name: statusUpdatedPO.name ?? prev.name,
+        eta: statusUpdatedPO.expected_date ?? prev.eta,
       }));
       
       await Promise.all([
@@ -908,6 +909,7 @@ export default function PurchaseOrderDetail({ poId, onClose, mode = "page" }) {
                       status: updatedPO.status ?? value,
                       po_reference: updatedPO.po_reference ?? prev.po_reference,
                       name: updatedPO.name ?? prev.name,
+                      eta: updatedPO.expected_date ?? prev.eta,
                     }));
                     
                     // Invalidate all relevant queries
