@@ -128,6 +128,12 @@ export const PO_STATUS_COLORS = {
   cancelled: "bg-red-200 text-red-800",
 };
 
+// Get color class for status badge
+export function getPoStatusColor(status) {
+  const key = normalizePoStatus(status);
+  return PO_STATUS_COLORS[key] || PO_STATUS_COLORS[status] || 'bg-gray-200 text-gray-800';
+}
+
 // Export object at bottom
 export default {
   PO_STATUS,
@@ -135,6 +141,7 @@ export default {
   PO_STATUS_OPTIONS_NON_PROJECT,
   PO_STATUS_OPTIONS_PROJECT,
   getPoStatusLabel,
+  getPoStatusColor,
   PO_STATUS_LABELS,
   normalizePoStatus,
   normaliseLegacyPoStatus,

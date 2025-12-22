@@ -11,7 +11,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { X, Plus, Trash2, Package, Truck, Save, Send, ArrowRight, List, ShoppingCart, Upload, FileText, Calendar, Trash } from "lucide-react";
 import { toast } from "sonner";
-import { PO_STATUS, PO_STATUS_OPTIONS, PO_STATUS_OPTIONS_NON_PROJECT, PO_STATUS_OPTIONS_PROJECT, getPoStatusLabel, normaliseLegacyPoStatus } from "@/components/domain/purchaseOrderStatusConfig";
+import { PO_STATUS, PO_STATUS_OPTIONS, PO_STATUS_OPTIONS_NON_PROJECT, PO_STATUS_OPTIONS_PROJECT, getPoStatusLabel, getPoStatusColor, normaliseLegacyPoStatus } from "@/components/domain/purchaseOrderStatusConfig";
 import { DELIVERY_METHOD as PO_DELIVERY_METHOD, DELIVERY_METHOD_OPTIONS as PO_DELIVERY_METHOD_OPTIONS } from "@/components/domain/supplierDeliveryConfig";
 import { PART_CATEGORIES } from "@/components/domain/partConfig";
 import { getPoDisplayReference, validatePoIdentityFields } from "@/components/domain/poDisplayHelpers";
@@ -645,21 +645,7 @@ export default function PurchaseOrderDetail({ poId, onClose, mode = "page" }) {
     }
   };
 
-  const getStatusColor = (status) => {
-    const normalized = normaliseLegacyPoStatus(status);
-    const colors = {
-      [PO_STATUS.DRAFT]: 'bg-gray-200 text-gray-800',
-      [PO_STATUS.SENT]: 'bg-blue-200 text-blue-800',
-      [PO_STATUS.ON_ORDER]: 'bg-amber-200 text-amber-800',
-      [PO_STATUS.IN_TRANSIT]: 'bg-purple-200 text-purple-800',
-      [PO_STATUS.IN_LOADING_BAY]: 'bg-orange-200 text-orange-800',
-      [PO_STATUS.IN_STORAGE]: 'bg-green-200 text-green-800',
-      [PO_STATUS.IN_VEHICLE]: 'bg-indigo-200 text-indigo-800',
-      [PO_STATUS.INSTALLED]: 'bg-teal-200 text-teal-800',
-      [PO_STATUS.CANCELLED]: 'bg-red-200 text-red-800',
-    };
-    return colors[normalized] || 'bg-gray-200 text-gray-800';
-  };
+
 
   const calculateTotal = () => {
     return formData.line_items.reduce((sum, item) => {
@@ -719,7 +705,7 @@ export default function PurchaseOrderDetail({ poId, onClose, mode = "page" }) {
               <div className="flex-1">
                 <div className="flex items-center gap-3">
                   <h2 className="text-xl font-bold text-[#111827]">Purchase Order</h2>
-                  <Badge className={getStatusColor(formData.status)}>{getPoStatusLabel(formData.status)}</Badge>
+                  <Badge className={getPoStatusColor(formData.status)}>{getPoStatusLabel(formData.status)}</Badge>
                 </div>
                 {isDraft ? (
                  <Input
