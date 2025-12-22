@@ -2,7 +2,6 @@ import React, { useState, useEffect } from "react";
 import { base44 } from "@/api/base44Client";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { sameId } from "@/components/utils/id";
-import { queryKeys } from "@/components/api/queryKeys";
 import { invalidatePurchaseOrderBundle } from "@/components/api/invalidate";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -583,7 +582,7 @@ export default function PurchaseOrderDetail({ poId, onClose, mode = "page" }) {
         line_items: prev.line_items.filter(item => !sameId(item.id, deletedLineId))
       }));
       
-      await queryClient.invalidateQueries({ queryKey: queryKeys.purchaseOrderLines(poId) });
+      await queryClient.invalidateQueries({ queryKey: ['purchaseOrderLines', poId] });
       await queryClient.invalidateQueries({ queryKey: ['parts'] });
       toast.success('Item removed');
     },
@@ -621,7 +620,7 @@ export default function PurchaseOrderDetail({ poId, onClose, mode = "page" }) {
       await base44.entities.PurchaseOrderLine.update(lineId, lineData);
     },
     onSuccess: async () => {
-      await queryClient.invalidateQueries({ queryKey: queryKeys.purchaseOrderLines(poId) });
+      await queryClient.invalidateQueries({ queryKey: ['purchaseOrderLines', poId] });
     }
   });
 
