@@ -1198,6 +1198,7 @@ Format as HTML bullet points using <ul> and <li> tags. Include only the most cri
                   <TabsTrigger value="overview" className="flex-1 whitespace-nowrap">
                     Overview
                   </TabsTrigger>
+                  <TabsTrigger value="activity" className="flex-1 whitespace-nowrap">Activity</TabsTrigger>
                   <TabsTrigger value="emails" className="flex-1 whitespace-nowrap">Emails</TabsTrigger>
                   <TabsTrigger value="quoting" className="flex-1 whitespace-nowrap">Quoting</TabsTrigger>
                   <TabsTrigger value="parts" className="flex-1 whitespace-nowrap">Parts</TabsTrigger>
@@ -1383,6 +1384,26 @@ Format as HTML bullet points using <ul> and <li> tags. Include only the most cri
                 </div>
               </div>
             )}
+          </TabsContent>
+
+          <TabsContent value="activity" className="mt-3 space-y-4">
+            <ProjectEmailSection 
+              project={project}
+              onThreadLinked={() => {
+                queryClient.invalidateQueries({ queryKey: ['project', project.id] });
+              }}
+            />
+
+            <div>
+              <RichTextField
+                label="Notes"
+                value={notes}
+                onChange={setNotes}
+                onBlur={handleNotesBlur}
+                placeholder="Add any extra notes or context for the team…"
+                helperText="Internal only"
+              />
+            </div>
           </TabsContent>
 
           <TabsContent value="summary" className="mt-3">
