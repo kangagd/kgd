@@ -3,7 +3,7 @@
  * Bundles related invalidations to ensure consistency
  */
 
-import { queryKeys } from './queryKeys';
+import { projectKeys } from './queryKeys';
 
 /**
  * Invalidate all purchase order related queries
@@ -12,9 +12,9 @@ import { queryKeys } from './queryKeys';
  */
 export async function invalidatePurchaseOrderBundle(queryClient, poId) {
   await Promise.all([
-    queryClient.invalidateQueries({ queryKey: queryKeys.purchaseOrders() }),
-    queryClient.invalidateQueries({ queryKey: queryKeys.purchaseOrder(poId) }),
-    queryClient.invalidateQueries({ queryKey: queryKeys.purchaseOrderLines(poId) }),
+    queryClient.invalidateQueries({ queryKey: ['purchaseOrders'] }),
+    queryClient.invalidateQueries({ queryKey: ['purchaseOrder', poId] }),
+    queryClient.invalidateQueries({ queryKey: projectKeys.purchaseOrders(poId) }),
   ]);
 }
 
@@ -25,8 +25,7 @@ export async function invalidatePurchaseOrderBundle(queryClient, poId) {
  */
 export async function invalidateProjectBundle(queryClient, projectId) {
   await Promise.all([
-    queryClient.invalidateQueries({ queryKey: queryKeys.projects() }),
-    queryClient.invalidateQueries({ queryKey: ['projectParts', projectId] }),
-    queryClient.invalidateQueries({ queryKey: ['projectParts'] }),
+    queryClient.invalidateQueries({ queryKey: projectKeys.all }),
+    queryClient.invalidateQueries({ queryKey: projectKeys.parts(projectId) }),
   ]);
 }
