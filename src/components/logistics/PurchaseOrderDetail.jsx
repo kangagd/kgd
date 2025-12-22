@@ -2,6 +2,8 @@ import React, { useState, useEffect } from "react";
 import { base44 } from "@/api/base44Client";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { sameId } from "@/components/utils/id";
+import { queryKeys } from "@/components/api/queryKeys";
+import { invalidatePurchaseOrderBundle } from "@/components/api/invalidate";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -164,11 +166,8 @@ export default function PurchaseOrderDetail({ poId, onClose, mode = "page" }) {
     mutationFn: async (updateData) => {
       await base44.entities.PurchaseOrder.update(poId, updateData);
     },
-    onSuccess: () => {
-      // Standardised invalidation set for PO updates
-      queryClient.invalidateQueries({ queryKey: ['purchaseOrder', poId] });
-      queryClient.invalidateQueries({ queryKey: ['purchaseOrders'] });
-      queryClient.invalidateQueries({ queryKey: ['purchaseOrderLines', poId] });
+    onSuccess: async () => {
+      await invalidatePurchaseOrderBundle(queryClient, poId);
       queryClient.invalidateQueries({ queryKey: ['parts'] });
       queryClient.invalidateQueries({ queryKey: ['projectParts'] });
       queryClient.invalidateQueries({ queryKey: ['projectPOs'] });
@@ -215,8 +214,8 @@ export default function PurchaseOrderDetail({ poId, onClose, mode = "page" }) {
       }
       return response.data;
     },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['purchaseOrders'] });
+    onSuccess: async () => {
+      await invalidatePurchaseOrderBundle(queryClient, poId);
       toast.success('Purchase Order deleted');
       onClose();
     },
@@ -282,12 +281,8 @@ export default function PurchaseOrderDetail({ poId, onClose, mode = "page" }) {
       attachments: updatedPO.attachments ?? prev.attachments,
     }));
 
-    // still invalidate list queries
-    await Promise.all([
-      queryClient.invalidateQueries({ queryKey: ["purchaseOrders"] }),
-      queryClient.invalidateQueries({ queryKey: ["purchaseOrderLines", poId] }),
-      queryClient.invalidateQueries({ queryKey: ["parts"] }),
-    ]);
+    await invalidatePurchaseOrderBundle(queryClient, poId);
+    await queryClient.invalidateQueries({ queryKey: ["parts"] });
 
     toast.success("Purchase Order saved");
   };
@@ -424,11 +419,8 @@ export default function PurchaseOrderDetail({ poId, onClose, mode = "page" }) {
         eta: statusUpdatedPO.expected_date ?? prev.eta,
       }));
       
-      await Promise.all([
-        queryClient.invalidateQueries({ queryKey: ['purchaseOrders'] }),
-        queryClient.invalidateQueries({ queryKey: ['purchaseOrderLines', poId] }),
-        queryClient.invalidateQueries({ queryKey: ['parts'] }),
-      ]);
+      await invalidatePurchaseOrderBundle(queryClient, poId);
+      await queryClient.invalidateQueries({ queryKey: ['parts'] });
       toast.success('Purchase Order sent to supplier');
     } else {
       toast.error('Failed to update status');
@@ -532,12 +524,11 @@ export default function PurchaseOrderDetail({ poId, onClose, mode = "page" }) {
         line_items: [...prev.line_items, newLineItem]
       }));
       
+      await invalidatePurchaseOrderBundle(queryClient, poId);
       await Promise.all([
-        queryClient.invalidateQueries({ queryKey: ['purchaseOrderLines', poId] }),
         queryClient.invalidateQueries({ queryKey: ['parts'] }),
         queryClient.invalidateQueries({ queryKey: ['projectParts', formData.project_id] }),
         queryClient.invalidateQueries({ queryKey: ['projectParts'] }),
-        queryClient.invalidateQueries({ queryKey: ['purchaseOrder', poId] })
       ]);
       toast.success('Item added');
     },
@@ -577,15 +568,15 @@ export default function PurchaseOrderDetail({ poId, onClose, mode = "page" }) {
       await base44.entities.PurchaseOrderLine.delete(lineId);
       return lineId;
     },
-    onSuccess: (deletedLineId) => {
+    onSuccess: async (deletedLineId) => {
       // Immediately update local state
       setFormData(prev => ({
         ...prev,
         line_items: prev.line_items.filter(item => !sameId(item.id, deletedLineId))
       }));
       
-      queryClient.invalidateQueries({ queryKey: ['purchaseOrderLines', poId] });
-      queryClient.invalidateQueries({ queryKey: ['parts'] });
+      await queryClient.invalidateQueries({ queryKey: queryKeys.purchaseOrderLines(poId) });
+      await queryClient.invalidateQueries({ queryKey: ['parts'] });
       toast.success('Item removed');
     },
     onError: () => {
@@ -621,8 +612,8 @@ export default function PurchaseOrderDetail({ poId, onClose, mode = "page" }) {
       
       await base44.entities.PurchaseOrderLine.update(lineId, lineData);
     },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['purchaseOrderLines', poId] });
+    onSuccess: async () => {
+      await queryClient.invalidateQueries({ queryKey: queryKeys.purchaseOrderLines(poId) });
     }
   });
 
@@ -900,9 +891,8 @@ export default function PurchaseOrderDetail({ poId, onClose, mode = "page" }) {
                     }));
                     
                     // Invalidate all relevant queries
+                    await invalidatePurchaseOrderBundle(queryClient, poId);
                     await Promise.all([
-                      queryClient.invalidateQueries({ queryKey: ['purchaseOrders'] }),
-                      queryClient.invalidateQueries({ queryKey: ['purchaseOrderLines', poId] }),
                       queryClient.invalidateQueries({ queryKey: ['parts'] }),
                       queryClient.invalidateQueries({ queryKey: ['allJobs'] }),
                       queryClient.invalidateQueries({ queryKey: ['linkedJob', updatedPO.linked_logistics_job_id] })
