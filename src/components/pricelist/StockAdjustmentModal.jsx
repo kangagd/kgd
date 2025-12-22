@@ -8,12 +8,20 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { base44 } from "@/api/base44Client";
 import { PackagePlus, PackageMinus } from "lucide-react";
+import { usePermissions, PERMISSIONS } from "@/components/auth/permissions";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
 
 export default function StockAdjustmentModal({ item, open, onClose }) {
   const [movementType, setMovementType] = useState("stock_in");
   const [quantity, setQuantity] = useState("");
   const [notes, setNotes] = useState("");
   const queryClient = useQueryClient();
+  const { can } = usePermissions();
 
   const adjustStockMutation = useMutation({
     mutationFn: async (data) => {
@@ -144,13 +152,26 @@ export default function StockAdjustmentModal({ item, open, onClose }) {
             >
               Cancel
             </Button>
-            <Button
-              type="submit"
-              disabled={adjustStockMutation.isPending || !quantity || newStock < 0}
-              className="flex-1 bg-orange-600 hover:bg-orange-700"
-            >
-              {adjustStockMutation.isPending ? 'Adjusting...' : 'Adjust Stock'}
-            </Button>
+            <TooltipProvider>
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <span className="flex-1">
+                    <Button
+                      type="submit"
+                      disabled={adjustStockMutation.isPending || !quantity || newStock < 0 || !can(PERMISSIONS.ADJUST_STOCK)}
+                      className="w-full bg-orange-600 hover:bg-orange-700"
+                    >
+                      {adjustStockMutation.isPending ? 'Adjusting...' : 'Adjust Stock'}
+                    </Button>
+                  </span>
+                </TooltipTrigger>
+                {!can(PERMISSIONS.ADJUST_STOCK) && (
+                  <TooltipContent>
+                    <p>Insufficient permissions</p>
+                  </TooltipContent>
+                )}
+              </Tooltip>
+            </TooltipProvider>
           </div>
         </form>
       </DialogContent>
