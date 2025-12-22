@@ -67,6 +67,9 @@ import DocumentListItem from "./DocumentListItem";
 import LastActivityCard from "./LastActivityCard";
 import SamplesAtClientPanel from "./SamplesAtClientPanel";
 import AttentionItemsPanel from "../attention/AttentionItemsPanel";
+import ProjectSnapshotZone from "./ProjectSnapshotZone";
+import ProjectNextActionsZone from "./ProjectNextActionsZone";
+import ProjectSummaryZone from "./ProjectSummaryZone";
 
 const statusColors = {
   "Lead": "bg-slate-100 text-slate-700",
@@ -1445,17 +1448,6 @@ Format as HTML bullet points using <ul> and <li> tags. Include only the most cri
         </CardHeader>
 
       <CardContent className="p-3 md:p-4">
-        {/* Attention Items Panel */}
-        <AttentionItemsPanel
-          entity_type="project"
-          entity_id={project.id}
-          context_ids={{
-            customer_id: project.customer_id,
-            project_id: project.id,
-            job_id: null
-          }}
-        />
-
         <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
             <div className="sticky top-0 z-10 bg-white pb-3">
               <div className="overflow-x-auto -mx-3 px-3 md:mx-0 md:px-0 mb-3">
@@ -1478,31 +1470,43 @@ Format as HTML bullet points using <ul> and <li> tags. Include only the most cri
                   )}
                 </TabsList>
               </div>
-
-              {/* Tasks Section - Sticky Below Tabs */}
-              <div className="border border-[#E5E7EB] rounded-lg bg-white shadow-sm">
-                <Collapsible open={tasksOpen} onOpenChange={setTasksOpen}>
-                  <CollapsibleTrigger className="w-full">
-                    <div className="px-4 py-2.5 flex items-center justify-between hover:bg-[#F9FAFB] transition-colors">
-                      <h3 className="text-[14px] font-semibold text-[#111827]">Tasks</h3>
-                      <ChevronDown className={`w-4 h-4 text-[#6B7280] transition-transform ${tasksOpen ? 'transform rotate-180' : ''}`} />
-                    </div>
-                  </CollapsibleTrigger>
-                  <CollapsibleContent>
-                    <div className="px-3 pb-3 pt-1 border-t border-[#E5E7EB]">
-                      <TasksPanel
-                        entityType="project"
-                        entityId={project.id}
-                        entityName={project.title}
-                        compact={true}
-                      />
-                    </div>
-                  </CollapsibleContent>
-                </Collapsible>
-              </div>
             </div>
 
           <TabsContent value="overview" className="space-y-3 mt-3">
+            {/* ZONE 1: Project Snapshot - Blockers */}
+            <ProjectSnapshotZone project={project} parts={parts} jobs={jobs} />
+
+            {/* ZONE 2: Attention Items */}
+            <AttentionItemsPanel
+              entity_type="project"
+              entity_id={project.id}
+              context_ids={{
+                customer_id: project.customer_id,
+                project_id: project.id,
+                job_id: null
+              }}
+            />
+
+            {/* ZONE 3: What's Next - Combined Tasks & Visits */}
+            <ProjectNextActionsZone
+              project={project}
+              jobs={jobs}
+              onAddJob={handleAddJob}
+              onJobClick={handleJobClick}
+              onPreviewJob={setPreviewJob}
+              canCreateJobs={canCreateJobs}
+            />
+
+            {/* ZONE 4: Project Summary - Description & Notes */}
+            <ProjectSummaryZone
+              description={description}
+              notes={notes}
+              onDescriptionChange={setDescription}
+              onNotesChange={setNotes}
+              onDescriptionBlur={handleDescriptionBlur}
+              onNotesBlur={handleNotesBlur}
+            />
+
             {/* Duplicate Warning */}
             <DuplicateWarningCard entityType="Project" record={project} />
 
@@ -1524,116 +1528,7 @@ Format as HTML bullet points using <ul> and <li> tags. Include only the most cri
               })
             }
 
-            {/* Visits Section */}
-            <Collapsible open={visitsOpen} onOpenChange={setVisitsOpen}>
-              <Card className="border border-[#E5E7EB] shadow-sm rounded-lg overflow-hidden">
-                <CardHeader className="bg-white px-4 py-3 border-b border-[#E5E7EB]">
-                  <div className="flex items-center justify-between w-full">
-                    <CollapsibleTrigger className="flex items-center flex-1 justify-between">
-                      <h3 className="text-[16px] font-semibold text-[#111827] leading-[1.2]">Visits ({jobs.length})</h3>
-                      <ChevronDown className={`w-4 h-4 text-[#6B7280] mr-2 transition-transform ${visitsOpen ? 'transform rotate-180' : ''}`} />
-                    </CollapsibleTrigger>
-                    {canCreateJobs && (
-                      <AddIconButton
-                        onClick={handleAddJob}
-                        title="Add Visit"
-                        className="flex-shrink-0 ml-2"
-                      />
-                    )}
-                  </div>
-                </CardHeader>
-                <CollapsibleContent>
-                  <CardContent className="p-3">
-                    {jobs.length === 0 ? (
-                      <div className="text-center py-6 bg-[#F8F9FA] rounded-lg">
-                        <p className="text-[14px] text-[#6B7280] leading-[1.4]">No visits yet</p>
-                      </div>
-                    ) : (
-                      <div className="space-y-2">
-                        {jobs.map((job) => (
-                          <div
-                            key={job.id}
-                            className="bg-white border border-[#E5E7EB] rounded-lg p-3 hover:border-[#FAE008] hover:shadow-sm transition-all cursor-pointer relative group"
-                          >
-                            <button
-                              onClick={(e) => {
-                                e.stopPropagation();
-                                setPreviewJob(job);
-                              }}
-                              className="absolute top-2 right-2 h-7 w-7 rounded-md hover:bg-[#F3F4F6] flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity z-10"
-                              title="Preview"
-                            >
-                              <Eye className="w-4 h-4 text-[#6B7280]" />
-                            </button>
-                            <div 
-                              className="flex flex-col gap-2"
-                              onClick={() => handleJobClick(job.id)}
-                            >
-                              <div className="flex items-center gap-2 flex-wrap pr-8">
-                                <Badge className="bg-white text-[#6B7280] border border-[#E5E7EB] font-medium text-xs px-2.5 py-0.5 rounded-lg hover:bg-white">
-                                          #{job.job_number}
-                                        </Badge>
-                                <Badge className={`${jobStatusColors[job.status]} border-0 font-semibold text-xs px-3 py-1 rounded-lg hover:opacity-100`}>
-                                  {job.status}
-                                </Badge>
-                                {job.job_type_name && (
-                                  <Badge className="bg-[#EDE9FE] text-[#6D28D9] border-0 font-semibold text-xs px-3 py-1 rounded-lg hover:bg-[#EDE9FE]">
-                                    {job.job_type_name}
-                                  </Badge>
-                                )}
-                              </div>
-
-                              <div className="flex items-center justify-between">
-                                {job.scheduled_date && (
-                                  <p className="text-sm text-[#4B5563]">
-                                    {new Date(job.scheduled_date).toLocaleDateString()}
-                                    {job.scheduled_time && ` • ${job.scheduled_time}`}
-                                  </p>
-                                )}
-
-                                {job.assigned_to && job.assigned_to.length > 0 && (
-                                  <TechnicianAvatarGroup
-                                    technicians={job.assigned_to.map((email, idx) => ({
-                                      email,
-                                      full_name: job.assigned_to_name?.[idx] || email,
-                                      id: email
-                                    }))}
-                                    maxDisplay={3}
-                                    size="sm"
-                                  />
-                                )}
-                              </div>
-                            </div>
-                          </div>
-                        ))}
-                      </div>
-                    )}
-                  </CardContent>
-                </CollapsibleContent>
-              </Card>
-            </Collapsible>
-
             <div>
-              <RichTextField
-                label="Description"
-                value={description}
-                onChange={setDescription}
-                onBlur={handleDescriptionBlur}
-                placeholder="Add a clear summary of this project…"
-              />
-            </div>
-
-            <div>
-              <RichTextField
-                label="Notes"
-                value={notes}
-                onChange={setNotes}
-                onBlur={handleNotesBlur}
-                placeholder="Add any extra notes or context for the team…"
-                helperText="Internal only"
-              />
-            </div>
-
             {isInstallType && (
               <div>
                 <div className="flex items-center justify-between mb-1.5">
