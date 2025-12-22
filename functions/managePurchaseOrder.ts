@@ -393,7 +393,7 @@ Deno.serve(async (req) => {
           supplier_id, project_id, delivery_method, delivery_location,
           line_items, status, supplier_name, notes,
           reference, po_number, po_reference,
-          name, eta, attachments, vehicle_id
+          name, eta, expected_date, attachments, vehicle_id
         } = await req.json();
 
         // Action: create
@@ -439,6 +439,9 @@ Deno.serve(async (req) => {
                 }
             }
 
+            // Compute expected_date: prefer expected_date, fallback to eta
+            const expected_date_to_save = expected_date ?? eta ?? null;
+
             const poData = {
                 supplier_id,
                 supplier_name: resolvedSupplierName,
@@ -451,7 +454,7 @@ Deno.serve(async (req) => {
                 name: normalizedName,
                 created_by: user.email,
                 order_date: new Date().toISOString().split('T')[0],
-                expected_date: eta || null,
+                expected_date: expected_date_to_save,
             };
 
             let po = await base44.asServiceRole.entities.PurchaseOrder.create(poData);
@@ -549,7 +552,12 @@ Deno.serve(async (req) => {
             if (delivery_method !== undefined) updateData.delivery_method = delivery_method || null;
             if (delivery_location !== undefined) updateData.delivery_location = delivery_location || null;
             if (notes !== undefined) updateData.notes = notes || null;
-            if (eta !== undefined) updateData.expected_date = eta || null;
+            
+            // Compute expected_date: prefer expected_date, fallback to eta
+            if (expected_date !== undefined || eta !== undefined) {
+                updateData.expected_date = expected_date ?? eta ?? null;
+            }
+            
             if (attachments !== undefined) updateData.attachments = attachments || [];
             
             // --- PERMANENT GUARDRAIL: Normalize references ---
@@ -717,9 +725,9 @@ Deno.serve(async (req) => {
                 updateData.arrived_at = new Date().toISOString();
             }
             
-            // Update ETA if provided (only mutable field allowed)
-            if (eta !== undefined) {
-                updateData.expected_date = eta || null;
+            // Update expected_date if provided (only mutable field allowed)
+            if (expected_date !== undefined || eta !== undefined) {
+                updateData.expected_date = expected_date ?? eta ?? null;
             }
 
             console.log('[managePurchaseOrder:updateStatus] Preserving identity:', {
@@ -899,6 +907,9 @@ Deno.serve(async (req) => {
 
             const normalizedName = name ?? data?.name ?? null;
 
+            // Compute expected_date: prefer expected_date, fallback to eta
+            const expected_date_to_save = expected_date ?? eta ?? null;
+
             const poData = {
                 supplier_id,
                 supplier_name: supplier_name || null,
@@ -911,7 +922,7 @@ Deno.serve(async (req) => {
                 name: normalizedName,
                 created_by: user.email,
                 order_date: new Date().toISOString().split('T')[0],
-                expected_date: eta || null,
+                expected_date: expected_date_to_save,
             };
 
             let newPO = await base44.asServiceRole.entities.PurchaseOrder.create(poData);
