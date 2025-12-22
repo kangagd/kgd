@@ -1557,6 +1557,43 @@ Format as HTML bullet points using <ul> and <li> tags. Include only the most cri
             </div>
 
           <TabsContent value="overview" className="space-y-4 mt-3">
+            {/* Attention Required */}
+            {(() => {
+              const { data: attentionItems = [] } = useQuery({
+                queryKey: ['attentionItems', 'project', project.id],
+                queryFn: () => base44.entities.AttentionItem.filter({ 
+                  entity_type: 'project',
+                  entity_id: project.id,
+                  status: 'open'
+                }),
+                enabled: !!project.id
+              });
+
+              if (attentionItems.length === 0) return null;
+
+              return (
+                <Card className="border-l-4 border-l-amber-500 bg-amber-50/50 border border-amber-200 shadow-sm">
+                  <CardHeader className="pb-3">
+                    <div className="flex items-center gap-2">
+                      <div className="w-8 h-8 rounded-full bg-amber-100 flex items-center justify-center">
+                        <span className="text-amber-600 text-lg">⚠</span>
+                      </div>
+                      <CardTitle className="text-[16px] font-semibold text-amber-900">
+                        Attention Required
+                      </CardTitle>
+                    </div>
+                  </CardHeader>
+                  <CardContent className="space-y-2">
+                    {attentionItems.map((item) => (
+                      <div key={item.id} className="text-[14px] text-amber-900 leading-relaxed">
+                        • {item.message || item.description || 'Action required'}
+                      </div>
+                    ))}
+                  </CardContent>
+                </Card>
+              );
+            })()}
+
             {/* Duplicate Warning */}
             <DuplicateWarningCard entityType="Project" record={project} />
 
