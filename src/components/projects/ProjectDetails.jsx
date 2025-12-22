@@ -1203,7 +1203,7 @@ Format as HTML bullet points using <ul> and <li> tags. Include only the most cri
                   <TabsTrigger value="overview" className="flex-1 whitespace-nowrap">
                     Overview
                   </TabsTrigger>
-                  <TabsTrigger value="emails" className="flex-1 whitespace-nowrap">Emails</TabsTrigger>
+                  <TabsTrigger value="activity" className="flex-1 whitespace-nowrap">Activity</TabsTrigger>
                   <TabsTrigger value="quoting" className="flex-1 whitespace-nowrap">Quoting</TabsTrigger>
                   <TabsTrigger value="parts" className="flex-1 whitespace-nowrap">Parts</TabsTrigger>
                   <TabsTrigger value="invoices" className="flex-1 whitespace-nowrap">Invoices</TabsTrigger>
@@ -1243,6 +1243,22 @@ Format as HTML bullet points using <ul> and <li> tags. Include only the most cri
             </div>
 
           <TabsContent value="overview" className="space-y-3 mt-3">
+            <ProjectOverviewLayout
+              project={project}
+              parts={parts}
+              jobs={jobs}
+              description={description}
+              notes={notes}
+              onDescriptionChange={setDescription}
+              onNotesChange={setNotes}
+              onDescriptionBlur={handleDescriptionBlur}
+              onNotesBlur={handleNotesBlur}
+              onAddJob={handleAddJob}
+              onJobClick={handleJobClick}
+              onPreviewJob={setPreviewJob}
+              canCreateJobs={canCreateJobs}
+            />
+
             {/* Duplicate Warning */}
             <DuplicateWarningCard entityType="Project" record={project} />
 
@@ -1263,27 +1279,6 @@ Format as HTML bullet points using <ul> and <li> tags. Include only the most cri
                 );
               })
             }
-
-            <div>
-              <RichTextField
-                label="Description"
-                value={description}
-                onChange={setDescription}
-                onBlur={handleDescriptionBlur}
-                placeholder="Add a clear summary of this project…"
-              />
-            </div>
-
-            <div>
-              <RichTextField
-                label="Notes"
-                value={notes}
-                onChange={setNotes}
-                onBlur={handleNotesBlur}
-                placeholder="Add any extra notes or context for the team…"
-                helperText="Internal only"
-              />
-            </div>
 
             {isInstallType && (
               <div>
@@ -1437,13 +1432,8 @@ Format as HTML bullet points using <ul> and <li> tags. Include only the most cri
             <LogisticsTimeline project={project} />
           </TabsContent>
 
-          <TabsContent value="emails" className="mt-3">
-            <ProjectEmailSection 
-              project={project}
-              onThreadLinked={() => {
-                queryClient.invalidateQueries({ queryKey: ['project', project.id] });
-              }}
-            />
+          <TabsContent value="activity" className="mt-3">
+            <ActivityTab project={project} />
           </TabsContent>
 
           <TabsContent value="invoices" className="mt-3">
