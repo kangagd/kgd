@@ -101,26 +101,85 @@ export default function Jobs() {
     };
   }, []);
 
-  const { data: jobs = [], isLoading, refetch } = useQuery({
-    queryKey: ['allJobs'],
+  const [allJobsData, setAllJobsData] = useState([]);
+  const [jobsCursor, setJobsCursor] = useState(null);
+  const [hasMoreJobs, setHasMoreJobs] = useState(true);
+
+  const { data: jobsPage, isLoading, refetch, isFetching } = useQuery({
+    queryKey: ['allJobs', jobsCursor],
     queryFn: async () => {
       try {
-        // Use backend function to fetch jobs with robust permission handling
-        const response = await base44.functions.invoke('getMyJobs');
-        const allJobs = response.data || [];
-
-        // Filter out deleted and cancelled jobs in the frontend
-        const activeJobs = allJobs.filter(job => !job.deleted_at && job.status !== "Cancelled");
-
-        return activeJobs;
+        // Use backend function for first page, then fall back to direct fetch
+        if (!jobsCursor) {
+          const response = await base44.functions.invoke('getMyJobs');
+          const allJobs = response.data || [];
+          const activeJobs = allJobs.filter(job => !job.deleted_at && job.status !== "Cancelled");
+          
+          // Sort by updated_date descending
+          activeJobs.sort((a, b) => {
+            const dateA = a.updated_date || a.created_date || '';
+            const dateB = b.updated_date || b.created_date || '';
+            return dateB.localeCompare(dateA);
+          });
+          
+          // Take first 50 and check if more
+          const limited = activeJobs.slice(0, 50);
+          return {
+            data: limited,
+            nextCursor: activeJobs.length > 50 ? 'page-2' : null
+          };
+        } else {
+          // For subsequent pages, fetch directly
+          const response = await base44.functions.invoke('getMyJobs');
+          const allJobs = response.data || [];
+          const activeJobs = allJobs.filter(job => !job.deleted_at && job.status !== "Cancelled");
+          
+          activeJobs.sort((a, b) => {
+            const dateA = a.updated_date || a.created_date || '';
+            const dateB = b.updated_date || b.created_date || '';
+            return dateB.localeCompare(dateA);
+          });
+          
+          // Calculate offset from cursor
+          const pageNum = parseInt(jobsCursor.split('-')[1]) || 2;
+          const offset = (pageNum - 1) * 50;
+          const limited = activeJobs.slice(offset, offset + 50);
+          
+          return {
+            data: limited,
+            nextCursor: activeJobs.length > offset + 50 ? `page-${pageNum + 1}` : null
+          };
+        }
       } catch (error) {
-        return [];
+        return { data: [], nextCursor: null };
       }
     },
-    refetchInterval: 5000,
+    refetchInterval: jobsCursor ? false : 5000,
     refetchOnMount: 'always',
     refetchOnWindowFocus: true
   });
+
+  // Accumulate jobs data
+  useEffect(() => {
+    if (jobsPage) {
+      if (!jobsCursor) {
+        // First page - replace all
+        setAllJobsData(jobsPage.data || []);
+      } else {
+        // Subsequent pages - append
+        setAllJobsData(prev => [...prev, ...(jobsPage.data || [])]);
+      }
+      setHasMoreJobs(!!jobsPage.nextCursor);
+    }
+  }, [jobsPage, jobsCursor]);
+
+  const jobs = allJobsData;
+
+  const handleLoadMore = () => {
+    if (jobsPage?.nextCursor && !isFetching) {
+      setJobsCursor(jobsPage.nextCursor);
+    }
+  };
 
   const jobIdFromUrl = searchParams.get('jobId');
 
@@ -586,6 +645,19 @@ export default function Jobs() {
           />
         )}
 
+        {hasMoreJobs && !isLoading && (
+          <div className="flex justify-center mt-6">
+            <Button
+              onClick={handleLoadMore}
+              disabled={isFetching}
+              variant="outline"
+              className="min-w-[200px]"
+            >
+              {isFetching ? "Loading..." : "Load More"}
+            </Button>
+          </div>
+        )}
+
         <EntityModal
           open={!!modalJob}
           onClose={() => setModalJob(null)}
@@ -595,7 +667,7 @@ export default function Jobs() {
         >
           {modalJob && <JobModalView job={modalJob} />}
         </EntityModal>
-      </div>
-    </div>
-  );
-}
+        </div>
+        </div>
+        );
+        }
