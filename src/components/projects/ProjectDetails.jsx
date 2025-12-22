@@ -282,6 +282,12 @@ export default function ProjectDetails({ project: initialProject, onClose, onEdi
     enabled: !!project.id
   });
 
+  const { data: projectTasks = [] } = useQuery({
+    queryKey: ['projectTasks', project.id],
+    queryFn: () => base44.entities.Task.filter({ project_id: project.id }),
+    enabled: !!project.id
+  });
+
   // Auto-expand panels based on content
   React.useEffect(() => {
     if (projectContacts.length > 0 && !contactsOpen) setContactsOpen(true);
@@ -935,6 +941,20 @@ Format as HTML bullet points using <ul> and <li> tags. Include only the most cri
     gray: "bg-gray-100 text-gray-700"
   };
 
+  // Calculate command bar counts
+  const mediaCount = (project.image_urls || []).length;
+  const docsCount = [
+    project.quote_url,
+    project.invoice_url,
+    project.handover_pdf_url,
+    ...(project.other_documents || [])
+  ].filter(Boolean).length + (handoverReports.length > 0 ? 1 : 0);
+  const tasksCount = projectTasks.filter(t => t.status !== 'Completed' && t.status !== 'Cancelled').length;
+  const unreadCommsCount = chatMessages.filter(m => 
+    new Date(m.created_date) > new Date(lastReadChat) && 
+    m.sender_email !== user?.email
+  ).length;
+
   return (
     <div className="relative flex flex-col lg:flex-row gap-4 overflow-x-hidden items-start">
       {/* Customer Sidebar */}
@@ -1202,6 +1222,59 @@ Format as HTML bullet points using <ul> and <li> tags. Include only the most cri
             </AlertDialog>
             )}
           </div>
+        </div>
+
+        {/* Command Bar */}
+        <div className="flex items-center gap-2 px-3 py-2 bg-[#F9FAFB] border-y border-[#E5E7EB] overflow-x-auto">
+          <button
+            onClick={() => setActiveTab('overview')}
+            className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-white border border-[#E5E7EB] hover:border-[#FAE008] hover:bg-[#FFFEF5] transition-all whitespace-nowrap"
+          >
+            <ImageIcon className="w-4 h-4 text-[#6B7280]" />
+            <span className="text-[13px] font-medium text-[#111827]">Media</span>
+            <Badge variant="secondary" className="ml-1 px-1.5 py-0 text-[10px] bg-[#E5E7EB] text-[#4B5563]">
+              {mediaCount}
+            </Badge>
+          </button>
+          
+          <button
+            onClick={() => setActiveTab('overview')}
+            className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-white border border-[#E5E7EB] hover:border-[#FAE008] hover:bg-[#FFFEF5] transition-all whitespace-nowrap"
+          >
+            <FileText className="w-4 h-4 text-[#6B7280]" />
+            <span className="text-[13px] font-medium text-[#111827]">Docs</span>
+            <Badge variant="secondary" className="ml-1 px-1.5 py-0 text-[10px] bg-[#E5E7EB] text-[#4B5563]">
+              {docsCount}
+            </Badge>
+          </button>
+          
+          <button
+            onClick={() => setTasksOpen(true)}
+            className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-white border border-[#E5E7EB] hover:border-[#FAE008] hover:bg-[#FFFEF5] transition-all whitespace-nowrap"
+          >
+            <Briefcase className="w-4 h-4 text-[#6B7280]" />
+            <span className="text-[13px] font-medium text-[#111827]">Tasks</span>
+            <Badge variant="secondary" className="ml-1 px-1.5 py-0 text-[10px] bg-[#E5E7EB] text-[#4B5563]">
+              {tasksCount}
+            </Badge>
+          </button>
+          
+          <button
+            onClick={() => handleChatOpenChange(true)}
+            className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-white border border-[#E5E7EB] hover:border-[#FAE008] hover:bg-[#FFFEF5] transition-all whitespace-nowrap relative"
+          >
+            <MessageCircle className="w-4 h-4 text-[#6B7280]" />
+            <span className="text-[13px] font-medium text-[#111827]">Comms</span>
+            <Badge 
+              variant="secondary" 
+              className={`ml-1 px-1.5 py-0 text-[10px] ${unreadCommsCount > 0 ? 'bg-red-100 text-red-700' : 'bg-[#E5E7EB] text-[#4B5563]'}`}
+            >
+              {unreadCommsCount}
+            </Badge>
+            {unreadCommsCount > 0 && (
+              <span className="absolute top-1 right-1 flex h-2 w-2 rounded-full bg-red-500" />
+            )}
+          </button>
         </div>
 
         <div className="space-y-3">
@@ -1739,10 +1812,39 @@ Format as HTML bullet points using <ul> and <li> tags. Include only the most cri
       <EntityModal
         open={showAllContactsModal}
         onClose={() => setShowAllContactsModal(false)}
-        title="All Project Contacts"
+        title={`All Project Contacts (${projectContacts.length})`}
       >
-        <div className="p-4">
-          <ProjectContactsPanel project={project} />
+        <div className="p-4 space-y-4">
+          {projectContacts.map((contact) => (
+            <div key={contact.id} className="pb-4 border-b border-[#E5E7EB] last:border-0 last:pb-0">
+              <div className="flex items-start justify-between gap-2 mb-2">
+                <div className="font-medium text-[15px] text-[#111827]">
+                  {contact.name}
+                </div>
+                {contact.role && (
+                  <Badge variant="outline" className="text-[11px] px-2 py-0.5">
+                    {contact.role}
+                  </Badge>
+                )}
+              </div>
+              {contact.phone && (
+                <div className="flex items-center gap-2 text-[14px] text-[#6B7280] mb-1.5">
+                  <Phone className="w-4 h-4 flex-shrink-0" />
+                  <a href={`tel:${contact.phone}`} className="hover:text-[#111827] transition-colors">
+                    {contact.phone}
+                  </a>
+                </div>
+              )}
+              {contact.email && (
+                <div className="flex items-center gap-2 text-[14px] text-[#6B7280]">
+                  <Mail className="w-4 h-4 flex-shrink-0" />
+                  <a href={`mailto:${contact.email}`} className="hover:text-[#111827] transition-colors">
+                    {contact.email}
+                  </a>
+                </div>
+              )}
+            </div>
+          ))}
         </div>
       </EntityModal>
     </div>
