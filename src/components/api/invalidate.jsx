@@ -1,3 +1,4 @@
+
 /**
  * Centralized query invalidation helpers
  * Bundles related invalidations to ensure consistency
@@ -14,7 +15,7 @@ export async function invalidatePurchaseOrderBundle(queryClient, poId) {
   await Promise.all([
     queryClient.invalidateQueries({ queryKey: ['purchaseOrders'] }),
     queryClient.invalidateQueries({ queryKey: ['purchaseOrder', poId] }),
-    queryClient.invalidateQueries({ queryKey: projectKeys.purchaseOrders(poId) }),
+    queryClient.invalidateQueries({ queryKey: ['purchaseOrderLines', poId] }),
   ]);
 }
 
