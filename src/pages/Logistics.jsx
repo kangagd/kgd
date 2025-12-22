@@ -609,7 +609,7 @@ export default function Logistics() {
                     
                     setSelectedPoId(newPO.id);
                     toast.success("Draft Purchase Order created");
-                    await queryClient.invalidateQueries({ queryKey: queryKeys.purchaseOrders() });
+                    await queryClient.invalidateQueries({ queryKey: ['purchaseOrders'] });
                   } else {
                     toast.error("Failed to create PO");
                   }
