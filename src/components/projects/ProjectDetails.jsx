@@ -77,6 +77,9 @@ import SamplesAtClientPanel from "./SamplesAtClientPanel";
 import AttentionItemsPanel from "../attention/AttentionItemsPanel";
 import ProjectOverviewLayout from "./ProjectOverviewLayout";
 import ActivityTab from "./ActivityTab";
+import ProjectSnapshotZone from "./ProjectSnapshotZone";
+import ProjectNextActionsZone from "./ProjectNextActionsZone";
+import ProjectSummaryZone from "./ProjectSummaryZone";
 
 const statusColors = {
   "Lead": "bg-slate-100 text-slate-700",
