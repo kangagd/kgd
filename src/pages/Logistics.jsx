@@ -29,7 +29,6 @@ import {
 import { LOGISTICS_LOCATION } from "@/components/domain/logisticsConfig";
 import { PO_STATUS, PO_STATUS_OPTIONS, normaliseLegacyPoStatus } from "@/components/domain/purchaseOrderStatusConfig";
 import { getStatusLabel, getStatusColor } from "@/components/domain/statusRegistry";
-import { queryKeys } from "@/components/api/queryKeys";
 import { invalidatePurchaseOrderBundle } from "@/components/api/invalidate";
 import { poDbToUi, getPoDisplaySupplierName } from "@/components/domain/purchaseOrderAdapter";
 import { DELIVERY_METHOD as PO_DELIVERY_METHOD } from "@/components/domain/supplierDeliveryConfig";
