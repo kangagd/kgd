@@ -1167,6 +1167,7 @@ Format as HTML bullet points using <ul> and <li> tags. Include only the most cri
   );
 
   return (
+    <>
     <ProjectPageShell
       header={projectHeader}
       contextPanel={<ProjectContextPanel project={project} />}
@@ -1616,6 +1617,6 @@ Format as HTML bullet points using <ul> and <li> tags. Include only the most cri
       >
         <LastActivityCard project={project} />
       </EntityModal>
-    </div>
+    </>
   );
 }
