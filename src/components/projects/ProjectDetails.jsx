@@ -62,6 +62,7 @@ import HandoverReportModal from "../handover/HandoverReportModal";
 import ProjectContactsPanel from "./ProjectContactsPanel";
 import ThirdPartyTradesPanel from "./ThirdPartyTradesPanel";
 import BackButton from "../common/BackButton";
+import ProjectContextPanel from "./ProjectContextPanel";
 import { getProjectFreshnessBadge } from "../utils/freshness";
 import DocumentListItem from "./DocumentListItem";
 import LastActivityCard from "./LastActivityCard";
