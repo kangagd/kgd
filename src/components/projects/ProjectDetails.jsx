@@ -70,6 +70,7 @@ import AttentionItemsPanel from "../attention/AttentionItemsPanel";
 import ProjectSnapshotZone from "./ProjectSnapshotZone";
 import ProjectNextActionsZone from "./ProjectNextActionsZone";
 import ProjectSummaryZone from "./ProjectSummaryZone";
+import ActivityTab from "./ActivityTab";
 
 const statusColors = {
   "Lead": "bg-slate-100 text-slate-700",
@@ -1455,7 +1456,7 @@ Format as HTML bullet points using <ul> and <li> tags. Include only the most cri
                   <TabsTrigger value="overview" className="flex-1 whitespace-nowrap">
                     Overview
                   </TabsTrigger>
-                  <TabsTrigger value="emails" className="flex-1 whitespace-nowrap">Emails</TabsTrigger>
+                  <TabsTrigger value="activity" className="flex-1 whitespace-nowrap">Activity</TabsTrigger>
                   <TabsTrigger value="quoting" className="flex-1 whitespace-nowrap">Quoting</TabsTrigger>
                   <TabsTrigger value="parts" className="flex-1 whitespace-nowrap">Parts</TabsTrigger>
                   <TabsTrigger value="invoices" className="flex-1 whitespace-nowrap">Invoices</TabsTrigger>
@@ -1680,13 +1681,8 @@ Format as HTML bullet points using <ul> and <li> tags. Include only the most cri
             <LogisticsTimeline project={project} />
           </TabsContent>
 
-          <TabsContent value="emails" className="mt-3">
-            <ProjectEmailSection 
-              project={project}
-              onThreadLinked={() => {
-                queryClient.invalidateQueries({ queryKey: ['project', project.id] });
-              }}
-            />
+          <TabsContent value="activity" className="mt-3">
+            <ActivityTab project={project} />
           </TabsContent>
 
           <TabsContent value="invoices" className="mt-3">
