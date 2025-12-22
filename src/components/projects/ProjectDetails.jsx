@@ -1571,6 +1571,36 @@ Format as HTML bullet points using <ul> and <li> tags. Include only the most cri
 
               if (attentionItems.length === 0) return null;
 
+              const getTabForItem = (item) => {
+                const category = (item.category || '').toLowerCase();
+                const message = (item.message || item.description || '').toLowerCase();
+
+                if (category.includes('payment') || category.includes('invoice') || message.includes('deposit') || message.includes('payment') || message.includes('invoice')) {
+                  return 'invoices';
+                }
+                if (category.includes('part') || message.includes('part') || message.includes('stock')) {
+                  return 'parts';
+                }
+                if (category.includes('quote') || message.includes('quote')) {
+                  return 'quoting';
+                }
+                if (category.includes('site') || category.includes('visit') || message.includes('site') || message.includes('visit') || message.includes('schedule')) {
+                  return 'requirements';
+                }
+                if (category.includes('warranty') || message.includes('warranty')) {
+                  return 'warranty';
+                }
+                return 'overview';
+              };
+
+              const handleItemClick = (item) => {
+                const targetTab = getTabForItem(item);
+                setActiveTab(targetTab);
+                setTimeout(() => {
+                  document.getElementById(`tab-${targetTab}`)?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                }, 100);
+              };
+
               return (
                 <Card className="border-l-4 border-l-amber-500 bg-amber-50/50 border border-amber-200 shadow-sm">
                   <CardHeader className="pb-3">
@@ -1585,9 +1615,13 @@ Format as HTML bullet points using <ul> and <li> tags. Include only the most cri
                   </CardHeader>
                   <CardContent className="space-y-2">
                     {attentionItems.map((item) => (
-                      <div key={item.id} className="text-[14px] text-amber-900 leading-relaxed">
+                      <button
+                        key={item.id}
+                        onClick={() => handleItemClick(item)}
+                        className="w-full text-left text-[14px] text-amber-900 leading-relaxed hover:text-amber-950 hover:bg-amber-100/50 p-2 rounded-lg transition-colors cursor-pointer"
+                      >
                         • {item.message || item.description || 'Action required'}
-                      </div>
+                      </button>
                     ))}
                   </CardContent>
                 </Card>
