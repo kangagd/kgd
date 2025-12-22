@@ -29,6 +29,7 @@ import { LOGISTICS_LOCATION } from "@/components/domain/logisticsConfig";
 import { PO_STATUS, PO_STATUS_OPTIONS, getPoStatusLabel, getPoStatusColor, normaliseLegacyPoStatus } from "@/components/domain/purchaseOrderStatusConfig";
 import { queryKeys } from "@/components/api/queryKeys";
 import { invalidatePurchaseOrderBundle } from "@/components/api/invalidate";
+import { poDbToUi, getPoDisplaySupplierName } from "@/components/domain/purchaseOrderAdapter";
 import { DELIVERY_METHOD as PO_DELIVERY_METHOD } from "@/components/domain/supplierDeliveryConfig";
 import { PART_LOCATION } from "@/components/domain/partConfig";
 import { getPoDisplayReference } from "@/components/domain/poDisplayHelpers";
@@ -632,39 +633,32 @@ export default function Logistics() {
                   </div>
                   <div className="space-y-2">
                     {draftPOs.map((po) => {
-                      console.log("[LOGISTICS PO RENDER]", {
-                        id: po?.id,
-                        po_reference: po?.po_reference,
-                        po_number: po?.po_number,
-                        order_reference: po?.order_reference,
-                        reference: po?.reference,
-                        display: getPoDisplayReference(po),
-                      });
+                      const uiPo = poDbToUi(po);
                       
                       return (
                       <div
-                        key={po.id}
+                        key={uiPo.id}
                         className="cursor-pointer rounded-md border border-[#E5E7EB] bg-white px-3 py-2 text-xs shadow-sm hover:bg-[#F9FAFB] transition-colors"
-                        onClick={() => setSelectedPoId(po.id)}
+                        onClick={() => setSelectedPoId(uiPo.id)}
                       >
                         <div className="font-medium text-[#111827] mb-2">
-                          PO #{getPoDisplayReference(po)}
+                          PO #{uiPo.poReference}
                         </div>
                         <div className="mt-1 text-[11px] text-[#6B7280]">
-                          {suppliers.find(s => sameId(s.id, po.supplier_id))?.name || po.supplier_name || "Supplier not set"}
+                          {getPoDisplaySupplierName(po, suppliers)}
                         </div>
-                        {po.expected_date && (
+                        {uiPo.eta && (
                           <div className="mt-1 text-[11px] text-[#6B7280]">
-                            ETA: {format(new Date(po.expected_date), "MMM d")}
+                            ETA: {format(new Date(uiPo.eta), "MMM d")}
                           </div>
                         )}
                         <div className="mt-1 flex items-center gap-1">
-                          {po.delivery_method && (
+                          {uiPo.deliveryMethod && (
                             <Badge variant="outline" className="text-[10px] px-1 py-0">
-                              {po.delivery_method === PO_DELIVERY_METHOD.PICKUP ? "Pickup" : "Delivery"}
+                              {uiPo.deliveryMethod === PO_DELIVERY_METHOD.PICKUP ? "Pickup" : "Delivery"}
                             </Badge>
                           )}
-                          {po.linked_logistics_job_id && (
+                          {uiPo.linkedLogisticsJobId && (
                             <Badge variant="outline" className="text-[10px] px-1 py-0">
                               Job
                             </Badge>
@@ -672,13 +666,13 @@ export default function Logistics() {
                         </div>
                         <div className="mt-2">
                           <Select
-                            value={po.status}
+                            value={uiPo.status}
                             onValueChange={(value) => handleUpdatePoStatus(po, value)}
                             onClick={(e) => e.stopPropagation()}
                           >
                             <SelectTrigger className="h-6 w-full text-[10px] px-2 border-0 bg-slate-100 text-slate-700">
                               <SelectValue>
-                                {getPoStatusLabel(po.status)}
+                                {getPoStatusLabel(uiPo.status)}
                               </SelectValue>
                             </SelectTrigger>
                             <SelectContent onClick={(e) => e.stopPropagation()}>
@@ -710,30 +704,32 @@ export default function Logistics() {
                     <span className="text-xs text-[#6B7280]">{onOrderPOs.length}</span>
                   </div>
                   <div className="space-y-2">
-                    {onOrderPOs.map((po) => (
+                    {onOrderPOs.map((po) => {
+                      const uiPo = poDbToUi(po);
+                      return (
                       <div
-                        key={po.id}
+                        key={uiPo.id}
                         className="cursor-pointer rounded-md border border-[#E5E7EB] bg-white px-3 py-2 text-xs shadow-sm hover:bg-[#F9FAFB] transition-colors"
-                        onClick={() => setSelectedPoId(po.id)}
+                        onClick={() => setSelectedPoId(uiPo.id)}
                       >
                         <div className="font-medium text-[#111827] mb-2">
-                          PO #{getPoDisplayReference(po)}
+                          PO #{uiPo.poReference}
                         </div>
                         <div className="mt-1 text-[11px] text-[#6B7280]">
-                          {suppliers.find(s => sameId(s.id, po.supplier_id))?.name || po.supplier_name || "Supplier not set"}
+                          {getPoDisplaySupplierName(po, suppliers)}
                         </div>
-                        {po.expected_date && (
+                        {uiPo.eta && (
                           <div className="mt-1 text-[11px] text-[#6B7280]">
-                            ETA: {format(new Date(po.expected_date), "MMM d")}
+                            ETA: {format(new Date(uiPo.eta), "MMM d")}
                           </div>
                         )}
                         <div className="mt-1 flex items-center gap-1">
-                          {po.delivery_method && (
+                          {uiPo.deliveryMethod && (
                             <Badge variant="outline" className="text-[10px] px-1 py-0">
-                              {po.delivery_method === PO_DELIVERY_METHOD.PICKUP ? "Pickup" : "Delivery"}
+                              {uiPo.deliveryMethod === PO_DELIVERY_METHOD.PICKUP ? "Pickup" : "Delivery"}
                             </Badge>
                           )}
-                          {po.linked_logistics_job_id && (
+                          {uiPo.linkedLogisticsJobId && (
                             <Badge variant="outline" className="text-[10px] px-1 py-0">
                               Job
                             </Badge>
@@ -741,13 +737,13 @@ export default function Logistics() {
                         </div>
                         <div className="mt-2">
                           <Select
-                            value={po.status}
+                            value={uiPo.status}
                             onValueChange={(value) => handleUpdatePoStatus(po, value)}
                             onClick={(e) => e.stopPropagation()}
                           >
-                            <SelectTrigger className={`h-6 w-full text-[10px] px-2 border-0 ${getPoStatusColor(po.status)}`}>
+                            <SelectTrigger className={`h-6 w-full text-[10px] px-2 border-0 ${getPoStatusColor(uiPo.status)}`}>
                               <SelectValue>
-                                {getPoStatusLabel(po.status)}
+                                {getPoStatusLabel(uiPo.status)}
                               </SelectValue>
                             </SelectTrigger>
                             <SelectContent onClick={(e) => e.stopPropagation()}>
@@ -760,7 +756,8 @@ export default function Logistics() {
                           </Select>
                         </div>
                       </div>
-                    ))}
+                      );
+                    })}
                     {!onOrderPOs.length && (
                       <div className="text-[11px] text-[#6B7280] text-center py-4">
                         No POs
@@ -780,30 +777,32 @@ export default function Logistics() {
                     </span>
                   </div>
                   <div className="space-y-2">
-                    {readyAtSupplierPOs.map((po) => (
+                    {readyAtSupplierPOs.map((po) => {
+                      const uiPo = poDbToUi(po);
+                      return (
                       <div
-                        key={po.id}
+                        key={uiPo.id}
                         className="cursor-pointer rounded-md border border-[#E5E7EB] bg-white px-3 py-2 text-xs shadow-sm hover:bg-[#F9FAFB] transition-colors"
-                        onClick={() => setSelectedPoId(po.id)}
+                        onClick={() => setSelectedPoId(uiPo.id)}
                       >
                         <div className="font-medium text-[#111827] mb-2">
-                          PO #{getPoDisplayReference(po)}
+                          PO #{uiPo.poReference}
                         </div>
                         <div className="mt-1 text-[11px] text-[#6B7280]">
-                          {suppliers.find(s => sameId(s.id, po.supplier_id))?.name || po.supplier_name || "Supplier not set"}
+                          {getPoDisplaySupplierName(po, suppliers)}
                         </div>
-                        {po.expected_date && (
+                        {uiPo.eta && (
                           <div className="mt-1 text-[11px] text-[#6B7280]">
-                            ETA: {format(new Date(po.expected_date), "MMM d")}
+                            ETA: {format(new Date(uiPo.eta), "MMM d")}
                           </div>
                         )}
                         <div className="mt-1 flex items-center gap-1">
-                          {po.delivery_method && (
+                          {uiPo.deliveryMethod && (
                             <Badge variant="outline" className="text-[10px] px-1 py-0">
-                              {po.delivery_method === PO_DELIVERY_METHOD.PICKUP ? "Pickup" : "Delivery"}
+                              {uiPo.deliveryMethod === PO_DELIVERY_METHOD.PICKUP ? "Pickup" : "Delivery"}
                             </Badge>
                           )}
-                          {po.linked_logistics_job_id && (
+                          {uiPo.linkedLogisticsJobId && (
                             <Badge variant="outline" className="text-[10px] px-1 py-0">
                               Job
                             </Badge>
@@ -811,13 +810,13 @@ export default function Logistics() {
                         </div>
                         <div className="mt-2">
                           <Select
-                            value={po.status}
+                            value={uiPo.status}
                             onValueChange={(value) => handleUpdatePoStatus(po, value)}
                             onClick={(e) => e.stopPropagation()}
                           >
-                            <SelectTrigger className={`h-6 w-full text-[10px] px-2 border-0 ${getPoStatusColor(po.status)}`}>
+                            <SelectTrigger className={`h-6 w-full text-[10px] px-2 border-0 ${getPoStatusColor(uiPo.status)}`}>
                               <SelectValue>
-                                {getPoStatusLabel(po.status)}
+                                {getPoStatusLabel(uiPo.status)}
                               </SelectValue>
                             </SelectTrigger>
                             <SelectContent onClick={(e) => e.stopPropagation()}>
@@ -830,7 +829,8 @@ export default function Logistics() {
                           </Select>
                         </div>
                       </div>
-                    ))}
+                      );
+                    })}
                     {!readyAtSupplierPOs.length && (
                       <div className="text-[11px] text-[#6B7280] text-center py-4">
                         No POs
@@ -850,30 +850,32 @@ export default function Logistics() {
                     </span>
                   </div>
                   <div className="space-y-2">
-                    {atDeliveryBayPOs.map((po) => (
+                    {atDeliveryBayPOs.map((po) => {
+                      const uiPo = poDbToUi(po);
+                      return (
                       <div
-                        key={po.id}
+                        key={uiPo.id}
                         className="cursor-pointer rounded-md border border-[#E5E7EB] bg-white px-3 py-2 text-xs shadow-sm hover:bg-[#F9FAFB] transition-colors"
-                        onClick={() => setSelectedPoId(po.id)}
+                        onClick={() => setSelectedPoId(uiPo.id)}
                       >
                         <div className="font-medium text-[#111827] mb-2">
-                          PO #{getPoDisplayReference(po)}
+                          PO #{uiPo.poReference}
                         </div>
                         <div className="mt-1 text-[11px] text-[#6B7280]">
-                          {suppliers.find(s => sameId(s.id, po.supplier_id))?.name || po.supplier_name || "Supplier not set"}
+                          {getPoDisplaySupplierName(po, suppliers)}
                         </div>
-                        {po.expected_date && (
+                        {uiPo.eta && (
                           <div className="mt-1 text-[11px] text-[#6B7280]">
-                            ETA: {format(new Date(po.expected_date), "MMM d")}
+                            ETA: {format(new Date(uiPo.eta), "MMM d")}
                           </div>
                         )}
                         <div className="mt-1 flex items-center gap-1">
-                          {po.delivery_method && (
+                          {uiPo.deliveryMethod && (
                             <Badge variant="outline" className="text-[10px] px-1 py-0">
-                              {po.delivery_method === PO_DELIVERY_METHOD.PICKUP ? "Pickup" : "Delivery"}
+                              {uiPo.deliveryMethod === PO_DELIVERY_METHOD.PICKUP ? "Pickup" : "Delivery"}
                             </Badge>
                           )}
-                          {po.linked_logistics_job_id && (
+                          {uiPo.linkedLogisticsJobId && (
                             <Badge variant="outline" className="text-[10px] px-1 py-0">
                               Job
                             </Badge>
@@ -881,7 +883,7 @@ export default function Logistics() {
                         </div>
                         <div className="mt-2">
                           <Select
-                            value={po.status}
+                            value={uiPo.status}
                             onValueChange={(value) => handleUpdatePoStatus(po, value)}
                             onClick={(e) => e.stopPropagation()}
                           >
@@ -898,7 +900,8 @@ export default function Logistics() {
                           </Select>
                         </div>
                       </div>
-                    ))}
+                      );
+                    })}
                     {!atDeliveryBayPOs.length && (
                       <div className="text-[11px] text-[#6B7280] text-center py-4">
                         No POs
@@ -918,30 +921,32 @@ export default function Logistics() {
                     </span>
                   </div>
                   <div className="space-y-2">
-                    {completedPOs.map((po) => (
+                    {completedPOs.map((po) => {
+                      const uiPo = poDbToUi(po);
+                      return (
                       <div
-                        key={po.id}
+                        key={uiPo.id}
                         className="cursor-pointer rounded-md border border-[#E5E7EB] bg-white px-3 py-2 text-xs shadow-sm hover:bg-[#F9FAFB] transition-colors"
-                        onClick={() => setSelectedPoId(po.id)}
+                        onClick={() => setSelectedPoId(uiPo.id)}
                       >
                         <div className="font-medium text-[#111827] mb-2">
-                          PO #{getPoDisplayReference(po)}
+                          PO #{uiPo.poReference}
                         </div>
                         <div className="mt-1 text-[11px] text-[#6B7280]">
-                          {suppliers.find(s => sameId(s.id, po.supplier_id))?.name || po.supplier_name || "Supplier not set"}
+                          {getPoDisplaySupplierName(po, suppliers)}
                         </div>
-                        {po.expected_date && (
+                        {uiPo.eta && (
                           <div className="mt-1 text-[11px] text-[#6B7280]">
-                            ETA: {format(new Date(po.expected_date), "MMM d")}
+                            ETA: {format(new Date(uiPo.eta), "MMM d")}
                           </div>
                         )}
                         <div className="mt-1 flex items-center gap-1">
-                          {po.delivery_method && (
+                          {uiPo.deliveryMethod && (
                             <Badge variant="outline" className="text-[10px] px-1 py-0">
-                              {po.delivery_method === PO_DELIVERY_METHOD.PICKUP ? "Pickup" : "Delivery"}
+                              {uiPo.deliveryMethod === PO_DELIVERY_METHOD.PICKUP ? "Pickup" : "Delivery"}
                             </Badge>
                           )}
-                          {po.linked_logistics_job_id && (
+                          {uiPo.linkedLogisticsJobId && (
                             <Badge variant="outline" className="text-[10px] px-1 py-0">
                               Job
                             </Badge>
@@ -949,13 +954,13 @@ export default function Logistics() {
                         </div>
                         <div className="mt-2">
                           <Select
-                            value={po.status}
+                            value={uiPo.status}
                             onValueChange={(value) => handleUpdatePoStatus(po, value)}
                             onClick={(e) => e.stopPropagation()}
                           >
-                            <SelectTrigger className={`h-6 w-full text-[10px] px-2 border-0 ${getPoStatusColor(po.status)}`}>
+                            <SelectTrigger className={`h-6 w-full text-[10px] px-2 border-0 ${getPoStatusColor(uiPo.status)}`}>
                               <SelectValue>
-                                {getPoStatusLabel(po.status)}
+                                {getPoStatusLabel(uiPo.status)}
                               </SelectValue>
                             </SelectTrigger>
                             <SelectContent onClick={(e) => e.stopPropagation()}>
@@ -968,7 +973,8 @@ export default function Logistics() {
                           </Select>
                         </div>
                       </div>
-                    ))}
+                      );
+                    })}
                     {!completedPOs.length && (
                       <div className="text-[11px] text-[#6B7280] text-center py-4">
                         No POs
@@ -1018,7 +1024,11 @@ export default function Logistics() {
                               </span>
                             </div>
                             <div className="text-xs text-[#6B7280] mt-1">
-                              PO: #{getPoDisplayReference(purchaseOrders.find(p => sameId(p.id, item.po_id)))} • {item.supplier_name}
+                              {(() => {
+                                const po = purchaseOrders.find(p => sameId(p.id, item.po_id));
+                                const uiPo = poDbToUi(po);
+                                return `PO: #${uiPo?.poReference || item.po_id.substring(0, 8)} • ${item.supplier_name}`;
+                              })()}
                             </div>
                             {item.expected_date && (
                               <div className="text-xs text-[#6B7280] mt-0.5">
