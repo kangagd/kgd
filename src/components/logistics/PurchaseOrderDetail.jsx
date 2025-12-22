@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from "react";
 import { base44 } from "@/api/base44Client";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { sameId } from "@/components/utils/id";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -63,7 +64,7 @@ export default function PurchaseOrderDetail({ poId, onClose, mode = "page" }) {
     retry: (count, err) => err?.status !== 429 && count < 2,
   });
 
-  const linkedProject = projects.find(p => p.id === formData.project_id);
+  const linkedProject = projects.find(p => sameId(p.id, formData.project_id));
 
   const { data: linkedJob } = useQuery({
     queryKey: ['linkedJob', po?.linked_logistics_job_id],
@@ -477,7 +478,7 @@ export default function PurchaseOrderDetail({ poId, onClose, mode = "page" }) {
           price_list_item_id: lineData.price_list_item_id,
           quantity_required: newItem.quantity || 1,
           supplier_id: formData.supplier_id,
-          supplier_name: suppliers.find(s => s.id === formData.supplier_id)?.name || "",
+          supplier_name: suppliers.find(s => sameId(s.id, formData.supplier_id))?.name || "",
           po_number: formData.po_reference || getPoDisplayReference(po),
           source_type: newItem.source_type || "supplier_delivery",
           ...partOrderData
@@ -494,7 +495,7 @@ export default function PurchaseOrderDetail({ poId, onClose, mode = "page" }) {
           location: "supplier",
           purchase_order_id: poId,
           supplier_id: formData.supplier_id || null,
-          supplier_name: suppliers.find(s => s.id === formData.supplier_id)?.name || "",
+          supplier_name: suppliers.find(s => sameId(s.id, formData.supplier_id))?.name || "",
           po_number: formData.po_reference || getPoDisplayReference(po),
           source_type: newItem.source_type || "supplier_delivery",
           notes: newItem.notes || null,
@@ -578,7 +579,7 @@ export default function PurchaseOrderDetail({ poId, onClose, mode = "page" }) {
       // Immediately update local state
       setFormData(prev => ({
         ...prev,
-        line_items: prev.line_items.filter(item => item.id !== deletedLineId)
+        line_items: prev.line_items.filter(item => !sameId(item.id, deletedLineId))
       }));
       
       queryClient.invalidateQueries({ queryKey: ['purchaseOrderLines', poId] });
@@ -829,7 +830,7 @@ export default function PurchaseOrderDetail({ poId, onClose, mode = "page" }) {
               <div>
                 <Label>Supplier</Label>
                 <div className="px-3 py-2.5 bg-[#F3F4F6] rounded-lg text-[#111827] text-sm">
-                  {suppliers.find(s => s.id === formData.supplier_id)?.name || 'No supplier selected'}
+                  {suppliers.find(s => sameId(s.id, formData.supplier_id))?.name || 'No supplier selected'}
                 </div>
               </div>
             )}

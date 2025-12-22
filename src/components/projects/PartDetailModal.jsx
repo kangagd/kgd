@@ -6,6 +6,7 @@ import {
   DialogTitle,
   DialogFooter,
 } from "@/components/ui/dialog";
+import { sameId } from "@/components/utils/id";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -180,7 +181,7 @@ export default function PartDetailModal({ open, part, onClose, onSave, isSubmitt
       // If there is a linked price list item, set search text for it
       if (priceListItemId) {
         const linkedItem = priceListItems.find(
-          (item) => item.id === priceListItemId
+          (item) => sameId(item.id, priceListItemId)
         );
         setPriceListSearch(linkedItem ? linkedItem.item : "");
       } else {
@@ -234,7 +235,7 @@ export default function PartDetailModal({ open, part, onClose, onSave, isSubmitt
   });
 
   // Get selected item name for display
-  const selectedPriceListItem = priceListItems.find(item => item.id === formData.price_list_item_id);
+  const selectedPriceListItem = priceListItems.find(item => sameId(item.id, formData.price_list_item_id));
   const displayValue = formData.price_list_item_id 
     ? (selectedPriceListItem?.item || "Loading...") 
     : priceListSearch;
@@ -305,10 +306,10 @@ export default function PartDetailModal({ open, part, onClose, onSave, isSubmitt
 
   const toggleLogisticsJob = (jobId) => {
     const currentLinks = formData.linked_logistics_jobs || [];
-    if (currentLinks.includes(jobId)) {
+    if (currentLinks.some(id => sameId(id, jobId))) {
       setFormData(prev => ({
         ...prev,
-        linked_logistics_jobs: currentLinks.filter(id => id !== jobId)
+        linked_logistics_jobs: currentLinks.filter(id => !sameId(id, jobId))
       }));
     } else {
       setFormData(prev => ({
@@ -329,7 +330,7 @@ export default function PartDetailModal({ open, part, onClose, onSave, isSubmitt
     );
   }).slice(0, 20); // Limit results
 
-  const linkedJobsData = jobs.filter(job => (formData.linked_logistics_jobs || []).includes(job.id));
+  const linkedJobsData = jobs.filter(job => (formData.linked_logistics_jobs || []).some(id => sameId(id, job.id)));
 
   const handleMovePart = (toLocation) => {
     if (!part?.id) {
@@ -462,7 +463,7 @@ export default function PartDetailModal({ open, part, onClose, onSave, isSubmitt
                               key={item.id}
                               type="button"
                               onClick={() => {
-                                const selectedItem = priceListItems.find(p => p.id === item.id);
+                                const selectedItem = priceListItems.find(p => sameId(p.id, item.id));
                                 setFormData(prev => ({ 
                                   ...prev, 
                                   price_list_item_id: item.id,
@@ -737,7 +738,7 @@ export default function PartDetailModal({ open, part, onClose, onSave, isSubmitt
                     <div className="p-3 text-sm text-[#6B7280] text-center">No jobs found</div>
                   ) : (
                     filteredJobs.map(job => {
-                      const isLinked = (formData.linked_logistics_jobs || []).includes(job.id);
+                      const isLinked = (formData.linked_logistics_jobs || []).some(id => sameId(id, job.id));
                       return (
                         <button
                           key={job.id}

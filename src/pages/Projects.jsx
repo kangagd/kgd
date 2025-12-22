@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useMemo, useCallback } from "react";
 import { base44 } from "@/api/base44Client";
 import { useDebounce } from "@/components/common/useDebounce";
+import { sameId } from "@/components/utils/id";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -203,8 +204,8 @@ export default function Projects() {
     }
     
     if (projectId && projects.length > 0) {
-      const project = projects.find((p) => p.id === projectId);
-      if (project && project.id !== selectedProject?.id) {
+      const project = projects.find((p) => sameId(p.id, projectId));
+      if (project && !sameId(project.id, selectedProject?.id)) {
         setSelectedProject(project);
       }
     } else if (!projectId && selectedProject) {
@@ -244,7 +245,7 @@ export default function Projects() {
       
       const matchesStage = stageFilter === "all" || project.status === stageFilter;
       
-      const projectParts = allParts.filter(p => p.project_id === project.id);
+      const projectParts = allParts.filter(p => sameId(p.project_id, project.id));
       const matchesPartsStatus = partsStatusFilter === "all" || 
         projectParts.some(p => p.status === partsStatusFilter);
       
@@ -273,11 +274,11 @@ export default function Projects() {
         }), [projects, debouncedSearchTerm, stageFilter, partsStatusFilter, startDate, endDate, sortBy, showDuplicatesOnly, allParts]);
 
         const getJobCount = useCallback((projectId) => {
-        return allJobs.filter(j => j.project_id === projectId && !j.deleted_at).length;
+          return allJobs.filter(j => sameId(j.project_id, projectId) && !j.deleted_at).length;
         }, [allJobs]);
 
         const getNextJob = useCallback((projectId) => {
-        const projectJobs = allJobs.filter(j => j.project_id === projectId && !j.deleted_at && j.scheduled_date);
+          const projectJobs = allJobs.filter(j => sameId(j.project_id, projectId) && !j.deleted_at && j.scheduled_date);
         const futureJobs = projectJobs.filter(j => new Date(j.scheduled_date) >= new Date());
         if (futureJobs.length === 0) return null;
         return futureJobs.sort((a, b) => new Date(a.scheduled_date) - new Date(b.scheduled_date))[0];
@@ -299,7 +300,7 @@ export default function Projects() {
         }, []);
 
         const hasRequiredTrades = useCallback((projectId) => {
-        return allTradeRequirements.some(t => t.project_id === projectId && t.is_required);
+          return allTradeRequirements.some(t => sameId(t.project_id, projectId) && t.is_required);
         }, [allTradeRequirements]);
 
   if (showForm) {
@@ -551,7 +552,7 @@ export default function Projects() {
                     <div className="flex items-center gap-2 mb-2 pr-8">
                       <h3 className="text-[18px] font-semibold text-[#111827] leading-[1.2]">{project.title}</h3>
                       <DuplicateBadge record={project} size="sm" />
-                      {allParts.filter(p => p.project_id === project.id).some(detectShortage) && (
+                      {allParts.filter(p => sameId(p.project_id, project.id)).some(detectShortage) && (
                         <span className="inline-flex items-center rounded-full bg-red-100 text-red-700 px-2 py-0.5 text-xs font-medium">
                           Shortage
                         </span>

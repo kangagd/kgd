@@ -1,6 +1,7 @@
 import React, { useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
+import { sameId } from "@/components/utils/id";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
@@ -295,7 +296,7 @@ export default function ProjectDetails({ project: initialProject, onClose, onEdi
       
       // Deduplicate by xero_invoice_id (in case duplicates were created)
       const uniqueInvoices = allInvoices.reduce((acc, inv) => {
-        if (!acc.find(i => i.xero_invoice_id === inv.xero_invoice_id)) {
+        if (!acc.find(i => sameId(i.xero_invoice_id, inv.xero_invoice_id))) {
           acc.push(inv);
         }
         return acc;
@@ -417,7 +418,7 @@ export default function ProjectDetails({ project: initialProject, onClose, onEdi
         project_id: project.id
       });
 
-      if (existing.length > 0) {
+      if (existing.length > 0 || xeroInvoices.some(x => sameId(x.xero_invoice_id, invoice.xero_invoice_id))) {
         toast.info('This invoice is already linked to this project');
         setShowLinkInvoiceModal(false);
         setIsLinkingInvoice(false);
@@ -562,7 +563,7 @@ export default function ProjectDetails({ project: initialProject, onClose, onEdi
     // Auto-create jobs based on stage
     const autoCreateJob = async (jobTypeName) => {
       // Check if job type already exists for this project
-      const existingJob = jobs.find(j => j.job_type_name === jobTypeName);
+      const existingJob = jobs.find(j => sameId(j.job_type_name, jobTypeName));
       if (existingJob) {
         // Job already exists, navigate to it
         handleJobClick(existingJob.id);
@@ -571,7 +572,7 @@ export default function ProjectDetails({ project: initialProject, onClose, onEdi
 
       // Fetch job types to get the ID
       const jobTypes = await base44.entities.JobType.list();
-      const jobType = jobTypes.find(jt => jt.name === jobTypeName);
+      const jobType = jobTypes.find(jt => sameId(jt.name, jobTypeName));
       
       if (!jobType) {
         // JobType not found
@@ -810,7 +811,7 @@ Format as HTML bullet points using <ul> and <li> tags. Include only the most cri
   const handleTechniciansChange = (emails) => {
     const emailsArray = Array.isArray(emails) ? emails : [];
     const techNames = emailsArray.map(email => {
-      const tech = technicians.find(t => t.email === email);
+      const tech = technicians.find(t => sameId(t.email, email));
       return tech?.full_name || "";
     }).filter(Boolean);
     
