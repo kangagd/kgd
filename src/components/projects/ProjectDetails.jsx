@@ -75,6 +75,8 @@ import DocumentListItem from "./DocumentListItem";
 import LastActivityCard from "./LastActivityCard";
 import SamplesAtClientPanel from "./SamplesAtClientPanel";
 import AttentionItemsPanel from "../attention/AttentionItemsPanel";
+import ProjectOverviewLayout from "./ProjectOverviewLayout";
+import ActivityTab from "./ActivityTab";
 
 const statusColors = {
   "Lead": "bg-slate-100 text-slate-700",
