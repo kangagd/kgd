@@ -44,13 +44,24 @@ export const PO_STATUS_LABELS = {
   cancelled: "Cancelled",
 };
 
+// Normalize status string for lookup (lowercase, underscore-separated)
+export const normalizePoStatus = (status) => {
+  if (!status) return '';
+  return String(status)
+    .trim()
+    .toLowerCase()
+    .replace(/[\s-]+/g, '_')
+    .replace(/_+/g, '_');
+};
+
 // Status → Label mapping function
 export function getPoStatusLabel(status) {
-  return PO_STATUS_LABELS[status] || "Unknown";
+  const key = normalizePoStatus(status);
+  return PO_STATUS_LABELS[key] || PO_STATUS_LABELS[status] || String(status || '');
 }
 
-// Status normaliser
-export function normalizePoStatus(input) {
+// Status normaliser (full normalization to canonical enum)
+export function normaliseLegacyPoStatus(input) {
   if (!input) return PO_STATUS.DRAFT;
   const s = input.toString().trim().toLowerCase();
 
@@ -102,8 +113,7 @@ export function normalizePoStatus(input) {
   }
 }
 
-// Legacy alias for backward compatibility
-export const normaliseLegacyPoStatus = normalizePoStatus;
+
 
 // Colour mapping for badges
 export const PO_STATUS_COLORS = {
