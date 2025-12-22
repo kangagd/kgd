@@ -43,6 +43,7 @@ export default function Logistics() {
   const navigate = useNavigate();
 
   const [viewMode, setViewMode] = useState("orders"); // "orders" | "jobs"
+  const [poSearchTerm, setPoSearchTerm] = useState("");
   const [searchTerm, setSearchTerm] = useState("");
   const debouncedSearchTerm = useDebounce(searchTerm, 250);
   const [statusFilter, setStatusFilter] = useState("active"); // active, all, or specific status
@@ -215,53 +216,79 @@ export default function Logistics() {
     [jobs]
   );
 
+  // Filter purchase orders by search term
+  const filteredPurchaseOrders = useMemo(() => {
+    if (!poSearchTerm.trim()) return purchaseOrders;
+    
+    const term = poSearchTerm.toLowerCase();
+    return purchaseOrders.filter(po => {
+      const uiPo = poDbToUi(po);
+      const supplierName = getPoDisplaySupplierName(po, suppliers).toLowerCase();
+      const poRef = uiPo.poReference.toLowerCase();
+      const poName = (uiPo.name || '').toLowerCase();
+      
+      // Get linked job/project info
+      const linkedJob = jobs.find(j => sameId(j.id, po.linked_logistics_job_id));
+      const jobNumber = linkedJob?.job_number?.toLowerCase() || '';
+      const customerName = (po.project_id ? projects.find(p => sameId(p.id, po.project_id))?.customer_name : linkedJob?.customer_name || '').toLowerCase();
+      const address = (linkedJob?.address_full || '').toLowerCase();
+      
+      return supplierName.includes(term) || 
+             poRef.includes(term) || 
+             poName.includes(term) ||
+             jobNumber.includes(term) ||
+             customerName.includes(term) ||
+             address.includes(term);
+    });
+  }, [purchaseOrders, poSearchTerm, suppliers, jobs, projects]);
+
   // Kanban columns based on PO status
   const draftPOs = useMemo(
-    () => purchaseOrders.filter((po) => po.status === PO_STATUS.DRAFT),
-    [purchaseOrders]
+    () => filteredPurchaseOrders.filter((po) => po.status === PO_STATUS.DRAFT),
+    [filteredPurchaseOrders]
   );
 
   const activePOs = useMemo(
-    () => purchaseOrders.filter(po => {
+    () => filteredPurchaseOrders.filter(po => {
       const normalized = normaliseLegacyPoStatus(po.status);
       return normalized !== PO_STATUS.DRAFT &&
         normalized !== PO_STATUS.IN_STORAGE &&
         normalized !== PO_STATUS.IN_VEHICLE &&
         normalized !== PO_STATUS.INSTALLED;
     }),
-    [purchaseOrders]
+    [filteredPurchaseOrders]
   );
 
   const onOrderPOs = useMemo(
-    () => purchaseOrders.filter(po => {
+    () => filteredPurchaseOrders.filter(po => {
       const normalized = normaliseLegacyPoStatus(po.status);
       return [PO_STATUS.SENT, PO_STATUS.ON_ORDER, PO_STATUS.IN_TRANSIT].includes(normalized);
     }),
-    [purchaseOrders]
+    [filteredPurchaseOrders]
   );
 
   const readyAtSupplierPOs = useMemo(
-    () => purchaseOrders.filter(po => {
+    () => filteredPurchaseOrders.filter(po => {
       const normalized = normaliseLegacyPoStatus(po.status);
       return normalized === PO_STATUS.IN_LOADING_BAY && po.delivery_method === PO_DELIVERY_METHOD.PICKUP;
     }),
-    [purchaseOrders]
+    [filteredPurchaseOrders]
   );
 
   const atDeliveryBayPOs = useMemo(
-    () => purchaseOrders.filter(po => {
+    () => filteredPurchaseOrders.filter(po => {
       const normalized = normaliseLegacyPoStatus(po.status);
       return normalized === PO_STATUS.IN_LOADING_BAY && po.delivery_method === PO_DELIVERY_METHOD.DELIVERY;
     }),
-    [purchaseOrders]
+    [filteredPurchaseOrders]
   );
 
   const completedPOs = useMemo(
-    () => purchaseOrders.filter(po => {
+    () => filteredPurchaseOrders.filter(po => {
       const normalized = normaliseLegacyPoStatus(po.status);
       return [PO_STATUS.IN_STORAGE, PO_STATUS.IN_VEHICLE, PO_STATUS.INSTALLED].includes(normalized);
     }),
-    [purchaseOrders]
+    [filteredPurchaseOrders]
   );
 
   const loadingBaySummary = useMemo(() => {
@@ -527,6 +554,14 @@ export default function Logistics() {
             </p>
           </div>
           <div className="flex items-center gap-3">
+            {viewMode === "orders" && (
+              <Input
+                placeholder="Search POs, suppliers, jobs..."
+                value={poSearchTerm}
+                onChange={(e) => setPoSearchTerm(e.target.value)}
+                className="w-64"
+              />
+            )}
             <div className="inline-flex rounded-xl border border-gray-200 bg-gray-50 p-1">
               <button
                 type="button"
