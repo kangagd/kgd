@@ -69,6 +69,11 @@ import SamplesAtClientPanel from "./SamplesAtClientPanel";
 import AttentionItemsPanel from "../attention/AttentionItemsPanel";
 import ProjectPageShell from "./ProjectPageShell";
 import ProjectContextPanel from "./ProjectContextPanel";
+import ProjectOverviewLayout from "./ProjectOverviewLayout";
+import ProjectSnapshotZone from "./ProjectSnapshotZone";
+import ProjectAttentionZone from "./ProjectAttentionZone";
+import ProjectNextActionsZone from "./ProjectNextActionsZone";
+import ProjectSummaryZone from "./ProjectSummaryZone";
 
 const statusColors = {
   "Lead": "bg-slate-100 text-slate-700",
@@ -1254,26 +1259,22 @@ Format as HTML bullet points using <ul> and <li> tags. Include only the most cri
               })
             }
 
-            <div>
-              <RichTextField
-                label="Description"
-                value={description}
-                onChange={setDescription}
-                onBlur={handleDescriptionBlur}
-                placeholder="Add a clear summary of this project…"
-              />
-            </div>
-
-            <div>
-              <RichTextField
-                label="Notes"
-                value={notes}
-                onChange={setNotes}
-                onBlur={handleNotesBlur}
-                placeholder="Add any extra notes or context for the team…"
-                helperText="Internal only"
-              />
-            </div>
+            {/* New Overview Layout with Zones */}
+            <ProjectOverviewLayout
+              snapshotZone={<ProjectSnapshotZone project={project} />}
+              attentionZone={<ProjectAttentionZone project={project} />}
+              nextActionsZone={<ProjectNextActionsZone project={project} jobs={jobs} />}
+              summaryZone={
+                <ProjectSummaryZone
+                  description={description}
+                  onDescriptionChange={setDescription}
+                  onDescriptionBlur={handleDescriptionBlur}
+                  notes={notes}
+                  onNotesChange={setNotes}
+                  onNotesBlur={handleNotesBlur}
+                />
+              }
+            />
 
             {isInstallType && (
               <div>
@@ -1288,7 +1289,7 @@ Format as HTML bullet points using <ul> and <li> tags. Include only the most cri
                     />
                   )}
                 </div>
-                
+
                 <div className="bg-white rounded-lg p-4 border border-[#E5E7EB]">
                   {project.doors && project.doors.length > 0 ? (
                     <div className="flex flex-wrap gap-2">
@@ -1311,7 +1312,7 @@ Format as HTML bullet points using <ul> and <li> tags. Include only the most cri
                   ) : !showAddDoor && (
                     <p className="text-[14px] text-[#9CA3AF]">No doors added yet</p>
                   )}
-                  
+
                   {showAddDoor && (
                     <div className="border border-[#E5E7EB] rounded-lg p-3 bg-[#F8F9FA] mt-3">
                       <div className="grid grid-cols-1 md:grid-cols-2 gap-2 mb-2">
