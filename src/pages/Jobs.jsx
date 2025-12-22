@@ -155,9 +155,10 @@ export default function Jobs() {
         return { data: [], nextCursor: null };
       }
     },
-    refetchInterval: jobsCursor ? false : 5000,
-    refetchOnMount: 'always',
-    refetchOnWindowFocus: true
+    refetchInterval: false,
+    refetchOnMount: true,
+    refetchOnWindowFocus: false,
+    staleTime: 30000
   });
 
   // Accumulate jobs data
