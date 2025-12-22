@@ -24,6 +24,7 @@ import { createPageUrl } from "@/utils";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import { buildActiveCheckInMap } from "@/components/domain/checkInHelpers";
 import BackButton from "../components/common/BackButton";
+import { notifySuccess, notifyError } from "@/utils/notify";
 
 export default function Jobs() {
   const navigate = useNavigate();
@@ -162,6 +163,10 @@ export default function Jobs() {
       setShowForm(false);
       setEditingJob(null);
       setSelectedJob(null);
+      notifySuccess('Job updated successfully');
+    },
+    onError: (error) => {
+      notifyError('Failed to update job', error);
     }
   });
 
