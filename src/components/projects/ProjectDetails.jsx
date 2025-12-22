@@ -931,6 +931,7 @@ Format as HTML bullet points using <ul> and <li> tags. Include only the most cri
   };
 
   const isInstallType = project.project_type && project.project_type.includes("Install");
+  const showRequirementsTab = isInstallType || project.project_type === "Multiple";
 
   React.useEffect(() => {
     // Auto-focus tabs based on project stage
@@ -1412,6 +1413,9 @@ Format as HTML bullet points using <ul> and <li> tags. Include only the most cri
                   </TabsTrigger>
                   <TabsTrigger value="activity" className="flex-1 whitespace-nowrap">Activity</TabsTrigger>
                   <TabsTrigger value="quoting" className="flex-1 whitespace-nowrap">Quoting</TabsTrigger>
+                  {showRequirementsTab && (
+                    <TabsTrigger value="requirements" className="flex-1 whitespace-nowrap">Requirements</TabsTrigger>
+                  )}
                   <TabsTrigger value="parts" className="flex-1 whitespace-nowrap">Parts</TabsTrigger>
                   <TabsTrigger value="invoices" className="flex-1 whitespace-nowrap">Invoices</TabsTrigger>
                   {(user?.role === 'admin' || user?.role === 'manager') && (
@@ -1696,6 +1700,29 @@ Format as HTML bullet points using <ul> and <li> tags. Include only the most cri
               isAdmin={user?.role === 'admin'}
             />
           </TabsContent>
+
+          {showRequirementsTab ? (
+            <TabsContent value="requirements" className="mt-3">
+              <Card className="border border-[#E5E7EB] shadow-sm">
+                <CardHeader>
+                  <CardTitle className="text-[16px] font-semibold text-[#111827]">Project Requirements</CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <p className="text-[14px] text-[#6B7280]">Requirements and specifications for this installation project.</p>
+                </CardContent>
+              </Card>
+            </TabsContent>
+          ) : (
+            <TabsContent value="requirements" className="mt-3">
+              <Card className="border border-[#E5E7EB] shadow-sm">
+                <CardContent className="p-8 text-center">
+                  <div className="text-[14px] text-[#9CA3AF]">
+                    Requirements tab is not applicable for {project.project_type || 'this project type'}
+                  </div>
+                </CardContent>
+              </Card>
+            </TabsContent>
+          )}
 
           <TabsContent value="parts" className="mt-3 space-y-6">
             <SamplesAtClientPanel project={project} />
