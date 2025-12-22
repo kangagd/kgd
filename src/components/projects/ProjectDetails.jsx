@@ -1528,7 +1528,6 @@ Format as HTML bullet points using <ul> and <li> tags. Include only the most cri
               })
             }
 
-            <div>
             {isInstallType && (
               <div>
                 <div className="flex items-center justify-between mb-1.5">
