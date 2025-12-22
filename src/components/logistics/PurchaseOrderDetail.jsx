@@ -398,6 +398,7 @@ export default function PurchaseOrderDetail({ poId, onClose, mode = "page" }) {
       name: updatedPO.name ?? prev.name,
       supplier_id: updatedPO.supplier_id ?? prev.supplier_id,
       project_id: updatedPO.project_id ?? prev.project_id,
+      eta: updatedPO.expected_date ?? prev.eta,
     }));
     
     // Then update status using managePurchaseOrder for side effects
