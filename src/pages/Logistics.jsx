@@ -777,15 +777,15 @@ export default function Logistics() {
                             onValueChange={(value) => handleUpdatePoStatus(po, value)}
                             onClick={(e) => e.stopPropagation()}
                           >
-                            <SelectTrigger className={`h-6 w-full text-[10px] px-2 border-0 ${getPoStatusColor(uiPo.status)}`}>
+                            <SelectTrigger className={`h-6 w-full text-[10px] px-2 border-0 ${getStatusColor('po', uiPo.status)}`}>
                               <SelectValue>
-                                {getPoStatusLabel(uiPo.status)}
+                                {getStatusLabel('po', uiPo.status)}
                               </SelectValue>
                             </SelectTrigger>
                             <SelectContent onClick={(e) => e.stopPropagation()}>
                               {PO_STATUS_OPTIONS.map((status) => (
                                 <SelectItem key={status} value={status}>
-                                  {getPoStatusLabel(status)}
+                                  {getStatusLabel('po', status)}
                                 </SelectItem>
                               ))}
                             </SelectContent>
@@ -850,15 +850,15 @@ export default function Logistics() {
                             onValueChange={(value) => handleUpdatePoStatus(po, value)}
                             onClick={(e) => e.stopPropagation()}
                           >
-                            <SelectTrigger className={`h-6 w-full text-[10px] px-2 border-0 ${getPoStatusColor(uiPo.status)}`}>
+                            <SelectTrigger className={`h-6 w-full text-[10px] px-2 border-0 ${getStatusColor('po', uiPo.status)}`}>
                               <SelectValue>
-                                {getPoStatusLabel(uiPo.status)}
+                                {getStatusLabel('po', uiPo.status)}
                               </SelectValue>
                             </SelectTrigger>
                             <SelectContent onClick={(e) => e.stopPropagation()}>
                               {PO_STATUS_OPTIONS.map((status) => (
                                 <SelectItem key={status} value={status}>
-                                  {getPoStatusLabel(status)}
+                                  {getStatusLabel('po', status)}
                                 </SelectItem>
                               ))}
                             </SelectContent>
@@ -929,7 +929,7 @@ export default function Logistics() {
                             <SelectContent onClick={(e) => e.stopPropagation()}>
                               {PO_STATUS_OPTIONS.map((status) => (
                                 <SelectItem key={status} value={status}>
-                                  {getPoStatusLabel(status)}
+                                  {getStatusLabel('po', status)}
                                 </SelectItem>
                               ))}
                             </SelectContent>
@@ -994,15 +994,15 @@ export default function Logistics() {
                             onValueChange={(value) => handleUpdatePoStatus(po, value)}
                             onClick={(e) => e.stopPropagation()}
                           >
-                            <SelectTrigger className={`h-6 w-full text-[10px] px-2 border-0 ${getPoStatusColor(uiPo.status)}`}>
+                            <SelectTrigger className={`h-6 w-full text-[10px] px-2 border-0 ${getStatusColor('po', uiPo.status)}`}>
                               <SelectValue>
-                                {getPoStatusLabel(uiPo.status)}
+                                {getStatusLabel('po', uiPo.status)}
                               </SelectValue>
                             </SelectTrigger>
                             <SelectContent onClick={(e) => e.stopPropagation()}>
                               {PO_STATUS_OPTIONS.map((status) => (
                                 <SelectItem key={status} value={status}>
-                                  {getPoStatusLabel(status)}
+                                  {getStatusLabel('po', status)}
                                 </SelectItem>
                               ))}
                             </SelectContent>
