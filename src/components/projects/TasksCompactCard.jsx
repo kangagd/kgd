@@ -6,53 +6,62 @@ import { Badge } from "@/components/ui/badge";
 
 export default function TasksCompactCard({ tasks = [], onViewAll, onAddTask }) {
   const now = new Date();
-  const dueSoon = tasks.filter(t => {
-    if (t.status === 'Completed' || t.status === 'Cancelled') return false;
+  const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+  
+  const activeTasks = tasks.filter(t => t.status !== 'Completed' && t.status !== 'Cancelled');
+  
+  const dueToday = activeTasks.filter(t => {
     if (!t.due_date) return false;
     const dueDate = new Date(t.due_date);
-    const daysUntilDue = Math.ceil((dueDate - now) / (1000 * 60 * 60 * 24));
-    return daysUntilDue >= 0 && daysUntilDue <= 3;
+    const dueDateOnly = new Date(dueDate.getFullYear(), dueDate.getMonth(), dueDate.getDate());
+    return dueDateOnly.getTime() === today.getTime();
   }).length;
 
-  const overdue = tasks.filter(t => {
-    if (t.status === 'Completed' || t.status === 'Cancelled') return false;
+  const overdue = activeTasks.filter(t => {
     if (!t.due_date) return false;
     const dueDate = new Date(t.due_date);
-    return dueDate < now;
+    return dueDate < today;
   }).length;
 
-  const activeTasks = tasks.filter(t => t.status !== 'Completed' && t.status !== 'Cancelled').length;
+  const dueSoon = activeTasks.filter(t => {
+    if (!t.due_date) return false;
+    const dueDate = new Date(t.due_date);
+    const dueDateOnly = new Date(dueDate.getFullYear(), dueDate.getMonth(), dueDate.getDate());
+    const daysUntilDue = Math.ceil((dueDateOnly - today) / (1000 * 60 * 60 * 24));
+    return daysUntilDue > 0 && daysUntilDue <= 3;
+  }).length;
 
   return (
     <Card className="border border-[#E5E7EB] shadow-sm">
-      <CardHeader className="pb-3">
-        <div className="flex items-center justify-between">
-          <CardTitle className="text-[16px] font-semibold text-[#111827]">Tasks</CardTitle>
-          <Badge variant="secondary" className="text-[11px]">
-            {activeTasks} active
-          </Badge>
-        </div>
+      <CardHeader className="pb-2">
+        <CardTitle className="text-[16px] font-semibold text-[#111827]">Tasks</CardTitle>
       </CardHeader>
       <CardContent className="space-y-3">
-        {/* Quick Stats */}
-        <div className="grid grid-cols-2 gap-2">
+        {/* Compact Stats */}
+        <div className="flex items-center gap-3 text-[13px]">
           {overdue > 0 && (
-            <div className="flex items-center gap-2 p-2 bg-red-50 rounded-lg">
-              <AlertCircle className="w-4 h-4 text-red-600" />
-              <div>
-                <div className="text-[11px] text-red-700 font-medium">Overdue</div>
-                <div className="text-[16px] font-bold text-red-700">{overdue}</div>
-              </div>
+            <div className="flex items-center gap-1.5">
+              <div className="w-2 h-2 rounded-full bg-red-500"></div>
+              <span className="text-[#4B5563]">Overdue:</span>
+              <span className="font-semibold text-red-700">{overdue}</span>
+            </div>
+          )}
+          {dueToday > 0 && (
+            <div className="flex items-center gap-1.5">
+              <div className="w-2 h-2 rounded-full bg-orange-500"></div>
+              <span className="text-[#4B5563]">Due today:</span>
+              <span className="font-semibold text-orange-700">{dueToday}</span>
             </div>
           )}
           {dueSoon > 0 && (
-            <div className="flex items-center gap-2 p-2 bg-yellow-50 rounded-lg">
-              <Clock className="w-4 h-4 text-yellow-700" />
-              <div>
-                <div className="text-[11px] text-yellow-800 font-medium">Due Soon</div>
-                <div className="text-[16px] font-bold text-yellow-800">{dueSoon}</div>
-              </div>
+            <div className="flex items-center gap-1.5">
+              <div className="w-2 h-2 rounded-full bg-yellow-500"></div>
+              <span className="text-[#4B5563]">Due soon:</span>
+              <span className="font-semibold text-yellow-700">{dueSoon}</span>
             </div>
+          )}
+          {overdue === 0 && dueToday === 0 && dueSoon === 0 && (
+            <span className="text-[#9CA3AF]">No urgent tasks</span>
           )}
         </div>
 
@@ -62,18 +71,17 @@ export default function TasksCompactCard({ tasks = [], onViewAll, onAddTask }) {
             onClick={onViewAll}
             variant="outline"
             size="sm"
-            className="flex-1 text-[13px]"
+            className="flex-1 text-[13px] h-8"
           >
-            <CheckSquare className="w-4 h-4 mr-1" />
-            View All
+            View all tasks
           </Button>
           <Button
             onClick={onAddTask}
             size="sm"
-            className="bg-[#FAE008] text-[#111827] hover:bg-[#E5CF07] text-[13px]"
+            className="bg-[#FAE008] text-[#111827] hover:bg-[#E5CF07] text-[13px] h-8"
           >
-            <Plus className="w-4 h-4 mr-1" />
-            Add Task
+            <Plus className="w-3.5 h-3.5 mr-1" />
+            Add task
           </Button>
         </div>
       </CardContent>
