@@ -20,6 +20,7 @@ import { toast } from "sonner";
 
 import BackButton from "../components/common/BackButton";
 import StatusBadge from "../components/common/StatusBadge";
+import QueryState from "../components/system/QueryState";
 import {
   getIncomingPurchaseOrders,
   getLoadingBayParts,
@@ -667,8 +668,8 @@ export default function Logistics() {
                     </span>
                     <span className="text-xs text-[#6B7280]">{draftPOs.length}</span>
                   </div>
-                  <div className="space-y-2">
-                    {draftPOs.map((po) => {
+                  <QueryState isEmpty={draftPOs.length === 0} emptyMessage="No POs">
+                   {draftPOs.map((po) => {
                       const uiPo = poDbToUi(po);
                       
                       return (
@@ -723,11 +724,7 @@ export default function Logistics() {
                       </div>
                       );
                     })}
-                    {!draftPOs.length && (
-                      <div className="text-[11px] text-[#6B7280] text-center py-4">
-                        No POs
-                      </div>
-                    )}
+                  </QueryState>
                   </div>
                 </div>
 
@@ -739,7 +736,7 @@ export default function Logistics() {
                     </span>
                     <span className="text-xs text-[#6B7280]">{onOrderPOs.length}</span>
                   </div>
-                  <div className="space-y-2">
+                  <QueryState isEmpty={onOrderPOs.length === 0} emptyMessage="No POs">
                     {onOrderPOs.map((po) => {
                       const uiPo = poDbToUi(po);
                       return (
@@ -794,11 +791,7 @@ export default function Logistics() {
                       </div>
                       );
                     })}
-                    {!onOrderPOs.length && (
-                      <div className="text-[11px] text-[#6B7280] text-center py-4">
-                        No POs
-                      </div>
-                    )}
+                  </QueryState>
                   </div>
                 </div>
 
@@ -812,7 +805,7 @@ export default function Logistics() {
                       {readyAtSupplierPOs.length}
                     </span>
                   </div>
-                  <div className="space-y-2">
+                  <QueryState isEmpty={readyAtSupplierPOs.length === 0} emptyMessage="No POs">
                     {readyAtSupplierPOs.map((po) => {
                       const uiPo = poDbToUi(po);
                       return (
@@ -867,11 +860,7 @@ export default function Logistics() {
                       </div>
                       );
                     })}
-                    {!readyAtSupplierPOs.length && (
-                      <div className="text-[11px] text-[#6B7280] text-center py-4">
-                        No POs
-                      </div>
-                    )}
+                  </QueryState>
                   </div>
                 </div>
 
@@ -885,7 +874,7 @@ export default function Logistics() {
                       {atDeliveryBayPOs.length}
                     </span>
                   </div>
-                  <div className="space-y-2">
+                  <QueryState isEmpty={atDeliveryBayPOs.length === 0} emptyMessage="No POs">
                     {atDeliveryBayPOs.map((po) => {
                       const uiPo = poDbToUi(po);
                       return (
@@ -938,11 +927,7 @@ export default function Logistics() {
                       </div>
                       );
                     })}
-                    {!atDeliveryBayPOs.length && (
-                      <div className="text-[11px] text-[#6B7280] text-center py-4">
-                        No POs
-                      </div>
-                    )}
+                  </QueryState>
                   </div>
                 </div>
 
@@ -956,7 +941,7 @@ export default function Logistics() {
                       {completedPOs.length}
                     </span>
                   </div>
-                  <div className="space-y-2">
+                  <QueryState isEmpty={completedPOs.length === 0} emptyMessage="No POs">
                     {completedPOs.map((po) => {
                       const uiPo = poDbToUi(po);
                       return (
@@ -1011,11 +996,7 @@ export default function Logistics() {
                       </div>
                       );
                     })}
-                    {!completedPOs.length && (
-                      <div className="text-[11px] text-[#6B7280] text-center py-4">
-                        No POs
-                      </div>
-                    )}
+                  </QueryState>
                   </div>
                 </div>
               </div>
