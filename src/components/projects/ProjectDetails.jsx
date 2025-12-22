@@ -1458,6 +1458,12 @@ Format as HTML bullet points using <ul> and <li> tags. Include only the most cri
                 project={project}
                 quotes={quotes}
                 invoices={xeroInvoices}
+                onNavigateToTab={(tab) => {
+                  setActiveTab(tab);
+                  setTimeout(() => {
+                    document.getElementById(`tab-${tab}`)?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                  }, 100);
+                }}
               />
               <TasksCompactCard 
                 tasks={projectTasks}
