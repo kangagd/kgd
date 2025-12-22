@@ -26,7 +26,8 @@ import {
   getLogisticsJobs,
 } from "@/components/domain/logisticsViewHelpers";
 import { LOGISTICS_LOCATION } from "@/components/domain/logisticsConfig";
-import { PO_STATUS, PO_STATUS_OPTIONS, getPoStatusLabel, getPoStatusColor, normaliseLegacyPoStatus } from "@/components/domain/purchaseOrderStatusConfig";
+import { PO_STATUS, PO_STATUS_OPTIONS, normaliseLegacyPoStatus } from "@/components/domain/purchaseOrderStatusConfig";
+import { getStatusLabel, getStatusColor } from "@/components/domain/statusRegistry";
 import { queryKeys } from "@/components/api/queryKeys";
 import { invalidatePurchaseOrderBundle } from "@/components/api/invalidate";
 import { poDbToUi, getPoDisplaySupplierName } from "@/components/domain/purchaseOrderAdapter";
@@ -347,7 +348,7 @@ export default function Logistics() {
         return next;
       });
 
-      toast.success(`Status updated to ${getPoStatusLabel(newStatus)}`);
+      toast.success(`Status updated to ${getStatusLabel('po', newStatus)}`);
       await invalidatePurchaseOrderBundle(queryClient, po.id);
     } catch (error) {
       toast.error("Error updating PO status");
@@ -707,13 +708,13 @@ export default function Logistics() {
                           >
                             <SelectTrigger className="h-6 w-full text-[10px] px-2 border-0 bg-slate-100 text-slate-700">
                               <SelectValue>
-                                {getPoStatusLabel(uiPo.status)}
+                                {getStatusLabel('po', uiPo.status)}
                               </SelectValue>
                             </SelectTrigger>
                             <SelectContent onClick={(e) => e.stopPropagation()}>
                               {PO_STATUS_OPTIONS.map((status) => (
                                 <SelectItem key={status} value={status}>
-                                  {getPoStatusLabel(status)}
+                                  {getStatusLabel('po', status)}
                                 </SelectItem>
                               ))}
                             </SelectContent>
