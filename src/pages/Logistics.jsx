@@ -668,8 +668,9 @@ export default function Logistics() {
                     </span>
                     <span className="text-xs text-[#6B7280]">{draftPOs.length}</span>
                   </div>
-                  <QueryState isEmpty={draftPOs.length === 0} emptyMessage="No POs">
-                   {draftPOs.map((po) => {
+                  <div className="space-y-2">
+                   <QueryState isEmpty={draftPOs.length === 0} emptyMessage="No POs">
+                    {draftPOs.map((po) => {
                       const uiPo = poDbToUi(po);
                       
                       return (
@@ -736,6 +737,7 @@ export default function Logistics() {
                     </span>
                     <span className="text-xs text-[#6B7280]">{onOrderPOs.length}</span>
                   </div>
+                  <div className="space-y-2">
                   <QueryState isEmpty={onOrderPOs.length === 0} emptyMessage="No POs">
                     {onOrderPOs.map((po) => {
                       const uiPo = poDbToUi(po);
@@ -805,6 +807,7 @@ export default function Logistics() {
                       {readyAtSupplierPOs.length}
                     </span>
                   </div>
+                  <div className="space-y-2">
                   <QueryState isEmpty={readyAtSupplierPOs.length === 0} emptyMessage="No POs">
                     {readyAtSupplierPOs.map((po) => {
                       const uiPo = poDbToUi(po);
@@ -874,6 +877,7 @@ export default function Logistics() {
                       {atDeliveryBayPOs.length}
                     </span>
                   </div>
+                  <div className="space-y-2">
                   <QueryState isEmpty={atDeliveryBayPOs.length === 0} emptyMessage="No POs">
                     {atDeliveryBayPOs.map((po) => {
                       const uiPo = poDbToUi(po);
@@ -941,6 +945,7 @@ export default function Logistics() {
                       {completedPOs.length}
                     </span>
                   </div>
+                  <div className="space-y-2">
                   <QueryState isEmpty={completedPOs.length === 0} emptyMessage="No POs">
                     {completedPOs.map((po) => {
                       const uiPo = poDbToUi(po);
