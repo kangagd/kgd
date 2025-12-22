@@ -1032,95 +1032,6 @@ Format as HTML bullet points using <ul> and <li> tags. Include only the most cri
               </Card>
             </Collapsible>
 
-            {/* Visits Section */}
-            <Collapsible open={visitsOpen} onOpenChange={setVisitsOpen}>
-              <Card className="border border-[#E5E7EB] shadow-sm rounded-lg overflow-hidden mt-4">
-                <CardHeader className="bg-white px-4 py-3 border-b border-[#E5E7EB]">
-                  <div className="flex items-center justify-between w-full">
-                    <CollapsibleTrigger className="flex items-center flex-1 justify-between">
-                      <h3 className="text-[16px] font-semibold text-[#111827] leading-[1.2]">Visits ({jobs.length})</h3>
-                      <ChevronDown className={`w-4 h-4 text-[#6B7280] mr-2 transition-transform ${visitsOpen ? 'transform rotate-180' : ''}`} />
-                    </CollapsibleTrigger>
-                    {canCreateJobs && (
-                      <AddIconButton
-                        onClick={handleAddJob}
-                        title="Add Visit"
-                        className="flex-shrink-0 ml-2"
-                      />
-                    )}
-                  </div>
-                </CardHeader>
-                <CollapsibleContent>
-                  <CardContent className="p-3">
-                    {jobs.length === 0 ? (
-                      <div className="text-center py-6 bg-[#F8F9FA] rounded-lg">
-                        <p className="text-[14px] text-[#6B7280] leading-[1.4]">No visits yet</p>
-                      </div>
-                    ) : (
-                      <div className="space-y-2">
-                        {jobs.map((job) => (
-                          <div
-                            key={job.id}
-                            className="bg-white border border-[#E5E7EB] rounded-lg p-3 hover:border-[#FAE008] hover:shadow-sm transition-all cursor-pointer relative group"
-                          >
-                            <button
-                              onClick={(e) => {
-                                e.stopPropagation();
-                                setPreviewJob(job);
-                              }}
-                              className="absolute top-2 right-2 h-7 w-7 rounded-md hover:bg-[#F3F4F6] flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity z-10"
-                              title="Preview"
-                            >
-                              <Eye className="w-4 h-4 text-[#6B7280]" />
-                            </button>
-                            <div 
-                              className="flex flex-col gap-2"
-                              onClick={() => handleJobClick(job.id)}
-                            >
-                              <div className="flex items-center gap-2 flex-wrap pr-8">
-                                <Badge className="bg-white text-[#6B7280] border border-[#E5E7EB] font-medium text-xs px-2.5 py-0.5 rounded-lg hover:bg-white">
-                                          #{job.job_number}
-                                        </Badge>
-                                <Badge className={`${jobStatusColors[job.status]} border-0 font-semibold text-xs px-3 py-1 rounded-lg hover:opacity-100`}>
-                                  {job.status}
-                                </Badge>
-                                {job.job_type_name && (
-                                  <Badge className="bg-[#EDE9FE] text-[#6D28D9] border-0 font-semibold text-xs px-3 py-1 rounded-lg hover:bg-[#EDE9FE]">
-                                    {job.job_type_name}
-                                  </Badge>
-                                )}
-                              </div>
-
-                              <div className="flex items-center justify-between">
-                                {job.scheduled_date && (
-                                  <p className="text-sm text-[#4B5563]">
-                                    {new Date(job.scheduled_date).toLocaleDateString()}
-                                    {job.scheduled_time && ` • ${job.scheduled_time}`}
-                                  </p>
-                                )}
-
-                                {job.assigned_to && job.assigned_to.length > 0 && (
-                                  <TechnicianAvatarGroup
-                                    technicians={job.assigned_to.map((email, idx) => ({
-                                      email,
-                                      full_name: job.assigned_to_name?.[idx] || email,
-                                      id: email
-                                    }))}
-                                    maxDisplay={3}
-                                    size="sm"
-                                  />
-                                )}
-                              </div>
-                            </div>
-                          </div>
-                        ))}
-                      </div>
-                    )}
-                  </CardContent>
-                </CollapsibleContent>
-              </Card>
-            </Collapsible>
-
             {/* Media & Documents Section */}
             <Collapsible open={mediaDocsOpen} onOpenChange={setMediaDocsOpen}>
               <Card className="border border-[#E5E7EB] shadow-sm rounded-lg overflow-hidden mt-4">
@@ -1612,6 +1523,95 @@ Format as HTML bullet points using <ul> and <li> tags. Include only the most cri
                 );
               })
             }
+
+            {/* Visits Section */}
+            <Collapsible open={visitsOpen} onOpenChange={setVisitsOpen}>
+              <Card className="border border-[#E5E7EB] shadow-sm rounded-lg overflow-hidden">
+                <CardHeader className="bg-white px-4 py-3 border-b border-[#E5E7EB]">
+                  <div className="flex items-center justify-between w-full">
+                    <CollapsibleTrigger className="flex items-center flex-1 justify-between">
+                      <h3 className="text-[16px] font-semibold text-[#111827] leading-[1.2]">Visits ({jobs.length})</h3>
+                      <ChevronDown className={`w-4 h-4 text-[#6B7280] mr-2 transition-transform ${visitsOpen ? 'transform rotate-180' : ''}`} />
+                    </CollapsibleTrigger>
+                    {canCreateJobs && (
+                      <AddIconButton
+                        onClick={handleAddJob}
+                        title="Add Visit"
+                        className="flex-shrink-0 ml-2"
+                      />
+                    )}
+                  </div>
+                </CardHeader>
+                <CollapsibleContent>
+                  <CardContent className="p-3">
+                    {jobs.length === 0 ? (
+                      <div className="text-center py-6 bg-[#F8F9FA] rounded-lg">
+                        <p className="text-[14px] text-[#6B7280] leading-[1.4]">No visits yet</p>
+                      </div>
+                    ) : (
+                      <div className="space-y-2">
+                        {jobs.map((job) => (
+                          <div
+                            key={job.id}
+                            className="bg-white border border-[#E5E7EB] rounded-lg p-3 hover:border-[#FAE008] hover:shadow-sm transition-all cursor-pointer relative group"
+                          >
+                            <button
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                setPreviewJob(job);
+                              }}
+                              className="absolute top-2 right-2 h-7 w-7 rounded-md hover:bg-[#F3F4F6] flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity z-10"
+                              title="Preview"
+                            >
+                              <Eye className="w-4 h-4 text-[#6B7280]" />
+                            </button>
+                            <div 
+                              className="flex flex-col gap-2"
+                              onClick={() => handleJobClick(job.id)}
+                            >
+                              <div className="flex items-center gap-2 flex-wrap pr-8">
+                                <Badge className="bg-white text-[#6B7280] border border-[#E5E7EB] font-medium text-xs px-2.5 py-0.5 rounded-lg hover:bg-white">
+                                          #{job.job_number}
+                                        </Badge>
+                                <Badge className={`${jobStatusColors[job.status]} border-0 font-semibold text-xs px-3 py-1 rounded-lg hover:opacity-100`}>
+                                  {job.status}
+                                </Badge>
+                                {job.job_type_name && (
+                                  <Badge className="bg-[#EDE9FE] text-[#6D28D9] border-0 font-semibold text-xs px-3 py-1 rounded-lg hover:bg-[#EDE9FE]">
+                                    {job.job_type_name}
+                                  </Badge>
+                                )}
+                              </div>
+
+                              <div className="flex items-center justify-between">
+                                {job.scheduled_date && (
+                                  <p className="text-sm text-[#4B5563]">
+                                    {new Date(job.scheduled_date).toLocaleDateString()}
+                                    {job.scheduled_time && ` • ${job.scheduled_time}`}
+                                  </p>
+                                )}
+
+                                {job.assigned_to && job.assigned_to.length > 0 && (
+                                  <TechnicianAvatarGroup
+                                    technicians={job.assigned_to.map((email, idx) => ({
+                                      email,
+                                      full_name: job.assigned_to_name?.[idx] || email,
+                                      id: email
+                                    }))}
+                                    maxDisplay={3}
+                                    size="sm"
+                                  />
+                                )}
+                              </div>
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    )}
+                  </CardContent>
+                </CollapsibleContent>
+              </Card>
+            </Collapsible>
 
             <div>
               <RichTextField
