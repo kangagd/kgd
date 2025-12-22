@@ -1,40 +1,59 @@
 import React from "react";
+import ProjectSnapshotZone from "./ProjectSnapshotZone";
+import AttentionItemsPanel from "../attention/AttentionItemsPanel";
+import ProjectNextActionsZone from "./ProjectNextActionsZone";
+import ProjectSummaryZone from "./ProjectSummaryZone";
 
 export default function ProjectOverviewLayout({ 
-  snapshotZone, 
-  attentionZone, 
-  nextActionsZone, 
-  summaryZone 
+  project,
+  parts,
+  jobs,
+  description,
+  notes,
+  onDescriptionChange,
+  onNotesChange,
+  onDescriptionBlur,
+  onNotesBlur,
+  onAddJob,
+  onJobClick,
+  onPreviewJob,
+  canCreateJobs
 }) {
   return (
     <div className="space-y-4">
-      {/* Snapshot Zone */}
-      {snapshotZone && (
-        <div className="snapshot-zone">
-          {snapshotZone}
-        </div>
-      )}
+      {/* ZONE 1: Project Snapshot */}
+      <ProjectSnapshotZone project={project} parts={parts} jobs={jobs} />
 
-      {/* Attention Zone */}
-      {attentionZone && (
-        <div className="attention-zone">
-          {attentionZone}
-        </div>
-      )}
+      {/* ZONE 2: Attention Items */}
+      <AttentionItemsPanel
+        entity_type="project"
+        entity_id={project.id}
+        context_ids={{
+          customer_id: project.customer_id,
+          project_id: project.id,
+          job_id: null
+        }}
+      />
 
-      {/* Next Actions Zone */}
-      {nextActionsZone && (
-        <div className="next-actions-zone">
-          {nextActionsZone}
-        </div>
-      )}
+      {/* ZONE 3: What's Next - Combined Tasks & Visits */}
+      <ProjectNextActionsZone
+        project={project}
+        jobs={jobs}
+        onAddJob={onAddJob}
+        onJobClick={onJobClick}
+        onPreviewJob={onPreviewJob}
+        canCreateJobs={canCreateJobs}
+      />
 
-      {/* Summary Zone */}
-      {summaryZone && (
-        <div className="summary-zone">
-          {summaryZone}
-        </div>
-      )}
+      {/* ZONE 4: Project Summary - Description & Notes */}
+      <ProjectSummaryZone
+        description={description}
+        notes={notes}
+        onDescriptionChange={onDescriptionChange}
+        onNotesChange={onNotesChange}
+        onDescriptionBlur={onDescriptionBlur}
+        onNotesBlur={onNotesBlur}
+      />
     </div>
   );
 }
