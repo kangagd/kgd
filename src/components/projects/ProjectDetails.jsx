@@ -75,6 +75,7 @@ import LatestVisitCard from "./LatestVisitCard";
 import ActivityTimeline from "./ActivityTimeline";
 import ActivityTab from "./ActivityTab";
 import RequirementsTab from "./RequirementsTab";
+import PartsTab from "./PartsTab";
 
 const statusColors = {
   "Lead": "bg-slate-100 text-slate-700",
@@ -1722,20 +1723,12 @@ Format as HTML bullet points using <ul> and <li> tags. Include only the most cri
             </TabsContent>
           )}
 
-          <TabsContent value="parts" className="mt-3 space-y-6">
-            <SamplesAtClientPanel project={project} />
-            <ProjectPartsPanel 
-              project={project} 
-              parts={parts} 
-              inventoryByItem={inventoryByItem} 
-              onAddPart={() => window.triggerAddPart?.()}
+          <TabsContent value="parts" className="mt-3">
+            <PartsTab 
+              project={project}
+              parts={parts}
+              inventoryByItem={inventoryByItem}
             />
-            <PartsSection 
-              projectId={project.id} 
-              autoExpand={project.status === "Parts Ordered"}
-              registerAddPartTrigger={(fn) => { window.triggerAddPart = fn; }}
-            />
-            <LogisticsTimeline project={project} />
           </TabsContent>
 
           <TabsContent value="activity" className="mt-3">
