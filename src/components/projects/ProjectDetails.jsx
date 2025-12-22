@@ -67,6 +67,8 @@ import DocumentListItem from "./DocumentListItem";
 import LastActivityCard from "./LastActivityCard";
 import SamplesAtClientPanel from "./SamplesAtClientPanel";
 import AttentionItemsPanel from "../attention/AttentionItemsPanel";
+import ProjectPageShell from "./ProjectPageShell";
+import ProjectContextPanel from "./ProjectContextPanel";
 
 const statusColors = {
   "Lead": "bg-slate-100 text-slate-700",
@@ -934,10 +936,244 @@ Format as HTML bullet points using <ul> and <li> tags. Include only the most cri
     gray: "bg-gray-100 text-gray-700"
   };
 
+  // Header Component
+  const projectHeader = (
+    <div className="w-full bg-white border-b border-[#E5E7EB]">
+      <div className="max-w-[1800px] mx-auto px-6 py-4">
+        <div className="flex items-center justify-between gap-3">
+          <div className="flex items-center gap-2">
+            <BackButton to={createPageUrl("Projects")} />
+            <Badge className={freshnessColors[freshness.color]}>
+              {freshness.label}
+            </Badge>
+            <span className="text-[12px] text-[#6B7280] hidden sm:block">
+              Age: {freshness.days !== null ? `${freshness.days} days` : 'Unknown'}
+            </span>
+          </div>
+
+          <div className="flex gap-1 flex-shrink-0">
+            {activeViewers.length > 0 && (
+              <div className="flex -space-x-2 mr-2">
+                {activeViewers.map((viewer, idx) => (
+                  <div
+                    key={viewer.id}
+                    className="w-8 h-8 bg-[#FAE008] rounded-full flex items-center justify-center border-2 border-white"
+                    title={viewer.user_name}
+                  >
+                    <span className="text-[#111827] font-semibold text-xs">
+                      {viewer.user_name?.charAt(0)?.toUpperCase() || 'U'}
+                    </span>
+                  </div>
+                ))}
+              </div>
+            )}
+            <Button
+              variant="ghost"
+              size="icon"
+              onClick={() => setShowActivityModal(true)}
+              className="h-9 w-9 hover:bg-[#F3F4F6] text-[#6B7280] hover:text-[#111827] transition-all rounded-lg"
+              title="View Activity"
+            >
+              <Activity className="w-4 h-4" />
+            </Button>
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={async () => {
+                if (project.handover_locked && project.handover_pdf_url) {
+                  window.open(project.handover_pdf_url, '_blank');
+                  return;
+                }
+                
+                setIsGeneratingHandover(true);
+                try {
+                  const response = await base44.functions.invoke('generateProjectHandoverReport', {
+                    projectId: project.id
+                  });
+                  
+                  if (response.data.success && response.data.pdf_url) {
+                    queryClient.invalidateQueries({ queryKey: ['project', project.id] });
+                    toast.success('Handover report generated successfully');
+                    window.open(response.data.pdf_url, '_blank');
+                  }
+                } catch (error) {
+                  const errorMsg = error?.response?.data?.error || error.message;
+                  toast.error(`Failed to generate handover: ${errorMsg}`);
+                } finally {
+                  setIsGeneratingHandover(false);
+                }
+              }}
+              disabled={isGeneratingHandover}
+              className="h-9 text-xs"
+            >
+              {isGeneratingHandover ? (
+                <>
+                  <Loader2 className="w-4 h-4 mr-1 animate-spin" />
+                  Generating...
+                </>
+              ) : project.handover_locked && project.handover_pdf_url ? (
+                'View Handover Report'
+              ) : (
+                'Generate Handover Report'
+              )}
+            </Button>
+            <Button
+              variant="ghost"
+              size="icon"
+              onClick={() => setShowHistory(true)}
+              className="h-9 w-9 hover:bg-[#F3F4F6] text-[#6B7280] hover:text-[#111827] transition-all rounded-lg"
+            >
+              <History className="w-4 h-4" />
+            </Button>
+            <Button
+              variant="ghost"
+              size="icon"
+              onClick={() => handleChatOpenChange(true)}
+              className="h-9 w-9 hover:bg-[#F3F4F6] text-[#6B7280] hover:text-[#111827] transition-all rounded-lg relative"
+            >
+              <MessageCircle className="w-4 h-4" />
+              {hasNewMessages && (
+                <span className="absolute top-1.5 right-1.5 flex h-2 w-2 rounded-full bg-red-500" />
+              )}
+            </Button>
+            {canEdit && (
+              <Button
+                variant="ghost"
+                size="icon"
+                onClick={() => onEdit(project)}
+                className="h-9 w-9 hover:bg-[#F3F4F6] text-[#6B7280] hover:text-[#111827] transition-all rounded-lg"
+              >
+                <Edit className="w-4 h-4" />
+              </Button>
+            )}
+            {canDelete && (
+            <AlertDialog>
+              <AlertDialogTrigger asChild>
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  className="h-9 w-9 hover:bg-red-50 hover:text-red-600 transition-all rounded-lg"
+                >
+                  <Trash2 className="w-4 h-4" />
+                </Button>
+              </AlertDialogTrigger>
+              <AlertDialogContent className="rounded-2xl border-2 border-slate-200">
+                <AlertDialogHeader>
+                  <AlertDialogTitle className="text-xl font-bold text-[#000000]">Delete Project?</AlertDialogTitle>
+                  <AlertDialogDescription className="text-slate-600">
+                    This project will be moved to the archive. Associated jobs will not be deleted.
+                  </AlertDialogDescription>
+                </AlertDialogHeader>
+                <AlertDialogFooter>
+                  <AlertDialogCancel className="rounded-xl font-semibold border-2">Cancel</AlertDialogCancel>
+                  <AlertDialogAction
+                    onClick={() => onDelete(project.id)}
+                    className="bg-red-600 hover:bg-red-700 rounded-xl font-semibold"
+                  >
+                    Delete
+                  </AlertDialogAction>
+                </AlertDialogFooter>
+              </AlertDialogContent>
+            </AlertDialog>
+            )}
+          </div>
+        </div>
+
+        <div className="space-y-3 mt-4">
+          <div className="flex items-center justify-between gap-3 flex-wrap">
+            <div className="flex items-center gap-2">
+              <h2 className="text-[22px] font-semibold text-[#111827] leading-[1.2]">
+                {project.title}
+              </h2>
+              <DuplicateBadge record={project} />
+            </div>
+            {project.contract_id && (
+              <Link to={createPageUrl("Contracts")}>
+                <Badge className="bg-purple-100 text-purple-800 hover:bg-purple-200 cursor-pointer border-purple-200 font-medium text-[12px] leading-[1.35] px-2.5 py-0.5 rounded-lg">
+                  Contract Job
+                </Badge>
+              </Link>
+            )}
+            {project.project_type && (
+              <EditableField
+                value={project.project_type}
+                onSave={(val) => handleFieldSave('project_type', project.project_type, val)}
+                type="select"
+                options={[
+                  { value: "Garage Door Install", label: "Garage Door Install" },
+                  { value: "Gate Install", label: "Gate Install" },
+                  { value: "Roller Shutter Install", label: "Roller Shutter Install" },
+                  { value: "Multiple", label: "Multiple" },
+                  { value: "Motor/Accessory", label: "Motor/Accessory" },
+                  { value: "Repair", label: "Repair" },
+                  { value: "Maintenance", label: "Maintenance" }
+                ]}
+                displayFormat={(val) => (
+                  <Badge className={`${projectTypeColors[val]} font-medium border-0 px-2.5 py-0.5 rounded-lg text-[12px] leading-[1.35] hover:opacity-100`}>
+                    {val}
+                  </Badge>
+                )}
+              />
+            )}
+          </div>
+
+          <div className="bg-white p-3 rounded-lg border border-[#E5E7EB] overflow-hidden">
+            <div className="text-[12px] font-medium text-[#4B5563] leading-[1.35] mb-2 uppercase tracking-wide">Project Stage</div>
+            <ProjectStageSelector
+              currentStage={project.status}
+              onStageChange={canChangeStage ? handleStageChange : undefined}
+              onMarkAsLost={canChangeStage ? () => setShowLostModal(true) : undefined}
+              disabled={!canChangeStage}
+            />
+            {project.status === "Lost" && (
+              <div className="mt-3 p-3 bg-red-50 border border-red-200 rounded-lg">
+                <div className="flex items-start gap-2">
+                  <span className="text-[13px] font-medium text-red-700">Lost Reason:</span>
+                  <span className="text-[13px] text-red-600">
+                    {project.lost_reason}
+                    {project.lost_reason_notes && ` - ${project.lost_reason_notes}`}
+                  </span>
+                </div>
+                {project.lost_date && (
+                  <div className="text-[12px] text-red-500 mt-1">
+                    Lost on {new Date(project.lost_date).toLocaleDateString('en-AU', { day: 'numeric', month: 'short', year: 'numeric' })}
+                  </div>
+                )}
+              </div>
+            )}
+          </div>
+          {project.financial_status && (
+            <div className="mt-2">
+              <EditableField
+                value={project.financial_status}
+                onSave={(val) => handleFieldSave('financial_status', project.financial_status, val)}
+                type="select"
+                options={[
+                  { value: "50% payment made", label: "50% payment made" },
+                  { value: "30% payment made (install)", label: "30% payment made (install)" },
+                  { value: "Balance paid in full", label: "Balance paid in full" }
+                ]}
+                displayFormat={(val) => (
+                  <Badge className={`${financialStatusColors[val]} font-medium border-0 px-2.5 py-0.5 rounded-lg text-[12px] leading-[1.35] hover:opacity-100`}>
+                    {val}
+                  </Badge>
+                )}
+              />
+            </div>
+          )}
+        </div>
+      </div>
+    </div>
+  );
+
   return (
-    <div className="relative flex flex-col lg:flex-row gap-4 overflow-x-hidden items-start">
-      {/* Customer Sidebar */}
-      <aside className="w-full lg:w-72 flex-shrink-0 lg:sticky lg:top-4">
+    <ProjectPageShell
+      header={projectHeader}
+      contextPanel={<ProjectContextPanel project={project} />}
+    >
+      <div className="relative flex flex-col overflow-x-hidden items-start w-full">
+      {/* OLD Customer Sidebar - Removed, replaced by ProjectContextPanel */}
+      {/* <aside className="w-full lg:w-72 flex-shrink-0 lg:sticky lg:top-4">
         <Card className="border border-[#E5E7EB] shadow-sm rounded-lg overflow-hidden">
           <CardHeader className="bg-white px-4 py-3 border-b border-[#E5E7EB]">
             <h3 className="text-[16px] font-semibold text-[#111827] leading-[1.2]">Customer</h3>
@@ -1301,237 +1537,11 @@ Format as HTML bullet points using <ul> and <li> tags. Include only the most cri
                 </CollapsibleContent>
               </Card>
             </Collapsible>
-      </aside>
+      {/* OLD Customer Sidebar - Now in ProjectContextPanel */}
 
-            {/* Main Content */}
-            <div className="flex-1 w-full lg:min-w-0">
+      {/* Main Content */}
       <Card className="border border-[#E5E7EB] shadow-sm rounded-lg overflow-hidden">
-        <CardHeader className="border-b border-[#E5E7EB] bg-white p-3 md:p-4 space-y-3">
-        <div className="flex items-center justify-between gap-3">
-          <div className="flex items-center gap-2">
-            <BackButton to={createPageUrl("Projects")} />
-            <Badge className={freshnessColors[freshness.color]}>
-              {freshness.label}
-            </Badge>
-            <span className="text-[12px] text-[#6B7280] hidden sm:block">
-              Age: {freshness.days !== null ? `${freshness.days} days` : 'Unknown'}
-            </span>
-          </div>
-
-          <div className="flex gap-1 flex-shrink-0">
-            {activeViewers.length > 0 && (
-              <div className="flex -space-x-2 mr-2">
-                {activeViewers.map((viewer, idx) => (
-                  <div
-                    key={viewer.id}
-                    className="w-8 h-8 bg-[#FAE008] rounded-full flex items-center justify-center border-2 border-white"
-                    title={viewer.user_name}
-                  >
-                    <span className="text-[#111827] font-semibold text-xs">
-                      {viewer.user_name?.charAt(0)?.toUpperCase() || 'U'}
-                    </span>
-                  </div>
-                ))}
-              </div>
-            )}
-            <Button
-              variant="ghost"
-              size="icon"
-              onClick={() => setShowActivityModal(true)}
-              className="h-9 w-9 hover:bg-[#F3F4F6] text-[#6B7280] hover:text-[#111827] transition-all rounded-lg"
-              title="View Activity"
-            >
-              <Activity className="w-4 h-4" />
-            </Button>
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={async () => {
-                if (project.handover_locked && project.handover_pdf_url) {
-                  window.open(project.handover_pdf_url, '_blank');
-                  return;
-                }
-                
-                setIsGeneratingHandover(true);
-                try {
-                  const response = await base44.functions.invoke('generateProjectHandoverReport', {
-                    projectId: project.id
-                  });
-                  
-                  if (response.data.success && response.data.pdf_url) {
-                    queryClient.invalidateQueries({ queryKey: ['project', project.id] });
-                    toast.success('Handover report generated successfully');
-                    window.open(response.data.pdf_url, '_blank');
-                  }
-                } catch (error) {
-                  const errorMsg = error?.response?.data?.error || error.message;
-                  toast.error(`Failed to generate handover: ${errorMsg}`);
-                } finally {
-                  setIsGeneratingHandover(false);
-                }
-              }}
-              disabled={isGeneratingHandover}
-              className="h-9 text-xs"
-            >
-              {isGeneratingHandover ? (
-                <>
-                  <Loader2 className="w-4 h-4 mr-1 animate-spin" />
-                  Generating...
-                </>
-              ) : project.handover_locked && project.handover_pdf_url ? (
-                'View Handover Report'
-              ) : (
-                'Generate Handover Report'
-              )}
-            </Button>
-            <Button
-              variant="ghost"
-              size="icon"
-              onClick={() => setShowHistory(true)}
-              className="h-9 w-9 hover:bg-[#F3F4F6] text-[#6B7280] hover:text-[#111827] transition-all rounded-lg"
-            >
-              <History className="w-4 h-4" />
-            </Button>
-            <Button
-              variant="ghost"
-              size="icon"
-              onClick={() => handleChatOpenChange(true)}
-              className="h-9 w-9 hover:bg-[#F3F4F6] text-[#6B7280] hover:text-[#111827] transition-all rounded-lg relative"
-            >
-              <MessageCircle className="w-4 h-4" />
-              {hasNewMessages && (
-                <span className="absolute top-1.5 right-1.5 flex h-2 w-2 rounded-full bg-red-500" />
-              )}
-            </Button>
-            {canEdit && (
-              <Button
-                variant="ghost"
-                size="icon"
-                onClick={() => onEdit(project)}
-                className="h-9 w-9 hover:bg-[#F3F4F6] text-[#6B7280] hover:text-[#111827] transition-all rounded-lg"
-              >
-                <Edit className="w-4 h-4" />
-              </Button>
-            )}
-            {canDelete && (
-            <AlertDialog>
-              <AlertDialogTrigger asChild>
-                <Button
-                  variant="ghost"
-                  size="icon"
-                  className="h-9 w-9 hover:bg-red-50 hover:text-red-600 transition-all rounded-lg"
-                >
-                  <Trash2 className="w-4 h-4" />
-                </Button>
-              </AlertDialogTrigger>
-              <AlertDialogContent className="rounded-2xl border-2 border-slate-200">
-                <AlertDialogHeader>
-                  <AlertDialogTitle className="text-xl font-bold text-[#000000]">Delete Project?</AlertDialogTitle>
-                  <AlertDialogDescription className="text-slate-600">
-                    This project will be moved to the archive. Associated jobs will not be deleted.
-                  </AlertDialogDescription>
-                </AlertDialogHeader>
-                <AlertDialogFooter>
-                  <AlertDialogCancel className="rounded-xl font-semibold border-2">Cancel</AlertDialogCancel>
-                  <AlertDialogAction
-                    onClick={() => onDelete(project.id)}
-                    className="bg-red-600 hover:bg-red-700 rounded-xl font-semibold"
-                  >
-                    Delete
-                  </AlertDialogAction>
-                </AlertDialogFooter>
-              </AlertDialogContent>
-            </AlertDialog>
-            )}
-          </div>
-        </div>
-
-        <div className="space-y-3">
-          <div className="flex items-center justify-between gap-3 flex-wrap">
-            <div className="flex items-center gap-2">
-              <h2 className="text-[22px] font-semibold text-[#111827] leading-[1.2]">
-                {project.title}
-              </h2>
-              <DuplicateBadge record={project} />
-            </div>
-            {project.contract_id && (
-              <Link to={createPageUrl("Contracts")}>
-                <Badge className="bg-purple-100 text-purple-800 hover:bg-purple-200 cursor-pointer border-purple-200 font-medium text-[12px] leading-[1.35] px-2.5 py-0.5 rounded-lg">
-                  Contract Job
-                </Badge>
-              </Link>
-            )}
-            {project.project_type && (
-              <EditableField
-                value={project.project_type}
-                onSave={(val) => handleFieldSave('project_type', project.project_type, val)}
-                type="select"
-                options={[
-                  { value: "Garage Door Install", label: "Garage Door Install" },
-                  { value: "Gate Install", label: "Gate Install" },
-                  { value: "Roller Shutter Install", label: "Roller Shutter Install" },
-                  { value: "Multiple", label: "Multiple" },
-                  { value: "Motor/Accessory", label: "Motor/Accessory" },
-                  { value: "Repair", label: "Repair" },
-                  { value: "Maintenance", label: "Maintenance" }
-                ]}
-                displayFormat={(val) => (
-                  <Badge className={`${projectTypeColors[val]} font-medium border-0 px-2.5 py-0.5 rounded-lg text-[12px] leading-[1.35] hover:opacity-100`}>
-                    {val}
-                  </Badge>
-                )}
-              />
-            )}
-          </div>
-
-
-
-          <div className="bg-white p-3 rounded-lg border border-[#E5E7EB] overflow-hidden">
-            <div className="text-[12px] font-medium text-[#4B5563] leading-[1.35] mb-2 uppercase tracking-wide">Project Stage</div>
-            <ProjectStageSelector
-              currentStage={project.status}
-              onStageChange={canChangeStage ? handleStageChange : undefined}
-              onMarkAsLost={canChangeStage ? () => setShowLostModal(true) : undefined}
-              disabled={!canChangeStage}
-            />
-            {project.status === "Lost" && (
-              <div className="mt-3 p-3 bg-red-50 border border-red-200 rounded-lg">
-                <div className="flex items-start gap-2">
-                  <span className="text-[13px] font-medium text-red-700">Lost Reason:</span>
-                  <span className="text-[13px] text-red-600">
-                    {project.lost_reason}
-                    {project.lost_reason_notes && ` - ${project.lost_reason_notes}`}
-                  </span>
-                </div>
-                {project.lost_date && (
-                  <div className="text-[12px] text-red-500 mt-1">
-                    Lost on {new Date(project.lost_date).toLocaleDateString('en-AU', { day: 'numeric', month: 'short', year: 'numeric' })}
-                  </div>
-                )}
-              </div>
-            )}
-          </div>
-          {project.financial_status && (
-            <div className="mt-2">
-              <EditableField
-                value={project.financial_status}
-                onSave={(val) => handleFieldSave('financial_status', project.financial_status, val)}
-                type="select"
-                options={[
-                  { value: "50% payment made", label: "50% payment made" },
-                  { value: "30% payment made (install)", label: "30% payment made (install)" },
-                  { value: "Balance paid in full", label: "Balance paid in full" }
-                ]}
-                displayFormat={(val) => (
-                  <Badge className={`${financialStatusColors[val]} font-medium border-0 px-2.5 py-0.5 rounded-lg text-[12px] leading-[1.35] hover:opacity-100`}>
-                    {val}
-                  </Badge>
-                )}
-              />
-            </div>
-          )}
-          </div>
-        </CardHeader>
+        <CardHeader className="border-b border-[#E5E7EB] bg-white p-3 md:p-4">
 
       <CardContent className="p-3 md:p-4">
         {/* Attention Items Panel */}
@@ -1883,6 +1893,7 @@ Format as HTML bullet points using <ul> and <li> tags. Include only the most cri
       />
       </Card>
       </div>
+    </ProjectPageShell>
 
       <FilePreviewModal
         isOpen={!!previewFile}
