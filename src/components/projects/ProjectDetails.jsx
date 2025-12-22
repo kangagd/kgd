@@ -278,12 +278,7 @@ export default function ProjectDetails({ project: initialProject, onClose, onEdi
     enabled: !!project.id
   });
 
-  // Auto-expand panels based on content
-  React.useEffect(() => {
-    if (projectContacts.length > 0 && !contactsOpen) setContactsOpen(true);
-    if (tradeRequirements.length > 0 && !tradesOpen) setTradesOpen(true);
-    if (((project.image_urls && project.image_urls.length > 0) || project.quote_url || project.invoice_url || (project.other_documents && project.other_documents.length > 0) || handoverReports.length > 0) && !mediaDocsOpen) setMediaDocsOpen(true);
-  }, [projectContacts, tradeRequirements, project.image_urls, project.quote_url, project.invoice_url, project.other_documents, handoverReports]);
+
 
   const { data: xeroInvoices = [] } = useQuery({
     queryKey: ['projectXeroInvoices', project.id],
