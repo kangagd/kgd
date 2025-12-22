@@ -25,6 +25,7 @@ import { useNavigate, useSearchParams } from "react-router-dom";
 import { buildActiveCheckInMap } from "@/components/domain/checkInHelpers";
 import BackButton from "../components/common/BackButton";
 import { notifySuccess, notifyError } from "@/components/utils/notify";
+import { jobKeys } from "@/components/api/queryKeys";
 
 export default function Jobs() {
   const navigate = useNavigate();
@@ -106,7 +107,7 @@ export default function Jobs() {
   const [hasMoreJobs, setHasMoreJobs] = useState(true);
 
   const { data: jobsPage, isLoading, refetch, isFetching } = useQuery({
-    queryKey: ['allJobs', jobsCursor],
+    queryKey: [...jobKeys.allJobs(), jobsCursor],
     queryFn: async () => {
       try {
         // Use backend function for first page, then fall back to direct fetch
@@ -184,7 +185,7 @@ export default function Jobs() {
   const jobIdFromUrl = searchParams.get('jobId');
 
   const { data: directJob } = useQuery({
-    queryKey: ['job', jobIdFromUrl],
+    queryKey: jobKeys.detail(jobIdFromUrl),
     queryFn: () => base44.entities.Job.get(jobIdFromUrl),
     enabled: !!jobIdFromUrl,
   });
@@ -203,7 +204,7 @@ export default function Jobs() {
   const createJobMutation = useMutation({
     mutationFn: (data) => base44.functions.invoke('manageJob', { action: 'create', data }),
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['allJobs'] });
+      queryClient.invalidateQueries({ queryKey: jobKeys.all });
       queryClient.invalidateQueries({ queryKey: ['projects'] });
       refetch();
       setShowForm(false);
@@ -217,7 +218,7 @@ export default function Jobs() {
   const updateJobMutation = useMutation({
     mutationFn: ({ id, data }) => base44.functions.invoke('manageJob', { action: 'update', id, data }),
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['allJobs'] });
+      queryClient.invalidateQueries({ queryKey: jobKeys.all });
       refetch();
       setShowForm(false);
       setEditingJob(null);
@@ -235,7 +236,7 @@ export default function Jobs() {
       return result;
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['allJobs'] });
+      queryClient.invalidateQueries({ queryKey: jobKeys.all });
       refetch();
       setSelectedJob(null);
     },
