@@ -41,6 +41,70 @@ const ALLOWED_FIELD_EVIDENCE = {
   'Customer': ['notes']
 };
 
+// Helper: Detect negative client sentiment in emails
+function detectNegativeClientSentiment(emails) {
+  if (!emails || !Array.isArray(emails) || emails.length === 0) {
+    return null;
+  }
+
+  // Conservative keywords/phrases for frustration or dissatisfaction
+  const negativeKeywords = [
+    'disappointed',
+    'frustrated',
+    'unhappy',
+    'unacceptable',
+    'dissatisfied',
+    'complaint',
+    'unprofessional',
+    'poor service',
+    'not happy',
+    'very upset',
+    'terrible',
+    'horrible',
+    'awful',
+    'disgusted',
+    'angry',
+    'furious',
+    'fed up',
+    'sick of',
+    'had enough',
+    'this is ridiculous',
+    'this is unacceptable',
+    'extremely poor',
+    'very disappointed',
+    'very frustrated'
+  ];
+
+  // Filter inbound client emails only (is_outbound: false or missing)
+  const inboundEmails = emails
+    .filter(email => !email.is_outbound)
+    .sort((a, b) => new Date(b.sent_at || b.created_at || 0) - new Date(a.sent_at || a.created_at || 0));
+
+  // Scan for negative sentiment
+  for (const email of inboundEmails) {
+    const content = ((email.body_text || email.content || '').toLowerCase());
+    
+    for (const keyword of negativeKeywords) {
+      if (content.includes(keyword)) {
+        // Extract snippet around the keyword
+        const index = content.indexOf(keyword);
+        const start = Math.max(0, index - 40);
+        const end = Math.min(content.length, index + keyword.length + 40);
+        const snippet = content.substring(start, end).trim();
+        
+        return {
+          timestamp: email.sent_at || email.created_at,
+          snippet: snippet.substring(0, 150),
+          matched_keyword: keyword,
+          email_id: email.id
+        };
+      }
+    }
+  }
+
+  return null;
+}
+
 // Score evidence records for each category
 function scoreEvidence(evidenceRecords) {
   const scores = {};
