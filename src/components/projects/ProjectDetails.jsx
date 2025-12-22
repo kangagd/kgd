@@ -30,7 +30,8 @@ import {
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
-import { ChevronDown } from "lucide-react";
+import { ChevronDown, MoreVertical } from "lucide-react";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import ProjectChangeHistoryModal from "./ProjectChangeHistoryModal";
 import ProjectStageSelector from "./ProjectStageSelector";
 import PartsSection from "./PartsSection";
@@ -146,6 +147,8 @@ export default function ProjectDetails({ project: initialProject, onClose, onEdi
   const [mediaDrawerOpen, setMediaDrawerOpen] = useState(false);
   const [mediaDrawerTab, setMediaDrawerTab] = useState("photos");
   const [projectInfoOpen, setProjectInfoOpen] = useState(false);
+  const [customerDrawerOpen, setCustomerDrawerOpen] = useState(false);
+  const [commandMenuOpen, setCommandMenuOpen] = useState(false);
   const addTradeRef = React.useRef(null);
 
   // Get email thread ID from props, URL params, or project's source
@@ -976,8 +979,19 @@ Format as HTML bullet points using <ul> and <li> tags. Include only the most cri
 
   return (
     <div className="relative flex flex-col lg:flex-row gap-4 overflow-x-hidden items-start">
-      {/* Customer Sidebar */}
-      <aside className="w-full lg:w-72 flex-shrink-0 lg:sticky lg:top-4">
+      {/* Mobile Customer Button */}
+      <Button
+        onClick={() => setCustomerDrawerOpen(true)}
+        variant="outline"
+        size="sm"
+        className="lg:hidden fixed bottom-20 left-4 z-40 shadow-lg bg-white"
+      >
+        <User className="w-4 h-4 mr-2" />
+        Customer
+      </Button>
+
+      {/* Customer Sidebar - Desktop */}
+      <aside className="hidden lg:block w-72 flex-shrink-0 lg:sticky lg:top-4">
         <Card className="border border-[#E5E7EB] shadow-sm rounded-lg overflow-hidden">
           <CardHeader className="bg-white px-4 py-3 border-b border-[#E5E7EB]">
             <h3 className="text-[16px] font-semibold text-[#111827] leading-[1.2]">Customer</h3>
@@ -1243,8 +1257,8 @@ Format as HTML bullet points using <ul> and <li> tags. Include only the most cri
           </div>
         </div>
 
-        {/* Command Bar */}
-        <div className="flex items-center gap-2 px-3 py-2 bg-[#F9FAFB] border-y border-[#E5E7EB] overflow-x-auto">
+        {/* Command Bar - Desktop */}
+        <div className="hidden md:flex items-center gap-2 px-3 py-2 bg-[#F9FAFB] border-y border-[#E5E7EB] overflow-x-auto">
           <button
             onClick={() => {
               setMediaDrawerTab("photos");
@@ -1258,7 +1272,7 @@ Format as HTML bullet points using <ul> and <li> tags. Include only the most cri
               {mediaCount}
             </Badge>
           </button>
-          
+
           <button
             onClick={() => {
               setMediaDrawerTab("documents");
@@ -1272,7 +1286,7 @@ Format as HTML bullet points using <ul> and <li> tags. Include only the most cri
               {docsCount}
             </Badge>
           </button>
-          
+
           <button
             onClick={() => {
               setActiveTab('overview');
@@ -1288,7 +1302,7 @@ Format as HTML bullet points using <ul> and <li> tags. Include only the most cri
               {tasksCount}
             </Badge>
           </button>
-          
+
           <button
             onClick={() => setActiveTab('activity')}
             className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-white border border-[#E5E7EB] hover:border-[#FAE008] hover:bg-[#FFFEF5] transition-all whitespace-nowrap relative"
@@ -1305,6 +1319,93 @@ Format as HTML bullet points using <ul> and <li> tags. Include only the most cri
               <span className="absolute top-1 right-1 flex h-2 w-2 rounded-full bg-red-500" />
             )}
           </button>
+        </div>
+
+        {/* Command Bar - Mobile */}
+        <div className="flex md:hidden items-center justify-center px-3 py-2 bg-[#F9FAFB] border-y border-[#E5E7EB]">
+          <Popover open={commandMenuOpen} onOpenChange={setCommandMenuOpen}>
+            <PopoverTrigger asChild>
+              <button className="flex items-center gap-2 px-4 py-2 rounded-lg bg-white border border-[#E5E7EB] hover:border-[#FAE008] hover:bg-[#FFFEF5] transition-all">
+                <MoreVertical className="w-4 h-4 text-[#6B7280]" />
+                <span className="text-[13px] font-medium text-[#111827]">Quick Actions</span>
+              </button>
+            </PopoverTrigger>
+            <PopoverContent className="w-56 p-2" align="center">
+              <div className="space-y-1">
+                <button
+                  onClick={() => {
+                    setMediaDrawerTab("photos");
+                    setMediaDrawerOpen(true);
+                    setCommandMenuOpen(false);
+                  }}
+                  className="w-full flex items-center justify-between px-3 py-2 rounded-lg hover:bg-[#F3F4F6] transition-colors"
+                >
+                  <div className="flex items-center gap-2">
+                    <ImageIcon className="w-4 h-4 text-[#6B7280]" />
+                    <span className="text-[14px] font-medium text-[#111827]">Media</span>
+                  </div>
+                  <Badge variant="secondary" className="px-1.5 py-0 text-[10px]">
+                    {mediaCount}
+                  </Badge>
+                </button>
+
+                <button
+                  onClick={() => {
+                    setMediaDrawerTab("documents");
+                    setMediaDrawerOpen(true);
+                    setCommandMenuOpen(false);
+                  }}
+                  className="w-full flex items-center justify-between px-3 py-2 rounded-lg hover:bg-[#F3F4F6] transition-colors"
+                >
+                  <div className="flex items-center gap-2">
+                    <FileText className="w-4 h-4 text-[#6B7280]" />
+                    <span className="text-[14px] font-medium text-[#111827]">Docs</span>
+                  </div>
+                  <Badge variant="secondary" className="px-1.5 py-0 text-[10px]">
+                    {docsCount}
+                  </Badge>
+                </button>
+
+                <button
+                  onClick={() => {
+                    setActiveTab('overview');
+                    setCommandMenuOpen(false);
+                    setTimeout(() => {
+                      document.getElementById('tasks-panel')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                    }, 100);
+                  }}
+                  className="w-full flex items-center justify-between px-3 py-2 rounded-lg hover:bg-[#F3F4F6] transition-colors"
+                >
+                  <div className="flex items-center gap-2">
+                    <Briefcase className="w-4 h-4 text-[#6B7280]" />
+                    <span className="text-[14px] font-medium text-[#111827]">Tasks</span>
+                  </div>
+                  <Badge variant="secondary" className="px-1.5 py-0 text-[10px]">
+                    {tasksCount}
+                  </Badge>
+                </button>
+
+                <button
+                  onClick={() => {
+                    setActiveTab('activity');
+                    setCommandMenuOpen(false);
+                  }}
+                  className="w-full flex items-center justify-between px-3 py-2 rounded-lg hover:bg-[#F3F4F6] transition-colors"
+                >
+                  <div className="flex items-center gap-2">
+                    <MessageCircle className="w-4 h-4 text-[#6B7280]" />
+                    <span className="text-[14px] font-medium text-[#111827]">Activity</span>
+                  </div>
+                  <Badge 
+                    variant="secondary" 
+                    className={`px-1.5 py-0 text-[10px] ${unreadCommsCount > 0 ? 'bg-red-100 text-red-700' : ''}`}
+                  >
+                    {unreadCommsCount}
+                  </Badge>
+                </button>
+              </div>
+            </PopoverContent>
+          </Popover>
         </div>
 
         <div className="space-y-3">
@@ -1969,6 +2070,116 @@ Format as HTML bullet points using <ul> and <li> tags. Include only the most cri
         project={project}
         initialTab={mediaDrawerTab}
       />
-    </div>
-  );
-}
+
+      {/* Customer Drawer - Mobile */}
+      {customerDrawerOpen && (
+        <>
+          <div 
+            className="lg:hidden fixed inset-0 bg-black/50 z-50"
+            onClick={() => setCustomerDrawerOpen(false)}
+          />
+          <div className="lg:hidden fixed right-0 top-0 bottom-0 w-[85vw] max-w-sm bg-white z-50 shadow-xl overflow-y-auto">
+            <div className="sticky top-0 bg-white border-b border-[#E5E7EB] p-4 flex items-center justify-between">
+              <h3 className="text-[16px] font-semibold text-[#111827]">Customer Details</h3>
+              <Button
+                variant="ghost"
+                size="icon"
+                onClick={() => setCustomerDrawerOpen(false)}
+                className="h-8 w-8"
+              >
+                <X className="w-4 h-4" />
+              </Button>
+            </div>
+            <div className="p-4 space-y-4">
+              <Card className="border border-[#E5E7EB] shadow-sm rounded-lg overflow-hidden">
+                <CardHeader className="bg-white px-4 py-3 border-b border-[#E5E7EB]">
+                  <h3 className="text-[16px] font-semibold text-[#111827] leading-[1.2]">Customer</h3>
+                </CardHeader>
+                <CardContent className="p-4 space-y-4">
+                  <CustomerQuickEdit
+                    customerId={project.customer_id}
+                    projectId={project.id}
+                    onCustomerUpdate={(updatedData) => {
+                      queryClient.invalidateQueries({ queryKey: ['project', project.id] });
+                    }}
+                  />
+
+                  <div className="pt-3 border-t border-[#E5E7EB]">
+                    <div className="flex items-start gap-2.5">
+                      <MapPin className="w-5 h-5 text-[#4B5563] flex-shrink-0 mt-1" />
+                      <div className="flex-1 min-w-0">
+                        <div className="text-[14px] text-[#6B7280] font-normal leading-[1.4] mb-0.5">Address</div>
+                        <AddressAutocomplete
+                          value={project.address_full || project.address}
+                          onChange={(addressData) => {
+                            base44.entities.Project.update(project.id, {
+                              address: addressData.address_full,
+                              address_full: addressData.address_full,
+                              address_street: addressData.address_street,
+                              address_suburb: addressData.address_suburb,
+                              address_state: addressData.address_state,
+                              address_postcode: addressData.address_postcode,
+                              address_country: addressData.address_country,
+                              google_place_id: addressData.google_place_id,
+                              latitude: addressData.latitude,
+                              longitude: addressData.longitude
+                            }).then(() => {
+                              queryClient.invalidateQueries({ queryKey: ['project', project.id] });
+                              queryClient.invalidateQueries({ queryKey: ['projects'] });
+                            });
+                          }}
+                          placeholder="Search for address..."
+                          className="text-[14px]"
+                        />
+                      </div>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+
+              {projectContacts.length > 0 && (
+                <Card className="border border-[#E5E7EB] shadow-sm rounded-lg overflow-hidden">
+                  <CardHeader className="bg-white px-4 py-3 border-b border-[#E5E7EB]">
+                    <h3 className="text-[16px] font-semibold text-[#111827] leading-[1.2]">
+                      Project Contacts ({projectContacts.length})
+                    </h3>
+                  </CardHeader>
+                  <CardContent className="p-4">
+                    <div className="space-y-3">
+                      {projectContacts.slice(0, 3).map((contact) => (
+                        <div key={contact.id} className="pb-3 border-b border-[#E5E7EB] last:border-0 last:pb-0">
+                          <div className="font-medium text-[14px] text-[#111827] mb-1">
+                            {contact.name}
+                            {contact.role && (
+                              <Badge variant="outline" className="ml-2 text-[10px] px-2 py-0">
+                                {contact.role}
+                              </Badge>
+                            )}
+                          </div>
+                          {contact.phone && (
+                            <div className="text-[13px] text-[#6B7280] mb-1">
+                              <a href={`tel:${contact.phone}`} className="hover:text-[#111827]">
+                                {contact.phone}
+                              </a>
+                            </div>
+                          )}
+                          {contact.email && (
+                            <div className="text-[13px] text-[#6B7280] truncate">
+                              <a href={`mailto:${contact.email}`} className="hover:text-[#111827]">
+                                {contact.email}
+                              </a>
+                            </div>
+                          )}
+                        </div>
+                      ))}
+                    </div>
+                  </CardContent>
+                </Card>
+              )}
+            </div>
+          </div>
+        </>
+      )}
+      </div>
+      );
+      }
