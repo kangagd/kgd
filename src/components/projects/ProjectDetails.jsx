@@ -1513,16 +1513,15 @@ Format as HTML bullet points using <ul> and <li> tags. Include only the most cri
               </div>
             </TabsContent>
           )}
-          </Tabs>
+        </Tabs>
       </CardContent>
+      </Card>
 
       <ProjectChangeHistoryModal
         open={showHistory}
         onClose={() => setShowHistory(false)}
         projectId={project.id}
       />
-      </Card>
-      </div>
     </ProjectPageShell>
 
       <FilePreviewModal
