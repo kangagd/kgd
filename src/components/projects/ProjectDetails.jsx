@@ -72,6 +72,7 @@ import CommercialStatusCard from "./CommercialStatusCard";
 import TasksCompactCard from "./TasksCompactCard";
 import UpcomingVisitsCard from "./UpcomingVisitsCard";
 import LatestVisitCard from "./LatestVisitCard";
+import ActivityTimeline from "./ActivityTimeline";
 
 const statusColors = {
   "Lead": "bg-slate-100 text-slate-700",
@@ -1483,7 +1484,15 @@ Format as HTML bullet points using <ul> and <li> tags. Include only the most cri
                 <CardTitle className="text-[16px] font-semibold text-[#111827]">What's Next</CardTitle>
               </CardHeader>
               <CardContent>
-                <LastActivityCard project={project} />
+                <ActivityTimeline 
+                  project={project} 
+                  onNavigateToTab={(tab) => {
+                    setActiveTab(tab);
+                    setTimeout(() => {
+                      document.getElementById(`tab-${tab}`)?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                    }, 100);
+                  }}
+                />
               </CardContent>
             </Card>
 
