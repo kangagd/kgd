@@ -3,8 +3,14 @@ import { X, Upload } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 
-export default function MediaDocumentsDrawer({ open, onClose, project }) {
-  const [activeTab, setActiveTab] = useState("photos");
+export default function MediaDocumentsDrawer({ open, onClose, project, initialTab = "photos" }) {
+  const [activeTab, setActiveTab] = useState(initialTab);
+
+  React.useEffect(() => {
+    if (open) {
+      setActiveTab(initialTab);
+    }
+  }, [open, initialTab]);
 
   if (!open) return null;
 
