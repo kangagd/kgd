@@ -9,6 +9,8 @@ import { toast } from "sonner";
 import { format, parseISO } from "date-fns";
 import debounce from "lodash/debounce";
 import ReactQuill from "react-quill";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { renderTemplate, buildTemplateContext } from "@/components/utils/templateHelpers";
 
 const sanitizeBodyHtml = (html) => {
   if (!html) return html;
@@ -101,6 +103,7 @@ export default function EmailComposer({ mode = "compose", thread, message, onClo
   const fileInputRef = useRef(null);
   const textareaRef = useRef(null);
   const toInputRef = useRef(null);
+  const [selectedTemplate, setSelectedTemplate] = useState("");
 
   // Fetch customers for email autocomplete
   const { data: customers = [] } = useQuery({
@@ -108,6 +111,52 @@ export default function EmailComposer({ mode = "compose", thread, message, onClo
     queryFn: () => base44.entities.Customer.filter({ status: 'active' }),
     staleTime: 60000
   });
+
+  // Fetch email templates
+  const { data: templates = [] } = useQuery({
+    queryKey: ['messageTemplates', 'email'],
+    queryFn: () => base44.entities.MessageTemplate.filter({ channel: 'email', active: true }),
+    staleTime: 120000
+  });
+
+  // Fetch context entities for template rendering
+  const { data: linkedProject } = useQuery({
+    queryKey: ['project', projectId],
+    queryFn: () => base44.entities.Project.get(projectId),
+    enabled: !!projectId
+  });
+
+  const { data: linkedJob } = useQuery({
+    queryKey: ['job', jobId],
+    queryFn: () => base44.entities.Job.get(jobId),
+    enabled: !!jobId
+  });
+
+  const handleApplyTemplate = (templateId) => {
+    const template = templates.find(t => t.id === templateId);
+    if (!template) return;
+
+    // Build context
+    const context = buildTemplateContext({
+      project: linkedProject,
+      job: linkedJob,
+      customer: customers.find(c => c.email === to)
+    });
+
+    // Render template
+    const rendered = renderTemplate(template, context);
+    
+    // Apply to form
+    if (rendered.subject && !subject) {
+      setSubject(rendered.subject);
+    }
+    if (rendered.body) {
+      setBody(rendered.body);
+    }
+
+    setSelectedTemplate("");
+    toast.success(`Template "${template.name}" applied`);
+  };
 
   // Filter customers based on search term
   const filteredCustomers = customers.filter(customer => {
@@ -344,6 +393,24 @@ export default function EmailComposer({ mode = "compose", thread, message, onClo
               className="flex-1"
             />
           </div>
+
+          {templates.length > 0 && (
+            <div className="flex items-center gap-2">
+              <label className="text-[14px] font-medium w-12">Template:</label>
+              <Select value={selectedTemplate} onValueChange={handleApplyTemplate}>
+                <SelectTrigger className="flex-1">
+                  <SelectValue placeholder="Use template..." />
+                </SelectTrigger>
+                <SelectContent>
+                  {templates.map(template => (
+                    <SelectItem key={template.id} value={template.id}>
+                      {template.name}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+          )}
         </div>
 
         <div className="space-y-2">
