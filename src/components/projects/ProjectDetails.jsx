@@ -1260,7 +1260,7 @@ Format as HTML bullet points using <ul> and <li> tags. Include only the most cri
           </button>
           
           <button
-            onClick={() => handleChatOpenChange(true)}
+            onClick={() => setActiveTab('emails')}
             className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-white border border-[#E5E7EB] hover:border-[#FAE008] hover:bg-[#FFFEF5] transition-all whitespace-nowrap relative"
           >
             <MessageCircle className="w-4 h-4 text-[#6B7280]" />
