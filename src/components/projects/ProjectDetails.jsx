@@ -129,11 +129,7 @@ export default function ProjectDetails({ project: initialProject, onClose, onEdi
   const [showHandoverModal, setShowHandoverModal] = useState(false);
   const [isGeneratingHandover, setIsGeneratingHandover] = useState(false);
   const [showActivityModal, setShowActivityModal] = useState(false);
-  const [contactsOpen, setContactsOpen] = useState(false);
-  const [tradesOpen, setTradesOpen] = useState(false);
   const [tasksOpen, setTasksOpen] = useState(true);
-  const [visitsOpen, setVisitsOpen] = useState(true);
-  const [mediaDocsOpen, setMediaDocsOpen] = useState(false);
   const addTradeRef = React.useRef(null);
 
   // Get email thread ID from props, URL params, or project's source
