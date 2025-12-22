@@ -73,6 +73,7 @@ import TasksCompactCard from "./TasksCompactCard";
 import UpcomingVisitsCard from "./UpcomingVisitsCard";
 import LatestVisitCard from "./LatestVisitCard";
 import ActivityTimeline from "./ActivityTimeline";
+import ActivityTab from "./ActivityTab";
 
 const statusColors = {
   "Lead": "bg-slate-100 text-slate-700",
@@ -1286,11 +1287,11 @@ Format as HTML bullet points using <ul> and <li> tags. Include only the most cri
           </button>
           
           <button
-            onClick={() => setActiveTab('emails')}
+            onClick={() => setActiveTab('activity')}
             className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-white border border-[#E5E7EB] hover:border-[#FAE008] hover:bg-[#FFFEF5] transition-all whitespace-nowrap relative"
           >
             <MessageCircle className="w-4 h-4 text-[#6B7280]" />
-            <span className="text-[13px] font-medium text-[#111827]">Comms</span>
+            <span className="text-[13px] font-medium text-[#111827]">Activity</span>
             <Badge 
               variant="secondary" 
               className={`ml-1 px-1.5 py-0 text-[10px] ${unreadCommsCount > 0 ? 'bg-red-100 text-red-700' : 'bg-[#E5E7EB] text-[#4B5563]'}`}
@@ -1409,7 +1410,7 @@ Format as HTML bullet points using <ul> and <li> tags. Include only the most cri
                   <TabsTrigger value="overview" className="flex-1 whitespace-nowrap">
                     Overview
                   </TabsTrigger>
-                  <TabsTrigger value="emails" className="flex-1 whitespace-nowrap">Emails</TabsTrigger>
+                  <TabsTrigger value="activity" className="flex-1 whitespace-nowrap">Activity</TabsTrigger>
                   <TabsTrigger value="quoting" className="flex-1 whitespace-nowrap">Quoting</TabsTrigger>
                   <TabsTrigger value="parts" className="flex-1 whitespace-nowrap">Parts</TabsTrigger>
                   <TabsTrigger value="invoices" className="flex-1 whitespace-nowrap">Invoices</TabsTrigger>
@@ -1712,11 +1713,12 @@ Format as HTML bullet points using <ul> and <li> tags. Include only the most cri
             <LogisticsTimeline project={project} />
           </TabsContent>
 
-          <TabsContent value="emails" className="mt-3">
-            <ProjectEmailSection 
+          <TabsContent value="activity" className="mt-3">
+            <ActivityTab 
               project={project}
-              onThreadLinked={() => {
-                queryClient.invalidateQueries({ queryKey: ['project', project.id] });
+              onComposeEmail={() => {
+                // Navigate to inbox to compose email
+                navigate(createPageUrl("Inbox") + `?action=compose&projectId=${project.id}`);
               }}
             />
           </TabsContent>
