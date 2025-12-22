@@ -26,28 +26,16 @@ import {
   getLogisticsJobs,
 } from "@/components/domain/logisticsViewHelpers";
 import { LOGISTICS_LOCATION } from "@/components/domain/logisticsConfig";
-import { PO_STATUS, PO_STATUS_OPTIONS, getPoStatusLabel, normaliseLegacyPoStatus } from "@/components/domain/purchaseOrderStatusConfig";
+import { PO_STATUS, PO_STATUS_OPTIONS, getPoStatusLabel, getPoStatusColor, normaliseLegacyPoStatus } from "@/components/domain/purchaseOrderStatusConfig";
+import { queryKeys } from "@/components/api/queryKeys";
+import { invalidatePurchaseOrderBundle } from "@/components/api/invalidate";
 import { DELIVERY_METHOD as PO_DELIVERY_METHOD } from "@/components/domain/supplierDeliveryConfig";
 import { PART_LOCATION } from "@/components/domain/partConfig";
 import { getPoDisplayReference } from "@/components/domain/poDisplayHelpers";
 
 
 
-const getPoStatusColor = (status) => {
-  const normalized = normaliseLegacyPoStatus(status);
-  const colors = {
-    draft: 'bg-gray-200 text-gray-800',
-    sent: 'bg-blue-200 text-blue-800',
-    on_order: 'bg-amber-200 text-amber-800',
-    in_transit: 'bg-purple-200 text-purple-800',
-    in_loading_bay: 'bg-orange-200 text-orange-800',
-    in_storage: 'bg-green-200 text-green-800',
-    in_vehicle: 'bg-indigo-200 text-indigo-800',
-    installed: 'bg-teal-200 text-teal-800',
-    cancelled: 'bg-red-200 text-red-800',
-  };
-  return colors[normalized] || 'bg-gray-200 text-gray-800';
-};
+
 
 export default function Logistics() {
   const queryClient = useQueryClient();
@@ -332,7 +320,7 @@ export default function Logistics() {
       });
 
       toast.success(`Status updated to ${getPoStatusLabel(newStatus)}`);
-      queryClient.invalidateQueries({ queryKey: ["purchaseOrders"] });
+      await invalidatePurchaseOrderBundle(queryClient, po.id);
     } catch (error) {
       toast.error("Error updating PO status");
     }
@@ -428,8 +416,10 @@ export default function Logistics() {
       }
 
       toast.success("Logistics job created");
-      queryClient.invalidateQueries({ queryKey: ["jobs"] });
-      queryClient.invalidateQueries({ queryKey: ["purchaseOrders"] });
+      await Promise.all([
+        queryClient.invalidateQueries({ queryKey: ["jobs"] }),
+        invalidatePurchaseOrderBundle(queryClient, po.id)
+      ]);
     } catch (error) {
       toast.error("Error creating logistics job");
     }
@@ -582,7 +572,7 @@ export default function Logistics() {
                     
                     setSelectedPoId(newPO.id);
                     toast.success("Draft Purchase Order created");
-                    queryClient.invalidateQueries({ queryKey: ["purchaseOrders"] });
+                    await queryClient.invalidateQueries({ queryKey: queryKeys.purchaseOrders() });
                   } else {
                     toast.error("Failed to create PO");
                   }
@@ -1121,8 +1111,10 @@ export default function Logistics() {
                                         return;
                                       }
                                       toast.success("Logistics job created");
-                                      queryClient.invalidateQueries({ queryKey: ['jobs'] });
-                                      queryClient.invalidateQueries({ queryKey: ['purchaseOrders'] });
+                                      await Promise.all([
+                                        queryClient.invalidateQueries({ queryKey: ['jobs'] }),
+                                        invalidatePurchaseOrderBundle(queryClient, part.purchase_order_id)
+                                      ]);
                                     } catch (error) {
                                       toast.error("Error creating logistics job");
                                     }
