@@ -55,15 +55,79 @@ export default function MediaDocumentsDrawer({ open, onClose, project, initialTa
             </div>
 
             <TabsContent value="photos" className="p-4">
-              <div className="text-center py-12 text-[#9CA3AF]">
-                <p className="text-[14px]">No photos yet</p>
-              </div>
+              {!project.image_urls || project.image_urls.length === 0 ? (
+                <div className="text-center py-12 text-[#9CA3AF]">
+                  <p className="text-[14px]">No photos yet</p>
+                </div>
+              ) : (
+                <div className="grid grid-cols-2 gap-3">
+                  {project.image_urls.map((url, idx) => (
+                    <div key={idx} className="relative aspect-square rounded-lg overflow-hidden border border-[#E5E7EB] hover:border-[#FAE008] transition-colors cursor-pointer group">
+                      <img 
+                        src={url} 
+                        alt={`Photo ${idx + 1}`}
+                        className="w-full h-full object-cover"
+                      />
+                      <div className="absolute inset-0 bg-black/0 group-hover:bg-black/10 transition-colors" />
+                    </div>
+                  ))}
+                </div>
+              )}
             </TabsContent>
 
             <TabsContent value="documents" className="p-4">
-              <div className="text-center py-12 text-[#9CA3AF]">
-                <p className="text-[14px]">No documents yet</p>
-              </div>
+              {(!project.other_documents || project.other_documents.length === 0) && 
+               !project.quote_url && 
+               !project.invoice_url && 
+               !project.handover_pdf_url ? (
+                <div className="text-center py-12 text-[#9CA3AF]">
+                  <p className="text-[14px]">No documents yet</p>
+                </div>
+              ) : (
+                <div className="space-y-2">
+                  {project.quote_url && (
+                    <a 
+                      href={project.quote_url} 
+                      target="_blank" 
+                      rel="noopener noreferrer"
+                      className="flex items-center gap-3 p-3 rounded-lg border border-[#E5E7EB] hover:border-[#FAE008] hover:bg-[#FFFEF5] transition-all"
+                    >
+                      <div className="text-[14px] font-medium text-[#111827]">Quote</div>
+                    </a>
+                  )}
+                  {project.invoice_url && (
+                    <a 
+                      href={project.invoice_url} 
+                      target="_blank" 
+                      rel="noopener noreferrer"
+                      className="flex items-center gap-3 p-3 rounded-lg border border-[#E5E7EB] hover:border-[#FAE008] hover:bg-[#FFFEF5] transition-all"
+                    >
+                      <div className="text-[14px] font-medium text-[#111827]">Invoice</div>
+                    </a>
+                  )}
+                  {project.handover_pdf_url && (
+                    <a 
+                      href={project.handover_pdf_url} 
+                      target="_blank" 
+                      rel="noopener noreferrer"
+                      className="flex items-center gap-3 p-3 rounded-lg border border-[#E5E7EB] hover:border-[#FAE008] hover:bg-[#FFFEF5] transition-all"
+                    >
+                      <div className="text-[14px] font-medium text-[#111827]">Handover Report</div>
+                    </a>
+                  )}
+                  {project.other_documents?.map((doc, idx) => (
+                    <a 
+                      key={idx}
+                      href={doc.url} 
+                      target="_blank" 
+                      rel="noopener noreferrer"
+                      className="flex items-center gap-3 p-3 rounded-lg border border-[#E5E7EB] hover:border-[#FAE008] hover:bg-[#FFFEF5] transition-all"
+                    >
+                      <div className="text-[14px] font-medium text-[#111827]">{doc.name || `Document ${idx + 1}`}</div>
+                    </a>
+                  ))}
+                </div>
+              )}
             </TabsContent>
           </Tabs>
         </div>
