@@ -133,6 +133,7 @@ export default function ProjectDetails({ project: initialProject, onClose, onEdi
   const [tasksOpen, setTasksOpen] = useState(true);
   const [visitsOpen, setVisitsOpen] = useState(true);
   const [mediaDocsOpen, setMediaDocsOpen] = useState(false);
+  const [showAllContactsModal, setShowAllContactsModal] = useState(false);
   const addTradeRef = React.useRef(null);
 
   // Get email thread ID from props, URL params, or project's source
@@ -984,6 +985,80 @@ Format as HTML bullet points using <ul> and <li> tags. Include only the most cri
             </div>
             </CardContent>
             </Card>
+
+            {/* Project Contacts Section */}
+            <Card className="border border-[#E5E7EB] shadow-sm rounded-lg overflow-hidden mt-4">
+              <CardHeader className="bg-white px-4 py-3 border-b border-[#E5E7EB] flex flex-row items-center justify-between">
+                <h3 className="text-[16px] font-semibold text-[#111827] leading-[1.2]">
+                  Project Contacts
+                  {projectContacts.length > 0 && (
+                    <span className="text-[12px] font-normal text-[#6B7280] ml-2">
+                      ({projectContacts.length})
+                    </span>
+                  )}
+                </h3>
+                {canEdit && (
+                  <AddIconButton
+                    onClick={() => {
+                      // Trigger the add contact function from ProjectContactsPanel
+                      window.dispatchEvent(new CustomEvent('addProjectContact', { detail: { projectId: project.id } }));
+                    }}
+                    title="Add Contact"
+                  />
+                )}
+              </CardHeader>
+              <CardContent className="p-4">
+                {projectContacts.length === 0 ? (
+                  <div className="text-center py-4 text-[14px] text-[#9CA3AF]">
+                    No additional contacts
+                  </div>
+                ) : (
+                  <div className="space-y-3">
+                    {projectContacts.slice(0, 5).map((contact) => (
+                      <div key={contact.id} className="pb-3 border-b border-[#E5E7EB] last:border-0 last:pb-0">
+                        <div className="flex items-start justify-between gap-2 mb-2">
+                          <div className="font-medium text-[14px] text-[#111827]">
+                            {contact.name}
+                          </div>
+                          {contact.role && (
+                            <Badge variant="outline" className="text-[10px] px-2 py-0">
+                              {contact.role}
+                            </Badge>
+                          )}
+                        </div>
+                        {contact.phone && (
+                          <div className="flex items-center gap-2 text-[13px] text-[#6B7280] mb-1">
+                            <Phone className="w-3.5 h-3.5 flex-shrink-0" />
+                            <a href={`tel:${contact.phone}`} className="hover:text-[#111827] transition-colors">
+                              {contact.phone}
+                            </a>
+                          </div>
+                        )}
+                        {contact.email && (
+                          <div className="flex items-center gap-2 text-[13px] text-[#6B7280]">
+                            <Mail className="w-3.5 h-3.5 flex-shrink-0" />
+                            <a href={`mailto:${contact.email}`} className="hover:text-[#111827] transition-colors truncate">
+                              {contact.email}
+                            </a>
+                          </div>
+                        )}
+                      </div>
+                    ))}
+                    
+                    {projectContacts.length > 5 && (
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => setShowAllContactsModal(true)}
+                        className="w-full mt-2 text-[#111827] hover:bg-[#F3F4F6] text-[13px]"
+                      >
+                        View all {projectContacts.length} contacts
+                      </Button>
+                    )}
+                  </div>
+                )}
+              </CardContent>
+            </Card>
       </aside>
 
             {/* Main Content */}
@@ -1658,6 +1733,17 @@ Format as HTML bullet points using <ul> and <li> tags. Include only the most cri
         title="Last Activity"
       >
         <LastActivityCard project={project} />
+      </EntityModal>
+
+      {/* All Contacts Modal */}
+      <EntityModal
+        open={showAllContactsModal}
+        onClose={() => setShowAllContactsModal(false)}
+        title="All Project Contacts"
+      >
+        <div className="p-4">
+          <ProjectContactsPanel project={project} />
+        </div>
       </EntityModal>
     </div>
   );
