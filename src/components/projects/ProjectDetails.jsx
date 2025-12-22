@@ -74,6 +74,7 @@ import UpcomingVisitsCard from "./UpcomingVisitsCard";
 import LatestVisitCard from "./LatestVisitCard";
 import ActivityTimeline from "./ActivityTimeline";
 import ActivityTab from "./ActivityTab";
+import RequirementsTab from "./RequirementsTab";
 
 const statusColors = {
   "Lead": "bg-slate-100 text-slate-700",
@@ -1703,14 +1704,11 @@ Format as HTML bullet points using <ul> and <li> tags. Include only the most cri
 
           {showRequirementsTab ? (
             <TabsContent value="requirements" className="mt-3">
-              <Card className="border border-[#E5E7EB] shadow-sm">
-                <CardHeader>
-                  <CardTitle className="text-[16px] font-semibold text-[#111827]">Project Requirements</CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <p className="text-[14px] text-[#6B7280]">Requirements and specifications for this installation project.</p>
-                </CardContent>
-              </Card>
+              <RequirementsTab 
+                project={project}
+                onUpdateProject={(fields) => updateProjectFieldsMutation.mutate(fields)}
+                canEdit={canEdit}
+              />
             </TabsContent>
           ) : (
             <TabsContent value="requirements" className="mt-3">
