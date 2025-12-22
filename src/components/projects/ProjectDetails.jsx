@@ -1164,17 +1164,6 @@ Format as HTML bullet points using <ul> and <li> tags. Include only the most cri
         </CardHeader>
 
       <CardContent className="p-3 md:p-4">
-        {/* Attention Items Panel */}
-        <AttentionItemsPanel
-          entity_type="project"
-          entity_id={project.id}
-          context_ids={{
-            customer_id: project.customer_id,
-            project_id: project.id,
-            job_id: null
-          }}
-        />
-
         <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
             <div className="sticky top-0 z-10 bg-white pb-3">
               <div className="overflow-x-auto -mx-3 px-3 md:mx-0 md:px-0 mb-3">
