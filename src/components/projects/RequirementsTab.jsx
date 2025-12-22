@@ -118,20 +118,6 @@ export default function RequirementsTab({ project, onUpdateProject, canEdit }) {
         </CardContent>
       </Card>
 
-      {/* Door Information */}
-      <Card className="border border-[#E5E7EB] shadow-sm">
-        <CardHeader className="pb-3">
-          <CardTitle className="text-[16px] font-semibold text-[#111827]">Door Information</CardTitle>
-        </CardHeader>
-        <CardContent>
-          <MeasurementsForm
-            measurements={project.measurements || {}}
-            onSave={(measurements) => onUpdateProject({ measurements })}
-            readOnly={!canEdit}
-          />
-        </CardContent>
-      </Card>
-
       {/* Special Requirements */}
       <Card className="border border-[#E5E7EB] shadow-sm">
         <CardHeader className="pb-3">
