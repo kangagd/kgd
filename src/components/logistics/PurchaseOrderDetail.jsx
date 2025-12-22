@@ -19,6 +19,13 @@ import { PART_CATEGORIES } from "@/components/domain/partConfig";
 import { getPoDisplayReference, validatePoIdentityFields } from "@/components/domain/poDisplayHelpers";
 import { createPageUrl } from "@/utils";
 import { useNavigate } from "react-router-dom";
+import { usePermissions, PERMISSIONS } from "@/components/auth/permissions";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
 import {
   Popover,
   PopoverContent,
@@ -28,6 +35,7 @@ import {
 export default function PurchaseOrderDetail({ poId, onClose, mode = "page" }) {
   const navigate = useNavigate();
   const queryClient = useQueryClient();
+  const { can } = usePermissions();
   const isModal = mode === "modal";
   const [isEditing, setIsEditing] = useState(false);
   const [formData, setFormData] = useState({
@@ -725,15 +733,28 @@ export default function PurchaseOrderDetail({ poId, onClose, mode = "page" }) {
                 <div className="flex gap-2">
                 {isDraft && (
                 <>
-                 <Button
-                   onClick={handleDelete}
-                   disabled={deletePOMutation.isPending}
-                   variant="outline"
-                   className="text-red-600 hover:text-red-700 hover:bg-red-50"
-                 >
-                   <Trash className="w-4 h-4 mr-2" />
-                   Delete
-                 </Button>
+                  <TooltipProvider>
+                    <Tooltip>
+                      <TooltipTrigger asChild>
+                        <span>
+                          <Button
+                            onClick={handleDelete}
+                            disabled={deletePOMutation.isPending || !can(PERMISSIONS.DELETE_PO)}
+                            variant="outline"
+                            className="text-red-600 hover:text-red-700 hover:bg-red-50"
+                          >
+                            <Trash className="w-4 h-4 mr-2" />
+                            Delete
+                          </Button>
+                        </span>
+                      </TooltipTrigger>
+                      {!can(PERMISSIONS.DELETE_PO) && (
+                        <TooltipContent>
+                          <p>Insufficient permissions</p>
+                        </TooltipContent>
+                      )}
+                    </Tooltip>
+                  </TooltipProvider>
                  <Button
                    onClick={handleSave}
                    disabled={updatePOMutation.isPending || !formData.po_reference?.trim()}
@@ -1107,12 +1128,26 @@ export default function PurchaseOrderDetail({ poId, onClose, mode = "page" }) {
                         {item.source_type === "custom" && "Custom"}
                       </Badge>
                       {isDraft && (
-                        <button
-                          onClick={() => removeLineItem(index)}
-                          className="p-1 hover:bg-red-50 rounded text-red-600 transition-colors"
-                        >
-                          <Trash2 className="w-4 h-4" />
-                        </button>
+                        <TooltipProvider>
+                          <Tooltip>
+                            <TooltipTrigger asChild>
+                              <span>
+                                <button
+                                  onClick={() => removeLineItem(index)}
+                                  disabled={!can(PERMISSIONS.DELETE_LINE_ITEM)}
+                                  className="p-1 hover:bg-red-50 rounded text-red-600 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                                >
+                                  <Trash2 className="w-4 h-4" />
+                                </button>
+                              </span>
+                            </TooltipTrigger>
+                            {!can(PERMISSIONS.DELETE_LINE_ITEM) && (
+                              <TooltipContent>
+                                <p>Insufficient permissions</p>
+                              </TooltipContent>
+                            )}
+                          </Tooltip>
+                        </TooltipProvider>
                       )}
                     </div>
 
