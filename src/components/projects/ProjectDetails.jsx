@@ -1249,7 +1249,12 @@ Format as HTML bullet points using <ul> and <li> tags. Include only the most cri
           </button>
           
           <button
-            onClick={() => setTasksOpen(true)}
+            onClick={() => {
+              setActiveTab('overview');
+              setTimeout(() => {
+                document.getElementById('tasks-panel')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+              }, 100);
+            }}
             className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-white border border-[#E5E7EB] hover:border-[#FAE008] hover:bg-[#FFFEF5] transition-all whitespace-nowrap"
           >
             <Briefcase className="w-4 h-4 text-[#6B7280]" />
