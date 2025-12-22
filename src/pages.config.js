@@ -1,63 +1,65 @@
-import Dashboard from './pages/Dashboard';
-import Jobs from './pages/Jobs';
-import CheckIn from './pages/CheckIn';
-import Team from './pages/Team';
-import Schedule from './pages/Schedule';
-import Customers from './pages/Customers';
-import PriceList from './pages/PriceList';
-import UserProfile from './pages/UserProfile';
 import Archive from './pages/Archive';
-import Organisations from './pages/Organisations';
-import Projects from './pages/Projects';
-import Photos from './pages/Photos';
-import Reports from './pages/Reports';
-import Inbox from './pages/Inbox';
-import Tasks from './pages/Tasks';
-import RoleSettings from './pages/RoleSettings';
-import Notifications from './pages/Notifications';
-import Logistics from './pages/Logistics';
+import CheckIn from './pages/CheckIn';
 import Contracts from './pages/Contracts';
-import MyVehicle from './pages/MyVehicle';
-import Fleet from './pages/Fleet';
-import ToolsAdmin from './pages/ToolsAdmin';
-import Suppliers from './pages/Suppliers';
+import Customers from './pages/Customers';
+import Dashboard from './pages/Dashboard';
 import EmailSettings from './pages/EmailSettings';
+import Fleet from './pages/Fleet';
+import Home from './pages/Home';
+import Inbox from './pages/Inbox';
+import Jobs from './pages/Jobs';
+import Logistics from './pages/Logistics';
+import MyVehicle from './pages/MyVehicle';
+import Notifications from './pages/Notifications';
+import Organisations from './pages/Organisations';
 import PartsHardwareAdmin from './pages/PartsHardwareAdmin';
+import Photos from './pages/Photos';
+import PriceList from './pages/PriceList';
+import Projects from './pages/Projects';
 import PurchaseOrders from './pages/PurchaseOrders';
-import SupplyLogistics from './pages/SupplyLogistics';
+import Reports from './pages/Reports';
+import RoleSettings from './pages/RoleSettings';
 import SamplesLibrary from './pages/SamplesLibrary';
+import Schedule from './pages/Schedule';
+import Suppliers from './pages/Suppliers';
+import SupplyLogistics from './pages/SupplyLogistics';
+import Tasks from './pages/Tasks';
+import Team from './pages/Team';
+import ToolsAdmin from './pages/ToolsAdmin';
+import UserProfile from './pages/UserProfile';
 import __Layout from './Layout.jsx';
 
 
 export const PAGES = {
-    "Dashboard": Dashboard,
-    "Jobs": Jobs,
-    "CheckIn": CheckIn,
-    "Team": Team,
-    "Schedule": Schedule,
-    "Customers": Customers,
-    "PriceList": PriceList,
-    "UserProfile": UserProfile,
     "Archive": Archive,
-    "Organisations": Organisations,
-    "Projects": Projects,
-    "Photos": Photos,
-    "Reports": Reports,
-    "Inbox": Inbox,
-    "Tasks": Tasks,
-    "RoleSettings": RoleSettings,
-    "Notifications": Notifications,
-    "Logistics": Logistics,
+    "CheckIn": CheckIn,
     "Contracts": Contracts,
-    "MyVehicle": MyVehicle,
-    "Fleet": Fleet,
-    "ToolsAdmin": ToolsAdmin,
-    "Suppliers": Suppliers,
+    "Customers": Customers,
+    "Dashboard": Dashboard,
     "EmailSettings": EmailSettings,
+    "Fleet": Fleet,
+    "Home": Home,
+    "Inbox": Inbox,
+    "Jobs": Jobs,
+    "Logistics": Logistics,
+    "MyVehicle": MyVehicle,
+    "Notifications": Notifications,
+    "Organisations": Organisations,
     "PartsHardwareAdmin": PartsHardwareAdmin,
+    "Photos": Photos,
+    "PriceList": PriceList,
+    "Projects": Projects,
     "PurchaseOrders": PurchaseOrders,
-    "SupplyLogistics": SupplyLogistics,
+    "Reports": Reports,
+    "RoleSettings": RoleSettings,
     "SamplesLibrary": SamplesLibrary,
+    "Schedule": Schedule,
+    "Suppliers": Suppliers,
+    "SupplyLogistics": SupplyLogistics,
+    "Tasks": Tasks,
+    "Team": Team,
+    "ToolsAdmin": ToolsAdmin,
+    "UserProfile": UserProfile,
 }
 
 export const pagesConfig = {

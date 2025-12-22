@@ -1,6 +1,7 @@
 import React, { useState, useMemo, useCallback } from "react";
 import { base44 } from "@/api/base44Client";
 import { useDebounce } from "@/components/common/useDebounce";
+import { sameId } from "@/components/utils/id";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -325,7 +326,7 @@ export default function Logistics() {
       // Optimistically update cache
       queryClient.setQueryData(['purchaseOrders'], (prev = []) => {
         const next = [...prev];
-        const idx = next.findIndex(p => p.id === po.id);
+        const idx = next.findIndex(p => sameId(p.id, po.id));
         if (idx >= 0) next[idx] = updatedPO;
         return next;
       });
@@ -482,7 +483,7 @@ export default function Logistics() {
           return false;
 
         if (vehicleFilter !== "all") {
-          if (part.assigned_vehicle_id !== vehicleFilter) return false;
+          if (!sameId(part.assigned_vehicle_id, vehicleFilter)) return false;
         }
 
         return true;
@@ -660,7 +661,7 @@ export default function Logistics() {
                           PO #{getPoDisplayReference(po)}
                         </div>
                         <div className="mt-1 text-[11px] text-[#6B7280]">
-                          {suppliers.find(s => s.id === po.supplier_id)?.name || po.supplier_name || "Supplier not set"}
+                          {suppliers.find(s => sameId(s.id, po.supplier_id))?.name || po.supplier_name || "Supplier not set"}
                         </div>
                         {po.expected_date && (
                           <div className="mt-1 text-[11px] text-[#6B7280]">
@@ -729,7 +730,7 @@ export default function Logistics() {
                           PO #{getPoDisplayReference(po)}
                         </div>
                         <div className="mt-1 text-[11px] text-[#6B7280]">
-                          {suppliers.find(s => s.id === po.supplier_id)?.name || po.supplier_name || "Supplier not set"}
+                          {suppliers.find(s => sameId(s.id, po.supplier_id))?.name || po.supplier_name || "Supplier not set"}
                         </div>
                         {po.expected_date && (
                           <div className="mt-1 text-[11px] text-[#6B7280]">
@@ -799,7 +800,7 @@ export default function Logistics() {
                           PO #{getPoDisplayReference(po)}
                         </div>
                         <div className="mt-1 text-[11px] text-[#6B7280]">
-                          {suppliers.find(s => s.id === po.supplier_id)?.name || po.supplier_name || "Supplier not set"}
+                          {suppliers.find(s => sameId(s.id, po.supplier_id))?.name || po.supplier_name || "Supplier not set"}
                         </div>
                         {po.expected_date && (
                           <div className="mt-1 text-[11px] text-[#6B7280]">
@@ -869,7 +870,7 @@ export default function Logistics() {
                           PO #{getPoDisplayReference(po)}
                         </div>
                         <div className="mt-1 text-[11px] text-[#6B7280]">
-                          {suppliers.find(s => s.id === po.supplier_id)?.name || po.supplier_name || "Supplier not set"}
+                          {suppliers.find(s => sameId(s.id, po.supplier_id))?.name || po.supplier_name || "Supplier not set"}
                         </div>
                         {po.expected_date && (
                           <div className="mt-1 text-[11px] text-[#6B7280]">
@@ -937,7 +938,7 @@ export default function Logistics() {
                           PO #{getPoDisplayReference(po)}
                         </div>
                         <div className="mt-1 text-[11px] text-[#6B7280]">
-                          {suppliers.find(s => s.id === po.supplier_id)?.name || po.supplier_name || "Supplier not set"}
+                          {suppliers.find(s => sameId(s.id, po.supplier_id))?.name || po.supplier_name || "Supplier not set"}
                         </div>
                         {po.expected_date && (
                           <div className="mt-1 text-[11px] text-[#6B7280]">
@@ -1027,7 +1028,7 @@ export default function Logistics() {
                               </span>
                             </div>
                             <div className="text-xs text-[#6B7280] mt-1">
-                              PO: #{getPoDisplayReference(purchaseOrders.find(p => p.id === item.po_id))} • {item.supplier_name}
+                              PO: #{getPoDisplayReference(purchaseOrders.find(p => sameId(p.id, item.po_id)))} • {item.supplier_name}
                             </div>
                             {item.expected_date && (
                               <div className="text-xs text-[#6B7280] mt-0.5">
@@ -1064,7 +1065,7 @@ export default function Logistics() {
                             <div className="text-xs text-[#6B7280] mt-1">
                               {(() => {
                                 const proj = projects.find(
-                                  (p) => p.id === part.project_id
+                                  (p) => sameId(p.id, part.project_id)
                                 );
                                 return proj
                                   ? proj.title
@@ -1193,8 +1194,8 @@ export default function Logistics() {
                       ...(logisticsJobGroups.open || []),
                       ...(logisticsJobGroups.scheduled || []),
                     ].map((job) => {
-                      const po = purchaseOrders.find(p => p.id === job.purchase_order_id);
-                      const supplier = suppliers.find(s => s.id === po?.supplier_id);
+                      const po = purchaseOrders.find(p => sameId(p.id, job.purchase_order_id));
+                      const supplier = suppliers.find(s => sameId(s.id, po?.supplier_id));
                       const isSampleJob = job.job_type_name === "Sample Drop-Off" || job.job_type_name === "Sample Pickup";
                       const hasSamples = job.sample_ids && job.sample_ids.length > 0;
                       
@@ -1256,8 +1257,8 @@ export default function Logistics() {
                     </div>
                   ) : (
                     (logisticsJobGroups.in_progress || []).map((job) => {
-                      const po = purchaseOrders.find(p => p.id === job.purchase_order_id);
-                      const supplier = suppliers.find(s => s.id === po?.supplier_id);
+                      const po = purchaseOrders.find(p => sameId(p.id, job.purchase_order_id));
+                      const supplier = suppliers.find(s => sameId(s.id, po?.supplier_id));
                       const isSampleJob = job.job_type_name === "Sample Drop-Off" || job.job_type_name === "Sample Pickup";
                       const hasSamples = job.sample_ids && job.sample_ids.length > 0;
                       
@@ -1319,8 +1320,8 @@ export default function Logistics() {
                     </div>
                   ) : (
                     (logisticsJobGroups.completed || []).map((job) => {
-                      const po = purchaseOrders.find(p => p.id === job.purchase_order_id);
-                      const supplier = suppliers.find(s => s.id === po?.supplier_id);
+                      const po = purchaseOrders.find(p => sameId(p.id, job.purchase_order_id));
+                      const supplier = suppliers.find(s => sameId(s.id, po?.supplier_id));
                       const isSampleJob = job.job_type_name === "Sample Drop-Off" || job.job_type_name === "Sample Pickup";
                       const hasSamples = job.sample_ids && job.sample_ids.length > 0;
                       
