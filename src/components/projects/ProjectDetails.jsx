@@ -29,6 +29,13 @@ import {
   AlertDialogTitle,
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
+import {
+  Drawer,
+  DrawerContent,
+  DrawerHeader,
+  DrawerTitle,
+  DrawerTrigger,
+} from "@/components/ui/drawer";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 import { ChevronDown } from "lucide-react";
 import ProjectChangeHistoryModal from "./ProjectChangeHistoryModal";
@@ -131,6 +138,7 @@ export default function ProjectDetails({ project: initialProject, onClose, onEdi
   const [showActivityModal, setShowActivityModal] = useState(false);
   const [tasksOpen, setTasksOpen] = useState(true);
   const addTradeRef = React.useRef(null);
+  const [showCustomerDrawer, setShowCustomerDrawer] = useState(false);
 
   // Get email thread ID from props, URL params, or project's source
   const urlParams = new URLSearchParams(window.location.search);
@@ -928,10 +936,22 @@ Format as HTML bullet points using <ul> and <li> tags. Include only the most cri
 
   return (
     <div className="relative flex flex-col lg:flex-row gap-4 overflow-x-hidden items-start">
-      {/* Customer Sidebar */}
-      <aside className="w-full lg:w-72 flex-shrink-0 lg:sticky lg:top-4">
+      {/* Customer Sidebar - Desktop Only */}
+      <aside className="hidden lg:block w-72 flex-shrink-0 lg:sticky lg:top-4">
         <ProjectContextPanel project={project} />
       </aside>
+
+      {/* Customer Drawer - Mobile Only */}
+      <Drawer open={showCustomerDrawer} onOpenChange={setShowCustomerDrawer}>
+        <DrawerContent className="max-h-[85vh]">
+          <DrawerHeader>
+            <DrawerTitle>Customer Details</DrawerTitle>
+          </DrawerHeader>
+          <div className="overflow-y-auto px-4 pb-4">
+            <ProjectContextPanel project={project} />
+          </div>
+        </DrawerContent>
+      </Drawer>
 
             {/* Main Content */}
             <div className="flex-1 w-full lg:min-w-0">
@@ -1077,6 +1097,18 @@ Format as HTML bullet points using <ul> and <li> tags. Include only the most cri
         </div>
 
         <div className="space-y-3">
+          {/* Mobile Customer Button */}
+          <div className="lg:hidden">
+            <Button
+              variant="outline"
+              onClick={() => setShowCustomerDrawer(true)}
+              className="w-full justify-start gap-2"
+            >
+              <User className="w-4 h-4" />
+              Customer Details
+            </Button>
+          </div>
+
           <div className="flex items-center justify-between gap-3 flex-wrap">
             <div className="flex items-center gap-2">
               <h2 className="text-[22px] font-semibold text-[#111827] leading-[1.2]">
