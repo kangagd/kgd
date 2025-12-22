@@ -67,6 +67,7 @@ import DocumentListItem from "./DocumentListItem";
 import LastActivityCard from "./LastActivityCard";
 import SamplesAtClientPanel from "./SamplesAtClientPanel";
 import AttentionItemsPanel from "../attention/AttentionItemsPanel";
+import MediaDocumentsDrawer from "./MediaDocumentsDrawer";
 
 const statusColors = {
   "Lead": "bg-slate-100 text-slate-700",
@@ -134,6 +135,7 @@ export default function ProjectDetails({ project: initialProject, onClose, onEdi
   const [visitsOpen, setVisitsOpen] = useState(true);
   const [mediaDocsOpen, setMediaDocsOpen] = useState(false);
   const [showAllContactsModal, setShowAllContactsModal] = useState(false);
+  const [mediaDrawerOpen, setMediaDrawerOpen] = useState(false);
   const addTradeRef = React.useRef(null);
 
   // Get email thread ID from props, URL params, or project's source
@@ -1227,7 +1229,7 @@ Format as HTML bullet points using <ul> and <li> tags. Include only the most cri
         {/* Command Bar */}
         <div className="flex items-center gap-2 px-3 py-2 bg-[#F9FAFB] border-y border-[#E5E7EB] overflow-x-auto">
           <button
-            onClick={() => setActiveTab('overview')}
+            onClick={() => setMediaDrawerOpen(true)}
             className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-white border border-[#E5E7EB] hover:border-[#FAE008] hover:bg-[#FFFEF5] transition-all whitespace-nowrap"
           >
             <ImageIcon className="w-4 h-4 text-[#6B7280]" />
@@ -1238,7 +1240,7 @@ Format as HTML bullet points using <ul> and <li> tags. Include only the most cri
           </button>
           
           <button
-            onClick={() => setActiveTab('overview')}
+            onClick={() => setMediaDrawerOpen(true)}
             className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-white border border-[#E5E7EB] hover:border-[#FAE008] hover:bg-[#FFFEF5] transition-all whitespace-nowrap"
           >
             <FileText className="w-4 h-4 text-[#6B7280]" />
@@ -1852,6 +1854,12 @@ Format as HTML bullet points using <ul> and <li> tags. Include only the most cri
           ))}
         </div>
       </EntityModal>
+
+      <MediaDocumentsDrawer 
+        open={mediaDrawerOpen}
+        onClose={() => setMediaDrawerOpen(false)}
+        project={project}
+      />
     </div>
   );
 }
