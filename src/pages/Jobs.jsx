@@ -24,7 +24,7 @@ import { createPageUrl } from "@/utils";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import { buildActiveCheckInMap } from "@/components/domain/checkInHelpers";
 import BackButton from "../components/common/BackButton";
-import { notifySuccess, notifyError } from "../components/utils/notify";
+import { notifySuccess, notifyError } from "@/components/utils/notify";
 
 export default function Jobs() {
   const navigate = useNavigate();
