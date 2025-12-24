@@ -15,8 +15,6 @@ import {
 } from "@/components/ui/collapsible";
 
 export default function PartsTab({ project, parts, inventoryByItem }) {
-  const [logisticsExpanded, setLogisticsExpanded] = useState(false);
-
   const { data: purchaseOrders = [] } = useQuery({
     queryKey: ['projectPurchaseOrders', project.id],
     queryFn: async () => {
@@ -41,6 +39,28 @@ export default function PartsTab({ project, parts, inventoryByItem }) {
     },
     enabled: !!project.id
   });
+
+  // Auto-expand logic for Logistics & Tracking
+  const shouldAutoExpandLogistics = () => {
+    // Check if any part is received but not yet allocated
+    const hasReceivedNotAllocated = parts.some(p => 
+      p.status === 'in_loading_bay' || p.status === 'in_storage'
+    );
+    
+    // Check if any PO is ready for pickup
+    const hasPoReadyForPickup = purchaseOrders.some(po => 
+      po.status === 'ready_for_pickup' || po.ready_for_pickup === true
+    );
+    
+    // Check if any logistics job is active/pending
+    const hasActiveLogistics = logisticsJobs.some(j => 
+      j.status !== 'Completed' && j.status !== 'Cancelled'
+    );
+    
+    return hasReceivedNotAllocated || hasPoReadyForPickup || hasActiveLogistics;
+  };
+
+  const [logisticsExpanded, setLogisticsExpanded] = useState(() => shouldAutoExpandLogistics());
 
   const poStatusColors = {
     "Draft": "bg-slate-100 text-slate-700",
