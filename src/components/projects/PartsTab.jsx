@@ -3,7 +3,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { useQuery } from "@tanstack/react-query";
 import { base44 } from "@/api/base44Client";
-import { Package, Truck, MapPin, Calendar, Building2, Clock, ChevronDown, TestTube2 } from "lucide-react";
+import { Package, Truck, MapPin, Calendar, Building2, Clock, ChevronDown, TestTube2, ShoppingCart } from "lucide-react";
 import { format } from "date-fns";
 import ProjectPartsPanel from "./ProjectPartsPanel";
 import LogisticsTimeline from "./LogisticsTimeline";
@@ -187,8 +187,21 @@ export default function PartsTab({ project, parts, inventoryByItem }) {
         </CardHeader>
         <CardContent>
           {purchaseOrders.length === 0 ? (
-            <div className="text-center py-6 text-[14px] text-[#9CA3AF]">
-              No purchase orders yet
+            <div className="text-center py-8">
+              <p className="text-sm text-gray-500 mb-3">No purchase orders yet</p>
+              {parts.filter(p => ['pending', 'cancelled'].includes(p.status) || !p.status).length > 0 && (
+                <Button
+                  onClick={() => {
+                    const event = new CustomEvent('openCreatePO');
+                    window.dispatchEvent(event);
+                  }}
+                  size="sm"
+                  variant="outline"
+                >
+                  <ShoppingCart className="w-4 h-4 mr-1" />
+                  Create PO
+                </Button>
+              )}
             </div>
           ) : (
             <div className="space-y-3">

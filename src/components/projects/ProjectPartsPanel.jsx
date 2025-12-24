@@ -283,10 +283,17 @@ export default function ProjectPartsPanel({ project, parts = [], inventoryByItem
       )}
 
       {parts.length === 0 && projectPOs.length === 0 && (
-        <div className="text-center py-6 bg-gray-50 rounded-lg border border-dashed border-gray-300">
+        <div className="text-center py-8 bg-gray-50 rounded-lg border border-dashed border-gray-300">
           <Package className="w-12 h-12 text-gray-300 mx-auto mb-3" />
-          <p className="text-sm text-gray-500 mb-2">No parts tracked yet</p>
-          <p className="text-xs text-gray-400">Order your first part to get started</p>
+          <p className="text-sm text-gray-500 mb-3">No parts tracked yet</p>
+          <Button
+            onClick={handleAddPart}
+            size="sm"
+            className="bg-[#FAE008] text-[#111827] hover:bg-[#E5CF07] font-semibold"
+          >
+            <Plus className="w-4 h-4 mr-1" />
+            Add Part
+          </Button>
         </div>
       )}
 

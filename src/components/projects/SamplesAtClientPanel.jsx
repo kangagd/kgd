@@ -80,18 +80,8 @@ export default function SamplesAtClientPanel({ project }) {
           )}
 
           {!isLoading && clientSamples.length === 0 && (
-            <div className="text-center py-12">
-              <Package className="w-12 h-12 mx-auto text-[#D1D5DB] mb-3" />
-              <p className="text-[14px] text-[#6B7280] mb-4">No samples currently with this client</p>
-              <Button
-                onClick={() => setShowDropOffModal(true)}
-                variant="outline"
-                size="sm"
-                className="gap-2"
-              >
-                <Calendar className="w-4 h-4" />
-                Schedule Sample Drop-Off
-              </Button>
+            <div className="text-center py-8">
+              <p className="text-sm text-gray-500">No samples logged</p>
             </div>
           )}
 
