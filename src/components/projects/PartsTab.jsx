@@ -28,10 +28,36 @@ export default function PartsTab({ project, parts, inventoryByItem }) {
     "Cancelled": "bg-red-100 text-red-700"
   };
 
+  // Calculate parts status summary
+  const partsReadyCount = parts.filter(p => 
+    ['in_storage', 'in_vehicle', 'installed'].includes(p.status)
+  ).length;
+  const partsOnOrderCount = parts.filter(p => 
+    ['on_order', 'in_transit'].includes(p.status)
+  ).length;
+  const partsPendingCount = parts.filter(p => p.status === 'pending').length;
+
   return (
     <div className="space-y-6">
-      {/* Samples at Client */}
-      <SamplesAtClientPanel project={project} />
+      {/* Parts Status Summary */}
+      <Card className="border border-[#E5E7EB] shadow-sm bg-gradient-to-br from-white to-slate-50">
+        <CardContent className="p-4">
+          <div className="grid grid-cols-3 gap-4">
+            <div className="text-center">
+              <div className="text-2xl font-bold text-green-600">{partsReadyCount}</div>
+              <div className="text-xs text-[#6B7280] mt-1">Ready</div>
+            </div>
+            <div className="text-center border-x border-[#E5E7EB]">
+              <div className="text-2xl font-bold text-orange-600">{partsOnOrderCount}</div>
+              <div className="text-xs text-[#6B7280] mt-1">On Order</div>
+            </div>
+            <div className="text-center">
+              <div className="text-2xl font-bold text-slate-600">{partsPendingCount}</div>
+              <div className="text-xs text-[#6B7280] mt-1">Pending</div>
+            </div>
+          </div>
+        </CardContent>
+      </Card>
 
       {/* Parts Required */}
       <Card className="border border-[#E5E7EB] shadow-sm">
@@ -114,6 +140,9 @@ export default function PartsTab({ project, parts, inventoryByItem }) {
           <LogisticsTimeline project={project} />
         </CardContent>
       </Card>
+
+      {/* Samples at Client */}
+      <SamplesAtClientPanel project={project} />
     </div>
   );
 }
