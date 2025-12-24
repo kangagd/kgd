@@ -131,8 +131,36 @@ export default function PartsTab({ project, parts, inventoryByItem }) {
         </CardContent>
       </Card>
 
+      {/* Quick Links */}
+      <div className="flex flex-wrap gap-2 text-xs">
+        <button
+          onClick={() => document.getElementById('parts-required')?.scrollIntoView({ behavior: 'smooth', block: 'start' })}
+          className="px-3 py-1.5 bg-white border border-[#E5E7EB] rounded-lg hover:border-[#FAE008] hover:bg-[#FAE008]/5 transition-colors text-[#6B7280] hover:text-[#111827]"
+        >
+          Jump to Parts Required
+        </button>
+        <button
+          onClick={() => document.getElementById('purchase-orders')?.scrollIntoView({ behavior: 'smooth', block: 'start' })}
+          className="px-3 py-1.5 bg-white border border-[#E5E7EB] rounded-lg hover:border-[#FAE008] hover:bg-[#FAE008]/5 transition-colors text-[#6B7280] hover:text-[#111827]"
+        >
+          Jump to Purchase Orders
+        </button>
+        <button
+          onClick={() => document.getElementById('logistics')?.scrollIntoView({ behavior: 'smooth', block: 'start' })}
+          className="px-3 py-1.5 bg-white border border-[#E5E7EB] rounded-lg hover:border-[#FAE008] hover:bg-[#FAE008]/5 transition-colors text-[#6B7280] hover:text-[#111827]"
+        >
+          Jump to Logistics
+        </button>
+        <button
+          onClick={() => document.getElementById('samples')?.scrollIntoView({ behavior: 'smooth', block: 'start' })}
+          className="px-3 py-1.5 bg-white border border-[#E5E7EB] rounded-lg hover:border-[#FAE008] hover:bg-[#FAE008]/5 transition-colors text-[#6B7280] hover:text-[#111827]"
+        >
+          Jump to Samples
+        </button>
+      </div>
+
       {/* Parts Required */}
-      <Card className="border border-[#E5E7EB] shadow-sm">
+      <Card id="parts-required" className="border border-[#E5E7EB] shadow-sm scroll-mt-6">
         <CardHeader className="pb-3">
           <CardTitle className="text-[16px] font-semibold text-[#111827] flex items-center gap-2">
             <Package className="w-5 h-5 text-[#6B7280]" />
@@ -202,7 +230,7 @@ export default function PartsTab({ project, parts, inventoryByItem }) {
 
       {/* Logistics & Tracking */}
       <Collapsible open={logisticsExpanded} onOpenChange={setLogisticsExpanded}>
-        <Card className="border border-[#E5E7EB] shadow-sm">
+        <Card id="logistics" className="border border-[#E5E7EB] shadow-sm scroll-mt-6">
           <CollapsibleTrigger asChild>
             <CardHeader className="pb-3 cursor-pointer hover:bg-[#F9FAFB] transition-colors">
               <div className="flex items-center justify-between">
@@ -229,7 +257,7 @@ export default function PartsTab({ project, parts, inventoryByItem }) {
 
       {/* Samples */}
       <Collapsible open={samplesExpanded} onOpenChange={setSamplesExpanded}>
-        <Card className="border border-[#E5E7EB] shadow-sm">
+        <Card id="samples" className="border border-[#E5E7EB] shadow-sm scroll-mt-6">
           <CollapsibleTrigger asChild>
             <CardHeader className="pb-3 cursor-pointer hover:bg-[#F9FAFB] transition-colors">
               <div className="flex items-center justify-between">
