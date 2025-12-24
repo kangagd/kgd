@@ -1,20 +1,43 @@
-import React from "react";
+import React, { useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { useQuery } from "@tanstack/react-query";
 import { base44 } from "@/api/base44Client";
-import { Package, Truck, MapPin, Calendar, Building2, Clock } from "lucide-react";
+import { Package, Truck, MapPin, Calendar, Building2, Clock, ChevronDown } from "lucide-react";
 import { format } from "date-fns";
 import ProjectPartsPanel from "./ProjectPartsPanel";
 import LogisticsTimeline from "./LogisticsTimeline";
 import SamplesAtClientPanel from "./SamplesAtClientPanel";
+import {
+  Collapsible,
+  CollapsibleContent,
+  CollapsibleTrigger,
+} from "@/components/ui/collapsible";
 
 export default function PartsTab({ project, parts, inventoryByItem }) {
+  const [logisticsExpanded, setLogisticsExpanded] = useState(false);
+
   const { data: purchaseOrders = [] } = useQuery({
     queryKey: ['projectPurchaseOrders', project.id],
     queryFn: async () => {
       const pos = await base44.entities.PurchaseOrder.filter({ project_id: project.id });
       return pos;
+    },
+    enabled: !!project.id
+  });
+
+  const { data: logisticsJobs = [] } = useQuery({
+    queryKey: ['projectLogisticsJobs', project.id],
+    queryFn: async () => {
+      const jobs = await base44.entities.Job.filter({ 
+        project_id: project.id,
+        $or: [
+          { purchase_order_id: { $ne: null } },
+          { third_party_trade_id: { $ne: null } },
+          { 'sample_ids.0': { $exists: true } }
+        ]
+      });
+      return jobs;
     },
     enabled: !!project.id
   });
@@ -148,17 +171,31 @@ export default function PartsTab({ project, parts, inventoryByItem }) {
       </Card>
 
       {/* Logistics & Tracking */}
-      <Card className="border border-[#E5E7EB] shadow-sm">
-        <CardHeader className="pb-3">
-          <CardTitle className="text-[16px] font-semibold text-[#111827] flex items-center gap-2">
-            <Truck className="w-5 h-5 text-[#6B7280]" />
-            Logistics & Tracking
-          </CardTitle>
-        </CardHeader>
-        <CardContent>
-          <LogisticsTimeline project={project} />
-        </CardContent>
-      </Card>
+      <Collapsible open={logisticsExpanded} onOpenChange={setLogisticsExpanded}>
+        <Card className="border border-[#E5E7EB] shadow-sm">
+          <CollapsibleTrigger asChild>
+            <CardHeader className="pb-3 cursor-pointer hover:bg-[#F9FAFB] transition-colors">
+              <div className="flex items-center justify-between">
+                <CardTitle className="text-[16px] font-semibold text-[#111827] flex items-center gap-2">
+                  <Truck className="w-5 h-5 text-[#6B7280]" />
+                  Logistics & Tracking
+                  {logisticsJobs.length > 0 && (
+                    <span className="text-sm font-normal text-[#6B7280]">
+                      ({logisticsJobs.filter(j => j.status !== 'Completed' && j.status !== 'Cancelled').length} active)
+                    </span>
+                  )}
+                </CardTitle>
+                <ChevronDown className={`w-4 h-4 text-[#6B7280] transition-transform ${logisticsExpanded ? 'rotate-180' : ''}`} />
+              </div>
+            </CardHeader>
+          </CollapsibleTrigger>
+          <CollapsibleContent>
+            <CardContent>
+              <LogisticsTimeline project={project} />
+            </CardContent>
+          </CollapsibleContent>
+        </Card>
+      </Collapsible>
 
       {/* Samples at Client */}
       <SamplesAtClientPanel project={project} />
