@@ -58,7 +58,10 @@ export default function ProjectPartsPanel({ project, parts = [], inventoryByItem
   const [showCreatePODialog, setShowCreatePODialog] = useState(false);
   const [selectedSupplierId, setSelectedSupplierId] = useState("");
   const [activePoId, setActivePoId] = useState(null);
-  const [posExpanded, setPosExpanded] = useState(false);
+  const [posExpanded, setPosExpanded] = useState(() => {
+    const hasShortages = parts.filter(p => !isPickablePart(p) && getNormalizedPartStatus(p) !== 'cancelled' && getNormalizedPartStatus(p) !== 'installed').length > 0;
+    return hasShortages;
+  });
   const queryClient = useQueryClient();
   const navigate = useNavigate();
 
