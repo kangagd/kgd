@@ -1534,30 +1534,6 @@ Format as HTML bullet points using <ul> and <li> tags. Include only the most cri
                   )}
                 </TabsList>
               </div>
-
-              {/* Tasks Section - Sticky Below Tabs - Hidden on Overview */}
-              {activeTab !== "overview" && (
-                <div id="tasks-panel" className="border border-[#E5E7EB] rounded-lg bg-white shadow-sm">
-                  <Collapsible open={tasksOpen} onOpenChange={setTasksOpen}>
-                    <CollapsibleTrigger className="w-full">
-                      <div className="px-4 py-2.5 flex items-center justify-between hover:bg-[#F9FAFB] transition-colors">
-                        <h3 className="text-[14px] font-semibold text-[#111827]">Tasks</h3>
-                        <ChevronDown className={`w-4 h-4 text-[#6B7280] transition-transform ${tasksOpen ? 'transform rotate-180' : ''}`} />
-                      </div>
-                    </CollapsibleTrigger>
-                    <CollapsibleContent>
-                      <div className="px-3 pb-3 pt-1 border-t border-[#E5E7EB]">
-                        <TasksPanel
-                          entityType="project"
-                          entityId={project.id}
-                          entityName={project.title}
-                          compact={true}
-                        />
-                      </div>
-                    </CollapsibleContent>
-                  </Collapsible>
-                </div>
-              )}
             </div>
 
           <TabsContent value="overview" className="space-y-4 mt-3">
