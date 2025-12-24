@@ -29,31 +29,50 @@ export default function PartsTab({ project, parts, inventoryByItem }) {
   };
 
   // Calculate parts status summary
-  const partsReadyCount = parts.filter(p => 
-    ['in_storage', 'in_vehicle', 'installed'].includes(p.status)
+  const requiredCount = parts.length;
+  const receivedReadyCount = parts.filter(p => 
+    ['in_storage', 'in_vehicle', 'installed', 'in_loading_bay'].includes(p.status)
   ).length;
-  const partsOnOrderCount = parts.filter(p => 
+  const orderedCount = parts.filter(p => 
     ['on_order', 'in_transit'].includes(p.status)
   ).length;
-  const partsPendingCount = parts.filter(p => p.status === 'pending').length;
+  const missingCount = parts.filter(p => 
+    ['pending', 'cancelled'].includes(p.status) || !p.status
+  ).length;
+
+  const isReady = missingCount === 0 && requiredCount > 0;
 
   return (
     <div className="space-y-6">
       {/* Parts Status Summary */}
       <Card className="border border-[#E5E7EB] shadow-sm bg-gradient-to-br from-white to-slate-50">
-        <CardContent className="p-4">
-          <div className="grid grid-cols-3 gap-4">
+        <CardHeader className="pb-2">
+          <div className="flex items-center justify-between">
+            <CardTitle className="text-[14px] font-semibold text-[#111827]">Parts Status</CardTitle>
+            {requiredCount > 0 && (
+              <div className={`flex items-center gap-1.5 text-[13px] font-medium ${isReady ? 'text-green-600' : 'text-orange-600'}`}>
+                {isReady ? '✓ Parts ready' : '⚠ Parts not ready'}
+              </div>
+            )}
+          </div>
+        </CardHeader>
+        <CardContent className="pt-2">
+          <div className="grid grid-cols-4 gap-4">
             <div className="text-center">
-              <div className="text-2xl font-bold text-green-600">{partsReadyCount}</div>
-              <div className="text-xs text-[#6B7280] mt-1">Ready</div>
-            </div>
-            <div className="text-center border-x border-[#E5E7EB]">
-              <div className="text-2xl font-bold text-orange-600">{partsOnOrderCount}</div>
-              <div className="text-xs text-[#6B7280] mt-1">On Order</div>
+              <div className="text-2xl font-bold text-slate-700">{requiredCount}</div>
+              <div className="text-xs text-[#6B7280] mt-1">Required</div>
             </div>
             <div className="text-center">
-              <div className="text-2xl font-bold text-slate-600">{partsPendingCount}</div>
-              <div className="text-xs text-[#6B7280] mt-1">Pending</div>
+              <div className="text-2xl font-bold text-orange-600">{missingCount}</div>
+              <div className="text-xs text-[#6B7280] mt-1">Missing</div>
+            </div>
+            <div className="text-center">
+              <div className="text-2xl font-bold text-blue-600">{orderedCount}</div>
+              <div className="text-xs text-[#6B7280] mt-1">Ordered</div>
+            </div>
+            <div className="text-center">
+              <div className="text-2xl font-bold text-green-600">{receivedReadyCount}</div>
+              <div className="text-xs text-[#6B7280] mt-1">Received</div>
             </div>
           </div>
         </CardContent>
