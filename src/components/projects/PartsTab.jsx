@@ -3,7 +3,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { useQuery } from "@tanstack/react-query";
 import { base44 } from "@/api/base44Client";
-import { Package, Truck, MapPin, Calendar, Building2, Clock, ChevronDown } from "lucide-react";
+import { Package, Truck, MapPin, Calendar, Building2, Clock, ChevronDown, TestTube2 } from "lucide-react";
 import { format } from "date-fns";
 import ProjectPartsPanel from "./ProjectPartsPanel";
 import LogisticsTimeline from "./LogisticsTimeline";
@@ -61,6 +61,16 @@ export default function PartsTab({ project, parts, inventoryByItem }) {
   };
 
   const [logisticsExpanded, setLogisticsExpanded] = useState(() => shouldAutoExpandLogistics());
+  const [samplesExpanded, setSamplesExpanded] = useState(false);
+
+  const { data: samples = [] } = useQuery({
+    queryKey: ['projectSamples', project.id],
+    queryFn: async () => {
+      const allSamples = await base44.entities.Sample.list();
+      return allSamples.filter(s => s.current_location_project_id === project.id);
+    },
+    enabled: !!project.id
+  });
 
   const poStatusColors = {
     "Draft": "bg-slate-100 text-slate-700",
@@ -217,8 +227,32 @@ export default function PartsTab({ project, parts, inventoryByItem }) {
         </Card>
       </Collapsible>
 
-      {/* Samples at Client */}
-      <SamplesAtClientPanel project={project} />
+      {/* Samples */}
+      <Collapsible open={samplesExpanded} onOpenChange={setSamplesExpanded}>
+        <Card className="border border-[#E5E7EB] shadow-sm">
+          <CollapsibleTrigger asChild>
+            <CardHeader className="pb-3 cursor-pointer hover:bg-[#F9FAFB] transition-colors">
+              <div className="flex items-center justify-between">
+                <CardTitle className="text-[16px] font-semibold text-[#111827] flex items-center gap-2">
+                  <TestTube2 className="w-5 h-5 text-[#6B7280]" />
+                  Samples (Reference)
+                  {samples.length > 0 && (
+                    <span className="text-sm font-normal text-[#6B7280]">
+                      ({samples.length})
+                    </span>
+                  )}
+                </CardTitle>
+                <ChevronDown className={`w-4 h-4 text-[#6B7280] transition-transform ${samplesExpanded ? 'rotate-180' : ''}`} />
+              </div>
+            </CardHeader>
+          </CollapsibleTrigger>
+          <CollapsibleContent>
+            <CardContent>
+              <SamplesAtClientPanel project={project} />
+            </CardContent>
+          </CollapsibleContent>
+        </Card>
+      </Collapsible>
     </div>
   );
 }
