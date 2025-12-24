@@ -140,11 +140,10 @@ export default function ProjectPartsPanel({ project, parts = [], inventoryByItem
 
   return (
     <div className="space-y-6">
-      <div className="flex items-center justify-between">
+      <div className="flex items-center justify-between mb-4">
         <div>
-          <h3 className="text-[16px] font-semibold text-[#111827] leading-[1.2]">Project Parts & Ordering</h3>
-          <p className="text-xs text-[#6B7280] mt-0.5">
-            Purchase orders and parts for this project. "Shortages" = Parts requiring ordering. "Ready" = Parts available to pick.
+          <p className="text-[13px] text-[#6B7280]">
+            Track parts needed and ready for installation. Create POs to order missing items.
           </p>
         </div>
         <div className="flex gap-2">
