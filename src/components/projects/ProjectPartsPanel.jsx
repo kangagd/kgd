@@ -8,6 +8,12 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
+import {
+  Collapsible,
+  CollapsibleContent,
+  CollapsibleTrigger,
+} from "@/components/ui/collapsible";
+import { ChevronDown } from "lucide-react";
 import AssignPartToVehicleModal from "./AssignPartToVehicleModal";
 import { PART_LOCATION, normaliseLegacyPartLocation, getPartStatusLabel, normaliseLegacyPartStatus, getNormalizedPartStatus, isPickablePart, PICKABLE_STATUSES } from "@/components/domain/partConfig";
 import { getPoStatusLabel } from "@/components/domain/purchaseOrderStatusConfig";
@@ -52,6 +58,7 @@ export default function ProjectPartsPanel({ project, parts = [], inventoryByItem
   const [showCreatePODialog, setShowCreatePODialog] = useState(false);
   const [selectedSupplierId, setSelectedSupplierId] = useState("");
   const [activePoId, setActivePoId] = useState(null);
+  const [posExpanded, setPosExpanded] = useState(false);
   const queryClient = useQueryClient();
   const navigate = useNavigate();
 
@@ -196,42 +203,80 @@ export default function ProjectPartsPanel({ project, parts = [], inventoryByItem
 
       {/* Purchase Orders */}
       {projectPOs.length > 0 && (
-        <div>
-          <h4 className="text-sm font-semibold text-[#111827] flex items-center gap-2 mb-3">
-            <Package className="w-4 h-4" />
-            Purchase Orders ({projectPOs.length})
-          </h4>
-          <div className="space-y-2">
-            {projectPOs.map(po => (
-              <button
-                key={po.id}
-                onClick={() => setActivePoId(po.id)}
-                className="w-full p-4 bg-white border border-[#E5E7EB] rounded-lg hover:border-[#FAE008] hover:shadow-sm transition-all text-left"
-              >
-                <div className="flex items-center justify-between">
-                  <div className="flex-1">
-                    <div className="flex items-center gap-2 mb-1">
-                      <span className="font-medium text-sm">
+        <Collapsible open={posExpanded} onOpenChange={setPosExpanded}>
+          <div className="border border-[#E5E7EB] rounded-lg bg-white">
+            <CollapsibleTrigger asChild>
+              <button className="w-full p-4 flex items-center justify-between hover:bg-[#F9FAFB] transition-colors">
+                <div className="flex items-center gap-2">
+                  <Package className="w-4 h-4 text-[#6B7280]" />
+                  <h4 className="text-sm font-semibold text-[#111827]">
+                    Purchase Orders ({projectPOs.length})
+                  </h4>
+                </div>
+                <ChevronDown className={`w-4 h-4 text-[#6B7280] transition-transform ${posExpanded ? 'rotate-180' : ''}`} />
+              </button>
+            </CollapsibleTrigger>
+
+            {!posExpanded && (
+              <div className="px-4 pb-4 space-y-1">
+                {projectPOs
+                  .filter(po => po.status === 'ordered' || po.status === 'draft')
+                  .slice(0, 2)
+                  .map(po => (
+                    <div key={po.id} className="text-xs text-[#6B7280]">
+                      <span className="font-medium text-[#111827]">
                         {(() => {
                           const poRef = getPoDisplayRef(po);
                           return poRef ? `PO #${poRef}` : "PO";
                         })()}
                       </span>
-                      <Badge className="text-xs bg-slate-100 text-slate-700 hover:bg-slate-100">
-                        {getPoStatusLabel(po.status)}
-                      </Badge>
-                    </div>
-                    <div className="text-xs text-[#6B7280]">
+                      {' • '}
                       {po.supplier_name || 'Supplier'}
-                      {po.expected_date && ` • ETA: ${format(new Date(po.expected_date), 'MMM d, yyyy')}`}
+                      {po.expected_date && ` • ETA: ${format(new Date(po.expected_date), 'MMM d')}`}
                     </div>
+                  ))}
+                {(projectPOs.filter(po => po.status === 'ordered' || po.status === 'draft').length === 0) && (
+                  <div className="text-xs text-[#9CA3AF]">
+                    {projectPOs.length === 1 ? '1 PO' : `${projectPOs.length} POs`} on file
                   </div>
-                  <ExternalLink className="w-4 h-4 text-[#6B7280] flex-shrink-0 ml-2" />
-                </div>
-              </button>
-            ))}
+                )}
+              </div>
+            )}
+
+            <CollapsibleContent>
+              <div className="px-4 pb-4 space-y-2">
+                {projectPOs.map(po => (
+                  <button
+                    key={po.id}
+                    onClick={() => setActivePoId(po.id)}
+                    className="w-full p-4 bg-[#F9FAFB] border border-[#E5E7EB] rounded-lg hover:border-[#FAE008] hover:shadow-sm transition-all text-left"
+                  >
+                    <div className="flex items-center justify-between">
+                      <div className="flex-1">
+                        <div className="flex items-center gap-2 mb-1">
+                          <span className="font-medium text-sm">
+                            {(() => {
+                              const poRef = getPoDisplayRef(po);
+                              return poRef ? `PO #${poRef}` : "PO";
+                            })()}
+                          </span>
+                          <Badge className="text-xs bg-slate-100 text-slate-700 hover:bg-slate-100">
+                            {getPoStatusLabel(po.status)}
+                          </Badge>
+                        </div>
+                        <div className="text-xs text-[#6B7280]">
+                          {po.supplier_name || 'Supplier'}
+                          {po.expected_date && ` • ETA: ${format(new Date(po.expected_date), 'MMM d, yyyy')}`}
+                        </div>
+                      </div>
+                      <ExternalLink className="w-4 h-4 text-[#6B7280] flex-shrink-0 ml-2" />
+                    </div>
+                  </button>
+                ))}
+              </div>
+            </CollapsibleContent>
           </div>
-        </div>
+        </Collapsible>
       )}
 
       {parts.length === 0 && projectPOs.length === 0 && (
