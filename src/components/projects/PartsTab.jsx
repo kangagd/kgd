@@ -178,7 +178,7 @@ export default function PartsTab({ project, parts, inventoryByItem }) {
       </Card>
 
       {/* Purchase Orders */}
-      <Card className="border border-[#E5E7EB] shadow-sm">
+      <Card id="purchase-orders" className="border border-[#E5E7EB] shadow-sm scroll-mt-6">
         <CardHeader className="pb-3">
           <CardTitle className="text-[16px] font-semibold text-[#111827] flex items-center gap-2">
             <Building2 className="w-5 h-5 text-[#6B7280]" />
