@@ -1510,31 +1510,31 @@ Format as HTML bullet points using <ul> and <li> tags. Include only the most cri
 
       <CardContent className="p-3 md:p-4">
         <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-            <div className="sticky top-0 z-10 bg-white pb-3">
-              <div className="overflow-x-auto -mx-3 px-3 md:mx-0 md:px-0 mb-3">
-                <TabsList className="w-full justify-start min-w-max md:min-w-0">
-                  <TabsTrigger value="overview" className="flex-1 whitespace-nowrap">
-                    Overview
-                  </TabsTrigger>
-                  <TabsTrigger value="activity" className="flex-1 whitespace-nowrap">Activity</TabsTrigger>
-                  <TabsTrigger value="quoting" className="flex-1 whitespace-nowrap">Quoting</TabsTrigger>
-                  {showRequirementsTab && (
-                    <TabsTrigger value="requirements" className="flex-1 whitespace-nowrap">Requirements</TabsTrigger>
-                  )}
-                  <TabsTrigger value="parts" className="flex-1 whitespace-nowrap">Parts</TabsTrigger>
-                  <TabsTrigger value="invoices" className="flex-1 whitespace-nowrap">Invoices</TabsTrigger>
-                  {(user?.role === 'admin' || user?.role === 'manager') && (
-                    <TabsTrigger value="financials" className="flex-1 whitespace-nowrap">Financials</TabsTrigger>
-                  )}
-                  <TabsTrigger value="summary" className="flex-1 whitespace-nowrap">
-                    Summary
-                  </TabsTrigger>
-                  {(user?.role === 'admin' || user?.role === 'manager') && (
-                    <TabsTrigger value="warranty" className="flex-1 whitespace-nowrap">Warranty</TabsTrigger>
-                  )}
-                </TabsList>
-              </div>
+          <div className="sticky top-0 z-10 bg-white pb-3">
+            <div className="overflow-x-auto -mx-3 px-3 md:mx-0 md:px-0">
+              <TabsList className="w-full justify-start min-w-max md:min-w-0">
+                <TabsTrigger value="overview" className="flex-1 whitespace-nowrap">
+                  Overview
+                </TabsTrigger>
+                <TabsTrigger value="activity" className="flex-1 whitespace-nowrap">Activity</TabsTrigger>
+                <TabsTrigger value="quoting" className="flex-1 whitespace-nowrap">Quoting</TabsTrigger>
+                {showRequirementsTab && (
+                  <TabsTrigger value="requirements" className="flex-1 whitespace-nowrap">Requirements</TabsTrigger>
+                )}
+                <TabsTrigger value="parts" className="flex-1 whitespace-nowrap">Parts</TabsTrigger>
+                <TabsTrigger value="invoices" className="flex-1 whitespace-nowrap">Invoices</TabsTrigger>
+                {(user?.role === 'admin' || user?.role === 'manager') && (
+                  <TabsTrigger value="financials" className="flex-1 whitespace-nowrap">Financials</TabsTrigger>
+                )}
+                <TabsTrigger value="summary" className="flex-1 whitespace-nowrap">
+                  Summary
+                </TabsTrigger>
+                {(user?.role === 'admin' || user?.role === 'manager') && (
+                  <TabsTrigger value="warranty" className="flex-1 whitespace-nowrap">Warranty</TabsTrigger>
+                )}
+              </TabsList>
             </div>
+          </div>
 
           <TabsContent value="overview" className="space-y-4 mt-3">
             {/* Derived Attention Items */}
