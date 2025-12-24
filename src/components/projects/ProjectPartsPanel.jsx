@@ -1,7 +1,13 @@
 import React, { useState } from "react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { AlertTriangle, CheckCircle2, Package, Truck, ExternalLink, Plus, ShoppingCart } from "lucide-react";
+import { AlertTriangle, CheckCircle2, Package, Truck, ExternalLink, Plus, ShoppingCart, MoreVertical } from "lucide-react";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 import AssignPartToVehicleModal from "./AssignPartToVehicleModal";
 import { PART_LOCATION, normaliseLegacyPartLocation, getPartStatusLabel, normaliseLegacyPartStatus, getNormalizedPartStatus, isPickablePart, PICKABLE_STATUSES } from "@/components/domain/partConfig";
 import { getPoStatusLabel } from "@/components/domain/purchaseOrderStatusConfig";
@@ -147,15 +153,17 @@ export default function ProjectPartsPanel({ project, parts = [], inventoryByItem
           </p>
         </div>
         <div className="flex gap-2">
-          <Button
-            onClick={() => setShowCreatePODialog(true)}
-            size="sm"
-            variant="outline"
-            title="Create a Purchase Order for this project"
-          >
-            <ShoppingCart className="w-4 h-4 mr-1" />
-            Create PO
-          </Button>
+          {needed.length > 0 && (
+            <Button
+              onClick={() => setShowCreatePODialog(true)}
+              size="sm"
+              variant="outline"
+              title="Create a Purchase Order for this project"
+            >
+              <ShoppingCart className="w-4 h-4 mr-1" />
+              Create PO
+            </Button>
+          )}
           <Button
             onClick={handleAddPart}
             size="sm"
@@ -168,6 +176,21 @@ export default function ProjectPartsPanel({ project, parts = [], inventoryByItem
           <Button variant="outline" size="sm" className="h-8 text-xs">
             Print Pick List
           </Button>
+          {needed.length === 0 && (
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button variant="outline" size="sm" className="h-8">
+                  <MoreVertical className="w-4 h-4" />
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end">
+                <DropdownMenuItem onClick={() => setShowCreatePODialog(true)}>
+                  <ShoppingCart className="w-4 h-4 mr-2" />
+                  Create PO
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
+          )}
         </div>
       </div>
 
