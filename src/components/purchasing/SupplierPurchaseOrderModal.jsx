@@ -380,6 +380,7 @@ export default function SupplierPurchaseOrderModal({ open, onClose, supplier, pu
                 <Popover open={locationOpen} onOpenChange={setLocationOpen}>
                   <PopoverTrigger asChild>
                     <Button
+                      type="button"
                       variant="outline"
                       role="combobox"
                       aria-expanded={locationOpen}
@@ -491,6 +492,7 @@ export default function SupplierPurchaseOrderModal({ open, onClose, supplier, pu
                       {url.split('/').pop()}
                     </a>
                     <Button
+                      type="button"
                       variant="ghost"
                       size="icon"
                       onClick={() => removeAttachment(url)}
@@ -534,7 +536,7 @@ export default function SupplierPurchaseOrderModal({ open, onClose, supplier, pu
           <div className="space-y-3">
             <div className="flex justify-between items-center">
               <Label className="text-sm font-semibold text-gray-900">Order Items</Label>
-              <Button variant="outline" size="sm" onClick={handleAddLine} className="h-8 text-xs">
+              <Button type="button" variant="outline" size="sm" onClick={handleAddLine} className="h-8 text-xs">
                 <Plus className="w-3.5 h-3.5 mr-1.5" /> Add Line
               </Button>
             </div>
@@ -563,6 +565,7 @@ export default function SupplierPurchaseOrderModal({ open, onClose, supplier, pu
                             >
                               <PopoverTrigger asChild>
                                 <Button
+                                  type="button"
                                   variant="outline"
                                   role="combobox"
                                   aria-expanded={itemOpenStates[index] || false}
@@ -672,6 +675,7 @@ export default function SupplierPurchaseOrderModal({ open, onClose, supplier, pu
                       </TableCell>
                       <TableCell className="p-2 text-center">
                         <Button 
+                          type="button"
                           variant="ghost" 
                           size="icon" 
                           className="h-7 w-7 text-red-500 hover:text-red-600 hover:bg-red-50"
@@ -710,6 +714,7 @@ export default function SupplierPurchaseOrderModal({ open, onClose, supplier, pu
             <div>
                 {purchaseOrderToEdit && (
                     <Button
+                        type="button"
                         variant="ghost"
                         size="sm"
                         onClick={() => {
@@ -726,8 +731,9 @@ export default function SupplierPurchaseOrderModal({ open, onClose, supplier, pu
                 )}
             </div>
             <div className="flex gap-2">
-              <Button variant="outline" size="sm" onClick={onClose}>Cancel</Button>
+              <Button type="button" variant="outline" size="sm" onClick={onClose}>Cancel</Button>
               <Button 
+                type="button"
                 size="sm"
                 onClick={() => savePOMutation.mutate()} 
                 disabled={savePOMutation.isPending || lines.length === 0}
