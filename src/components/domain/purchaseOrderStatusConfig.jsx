@@ -1,20 +1,17 @@
 /**
  * Purchase Order Status Configuration
  * Central source of truth for all PO status values, labels, and colors
+ * 
+ * Internally sources definitions from statusRegistry.jsx to avoid duplication
  */
 
-// Full PO status enum
-export const PO_STATUS = {
-  DRAFT: "draft",
-  SENT: "sent",
-  ON_ORDER: "on_order",
-  IN_TRANSIT: "in_transit",
-  IN_LOADING_BAY: "in_loading_bay",
-  IN_STORAGE: "in_storage",
-  IN_VEHICLE: "in_vehicle",
-  INSTALLED: "installed",
-  CANCELLED: "cancelled",
-};
+import { 
+  PO_STATUS as REGISTRY_PO_STATUS,
+  normalizeStatus 
+} from './statusRegistry';
+
+// Re-export PO_STATUS from statusRegistry for consistency
+export const PO_STATUS = REGISTRY_PO_STATUS;
 
 export const PO_STATUS_OPTIONS = Object.values(PO_STATUS);
 
@@ -31,7 +28,7 @@ export const PO_STATUS_OPTIONS_NON_PROJECT = [
 // Status options for project POs (includes vehicle and installed)
 export const PO_STATUS_OPTIONS_PROJECT = PO_STATUS_OPTIONS;
 
-// Status labels constant for backward compatibility
+// Status labels - sourced from statusRegistry
 export const PO_STATUS_LABELS = {
   draft: "Draft",
   sent: "Sent",
@@ -44,15 +41,8 @@ export const PO_STATUS_LABELS = {
   cancelled: "Cancelled",
 };
 
-// Normalize status string for lookup (lowercase, underscore-separated)
-export const normalizePoStatus = (status) => {
-  if (!status) return '';
-  return String(status)
-    .trim()
-    .toLowerCase()
-    .replace(/[\s-]+/g, '_')
-    .replace(/_+/g, '_');
-};
+// Normalize status string - delegate to statusRegistry for consistency
+export const normalizePoStatus = (status) => normalizeStatus(status);
 
 // Status → Label mapping function
 export function getPoStatusLabel(status) {
@@ -60,49 +50,42 @@ export function getPoStatusLabel(status) {
   return PO_STATUS_LABELS[key] || PO_STATUS_LABELS[status] || String(status || '');
 }
 
-// Status normaliser (full normalization to canonical enum)
+// Legacy status normaliser - maps various input formats to canonical PO_STATUS values
+// This is the compatibility layer for historical data
 export function normaliseLegacyPoStatus(input) {
   if (!input) return PO_STATUS.DRAFT;
-  const s = input.toString().trim().toLowerCase();
+  
+  // Use statusRegistry normalizer for consistency
+  const s = normalizeStatus(input);
 
   switch (s) {
     case "draft":
       return PO_STATUS.DRAFT;
     case "sent":
       return PO_STATUS.SENT;
-    case "on order":
     case "on_order":
       return PO_STATUS.ON_ORDER;
-    case "in transit":
     case "in_transit":
     case "partially_received":
       return PO_STATUS.IN_TRANSIT;
-    case "in loading bay":
     case "in_loading_bay":
     case "received":
     case "delivered":
-    case "delivered - loading bay":
     case "delivered_loading_bay":
-    case "delivered to delivery bay":
-    case "delivered to loading bay":
     case "delivered_to_delivery_bay":
-    case "ready for pick up":
-    case "ready to pick up":
+    case "delivered_to_loading_bay":
+    case "ready_for_pick_up":
     case "ready_to_pick_up":
     case "arrived":
     case "at_delivery_bay":
-    case "at delivery bay":
     case "in_delivery_bay":
-    case "in delivery bay":
     case "loadingbay":
       return PO_STATUS.IN_LOADING_BAY;
-    case "in storage":
     case "in_storage":
-    case "completed - in storage":
+    case "completed_in_storage":
       return PO_STATUS.IN_STORAGE;
-    case "in vehicle":
     case "in_vehicle":
-    case "completed - in vehicle":
+    case "completed_in_vehicle":
       return PO_STATUS.IN_VEHICLE;
     case "installed":
       return PO_STATUS.INSTALLED;
@@ -115,7 +98,7 @@ export function normaliseLegacyPoStatus(input) {
 
 
 
-// Colour mapping for badges
+// Colour mapping for badges - sourced from statusRegistry
 export const PO_STATUS_COLORS = {
   draft: "bg-gray-200 text-gray-800",
   sent: "bg-blue-200 text-blue-800",
