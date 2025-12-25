@@ -83,7 +83,12 @@ export default function TasksCompactCard({ tasks = [], onViewAll, onAddTask }) {
             type="button"
             onClick={(e) => {
               e.stopPropagation();
-              onAddTask?.();
+              console.log('Add task button clicked', { onAddTask, exists: !!onAddTask });
+              if (onAddTask) {
+                onAddTask();
+              } else {
+                console.error('onAddTask callback is not defined');
+              }
             }}
             size="sm"
             className="bg-[#FAE008] text-[#111827] hover:bg-[#E5CF07] text-[13px] h-8"
