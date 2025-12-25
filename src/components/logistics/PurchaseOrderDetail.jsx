@@ -16,6 +16,7 @@ import { PO_STATUS, PO_STATUS_OPTIONS, PO_STATUS_OPTIONS_NON_PROJECT, PO_STATUS_
 import { DELIVERY_METHOD as PO_DELIVERY_METHOD, DELIVERY_METHOD_OPTIONS as PO_DELIVERY_METHOD_OPTIONS } from "@/components/domain/supplierDeliveryConfig";
 import { PART_CATEGORIES } from "@/components/domain/partConfig";
 import { getPoDisplayReference, validatePoIdentityFields } from "@/components/domain/poDisplayHelpers";
+import { setPoEtaPayload } from "@/components/domain/schemaAdapters";
 import { createPageUrl } from "@/utils";
 import { useNavigate } from "react-router-dom";
 import { usePermissions, PERMISSIONS } from "@/components/auth/permissions";
@@ -169,23 +170,7 @@ export default function PurchaseOrderDetail({ poId, onClose, mode = "page" }) {
     }
   }, [po?.id, lineItems?.length]);
 
-  const updatePOMutation = useMutation({
-    mutationFn: async (updateData) => {
-      await base44.entities.PurchaseOrder.update(poId, updateData);
-    },
-    onSuccess: async () => {
-      await invalidatePurchaseOrderBundle(queryClient, poId);
-      queryClient.invalidateQueries({ queryKey: ['parts'] });
-      queryClient.invalidateQueries({ queryKey: ['projectParts'] });
-      queryClient.invalidateQueries({ queryKey: ['projectPOs'] });
-      toast.success('Purchase Order updated');
-    },
-    onError: (error) => {
-      const errMsg = error?.message || 'Failed to update PO';
-      toast.error(errMsg);
-      console.error("PO save error:", error);
-    }
-  });
+
 
   const createLogisticsJobMutation = useMutation({
     mutationFn: async () => {
@@ -258,7 +243,7 @@ export default function PurchaseOrderDetail({ poId, onClose, mode = "page" }) {
       project_id: formData.project_id || null,
       delivery_method: formData.delivery_method || null,
       notes: formData.notes || "",
-      eta: formData.eta || null,
+      ...setPoEtaPayload(formData.eta),
       attachments: formData.attachments || [],
     };
 
@@ -378,7 +363,7 @@ export default function PurchaseOrderDetail({ poId, onClose, mode = "page" }) {
       project_id: formData.project_id || null,
       delivery_method: formData.delivery_method || null,
       notes: formData.notes || "",
-      eta: formData.eta || null,
+      ...setPoEtaPayload(formData.eta),
       attachments: formData.attachments || [],
     };
 
@@ -756,19 +741,19 @@ export default function PurchaseOrderDetail({ poId, onClose, mode = "page" }) {
                   </TooltipProvider>
                  <Button
                    onClick={handleSave}
-                   disabled={updatePOMutation.isPending || !formData.po_reference?.trim()}
+                   disabled={!formData.po_reference?.trim()}
                    className="bg-[#F3F4F6] text-[#111827] hover:bg-[#E5E7EB]"
                  >
                    <Save className="w-4 h-4 mr-2" />
-                   {updatePOMutation.isPending ? 'Saving...' : 'Save'}
+                   Save
                  </Button>
                  <Button
                    onClick={handleSendToSupplier}
-                   disabled={updatePOMutation.isPending || !formData.po_reference?.trim()}
+                   disabled={!formData.po_reference?.trim()}
                    className="bg-[#FAE008] text-[#111827] hover:bg-[#E5CF07]"
                  >
                    <Send className="w-4 h-4 mr-2" />
-                   {updatePOMutation.isPending ? 'Sending...' : 'Send to Supplier'}
+                   Send to Supplier
                  </Button>
                 </>
                 )}
@@ -929,7 +914,6 @@ export default function PurchaseOrderDetail({ poId, onClose, mode = "page" }) {
                     toast.error("Error updating status");
                   }
                 }}
-                disabled={updatePOMutation.isPending}
               >
                 <SelectTrigger>
                   <SelectValue placeholder="Select status">
