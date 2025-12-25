@@ -1649,23 +1649,7 @@ Format as HTML bullet points using <ul> and <li> tags. Include only the most cri
               />
             </div>
 
-            {/* Row 4: Full Tasks Panel */}
-            <div id="tasks-panel">
-              <Card className="border border-[#E5E7EB] shadow-sm">
-                <CardHeader className="pb-3">
-                  <CardTitle className="text-[16px] font-semibold text-[#111827]">All Tasks</CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <TasksPanel
-                    entityType="project"
-                    entityId={project.id}
-                    entityName={project.title}
-                  />
-                </CardContent>
-              </Card>
-            </div>
-
-            {/* Row 5: Collapsible Project Info */}
+            {/* Row 4: Collapsible Project Info */}
             <Collapsible open={projectInfoOpen} onOpenChange={setProjectInfoOpen}>
               <Card className="border border-[#E5E7EB] shadow-sm">
                 <CollapsibleTrigger className="w-full">
