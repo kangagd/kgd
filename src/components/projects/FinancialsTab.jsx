@@ -428,7 +428,10 @@ export default function FinancialsTab({ project, onUpdate }) {
                     variant="outline"
                     size="xs"
                     className="h-6 text-[11px] px-2"
-                    onClick={() => onUpdate({ total_project_value: primaryQuote.value })}
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      onUpdate({ total_project_value: primaryQuote.value });
+                    }}
                   >
                     Apply
                   </Button>
@@ -514,7 +517,10 @@ export default function FinancialsTab({ project, onUpdate }) {
                       variant="outline"
                       size="xs"
                       className="h-6 text-[11px] px-2"
-                      onClick={handleApplyMaterialsCost}
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        handleApplyMaterialsCost();
+                      }}
                     >
                       Apply
                     </Button>
@@ -625,7 +631,10 @@ export default function FinancialsTab({ project, onUpdate }) {
               Payment Tracking
             </CardTitle>
             <Button
-              onClick={() => setShowAddPayment(true)}
+              onClick={(e) => {
+                e.stopPropagation();
+                setShowAddPayment(true);
+              }}
               size="sm"
               className="bg-[#FAE008] text-[#111827] hover:bg-[#E5CF07] font-semibold h-9"
             >
@@ -648,7 +657,8 @@ export default function FinancialsTab({ project, onUpdate }) {
                 variant="outline"
                 size="xs"
                 className="h-6 text-[11px] px-2"
-                onClick={() => {
+                onClick={(e) => {
+                  e.stopPropagation();
                   const syntheticPayment = {
                     payment_name: "Xero Payments",
                     payment_status: xeroTotalDue === 0 ? "Paid" : "Pending",
@@ -732,11 +742,23 @@ export default function FinancialsTab({ project, onUpdate }) {
                 />
               </div>
               <div className="flex gap-2">
-                <Button onClick={handleAddPayment} className="bg-[#FAE008] text-[#111827] hover:bg-[#E5CF07] font-semibold">
+                <Button 
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    handleAddPayment();
+                  }}
+                  className="bg-[#FAE008] text-[#111827] hover:bg-[#E5CF07] font-semibold"
+                >
                   <Plus className="w-4 h-4 mr-1" />
                   Add Payment
                 </Button>
-                <Button onClick={() => setShowAddPayment(false)} variant="outline">
+                <Button 
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    setShowAddPayment(false);
+                  }}
+                  variant="outline"
+                >
                   Cancel
                 </Button>
               </div>
@@ -860,7 +882,10 @@ export default function FinancialsTab({ project, onUpdate }) {
               <Button 
                 variant="outline" 
                 size="sm" 
-                onClick={handleLinkLegacyDocs} 
+                onClick={(e) => {
+                  e.stopPropagation();
+                  handleLinkLegacyDocs();
+                }}
                 disabled={linkingLegacy}
                 className="h-8 text-xs gap-1.5"
               >

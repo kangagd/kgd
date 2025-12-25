@@ -994,7 +994,10 @@ Format as HTML bullet points using <ul> and <li> tags. Include only the most cri
     <div className="relative flex flex-col lg:flex-row gap-4 overflow-x-hidden items-start">
       {/* Mobile Customer Button */}
       <Button
-        onClick={() => setCustomerDrawerOpen(true)}
+        onClick={(e) => {
+          e.stopPropagation();
+          setCustomerDrawerOpen(true);
+        }}
         variant="outline"
         size="sm"
         className="lg:hidden fixed bottom-20 left-4 z-40 shadow-lg bg-white"
@@ -1065,7 +1068,8 @@ Format as HTML bullet points using <ul> and <li> tags. Include only the most cri
                 </h3>
                 {canEdit && (
                   <AddIconButton
-                    onClick={() => {
+                    onClick={(e) => {
+                      e.stopPropagation();
                       // Trigger the add contact function from ProjectContactsPanel
                       window.dispatchEvent(new CustomEvent('addProjectContact', { detail: { projectId: project.id } }));
                     }}
@@ -1115,7 +1119,10 @@ Format as HTML bullet points using <ul> and <li> tags. Include only the most cri
                       <Button
                         variant="ghost"
                         size="sm"
-                        onClick={() => setShowAllContactsModal(true)}
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          setShowAllContactsModal(true);
+                        }}
                         className="w-full mt-2 text-[#111827] hover:bg-[#F3F4F6] text-[13px]"
                       >
                         View all {projectContacts.length} contacts
@@ -1161,7 +1168,10 @@ Format as HTML bullet points using <ul> and <li> tags. Include only the most cri
             <Button
               variant="ghost"
               size="icon"
-              onClick={() => setShowActivityModal(true)}
+              onClick={(e) => {
+                e.stopPropagation();
+                setShowActivityModal(true);
+              }}
               className="h-9 w-9 hover:bg-[#F3F4F6] text-[#6B7280] hover:text-[#111827] transition-all rounded-lg"
               title="View Activity"
             >
@@ -1170,7 +1180,8 @@ Format as HTML bullet points using <ul> and <li> tags. Include only the most cri
             <Button
               variant="outline"
               size="sm"
-              onClick={async () => {
+              onClick={async (e) => {
+                e.stopPropagation();
                 if (project.handover_locked && project.handover_pdf_url) {
                   window.open(project.handover_pdf_url, '_blank');
                   return;
@@ -1211,7 +1222,10 @@ Format as HTML bullet points using <ul> and <li> tags. Include only the most cri
             <Button
               variant="ghost"
               size="icon"
-              onClick={() => setShowHistory(true)}
+              onClick={(e) => {
+                e.stopPropagation();
+                setShowHistory(true);
+              }}
               className="h-9 w-9 hover:bg-[#F3F4F6] text-[#6B7280] hover:text-[#111827] transition-all rounded-lg"
             >
               <History className="w-4 h-4" />
@@ -1219,7 +1233,10 @@ Format as HTML bullet points using <ul> and <li> tags. Include only the most cri
             <Button
               variant="ghost"
               size="icon"
-              onClick={() => handleChatOpenChange(true)}
+              onClick={(e) => {
+                e.stopPropagation();
+                handleChatOpenChange(true);
+              }}
               className="h-9 w-9 hover:bg-[#F3F4F6] text-[#6B7280] hover:text-[#111827] transition-all rounded-lg relative"
             >
               <MessageCircle className="w-4 h-4" />
@@ -1231,7 +1248,10 @@ Format as HTML bullet points using <ul> and <li> tags. Include only the most cri
               <Button
                 variant="ghost"
                 size="icon"
-                onClick={() => onEdit(project)}
+                onClick={(e) => {
+                  e.stopPropagation();
+                  onEdit(project);
+                }}
                 className="h-9 w-9 hover:bg-[#F3F4F6] text-[#6B7280] hover:text-[#111827] transition-all rounded-lg"
               >
                 <Edit className="w-4 h-4" />
@@ -1850,7 +1870,10 @@ Format as HTML bullet points using <ul> and <li> tags. Include only the most cri
                   {user?.role === 'admin' && (
                     <div className="flex gap-2 w-full sm:w-auto">
                       <Button
-                        onClick={() => setShowLinkInvoiceModal(true)}
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          setShowLinkInvoiceModal(true);
+                        }}
                         size="sm"
                         variant="outline"
                         className="font-semibold h-8 flex-1 sm:flex-initial"
@@ -1859,7 +1882,10 @@ Format as HTML bullet points using <ul> and <li> tags. Include only the most cri
                         Link Existing
                       </Button>
                       <Button
-                        onClick={() => setShowInvoiceModal(true)}
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          setShowInvoiceModal(true);
+                        }}
                         size="sm"
                         className="bg-[#FAE008] text-[#111827] hover:bg-[#E5CF07] font-semibold h-8 flex-1 sm:flex-initial"
                       >
@@ -1879,7 +1905,10 @@ Format as HTML bullet points using <ul> and <li> tags. Include only the most cri
                     </p>
                     {user?.role === 'admin' && (
                       <Button
-                        onClick={() => setShowInvoiceModal(true)}
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          setShowInvoiceModal(true);
+                        }}
                         variant="outline"
                         size="sm"
                         className="border-[#E5E7EB] hover:border-[#FAE008] hover:bg-[#FFFEF5]"
