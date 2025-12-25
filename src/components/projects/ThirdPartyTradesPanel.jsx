@@ -219,7 +219,10 @@ export default function ThirdPartyTradesPanel({ project, onAddTrade }) {
       {!isAdding && (
         <div className="flex justify-end">
           <button
-            onClick={() => setIsAdding(true)}
+            onClick={(e) => {
+              e.stopPropagation();
+              setIsAdding(true);
+            }}
             className="w-8 h-8 rounded-lg border border-[#E5E7EB] bg-white hover:bg-[#F9FAFB] flex items-center justify-center text-[#6B7280] hover:text-[#111827] transition-colors"
             title="Add Trade"
           >
@@ -315,14 +318,20 @@ export default function ThirdPartyTradesPanel({ project, onAddTrade }) {
 
             <div className="flex gap-2 pt-2">
               <Button
-                onClick={handleSubmit}
+                onClick={(e) => {
+                  e.stopPropagation();
+                  handleSubmit();
+                }}
                 disabled={createTradeMutation.isPending || updateTradeMutation.isPending}
                 className="flex-1 bg-[#FAE008] text-[#111827] hover:bg-[#E5CF07]"
               >
                 {editingId ? "Update" : "Add"} Trade
               </Button>
               <Button
-                onClick={resetForm}
+                onClick={(e) => {
+                  e.stopPropagation();
+                  resetForm();
+                }}
                 variant="outline"
               >
                 Cancel
@@ -356,11 +365,14 @@ export default function ThirdPartyTradesPanel({ project, onAddTrade }) {
                   </div>
                   <div className="flex items-center gap-2">
                     <button
-                      onClick={() => toggleBookedMutation.mutate({ 
-                        id: trade.id, 
-                        isBooked: !trade.is_booked,
-                        wasBooked: trade.is_booked 
-                      })}
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        toggleBookedMutation.mutate({ 
+                          id: trade.id, 
+                          isBooked: !trade.is_booked,
+                          wasBooked: trade.is_booked 
+                        });
+                      }}
                       className="hover:opacity-70 transition-opacity"
                       title={trade.is_booked ? "Mark as not booked" : "Mark as booked"}
                     >
@@ -373,7 +385,10 @@ export default function ThirdPartyTradesPanel({ project, onAddTrade }) {
                     <Button
                       variant="ghost"
                       size="icon"
-                      onClick={() => handleEdit(trade)}
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        handleEdit(trade);
+                      }}
                       className="h-7 w-7 text-slate-400 hover:text-slate-700"
                     >
                       <Wrench className="w-3.5 h-3.5" />
@@ -381,7 +396,12 @@ export default function ThirdPartyTradesPanel({ project, onAddTrade }) {
                     <Button
                       variant="ghost"
                       size="icon"
-                      onClick={() => deleteTradeMutation.mutate(trade.id)}
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        if (confirm('Delete this trade requirement?')) {
+                          deleteTradeMutation.mutate(trade.id);
+                        }
+                      }}
                       className="h-7 w-7 text-red-400 hover:text-red-600 hover:bg-red-50"
                     >
                       <Trash2 className="w-3.5 h-3.5" />
