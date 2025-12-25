@@ -346,38 +346,53 @@ export const STATUS_COLORS = {
 
 /**
  * Get display label for a status
- * @param {string} entityType - Entity type (job, project, po, etc.)
+ * @param {string} entityType - Entity type (job, project, po, part, task, etc.)
  * @param {string} status - Status value
- * @returns {string} Display label
+ * @returns {string} Display label (title-cased if no mapping found)
  */
 export function getStatusLabel(entityType, status) {
-  if (!entityType || !status) return '';
+  if (!status) return '';
   
   const normalizedType = normalizeStatus(entityType);
   const normalizedStatus = normalizeStatus(status);
   
   const labels = STATUS_LABELS[normalizedType];
-  if (!labels) return String(status);
   
-  return labels[normalizedStatus] || labels[status] || String(status);
+  // If we have a label mapping for this entity type
+  if (labels) {
+    const label = labels[normalizedStatus] || labels[status];
+    if (label) return label;
+  }
+  
+  // Fallback: Title case the normalized status
+  return normalizedStatus
+    .split('_')
+    .map(word => word.charAt(0).toUpperCase() + word.slice(1))
+    .join(' ');
 }
 
 /**
  * Get color class for a status badge
- * @param {string} entityType - Entity type (job, project, po, etc.)
+ * @param {string} entityType - Entity type (job, project, po, part, task, etc.)
  * @param {string} status - Status value
- * @returns {string} Tailwind color classes
+ * @returns {string} Tailwind color classes (safe fallback)
  */
 export function getStatusColor(entityType, status) {
-  if (!entityType || !status) return 'bg-gray-100 text-gray-800';
+  if (!status) return 'bg-gray-100 text-gray-800';
   
   const normalizedType = normalizeStatus(entityType);
   const normalizedStatus = normalizeStatus(status);
   
   const colors = STATUS_COLORS[normalizedType];
-  if (!colors) return 'bg-gray-100 text-gray-800';
   
-  return colors[normalizedStatus] || colors[status] || 'bg-gray-100 text-gray-800';
+  // If we have a color mapping for this entity type
+  if (colors) {
+    const color = colors[normalizedStatus] || colors[status];
+    if (color) return color;
+  }
+  
+  // Safe fallback for unknown statuses
+  return 'bg-slate-100 text-slate-700';
 }
 
 // ============================================================================
