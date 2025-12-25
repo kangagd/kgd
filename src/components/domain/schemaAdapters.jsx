@@ -5,6 +5,8 @@
  * All functions are null-safe and return predictable types.
  */
 
+import { warnPoEtaMismatch, warnPoMissingSupplier } from './domainWarnings';
+
 // ============================================================================
 // PURCHASE ORDER ADAPTERS
 // ============================================================================
@@ -16,6 +18,10 @@
  */
 export function getPoEta(po) {
   if (!po) return null;
+  
+  // Warn about ETA field disagreement
+  warnPoEtaMismatch(po);
+  
   return po.expected_date || po.expected_delivery_date || po.eta || po.due_date || null;
 }
 
@@ -45,6 +51,10 @@ export function getPoSupplierId(po) {
  */
 export function getPoSupplierName(po) {
   if (!po) return null;
+  
+  // Warn about missing supplier
+  warnPoMissingSupplier(po);
+  
   return po.supplier_name || po.supplierName || null;
 }
 

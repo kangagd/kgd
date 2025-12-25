@@ -9,9 +9,13 @@ import {
   PO_STATUS as REGISTRY_PO_STATUS,
   normalizeStatus 
 } from './statusRegistry';
+import { warnUnknownPoStatus } from './domainWarnings';
 
 // Re-export PO_STATUS from statusRegistry for consistency
 export const PO_STATUS = REGISTRY_PO_STATUS;
+
+// Known statuses for warning detection
+const KNOWN_PO_STATUSES = new Set(Object.values(PO_STATUS).map(s => normalizeStatus(s)));
 
 export const PO_STATUS_OPTIONS = Object.values(PO_STATUS);
 
@@ -54,6 +58,9 @@ export function getPoStatusLabel(status) {
 // This is the compatibility layer for historical data
 export function normaliseLegacyPoStatus(input) {
   if (!input) return PO_STATUS.DRAFT;
+  
+  // Warn about unknown statuses
+  warnUnknownPoStatus(input, KNOWN_PO_STATUSES);
   
   // Use statusRegistry normalizer for consistency
   const s = normalizeStatus(input);
