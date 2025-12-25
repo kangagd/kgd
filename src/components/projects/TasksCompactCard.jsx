@@ -4,7 +4,7 @@ import { Button } from "@/components/ui/button";
 import { CheckSquare, Plus, Clock, AlertCircle } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import TaskFormModal from "../tasks/TaskFormModal";
-import { getTaskUrgencyCounts } from "./taskFilters";
+import { getTaskUrgencyCounts } from "../tasks/taskFilters";
 
 export default function TasksCompactCard({ tasks = [], onViewAll, onAddTask, entityType = 'project', entityId, entityName, customerId, customerName, onFilteredViewAll }) {
   const [showCreateModal, setShowCreateModal] = useState(false);
