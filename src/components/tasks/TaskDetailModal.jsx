@@ -107,6 +107,7 @@ export default function TaskDetailModal({
             {!isEditing && (
               <div className="flex gap-2">
                 <Button
+                  type="button"
                   variant="ghost"
                   size="icon"
                   onClick={() => setIsEditing(true)}
@@ -115,6 +116,7 @@ export default function TaskDetailModal({
                   <Pencil className="w-4 h-4" />
                 </Button>
                 <Button
+                  type="button"
                   variant="ghost"
                   size="icon"
                   onClick={() => onDelete(task.id)}
@@ -187,7 +189,7 @@ export default function TaskDetailModal({
               <Label>Due Date</Label>
               <Popover>
                 <PopoverTrigger asChild>
-                  <Button variant="outline" className="w-full justify-start text-left font-normal">
+                  <Button type="button" variant="outline" className="w-full justify-start text-left font-normal">
                     <CalendarIcon className="mr-2 h-4 w-4" />
                     {editData.due_date ? format(editData.due_date, "PPP") : "Select date"}
                   </Button>
@@ -227,10 +229,11 @@ export default function TaskDetailModal({
             </div>
 
             <div className="flex gap-3 pt-2">
-              <Button variant="outline" onClick={() => setIsEditing(false)} className="flex-1">
+              <Button type="button" variant="outline" onClick={() => setIsEditing(false)} className="flex-1">
                 Cancel
               </Button>
               <Button 
+                type="button"
                 onClick={handleSave}
                 className="flex-1 bg-[#FAE008] hover:bg-[#E5CF07] text-[#111827]"
                 disabled={isUpdating}
@@ -297,6 +300,7 @@ export default function TaskDetailModal({
                   <div className="space-y-2">
                     {task.project_id && (
                       <button
+                        type="button"
                         onClick={() => handleNavigateToEntity('project', task.project_id)}
                         className="flex items-center gap-2 text-sm text-[#2563EB] hover:underline"
                       >
@@ -307,6 +311,7 @@ export default function TaskDetailModal({
                     )}
                     {task.job_id && (
                       <button
+                        type="button"
                         onClick={() => handleNavigateToEntity('job', task.job_id)}
                         className="flex items-center gap-2 text-sm text-[#2563EB] hover:underline"
                       >
@@ -317,6 +322,7 @@ export default function TaskDetailModal({
                     )}
                     {task.customer_id && (
                       <button
+                        type="button"
                         onClick={() => handleNavigateToEntity('customer', task.customer_id)}
                         className="flex items-center gap-2 text-sm text-[#2563EB] hover:underline"
                       >
@@ -327,6 +333,7 @@ export default function TaskDetailModal({
                     )}
                     {task.email_thread_id && (
                       <button
+                        type="button"
                         onClick={() => handleNavigateToEntity('email', task.email_thread_id)}
                         className="flex items-center gap-2 text-sm text-[#2563EB] hover:underline"
                       >
@@ -345,6 +352,7 @@ export default function TaskDetailModal({
               <>
                 <Separator />
                 <Button
+                  type="button"
                   onClick={() => onMarkComplete(task)}
                   className="w-full bg-[#16A34A] hover:bg-[#15803D] text-white"
                   disabled={isUpdating}

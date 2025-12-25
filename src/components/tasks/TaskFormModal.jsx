@@ -216,7 +216,7 @@ export default function TaskFormModal({
             <Label>Due Date</Label>
             <Popover>
               <PopoverTrigger asChild>
-                <Button variant="outline" className="w-full justify-start text-left font-normal">
+                <Button type="button" variant="outline" className="w-full justify-start text-left font-normal">
                   <CalendarIcon className="mr-2 h-4 w-4" />
                   {formData.due_date ? format(formData.due_date, "PPP") : "Select date"}
                 </Button>

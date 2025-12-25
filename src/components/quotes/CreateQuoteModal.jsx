@@ -258,10 +258,11 @@ export default function CreateQuoteModal({
         </div>
 
         <DialogFooter>
-          <Button variant="outline" onClick={onClose} disabled={isCreating}>
+          <Button type="button" variant="outline" onClick={onClose} disabled={isCreating}>
             Cancel
           </Button>
           <Button 
+            type="button"
             onClick={handleCreate} 
             disabled={isCreating || !selectedTemplate}
             className="bg-[#FAE008] hover:bg-[#E5CF07] text-[#111827]"
