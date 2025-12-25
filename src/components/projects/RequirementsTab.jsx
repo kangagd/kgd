@@ -43,7 +43,10 @@ export default function RequirementsTab({ project, onUpdateProject, canEdit }) {
             <CardTitle className="text-[16px] font-semibold text-[#111827]">Door Measurements</CardTitle>
             {canEdit && !showAddDoor && (
               <AddIconButton
-                onClick={() => setShowAddDoor(true)}
+                onClick={(e) => {
+                  e.stopPropagation();
+                  setShowAddDoor(true);
+                }}
                 title="Add Door"
               />
             )}
@@ -67,7 +70,11 @@ export default function RequirementsTab({ project, onUpdateProject, canEdit }) {
                       </Badge>
                       {canEdit && (
                         <button
-                          onClick={() => handleRemoveDoor(idx)}
+                          type="button"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            handleRemoveDoor(idx);
+                          }}
                           className="absolute -top-1 -right-1 bg-red-500 text-white rounded-full w-5 h-5 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity"
                         >
                           <X className="w-3 h-3" />
@@ -103,11 +110,11 @@ export default function RequirementsTab({ project, onUpdateProject, canEdit }) {
                     />
                   </div>
                   <div className="flex gap-2">
-                    <Button onClick={handleAddDoor} size="sm" className="bg-[#FAE008] text-[#111827] hover:bg-[#E5CF07]">
+                    <Button type="button" onClick={handleAddDoor} size="sm" className="bg-[#FAE008] text-[#111827] hover:bg-[#E5CF07]">
                       <Plus className="w-4 h-4 mr-1" />
                       Add Door
                     </Button>
-                    <Button onClick={() => setShowAddDoor(false)} size="sm" variant="outline">
+                    <Button type="button" onClick={() => setShowAddDoor(false)} size="sm" variant="outline">
                       Cancel
                     </Button>
                   </div>

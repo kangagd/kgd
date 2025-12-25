@@ -154,6 +154,7 @@ export default function ProjectSummary({ project, jobs, onUpdateNotes }) {
             </CardTitle>
             {!isEditingNotes && (
               <Button
+                type="button"
                 variant="outline"
                 size="sm"
                 onClick={() => setIsEditingNotes(true)}
@@ -175,12 +176,14 @@ export default function ProjectSummary({ project, jobs, onUpdateNotes }) {
               />
               <div className="flex gap-2">
                 <Button
+                  type="button"
                   onClick={handleSaveNotes}
                   className="bg-[#FAE008] text-[#111827] hover:bg-[#E5CF07] font-semibold"
                 >
                   Save Notes
                 </Button>
                 <Button
+                  type="button"
                   variant="outline"
                   onClick={() => {
                     setSummaryNotes(project.notes || "");
@@ -246,7 +249,7 @@ export default function ProjectSummary({ project, jobs, onUpdateNotes }) {
                       {attachment.type === 'image' ? 'Image' : 'Document'}
                     </div>
                   </div>
-                  <Button variant="outline" size="sm" className="flex-shrink-0 h-8">
+                  <Button type="button" variant="outline" size="sm" className="flex-shrink-0 h-8">
                     Open
                   </Button>
                 </a>
