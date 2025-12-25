@@ -1594,19 +1594,18 @@ Format as HTML bullet points using <ul> and <li> tags. Include only the most cri
               <div id="tasks-compact">
                 <TasksCompactCard 
                   tasks={projectTasks}
+                  entityType="project"
+                  entityId={project.id}
+                  entityName={project.title}
                   onViewAll={() => {
                     setTimeout(() => {
                       document.getElementById('tasks-panel')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
                     }, 100);
                   }}
-                  onAddTask={() => {
-                    window.dispatchEvent(new CustomEvent('openTaskModal', { 
-                      detail: { 
-                        entityType: 'project',
-                        entityId: project.id,
-                        entityName: project.title
-                      } 
-                    }));
+                  onAddTask={async (taskData) => {
+                    await base44.entities.Task.create(taskData);
+                    queryClient.invalidateQueries({ queryKey: ['projectTasks', project.id] });
+                    toast.success('Task created');
                   }}
                 />
               </div>

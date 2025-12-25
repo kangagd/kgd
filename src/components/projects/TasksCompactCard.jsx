@@ -1,10 +1,12 @@
-import React from "react";
+import React, { useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { CheckSquare, Plus, Clock, AlertCircle } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
+import TaskFormModal from "../tasks/TaskFormModal";
 
-export default function TasksCompactCard({ tasks = [], onViewAll, onAddTask }) {
+export default function TasksCompactCard({ tasks = [], onViewAll, onAddTask, entityType = 'project', entityId, entityName }) {
+  const [showCreateModal, setShowCreateModal] = useState(false);
   const now = new Date();
   const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
   
@@ -83,12 +85,7 @@ export default function TasksCompactCard({ tasks = [], onViewAll, onAddTask }) {
             type="button"
             onClick={(e) => {
               e.stopPropagation();
-              console.log('Add task button clicked', { onAddTask, exists: !!onAddTask });
-              if (onAddTask) {
-                onAddTask();
-              } else {
-                console.error('onAddTask callback is not defined');
-              }
+              setShowCreateModal(true);
             }}
             size="sm"
             className="bg-[#FAE008] text-[#111827] hover:bg-[#E5CF07] text-[13px] h-8"
@@ -98,6 +95,20 @@ export default function TasksCompactCard({ tasks = [], onViewAll, onAddTask }) {
           </Button>
         </div>
       </CardContent>
+
+      <TaskFormModal
+        open={showCreateModal}
+        onClose={() => setShowCreateModal(false)}
+        onSubmit={(data) => {
+          if (onAddTask) onAddTask(data);
+          setShowCreateModal(false);
+        }}
+        preLinkedEntity={{
+          type: entityType,
+          id: entityId,
+          name: entityName
+        }}
+      />
     </Card>
   );
 }
