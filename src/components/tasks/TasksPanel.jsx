@@ -69,6 +69,9 @@ export default function TasksPanel({
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['tasks', entityType, entityId] });
       queryClient.invalidateQueries({ queryKey: ['tasks'] });
+      if (entityType === 'project') {
+        queryClient.invalidateQueries({ queryKey: ['projectTasks', entityId] });
+      }
       setShowCreateModal(false);
       toast.success("Task created");
     },
@@ -96,6 +99,9 @@ export default function TasksPanel({
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['tasks', entityType, entityId] });
       queryClient.invalidateQueries({ queryKey: ['tasks'] });
+      if (entityType === 'project') {
+        queryClient.invalidateQueries({ queryKey: ['projectTasks', entityId] });
+      }
       toast.success("Task updated");
     },
     onError: () => toast.error("Failed to update task")
@@ -106,6 +112,9 @@ export default function TasksPanel({
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['tasks', entityType, entityId] });
       queryClient.invalidateQueries({ queryKey: ['tasks'] });
+      if (entityType === 'project') {
+        queryClient.invalidateQueries({ queryKey: ['projectTasks', entityId] });
+      }
       setSelectedTask(null);
       toast.success("Task deleted");
     },
