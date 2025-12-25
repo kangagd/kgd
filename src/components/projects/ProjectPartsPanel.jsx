@@ -264,7 +264,17 @@ export default function ProjectPartsPanel({ project, parts = [], inventoryByItem
 
             <CollapsibleContent>
               <div className="px-3 pb-3 space-y-2">
-                {projectPOs.map(po => (
+                {projectPOs.map(po => {
+                  const supplier = suppliers.find(s => s.id === po.supplier_id);
+                  const supplierName = supplier?.name || getPoSupplierName(po) || "Unknown Supplier";
+                  const eta = getPoEta(po);
+                  const etaDate = safeParseDate(eta);
+                  const logisticsCount = logisticsJobsByPO.get(po.id) || 0;
+                  
+                  // Count line items for this PO
+                  const itemsCount = allPOLines.filter(line => line.purchase_order_id === po.id).length;
+                  
+                  return (
                   <button
                     key={po.id}
                     onClick={() => setActivePoId(po.id)}
@@ -272,26 +282,41 @@ export default function ProjectPartsPanel({ project, parts = [], inventoryByItem
                   >
                     <div className="flex items-center justify-between">
                       <div className="flex-1">
-                        <div className="flex items-center gap-2 mb-1">
+                        <div className="flex items-center gap-2 mb-1 flex-wrap">
                           <span className="font-medium text-sm">
-                            {(() => {
-                              const poRef = getPoDisplayRef(po);
-                              return poRef ? `PO #${poRef}` : "PO";
-                            })()}
+                            {getPoDisplayReference(po)}
                           </span>
                           <Badge className="text-xs bg-slate-100 text-slate-700">
                             {getPoStatusLabel(po.status)}
                           </Badge>
                         </div>
-                        <div className="text-xs text-[#6B7280]">
-                          {po.supplier_name || 'No supplier set'}
-                          {po.expected_delivery_date && ` • ETA: ${format(new Date(po.expected_delivery_date), 'MMM d')}`}
+                        <div className="text-xs text-[#6B7280] space-y-0.5">
+                          <div>{supplierName}</div>
+                          {itemsCount > 0 && (
+                            <div>{itemsCount} item{itemsCount > 1 ? 's' : ''}</div>
+                          )}
+                          {etaDate && (
+                            <div>ETA: {format(etaDate, "MMM d, yyyy")}</div>
+                          )}
                         </div>
+                        {logisticsCount > 0 && (
+                          <button
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              document.getElementById('logistics')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                            }}
+                            className="text-xs text-blue-600 hover:text-blue-700 hover:underline mt-2 inline-flex items-center gap-1"
+                          >
+                            <Truck className="w-3 h-3" />
+                            View logistics ({logisticsCount})
+                          </button>
+                        )}
                       </div>
                       <ExternalLink className="w-4 h-4 text-[#6B7280] flex-shrink-0 ml-2" />
                     </div>
                   </button>
-                ))}
+                  );
+                })}
               </div>
             </CollapsibleContent>
           </div>
