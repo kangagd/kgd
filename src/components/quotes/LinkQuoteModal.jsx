@@ -110,7 +110,7 @@ export default function LinkQuoteModal({
               onChange={(e) => setSearch(e.target.value)}
               onKeyDown={(e) => e.key === 'Enter' && handleSearch()}
             />
-            <Button onClick={handleSearch} variant="outline" disabled={loading}>
+            <Button type="button" onClick={handleSearch} variant="outline" disabled={loading}>
               <Search className="w-4 h-4" />
             </Button>
           </div>
@@ -171,6 +171,7 @@ export default function LinkQuoteModal({
                         </Badge>
                       )}
                       <Button
+                        type="button"
                         variant="ghost"
                         size="icon"
                         className="h-8 w-8"
@@ -190,10 +191,11 @@ export default function LinkQuoteModal({
         </div>
 
         <DialogFooter className="mt-4">
-          <Button variant="outline" onClick={onClose} disabled={linking}>
+          <Button type="button" variant="outline" onClick={onClose} disabled={linking}>
             Cancel
           </Button>
           <Button 
+            type="button"
             onClick={handleLink} 
             disabled={!selectedDoc || linking}
             className="bg-[#FAE008] hover:bg-[#E5CF07] text-[#111827]"

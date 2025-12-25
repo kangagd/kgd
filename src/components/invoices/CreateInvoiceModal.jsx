@@ -307,7 +307,10 @@ export default function CreateInvoiceModal({
                         {lineItems.length > 1 && (
                           <button
                             type="button"
-                            onClick={() => removeLineItem(index)}
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              removeLineItem(index);
+                            }}
                             className="text-red-600 hover:bg-red-50 rounded p-1"
                           >
                             <X className="w-4 h-4" />
@@ -450,6 +453,7 @@ export default function CreateInvoiceModal({
           {showPreview ? (
             <>
               <Button
+                type="button"
                 variant="outline"
                 onClick={() => setShowPreview(false)}
                 disabled={isSubmitting}
@@ -459,6 +463,7 @@ export default function CreateInvoiceModal({
                 Back to Edit
               </Button>
               <Button
+                type="button"
                 onClick={handleConfirm}
                 disabled={isSubmitting}
                 className="bg-[#FAE008] text-[#111827] hover:bg-[#E5CF07] font-semibold rounded-lg shadow-sm"
@@ -469,6 +474,7 @@ export default function CreateInvoiceModal({
           ) : (
             <>
               <Button
+                type="button"
                 variant="outline"
                 onClick={handleClose}
                 disabled={isSubmitting}
@@ -477,6 +483,7 @@ export default function CreateInvoiceModal({
                 Cancel
               </Button>
               <Button
+                type="button"
                 onClick={handlePreview}
                 disabled={isSubmitting}
                 className="bg-[#FAE008] text-[#111827] hover:bg-[#E5CF07] font-semibold rounded-lg shadow-sm"

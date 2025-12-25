@@ -157,6 +157,7 @@ export default function LogManualActivityModal({ open, onClose, projectId, onSuc
                     <div key={idx} className="flex items-center justify-between bg-slate-50 p-2 rounded-lg">
                       <span className="text-sm text-slate-700 truncate flex-1">{att.name}</span>
                       <button
+                        type="button"
                         onClick={() => handleRemoveAttachment(idx)}
                         className="ml-2 text-red-600 hover:text-red-700"
                       >
@@ -188,10 +189,10 @@ export default function LogManualActivityModal({ open, onClose, projectId, onSuc
         </div>
 
         <DialogFooter>
-          <Button variant="outline" onClick={onClose}>
+          <Button type="button" variant="outline" onClick={onClose}>
             Cancel
           </Button>
-          <Button onClick={handleSubmit} disabled={isSubmitting || !formData.summary.trim()}>
+          <Button type="button" onClick={handleSubmit} disabled={isSubmitting || !formData.summary.trim()}>
             {isSubmitting ? 'Logging...' : 'Log Activity'}
           </Button>
         </DialogFooter>
