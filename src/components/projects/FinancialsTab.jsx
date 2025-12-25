@@ -631,6 +631,7 @@ export default function FinancialsTab({ project, onUpdate }) {
               Payment Tracking
             </CardTitle>
             <Button
+              type="button"
               onClick={(e) => {
                 e.stopPropagation();
                 setShowAddPayment(true);
@@ -743,6 +744,7 @@ export default function FinancialsTab({ project, onUpdate }) {
               </div>
               <div className="flex gap-2">
                 <Button 
+                  type="button"
                   onClick={(e) => {
                     e.stopPropagation();
                     handleAddPayment();
@@ -753,6 +755,7 @@ export default function FinancialsTab({ project, onUpdate }) {
                   Add Payment
                 </Button>
                 <Button 
+                  type="button"
                   onClick={(e) => {
                     e.stopPropagation();
                     setShowAddPayment(false);
@@ -803,7 +806,13 @@ export default function FinancialsTab({ project, onUpdate }) {
                         </SelectContent>
                       </Select>
                       <button
-                        onClick={() => handleRemovePayment(index)}
+                        type="button"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          if (confirm('Remove this payment?')) {
+                            handleRemovePayment(index);
+                          }
+                        }}
                         className="text-red-600 hover:bg-red-50 rounded p-1 transition-colors"
                       >
                         <X className="w-4 h-4" />
@@ -880,6 +889,7 @@ export default function FinancialsTab({ project, onUpdate }) {
             </CardTitle>
             {((project.legacy_pandadoc_url && !primaryQuote) || (project.legacy_xero_invoice_url && !primaryInvoice)) && (
               <Button 
+                type="button"
                 variant="outline" 
                 size="sm" 
                 onClick={(e) => {
