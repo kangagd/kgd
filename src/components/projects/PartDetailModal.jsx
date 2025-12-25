@@ -387,6 +387,7 @@ export default function PartDetailModal({ open, part, onClose, onSave, isSubmitt
                   )}
                 </div>
                 <Button
+                  type="button"
                   variant="outline"
                   size="sm"
                   onClick={(e) => {

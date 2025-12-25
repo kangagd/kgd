@@ -502,6 +502,7 @@ export default function JobForm({ job, technicians, onSubmit, onCancel, isSubmit
         <CardHeader className="border-b-2 border-slate-200 bg-gradient-to-r from-slate-50 to-white p-6">
           <div className="flex items-center gap-4">
             <Button 
+              type="button"
               variant="ghost" 
               size="icon" 
               onClick={handleAutoSave}
@@ -1028,6 +1029,7 @@ export default function JobForm({ job, technicians, onSubmit, onCancel, isSubmit
           </div>
           <DialogFooter>
             <Button 
+              type="button"
               variant="outline" 
               onClick={() => {
                 setShowNewCustomerDialog(false);
@@ -1038,6 +1040,7 @@ export default function JobForm({ job, technicians, onSubmit, onCancel, isSubmit
               Cancel
             </Button>
             <Button 
+              type="button"
               onClick={handleCreateNewCustomer}
               disabled={!newCustomerData.name}
               className="bg-[#fae008] hover:bg-[#e5d007] text-[#000000] font-bold"
@@ -1078,6 +1081,7 @@ export default function JobForm({ job, technicians, onSubmit, onCancel, isSubmit
                       </div>
                     </div>
                     <Button
+                      type="button"
                       size="sm"
                       variant="outline"
                       onClick={(e) => {
@@ -1106,6 +1110,7 @@ export default function JobForm({ job, technicians, onSubmit, onCancel, isSubmit
           </div>
           <DialogFooter>
             <Button 
+              type="button"
               variant="outline" 
               onClick={() => {
                 setShowDuplicateDialog(false);
@@ -1116,6 +1121,7 @@ export default function JobForm({ job, technicians, onSubmit, onCancel, isSubmit
               Go Back
             </Button>
             <Button 
+              type="button"
               onClick={handleForceCreateNew}
               className="bg-[#fae008] hover:bg-[#e5d007] text-[#000000] font-bold"
             >

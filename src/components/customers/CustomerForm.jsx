@@ -216,7 +216,7 @@ export default function CustomerForm({ customer, onSubmit, onCancel, isSubmittin
       <Card className="border-none shadow-lg">
         <CardHeader className="border-b border-slate-100">
           <div className="flex items-center gap-4">
-            <Button variant="ghost" size="icon" onClick={onCancel}>
+            <Button type="button" variant="ghost" size="icon" onClick={onCancel}>
               <ArrowLeft className="w-4 h-4" />
             </Button>
             <CardTitle className="text-2xl font-bold">
@@ -544,6 +544,7 @@ export default function CustomerForm({ customer, onSubmit, onCancel, isSubmittin
           </div>
           <DialogFooter>
             <Button 
+              type="button"
               variant="outline" 
               onClick={() => setShowNewOrgDialog(false)}
               className="border-2 font-semibold"
@@ -552,6 +553,7 @@ export default function CustomerForm({ customer, onSubmit, onCancel, isSubmittin
               Cancel
             </Button>
             <Button 
+              type="button"
               onClick={handleCreateNewOrg}
               disabled={!newOrgData.name || isCreatingOrg}
               className="bg-[#fae008] hover:bg-[#e5d007] text-[#000000] font-bold"

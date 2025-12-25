@@ -326,6 +326,7 @@ export default function ProjectForm({ project, onSubmit, onCancel, isSubmitting 
         <CardHeader className="border-b-2 border-slate-200 bg-gradient-to-r from-slate-50 to-white p-6">
           <div className="flex items-center gap-4">
             <Button 
+              type="button"
               variant="ghost" 
               size="icon" 
               onClick={() => {
@@ -802,6 +803,7 @@ export default function ProjectForm({ project, onSubmit, onCancel, isSubmitting 
               Cancel
             </Button>
             <Button
+              type="button"
               onClick={handleCreateCustomer}
               disabled={!newCustomerData.name || createCustomerMutation.isPending}
               className="bg-[#fae008] hover:bg-[#e5d007] text-[#000000] font-bold"
@@ -857,6 +859,7 @@ export default function ProjectForm({ project, onSubmit, onCancel, isSubmitting 
           </div>
           <DialogFooter>
             <Button 
+              type="button"
               variant="outline" 
               onClick={() => setShowNewOrgDialog(false)}
               className="border-2 font-semibold"
@@ -865,6 +868,7 @@ export default function ProjectForm({ project, onSubmit, onCancel, isSubmitting 
               Cancel
             </Button>
             <Button 
+              type="button"
               onClick={handleCreateOrganisation}
               disabled={!newOrgData.name || createOrganisationMutation.isPending}
               className="bg-[#fae008] hover:bg-[#e5d007] text-[#000000] font-bold"
