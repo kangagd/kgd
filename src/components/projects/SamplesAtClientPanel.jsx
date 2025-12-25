@@ -1,19 +1,17 @@
 import React, { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { base44 } from "@/api/base44Client";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Package, Calendar, ArrowDown, ArrowUp, ChevronDown } from "lucide-react";
+import { Package, Calendar, ArrowDown, ArrowUp } from "lucide-react";
 import { getSampleStatusColor } from "../domain/sampleConfig";
 import ScheduleSampleDropOffModal from "./ScheduleSampleDropOffModal";
 import ScheduleSamplePickupModal from "./ScheduleSamplePickupModal";
-import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 
 export default function SamplesAtClientPanel({ project }) {
   const [showDropOffModal, setShowDropOffModal] = useState(false);
   const [showPickupModal, setShowPickupModal] = useState(false);
-  const [isExpanded, setIsExpanded] = useState(false);
 
   const { data: clientSamples = [], isLoading } = useQuery({
     queryKey: ['clientSamples', project.id],
@@ -28,27 +26,8 @@ export default function SamplesAtClientPanel({ project }) {
 
   return (
     <>
-      <Collapsible open={isExpanded} onOpenChange={setIsExpanded}>
-        <Card className="border border-[#E5E7EB] shadow-sm">
-          <CollapsibleTrigger className="w-full">
-            <CardHeader className="border-b border-[#E5E7EB] bg-white px-5 py-4">
-              <div className="flex items-center justify-between">
-                <CardTitle className="text-[18px] font-semibold text-[#111827] flex items-center gap-2">
-                  <Package className="w-5 h-5 text-purple-600" />
-                  Samples at this Client
-                  {clientSamples.length > 0 && (
-                    <Badge variant="outline" className="ml-2 bg-purple-50 text-purple-700 border-purple-200">
-                      {clientSamples.length}
-                    </Badge>
-                  )}
-                  <ChevronDown className={`w-4 h-4 text-[#6B7280] transition-transform ml-auto ${isExpanded ? 'transform rotate-180' : ''}`} />
-                </CardTitle>
-              </div>
-            </CardHeader>
-          </CollapsibleTrigger>
-
-          <CollapsibleContent>
-            <div className="border-t border-[#E5E7EB] bg-white px-5 py-3">
+      <div>
+        <div className="bg-white px-5 py-3">
               <div className="flex gap-2 justify-end">
                 <Button
                   onClick={() => setShowDropOffModal(true)}
@@ -118,9 +97,8 @@ export default function SamplesAtClientPanel({ project }) {
             </div>
           )}
             </CardContent>
-          </CollapsibleContent>
-        </Card>
-      </Collapsible>
+        </div>
+      </div>
 
       <ScheduleSampleDropOffModal
         open={showDropOffModal}
