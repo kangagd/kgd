@@ -231,8 +231,8 @@ export default function ProjectPartsPanel({ project, parts = [], inventoryByItem
                         })()}
                       </span>
                       {' • '}
-                      {po.supplier_name || 'Supplier'}
-                      {po.expected_delivery_date && ` • ${format(new Date(po.expected_delivery_date), 'MMM d')}`}
+                      {po.supplier_name || 'No supplier set'}
+                      {po.expected_delivery_date && ` • ETA: ${format(new Date(po.expected_delivery_date), 'MMM d')}`}
                     </div>
                   ))}
                 {projectPOs.filter(po => po.status !== 'received' && po.status !== 'completed' && po.status !== 'cancelled').length === 0 && (
@@ -263,8 +263,8 @@ export default function ProjectPartsPanel({ project, parts = [], inventoryByItem
                           </Badge>
                         </div>
                         <div className="text-xs text-[#6B7280]">
-                          {po.supplier_name || 'Supplier'}
-                          {po.expected_delivery_date && ` • ${format(new Date(po.expected_delivery_date), 'MMM d')}`}
+                          {po.supplier_name || 'No supplier set'}
+                          {po.expected_delivery_date && ` • ETA: ${format(new Date(po.expected_delivery_date), 'MMM d')}`}
                         </div>
                       </div>
                       <ExternalLink className="w-4 h-4 text-[#6B7280] flex-shrink-0 ml-2" />
