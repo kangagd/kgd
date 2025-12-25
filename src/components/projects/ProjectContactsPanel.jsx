@@ -181,12 +181,12 @@ export default function ProjectContactsPanel({ project }) {
                   <span className="text-[10px] text-gray-500 font-medium">Show on jobs</span>
                   <Switch
                     checked={!!c.show_on_jobs}
-                    onCheckedChange={(value) =>
+                    onCheckedChange={(value) => {
                       updateContactMutation.mutate({
                         id: c.id,
                         patch: { show_on_jobs: value },
-                      })
-                    }
+                      });
+                    }}
                     className="scale-75"
                   />
                 </div>
@@ -194,7 +194,12 @@ export default function ProjectContactsPanel({ project }) {
                     variant="ghost" 
                     size="icon" 
                     className="h-6 w-6 text-gray-400 hover:text-red-600 hover:bg-red-50"
-                    onClick={() => deleteContactMutation.mutate(c.id)}
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      if (confirm('Delete this contact?')) {
+                        deleteContactMutation.mutate(c.id);
+                      }
+                    }}
                 >
                     <Trash2 className="w-3.5 h-3.5" />
                 </Button>
@@ -232,7 +237,8 @@ export default function ProjectContactsPanel({ project }) {
                     <button
                       key={person.id}
                       className="w-full text-left px-3 py-2 text-xs hover:bg-gray-50 flex flex-col"
-                      onClick={() => {
+                      onClick={(e) => {
+                        e.stopPropagation();
                         setNewContact(prev => ({
                           ...prev,
                           contact_id: person.id,
@@ -280,9 +286,9 @@ export default function ProjectContactsPanel({ project }) {
           <div className="flex items-center gap-2 pl-1">
             <Switch
               checked={newContact.show_on_jobs}
-              onCheckedChange={(value) =>
-                setNewContact((c) => ({ ...c, show_on_jobs: value }))
-              }
+              onCheckedChange={(value) => {
+                setNewContact((c) => ({ ...c, show_on_jobs: value }));
+              }}
               className="scale-75"
             />
             <span className="text-[11px] text-gray-600">
@@ -291,7 +297,10 @@ export default function ProjectContactsPanel({ project }) {
           </div>
           <Button
             size="sm"
-            onClick={() => createContactMutation.mutate()}
+            onClick={(e) => {
+              e.stopPropagation();
+              createContactMutation.mutate();
+            }}
             disabled={!newContact.name || createContactMutation.isPending}
             className="h-8 bg-[#FAE008] text-[#111827] hover:bg-[#E5CF07]"
           >
