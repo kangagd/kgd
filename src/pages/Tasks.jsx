@@ -4,7 +4,9 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Plus, CheckSquare, Loader2, Filter, Calendar, LayoutList, Columns } from "lucide-react";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from "@/components/ui/command";
+import { Plus, CheckSquare, Loader2, Filter, Calendar, LayoutList, Columns, Check, ChevronsUpDown } from "lucide-react";
 import { isPast, isToday, isThisWeek, startOfDay } from "date-fns";
 import TaskCard from "../components/tasks/TaskCard";
 import TaskFormModal from "../components/tasks/TaskFormModal";
@@ -23,6 +25,7 @@ export default function Tasks() {
   const [dueFilter, setDueFilter] = useState("all");
   const [assigneeFilter, setAssigneeFilter] = useState("all");
   const [projectFilter, setProjectFilter] = useState(searchParams.get('projectId') || "all");
+  const [projectSearchOpen, setProjectSearchOpen] = useState(false);
   const [viewMode, setViewMode] = useState("list"); // "list" or "kanban"
   const [showCreateModal, setShowCreateModal] = useState(false);
   const [selectedTask, setSelectedTask] = useState(null);
@@ -420,19 +423,60 @@ export default function Tasks() {
               </SelectContent>
             </Select>
 
-            <Select value={projectFilter} onValueChange={setProjectFilter}>
-              <SelectTrigger className="w-full lg:w-[180px]">
-                <SelectValue placeholder="Project" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="all">All Projects</SelectItem>
-                {projects.map(p => (
-                  <SelectItem key={p.id} value={p.id}>
-                    #{p.project_number} {p.title}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
+            <Popover open={projectSearchOpen} onOpenChange={setProjectSearchOpen}>
+              <PopoverTrigger asChild>
+                <Button
+                  variant="outline"
+                  role="combobox"
+                  aria-expanded={projectSearchOpen}
+                  className="w-full lg:w-[220px] justify-between"
+                >
+                  {projectFilter === "all" 
+                    ? "All Projects" 
+                    : projects.find(p => p.id === projectFilter)?.title 
+                      ? `#${projects.find(p => p.id === projectFilter)?.project_number} ${projects.find(p => p.id === projectFilter)?.title}`
+                      : "Select project..."}
+                  <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+                </Button>
+              </PopoverTrigger>
+              <PopoverContent className="w-[300px] p-0">
+                <Command>
+                  <CommandInput placeholder="Search projects..." />
+                  <CommandList>
+                    <CommandEmpty>No project found.</CommandEmpty>
+                    <CommandGroup>
+                      <CommandItem
+                        value="all"
+                        onSelect={() => {
+                          setProjectFilter("all");
+                          setProjectSearchOpen(false);
+                        }}
+                      >
+                        <Check
+                          className={`mr-2 h-4 w-4 ${projectFilter === "all" ? "opacity-100" : "opacity-0"}`}
+                        />
+                        All Projects
+                      </CommandItem>
+                      {projects.map(p => (
+                        <CommandItem
+                          key={p.id}
+                          value={`${p.project_number} ${p.title}`}
+                          onSelect={() => {
+                            setProjectFilter(p.id);
+                            setProjectSearchOpen(false);
+                          }}
+                        >
+                          <Check
+                            className={`mr-2 h-4 w-4 ${projectFilter === p.id ? "opacity-100" : "opacity-0"}`}
+                          />
+                          #{p.project_number} {p.title}
+                        </CommandItem>
+                      ))}
+                    </CommandGroup>
+                  </CommandList>
+                </Command>
+              </PopoverContent>
+            </Popover>
           </div>
 
           {/* View Toggle */}
