@@ -1604,6 +1604,13 @@ Format as HTML bullet points using <ul> and <li> tags. Include only the most cri
                       document.getElementById('tasks-panel')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
                     }, 100);
                   }}
+                  onFilteredViewAll={(filter) => {
+                    // Store filter in state so TasksPanel can use it
+                    window.dispatchEvent(new CustomEvent('setTaskFilter', { detail: { filter } }));
+                    setTimeout(() => {
+                      document.getElementById('tasks-panel')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                    }, 100);
+                  }}
                   onAddTask={async (taskData) => {
                     await base44.entities.Task.create(taskData);
                     queryClient.invalidateQueries({ queryKey: ['projectTasks', project.id] });

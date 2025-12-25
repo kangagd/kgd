@@ -13,11 +13,22 @@ export default function TasksPanel({
   entityId,
   entityName,
   entityNumber, // for jobs
-  compact = false // for sidebar compact view
+  compact = false, // for sidebar compact view
+  initialFilter = null // 'overdue' | 'due_today' | 'due_soon' | null
 }) {
   const queryClient = useQueryClient();
   const [showCreateModal, setShowCreateModal] = useState(false);
   const [selectedTask, setSelectedTask] = useState(null);
+  const [urgencyFilter, setUrgencyFilter] = useState(initialFilter);
+
+  // Listen for filter events
+  React.useEffect(() => {
+    const handleFilterEvent = (e) => {
+      setUrgencyFilter(e.detail.filter);
+    };
+    window.addEventListener('setTaskFilter', handleFilterEvent);
+    return () => window.removeEventListener('setTaskFilter', handleFilterEvent);
+  }, []);
 
   // Build filter based on entity type
   const getFilter = () => {
@@ -141,7 +152,32 @@ export default function TasksPanel({
     number: entityNumber
   };
 
-  const openTasks = tasks.filter(t => t.status !== "Completed" && t.status !== "Cancelled");
+  // Apply urgency filtering
+  const now = new Date();
+  const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+  
+  const applyUrgencyFilter = (taskList) => {
+    if (!urgencyFilter) return taskList;
+    
+    return taskList.filter(t => {
+      if (!t.due_date) return false;
+      const dueDate = new Date(t.due_date);
+      const dueDateOnly = new Date(dueDate.getFullYear(), dueDate.getMonth(), dueDate.getDate());
+      
+      if (urgencyFilter === 'overdue') {
+        return dueDate < today;
+      } else if (urgencyFilter === 'due_today') {
+        return dueDateOnly.getTime() === today.getTime();
+      } else if (urgencyFilter === 'due_soon') {
+        const daysUntilDue = Math.ceil((dueDateOnly - today) / (1000 * 60 * 60 * 24));
+        return daysUntilDue > 0 && daysUntilDue <= 3;
+      }
+      return true;
+    });
+  };
+
+  const allOpenTasks = tasks.filter(t => t.status !== "Completed" && t.status !== "Cancelled");
+  const openTasks = applyUrgencyFilter(allOpenTasks);
   const completedTasks = tasks.filter(t => t.status === "Completed" || t.status === "Cancelled");
 
   // Compact view for sidebar
@@ -255,27 +291,49 @@ export default function TasksPanel({
   return (
     <div className="space-y-4">
       {/* Header */}
-      <div className="flex items-center justify-between">
-        <div className="flex items-center gap-2">
-          <CheckSquare className="w-5 h-5 text-[#4B5563]" />
-          <h3 className="font-semibold text-[#111827]">Tasks</h3>
-          {tasks.length > 0 && (
-            <span className="text-sm text-[#6B7280]">
-              ({openTasks.length} open)
-            </span>
-          )}
+      <div className="flex flex-col gap-3">
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-2">
+            <CheckSquare className="w-5 h-5 text-[#4B5563]" />
+            <h3 className="font-semibold text-[#111827]">Tasks</h3>
+            {tasks.length > 0 && (
+              <span className="text-sm text-[#6B7280]">
+                ({urgencyFilter ? openTasks.length : allOpenTasks.length} {urgencyFilter ? 'filtered' : 'open'})
+              </span>
+            )}
+          </div>
+          <Button
+            size="sm"
+            onClick={(e) => {
+              e.stopPropagation();
+              setShowCreateModal(true);
+            }}
+            className="bg-[#FAE008] hover:bg-[#E5CF07] text-[#111827]"
+          >
+            <Plus className="w-4 h-4 mr-1" />
+            Add Task
+          </Button>
         </div>
-        <Button
-          size="sm"
-          onClick={(e) => {
-            e.stopPropagation();
-            setShowCreateModal(true);
-          }}
-          className="bg-[#FAE008] hover:bg-[#E5CF07] text-[#111827]"
-        >
-          <Plus className="w-4 h-4 mr-1" />
-          Add Task
-        </Button>
+
+        {/* Filter Pills */}
+        {urgencyFilter && (
+          <div className="flex items-center gap-2">
+            <span className="text-sm text-[#6B7280]">Filtered by:</span>
+            <div className="flex items-center gap-2 px-3 py-1.5 bg-blue-50 border border-blue-200 rounded-lg text-sm text-blue-700">
+              <span className="font-medium">
+                {urgencyFilter === 'overdue' && 'Overdue'}
+                {urgencyFilter === 'due_today' && 'Due Today'}
+                {urgencyFilter === 'due_soon' && 'Due Soon'}
+              </span>
+              <button
+                onClick={() => setUrgencyFilter(null)}
+                className="text-blue-500 hover:text-blue-700 font-medium"
+              >
+                ×
+              </button>
+            </div>
+          </div>
+        )}
       </div>
 
       {/* Task List */}

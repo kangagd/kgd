@@ -5,7 +5,7 @@ import { CheckSquare, Plus, Clock, AlertCircle } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import TaskFormModal from "../tasks/TaskFormModal";
 
-export default function TasksCompactCard({ tasks = [], onViewAll, onAddTask, entityType = 'project', entityId, entityName, customerId, customerName }) {
+export default function TasksCompactCard({ tasks = [], onViewAll, onAddTask, entityType = 'project', entityId, entityName, customerId, customerName, onFilteredViewAll }) {
   const [showCreateModal, setShowCreateModal] = useState(false);
   const now = new Date();
   const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
@@ -50,25 +50,43 @@ export default function TasksCompactCard({ tasks = [], onViewAll, onAddTask, ent
         {/* Compact Stats */}
         <div className="flex items-center gap-3 text-[13px]">
           {overdue > 0 && (
-            <div className="flex items-center gap-1.5">
+            <button
+              onClick={(e) => {
+                e.stopPropagation();
+                if (onFilteredViewAll) onFilteredViewAll('overdue');
+              }}
+              className="flex items-center gap-1.5 cursor-pointer hover:underline"
+            >
               <div className="w-2 h-2 rounded-full bg-red-500"></div>
               <span className="text-[#4B5563]">Overdue:</span>
               <span className="font-semibold text-red-700">{overdue}</span>
-            </div>
+            </button>
           )}
           {dueToday > 0 && (
-            <div className="flex items-center gap-1.5">
+            <button
+              onClick={(e) => {
+                e.stopPropagation();
+                if (onFilteredViewAll) onFilteredViewAll('due_today');
+              }}
+              className="flex items-center gap-1.5 cursor-pointer hover:underline"
+            >
               <div className="w-2 h-2 rounded-full bg-orange-500"></div>
               <span className="text-[#4B5563]">Due today:</span>
               <span className="font-semibold text-orange-700">{dueToday}</span>
-            </div>
+            </button>
           )}
           {dueSoon > 0 && (
-            <div className="flex items-center gap-1.5">
+            <button
+              onClick={(e) => {
+                e.stopPropagation();
+                if (onFilteredViewAll) onFilteredViewAll('due_soon');
+              }}
+              className="flex items-center gap-1.5 cursor-pointer hover:underline"
+            >
               <div className="w-2 h-2 rounded-full bg-yellow-500"></div>
               <span className="text-[#4B5563]">Due soon:</span>
               <span className="font-semibold text-yellow-700">{dueSoon}</span>
-            </div>
+            </button>
           )}
           {overdue === 0 && dueToday === 0 && dueSoon === 0 && (
             <span className="text-[#9CA3AF]">No urgent tasks</span>
