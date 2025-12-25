@@ -680,6 +680,7 @@ export default function PurchaseOrderDetail({ poId, onClose, mode = "page" }) {
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-3">
               <button
+                type="button"
                 onClick={onClose}
                 className="p-2 hover:bg-[#F3F4F6] rounded-lg transition-colors"
               >
@@ -722,6 +723,7 @@ export default function PurchaseOrderDetail({ poId, onClose, mode = "page" }) {
                       <TooltipTrigger asChild>
                         <span>
                           <Button
+                            type="button"
                             onClick={handleDelete}
                             disabled={deletePOMutation.isPending || !can(PERMISSIONS.DELETE_PO)}
                             variant="outline"
@@ -740,6 +742,7 @@ export default function PurchaseOrderDetail({ poId, onClose, mode = "page" }) {
                     </Tooltip>
                   </TooltipProvider>
                  <Button
+                   type="button"
                    onClick={handleSave}
                    disabled={!formData.po_reference?.trim()}
                    className="bg-[#F3F4F6] text-[#111827] hover:bg-[#E5E7EB]"
@@ -748,6 +751,7 @@ export default function PurchaseOrderDetail({ poId, onClose, mode = "page" }) {
                    Save
                  </Button>
                  <Button
+                   type="button"
                    onClick={handleSendToSupplier}
                    disabled={!formData.po_reference?.trim()}
                    className="bg-[#FAE008] text-[#111827] hover:bg-[#E5CF07]"
@@ -960,6 +964,7 @@ export default function PurchaseOrderDetail({ poId, onClose, mode = "page" }) {
                           <span className="truncate">{url.split('/').pop()}</span>
                         </a>
                         <button
+                          type="button"
                           onClick={() => removeAttachment(index)}
                           className="p-1 hover:bg-red-50 rounded text-red-600 transition-colors"
                         >
@@ -978,6 +983,7 @@ export default function PurchaseOrderDetail({ poId, onClose, mode = "page" }) {
                     className="hidden"
                   />
                   <Button
+                    type="button"
                     variant="outline"
                     size="sm"
                     onClick={() => document.getElementById('attachment-upload').click()}
@@ -1013,6 +1019,7 @@ export default function PurchaseOrderDetail({ poId, onClose, mode = "page" }) {
                 <Popover open={addItemMenuOpen} onOpenChange={setAddItemMenuOpen}>
                   <PopoverTrigger asChild>
                     <Button
+                      type="button"
                       variant="outline"
                       size="sm"
                       className="h-8"
@@ -1024,6 +1031,7 @@ export default function PurchaseOrderDetail({ poId, onClose, mode = "page" }) {
                   <PopoverContent className="w-80 p-2" align="end">
                     <div className="space-y-1">
                       <Button
+                        type="button"
                         variant="ghost"
                         size="sm"
                         className="w-full justify-start"
@@ -1051,6 +1059,7 @@ export default function PurchaseOrderDetail({ poId, onClose, mode = "page" }) {
                               )
                               .map((item) => (
                                 <Button
+                                  type="button"
                                   key={item.id}
                                   variant="ghost"
                                   size="sm"
@@ -1074,6 +1083,7 @@ export default function PurchaseOrderDetail({ poId, onClose, mode = "page" }) {
                             <div className="px-2 py-1 text-xs font-medium text-[#6B7280]">From Project Parts</div>
                             {projectParts.map((part) => (
                               <Button
+                                type="button"
                                 key={part.id}
                                 variant="ghost"
                                 size="sm"
@@ -1116,6 +1126,7 @@ export default function PurchaseOrderDetail({ poId, onClose, mode = "page" }) {
                             <TooltipTrigger asChild>
                               <span>
                                 <button
+                                  type="button"
                                   onClick={() => removeLineItem(index)}
                                   disabled={!can(PERMISSIONS.DELETE_LINE_ITEM)}
                                   className="p-1 hover:bg-red-50 rounded text-red-600 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
@@ -1233,6 +1244,7 @@ export default function PurchaseOrderDetail({ poId, onClose, mode = "page" }) {
                     A logistics job has been created for this purchase order.
                   </p>
                   <Button
+                    type="button"
                     onClick={() => navigate(`${createPageUrl("Jobs")}?jobId=${po.linked_logistics_job_id}`)}
                     variant="outline"
                     className="w-full"
@@ -1247,6 +1259,7 @@ export default function PurchaseOrderDetail({ poId, onClose, mode = "page" }) {
                     Create a logistics job to track delivery from {formData.delivery_method === 'Supplier → Pickup Required' ? 'supplier pickup' : 'supplier to warehouse'}.
                   </p>
                   <Button
+                    type="button"
                     onClick={handleCreateLogisticsJob}
                     disabled={createLogisticsJobMutation.isPending}
                     className="w-full bg-[#FAE008] text-[#111827] hover:bg-[#E5CF07]"
