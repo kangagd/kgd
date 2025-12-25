@@ -16,10 +16,10 @@ export default function TasksCompactCard({ tasks = [], onViewAll, onAddTask, ent
   const { overdue, dueToday, dueSoon } = getTaskUrgencyCounts(tasks);
 
   const handleViewAll = () => {
-    if (onViewAll) {
-      onViewAll();
-    } else if (entityType === 'project' && entityId) {
+    if (entityType === 'project' && entityId) {
       navigate(`${createPageUrl("Tasks")}?projectId=${entityId}`);
+    } else if (onViewAll) {
+      onViewAll();
     } else {
       toast.error("Action not configured yet");
     }
