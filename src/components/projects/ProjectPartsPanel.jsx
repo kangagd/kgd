@@ -324,10 +324,7 @@ export default function ProjectPartsPanel({ project, parts = [], inventoryByItem
               const partTitle = part.item_name || part.category || "Part";
               const normalizedStatus = getNormalizedPartStatus(part);
               const linkedPO = resolvePartPO(part);
-              const poDisplay = (() => {
-                const poRef = getPoDisplayRef(linkedPO, part);
-                return poRef ? `PO #${poRef}` : null;
-              })();
+              const poDisplay = linkedPO ? getPoDisplayReference(linkedPO) : null;
               
               return (
                 <div key={part.id} className="p-3 bg-red-50 border border-red-100 rounded-lg flex justify-between items-center">
