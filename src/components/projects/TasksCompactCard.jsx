@@ -5,6 +5,7 @@ import { CheckSquare, Plus, Clock, AlertCircle } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import TaskFormModal from "../tasks/TaskFormModal";
 import { getTaskUrgencyCounts } from "../tasks/taskFilters";
+import { toast } from "sonner";
 
 export default function TasksCompactCard({ tasks = [], onViewAll, onAddTask, entityType = 'project', entityId, entityName, customerId, customerName, onFilteredViewAll }) {
   const [showCreateModal, setShowCreateModal] = useState(false);
@@ -77,7 +78,11 @@ export default function TasksCompactCard({ tasks = [], onViewAll, onAddTask, ent
             type="button"
             onClick={(e) => {
               e.stopPropagation();
-              onViewAll?.();
+              if (onViewAll) {
+                onViewAll();
+              } else {
+                toast.error("Action not configured yet");
+              }
             }}
             variant="outline"
             size="sm"
@@ -104,7 +109,11 @@ export default function TasksCompactCard({ tasks = [], onViewAll, onAddTask, ent
         open={showCreateModal}
         onClose={() => setShowCreateModal(false)}
         onSubmit={(data) => {
-          if (onAddTask) onAddTask(data);
+          if (onAddTask) {
+            onAddTask(data);
+          } else {
+            toast.error("Action not configured yet");
+          }
           setShowCreateModal(false);
         }}
         preLinkedEntity={{
