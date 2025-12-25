@@ -13,13 +13,16 @@ import TaskKanbanView from "../components/tasks/TaskKanbanView";
 import { toast } from "sonner";
 import BackButton from "../components/common/BackButton";
 import { createPageUrl } from "@/utils";
+import { useSearchParams } from "react-router-dom";
 
 export default function Tasks() {
   const queryClient = useQueryClient();
+  const [searchParams] = useSearchParams();
   const [user, setUser] = useState(null);
   const [statusFilter, setStatusFilter] = useState("open");
   const [dueFilter, setDueFilter] = useState("all");
   const [assigneeFilter, setAssigneeFilter] = useState("all");
+  const [projectFilter, setProjectFilter] = useState(searchParams.get('projectId') || "all");
   const [viewMode, setViewMode] = useState("list"); // "list" or "kanban"
   const [showCreateModal, setShowCreateModal] = useState(false);
   const [selectedTask, setSelectedTask] = useState(null);
@@ -27,6 +30,13 @@ export default function Tasks() {
   useEffect(() => {
     base44.auth.me().then(setUser).catch(() => {});
   }, []);
+
+  useEffect(() => {
+    const projectId = searchParams.get('projectId');
+    if (projectId) {
+      setProjectFilter(projectId);
+    }
+  }, [searchParams]);
 
   const isTechnician = user?.is_field_technician && user?.role !== 'admin';
 
@@ -104,6 +114,9 @@ export default function Tasks() {
     if (statusFilter === "in_progress" && task.status !== "In Progress") return false;
     if (statusFilter === "completed" && task.status !== "Completed") return false;
 
+    // Project filter
+    if (projectFilter !== "all" && task.project_id !== projectFilter) return false;
+
     // Due filter
     if (dueFilter !== "all" && task.due_date) {
       const dueDate = new Date(task.due_date);
@@ -124,7 +137,7 @@ export default function Tasks() {
     if (isTechnician && task.assigned_to_user_id !== user?.id) return false;
 
     return true;
-  }), [tasks, statusFilter, dueFilter, assigneeFilter, isTechnician, user?.id]);
+  }), [tasks, statusFilter, dueFilter, assigneeFilter, projectFilter, isTechnician, user?.id]);
 
   // Memoized task grouping for technician view
   const groupedTasks = React.useMemo(() => isTechnician ? {

@@ -6,11 +6,24 @@ import { Badge } from "@/components/ui/badge";
 import TaskFormModal from "../tasks/TaskFormModal";
 import { getTaskUrgencyCounts } from "../tasks/taskFilters";
 import { toast } from "sonner";
+import { useNavigate } from "react-router-dom";
+import { createPageUrl } from "@/utils";
 
 export default function TasksCompactCard({ tasks = [], onViewAll, onAddTask, entityType = 'project', entityId, entityName, customerId, customerName, onFilteredViewAll }) {
   const [showCreateModal, setShowCreateModal] = useState(false);
+  const navigate = useNavigate();
   
   const { overdue, dueToday, dueSoon } = getTaskUrgencyCounts(tasks);
+
+  const handleViewAll = () => {
+    if (onViewAll) {
+      onViewAll();
+    } else if (entityType === 'project' && entityId) {
+      navigate(`${createPageUrl("Tasks")}?projectId=${entityId}`);
+    } else {
+      toast.error("Action not configured yet");
+    }
+  };
 
   return (
     <Card className="border border-[#E5E7EB] shadow-sm">
@@ -18,7 +31,7 @@ export default function TasksCompactCard({ tasks = [], onViewAll, onAddTask, ent
         <CardTitle 
           onClick={(e) => {
             e.stopPropagation();
-            if (onViewAll) onViewAll();
+            handleViewAll();
           }}
           className="text-[16px] font-semibold text-[#111827] cursor-pointer hover:underline"
         >
@@ -78,11 +91,7 @@ export default function TasksCompactCard({ tasks = [], onViewAll, onAddTask, ent
             type="button"
             onClick={(e) => {
               e.stopPropagation();
-              if (onViewAll) {
-                onViewAll();
-              } else {
-                toast.error("Action not configured yet");
-              }
+              handleViewAll();
             }}
             variant="outline"
             size="sm"
