@@ -52,7 +52,7 @@ import {
 import { toast } from "sonner";
 import PurchaseOrderModal from "../logistics/PurchaseOrderModal";
 
-export default function ProjectPartsPanel({ project, parts = [], inventoryByItem = {} }) {
+export default function ProjectPartsPanel({ project, parts = [], inventoryByItem = {}, purchaseOrders = [], missingCount = 0 }) {
   const [assignModalOpen, setAssignModalOpen] = useState(false);
   const [partToAssign, setPartToAssign] = useState(null);
   const [showCreatePODialog, setShowCreatePODialog] = useState(false);
@@ -108,11 +108,8 @@ export default function ProjectPartsPanel({ project, parts = [], inventoryByItem
     setSelectedSupplierId("");
   };
 
-  const { data: projectPOs = [] } = useQuery({
-    queryKey: ['projectPOs', project.id],
-    queryFn: () => base44.entities.PurchaseOrder.filter({ project_id: project.id }, '-created_date'),
-    enabled: !!project.id
-  });
+  // Use passed purchaseOrders prop instead of fetching again
+  const projectPOs = purchaseOrders;
 
   const { data: suppliers = [] } = useQuery({
     queryKey: ['suppliers-for-po-panel'],
@@ -159,16 +156,16 @@ export default function ProjectPartsPanel({ project, parts = [], inventoryByItem
       <div className="flex items-center justify-between mb-4">
         <div>
           <p className="text-[13px] text-[#6B7280]">
-            Track parts needed and ready for installation. Create POs to order missing items.
+            Track parts needed and ready for installation.
           </p>
         </div>
         <div className="flex gap-2">
-          {needed.length > 0 && (
+          {missingCount > 0 && (
             <Button
               onClick={() => setShowCreatePODialog(true)}
               size="sm"
-              variant="outline"
-              title="Create a Purchase Order for this project"
+              className="bg-[#FAE008] text-[#111827] hover:bg-[#E5CF07] font-semibold"
+              title="Create a Purchase Order for missing parts"
             >
               <ShoppingCart className="w-4 h-4 mr-1" />
               Create PO
@@ -183,36 +180,36 @@ export default function ProjectPartsPanel({ project, parts = [], inventoryByItem
             <Plus className="w-4 h-4 mr-1" />
             Add Part
           </Button>
-          <Button variant="outline" size="sm" className="h-8 text-xs">
-            Print Pick List
-          </Button>
-          {needed.length === 0 && (
-            <DropdownMenu>
-              <DropdownMenuTrigger asChild>
-                <Button variant="outline" size="sm" className="h-8">
-                  <MoreVertical className="w-4 h-4" />
-                </Button>
-              </DropdownMenuTrigger>
-              <DropdownMenuContent align="end">
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button variant="outline" size="sm" className="h-8">
+                <MoreVertical className="w-4 h-4" />
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end">
+              {missingCount === 0 && (
                 <DropdownMenuItem onClick={() => setShowCreatePODialog(true)}>
                   <ShoppingCart className="w-4 h-4 mr-2" />
                   Create PO
                 </DropdownMenuItem>
-              </DropdownMenuContent>
-            </DropdownMenu>
-          )}
+              )}
+              <DropdownMenuItem>
+                Print Pick List
+              </DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
         </div>
       </div>
 
-      {/* Purchase Orders */}
+      {/* Purchase Orders - Inline Summary */}
       {projectPOs.length > 0 && (
         <Collapsible open={posExpanded} onOpenChange={setPosExpanded}>
           <div className="border border-[#E5E7EB] rounded-lg bg-white">
             <CollapsibleTrigger asChild>
-              <button className="w-full p-4 flex items-center justify-between hover:bg-[#F9FAFB] transition-colors">
+              <button className="w-full p-3 flex items-center justify-between hover:bg-[#F9FAFB] transition-colors">
                 <div className="flex items-center gap-2">
-                  <Package className="w-4 h-4 text-[#6B7280]" />
-                  <h4 className="text-sm font-semibold text-[#111827]">
+                  <Building2 className="w-4 h-4 text-[#6B7280]" />
+                  <h4 className="text-sm font-medium text-[#111827]">
                     Purchase Orders ({projectPOs.length})
                   </h4>
                 </div>
@@ -221,9 +218,9 @@ export default function ProjectPartsPanel({ project, parts = [], inventoryByItem
             </CollapsibleTrigger>
 
             {!posExpanded && (
-              <div className="px-4 pb-4 space-y-1">
+              <div className="px-3 pb-3 space-y-1">
                 {projectPOs
-                  .filter(po => po.status === 'ordered' || po.status === 'draft')
+                  .filter(po => po.status !== 'received' && po.status !== 'completed' && po.status !== 'cancelled')
                   .slice(0, 2)
                   .map(po => (
                     <div key={po.id} className="text-xs text-[#6B7280]">
@@ -235,24 +232,22 @@ export default function ProjectPartsPanel({ project, parts = [], inventoryByItem
                       </span>
                       {' • '}
                       {po.supplier_name || 'Supplier'}
-                      {po.expected_date && ` • ETA: ${format(new Date(po.expected_date), 'MMM d')}`}
+                      {po.expected_delivery_date && ` • ${format(new Date(po.expected_delivery_date), 'MMM d')}`}
                     </div>
                   ))}
-                {(projectPOs.filter(po => po.status === 'ordered' || po.status === 'draft').length === 0) && (
-                  <div className="text-xs text-[#9CA3AF]">
-                    {projectPOs.length === 1 ? '1 PO' : `${projectPOs.length} POs`} on file
-                  </div>
+                {projectPOs.filter(po => po.status !== 'received' && po.status !== 'completed' && po.status !== 'cancelled').length === 0 && (
+                  <div className="text-xs text-[#9CA3AF]">All POs closed</div>
                 )}
               </div>
             )}
 
             <CollapsibleContent>
-              <div className="px-4 pb-4 space-y-2">
+              <div className="px-3 pb-3 space-y-2">
                 {projectPOs.map(po => (
                   <button
                     key={po.id}
                     onClick={() => setActivePoId(po.id)}
-                    className="w-full p-4 bg-[#F9FAFB] border border-[#E5E7EB] rounded-lg hover:border-[#FAE008] hover:shadow-sm transition-all text-left"
+                    className="w-full p-3 bg-[#F9FAFB] border border-[#E5E7EB] rounded-lg hover:border-[#FAE008] transition-all text-left"
                   >
                     <div className="flex items-center justify-between">
                       <div className="flex-1">
@@ -263,13 +258,13 @@ export default function ProjectPartsPanel({ project, parts = [], inventoryByItem
                               return poRef ? `PO #${poRef}` : "PO";
                             })()}
                           </span>
-                          <Badge className="text-xs bg-slate-100 text-slate-700 hover:bg-slate-100">
+                          <Badge className="text-xs bg-slate-100 text-slate-700">
                             {getPoStatusLabel(po.status)}
                           </Badge>
                         </div>
                         <div className="text-xs text-[#6B7280]">
                           {po.supplier_name || 'Supplier'}
-                          {po.expected_date && ` • ETA: ${format(new Date(po.expected_date), 'MMM d, yyyy')}`}
+                          {po.expected_delivery_date && ` • ${format(new Date(po.expected_delivery_date), 'MMM d')}`}
                         </div>
                       </div>
                       <ExternalLink className="w-4 h-4 text-[#6B7280] flex-shrink-0 ml-2" />
@@ -282,7 +277,7 @@ export default function ProjectPartsPanel({ project, parts = [], inventoryByItem
         </Collapsible>
       )}
 
-      {parts.length === 0 && projectPOs.length === 0 && (
+      {parts.length === 0 && (
         <div className="text-center py-8 bg-gray-50 rounded-lg border border-dashed border-gray-300">
           <Package className="w-12 h-12 text-gray-300 mx-auto mb-3" />
           <p className="text-sm text-gray-500 mb-3">No parts tracked yet</p>

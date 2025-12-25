@@ -177,6 +177,9 @@ export default function PartsTab({ project, parts, inventoryByItem }) {
           <CardTitle className="text-[16px] font-semibold text-[#111827] flex items-center gap-2">
             <Package className="w-5 h-5 text-[#6B7280]" />
             Parts Required
+            {parts.length > 0 && (
+              <span className="text-sm font-normal text-[#6B7280]">({parts.length})</span>
+            )}
           </CardTitle>
         </CardHeader>
         <CardContent>
@@ -185,73 +188,13 @@ export default function PartsTab({ project, parts, inventoryByItem }) {
             parts={parts} 
             inventoryByItem={inventoryByItem} 
             onAddPart={() => window.triggerAddPart?.()}
+            purchaseOrders={purchaseOrders}
+            missingCount={missingCount}
           />
         </CardContent>
       </Card>
 
-      {/* Purchase Orders */}
-      <Card id="purchase-orders" className="border border-[#E5E7EB] shadow-sm scroll-mt-6">
-        <CardHeader className="pb-3">
-          <CardTitle className="text-[16px] font-semibold text-[#111827] flex items-center gap-2">
-            <Building2 className="w-5 h-5 text-[#6B7280]" />
-            Purchase Orders ({purchaseOrders.length})
-          </CardTitle>
-        </CardHeader>
-        <CardContent>
-          {purchaseOrders.length === 0 ? (
-            <div className="text-center py-8">
-              <p className="text-sm text-gray-500 mb-3">No purchase orders yet</p>
-              {parts.filter(p => ['pending', 'cancelled'].includes(p.status) || !p.status).length > 0 && (
-                <Button
-                  onClick={() => {
-                    const event = new CustomEvent('openCreatePO');
-                    window.dispatchEvent(event);
-                  }}
-                  size="sm"
-                  variant="outline"
-                >
-                  <ShoppingCart className="w-4 h-4 mr-1" />
-                  Create PO
-                </Button>
-              )}
-            </div>
-          ) : (
-            <div className="space-y-3">
-              {purchaseOrders.map((po) => (
-                <div key={po.id} className="border border-[#E5E7EB] rounded-lg p-4 hover:border-[#FAE008] transition-colors">
-                  <div className="flex items-start justify-between gap-3 mb-2">
-                    <div>
-                      <div className="font-medium text-[15px] text-[#111827] mb-1">
-                        PO #{po.po_number || po.id.slice(0, 8)}
-                      </div>
-                      <div className="flex items-center gap-2 text-[13px] text-[#6B7280]">
-                        <Building2 className="w-3.5 h-3.5" />
-                        {po.supplier_name || 'Unknown Supplier'}
-                      </div>
-                    </div>
-                    <Badge className={`${poStatusColors[po.status]} font-medium text-[12px]`}>
-                      {po.status}
-                    </Badge>
-                  </div>
-                  
-                  {po.expected_delivery_date && (
-                    <div className="flex items-center gap-2 text-[13px] text-[#6B7280] mt-2">
-                      <Calendar className="w-3.5 h-3.5" />
-                      <span>ETA: {format(new Date(po.expected_delivery_date), 'dd MMM yyyy')}</span>
-                    </div>
-                  )}
-                  
-                  {po.notes && (
-                    <div className="mt-2 text-[13px] text-[#6B7280] line-clamp-2">
-                      {po.notes}
-                    </div>
-                  )}
-                </div>
-              ))}
-            </div>
-          )}
-        </CardContent>
-      </Card>
+      {/* Purchase Orders - Moved inside ProjectPartsPanel */}
 
       {/* Logistics & Tracking */}
       <Collapsible open={logisticsExpanded} onOpenChange={setLogisticsExpanded}>
@@ -274,7 +217,13 @@ export default function PartsTab({ project, parts, inventoryByItem }) {
           </CollapsibleTrigger>
           <CollapsibleContent>
             <CardContent>
-              <LogisticsTimeline project={project} />
+              {logisticsJobs.length === 0 ? (
+                <div className="text-center py-6">
+                  <p className="text-sm text-gray-500">No logistics activity yet</p>
+                </div>
+              ) : (
+                <LogisticsTimeline project={project} />
+              )}
             </CardContent>
           </CollapsibleContent>
         </Card>
