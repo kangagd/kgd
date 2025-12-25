@@ -36,7 +36,15 @@ export default function TasksCompactCard({ tasks = [], onViewAll, onAddTask, ent
   return (
     <Card className="border border-[#E5E7EB] shadow-sm">
       <CardHeader className="pb-2">
-        <CardTitle className="text-[16px] font-semibold text-[#111827]">Tasks</CardTitle>
+        <CardTitle 
+          onClick={(e) => {
+            e.stopPropagation();
+            if (onViewAll) onViewAll();
+          }}
+          className="text-[16px] font-semibold text-[#111827] cursor-pointer hover:underline"
+        >
+          Tasks
+        </CardTitle>
       </CardHeader>
       <CardContent className="space-y-3">
         {/* Compact Stats */}
