@@ -74,7 +74,10 @@ export default function LatestVisitCard({ jobs = [], onOpenMediaDrawer }) {
           <div className="pt-3 border-t border-[#E5E7EB] flex gap-2">
             {latestCompletedJob.image_urls?.length > 0 && (
               <Button
-                onClick={() => onOpenMediaDrawer?.('photos')}
+                onClick={(e) => {
+                  e.stopPropagation();
+                  onOpenMediaDrawer?.('photos');
+                }}
                 variant="outline"
                 size="sm"
                 className="flex-1 text-[12px] h-7"
@@ -85,7 +88,10 @@ export default function LatestVisitCard({ jobs = [], onOpenMediaDrawer }) {
             )}
             {latestCompletedJob.other_documents?.length > 0 && (
               <Button
-                onClick={() => onOpenMediaDrawer?.('documents')}
+                onClick={(e) => {
+                  e.stopPropagation();
+                  onOpenMediaDrawer?.('documents');
+                }}
                 variant="outline"
                 size="sm"
                 className="flex-1 text-[12px] h-7"

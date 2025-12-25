@@ -1591,23 +1591,25 @@ Format as HTML bullet points using <ul> and <li> tags. Include only the most cri
                   }, 100);
                 }}
               />
-              <TasksCompactCard 
-                tasks={projectTasks}
-                onViewAll={() => {
-                  setTimeout(() => {
-                    document.getElementById('tasks-panel')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
-                  }, 100);
-                }}
-                onAddTask={() => {
-                  window.dispatchEvent(new CustomEvent('openTaskModal', { 
-                    detail: { 
-                      entityType: 'project',
-                      entityId: project.id,
-                      entityName: project.title
-                    } 
-                  }));
-                }}
-              />
+              <div id="tasks-compact">
+                <TasksCompactCard 
+                  tasks={projectTasks}
+                  onViewAll={() => {
+                    setTimeout(() => {
+                      document.getElementById('tasks-panel')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                    }, 100);
+                  }}
+                  onAddTask={() => {
+                    window.dispatchEvent(new CustomEvent('openTaskModal', { 
+                      detail: { 
+                        entityType: 'project',
+                        entityId: project.id,
+                        entityName: project.title
+                      } 
+                    }));
+                  }}
+                />
+              </div>
             </div>
 
             {/* Row 2: What's Next / Latest Activity */}

@@ -53,7 +53,10 @@ export default function UpcomingVisitsCard({ jobs = [], onScheduleVisit }) {
 
         {/* Schedule Visit Button */}
         <Button
-          onClick={onScheduleVisit}
+          onClick={(e) => {
+            e.stopPropagation();
+            onScheduleVisit?.();
+          }}
           variant="outline"
           size="sm"
           className="w-full text-[13px] h-8 mt-3"

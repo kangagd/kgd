@@ -35,7 +35,10 @@ export default function CommercialStatusCard({ project, quotes = [], invoices = 
       <CardContent className="space-y-2">
         {/* Quote Status */}
         <button
-          onClick={() => onNavigateToTab?.('quotes')}
+          onClick={(e) => {
+            e.stopPropagation();
+            onNavigateToTab?.('quoting');
+          }}
           className="w-full flex items-center justify-between p-2.5 rounded-lg hover:bg-[#F9FAFB] transition-colors text-left group"
         >
           <div className="flex items-center gap-2">
@@ -53,7 +56,10 @@ export default function CommercialStatusCard({ project, quotes = [], invoices = 
         {/* Invoice Status */}
         {invoices.length > 0 && (
           <button
-            onClick={() => onNavigateToTab?.('invoicing')}
+            onClick={(e) => {
+              e.stopPropagation();
+              onNavigateToTab?.('invoices');
+            }}
             className="w-full flex items-col p-2.5 rounded-lg hover:bg-[#F9FAFB] transition-colors text-left group border-t border-[#E5E7EB] pt-3"
           >
             <div className="flex-1">
@@ -84,7 +90,10 @@ export default function CommercialStatusCard({ project, quotes = [], invoices = 
 
         {invoices.length === 0 && (
           <button
-            onClick={() => onNavigateToTab?.('invoicing')}
+            onClick={(e) => {
+              e.stopPropagation();
+              onNavigateToTab?.('invoices');
+            }}
             className="w-full flex items-center justify-between p-2.5 rounded-lg hover:bg-[#F9FAFB] transition-colors text-left group border-t border-[#E5E7EB] pt-3"
           >
             <div className="flex items-center gap-2">

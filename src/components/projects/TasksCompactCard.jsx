@@ -68,7 +68,10 @@ export default function TasksCompactCard({ tasks = [], onViewAll, onAddTask }) {
         {/* Action Buttons */}
         <div className="flex gap-2">
           <Button
-            onClick={onViewAll}
+            onClick={(e) => {
+              e.stopPropagation();
+              onViewAll?.();
+            }}
             variant="outline"
             size="sm"
             className="flex-1 text-[13px] h-8"
