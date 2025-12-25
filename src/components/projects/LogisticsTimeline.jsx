@@ -2,7 +2,7 @@ import React from "react";
 import { useQuery } from "@tanstack/react-query";
 import { base44 } from "@/api/base44Client";
 import { format, parseISO } from "date-fns";
-import { Briefcase, Truck, Calendar, User, CheckCircle2, Clock } from "lucide-react";
+import { Briefcase, Truck, Calendar, User, CheckCircle2, Clock, MapPin } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { useNavigate } from "react-router-dom";
 import { createPageUrl } from "@/utils";
@@ -145,21 +145,35 @@ export default function LogisticsTimeline({ project }) {
                         </span>
                       )}
                     </div>
-                    {isStockJob && (
-                      <div className="text-xs text-slate-600 mt-1 font-medium">
-                        {linkedPO ? (
-                          <>
-                            {(() => {
-                              const supplier = suppliers.find(s => s.id === linkedPO.supplier_id);
-                              const supplierName = supplier?.name || linkedPO.supplier_name;
-                              return supplierName ? `Supplier: ${supplierName}` : `PO ID: ${job.purchase_order_id}`;
-                            })()}
-                          </>
-                        ) : (
-                          `PO ID: ${job.purchase_order_id} (not found)`
-                        )}
-                      </div>
-                    )}
+                    {/* Origin → Destination */}
+                    <div className="flex items-center gap-2 text-xs mt-2 text-slate-700 font-medium">
+                      <MapPin className="w-3.5 h-3.5 text-blue-600" />
+                      <span>
+                        {(() => {
+                          let origin = "Warehouse";
+                          let destination = "Site";
+                          
+                          if (isStockJob && linkedPO) {
+                            const supplier = suppliers.find(s => s.id === linkedPO.supplier_id);
+                            origin = supplier?.name || linkedPO.supplier_name || "Supplier";
+                          } else if (job.job_type_name?.toLowerCase().includes('warehouse')) {
+                            origin = "Warehouse";
+                          } else if (job.job_type_name?.toLowerCase().includes('supplier')) {
+                            origin = "Supplier";
+                          }
+                          
+                          if (job.vehicle_id) {
+                            destination = "Vehicle";
+                          } else if (job.location_id) {
+                            destination = "Storage";
+                          } else if (job.job_type_name?.toLowerCase().includes('client')) {
+                            destination = "Client";
+                          }
+                          
+                          return `${origin} → ${destination}`;
+                        })()}
+                      </span>
+                    </div>
                     {hasRequiredTrades && (
                       <div className="mt-2 space-y-1">
                         <p className="text-[11px] text-amber-900 font-medium">
