@@ -65,7 +65,10 @@ export default function DerivedAttentionItems({
         {items.map((item) => (
           <button
             key={item.id}
-            onClick={() => onNavigateToTab && onNavigateToTab(item.deepLinkTab)}
+            onClick={(e) => {
+              e.stopPropagation();
+              onNavigateToTab?.(item.deepLinkTab);
+            }}
             className={`w-full text-left p-3 rounded-lg border-l-2 transition-all hover:shadow-sm ${getPriorityStyles(item.priority)} hover:bg-opacity-70 cursor-pointer`}
           >
             <div className="flex items-start gap-2">
