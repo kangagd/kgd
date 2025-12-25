@@ -5,11 +5,8 @@
  * Does not modify schemas or business logic - only computes display metrics.
  */
 
-// Normalize status strings for consistent matching
-function normalizeStatus(status) {
-  if (!status || typeof status !== 'string') return '';
-  return status.toLowerCase().trim().replace(/[\s-]/g, '_');
-}
+import { normalizeStatus } from './statusRegistry';
+import { getPoEta, safeParseDate } from './schemaAdapters';
 
 // Whitelist of statuses that indicate a part is READY
 const READY_STATUSES = new Set([
@@ -198,16 +195,12 @@ export function computePartsStatus({ parts = [], purchaseOrders = [], logisticsJ
       if (isOpen) {
         openPOCount++;
         
-        // Check if overdue
-        const etaField = po.expected_delivery_date || po.expected_date || po.eta || po.due_date;
-        if (etaField) {
-          try {
-            const etaDate = new Date(etaField);
-            if (!isNaN(etaDate.getTime()) && etaDate < now) {
-              overduePOCount++;
-            }
-          } catch (e) {
-            // Invalid date, skip
+        // Check if overdue using schemaAdapters
+        const etaValue = getPoEta(po);
+        if (etaValue) {
+          const etaDate = safeParseDate(etaValue);
+          if (etaDate && etaDate < now) {
+            overduePOCount++;
           }
         }
       }
