@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useMemo } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { useQuery } from "@tanstack/react-query";
@@ -13,6 +13,7 @@ import {
   CollapsibleContent,
   CollapsibleTrigger,
 } from "@/components/ui/collapsible";
+import { computePartsStatus } from "../domain/partsStatus";
 
 export default function PartsTab({ project, parts, inventoryByItem }) {
   const { data: purchaseOrders = [] } = useQuery({
@@ -81,19 +82,24 @@ export default function PartsTab({ project, parts, inventoryByItem }) {
     "Cancelled": "bg-red-100 text-red-700"
   };
 
-  // Calculate parts status summary
-  const requiredCount = parts.length;
-  const receivedReadyCount = parts.filter(p => 
-    ['in_storage', 'in_vehicle', 'installed', 'in_loading_bay'].includes(p.status)
-  ).length;
-  const orderedCount = parts.filter(p => 
-    ['on_order', 'in_transit'].includes(p.status)
-  ).length;
-  const missingCount = parts.filter(p => 
-    ['pending', 'cancelled'].includes(p.status) || !p.status
-  ).length;
+  // Compute parts status using the mapping utility
+  const partsStatusMetrics = useMemo(() => {
+    return computePartsStatus({
+      parts,
+      purchaseOrders,
+      logisticsJobs
+    });
+  }, [parts, purchaseOrders, logisticsJobs]);
 
-  const isReady = missingCount === 0 && requiredCount > 0;
+  const { 
+    requiredCount, 
+    readyCount, 
+    orderedCount, 
+    missingCount, 
+    partsReady, 
+    openPOCount, 
+    overduePOCount 
+  } = partsStatusMetrics;
 
   return (
     <div className="space-y-6">
@@ -103,8 +109,8 @@ export default function PartsTab({ project, parts, inventoryByItem }) {
           <div className="flex items-center justify-between">
             <CardTitle className="text-[14px] font-semibold text-[#111827]">Parts Status</CardTitle>
             {requiredCount > 0 && (
-              <div className={`flex items-center gap-1.5 text-[13px] font-medium ${isReady ? 'text-green-600' : 'text-orange-600'}`}>
-                {isReady ? '✓ Parts ready' : '⚠ Parts not ready'}
+              <div className={`flex items-center gap-1.5 text-[13px] font-medium ${partsReady ? 'text-green-600' : 'text-orange-600'}`}>
+                {partsReady ? '✓ Parts ready' : '⚠ Parts not ready'}
               </div>
             )}
           </div>
@@ -124,10 +130,16 @@ export default function PartsTab({ project, parts, inventoryByItem }) {
               <div className="text-xs text-[#6B7280] mt-1">Ordered</div>
             </div>
             <div className="text-center">
-              <div className="text-2xl font-bold text-green-600">{receivedReadyCount}</div>
-              <div className="text-xs text-[#6B7280] mt-1">Received</div>
+              <div className="text-2xl font-bold text-green-600">{readyCount}</div>
+              <div className="text-xs text-[#6B7280] mt-1">Ready</div>
             </div>
           </div>
+          {(openPOCount > 0 || overduePOCount > 0) && (
+            <div className="mt-3 pt-3 border-t border-[#E5E7EB] flex items-center justify-center gap-4 text-xs text-[#6B7280]">
+              {openPOCount > 0 && <span>Open POs: {openPOCount}</span>}
+              {overduePOCount > 0 && <span className="text-orange-600 font-medium">Overdue POs: {overduePOCount}</span>}
+            </div>
+          )}
         </CardContent>
       </Card>
 
