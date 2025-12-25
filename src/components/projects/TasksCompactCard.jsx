@@ -5,7 +5,7 @@ import { CheckSquare, Plus, Clock, AlertCircle } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import TaskFormModal from "../tasks/TaskFormModal";
 
-export default function TasksCompactCard({ tasks = [], onViewAll, onAddTask, entityType = 'project', entityId, entityName }) {
+export default function TasksCompactCard({ tasks = [], onViewAll, onAddTask, entityType = 'project', entityId, entityName, customerId, customerName }) {
   const [showCreateModal, setShowCreateModal] = useState(false);
   const now = new Date();
   const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
@@ -114,7 +114,9 @@ export default function TasksCompactCard({ tasks = [], onViewAll, onAddTask, ent
         preLinkedEntity={{
           type: entityType,
           id: entityId,
-          name: entityName
+          name: entityName,
+          customer_id: customerId,
+          customer_name: customerName
         }}
       />
     </Card>

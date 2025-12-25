@@ -1597,6 +1597,8 @@ Format as HTML bullet points using <ul> and <li> tags. Include only the most cri
                   entityType="project"
                   entityId={project.id}
                   entityName={project.title}
+                  customerId={project.customer_id}
+                  customerName={project.customer_name}
                   onViewAll={() => {
                     setTimeout(() => {
                       document.getElementById('tasks-panel')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
