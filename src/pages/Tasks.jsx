@@ -50,6 +50,11 @@ export default function Tasks() {
     queryFn: () => base44.entities.User.list()
   });
 
+  const { data: projects = [] } = useQuery({
+    queryKey: ['projects'],
+    queryFn: () => base44.entities.Project.list('-created_date')
+  });
+
   const createMutation = useMutation({
     mutationFn: (data) => base44.entities.Task.create(data),
     onSuccess: () => {
@@ -411,6 +416,20 @@ export default function Tasks() {
                 <SelectItem value="me">Assigned to Me</SelectItem>
                 {users.map(u => (
                   <SelectItem key={u.id} value={u.id}>{u.display_name || u.full_name}</SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+
+            <Select value={projectFilter} onValueChange={setProjectFilter}>
+              <SelectTrigger className="w-full lg:w-[180px]">
+                <SelectValue placeholder="Project" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">All Projects</SelectItem>
+                {projects.map(p => (
+                  <SelectItem key={p.id} value={p.id}>
+                    #{p.project_number} {p.title}
+                  </SelectItem>
                 ))}
               </SelectContent>
             </Select>
