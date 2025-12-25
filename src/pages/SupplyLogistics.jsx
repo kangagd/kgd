@@ -16,6 +16,7 @@ import PurchaseOrderModal from "../components/logistics/PurchaseOrderModal";
 import StatusBadge from "../components/common/StatusBadge";
 import BackButton from "../components/common/BackButton";
 import { getPoDisplayReference, getPoDisplayTitle } from "@/components/domain/poDisplayHelpers";
+import { getPoEta, getPoSupplierName, safeParseDate } from "@/components/domain/schemaAdapters";
 
 export default function SupplyLogistics() {
   const [activeTab, setActiveTab] = useState("board");
@@ -123,7 +124,13 @@ export default function SupplyLogistics() {
     }
   };
 
-  const POCard = ({ po }) => (
+  const POCard = ({ po }) => {
+    const supplier = suppliers.find(s => s.id === po.supplier_id);
+    const supplierName = supplier?.name || getPoSupplierName(po) || "Unknown Supplier";
+    const eta = getPoEta(po);
+    const etaDate = safeParseDate(eta);
+    
+    return (
     <div
       className="cursor-pointer rounded-md border border-[#E5E7EB] bg-white px-3 py-2 text-xs shadow-sm hover:bg-[#F9FAFB] transition-colors"
       onClick={() => setActivePoId(po.id)}
@@ -135,11 +142,11 @@ export default function SupplyLogistics() {
         <div className="text-[11px] text-[#4B5563] mb-1">{po.name}</div>
       )}
       <div className="mt-1 text-[11px] text-[#6B7280]">
-        {po.supplier_name || "Supplier not set"}
+        {supplierName}
       </div>
-      {po.expected_date && (
+      {etaDate && (
         <div className="mt-1 text-[11px] text-[#6B7280]">
-          ETA: {format(new Date(po.expected_date), "MMM d")}
+          ETA: {format(etaDate, "MMM d")}
         </div>
       )}
       {po.project_name && (
@@ -160,7 +167,8 @@ export default function SupplyLogistics() {
         )}
       </div>
     </div>
-  );
+    );
+  };
 
   return (
     <div className="p-4 md:p-5 lg:p-10 bg-[#ffffff] min-h-screen">
@@ -382,9 +390,13 @@ export default function SupplyLogistics() {
                           )}
                         </div>
                         <div className="text-xs text-[#6B7280]">
-                          {po.supplier_name || 'Supplier'}
-                          {po.project_name && ` • Project: ${po.project_name}`}
-                          {po.expected_date && ` • ETA: ${format(new Date(po.expected_date), 'MMM d, yyyy')}`}
+                          {(() => {
+                            const supplier = suppliers.find(s => s.id === po.supplier_id);
+                            const supplierName = supplier?.name || getPoSupplierName(po) || "Unknown Supplier";
+                            const eta = getPoEta(po);
+                            const etaDate = safeParseDate(eta);
+                            return `${supplierName}${po.project_name ? ` • Project: ${po.project_name}` : ''}${etaDate ? ` • ETA: ${format(etaDate, 'MMM d, yyyy')}` : ''}`;
+                          })()}
                         </div>
                       </div>
                     </div>

@@ -12,6 +12,7 @@ import { createPageUrl } from "@/utils";
 import { PO_STATUS_OPTIONS, PO_STATUS, getPoStatusLabel } from "@/components/domain/purchaseOrderStatusConfig";
 import { DELIVERY_METHOD as PO_DELIVERY_METHOD } from "@/components/domain/supplierDeliveryConfig";
 import { getPoDisplayReference } from "@/components/domain/poDisplayHelpers";
+import { getPoEta, getPoSupplierName, safeParseDate } from "@/components/domain/schemaAdapters";
 import BackButton from "../components/common/BackButton";
 import { format, parseISO } from "date-fns";
 import { toast } from "sonner";
@@ -291,7 +292,10 @@ export default function PurchaseOrders() {
                     <div className="flex items-center gap-4 text-[#4B5563] text-[14px] leading-[1.4] flex-wrap">
                       <div className="flex items-center gap-1.5">
                         <Package className="w-4 h-4" />
-                        <span>{po.supplier_name || 'No supplier'}</span>
+                        <span>{(() => {
+                          const supplier = suppliers.find(s => s.id === po.supplier_id);
+                          return supplier?.name || getPoSupplierName(po) || "Unknown Supplier";
+                        })()}</span>
                       </div>
                       {po.project_name && (
                         <div className="flex items-center gap-1.5">
@@ -299,6 +303,16 @@ export default function PurchaseOrders() {
                           <span className="font-medium text-[#111827]">{po.project_name}</span>
                         </div>
                       )}
+                      {(() => {
+                        const eta = getPoEta(po);
+                        const etaDate = safeParseDate(eta);
+                        return etaDate ? (
+                          <div className="flex items-center gap-1.5">
+                            <span className="text-[#6B7280]">ETA:</span>
+                            <span>{format(etaDate, 'MMM d, yyyy')}</span>
+                          </div>
+                        ) : null;
+                      })()}
                       <div className="flex items-center gap-1.5">
                         <span className="text-[#6B7280]">Created:</span>
                         <span>
