@@ -217,7 +217,15 @@ export default function PartsSection({ projectId, autoExpand = false, registerAd
             <Truck className="w-6 h-6 text-slate-400" />
           </div>
           <p className="text-slate-600 mb-4">No parts tracked for this project yet.</p>
-          <Button variant="outline" onClick={handleAddPart}>Order First Part</Button>
+          <Button 
+            variant="outline" 
+            onClick={(e) => {
+              e.stopPropagation();
+              handleAddPart();
+            }}
+          >
+            Order First Part
+          </Button>
         </div>
       ) : parts.length > 0 ? (
         <div className="border border-[#E5E7EB] rounded-xl overflow-hidden bg-white shadow-sm">

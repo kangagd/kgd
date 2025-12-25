@@ -179,7 +179,10 @@ export default function ProjectPartsPanel({ project, parts = [], inventoryByItem
         <div className="flex gap-2">
           {missingCount > 0 && (
             <Button
-              onClick={() => setShowCreatePODialog(true)}
+              onClick={(e) => {
+                e.stopPropagation();
+                setShowCreatePODialog(true);
+              }}
               size="sm"
               className="bg-[#FAE008] text-[#111827] hover:bg-[#E5CF07] font-semibold"
               title="Create a Purchase Order for missing parts"
@@ -189,7 +192,10 @@ export default function ProjectPartsPanel({ project, parts = [], inventoryByItem
             </Button>
           )}
           <Button
-            onClick={handleAddPart}
+            onClick={(e) => {
+              e.stopPropagation();
+              handleAddPart();
+            }}
             size="sm"
             className="bg-[#FAE008] text-[#111827] hover:bg-[#E5CF07] font-semibold"
             title="Add a Part required for this project"
@@ -205,7 +211,12 @@ export default function ProjectPartsPanel({ project, parts = [], inventoryByItem
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end">
               {missingCount === 0 && (
-                <DropdownMenuItem onClick={() => setShowCreatePODialog(true)}>
+                <DropdownMenuItem 
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    setShowCreatePODialog(true);
+                  }}
+                >
                   <ShoppingCart className="w-4 h-4 mr-2" />
                   Create PO
                 </DropdownMenuItem>
@@ -328,7 +339,10 @@ export default function ProjectPartsPanel({ project, parts = [], inventoryByItem
           <Package className="w-12 h-12 text-gray-300 mx-auto mb-3" />
           <p className="text-sm text-gray-500 mb-3">No parts tracked yet</p>
           <Button
-            onClick={handleAddPart}
+            onClick={(e) => {
+              e.stopPropagation();
+              handleAddPart();
+            }}
             size="sm"
             className="bg-[#FAE008] text-[#111827] hover:bg-[#E5CF07] font-semibold"
           >
@@ -382,17 +396,18 @@ export default function ProjectPartsPanel({ project, parts = [], inventoryByItem
                      </Badge>
                      
                      {normaliseLegacyPartLocation(part.location) !== PART_LOCATION.VEHICLE && (
-                       <Button
-                         variant="outline"
-                         size="sm"
-                         className="h-7 text-xs"
-                         onClick={() => {
-                           setPartToAssign(part);
-                           setAssignModalOpen(true);
-                         }}
-                       >
-                         Assign to vehicle
-                       </Button>
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        className="h-7 text-xs"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          setPartToAssign(part);
+                          setAssignModalOpen(true);
+                        }}
+                      >
+                        Assign to vehicle
+                      </Button>
                      )}
                   </div>
                 </div>
@@ -448,19 +463,20 @@ export default function ProjectPartsPanel({ project, parts = [], inventoryByItem
                     </Badge>
                     
                     {(normaliseLegacyPartLocation(part.location) !== PART_LOCATION.VEHICLE || !part.assigned_vehicle_id) && (
-                       <Button
-                         variant="outline"
-                         size="sm"
-                         className="h-7 text-xs border-blue-200 text-blue-700 hover:bg-blue-50"
-                         onClick={() => {
-                           setPartToAssign(part);
-                           setAssignModalOpen(true);
-                         }}
-                       >
-                         <Truck className="w-3 h-3 mr-1" />
-                         Assign to vehicle
-                       </Button>
-                     )}
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        className="h-7 text-xs border-blue-200 text-blue-700 hover:bg-blue-50"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          setPartToAssign(part);
+                          setAssignModalOpen(true);
+                        }}
+                      >
+                        <Truck className="w-3 h-3 mr-1" />
+                        Assign to vehicle
+                      </Button>
+                    )}
                   </div>
                 </div>
               );
@@ -510,10 +526,22 @@ export default function ProjectPartsPanel({ project, parts = [], inventoryByItem
             </div>
           </div>
           <div className="flex justify-end gap-2">
-            <Button variant="outline" onClick={() => setShowCreatePODialog(false)}>
+            <Button 
+              variant="outline" 
+              onClick={(e) => {
+                e.stopPropagation();
+                setShowCreatePODialog(false);
+              }}
+            >
               Cancel
             </Button>
-            <Button onClick={handleCreatePO} disabled={!selectedSupplierId}>
+            <Button 
+              onClick={(e) => {
+                e.stopPropagation();
+                handleCreatePO();
+              }}
+              disabled={!selectedSupplierId}
+            >
               Create / Open PO
             </Button>
           </div>

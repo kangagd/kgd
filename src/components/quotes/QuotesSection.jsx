@@ -155,7 +155,10 @@ export default function QuotesSection({
           <Button
             size="sm"
             variant="outline"
-            onClick={() => setShowLinkModal(true)}
+            onClick={(e) => {
+              e.stopPropagation();
+              setShowLinkModal(true);
+            }}
             className="h-8 text-[13px]"
           >
             <Link2 className="w-3.5 h-3.5 mr-1" />
@@ -163,7 +166,10 @@ export default function QuotesSection({
           </Button>
           <Button
             size="sm"
-            onClick={() => setShowCreateModal(true)}
+            onClick={(e) => {
+              e.stopPropagation();
+              setShowCreateModal(true);
+            }}
             className="bg-[#FAE008] hover:bg-[#E5CF07] text-[#111827] h-8 text-[13px]"
           >
             <Plus className="w-3.5 h-3.5 mr-1" />
@@ -183,7 +189,10 @@ export default function QuotesSection({
             No quotes yet for this {project ? 'project' : 'job'}.
           </p>
           <Button
-            onClick={() => setShowCreateModal(true)}
+            onClick={(e) => {
+              e.stopPropagation();
+              setShowCreateModal(true);
+            }}
             className="bg-[#FAE008] hover:bg-[#E5CF07] text-[#111827]"
           >
             <Plus className="w-4 h-4 mr-2" />

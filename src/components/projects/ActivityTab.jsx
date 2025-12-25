@@ -143,7 +143,10 @@ export default function ActivityTab({ project, onComposeEmail }) {
             <CardTitle className="text-[16px] font-semibold text-[#111827]">Activity Timeline</CardTitle>
             <div className="flex gap-2">
               <Button
-                onClick={onComposeEmail}
+                onClick={(e) => {
+                  e.stopPropagation();
+                  onComposeEmail?.();
+                }}
                 size="sm"
                 variant="outline"
                 className="gap-2"
@@ -152,7 +155,10 @@ export default function ActivityTab({ project, onComposeEmail }) {
                 Compose Email
               </Button>
               <Button
-                onClick={() => setShowLogModal(true)}
+                onClick={(e) => {
+                  e.stopPropagation();
+                  setShowLogModal(true);
+                }}
                 size="sm"
                 className="gap-2 bg-[#FAE008] text-[#111827] hover:bg-[#E5CF07]"
               >

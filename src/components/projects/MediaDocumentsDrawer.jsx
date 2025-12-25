@@ -31,12 +31,20 @@ export default function MediaDocumentsDrawer({ open, onClose, project, initialTa
             <Button
               size="sm"
               className="bg-[#FAE008] text-[#111827] hover:bg-[#E5CF07]"
+              onClick={(e) => {
+                e.stopPropagation();
+                // Trigger upload - delegate to parent or implement file input
+                toast.info('Upload functionality - connect to file input');
+              }}
             >
               <Upload className="w-4 h-4 mr-2" />
               Upload
             </Button>
             <button
-              onClick={onClose}
+              onClick={(e) => {
+                e.stopPropagation();
+                onClose();
+              }}
               className="p-2 hover:bg-[#F3F4F6] rounded-lg transition-colors"
             >
               <X className="w-5 h-5 text-[#6B7280]" />

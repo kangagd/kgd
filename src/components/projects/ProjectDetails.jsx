@@ -1690,7 +1690,10 @@ Format as HTML bullet points using <ul> and <li> tags. Include only the most cri
                           </label>
                           {!showAddDoor && (
                             <AddIconButton
-                              onClick={() => setShowAddDoor(true)}
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                setShowAddDoor(true);
+                              }}
                               title="Add Door"
                             />
                           )}
@@ -1707,7 +1710,10 @@ Format as HTML bullet points using <ul> and <li> tags. Include only the most cri
                                     {door.style && ` • ${door.style}`}
                                   </Badge>
                                   <button
-                                    onClick={() => handleRemoveDoor(idx)}
+                                    onClick={(e) => {
+                                      e.stopPropagation();
+                                      handleRemoveDoor(idx);
+                                    }}
                                     className="absolute -top-1 -right-1 bg-red-500 text-white rounded-full w-5 h-5 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity"
                                   >
                                     <X className="w-3 h-3" />
@@ -1769,7 +1775,10 @@ Format as HTML bullet points using <ul> and <li> tags. Include only the most cri
                               </div>
                               <div className="flex gap-2">
                                 <Button
-                                  onClick={handleAddDoor}
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    handleAddDoor();
+                                  }}
                                   size="sm"
                                   className="bg-[#FAE008] text-[#111827] hover:bg-[#E5CF07] font-semibold"
                                 >
@@ -1777,7 +1786,10 @@ Format as HTML bullet points using <ul> and <li> tags. Include only the most cri
                                   Add Door
                                 </Button>
                                 <Button
-                                  onClick={() => setShowAddDoor(false)}
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    setShowAddDoor(false);
+                                  }}
                                   size="sm"
                                   variant="outline"
                                 >
