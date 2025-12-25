@@ -4,34 +4,12 @@ import { Button } from "@/components/ui/button";
 import { CheckSquare, Plus, Clock, AlertCircle } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import TaskFormModal from "../tasks/TaskFormModal";
+import { getTaskUrgencyCounts } from "./taskFilters";
 
 export default function TasksCompactCard({ tasks = [], onViewAll, onAddTask, entityType = 'project', entityId, entityName, customerId, customerName, onFilteredViewAll }) {
   const [showCreateModal, setShowCreateModal] = useState(false);
-  const now = new Date();
-  const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
   
-  const activeTasks = tasks.filter(t => t.status !== 'Completed' && t.status !== 'Cancelled');
-  
-  const dueToday = activeTasks.filter(t => {
-    if (!t.due_date) return false;
-    const dueDate = new Date(t.due_date);
-    const dueDateOnly = new Date(dueDate.getFullYear(), dueDate.getMonth(), dueDate.getDate());
-    return dueDateOnly.getTime() === today.getTime();
-  }).length;
-
-  const overdue = activeTasks.filter(t => {
-    if (!t.due_date) return false;
-    const dueDate = new Date(t.due_date);
-    return dueDate < today;
-  }).length;
-
-  const dueSoon = activeTasks.filter(t => {
-    if (!t.due_date) return false;
-    const dueDate = new Date(t.due_date);
-    const dueDateOnly = new Date(dueDate.getFullYear(), dueDate.getMonth(), dueDate.getDate());
-    const daysUntilDue = Math.ceil((dueDateOnly - today) / (1000 * 60 * 60 * 24));
-    return daysUntilDue > 0 && daysUntilDue <= 3;
-  }).length;
+  const { overdue, dueToday, dueSoon } = getTaskUrgencyCounts(tasks);
 
   return (
     <Card className="border border-[#E5E7EB] shadow-sm">

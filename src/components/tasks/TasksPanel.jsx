@@ -7,6 +7,7 @@ import TaskCard from "./TaskCard";
 import TaskFormModal from "./TaskFormModal";
 import TaskDetailModal from "./TaskDetailModal";
 import { toast } from "sonner";
+import { getActiveTasks, filterTasksByUrgency } from "./taskFilters";
 
 export default function TasksPanel({
   entityType, // 'project' | 'job' | 'customer' | 'email_thread'
@@ -152,33 +153,10 @@ export default function TasksPanel({
     number: entityNumber
   };
 
-  // Apply urgency filtering
-  const now = new Date();
-  const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
-  
-  const applyUrgencyFilter = (taskList) => {
-    if (!urgencyFilter) return taskList;
-    
-    return taskList.filter(t => {
-      if (!t.due_date) return false;
-      const dueDate = new Date(t.due_date);
-      const dueDateOnly = new Date(dueDate.getFullYear(), dueDate.getMonth(), dueDate.getDate());
-      
-      if (urgencyFilter === 'overdue') {
-        return dueDate < today;
-      } else if (urgencyFilter === 'due_today') {
-        return dueDateOnly.getTime() === today.getTime();
-      } else if (urgencyFilter === 'due_soon') {
-        const daysUntilDue = Math.ceil((dueDateOnly - today) / (1000 * 60 * 60 * 24));
-        return daysUntilDue > 0 && daysUntilDue <= 3;
-      }
-      return true;
-    });
-  };
-
-  const allOpenTasks = tasks.filter(t => t.status !== "Completed" && t.status !== "Cancelled");
-  const openTasks = applyUrgencyFilter(allOpenTasks);
-  const completedTasks = tasks.filter(t => t.status === "Completed" || t.status === "Cancelled");
+  // Apply urgency filtering using shared logic
+  const allOpenTasks = getActiveTasks(tasks);
+  const openTasks = urgencyFilter ? filterTasksByUrgency(tasks, urgencyFilter) : allOpenTasks;
+  const completedTasks = tasks.filter(t => !getActiveTasks([t]).length);
 
   // Compact view for sidebar
   if (compact) {
