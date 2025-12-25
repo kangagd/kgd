@@ -18,19 +18,7 @@ import AssignPartToVehicleModal from "./AssignPartToVehicleModal";
 import { PART_LOCATION, normaliseLegacyPartLocation, getPartStatusLabel, normaliseLegacyPartStatus, getNormalizedPartStatus, isPickablePart, PICKABLE_STATUSES } from "@/components/domain/partConfig";
 import { getPoStatusLabel } from "@/components/domain/purchaseOrderStatusConfig";
 
-// Helper for consistent PO reference display
-function getPoDisplayRef(po, part) {
-  return (
-    po?.po_number ||
-    po?.po_reference ||
-    po?.order_reference ||
-    po?.reference ||
-    part?.po_number ||
-    part?.order_reference ||
-    (po?.id ? String(po.id).slice(0, 8) : "") ||
-    ""
-  );
-}
+
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { base44 } from "@/api/base44Client";
 import { useNavigate } from "react-router-dom";
@@ -151,6 +139,35 @@ export default function ProjectPartsPanel({ project, parts = [], inventoryByItem
   const ready = parts.filter(isPickablePart);
   const needed = parts.filter(p => !isPickablePart(p) && getNormalizedPartStatus(p) !== 'cancelled' && getNormalizedPartStatus(p) !== 'installed');
 
+  // Fetch logistics jobs for this project
+  const { data: projectLogisticsJobs = [] } = useQuery({
+    queryKey: ['projectLogisticsJobsForParts', project.id],
+    queryFn: async () => {
+      const jobs = await base44.entities.Job.filter({
+        project_id: project.id,
+        $or: [
+          { purchase_order_id: { $ne: null } },
+          { third_party_trade_id: { $ne: null } }
+        ]
+      });
+      return jobs;
+    },
+    enabled: !!project.id,
+    staleTime: 60_000
+  });
+
+  // Count logistics jobs per PO
+  const logisticsJobsByPO = React.useMemo(() => {
+    const map = new Map();
+    for (const job of projectLogisticsJobs) {
+      if (job.purchase_order_id) {
+        const count = map.get(job.purchase_order_id) || 0;
+        map.set(job.purchase_order_id, count + 1);
+      }
+    }
+    return map;
+  }, [projectLogisticsJobs]);
+
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between mb-4">
@@ -222,19 +239,23 @@ export default function ProjectPartsPanel({ project, parts = [], inventoryByItem
                 {projectPOs
                   .filter(po => po.status !== 'received' && po.status !== 'completed' && po.status !== 'cancelled')
                   .slice(0, 2)
-                  .map(po => (
+                  .map(po => {
+                    const supplier = suppliers.find(s => s.id === po.supplier_id);
+                    const supplierName = supplier?.name || getPoSupplierName(po) || "Unknown Supplier";
+                    const eta = getPoEta(po);
+                    const etaDate = safeParseDate(eta);
+                    
+                    return (
                     <div key={po.id} className="text-xs text-[#6B7280]">
                       <span className="font-medium text-[#111827]">
-                        {(() => {
-                          const poRef = getPoDisplayRef(po);
-                          return poRef ? `PO #${poRef}` : "PO";
-                        })()}
+                        {getPoDisplayReference(po)}
                       </span>
                       {' • '}
-                      {po.supplier_name || 'No supplier set'}
-                      {po.expected_delivery_date && ` • ETA: ${format(new Date(po.expected_delivery_date), 'MMM d')}`}
+                      {supplierName}
+                      {etaDate && ` • ETA: ${format(etaDate, 'MMM d')}`}
                     </div>
-                  ))}
+                    );
+                  })}
                 {projectPOs.filter(po => po.status !== 'received' && po.status !== 'completed' && po.status !== 'cancelled').length === 0 && (
                   <div className="text-xs text-[#9CA3AF]">All POs closed</div>
                 )}
@@ -377,10 +398,7 @@ export default function ProjectPartsPanel({ project, parts = [], inventoryByItem
               }
               
               const linkedPO = resolvePartPO(part);
-              const poDisplay = (() => {
-                const poRef = getPoDisplayRef(linkedPO, part);
-                return poRef ? `PO #${poRef}` : null;
-              })();
+              const poDisplay = linkedPO ? getPoDisplayReference(linkedPO) : null;
               
               return (
                 <div key={part.id} className="p-3 bg-white border border-gray-200 rounded-lg flex justify-between items-center">
