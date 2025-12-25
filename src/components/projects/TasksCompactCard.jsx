@@ -68,6 +68,7 @@ export default function TasksCompactCard({ tasks = [], onViewAll, onAddTask }) {
         {/* Action Buttons */}
         <div className="flex gap-2">
           <Button
+            type="button"
             onClick={(e) => {
               e.stopPropagation();
               onViewAll?.();
@@ -79,6 +80,7 @@ export default function TasksCompactCard({ tasks = [], onViewAll, onAddTask }) {
             View all tasks
           </Button>
           <Button
+            type="button"
             onClick={(e) => {
               e.stopPropagation();
               onAddTask?.();
