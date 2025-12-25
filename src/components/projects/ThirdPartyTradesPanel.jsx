@@ -218,14 +218,13 @@ export default function ThirdPartyTradesPanel({ project, onAddTrade }) {
       {/* Add Trade Button */}
       {!isAdding && (
         <div className="flex justify-end">
-          <Button
+          <button
             onClick={() => setIsAdding(true)}
-            size="sm"
-            className="bg-[#FAE008] text-[#111827] hover:bg-[#E5CF07] font-semibold"
+            className="w-8 h-8 rounded-lg border border-[#E5E7EB] bg-white hover:bg-[#F9FAFB] flex items-center justify-center text-[#6B7280] hover:text-[#111827] transition-colors"
+            title="Add Trade"
           >
-            <Plus className="w-4 h-4 mr-1" />
-            Add Trade
-          </Button>
+            <Plus className="w-4 h-4" />
+          </button>
         </div>
       )}
 
