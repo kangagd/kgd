@@ -108,36 +108,71 @@ export default function Tasks() {
   };
 
   // Memoized task filtering to avoid re-computation on every render
-  const filteredTasks = React.useMemo(() => tasks.filter(task => {
-    // Status filter
-    if (statusFilter === "open" && (task.status === "Completed" || task.status === "Cancelled")) return false;
-    if (statusFilter === "in_progress" && task.status !== "In Progress") return false;
-    if (statusFilter === "completed" && task.status !== "Completed") return false;
+  const filteredTasks = React.useMemo(() => {
+    const filtered = tasks.filter(task => {
+      // Status filter
+      if (statusFilter === "open" && (task.status === "Completed" || task.status === "Cancelled")) return false;
+      if (statusFilter === "in_progress" && task.status !== "In Progress") return false;
+      if (statusFilter === "completed" && task.status !== "Completed") return false;
 
-    // Project filter
-    if (projectFilter !== "all" && task.project_id !== projectFilter) return false;
+      // Project filter
+      if (projectFilter !== "all" && task.project_id !== projectFilter) return false;
 
-    // Due filter
-    if (dueFilter !== "all" && task.due_date) {
-      const dueDate = new Date(task.due_date);
-      const today = startOfDay(new Date());
-      
-      if (dueFilter === "overdue" && !isPast(dueDate)) return false;
-      if (dueFilter === "today" && !isToday(dueDate)) return false;
-      if (dueFilter === "this_week" && !isThisWeek(dueDate, { weekStartsOn: 1 })) return false;
-    } else if (dueFilter === "overdue" && !task.due_date) {
-      return false;
+      // Due filter
+      if (dueFilter !== "all" && task.due_date) {
+        const dueDate = new Date(task.due_date);
+        const today = startOfDay(new Date());
+        
+        if (dueFilter === "overdue" && !isPast(dueDate)) return false;
+        if (dueFilter === "today" && !isToday(dueDate)) return false;
+        if (dueFilter === "this_week" && !isThisWeek(dueDate, { weekStartsOn: 1 })) return false;
+      } else if (dueFilter === "overdue" && !task.due_date) {
+        return false;
+      }
+
+      // Assignee filter
+      if (assigneeFilter === "me" && task.assigned_to_user_id !== user?.id) return false;
+      if (assigneeFilter !== "all" && assigneeFilter !== "me" && task.assigned_to_user_id !== assigneeFilter) return false;
+
+      // Technician: only show assigned tasks
+      if (isTechnician && task.assigned_to_user_id !== user?.id) return false;
+
+      return true;
+    });
+
+    // Sort by urgency when filtering by project
+    if (projectFilter !== "all") {
+      return filtered.sort((a, b) => {
+        const aDate = a.due_date ? new Date(a.due_date) : null;
+        const bDate = b.due_date ? new Date(b.due_date) : null;
+        const now = new Date();
+
+        // Priority order: overdue > due today > due soon > no due date
+        const aOverdue = aDate && isPast(aDate);
+        const bOverdue = bDate && isPast(bDate);
+        const aToday = aDate && isToday(aDate);
+        const bToday = bDate && isToday(bDate);
+        const aDueSoon = aDate && !isPast(aDate) && !isToday(aDate) && aDate <= new Date(now.getTime() + 3 * 24 * 60 * 60 * 1000);
+        const bDueSoon = bDate && !isPast(bDate) && !isToday(bDate) && bDate <= new Date(now.getTime() + 3 * 24 * 60 * 60 * 1000);
+
+        if (aOverdue && !bOverdue) return -1;
+        if (!aOverdue && bOverdue) return 1;
+        if (aToday && !bToday) return -1;
+        if (!aToday && bToday) return 1;
+        if (aDueSoon && !bDueSoon) return -1;
+        if (!aDueSoon && bDueSoon) return 1;
+
+        // Within same urgency, sort by due date
+        if (aDate && bDate) return aDate - bDate;
+        if (aDate) return -1;
+        if (bDate) return 1;
+
+        return 0;
+      });
     }
 
-    // Assignee filter
-    if (assigneeFilter === "me" && task.assigned_to_user_id !== user?.id) return false;
-    if (assigneeFilter !== "all" && assigneeFilter !== "me" && task.assigned_to_user_id !== assigneeFilter) return false;
-
-    // Technician: only show assigned tasks
-    if (isTechnician && task.assigned_to_user_id !== user?.id) return false;
-
-    return true;
-  }), [tasks, statusFilter, dueFilter, assigneeFilter, projectFilter, isTechnician, user?.id]);
+    return filtered;
+  }, [tasks, statusFilter, dueFilter, assigneeFilter, projectFilter, isTechnician, user?.id]);
 
   // Memoized task grouping for technician view
   const groupedTasks = React.useMemo(() => isTechnician ? {
