@@ -76,7 +76,10 @@ export default function TasksCompactCard({ tasks = [], onViewAll, onAddTask }) {
             View all tasks
           </Button>
           <Button
-            onClick={onAddTask}
+            onClick={(e) => {
+              e.stopPropagation();
+              onAddTask?.();
+            }}
             size="sm"
             className="bg-[#FAE008] text-[#111827] hover:bg-[#E5CF07] text-[13px] h-8"
           >
