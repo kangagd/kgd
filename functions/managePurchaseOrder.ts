@@ -442,6 +442,10 @@ Deno.serve(async (req) => {
             // Compute expected_date: prefer expected_date, fallback to eta
             const expected_date_to_save = expected_date ?? eta ?? null;
 
+            // Generate po_reference BEFORE create if not provided
+            const finalPoRef = normalizedPoRef || crypto.randomUUID().slice(0, 8).toUpperCase();
+            const canonicalRef = `PO-${finalPoRef}`;
+
             const poData = {
                 supplier_id,
                 supplier_name: resolvedSupplierName,
@@ -450,26 +454,19 @@ Deno.serve(async (req) => {
                 delivery_method: delivery_method || PO_DELIVERY_METHOD.DELIVERY,
                 delivery_location: delivery_location || null,
                 notes: notes || null,
-                po_reference: normalizedPoRef,
+                po_reference: canonicalRef,
+                po_number: canonicalRef,
+                order_reference: canonicalRef,
+                reference: canonicalRef,
                 name: normalizedName,
                 created_by: user.email,
                 order_date: new Date().toISOString().split('T')[0],
                 expected_date: expected_date_to_save,
             };
 
-            let po = await base44.asServiceRole.entities.PurchaseOrder.create(poData);
+            const po = await base44.asServiceRole.entities.PurchaseOrder.create(poData);
             
-            // If po_reference was not provided, generate from ID and update PO
-            if (!po.po_reference) {
-                const generatedRef = `PO-${po.id.slice(0, 8)}`;
-                po = await base44.asServiceRole.entities.PurchaseOrder.update(po.id, {
-                    po_reference: generatedRef,
-                    po_number: generatedRef,
-                    order_reference: generatedRef,
-                    reference: generatedRef,
-                });
-                console.log('[managePurchaseOrder:create] Generated PO Reference:', generatedRef);
-            }
+            console.log('[managePurchaseOrder:create] Created PO with reference:', canonicalRef);
             
             console.log('[managePurchaseOrder:create] Created PO:', {
                 id: po.id,
@@ -959,6 +956,10 @@ Deno.serve(async (req) => {
             // Compute expected_date: prefer expected_date, fallback to eta
             const expected_date_to_save = expected_date ?? eta ?? null;
 
+            // Generate po_reference BEFORE create if not provided
+            const finalPoRef = normalizedPoRef || crypto.randomUUID().slice(0, 8).toUpperCase();
+            const canonicalRef = `PO-${finalPoRef}`;
+
             const poData = {
                 supplier_id,
                 supplier_name: resolvedSupplierName,
@@ -967,26 +968,19 @@ Deno.serve(async (req) => {
                 delivery_method: delivery_method || PO_DELIVERY_METHOD.DELIVERY,
                 delivery_location: delivery_location || null,
                 notes: notes || null,
-                po_reference: normalizedPoRef,
+                po_reference: canonicalRef,
+                po_number: canonicalRef,
+                order_reference: canonicalRef,
+                reference: canonicalRef,
                 name: normalizedName,
                 created_by: user.email,
                 order_date: new Date().toISOString().split('T')[0],
                 expected_date: expected_date_to_save,
             };
 
-            let newPO = await base44.asServiceRole.entities.PurchaseOrder.create(poData);
+            const newPO = await base44.asServiceRole.entities.PurchaseOrder.create(poData);
             
-            // If po_reference was not provided, generate from ID and update PO
-            if (!newPO.po_reference) {
-                const generatedRef = `PO-${newPO.id.slice(0, 8)}`;
-                newPO = await base44.asServiceRole.entities.PurchaseOrder.update(newPO.id, {
-                    po_reference: generatedRef,
-                    po_number: generatedRef,
-                    order_reference: generatedRef,
-                    reference: generatedRef,
-                });
-                console.log('[managePurchaseOrder:getOrCreateProjectSupplierDraft] Generated PO Reference:', generatedRef);
-            }
+            console.log('[managePurchaseOrder:getOrCreateProjectSupplierDraft] Created PO with reference:', canonicalRef);
             
             // Initialize with empty line_items array
             newPO.line_items = [];
