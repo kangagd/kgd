@@ -770,7 +770,7 @@ export default function PurchaseOrderDetail({ poId, onClose, mode = "page" }) {
                      <p className="text-sm font-medium text-[#111827]">
                        {getPoDisplayReference(po)}
                      </p>
-                     {(formData.po_reference?.trim() !== po.po_reference || formData.name?.trim() !== po.name) && (
+                     {isDirty && (
                        <Badge variant="outline" className="text-xs text-amber-600 border-amber-300">
                          Unsaved changes
                        </Badge>
