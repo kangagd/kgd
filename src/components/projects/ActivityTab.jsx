@@ -4,7 +4,7 @@ import { base44 } from "@/api/base44Client";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Mail, Phone, MessageSquare, User, Calendar, FileText, Plus, Paperclip, Link2, X } from "lucide-react";
+import { Mail, Phone, MessageSquare, User, Calendar, FileText, Plus, Paperclip, Link2, X, Unlink } from "lucide-react";
 import { format } from "date-fns";
 import LogManualActivityModal from "./LogManualActivityModal";
 import { Badge } from "@/components/ui/badge";
@@ -397,22 +397,44 @@ export default function ActivityTab({ project, onComposeEmail }) {
       <Dialog open={!!selectedActivity} onOpenChange={() => setSelectedActivity(null)}>
         <DialogContent className="max-w-4xl max-h-[90vh] overflow-hidden flex flex-col">
           <DialogHeader>
-            <DialogTitle className="flex items-center gap-2">
-              <Mail className="w-5 h-5" />
-              {selectedActivity?.subject || 'Email'}
-            </DialogTitle>
-            <DialogDescription>
-              {selectedActivity && (
-                <div className="flex items-center gap-2 text-[13px]">
-                  <span>From: {selectedActivity.from}</span>
-                  <span>•</span>
-                  <span>{format(new Date(selectedActivity.date), 'MMM d, yyyy h:mm a')}</span>
-                  {selectedActivity.isOutbound && (
-                    <Badge variant="default" className="bg-blue-100 text-blue-700 ml-2">Sent</Badge>
+            <div className="flex items-start justify-between gap-3">
+              <div className="flex-1">
+                <DialogTitle className="flex items-center gap-2">
+                  <Mail className="w-5 h-5" />
+                  {selectedActivity?.subject || 'Email'}
+                </DialogTitle>
+                <DialogDescription>
+                  {selectedActivity && (
+                    <div className="flex items-center gap-2 text-[13px]">
+                      <span>From: {selectedActivity.from}</span>
+                      <span>•</span>
+                      <span>{format(new Date(selectedActivity.date), 'MMM d, yyyy h:mm a')}</span>
+                      {selectedActivity.isOutbound && (
+                        <Badge variant="default" className="bg-blue-100 text-blue-700 ml-2">Sent</Badge>
+                      )}
+                    </div>
                   )}
-                </div>
+                </DialogDescription>
+              </div>
+              {selectedActivity?.type === 'email' && (
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => {
+                    const emailMessage = emailMessages.find(msg => `email-${msg.id}` === selectedActivity.id);
+                    if (emailMessage) {
+                      unlinkEmailMutation.mutate(emailMessage.thread_id);
+                      setSelectedActivity(null);
+                    }
+                  }}
+                  disabled={unlinkEmailMutation.isPending}
+                  className="text-red-600 hover:text-red-700 hover:bg-red-50"
+                >
+                  <Unlink className="w-4 h-4 mr-1" />
+                  Unlink
+                </Button>
               )}
-            </DialogDescription>
+            </div>
           </DialogHeader>
           
           <div className="flex-1 overflow-y-auto py-4">
