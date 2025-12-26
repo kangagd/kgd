@@ -17,7 +17,7 @@ import { computePartsStatus } from "../domain/partsStatus";
 
 export default function PartsTab({ project, parts, inventoryByItem }) {
   const { data: purchaseOrders = [] } = useQuery({
-    queryKey: ['purchaseOrdersByProject', project.id],
+    queryKey: ['projectPurchaseOrders', project.id],
     queryFn: async () => {
       const pos = await base44.entities.PurchaseOrder.filter({ project_id: project.id });
       return pos;
