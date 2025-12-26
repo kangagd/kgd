@@ -1,17 +1,27 @@
-import React, { useState } from "react";
+import React, { useState, useRef } from "react";
 import { X, Upload } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { toast } from "sonner";
 
-export default function MediaDocumentsDrawer({ open, onClose, project, initialTab = "photos" }) {
+export default function MediaDocumentsDrawer({ open, onClose, project, initialTab = "photos", onUploadPhotos, onUploadDocuments }) {
   const [activeTab, setActiveTab] = useState(initialTab);
+  const photoInputRef = useRef(null);
+  const docInputRef = useRef(null);
 
   React.useEffect(() => {
     if (open) {
       setActiveTab(initialTab);
     }
   }, [open, initialTab]);
+
+  const handleUploadClick = () => {
+    if (activeTab === "photos") {
+      photoInputRef.current?.click();
+    } else {
+      docInputRef.current?.click();
+    }
+  };
 
   if (!open) return null;
 
