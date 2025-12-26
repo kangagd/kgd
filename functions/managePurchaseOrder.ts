@@ -256,15 +256,18 @@ Deno.serve(async (req) => {
         updateData.expected_date = expected_date || null;
       }
 
-      const updatedPO = await base44.asServiceRole.entities.PurchaseOrder.update(id, updateData);
+      await base44.asServiceRole.entities.PurchaseOrder.update(id, updateData);
 
       console.log('[updateIdentity] Updated PO:', { id, fields: Object.keys(updateData) });
 
-      if (updatedPO.project_id) {
-        await updateProjectActivity(base44, updatedPO.project_id, 'PO Updated');
+      // Re-fetch to ensure UI gets persisted state
+      const freshPO = await base44.asServiceRole.entities.PurchaseOrder.get(id);
+
+      if (freshPO.project_id) {
+        await updateProjectActivity(base44, freshPO.project_id, 'PO Updated');
       }
 
-      return Response.json({ success: true, purchaseOrder: updatedPO });
+      return Response.json({ success: true, purchaseOrder: freshPO });
     }
 
     // ========================================
@@ -310,7 +313,7 @@ Deno.serve(async (req) => {
         updateData.arrived_at = new Date().toISOString();
       }
 
-      const updatedPO = await base44.asServiceRole.entities.PurchaseOrder.update(id, updateData);
+      await base44.asServiceRole.entities.PurchaseOrder.update(id, updateData);
 
       console.log('[updateStatus] Updated PO status:', { 
         id, 
@@ -318,15 +321,18 @@ Deno.serve(async (req) => {
         new_status: normalizedStatus 
       });
 
-      if (updatedPO.project_id) {
+      // Re-fetch to ensure UI gets persisted state
+      const freshPO = await base44.asServiceRole.entities.PurchaseOrder.get(id);
+
+      if (freshPO.project_id) {
         const activityType = normalizedStatus === PO_STATUS.IN_LOADING_BAY ? 'PO Delivered' :
                            normalizedStatus === PO_STATUS.IN_STORAGE ? 'PO in Storage' :
                            normalizedStatus === PO_STATUS.IN_VEHICLE ? 'PO in Vehicle' :
                            'PO Status Updated';
-        await updateProjectActivity(base44, updatedPO.project_id, activityType);
+        await updateProjectActivity(base44, freshPO.project_id, activityType);
       }
 
-      return Response.json({ success: true, purchaseOrder: updatedPO });
+      return Response.json({ success: true, purchaseOrder: freshPO });
     }
 
     // ========================================
