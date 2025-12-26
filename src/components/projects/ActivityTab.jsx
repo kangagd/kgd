@@ -88,10 +88,24 @@ export default function ActivityTab({ project, onComposeEmail }) {
 
   // Link email thread mutation
   const linkEmailMutation = useMutation({
-    mutationFn: async (threadId) => {
+    mutationFn: async (thread) => {
+      // Fetch the first message from this thread to get gmail_message_id
+      const messages = await base44.entities.EmailMessage.filter({ thread_id: thread.id });
+      if (messages.length === 0) {
+        throw new Error("No messages found in this thread");
+      }
+      
+      const firstMessage = messages[0];
+      
       await base44.entities.ProjectEmail.create({
         project_id: project.id,
-        email_thread_id: threadId
+        gmail_message_id: firstMessage.gmail_message_id,
+        thread_id: thread.id,
+        subject: thread.subject,
+        snippet: thread.last_message_snippet,
+        from_email: thread.from_address,
+        sent_at: thread.last_message_date,
+        is_historical: true
       });
     },
     onSuccess: () => {
@@ -100,8 +114,8 @@ export default function ActivityTab({ project, onComposeEmail }) {
       setSearchTerm("");
       toast.success("Email thread linked to project");
     },
-    onError: () => {
-      toast.error("Failed to link email thread");
+    onError: (error) => {
+      toast.error(error.message || "Failed to link email thread");
     }
   });
 
