@@ -256,22 +256,8 @@ export default function PurchaseOrderDetail({ poId, onClose, mode = "page" }) {
 
     const updatedPO = res.data.purchaseOrder;
     
-    // Write to cache immediately
-    queryClient.setQueryData(['purchaseOrder', poId], updatedPO);
-    
-    // Update formData to stay in sync
-    setFormData(prev => ({
-      ...prev,
-      po_reference: updatedPO.po_reference ?? prev.po_reference,
-      name: updatedPO.name ?? prev.name,
-      supplier_id: updatedPO.supplier_id ?? prev.supplier_id,
-      project_id: updatedPO.project_id ?? prev.project_id,
-      status: normaliseLegacyPoStatus(updatedPO.status ?? prev.status),
-      delivery_method: updatedPO.delivery_method ?? prev.delivery_method,
-      notes: updatedPO.notes ?? prev.notes,
-      eta: updatedPO.expected_date ?? prev.eta,
-      attachments: updatedPO.attachments ?? prev.attachments,
-    }));
+    // Apply returned PO to both cache and formData
+    applyReturnedPO(updatedPO);
 
     await invalidatePurchaseOrderBundle(queryClient, poId);
     await queryClient.invalidateQueries({ queryKey: ["parts"] });
@@ -374,19 +360,9 @@ export default function PurchaseOrderDetail({ poId, onClose, mode = "page" }) {
       return;
     }
     
-    // Write update to cache
+    // Apply returned PO to both cache and formData
     const updatedPO = updateRes.data.purchaseOrder;
-    queryClient.setQueryData(['purchaseOrder', poId], updatedPO);
-    
-    // Update formData
-    setFormData(prev => ({
-      ...prev,
-      po_reference: updatedPO.po_reference ?? prev.po_reference,
-      name: updatedPO.name ?? prev.name,
-      supplier_id: updatedPO.supplier_id ?? prev.supplier_id,
-      project_id: updatedPO.project_id ?? prev.project_id,
-      eta: updatedPO.expected_date ?? prev.eta,
-    }));
+    applyReturnedPO(updatedPO);
     
     // Then update status using managePurchaseOrder for side effects
     const response = await base44.functions.invoke('managePurchaseOrder', {
@@ -887,17 +863,8 @@ export default function PurchaseOrderDetail({ poId, onClose, mode = "page" }) {
 
                     const updatedPO = response.data.purchaseOrder;
                     
-                    // Write to cache immediately
-                    queryClient.setQueryData(['purchaseOrder', poId], updatedPO);
-                    
-                    // Update formData
-                    setFormData((prev) => ({ 
-                      ...prev, 
-                      status: updatedPO.status ?? value,
-                      po_reference: updatedPO.po_reference ?? prev.po_reference,
-                      name: updatedPO.name ?? prev.name,
-                      eta: updatedPO.expected_date ?? prev.eta,
-                    }));
+                    // Apply returned PO to both cache and formData
+                    applyReturnedPO(updatedPO);
                     
                     // Invalidate all relevant queries
                     await invalidatePurchaseOrderBundle(queryClient, poId);
