@@ -272,15 +272,6 @@ export default function PurchaseOrderDetail({ poId, onClose, mode = "page" }) {
     };
 
     const handleSave = async () => {
-    // Debug: Confirm save handler runs
-    console.log("[PO SAVE - START]", {
-      po_id: po?.id,
-      form_po_reference: formData.po_reference,
-      form_name: formData.name,
-      loaded_po_reference: po?.po_reference,
-      loaded_name: po?.name
-    });
-
     // Validate identity fields
     const validation = validatePoIdentityFields({
       po_reference: formData.po_reference,
@@ -291,45 +282,53 @@ export default function PurchaseOrderDetail({ poId, onClose, mode = "page" }) {
       validation.errors.forEach(err => toast.error(err));
       return;
     }
-    
-    // Build update payload with exact schema keys
-    const updateFields = {
-      po_reference: formData.po_reference?.trim() || "",
-      name: formData.name?.trim() || "",
-      supplier_id: formData.supplier_id || po?.supplier_id || null,
-      project_id: formData.project_id || po?.project_id || null,
-      delivery_method: formData.delivery_method || po?.delivery_method || null,
-      notes: formData.notes || "",
-      ...setPoEtaPayload(formData.eta || po?.expected_date),
-      attachments: formData.attachments || [],
-    };
-
-    console.log("[PO SAVE - PAYLOAD]", {
-      po_reference: updateFields.po_reference,
-      name: updateFields.name
-    });
 
     try {
-      // Direct entity update for reliable persistence
-      await base44.entities.PurchaseOrder.update(poId, updateFields);
+      // Step 1: Update identity fields
+      const identityPayload = {
+        action: 'updateIdentity',
+        id: poId,
+        po_reference: formData.po_reference?.trim() || "",
+        name: formData.name?.trim() || "",
+        supplier_id: formData.supplier_id,
+        notes: formData.notes || "",
+        expected_date: formData.eta || null
+      };
+      console.log("[PO UI] invoking", identityPayload);
+      const identityResponse = await base44.functions.invoke('managePurchaseOrder', identityPayload);
 
-      // Refetch to get persisted values
-      console.log("[PO SAVE - Refetching PO]");
-      const refetchedPO = await base44.entities.PurchaseOrder.get(poId);
-      console.log("[PO SAVE - SUCCESS]", {
-        po_reference: refetchedPO?.po_reference,
-        name: refetchedPO?.name
-      });
+      if (!identityResponse.data?.success) {
+        toast.error(identityResponse.data?.error || 'Failed to update PO identity');
+        return;
+      }
 
-      applyReturnedPO(refetchedPO);
+      // Step 2: Update line items if changed
+      const lineItemsPayload = {
+        action: 'manageLineItems',
+        id: poId,
+        line_items: formData.line_items.map(item => ({
+          source_type: item.source_type || "custom",
+          source_id: item.source_id || null,
+          part_id: item.part_id || null,
+          name: item.name || '',
+          quantity: item.quantity || 0,
+          unit_price: item.unit_price || 0,
+          unit: item.unit || null,
+          notes: item.notes || null,
+          category: item.category || "Other"
+        }))
+      };
+      console.log("[PO UI] invoking", lineItemsPayload);
+      const lineItemsResponse = await base44.functions.invoke('managePurchaseOrder', lineItemsPayload);
 
-      // Optimistically update PO list cache
-      queryClient.setQueryData(['purchaseOrders'], (oldList) => {
-        if (!oldList) return oldList;
-        return oldList.map(item => 
-          item.id === poId ? { ...item, ...refetchedPO } : item
-        );
-      });
+      if (!lineItemsResponse.data?.success) {
+        toast.error(lineItemsResponse.data?.error || 'Failed to update line items');
+        return;
+      }
+
+      // Apply returned PO to cache and form
+      const updatedPO = lineItemsResponse.data.purchaseOrder;
+      applyReturnedPO(updatedPO);
 
       // Invalidate all PO-related queries
       await Promise.all([
