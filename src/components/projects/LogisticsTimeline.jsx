@@ -6,6 +6,7 @@ import { Briefcase, Truck, Calendar, User, CheckCircle2, Clock, MapPin } from "l
 import { Badge } from "@/components/ui/badge";
 import { useNavigate } from "react-router-dom";
 import { createPageUrl } from "@/utils";
+import { getPoIdentity } from "@/components/domain/poDisplayHelpers";
 
 const LOGISTICS_JOB_TYPES = [
   "Material Pickup – Warehouse",
@@ -41,12 +42,12 @@ export default function LogisticsTimeline({ project }) {
 
   // Fetch all POs to match with jobs
   const { data: purchaseOrders = [] } = useQuery({
-    queryKey: ["purchase-orders-for-logistics"],
+    queryKey: ["purchaseOrders"],
     queryFn: () => base44.entities.PurchaseOrder.list(),
   });
 
   const { data: suppliers = [] } = useQuery({
-    queryKey: ["suppliers-for-logistics"],
+    queryKey: ["suppliers"],
     queryFn: () => base44.entities.Supplier.list(),
   });
 
@@ -118,7 +119,7 @@ export default function LogisticsTimeline({ project }) {
                       {job.job_type_name || job.job_type}
                       {linkedPO && (
                         <span className="inline-flex items-center rounded-full bg-amber-100 px-2 py-0.5 text-[10px] font-medium text-amber-700">
-                          {linkedPO.po_number ? `PO #${linkedPO.po_number}` : 'PO'}
+                          {getPoIdentity(linkedPO).reference}
                         </span>
                       )}
                       {isStockJob && !linkedPO && (

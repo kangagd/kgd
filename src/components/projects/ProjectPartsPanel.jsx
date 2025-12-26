@@ -17,6 +17,7 @@ import { ChevronDown } from "lucide-react";
 import AssignPartToVehicleModal from "./AssignPartToVehicleModal";
 import { PART_LOCATION, normaliseLegacyPartLocation, getPartStatusLabel, normaliseLegacyPartStatus, getNormalizedPartStatus, isPickablePart, PICKABLE_STATUSES } from "@/components/domain/partConfig";
 import { getPoStatusLabel } from "@/components/domain/purchaseOrderStatusConfig";
+import { getPoIdentity } from "@/components/domain/poDisplayHelpers";
 
 
 import { useQuery, useQueryClient } from "@tanstack/react-query";
@@ -259,7 +260,7 @@ export default function ProjectPartsPanel({ project, parts = [], inventoryByItem
                     return (
                     <div key={po.id} className="text-xs text-[#6B7280]">
                       <span className="font-medium text-[#111827]">
-                        {getPoDisplayReference(po)}
+                        {getPoIdentity(po).reference}
                       </span>
                       {' • '}
                       {supplierName}
@@ -295,7 +296,7 @@ export default function ProjectPartsPanel({ project, parts = [], inventoryByItem
                       <div className="flex-1">
                         <div className="flex items-center gap-2 mb-1 flex-wrap">
                           <span className="font-medium text-sm">
-                            {getPoDisplayReference(po)}
+                            {getPoIdentity(po).reference}
                           </span>
                           <Badge className="text-xs bg-slate-100 text-slate-700">
                             {getPoStatusLabel(po.status)}
@@ -363,7 +364,7 @@ export default function ProjectPartsPanel({ project, parts = [], inventoryByItem
               const partTitle = part.item_name || part.category || "Part";
               const normalizedStatus = getNormalizedPartStatus(part);
               const linkedPO = resolvePartPO(part);
-              const poDisplay = linkedPO ? getPoDisplayReference(linkedPO) : null;
+              const poDisplay = linkedPO ? getPoIdentity(linkedPO).reference : null;
               
               return (
                 <div key={part.id} className="p-3 bg-red-50 border border-red-100 rounded-lg flex justify-between items-center">
@@ -435,7 +436,7 @@ export default function ProjectPartsPanel({ project, parts = [], inventoryByItem
               }
               
               const linkedPO = resolvePartPO(part);
-              const poDisplay = linkedPO ? getPoDisplayReference(linkedPO) : null;
+              const poDisplay = linkedPO ? getPoIdentity(linkedPO).reference : null;
               
               return (
                 <div key={part.id} className="p-3 bg-white border border-gray-200 rounded-lg flex justify-between items-center">
