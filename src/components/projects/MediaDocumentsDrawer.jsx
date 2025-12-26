@@ -2,6 +2,7 @@ import React, { useState } from "react";
 import { X, Upload } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
+import { toast } from "sonner";
 
 export default function MediaDocumentsDrawer({ open, onClose, project, initialTab = "photos" }) {
   const [activeTab, setActiveTab] = useState(initialTab);
