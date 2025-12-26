@@ -782,8 +782,7 @@ export default function PurchaseOrderDetail({ poId, onClose, mode = "page" }) {
                 </div>
                 </div>
                 <div className="flex gap-2">
-                {isDraft && (
-                <>
+                {(isDraft || can(PERMISSIONS.DELETE_PO)) && (
                   <TooltipProvider>
                     <Tooltip>
                       <TooltipTrigger asChild>
@@ -807,6 +806,9 @@ export default function PurchaseOrderDetail({ poId, onClose, mode = "page" }) {
                       )}
                     </Tooltip>
                   </TooltipProvider>
+                )}
+                {isDraft && (
+                <>
                  <Button
                    type="button"
                    onClick={handleSave}
