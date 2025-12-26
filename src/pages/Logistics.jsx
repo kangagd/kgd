@@ -591,9 +591,16 @@ export default function Logistics() {
             </div>
             <Button
               onClick={async () => {
+                // Validate supplier exists
+                if (!suppliers || suppliers.length === 0) {
+                  toast.error("No suppliers available. Please create a supplier first.");
+                  return;
+                }
+
                 try {
                   const newPO = await purchaseOrdersApi.createDraft({
-                    supplier_id: suppliers[0]?.id || null
+                    supplier_id: suppliers[0].id,
+                    project_id: null
                   });
                   
                   // Optimistically add to cache
@@ -605,10 +612,7 @@ export default function Logistics() {
                   toast.success("Draft Purchase Order created");
                   
                   // Invalidate caches
-                  await Promise.all([
-                    queryClient.invalidateQueries({ queryKey: ['purchaseOrders'] }),
-                    queryClient.invalidateQueries({ queryKey: ['purchaseOrder', newPO.id] })
-                  ]);
+                  queryClient.invalidateQueries({ queryKey: ['purchaseOrders'] });
                 } catch (error) {
                   toast.error(error.message || "Failed to create Purchase Order");
                 }
