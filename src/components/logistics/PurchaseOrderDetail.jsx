@@ -296,7 +296,7 @@ export default function PurchaseOrderDetail({ poId, onClose, mode = "page" }) {
     try {
       // Direct entity update for reliable persistence
       await base44.entities.PurchaseOrder.update(poId, updateFields);
-      
+
       // Refetch to get persisted values
       console.log("[PO SAVE - Refetching PO]");
       const refetchedPO = await base44.entities.PurchaseOrder.get(poId);
@@ -304,8 +304,16 @@ export default function PurchaseOrderDetail({ poId, onClose, mode = "page" }) {
         po_reference: refetchedPO?.po_reference,
         name: refetchedPO?.name
       });
-      
+
       applyReturnedPO(refetchedPO);
+
+      // Optimistically update PO list cache
+      queryClient.setQueryData(['purchaseOrders'], (oldList) => {
+        if (!oldList) return oldList;
+        return oldList.map(item => 
+          item.id === poId ? { ...item, ...refetchedPO } : item
+        );
+      });
 
       // Invalidate all PO-related queries
       await Promise.all([
@@ -429,10 +437,18 @@ export default function PurchaseOrderDetail({ poId, onClose, mode = "page" }) {
           po_reference: statusUpdatedPO?.po_reference,
           name: statusUpdatedPO?.name
         });
-        
+
         // Write status update to cache
         queryClient.setQueryData(['purchaseOrder', poId], statusUpdatedPO);
-        
+
+        // Optimistically update PO list cache
+        queryClient.setQueryData(['purchaseOrders'], (oldList) => {
+          if (!oldList) return oldList;
+          return oldList.map(item => 
+            item.id === poId ? { ...item, ...statusUpdatedPO } : item
+          );
+        });
+
         // Update formData
         setFormData(prev => ({
           ...prev,
@@ -441,9 +457,12 @@ export default function PurchaseOrderDetail({ poId, onClose, mode = "page" }) {
           name: statusUpdatedPO.name ?? prev.name,
           eta: statusUpdatedPO.expected_date ?? prev.eta,
         }));
-        
+
         await invalidatePurchaseOrderBundle(queryClient, poId);
-        await queryClient.invalidateQueries({ queryKey: ['parts'] });
+        await Promise.all([
+          queryClient.invalidateQueries({ queryKey: ['parts'] }),
+          queryClient.invalidateQueries({ queryKey: ['purchaseOrders'] }),
+        ]);
         setIsDirty(false);
         toast.success('Purchase Order sent to supplier');
       } else {
