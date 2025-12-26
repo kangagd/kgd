@@ -858,6 +858,21 @@ Deno.serve(async (req) => {
             if (existingPOs.length > 0) {
                 const existingPO = existingPOs[0];
                 
+                // Ensure supplier_name is populated if missing
+                if (!existingPO.supplier_name && existingPO.supplier_id) {
+                    try {
+                        const supplier = await base44.asServiceRole.entities.Supplier.get(existingPO.supplier_id);
+                        if (supplier?.name) {
+                            await base44.asServiceRole.entities.PurchaseOrder.update(existingPO.id, {
+                                supplier_name: supplier.name
+                            });
+                            existingPO.supplier_name = supplier.name;
+                        }
+                    } catch (err) {
+                        console.error('Failed to fetch supplier for existing PO:', err);
+                    }
+                }
+                
                 // Load line items for the response
                 const lines = await base44.asServiceRole.entities.PurchaseOrderLine.filter({ 
                     purchase_order_id: existingPO.id 
@@ -884,6 +899,17 @@ Deno.serve(async (req) => {
             }
 
             // Create new DRAFT PO
+            // Fetch supplier to ensure supplier_name persistence
+            let resolvedSupplierName = supplier_name || null;
+            if (!resolvedSupplierName && supplier_id) {
+                try {
+                    const supplier = await base44.asServiceRole.entities.Supplier.get(supplier_id);
+                    resolvedSupplierName = supplier?.name || null;
+                } catch (err) {
+                    console.error('Failed to fetch supplier for name on create:', err);
+                }
+            }
+
             // 🔒 STRIP LEGACY FIELDS - Never allow writes
             const normalizedPoRef =
                 po_reference ??
@@ -912,7 +938,7 @@ Deno.serve(async (req) => {
 
             const poData = {
                 supplier_id,
-                supplier_name: supplier_name || null,
+                supplier_name: resolvedSupplierName,
                 project_id,
                 status: PO_STATUS.DRAFT,
                 delivery_method: delivery_method || PO_DELIVERY_METHOD.DELIVERY,
