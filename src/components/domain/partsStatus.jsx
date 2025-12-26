@@ -207,8 +207,8 @@ export function computePartsStatus({ parts = [], purchaseOrders = [], logisticsJ
     }
   }
   
-  // Compute readiness flag
-  const partsReady = missingCount === 0 && requiredCount > 0;
+  // Compute readiness flag - all required parts must be ready
+  const partsReady = requiredCount > 0 && readyCount >= requiredCount;
   
   return {
     requiredCount,
