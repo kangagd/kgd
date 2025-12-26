@@ -69,19 +69,31 @@ export default function PurchaseOrders() {
   const handleCreatePO = async () => {
     try {
       // Create a draft PO with minimal data
-      const response = await base44.functions.invoke('managePurchaseOrder', {
-        action: 'create',
-        supplier_id: suppliers[0]?.id || 'temp', // Use first supplier or temp
-        line_items: [{ name: 'New Item', qty: 1, price: 0 }]
-      });
+      const createPayload = {
+        action: 'createDraft',
+        supplier_id: suppliers[0]?.id || 'temp'
+      };
+      console.log("[PO UI] invoking", createPayload);
+      const createResponse = await base44.functions.invoke('managePurchaseOrder', createPayload);
 
-      if (response.data?.success && response.data?.purchaseOrder) {
-        const newPO = response.data.purchaseOrder;
-        navigate(`${createPageUrl("PurchaseOrders")}?poId=${newPO.id}`);
-        toast.success('Draft Purchase Order created');
-      } else {
-        toast.error('Failed to create PO');
+      if (!createResponse.data?.success || !createResponse.data?.purchaseOrder) {
+        toast.error(createResponse.data?.error || 'Failed to create PO');
+        return;
       }
+
+      const newPO = createResponse.data.purchaseOrder;
+
+      // Add initial line item
+      const lineItemsPayload = {
+        action: 'manageLineItems',
+        id: newPO.id,
+        line_items: [{ name: 'New Item', quantity: 1, unit_price: 0 }]
+      };
+      console.log("[PO UI] invoking", lineItemsPayload);
+      await base44.functions.invoke('managePurchaseOrder', lineItemsPayload);
+
+      navigate(`${createPageUrl("PurchaseOrders")}?poId=${newPO.id}`);
+      toast.success('Draft Purchase Order created');
     } catch (error) {
       console.error('Error creating PO:', error);
       toast.error('Failed to create Purchase Order');
@@ -107,11 +119,13 @@ export default function PurchaseOrders() {
 
   const handleStatusChange = async (po, newStatus) => {
     try {
-      const response = await base44.functions.invoke('managePurchaseOrder', {
+      const payload = {
         action: 'updateStatus',
         id: po.id,
         status: newStatus
-      });
+      };
+      console.log("[PO UI] invoking", payload);
+      const response = await base44.functions.invoke('managePurchaseOrder', payload);
 
       if (!response.data?.success) {
         toast.error(response.data?.error || 'Failed to update status');

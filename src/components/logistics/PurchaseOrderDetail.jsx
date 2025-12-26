@@ -441,12 +441,13 @@ export default function PurchaseOrderDetail({ poId, onClose, mode = "page" }) {
       console.log("[Send to Supplier - fields persisted]");
       
       // Then update status using managePurchaseOrder for side effects
-      const response = await base44.functions.invoke('managePurchaseOrder', {
+      const payload = {
         action: 'updateStatus',
         id: poId,
-        status: PO_STATUS.ON_ORDER,
-        eta: formData.eta || null
-      });
+        status: PO_STATUS.ON_ORDER
+      };
+      console.log("[PO UI] invoking", payload);
+      const response = await base44.functions.invoke('managePurchaseOrder', payload);
       
       if (response?.data?.success) {
         const statusUpdatedPO = response.data.purchaseOrder;
@@ -961,11 +962,13 @@ export default function PurchaseOrderDetail({ poId, onClose, mode = "page" }) {
                   setFormData((prev) => ({ ...prev, status: value }));
 
                   try {
-                    const response = await base44.functions.invoke("managePurchaseOrder", {
+                    const payload = {
                       action: "updateStatus",
                       id: po.id,
-                      status: value,
-                    });
+                      status: value
+                    };
+                    console.log("[PO UI] invoking", payload);
+                    const response = await base44.functions.invoke("managePurchaseOrder", payload);
 
                     if (!response?.data?.success) {
                       setFormData((prev) => ({ ...prev, status: po.status }));
