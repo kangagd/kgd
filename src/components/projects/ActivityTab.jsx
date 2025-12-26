@@ -396,45 +396,41 @@ export default function ActivityTab({ project, onComposeEmail }) {
 
       <Dialog open={!!selectedActivity} onOpenChange={() => setSelectedActivity(null)}>
         <DialogContent className="max-w-4xl max-h-[90vh] overflow-hidden flex flex-col">
+          {selectedActivity?.type === 'email' && (
+            <Button
+              variant="ghost"
+              size="icon"
+              onClick={() => {
+                const emailMessage = emailMessages.find(msg => `email-${msg.id}` === selectedActivity.id);
+                if (emailMessage) {
+                  unlinkEmailMutation.mutate(emailMessage.thread_id);
+                  setSelectedActivity(null);
+                }
+              }}
+              disabled={unlinkEmailMutation.isPending}
+              className="absolute right-12 top-4 text-red-600 hover:text-red-700 hover:bg-red-50 h-6 w-6 z-50"
+              title="Unlink email from project"
+            >
+              <Unlink className="w-4 h-4" />
+            </Button>
+          )}
           <DialogHeader>
-            <div className="flex items-start justify-between gap-3">
-              <div className="flex-1">
-                <DialogTitle className="flex items-center gap-2">
-                  <Mail className="w-5 h-5" />
-                  {selectedActivity?.subject || 'Email'}
-                </DialogTitle>
-                <DialogDescription>
-                  {selectedActivity && (
-                    <div className="flex items-center gap-2 text-[13px]">
-                      <span>From: {selectedActivity.from}</span>
-                      <span>•</span>
-                      <span>{format(new Date(selectedActivity.date), 'MMM d, yyyy h:mm a')}</span>
-                      {selectedActivity.isOutbound && (
-                        <Badge variant="default" className="bg-blue-100 text-blue-700 ml-2">Sent</Badge>
-                      )}
-                    </div>
+            <DialogTitle className="flex items-center gap-2">
+              <Mail className="w-5 h-5" />
+              {selectedActivity?.subject || 'Email'}
+            </DialogTitle>
+            <DialogDescription>
+              {selectedActivity && (
+                <div className="flex items-center gap-2 text-[13px]">
+                  <span>From: {selectedActivity.from}</span>
+                  <span>•</span>
+                  <span>{format(new Date(selectedActivity.date), 'MMM d, yyyy h:mm a')}</span>
+                  {selectedActivity.isOutbound && (
+                    <Badge variant="default" className="bg-blue-100 text-blue-700 ml-2">Sent</Badge>
                   )}
-                </DialogDescription>
-              </div>
-              {selectedActivity?.type === 'email' && (
-                <Button
-                  variant="ghost"
-                  size="icon"
-                  onClick={() => {
-                    const emailMessage = emailMessages.find(msg => `email-${msg.id}` === selectedActivity.id);
-                    if (emailMessage) {
-                      unlinkEmailMutation.mutate(emailMessage.thread_id);
-                      setSelectedActivity(null);
-                    }
-                  }}
-                  disabled={unlinkEmailMutation.isPending}
-                  className="text-red-600 hover:text-red-700 hover:bg-red-50 h-6 w-6"
-                  title="Unlink email from project"
-                >
-                  <Unlink className="w-4 h-4" />
-                </Button>
+                </div>
               )}
-            </div>
+            </DialogDescription>
           </DialogHeader>
           
           <div className="flex-1 overflow-y-auto py-4">
