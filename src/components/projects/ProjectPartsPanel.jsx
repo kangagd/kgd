@@ -2,7 +2,7 @@ import React, { useState } from "react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { AlertTriangle, CheckCircle2, Package, Truck, ExternalLink, Plus, ShoppingCart, MoreVertical, Building2 } from "lucide-react";
-import * as purchaseOrdersApi from "@/api/purchaseOrdersApi";
+import * as purchaseOrdersApi from "@/components/api/purchaseOrdersApi";
 import {
   DropdownMenu,
   DropdownMenuContent,

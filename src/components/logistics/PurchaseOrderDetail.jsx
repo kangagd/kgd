@@ -3,7 +3,7 @@ import { base44 } from "@/api/base44Client";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { sameId } from "@/components/utils/id";
 import { invalidatePurchaseOrderBundle } from "@/components/api/invalidate";
-import * as purchaseOrdersApi from "@/api/purchaseOrdersApi";
+import * as purchaseOrdersApi from "@/components/api/purchaseOrdersApi";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
