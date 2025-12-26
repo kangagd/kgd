@@ -9,6 +9,7 @@ import { format } from "date-fns";
 import LogManualActivityModal from "./LogManualActivityModal";
 import { Badge } from "@/components/ui/badge";
 import { toast } from "sonner";
+import { processEmailForDisplay } from "@/components/utils/emailFormatting";
 import {
   Dialog,
   DialogContent,
@@ -252,11 +253,16 @@ export default function ActivityTab({ project, onComposeEmail }) {
     return tmp.textContent || tmp.innerText || '';
   };
 
-  const decodeHtml = (html) => {
-    if (!html) return '';
-    const txt = document.createElement('textarea');
-    txt.innerHTML = html;
-    return txt.value;
+  const formatEmailForModal = (content) => {
+    if (!content) return '';
+    
+    const formatted = processEmailForDisplay(content, {
+      isHtml: content.includes('<'),
+      includeSignature: true,
+      collapseQuotes: true
+    });
+    
+    return formatted.html;
   };
 
   return (
@@ -430,7 +436,7 @@ export default function ActivityTab({ project, onComposeEmail }) {
               <div 
                 className="gmail-email-body prose prose-sm max-w-none"
                 dangerouslySetInnerHTML={{ 
-                  __html: decodeHtml(selectedActivity.content)
+                  __html: formatEmailForModal(selectedActivity.content)
                 }}
               />
             )}

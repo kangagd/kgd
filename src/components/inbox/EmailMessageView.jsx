@@ -4,6 +4,7 @@ import { ChevronDown, ChevronUp, Paperclip, ChevronRight } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { base44 } from "@/api/base44Client";
 import AttachmentCard from "./AttachmentCard";
+import { processEmailForDisplay } from "@/components/utils/emailFormatting";
 
 function AttachmentsSection({ attachments, linkedJobId, linkedProjectId, threadSubject, gmailMessageId }) {
   const [isExpanded, setIsExpanded] = useState(true);
@@ -155,6 +156,18 @@ export default function EmailMessageView({ message, isFirst, linkedJobId, linked
     return html;
   }, [displayMessage.body_html, inlineImageUrls]);
 
+  // Format email content with proper decoding and structure
+  const formattedEmailContent = useMemo(() => {
+    const content = processedBodyHtml || displayMessage.body_text;
+    if (!content) return null;
+
+    return processEmailForDisplay(content, {
+      isHtml: !!processedBodyHtml,
+      includeSignature: true,
+      collapseQuotes: true
+    });
+  }, [processedBodyHtml, displayMessage.body_text]);
+
   // Minimal sanitization - preserve Gmail layout and styling
   const sanitizeBodyHtml = (html) => {
     if (!html) return html;
@@ -297,7 +310,7 @@ export default function EmailMessageView({ message, isFirst, linkedJobId, linked
                 Loading images...
               </div>
             )}
-            {processedBodyHtml ? (
+            {formattedEmailContent ? (
               <div 
                 className="gmail-email-body"
                 style={{
@@ -307,19 +320,7 @@ export default function EmailMessageView({ message, isFirst, linkedJobId, linked
                   wordWrap: 'break-word',
                   overflowWrap: 'anywhere'
                 }}
-                dangerouslySetInnerHTML={{ __html: sanitizeBodyHtml(processedBodyHtml) }} 
-              />
-            ) : displayMessage.body_text?.includes('<') ? (
-              <div 
-                className="gmail-email-body"
-                style={{
-                  fontSize: '14px',
-                  lineHeight: '1.5',
-                  color: '#111827',
-                  wordWrap: 'break-word',
-                  overflowWrap: 'anywhere'
-                }}
-                dangerouslySetInnerHTML={{ __html: sanitizeBodyHtml(displayMessage.body_text) }} 
+                dangerouslySetInnerHTML={{ __html: sanitizeBodyHtml(formattedEmailContent.html) }} 
               />
             ) : (
               <div className="whitespace-pre-wrap text-[14px] text-[#111827] leading-[1.6] break-words overflow-wrap-anywhere">
