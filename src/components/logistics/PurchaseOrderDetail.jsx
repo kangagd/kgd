@@ -56,7 +56,8 @@ export default function PurchaseOrderDetail({ poId, onClose, mode = "page" }) {
   const { data: po, isLoading } = useQuery({
     queryKey: ['purchaseOrder', poId],
     queryFn: () => base44.entities.PurchaseOrder.get(poId),
-    enabled: !!poId
+    enabled: !!poId,
+    refetchOnMount: true
   });
 
   const { data: suppliers = [] } = useQuery({
@@ -87,7 +88,8 @@ export default function PurchaseOrderDetail({ poId, onClose, mode = "page" }) {
   const { data: lineItems = [] } = useQuery({
     queryKey: ['purchaseOrderLines', poId],
     queryFn: () => base44.entities.PurchaseOrderLine.filter({ purchase_order_id: poId }),
-    enabled: !!poId
+    enabled: !!poId,
+    refetchOnMount: true
   });
 
   const { data: projectParts = [] } = useQuery({
@@ -106,6 +108,12 @@ export default function PurchaseOrderDetail({ poId, onClose, mode = "page" }) {
   const priceListItems = priceListQuery.data || [];
 
   const initialLoadDone = React.useRef(false);
+
+  // Reset initial load flag when poId changes
+  React.useEffect(() => {
+    initialLoadDone.current = false;
+    setIsDirty(false);
+  }, [poId]);
 
   // Helper: Apply returned PO to both cache and formData
   const applyReturnedPO = (returnedPO) => {
