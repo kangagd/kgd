@@ -74,8 +74,6 @@ export function computeAttentionItems({
   quotes = [],
   invoices = [],
   jobs = [],
-  parts = [],
-  purchaseOrders = [],
   emails = [],
   manualLogs = []
 }) {
@@ -131,31 +129,7 @@ export function computeAttentionItems({
     }
   }
 
-  // RULE C — Install scheduled but parts not ready (HIGH, Ops)
-  const futureInstallJobs = jobs.filter(job => {
-    const isInstall = (job.job_type_name || job.job_type || '').toLowerCase().includes('install');
-    const isFuture = job.scheduled_date && new Date(job.scheduled_date) > now;
-    const notCompleted = job.status !== 'Completed' && job.status !== 'Cancelled';
-    return isInstall && isFuture && notCompleted;
-  });
 
-  if (futureInstallJobs.length > 0) {
-    const readyStatuses = ['received', 'in_vehicle', 'reserved', 'available', 'installed'];
-    const notReadyParts = parts.filter(p => 
-      !readyStatuses.includes((p.status || '').toLowerCase())
-    );
-    
-    if (notReadyParts.length > 0) {
-      items.push({
-        id: 'INSTALL_SCHEDULED_PARTS_NOT_READY',
-        reasonCode: 'INSTALL_SCHEDULED_PARTS_NOT_READY',
-        priority: 'HIGH',
-        category: 'Ops',
-        message: 'Install scheduled but parts not ready',
-        deepLinkTab: 'parts'
-      });
-    }
-  }
 
   // RULE D — Install project missing requirements (HIGH, Requirements)
   const installTypes = ['Garage Door Install', 'Gate Install', 'Roller Shutter Install', 'Multiple'];
@@ -210,24 +184,7 @@ export function computeAttentionItems({
     }
   }
 
-  // RULE F — Purchase Order ETA missed (MEDIUM, Ops)
-  for (const po of purchaseOrders) {
-    if (po.eta_date && po.status !== 'received' && po.status !== 'completed') {
-      const etaDate = new Date(po.eta_date);
-      if (etaDate < now) {
-        const reference = po.po_number || po.supplier_name || 'Unknown';
-        items.push({
-          id: `PO_ETA_MISSED_${po.id}`,
-          reasonCode: 'PO_ETA_MISSED',
-          priority: 'MEDIUM',
-          category: 'Ops',
-          message: `PO ETA missed: ${reference}`,
-          deepLinkTab: 'parts',
-          sortWeight: daysSince(po.eta_date)
-        });
-      }
-    }
-  }
+
 
   // RULE G — Client email awaiting response (MEDIUM, Comms)
   const inboundEmails = emails.filter(e => !e.is_outbound);
