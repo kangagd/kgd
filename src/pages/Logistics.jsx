@@ -327,11 +327,13 @@ export default function Logistics() {
     if (newStatus === po.status) return;
 
     try {
-      const response = await base44.functions.invoke("managePurchaseOrder", {
+      const payload = {
         action: "updateStatus",
         id: po.id,
-        status: newStatus,
-      });
+        status: newStatus
+      };
+      console.log("[PO UI] invoking", payload);
+      const response = await base44.functions.invoke("managePurchaseOrder", payload);
 
       if (!response?.data?.success) {
         toast.error(response?.data?.error || "Failed to update PO status");
@@ -349,7 +351,16 @@ export default function Logistics() {
       });
 
       toast.success(`Status updated to ${getStatusLabel('po', newStatus)}`);
-      await invalidatePurchaseOrderBundle(queryClient, po.id);
+      
+      // Invalidate all PO-related caches
+      await Promise.all([
+        invalidatePurchaseOrderBundle(queryClient, po.id),
+        queryClient.invalidateQueries({ queryKey: ['purchaseOrder', po.id] }),
+        queryClient.invalidateQueries({ queryKey: ['purchaseOrders'] }),
+        po.project_id && queryClient.invalidateQueries({ queryKey: ['projectPurchaseOrders', po.project_id] }),
+        po.project_id && queryClient.invalidateQueries({ queryKey: ['projectPOLines', po.project_id] }),
+        queryClient.invalidateQueries({ queryKey: ['parts'] })
+      ].filter(Boolean));
     } catch (error) {
       toast.error("Error updating PO status");
     }
@@ -590,29 +601,48 @@ export default function Logistics() {
             <Button
               onClick={async () => {
                 try {
-                  const response = await base44.functions.invoke(
-                    "managePurchaseOrder",
-                    {
-                      action: "create",
-                      supplier_id: suppliers[0]?.id || "temp",
-                      line_items: [{ name: "New Item", quantity: 1, unit_price: 0 }],
-                    }
-                  );
+                  // Step 1: Create draft
+                  const createPayload = {
+                    action: "createDraft",
+                    supplier_id: suppliers[0]?.id || "temp"
+                  };
+                  console.log("[PO UI] invoking", createPayload);
+                  const createResponse = await base44.functions.invoke("managePurchaseOrder", createPayload);
 
-                  if (response.data?.success && response.data?.purchaseOrder) {
-                    const newPO = response.data.purchaseOrder;
-                    
-                    // Optimistically add to cache
-                    queryClient.setQueryData(['purchaseOrders'], (prev = []) => {
-                      return [newPO, ...prev];
-                    });
-                    
-                    setSelectedPoId(newPO.id);
-                    toast.success("Draft Purchase Order created");
-                    await queryClient.invalidateQueries({ queryKey: ['purchaseOrders'] });
-                  } else {
-                    toast.error("Failed to create PO");
+                  if (!createResponse.data?.success || !createResponse.data?.purchaseOrder) {
+                    toast.error(createResponse.data?.error || "Failed to create PO");
+                    return;
                   }
+
+                  const newPO = createResponse.data.purchaseOrder;
+
+                  // Step 2: Add initial line item
+                  const lineItemsPayload = {
+                    action: "manageLineItems",
+                    id: newPO.id,
+                    line_items: [{ name: "New Item", quantity: 1, unit_price: 0 }]
+                  };
+                  console.log("[PO UI] invoking", lineItemsPayload);
+                  const lineItemsResponse = await base44.functions.invoke("managePurchaseOrder", lineItemsPayload);
+
+                  if (!lineItemsResponse.data?.success) {
+                    toast.error(lineItemsResponse.data?.error || "Failed to add line items");
+                    return;
+                  }
+                  
+                  // Optimistically add to cache
+                  queryClient.setQueryData(['purchaseOrders'], (prev = []) => {
+                    return [lineItemsResponse.data.purchaseOrder, ...prev];
+                  });
+                  
+                  setSelectedPoId(newPO.id);
+                  toast.success("Draft Purchase Order created");
+                  
+                  // Invalidate caches
+                  await Promise.all([
+                    queryClient.invalidateQueries({ queryKey: ['purchaseOrders'] }),
+                    queryClient.invalidateQueries({ queryKey: ['purchaseOrder', newPO.id] })
+                  ]);
                 } catch (error) {
                   toast.error("Failed to create Purchase Order");
                 }

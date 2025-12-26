@@ -333,10 +333,11 @@ export default function PurchaseOrderDetail({ poId, onClose, mode = "page" }) {
       // Invalidate all PO-related queries
       await Promise.all([
         invalidatePurchaseOrderBundle(queryClient, poId),
-        queryClient.invalidateQueries({ queryKey: ["parts"] }),
-        queryClient.invalidateQueries({ queryKey: ["purchaseOrders"] }),
-        queryClient.invalidateQueries({ queryKey: ["projectParts"] }),
+        queryClient.invalidateQueries({ queryKey: ['purchaseOrder', poId] }),
+        queryClient.invalidateQueries({ queryKey: ['purchaseOrders'] }),
         formData.project_id && queryClient.invalidateQueries({ queryKey: ['projectPurchaseOrders', formData.project_id] }),
+        formData.project_id && queryClient.invalidateQueries({ queryKey: ['projectPOLines', formData.project_id] }),
+        queryClient.invalidateQueries({ queryKey: ['parts'] })
       ].filter(Boolean));
 
       // Reset dirty flag after successful save
@@ -981,12 +982,16 @@ export default function PurchaseOrderDetail({ poId, onClose, mode = "page" }) {
                     applyReturnedPO(updatedPO);
                     
                     // Invalidate all relevant queries
-                    await invalidatePurchaseOrderBundle(queryClient, poId);
+                    // Invalidate all PO-related caches
                     await Promise.all([
+                      invalidatePurchaseOrderBundle(queryClient, poId),
+                      queryClient.invalidateQueries({ queryKey: ['purchaseOrder', poId] }),
+                      queryClient.invalidateQueries({ queryKey: ['purchaseOrders'] }),
+                      formData.project_id && queryClient.invalidateQueries({ queryKey: ['projectPurchaseOrders', formData.project_id] }),
+                      formData.project_id && queryClient.invalidateQueries({ queryKey: ['projectPOLines', formData.project_id] }),
                       queryClient.invalidateQueries({ queryKey: ['parts'] }),
                       queryClient.invalidateQueries({ queryKey: ['allJobs'] }),
-                      queryClient.invalidateQueries({ queryKey: ['linkedJob', updatedPO.linked_logistics_job_id] }),
-                      formData.project_id && queryClient.invalidateQueries({ queryKey: ['projectPurchaseOrders', formData.project_id] }),
+                      queryClient.invalidateQueries({ queryKey: ['linkedJob', updatedPO.linked_logistics_job_id] })
                     ].filter(Boolean));
                     
                     // Show appropriate message

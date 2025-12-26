@@ -99,11 +99,13 @@ export default function ProjectPartsPanel({ project, parts = [], inventoryByItem
     }
 
     try {
-      const response = await base44.functions.invoke("managePurchaseOrder", {
+      const payload = {
         action: "getOrCreateProjectSupplierDraft",
         project_id: project.id,
-        supplier_id: supplierId,
-      });
+        supplier_id: supplierId
+      };
+      console.log("[PO UI] invoking", payload);
+      const response = await base44.functions.invoke("managePurchaseOrder", payload);
 
       if (!response?.data?.success || !response.data.purchaseOrder) {
         toast.error(response?.data?.error || "Failed to open/create Purchase Order");
@@ -111,6 +113,15 @@ export default function ProjectPartsPanel({ project, parts = [], inventoryByItem
       }
 
       const po = response.data.purchaseOrder;
+      
+      // Invalidate all PO-related caches
+      await Promise.all([
+        queryClient.invalidateQueries({ queryKey: ['purchaseOrder', po.id] }),
+        queryClient.invalidateQueries({ queryKey: ['purchaseOrders'] }),
+        queryClient.invalidateQueries({ queryKey: ['projectPurchaseOrders', project.id] }),
+        queryClient.invalidateQueries({ queryKey: ['projectPOLines', project.id] })
+      ]);
+      
       setActivePoId(po.id);
     } catch (error) {
       toast.error("Error opening/creating Purchase Order");
