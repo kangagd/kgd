@@ -470,13 +470,14 @@ export default function PartsSection({ projectId, autoExpand = false, registerAd
                       )}
 
                       <Button
-                        variant="ghost"
+                        variant="outline"
                         size="icon"
                         onClick={(e) => {
                           e.stopPropagation();
                           if (confirm('Delete this part?')) deletePartMutation.mutate(part.id);
                         }}
-                        className="h-8 w-8 text-slate-400 hover:text-red-600 hover:bg-red-50"
+                        className="h-8 w-8 text-red-600 hover:text-red-700 hover:bg-red-50 border-red-200"
+                        title="Delete part"
                       >
                         <Trash2 className="w-4 h-4" />
                       </Button>
