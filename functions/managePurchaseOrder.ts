@@ -856,8 +856,9 @@ Deno.serve(async (req) => {
                 return Response.json({ error: 'Purchase Order not found' }, { status: 404 });
             }
 
-            // Only allow deletion if status is Draft
-            if (po.status !== PO_STATUS.DRAFT) {
+            // Admins can delete any PO, non-admins can only delete drafts
+            const isAdmin = user.role === 'admin';
+            if (!isAdmin && po.status !== PO_STATUS.DRAFT) {
                 return Response.json({ error: 'Only Draft purchase orders can be deleted' }, { status: 400 });
             }
 
