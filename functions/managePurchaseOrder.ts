@@ -90,6 +90,23 @@ function firstNonEmpty(...values) {
   return null;
 }
 
+/**
+ * GUARDRAIL: Ensure PO has canonical reference before creation
+ * No PurchaseOrder may exist with po_reference = null
+ */
+function ensurePoReference(poData, context = 'create') {
+  if (!poData.po_reference || !poData.po_reference.trim()) {
+    const generatedRef = `PO-${crypto.randomUUID().slice(0, 8).toUpperCase()}`;
+    console.warn(`⚠️ [GUARDRAIL:${context}] Auto-generated po_reference: ${generatedRef}`);
+    
+    poData.po_reference = generatedRef;
+    poData.po_number = generatedRef;
+    poData.order_reference = generatedRef;
+    poData.reference = generatedRef;
+  }
+  return poData;
+}
+
 // Resolve and normalize PO reference - CANONICAL FIELD ENFORCER
 // This ensures po_reference is the single source of truth
 function resolvePoRef({ data, po_reference, po_number, reference, order_reference }) {
@@ -463,6 +480,9 @@ Deno.serve(async (req) => {
                 order_date: new Date().toISOString().split('T')[0],
                 expected_date: expected_date_to_save,
             };
+
+            // GUARDRAIL: Enforce po_reference before create
+            ensurePoReference(poData, 'create');
 
             const po = await base44.asServiceRole.entities.PurchaseOrder.create(poData);
             
@@ -977,6 +997,9 @@ Deno.serve(async (req) => {
                 order_date: new Date().toISOString().split('T')[0],
                 expected_date: expected_date_to_save,
             };
+
+            // GUARDRAIL: Enforce po_reference before create
+            ensurePoReference(poData, 'getOrCreateProjectSupplierDraft');
 
             const newPO = await base44.asServiceRole.entities.PurchaseOrder.create(poData);
             
