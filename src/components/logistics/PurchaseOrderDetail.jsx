@@ -113,26 +113,23 @@ export default function PurchaseOrderDetail({ poId, onClose, mode = "page" }) {
     // 1) Update the query cache so `po` in render updates immediately
     queryClient.setQueryData(["purchaseOrder", poId], returnedPO);
 
-    // 2) Keep formData aligned (especially po_reference + name)
+    // 2) Sync formData with returned PO - use returnedPO values, no fallbacks
     setFormData(prev => ({
       ...prev,
-      supplier_id: returnedPO.supplier_id ?? prev.supplier_id,
-      project_id: returnedPO.project_id ?? prev.project_id,
-      delivery_method: returnedPO.delivery_method ?? prev.delivery_method,
-      notes: returnedPO.notes ?? prev.notes,
-      po_reference: returnedPO.po_reference ?? prev.po_reference,
-      name: returnedPO.name ?? prev.name,
-      status: normaliseLegacyPoStatus(returnedPO.status ?? prev.status),
-      eta: returnedPO.expected_date ?? prev.eta,
-      attachments: returnedPO.attachments ?? prev.attachments,
+      supplier_id: returnedPO.supplier_id || prev.supplier_id,
+      project_id: returnedPO.project_id || prev.project_id,
+      delivery_method: returnedPO.delivery_method || prev.delivery_method,
+      notes: returnedPO.notes || prev.notes,
+      po_reference: returnedPO.po_reference || "",
+      name: returnedPO.name || "",
+      status: normaliseLegacyPoStatus(returnedPO.status || prev.status),
+      eta: returnedPO.expected_date || prev.eta,
+      attachments: returnedPO.attachments || prev.attachments,
     }));
-
-    // 3) Allow re-hydration logic to run again if needed
-    initialLoadDone.current = true;
   };
 
   useEffect(() => {
-    if (po && lineItems) {
+    if (po && lineItems && !initialLoadDone.current) {
       // Normalize legacy status
       const normalizedStatus = normaliseLegacyPoStatus(po.status);
       
@@ -150,25 +147,23 @@ export default function PurchaseOrderDetail({ poId, onClose, mode = "page" }) {
         category: line.category || "Other"
       }));
 
-      // Only rehydrate on initial load - never overwrite user input
-      if (!initialLoadDone.current) {
-        setFormData({
-          supplier_id: po.supplier_id || "",
-          project_id: po.project_id || "",
-          delivery_method: po.delivery_method || "",
-          notes: po.notes || "",
-          po_reference: po.po_reference || "",
-          name: po.name || "",
-          status: normalizedStatus,
-          eta: po.expected_date || "",
-          attachments: po.attachments || [],
-          line_items: items
-        });
-        setIsEditing(normalizedStatus === PO_STATUS.DRAFT);
-        initialLoadDone.current = true;
-      }
+      // Only run once on initial load - never overwrite user input after that
+      setFormData({
+        supplier_id: po.supplier_id || "",
+        project_id: po.project_id || "",
+        delivery_method: po.delivery_method || "",
+        notes: po.notes || "",
+        po_reference: po.po_reference || "",
+        name: po.name || "",
+        status: normalizedStatus,
+        eta: po.expected_date || "",
+        attachments: po.attachments || [],
+        line_items: items
+      });
+      setIsEditing(normalizedStatus === PO_STATUS.DRAFT);
+      initialLoadDone.current = true;
     }
-  }, [po?.id, lineItems?.length]);
+  }, [po?.id]);
 
 
 
