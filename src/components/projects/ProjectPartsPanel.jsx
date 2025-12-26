@@ -101,7 +101,7 @@ export default function ProjectPartsPanel({ project, parts = [], inventoryByItem
   const projectPOs = purchaseOrders;
 
   const { data: suppliers = [] } = useQuery({
-    queryKey: ['suppliers-for-po-panel'],
+    queryKey: ['suppliers'],
     queryFn: () => base44.entities.Supplier.list('name')
   });
 

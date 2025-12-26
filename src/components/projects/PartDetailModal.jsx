@@ -29,6 +29,7 @@ import { toast } from "sonner";
 import { PART_STATUS, PART_STATUS_OPTIONS, PART_LOCATION, PART_LOCATION_OPTIONS, PART_CATEGORIES, getPartStatusLabel, getPartLocationLabel, normaliseLegacyPartStatus, normaliseLegacyPartLocation } from "@/components/domain/partConfig";
 import { SOURCE_TYPE, SOURCE_TYPE_OPTIONS, SOURCE_TYPE_LABELS, getSourceTypeLabel, normaliseLegacySourceType } from "@/components/domain/supplierDeliveryConfig";
 import { getPoStatusLabel } from "@/components/domain/purchaseOrderStatusConfig";
+import { getPoIdentity } from "@/components/domain/poDisplayHelpers";
 import { createPageUrl } from "@/utils";
 import { useNavigate } from "react-router-dom";
 
@@ -69,7 +70,7 @@ export default function PartDetailModal({ open, part, onClose, onSave, isSubmitt
 
   // Fetch price list items FIRST (needed by useEffect below)
   const { data: priceListItems = [] } = useQuery({
-    queryKey: ['priceListItems-for-parts'],
+    queryKey: ['priceListItems'],
     queryFn: () => base44.entities.PriceListItem.list('item'),
     enabled: open
   });
@@ -222,14 +223,14 @@ export default function PartDetailModal({ open, part, onClose, onSave, isSubmitt
 
   // Fetch vehicles for parts
   const { data: vehicles = [] } = useQuery({
-    queryKey: ['vehicles-for-parts'],
+    queryKey: ['vehicles'],
     queryFn: () => base44.entities.Vehicle.list('name'),
     enabled: open
   });
 
   // Fetch active suppliers
   const { data: suppliers = [] } = useQuery({
-    queryKey: ['activeSuppliers-parts'],
+    queryKey: ['suppliers'],
     queryFn: () => base44.entities.Supplier.list('name'),
     enabled: open
   });
@@ -358,21 +359,14 @@ export default function PartDetailModal({ open, part, onClose, onSave, isSubmitt
           
           {/* PO Linkage Status */}
           {part?.purchase_order_id ? (() => {
-            const poDisplayRef =
-              linkedPO?.order_reference ||
-              linkedPO?.po_number ||
-              part.order_reference ||
-              part.po_number ||
-              (part.purchase_order_id
-                ? String(part.purchase_order_id).slice(0, 8)
-                : "");
+            const poDisplayRef = linkedPO ? getPoIdentity(linkedPO).reference : null;
             
             return (
               <div className="mt-3 flex items-center justify-between gap-2 bg-blue-50 border border-blue-200 rounded-lg p-3">
                 <div className="flex flex-col gap-1">
                   <div className="flex items-center gap-2 flex-wrap">
                     <Badge variant="outline" className="text-xs bg-white">
-                      {poDisplayRef ? `Linked to PO #${poDisplayRef}` : "Linked to PO"}
+                      {poDisplayRef ? `Linked to ${poDisplayRef}` : "Linked to PO"}
                     </Badge>
                     {(linkedPO?.status || part.status) && (
                       <Badge className="text-xs bg-slate-100 text-slate-700 border-slate-200">
