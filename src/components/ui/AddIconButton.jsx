@@ -1,9 +1,10 @@
 import { Button } from "@/components/ui/button";
 import { Plus } from "lucide-react";
 
-export function AddIconButton({ onClick, className = "", title = "Add", ...props }) {
+export function AddIconButton({ onClick, className = "", title = "Add", type = "button", ...props }) {
   return (
     <Button
+      type={type}
       onClick={onClick}
       variant="ghost"
       title={title}
