@@ -120,20 +120,3 @@ export async function deletePurchaseOrder({ id }) {
   
   return response.data;
 }
-
-export async function getOrCreateProjectSupplierDraft({ project_id, supplier_id }) {
-  const payload = {
-    action: 'getOrCreateProjectSupplierDraft',
-    project_id,
-    supplier_id
-  };
-  
-  console.log("[PO UI] invoking", payload);
-  const response = await base44.functions.invoke('managePurchaseOrder', payload);
-  
-  if (!response.data?.success) {
-    throw new Error(response.data?.error || 'Failed to get/create project supplier draft');
-  }
-  
-  return response.data.purchaseOrder;
-}
