@@ -11,7 +11,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { createPageUrl } from "@/utils";
 import { PO_STATUS_OPTIONS, PO_STATUS, getPoStatusLabel } from "@/components/domain/purchaseOrderStatusConfig";
 import { DELIVERY_METHOD as PO_DELIVERY_METHOD } from "@/components/domain/supplierDeliveryConfig";
-import { getPoDisplayReference } from "@/components/domain/poDisplayHelpers";
+import { getPoDisplayReference, getPoIdentity } from "@/components/domain/poDisplayHelpers";
 import { getPoEta, getPoSupplierName, safeParseDate } from "@/components/domain/schemaAdapters";
 import BackButton from "../components/common/BackButton";
 import { format, parseISO } from "date-fns";
@@ -256,7 +256,12 @@ export default function PurchaseOrders() {
                   <div className="flex-1 min-w-0">
                     <div className="flex items-center gap-2 mb-2">
                       <h3 className="text-[18px] font-semibold text-[#111827] leading-[1.2]">
-                        {getPoDisplayReference(po)}
+                        {getPoIdentity(po).reference}
+                        {getPoIdentity(po).name && (
+                          <span className="text-[14px] font-normal text-[#6B7280] ml-2">
+                            {getPoIdentity(po).name}
+                          </span>
+                        )}
                       </h3>
                       <Select
                         value={po.status}
