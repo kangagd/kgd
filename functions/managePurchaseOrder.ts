@@ -110,7 +110,7 @@ Deno.serve(async (req) => {
     // ========================================
     
     // Reject data:{...} shape for new actions (only allow for legacy compatibility)
-    const legacyActions = ['create', 'update', 'getOrCreateProjectSupplierDraft'];
+    const legacyActions = ['getOrCreateProjectSupplierDraft'];
     if (payload.data && !legacyActions.includes(action)) {
       console.error('[PO] Rejected payload', { 
         action, 
@@ -446,139 +446,6 @@ Deno.serve(async (req) => {
     }
 
     // ========================================
-    // LEGACY COMPATIBILITY ACTIONS
-    // ========================================
-    
-    // Map old 'create' to 'createDraft' + 'manageLineItems'
-    if (action === 'create') {
-      const { supplier_id, project_id, delivery_method, delivery_location, notes, expected_date, attachments, line_items } = payload;
-
-      // Create draft PO first
-      const draftResponse = await fetch(req.url, {
-        method: 'POST',
-        headers: { ...Object.fromEntries(req.headers), 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          action: 'createDraft',
-          supplier_id,
-          project_id,
-          delivery_method,
-          delivery_location,
-          notes,
-          expected_date,
-          attachments
-        })
-      });
-
-      const draftResult = await draftResponse.json();
-      if (!draftResult.success) {
-        return Response.json(draftResult, { status: draftResponse.status });
-      }
-
-      const po = draftResult.purchaseOrder;
-
-      // Add line items if provided
-      if (line_items && line_items.length > 0) {
-        const linesResponse = await fetch(req.url, {
-          method: 'POST',
-          headers: { ...Object.fromEntries(req.headers), 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            action: 'manageLineItems',
-            id: po.id,
-            line_items
-          })
-        });
-
-        const linesResult = await linesResponse.json();
-        if (!linesResult.success) {
-          return Response.json(linesResult, { status: linesResponse.status });
-        }
-
-        return Response.json({ success: true, purchaseOrder: linesResult.purchaseOrder });
-      }
-
-      return Response.json({ success: true, purchaseOrder: po });
-    }
-
-    // Map old 'update' to appropriate new actions
-    if (action === 'update') {
-      const { id, supplier_id, notes, expected_date, name, po_reference, line_items } = payload;
-
-      if (!id) {
-        return Response.json({ error: 'id is required' }, { status: 400 });
-      }
-
-      const po = await base44.asServiceRole.entities.PurchaseOrder.get(id);
-      if (!po) {
-        return Response.json({ error: 'Purchase Order not found' }, { status: 404 });
-      }
-
-      // Update identity fields if any provided
-      const identityFields = { po_reference, name, supplier_id, notes, expected_date };
-      const hasIdentityUpdates = Object.values(identityFields).some(v => v !== undefined);
-
-      if (hasIdentityUpdates) {
-        const updateIdentityPayload = { action: 'updateIdentity', id };
-        if (po_reference !== undefined) updateIdentityPayload.po_reference = po_reference;
-        if (name !== undefined) updateIdentityPayload.name = name;
-        if (supplier_id !== undefined) updateIdentityPayload.supplier_id = supplier_id;
-        if (notes !== undefined) updateIdentityPayload.notes = notes;
-        if (expected_date !== undefined) updateIdentityPayload.expected_date = expected_date;
-
-        const identityResponse = await fetch(req.url, {
-          method: 'POST',
-          headers: { ...Object.fromEntries(req.headers), 'Content-Type': 'application/json' },
-          body: JSON.stringify(updateIdentityPayload)
-        });
-
-        const identityResult = await identityResponse.json();
-        if (!identityResult.success) {
-          return Response.json(identityResult, { status: identityResponse.status });
-        }
-      }
-
-      // Update line items if provided
-      if (line_items && Array.isArray(line_items)) {
-        const linesResponse = await fetch(req.url, {
-          method: 'POST',
-          headers: { ...Object.fromEntries(req.headers), 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            action: 'manageLineItems',
-            id,
-            line_items
-          })
-        });
-
-        const linesResult = await linesResponse.json();
-        if (!linesResult.success) {
-          return Response.json(linesResult, { status: linesResponse.status });
-        }
-
-        return Response.json({ success: true, purchaseOrder: linesResult.purchaseOrder });
-      }
-
-      // Reload final PO
-      const finalPO = await base44.asServiceRole.entities.PurchaseOrder.get(id);
-      const finalLines = await base44.asServiceRole.entities.PurchaseOrderLine.filter({ 
-        purchase_order_id: id 
-      });
-      
-      finalPO.line_items = finalLines.map(line => ({
-        id: line.id,
-        source_type: line.source_type || "custom",
-        source_id: line.source_id || null,
-        part_id: line.part_id || null,
-        name: line.item_name || line.description || '',
-        quantity: line.qty_ordered || 0,
-        unit_price: line.unit_cost_ex_tax || 0,
-        unit: line.unit || null,
-        notes: line.notes || null,
-        price_list_item_id: line.price_list_item_id
-      }));
-
-      return Response.json({ success: true, purchaseOrder: finalPO });
-    }
-
-    // ========================================
     // ACTION: getOrCreateProjectSupplierDraft (for backward compat)
     // ========================================
     if (action === 'getOrCreateProjectSupplierDraft') {
@@ -653,7 +520,9 @@ Deno.serve(async (req) => {
       });
     }
 
-    return Response.json({ error: 'Invalid action. Supported: createDraft, updateIdentity, updateStatus, manageLineItems, delete' }, { status: 400 });
+    return Response.json({ 
+      error: 'Invalid action. Supported: createDraft, updateIdentity, updateStatus, manageLineItems, delete, getOrCreateProjectSupplierDraft' 
+    }, { status: 400 });
 
   } catch (error) {
     console.error('[managePurchaseOrder] Error:', error);
