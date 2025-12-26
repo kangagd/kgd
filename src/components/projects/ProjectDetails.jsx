@@ -1070,8 +1070,12 @@ Format as HTML bullet points using <ul> and <li> tags. Include only the most cri
                   <AddIconButton
                     onClick={(e) => {
                       e.stopPropagation();
-                      // Trigger the add contact function from ProjectContactsPanel
-                      window.dispatchEvent(new CustomEvent('addProjectContact', { detail: { projectId: project.id } }));
+                      // Scroll to and focus on the contact form
+                      const contactPanel = document.querySelector('[placeholder="Name"]');
+                      if (contactPanel) {
+                        contactPanel.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                        setTimeout(() => contactPanel.focus(), 300);
+                      }
                     }}
                     title="Add Contact"
                   />
