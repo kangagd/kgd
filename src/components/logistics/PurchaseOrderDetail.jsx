@@ -292,13 +292,13 @@ export default function PurchaseOrderDetail({ poId, onClose, mode = "page" }) {
       });
 
       // Step 2: Update line items
-      const finalPO = await purchaseOrdersApi.manageLineItems({
+      const finalPO = await purchaseOrdersApi.setLineItems({
         id: poId,
         line_items: formData.line_items.map(item => ({
           source_type: item.source_type || "custom",
           source_id: item.source_id || null,
           part_id: item.part_id || null,
-          name: item.name || '',
+          item_name: item.name || '',
           quantity: item.quantity || 0,
           unit_price: item.unit_price || 0,
           unit: item.unit || null,
