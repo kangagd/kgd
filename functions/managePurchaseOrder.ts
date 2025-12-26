@@ -392,7 +392,7 @@ Deno.serve(async (req) => {
           action, id, data,
           supplier_id, project_id, delivery_method, delivery_location,
           line_items, status, supplier_name, notes,
-          reference, po_number, po_reference,
+          reference, po_number, po_reference, order_reference,
           name, eta, expected_date, attachments, vehicle_id
         } = await req.json();
 
@@ -534,6 +534,13 @@ Deno.serve(async (req) => {
                 });
             }
 
+            // Logging: Received values
+            console.log("[managePurchaseOrder:update] Received:", {
+                id,
+                top_level: { po_reference, po_number, order_reference, reference, name },
+                data: { po_reference: data?.po_reference, po_number: data?.po_number, order_reference: data?.order_reference, reference: data?.reference, name: data?.name }
+            });
+
             const updateData = {};
             if (supplier_id !== undefined) {
                 updateData.supplier_id = supplier_id;
@@ -561,40 +568,56 @@ Deno.serve(async (req) => {
             if (attachments !== undefined) updateData.attachments = attachments || [];
             
             // --- PERMANENT GUARDRAIL: Normalize references ---
-            const incomingRefs = normalizePOReferences({
+            // Accept both top-level and data payloads
+            const incomingPoReference = firstNonEmpty(
                 po_reference,
+                data?.po_reference,
                 po_number,
+                data?.po_number,
                 order_reference,
+                data?.order_reference,
                 reference,
-                data
-            });
+                data?.reference
+            );
             
-            // Only update if a reference was provided
-            if (incomingRefs.po_reference !== null) {
-                updateData.po_reference = incomingRefs.po_reference;
-                updateData.po_number = incomingRefs.po_reference;
-                updateData.order_reference = incomingRefs.po_reference;
-                updateData.reference = incomingRefs.po_reference;
+            // Only update if a non-empty reference was provided
+            if (incomingPoReference) {
+                updateData.po_reference = incomingPoReference;
+                updateData.po_number = incomingPoReference;
+                updateData.order_reference = incomingPoReference;
+                updateData.reference = incomingPoReference;
             }
 
             // --- Normalize Name from all possible inputs (canonical: name) ---
-            const incomingName =
-                name ??
-                data?.name ??
-                null;
+            // Accept both top-level and data payloads
+            const incomingName = name ?? data?.name ?? undefined;
 
-            if (incomingName !== null) {
-                const cleanedName = typeof incomingName === 'string' ? incomingName.trim() : incomingName;
-                updateData.name = cleanedName || null;
+            // Only update name if explicitly provided (not undefined)
+            if (incomingName !== undefined) {
+                if (incomingName === null) {
+                    // Explicitly null - allow setting to null
+                    updateData.name = null;
+                } else if (typeof incomingName === 'string') {
+                    const trimmedName = incomingName.trim();
+                    // Only update if trimmed value is non-empty
+                    if (trimmedName) {
+                        updateData.name = trimmedName;
+                    }
+                    // Empty string after trim = no update (preserve existing)
+                }
             }
 
-            console.log("[managePurchaseOrder:update] Incoming:", { id, incoming: { po_reference, po_number, name, supplier_name, data }, updateData });
+            // Logging: Final payload
+            console.log("[managePurchaseOrder:update] Update payload:", {
+                po_reference: updateData.po_reference,
+                name: updateData.name
+            });
 
             const updatedPO = await base44.asServiceRole.entities.PurchaseOrder.update(id, updateData);
 
-            console.log("[managePurchaseOrder:update] Result:", {
+            // Logging: Result after DB update
+            console.log("[managePurchaseOrder:update] DB result:", {
               po_reference: updatedPO.po_reference,
-              supplier_name: updatedPO.supplier_name,
               name: updatedPO.name
             });
 
