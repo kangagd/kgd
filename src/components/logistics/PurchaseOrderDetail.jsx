@@ -38,6 +38,7 @@ export default function PurchaseOrderDetail({ poId, onClose, mode = "page" }) {
   const { can } = usePermissions();
   const isModal = mode === "modal";
   const [isEditing, setIsEditing] = useState(false);
+  const [isDirty, setIsDirty] = useState(false);
   const [formData, setFormData] = useState({
     supplier_id: "",
     project_id: "",
@@ -169,9 +170,38 @@ export default function PurchaseOrderDetail({ poId, onClose, mode = "page" }) {
         line_items: items
       });
       setIsEditing(normalizedStatus === PO_STATUS.DRAFT);
+      setIsDirty(false);
       initialLoadDone.current = true;
+    } else if (po && lineItems && initialLoadDone.current && !isDirty) {
+      // PO updated from backend (e.g., after save) - rehydrate if not dirty
+      const normalizedStatus = normaliseLegacyPoStatus(po.status);
+      const items = lineItems.map(line => ({
+        id: line.id,
+        source_type: line.source_type || "custom",
+        source_id: line.source_id || line.price_list_item_id || null,
+        part_id: line.part_id || null,
+        name: line.item_name || line.description || '',
+        quantity: line.qty_ordered || 0,
+        unit_price: line.unit_cost_ex_tax || 0,
+        unit: line.unit || null,
+        notes: line.notes || null,
+        category: line.category || "Other"
+      }));
+
+      setFormData({
+        supplier_id: po.supplier_id || "",
+        project_id: po.project_id || "",
+        delivery_method: po.delivery_method || "",
+        notes: po.notes || "",
+        po_reference: po.po_reference || "",
+        name: po.name || "",
+        status: normalizedStatus,
+        eta: po.expected_date || "",
+        attachments: po.attachments || [],
+        line_items: items
+      });
     }
-  }, [po?.id]);
+  }, [po?.id, po, lineItems, isDirty]);
 
 
 
@@ -302,6 +332,9 @@ export default function PurchaseOrderDetail({ poId, onClose, mode = "page" }) {
         queryClient.invalidateQueries({ queryKey: ["purchaseOrders"] }),
         queryClient.invalidateQueries({ queryKey: ["projectParts"] }),
       ]);
+
+      // Reset dirty flag after successful save
+      setIsDirty(false);
 
       toast.success("Purchase Order saved");
     } catch (error) {
@@ -722,12 +755,15 @@ export default function PurchaseOrderDetail({ poId, onClose, mode = "page" }) {
                   <Badge className={getPoStatusColor(formData.status)}>{getPoStatusLabel(formData.status)}</Badge>
                 </div>
                 {isDraft ? (
-                 <Input
-                   value={formData.po_reference}
-                   onChange={(e) => setFormData({ ...formData, po_reference: e.target.value })}
-                   placeholder="Enter PO reference..."
-                   className="mt-2 max-w-xs text-sm"
-                 />
+                <Input
+                  value={formData.po_reference}
+                  onChange={(e) => {
+                    setFormData({ ...formData, po_reference: e.target.value });
+                    setIsDirty(true);
+                  }}
+                  placeholder="Enter PO reference..."
+                  className="mt-2 max-w-xs text-sm"
+                />
                 ) : (
                  <div className="mt-2 space-y-1">
                    <div className="flex items-center gap-2">
@@ -815,7 +851,10 @@ export default function PurchaseOrderDetail({ poId, onClose, mode = "page" }) {
                 <Label>PO Reference</Label>
                 <Input
                   value={formData.po_reference}
-                  onChange={(e) => setFormData({ ...formData, po_reference: e.target.value })}
+                  onChange={(e) => {
+                    setFormData({ ...formData, po_reference: e.target.value });
+                    setIsDirty(true);
+                  }}
                   disabled={!isDraft}
                   placeholder="e.g. KGD-RSH-4634"
                 />
@@ -826,7 +865,10 @@ export default function PurchaseOrderDetail({ poId, onClose, mode = "page" }) {
               <Label>Name/Description</Label>
               <Input
                 value={formData.name}
-                onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+                onChange={(e) => {
+                  setFormData({ ...formData, name: e.target.value });
+                  setIsDirty(true);
+                }}
                 disabled={!isDraft}
                 placeholder="e.g., Garage Door Parts Order"
               />
@@ -837,7 +879,10 @@ export default function PurchaseOrderDetail({ poId, onClose, mode = "page" }) {
                 <Label>Supplier *</Label>
                 <Select
                   value={formData.supplier_id}
-                  onValueChange={(value) => setFormData({ ...formData, supplier_id: value })}
+                  onValueChange={(value) => {
+                    setFormData({ ...formData, supplier_id: value });
+                    setIsDirty(true);
+                  }}
                 >
                   <SelectTrigger>
                     <SelectValue placeholder="Select supplier" />
@@ -864,7 +909,10 @@ export default function PurchaseOrderDetail({ poId, onClose, mode = "page" }) {
               <Label>Project (Optional)</Label>
               <Select
                 value={formData.project_id || "none"}
-                onValueChange={(value) => setFormData({ ...formData, project_id: value === "none" ? "" : value })}
+                onValueChange={(value) => {
+                  setFormData({ ...formData, project_id: value === "none" ? "" : value });
+                  setIsDirty(true);
+                }}
                 disabled={!isDraft}
               >
                 <SelectTrigger>
@@ -885,7 +933,10 @@ export default function PurchaseOrderDetail({ poId, onClose, mode = "page" }) {
               <Label>Delivery Method</Label>
               <Select
                 value={formData.delivery_method || "placeholder"}
-                onValueChange={(value) => setFormData({ ...formData, delivery_method: value === "placeholder" ? "" : value })}
+                onValueChange={(value) => {
+                  setFormData({ ...formData, delivery_method: value === "placeholder" ? "" : value });
+                  setIsDirty(true);
+                }}
                 disabled={!isDraft}
               >
                 <SelectTrigger>
@@ -969,7 +1020,10 @@ export default function PurchaseOrderDetail({ poId, onClose, mode = "page" }) {
                 <Input
                   type="date"
                   value={formData.eta}
-                  onChange={(e) => setFormData({ ...formData, eta: e.target.value })}
+                  onChange={(e) => {
+                    setFormData({ ...formData, eta: e.target.value });
+                    setIsDirty(true);
+                  }}
                   className="pl-9"
                 />
               </div>
@@ -1029,7 +1083,10 @@ export default function PurchaseOrderDetail({ poId, onClose, mode = "page" }) {
               <Label>Notes</Label>
               <Textarea
                 value={formData.notes}
-                onChange={(e) => setFormData({ ...formData, notes: e.target.value })}
+                onChange={(e) => {
+                  setFormData({ ...formData, notes: e.target.value });
+                  setIsDirty(true);
+                }}
                 disabled={!isDraft}
                 placeholder="Add any notes or special instructions..."
                 className="min-h-[80px]"
