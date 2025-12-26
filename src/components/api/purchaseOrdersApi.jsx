@@ -88,9 +88,9 @@ export async function updateStatus({ id, status }) {
   return response.data.purchaseOrder;
 }
 
-export async function manageLineItems({ id, line_items }) {
+export async function setLineItems({ id, line_items }) {
   const payload = {
-    action: 'manageLineItems',
+    action: 'setLineItems',
     id,
     line_items
   };
@@ -99,7 +99,7 @@ export async function manageLineItems({ id, line_items }) {
   const response = await base44.functions.invoke('managePurchaseOrder', payload);
   
   if (!response.data?.success) {
-    throw new Error(response.data?.error || 'Failed to manage line items');
+    throw new Error(response.data?.error || 'Failed to set line items');
   }
   
   return response.data.purchaseOrder;
