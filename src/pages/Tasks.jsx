@@ -36,7 +36,7 @@ export default function Tasks() {
 
   useEffect(() => {
     const projectId = searchParams.get('projectId');
-    if (projectId) {
+    if (projectId && projectId !== projectFilter) {
       setProjectFilter(projectId);
     }
   }, [searchParams]);
