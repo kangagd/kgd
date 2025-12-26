@@ -1,17 +1,29 @@
 import React, { useState } from "react";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { base44 } from "@/api/base44Client";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Mail, Phone, MessageSquare, User, Calendar, FileText, Plus, Paperclip } from "lucide-react";
+import { Mail, Phone, MessageSquare, User, Calendar, FileText, Plus, Paperclip, Link2 } from "lucide-react";
 import { format } from "date-fns";
 import LogManualActivityModal from "./LogManualActivityModal";
 import { Badge } from "@/components/ui/badge";
+import { toast } from "sonner";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
+import { Input } from "@/components/ui/input";
 
 export default function ActivityTab({ project, onComposeEmail }) {
   const [filter, setFilter] = useState("all");
   const [showLogModal, setShowLogModal] = useState(false);
+  const [showLinkModal, setShowLinkModal] = useState(false);
+  const [searchTerm, setSearchTerm] = useState("");
+  const queryClient = useQueryClient();
 
   // Fetch project messages (manual activities)
   const { data: projectMessages = [], refetch: refetchMessages } = useQuery({
@@ -25,6 +37,42 @@ export default function ActivityTab({ project, onComposeEmail }) {
     queryKey: ['projectEmails', project.id],
     queryFn: () => base44.entities.ProjectEmail.filter({ project_id: project.id }),
     enabled: !!project.id
+  });
+
+  // Fetch all email threads for linking
+  const { data: allEmailThreads = [] } = useQuery({
+    queryKey: ['allEmailThreads'],
+    queryFn: () => base44.entities.EmailThread.list('-created_date', 100),
+    enabled: showLinkModal
+  });
+
+  // Filter email threads based on search
+  const filteredEmailThreads = React.useMemo(() => {
+    if (!searchTerm) return allEmailThreads.slice(0, 20);
+    const term = searchTerm.toLowerCase();
+    return allEmailThreads.filter(thread =>
+      thread.subject?.toLowerCase().includes(term) ||
+      thread.from_address?.toLowerCase().includes(term)
+    ).slice(0, 20);
+  }, [allEmailThreads, searchTerm]);
+
+  // Link email thread mutation
+  const linkEmailMutation = useMutation({
+    mutationFn: async (threadId) => {
+      await base44.entities.ProjectEmail.create({
+        project_id: project.id,
+        email_thread_id: threadId
+      });
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['projectEmails', project.id] });
+      setShowLinkModal(false);
+      setSearchTerm("");
+      toast.success("Email thread linked to project");
+    },
+    onError: () => {
+      toast.error("Failed to link email thread");
+    }
   });
 
   // Fetch email threads for those emails
@@ -141,7 +189,19 @@ export default function ActivityTab({ project, onComposeEmail }) {
         <CardHeader className="pb-3">
           <div className="flex items-center justify-between">
             <CardTitle className="text-[16px] font-semibold text-[#111827]">Activity Timeline</CardTitle>
-            <div className="flex gap-2">
+            <div className="flex gap-2 flex-wrap">
+              <Button
+                onClick={(e) => {
+                  e.stopPropagation();
+                  setShowLinkModal(true);
+                }}
+                size="sm"
+                variant="outline"
+                className="gap-2"
+              >
+                <Link2 className="w-4 h-4" />
+                Link Email
+              </Button>
               <Button
                 onClick={(e) => {
                   e.stopPropagation();
@@ -249,6 +309,83 @@ export default function ActivityTab({ project, onComposeEmail }) {
         projectId={project.id}
         onSuccess={refetchMessages}
       />
+
+      <Dialog open={showLinkModal} onOpenChange={setShowLinkModal}>
+        <DialogContent className="max-w-2xl max-h-[80vh] overflow-hidden flex flex-col">
+          <DialogHeader>
+            <DialogTitle>Link Email Thread to Project</DialogTitle>
+            <DialogDescription>
+              Search and select an email thread to link to this project
+            </DialogDescription>
+          </DialogHeader>
+          
+          <div className="py-4">
+            <Input
+              placeholder="Search by subject or sender..."
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+              className="mb-4"
+            />
+            
+            <div className="space-y-2 max-h-[400px] overflow-y-auto">
+              {filteredEmailThreads.length === 0 ? (
+                <div className="text-center py-8 text-[#9CA3AF]">
+                  <Mail className="w-12 h-12 mx-auto mb-3 text-[#E5E7EB]" />
+                  <p className="text-[14px]">No email threads found</p>
+                </div>
+              ) : (
+                filteredEmailThreads.map((thread) => {
+                  const alreadyLinked = projectEmails.some(pe => pe.email_thread_id === thread.id);
+                  
+                  return (
+                    <button
+                      key={thread.id}
+                      onClick={() => {
+                        if (!alreadyLinked) {
+                          linkEmailMutation.mutate(thread.id);
+                        }
+                      }}
+                      disabled={alreadyLinked || linkEmailMutation.isPending}
+                      className={`w-full text-left p-3 rounded-lg border transition-all ${
+                        alreadyLinked 
+                          ? 'bg-[#F3F4F6] border-[#E5E7EB] cursor-not-allowed opacity-50' 
+                          : 'bg-white border-[#E5E7EB] hover:border-[#FAE008] hover:bg-[#FFFEF5] cursor-pointer'
+                      }`}
+                    >
+                      <div className="flex items-start justify-between gap-3">
+                        <div className="flex-1 min-w-0">
+                          <div className="font-medium text-[14px] text-[#111827] mb-1 truncate">
+                            {thread.subject || '(No subject)'}
+                          </div>
+                          <div className="text-[13px] text-[#6B7280] mb-1 truncate">
+                            From: {thread.from_address}
+                          </div>
+                          {thread.last_message_snippet && (
+                            <div className="text-[12px] text-[#9CA3AF] line-clamp-2">
+                              {thread.last_message_snippet}
+                            </div>
+                          )}
+                        </div>
+                        <div className="flex-shrink-0">
+                          {alreadyLinked ? (
+                            <Badge variant="secondary" className="bg-green-100 text-green-700">
+                              Linked
+                            </Badge>
+                          ) : (
+                            <span className="text-[12px] text-[#9CA3AF]">
+                              {format(new Date(thread.last_message_date), 'MMM d')}
+                            </span>
+                          )}
+                        </div>
+                      </div>
+                    </button>
+                  );
+                })
+              )}
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
