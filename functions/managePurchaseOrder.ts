@@ -32,6 +32,22 @@ Deno.serve(async (req) => {
     // ACTION: createDraft
     // ========================================
     if (action === 'createDraft') {
+      const allowedFields = new Set(['action', 'supplier_id', 'project_id', 'delivery_method', 'delivery_location', 'notes', 'expected_date', 'attachments']);
+      const payloadKeys = Object.keys(payload);
+      const forbiddenFields = payloadKeys.filter(k => !allowedFields.has(k));
+      
+      if (forbiddenFields.length > 0) {
+        console.warn('[managePurchaseOrderV2] Validation failed', {
+          action: 'createDraft',
+          poId: null,
+          forbiddenFields
+        });
+        return Response.json({ 
+          success: false,
+          error: `Forbidden fields for createDraft: ${forbiddenFields.join(', ')}` 
+        }, { status: 400 });
+      }
+
       const { 
         supplier_id, 
         project_id, 
@@ -43,17 +59,7 @@ Deno.serve(async (req) => {
       } = payload;
 
       if (!supplier_id) {
-        return Response.json({ error: 'supplier_id is required' }, { status: 400 });
-      }
-
-      // Forbidden fields check
-      const forbiddenFields = ['status', 'po_reference', 'name', 'po_number', 'order_reference', 'reference', 'sent_at', 'arrived_at'];
-      const passedForbidden = forbiddenFields.filter(f => payload[f] !== undefined);
-      if (passedForbidden.length > 0) {
-        console.error('❌ [createDraft] Forbidden fields:', passedForbidden);
-        return Response.json({ 
-          error: `Forbidden fields: ${passedForbidden.join(', ')}` 
-        }, { status: 400 });
+        return Response.json({ success: false, error: 'supplier_id is required' }, { status: 400 });
       }
 
       // Fetch supplier name
@@ -95,31 +101,44 @@ Deno.serve(async (req) => {
     // ACTION: updateIdentity
     // ========================================
     if (action === 'updateIdentity') {
+      const allowedFields = new Set(['action', 'id', 'po_reference', 'name', 'supplier_id', 'notes', 'expected_date', 'attachments']);
+      const payloadKeys = Object.keys(payload);
+      const forbiddenFields = payloadKeys.filter(k => !allowedFields.has(k));
+      
+      if (forbiddenFields.length > 0) {
+        console.warn('[managePurchaseOrderV2] Validation failed', {
+          action: 'updateIdentity',
+          poId: payload.id || null,
+          forbiddenFields
+        });
+        return Response.json({ 
+          success: false,
+          error: `Forbidden fields for updateIdentity: ${forbiddenFields.join(', ')}` 
+        }, { status: 400 });
+      }
+
       const { id, po_reference, name, supplier_id, notes, expected_date, attachments } = payload;
 
       if (!id) {
-        return Response.json({ error: 'id is required' }, { status: 400 });
-      }
-
-      // Forbidden fields check
-      const forbiddenFields = ['status', 'project_id', 'delivery_method', 'delivery_location', 'sent_at', 'arrived_at', 'po_number', 'order_reference', 'reference'];
-      const passedForbidden = forbiddenFields.filter(f => payload[f] !== undefined);
-      if (passedForbidden.length > 0) {
-        console.error('❌ [updateIdentity] Forbidden fields:', passedForbidden);
-        return Response.json({ 
-          error: `Forbidden fields: ${passedForbidden.join(', ')}` 
-        }, { status: 400 });
+        return Response.json({ success: false, error: 'id is required' }, { status: 400 });
       }
 
       const po = await base44.asServiceRole.entities.PurchaseOrder.get(id);
       if (!po) {
-        return Response.json({ error: 'Purchase Order not found' }, { status: 404 });
+        return Response.json({ success: false, error: 'Purchase Order not found' }, { status: 404 });
       }
 
       const updateData = {};
 
       if (po_reference !== undefined) {
-        updateData.po_reference = po_reference?.trim() || null;
+        const trimmed = po_reference?.trim() || '';
+        if (trimmed === '') {
+          return Response.json({ success: false, error: 'po_reference cannot be empty' }, { status: 400 });
+        }
+        if (trimmed.length > 50) {
+          return Response.json({ success: false, error: 'po_reference max length is 50 characters' }, { status: 400 });
+        }
+        updateData.po_reference = trimmed;
       }
       if (name !== undefined) {
         updateData.name = name?.trim() || null;
@@ -157,31 +176,38 @@ Deno.serve(async (req) => {
     // ACTION: updateStatus
     // ========================================
     if (action === 'updateStatus') {
+      const allowedFields = new Set(['action', 'id', 'status']);
+      const payloadKeys = Object.keys(payload);
+      const forbiddenFields = payloadKeys.filter(k => !allowedFields.has(k));
+      
+      if (forbiddenFields.length > 0) {
+        console.warn('[managePurchaseOrderV2] Validation failed', {
+          action: 'updateStatus',
+          poId: payload.id || null,
+          forbiddenFields
+        });
+        return Response.json({ 
+          success: false,
+          error: `Forbidden fields for updateStatus: ${forbiddenFields.join(', ')}` 
+        }, { status: 400 });
+      }
+
       const { id, status } = payload;
 
       if (!id || !status) {
-        return Response.json({ error: 'id and status are required' }, { status: 400 });
-      }
-
-      // Forbidden fields check
-      const forbiddenFields = ['po_reference', 'name', 'supplier_id', 'notes', 'expected_date', 'attachments', 'sent_at', 'arrived_at'];
-      const passedForbidden = forbiddenFields.filter(f => payload[f] !== undefined);
-      if (passedForbidden.length > 0) {
-        console.error('❌ [updateStatus] Forbidden fields:', passedForbidden);
-        return Response.json({ 
-          error: `Forbidden fields: ${passedForbidden.join(', ')}` 
-        }, { status: 400 });
+        return Response.json({ success: false, error: 'id and status are required' }, { status: 400 });
       }
 
       if (!VALID_STATUSES.includes(status)) {
         return Response.json({ 
+          success: false,
           error: `Invalid status. Must be one of: ${VALID_STATUSES.join(', ')}` 
         }, { status: 400 });
       }
 
       const po = await base44.asServiceRole.entities.PurchaseOrder.get(id);
       if (!po) {
-        return Response.json({ error: 'Purchase Order not found' }, { status: 404 });
+        return Response.json({ success: false, error: 'Purchase Order not found' }, { status: 404 });
       }
 
       console.log('[PO updateStatus] pure status update', { id, status });
@@ -196,29 +222,47 @@ Deno.serve(async (req) => {
     // ACTION: setLineItems
     // ========================================
     if (action === 'setLineItems') {
+      const allowedFields = new Set(['action', 'id', 'line_items']);
+      const payloadKeys = Object.keys(payload);
+      const forbiddenFields = payloadKeys.filter(k => !allowedFields.has(k));
+      
+      if (forbiddenFields.length > 0) {
+        console.warn('[managePurchaseOrderV2] Validation failed', {
+          action: 'setLineItems',
+          poId: payload.id || null,
+          forbiddenFields
+        });
+        return Response.json({ 
+          success: false,
+          error: `Forbidden fields for setLineItems: ${forbiddenFields.join(', ')}` 
+        }, { status: 400 });
+      }
+
       const { id, line_items } = payload;
 
       if (!id) {
-        return Response.json({ error: 'id is required' }, { status: 400 });
+        return Response.json({ success: false, error: 'id is required' }, { status: 400 });
       }
 
       if (!line_items || !Array.isArray(line_items)) {
-        return Response.json({ error: 'line_items array is required' }, { status: 400 });
+        return Response.json({ success: false, error: 'line_items array is required' }, { status: 400 });
       }
 
-      // Forbidden fields check
-      const forbiddenFields = ['status', 'po_reference', 'name', 'supplier_id', 'notes', 'expected_date'];
-      const passedForbidden = forbiddenFields.filter(f => payload[f] !== undefined);
-      if (passedForbidden.length > 0) {
-        console.error('❌ [setLineItems] Forbidden fields:', passedForbidden);
-        return Response.json({ 
-          error: `Forbidden fields: ${passedForbidden.join(', ')}` 
-        }, { status: 400 });
+      // Validate each line item
+      for (let i = 0; i < line_items.length; i++) {
+        const item = line_items[i];
+        const hasName = item.item_name || item.description || item.name;
+        if (!hasName) {
+          return Response.json({ 
+            success: false,
+            error: `Line item at index ${i} must have at least one of: item_name, description, name` 
+          }, { status: 400 });
+        }
       }
 
       const po = await base44.asServiceRole.entities.PurchaseOrder.get(id);
       if (!po) {
-        return Response.json({ error: 'Purchase Order not found' }, { status: 404 });
+        return Response.json({ success: false, error: 'Purchase Order not found' }, { status: 404 });
       }
 
       // Delete existing lines
@@ -231,15 +275,18 @@ Deno.serve(async (req) => {
 
       // Create new lines
       for (const item of line_items) {
+        const qtyOrdered = Number(item.qty_ordered || item.quantity || item.qty || 1);
+        const unitCostExTax = Number(item.unit_cost_ex_tax || item.unit_price || item.price || 0);
+        
         const lineData = {
           purchase_order_id: id,
           item_name: item.item_name || item.name || '',
           description: item.description || item.item_name || item.name || '',
-          qty_ordered: item.qty_ordered || item.quantity || item.qty || 0,
-          unit_cost_ex_tax: item.unit_cost_ex_tax || item.unit_price || item.price || 0,
+          qty_ordered: qtyOrdered,
+          unit_cost_ex_tax: unitCostExTax,
           unit: item.unit || null,
           tax_rate_percent: item.tax_rate_percent || 0,
-          total_line_ex_tax: (item.qty_ordered || item.quantity || item.qty || 0) * (item.unit_cost_ex_tax || item.unit_price || item.price || 0),
+          total_line_ex_tax: qtyOrdered * unitCostExTax,
           source_type: item.source_type || null,
           source_id: item.source_id || null,
           part_id: item.part_id || null,
@@ -276,15 +323,31 @@ Deno.serve(async (req) => {
     // ACTION: delete
     // ========================================
     if (action === 'delete') {
+      const allowedFields = new Set(['action', 'id']);
+      const payloadKeys = Object.keys(payload);
+      const forbiddenFields = payloadKeys.filter(k => !allowedFields.has(k));
+      
+      if (forbiddenFields.length > 0) {
+        console.warn('[managePurchaseOrderV2] Validation failed', {
+          action: 'delete',
+          poId: payload.id || null,
+          forbiddenFields
+        });
+        return Response.json({ 
+          success: false,
+          error: `Forbidden fields for delete: ${forbiddenFields.join(', ')}` 
+        }, { status: 400 });
+      }
+
       const { id } = payload;
 
       if (!id) {
-        return Response.json({ error: 'id is required' }, { status: 400 });
+        return Response.json({ success: false, error: 'id is required' }, { status: 400 });
       }
 
       const po = await base44.asServiceRole.entities.PurchaseOrder.get(id);
       if (!po) {
-        return Response.json({ error: 'Purchase Order not found' }, { status: 404 });
+        return Response.json({ success: false, error: 'Purchase Order not found' }, { status: 404 });
       }
 
       // Delete line items
@@ -302,10 +365,10 @@ Deno.serve(async (req) => {
     }
 
     // Should never reach here due to VALID_ACTIONS check
-    return Response.json({ error: 'Invalid action' }, { status: 400 });
+    return Response.json({ success: false, error: 'Invalid action' }, { status: 400 });
 
   } catch (error) {
     console.error('[managePurchaseOrderV2] Error:', error);
-    return Response.json({ error: error.message }, { status: 500 });
+    return Response.json({ success: false, error: error.message }, { status: 500 });
   }
 });
