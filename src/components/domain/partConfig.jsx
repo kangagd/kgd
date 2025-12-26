@@ -136,6 +136,8 @@ export function getNormalizedPartStatus(part) {
 /**
  * Check if a part is pickable (can appear in "Ready to Pick / Assigned")
  * This is the single source of truth for pick list eligibility
+ * 
+ * Uses the full isPartAvailable() logic to ensure only truly ready parts appear
  */
 export function isPickablePart(part) {
   if (!part) return false;
@@ -145,8 +147,8 @@ export function isPickablePart(part) {
     return false;
   }
   
-  const normalizedStatus = getNormalizedPartStatus(part);
-  return PICKABLE_STATUSES.has(normalizedStatus);
+  // Use the strict availability check
+  return isPartAvailable(part);
 }
 
 export const PART_CATEGORIES = [
