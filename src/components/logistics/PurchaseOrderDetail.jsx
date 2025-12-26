@@ -108,23 +108,31 @@ export default function PurchaseOrderDetail({ poId, onClose, mode = "page" }) {
 
   // Helper: Apply returned PO to both cache and formData
   const applyReturnedPO = (returnedPO) => {
-    if (!returnedPO?.id) return;
+    if (!returnedPO?.id) {
+      console.warn("[applyReturnedPO] No PO returned");
+      return;
+    }
+
+    console.log("[applyReturnedPO]", {
+      returned_po_reference: returnedPO.po_reference,
+      returned_name: returnedPO.name
+    });
 
     // 1) Update the query cache so `po` in render updates immediately
     queryClient.setQueryData(["purchaseOrder", poId], returnedPO);
 
-    // 2) Sync formData with returned PO - use returnedPO values, no fallbacks
+    // 2) Sync formData with returned PO - explicitly use returned values
     setFormData(prev => ({
       ...prev,
-      supplier_id: returnedPO.supplier_id || prev.supplier_id,
-      project_id: returnedPO.project_id || prev.project_id,
-      delivery_method: returnedPO.delivery_method || prev.delivery_method,
-      notes: returnedPO.notes || prev.notes,
-      po_reference: returnedPO.po_reference || "",
-      name: returnedPO.name || "",
-      status: normaliseLegacyPoStatus(returnedPO.status || prev.status),
-      eta: returnedPO.expected_date || prev.eta,
-      attachments: returnedPO.attachments || prev.attachments,
+      supplier_id: returnedPO.supplier_id ?? prev.supplier_id,
+      project_id: returnedPO.project_id ?? prev.project_id,
+      delivery_method: returnedPO.delivery_method ?? prev.delivery_method,
+      notes: returnedPO.notes ?? prev.notes,
+      po_reference: returnedPO.po_reference ?? "",
+      name: returnedPO.name ?? "",
+      status: normaliseLegacyPoStatus(returnedPO.status ?? prev.status),
+      eta: returnedPO.expected_date ?? prev.eta,
+      attachments: returnedPO.attachments ?? prev.attachments,
     }));
   };
 
@@ -275,8 +283,13 @@ export default function PurchaseOrderDetail({ poId, onClose, mode = "page" }) {
     // Apply returned PO to both cache and formData
     applyReturnedPO(updatedPO);
 
-    await invalidatePurchaseOrderBundle(queryClient, poId);
-    await queryClient.invalidateQueries({ queryKey: ["parts"] });
+    // Invalidate all PO-related queries
+    await Promise.all([
+      invalidatePurchaseOrderBundle(queryClient, poId),
+      queryClient.invalidateQueries({ queryKey: ["parts"] }),
+      queryClient.invalidateQueries({ queryKey: ["purchaseOrders"] }),
+      queryClient.invalidateQueries({ queryKey: ["projectParts"] }),
+    ]);
 
     toast.success("Purchase Order saved");
   };
@@ -383,6 +396,10 @@ export default function PurchaseOrderDetail({ poId, onClose, mode = "page" }) {
     
     // Apply returned PO to both cache and formData
     const updatedPO = updateRes.data.purchaseOrder;
+    console.log("[Send to Supplier - after update]", {
+      returned_po_reference: updatedPO?.po_reference,
+      returned_name: updatedPO?.name
+    });
     applyReturnedPO(updatedPO);
     
     // Then update status using managePurchaseOrder for side effects
