@@ -125,7 +125,15 @@ export default function CustomerForm({ customer, onSubmit, onCancel, isSubmittin
 
   const handleSubmit = (e) => {
     e.preventDefault();
-    onSubmit(formData);
+    
+    // Ensure organisation_name is included if organisation_id is set
+    const submitData = { ...formData };
+    if (submitData.organisation_id && !submitData.organisation_name) {
+      const org = organisations.find(o => o.id === submitData.organisation_id);
+      submitData.organisation_name = org?.name || "";
+    }
+    
+    onSubmit(submitData);
   };
 
   const handleOrganisationChange = (orgId) => {
