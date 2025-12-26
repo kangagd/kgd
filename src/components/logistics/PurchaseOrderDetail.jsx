@@ -15,7 +15,7 @@ import { toast } from "sonner";
 import { PO_STATUS, PO_STATUS_OPTIONS, PO_STATUS_OPTIONS_NON_PROJECT, PO_STATUS_OPTIONS_PROJECT, getPoStatusLabel, getPoStatusColor, normaliseLegacyPoStatus } from "@/components/domain/purchaseOrderStatusConfig";
 import { DELIVERY_METHOD as PO_DELIVERY_METHOD, DELIVERY_METHOD_OPTIONS as PO_DELIVERY_METHOD_OPTIONS } from "@/components/domain/supplierDeliveryConfig";
 import { PART_CATEGORIES } from "@/components/domain/partConfig";
-import { getPoDisplayReference, validatePoIdentityFields } from "@/components/domain/poDisplayHelpers";
+import { getPoDisplayReference, validatePoIdentityFields, getPoIdentity } from "@/components/domain/poDisplayHelpers";
 import { setPoEtaPayload } from "@/components/domain/schemaAdapters";
 import { createPageUrl } from "@/utils";
 import { useNavigate } from "react-router-dom";
@@ -741,7 +741,7 @@ export default function PurchaseOrderDetail({ poId, onClose, mode = "page" }) {
                  <div className="mt-2 space-y-1">
                    <div className="flex items-center gap-2">
                      <p className="text-sm font-medium text-[#111827]">
-                       {po.po_reference || getPoDisplayReference(po)}
+                       {getPoIdentity(po).reference}
                      </p>
                      {(formData.po_reference?.trim() !== (po.po_reference || '') || 
                        formData.name?.trim() !== (po.name || '')) && (
@@ -750,8 +750,8 @@ export default function PurchaseOrderDetail({ poId, onClose, mode = "page" }) {
                        </Badge>
                      )}
                    </div>
-                   {po.name && (
-                     <p className="text-sm text-[#6B7280]">{po.name}</p>
+                   {getPoIdentity(po).name && (
+                     <p className="text-sm text-[#6B7280]">{getPoIdentity(po).name}</p>
                    )}
                  </div>
                 )}
