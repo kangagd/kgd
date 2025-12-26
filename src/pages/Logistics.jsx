@@ -2,7 +2,7 @@ import React, { useState, useMemo, useCallback } from "react";
 import { base44 } from "@/api/base44Client";
 import { useDebounce } from "@/components/common/useDebounce";
 import { sameId } from "@/components/utils/id";
-import { useQuery, useMutation, useQueryClient } from "@tantml:react-query";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import * as purchaseOrdersApi from "@/components/api/purchaseOrdersApi";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
