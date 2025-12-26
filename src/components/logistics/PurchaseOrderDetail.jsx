@@ -787,29 +787,16 @@ export default function PurchaseOrderDetail({ poId, onClose, mode = "page" }) {
                 </div>
                 <div className="flex gap-2">
                 {(isDraft || can(PERMISSIONS.DELETE_PO)) && (
-                  <TooltipProvider>
-                    <Tooltip>
-                      <TooltipTrigger asChild>
-                        <span>
-                          <Button
-                            type="button"
-                            onClick={handleDelete}
-                            disabled={deletePOMutation.isPending || !can(PERMISSIONS.DELETE_PO)}
-                            variant="outline"
-                            className="text-red-600 hover:text-red-700 hover:bg-red-50"
-                          >
-                            <Trash className="w-4 h-4 mr-2" />
-                            Delete
-                          </Button>
-                        </span>
-                      </TooltipTrigger>
-                      {!can(PERMISSIONS.DELETE_PO) && (
-                        <TooltipContent>
-                          <p>Insufficient permissions</p>
-                        </TooltipContent>
-                      )}
-                    </Tooltip>
-                  </TooltipProvider>
+                  <Button
+                    type="button"
+                    onClick={handleDelete}
+                    disabled={deletePOMutation.isPending}
+                    variant="outline"
+                    className="text-red-600 hover:text-red-700 hover:bg-red-50"
+                  >
+                    <Trash className="w-4 h-4 mr-2" />
+                    Delete
+                  </Button>
                 )}
                 {isDraft && (
                 <>
