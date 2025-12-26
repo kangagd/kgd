@@ -147,9 +147,12 @@ export default function ActivityTab({ project, onComposeEmail }) {
   });
 
   // Fetch email threads for those emails
-  const emailThreadIds = [...new Set(projectEmails.map(pe => pe.thread_id).filter(Boolean))];
+  const emailThreadIds = React.useMemo(() => 
+    [...new Set(projectEmails.map(pe => pe.thread_id).filter(Boolean))],
+    [projectEmails]
+  );
   const { data: emailThreads = [] } = useQuery({
-    queryKey: ['emailThreads', emailThreadIds],
+    queryKey: ['emailThreads', ...emailThreadIds],
     queryFn: async () => {
       if (emailThreadIds.length === 0) return [];
       const threads = await Promise.all(
@@ -162,7 +165,7 @@ export default function ActivityTab({ project, onComposeEmail }) {
 
   // Fetch email messages for those threads
   const { data: emailMessages = [] } = useQuery({
-    queryKey: ['emailMessages', emailThreadIds],
+    queryKey: ['emailMessages', ...emailThreadIds],
     queryFn: async () => {
       if (emailThreadIds.length === 0) return [];
       const messages = await Promise.all(
