@@ -39,13 +39,27 @@ export default function MediaDocumentsDrawer({ open, onClose, project, initialTa
         <div className="flex items-center justify-between px-4 py-3 border-b border-[#E5E7EB]">
           <h2 className="text-[18px] font-semibold text-[#111827]">Media & Documents</h2>
           <div className="flex items-center gap-2">
+            <input
+              ref={photoInputRef}
+              type="file"
+              accept="image/*"
+              multiple
+              className="hidden"
+              onChange={(e) => onUploadPhotos?.(e)}
+            />
+            <input
+              ref={docInputRef}
+              type="file"
+              multiple
+              className="hidden"
+              onChange={(e) => onUploadDocuments?.(e)}
+            />
             <Button
               size="sm"
               className="bg-[#FAE008] text-[#111827] hover:bg-[#E5CF07]"
               onClick={(e) => {
                 e.stopPropagation();
-                // Trigger upload - delegate to parent or implement file input
-                toast.info('Upload functionality - connect to file input');
+                handleUploadClick();
               }}
             >
               <Upload className="w-4 h-4 mr-2" />
