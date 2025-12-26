@@ -506,8 +506,13 @@ Deno.serve(async (req) => {
                 await base44.asServiceRole.entities.PurchaseOrderLine.create(lineData);
             }
 
-            // Link Parts to PO
-            await linkPartsToPO(base44, po.id, line_items);
+            // 🚫 DISABLED: Link Parts to PO
+            // await linkPartsToPO(base44, po.id, line_items);
+            console.warn('⚠️ [SIDE EFFECT DISABLED] Would have linked parts to PO on create:', {
+                po_id: po.id,
+                po_reference: po.po_reference,
+                blocked_mutations: ['Part.purchase_order_id', 'Part.status', 'Part.order_date', 'Part.location']
+            });
 
             // Reload PO with line items for response
             const finalPO = await base44.asServiceRole.entities.PurchaseOrder.get(po.id);
@@ -638,9 +643,14 @@ Deno.serve(async (req) => {
               name: updatedPO.name
             });
 
-            // Sync linked parts status/location and references with PO
-            await syncPartsWithPurchaseOrderStatus(base44, updatedPO);
-            await syncPartReferencesWithPO(base44, updatedPO);
+            // 🚫 DISABLED: Sync linked parts status/location and references with PO
+            // await syncPartsWithPurchaseOrderStatus(base44, updatedPO);
+            // await syncPartReferencesWithPO(base44, updatedPO);
+            console.warn('⚠️ [SIDE EFFECT DISABLED] Would have synced parts for PO:', {
+                po_id: updatedPO.id,
+                po_reference: updatedPO.po_reference,
+                blocked_mutations: ['Part.status', 'Part.location', 'Part.po_number', 'Part.order_reference']
+            });
 
             // Update project activity if PO is linked to a project
             if (updatedPO.project_id) {
@@ -673,8 +683,12 @@ Deno.serve(async (req) => {
                     await base44.asServiceRole.entities.PurchaseOrderLine.create(lineData);
                 }
 
-                // Link Parts to PO
-                await linkPartsToPO(base44, id, line_items);
+                // 🚫 DISABLED: Link Parts to PO
+                // await linkPartsToPO(base44, id, line_items);
+                console.warn('⚠️ [SIDE EFFECT DISABLED] Would have linked parts to PO on update:', {
+                    po_id: id,
+                    blocked_mutations: ['Part.purchase_order_id', 'Part.status', 'Part.order_date', 'Part.location']
+                });
             }
 
             // Reload PO to return fresh data with line items
@@ -794,11 +808,16 @@ Deno.serve(async (req) => {
                 await updateProjectActivity(base44, updatedPO.project_id, activityType);
             }
 
-            // Sync linked Parts status/location and references
-            await syncPartsWithPurchaseOrderStatus(base44, updatedPO, vehicle_id);
-            await syncPartReferencesWithPO(base44, updatedPO);
+            // 🚫 DISABLED: Sync linked Parts status/location and references
+            // await syncPartsWithPurchaseOrderStatus(base44, updatedPO, vehicle_id);
+            // await syncPartReferencesWithPO(base44, updatedPO);
+            console.warn('⚠️ [SIDE EFFECT DISABLED] Would have synced parts for PO:', {
+                po_id: updatedPO.id,
+                po_reference: updatedPO.po_reference,
+                blocked_mutations: ['Part.status', 'Part.location', 'Part.po_number', 'Part.order_reference', 'Part.assigned_vehicle_id']
+            });
 
-            // Auto-create Logistics Job if conditions are met
+            // 🚫 DISABLED: Auto-create Logistics Job if conditions are met
             let logisticsJob = null;
 
             const shouldHaveLogisticsJob =
@@ -813,29 +832,39 @@ Deno.serve(async (req) => {
                      newStatus === PO_STATUS.IN_LOADING_BAY)
                 );
 
+            // if (shouldHaveLogisticsJob) {
+            //     try {
+            //         const jobResponse = await base44.asServiceRole.functions.invoke("createLogisticsJobForPO", {
+            //             purchase_order_id: updatedPO.id,
+            //             scheduled_date: updatedPO.expected_date || new Date().toISOString().split("T")[0],
+            //         });
+
+            //         if (jobResponse?.data?.success && jobResponse.data?.job) {
+            //             logisticsJob = jobResponse.data.job;
+
+            //             // Update PO with logistics job link if not already set
+            //             if (!updatedPO.linked_logistics_job_id) {
+            //                 await base44.asServiceRole.entities.PurchaseOrder.update(updatedPO.id, {
+            //                     linked_logistics_job_id: logisticsJob.id,
+            //                 });
+            //                 updatedPO.linked_logistics_job_id = logisticsJob.id;
+            //             }
+            //         } else {
+            //             console.error("Auto logistics job creation failed for PO", updatedPO.id, jobResponse?.data?.error);
+            //         }
+            //     } catch (error) {
+            //         console.error("Error auto-creating logistics job for PO", updatedPO.id, error);
+            //     }
+            // }
+            
             if (shouldHaveLogisticsJob) {
-                try {
-                    const jobResponse = await base44.asServiceRole.functions.invoke("createLogisticsJobForPO", {
-                        purchase_order_id: updatedPO.id,
-                        scheduled_date: updatedPO.expected_date || new Date().toISOString().split("T")[0],
-                    });
-
-                    if (jobResponse?.data?.success && jobResponse.data?.job) {
-                        logisticsJob = jobResponse.data.job;
-
-                        // Update PO with logistics job link if not already set
-                        if (!updatedPO.linked_logistics_job_id) {
-                            await base44.asServiceRole.entities.PurchaseOrder.update(updatedPO.id, {
-                                linked_logistics_job_id: logisticsJob.id,
-                            });
-                            updatedPO.linked_logistics_job_id = logisticsJob.id;
-                        }
-                    } else {
-                        console.error("Auto logistics job creation failed for PO", updatedPO.id, jobResponse?.data?.error);
-                    }
-                } catch (error) {
-                    console.error("Error auto-creating logistics job for PO", updatedPO.id, error);
-                }
+                console.warn('⚠️ [SIDE EFFECT DISABLED] Would have auto-created logistics job for PO:', {
+                    po_id: updatedPO.id,
+                    po_reference: updatedPO.po_reference,
+                    delivery_method: updatedPO.delivery_method,
+                    status: newStatus,
+                    blocked_action: 'Auto-create logistics job'
+                });
             }
 
             return Response.json({ 
