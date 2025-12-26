@@ -268,21 +268,19 @@ export default function PurchaseOrderDetail({ poId, onClose, mode = "page" }) {
     }
     };
 
-    const handleSave = async () => {
-    // Validate identity fields
-    const validation = validatePoIdentityFields({
-      po_reference: formData.po_reference,
-      supplier_id: formData.supplier_id
-    });
-    
-    if (!validation.valid) {
-      validation.errors.forEach(err => toast.error(err));
-      return;
-    }
+    const saveIdentityMutation = useMutation({
+    mutationFn: async () => {
+      // Validate identity fields
+      const validation = validatePoIdentityFields({
+        po_reference: formData.po_reference,
+        supplier_id: formData.supplier_id
+      });
+      
+      if (!validation.valid) {
+        throw new Error(validation.errors.join(', '));
+      }
 
-    try {
-      // Step 1: Update identity fields
-      const updatedPO = await purchaseOrdersApi.updateIdentity({
+      return await purchaseOrdersApi.updateIdentity({
         id: poId,
         po_reference: formData.po_reference?.trim() || "",
         name: formData.name?.trim() || "",
@@ -290,44 +288,76 @@ export default function PurchaseOrderDetail({ poId, onClose, mode = "page" }) {
         notes: formData.notes || "",
         expected_date: formData.eta || null
       });
-
-      // Step 2: Update line items
-      const finalPO = await purchaseOrdersApi.setLineItems({
-        id: poId,
-        line_items: formData.line_items.map(item => ({
-          source_type: item.source_type || "custom",
-          source_id: item.source_id || null,
-          part_id: item.part_id || null,
-          item_name: item.name || '',
-          quantity: item.quantity || 0,
-          unit_price: item.unit_price || 0,
-          unit: item.unit || null,
-          notes: item.notes || null,
-          category: item.category || "Other"
-        }))
-      });
-
+    },
+    onSuccess: async (updatedPO) => {
       // Apply returned PO to cache and form
-      applyReturnedPO(finalPO);
+      applyReturnedPO(updatedPO);
 
       // Invalidate all PO-related queries
       await Promise.all([
-        invalidatePurchaseOrderBundle(queryClient, poId),
         queryClient.invalidateQueries({ queryKey: ['purchaseOrder', poId] }),
         queryClient.invalidateQueries({ queryKey: ['purchaseOrders'] }),
-        queryClient.invalidateQueries({ queryKey: ['purchaseOrderLines', poId] }),
-        finalPO.project_id && queryClient.invalidateQueries({ queryKey: ['projectPurchaseOrders', finalPO.project_id] }),
-        finalPO.project_id && queryClient.invalidateQueries({ queryKey: ['projectPOLines', finalPO.project_id] }),
-        queryClient.invalidateQueries({ queryKey: ['parts'] })
+        updatedPO.project_id && queryClient.invalidateQueries({ queryKey: ['projectPurchaseOrders', updatedPO.project_id] })
       ].filter(Boolean));
 
-      // Reset dirty flag after successful save
       setIsDirty(false);
-
       toast.success("Purchase Order saved");
-    } catch (error) {
-      console.error("[PO SAVE - ERROR]", error);
+    },
+    onError: (error) => {
       toast.error(error.message || "Failed to save Purchase Order");
+    }
+  });
+
+  const handleSave = async () => {
+    // If line items have changed, save them as well
+    if (formData.line_items.length > 0) {
+      try {
+        // Step 1: Update identity
+        const updatedPO = await purchaseOrdersApi.updateIdentity({
+          id: poId,
+          po_reference: formData.po_reference?.trim() || "",
+          name: formData.name?.trim() || "",
+          supplier_id: formData.supplier_id,
+          notes: formData.notes || "",
+          expected_date: formData.eta || null
+        });
+
+        // Step 2: Update line items
+        const finalPO = await purchaseOrdersApi.setLineItems({
+          id: poId,
+          line_items: formData.line_items.map(item => ({
+            source_type: item.source_type || "custom",
+            source_id: item.source_id || null,
+            part_id: item.part_id || null,
+            item_name: item.name || '',
+            quantity: item.quantity || 0,
+            unit_price: item.unit_price || 0,
+            unit: item.unit || null,
+            notes: item.notes || null,
+            category: item.category || "Other"
+          }))
+        });
+
+        applyReturnedPO(finalPO);
+
+        await Promise.all([
+          invalidatePurchaseOrderBundle(queryClient, poId),
+          queryClient.invalidateQueries({ queryKey: ['purchaseOrder', poId] }),
+          queryClient.invalidateQueries({ queryKey: ['purchaseOrders'] }),
+          queryClient.invalidateQueries({ queryKey: ['purchaseOrderLines', poId] }),
+          finalPO.project_id && queryClient.invalidateQueries({ queryKey: ['projectPurchaseOrders', finalPO.project_id] }),
+          finalPO.project_id && queryClient.invalidateQueries({ queryKey: ['projectPOLines', finalPO.project_id] }),
+          queryClient.invalidateQueries({ queryKey: ['parts'] })
+        ].filter(Boolean));
+
+        setIsDirty(false);
+        toast.success("Purchase Order saved");
+      } catch (error) {
+        toast.error(error.message || "Failed to save Purchase Order");
+      }
+    } else {
+      // Only identity changes
+      saveIdentityMutation.mutate();
     }
   };
 
@@ -683,17 +713,18 @@ export default function PurchaseOrderDetail({ poId, onClose, mode = "page" }) {
                     Delete
                   </Button>
                 )}
-                {isDraft && (
-                <>
+                {isDirty && (
                  <Button
                    type="button"
                    onClick={handleSave}
-                   disabled={!formData.po_reference?.trim()}
+                   disabled={!formData.po_reference?.trim() || saveIdentityMutation.isPending}
                    className="bg-[#F3F4F6] text-[#111827] hover:bg-[#E5E7EB]"
                  >
                    <Save className="w-4 h-4 mr-2" />
-                   Save
+                   Save Changes
                  </Button>
+                )}
+                {isDraft && (
                  <Button
                    type="button"
                    onClick={handleSendToSupplier}
@@ -703,7 +734,6 @@ export default function PurchaseOrderDetail({ poId, onClose, mode = "page" }) {
                    <Send className="w-4 h-4 mr-2" />
                    Send to Supplier
                  </Button>
-                </>
                 )}
             </div>
           </div>
@@ -726,7 +756,6 @@ export default function PurchaseOrderDetail({ poId, onClose, mode = "page" }) {
                     setFormData({ ...formData, po_reference: e.target.value });
                     setIsDirty(true);
                   }}
-                  disabled={!isDraft}
                   placeholder="e.g. KGD-RSH-4634"
                 />
               </div>
@@ -740,7 +769,6 @@ export default function PurchaseOrderDetail({ poId, onClose, mode = "page" }) {
                   setFormData({ ...formData, name: e.target.value });
                   setIsDirty(true);
                 }}
-                disabled={!isDraft}
                 placeholder="e.g., Garage Door Parts Order"
               />
             </div>
@@ -949,7 +977,6 @@ export default function PurchaseOrderDetail({ poId, onClose, mode = "page" }) {
                   setFormData({ ...formData, notes: e.target.value });
                   setIsDirty(true);
                 }}
-                disabled={!isDraft}
                 placeholder="Add any notes or special instructions..."
                 className="min-h-[80px]"
               />
