@@ -252,6 +252,13 @@ export default function ActivityTab({ project, onComposeEmail }) {
     return tmp.textContent || tmp.innerText || '';
   };
 
+  const decodeHtml = (html) => {
+    if (!html) return '';
+    const txt = document.createElement('textarea');
+    txt.innerHTML = html;
+    return txt.value;
+  };
+
   return (
     <div className="space-y-4">
       {/* Header with Actions */}
@@ -423,7 +430,7 @@ export default function ActivityTab({ project, onComposeEmail }) {
               <div 
                 className="gmail-email-body prose prose-sm max-w-none"
                 dangerouslySetInnerHTML={{ 
-                  __html: selectedActivity.content 
+                  __html: decodeHtml(selectedActivity.content)
                 }}
               />
             )}
