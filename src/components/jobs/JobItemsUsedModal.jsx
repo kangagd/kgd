@@ -14,11 +14,13 @@ import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { LOCATION_TYPE, MOVEMENT_TYPE } from "@/components/domain/inventoryConfig";
 import { toast } from "sonner";
-import { PackageMinus, Loader2 } from "lucide-react";
+import { PackageMinus, Loader2, Trash2, Plus } from "lucide-react";
+import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 
 export default function JobItemsUsedModal({ job, vehicle, open, onClose, onSaved }) {
   const [selectedItemId, setSelectedItemId] = useState("");
   const [quantity, setQuantity] = useState("1");
+  const [activeTab, setActiveTab] = useState("add");
   const queryClient = useQueryClient();
 
   // Fetch Price List Items
@@ -26,6 +28,16 @@ export default function JobItemsUsedModal({ job, vehicle, open, onClose, onSaved
     queryKey: ['priceListItems'],
     queryFn: () => base44.entities.PriceListItem.list('item'),
     enabled: open,
+  });
+
+  // Fetch existing stock movements (items used) for this job
+  const { data: stockMovements = [], isLoading: movementsLoading } = useQuery({
+    queryKey: ['jobStockMovements', job.id],
+    queryFn: () => base44.entities.StockMovement.filter({ 
+      job_id: job.id,
+      movement_type: MOVEMENT_TYPE.USAGE
+    }),
+    enabled: open && !!job.id,
   });
 
   const priceListMap = useMemo(() => {
@@ -174,20 +186,52 @@ export default function JobItemsUsedModal({ job, vehicle, open, onClose, onSaved
   const handleClose = () => {
     setSelectedItemId("");
     setQuantity("1");
+    setActiveTab("add");
     onClose();
   };
 
+  const deleteMovementMutation = useMutation({
+    mutationFn: async (movementId) => {
+      await base44.entities.StockMovement.delete(movementId);
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['jobStockMovements', job.id] });
+      queryClient.invalidateQueries({ queryKey: ['vehicleStock'] });
+      queryClient.invalidateQueries({ queryKey: ['priceListItems'] });
+      queryClient.invalidateQueries({ queryKey: ['inventory-quantities'] });
+      toast.success("Item removed");
+      if (onSaved) onSaved();
+    },
+    onError: (error) => {
+      console.error("Error deleting movement:", error);
+      toast.error("Failed to remove item");
+    }
+  });
+
   return (
     <Dialog open={open} onOpenChange={handleClose}>
-      <DialogContent className="sm:max-w-[425px]">
+      <DialogContent className="sm:max-w-[500px]">
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
             <PackageMinus className="w-5 h-5 text-[#FAE008]" />
-            Record Item Usage
+            Items Used on Job
           </DialogTitle>
         </DialogHeader>
         
-        <form onSubmit={handleSubmit} className="space-y-4 py-4">
+        <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
+          <TabsList className="grid w-full grid-cols-2">
+            <TabsTrigger value="add">
+              <Plus className="w-4 h-4 mr-1" />
+              Add Item
+            </TabsTrigger>
+            <TabsTrigger value="view">
+              <PackageMinus className="w-4 h-4 mr-1" />
+              View Items ({stockMovements.length})
+            </TabsTrigger>
+          </TabsList>
+
+          <TabsContent value="add" className="mt-4">
+            <form onSubmit={handleSubmit} className="space-y-4">
           <div className="space-y-2">
             <Label>Item Used</Label>
             <Select value={selectedItemId} onValueChange={setSelectedItemId}>
@@ -220,30 +264,87 @@ export default function JobItemsUsedModal({ job, vehicle, open, onClose, onSaved
             />
           </div>
 
-          <div className="pt-2 text-xs text-gray-500">
-            Source: {vehicle ? `Vehicle: ${vehicle.name}` : "Warehouse (Default)"}
-          </div>
+              <div className="pt-2 text-xs text-gray-500">
+                Source: {vehicle ? `Vehicle: ${vehicle.name}` : "Warehouse (Default)"}
+              </div>
 
-          <DialogFooter>
-            <Button type="button" variant="outline" onClick={handleClose}>
-              Cancel
-            </Button>
-            <Button 
-              type="submit" 
-              className="bg-[#FAE008] text-[#111827] hover:bg-[#E5CF07] font-semibold"
-              disabled={createMovementMutation.isPending}
-            >
-              {createMovementMutation.isPending ? (
-                <>
-                  <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                  Saving...
-                </>
+              <DialogFooter>
+                <Button type="button" variant="outline" onClick={handleClose}>
+                  Cancel
+                </Button>
+                <Button 
+                  type="submit" 
+                  className="bg-[#FAE008] text-[#111827] hover:bg-[#E5CF07] font-semibold"
+                  disabled={createMovementMutation.isPending}
+                >
+                  {createMovementMutation.isPending ? (
+                    <>
+                      <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                      Saving...
+                    </>
+                  ) : (
+                    "Confirm Usage"
+                  )}
+                </Button>
+              </DialogFooter>
+            </form>
+          </TabsContent>
+
+          <TabsContent value="view" className="mt-4">
+            <div className="space-y-4">
+              {movementsLoading ? (
+                <div className="text-center py-8">
+                  <Loader2 className="w-6 h-6 animate-spin mx-auto text-gray-400" />
+                </div>
+              ) : stockMovements.length === 0 ? (
+                <div className="text-center py-8 text-gray-500">
+                  No items recorded yet
+                </div>
               ) : (
-                "Confirm Usage"
+                <div className="space-y-2 max-h-[400px] overflow-y-auto">
+                  {stockMovements.map((movement) => {
+                    const item = priceListMap[movement.price_list_item_id];
+                    return (
+                      <div 
+                        key={movement.id} 
+                        className="flex items-center justify-between p-3 bg-gray-50 rounded-lg border border-gray-200 hover:border-gray-300 transition-colors"
+                      >
+                        <div className="flex-1">
+                          <div className="font-medium text-sm text-gray-900">
+                            {item?.item || "Unknown Item"}
+                          </div>
+                          <div className="text-xs text-gray-600 mt-0.5">
+                            Qty: {movement.quantity} • {item?.category || "N/A"}
+                          </div>
+                        </div>
+                        <Button
+                          type="button"
+                          variant="ghost"
+                          size="icon"
+                          onClick={() => {
+                            if (confirm('Remove this item from the job?')) {
+                              deleteMovementMutation.mutate(movement.id);
+                            }
+                          }}
+                          disabled={deleteMovementMutation.isPending}
+                          className="h-8 w-8 text-red-600 hover:text-red-700 hover:bg-red-50"
+                        >
+                          <Trash2 className="w-4 h-4" />
+                        </Button>
+                      </div>
+                    );
+                  })}
+                </div>
               )}
-            </Button>
-          </DialogFooter>
-        </form>
+
+              <DialogFooter className="pt-4 border-t">
+                <Button type="button" variant="outline" onClick={handleClose}>
+                  Close
+                </Button>
+              </DialogFooter>
+            </div>
+          </TabsContent>
+        </Tabs>
       </DialogContent>
     </Dialog>
   );
