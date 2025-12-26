@@ -1,7 +1,7 @@
 import React, { useState } from "react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { AlertTriangle, CheckCircle2, Package, Truck, ExternalLink, Plus, ShoppingCart, MoreVertical } from "lucide-react";
+import { AlertTriangle, CheckCircle2, Package, Truck, ExternalLink, Plus, ShoppingCart, MoreVertical, Building2 } from "lucide-react";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -18,6 +18,7 @@ import AssignPartToVehicleModal from "./AssignPartToVehicleModal";
 import { PART_LOCATION, normaliseLegacyPartLocation, getPartStatusLabel, normaliseLegacyPartStatus, getNormalizedPartStatus, isPickablePart, PICKABLE_STATUSES } from "@/components/domain/partConfig";
 import { getPoStatusLabel } from "@/components/domain/purchaseOrderStatusConfig";
 import { getPoIdentity } from "@/components/domain/poDisplayHelpers";
+import { getPoEta, getPoSupplierName, safeParseDate } from "@/components/domain/schemaAdapters";
 
 
 import { useQuery, useQueryClient } from "@tanstack/react-query";
@@ -359,61 +360,153 @@ export default function ProjectPartsPanel({ project, parts = [], inventoryByItem
             <AlertTriangle className="w-4 h-4" />
             Shortages ({needed.length})
           </h4>
-          <div className="space-y-2">
-            {needed.map(part => {
-              const partTitle = part.item_name || part.category || "Part";
-              const normalizedStatus = getNormalizedPartStatus(part);
-              const linkedPO = resolvePartPO(part);
-              const poDisplay = linkedPO ? getPoIdentity(linkedPO).reference : null;
+          <div className="space-y-3">
+            {(() => {
+              // Group parts by PO
+              const partsByPO = new Map();
+              const partsWithoutPO = [];
+              
+              needed.forEach(part => {
+                const linkedPO = resolvePartPO(part);
+                if (linkedPO) {
+                  if (!partsByPO.has(linkedPO.id)) {
+                    partsByPO.set(linkedPO.id, { po: linkedPO, parts: [] });
+                  }
+                  partsByPO.get(linkedPO.id).parts.push(part);
+                } else {
+                  partsWithoutPO.push(part);
+                }
+              });
               
               return (
-                <div key={part.id} className="p-3 bg-red-50 border border-red-100 rounded-lg flex justify-between items-center">
-                  <div>
-                    <div className="text-sm font-medium text-red-900">{partTitle}</div>
-                    <div className="flex items-center gap-2 mt-1 flex-wrap">
-                      {part.supplier_name && (
-                        <span className="text-xs text-red-700">
-                          {part.supplier_name}
-                        </span>
-                      )}
-                      <Badge className="bg-red-100 text-red-800 border-red-200 text-[11px] px-2 py-0">
-                        {getPartStatusLabel(normalizedStatus)}
-                      </Badge>
-                      {poDisplay && (
-                        <span className="text-xs text-red-700">
-                          {poDisplay}
-                        </span>
-                      )}
-                    </div>
-                    {part.price_list_item_id && (
-                      <div className="text-xs text-red-600 mt-0.5">
-                        Stock Available: {inventoryByItem[part.price_list_item_id] || 0}
+                <>
+                  {/* Parts grouped by PO */}
+                  {Array.from(partsByPO.values()).map(({ po, parts }) => {
+                    const eta = getPoEta(po);
+                    const etaDate = safeParseDate(eta);
+                    const logisticsCount = logisticsJobsByPO.get(po.id) || 0;
+                    
+                    return (
+                      <div key={po.id} className="border border-red-200 rounded-lg bg-red-50/50 overflow-hidden">
+                        {/* PO Summary Header */}
+                        <div className="bg-red-100/50 px-3 py-2 border-b border-red-200">
+                          <div className="flex items-center justify-between gap-2">
+                            <div className="flex items-center gap-2 flex-wrap">
+                              <span className="text-sm font-semibold text-red-900">
+                                {getPoIdentity(po).reference}
+                              </span>
+                              {getPoIdentity(po).name && (
+                                <span className="text-xs text-red-700">• {getPoIdentity(po).name}</span>
+                              )}
+                              <Badge className="bg-red-200 text-red-900 border-red-300 text-[10px]">
+                                {getPoStatusLabel(po.status)}
+                              </Badge>
+                              {etaDate && (
+                                <span className="text-xs text-red-700">• ETA: {format(etaDate, 'MMM d')}</span>
+                              )}
+                            </div>
+                            <div className="flex gap-1">
+                              <Button
+                                size="sm"
+                                variant="ghost"
+                                onClick={() => setActivePoId(po.id)}
+                                className="h-6 px-2 text-xs text-red-700 hover:bg-red-200"
+                              >
+                                Open PO
+                              </Button>
+                              {logisticsCount > 0 && (
+                                <Button
+                                  size="sm"
+                                  variant="ghost"
+                                  onClick={() => document.getElementById('logistics')?.scrollIntoView({ behavior: 'smooth' })}
+                                  className="h-6 px-2 text-xs text-red-700 hover:bg-red-200"
+                                >
+                                  <Truck className="w-3 h-3 mr-1" />
+                                  Logistics ({logisticsCount})
+                                </Button>
+                              )}
+                            </div>
+                          </div>
+                        </div>
+                        
+                        {/* Parts List */}
+                        <div className="divide-y divide-red-100">
+                          {parts.map(part => {
+                            const partTitle = part.item_name || part.category || "Part";
+                            const normalizedStatus = getNormalizedPartStatus(part);
+                            
+                            return (
+                              <div key={part.id} className="p-3 flex justify-between items-center bg-red-50">
+                                <div className="flex-1">
+                                  <div className="text-sm font-medium text-red-900">{partTitle}</div>
+                                  <div className="flex items-center gap-2 mt-1">
+                                    <Badge className="bg-red-100 text-red-800 border-red-200 text-[10px] px-1.5 py-0">
+                                      {getPartStatusLabel(normalizedStatus)}
+                                    </Badge>
+                                    <span className="text-xs text-red-700">Qty: {part.quantity_required || 1}</span>
+                                  </div>
+                                </div>
+                                {normaliseLegacyPartLocation(part.location) !== PART_LOCATION.VEHICLE && (
+                                  <Button
+                                    variant="outline"
+                                    size="sm"
+                                    className="h-7 text-xs bg-white"
+                                    onClick={(e) => {
+                                      e.stopPropagation();
+                                      setPartToAssign(part);
+                                      setAssignModalOpen(true);
+                                    }}
+                                  >
+                                    Assign
+                                  </Button>
+                                )}
+                              </div>
+                            );
+                          })}
+                        </div>
                       </div>
-                    )}
-                  </div>
-                  <div className="text-right flex flex-col gap-2 items-end">
-                     <Badge variant="outline" className="bg-white border-red-200 text-red-800">
-                       Qty: {part.quantity_required || 1}
-                     </Badge>
-                     
-                     {normaliseLegacyPartLocation(part.location) !== PART_LOCATION.VEHICLE && (
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        className="h-7 text-xs"
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          setPartToAssign(part);
-                          setAssignModalOpen(true);
-                        }}
-                      >
-                        Assign to vehicle
-                      </Button>
-                     )}
-                  </div>
-                </div>
+                    );
+                  })}
+                  
+                  {/* Parts without PO */}
+                  {partsWithoutPO.map(part => {
+                    const partTitle = part.item_name || part.category || "Part";
+                    const normalizedStatus = getNormalizedPartStatus(part);
+                    
+                    return (
+                      <div key={part.id} className="p-3 bg-red-50 border border-red-100 rounded-lg flex justify-between items-center">
+                        <div className="flex-1">
+                          <div className="text-sm font-medium text-red-900">{partTitle}</div>
+                          <div className="flex items-center gap-2 mt-1 flex-wrap">
+                            {part.supplier_name && (
+                              <span className="text-xs text-red-700">{part.supplier_name}</span>
+                            )}
+                            <Badge className="bg-red-100 text-red-800 border-red-200 text-[10px] px-1.5 py-0">
+                              {getPartStatusLabel(normalizedStatus)}
+                            </Badge>
+                            <span className="text-xs text-red-700">Qty: {part.quantity_required || 1}</span>
+                          </div>
+                        </div>
+                        {normaliseLegacyPartLocation(part.location) !== PART_LOCATION.VEHICLE && (
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            className="h-7 text-xs"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              setPartToAssign(part);
+                              setAssignModalOpen(true);
+                            }}
+                          >
+                            Assign
+                          </Button>
+                        )}
+                      </div>
+                    );
+                  })}
+                </>
               );
-            })}
+            })()}
           </div>
         </div>
       )}
@@ -424,64 +517,161 @@ export default function ProjectPartsPanel({ project, parts = [], inventoryByItem
             <CheckCircle2 className="w-4 h-4" />
             Ready to Pick / Assigned ({ready.length})
           </h4>
-          <div className="space-y-2">
-            {ready.map(part => {
-              const partTitle = part.item_name || part.category || "Part";
-              const normalizedStatus = getNormalizedPartStatus(part);
+          <div className="space-y-3">
+            {(() => {
+              // Group parts by PO
+              const partsByPO = new Map();
+              const partsWithoutPO = [];
               
-              // DEFENSIVE GUARD: Double-check pickability (safety net)
-              if (!isPickablePart(part)) {
-                console.warn('[ProjectPartsPanel] Non-pickable part in ready list:', part.id, normalizedStatus);
-                return null;
-              }
-              
-              const linkedPO = resolvePartPO(part);
-              const poDisplay = linkedPO ? getPoIdentity(linkedPO).reference : null;
+              ready.forEach(part => {
+                // DEFENSIVE GUARD: Double-check pickability
+                if (!isPickablePart(part)) {
+                  console.warn('[ProjectPartsPanel] Non-pickable part in ready list:', part.id);
+                  return;
+                }
+                
+                const linkedPO = resolvePartPO(part);
+                if (linkedPO) {
+                  if (!partsByPO.has(linkedPO.id)) {
+                    partsByPO.set(linkedPO.id, { po: linkedPO, parts: [] });
+                  }
+                  partsByPO.get(linkedPO.id).parts.push(part);
+                } else {
+                  partsWithoutPO.push(part);
+                }
+              });
               
               return (
-                <div key={part.id} className="p-3 bg-white border border-gray-200 rounded-lg flex justify-between items-center">
-                  <div>
-                    <div className="text-sm font-medium text-gray-900">{partTitle}</div>
-                    <div className="flex items-center gap-2 mt-1 flex-wrap">
-                      {part.supplier_name && (
-                        <span className="text-xs text-gray-600">
-                          {part.supplier_name}
-                        </span>
-                      )}
-                      <Badge className="bg-slate-100 text-slate-700 border-slate-200 text-[11px] px-2 py-0">
-                        {getPartStatusLabel(normalizedStatus)}
-                      </Badge>
-                      {poDisplay && (
-                        <span className="text-xs text-gray-600">
-                          {poDisplay}
-                        </span>
-                      )}
-                    </div>
-                  </div>
-                  <div className="flex flex-col gap-2 items-end">
-                    <Badge variant="outline" className="bg-gray-50">
-                      Qty: {part.quantity_required || 1}
-                    </Badge>
+                <>
+                  {/* Parts grouped by PO */}
+                  {Array.from(partsByPO.values()).map(({ po, parts }) => {
+                    const eta = getPoEta(po);
+                    const etaDate = safeParseDate(eta);
+                    const logisticsCount = logisticsJobsByPO.get(po.id) || 0;
                     
-                    {(normaliseLegacyPartLocation(part.location) !== PART_LOCATION.VEHICLE || !part.assigned_vehicle_id) && (
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        className="h-7 text-xs border-blue-200 text-blue-700 hover:bg-blue-50"
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          setPartToAssign(part);
-                          setAssignModalOpen(true);
-                        }}
-                      >
-                        <Truck className="w-3 h-3 mr-1" />
-                        Assign to vehicle
-                      </Button>
-                    )}
-                  </div>
-                </div>
+                    return (
+                      <div key={po.id} className="border border-green-200 rounded-lg bg-white overflow-hidden">
+                        {/* PO Summary Header */}
+                        <div className="bg-green-50 px-3 py-2 border-b border-green-200">
+                          <div className="flex items-center justify-between gap-2">
+                            <div className="flex items-center gap-2 flex-wrap">
+                              <span className="text-sm font-semibold text-green-900">
+                                {getPoIdentity(po).reference}
+                              </span>
+                              {getPoIdentity(po).name && (
+                                <span className="text-xs text-green-700">• {getPoIdentity(po).name}</span>
+                              )}
+                              <Badge className="bg-green-200 text-green-900 border-green-300 text-[10px]">
+                                {getPoStatusLabel(po.status)}
+                              </Badge>
+                              {etaDate && (
+                                <span className="text-xs text-green-700">• ETA: {format(etaDate, 'MMM d')}</span>
+                              )}
+                            </div>
+                            <div className="flex gap-1">
+                              <Button
+                                size="sm"
+                                variant="ghost"
+                                onClick={() => setActivePoId(po.id)}
+                                className="h-6 px-2 text-xs text-green-700 hover:bg-green-100"
+                              >
+                                Open PO
+                              </Button>
+                              {logisticsCount > 0 && (
+                                <Button
+                                  size="sm"
+                                  variant="ghost"
+                                  onClick={() => document.getElementById('logistics')?.scrollIntoView({ behavior: 'smooth' })}
+                                  className="h-6 px-2 text-xs text-green-700 hover:bg-green-100"
+                                >
+                                  <Truck className="w-3 h-3 mr-1" />
+                                  Logistics ({logisticsCount})
+                                </Button>
+                              )}
+                            </div>
+                          </div>
+                        </div>
+                        
+                        {/* Parts List */}
+                        <div className="divide-y divide-gray-100">
+                          {parts.map(part => {
+                            const partTitle = part.item_name || part.category || "Part";
+                            const normalizedStatus = getNormalizedPartStatus(part);
+                            
+                            return (
+                              <div key={part.id} className="p-3 flex justify-between items-center">
+                                <div className="flex-1">
+                                  <div className="text-sm font-medium text-gray-900">{partTitle}</div>
+                                  <div className="flex items-center gap-2 mt-1">
+                                    <Badge className="bg-slate-100 text-slate-700 border-slate-200 text-[10px] px-1.5 py-0">
+                                      {getPartStatusLabel(normalizedStatus)}
+                                    </Badge>
+                                    <span className="text-xs text-gray-600">Qty: {part.quantity_required || 1}</span>
+                                  </div>
+                                </div>
+                                {(normaliseLegacyPartLocation(part.location) !== PART_LOCATION.VEHICLE || !part.assigned_vehicle_id) && (
+                                  <Button
+                                    variant="outline"
+                                    size="sm"
+                                    className="h-7 text-xs border-blue-200 text-blue-700 hover:bg-blue-50"
+                                    onClick={(e) => {
+                                      e.stopPropagation();
+                                      setPartToAssign(part);
+                                      setAssignModalOpen(true);
+                                    }}
+                                  >
+                                    <Truck className="w-3 h-3 mr-1" />
+                                    Assign
+                                  </Button>
+                                )}
+                              </div>
+                            );
+                          })}
+                        </div>
+                      </div>
+                    );
+                  })}
+                  
+                  {/* Parts without PO */}
+                  {partsWithoutPO.map(part => {
+                    const partTitle = part.item_name || part.category || "Part";
+                    const normalizedStatus = getNormalizedPartStatus(part);
+                    
+                    return (
+                      <div key={part.id} className="p-3 bg-white border border-gray-200 rounded-lg flex justify-between items-center">
+                        <div className="flex-1">
+                          <div className="text-sm font-medium text-gray-900">{partTitle}</div>
+                          <div className="flex items-center gap-2 mt-1 flex-wrap">
+                            {part.supplier_name && (
+                              <span className="text-xs text-gray-600">{part.supplier_name}</span>
+                            )}
+                            <Badge className="bg-slate-100 text-slate-700 border-slate-200 text-[10px] px-1.5 py-0">
+                              {getPartStatusLabel(normalizedStatus)}
+                            </Badge>
+                            <span className="text-xs text-gray-600">Qty: {part.quantity_required || 1}</span>
+                          </div>
+                        </div>
+                        {(normaliseLegacyPartLocation(part.location) !== PART_LOCATION.VEHICLE || !part.assigned_vehicle_id) && (
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            className="h-7 text-xs border-blue-200 text-blue-700 hover:bg-blue-50"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              setPartToAssign(part);
+                              setAssignModalOpen(true);
+                            }}
+                          >
+                            <Truck className="w-3 h-3 mr-1" />
+                            Assign
+                          </Button>
+                        )}
+                      </div>
+                    );
+                  })}
+                </>
               );
-            })}
+            })()}
           </div>
         </div>
       )}
