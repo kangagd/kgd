@@ -38,6 +38,19 @@ export function getPoDisplayTitle(po) {
 }
 
 /**
+ * Get canonical PO identity (reference + name)
+ * 
+ * @param {Object} po - Purchase Order object
+ * @returns {Object} { reference: string, name: string|null }
+ */
+export function getPoIdentity(po) {
+  return {
+    reference: po?.po_reference || getPoDisplayReference(po),
+    name: po?.name || null
+  };
+}
+
+/**
  * Get part location based on PO status
  * @param {string} status - PO status
  * @returns {string} Part location
