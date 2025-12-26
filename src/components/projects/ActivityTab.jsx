@@ -23,6 +23,7 @@ export default function ActivityTab({ project, onComposeEmail }) {
   const [showLogModal, setShowLogModal] = useState(false);
   const [showLinkModal, setShowLinkModal] = useState(false);
   const [searchTerm, setSearchTerm] = useState("");
+  const [selectedActivity, setSelectedActivity] = useState(null);
   const queryClient = useQueryClient();
 
   // Fetch project messages (manual activities)
@@ -321,7 +322,8 @@ export default function ActivityTab({ project, onComposeEmail }) {
               {filteredActivities.map((activity) => (
                 <div
                   key={activity.id}
-                  className="border-l-2 border-[#E5E7EB] pl-4 pb-4 last:pb-0 relative"
+                  className={`border-l-2 border-[#E5E7EB] pl-4 pb-4 last:pb-0 relative ${activity.type === 'email' ? 'cursor-pointer hover:bg-[#F9FAFB] -mx-4 px-8 py-2 rounded-lg transition-colors' : ''}`}
+                  onClick={() => activity.type === 'email' && setSelectedActivity(activity)}
                 >
                   <div className="absolute -left-[9px] top-0 w-4 h-4 rounded-full bg-white border-2 border-[#E5E7EB] flex items-center justify-center">
                     <div className="w-2 h-2 rounded-full bg-[#6B7280]" />
@@ -378,6 +380,56 @@ export default function ActivityTab({ project, onComposeEmail }) {
         projectId={project.id}
         onSuccess={refetchMessages}
       />
+
+      <Dialog open={!!selectedActivity} onOpenChange={() => setSelectedActivity(null)}>
+        <DialogContent className="max-w-4xl max-h-[90vh] overflow-hidden flex flex-col">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <Mail className="w-5 h-5" />
+              {selectedActivity?.subject || 'Email'}
+            </DialogTitle>
+            <DialogDescription>
+              {selectedActivity && (
+                <div className="flex items-center gap-2 text-[13px]">
+                  <span>From: {selectedActivity.from}</span>
+                  <span>•</span>
+                  <span>{format(new Date(selectedActivity.date), 'MMM d, yyyy h:mm a')}</span>
+                  {selectedActivity.isOutbound && (
+                    <Badge variant="default" className="bg-blue-100 text-blue-700 ml-2">Sent</Badge>
+                  )}
+                </div>
+              )}
+            </DialogDescription>
+          </DialogHeader>
+          
+          <div className="flex-1 overflow-y-auto py-4">
+            {selectedActivity?.attachments?.length > 0 && (
+              <div className="mb-4 p-3 bg-[#F9FAFB] rounded-lg border border-[#E5E7EB]">
+                <div className="flex items-center gap-2 text-[13px] font-medium text-[#4B5563] mb-2">
+                  <Paperclip className="w-4 h-4" />
+                  Attachments ({selectedActivity.attachments.length})
+                </div>
+                <div className="space-y-1">
+                  {selectedActivity.attachments.map((att, idx) => (
+                    <div key={idx} className="text-[13px] text-[#6B7280]">
+                      {att.filename || `Attachment ${idx + 1}`}
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+            
+            {selectedActivity?.content && (
+              <div 
+                className="gmail-email-body prose prose-sm max-w-none"
+                dangerouslySetInnerHTML={{ 
+                  __html: selectedActivity.content 
+                }}
+              />
+            )}
+          </div>
+        </DialogContent>
+      </Dialog>
 
       <Dialog open={showLinkModal} onOpenChange={setShowLinkModal}>
         <DialogContent className="max-w-2xl max-h-[80vh] overflow-hidden flex flex-col">
