@@ -8,6 +8,7 @@ import { Plus, X } from "lucide-react";
 import MeasurementsForm from "../jobs/MeasurementsForm";
 import InitialVisitSummary from "./InitialVisitSummary";
 import ThirdPartyTradesPanel from "./ThirdPartyTradesPanel";
+import ProjectContactsPanel from "./ProjectContactsPanel";
 import RichTextField from "../common/RichTextField";
 
 export default function RequirementsTab({ project, onUpdateProject, canEdit }) {
@@ -152,6 +153,9 @@ export default function RequirementsTab({ project, onUpdateProject, canEdit }) {
           </CardContent>
         </Card>
       )}
+
+      {/* Project Contacts */}
+      <ProjectContactsPanel project={project} />
 
       {/* Third Party Required */}
       <Card className="border border-[#E5E7EB] shadow-sm">
