@@ -304,21 +304,10 @@ Deno.serve(async (req) => {
         return Response.json({ error: 'Purchase Order not found' }, { status: 404 });
       }
 
-      const updateData = { status: normalizedStatus };
+      console.log('[PO updateStatus] pure status update', { id, status: normalizedStatus });
 
-      // Set timestamps based on status
-      if (normalizedStatus === PO_STATUS.ON_ORDER && !po.sent_at) {
-        updateData.sent_at = new Date().toISOString();
-      } else if (normalizedStatus === PO_STATUS.IN_LOADING_BAY && !po.arrived_at) {
-        updateData.arrived_at = new Date().toISOString();
-      }
-
-      await base44.asServiceRole.entities.PurchaseOrder.update(id, updateData);
-
-      console.log('[updateStatus] Updated PO status:', { 
-        id, 
-        old_status: po.status, 
-        new_status: normalizedStatus 
+      await base44.asServiceRole.entities.PurchaseOrder.update(id, { 
+        status: normalizedStatus 
       });
 
       // Re-fetch to ensure UI gets persisted state
