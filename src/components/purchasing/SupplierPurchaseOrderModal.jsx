@@ -47,21 +47,21 @@ export default function SupplierPurchaseOrderModal({ open, onClose, supplier, pu
   const [isUploading, setIsUploading] = useState(false);
 
   const { data: existingLines = [], isLoading: isLoadingLines } = useQuery({
-    queryKey: ["purchase-order-lines", purchaseOrderToEdit?.id],
+    queryKey: ["purchaseOrderLines", purchaseOrderToEdit?.id],
     queryFn: () => base44.entities.PurchaseOrderLine.filter({ purchase_order_id: purchaseOrderToEdit.id }),
     enabled: !!purchaseOrderToEdit && open,
   });
 
   // Fetch Inventory Locations
   const { data: locations = [] } = useQuery({
-    queryKey: ["inventory-locations"],
+    queryKey: ["inventoryLocations"],
     queryFn: () => base44.entities.InventoryLocation.filter({ is_active: true }),
     enabled: open,
   });
 
   // Fetch Price List Items (filtered by supplier if possible, but fetching all for dropdown logic)
   const { data: priceListItems = [] } = useQuery({
-    queryKey: ["price-list-items"],
+    queryKey: ["priceListItems"],
     queryFn: () => base44.entities.PriceListItem.filter({ is_active: true }),
     enabled: open,
   });
@@ -305,8 +305,8 @@ export default function SupplierPurchaseOrderModal({ open, onClose, supplier, pu
       }
     },
     onSuccess: () => {
-      queryClient.invalidateQueries(["purchase-orders-by-supplier", supplier?.id]);
-      queryClient.invalidateQueries(["purchase-order-lines", purchaseOrderToEdit?.id]);
+      queryClient.invalidateQueries(["purchaseOrdersBySupplier", supplier?.id]);
+      queryClient.invalidateQueries(["purchaseOrderLines", purchaseOrderToEdit?.id]);
       queryClient.invalidateQueries(["purchaseOrders"]);
       queryClient.invalidateQueries(["stockLogisticsJobs"]);
       queryClient.invalidateQueries(["inventoryQuantities"]);
@@ -329,7 +329,7 @@ export default function SupplierPurchaseOrderModal({ open, onClose, supplier, pu
           await base44.entities.PurchaseOrder.delete(purchaseOrderToEdit.id);
       },
       onSuccess: () => {
-          queryClient.invalidateQueries(["purchase-orders-by-supplier", supplier?.id]);
+          queryClient.invalidateQueries(["purchaseOrdersBySupplier", supplier?.id]);
           toast.success("Purchase Order deleted");
           onClose();
       },

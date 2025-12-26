@@ -15,7 +15,7 @@ export default function PurchaseOrdersList({ supplierId, onSelectPO }) {
   const selectedSupplierId = supplierId;
 
   const { data: purchaseOrders = [], isLoading } = useQuery({
-    queryKey: ["purchase-orders-by-supplier", supplierId],
+    queryKey: ["purchaseOrdersBySupplier", supplierId],
     queryFn: () => base44.entities.PurchaseOrder.filter({ supplier_id: supplierId }, "-order_date"),
     enabled: !!supplierId,
   });
@@ -30,7 +30,7 @@ export default function PurchaseOrdersList({ supplierId, onSelectPO }) {
       });
     },
     onSuccess: () => {
-      queryClient.invalidateQueries(["purchase-orders-by-supplier", supplierId]);
+      queryClient.invalidateQueries(["purchaseOrdersBySupplier", supplierId]);
       queryClient.invalidateQueries(["purchaseOrders"]);
       queryClient.invalidateQueries(["stockLogisticsJobs"]);
       queryClient.invalidateQueries(["inventoryQuantities"]);
