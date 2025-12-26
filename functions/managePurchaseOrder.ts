@@ -896,7 +896,7 @@ Deno.serve(async (req) => {
             });
 
             if (existingPOs.length > 0) {
-                const existingPO = existingPOs[0];
+                let existingPO = existingPOs[0];
                 
                 // Ensure supplier_name is populated if missing
                 if (!existingPO.supplier_name && existingPO.supplier_id) {
@@ -911,6 +911,20 @@ Deno.serve(async (req) => {
                     } catch (err) {
                         console.error('Failed to fetch supplier for existing PO:', err);
                     }
+                }
+                
+                // Ensure reference fields are normalized (for legacy POs)
+                if (!existingPO.po_reference) {
+                    const generatedRef = `PO-${existingPO.id.slice(0, 8)}`;
+                    console.warn('⚠️ [GUARDRAIL:getOrCreateProjectSupplierDraft] Normalizing legacy PO references:', generatedRef);
+                    await base44.asServiceRole.entities.PurchaseOrder.update(existingPO.id, {
+                        po_reference: generatedRef,
+                        po_number: generatedRef,
+                        order_reference: generatedRef,
+                        reference: generatedRef,
+                    });
+                    // Reload to get normalized version
+                    existingPO = await base44.asServiceRole.entities.PurchaseOrder.get(existingPO.id);
                 }
                 
                 // Load line items for the response
@@ -1001,9 +1015,12 @@ Deno.serve(async (req) => {
             // GUARDRAIL: Enforce po_reference before create
             ensurePoReference(poData, 'getOrCreateProjectSupplierDraft');
 
-            const newPO = await base44.asServiceRole.entities.PurchaseOrder.create(poData);
+            let newPO = await base44.asServiceRole.entities.PurchaseOrder.create(poData);
             
-            console.log('[managePurchaseOrder:getOrCreateProjectSupplierDraft] Created PO with reference:', canonicalRef);
+            console.log('[managePurchaseOrder:getOrCreateProjectSupplierDraft] Created PO with reference:', poData.po_reference);
+            
+            // Reload to ensure all fields are normalized and returned
+            newPO = await base44.asServiceRole.entities.PurchaseOrder.get(newPO.id);
             
             // Initialize with empty line_items array
             newPO.line_items = [];
