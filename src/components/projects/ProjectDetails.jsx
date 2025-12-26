@@ -2118,6 +2118,8 @@ Format as HTML bullet points using <ul> and <li> tags. Include only the most cri
         onClose={() => setMediaDrawerOpen(false)}
         project={project}
         initialTab={mediaDrawerTab}
+        onUploadPhotos={(e) => handleFileUpload(e, 'image')}
+        onUploadDocuments={(e) => handleFileUpload(e, 'other')}
       />
 
       {/* Customer Drawer - Mobile */}
