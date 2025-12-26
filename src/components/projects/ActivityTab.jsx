@@ -419,7 +419,7 @@ export default function ActivityTab({ project, onComposeEmail }) {
               {selectedActivity?.type === 'email' && (
                 <Button
                   variant="ghost"
-                  size="sm"
+                  size="icon"
                   onClick={() => {
                     const emailMessage = emailMessages.find(msg => `email-${msg.id}` === selectedActivity.id);
                     if (emailMessage) {
@@ -428,10 +428,10 @@ export default function ActivityTab({ project, onComposeEmail }) {
                     }
                   }}
                   disabled={unlinkEmailMutation.isPending}
-                  className="text-red-600 hover:text-red-700 hover:bg-red-50"
+                  className="text-red-600 hover:text-red-700 hover:bg-red-50 h-6 w-6"
+                  title="Unlink email from project"
                 >
-                  <Unlink className="w-4 h-4 mr-1" />
-                  Unlink
+                  <Unlink className="w-4 h-4" />
                 </Button>
               )}
             </div>
