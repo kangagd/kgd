@@ -4,7 +4,7 @@ import { base44 } from "@/api/base44Client";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Mail, Phone, MessageSquare, User, Calendar, FileText, Plus, Paperclip, Link2 } from "lucide-react";
+import { Mail, Phone, MessageSquare, User, Calendar, FileText, Plus, Paperclip, Link2, X } from "lucide-react";
 import { format } from "date-fns";
 import LogManualActivityModal from "./LogManualActivityModal";
 import { Badge } from "@/components/ui/badge";
@@ -121,6 +121,26 @@ export default function ActivityTab({ project, onComposeEmail }) {
     },
     onError: (error) => {
       toast.error(error.message || "Failed to link email thread");
+    }
+  });
+
+  // Unlink email thread mutation
+  const unlinkEmailMutation = useMutation({
+    mutationFn: async (threadId) => {
+      const projectEmail = projectEmails.find(pe => pe.thread_id === threadId);
+      if (projectEmail) {
+        await base44.entities.ProjectEmail.delete(projectEmail.id);
+      }
+    },
+    onSuccess: async () => {
+      await queryClient.refetchQueries({ 
+        queryKey: ['projectEmails', project.id],
+        type: 'active'
+      });
+      toast.success("Email thread unlinked");
+    },
+    onError: () => {
+      toast.error("Failed to unlink email thread");
     }
   });
 
@@ -415,11 +435,25 @@ export default function ActivityTab({ project, onComposeEmail }) {
                             </div>
                           )}
                         </div>
-                        <div className="flex-shrink-0">
+                        <div className="flex-shrink-0 flex items-center gap-2">
                           {alreadyLinked ? (
-                            <Badge variant="secondary" className="bg-green-100 text-green-700">
-                              Linked
-                            </Badge>
+                            <>
+                              <Badge variant="secondary" className="bg-green-100 text-green-700">
+                                Linked
+                              </Badge>
+                              <Button
+                                variant="ghost"
+                                size="icon"
+                                className="h-6 w-6 hover:bg-red-50 hover:text-red-600"
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  unlinkEmailMutation.mutate(thread.id);
+                                }}
+                                disabled={unlinkEmailMutation.isPending}
+                              >
+                                <X className="w-3 h-3" />
+                              </Button>
+                            </>
                           ) : (
                             <span className="text-[12px] text-[#9CA3AF]">
                               {format(new Date(thread.last_message_date), 'MMM d')}
