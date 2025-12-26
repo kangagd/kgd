@@ -86,13 +86,18 @@ export function computeAttentionItems({
   // RULE A — Deposit missing after quote accepted (HIGH, Finance)
   const acceptedQuotes = quotes.filter(q => q.status === 'Accepted' || q.status === 'accepted');
   if (acceptedQuotes.length > 0) {
-    // Check if any deposit payment exists
-    const hasDeposit = (project.payments || []).some(p => 
+    // Check if any deposit payment exists in project.payments
+    const hasDepositInPayments = (project.payments || []).some(p => 
       p.payment_status === 'Paid' && 
       (p.payment_name || '').toLowerCase().includes('deposit')
     );
     
-    if (!hasDeposit) {
+    // Check if deposit is paid in invoices (amount_paid > 0)
+    const hasDepositInInvoices = invoices.some(inv => 
+      inv.amount_paid > 0
+    );
+    
+    if (!hasDepositInPayments && !hasDepositInInvoices) {
       items.push({
         id: 'DEPOSIT_MISSING_AFTER_ACCEPTED_QUOTE',
         reasonCode: 'DEPOSIT_MISSING_AFTER_ACCEPTED_QUOTE',
