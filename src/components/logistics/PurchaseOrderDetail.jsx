@@ -240,7 +240,11 @@ export default function PurchaseOrderDetail({ poId, onClose, mode = "page" }) {
       return response.data;
     },
     onSuccess: async () => {
+      const projectId = po?.project_id;
       await invalidatePurchaseOrderBundle(queryClient, poId);
+      if (projectId) {
+        queryClient.invalidateQueries({ queryKey: ['projectPurchaseOrders', projectId] });
+      }
       toast.success('Purchase Order deleted');
       onClose();
     },
@@ -325,7 +329,8 @@ export default function PurchaseOrderDetail({ poId, onClose, mode = "page" }) {
         queryClient.invalidateQueries({ queryKey: ["parts"] }),
         queryClient.invalidateQueries({ queryKey: ["purchaseOrders"] }),
         queryClient.invalidateQueries({ queryKey: ["projectParts"] }),
-      ]);
+        formData.project_id && queryClient.invalidateQueries({ queryKey: ['projectPurchaseOrders', formData.project_id] }),
+      ].filter(Boolean));
 
       // Reset dirty flag after successful save
       setIsDirty(false);
@@ -466,7 +471,8 @@ export default function PurchaseOrderDetail({ poId, onClose, mode = "page" }) {
         await Promise.all([
           queryClient.invalidateQueries({ queryKey: ['parts'] }),
           queryClient.invalidateQueries({ queryKey: ['purchaseOrders'] }),
-        ]);
+          formData.project_id && queryClient.invalidateQueries({ queryKey: ['projectPurchaseOrders', formData.project_id] }),
+        ].filter(Boolean));
         setIsDirty(false);
         toast.success('Purchase Order sent to supplier');
       } else {
@@ -969,8 +975,9 @@ export default function PurchaseOrderDetail({ poId, onClose, mode = "page" }) {
                     await Promise.all([
                       queryClient.invalidateQueries({ queryKey: ['parts'] }),
                       queryClient.invalidateQueries({ queryKey: ['allJobs'] }),
-                      queryClient.invalidateQueries({ queryKey: ['linkedJob', updatedPO.linked_logistics_job_id] })
-                    ]);
+                      queryClient.invalidateQueries({ queryKey: ['linkedJob', updatedPO.linked_logistics_job_id] }),
+                      formData.project_id && queryClient.invalidateQueries({ queryKey: ['projectPurchaseOrders', formData.project_id] }),
+                    ].filter(Boolean));
                     
                     // Show appropriate message
                     if (response.data.logisticsJob) {
