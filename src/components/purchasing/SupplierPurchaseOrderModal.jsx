@@ -33,11 +33,11 @@ import { exToGstAmount, exToInc } from "@/components/gst";
 
 export default function SupplierPurchaseOrderModal({ open, onClose, supplier, purchaseOrderToEdit }) {
   const queryClient = useQueryClient();
-  const [poNumber, setPoNumber] = useState("");
+  const [poReference, setPoReference] = useState("");
   const [orderDate, setOrderDate] = useState(format(new Date(), "yyyy-MM-dd"));
   const [expectedDate, setExpectedDate] = useState("");
-  const [deliveryLocationId, setDeliveryLocationId] = useState("");
-  const [fulfilmentMethod, setFulfilmentMethod] = useState("");
+  const [deliveryLocation, setDeliveryLocation] = useState("");
+  const [deliveryMethod, setDeliveryMethod] = useState("");
   const [notes, setNotes] = useState("");
   const [lines, setLines] = useState([]);
   const [locationOpen, setLocationOpen] = useState(false);
@@ -80,32 +80,26 @@ export default function SupplierPurchaseOrderModal({ open, onClose, supplier, pu
   useEffect(() => {
     if (open) {
       if (purchaseOrderToEdit) {
-        setPoNumber(purchaseOrderToEdit.po_number || "");
+        setPoReference(purchaseOrderToEdit.po_reference || "");
         setOrderDate(purchaseOrderToEdit.order_date ? format(new Date(purchaseOrderToEdit.order_date), "yyyy-MM-dd") : format(new Date(), "yyyy-MM-dd"));
         setExpectedDate(purchaseOrderToEdit.expected_date ? format(new Date(purchaseOrderToEdit.expected_date), "yyyy-MM-dd") : "");
-        setDeliveryLocationId(purchaseOrderToEdit.delivery_location_id || "");
-        setFulfilmentMethod(purchaseOrderToEdit.fulfilment_method || "");
+        setDeliveryLocation(purchaseOrderToEdit.delivery_location || "");
+        setDeliveryMethod(purchaseOrderToEdit.delivery_method || "");
         setNotes(purchaseOrderToEdit.notes || "");
         setAttachments(purchaseOrderToEdit.attachments || []);
         setLinesLoaded(false);
         // Lines will be set via existingLines effect
       } else {
-        setPoNumber("");
+        setPoReference("");
         setOrderDate(format(new Date(), "yyyy-MM-dd"));
         setExpectedDate("");
+        setDeliveryLocation("");
         
-        // Try to find default location immediately
-        const defaultLoc = locations.find(l => 
-          (l.address || "").includes("866 Bourke") || 
-          (l.name || "").includes("866 Bourke")
-        );
-        setDeliveryLocationId(defaultLoc ? defaultLoc.id : "");
-        
-        // Default fulfilment method from supplier
+        // Default delivery method from supplier
         if (supplier?.fulfilment_preference === 'pickup' || supplier?.fulfilment_preference === 'delivery') {
-            setFulfilmentMethod(supplier.fulfilment_preference);
+            setDeliveryMethod(supplier.fulfilment_preference);
         } else {
-            setFulfilmentMethod("delivery");
+            setDeliveryMethod("delivery");
         }
   
         setNotes("");
@@ -136,19 +130,7 @@ export default function SupplierPurchaseOrderModal({ open, onClose, supplier, pu
     }
   }, [open, purchaseOrderToEdit, existingLines, linesLoaded, isLoadingLines]);
 
-  // Attempt to set default location if locations load after modal opens (only for create)
-  useEffect(() => {
-    if (open && !purchaseOrderToEdit && locations.length > 0) {
-      setDeliveryLocationId(prev => {
-        if (prev) return prev;
-        const defaultLoc = locations.find(l => 
-          (l.address || "").includes("866 Bourke") || 
-          (l.name || "").includes("866 Bourke")
-        );
-        return defaultLoc ? defaultLoc.id : prev;
-      });
-    }
-  }, [locations, open, purchaseOrderToEdit]);
+
 
   const handleAddLine = () => {
     setLines([...lines, { 
@@ -233,26 +215,23 @@ export default function SupplierPurchaseOrderModal({ open, onClose, supplier, pu
     mutationFn: async () => {
       if (!supplier) throw new Error("No supplier selected");
       
-      // Ensure fulfilment_method is always valid
-      const finalFulfilmentMethod =
-        fulfilmentMethod === "pickup" || fulfilmentMethod === "delivery"
-          ? fulfilmentMethod
+      // Ensure delivery_method is always valid
+      const finalDeliveryMethod =
+        deliveryMethod === "pickup" || deliveryMethod === "delivery"
+          ? deliveryMethod
           : "delivery";
       
-      const locationName = locations.find(l => l.id === deliveryLocationId)?.name || "";
       const poData = {
         supplier_id: supplier.id,
         supplier_name: supplier.name,
-        delivery_location_id: deliveryLocationId || null,
-        delivery_location_name: locationName,
+        delivery_location: deliveryLocation || null,
         status: purchaseOrderToEdit?.status || "draft",
-        po_number: poNumber || null,
+        po_reference: poReference || null,
         order_date: orderDate,
         expected_date: expectedDate || null,
-        fulfilment_method: finalFulfilmentMethod,
+        delivery_method: finalDeliveryMethod,
         notes: notes,
         attachments: attachments,
-        total_amount_ex_tax: calculateTotal(),
       };
 
       let poId;
@@ -374,63 +353,11 @@ export default function SupplierPurchaseOrderModal({ open, onClose, supplier, pu
         <div className="modal-panel py-4 space-y-6">
           {/* Header Info */}
           <div className="grid grid-cols-2 gap-4">
-            {fulfilmentMethod !== "pickup" && (
-              <div className="space-y-2">
-                <Label className="text-xs font-medium text-gray-700">Delivery Location</Label>
-                <Popover open={locationOpen} onOpenChange={setLocationOpen}>
-                  <PopoverTrigger asChild>
-                    <Button
-                      type="button"
-                      variant="outline"
-                      role="combobox"
-                      aria-expanded={locationOpen}
-                      className="w-full h-[44px] justify-between text-[15px] font-normal"
-                    >
-                      {deliveryLocationId
-                        ? locations.find((loc) => loc.id === deliveryLocationId)?.name
-                        : "Select location..."}
-                      <ChevronsUpDown className="ml-2 h-3 w-3 shrink-0 opacity-50" />
-                    </Button>
-                  </PopoverTrigger>
-                  <PopoverContent className="w-[300px] p-0 z-[100]">
-                    <Command>
-                      <CommandInput placeholder="Search location..." className="h-8 text-xs" />
-                      <CommandList>
-                        <CommandEmpty>No location found.</CommandEmpty>
-                        <CommandGroup>
-                          {locations.map((loc) => (
-                            <CommandItem
-                              key={loc.id}
-                              value={`${loc.name} ${loc.id}`.toLowerCase()}
-                              keywords={[loc.name]}
-                              onSelect={() => {
-                                setDeliveryLocationId(loc.id);
-                                setLocationOpen(false);
-                              }}
-                              className="text-xs cursor-pointer !opacity-100 !pointer-events-auto"
-                              disabled={false}
-                            >
-                              <Check
-                                className={cn(
-                                  "mr-2 h-3 w-3",
-                                  deliveryLocationId === loc.id ? "opacity-100" : "opacity-0"
-                                )}
-                              />
-                              {loc.name}
-                            </CommandItem>
-                          ))}
-                        </CommandGroup>
-                      </CommandList>
-                    </Command>
-                  </PopoverContent>
-                </Popover>
-              </div>
-            )}
             <div className="space-y-2">
-              <Label className="text-xs font-medium text-gray-700">PO Number (Optional)</Label>
+              <Label className="text-xs font-medium text-gray-700">PO Reference</Label>
               <Input 
-                value={poNumber} 
-                onChange={(e) => setPoNumber(e.target.value)} 
+                value={poReference} 
+                onChange={(e) => setPoReference(e.target.value)} 
                 placeholder="e.g. PO-2024-001"
                 className="input-sm w-full h-9"
               />
@@ -454,8 +381,8 @@ export default function SupplierPurchaseOrderModal({ open, onClose, supplier, pu
               />
             </div>
             <div className="space-y-2 col-span-2">
-              <Label className="text-xs font-medium text-gray-700">Fulfilment Method</Label>
-              <Select value={fulfilmentMethod} onValueChange={setFulfilmentMethod}>
+              <Label className="text-xs font-medium text-gray-700">Delivery Method</Label>
+              <Select value={deliveryMethod} onValueChange={setDeliveryMethod}>
                 <SelectTrigger className="h-9 text-xs">
                   <SelectValue placeholder="Select method" />
                 </SelectTrigger>
@@ -465,7 +392,7 @@ export default function SupplierPurchaseOrderModal({ open, onClose, supplier, pu
                 </SelectContent>
               </Select>
             </div>
-            {fulfilmentMethod === "pickup" && supplier?.pickup_address && (
+            {deliveryMethod === "pickup" && supplier?.pickup_address && (
               <div className="col-span-2 bg-blue-50 border border-blue-200 rounded-lg p-3">
                 <Label className="text-xs font-medium text-blue-900">Pickup Address</Label>
                 <p className="text-sm text-blue-800 mt-1">{supplier.pickup_address}</p>
