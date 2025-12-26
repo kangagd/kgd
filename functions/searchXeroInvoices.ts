@@ -57,9 +57,9 @@ Deno.serve(async (req) => {
 
     // Build Xero API URL with filters
     // Fetch invoices (Type=ACCREC), excluding voided and bills (Type=ACCPAY)
-    // Fetch ALL pages to get all invoices in Xero
+    // Fetch multiple pages to get comprehensive results
     const allInvoices = [];
-    let maxPages = 100; // Maximum safety limit (10,000 invoices)
+    let maxPages = 20; // Fetch up to 2,000 invoices (20 pages x 100)
     
     for (let currentPage = 1; currentPage <= maxPages; currentPage++) {
       const url = `https://api.xero.com/api.xro/2.0/Invoices?Statuses=DRAFT,SUBMITTED,AUTHORISED,PAID&Type=ACCREC&order=UpdatedDateUTC DESC&page=${currentPage}`;
