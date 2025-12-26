@@ -250,7 +250,11 @@ export default function PurchaseOrderDetail({ poId, onClose, mode = "page" }) {
     });
 
     const handleDelete = () => {
-    if (confirm('Are you sure you want to delete this draft Purchase Order? This action cannot be undone.')) {
+    const confirmMessage = isDraft 
+      ? 'Are you sure you want to delete this draft Purchase Order? This action cannot be undone.'
+      : 'Are you sure you want to delete this Purchase Order? This action cannot be undone.';
+    
+    if (confirm(confirmMessage)) {
       deletePOMutation.mutate();
     }
     };
