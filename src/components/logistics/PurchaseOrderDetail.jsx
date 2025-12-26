@@ -276,54 +276,36 @@ export default function PurchaseOrderDetail({ poId, onClose, mode = "page" }) {
       return;
     }
     
-    // Build payload with EXACT keys - trim values
-    const payload = {
-      action: "update",
-      id: poId,
-      po_reference: formData.po_reference?.trim() || po?.po_reference || "",
-      name: formData.name?.trim() || po?.name || "",
+    // Build update payload with exact schema keys
+    const updateFields = {
+      po_reference: formData.po_reference?.trim() || "",
+      name: formData.name?.trim() || "",
       supplier_id: formData.supplier_id || po?.supplier_id || null,
       project_id: formData.project_id || po?.project_id || null,
       delivery_method: formData.delivery_method || po?.delivery_method || null,
-      notes: formData.notes || po?.notes || "",
+      notes: formData.notes || "",
       ...setPoEtaPayload(formData.eta || po?.expected_date),
-      attachments: formData.attachments || po?.attachments || [],
+      attachments: formData.attachments || [],
     };
 
     console.log("[PO SAVE - PAYLOAD]", {
-      po_reference: payload.po_reference,
-      name: payload.name
+      po_reference: updateFields.po_reference,
+      name: updateFields.name
     });
 
     try {
-      const res = await base44.functions.invoke("managePurchaseOrder", payload);
-
-      if (!res?.data?.success) {
-        console.error("[PO SAVE - FAILED]", res?.data?.error);
-        toast.error(res?.data?.error || "Failed to save PO");
-        return;
-      }
-
-      const updatedPO = res.data.purchaseOrder;
+      // Direct entity update for reliable persistence
+      await base44.entities.PurchaseOrder.update(poId, updateFields);
+      
+      // Refetch to get persisted values
+      console.log("[PO SAVE - Refetching PO]");
+      const refetchedPO = await base44.entities.PurchaseOrder.get(poId);
       console.log("[PO SAVE - SUCCESS]", {
-        returned_po_reference: updatedPO?.po_reference,
-        returned_name: updatedPO?.name,
-        full_po: updatedPO
+        po_reference: refetchedPO?.po_reference,
+        name: refetchedPO?.name
       });
       
-      // If update returns PO, apply it
-      if (updatedPO?.id) {
-        applyReturnedPO(updatedPO);
-      } else {
-        // Otherwise refetch by ID
-        console.log("[PO SAVE - Refetching PO]");
-        const refetchedPO = await base44.entities.PurchaseOrder.get(poId);
-        console.log("[PO SAVE - REFETCHED]", {
-          po_reference: refetchedPO?.po_reference,
-          name: refetchedPO?.name
-        });
-        applyReturnedPO(refetchedPO);
-      }
+      applyReturnedPO(refetchedPO);
 
       // Invalidate all PO-related queries
       await Promise.all([
@@ -417,68 +399,59 @@ export default function PurchaseOrderDetail({ poId, onClose, mode = "page" }) {
       return;
     }
     
-    // Save all fields via managePurchaseOrder first
-    const updatePayload = {
-      action: "update",
-      id: poId,
-      po_reference: (formData.po_reference !== undefined) 
-        ? formData.po_reference?.trim() 
-        : po?.po_reference,
-      name: (formData.name !== undefined) 
-        ? (formData.name?.trim() || null) 
-        : (po?.name || null),
-      supplier_id: formData.supplier_id || po?.supplier_id || null,
-      project_id: formData.project_id || po?.project_id || null,
-      delivery_method: formData.delivery_method || po?.delivery_method || null,
-      notes: (formData.notes !== undefined) ? formData.notes : (po?.notes || ""),
-      ...setPoEtaPayload(formData.eta || po?.expected_date),
-      attachments: formData.attachments || po?.attachments || [],
-    };
+    try {
+      // First, persist all field edits using direct entity update
+      const updateFields = {
+        po_reference: formData.po_reference?.trim() || "",
+        name: formData.name?.trim() || "",
+        supplier_id: formData.supplier_id || po?.supplier_id || null,
+        project_id: formData.project_id || po?.project_id || null,
+        delivery_method: formData.delivery_method || po?.delivery_method || null,
+        notes: formData.notes || "",
+        ...setPoEtaPayload(formData.eta || po?.expected_date),
+        attachments: formData.attachments || [],
+      };
 
-    const updateRes = await base44.functions.invoke("managePurchaseOrder", updatePayload);
-
-    if (!updateRes?.data?.success) {
-      console.error("[PO UPDATE FAILED]", updateRes?.data?.error);
-      toast.error(updateRes?.data?.error || "Failed to save PO");
-      return;
-    }
-    
-    // Apply returned PO to both cache and formData
-    const updatedPO = updateRes.data.purchaseOrder;
-    console.log("[Send to Supplier - after update]", {
-      returned_po_reference: updatedPO?.po_reference,
-      returned_name: updatedPO?.name
-    });
-    applyReturnedPO(updatedPO);
-    
-    // Then update status using managePurchaseOrder for side effects
-    const response = await base44.functions.invoke('managePurchaseOrder', {
-      action: 'updateStatus',
-      id: poId,
-      status: PO_STATUS.ON_ORDER,
-      eta: formData.eta || null
-    });
-    
-    if (response?.data?.success) {
-      const statusUpdatedPO = response.data.purchaseOrder;
+      await base44.entities.PurchaseOrder.update(poId, updateFields);
+      console.log("[Send to Supplier - fields persisted]");
       
-      // Write status update to cache
-      queryClient.setQueryData(['purchaseOrder', poId], statusUpdatedPO);
+      // Then update status using managePurchaseOrder for side effects
+      const response = await base44.functions.invoke('managePurchaseOrder', {
+        action: 'updateStatus',
+        id: poId,
+        status: PO_STATUS.ON_ORDER,
+        eta: formData.eta || null
+      });
       
-      // Update formData
-      setFormData(prev => ({
-        ...prev,
-        status: normaliseLegacyPoStatus(statusUpdatedPO.status ?? value),
-        po_reference: statusUpdatedPO.po_reference ?? prev.po_reference,
-        name: statusUpdatedPO.name ?? prev.name,
-        eta: statusUpdatedPO.expected_date ?? prev.eta,
-      }));
-      
-      await invalidatePurchaseOrderBundle(queryClient, poId);
-      await queryClient.invalidateQueries({ queryKey: ['parts'] });
-      toast.success('Purchase Order sent to supplier');
-    } else {
-      toast.error('Failed to update status');
+      if (response?.data?.success) {
+        const statusUpdatedPO = response.data.purchaseOrder;
+        console.log("[Send to Supplier - after status update]", {
+          po_reference: statusUpdatedPO?.po_reference,
+          name: statusUpdatedPO?.name
+        });
+        
+        // Write status update to cache
+        queryClient.setQueryData(['purchaseOrder', poId], statusUpdatedPO);
+        
+        // Update formData
+        setFormData(prev => ({
+          ...prev,
+          status: normaliseLegacyPoStatus(statusUpdatedPO.status),
+          po_reference: statusUpdatedPO.po_reference ?? prev.po_reference,
+          name: statusUpdatedPO.name ?? prev.name,
+          eta: statusUpdatedPO.expected_date ?? prev.eta,
+        }));
+        
+        await invalidatePurchaseOrderBundle(queryClient, poId);
+        await queryClient.invalidateQueries({ queryKey: ['parts'] });
+        setIsDirty(false);
+        toast.success('Purchase Order sent to supplier');
+      } else {
+        toast.error('Failed to update status');
+      }
+    } catch (error) {
+      console.error('[Send to Supplier - ERROR]', error);
+      toast.error('Failed to send Purchase Order');
     }
   };
 
