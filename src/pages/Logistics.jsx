@@ -3,6 +3,7 @@ import { base44 } from "@/api/base44Client";
 import { useDebounce } from "@/components/common/useDebounce";
 import { sameId } from "@/components/utils/id";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import * as purchaseOrdersApi from "@/api/purchaseOrdersApi";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
@@ -327,20 +328,10 @@ export default function Logistics() {
     if (newStatus === po.status) return;
 
     try {
-      const payload = {
-        action: "updateStatus",
+      const updatedPO = await purchaseOrdersApi.updateStatus({
         id: po.id,
         status: newStatus
-      };
-      console.log("[PO UI] invoking", payload);
-      const response = await base44.functions.invoke("managePurchaseOrder", payload);
-
-      if (!response?.data?.success) {
-        toast.error(response?.data?.error || "Failed to update PO status");
-        return;
-      }
-
-      const updatedPO = response.data.purchaseOrder;
+      });
       
       // Optimistically update cache
       queryClient.setQueryData(['purchaseOrders'], (prev = []) => {
@@ -357,12 +348,12 @@ export default function Logistics() {
         invalidatePurchaseOrderBundle(queryClient, po.id),
         queryClient.invalidateQueries({ queryKey: ['purchaseOrder', po.id] }),
         queryClient.invalidateQueries({ queryKey: ['purchaseOrders'] }),
-        po.project_id && queryClient.invalidateQueries({ queryKey: ['projectPurchaseOrders', po.project_id] }),
-        po.project_id && queryClient.invalidateQueries({ queryKey: ['projectPOLines', po.project_id] }),
+        updatedPO.project_id && queryClient.invalidateQueries({ queryKey: ['projectPurchaseOrders', updatedPO.project_id] }),
+        updatedPO.project_id && queryClient.invalidateQueries({ queryKey: ['projectPOLines', updatedPO.project_id] }),
         queryClient.invalidateQueries({ queryKey: ['parts'] })
       ].filter(Boolean));
     } catch (error) {
-      toast.error("Error updating PO status");
+      toast.error(error.message || "Error updating PO status");
     }
   };
 
@@ -601,38 +592,13 @@ export default function Logistics() {
             <Button
               onClick={async () => {
                 try {
-                  // Step 1: Create draft
-                  const createPayload = {
-                    action: "createDraft",
-                    supplier_id: suppliers[0]?.id || "temp"
-                  };
-                  console.log("[PO UI] invoking", createPayload);
-                  const createResponse = await base44.functions.invoke("managePurchaseOrder", createPayload);
-
-                  if (!createResponse.data?.success || !createResponse.data?.purchaseOrder) {
-                    toast.error(createResponse.data?.error || "Failed to create PO");
-                    return;
-                  }
-
-                  const newPO = createResponse.data.purchaseOrder;
-
-                  // Step 2: Add initial line item
-                  const lineItemsPayload = {
-                    action: "manageLineItems",
-                    id: newPO.id,
-                    line_items: [{ name: "New Item", quantity: 1, unit_price: 0 }]
-                  };
-                  console.log("[PO UI] invoking", lineItemsPayload);
-                  const lineItemsResponse = await base44.functions.invoke("managePurchaseOrder", lineItemsPayload);
-
-                  if (!lineItemsResponse.data?.success) {
-                    toast.error(lineItemsResponse.data?.error || "Failed to add line items");
-                    return;
-                  }
+                  const newPO = await purchaseOrdersApi.createDraft({
+                    supplier_id: suppliers[0]?.id || null
+                  });
                   
                   // Optimistically add to cache
                   queryClient.setQueryData(['purchaseOrders'], (prev = []) => {
-                    return [lineItemsResponse.data.purchaseOrder, ...prev];
+                    return [newPO, ...prev];
                   });
                   
                   setSelectedPoId(newPO.id);
@@ -644,7 +610,7 @@ export default function Logistics() {
                     queryClient.invalidateQueries({ queryKey: ['purchaseOrder', newPO.id] })
                   ]);
                 } catch (error) {
-                  toast.error("Failed to create Purchase Order");
+                  toast.error(error.message || "Failed to create Purchase Order");
                 }
               }}
               className="bg-[#FAE008] text-[#111827] hover:bg-[#E5CF07] font-semibold shadow-sm hover:shadow-md transition h-9 px-4 text-sm rounded-xl"

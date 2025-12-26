@@ -2,6 +2,7 @@ import React, { useState, useMemo } from "react";
 import { base44 } from "@/api/base44Client";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useNavigate, useSearchParams } from "react-router-dom";
+import * as purchaseOrdersApi from "@/api/purchaseOrdersApi";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent } from "@/components/ui/card";
@@ -68,35 +69,22 @@ export default function PurchaseOrders() {
 
   const handleCreatePO = async () => {
     try {
-      // Create a draft PO with minimal data
-      const createPayload = {
-        action: 'createDraft',
-        supplier_id: suppliers[0]?.id || 'temp'
-      };
-      console.log("[PO UI] invoking", createPayload);
-      const createResponse = await base44.functions.invoke('managePurchaseOrder', createPayload);
+      // Create a draft PO with no line items (user adds them in detail view)
+      const newPO = await purchaseOrdersApi.createDraft({
+        supplier_id: suppliers[0]?.id || null
+      });
 
-      if (!createResponse.data?.success || !createResponse.data?.purchaseOrder) {
-        toast.error(createResponse.data?.error || 'Failed to create PO');
-        return;
-      }
-
-      const newPO = createResponse.data.purchaseOrder;
-
-      // Add initial line item
-      const lineItemsPayload = {
-        action: 'manageLineItems',
-        id: newPO.id,
-        line_items: [{ name: 'New Item', quantity: 1, unit_price: 0 }]
-      };
-      console.log("[PO UI] invoking", lineItemsPayload);
-      await base44.functions.invoke('managePurchaseOrder', lineItemsPayload);
+      // Invalidate caches
+      await Promise.all([
+        queryClient.invalidateQueries({ queryKey: ['purchaseOrders'] }),
+        queryClient.invalidateQueries({ queryKey: ['purchaseOrder', newPO.id] })
+      ]);
 
       navigate(`${createPageUrl("PurchaseOrders")}?poId=${newPO.id}`);
       toast.success('Draft Purchase Order created');
     } catch (error) {
       console.error('Error creating PO:', error);
-      toast.error('Failed to create Purchase Order');
+      toast.error(error.message || 'Failed to create Purchase Order');
     }
   };
 
@@ -119,23 +107,23 @@ export default function PurchaseOrders() {
 
   const handleStatusChange = async (po, newStatus) => {
     try {
-      const payload = {
-        action: 'updateStatus',
+      const updatedPO = await purchaseOrdersApi.updateStatus({
         id: po.id,
         status: newStatus
-      };
-      console.log("[PO UI] invoking", payload);
-      const response = await base44.functions.invoke('managePurchaseOrder', payload);
+      });
 
-      if (!response.data?.success) {
-        toast.error(response.data?.error || 'Failed to update status');
-        return;
-      }
+      // Invalidate all PO-related caches
+      await Promise.all([
+        queryClient.invalidateQueries({ queryKey: ['purchaseOrder', po.id] }),
+        queryClient.invalidateQueries({ queryKey: ['purchaseOrders'] }),
+        updatedPO.project_id && queryClient.invalidateQueries({ queryKey: ['projectPurchaseOrders', updatedPO.project_id] }),
+        updatedPO.project_id && queryClient.invalidateQueries({ queryKey: ['projectPOLines', updatedPO.project_id] }),
+        queryClient.invalidateQueries({ queryKey: ['parts'] })
+      ].filter(Boolean));
 
       toast.success('Status updated');
-      queryClient.invalidateQueries({ queryKey: ['purchaseOrders'] });
     } catch (error) {
-      toast.error('Error updating status');
+      toast.error(error.message || 'Error updating status');
     }
   };
 

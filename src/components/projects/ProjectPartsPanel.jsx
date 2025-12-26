@@ -2,6 +2,7 @@ import React, { useState } from "react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { AlertTriangle, CheckCircle2, Package, Truck, ExternalLink, Plus, ShoppingCart, MoreVertical, Building2 } from "lucide-react";
+import * as purchaseOrdersApi from "@/api/purchaseOrdersApi";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -99,20 +100,10 @@ export default function ProjectPartsPanel({ project, parts = [], inventoryByItem
     }
 
     try {
-      const payload = {
-        action: "getOrCreateProjectSupplierDraft",
+      const po = await purchaseOrdersApi.getOrCreateProjectSupplierDraft({
         project_id: project.id,
         supplier_id: supplierId
-      };
-      console.log("[PO UI] invoking", payload);
-      const response = await base44.functions.invoke("managePurchaseOrder", payload);
-
-      if (!response?.data?.success || !response.data.purchaseOrder) {
-        toast.error(response?.data?.error || "Failed to open/create Purchase Order");
-        return;
-      }
-
-      const po = response.data.purchaseOrder;
+      });
       
       // Invalidate all PO-related caches
       await Promise.all([
@@ -124,7 +115,7 @@ export default function ProjectPartsPanel({ project, parts = [], inventoryByItem
       
       setActivePoId(po.id);
     } catch (error) {
-      toast.error("Error opening/creating Purchase Order");
+      toast.error(error.message || "Error opening/creating Purchase Order");
     }
   };
 
