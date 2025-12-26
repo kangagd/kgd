@@ -227,7 +227,7 @@ export default function PurchaseOrderDetail({ poId, onClose, mode = "page" }) {
 
     const handleSave = async () => {
     // Debug: Confirm save handler runs
-    console.log("[PO SAVE]", {
+    console.log("[PO SAVE - START]", {
       po_id: po?.id,
       form_po_reference: formData.po_reference,
       form_name: formData.name,
@@ -246,52 +246,68 @@ export default function PurchaseOrderDetail({ poId, onClose, mode = "page" }) {
       return;
     }
     
-    // Build payload with proper fallbacks to loaded PO values
+    // Build payload with EXACT keys - trim values
     const payload = {
       action: "update",
       id: poId,
-      po_reference: (formData.po_reference !== undefined) 
-        ? formData.po_reference?.trim() 
-        : po?.po_reference,
-      name: (formData.name !== undefined) 
-        ? (formData.name?.trim() || null) 
-        : (po?.name || null),
+      po_reference: formData.po_reference?.trim() || po?.po_reference || "",
+      name: formData.name?.trim() || po?.name || "",
       supplier_id: formData.supplier_id || po?.supplier_id || null,
       project_id: formData.project_id || po?.project_id || null,
       delivery_method: formData.delivery_method || po?.delivery_method || null,
-      notes: (formData.notes !== undefined) ? formData.notes : (po?.notes || ""),
+      notes: formData.notes || po?.notes || "",
       ...setPoEtaPayload(formData.eta || po?.expected_date),
       attachments: formData.attachments || po?.attachments || [],
     };
 
-    console.log("[PO SAVE PAYLOAD]", payload);
-
-    const res = await base44.functions.invoke("managePurchaseOrder", payload);
-
-    if (!res?.data?.success) {
-      console.error("[PO SAVE FAILED]", res?.data?.error);
-      toast.error(res?.data?.error || "Failed to save PO");
-      return;
-    }
-
-    const updatedPO = res.data.purchaseOrder;
-    console.log("[PO SAVE SUCCESS]", {
-      returned_po_reference: updatedPO?.po_reference,
-      returned_name: updatedPO?.name
+    console.log("[PO SAVE - PAYLOAD]", {
+      po_reference: payload.po_reference,
+      name: payload.name
     });
-    
-    // Apply returned PO to both cache and formData
-    applyReturnedPO(updatedPO);
 
-    // Invalidate all PO-related queries
-    await Promise.all([
-      invalidatePurchaseOrderBundle(queryClient, poId),
-      queryClient.invalidateQueries({ queryKey: ["parts"] }),
-      queryClient.invalidateQueries({ queryKey: ["purchaseOrders"] }),
-      queryClient.invalidateQueries({ queryKey: ["projectParts"] }),
-    ]);
+    try {
+      const res = await base44.functions.invoke("managePurchaseOrder", payload);
 
-    toast.success("Purchase Order saved");
+      if (!res?.data?.success) {
+        console.error("[PO SAVE - FAILED]", res?.data?.error);
+        toast.error(res?.data?.error || "Failed to save PO");
+        return;
+      }
+
+      const updatedPO = res.data.purchaseOrder;
+      console.log("[PO SAVE - SUCCESS]", {
+        returned_po_reference: updatedPO?.po_reference,
+        returned_name: updatedPO?.name,
+        full_po: updatedPO
+      });
+      
+      // If update returns PO, apply it
+      if (updatedPO?.id) {
+        applyReturnedPO(updatedPO);
+      } else {
+        // Otherwise refetch by ID
+        console.log("[PO SAVE - Refetching PO]");
+        const refetchedPO = await base44.entities.PurchaseOrder.get(poId);
+        console.log("[PO SAVE - REFETCHED]", {
+          po_reference: refetchedPO?.po_reference,
+          name: refetchedPO?.name
+        });
+        applyReturnedPO(refetchedPO);
+      }
+
+      // Invalidate all PO-related queries
+      await Promise.all([
+        invalidatePurchaseOrderBundle(queryClient, poId),
+        queryClient.invalidateQueries({ queryKey: ["parts"] }),
+        queryClient.invalidateQueries({ queryKey: ["purchaseOrders"] }),
+        queryClient.invalidateQueries({ queryKey: ["projectParts"] }),
+      ]);
+
+      toast.success("Purchase Order saved");
+    } catch (error) {
+      console.error("[PO SAVE - ERROR]", error);
+      toast.error("Failed to save Purchase Order");
+    }
   };
 
   const handleFileUpload = async (e) => {
