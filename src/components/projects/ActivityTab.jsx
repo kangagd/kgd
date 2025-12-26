@@ -39,10 +39,40 @@ export default function ActivityTab({ project, onComposeEmail }) {
     enabled: !!project.id
   });
 
-  // Fetch all email threads for linking
+  // Fetch all email threads for linking (last 6 months)
   const { data: allEmailThreads = [] } = useQuery({
     queryKey: ['allEmailThreads'],
-    queryFn: () => base44.entities.EmailThread.list('-created_date', 100),
+    queryFn: async () => {
+      const sixMonthsAgo = new Date();
+      sixMonthsAgo.setMonth(sixMonthsAgo.getMonth() - 6);
+      
+      const threads = await base44.entities.EmailThread.list('-created_date', 500);
+      
+      // Filter by date and exclude automatic replies
+      return threads.filter(thread => {
+        const threadDate = new Date(thread.last_message_date || thread.created_date);
+        if (threadDate < sixMonthsAgo) return false;
+        
+        // Exclude automatic replies
+        const subject = (thread.subject || '').toLowerCase();
+        const autoReplyPatterns = [
+          'auto-reply',
+          'automatic reply',
+          'out of office',
+          'out of the office',
+          'away from office',
+          'delivery status notification',
+          'undeliverable',
+          'mail delivery failed',
+          'returned mail',
+          'auto response',
+          'vacation reply',
+          'absence notification'
+        ];
+        
+        return !autoReplyPatterns.some(pattern => subject.includes(pattern));
+      });
+    },
     enabled: showLinkModal
   });
 
