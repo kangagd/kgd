@@ -36,7 +36,8 @@ export default function ActivityTab({ project, onComposeEmail }) {
   const { data: projectEmails = [] } = useQuery({
     queryKey: ['projectEmails', project.id],
     queryFn: () => base44.entities.ProjectEmail.filter({ project_id: project.id }),
-    enabled: !!project.id
+    enabled: !!project.id,
+    refetchOnMount: true
   });
 
   // Fetch all email threads for linking (last 6 months)
@@ -109,8 +110,11 @@ export default function ActivityTab({ project, onComposeEmail }) {
       });
     },
     onSuccess: async () => {
-      await queryClient.invalidateQueries({ queryKey: ['projectEmails', project.id] });
-      await queryClient.refetchQueries({ queryKey: ['projectEmails', project.id] });
+      // Force immediate refetch
+      await queryClient.refetchQueries({ 
+        queryKey: ['projectEmails', project.id],
+        type: 'active'
+      });
       setShowLinkModal(false);
       setSearchTerm("");
       toast.success("Email thread linked to project");
