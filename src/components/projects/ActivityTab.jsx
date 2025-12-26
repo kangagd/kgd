@@ -108,8 +108,9 @@ export default function ActivityTab({ project, onComposeEmail }) {
         is_historical: true
       });
     },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['projectEmails', project.id] });
+    onSuccess: async () => {
+      await queryClient.invalidateQueries({ queryKey: ['projectEmails', project.id] });
+      await queryClient.refetchQueries({ queryKey: ['projectEmails', project.id] });
       setShowLinkModal(false);
       setSearchTerm("");
       toast.success("Email thread linked to project");
