@@ -4,7 +4,13 @@ import { base44 } from "@/api/base44Client";
  * Thin client wrapper for Purchase Order operations.
  * All PO mutations must go through managePurchaseOrder backend function.
  * 
- * NEVER use base44.entities.PurchaseOrder.* or PurchaseOrderLine.* directly in frontend.
+ * ⚠️ CRITICAL: NEVER use base44.entities.PurchaseOrder.* or PurchaseOrderLine.* directly in frontend.
+ * 
+ * DEPRECATED COMPONENTS (DO NOT USE):
+ * - components/purchasing/SupplierPurchaseOrderModal.js (uses direct entity calls)
+ * - components/purchasing/ReceivePurchaseOrderModal.js (uses direct entity calls)
+ * 
+ * These components bypass the managePurchaseOrder command flow and should be phased out.
  */
 
 export async function createDraft({ 
