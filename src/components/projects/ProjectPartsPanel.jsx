@@ -100,7 +100,22 @@ export default function ProjectPartsPanel({ project, parts = [], inventoryByItem
     }
 
     try {
-      const po = await purchaseOrdersApi.getOrCreateProjectSupplierDraft({
+      // Step 1: Query for existing draft PO
+      const existingDrafts = await base44.entities.PurchaseOrder.filter({
+        project_id: project.id,
+        supplier_id: supplierId,
+        status: "draft"
+      });
+      
+      if (existingDrafts.length > 0) {
+        // Use existing draft
+        const draft = existingDrafts[0];
+        setActivePoId(draft.id);
+        return;
+      }
+      
+      // Step 2: Create new draft if none exists
+      const po = await purchaseOrdersApi.createDraft({
         project_id: project.id,
         supplier_id: supplierId
       });
@@ -115,6 +130,7 @@ export default function ProjectPartsPanel({ project, parts = [], inventoryByItem
       
       setActivePoId(po.id);
     } catch (error) {
+      console.error('[ProjectPartsPanel] Error opening/creating PO:', error);
       toast.error(error.message || "Error opening/creating Purchase Order");
     }
   };
