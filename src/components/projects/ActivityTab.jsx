@@ -125,7 +125,7 @@ export default function ActivityTab({ project, onComposeEmail }) {
   });
 
   // Fetch email threads for those emails
-  const emailThreadIds = [...new Set(projectEmails.map(pe => pe.email_thread_id).filter(Boolean))];
+  const emailThreadIds = [...new Set(projectEmails.map(pe => pe.thread_id).filter(Boolean))];
   const { data: emailThreads = [] } = useQuery({
     queryKey: ['emailThreads', emailThreadIds],
     queryFn: async () => {
@@ -384,7 +384,7 @@ export default function ActivityTab({ project, onComposeEmail }) {
                 </div>
               ) : (
                 filteredEmailThreads.map((thread) => {
-                  const alreadyLinked = projectEmails.some(pe => pe.email_thread_id === thread.id);
+                  const alreadyLinked = projectEmails.some(pe => pe.thread_id === thread.id);
                   
                   return (
                     <button
