@@ -202,7 +202,18 @@ export default function ProjectForm({ project, onSubmit, onCancel, isSubmitting 
   };
 
   const handleCreateCustomer = () => {
-    createCustomerMutation.mutate({ ...newCustomerData, status: "active" });
+    const customerData = { 
+      ...newCustomerData, 
+      status: "active" 
+    };
+    
+    // Get organisation_name if organisation_id is set
+    if (customerData.organisation_id) {
+      const org = organisations.find(o => o.id === customerData.organisation_id);
+      customerData.organisation_name = org?.name || "";
+    }
+    
+    createCustomerMutation.mutate(customerData);
   };
 
   const createOrganisationMutation = useMutation({
