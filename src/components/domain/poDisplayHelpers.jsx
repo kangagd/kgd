@@ -5,14 +5,22 @@
 
 /**
  * Get the display reference for a Purchase Order
- * CANONICAL DISPLAY RULE: Always use po_reference, never legacy fields
+ * Checks multiple fields in priority order for maximum compatibility
  * @param {Object} po - Purchase Order object
- * @returns {string} Display reference (canonical po_reference or fallback)
+ * @returns {string} Display reference (first non-empty value or fallback)
  */
 export function getPoDisplayReference(po) {
   if (!po) return 'Unknown PO';
-  // Only use po_reference (canonical field), fallback to ID slice if empty
-  return po.po_reference?.trim() || `PO-${po.id?.slice(0, 8)}`;
+  
+  // Check fields in priority order
+  const ref = po.po_reference?.trim() || 
+              po.po_ref?.trim() || 
+              po.reference?.trim() || 
+              po.po_number?.trim() || 
+              po.name?.trim() || 
+              null;
+  
+  return ref || `PO-${po.id?.slice(0, 8)}`;
 }
 
 /**
