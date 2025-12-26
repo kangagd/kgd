@@ -106,6 +106,40 @@ Deno.serve(async (req) => {
     const { action } = payload;
 
     // ========================================
+    // STRICT PAYLOAD VALIDATION
+    // ========================================
+    
+    // Reject data:{...} shape for new actions (only allow for legacy compatibility)
+    const legacyActions = ['create', 'update', 'getOrCreateProjectSupplierDraft'];
+    if (payload.data && !legacyActions.includes(action)) {
+      console.error('[PO] Rejected payload', { 
+        action, 
+        id: payload.id, 
+        hasData: !!payload.data, 
+        keys: Object.keys(payload) 
+      });
+      return Response.json({ 
+        error: 'Forbidden payload shape: do not send data. Send top-level fields for this action.' 
+      }, { status: 400 });
+    }
+
+    // Reject forbidden fields anywhere in payload
+    const forbiddenGlobalFields = ['po_number', 'order_reference', 'reference'];
+    const foundForbidden = forbiddenGlobalFields.filter(f => payload[f] !== undefined);
+    if (foundForbidden.length > 0) {
+      console.error('[PO] Rejected payload', { 
+        action, 
+        id: payload.id, 
+        hasData: !!payload.data, 
+        keys: Object.keys(payload),
+        forbiddenFields: foundForbidden
+      });
+      return Response.json({ 
+        error: `Forbidden fields: ${foundForbidden.join(', ')}. These are system-generated and cannot be set directly.` 
+      }, { status: 400 });
+    }
+
+    // ========================================
     // ACTION: createDraft
     // ========================================
     if (action === 'createDraft') {
