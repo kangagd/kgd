@@ -714,11 +714,18 @@ export default function PurchaseOrderDetail({ poId, onClose, mode = "page" }) {
                  />
                 ) : (
                  <div className="mt-2 space-y-1">
-                   <p className="text-sm font-medium text-[#111827]">
-                     {formData.po_reference?.trim() || getPoDisplayReference(po)}
-                   </p>
-                   {(formData.name || po.name) && (
-                     <p className="text-sm text-[#6B7280]">{formData.name || po.name}</p>
+                   <div className="flex items-center gap-2">
+                     <p className="text-sm font-medium text-[#111827]">
+                       {getPoDisplayReference(po)}
+                     </p>
+                     {(formData.po_reference?.trim() !== po.po_reference || formData.name?.trim() !== po.name) && (
+                       <Badge variant="outline" className="text-xs text-amber-600 border-amber-300">
+                         Unsaved changes
+                       </Badge>
+                     )}
+                   </div>
+                   {po.name && (
+                     <p className="text-sm text-[#6B7280]">{po.name}</p>
                    )}
                  </div>
                 )}
