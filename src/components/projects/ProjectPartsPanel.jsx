@@ -391,8 +391,11 @@ export default function ProjectPartsPanel({ project, parts = [], inventoryByItem
                         {/* PO Summary Header */}
                         <div className="bg-red-100/50 px-3 py-2 border-b border-red-200">
                           <div className="flex items-center justify-between gap-2">
-                            <div className="flex items-center gap-2 flex-wrap">
-                              <span className="text-sm font-semibold text-red-900">
+                            <button
+                              onClick={() => setActivePoId(po.id)}
+                              className="flex items-center gap-2 flex-wrap hover:opacity-80 transition-opacity"
+                            >
+                              <span className="text-sm font-semibold text-red-900 underline decoration-dotted underline-offset-2">
                                 {getPoIdentity(po).reference}
                               </span>
                               {getPoIdentity(po).name && (
@@ -404,28 +407,18 @@ export default function ProjectPartsPanel({ project, parts = [], inventoryByItem
                               {etaDate && (
                                 <span className="text-xs text-red-700">• ETA: {format(etaDate, 'MMM d')}</span>
                               )}
-                            </div>
-                            <div className="flex gap-1">
+                            </button>
+                            {logisticsCount > 0 && (
                               <Button
                                 size="sm"
                                 variant="ghost"
-                                onClick={() => setActivePoId(po.id)}
+                                onClick={() => document.getElementById('logistics')?.scrollIntoView({ behavior: 'smooth' })}
                                 className="h-6 px-2 text-xs text-red-700 hover:bg-red-200"
                               >
-                                Open PO
+                                <Truck className="w-3 h-3 mr-1" />
+                                Logistics ({logisticsCount})
                               </Button>
-                              {logisticsCount > 0 && (
-                                <Button
-                                  size="sm"
-                                  variant="ghost"
-                                  onClick={() => document.getElementById('logistics')?.scrollIntoView({ behavior: 'smooth' })}
-                                  className="h-6 px-2 text-xs text-red-700 hover:bg-red-200"
-                                >
-                                  <Truck className="w-3 h-3 mr-1" />
-                                  Logistics ({logisticsCount})
-                                </Button>
-                              )}
-                            </div>
+                            )}
                           </div>
                         </div>
                         
@@ -554,8 +547,11 @@ export default function ProjectPartsPanel({ project, parts = [], inventoryByItem
                         {/* PO Summary Header */}
                         <div className="bg-green-50 px-3 py-2 border-b border-green-200">
                           <div className="flex items-center justify-between gap-2">
-                            <div className="flex items-center gap-2 flex-wrap">
-                              <span className="text-sm font-semibold text-green-900">
+                            <button
+                              onClick={() => setActivePoId(po.id)}
+                              className="flex items-center gap-2 flex-wrap hover:opacity-80 transition-opacity"
+                            >
+                              <span className="text-sm font-semibold text-green-900 underline decoration-dotted underline-offset-2">
                                 {getPoIdentity(po).reference}
                               </span>
                               {getPoIdentity(po).name && (
@@ -567,28 +563,18 @@ export default function ProjectPartsPanel({ project, parts = [], inventoryByItem
                               {etaDate && (
                                 <span className="text-xs text-green-700">• ETA: {format(etaDate, 'MMM d')}</span>
                               )}
-                            </div>
-                            <div className="flex gap-1">
+                            </button>
+                            {logisticsCount > 0 && (
                               <Button
                                 size="sm"
                                 variant="ghost"
-                                onClick={() => setActivePoId(po.id)}
+                                onClick={() => document.getElementById('logistics')?.scrollIntoView({ behavior: 'smooth' })}
                                 className="h-6 px-2 text-xs text-green-700 hover:bg-green-100"
                               >
-                                Open PO
+                                <Truck className="w-3 h-3 mr-1" />
+                                Logistics ({logisticsCount})
                               </Button>
-                              {logisticsCount > 0 && (
-                                <Button
-                                  size="sm"
-                                  variant="ghost"
-                                  onClick={() => document.getElementById('logistics')?.scrollIntoView({ behavior: 'smooth' })}
-                                  className="h-6 px-2 text-xs text-green-700 hover:bg-green-100"
-                                >
-                                  <Truck className="w-3 h-3 mr-1" />
-                                  Logistics ({logisticsCount})
-                                </Button>
-                              )}
-                            </div>
+                            )}
                           </div>
                         </div>
                         

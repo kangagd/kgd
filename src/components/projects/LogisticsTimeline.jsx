@@ -7,6 +7,8 @@ import { Badge } from "@/components/ui/badge";
 import { useNavigate } from "react-router-dom";
 import { createPageUrl } from "@/utils";
 import { getPoIdentity } from "@/components/domain/poDisplayHelpers";
+import { useState } from "react";
+import PurchaseOrderModal from "../logistics/PurchaseOrderModal";
 
 const LOGISTICS_JOB_TYPES = [
   "Material Pickup – Warehouse",
@@ -19,6 +21,7 @@ const LOGISTICS_JOB_TYPES = [
 
 export default function LogisticsTimeline({ project }) {
   const navigate = useNavigate();
+  const [activePoId, setActivePoId] = useState(null);
 
   const { data: jobs = [] } = useQuery({
     queryKey: ['projectJobs', project.id],
@@ -118,9 +121,15 @@ export default function LogisticsTimeline({ project }) {
                     <div className="font-semibold text-slate-900 flex items-center gap-2 flex-wrap">
                       {job.job_type_name || job.job_type}
                       {linkedPO && (
-                        <span className="inline-flex items-center rounded-full bg-amber-100 px-2 py-0.5 text-[10px] font-medium text-amber-700">
+                        <button
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            setActivePoId(linkedPO.id);
+                          }}
+                          className="inline-flex items-center rounded-full bg-amber-100 px-2 py-0.5 text-[10px] font-medium text-amber-700 hover:bg-amber-200 transition-colors"
+                        >
                           {getPoIdentity(linkedPO).reference}
-                        </span>
+                        </button>
                       )}
                       {isStockJob && !linkedPO && (
                         <span className="inline-flex items-center rounded-full bg-amber-100 px-2 py-0.5 text-[10px] font-medium text-amber-700">
@@ -213,6 +222,12 @@ export default function LogisticsTimeline({ project }) {
           );
         })}
       </div>
+
+      <PurchaseOrderModal
+        poId={activePoId}
+        open={!!activePoId}
+        onClose={() => setActivePoId(null)}
+      />
     </div>
   );
 }
