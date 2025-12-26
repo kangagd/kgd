@@ -218,6 +218,15 @@ export default function PurchaseOrderDetail({ poId, onClose, mode = "page" }) {
     };
 
     const handleSave = async () => {
+    // Debug: Confirm save handler runs
+    console.log("[PO SAVE]", {
+      po_id: po?.id,
+      form_po_reference: formData.po_reference,
+      form_name: formData.name,
+      loaded_po_reference: po?.po_reference,
+      loaded_name: po?.name
+    });
+
     // Validate identity fields
     const validation = validatePoIdentityFields({
       po_reference: formData.po_reference,
@@ -229,27 +238,39 @@ export default function PurchaseOrderDetail({ poId, onClose, mode = "page" }) {
       return;
     }
     
+    // Build payload with proper fallbacks to loaded PO values
     const payload = {
       action: "update",
       id: poId,
-      po_reference: formData.po_reference?.trim(),
-      name: formData.name?.trim() || null,
-      supplier_id: formData.supplier_id || null,
-      project_id: formData.project_id || null,
-      delivery_method: formData.delivery_method || null,
-      notes: formData.notes || "",
-      ...setPoEtaPayload(formData.eta),
-      attachments: formData.attachments || [],
+      po_reference: (formData.po_reference !== undefined) 
+        ? formData.po_reference?.trim() 
+        : po?.po_reference,
+      name: (formData.name !== undefined) 
+        ? (formData.name?.trim() || null) 
+        : (po?.name || null),
+      supplier_id: formData.supplier_id || po?.supplier_id || null,
+      project_id: formData.project_id || po?.project_id || null,
+      delivery_method: formData.delivery_method || po?.delivery_method || null,
+      notes: (formData.notes !== undefined) ? formData.notes : (po?.notes || ""),
+      ...setPoEtaPayload(formData.eta || po?.expected_date),
+      attachments: formData.attachments || po?.attachments || [],
     };
+
+    console.log("[PO SAVE PAYLOAD]", payload);
 
     const res = await base44.functions.invoke("managePurchaseOrder", payload);
 
     if (!res?.data?.success) {
+      console.error("[PO SAVE FAILED]", res?.data?.error);
       toast.error(res?.data?.error || "Failed to save PO");
       return;
     }
 
     const updatedPO = res.data.purchaseOrder;
+    console.log("[PO SAVE SUCCESS]", {
+      returned_po_reference: updatedPO?.po_reference,
+      returned_name: updatedPO?.name
+    });
     
     // Apply returned PO to both cache and formData
     applyReturnedPO(updatedPO);
@@ -338,19 +359,24 @@ export default function PurchaseOrderDetail({ poId, onClose, mode = "page" }) {
     const updatePayload = {
       action: "update",
       id: poId,
-      po_reference: formData.po_reference?.trim(),
-      name: formData.name?.trim() || null,
-      supplier_id: formData.supplier_id || null,
-      project_id: formData.project_id || null,
-      delivery_method: formData.delivery_method || null,
-      notes: formData.notes || "",
-      ...setPoEtaPayload(formData.eta),
-      attachments: formData.attachments || [],
+      po_reference: (formData.po_reference !== undefined) 
+        ? formData.po_reference?.trim() 
+        : po?.po_reference,
+      name: (formData.name !== undefined) 
+        ? (formData.name?.trim() || null) 
+        : (po?.name || null),
+      supplier_id: formData.supplier_id || po?.supplier_id || null,
+      project_id: formData.project_id || po?.project_id || null,
+      delivery_method: formData.delivery_method || po?.delivery_method || null,
+      notes: (formData.notes !== undefined) ? formData.notes : (po?.notes || ""),
+      ...setPoEtaPayload(formData.eta || po?.expected_date),
+      attachments: formData.attachments || po?.attachments || [],
     };
 
     const updateRes = await base44.functions.invoke("managePurchaseOrder", updatePayload);
 
     if (!updateRes?.data?.success) {
+      console.error("[PO UPDATE FAILED]", updateRes?.data?.error);
       toast.error(updateRes?.data?.error || "Failed to save PO");
       return;
     }
