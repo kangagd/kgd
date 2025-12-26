@@ -6,7 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Plus, Upload, X, DollarSign, FileText, ExternalLink, Link as LinkIcon, Loader2 } from "lucide-react";
+import { Plus, Upload, X, DollarSign, FileText, ExternalLink, Link as LinkIcon, Loader2, Unlink } from "lucide-react";
 import { base44 } from "@/api/base44Client";
 import RichTextField from "../common/RichTextField";
 import { usePermissions } from "../common/PermissionsContext";
@@ -38,6 +38,7 @@ export default function FinancialsTab({ project, onUpdate }) {
   const [primaryQuote, setPrimaryQuote] = useState(null);
   const [primaryInvoice, setPrimaryInvoice] = useState(null);
   const [linkingLegacy, setLinkingLegacy] = useState(false);
+  const [unlinkingInvoice, setUnlinkingInvoice] = useState(null);
 
   useEffect(() => {
     const loadLinkedDocs = async () => {
@@ -80,6 +81,24 @@ export default function FinancialsTab({ project, onUpdate }) {
       console.error("Failed to link legacy docs:", error);
     } finally {
       setLinkingLegacy(false);
+    }
+  };
+
+  const handleUnlinkInvoice = async (invoiceId) => {
+    if (!confirm('Unlink this invoice from the project?')) return;
+    
+    setUnlinkingInvoice(invoiceId);
+    try {
+      await base44.entities.XeroInvoice.update(invoiceId, { project_id: null });
+      
+      // If it's the primary invoice, clear that too
+      if (project.primary_xero_invoice_id === invoiceId) {
+        onUpdate({ primary_xero_invoice_id: null });
+      }
+    } catch (error) {
+      console.error("Failed to unlink invoice:", error);
+    } finally {
+      setUnlinkingInvoice(null);
     }
   };
   const [newPayment, setNewPayment] = useState({
@@ -1019,6 +1038,19 @@ export default function FinancialsTab({ project, onUpdate }) {
                           View <ExternalLink className="w-3 h-3" />
                         </a>
                       )}
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          handleUnlinkInvoice(invoice.id);
+                        }}
+                        disabled={unlinkingInvoice === invoice.id}
+                        className="h-6 w-6 text-red-600 hover:text-red-700 hover:bg-red-50"
+                        title="Unlink invoice from project"
+                      >
+                        <Unlink className="w-3 h-3" />
+                      </Button>
                     </div>
                   </div>
                 </div>
