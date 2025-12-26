@@ -10,7 +10,7 @@ import {
     UserCircle, 
     DollarSign, 
     Archive as ArchiveIcon, 
-    Building2, 
+    Building2,
     FolderKanban,
     Menu,
     X,
@@ -33,7 +33,7 @@ import {
     Truck,
     Car,
     Package
-    } from "lucide-react";
+} from "lucide-react";
 import { base44 } from "@/api/base44Client";
 import { toast } from "sonner";
 import { Toaster } from "@/components/ui/sonner";
