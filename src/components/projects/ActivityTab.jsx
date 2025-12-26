@@ -386,7 +386,7 @@ export default function ActivityTab({ project, onComposeEmail }) {
                       key={thread.id}
                       onClick={() => {
                         if (!alreadyLinked) {
-                          linkEmailMutation.mutate(thread.id);
+                          linkEmailMutation.mutate(thread);
                         }
                       }}
                       disabled={alreadyLinked || linkEmailMutation.isPending}
