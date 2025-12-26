@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useMemo } from "react";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { MOVEMENT_TYPE } from "@/components/domain/inventoryConfig";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -33,6 +33,7 @@ const getFinancialStatusOptions = (projectType) => {
 };
 
 export default function FinancialsTab({ project, onUpdate }) {
+  const queryClient = useQueryClient();
   const { canViewCosts, isAdminOrManager } = usePermissions();
   const [uploading, setUploading] = useState(false);
   const [primaryQuote, setPrimaryQuote] = useState(null);
@@ -95,6 +96,10 @@ export default function FinancialsTab({ project, onUpdate }) {
       if (project.primary_xero_invoice_id === invoiceId) {
         onUpdate({ primary_xero_invoice_id: null });
       }
+
+      // Invalidate queries to refresh the UI
+      queryClient.invalidateQueries({ queryKey: ['projectXeroInvoices', project.id] });
+      queryClient.invalidateQueries({ queryKey: ['xero-invoices-for-project', project.id] });
     } catch (error) {
       console.error("Failed to unlink invoice:", error);
     } finally {
