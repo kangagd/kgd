@@ -223,11 +223,7 @@ export default function ProjectPartsPanel({ project, parts = [], inventoryByItem
                   Create PO
                 </DropdownMenuItem>
               )}
-              <DropdownMenuItem
-                onClick={() => {
-                  toast.info("Pick list feature coming soon");
-                }}
-              >
+              <DropdownMenuItem>
                 Print Pick List
               </DropdownMenuItem>
             </DropdownMenuContent>
