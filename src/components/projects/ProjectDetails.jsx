@@ -1068,14 +1068,20 @@ Format as HTML bullet points using <ul> and <li> tags. Include only the most cri
                 </h3>
                 {canEdit && (
                   <AddIconButton
+                    type="button"
                     onClick={(e) => {
+                      e.preventDefault();
                       e.stopPropagation();
-                      // Scroll to and focus on the contact form
-                      const contactPanel = document.querySelector('[placeholder="Name"]');
-                      if (contactPanel) {
-                        contactPanel.scrollIntoView({ behavior: 'smooth', block: 'center' });
-                        setTimeout(() => contactPanel.focus(), 300);
-                      }
+                      // Switch to requirements tab where contacts panel is
+                      setActiveTab('requirements');
+                      // Wait for tab to render, then scroll to and focus the contact form
+                      setTimeout(() => {
+                        const contactInput = document.querySelector('input[placeholder="Name"]');
+                        if (contactInput) {
+                          contactInput.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                          setTimeout(() => contactInput.focus(), 300);
+                        }
+                      }, 100);
                     }}
                     title="Add Contact"
                   />
