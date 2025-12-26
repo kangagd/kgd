@@ -1,7 +1,7 @@
 import { createClientFromRequest } from 'npm:@base44/sdk@0.8.4';
 
-// Valid V2 actions only
-const VALID_ACTIONS = ['createDraft', 'updateIdentity', 'updateStatus', 'setLineItems', 'delete'];
+// Valid V2 actions only (manageLineItems is an alias for setLineItems for backward compatibility)
+const VALID_ACTIONS = ['createDraft', 'updateIdentity', 'updateStatus', 'setLineItems', 'manageLineItems', 'delete'];
 
 // Valid PO statuses
 const VALID_STATUSES = ['draft', 'sent', 'cancelled'];
@@ -219,9 +219,9 @@ Deno.serve(async (req) => {
     }
 
     // ========================================
-    // ACTION: setLineItems
+    // ACTION: setLineItems / manageLineItems (aliases)
     // ========================================
-    if (action === 'setLineItems') {
+    if (action === 'setLineItems' || action === 'manageLineItems') {
       const allowedFields = new Set(['action', 'id', 'line_items']);
       const payloadKeys = Object.keys(payload);
       const forbiddenFields = payloadKeys.filter(k => !allowedFields.has(k));
