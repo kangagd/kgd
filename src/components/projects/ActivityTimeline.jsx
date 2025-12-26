@@ -291,15 +291,6 @@ export default function ActivityTimeline({ project, onNavigateToTab }) {
     }
   };
 
-  if (filteredEvents.length === 0) {
-    return (
-      <div className="text-center py-8">
-        <Clock className="w-12 h-12 text-[#E5E7EB] mx-auto mb-3" />
-        <p className="text-[14px] text-[#9CA3AF]">No recent activity</p>
-      </div>
-    );
-  }
-
   return (
     <div className="space-y-4">
       {/* Filters */}
@@ -313,8 +304,14 @@ export default function ActivityTimeline({ project, onNavigateToTab }) {
       </Tabs>
 
       {/* Timeline */}
-      <div className="space-y-0">
-        {filteredEvents.map((event, idx) => {
+      {filteredEvents.length === 0 ? (
+        <div className="text-center py-8">
+          <Clock className="w-12 h-12 text-[#E5E7EB] mx-auto mb-3" />
+          <p className="text-[14px] text-[#9CA3AF]">No {filter === 'all' ? 'recent' : filter} activity</p>
+        </div>
+      ) : (
+        <div className="space-y-0">
+          {filteredEvents.map((event, idx) => {
           const Icon = event.icon;
           return (
             <div 
@@ -349,7 +346,8 @@ export default function ActivityTimeline({ project, onNavigateToTab }) {
             </div>
           );
         })}
-      </div>
+        </div>
+      )}
     </div>
   );
 }
