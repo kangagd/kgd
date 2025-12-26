@@ -37,7 +37,9 @@ export default function ProjectContactsPanel({ project }) {
 
   const createContactMutation = useMutation({
     mutationFn: async () => {
-      if (!project?.id) return;
+      if (!project?.id) {
+        throw new Error("Project ID is required");
+      }
       
       let finalContactId = newContact.contact_id;
       let finalName = newContact.name;
@@ -77,7 +79,9 @@ export default function ProjectContactsPanel({ project }) {
           }
       }
 
-      if (!finalName) return;
+      if (!finalName) {
+        throw new Error("Contact name is required");
+      }
 
       await base44.entities.ProjectContact.create({
         project_id: project.id,
