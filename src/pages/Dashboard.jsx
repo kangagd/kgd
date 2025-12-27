@@ -5,7 +5,10 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { ProjectStatusBadge } from "../components/common/StatusBadge";
-import { Plus, Clock, Briefcase, Calendar, CheckCircle, FolderKanban, CheckSquare, Truck, Package, Trash2 } from "lucide-react";
+import { getPoDisplayReference, getPoIdentity } from "@/components/domain/poDisplayHelpers";
+import { getPoEta, getPoSupplierName, safeParseDate } from "@/components/domain/schemaAdapters";
+import { getPoStatusColor } from "@/components/domain/purchaseOrderStatusConfig";
+import { Plus, Clock, Briefcase, Calendar, CheckCircle, FolderKanban, CheckSquare, Truck, Package, Trash2, FolderOpen } from "lucide-react";
 import { format, parseISO } from "date-fns";
 import { useNavigate } from "react-router-dom";
 import { createPageUrl } from "@/utils";
@@ -79,7 +82,17 @@ export default function Dashboard() {
     enabled: isAdminOrManager,
   });
 
-  const recentPurchaseOrders = allPurchaseOrders.filter(po => po.status !== 'received').slice(0, 5);
+  const recentPurchaseOrders = allPurchaseOrders.filter(po => 
+    po.status !== 'received' && 
+    po.status !== 'installed' &&
+    po.status !== 'cancelled'
+  ).slice(0, 5);
+
+  const { data: projects = [] } = useQuery({
+    queryKey: ['projects'],
+    queryFn: () => base44.entities.Project.list(),
+    enabled: isAdminOrManager && recentPurchaseOrders.length > 0,
+  });
 
   const logisticsJobs = jobs.filter(j => 
     j.job_type === 'Logistics' || 
@@ -435,7 +448,7 @@ export default function Dashboard() {
                 <Button
                   variant="ghost"
                   size="sm"
-                  onClick={() => navigate(createPageUrl("Suppliers"))}
+                  onClick={() => navigate(createPageUrl("PurchaseOrders"))}
                   className="text-[#6B7280] hover:text-[#111827] text-sm"
                 >
                   View All →
@@ -449,35 +462,48 @@ export default function Dashboard() {
               ) : (
                 <div className="space-y-3">
                   {recentPurchaseOrders.map(po => {
-                    const statusColors = {
-                      draft: 'bg-gray-100 text-gray-700 border-gray-200',
-                      sent: 'bg-blue-50 text-blue-700 border-blue-200',
-                      partially_received: 'bg-orange-50 text-orange-700 border-orange-200',
-                      received: 'bg-green-50 text-green-700 border-green-200'
-                    };
+                    const poIdentity = getPoIdentity(po);
+                    const eta = getPoEta(po);
+                    const etaDate = safeParseDate(eta);
+                    const linkedProject = projects.find(p => p.id === po.project_id);
+                    
                     return (
                       <div 
                         key={po.id} 
                         className="p-4 rounded-xl border border-[#E5E7EB] hover:bg-[#F9FAFB] hover:border-[#FAE008] transition-all cursor-pointer"
-                        onClick={() => navigate(createPageUrl("Suppliers"))}
+                        onClick={() => navigate(`${createPageUrl("PurchaseOrders")}?poId=${po.id}`)}
                       >
                         <div className="flex items-start justify-between mb-2">
-                          <div className="flex-1">
-                            <h4 className="text-[14px] font-medium text-[#111827] leading-[1.4]">
-                              {po.po_number || 'Draft PO'}
-                            </h4>
-                            <p className="text-[12px] text-[#6B7280] leading-[1.35]">{po.supplier_name}</p>
+                          <div className="flex-1 min-w-0">
+                            <div className="flex items-center gap-2 mb-1">
+                              <h4 className="text-[14px] font-semibold text-[#111827] leading-[1.4]">
+                                {poIdentity.reference}
+                              </h4>
+                              <Badge className={getPoStatusColor(po.status)}>
+                                {po.status?.replace('_', ' ')}
+                              </Badge>
+                            </div>
+                            {poIdentity.name && (
+                              <p className="text-[12px] text-[#4B5563] leading-[1.35] mb-1">{poIdentity.name}</p>
+                            )}
+                            <div className="flex items-center gap-2 text-[12px] text-[#6B7280] leading-[1.35]">
+                              <Package className="w-3 h-3" />
+                              <span>{getPoSupplierName(po) || 'Unknown Supplier'}</span>
+                            </div>
+                            {linkedProject && (
+                              <div className="flex items-center gap-2 text-[12px] text-[#6B7280] leading-[1.35] mt-1">
+                                <FolderOpen className="w-3 h-3" />
+                                <span>{linkedProject.title}</span>
+                              </div>
+                            )}
                           </div>
-                          <Badge variant="outline" className={`capitalize text-[10px] px-1.5 py-0 ${statusColors[po.status]}`}>
-                            {po.status?.replace('_', ' ')}
-                          </Badge>
                         </div>
-                        <div className="flex items-center justify-between text-[12px] text-[#6B7280]">
-                          <span>${po.total_amount_ex_tax?.toFixed(2) || '0.00'}</span>
-                          {po.expected_date && (
-                            <span>ETA: {format(parseISO(po.expected_date), 'MMM d')}</span>
-                          )}
-                        </div>
+                        {etaDate && (
+                          <div className="flex items-center text-[12px] text-[#6B7280] mt-2">
+                            <Clock className="w-3 h-3 mr-1" />
+                            <span>ETA: {format(etaDate, 'MMM d, yyyy')}</span>
+                          </div>
+                        )}
                       </div>
                     );
                   })}
