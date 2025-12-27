@@ -437,6 +437,16 @@ export default function Logistics() {
   });
 
   const handleCreateLogisticsJobForPO = async (po) => {
+    if (isLegacyPurchasingReadOnly()) {
+      toast.info("Legacy purchasing is read-only. Use Purchasing V2.");
+      console.warn('[LEGACY_READONLY_BLOCKED]', {
+        component: 'Logistics',
+        action: 'createLogisticsJobForPO',
+        payload: { purchase_order_id: po.id }
+      });
+      return;
+    }
+    
     try {
       const response = await base44.functions.invoke("createLogisticsJobForPO", {
         purchase_order_id: po.id,
@@ -458,6 +468,16 @@ export default function Logistics() {
   };
 
   const handleMoveLoadingBayPart = async (part, destination) => {
+    if (isLegacyPurchasingReadOnly()) {
+      toast.info("Legacy purchasing is read-only. Use Purchasing V2.");
+      console.warn('[LEGACY_READONLY_BLOCKED]', {
+        component: 'Logistics',
+        action: 'moveLoadingBayPart',
+        payload: { part_id: part.id, destination }
+      });
+      return;
+    }
+    
     try {
       const response = await base44.functions.invoke("recordStockMovement", {
         part_ids: [part.id],
@@ -783,6 +803,7 @@ export default function Logistics() {
                             value={uiPo.status}
                             onValueChange={(value) => handleUpdatePoStatus(po, value)}
                             onClick={(e) => e.stopPropagation()}
+                            disabled={isLegacyPurchasingReadOnly()}
                           >
                             <SelectTrigger className={`h-6 w-full text-[10px] px-2 border-0 ${getStatusColor('po', uiPo.status)}`}>
                               <SelectValue>
@@ -853,6 +874,7 @@ export default function Logistics() {
                             value={uiPo.status}
                             onValueChange={(value) => handleUpdatePoStatus(po, value)}
                             onClick={(e) => e.stopPropagation()}
+                            disabled={isLegacyPurchasingReadOnly()}
                           >
                             <SelectTrigger className={`h-6 w-full text-[10px] px-2 border-0 ${getStatusColor('po', uiPo.status)}`}>
                               <SelectValue>
@@ -923,6 +945,7 @@ export default function Logistics() {
                             value={uiPo.status}
                             onValueChange={(value) => handleUpdatePoStatus(po, value)}
                             onClick={(e) => e.stopPropagation()}
+                            disabled={isLegacyPurchasingReadOnly()}
                           >
                             <SelectTrigger className="h-6 w-full text-[10px] px-2 border-0 bg-cyan-100 text-cyan-700">
                               <SelectValue />
@@ -991,6 +1014,7 @@ export default function Logistics() {
                             value={uiPo.status}
                             onValueChange={(value) => handleUpdatePoStatus(po, value)}
                             onClick={(e) => e.stopPropagation()}
+                            disabled={isLegacyPurchasingReadOnly()}
                           >
                             <SelectTrigger className={`h-6 w-full text-[10px] px-2 border-0 ${getStatusColor('po', uiPo.status)}`}>
                               <SelectValue>
@@ -1117,6 +1141,7 @@ export default function Logistics() {
                                      PART_LOCATION.WAREHOUSE_STORAGE
                                    );
                                   }}
+                                  disabled={isLegacyPurchasingReadOnly()}
                                 >
                                   To Storage
                                 </Button>
@@ -1131,6 +1156,7 @@ export default function Logistics() {
                                      PART_LOCATION.VEHICLE
                                    );
                                   }}
+                                  disabled={isLegacyPurchasingReadOnly()}
                                 >
                                   To Vehicle
                                 </Button>
@@ -1142,6 +1168,15 @@ export default function Logistics() {
                                   className="h-7 text-[11px] w-full"
                                   onClick={async (e) => {
                                     e.stopPropagation();
+                                    if (isLegacyPurchasingReadOnly()) {
+                                      toast.info("Legacy purchasing is read-only. Use Purchasing V2.");
+                                      console.warn('[LEGACY_READONLY_BLOCKED]', {
+                                        component: 'Logistics',
+                                        action: 'createLogisticsJobForPO',
+                                        payload: { purchase_order_id: part.purchase_order_id }
+                                      });
+                                      return;
+                                    }
                                     try {
                                       const response = await base44.functions.invoke("createLogisticsJobForPO", {
                                         purchase_order_id: part.purchase_order_id,
@@ -1159,6 +1194,7 @@ export default function Logistics() {
                                       toast.error("Error creating logistics job");
                                     }
                                   }}
+                                  disabled={isLegacyPurchasingReadOnly()}
                                 >
                                   Create Pickup Job
                                 </Button>
