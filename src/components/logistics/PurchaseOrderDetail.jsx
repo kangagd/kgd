@@ -782,20 +782,8 @@ export default function PurchaseOrderDetail({ poId, onClose, mode = "page" }) {
               </div>
             </div>
           )}
-          <div className="flex gap-2">
-            {can(PERMISSIONS.DELETE_PO) && (
-              <Button
-                type="button"
-                onClick={handleDelete}
-                disabled={deletePOMutation.isPending}
-                variant="outline"
-                className="text-red-600 hover:text-red-700 hover:bg-red-50"
-              >
-                <Trash className="w-4 h-4 mr-2" />
-                Delete
-              </Button>
-            )}
-            {!isModal && (
+          {!isModal && (
+            <div className="flex gap-2">
               <>
                 <Button
                   type="button"
@@ -816,8 +804,8 @@ export default function PurchaseOrderDetail({ poId, onClose, mode = "page" }) {
                   Send to Supplier
                 </Button>
               </>
-            )}
-          </div>
+            </div>
+          )}
         </div>
       </div>
 
@@ -825,7 +813,21 @@ export default function PurchaseOrderDetail({ poId, onClose, mode = "page" }) {
         {/* Basic Info */}
         <Card>
           <CardHeader>
-            <CardTitle className="text-[18px]">Purchase Order Details</CardTitle>
+            <div className="flex items-center justify-between">
+              <CardTitle className="text-[18px]">Purchase Order Details</CardTitle>
+              {can(PERMISSIONS.DELETE_PO) && (
+                <Button
+                  type="button"
+                  onClick={handleDelete}
+                  disabled={deletePOMutation.isPending}
+                  variant="ghost"
+                  size="icon"
+                  className="text-red-600 hover:text-red-700 hover:bg-red-50 h-8 w-8"
+                >
+                  <Trash className="w-4 h-4" />
+                </Button>
+              )}
+            </div>
           </CardHeader>
           <CardContent className="space-y-4">
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
