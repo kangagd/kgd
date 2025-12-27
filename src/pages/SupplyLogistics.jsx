@@ -137,16 +137,12 @@ export default function SupplyLogistics() {
 
   const updateStatusMutation = useMutation({
     mutationFn: async ({ poId, newStatus }) => {
-      console.log('[SupplyLogistics] Updating PO status:', { poId, newStatus });
-      
-      // Map Kanban labels to canonical status values
       const statusMap = {
         'Draft': 'draft',
         'On Order': 'on_order',
         'In Transit': 'in_transit',
         'Loading Bay': 'in_loading_bay',
         'Completed': 'in_storage',
-        // Also handle already-normalized values
         'draft': 'draft',
         'on_order': 'on_order',
         'in_transit': 'in_transit',
@@ -155,14 +151,12 @@ export default function SupplyLogistics() {
       };
       
       const normalizedStatus = statusMap[newStatus] || newStatus;
-      console.log('[SupplyLogistics] Normalized status:', normalizedStatus);
       
-      const response = await base44.functions.invoke('managePurchaseOrder', {
-        action: 'updateStatus',
+      const response = await base44.functions.invoke('updatePurchaseOrderStatus', {
         id: poId,
         status: normalizedStatus
       });
-      console.log('[SupplyLogistics] Update response:', response.data);
+      
       if (!response.data?.success) {
         throw new Error(response.data?.error || 'Failed to update status');
       }
