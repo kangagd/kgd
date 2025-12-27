@@ -747,80 +747,81 @@ export default function PurchaseOrderDetail({ poId, onClose, mode = "page" }) {
                   <Badge className={getPoStatusColor(formData.status)}>{getPoStatusLabel(formData.status)}</Badge>
                 </div>
                 {isDraft ? (
-                <Input
-                  value={formData.po_reference}
-                  onChange={(e) => {
-                    setFormData({ ...formData, po_reference: e.target.value });
-                    setIsDirty(true);
-                  }}
-                  placeholder="Enter PO reference..."
-                  className="mt-2 max-w-xs text-sm"
-                />
+                  <Input
+                    value={formData.po_reference}
+                    onChange={(e) => {
+                      setFormData({ ...formData, po_reference: e.target.value });
+                      setIsDirty(true);
+                    }}
+                    placeholder="Enter PO reference..."
+                    className="mt-2 max-w-xs text-sm"
+                  />
                 ) : (
-                 <div className="mt-2 space-y-1">
-                   <div className="flex items-center gap-2">
-                     <p className="text-sm font-medium text-[#111827]">
-                       {getPoIdentity(po).reference}
-                     </p>
-                     {(formData.po_reference?.trim() !== (po.po_reference || '') || 
-                       formData.name?.trim() !== (po.name || '')) && (
-                       <Badge variant="outline" className="text-xs text-amber-600 border-amber-300">
-                         Unsaved changes
-                       </Badge>
-                     )}
-                   </div>
-                   {getPoIdentity(po).name && (
-                     <p className="text-sm text-[#6B7280]">{getPoIdentity(po).name}</p>
-                   )}
-                 </div>
+                  <div className="mt-2 space-y-1">
+                    <div className="flex items-center gap-2">
+                      <p className="text-sm font-medium text-[#111827]">
+                        {getPoIdentity(po).reference}
+                      </p>
+                      {(formData.po_reference?.trim() !== (po.po_reference || '') || 
+                        formData.name?.trim() !== (po.name || '')) && (
+                        <Badge variant="outline" className="text-xs text-amber-600 border-amber-300">
+                          Unsaved changes
+                        </Badge>
+                      )}
+                    </div>
+                    {getPoIdentity(po).name && (
+                      <p className="text-sm text-[#6B7280]">{getPoIdentity(po).name}</p>
+                    )}
+                  </div>
                 )}
                 {linkedProject && (
-                 <p className="text-sm text-[#6B7280] mt-1">
-                   Project: {linkedProject.title}
-                 </p>
+                  <p className="text-sm text-[#6B7280] mt-1">
+                    Project: {linkedProject.title}
+                  </p>
                 )}
-                </div>
-                )}
-                <div className="flex gap-2">
-                {can(PERMISSIONS.DELETE_PO) && (
+              </div>
+            </div>
+          )}
+          <div className="flex gap-2">
+            {can(PERMISSIONS.DELETE_PO) && (
+              <Button
+                type="button"
+                onClick={handleDelete}
+                disabled={deletePOMutation.isPending}
+                variant="outline"
+                className="text-red-600 hover:text-red-700 hover:bg-red-50"
+              >
+                <Trash className="w-4 h-4 mr-2" />
+                Delete
+              </Button>
+            )}
+            {!isModal && (
+              <>
                 <Button
-                 type="button"
-                 onClick={handleDelete}
-                 disabled={deletePOMutation.isPending}
-                 variant="outline"
-                 className="text-red-600 hover:text-red-700 hover:bg-red-50"
+                  type="button"
+                  onClick={handleSave}
+                  disabled={!formData.po_reference?.trim()}
+                  className="bg-[#F3F4F6] text-[#111827] hover:bg-[#E5E7EB]"
                 >
-                 <Trash className="w-4 h-4 mr-2" />
-                 Delete
+                  <Save className="w-4 h-4 mr-2" />
+                  Save
                 </Button>
-                )}
-                {!isModal && (
-                <>
-                 <Button
-                   type="button"
-                   onClick={handleSave}
-                   disabled={!formData.po_reference?.trim()}
-                   className="bg-[#F3F4F6] text-[#111827] hover:bg-[#E5E7EB]"
-                 >
-                   <Save className="w-4 h-4 mr-2" />
-                   Save
-                 </Button>
-                 <Button
-                   type="button"
-                   onClick={handleSendToSupplier}
-                   disabled={!formData.po_reference?.trim()}
-                   className="bg-[#FAE008] text-[#111827] hover:bg-[#E5CF07]"
-                 >
-                   <Send className="w-4 h-4 mr-2" />
-                   Send to Supplier
-                 </Button>
-                </>
-                )}
-                </div>
-                </div>
-                </div>
+                <Button
+                  type="button"
+                  onClick={handleSendToSupplier}
+                  disabled={!formData.po_reference?.trim()}
+                  className="bg-[#FAE008] text-[#111827] hover:bg-[#E5CF07]"
+                >
+                  <Send className="w-4 h-4 mr-2" />
+                  Send to Supplier
+                </Button>
+              </>
+            )}
+          </div>
+        </div>
+      </div>
 
-                <div className={isModal ? "space-y-6 max-h-[calc(100vh-200px)] overflow-y-auto p-6" : "p-6 space-y-6 max-w-4xl mx-auto"}>
+      <div className={isModal ? "space-y-6 max-h-[calc(100vh-200px)] overflow-y-auto p-6" : "p-6 space-y-6 max-w-4xl mx-auto"}>
         {/* Basic Info */}
         <Card>
           <CardHeader>
