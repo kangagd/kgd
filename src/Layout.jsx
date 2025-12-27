@@ -21,7 +21,6 @@ import {
     Image as ImageIcon,
     TrendingUp,
     Mail,
-    ChevronDown,
     Plus,
     Search,
     MoreHorizontal,
@@ -36,7 +35,6 @@ import { base44 } from "@/api/base44Client";
 import { toast } from "sonner";
 import { Toaster } from "@/components/ui/sonner";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import GlobalSearchDropdown from "./components/common/GlobalSearchDropdown";
 import { RoleBadge, PermissionsProvider } from "./components/common/PermissionsContext";
@@ -69,7 +67,7 @@ const navigationSections = [
       { title: "Fleet", url: createPageUrl("Fleet"), icon: Car },
       { title: "Tools Admin", url: createPageUrl("ToolsAdmin"), icon: Wrench },
       { title: "Samples Library", url: createPageUrl("SamplesLibrary"), icon: TestTube2 },
-      { title: "Suppliers", url: createPageUrl("Suppliers"), icon: Package },
+      { title: "Suppliers", url: createPageUrl("Suppliers"), icon: Building2 },
       { title: "Price List", url: createPageUrl("PriceList"), icon: DollarSign },
     ]
   },
@@ -90,7 +88,7 @@ const technicianNavigationItems = [
   { title: "Schedule", url: createPageUrl("Schedule"), icon: Calendar },
   { title: "Jobs", url: createPageUrl("Jobs"), icon: Briefcase },
   { title: "Tasks", url: createPageUrl("Tasks"), icon: CheckSquare },
-  { title: "Suppliers", url: createPageUrl("Suppliers"), icon: Package },
+  { title: "Suppliers", url: createPageUrl("Suppliers"), icon: Building2 },
   { title: "Photos", url: createPageUrl("Photos"), icon: ImageIcon },
   { title: "Price List", url: createPageUrl("PriceList"), icon: DollarSign },
 ];
@@ -103,7 +101,6 @@ const viewerNavigationItems = [
   { title: "Customers", url: createPageUrl("Customers"), icon: UserCircle },
 ];
 
-// Get effective role for user
 const getEffectiveRole = (user) => {
   if (!user) return 'viewer';
   if (user.role === 'admin') return 'admin';
@@ -121,7 +118,6 @@ export default function Layout({ children, currentPageName }) {
     localStorage.getItem('sidebarCollapsed') === 'true'
   );
   
-  // Auto-collapse sidebar when on Inbox page with email open
   useEffect(() => {
     const isInboxPage = (currentPageName === "Inbox") || location.pathname.includes("Inbox");
     const params = new URLSearchParams(location.search);
@@ -135,9 +131,6 @@ export default function Layout({ children, currentPageName }) {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [testMode, setTestMode] = useState(() => 
     localStorage.getItem('testMode') || 'off'
-  );
-  const [isMoreMenuOpen, setIsMoreMenuOpen] = useState(() => 
-    localStorage.getItem('moreMenuOpen') === 'true'
   );
   const [collapsedMoreOpen, setCollapsedMoreOpen] = useState(false);
   const [techMobileMenuOpen, setTechMobileMenuOpen] = useState(false);
@@ -174,24 +167,20 @@ export default function Layout({ children, currentPageName }) {
         return;
       }
       try {
-        // Fetch check-ins for user
         const checkIns = await base44.entities.CheckInOut.filter({ 
             technician_email: user.email 
         });
         
         if (isCancelled) return;
 
-        // Find active one (no check_out_time)
         const active = checkIns.find(c => !c.check_out_time);
         
         if (active) {
-            // Fetch job details
             try {
               const job = await base44.entities.Job.get(active.job_id);
               if (!isCancelled) setActiveCheckIn({ ...active, job });
             } catch (err) {
               console.error("Error fetching job for active check-in", err);
-              // Still show banner but maybe without job details if fail
               if (!isCancelled) setActiveCheckIn({ ...active, job: null });
             }
         } else {
@@ -204,7 +193,6 @@ export default function Layout({ children, currentPageName }) {
 
     if (user) {
       fetchActiveCheckIn();
-      // Poll every minute
       const interval = setInterval(fetchActiveCheckIn, 60000);
       return () => {
         isCancelled = true;
@@ -249,7 +237,6 @@ export default function Layout({ children, currentPageName }) {
       ? viewerNavigationItems 
       : primaryNavigationItems;
 
-  // Filter navigation sections for regular users
   const filteredNavigationSections = isRegularUser 
     ? navigationSections.map(section => {
         if (section.title === "Technicians") {
@@ -270,7 +257,6 @@ export default function Layout({ children, currentPageName }) {
       })
     : navigationSections;
 
-  // Swipe to open menu
   useEffect(() => {
     const handleTouchStart = (e) => {
       touchStartX.current = e.touches[0].clientX;
@@ -283,7 +269,6 @@ export default function Layout({ children, currentPageName }) {
       const touchX = e.changedTouches[0].clientX;
       const deltaX = touchX - touchStartX.current;
       
-      // Swipe right from left edge to open menu
       if (touchStartX.current < 30 && deltaX > 80) {
         if (isTechnician) {
           setTechMobileMenuOpen(true);
@@ -300,14 +285,11 @@ export default function Layout({ children, currentPageName }) {
       document.removeEventListener('touchstart', handleTouchStart);
       document.removeEventListener('touchend', handleTouchEnd);
     };
-  }, [isTechnician, setIsMobileMenuOpen, setTechMobileMenuOpen]);
+  }, [isTechnician]);
 
-  // Persist state
   useEffect(() => { localStorage.setItem('testMode', testMode); }, [testMode]);
   useEffect(() => { localStorage.setItem('sidebarCollapsed', isCollapsed); }, [isCollapsed]);
-  useEffect(() => { localStorage.setItem('moreMenuOpen', isMoreMenuOpen); }, [isMoreMenuOpen]);
 
-  // Close mobile menu on route change or ESC key
   useEffect(() => { setIsMobileMenuOpen(false); }, [location.pathname]);
   
   useEffect(() => {
@@ -316,13 +298,11 @@ export default function Layout({ children, currentPageName }) {
     return () => window.removeEventListener('keydown', handleEscape);
     }, [isMobileMenuOpen]);
 
-    // Flatten all navigation items for recent pages tracking
     const allNavigationItems = React.useMemo(() => {
     const sectionItems = navigationSections.flatMap(section => section.items);
     return [...primaryNavigationItems, ...sectionItems];
     }, []);
 
-  // Track recent pages
   useEffect(() => {
     const trackRecentPage = async () => {
       const currentItem = allNavigationItems.find(item => item.url === location.pathname);
@@ -331,7 +311,6 @@ export default function Layout({ children, currentPageName }) {
       let pageEntry = null;
       const fullUrl = location.pathname + location.search;
 
-      // Check for specific entity pages
       const projectId = params.get('projectId');
       if (location.pathname === createPageUrl("Projects") && projectId) {
         try {
@@ -421,7 +400,6 @@ export default function Layout({ children, currentPageName }) {
       <div className="min-h-screen flex bg-[#ffffff]">
         <Toaster position="top-right" richColors />
 
-        {/* Mobile Overlay - Handles both tech and admin mobile menus */}
         {(isMobileMenuOpen || techMobileMenuOpen) && (
           <div 
             className="fixed inset-0 bg-black/50 z-40 transition-opacity"
@@ -432,7 +410,6 @@ export default function Layout({ children, currentPageName }) {
           />
         )}
 
-        {/* Sidebar - Desktop Admin/Manager/Viewer */}
         {!isTechnician && (
           <aside 
             className={`
@@ -444,7 +421,6 @@ export default function Layout({ children, currentPageName }) {
             `}
           >
             <div className="flex flex-col h-full overflow-hidden">
-              {/* Close button (mobile only) */}
               <div className="lg:hidden p-3 border-b border-[#E5E7EB] flex items-center justify-end">
                 <button
                   onClick={() => setIsMobileMenuOpen(false)}
@@ -455,10 +431,8 @@ export default function Layout({ children, currentPageName }) {
                 </button>
               </div>
 
-              {/* Navigation */}
               <nav className="flex-1 overflow-y-auto overflow-x-hidden p-3 min-h-0">
                 <div className="space-y-1 min-w-0">
-                  {/* Create Buttons - Only for admin/manager/regular users */}
                   {(isAdminOrManager || isRegularUser) && (
                     <div className={`grid ${isCollapsed ? 'grid-cols-1' : 'grid-cols-2'} gap-2 mb-4 pb-4 border-b border-[#E5E7EB]`}>
                       <div className="flex items-center gap-1.5">
@@ -483,7 +457,6 @@ export default function Layout({ children, currentPageName }) {
                     </div>
                   )}
 
-                  {/* Primary Navigation */}
                   {primaryNavigationItems.map((item) => {
                   const isActive = location.pathname === item.url;
                   return (
@@ -508,7 +481,6 @@ export default function Layout({ children, currentPageName }) {
                   );
                   })}
 
-                  {/* Sectioned Navigation - Only for admin/manager/regular users */}
                   {!isCollapsed && (isAdminOrManager || isRegularUser) && (
                     <>
                       {filteredNavigationSections.map((section, sectionIndex) => (
@@ -545,7 +517,6 @@ export default function Layout({ children, currentPageName }) {
                     </>
                   )}
 
-                  {/* Collapsed More Menu - Only for admin/manager/regular users */}
                   {isCollapsed && (isAdminOrManager || isRegularUser) && (
                     <Popover open={collapsedMoreOpen} onOpenChange={setCollapsedMoreOpen}>
                       <PopoverTrigger asChild>
@@ -595,7 +566,6 @@ export default function Layout({ children, currentPageName }) {
                 </div>
               </nav>
 
-              {/* Collapse Toggle */}
               <div className={`hidden lg:block p-3 border-b border-[#E5E7EB] flex-shrink-0 ${isCollapsed ? 'flex justify-center' : ''}`}>
                 <button
                   onClick={() => setIsCollapsed(!isCollapsed)}
@@ -613,9 +583,7 @@ export default function Layout({ children, currentPageName }) {
                 </button>
               </div>
 
-              {/* User Profile & Logout */}
               <div className="p-3 border-t border-[#E5E7EB] flex-shrink-0">
-                {/* Role Badge */}
                 {!isCollapsed && (
                   <div className="mb-2 px-3">
                     <RoleBadge role={effectiveRole} className="text-[11px]" />
@@ -667,7 +635,6 @@ export default function Layout({ children, currentPageName }) {
           </aside>
         )}
 
-        {/* Tech Mobile Menu Dropdown */}
         {isTechnician && (
           <div 
             className={`fixed top-[60px] left-0 right-0 bg-white border-b border-[#E5E7EB] shadow-lg z-40 transition-all duration-300 ${
@@ -675,7 +642,6 @@ export default function Layout({ children, currentPageName }) {
             }`}
           >
             <nav className="p-2">
-              {/* Create Buttons - Only for non-viewers */}
               {!isViewer && (
                 <div className="grid grid-cols-2 gap-2 mb-3 pb-3 border-b border-[#E5E7EB]">
                   <div className="flex items-center gap-2 justify-center">
@@ -728,10 +694,8 @@ export default function Layout({ children, currentPageName }) {
           </div>
         )}
 
-        {/* Main Content Area */}
         <div className="flex-1 flex flex-col min-w-0 bg-[#ffffff] relative">
           
-          {/* Tech Header */}
           {isTechnician && (
              <header className="bg-white border-b border-[#E5E7EB] px-4 py-3 sticky top-0 z-50 shadow-sm safe-area-top">
                 <div className="flex items-center justify-between min-h-[44px]">
@@ -762,7 +726,6 @@ export default function Layout({ children, currentPageName }) {
               </header>
           )}
 
-          {/* Admin Mobile Header */}
           {!isTechnician && (
             <header className="lg:hidden bg-white border-b border-[#E5E7EB] px-4 py-3 sticky top-0 z-30 safe-area-top">
               <div className="flex items-center justify-between min-h-[44px]">
@@ -780,7 +743,6 @@ export default function Layout({ children, currentPageName }) {
             </header>
           )}
 
-          {/* Admin Desktop Sticky Header */}
           {!isTechnician && (
              <div className="hidden lg:flex sticky top-0 z-30 bg-[#ffffff] border-b border-[#E5E7EB] px-6 py-3 items-center justify-between gap-4">
                  <GlobalSearchDropdown />
@@ -792,9 +754,7 @@ export default function Layout({ children, currentPageName }) {
                    >
                      <Search className="w-5 h-5" />
                    </button>
-                   {/* Notifications */}
                    <NotificationBell />
-                   {/* Recent Pages Dropdown */}
                    <Popover open={recentPagesOpen} onOpenChange={setRecentPagesOpen}>
                      <PopoverTrigger asChild>
                        <button
@@ -862,7 +822,6 @@ export default function Layout({ children, currentPageName }) {
              </div>
           )}
 
-          {/* Consolidated Main Wrapper */}
           <main className="flex-1 overflow-y-auto pb-24 bg-[#ffffff] relative">
             <PullToRefresh onRefresh={handleRefresh}>
               <div className="relative">
@@ -877,7 +836,6 @@ export default function Layout({ children, currentPageName }) {
             </PullToRefresh>
           </main>
 
-          {/* Tech Test Mode Button */}
           {isTechnician && user && user.email === 'admin@kangaroogd.com.au' && (
             <button
               onClick={handleTestModeToggle}
