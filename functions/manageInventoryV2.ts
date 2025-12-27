@@ -1,181 +1,185 @@
 import { createClientFromRequest } from 'npm:@base44/sdk@0.8.6';
 
-/**
- * V2 Inventory Management Function
- * Command-based API for managing inventory items and stock movements
- * 
- * Supported Actions:
- * - createStockItem: Create new inventory item
- * - adjustBalance: Adjust stock at a location (audit via StockLedgerV2)
- * - moveStock: Transfer stock between locations
- * - consumeForProject: Consume stock for a project
- * 
- * Rules:
- * - All stock movements create StockLedgerV2 entries (append-only audit log)
- * - Negative balances are prevented unless user is admin
- */
+const VALID_ACTIONS = [
+  'createStockItem',
+  'adjustBalance',
+  'moveStock',
+  'consumeForProject'
+];
 
 Deno.serve(async (req) => {
   try {
     const base44 = createClientFromRequest(req);
     const user = await base44.auth.me();
-
     if (!user) {
-      return Response.json({ error: 'Unauthorized' }, { status: 401 });
+      return Response.json({ success: false, error: 'Unauthorized' }, { status: 401 });
     }
 
     const payload = await req.json();
     const { action } = payload;
 
-    console.log('[manageInventoryV2]', { action, user: user.email, payload });
+    if (!action || !VALID_ACTIONS.includes(action)) {
+      return Response.json({
+        success: false,
+        error: `Invalid action. Must be one of: ${VALID_ACTIONS.join(', ')}`
+      }, { status: 400 });
+    }
 
-    // Route to action handler
+    console.log(`[manageInventoryV2] Action: ${action}`, payload);
+
+    // Route to action handlers
     switch (action) {
       case 'createStockItem':
-        return await handleCreateStockItem(base44, user, payload);
+        return await handleCreateStockItem(base44, payload);
       case 'adjustBalance':
-        return await handleAdjustBalance(base44, user, payload);
+        return await handleAdjustBalance(base44, payload);
       case 'moveStock':
-        return await handleMoveStock(base44, user, payload);
+        return await handleMoveStock(base44, payload);
       case 'consumeForProject':
-        return await handleConsumeForProject(base44, user, payload);
+        return await handleConsumeForProject(base44, payload);
       default:
-        return Response.json({ 
-          success: false, 
-          error: `Unknown action: ${action}` 
-        }, { status: 400 });
+        return Response.json({ success: false, error: 'Unknown action' }, { status: 400 });
     }
   } catch (error) {
     console.error('[manageInventoryV2] Error:', error);
-    return Response.json({ 
-      success: false, 
-      error: error.message 
+    return Response.json({
+      success: false,
+      error: error.message || 'Internal server error'
     }, { status: 500 });
   }
 });
 
-// ============================================================================
-// ACTION HANDLERS
-// ============================================================================
-
-async function handleCreateStockItem(base44, user, payload) {
-  const allowedKeys = ['action', 'sku', 'name', 'category', 'unit', 'reorder_point', 'default_supplier_id', 'unit_cost_ex_tax'];
-  validatePayloadKeys(payload, allowedKeys, 'createStockItem');
-
-  const { sku, name, category, unit, reorder_point, default_supplier_id, unit_cost_ex_tax } = payload;
+// Create new stock item
+async function handleCreateStockItem(base44, payload) {
+  const { name, sku, category, unit, reorder_point, default_supplier_id, unit_cost_ex_tax } = payload;
 
   if (!name) {
-    throw new Error('name is required');
+    return Response.json({ success: false, error: 'name is required' }, { status: 400 });
   }
 
   const itemData = {
     name,
-    sku: sku || null,
-    default_supplier_id: default_supplier_id || null,
-    unit_cost_ex_tax: unit_cost_ex_tax || null,
     is_active: true
   };
 
+  if (sku) itemData.sku = sku;
+  if (category) itemData.category = category;
+  if (unit) itemData.unit = unit;
+  if (reorder_point !== undefined) itemData.reorder_point = reorder_point;
+  if (default_supplier_id) itemData.default_supplier_id = default_supplier_id;
+  if (unit_cost_ex_tax !== undefined) itemData.unit_cost_ex_tax = unit_cost_ex_tax;
+
   const item = await base44.asServiceRole.entities.InventoryItemV2.create(itemData);
 
-  console.log('[createStockItem] Created item:', item.id, name);
+  console.log(`[manageInventoryV2] Created stock item:`, item.id);
 
-  return Response.json({
-    success: true,
-    item
-  });
+  return Response.json({ success: true, item });
 }
 
-async function handleAdjustBalance(base44, user, payload) {
-  const allowedKeys = ['action', 'stock_item_id', 'inventory_location_id', 'qty_delta', 'note'];
-  validatePayloadKeys(payload, allowedKeys, 'adjustBalance');
-
+// Adjust balance at a location
+async function handleAdjustBalance(base44, payload) {
   const { stock_item_id, inventory_location_id, qty_delta, note } = payload;
 
-  if (!stock_item_id) {
-    throw new Error('stock_item_id is required');
+  if (!stock_item_id || !inventory_location_id || qty_delta === undefined) {
+    return Response.json({
+      success: false,
+      error: 'stock_item_id, inventory_location_id, and qty_delta are required'
+    }, { status: 400 });
   }
 
-  if (!inventory_location_id) {
-    throw new Error('inventory_location_id is required');
+  // Get or create balance record
+  const existingBalances = await base44.asServiceRole.entities.InventoryBalance.filter({
+    inventory_item_v2_id: stock_item_id,
+    location_v2_id: inventory_location_id
+  });
+
+  let balance;
+  if (existingBalances.length > 0) {
+    balance = existingBalances[0];
+    const newQty = (balance.qty_on_hand || 0) + qty_delta;
+    await base44.asServiceRole.entities.InventoryBalance.update(balance.id, {
+      qty_on_hand: newQty
+    });
+  } else {
+    balance = await base44.asServiceRole.entities.InventoryBalance.create({
+      inventory_item_v2_id: stock_item_id,
+      location_v2_id: inventory_location_id,
+      qty_on_hand: qty_delta
+    });
   }
 
-  if (qty_delta === undefined || qty_delta === null) {
-    throw new Error('qty_delta is required');
-  }
-
-  // Check current balance
-  const currentBalance = await getStockBalance(base44, stock_item_id, inventory_location_id);
-  const newBalance = currentBalance + qty_delta;
-
-  // Prevent negative balance unless admin
-  if (newBalance < 0 && user.role !== 'admin') {
-    throw new Error(`Insufficient stock. Current: ${currentBalance}, Requested: ${qty_delta}`);
-  }
-
-  // Create ledger entry
+  // Record ledger entry
   await base44.asServiceRole.entities.StockLedgerV2.create({
     inventory_item_v2_id: stock_item_id,
     location_v2_id: inventory_location_id,
     qty_delta,
     reason: 'adjustment',
     ref_type: 'manual',
-    ref_id: user.email,
-    note: note || `Manual adjustment by ${user.email}`
+    note: note || 'Manual adjustment'
   });
 
-  console.log('[adjustBalance] Adjusted:', stock_item_id, inventory_location_id, qty_delta);
+  console.log(`[manageInventoryV2] Adjusted balance for item ${stock_item_id} at ${inventory_location_id}: ${qty_delta}`);
 
-  return Response.json({
-    success: true,
-    previousBalance: currentBalance,
-    newBalance: newBalance,
-    delta: qty_delta
-  });
+  return Response.json({ success: true });
 }
 
-async function handleMoveStock(base44, user, payload) {
-  const allowedKeys = ['action', 'stock_item_id', 'from_location_id', 'to_location_id', 'qty', 'note'];
-  validatePayloadKeys(payload, allowedKeys, 'moveStock');
-
+// Move stock between locations
+async function handleMoveStock(base44, payload) {
   const { stock_item_id, from_location_id, to_location_id, qty, note } = payload;
 
-  if (!stock_item_id) {
-    throw new Error('stock_item_id is required');
+  if (!stock_item_id || !from_location_id || !to_location_id || !qty) {
+    return Response.json({
+      success: false,
+      error: 'stock_item_id, from_location_id, to_location_id, and qty are required'
+    }, { status: 400 });
   }
 
-  if (!from_location_id) {
-    throw new Error('from_location_id is required');
+  if (qty <= 0) {
+    return Response.json({ success: false, error: 'qty must be positive' }, { status: 400 });
   }
 
-  if (!to_location_id) {
-    throw new Error('to_location_id is required');
+  // Check from location has sufficient stock
+  const fromBalances = await base44.asServiceRole.entities.InventoryBalance.filter({
+    inventory_item_v2_id: stock_item_id,
+    location_v2_id: from_location_id
+  });
+
+  if (fromBalances.length === 0 || (fromBalances[0].qty_on_hand || 0) < qty) {
+    return Response.json({ success: false, error: 'Insufficient stock at source location' }, { status: 400 });
   }
 
-  if (!qty || qty <= 0) {
-    throw new Error('qty must be a positive number');
+  // Deduct from source
+  const fromBalance = fromBalances[0];
+  await base44.asServiceRole.entities.InventoryBalance.update(fromBalance.id, {
+    qty_on_hand: (fromBalance.qty_on_hand || 0) - qty
+  });
+
+  // Add to destination
+  const toBalances = await base44.asServiceRole.entities.InventoryBalance.filter({
+    inventory_item_v2_id: stock_item_id,
+    location_v2_id: to_location_id
+  });
+
+  if (toBalances.length > 0) {
+    await base44.asServiceRole.entities.InventoryBalance.update(toBalances[0].id, {
+      qty_on_hand: (toBalances[0].qty_on_hand || 0) + qty
+    });
+  } else {
+    await base44.asServiceRole.entities.InventoryBalance.create({
+      inventory_item_v2_id: stock_item_id,
+      location_v2_id: to_location_id,
+      qty_on_hand: qty
+    });
   }
 
-  if (from_location_id === to_location_id) {
-    throw new Error('from_location_id and to_location_id cannot be the same');
-  }
-
-  // Check source balance
-  const sourceBalance = await getStockBalance(base44, stock_item_id, from_location_id);
-  
-  if (sourceBalance < qty && user.role !== 'admin') {
-    throw new Error(`Insufficient stock at source location. Available: ${sourceBalance}, Requested: ${qty}`);
-  }
-
-  // Create ledger entries (out from source, in to destination)
+  // Record ledger entries
   await base44.asServiceRole.entities.StockLedgerV2.create({
     inventory_item_v2_id: stock_item_id,
     location_v2_id: from_location_id,
     qty_delta: -qty,
     reason: 'transfer',
     ref_type: 'manual',
-    ref_id: `${from_location_id}_to_${to_location_id}`,
-    note: note || `Transfer to ${to_location_id}`
+    note: note || `Transfer to location ${to_location_id}`
   });
 
   await base44.asServiceRole.entities.StockLedgerV2.create({
@@ -184,117 +188,57 @@ async function handleMoveStock(base44, user, payload) {
     qty_delta: qty,
     reason: 'transfer',
     ref_type: 'manual',
-    ref_id: `${from_location_id}_to_${to_location_id}`,
-    note: note || `Transfer from ${from_location_id}`
+    note: note || `Transfer from location ${from_location_id}`
   });
 
-  console.log('[moveStock] Moved:', stock_item_id, `${from_location_id} → ${to_location_id}`, qty);
+  console.log(`[manageInventoryV2] Moved ${qty} units from ${from_location_id} to ${to_location_id}`);
 
-  return Response.json({
-    success: true,
-    moved: {
-      item_id: stock_item_id,
-      from: from_location_id,
-      to: to_location_id,
-      qty
-    }
-  });
+  return Response.json({ success: true });
 }
 
-async function handleConsumeForProject(base44, user, payload) {
-  const allowedKeys = ['action', 'project_id', 'stock_item_id', 'from_location_id', 'qty', 'note'];
-  validatePayloadKeys(payload, allowedKeys, 'consumeForProject');
-
+// Consume stock for a project
+async function handleConsumeForProject(base44, payload) {
   const { project_id, stock_item_id, from_location_id, qty, note } = payload;
 
-  if (!project_id) {
-    throw new Error('project_id is required');
+  if (!project_id || !stock_item_id || !from_location_id || !qty) {
+    return Response.json({
+      success: false,
+      error: 'project_id, stock_item_id, from_location_id, and qty are required'
+    }, { status: 400 });
   }
 
-  if (!stock_item_id) {
-    throw new Error('stock_item_id is required');
+  if (qty <= 0) {
+    return Response.json({ success: false, error: 'qty must be positive' }, { status: 400 });
   }
 
-  if (!from_location_id) {
-    throw new Error('from_location_id is required');
+  // Check location has sufficient stock
+  const balances = await base44.asServiceRole.entities.InventoryBalance.filter({
+    inventory_item_v2_id: stock_item_id,
+    location_v2_id: from_location_id
+  });
+
+  if (balances.length === 0 || (balances[0].qty_on_hand || 0) < qty) {
+    return Response.json({ success: false, error: 'Insufficient stock at location' }, { status: 400 });
   }
 
-  if (!qty || qty <= 0) {
-    throw new Error('qty must be a positive number');
-  }
+  // Deduct stock
+  const balance = balances[0];
+  await base44.asServiceRole.entities.InventoryBalance.update(balance.id, {
+    qty_on_hand: (balance.qty_on_hand || 0) - qty
+  });
 
-  // Check balance
-  const currentBalance = await getStockBalance(base44, stock_item_id, from_location_id);
-  
-  if (currentBalance < qty && user.role !== 'admin') {
-    throw new Error(`Insufficient stock. Available: ${currentBalance}, Requested: ${qty}`);
-  }
-
-  // Create ledger entry (consumption)
+  // Record ledger entry
   await base44.asServiceRole.entities.StockLedgerV2.create({
     inventory_item_v2_id: stock_item_id,
     location_v2_id: from_location_id,
     qty_delta: -qty,
-    reason: 'allocate_project',
+    reason: 'consume_job',
     ref_type: 'project',
     ref_id: project_id,
     note: note || `Consumed for project ${project_id}`
   });
 
-  console.log('[consumeForProject] Consumed:', stock_item_id, project_id, qty);
+  console.log(`[manageInventoryV2] Consumed ${qty} units for project ${project_id}`);
 
-  return Response.json({
-    success: true,
-    consumed: {
-      item_id: stock_item_id,
-      project_id,
-      location_id: from_location_id,
-      qty
-    }
-  });
-}
-
-// ============================================================================
-// HELPER FUNCTIONS
-// ============================================================================
-
-/**
- * Calculate current stock balance for an item at a location
- * by summing all StockLedgerV2 entries
- */
-async function getStockBalance(base44, itemId, locationId) {
-  const entries = await base44.asServiceRole.entities.StockLedgerV2.filter({
-    inventory_item_v2_id: itemId,
-    location_v2_id: locationId
-  });
-
-  if (!entries || entries.length === 0) {
-    return 0;
-  }
-
-  const balance = entries.reduce((sum, entry) => sum + (entry.qty_delta || 0), 0);
-  
-  return balance;
-}
-
-/**
- * Validate payload contains only allowed keys
- */
-function validatePayloadKeys(payload, allowedKeys, action) {
-  const receivedKeys = Object.keys(payload);
-  const invalidKeys = receivedKeys.filter(key => !allowedKeys.includes(key));
-
-  console.log('[validatePayloadKeys]', {
-    action,
-    allowedKeys,
-    receivedKeys,
-    invalidKeys
-  });
-
-  if (invalidKeys.length > 0) {
-    throw new Error(
-      `Invalid keys for action "${action}": ${invalidKeys.join(', ')}. ` +
-      `Allowed keys: ${allowedKeys.join(', ')}`
-    );
-  }
+  return Response.json({ success: true });
 }
