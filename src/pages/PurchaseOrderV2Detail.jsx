@@ -13,7 +13,7 @@ import { ArrowLeft, Save, Trash2, Plus, Package } from "lucide-react";
 import { Link } from "react-router-dom";
 import { createPageUrl } from "@/utils";
 import { toast } from "sonner";
-import { BackButton } from "@/components/common/BackButton";
+import BackButton from "@/components/common/BackButton";
 
 const STATUS_COLORS = {
   draft: "bg-gray-100 text-gray-800",
