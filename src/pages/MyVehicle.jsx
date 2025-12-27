@@ -28,21 +28,12 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { toast } from "sonner";
-import RestockRequestModal from "../components/fleet/RestockRequestModal";
-import StockAdjustmentModal from "../components/fleet/StockAdjustmentModal";
-import StockUsageModal from "../components/fleet/StockUsageModal";
 import VehicleStockList from "../components/fleet/VehicleStockList";
-import { LOCATION_TYPE, MOVEMENT_TYPE } from "@/components/domain/inventoryConfig";
 
 export default function MyVehicle() {
   const [user, setUser] = useState(null);
   const [search, setSearch] = useState("");
   const [filter, setFilter] = useState("all"); // all, low
-  
-  // Modals state
-  const [showRestockModal, setShowRestockModal] = useState(false);
-  const [adjustmentItem, setAdjustmentItem] = useState(null);
-  const [usageItem, setUsageItem] = useState(null);
 
   const queryClient = useQueryClient();
 
@@ -56,20 +47,6 @@ export default function MyVehicle() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries(["vehicle-tools", vehicle?.id]);
-    },
-  });
-
-  const updatePartsHardwareMutation = useMutation({
-    mutationFn: async ({ id, quantity_present, condition }) => {
-      const payload = {
-        quantity_present,
-        condition,
-        last_checked_at: new Date().toISOString(),
-      };
-      return base44.entities.VehiclePartsHardwareAssignment.update(id, payload);
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries(["vehicle-parts-hardware", vehicle?.id]);
     },
   });
 
@@ -119,88 +96,7 @@ export default function MyVehicle() {
     enabled: !!user
   });
 
-  const { data: stock = [], isLoading: isStockLoading } = useQuery({
-    queryKey: ['vehicleStock', vehicle?.id],
-    queryFn: () => base44.entities.VehicleStock.filter({ vehicle_id: vehicle.id }),
-    enabled: !!vehicle
-  });
 
-  const { data: assignedParts = [] } = useQuery({
-    queryKey: ['parts-assigned-to-vehicle', vehicle?.id],
-    queryFn: async () => {
-      if (!vehicle?.id) return [];
-      const allParts = await base44.entities.Part.filter({
-        assigned_vehicle_id: vehicle.id,
-      });
-      return allParts;
-    },
-    enabled: !!vehicle?.id,
-  });
-
-  const { data: vehicleInventory = [] } = useQuery({
-    queryKey: ["inventory-quantities-for-vehicle", vehicle?.id],
-    queryFn: async () => {
-      if (!vehicle?.id) return [];
-      const all = await base44.entities.InventoryQuantity.filter({
-        location_type: LOCATION_TYPE.VEHICLE,
-        location_id: vehicle.id,
-      });
-      return all;
-    },
-    enabled: !!vehicle?.id,
-  });
-
-  const inventoryByItem = useMemo(() => {
-    const map = {};
-    for (const iq of vehicleInventory) {
-      if (!iq.price_list_item_id) continue;
-      map[iq.price_list_item_id] = (map[iq.price_list_item_id] || 0) + (iq.quantity_on_hand || 0);
-    }
-    return map;
-  }, [vehicleInventory]);
-
-  const { data: projects = [] } = useQuery({
-    queryKey: ["projects-for-assigned-parts"],
-    queryFn: () => base44.entities.Project.list("title"),
-  });
-
-  const { data: todaysUsage = [] } = useQuery({
-    queryKey: ["stock-usage-today", vehicle?.id],
-    queryFn: async () => {
-      if (!vehicle?.id) return [];
-      // Filter for usage movements from this vehicle
-      const all = await base44.entities.StockMovement.filter({
-        from_location_type: LOCATION_TYPE.VEHICLE,
-        from_location_id: vehicle.id,
-        movement_type: MOVEMENT_TYPE.USAGE,
-      });
-      
-      // Client-side date filter for "today" since we don't have date filters in the API yet for some backends
-      const today = new Date();
-      today.setHours(0, 0, 0, 0);
-      return all.filter(m => new Date(m.created_at) >= today);
-    },
-    enabled: !!vehicle?.id,
-  });
-
-  const { data: priceItems = [] } = useQuery({
-    queryKey: ['priceListItems-for-usage'],
-    queryFn: () => base44.entities.PriceListItem.list('item'),
-  });
-
-  const itemMap = useMemo(() => {
-    return priceItems.reduce((acc, item) => {
-      acc[item.id] = item;
-      return acc;
-    }, {});
-  }, [priceItems]);
-
-  const projectMap = useMemo(() => {
-    return projects.reduce((acc, p) => {
-      acc[p.id] = p;
-      return acc;
-    }, {});
-  }, [projects]);
 
   const { data: vehicleTools = [], isLoading: vehicleToolsLoading } = useQuery({
     queryKey: ["vehicle-tools", vehicle?.id],
@@ -213,26 +109,14 @@ export default function MyVehicle() {
     enabled: !!vehicle?.id,
   });
 
-  const { data: vehiclePartsHardware = [], isLoading: partsHardwareLoading } = useQuery({
-    queryKey: ["vehicle-parts-hardware", vehicle?.id],
-    queryFn: async () => {
-      if (!vehicle?.id) return [];
-      return base44.entities.VehiclePartsHardwareAssignment.filter({
-        vehicle_id: vehicle.id,
-      });
-    },
-    enabled: !!vehicle?.id,
-  });
+
 
   const { data: toolItems = [] } = useQuery({
     queryKey: ["tool-items"],
     queryFn: () => base44.entities.ToolItem.list("name"),
   });
 
-  const { data: partsHardwareItems = [] } = useQuery({
-    queryKey: ["parts-hardware-items"],
-    queryFn: () => base44.entities.PartsHardwareItem.list("name"),
-  });
+
 
   const toolItemMap = useMemo(() => {
     const map = {};
@@ -244,24 +128,10 @@ export default function MyVehicle() {
     return map;
   }, [toolItems]);
 
-  const partsHardwareItemMap = useMemo(() => {
-    const map = {};
-    for (const p of partsHardwareItems) {
-      if (p.is_active !== false) {
-        map[p.id] = p;
-      }
-    }
-    return map;
-  }, [partsHardwareItems]);
-
   // Filter out assignments that reference deleted/inactive items
   const activeVehicleTools = useMemo(() => {
     return vehicleTools.filter(vt => vt.tool_item_id && toolItemMap[vt.tool_item_id]);
   }, [vehicleTools, toolItemMap]);
-
-  const activeVehiclePartsHardware = useMemo(() => {
-    return vehiclePartsHardware.filter(vp => vp.parts_hardware_id && partsHardwareItemMap[vp.parts_hardware_id]);
-  }, [vehiclePartsHardware, partsHardwareItemMap]);
 
   const groupedToolsByLocation = useMemo(() => {
     const groups = {};
@@ -306,18 +176,7 @@ export default function MyVehicle() {
     );
   }
 
-  const filteredStock = stock.filter(item => {
-    const matchesSearch = item.product_name?.toLowerCase().includes(search.toLowerCase()) || 
-                          item.sku?.toLowerCase().includes(search.toLowerCase());
-    
-    if (filter === "low") {
-      return matchesSearch && (item.quantity_on_hand < (item.minimum_target_quantity || 0));
-    }
-    
-    return matchesSearch;
-  });
 
-  const lowStockCount = stock.filter(i => i.quantity_on_hand < (i.minimum_target_quantity || 0)).length;
 
   return (
     <div className="p-4 max-w-2xl mx-auto pb-24">
@@ -672,48 +531,7 @@ export default function MyVehicle() {
         )}
       </div>
 
-      {/* Bottom Actions */}
-      <div className="fixed bottom-0 left-0 right-0 bg-white border-t border-gray-200 p-4 z-50">
-        <div className="max-w-2xl mx-auto grid grid-cols-2 gap-3">
-          <Button 
-            variant="outline" 
-            className="w-full border-gray-300 text-gray-700"
-            onClick={() => toast.info("View history coming soon")}
-          >
-            <History className="w-4 h-4 mr-2" />
-            History
-          </Button>
-          <Button 
-            className="w-full bg-[#FAE008] hover:bg-[#E5CF07] text-black font-semibold"
-            onClick={() => setShowRestockModal(true)}
-          >
-            <RefreshCw className="w-4 h-4 mr-2" />
-            Request Restock
-          </Button>
-        </div>
-      </div>
 
-      {/* Modals */}
-      <RestockRequestModal 
-        open={showRestockModal} 
-        onClose={() => setShowRestockModal(false)}
-        vehicle={vehicle}
-        stock={stock}
-      />
-
-      <StockAdjustmentModal
-        open={!!adjustmentItem}
-        onClose={() => setAdjustmentItem(null)}
-        item={adjustmentItem}
-        vehicleId={vehicle.id}
-      />
-
-      <StockUsageModal
-        open={!!usageItem}
-        onClose={() => setUsageItem(null)}
-        item={usageItem}
-        vehicleId={vehicle.id}
-      />
     </div>
   );
 }
