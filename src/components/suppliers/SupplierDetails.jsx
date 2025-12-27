@@ -1,26 +1,16 @@
-import React, { useState } from "react";
+/**
+ * REMOVED: Purchase Order integration (HARD RESET - 2025-12-27)
+ * Component now shows only supplier contact and logistics information
+ */
+
+import React from "react";
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { ArrowLeft, Edit, Phone, Mail, MapPin, ShoppingCart, Clock, Info, Truck } from "lucide-react";
+import { Edit, Phone, Mail, MapPin, Clock, Info } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
-import PurchaseOrdersList from "./PurchaseOrdersList";
-import SupplierPurchaseOrderModal from "../purchasing/SupplierPurchaseOrderModal";
 import BackButton from "../common/BackButton";
 
 export default function SupplierDetails({ supplier, onClose, onEdit }) {
-  const [poModalOpen, setPoModalOpen] = useState(false);
-  const [selectedPO, setSelectedPO] = useState(null);
-
-  const handleEditPO = (po) => {
-    setSelectedPO(po);
-    setPoModalOpen(true);
-  };
-
-  const handleCloseModal = () => {
-    setPoModalOpen(false);
-    setSelectedPO(null);
-  };
-
   return (
     <div className="space-y-6">
       <Card className="border-2 border-slate-200 shadow-lg rounded-2xl">
@@ -77,27 +67,8 @@ export default function SupplierDetails({ supplier, onClose, onEdit }) {
             </div>
 
             <div className="space-y-4">
-                <h3 className="text-sm font-semibold text-gray-900 uppercase tracking-wider">Logistics</h3>
+                <h3 className="text-sm font-semibold text-gray-900 uppercase tracking-wider">Additional Info</h3>
                 <div className="space-y-3">
-                    <div className="flex items-center gap-2 text-sm">
-                        <Truck className="w-4 h-4 text-slate-400" />
-                        <span className="capitalize font-medium">{supplier.fulfilment_preference || 'pickup'}</span>
-                        {(supplier.fulfilment_preference === 'delivery' || supplier.fulfilment_preference === 'mixed') && supplier.delivery_days && (
-                            <span className="text-slate-500">({supplier.delivery_days})</span>
-                        )}
-                    </div>
-                    {supplier.pickup_address && (
-                        <div className="flex items-start gap-2 text-sm">
-                            <MapPin className="w-4 h-4 text-slate-400 mt-0.5" />
-                            <span className="whitespace-pre-wrap">{supplier.pickup_address}</span>
-                        </div>
-                    )}
-                    {supplier.opening_hours && (
-                        <div className="flex items-center gap-2 text-sm">
-                            <Clock className="w-4 h-4 text-slate-400" />
-                            <span>{supplier.opening_hours}</span>
-                        </div>
-                    )}
                      {supplier.default_lead_time_days && (
                         <div className="flex items-center gap-2 text-sm">
                             <Clock className="w-4 h-4 text-slate-400" />
@@ -116,33 +87,6 @@ export default function SupplierDetails({ supplier, onClose, onEdit }) {
           )}
         </CardContent>
       </Card>
-
-      {/* Purchase Orders */}
-      <Card className="border-2 border-slate-200 shadow-lg rounded-2xl">
-        <CardHeader className="border-b border-slate-100 p-4 md:p-6">
-            <div className="flex items-center justify-between">
-                <CardTitle className="text-lg font-semibold">Purchase Orders</CardTitle>
-                <Button 
-                  size="sm"
-                  onClick={() => setPoModalOpen(true)}
-                  className="bg-[#FAE008] text-[#111827] hover:bg-[#E5CF07]"
-                >
-                  <ShoppingCart className="w-3.5 h-3.5 mr-2" />
-                  Create Order
-                </Button>
-            </div>
-        </CardHeader>
-        <CardContent className="p-4 md:p-6">
-            <PurchaseOrdersList supplierId={supplier.id} onSelectPO={handleEditPO} />
-        </CardContent>
-      </Card>
-
-      <SupplierPurchaseOrderModal 
-        open={poModalOpen}
-        onClose={handleCloseModal}
-        supplier={supplier}
-        purchaseOrderToEdit={selectedPO}
-      />
     </div>
   );
 }
