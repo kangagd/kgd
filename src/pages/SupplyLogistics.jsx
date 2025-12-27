@@ -3,7 +3,7 @@ import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Plus, Package, Truck, Calendar } from "lucide-react";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { base44 } from "@/api/base44Client";
 import { useNavigate } from "react-router-dom";
 import { createPageUrl } from "@/utils";
@@ -17,11 +17,13 @@ import StatusBadge from "../components/common/StatusBadge";
 import BackButton from "../components/common/BackButton";
 import { getPoDisplayReference, getPoDisplayTitle } from "@/components/domain/poDisplayHelpers";
 import { getPoEta, getPoSupplierName, safeParseDate } from "@/components/domain/schemaAdapters";
+import { DragDropContext, Droppable, Draggable } from "@hello-pangea/dnd";
 
 export default function SupplyLogistics() {
   const [activeTab, setActiveTab] = useState("board");
   const [activePoId, setActivePoId] = useState(null);
   const navigate = useNavigate();
+  const queryClient = useQueryClient();
 
   const { data: purchaseOrders = [] } = useQuery({
     queryKey: ['purchaseOrders'],
@@ -128,17 +130,69 @@ export default function SupplyLogistics() {
     }
   };
 
-  const POCard = ({ po }) => {
+  const updateStatusMutation = useMutation({
+    mutationFn: async ({ poId, newStatus }) => {
+      const response = await base44.functions.invoke('managePurchaseOrder', {
+        action: 'updateStatus',
+        id: poId,
+        status: newStatus
+      });
+      if (!response.data?.success) {
+        throw new Error(response.data?.error || 'Failed to update status');
+      }
+      return response.data;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['purchaseOrders'] });
+      queryClient.invalidateQueries({ queryKey: ['parts'] });
+      queryClient.invalidateQueries({ queryKey: ['allJobs'] });
+      toast.success('PO status updated');
+    },
+    onError: (error) => {
+      toast.error(error.message || 'Failed to update status');
+    }
+  });
+
+  const handleDragEnd = (result) => {
+    if (!result.destination) return;
+    
+    const { draggableId, destination } = result;
+    const poId = draggableId;
+    const newStatus = destination.droppableId;
+    
+    // Map column IDs to PO statuses
+    const statusMap = {
+      'draft': PO_STATUS.DRAFT,
+      'on_order': PO_STATUS.ON_ORDER,
+      'at_supplier': PO_STATUS.IN_LOADING_BAY,
+      'loading_bay': PO_STATUS.IN_LOADING_BAY,
+      'completed': PO_STATUS.IN_STORAGE
+    };
+    
+    const mappedStatus = statusMap[newStatus];
+    if (!mappedStatus) return;
+    
+    updateStatusMutation.mutate({ poId, newStatus: mappedStatus });
+  };
+
+  const POCard = ({ po, index }) => {
     const supplier = suppliers.find(s => s.id === po.supplier_id);
     const supplierName = supplier?.name || getPoSupplierName(po) || "Unknown Supplier";
     const eta = getPoEta(po);
     const etaDate = safeParseDate(eta);
     
     return (
-    <div
-      className="cursor-pointer rounded-md border border-[#E5E7EB] bg-white px-3 py-2 text-xs shadow-sm hover:bg-[#F9FAFB] transition-colors"
-      onClick={() => setActivePoId(po.id)}
-    >
+      <Draggable draggableId={po.id} index={index}>
+        {(provided, snapshot) => (
+          <div
+            ref={provided.innerRef}
+            {...provided.draggableProps}
+            {...provided.dragHandleProps}
+            className={`cursor-pointer rounded-md border border-[#E5E7EB] bg-white px-3 py-2 text-xs shadow-sm hover:bg-[#F9FAFB] transition-colors ${
+              snapshot.isDragging ? 'shadow-lg ring-2 ring-[#FAE008]' : ''
+            }`}
+            onClick={() => setActivePoId(po.id)}
+          >
       <div className="font-medium text-[#111827] mb-1">
         {getPoDisplayReference(po)}
       </div>
@@ -170,7 +224,9 @@ export default function SupplyLogistics() {
           </Badge>
         )}
       </div>
-    </div>
+          </div>
+        )}
+      </Draggable>
     );
   };
 
@@ -257,67 +313,124 @@ export default function SupplyLogistics() {
             </div>
 
             {/* Kanban Board */}
-            <div className="grid gap-4 md:grid-cols-5">
-              {/* Draft */}
-              <div className="flex flex-col rounded-xl border border-[#E5E7EB] bg-white p-3">
-                <div className="mb-2 flex items-center justify-between">
-                  <span className="text-sm font-semibold text-[#111827]">Draft</span>
-                  <span className="text-xs text-[#6B7280]">{draftPOs.length}</span>
-                </div>
-                <div className="space-y-2">
-                  {draftPOs.map(po => <POCard key={po.id} po={po} />)}
-                  {!draftPOs.length && <div className="text-[11px] text-[#6B7280] text-center py-4">No POs</div>}
-                </div>
-              </div>
+            <DragDropContext onDragEnd={handleDragEnd}>
+              <div className="grid gap-4 md:grid-cols-5">
+                {/* Draft */}
+                <Droppable droppableId="draft">
+                  {(provided, snapshot) => (
+                    <div
+                      ref={provided.innerRef}
+                      {...provided.droppableProps}
+                      className={`flex flex-col rounded-xl border border-[#E5E7EB] bg-white p-3 ${
+                        snapshot.isDraggingOver ? 'bg-[#FAE008]/10 border-[#FAE008]' : ''
+                      }`}
+                    >
+                      <div className="mb-2 flex items-center justify-between">
+                        <span className="text-sm font-semibold text-[#111827]">Draft</span>
+                        <span className="text-xs text-[#6B7280]">{draftPOs.length}</span>
+                      </div>
+                      <div className="space-y-2 min-h-[100px]">
+                        {draftPOs.map((po, index) => <POCard key={po.id} po={po} index={index} />)}
+                        {!draftPOs.length && <div className="text-[11px] text-[#6B7280] text-center py-4">No POs</div>}
+                        {provided.placeholder}
+                      </div>
+                    </div>
+                  )}
+                </Droppable>
 
-              {/* On Order */}
-              <div className="flex flex-col rounded-xl border border-[#E5E7EB] bg-white p-3">
-                <div className="mb-2 flex items-center justify-between">
-                  <span className="text-sm font-semibold text-[#111827]">On Order</span>
-                  <span className="text-xs text-[#6B7280]">{onOrderPOs.length}</span>
-                </div>
-                <div className="space-y-2">
-                  {onOrderPOs.map(po => <POCard key={po.id} po={po} />)}
-                  {!onOrderPOs.length && <div className="text-[11px] text-[#6B7280] text-center py-4">No POs</div>}
-                </div>
-              </div>
+                {/* On Order */}
+                <Droppable droppableId="on_order">
+                  {(provided, snapshot) => (
+                    <div
+                      ref={provided.innerRef}
+                      {...provided.droppableProps}
+                      className={`flex flex-col rounded-xl border border-[#E5E7EB] bg-white p-3 ${
+                        snapshot.isDraggingOver ? 'bg-[#FAE008]/10 border-[#FAE008]' : ''
+                      }`}
+                    >
+                      <div className="mb-2 flex items-center justify-between">
+                        <span className="text-sm font-semibold text-[#111827]">On Order</span>
+                        <span className="text-xs text-[#6B7280]">{onOrderPOs.length}</span>
+                      </div>
+                      <div className="space-y-2 min-h-[100px]">
+                        {onOrderPOs.map((po, index) => <POCard key={po.id} po={po} index={index} />)}
+                        {!onOrderPOs.length && <div className="text-[11px] text-[#6B7280] text-center py-4">No POs</div>}
+                        {provided.placeholder}
+                      </div>
+                    </div>
+                  )}
+                </Droppable>
 
-              {/* At Supplier */}
-              <div className="flex flex-col rounded-xl border border-[#E5E7EB] bg-white p-3">
-                <div className="mb-2 flex items-center justify-between">
-                  <span className="text-sm font-semibold text-[#111827]">At Supplier</span>
-                  <span className="text-xs text-[#6B7280]">{readyAtSupplierPOs.length}</span>
-                </div>
-                <div className="space-y-2">
-                  {readyAtSupplierPOs.map(po => <POCard key={po.id} po={po} />)}
-                  {!readyAtSupplierPOs.length && <div className="text-[11px] text-[#6B7280] text-center py-4">No POs</div>}
-                </div>
-              </div>
+                {/* At Supplier */}
+                <Droppable droppableId="at_supplier">
+                  {(provided, snapshot) => (
+                    <div
+                      ref={provided.innerRef}
+                      {...provided.droppableProps}
+                      className={`flex flex-col rounded-xl border border-[#E5E7EB] bg-white p-3 ${
+                        snapshot.isDraggingOver ? 'bg-[#FAE008]/10 border-[#FAE008]' : ''
+                      }`}
+                    >
+                      <div className="mb-2 flex items-center justify-between">
+                        <span className="text-sm font-semibold text-[#111827]">At Supplier</span>
+                        <span className="text-xs text-[#6B7280]">{readyAtSupplierPOs.length}</span>
+                      </div>
+                      <div className="space-y-2 min-h-[100px]">
+                        {readyAtSupplierPOs.map((po, index) => <POCard key={po.id} po={po} index={index} />)}
+                        {!readyAtSupplierPOs.length && <div className="text-[11px] text-[#6B7280] text-center py-4">No POs</div>}
+                        {provided.placeholder}
+                      </div>
+                    </div>
+                  )}
+                </Droppable>
 
-              {/* Loading Bay */}
-              <div className="flex flex-col rounded-xl border border-[#E5E7EB] bg-white p-3">
-                <div className="mb-2 flex items-center justify-between">
-                  <span className="text-sm font-semibold text-[#111827]">Loading Bay</span>
-                  <span className="text-xs text-[#6B7280]">{atDeliveryBayPOs.length}</span>
-                </div>
-                <div className="space-y-2">
-                  {atDeliveryBayPOs.map(po => <POCard key={po.id} po={po} />)}
-                  {!atDeliveryBayPOs.length && <div className="text-[11px] text-[#6B7280] text-center py-4">No POs</div>}
-                </div>
-              </div>
+                {/* Loading Bay */}
+                <Droppable droppableId="loading_bay">
+                  {(provided, snapshot) => (
+                    <div
+                      ref={provided.innerRef}
+                      {...provided.droppableProps}
+                      className={`flex flex-col rounded-xl border border-[#E5E7EB] bg-white p-3 ${
+                        snapshot.isDraggingOver ? 'bg-[#FAE008]/10 border-[#FAE008]' : ''
+                      }`}
+                    >
+                      <div className="mb-2 flex items-center justify-between">
+                        <span className="text-sm font-semibold text-[#111827]">Loading Bay</span>
+                        <span className="text-xs text-[#6B7280]">{atDeliveryBayPOs.length}</span>
+                      </div>
+                      <div className="space-y-2 min-h-[100px]">
+                        {atDeliveryBayPOs.map((po, index) => <POCard key={po.id} po={po} index={index} />)}
+                        {!atDeliveryBayPOs.length && <div className="text-[11px] text-[#6B7280] text-center py-4">No POs</div>}
+                        {provided.placeholder}
+                      </div>
+                    </div>
+                  )}
+                </Droppable>
 
-              {/* Completed */}
-              <div className="flex flex-col rounded-xl border border-[#E5E7EB] bg-white p-3">
-                <div className="mb-2 flex items-center justify-between">
-                  <span className="text-sm font-semibold text-[#111827]">Completed</span>
-                  <span className="text-xs text-[#6B7280]">{completedPOs.length}</span>
-                </div>
-                <div className="space-y-2">
-                  {completedPOs.map(po => <POCard key={po.id} po={po} />)}
-                  {!completedPOs.length && <div className="text-[11px] text-[#6B7280] text-center py-4">No POs</div>}
-                </div>
+                {/* Completed */}
+                <Droppable droppableId="completed">
+                  {(provided, snapshot) => (
+                    <div
+                      ref={provided.innerRef}
+                      {...provided.droppableProps}
+                      className={`flex flex-col rounded-xl border border-[#E5E7EB] bg-white p-3 ${
+                        snapshot.isDraggingOver ? 'bg-[#FAE008]/10 border-[#FAE008]' : ''
+                      }`}
+                    >
+                      <div className="mb-2 flex items-center justify-between">
+                        <span className="text-sm font-semibold text-[#111827]">Completed</span>
+                        <span className="text-xs text-[#6B7280]">{completedPOs.length}</span>
+                      </div>
+                      <div className="space-y-2 min-h-[100px]">
+                        {completedPOs.map((po, index) => <POCard key={po.id} po={po} index={index} />)}
+                        {!completedPOs.length && <div className="text-[11px] text-[#6B7280] text-center py-4">No POs</div>}
+                        {provided.placeholder}
+                      </div>
+                    </div>
+                  )}
+                </Droppable>
               </div>
-            </div>
+            </DragDropContext>
 
             {/* Loading Bay */}
             <Card>
