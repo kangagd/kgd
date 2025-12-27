@@ -195,7 +195,7 @@ export default function PurchaseOrdersV2() {
       ) : (
         <div className="space-y-3">
           {filteredPOs.map(po => (
-            <Link key={po.id} to={createPageUrl('PurchaseOrderV2Detail', `id=${po.id}`)}>
+            <Link key={po.id} to={`${createPageUrl('PurchaseOrderV2Detail')}?id=${po.id}`}>
               <Card className="hover:shadow-md transition-shadow cursor-pointer">
                 <CardContent className="p-4">
                   <div className="flex items-center justify-between">
