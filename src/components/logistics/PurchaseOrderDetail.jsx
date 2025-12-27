@@ -106,6 +106,7 @@ export default function PurchaseOrderDetail({ poId, onClose, mode = "page" }) {
   const priceListItems = priceListQuery.data || [];
 
   const initialLoadDone = React.useRef(false);
+  const justSaved = React.useRef(false);
 
   // Helper: Apply returned PO to both cache and formData
   const applyReturnedPO = (returnedPO) => {
@@ -172,8 +173,8 @@ export default function PurchaseOrderDetail({ poId, onClose, mode = "page" }) {
       setIsEditing(normalizedStatus === PO_STATUS.DRAFT);
       setIsDirty(false);
       initialLoadDone.current = true;
-    } else if (po && lineItems && initialLoadDone.current && !isDirty) {
-      // PO updated from backend (e.g., after save) - rehydrate if not dirty
+    } else if (po && lineItems && initialLoadDone.current && !isDirty && !justSaved.current) {
+      // PO updated from backend (e.g., after external change) - rehydrate if not dirty and not just saved
       const normalizedStatus = normaliseLegacyPoStatus(po.status);
       const items = lineItems.map(line => ({
         id: line.id,
@@ -200,6 +201,11 @@ export default function PurchaseOrderDetail({ poId, onClose, mode = "page" }) {
         attachments: po.attachments || [],
         line_items: items
       });
+    }
+    
+    // Reset justSaved flag after useEffect completes
+    if (justSaved.current) {
+      justSaved.current = false;
     }
   }, [po?.id, po, lineItems, isDirty]);
 
@@ -323,8 +329,9 @@ export default function PurchaseOrderDetail({ poId, onClose, mode = "page" }) {
         queryClient.invalidateQueries({ queryKey: ["projectParts"] }),
       ]);
 
-      // Reset dirty flag after successful save
+      // Reset dirty flag and mark as just saved to prevent useEffect rehydration
       setIsDirty(false);
+      justSaved.current = true;
 
       toast.success("Purchase Order saved");
     } catch (error) {
