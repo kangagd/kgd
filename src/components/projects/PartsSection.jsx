@@ -76,7 +76,7 @@ export default function PartsSection({ projectId, autoExpand = false, registerAd
   const navigate = useNavigate();
 
   const { data: allParts = [] } = useQuery({
-    queryKey: ['projectParts', projectId],
+    queryKey: ['parts', projectId],
     queryFn: () => base44.entities.Part.filter({ project_id: projectId }, '-order_date')
   });
 
@@ -98,19 +98,9 @@ export default function PartsSection({ projectId, autoExpand = false, registerAd
   });
 
   const createPartMutation = useMutation({
-    mutationFn: (data) => {
-      // Ensure canonical defaults for new parts
-      const partData = {
-        ...data,
-        project_id: projectId,
-        status: PART_STATUS.PENDING,
-        location: PART_LOCATION.SUPPLIER,
-        purchase_order_id: null
-      };
-      return base44.functions.invoke('managePart', { action: 'create', data: partData });
-    },
+    mutationFn: (data) => base44.functions.invoke('managePart', { action: 'create', data }),
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['projectParts', projectId] });
+      queryClient.invalidateQueries({ queryKey: ['parts', projectId] });
       setShowModal(false);
       setEditingPart(null);
       toast.success("Part added successfully");
@@ -120,7 +110,7 @@ export default function PartsSection({ projectId, autoExpand = false, registerAd
   const updatePartMutation = useMutation({
     mutationFn: ({ id, data }) => base44.functions.invoke('managePart', { action: 'update', id, data }),
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['projectParts', projectId] });
+      queryClient.invalidateQueries({ queryKey: ['parts', projectId] });
       setShowModal(false);
       setEditingPart(null);
       toast.success("Part updated");
@@ -130,7 +120,7 @@ export default function PartsSection({ projectId, autoExpand = false, registerAd
   const deletePartMutation = useMutation({
     mutationFn: (id) => base44.functions.invoke('managePart', { action: 'delete', id }),
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['projectParts', projectId] });
+      queryClient.invalidateQueries({ queryKey: ['parts', projectId] });
       setShowModal(false); 
       toast.success("Part deleted");
     }
@@ -146,7 +136,7 @@ export default function PartsSection({ projectId, autoExpand = false, registerAd
       }),
     onSuccess: (response) => {
       if (response.data?.success) {
-        queryClient.invalidateQueries({ queryKey: ['projectParts', projectId] });
+        queryClient.invalidateQueries({ queryKey: ['parts', projectId] });
         toast.success("Part moved successfully");
       } else {
         toast.error(response.data?.error || "Failed to move part");

@@ -2,7 +2,6 @@ import React, { useState } from "react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { AlertTriangle, CheckCircle2, Package, Truck, ExternalLink, Plus, ShoppingCart, MoreVertical, Building2 } from "lucide-react";
-import * as purchaseOrdersApi from "@/components/api/purchaseOrdersApi";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -16,13 +15,13 @@ import {
 } from "@/components/ui/collapsible";
 import { ChevronDown } from "lucide-react";
 import AssignPartToVehicleModal from "./AssignPartToVehicleModal";
-import { PART_LOCATION, normaliseLegacyPartLocation, getPartStatusLabel, normaliseLegacyPartStatus, getNormalizedPartStatus, isPickablePart, PICKABLE_STATUSES, PART_STATUS } from "@/components/domain/partConfig";
+import { PART_LOCATION, normaliseLegacyPartLocation, getPartStatusLabel, normaliseLegacyPartStatus, getNormalizedPartStatus, isPickablePart, PICKABLE_STATUSES } from "@/components/domain/partConfig";
 import { getPoStatusLabel } from "@/components/domain/purchaseOrderStatusConfig";
 import { getPoIdentity } from "@/components/domain/poDisplayHelpers";
 import { getPoEta, getPoSupplierName, safeParseDate } from "@/components/domain/schemaAdapters";
 
 
-import { useQuery, useQueryClient, useMutation } from "@tanstack/react-query";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { base44 } from "@/api/base44Client";
 import { useNavigate } from "react-router-dom";
 import { createPageUrl } from "@/utils";
@@ -42,7 +41,6 @@ import {
 } from "@/components/ui/select";
 import { toast } from "sonner";
 import PurchaseOrderModal from "../logistics/PurchaseOrderModal";
-import PartDetailModal from "./PartDetailModal";
 
 export default function ProjectPartsPanel({ project, parts = [], inventoryByItem = {}, purchaseOrders = [], missingCount = 0 }) {
   const [assignModalOpen, setAssignModalOpen] = useState(false);
@@ -50,7 +48,6 @@ export default function ProjectPartsPanel({ project, parts = [], inventoryByItem
   const [showCreatePODialog, setShowCreatePODialog] = useState(false);
   const [selectedSupplierId, setSelectedSupplierId] = useState("");
   const [activePoId, setActivePoId] = useState(null);
-  const [showAddPartModal, setShowAddPartModal] = useState(false);
   const [posExpanded, setPosExpanded] = useState(() => {
     const hasShortages = parts.filter(p => !isPickablePart(p) && getNormalizedPartStatus(p) !== 'cancelled' && getNormalizedPartStatus(p) !== 'installed').length > 0;
     return hasShortages;
@@ -58,39 +55,11 @@ export default function ProjectPartsPanel({ project, parts = [], inventoryByItem
   const queryClient = useQueryClient();
   const navigate = useNavigate();
 
-  const createPartMutation = useMutation({
-    mutationFn: (data) => {
-      const partData = {
-        ...data,
-        project_id: project.id,
-        status: PART_STATUS.PENDING,
-        location: PART_LOCATION.SUPPLIER,
-        purchase_order_id: null
-      };
-      return base44.functions.invoke('managePart', { action: 'create', data: partData });
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['projectParts', project.id] });
-      queryClient.invalidateQueries({ queryKey: ['parts'] });
-      setShowAddPartModal(false);
-      toast.success("Part added successfully");
-    }
-  });
-
   const handleAddPart = () => {
-    setShowAddPartModal(true);
-  };
-
-  const handleSavePart = async (data) => {
-    return new Promise((resolve, reject) => {
-      createPartMutation.mutate(data, {
-        onSuccess: (result) => {
-          const savedPart = result?.data?.part || { ...data, id: result?.data?.id };
-          resolve(savedPart);
-        },
-        onError: reject
-      });
-    });
+    // Will trigger part modal from PartsSection
+    if (window.triggerAddPart) {
+      window.triggerAddPart();
+    }
   };
 
   const openOrCreateProjectSupplierPO = async (supplierId) => {
@@ -100,38 +69,21 @@ export default function ProjectPartsPanel({ project, parts = [], inventoryByItem
     }
 
     try {
-      // Step 1: Query for existing draft PO
-      const existingDrafts = await base44.entities.PurchaseOrder.filter({
+      const response = await base44.functions.invoke("managePurchaseOrder", {
+        action: "getOrCreateProjectSupplierDraft",
         project_id: project.id,
         supplier_id: supplierId,
-        status: "draft"
       });
-      
-      if (existingDrafts.length > 0) {
-        // Use existing draft
-        const draft = existingDrafts[0];
-        setActivePoId(draft.id);
+
+      if (!response?.data?.success || !response.data.purchaseOrder) {
+        toast.error(response?.data?.error || "Failed to open/create Purchase Order");
         return;
       }
-      
-      // Step 2: Create new draft if none exists
-      const po = await purchaseOrdersApi.createDraft({
-        project_id: project.id,
-        supplier_id: supplierId
-      });
-      
-      // Invalidate all PO-related caches
-      await Promise.all([
-        queryClient.invalidateQueries({ queryKey: ['purchaseOrder', po.id] }),
-        queryClient.invalidateQueries({ queryKey: ['purchaseOrders'] }),
-        queryClient.invalidateQueries({ queryKey: ['projectPurchaseOrders', project.id] }),
-        queryClient.invalidateQueries({ queryKey: ['projectPOLines', project.id] })
-      ]);
-      
+
+      const po = response.data.purchaseOrder;
       setActivePoId(po.id);
     } catch (error) {
-      console.error('[ProjectPartsPanel] Error opening/creating PO:', error);
-      toast.error(error.message || "Error opening/creating Purchase Order");
+      toast.error("Error opening/creating Purchase Order");
     }
   };
 
@@ -777,15 +729,6 @@ export default function ProjectPartsPanel({ project, parts = [], inventoryByItem
         poId={activePoId}
         open={!!activePoId}
         onClose={() => setActivePoId(null)}
-      />
-
-      <PartDetailModal
-        open={showAddPartModal}
-        part={null}
-        projectId={project.id}
-        onClose={() => setShowAddPartModal(false)}
-        onSave={handleSavePart}
-        isSubmitting={createPartMutation.isPending}
       />
     </div>
   );

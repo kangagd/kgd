@@ -1,9 +1,8 @@
 import React from "react";
 import { Badge } from "@/components/ui/badge";
 import { cn } from "@/lib/utils";
-import { getProjectEffectiveOpenedDate } from "@/components/utils/freshness";
 
-// Helper logic to calculate age in days from a date
+// Helper logic inlined to avoid potential import issues
 const getAgeInDays = (dateValue) => {
   if (!dateValue) return null;
   const date = new Date(dateValue);
@@ -51,13 +50,9 @@ const getAgeLabel = (dateValue) => {
   };
 };
 
-export default function AgeBadge({ date, entity = null, prefix = null, className = "" }) {
-  // If entity is provided and is a project, use effective opened date
-  const effectiveDate = (entity && entity.project_number !== undefined) 
-    ? getProjectEffectiveOpenedDate(entity) 
-    : date;
-  
-  const { ageInDays, bucket, label } = getAgeLabel(effectiveDate);
+export default function AgeBadge({ date, prefix = null, className = "" }) {
+  // Ensure hooks are not used here (they aren't)
+  const { ageInDays, bucket, label } = getAgeLabel(date);
 
   let colorClasses = "bg-slate-100 text-slate-700 border-slate-200";
   

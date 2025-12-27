@@ -65,7 +65,6 @@ import ThirdPartyTradesPanel from "./ThirdPartyTradesPanel";
 import BackButton from "../common/BackButton";
 import { getProjectFreshnessBadge } from "../utils/freshness";
 import DocumentListItem from "./DocumentListItem";
-import AgeBadge from "../common/AgeBadge";
 import LastActivityCard from "./LastActivityCard";
 import SamplesAtClientPanel from "./SamplesAtClientPanel";
 import AttentionItemsPanel from "../attention/AttentionItemsPanel";
@@ -1155,7 +1154,9 @@ Format as HTML bullet points using <ul> and <li> tags. Include only the most cri
             <Badge className={freshnessColors[freshness.color]}>
               {freshness.label}
             </Badge>
-            <AgeBadge entity={project} className="hidden sm:inline-flex" />
+            <span className="text-[12px] text-[#6B7280] hidden sm:block">
+              Age: {freshness.days !== null ? `${freshness.days} days` : 'Unknown'}
+            </span>
           </div>
 
           <div className="flex gap-1 flex-shrink-0">

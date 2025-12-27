@@ -5,15 +5,20 @@
 
 /**
  * Get the display reference for a Purchase Order
- * V2: Uses only po_reference (canonical field)
+ * Checks multiple fields in priority order for maximum compatibility
  * @param {Object} po - Purchase Order object
- * @returns {string} Display reference
+ * @returns {string} Display reference (first non-empty value or fallback)
  */
 export function getPoDisplayReference(po) {
   if (!po) return 'Unknown PO';
   
-  // V2: Use only canonical field
-  const ref = po.po_reference?.trim();
+  // Check fields in priority order
+  const ref = po.po_reference?.trim() || 
+              po.po_ref?.trim() || 
+              po.reference?.trim() || 
+              po.po_number?.trim() || 
+              po.name?.trim() || 
+              null;
   
   return ref || `PO-${po.id?.slice(0, 8)}`;
 }
@@ -34,16 +39,14 @@ export function getPoDisplayTitle(po) {
 
 /**
  * Get canonical PO identity (reference + name)
- * V2: Uses only po_reference and name fields
+ * 
  * @param {Object} po - Purchase Order object
  * @returns {Object} { reference: string, name: string|null }
  */
 export function getPoIdentity(po) {
-  if (!po) return { reference: '', name: null };
-  
   return {
-    reference: po.po_reference || `PO-${po.id?.slice(0, 8)}` || '',
-    name: po.name || null
+    reference: po?.po_reference || getPoDisplayReference(po),
+    name: po?.name || null
   };
 }
 

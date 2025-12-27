@@ -59,19 +59,32 @@ export function getPoSupplierName(po) {
 }
 
 /**
- * Get PO reference for display
- * V2: Uses only po_reference field (canonical)
+ * Get PO reference/number for display
+ * Checks multiple possible field names and returns the first available
  * @param {Object} po - Purchase Order object
+ * @param {Object} part - Optional Part object (may have cached PO reference)
  * @returns {string} - PO reference string (empty string if none found)
  */
-export function getPoReference(po) {
-  if (!po) return '';
+export function getPoReference(po, part = null) {
+  if (!po && !part) return '';
   
-  // V2: Use only canonical field
-  if (po.po_reference) return String(po.po_reference);
+  // Try PO object first
+  if (po) {
+    const ref = po.po_number || 
+                po.po_reference || 
+                po.order_reference || 
+                po.reference || 
+                po.name;
+    if (ref) return String(ref);
+    
+    // Fallback to truncated ID
+    if (po.id) return String(po.id).slice(0, 8);
+  }
   
-  // Fallback to truncated ID only if no reference
-  if (po.id) return String(po.id).slice(0, 8);
+  // Try part object's cached fields
+  if (part) {
+    return part.po_number || part.order_reference || '';
+  }
   
   return '';
 }

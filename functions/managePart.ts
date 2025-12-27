@@ -1,494 +1,248 @@
+// PARTIALLY DEPRECATED: Auto-logistics job creation logic in this function uses old Part schema.
+// For new logistics workflows, prefer using createLogisticsJobForPO and recordStockMovement.
+// The CRUD operations (create/update/delete Part) are still valid.
+
 import { createClientFromRequest } from 'npm:@base44/sdk@0.8.4';
 import { updateProjectActivity } from './updateProjectActivity.js';
 
-// Canonical Part status values
-const PART_STATUS = {
-  PENDING: "pending",
-  ON_ORDER: "on_order",
-  IN_TRANSIT: "in_transit",
-  IN_LOADING_BAY: "in_loading_bay",
-  IN_STORAGE: "in_storage",
-  IN_VEHICLE: "in_vehicle",
-  INSTALLED: "installed",
-  CANCELLED: "cancelled",
-};
-
-const PART_LOCATION = {
-  SUPPLIER: "supplier",
-  LOADING_BAY: "loading_bay",
-  WAREHOUSE_STORAGE: "warehouse_storage",
-  VEHICLE: "vehicle",
-  CLIENT_SITE: "client_site",
-};
-
 Deno.serve(async (req) => {
-  try {
-    const base44 = createClientFromRequest(req);
-    const user = await base44.auth.me();
-    if (!user) return Response.json({ error: 'Unauthorized' }, { status: 401 });
+    try {
+        const base44 = createClientFromRequest(req);
+        const user = await base44.auth.me();
+        if (!user) return Response.json({ error: 'Unauthorized' }, { status: 401 });
 
-    const payload = await req.json();
-    const { action } = payload;
+        const { action, id, data } = await req.json();
 
-    // ========================================
-    // ACTION: create (basic Part creation)
-    // ========================================
-    if (action === 'create') {
-      const { data } = payload;
+        let part;
+        let previousPart = null;
 
-      if (!data) {
-        return Response.json({ error: 'data is required' }, { status: 400 });
-      }
+        if (action === 'create') {
+            part = await base44.asServiceRole.entities.Part.create(data);
+            
+            // Update project activity when part is created
+            if (part.project_id) {
+                await updateProjectActivity(base44, part.project_id, 'Part Created');
+            }
 
-      const part = await base44.asServiceRole.entities.Part.create(data);
-      
-      console.log('[managePart:create] Created Part:', { 
-        id: part.id, 
-        project_id: part.project_id,
-        status: part.status 
-      });
+            // LOGISTICS AUTOMATION LOGIC
+            // Only on create, if project_id exists and part is Ordered
+            if (part.project_id && 
+                (part.status === "Ordered" || part.status === "Pending") && // Relaxed to Pending/Ordered as usually created as Ordered
+                (part.supplier_id || part.supplier_name)) {
+                
+                try {
+                    // Fetch supplier if ID exists
+                    let supplier = null;
+                    if (part.supplier_id) {
+                        supplier = await base44.asServiceRole.entities.Supplier.get(part.supplier_id);
+                    }
 
-      if (part.project_id) {
-        await updateProjectActivity(base44, part.project_id, 'Part Created');
-      }
+                    // Determine Fulfilment Preference
+                    // Default to pickup if not set
+                    let fulfilmentPreference = supplier?.fulfilment_preference || "pickup";
 
-      return Response.json({ success: true, part });
-    }
+                    // If mixed, try to infer from source_type
+                    if (fulfilmentPreference === "mixed") {
+                        const sourceType = (part.source_type || "").toLowerCase();
+                        if (sourceType.includes("pickup")) {
+                            fulfilmentPreference = "pickup";
+                        } else if (sourceType.includes("deliver") || sourceType.includes("delivery")) {
+                            fulfilmentPreference = "delivery";
+                        } else {
+                            fulfilmentPreference = "pickup"; // Default
+                        }
+                    } else if (fulfilmentPreference === "delivery") {
+                         // If preference is delivery, we should ideally create a delivery job
+                         // BUT if the user explicitly set source_type to "Supplier - Pickup Required", we might want to respect that?
+                         // The prompt says "Create a Material Delivery... if Supplier is usually Delivery".
+                         // And "If they are usually Delivery... automatically create...".
+                         // So we prioritize the supplier preference unless the source type STRONGLY contradicts?
+                         // Let's assume supplier preference + automation is key here.
+                         // However, if source_type is explicit "Pickup Required", it would be weird to create a Delivery job.
+                         // Let's trust the mixed logic: if source_type explicitly says Pickup, we do Pickup.
+                         // Otherwise if Supplier is Delivery, we do Delivery.
+                         const sourceType = (part.source_type || "").toLowerCase();
+                         if (sourceType.includes("pickup")) {
+                             fulfilmentPreference = "pickup";
+                         }
+                    }
 
-    // ========================================
-    // ACTION: update (generic update)
-    // ========================================
-    if (action === 'update') {
-      const { id, data } = payload;
+                    // Determine details
+                    const supplierName = supplier?.name || part.supplier_name || "Unknown Supplier";
+                    const project = await base44.asServiceRole.entities.Project.get(part.project_id);
 
-      if (!id || !data) {
-        return Response.json({ error: 'id and data are required' }, { status: 400 });
-      }
+                    if (project) {
+                        let jobTypeName;
+                        let jobDescription;
+                        let jobColor;
+                        let jobNotes;
+                        let jobAddress;
+                        let newLocation;
 
-      const part = await base44.asServiceRole.entities.Part.update(id, data);
+                        if (fulfilmentPreference === "delivery") {
+                            jobTypeName = "Material Delivery – Supplier";
+                            jobDescription = "Logistics: Receive delivery from supplier";
+                            jobColor = "#3b82f6"; // Blue
+                            jobAddress = project.address_full || project.address || "Site Address";
+                            
+                            let deliveryNote = `Supplier delivery for project ${project.title} from ${supplierName}.`;
+                            if (supplier?.delivery_days) {
+                                deliveryNote += ` Usual delivery days: ${supplier.delivery_days}.`;
+                            }
+                            jobNotes = deliveryNote;
+                            newLocation = "Awaiting Supplier Delivery";
 
-      console.log('[managePart:update] Updated Part:', { 
-        id, 
-        fields: Object.keys(data) 
-      });
+                        } else {
+                            // PICKUP
+                            jobTypeName = "Material Pickup – Supplier";
+                            jobDescription = "Logistics: Pickup parts from supplier";
+                            jobColor = "#f59e0b"; // Amber
+                            jobAddress = supplier?.pickup_address || "Address not defined";
+                            jobNotes = `Pickup parts for project ${project.title} from ${supplierName}.`;
+                            newLocation = "At Supplier";
+                        }
 
-      if (part.project_id) {
-        await updateProjectActivity(base44, part.project_id, 'Part Updated');
-      }
+                        // Find or Create JobType
+                        let jobTypes = await base44.asServiceRole.entities.JobType.filter({ name: jobTypeName });
+                        let jobTypeId = jobTypes.length > 0 ? jobTypes[0].id : null;
+                        
+                        if (!jobTypeId) {
+                             const newJobType = await base44.asServiceRole.entities.JobType.create({
+                                 name: jobTypeName,
+                                 description: jobDescription,
+                                 color: jobColor,
+                                 estimated_duration: 0.5,
+                                 is_active: true
+                             });
+                             jobTypeId = newJobType.id;
+                        }
 
-      return Response.json({ success: true, part });
-    }
+                        // Create Job
+                        const logisticsJob = await base44.asServiceRole.entities.Job.create({
+                            job_type: jobTypeName,
+                            job_type_id: jobTypeId,
+                            job_type_name: jobTypeName,
+                            project_id: part.project_id,
+                            project_name: project.title,
+                            customer_id: project.customer_id,
+                            customer_name: project.customer_name,
+                            address: jobAddress,
+                            address_full: jobAddress,
+                            status: "Scheduled",
+                            notes: jobNotes,
+                            overview: `Part: ${part.category}${part.notes ? ' - ' + part.notes : ''}`,
+                            additional_info: `Order Ref: ${part.order_reference || 'N/A'}`
+                        });
 
-    // ========================================
-    // ACTION: delete
-    // ========================================
-    if (action === 'delete') {
-      const { id } = payload;
+                        // Update Part with linked job and location
+                        const currentLinks = part.linked_logistics_jobs || [];
+                        await base44.asServiceRole.entities.Part.update(part.id, {
+                            linked_logistics_jobs: [...currentLinks, logisticsJob.id],
+                            location: newLocation // Update location based on job type
+                        });
 
-      if (!id) {
-        return Response.json({ error: 'id is required' }, { status: 400 });
-      }
+                        // Update local part object
+                        part.linked_logistics_jobs = [...currentLinks, logisticsJob.id];
+                        part.location = newLocation;
+                    }
+                } catch (err) {
+                    console.error("Error auto-creating supplier logistics job:", err);
+                }
+            }
 
-      await base44.asServiceRole.entities.Part.delete(id);
-
-      console.log('[managePart:delete] Deleted Part:', { id });
-
-      return Response.json({ success: true });
-    }
-
-    // ========================================
-    // ACTION: assignToPurchaseOrder
-    // ========================================
-    if (action === 'assignToPurchaseOrder') {
-      const { part_id, purchase_order_id, po_reference } = payload;
-
-      if (!part_id || !purchase_order_id) {
-        return Response.json({ 
-          error: 'part_id and purchase_order_id are required' 
-        }, { status: 400 });
-      }
-
-      // Forbidden fields check
-      const forbiddenFields = ['status', 'location', 'supplier_id'];
-      const passedForbidden = forbiddenFields.filter(f => payload[f] !== undefined);
-      if (passedForbidden.length > 0) {
-        console.error('❌ [assignToPurchaseOrder] Forbidden fields passed:', passedForbidden);
-        return Response.json({ 
-          error: `Forbidden fields: ${passedForbidden.join(', ')}. Use assignToPurchaseOrder only to link part to PO.` 
-        }, { status: 400 });
-      }
-
-      const part = await base44.asServiceRole.entities.Part.get(part_id);
-      if (!part) {
-        return Response.json({ error: 'Part not found' }, { status: 404 });
-      }
-
-      const updateData = {
-        purchase_order_id,
-        po_number: po_reference || null,
-        order_reference: po_reference || null,
-      };
-
-      const updatedPart = await base44.asServiceRole.entities.Part.update(part_id, updateData);
-
-      console.log('[assignToPurchaseOrder] Assigned Part to PO:', { 
-        part_id, 
-        purchase_order_id,
-        po_reference 
-      });
-
-      if (updatedPart.project_id) {
-        await updateProjectActivity(base44, updatedPart.project_id, 'Part Assigned to PO');
-      }
-
-      return Response.json({ success: true, part: updatedPart });
-    }
-
-    // ========================================
-    // ACTION: markOrdered
-    // ========================================
-    if (action === 'markOrdered') {
-      const { part_id, order_date, supplier_id } = payload;
-
-      if (!part_id) {
-        return Response.json({ error: 'part_id is required' }, { status: 400 });
-      }
-
-      // Forbidden fields check
-      const forbiddenFields = ['location', 'purchase_order_id'];
-      const passedForbidden = forbiddenFields.filter(f => payload[f] !== undefined);
-      if (passedForbidden.length > 0) {
-        console.error('❌ [markOrdered] Forbidden fields passed:', passedForbidden);
-        return Response.json({ 
-          error: `Forbidden fields: ${passedForbidden.join(', ')}. Use markOrdered only to update status and order metadata.` 
-        }, { status: 400 });
-      }
-
-      const part = await base44.asServiceRole.entities.Part.get(part_id);
-      if (!part) {
-        return Response.json({ error: 'Part not found' }, { status: 404 });
-      }
-
-      const updateData = {
-        status: PART_STATUS.ON_ORDER,
-        location: PART_LOCATION.SUPPLIER,
-        order_date: order_date || new Date().toISOString().split('T')[0],
-      };
-
-      if (supplier_id !== undefined) {
-        updateData.supplier_id = supplier_id;
-        // Fetch supplier name
-        if (supplier_id) {
-          try {
-            const supplier = await base44.asServiceRole.entities.Supplier.get(supplier_id);
-            updateData.supplier_name = supplier?.name || null;
-          } catch (err) {
-            console.error('Failed to fetch supplier:', err);
-          }
+        } else if (action === 'update') {
+            // Fetch previous state for logic comparison
+            previousPart = await base44.asServiceRole.entities.Part.get(id);
+            part = await base44.asServiceRole.entities.Part.update(id, data);
+            
+            // Update project activity when part is updated
+            if (part.project_id) {
+                await updateProjectActivity(base44, part.project_id, 'Part Updated');
+            }
+        } else if (action === 'delete') {
+            await base44.asServiceRole.entities.Part.delete(id);
+            return Response.json({ success: true });
+        } else {
+            return Response.json({ error: 'Invalid action' }, { status: 400 });
         }
-      }
 
-      const updatedPart = await base44.asServiceRole.entities.Part.update(part_id, updateData);
+        // TRIGGER B: When Part is marked Delivered at Delivery Bay → create “Delivery – At Warehouse” job
+        if (part.status === 'Delivered' && part.location === 'At Delivery Bay') {
+            const wasTriggered = previousPart && 
+                                previousPart.status === 'Delivered' && 
+                                previousPart.location === 'At Delivery Bay';
+            
+            if (!wasTriggered) {
+                const project = await base44.asServiceRole.entities.Project.get(part.project_id);
+                if (project) {
+                    const otherParts = await base44.asServiceRole.entities.Part.filter({
+                        project_id: part.project_id,
+                        status: 'Delivered',
+                        location: 'At Delivery Bay'
+                    });
 
-      console.log('[markOrdered] Marked Part as ordered:', { 
-        part_id, 
-        status: PART_STATUS.ON_ORDER 
-      });
+                    const jobTypeName = "Delivery – At Warehouse";
+                    let jobTypes = await base44.asServiceRole.entities.JobType.filter({ name: jobTypeName });
+                    let jobTypeId = jobTypes.length > 0 ? jobTypes[0].id : null;
+                    
+                    if (!jobTypeId) {
+                         const newJobType = await base44.asServiceRole.entities.JobType.create({
+                             name: jobTypeName,
+                             description: "Logistics: Delivery of parts at warehouse",
+                             color: "#3b82f6",
+                             estimated_duration: 0.5,
+                             is_active: true
+                         });
+                         jobTypeId = newJobType.id;
+                    }
 
-      if (updatedPart.project_id) {
-        await updateProjectActivity(base44, updatedPart.project_id, 'Part Ordered');
-      }
+                    const existingJobs = await base44.asServiceRole.entities.Job.filter({
+                        project_id: part.project_id,
+                        job_type: jobTypeName,
+                        status: { $in: ['Open', 'Scheduled'] }
+                    });
 
-      return Response.json({ success: true, part: updatedPart });
-    }
+                    let logisticsJob;
 
-    // ========================================
-    // ACTION: markReceived
-    // ========================================
-    if (action === 'markReceived') {
-      const { part_id, received_date } = payload;
+                    if (existingJobs.length > 0) {
+                        logisticsJob = existingJobs[0];
+                    } else {
+                        const customerId = project.customer_id;
+                        const warehouseAddress = "Warehouse Delivery Bay";
 
-      if (!part_id) {
-        return Response.json({ error: 'part_id is required' }, { status: 400 });
-      }
+                        logisticsJob = await base44.asServiceRole.entities.Job.create({
+                            job_type: jobTypeName,
+                            job_type_id: jobTypeId,
+                            job_type_name: jobTypeName,
+                            project_id: part.project_id,
+                            project_name: project.title,
+                            customer_id: customerId,
+                            customer_name: project.customer_name,
+                            address: warehouseAddress,
+                            address_full: warehouseAddress,
+                            status: "Open",
+                            notes: `Logistics job generated for parts: ${otherParts.map(p => p.category).join(', ')}`
+                        });
+                    }
 
-      // Forbidden fields check
-      const forbiddenFields = ['supplier_id', 'purchase_order_id'];
-      const passedForbidden = forbiddenFields.filter(f => payload[f] !== undefined);
-      if (passedForbidden.length > 0) {
-        console.error('❌ [markReceived] Forbidden fields passed:', passedForbidden);
-        return Response.json({ 
-          error: `Forbidden fields: ${passedForbidden.join(', ')}. Use markReceived only to update status and location.` 
-        }, { status: 400 });
-      }
+                    const partIdsToUpdate = otherParts.map(p => p.id);
+                    if (!partIdsToUpdate.includes(part.id)) partIdsToUpdate.push(part.id);
 
-      const part = await base44.asServiceRole.entities.Part.get(part_id);
-      if (!part) {
-        return Response.json({ error: 'Part not found' }, { status: 404 });
-      }
-
-      const updateData = {
-        status: PART_STATUS.IN_LOADING_BAY,
-        location: PART_LOCATION.LOADING_BAY,
-        received_date: received_date || new Date().toISOString().split('T')[0],
-      };
-
-      const updatedPart = await base44.asServiceRole.entities.Part.update(part_id, updateData);
-
-      console.log('[markReceived] Marked Part as received:', { 
-        part_id, 
-        status: PART_STATUS.IN_LOADING_BAY,
-        location: PART_LOCATION.LOADING_BAY
-      });
-
-      if (updatedPart.project_id) {
-        await updateProjectActivity(base44, updatedPart.project_id, 'Part Received');
-      }
-
-      return Response.json({ success: true, part: updatedPart });
-    }
-
-    // ========================================
-    // ACTION: moveToStorage
-    // ========================================
-    if (action === 'moveToStorage') {
-      const { part_id } = payload;
-
-      if (!part_id) {
-        return Response.json({ error: 'part_id is required' }, { status: 400 });
-      }
-
-      // Forbidden fields check
-      const forbiddenFields = ['supplier_id', 'purchase_order_id', 'order_date'];
-      const passedForbidden = forbiddenFields.filter(f => payload[f] !== undefined);
-      if (passedForbidden.length > 0) {
-        console.error('❌ [moveToStorage] Forbidden fields passed:', passedForbidden);
-        return Response.json({ 
-          error: `Forbidden fields: ${passedForbidden.join(', ')}. Use moveToStorage only to update status and location.` 
-        }, { status: 400 });
-      }
-
-      const part = await base44.asServiceRole.entities.Part.get(part_id);
-      if (!part) {
-        return Response.json({ error: 'Part not found' }, { status: 404 });
-      }
-
-      const updateData = {
-        status: PART_STATUS.IN_STORAGE,
-        location: PART_LOCATION.WAREHOUSE_STORAGE,
-      };
-
-      const updatedPart = await base44.asServiceRole.entities.Part.update(part_id, updateData);
-
-      console.log('[moveToStorage] Moved Part to storage:', { 
-        part_id, 
-        status: PART_STATUS.IN_STORAGE,
-        location: PART_LOCATION.WAREHOUSE_STORAGE
-      });
-
-      if (updatedPart.project_id) {
-        await updateProjectActivity(base44, updatedPart.project_id, 'Part Moved to Storage');
-      }
-
-      return Response.json({ success: true, part: updatedPart });
-    }
-
-    // ========================================
-    // ACTION: assignToVehicle
-    // ========================================
-    if (action === 'assignToVehicle') {
-      const { part_id, vehicle_id } = payload;
-
-      if (!part_id || !vehicle_id) {
-        return Response.json({ 
-          error: 'part_id and vehicle_id are required' 
-        }, { status: 400 });
-      }
-
-      // Forbidden fields check
-      const forbiddenFields = ['supplier_id', 'purchase_order_id', 'order_date'];
-      const passedForbidden = forbiddenFields.filter(f => payload[f] !== undefined);
-      if (passedForbidden.length > 0) {
-        console.error('❌ [assignToVehicle] Forbidden fields passed:', passedForbidden);
-        return Response.json({ 
-          error: `Forbidden fields: ${passedForbidden.join(', ')}. Use assignToVehicle only to update status, location, and vehicle.` 
-        }, { status: 400 });
-      }
-
-      const part = await base44.asServiceRole.entities.Part.get(part_id);
-      if (!part) {
-        return Response.json({ error: 'Part not found' }, { status: 404 });
-      }
-
-      const updateData = {
-        status: PART_STATUS.IN_VEHICLE,
-        location: PART_LOCATION.VEHICLE,
-        assigned_vehicle_id: vehicle_id,
-        vehicle_id: vehicle_id,
-      };
-
-      const updatedPart = await base44.asServiceRole.entities.Part.update(part_id, updateData);
-
-      console.log('[assignToVehicle] Assigned Part to vehicle:', { 
-        part_id, 
-        vehicle_id,
-        status: PART_STATUS.IN_VEHICLE,
-        location: PART_LOCATION.VEHICLE
-      });
-
-      if (updatedPart.project_id) {
-        await updateProjectActivity(base44, updatedPart.project_id, 'Part Assigned to Vehicle');
-      }
-
-      return Response.json({ success: true, part: updatedPart });
-    }
-
-    // ========================================
-    // ACTION: markInstalled
-    // ========================================
-    if (action === 'markInstalled') {
-      const { part_id, installed_date, job_id } = payload;
-
-      if (!part_id) {
-        return Response.json({ error: 'part_id is required' }, { status: 400 });
-      }
-
-      // Forbidden fields check
-      const forbiddenFields = ['supplier_id', 'purchase_order_id', 'vehicle_id'];
-      const passedForbidden = forbiddenFields.filter(f => payload[f] !== undefined);
-      if (passedForbidden.length > 0) {
-        console.error('❌ [markInstalled] Forbidden fields passed:', passedForbidden);
-        return Response.json({ 
-          error: `Forbidden fields: ${passedForbidden.join(', ')}. Use markInstalled only to update status and location.` 
-        }, { status: 400 });
-      }
-
-      const part = await base44.asServiceRole.entities.Part.get(part_id);
-      if (!part) {
-        return Response.json({ error: 'Part not found' }, { status: 404 });
-      }
-
-      const updateData = {
-        status: PART_STATUS.INSTALLED,
-        location: PART_LOCATION.CLIENT_SITE,
-      };
-
-      if (installed_date !== undefined) {
-        updateData.installed_date = installed_date || new Date().toISOString().split('T')[0];
-      }
-
-      if (job_id !== undefined) {
-        updateData.installed_job_id = job_id;
-      }
-
-      const updatedPart = await base44.asServiceRole.entities.Part.update(part_id, updateData);
-
-      console.log('[markInstalled] Marked Part as installed:', { 
-        part_id, 
-        status: PART_STATUS.INSTALLED,
-        location: PART_LOCATION.CLIENT_SITE
-      });
-
-      if (updatedPart.project_id) {
-        await updateProjectActivity(base44, updatedPart.project_id, 'Part Installed');
-      }
-
-      return Response.json({ success: true, part: updatedPart });
-    }
-
-    // ========================================
-    // ACTION: bulkUpdateStatus (for batch operations)
-    // ========================================
-    if (action === 'bulkUpdateStatus') {
-      const { part_ids, status, location } = payload;
-
-      if (!part_ids || !Array.isArray(part_ids) || part_ids.length === 0) {
-        return Response.json({ error: 'part_ids array is required' }, { status: 400 });
-      }
-
-      if (!status) {
-        return Response.json({ error: 'status is required' }, { status: 400 });
-      }
-
-      const updatedParts = [];
-
-      for (const part_id of part_ids) {
-        try {
-          const part = await base44.asServiceRole.entities.Part.get(part_id);
-          if (!part) continue;
-
-          const updateData = { status };
-          if (location !== undefined) {
-            updateData.location = location;
-          }
-
-          const updated = await base44.asServiceRole.entities.Part.update(part_id, updateData);
-          updatedParts.push(updated);
-
-          if (updated.project_id) {
-            await updateProjectActivity(base44, updated.project_id, 'Parts Updated');
-          }
-        } catch (err) {
-          console.error(`Failed to update part ${part_id}:`, err);
+                    for (const pId of partIdsToUpdate) {
+                        const p = otherParts.find(op => op.id === pId) || part;
+                        const currentLinks = p.linked_logistics_jobs || [];
+                        if (!currentLinks.includes(logisticsJob.id)) {
+                             await base44.asServiceRole.entities.Part.update(pId, {
+                                 linked_logistics_jobs: [...currentLinks, logisticsJob.id]
+                             });
+                        }
+                    }
+                }
+            }
         }
-      }
 
-      console.log('[bulkUpdateStatus] Updated parts:', { 
-        count: updatedParts.length,
-        status,
-        location 
-      });
-
-      return Response.json({ success: true, parts: updatedParts });
+        return Response.json({ success: true, part });
+    } catch (error) {
+        return Response.json({ error: error.message }, { status: 500 });
     }
-
-    // ========================================
-    // ACTION: updateMetadata (for notes, attachments, etc.)
-    // ========================================
-    if (action === 'updateMetadata') {
-      const { part_id, notes, attachments, eta, tracking_url } = payload;
-
-      if (!part_id) {
-        return Response.json({ error: 'part_id is required' }, { status: 400 });
-      }
-
-      // Forbidden fields check
-      const forbiddenFields = ['status', 'location', 'supplier_id', 'purchase_order_id', 'vehicle_id'];
-      const passedForbidden = forbiddenFields.filter(f => payload[f] !== undefined);
-      if (passedForbidden.length > 0) {
-        console.error('❌ [updateMetadata] Forbidden fields passed:', passedForbidden);
-        return Response.json({ 
-          error: `Forbidden fields: ${passedForbidden.join(', ')}. Use updateMetadata only for notes, attachments, eta, tracking_url.` 
-        }, { status: 400 });
-      }
-
-      const part = await base44.asServiceRole.entities.Part.get(part_id);
-      if (!part) {
-        return Response.json({ error: 'Part not found' }, { status: 404 });
-      }
-
-      const updateData = {};
-      if (notes !== undefined) updateData.notes = notes;
-      if (attachments !== undefined) updateData.attachments = attachments;
-      if (eta !== undefined) updateData.eta = eta;
-      if (tracking_url !== undefined) updateData.tracking_url = tracking_url;
-
-      const updatedPart = await base44.asServiceRole.entities.Part.update(part_id, updateData);
-
-      console.log('[updateMetadata] Updated Part metadata:', { 
-        part_id, 
-        fields: Object.keys(updateData) 
-      });
-
-      return Response.json({ success: true, part: updatedPart });
-    }
-
-    return Response.json({ 
-      error: 'Invalid action. Supported: create, update, delete, assignToPurchaseOrder, markOrdered, markReceived, moveToStorage, assignToVehicle, markInstalled, bulkUpdateStatus, updateMetadata' 
-    }, { status: 400 });
-
-  } catch (error) {
-    console.error('[managePart] Error:', error);
-    return Response.json({ error: error.message }, { status: 500 });
-  }
 });

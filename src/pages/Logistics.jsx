@@ -3,7 +3,6 @@ import { base44 } from "@/api/base44Client";
 import { useDebounce } from "@/components/common/useDebounce";
 import { sameId } from "@/components/utils/id";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import * as purchaseOrdersApi from "@/components/api/purchaseOrdersApi";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
@@ -328,10 +327,18 @@ export default function Logistics() {
     if (newStatus === po.status) return;
 
     try {
-      const updatedPO = await purchaseOrdersApi.updateStatus({
+      const response = await base44.functions.invoke("managePurchaseOrder", {
+        action: "updateStatus",
         id: po.id,
-        status: newStatus
+        status: newStatus,
       });
+
+      if (!response?.data?.success) {
+        toast.error(response?.data?.error || "Failed to update PO status");
+        return;
+      }
+
+      const updatedPO = response.data.purchaseOrder;
       
       // Optimistically update cache
       queryClient.setQueryData(['purchaseOrders'], (prev = []) => {
@@ -342,18 +349,9 @@ export default function Logistics() {
       });
 
       toast.success(`Status updated to ${getStatusLabel('po', newStatus)}`);
-      
-      // Invalidate all PO-related caches
-      await Promise.all([
-        invalidatePurchaseOrderBundle(queryClient, po.id),
-        queryClient.invalidateQueries({ queryKey: ['purchaseOrder', po.id] }),
-        queryClient.invalidateQueries({ queryKey: ['purchaseOrders'] }),
-        updatedPO.project_id && queryClient.invalidateQueries({ queryKey: ['projectPurchaseOrders', updatedPO.project_id] }),
-        updatedPO.project_id && queryClient.invalidateQueries({ queryKey: ['projectPOLines', updatedPO.project_id] }),
-        queryClient.invalidateQueries({ queryKey: ['parts'] })
-      ].filter(Boolean));
+      await invalidatePurchaseOrderBundle(queryClient, po.id);
     } catch (error) {
-      toast.error(error.message || "Error updating PO status");
+      toast.error("Error updating PO status");
     }
   };
 
@@ -591,30 +589,32 @@ export default function Logistics() {
             </div>
             <Button
               onClick={async () => {
-                // Validate supplier exists
-                if (!suppliers || suppliers.length === 0) {
-                  toast.error("No suppliers available. Please create a supplier first.");
-                  return;
-                }
-
                 try {
-                  const newPO = await purchaseOrdersApi.createDraft({
-                    supplier_id: suppliers[0].id,
-                    project_id: null
-                  });
-                  
-                  // Optimistically add to cache
-                  queryClient.setQueryData(['purchaseOrders'], (prev = []) => {
-                    return [newPO, ...prev];
-                  });
-                  
-                  setSelectedPoId(newPO.id);
-                  toast.success("Draft Purchase Order created");
-                  
-                  // Invalidate caches
-                  queryClient.invalidateQueries({ queryKey: ['purchaseOrders'] });
+                  const response = await base44.functions.invoke(
+                    "managePurchaseOrder",
+                    {
+                      action: "create",
+                      supplier_id: suppliers[0]?.id || "temp",
+                      line_items: [{ name: "New Item", quantity: 1, unit_price: 0 }],
+                    }
+                  );
+
+                  if (response.data?.success && response.data?.purchaseOrder) {
+                    const newPO = response.data.purchaseOrder;
+                    
+                    // Optimistically add to cache
+                    queryClient.setQueryData(['purchaseOrders'], (prev = []) => {
+                      return [newPO, ...prev];
+                    });
+                    
+                    setSelectedPoId(newPO.id);
+                    toast.success("Draft Purchase Order created");
+                    await queryClient.invalidateQueries({ queryKey: ['purchaseOrders'] });
+                  } else {
+                    toast.error("Failed to create PO");
+                  }
                 } catch (error) {
-                  toast.error(error.message || "Failed to create Purchase Order");
+                  toast.error("Failed to create Purchase Order");
                 }
               }}
               className="bg-[#FAE008] text-[#111827] hover:bg-[#E5CF07] font-semibold shadow-sm hover:shadow-md transition h-9 px-4 text-sm rounded-xl"
