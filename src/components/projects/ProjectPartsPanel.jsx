@@ -69,20 +69,34 @@ export default function ProjectPartsPanel({ project, parts = [], inventoryByItem
     }
 
     try {
-      const response = await base44.functions.invoke("managePurchaseOrder", {
-        action: "getOrCreateProjectSupplierDraft",
+      // Find existing DRAFT PO for this project + supplier
+      const existingPOs = await base44.entities.PurchaseOrder.filter({
         project_id: project.id,
         supplier_id: supplierId,
+        status: 'draft'
       });
 
-      if (!response?.data?.success || !response.data.purchaseOrder) {
-        toast.error(response?.data?.error || "Failed to open/create Purchase Order");
+      if (existingPOs.length > 0) {
+        setActivePoId(existingPOs[0].id);
         return;
       }
 
-      const po = response.data.purchaseOrder;
-      setActivePoId(po.id);
+      // Create new draft PO
+      const supplier = suppliers.find(s => s.id === supplierId);
+      const newPO = await base44.entities.PurchaseOrder.create({
+        project_id: project.id,
+        supplier_id: supplierId,
+        supplier_name: supplier?.name || '',
+        status: 'draft',
+        delivery_method: 'delivery',
+        order_date: new Date().toISOString().split('T')[0]
+      });
+
+      setActivePoId(newPO.id);
+      queryClient.invalidateQueries({ queryKey: ['purchaseOrders'] });
+      toast.success('Draft Purchase Order created');
     } catch (error) {
+      console.error('Error opening/creating PO:', error);
       toast.error("Error opening/creating Purchase Order");
     }
   };
