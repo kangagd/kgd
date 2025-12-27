@@ -75,21 +75,23 @@ export default function SupplyLogistics() {
     retry: (count, err) => err?.status !== 429 && count < 2,
   });
 
-  // Group POs by status (normalize legacy statuses)
-  const draftPOs = purchaseOrders.filter(po => normaliseLegacyPoStatus(po.status) === PO_STATUS.DRAFT);
-  const onOrderPOs = purchaseOrders.filter(po => {
+  // Group POs by status (normalize legacy statuses) - exclude cancelled
+  const activePOs = purchaseOrders.filter(po => normaliseLegacyPoStatus(po.status) !== PO_STATUS.CANCELLED);
+  
+  const draftPOs = activePOs.filter(po => normaliseLegacyPoStatus(po.status) === PO_STATUS.DRAFT);
+  const onOrderPOs = activePOs.filter(po => {
     const normalized = normaliseLegacyPoStatus(po.status);
-    return [PO_STATUS.SENT, PO_STATUS.ON_ORDER, PO_STATUS.IN_TRANSIT].includes(normalized);
+    return [PO_STATUS.SENT, PO_STATUS.ON_ORDER].includes(normalized);
   });
-  const readyAtSupplierPOs = purchaseOrders.filter(po => {
+  const inTransitPOs = activePOs.filter(po => {
     const normalized = normaliseLegacyPoStatus(po.status);
-    return normalized === PO_STATUS.IN_LOADING_BAY && po.delivery_method === PO_DELIVERY_METHOD.PICKUP;
+    return normalized === PO_STATUS.IN_TRANSIT;
   });
-  const atDeliveryBayPOs = purchaseOrders.filter(po => {
+  const loadingBayPOs = activePOs.filter(po => {
     const normalized = normaliseLegacyPoStatus(po.status);
-    return normalized === PO_STATUS.IN_LOADING_BAY && po.delivery_method === PO_DELIVERY_METHOD.DELIVERY;
+    return normalized === PO_STATUS.IN_LOADING_BAY;
   });
-  const completedPOs = purchaseOrders.filter(po => {
+  const completedPOs = activePOs.filter(po => {
     const normalized = normaliseLegacyPoStatus(po.status);
     return [PO_STATUS.IN_STORAGE, PO_STATUS.IN_VEHICLE, PO_STATUS.INSTALLED].includes(normalized);
   });
@@ -164,9 +166,9 @@ export default function SupplyLogistics() {
     const statusMap = {
       'draft': PO_STATUS.DRAFT,
       'on_order': PO_STATUS.ON_ORDER,
-      'at_supplier': PO_STATUS.IN_LOADING_BAY,
+      'in_transit': PO_STATUS.IN_TRANSIT,
       'loading_bay': PO_STATUS.IN_LOADING_BAY,
-      'completed': PO_STATUS.IN_STORAGE
+      'completed': PO_STATUS.INSTALLED
     };
     
     const mappedStatus = statusMap[newStatus];
@@ -295,7 +297,7 @@ export default function SupplyLogistics() {
               <Card className="border border-gray-200">
                 <CardContent className="py-3">
                   <p className="text-xs text-gray-500">Active POs</p>
-                  <p className="text-xl font-semibold text-gray-900">{onOrderPOs.length + readyAtSupplierPOs.length + atDeliveryBayPOs.length}</p>
+                  <p className="text-xl font-semibold text-gray-900">{onOrderPOs.length + inTransitPOs.length + loadingBayPOs.length}</p>
                 </CardContent>
               </Card>
               <Card className="border border-gray-200">
@@ -361,8 +363,8 @@ export default function SupplyLogistics() {
                   )}
                 </Droppable>
 
-                {/* At Supplier */}
-                <Droppable droppableId="at_supplier">
+                {/* In Transit */}
+                <Droppable droppableId="in_transit">
                   {(provided, snapshot) => (
                     <div
                       ref={provided.innerRef}
@@ -372,12 +374,12 @@ export default function SupplyLogistics() {
                       }`}
                     >
                       <div className="mb-2 flex items-center justify-between">
-                        <span className="text-sm font-semibold text-[#111827]">At Supplier</span>
-                        <span className="text-xs text-[#6B7280]">{readyAtSupplierPOs.length}</span>
+                        <span className="text-sm font-semibold text-[#111827]">In Transit</span>
+                        <span className="text-xs text-[#6B7280]">{inTransitPOs.length}</span>
                       </div>
                       <div className="space-y-2 min-h-[100px]">
-                        {readyAtSupplierPOs.map((po, index) => <POCard key={po.id} po={po} index={index} />)}
-                        {!readyAtSupplierPOs.length && <div className="text-[11px] text-[#6B7280] text-center py-4">No POs</div>}
+                        {inTransitPOs.map((po, index) => <POCard key={po.id} po={po} index={index} />)}
+                        {!inTransitPOs.length && <div className="text-[11px] text-[#6B7280] text-center py-4">No POs</div>}
                         {provided.placeholder}
                       </div>
                     </div>
@@ -396,11 +398,11 @@ export default function SupplyLogistics() {
                     >
                       <div className="mb-2 flex items-center justify-between">
                         <span className="text-sm font-semibold text-[#111827]">Loading Bay</span>
-                        <span className="text-xs text-[#6B7280]">{atDeliveryBayPOs.length}</span>
+                        <span className="text-xs text-[#6B7280]">{loadingBayPOs.length}</span>
                       </div>
                       <div className="space-y-2 min-h-[100px]">
-                        {atDeliveryBayPOs.map((po, index) => <POCard key={po.id} po={po} index={index} />)}
-                        {!atDeliveryBayPOs.length && <div className="text-[11px] text-[#6B7280] text-center py-4">No POs</div>}
+                        {loadingBayPOs.map((po, index) => <POCard key={po.id} po={po} index={index} />)}
+                        {!loadingBayPOs.length && <div className="text-[11px] text-[#6B7280] text-center py-4">No POs</div>}
                         {provided.placeholder}
                       </div>
                     </div>
