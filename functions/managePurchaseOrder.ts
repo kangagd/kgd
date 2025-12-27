@@ -715,7 +715,7 @@ Deno.serve(async (req) => {
             }
 
             const oldStatus = existing.status;
-            const newStatus = normaliseLegacyPoStatus(status);
+            const newStatus = normalizedStatus;
 
             // Normalize canonical reference once from existing data
             let normalizedRef = resolvePoRef({
