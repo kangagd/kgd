@@ -137,11 +137,13 @@ export default function SupplyLogistics() {
 
   const updateStatusMutation = useMutation({
     mutationFn: async ({ poId, newStatus }) => {
+      console.log('[SupplyLogistics] Updating PO status:', { poId, newStatus });
       const response = await base44.functions.invoke('managePurchaseOrder', {
         action: 'updateStatus',
         id: poId,
         status: newStatus
       });
+      console.log('[SupplyLogistics] Update response:', response.data);
       if (!response.data?.success) {
         throw new Error(response.data?.error || 'Failed to update status');
       }
@@ -154,6 +156,7 @@ export default function SupplyLogistics() {
       toast.success('PO status updated');
     },
     onError: (error) => {
+      console.error('[SupplyLogistics] Update error:', error);
       toast.error(error.message || 'Failed to update status');
     }
   });
