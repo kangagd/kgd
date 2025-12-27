@@ -11,6 +11,7 @@ import { Checkbox } from "@/components/ui/checkbox";
 import PriceListItemForm from "../components/pricelist/PriceListItemForm";
 import StockAdjustmentModal from "../components/pricelist/StockAdjustmentModal";
 import PriceListCard from "../components/pricelist/PriceListCard";
+import { LOCATION_TYPE } from "@/components/domain/inventoryConfig";
 import { useMemo } from "react";
 import BackButton from "../components/common/BackButton";
 import { createPageUrl } from "@/utils";
@@ -63,9 +64,9 @@ export default function PriceList() {
       }
       const summary = map[iq.price_list_item_id];
       summary.total_on_hand += iq.quantity_on_hand || 0;
-      if (iq.location_type === 'vehicle') {
+      if (iq.location_type === LOCATION_TYPE.VEHICLE) {
         summary.total_in_vehicles += iq.quantity_on_hand || 0;
-      } else if (iq.location_type === 'warehouse') {
+      } else if (iq.location_type === LOCATION_TYPE.WAREHOUSE) {
         summary.total_in_warehouse += iq.quantity_on_hand || 0;
       }
     }

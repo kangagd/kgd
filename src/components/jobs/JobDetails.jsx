@@ -27,7 +27,7 @@ import CustomerEditModal from "../customers/CustomerEditModal";
 import RichTextField from "../common/RichTextField";
 import { determineJobStatus } from "./jobStatusHelper";
 import TechnicianAvatar, { TechnicianAvatarGroup } from "../common/TechnicianAvatar";
-
+import { PO_STATUS, LOGISTICS_LOCATION, getPoStatusLabel, normaliseLegacyPoStatus } from "../domain/logisticsConfig";
 
 import JobChat from "./JobChat";
 import JobMapView from "./JobMapView";
@@ -55,8 +55,10 @@ import {
 "@/components/ui/alert-dialog";
 import TasksPanel from "../tasks/TasksPanel";
 import QuotesSection from "../quotes/QuotesSection";
+import LinkedPartsCard from "./LinkedPartsCard";
 import JobItemsUsedModal from "./JobItemsUsedModal";
 import JobContactsPanel from "./JobContactsPanel";
+import ThirdPartyTradesInfo from "./ThirdPartyTradesInfo";
 import BackButton from "../common/BackButton";
 import SampleQuickActionsPanel from "./SampleQuickActionsPanel";
 import AttentionItemsPanel from "../attention/AttentionItemsPanel";
@@ -161,6 +163,7 @@ export default function JobDetails({ job: initialJob, onClose, onStatusChange, o
   const [showPaymentModal, setShowPaymentModal] = useState(false);
   const [showLinkInvoiceModal, setShowLinkInvoiceModal] = useState(false);
   const [showItemsUsedModal, setShowItemsUsedModal] = useState(false);
+  const [checkedItems, setCheckedItems] = useState(job.checked_items || {});
   const [minimizedVisits, setMinimizedVisits] = useState({});
 
   const [user, setUser] = useState(null);
@@ -174,6 +177,7 @@ export default function JobDetails({ job: initialJob, onClose, onStatusChange, o
   const [nextSteps, setNextSteps] = useState(job.next_steps || "");
   const [communicationWithClient, setCommunicationWithClient] = useState(job.communication_with_client || "");
   const [outcome, setOutcome] = useState(job.outcome || "");
+  const [logisticsOutcome, setLogisticsOutcome] = useState(job.logistics_outcome || "none");
   const [validationError, setValidationError] = useState("");
   const [isGeneratingReport, setIsGeneratingReport] = useState(false);
   const [previousReportData, setPreviousReportData] = useState(null);
@@ -251,7 +255,43 @@ export default function JobDetails({ job: initialJob, onClose, onStatusChange, o
     enabled: !!job.contract_id
   });
 
-  const isLogisticsJob = false; // Logistics feature removed
+  // Detect logistics job
+  const isLogisticsJob = !!(job.job_type === 'Logistics' || job.vehicle_id || job.purchase_order_id || job.third_party_trade_id);
+
+  // Fetch purchase order data for logistics jobs
+  const { data: purchaseOrder } = useQuery({
+    queryKey: ['purchaseOrder', job.purchase_order_id],
+    queryFn: () => base44.entities.PurchaseOrder.get(job.purchase_order_id),
+    enabled: !!job.purchase_order_id && isLogisticsJob
+  });
+
+  const { data: purchaseOrderLines = [] } = useQuery({
+    queryKey: ['purchaseOrderLines', job.purchase_order_id],
+    queryFn: () => base44.entities.PurchaseOrderLine.filter({ purchase_order_id: job.purchase_order_id }),
+    enabled: !!job.purchase_order_id && isLogisticsJob
+  });
+
+
+
+  // Fetch parts for logistics jobs
+  const { data: jobParts = [] } = useQuery({
+    queryKey: ['jobParts', job.id],
+    queryFn: async () => {
+      const parts = await base44.entities.Part.list();
+      return parts.filter(p => 
+        p.linked_logistics_jobs && 
+        Array.isArray(p.linked_logistics_jobs) && 
+        p.linked_logistics_jobs.includes(job.id)
+      );
+    },
+    enabled: isLogisticsJob
+  });
+
+  const { data: supplier } = useQuery({
+    queryKey: ["supplier", purchaseOrder?.supplier_id],
+    queryFn: () => base44.entities.Supplier.get(purchaseOrder.supplier_id),
+    enabled: !!purchaseOrder?.supplier_id && isLogisticsJob,
+  });
 
   const { data: xeroInvoice } = useQuery({
     queryKey: ['xeroInvoice', job.xero_invoice_id],
@@ -322,7 +362,61 @@ export default function JobDetails({ job: initialJob, onClose, onStatusChange, o
       // Check if this is a mistake check-in (less than 1 minute)
       const isMistake = durationMinutes < 1;
 
+      // Validation for logistics jobs
+      if (isLogisticsJob && !isMistake) {
+        if (!outcome) {
+          throw new Error("Please select an outcome before checking out.");
+        }
+        if (outcome === 'completed' && !allItemsChecked()) {
+          throw new Error("All items must be checked off before completing.");
+        }
+        
+        // Save checked items state to job when completing logistics
+        if (outcome === 'completed') {
+          await base44.entities.Job.update(job.id, { checked_items: checkedItems });
+          
+          // Apply logistics outcome if set
+          if (job.purchase_order_id && logisticsOutcome && logisticsOutcome !== 'none') {
+            try {
+              // 1. Update PO status
+              const newPoStatus = logisticsOutcome === 'in_storage' ? PO_STATUS.IN_STORAGE : PO_STATUS.IN_VEHICLE;
+              await base44.functions.invoke("managePurchaseOrder", {
+                action: "updateStatus",
+                id: job.purchase_order_id,
+                status: newPoStatus,
+              });
 
+              // 2. Move parts from Loading Bay
+              const linkedParts = await base44.entities.Part.filter({
+                purchase_order_id: job.purchase_order_id
+              });
+              
+              const partsInLoadingBay = linkedParts.filter(p => 
+                p.location === LOGISTICS_LOCATION.LOADING_BAY || 
+                p.location === "At Delivery Bay"
+              );
+
+              if (partsInLoadingBay.length > 0) {
+                const targetLocation = logisticsOutcome === 'in_storage' 
+                  ? LOGISTICS_LOCATION.STORAGE 
+                  : LOGISTICS_LOCATION.VEHICLE;
+
+                await base44.functions.invoke("recordStockMovement", {
+                  part_ids: partsInLoadingBay.map(p => p.id),
+                  from_location: LOGISTICS_LOCATION.LOADING_BAY,
+                  to_location: targetLocation,
+                });
+              }
+
+              queryClient.invalidateQueries({ queryKey: ['purchaseOrders'] });
+              queryClient.invalidateQueries({ queryKey: ['parts'] });
+            } catch (error) {
+              console.error('Error applying logistics outcome:', error);
+              toast.error('Failed to apply logistics outcome');
+            }
+          }
+        }
+      }
 
       // Only validate fields if this is a real visit and NOT a logistics job
       if (!isMistake && !isLogisticsJob) {
@@ -699,7 +793,30 @@ export default function JobDetails({ job: initialJob, onClose, onStatusChange, o
     }
   };
 
+  const handleLogisticsOutcomeChange = async (value) => {
+    setLogisticsOutcome(value);
+    logChange('logistics_outcome', job.logistics_outcome, value);
+    
+    try {
+      await base44.entities.Job.update(job.id, { logistics_outcome: value });
+      queryClient.invalidateQueries({ queryKey: ['job', job.id] });
+      queryClient.invalidateQueries({ queryKey: ['jobs'] });
+      toast.success('Logistics outcome updated');
+    } catch (error) {
+      toast.error('Failed to update logistics outcome');
+    }
+  };
 
+  const handleItemCheck = (itemId, checked) => {
+    setCheckedItems(prev => ({ ...prev, [itemId]: checked }));
+  };
+
+  const allItemsChecked = () => {
+    if (purchaseOrderLines.length === 0 && jobParts.length === 0) return true;
+    const totalItems = purchaseOrderLines.length + jobParts.length;
+    const checkedCount = Object.values(checkedItems).filter(Boolean).length;
+    return checkedCount === totalItems;
+  };
 
   const handleAssignedToChange = (emails) => {
     const newAssignedEmails = Array.isArray(emails) ? emails : emails ? [emails] : [];
@@ -1305,73 +1422,257 @@ export default function JobDetails({ job: initialJob, onClose, onStatusChange, o
               {/* Duplicate Warning */}
               <DuplicateWarningCard entityType="Job" record={job} />
 
-              {/* Job Contacts Panel */}
-              <JobContactsPanel job={job} />
-
-              {/* Sample Quick Actions */}
-              {user && <SampleQuickActionsPanel job={job} user={user} />}
-
-              {/* Tasks Panel */}
-              <Collapsible defaultOpen={false} className="border border-[#E5E7EB] shadow-sm rounded-lg bg-white">
-                <CollapsibleTrigger className="w-full flex items-center justify-between p-4 hover:bg-slate-50 transition-colors group">
-                  <h3 className="text-[16px] font-semibold text-[#111827] leading-[1.2]">Tasks</h3>
-                  <ChevronDown className="w-4 h-4 text-slate-500 transition-transform group-data-[state=open]:rotate-180" />
-                </CollapsibleTrigger>
-                <CollapsibleContent className="p-4 pt-0">
-                  <TasksPanel
-                    entityType="job"
-                    entityId={job.id}
-                    entityName={`Job #${job.job_number}`}
-                    entityNumber={job.job_number}
-                  />
-                </CollapsibleContent>
-              </Collapsible>
-
-              {job.project_id && projectJobs.length > 0 && (
-                <div className="bg-blue-50 border-2 border-blue-200 rounded-xl p-3 mb-4">
-                  <h3 className="text-[14px] font-semibold text-blue-900 leading-[1.4] mb-2 flex items-center gap-1.5">
-                    <FolderKanban className="w-4 h-4" />
-                    Project Job History ({projectJobs.length})
-                  </h3>
-                  <div className="space-y-2">
-                    {projectJobs.map((pJob) => (
-                      <div key={pJob.id} className="bg-white border border-blue-200 rounded-lg p-2.5 text-sm">
-                        <div className="flex items-start justify-between gap-2 mb-1.5">
-                          <div className="flex-1">
-                            <div className="font-bold text-slate-900">
-                              {pJob.job_type_name || 'Job'} #{pJob.job_number}
+              {isLogisticsJob ? (
+                <>
+                  {/* Order Items Checklist for Logistics Jobs */}
+                  {(purchaseOrderLines.length > 0 || jobParts.length > 0) && (
+                    <Card className="border border-[#E5E7EB] shadow-sm rounded-lg">
+                      <CardHeader className="bg-white px-4 py-3 border-b border-[#E5E7EB]">
+                        <CardTitle className="text-[16px] font-semibold text-[#111827] leading-[1.2]">
+                          Order Items
+                        </CardTitle>
+                      </CardHeader>
+                      <CardContent className="p-4 space-y-2">
+                        {purchaseOrderLines.map((line) => {
+                          const itemName = line.item_name || line.description || "Item";
+                          return (
+                            <div key={line.id} className="flex items-center gap-3 p-2 hover:bg-[#F9FAFB] rounded-lg transition-colors">
+                              <Checkbox
+                                checked={checkedItems[line.id] || false}
+                                onCheckedChange={(checked) => handleItemCheck(line.id, checked)}
+                              />
+                              <div className="flex-1">
+                                <span className="text-[14px] font-medium text-[#111827]">{itemName}</span>
+                                <span className="text-[14px] text-[#6B7280] ml-2">× {line.qty_ordered}</span>
+                              </div>
                             </div>
-                            {pJob.scheduled_date && (
-                              <div className="text-xs text-slate-600 flex items-center gap-1 mt-0.5">
-                                <Calendar className="w-3 h-3" />
-                                {format(parseISO(pJob.scheduled_date), 'MMM d, yyyy')}
+                          );
+                        })}
+                        {jobParts.map((part) => (
+                          <div key={part.id} className="flex items-center gap-3 p-2 hover:bg-[#F9FAFB] rounded-lg transition-colors">
+                            <Checkbox
+                              checked={checkedItems[part.id] || false}
+                              onCheckedChange={(checked) => handleItemCheck(part.id, checked)}
+                            />
+                            <div className="flex-1">
+                              <span className="text-[14px] font-medium text-[#111827]">{part.category}</span>
+                              {part.quantity_required && (
+                                <span className="text-[14px] text-[#6B7280] ml-2">× {part.quantity_required}</span>
+                              )}
+                            </div>
+                          </div>
+                        ))}
+                      </CardContent>
+                    </Card>
+                  )}
+
+                  {/* Notes from Purchase Order or Parts */}
+                  {(purchaseOrder?.notes || jobParts.some(p => p.notes)) && (
+                    <Card className="border border-[#E5E7EB] shadow-sm rounded-lg">
+                      <CardHeader className="bg-white px-4 py-3 border-b border-[#E5E7EB]">
+                        <CardTitle className="text-[16px] font-semibold text-[#111827] leading-[1.2]">
+                          Notes
+                        </CardTitle>
+                      </CardHeader>
+                      <CardContent className="p-4 space-y-3">
+                        {purchaseOrder?.notes && (
+                          <div>
+                            <div className="text-[12px] font-semibold text-[#6B7280] mb-1">Purchase Order Notes:</div>
+                            <p className="text-[14px] text-[#111827]">{purchaseOrder.notes}</p>
+                          </div>
+                        )}
+                        {jobParts.filter(p => p.notes).map((part) => (
+                          <div key={part.id}>
+                            <div className="text-[12px] font-semibold text-[#6B7280] mb-1">{part.category} Notes:</div>
+                            <p className="text-[14px] text-[#111827]">{part.notes}</p>
+                          </div>
+                        ))}
+                      </CardContent>
+                    </Card>
+                  )}
+
+                  {/* Check In/Out Section for Logistics */}
+                  {!isTechnician && (
+                    <div className="flex flex-col gap-2">
+                      {!activeCheckIn ? (
+                        <Button
+                          onClick={handleCheckIn}
+                          disabled={checkInMutation.isPending}
+                          className="w-full bg-[#FAE008] hover:bg-[#E5CF07] text-[#111827] h-11 font-semibold text-base rounded-lg shadow-sm hover:shadow-md transition-all"
+                        >
+                          <LogIn className="w-5 h-5 mr-2" />
+                          {checkInMutation.isPending ? 'Checking In...' : 'Check In'}
+                        </Button>
+                      ) : (
+                        <div className="bg-blue-50 border border-blue-200 rounded-lg p-3">
+                          <div className="flex items-center gap-2 text-blue-700">
+                            <Timer className="w-4 h-4" />
+                            <span className="text-sm font-semibold">
+                              Checked in at {format(new Date(activeCheckIn.check_in_time), 'h:mm a')}
+                            </span>
+                          </div>
+                        </div>
+                      )}
+                      {totalJobTime > 0 && (
+                        <div className="bg-[#F8F9FA] border border-[#E5E7EB] rounded-lg p-3">
+                          <div className="flex items-center justify-between">
+                            <span className="text-sm text-[#6B7280] font-semibold">Total Time:</span>
+                            <span className="text-sm font-bold text-[#111827]">{totalJobTime.toFixed(1)}h</span>
+                          </div>
+                        </div>
+                      )}
+                    </div>
+                  )}
+
+                  {/* Logistics Outcome Selector */}
+                  {!activeCheckIn && job.status !== 'Completed' && (
+                    <Card className="border border-[#E5E7EB] shadow-sm rounded-lg">
+                      <CardHeader className="bg-white px-4 py-3 border-b border-[#E5E7EB]">
+                        <CardTitle className="text-[16px] font-semibold text-[#111827] leading-[1.2]">
+                          Stock Outcome
+                        </CardTitle>
+                      </CardHeader>
+                      <CardContent className="p-4">
+                        <Label className="block text-[13px] md:text-[14px] font-medium text-[#4B5563] mb-1.5">
+                          Where should stock go after completion?
+                        </Label>
+                        <Select value={logisticsOutcome} onValueChange={handleLogisticsOutcomeChange}>
+                          <SelectTrigger className="h-11 text-sm border-2 border-slate-300 focus:border-[#fae008] focus:ring-2 focus:ring-[#fae008]/20 rounded-xl font-medium">
+                            <SelectValue placeholder="Select destination" />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="none">No stock movement yet</SelectItem>
+                            <SelectItem value="in_storage">Move to Storage</SelectItem>
+                            <SelectItem value="in_vehicle">Move to Vehicle</SelectItem>
+                          </SelectContent>
+                        </Select>
+                      </CardContent>
+                    </Card>
+                  )}
+
+                  {/* Show applied outcome for completed jobs */}
+                  {job.status === 'Completed' && job.logistics_outcome && job.logistics_outcome !== 'none' && (
+                    <div className="bg-green-50 border border-green-200 rounded-lg p-3">
+                      <div className="flex items-center gap-2 text-green-700">
+                        <Package className="w-4 h-4" />
+                        <span className="text-sm font-semibold">
+                          Outcome applied: {job.logistics_outcome === 'in_storage' ? 'In Storage' : 'In Vehicle'} (PO updated & parts moved)
+                        </span>
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Outcome for Logistics Jobs - Only Complete and Reschedule */}
+                  {activeCheckIn && (
+                    <div>
+                      <Label className="block text-[13px] md:text-[14px] font-medium text-[#4B5563] mb-1.5">Outcome *</Label>
+                      <Select value={outcome} onValueChange={handleOutcomeChange}>
+                        <SelectTrigger className="h-11 text-sm border-2 border-slate-300 focus:border-[#fae008] focus:ring-2 focus:ring-[#fae008]/20 rounded-xl font-medium">
+                          <SelectValue placeholder="Select outcome" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="completed">Complete</SelectItem>
+                          <SelectItem value="return_visit_required">Reschedule</SelectItem>
+                        </SelectContent>
+                      </Select>
+                      {!allItemsChecked() && outcome === 'completed' && (
+                        <div className="bg-red-50 border border-red-200 rounded-lg p-2 mt-2 flex items-start gap-2">
+                          <AlertCircle className="w-4 h-4 text-red-600 mt-0.5 flex-shrink-0" />
+                          <span className="text-sm text-red-700">All items must be checked off before completing</span>
+                        </div>
+                      )}
+                    </div>
+                  )}
+
+                  {activeCheckIn && !isTechnician && (
+                    <div className="pt-3 border-t-2">
+                      <Button
+                        onClick={handleCheckOut}
+                        disabled={checkOutMutation.isPending || (outcome === 'completed' && !allItemsChecked())}
+                        className="w-full bg-blue-600 hover:bg-blue-700 h-11 font-semibold text-base rounded-xl shadow-md hover:shadow-lg transition-all disabled:opacity-50"
+                      >
+                        <LogOut className="w-4 h-4 mr-2" />
+                        {checkOutMutation.isPending ? 'Checking Out...' : 'Check Out'}
+                      </Button>
+                    </div>
+                  )}
+                </>
+              ) : (
+                <>
+                  {/* Standard Job Details */}
+                  {/* Linked Parts Card - Logistics */}
+                  <LinkedPartsCard job={job} />
+
+                  {/* Job Contacts Panel */}
+                  <JobContactsPanel job={job} />
+
+                  {/* Sample Quick Actions */}
+                  {user && <SampleQuickActionsPanel job={job} user={user} />}
+
+                  {/* Sample Quick Actions */}
+                  {user && <SampleQuickActionsPanel job={job} user={user} />}
+
+                  {/* Tasks Panel */}
+                  <Collapsible defaultOpen={false} className="border border-[#E5E7EB] shadow-sm rounded-lg bg-white">
+                    <CollapsibleTrigger className="w-full flex items-center justify-between p-4 hover:bg-slate-50 transition-colors group">
+                      <h3 className="text-[16px] font-semibold text-[#111827] leading-[1.2]">Tasks</h3>
+                      <ChevronDown className="w-4 h-4 text-slate-500 transition-transform group-data-[state=open]:rotate-180" />
+                    </CollapsibleTrigger>
+                    <CollapsibleContent className="p-4 pt-0">
+                      <TasksPanel
+                        entityType="job"
+                        entityId={job.id}
+                        entityName={`Job #${job.job_number}`}
+                        entityNumber={job.job_number}
+                      />
+                    </CollapsibleContent>
+                  </Collapsible>
+
+                  {job.project_id && projectJobs.length > 0 && (
+                    <div className="bg-blue-50 border-2 border-blue-200 rounded-xl p-3 mb-4">
+                      <h3 className="text-[14px] font-semibold text-blue-900 leading-[1.4] mb-2 flex items-center gap-1.5">
+                        <FolderKanban className="w-4 h-4" />
+                        Project Job History ({projectJobs.length})
+                      </h3>
+                      <div className="space-y-2">
+                        {projectJobs.map((pJob) => (
+                          <div key={pJob.id} className="bg-white border border-blue-200 rounded-lg p-2.5 text-sm">
+                            <div className="flex items-start justify-between gap-2 mb-1.5">
+                              <div className="flex-1">
+                                <div className="font-bold text-slate-900">
+                                  {pJob.job_type_name || 'Job'} #{pJob.job_number}
+                                </div>
+                                {pJob.scheduled_date && (
+                                  <div className="text-xs text-slate-600 flex items-center gap-1 mt-0.5">
+                                    <Calendar className="w-3 h-3" />
+                                    {format(parseISO(pJob.scheduled_date), 'MMM d, yyyy')}
+                                  </div>
+                                )}
+                              </div>
+                              {pJob.status && (
+                                <Badge className={`${statusColors[pJob.status]} text-xs font-semibold border hover:opacity-100`}>
+                                  {pJob.status}
+                                </Badge>
+                              )}
+                            </div>
+                            {pJob.notes && pJob.notes !== "<p><br></p>" && (
+                              <div className="text-xs text-slate-600 mt-2 pt-2 border-t border-blue-100">
+                                <div className="font-semibold mb-0.5">Notes:</div>
+                                <div className="line-clamp-2" dangerouslySetInnerHTML={{ __html: pJob.notes }} />
                               </div>
                             )}
+                            {pJob.outcome && (
+                              <Badge className={`${outcomeColors[pJob.outcome]} text-xs font-semibold border mt-1.5 hover:opacity-100`}>
+                                Outcome: {pJob.outcome?.replace(/_/g, ' ') || pJob.outcome}
+                              </Badge>
+                            )}
                           </div>
-                          {pJob.status && (
-                            <Badge className={`${statusColors[pJob.status]} text-xs font-semibold border hover:opacity-100`}>
-                              {pJob.status}
-                            </Badge>
-                          )}
-                        </div>
-                        {pJob.notes && pJob.notes !== "<p><br></p>" && (
-                          <div className="text-xs text-slate-600 mt-2 pt-2 border-t border-blue-100">
-                            <div className="font-semibold mb-0.5">Notes:</div>
-                            <div className="line-clamp-2" dangerouslySetInnerHTML={{ __html: pJob.notes }} />
-                          </div>
-                        )}
-                        {pJob.outcome && (
-                          <Badge className={`${outcomeColors[pJob.outcome]} text-xs font-semibold border mt-1.5 hover:opacity-100`}>
-                            Outcome: {pJob.outcome?.replace(/_/g, ' ') || pJob.outcome}
-                          </Badge>
-                        )}
+                        ))}
                       </div>
-                    ))}
-                  </div>
-                </div>
-              )}
+                    </div>
+                  )}
 
-              <div>
+                  <div>
                 <RichTextField
                   label="Job Info"
                   value={additionalInfo}
@@ -1401,101 +1702,103 @@ export default function JobDetails({ job: initialJob, onClose, onStatusChange, o
                 />
               </div>
 
-              {!isTechnician && (
-                <div className="flex flex-col gap-2">
-                  {!activeCheckIn ? (
-                    <Button
-                      onClick={handleCheckIn}
-                      disabled={checkInMutation.isPending}
-                      className="w-full bg-[#FAE008] hover:bg-[#E5CF07] text-[#111827] h-11 font-semibold text-base rounded-lg shadow-sm hover:shadow-md transition-all"
-                    >
-                      <LogIn className="w-5 h-5 mr-2" />
-                      {checkInMutation.isPending ? 'Checking In...' : 'Check In'}
-                    </Button>
-                  ) : (
-                    <div className="bg-blue-50 border border-blue-200 rounded-lg p-3">
-                      <div className="flex items-center gap-2 text-blue-700">
-                        <Timer className="w-4 h-4" />
-                        <span className="text-sm font-semibold">
-                          Checked in at {format(new Date(activeCheckIn.check_in_time), 'h:mm a')}
-                        </span>
-                      </div>
+                  {!isTechnician && (
+                    <div className="flex flex-col gap-2">
+                      {!activeCheckIn ? (
+                        <Button
+                          onClick={handleCheckIn}
+                          disabled={checkInMutation.isPending}
+                          className="w-full bg-[#FAE008] hover:bg-[#E5CF07] text-[#111827] h-11 font-semibold text-base rounded-lg shadow-sm hover:shadow-md transition-all"
+                        >
+                          <LogIn className="w-5 h-5 mr-2" />
+                          {checkInMutation.isPending ? 'Checking In...' : 'Check In'}
+                        </Button>
+                      ) : (
+                        <div className="bg-blue-50 border border-blue-200 rounded-lg p-3">
+                          <div className="flex items-center gap-2 text-blue-700">
+                            <Timer className="w-4 h-4" />
+                            <span className="text-sm font-semibold">
+                              Checked in at {format(new Date(activeCheckIn.check_in_time), 'h:mm a')}
+                            </span>
+                          </div>
+                        </div>
+                      )}
+                      {totalJobTime > 0 && (
+                        <div className="bg-[#F8F9FA] border border-[#E5E7EB] rounded-lg p-3">
+                          <div className="flex items-center justify-between">
+                            <span className="text-sm text-[#6B7280] font-semibold">Total Time:</span>
+                            <span className="text-sm font-bold text-[#111827]">{totalJobTime.toFixed(1)}h</span>
+                          </div>
+                        </div>
+                      )}
                     </div>
                   )}
-                  {totalJobTime > 0 && (
-                    <div className="bg-[#F8F9FA] border border-[#E5E7EB] rounded-lg p-3">
-                      <div className="flex items-center justify-between">
-                        <span className="text-sm text-[#6B7280] font-semibold">Total Time:</span>
-                        <span className="text-sm font-bold text-[#111827]">{totalJobTime.toFixed(1)}h</span>
-                      </div>
-                    </div>
+
+                  {jobSummaries.length > 0 && (
+                    <Collapsible defaultOpen={true} className="pt-3 border-t-2">
+                      <CollapsibleTrigger className="flex items-center justify-between w-full group bg-slate-50 border-2 border-slate-200 rounded-xl p-3 hover:bg-slate-100 transition-colors">
+                        <h4 className="text-[14px] font-semibold text-[#111827] leading-[1.4]">Previous Visit Summaries ({jobSummaries.length})</h4>
+                        <ChevronDown className="w-4 h-4 text-slate-500 transition-transform group-data-[state=open]:rotate-180" />
+                      </CollapsibleTrigger>
+                      
+                      <CollapsibleContent className="pt-3 space-y-3">
+                        {jobSummaries.map((summary) => (
+                          <div key={summary.id} className="bg-white border-2 border-slate-200 rounded-xl p-3">
+                            <div className="flex items-center justify-between mb-3">
+                              <span className="font-bold text-[#000000]">{summary.technician_name}</span>
+                              <span className="text-xs text-slate-500 font-medium">
+                                {format(new Date(summary.check_out_time), 'MMM d, yyyy h:mm a')}
+                              </span>
+                            </div>
+                            
+                            {summary.outcome && (
+                              <Badge className={`${outcomeColors[summary.outcome]} mb-3 font-semibold border-2 hover:opacity-100`}>
+                                {summary.outcome?.replace(/_/g, ' ') || summary.outcome}
+                              </Badge>
+                            )}
+
+                            <div className="space-y-2">
+                              {summary.overview && (
+                                <div>
+                                  <div className="text-xs font-bold text-slate-500 mb-1">Work Performed:</div>
+                                  <div className="text-sm text-slate-700" dangerouslySetInnerHTML={{ __html: summary.overview }} />
+                                </div>
+                              )}
+
+                              {summary.issues_found && (
+                                <div>
+                                  <div className="text-xs font-bold text-slate-500 mb-1">Issues Found:</div>
+                                  <div className="text-sm text-slate-700" dangerouslySetInnerHTML={{ __html: summary.issues_found }} />
+                                </div>
+                              )}
+
+                              {summary.resolution && (
+                                <div>
+                                  <div className="text-xs font-bold text-slate-500 mb-1">Resolution:</div>
+                                  <div className="text-sm text-slate-700" dangerouslySetInnerHTML={{ __html: summary.resolution }} />
+                                </div>
+                              )}
+                              
+                              {summary.next_steps && (
+                                <div>
+                                  <div className="text-xs font-bold text-slate-500 mb-1">Next Steps:</div>
+                                  <div className="text-sm text-slate-700" dangerouslySetInnerHTML={{ __html: summary.next_steps }} />
+                                </div>
+                              )}
+                              
+                              {summary.communication_with_client && (
+                                <div>
+                                  <div className="text-xs font-bold text-slate-500 mb-1">Communication:</div>
+                                  <div className="text-sm text-slate-700" dangerouslySetInnerHTML={{ __html: summary.communication_with_client }} />
+                                </div>
+                              )}
+                            </div>
+                          </div>
+                        ))}
+                      </CollapsibleContent>
+                    </Collapsible>
                   )}
-                </div>
-              )}
-
-              {jobSummaries.length > 0 && (
-                <Collapsible defaultOpen={true} className="pt-3 border-t-2">
-                  <CollapsibleTrigger className="flex items-center justify-between w-full group bg-slate-50 border-2 border-slate-200 rounded-xl p-3 hover:bg-slate-100 transition-colors">
-                    <h4 className="text-[14px] font-semibold text-[#111827] leading-[1.4]">Previous Visit Summaries ({jobSummaries.length})</h4>
-                    <ChevronDown className="w-4 h-4 text-slate-500 transition-transform group-data-[state=open]:rotate-180" />
-                  </CollapsibleTrigger>
-                  
-                  <CollapsibleContent className="pt-3 space-y-3">
-                    {jobSummaries.map((summary) => (
-                      <div key={summary.id} className="bg-white border-2 border-slate-200 rounded-xl p-3">
-                        <div className="flex items-center justify-between mb-3">
-                          <span className="font-bold text-[#000000]">{summary.technician_name}</span>
-                          <span className="text-xs text-slate-500 font-medium">
-                            {format(new Date(summary.check_out_time), 'MMM d, yyyy h:mm a')}
-                          </span>
-                        </div>
-                        
-                        {summary.outcome && (
-                          <Badge className={`${outcomeColors[summary.outcome]} mb-3 font-semibold border-2 hover:opacity-100`}>
-                            {summary.outcome?.replace(/_/g, ' ') || summary.outcome}
-                          </Badge>
-                        )}
-
-                        <div className="space-y-2">
-                          {summary.overview && (
-                            <div>
-                              <div className="text-xs font-bold text-slate-500 mb-1">Work Performed:</div>
-                              <div className="text-sm text-slate-700" dangerouslySetInnerHTML={{ __html: summary.overview }} />
-                            </div>
-                          )}
-
-                          {summary.issues_found && (
-                            <div>
-                              <div className="text-xs font-bold text-slate-500 mb-1">Issues Found:</div>
-                              <div className="text-sm text-slate-700" dangerouslySetInnerHTML={{ __html: summary.issues_found }} />
-                            </div>
-                          )}
-
-                          {summary.resolution && (
-                            <div>
-                              <div className="text-xs font-bold text-slate-500 mb-1">Resolution:</div>
-                              <div className="text-sm text-slate-700" dangerouslySetInnerHTML={{ __html: summary.resolution }} />
-                            </div>
-                          )}
-                          
-                          {summary.next_steps && (
-                            <div>
-                              <div className="text-xs font-bold text-slate-500 mb-1">Next Steps:</div>
-                              <div className="text-sm text-slate-700" dangerouslySetInnerHTML={{ __html: summary.next_steps }} />
-                            </div>
-                          )}
-                          
-                          {summary.communication_with_client && (
-                            <div>
-                              <div className="text-xs font-bold text-slate-500 mb-1">Communication:</div>
-                              <div className="text-sm text-slate-700" dangerouslySetInnerHTML={{ __html: summary.communication_with_client }} />
-                            </div>
-                          )}
-                        </div>
-                      </div>
-                    ))}
-                  </CollapsibleContent>
-                </Collapsible>
+                </>
               )}
             </TabsContent>
 
@@ -2137,7 +2440,81 @@ export default function JobDetails({ job: initialJob, onClose, onStatusChange, o
                   )}
                 </div>
 
+                {isLogisticsJob && (
+                  <>
+                    {/* Auto-load files from purchase order attachments */}
+                    {purchaseOrder?.attachments && purchaseOrder.attachments.length > 0 && (
+                      <Card className="border border-[#E5E7EB] shadow-sm rounded-lg">
+                        <CardHeader className="bg-white px-4 py-3 border-b border-[#E5E7EB]">
+                          <CardTitle className="text-[14px] font-semibold text-[#111827]">Purchase Order Attachments</CardTitle>
+                        </CardHeader>
+                        <CardContent className="p-4">
+                          <div className="space-y-2">
+                            {purchaseOrder.attachments.map((url, idx) => (
+                              <a
+                                key={idx}
+                                href={url}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                className="flex items-center gap-2 p-2 hover:bg-[#F9FAFB] rounded-lg transition-colors text-[#2563EB] hover:text-[#1E40AF]"
+                              >
+                                <FileText className="w-4 h-4" />
+                                <span className="text-sm">Document {idx + 1}</span>
+                                <ExternalLink className="w-3 h-3 ml-auto" />
+                              </a>
+                            ))}
+                          </div>
+                        </CardContent>
+                      </Card>
+                    )}
+                    {/* Auto-load files from parts attachments */}
+                    {jobParts.some(p => p.attachments && p.attachments.length > 0) && (
+                      <Card className="border border-[#E5E7EB] shadow-sm rounded-lg">
+                        <CardHeader className="bg-white px-4 py-3 border-b border-[#E5E7EB]">
+                          <CardTitle className="text-[14px] font-semibold text-[#111827]">Part Attachments</CardTitle>
+                        </CardHeader>
+                        <CardContent className="p-4">
+                          <div className="space-y-3">
+                            {jobParts.filter(p => p.attachments && p.attachments.length > 0).map((part) => (
+                              <div key={part.id}>
+                                <div className="text-[12px] font-semibold text-[#6B7280] mb-1">{part.category}</div>
+                                <div className="space-y-2">
+                                  {part.attachments.map((url, idx) => (
+                                    <a
+                                      key={idx}
+                                      href={url}
+                                      target="_blank"
+                                      rel="noopener noreferrer"
+                                      className="flex items-center gap-2 p-2 hover:bg-[#F9FAFB] rounded-lg transition-colors text-[#2563EB] hover:text-[#1E40AF]"
+                                    >
+                                      <FileText className="w-4 h-4" />
+                                      <span className="text-sm">Document {idx + 1}</span>
+                                      <ExternalLink className="w-3 h-3 ml-auto" />
+                                    </a>
+                                  ))}
+                                </div>
+                              </div>
+                            ))}
+                          </div>
+                        </CardContent>
+                      </Card>
+                    )}
+                    {/* Additional uploads */}
+                    <div className="pt-3 border-t-2">
+                      <EditableFileUpload
+                        files={job.other_documents || []}
+                        onFilesChange={handleOtherDocumentsChange}
+                        accept=".pdf,.doc,.docx,.xls,.xlsx,.txt,image/*"
+                        multiple={true}
+                        icon={FileText}
+                        label="Additional Documents"
+                        emptyText="Upload documents"
+                      />
+                    </div>
+                  </>
+                )}
 
+                {!isLogisticsJob && (
                   <>
                     <EditableFileUpload
                       files={job.image_urls || []}

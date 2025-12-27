@@ -30,6 +30,7 @@ import {
     History,
     Clock,
     Shield,
+    Truck,
     Car,
     Package
 } from "lucide-react";
@@ -69,6 +70,8 @@ const navigationSections = [
     items: [
       { title: "Fleet", url: createPageUrl("Fleet"), icon: Car },
       { title: "Tools Admin", url: createPageUrl("ToolsAdmin"), icon: Wrench },
+      { title: "Hardware Library", url: createPageUrl("PartsHardwareAdmin"), icon: Package },
+      { title: "Supply & Logistics", url: createPageUrl("SupplyLogistics"), icon: Truck },
       { title: "Samples Library", url: createPageUrl("SamplesLibrary"), icon: TestTube2 },
       { title: "Suppliers", url: createPageUrl("Suppliers"), icon: Package },
       { title: "Price List", url: createPageUrl("PriceList"), icon: DollarSign },
@@ -91,6 +94,7 @@ const technicianNavigationItems = [
   { title: "Schedule", url: createPageUrl("Schedule"), icon: Calendar },
   { title: "Jobs", url: createPageUrl("Jobs"), icon: Briefcase },
   { title: "Tasks", url: createPageUrl("Tasks"), icon: CheckSquare },
+  { title: "Logistics", url: createPageUrl("Logistics"), icon: Truck },
   { title: "Suppliers", url: createPageUrl("Suppliers"), icon: Package },
   { title: "Photos", url: createPageUrl("Photos"), icon: ImageIcon },
   { title: "Price List", url: createPageUrl("PriceList"), icon: DollarSign },

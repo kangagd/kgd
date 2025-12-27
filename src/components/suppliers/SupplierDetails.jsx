@@ -1,11 +1,26 @@
 import React, { useState } from "react";
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { ArrowLeft, Edit, Phone, Mail, MapPin, Clock, Info, Truck } from "lucide-react";
+import { ArrowLeft, Edit, Phone, Mail, MapPin, ShoppingCart, Clock, Info, Truck } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
+import PurchaseOrdersList from "./PurchaseOrdersList";
+import SupplierPurchaseOrderModal from "../purchasing/SupplierPurchaseOrderModal";
 import BackButton from "../common/BackButton";
 
 export default function SupplierDetails({ supplier, onClose, onEdit }) {
+  const [poModalOpen, setPoModalOpen] = useState(false);
+  const [selectedPO, setSelectedPO] = useState(null);
+
+  const handleEditPO = (po) => {
+    setSelectedPO(po);
+    setPoModalOpen(true);
+  };
+
+  const handleCloseModal = () => {
+    setPoModalOpen(false);
+    setSelectedPO(null);
+  };
+
   return (
     <div className="space-y-6">
       <Card className="border-2 border-slate-200 shadow-lg rounded-2xl">
@@ -102,14 +117,32 @@ export default function SupplierDetails({ supplier, onClose, onEdit }) {
         </CardContent>
       </Card>
 
-      {/* Purchase Orders section removed */}
+      {/* Purchase Orders */}
       <Card className="border-2 border-slate-200 shadow-lg rounded-2xl">
-        <CardContent className="p-8 text-center">
-          <div className="text-[14px] text-[#9CA3AF]">
-            Purchase Order management has been removed. New purchasing system coming soon.
-          </div>
+        <CardHeader className="border-b border-slate-100 p-4 md:p-6">
+            <div className="flex items-center justify-between">
+                <CardTitle className="text-lg font-semibold">Purchase Orders</CardTitle>
+                <Button 
+                  size="sm"
+                  onClick={() => setPoModalOpen(true)}
+                  className="bg-[#FAE008] text-[#111827] hover:bg-[#E5CF07]"
+                >
+                  <ShoppingCart className="w-3.5 h-3.5 mr-2" />
+                  Create Order
+                </Button>
+            </div>
+        </CardHeader>
+        <CardContent className="p-4 md:p-6">
+            <PurchaseOrdersList supplierId={supplier.id} onSelectPO={handleEditPO} />
         </CardContent>
       </Card>
+
+      <SupplierPurchaseOrderModal 
+        open={poModalOpen}
+        onClose={handleCloseModal}
+        supplier={supplier}
+        purchaseOrderToEdit={selectedPO}
+      />
     </div>
   );
 }
