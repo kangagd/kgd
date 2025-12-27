@@ -204,34 +204,7 @@ export default function ProjectDetails({ project: initialProject, onClose, onEdi
     enabled: !!project.id
   });
 
-  const { data: parts = [] } = useQuery({
-    queryKey: ['projectParts', project.id],
-    queryFn: () => base44.entities.Part.filter({ project_id: project.id }),
-    enabled: !!project.id
-  });
 
-  const { data: priceListItems = [] } = useQuery({
-    queryKey: ['priceListItems'],
-    queryFn: () => base44.entities.PriceListItem.list(),
-  });
-
-  const { data: inventoryQuantities = [] } = useQuery({
-    queryKey: ['inventoryQuantities'],
-    queryFn: () => base44.entities.InventoryQuantity.list(),
-  });
-
-  const inventoryByItem = React.useMemo(() => {
-    const map = {};
-    for (const item of priceListItems) {
-      map[item.id] = (map[item.id] || 0) + (item.stock_level || 0);
-    }
-    for (const iq of inventoryQuantities) {
-      if (iq.price_list_item_id && iq.location_type === 'vehicle') {
-        map[iq.price_list_item_id] = (map[iq.price_list_item_id] || 0) + (iq.quantity_on_hand || 0);
-      }
-    }
-    return map;
-  }, [priceListItems, inventoryQuantities]);
 
   const { data: customer } = useQuery({
     queryKey: ['customer', project.customer_id],
@@ -292,11 +265,7 @@ export default function ProjectDetails({ project: initialProject, onClose, onEdi
     enabled: !!project.id
   });
 
-  const { data: tradeRequirements = [] } = useQuery({
-    queryKey: ['projectTrades', project.id],
-    queryFn: () => base44.entities.ProjectTradeRequirement.filter({ project_id: project.id }),
-    enabled: !!project.id
-  });
+
 
   const { data: projectTasks = [] } = useQuery({
     queryKey: ['projectTasks', project.id],
@@ -307,9 +276,8 @@ export default function ProjectDetails({ project: initialProject, onClose, onEdi
   // Auto-expand panels based on content
   React.useEffect(() => {
     if (projectContacts.length > 0 && !contactsOpen) setContactsOpen(true);
-    if (tradeRequirements.length > 0 && !tradesOpen) setTradesOpen(true);
     if (((project.image_urls && project.image_urls.length > 0) || project.quote_url || project.invoice_url || (project.other_documents && project.other_documents.length > 0) || handoverReports.length > 0) && !mediaDocsOpen) setMediaDocsOpen(true);
-  }, [projectContacts, tradeRequirements, project.image_urls, project.quote_url, project.invoice_url, project.other_documents, handoverReports]);
+  }, [projectContacts, project.image_urls, project.quote_url, project.invoice_url, project.other_documents, handoverReports]);
 
   const { data: xeroInvoices = [] } = useQuery({
     queryKey: ['projectXeroInvoices', project.id],
@@ -336,11 +304,7 @@ export default function ProjectDetails({ project: initialProject, onClose, onEdi
     enabled: !!project.id
   });
 
-  const { data: purchaseOrders = [] } = useQuery({
-    queryKey: ['projectPurchaseOrders', project.id],
-    queryFn: () => base44.entities.PurchaseOrder.filter({ project_id: project.id }),
-    enabled: !!project.id
-  });
+
 
   const { data: projectEmails = [] } = useQuery({
     queryKey: ['projectEmails', project.id],
@@ -1549,7 +1513,7 @@ Format as HTML bullet points using <ul> and <li> tags. Include only the most cri
                 {showRequirementsTab && (
                   <TabsTrigger value="requirements" className="flex-1 whitespace-nowrap">Requirements</TabsTrigger>
                 )}
-                <TabsTrigger value="parts" className="flex-1 whitespace-nowrap">Parts</TabsTrigger>
+
                 <TabsTrigger value="invoices" className="flex-1 whitespace-nowrap">Invoices</TabsTrigger>
                 {(user?.role === 'admin' || user?.role === 'manager') && (
                   <TabsTrigger value="financials" className="flex-1 whitespace-nowrap">Financials</TabsTrigger>
@@ -1872,13 +1836,7 @@ Format as HTML bullet points using <ul> and <li> tags. Include only the most cri
             </TabsContent>
           )}
 
-          <TabsContent value="parts" className="mt-3">
-            <PartsTab 
-              project={project}
-              parts={parts}
-              inventoryByItem={inventoryByItem}
-            />
-          </TabsContent>
+
 
           <TabsContent value="activity" className="mt-3">
             <ActivityTab 
