@@ -142,7 +142,7 @@ export default function SupplyLogistics() {
         validStatuses: Object.values(PO_STATUS)
       });
       
-      const response = await base44.functions.invoke('managePurchaseOrderV2', {
+      const response = await base44.functions.invoke('managePurchaseOrder', {
         action: 'updateStatus',
         id: poId,
         status: newStatus
