@@ -186,7 +186,7 @@ export default function SupplyLogistics() {
       'on_order': PO_STATUS.ON_ORDER,
       'in_transit': PO_STATUS.IN_TRANSIT,
       'loading_bay': PO_STATUS.IN_LOADING_BAY,
-      'completed': PO_STATUS.INSTALLED
+      'completed': PO_STATUS.IN_STORAGE
     };
     
     const mappedStatus = statusMap[columnId];
