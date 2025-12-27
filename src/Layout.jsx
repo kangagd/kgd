@@ -75,6 +75,8 @@ const navigationSections = [
       { title: "Samples Library", url: createPageUrl("SamplesLibrary"), icon: TestTube2 },
       { title: "Suppliers", url: createPageUrl("Suppliers"), icon: Package },
       { title: "Price List", url: createPageUrl("PriceList"), icon: DollarSign },
+      { title: "Purchase Orders V2", url: createPageUrl("PurchaseOrdersV2"), icon: Package },
+      { title: "Inventory V2", url: createPageUrl("InventoryV2"), icon: Package },
     ]
   },
   {
