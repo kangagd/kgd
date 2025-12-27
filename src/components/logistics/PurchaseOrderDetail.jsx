@@ -783,38 +783,38 @@ export default function PurchaseOrderDetail({ poId, onClose, mode = "page" }) {
                 )}
                 <div className="flex gap-2">
                 {can(PERMISSIONS.DELETE_PO) && (
-                 <Button
-                   type="button"
-                   onClick={handleDelete}
-                   disabled={deletePOMutation.isPending}
-                   variant="outline"
-                   className="text-red-600 hover:text-red-700 hover:bg-red-50"
-                 >
-                   <Trash className="w-4 h-4 mr-2" />
-                   Delete
-                 </Button>
+                <Button
+                 type="button"
+                 onClick={handleDelete}
+                 disabled={deletePOMutation.isPending}
+                 variant="outline"
+                 className="text-red-600 hover:text-red-700 hover:bg-red-50"
+                >
+                 <Trash className="w-4 h-4 mr-2" />
+                 Delete
+                </Button>
                 )}
                 {!isModal && (
-                 <>
-                   <Button
-                     type="button"
-                     onClick={handleSave}
-                     disabled={!formData.po_reference?.trim()}
-                     className="bg-[#F3F4F6] text-[#111827] hover:bg-[#E5E7EB]"
-                   >
-                     <Save className="w-4 h-4 mr-2" />
-                     Save
-                   </Button>
-                   <Button
-                     type="button"
-                     onClick={handleSendToSupplier}
-                     disabled={!formData.po_reference?.trim()}
-                     className="bg-[#FAE008] text-[#111827] hover:bg-[#E5CF07]"
-                   >
-                     <Send className="w-4 h-4 mr-2" />
-                     Send to Supplier
-                   </Button>
-                 </>
+                <>
+                 <Button
+                   type="button"
+                   onClick={handleSave}
+                   disabled={!formData.po_reference?.trim()}
+                   className="bg-[#F3F4F6] text-[#111827] hover:bg-[#E5E7EB]"
+                 >
+                   <Save className="w-4 h-4 mr-2" />
+                   Save
+                 </Button>
+                 <Button
+                   type="button"
+                   onClick={handleSendToSupplier}
+                   disabled={!formData.po_reference?.trim()}
+                   className="bg-[#FAE008] text-[#111827] hover:bg-[#E5CF07]"
+                 >
+                   <Send className="w-4 h-4 mr-2" />
+                   Send to Supplier
+                 </Button>
+                </>
                 )}
                 </div>
                 </div>
