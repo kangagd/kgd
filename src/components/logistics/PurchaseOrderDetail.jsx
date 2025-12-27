@@ -919,9 +919,10 @@ export default function PurchaseOrderDetail({ poId, onClose, mode = "page" }) {
             <div>
               <Label>Delivery Method</Label>
               <Select
-                value={formData.delivery_method || "placeholder"}
+                value={formData.delivery_method || ""}
                 onValueChange={async (value) => {
-                  setFormData({ ...formData, delivery_method: value === "placeholder" ? "" : value });
+                  if (!value) return;
+                  setFormData({ ...formData, delivery_method: value });
                   setIsDirty(true);
                   await handleSave();
                 }}
@@ -931,7 +932,6 @@ export default function PurchaseOrderDetail({ poId, onClose, mode = "page" }) {
                   <SelectValue placeholder="Select delivery method" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="placeholder">Select delivery method</SelectItem>
                   {PO_DELIVERY_METHOD_OPTIONS.map((method) => (
                     <SelectItem key={method} value={method}>
                       {method}
