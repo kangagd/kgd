@@ -848,6 +848,7 @@ export default function PurchaseOrderDetail({ poId, onClose, mode = "page" }) {
                     setFormData({ ...formData, po_reference: e.target.value });
                     setIsDirty(true);
                   }}
+                  onBlur={handleSave}
                   disabled={!isDraft}
                   placeholder="e.g. KGD-RSH-4634"
                 />
@@ -862,6 +863,7 @@ export default function PurchaseOrderDetail({ poId, onClose, mode = "page" }) {
                   setFormData({ ...formData, name: e.target.value });
                   setIsDirty(true);
                 }}
+                onBlur={handleSave}
                 disabled={!isDraft}
                 placeholder="e.g., Garage Door Parts Order"
               />
@@ -902,9 +904,10 @@ export default function PurchaseOrderDetail({ poId, onClose, mode = "page" }) {
               <Label>Project (Optional)</Label>
               <Select
                 value={formData.project_id || "none"}
-                onValueChange={(value) => {
+                onValueChange={async (value) => {
                   setFormData({ ...formData, project_id: value === "none" ? "" : value });
                   setIsDirty(true);
+                  await handleSave();
                 }}
                 disabled={!isDraft}
               >
@@ -926,9 +929,10 @@ export default function PurchaseOrderDetail({ poId, onClose, mode = "page" }) {
               <Label>Delivery Method</Label>
               <Select
                 value={formData.delivery_method || "placeholder"}
-                onValueChange={(value) => {
+                onValueChange={async (value) => {
                   setFormData({ ...formData, delivery_method: value === "placeholder" ? "" : value });
                   setIsDirty(true);
+                  await handleSave();
                 }}
                 disabled={!isDraft}
               >
@@ -1017,6 +1021,7 @@ export default function PurchaseOrderDetail({ poId, onClose, mode = "page" }) {
                     setFormData({ ...formData, eta: e.target.value });
                     setIsDirty(true);
                   }}
+                  onBlur={handleSave}
                   className="pl-9"
                 />
               </div>
@@ -1080,6 +1085,7 @@ export default function PurchaseOrderDetail({ poId, onClose, mode = "page" }) {
                   setFormData({ ...formData, notes: e.target.value });
                   setIsDirty(true);
                 }}
+                onBlur={handleSave}
                 disabled={!isDraft}
                 placeholder="Add any notes or special instructions..."
                 className="min-h-[80px]"
