@@ -468,10 +468,10 @@ Deno.serve(async (req) => {
                     order_reference: generatedRef,
                     reference: generatedRef,
                 });
-                console.log('[managePurchaseOrder:create] Generated PO Reference:', generatedRef);
+                console.log('[managePurchaseOrder] action=create Generated PO Reference:', generatedRef);
             }
             
-            console.log('[managePurchaseOrder:create] Created PO:', {
+            console.log('[managePurchaseOrder] action=create Created PO:', {
                 id: po.id,
                 po_reference: po.po_reference,
                 supplier_name: po.supplier_name,
@@ -535,7 +535,7 @@ Deno.serve(async (req) => {
             }
 
             // Logging: Received values
-            console.log("[managePurchaseOrder:update] Received:", {
+            console.log("[managePurchaseOrder] action=update Received:", {
                 id,
                 top_level: { po_reference, po_number, order_reference, reference, name },
                 data: { po_reference: data?.po_reference, po_number: data?.po_number, order_reference: data?.order_reference, reference: data?.reference, name: data?.name }
@@ -608,7 +608,7 @@ Deno.serve(async (req) => {
             }
 
             // Logging: Final payload
-            console.log("[managePurchaseOrder:update] Update payload:", {
+            console.log("[managePurchaseOrder] action=update Update payload:", {
                 po_reference: updateData.po_reference,
                 name: updateData.name
             });
@@ -616,7 +616,7 @@ Deno.serve(async (req) => {
             const updatedPO = await base44.asServiceRole.entities.PurchaseOrder.update(id, updateData);
 
             // Logging: Result after DB update
-            console.log("[managePurchaseOrder:update] DB result:", {
+            console.log("[managePurchaseOrder] action=update DB result:", {
               po_reference: updatedPO.po_reference,
               name: updatedPO.name
             });
@@ -691,7 +691,7 @@ Deno.serve(async (req) => {
             const normalizedStatus = normaliseLegacyPoStatus(status);
             const validStatuses = Object.values(PO_STATUS);
             
-            console.log('[managePurchaseOrder:updateStatus] Status validation:', {
+            console.log('[managePurchaseOrder] action=updateStatus Status validation:', {
                 received: status,
                 normalized: normalizedStatus,
                 validStatuses
@@ -725,7 +725,7 @@ Deno.serve(async (req) => {
             // If still no reference, generate one from ID
             if (!normalizedRef) {
                 normalizedRef = `PO-${existing.id.slice(0, 8)}`;
-                console.log('[managePurchaseOrder:updateStatus] Generated missing po_reference:', normalizedRef);
+                console.log('[managePurchaseOrder] action=updateStatus Generated missing po_reference:', normalizedRef);
             }
 
             // 🔒 PERMANENT IDENTITY PRESERVATION - Explicit carry-forward
@@ -762,7 +762,7 @@ Deno.serve(async (req) => {
                 updateData.expected_date = expected_date ?? eta ?? null;
             }
 
-            console.log('[managePurchaseOrder:updateStatus] Preserving identity:', {
+            console.log('[managePurchaseOrder] action=updateStatus Preserving identity:', {
                 poId: id,
                 po_reference: updateData.po_reference,
                 supplier_name: updateData.supplier_name,
@@ -771,7 +771,7 @@ Deno.serve(async (req) => {
 
             const updatedPO = await base44.asServiceRole.entities.PurchaseOrder.update(id, updateData);
             
-            console.log('[managePurchaseOrder:updateStatus] Result:', {
+            console.log('[managePurchaseOrder] action=updateStatus Result:', {
                 po_reference: updatedPO.po_reference,
                 supplier_name: updatedPO.supplier_name,
                 name: updatedPO.name
@@ -994,7 +994,7 @@ Deno.serve(async (req) => {
                     order_reference: generatedRef,
                     reference: generatedRef,
                 });
-                console.log('[managePurchaseOrder:getOrCreateProjectSupplierDraft] Generated PO Reference:', generatedRef);
+                console.log('[managePurchaseOrder] action=getOrCreateProjectSupplierDraft Generated PO Reference:', generatedRef);
             }
             
             // Initialize with empty line_items array
