@@ -284,7 +284,7 @@ export default function PurchaseOrderDetail({ poId, onClose, mode = "page" }) {
       project_id: formData.project_id || po?.project_id || null,
       delivery_method: formData.delivery_method || po?.delivery_method || null,
       notes: formData.notes || "",
-      ...setPoEtaPayload(formData.eta || po?.expected_date),
+      expected_date: formData.eta || null,
       attachments: formData.attachments || [],
     };
 
@@ -416,7 +416,7 @@ export default function PurchaseOrderDetail({ poId, onClose, mode = "page" }) {
         project_id: formData.project_id || po?.project_id || null,
         delivery_method: formData.delivery_method || po?.delivery_method || null,
         notes: formData.notes || "",
-        ...setPoEtaPayload(formData.eta || po?.expected_date),
+        expected_date: formData.eta || null,
         attachments: formData.attachments || [],
       };
 
