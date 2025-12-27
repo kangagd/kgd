@@ -1,6 +1,4 @@
 import { base44 } from "@/api/base44Client";
-import { isLegacyPurchasingReadOnly, logLegacyReadOnlyBlock } from "@/components/config/featureFlags";
-import { toast } from "sonner";
 
 /**
  * Thin client wrapper for Purchase Order operations.
@@ -13,8 +11,6 @@ import { toast } from "sonner";
  * - components/purchasing/ReceivePurchaseOrderModal.js (uses direct entity calls)
  * 
  * These components bypass the managePurchaseOrder command flow and should be phased out.
- * 
- * READ-ONLY MODE: When LEGACY_PURCHASING_READ_ONLY flag is enabled, all mutations are blocked.
  */
 
 export async function createDraft({ 
@@ -26,12 +22,6 @@ export async function createDraft({
   expected_date, 
   attachments 
 }) {
-  if (isLegacyPurchasingReadOnly()) {
-    logLegacyReadOnlyBlock('purchaseOrdersApi', 'createDraft', { supplier_id, project_id });
-    toast.info("Legacy purchasing is read-only. Use Purchasing V2.");
-    throw new Error('Legacy purchasing is read-only');
-  }
-  
   const payload = {
     action: 'createDraft',
     supplier_id,
@@ -61,12 +51,6 @@ export async function updateIdentity({
   notes, 
   expected_date 
 }) {
-  if (isLegacyPurchasingReadOnly()) {
-    logLegacyReadOnlyBlock('purchaseOrdersApi', 'updateIdentity', { id });
-    toast.info("Legacy purchasing is read-only. Use Purchasing V2.");
-    throw new Error('Legacy purchasing is read-only');
-  }
-  
   const payload = {
     action: 'updateIdentity',
     id,
@@ -88,12 +72,6 @@ export async function updateIdentity({
 }
 
 export async function updateStatus({ id, status }) {
-  if (isLegacyPurchasingReadOnly()) {
-    logLegacyReadOnlyBlock('purchaseOrdersApi', 'updateStatus', { id, status });
-    toast.info("Legacy purchasing is read-only. Use Purchasing V2.");
-    throw new Error('Legacy purchasing is read-only');
-  }
-  
   const payload = {
     action: 'updateStatus',
     id,
@@ -111,12 +89,6 @@ export async function updateStatus({ id, status }) {
 }
 
 export async function setLineItems({ id, line_items }) {
-  if (isLegacyPurchasingReadOnly()) {
-    logLegacyReadOnlyBlock('purchaseOrdersApi', 'setLineItems', { id, line_items_count: line_items?.length });
-    toast.info("Legacy purchasing is read-only. Use Purchasing V2.");
-    throw new Error('Legacy purchasing is read-only');
-  }
-  
   const payload = {
     action: 'setLineItems',
     id,
@@ -134,12 +106,6 @@ export async function setLineItems({ id, line_items }) {
 }
 
 export async function deletePurchaseOrder({ id }) {
-  if (isLegacyPurchasingReadOnly()) {
-    logLegacyReadOnlyBlock('purchaseOrdersApi', 'deletePurchaseOrder', { id });
-    toast.info("Legacy purchasing is read-only. Use Purchasing V2.");
-    throw new Error('Legacy purchasing is read-only');
-  }
-  
   const payload = {
     action: 'delete',
     id

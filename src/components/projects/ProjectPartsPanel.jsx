@@ -3,7 +3,6 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { AlertTriangle, CheckCircle2, Package, Truck, ExternalLink, Plus, ShoppingCart, MoreVertical, Building2 } from "lucide-react";
 import * as purchaseOrdersApi from "@/components/api/purchaseOrdersApi";
-import { isLegacyPurchasingReadOnly } from "@/components/config/featureFlags";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -226,12 +225,6 @@ export default function ProjectPartsPanel({ project, parts = [], inventoryByItem
           <p className="text-[13px] text-[#6B7280]">
             Track parts needed and ready for installation.
           </p>
-          {isLegacyPurchasingReadOnly() && (
-            <p className="text-[11px] text-amber-600 mt-1 flex items-center gap-1">
-              <AlertTriangle className="w-3 h-3" />
-              Legacy purchasing is read-only. Use Purchasing V2.
-            </p>
-          )}
         </div>
         <div className="flex gap-2">
           {missingCount > 0 && (
@@ -243,7 +236,6 @@ export default function ProjectPartsPanel({ project, parts = [], inventoryByItem
               size="sm"
               className="bg-[#FAE008] text-[#111827] hover:bg-[#E5CF07] font-semibold"
               title="Create a Purchase Order for missing parts"
-              disabled={isLegacyPurchasingReadOnly()}
             >
               <ShoppingCart className="w-4 h-4 mr-1" />
               Create PO
@@ -257,7 +249,6 @@ export default function ProjectPartsPanel({ project, parts = [], inventoryByItem
             size="sm"
             className="bg-[#FAE008] text-[#111827] hover:bg-[#E5CF07] font-semibold"
             title="Add a Part required for this project"
-            disabled={isLegacyPurchasingReadOnly()}
           >
             <Plus className="w-4 h-4 mr-1" />
             Add Part
@@ -275,7 +266,6 @@ export default function ProjectPartsPanel({ project, parts = [], inventoryByItem
                     e.stopPropagation();
                     setShowCreatePODialog(true);
                   }}
-                  disabled={isLegacyPurchasingReadOnly()}
                 >
                   <ShoppingCart className="w-4 h-4 mr-2" />
                   Create PO
