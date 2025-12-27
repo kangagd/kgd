@@ -158,7 +158,7 @@ export default function SupplyLogistics() {
       console.log('[SupplyLogistics] Normalized status:', normalizedStatus);
       
       const response = await base44.functions.invoke('managePurchaseOrder', {
-        action: 'updateStatus',
+        action: 'updateStatusV2',
         id: poId,
         status: normalizedStatus
       });
