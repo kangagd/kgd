@@ -687,8 +687,17 @@ Deno.serve(async (req) => {
                 return Response.json({ error: 'id and status are required' }, { status: 400 });
             }
 
+            // Normalize the status first before validation
+            const normalizedStatus = normaliseLegacyPoStatus(status);
             const validStatuses = Object.values(PO_STATUS);
-            if (!validStatuses.includes(status)) {
+            
+            console.log('[managePurchaseOrder:updateStatus] Status validation:', {
+                received: status,
+                normalized: normalizedStatus,
+                validStatuses
+            });
+            
+            if (!validStatuses.includes(normalizedStatus)) {
                 return Response.json({ error: `Invalid status. Must be one of: ${validStatuses.join(', ')}` }, { status: 400 });
             }
 
