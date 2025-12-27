@@ -7,7 +7,7 @@ import { AddIconButton } from "@/components/ui/AddIconButton";
 import { Plus, X } from "lucide-react";
 import MeasurementsForm from "../jobs/MeasurementsForm";
 import InitialVisitSummary from "./InitialVisitSummary";
-
+import ThirdPartyTradesPanel from "./ThirdPartyTradesPanel";
 import ProjectContactsPanel from "./ProjectContactsPanel";
 import RichTextField from "../common/RichTextField";
 
@@ -157,7 +157,18 @@ export default function RequirementsTab({ project, onUpdateProject, canEdit }) {
       {/* Project Contacts */}
       <ProjectContactsPanel project={project} />
 
-
+      {/* Third Party Required */}
+      <Card className="border border-[#E5E7EB] shadow-sm">
+        <CardHeader className="pb-3">
+          <CardTitle className="text-[16px] font-semibold text-[#111827]">Third Party Trades</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <ThirdPartyTradesPanel 
+            projectId={project.id}
+            canEdit={canEdit}
+          />
+        </CardContent>
+      </Card>
     </div>
   );
 }

@@ -5,7 +5,7 @@ import { sameId } from "@/components/utils/id";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Plus, Search, User, Filter, Eye } from "lucide-react";
+import { Plus, Search, SlidersHorizontal, User, Filter, Eye, AlertTriangle } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { 
   ProjectStatusBadge, 
@@ -23,6 +23,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { Label } from "@/components/ui/label";
 import ProjectForm from "../components/projects/ProjectForm";
 import ProjectDetails from "../components/projects/ProjectDetails";
 import EntityModal from "../components/common/EntityModal.jsx";
@@ -42,6 +43,7 @@ export default function Projects() {
   const [searchTerm, setSearchTerm] = useState("");
   const debouncedSearchTerm = useDebounce(searchTerm, 250);
   const [stageFilter, setStageFilter] = useState("all");
+  const [partsStatusFilter, setPartsStatusFilter] = useState("all");
   const [startDate, setStartDate] = useState("");
   const [endDate, setEndDate] = useState("");
   const [sortBy, setSortBy] = useState("created_date");
@@ -68,12 +70,13 @@ export default function Projects() {
   const isAdmin = user?.role === 'admin';
   const isManager = user?.role === 'manager';
   const isAdminOrManager = isAdmin || isManager;
+  const isViewer = user?.role === 'viewer';
   const canCreateProjects = isAdminOrManager;
 
   const { data: allProjects = [], isLoading } = useQuery({
     queryKey: ['projects'],
     queryFn: () => base44.entities.Project.list('-created_date'),
-    refetchInterval: 15000,
+    refetchInterval: 15000, // Refetch every 15 seconds
   });
 
   const projects = allProjects.filter(p => !p.deleted_at && p.status !== "Lost");
@@ -86,6 +89,56 @@ export default function Projects() {
     }
   });
 
+  const { data: allParts = [] } = useQuery({
+    queryKey: ['allParts'],
+    queryFn: () => base44.entities.Part.list()
+  });
+
+  const { data: priceListItems = [] } = useQuery({
+    queryKey: ['priceListItems'],
+    queryFn: () => base44.entities.PriceListItem.list(),
+  });
+
+  const { data: inventoryQuantities = [] } = useQuery({
+    queryKey: ['inventoryQuantities'],
+    queryFn: () => base44.entities.InventoryQuantity.list(),
+  });
+
+  const { data: allTradeRequirements = [] } = useQuery({
+    queryKey: ['allTradeRequirements'],
+    queryFn: () => base44.entities.ProjectTradeRequirement.list(),
+  });
+
+  const inventoryByItem = useMemo(() => {
+    const map = {};
+    // Warehouse from PriceList
+    for (const item of priceListItems) {
+      map[item.id] = (map[item.id] || 0) + (item.stock_level || 0);
+    }
+    // Vehicles from InventoryQuantity
+    for (const iq of inventoryQuantities) {
+      if (iq.price_list_item_id && iq.location_type === 'vehicle') {
+        map[iq.price_list_item_id] = (map[iq.price_list_item_id] || 0) + (iq.quantity_on_hand || 0);
+      }
+    }
+    return map;
+  }, [priceListItems, inventoryQuantities]);
+
+  const detectShortage = useCallback((part) => {
+    // Cancelled or installed parts are not shortages
+    if (part.status === 'cancelled' || part.status === 'installed') {
+      return false;
+    }
+    
+    // CRITICAL: Part is only available if physically at warehouse or vehicle
+    const isAvailable = 
+      (part.status === 'in_storage' || part.status === 'in_vehicle') &&
+      part.location !== 'supplier';
+    
+    // If not available, it's a shortage
+    return !isAvailable;
+  }, []);
+
   const createProjectMutation = useMutation({
     mutationFn: async (data) => {
       const res = await base44.functions.invoke('manageProject', { action: 'create', data });
@@ -96,6 +149,7 @@ export default function Projects() {
       queryClient.invalidateQueries({ queryKey: ['projects'] });
       setEditingProject(null);
       setShowForm(false);
+      // Navigate to the new project page
       navigate(`${createPageUrl("Projects")}?projectId=${newProject.id}`);
     }
   });
@@ -116,8 +170,10 @@ export default function Projects() {
 
   const deleteProjectMutation = useMutation({
     mutationFn: async (projectId) => {
+      // Get the project to check for linked email thread
       const project = projects.find(p => p.id === projectId);
       
+      // If project has a linked email thread, unlink it
       if (project?.source_email_thread_id) {
         try {
           await base44.entities.EmailThread.update(project.source_email_thread_id, {
@@ -153,6 +209,7 @@ export default function Projects() {
         setSelectedProject(project);
       }
     } else if (!projectId && selectedProject) {
+      // Clear selected project when projectId is removed from URL
       setSelectedProject(null);
     }
   }, [projects, selectedProject, location.search]);
@@ -188,6 +245,10 @@ export default function Projects() {
       
       const matchesStage = stageFilter === "all" || project.status === stageFilter;
       
+      const projectParts = allParts.filter(p => sameId(p.project_id, project.id));
+      const matchesPartsStatus = partsStatusFilter === "all" || 
+        projectParts.some(p => p.status === partsStatusFilter);
+      
       let matchesDateRange = true;
       if (startDate || endDate) {
         const createdAt = project.created_at || project.created_date || project.createdDate;
@@ -198,7 +259,7 @@ export default function Projects() {
 
       const matchesDuplicateFilter = !showDuplicatesOnly || project.is_potential_duplicate;
       
-      return matchesSearch && matchesStage && matchesDateRange && matchesDuplicateFilter;
+      return matchesSearch && matchesStage && matchesPartsStatus && matchesDateRange && matchesDuplicateFilter;
     })
     .sort((a, b) => {
       if (sortBy === "created_date") {
@@ -206,28 +267,41 @@ export default function Projects() {
         const dateB = b.created_at || b.created_date || b.createdDate;
         return new Date(dateB) - new Date(dateA);
       } else if (sortBy === "stage") {
-        const stages = ["Lead", "Initial Site Visit", "Quote Sent", "Quote Approved", "Final Measure", "Scheduled", "Completed", "Warranty"];
+        const stages = ["Lead", "Initial Site Visit", "Quote Sent", "Quote Approved", "Final Measure", "Parts Ordered", "Scheduled", "Completed", "Warranty"];
         return stages.indexOf(a.status) - stages.indexOf(b.status);
-      }
-      return 0;
-    }), [projects, debouncedSearchTerm, stageFilter, startDate, endDate, sortBy, showDuplicatesOnly]);
+        }
+        return 0;
+        }), [projects, debouncedSearchTerm, stageFilter, partsStatusFilter, startDate, endDate, sortBy, showDuplicatesOnly, allParts]);
 
-  const getJobCount = useCallback((projectId) => {
-    return allJobs.filter(j => sameId(j.project_id, projectId) && !j.deleted_at).length;
-  }, [allJobs]);
+        const getJobCount = useCallback((projectId) => {
+          return allJobs.filter(j => sameId(j.project_id, projectId) && !j.deleted_at).length;
+        }, [allJobs]);
 
-  const getNextJob = useCallback((projectId) => {
-    const projectJobs = allJobs.filter(j => sameId(j.project_id, projectId) && !j.deleted_at && j.scheduled_date);
-    const futureJobs = projectJobs.filter(j => new Date(j.scheduled_date) >= new Date());
-    if (futureJobs.length === 0) return null;
-    return futureJobs.sort((a, b) => new Date(a.scheduled_date) - new Date(b.scheduled_date))[0];
-  }, [allJobs]);
+        const getNextJob = useCallback((projectId) => {
+          const projectJobs = allJobs.filter(j => sameId(j.project_id, projectId) && !j.deleted_at && j.scheduled_date);
+        const futureJobs = projectJobs.filter(j => new Date(j.scheduled_date) >= new Date());
+        if (futureJobs.length === 0) return null;
+        return futureJobs.sort((a, b) => new Date(a.scheduled_date) - new Date(b.scheduled_date))[0];
+        }, [allJobs]);
 
-  const extractSuburb = useCallback((address) => {
-    if (!address) return null;
-    const parts = address.split(',').map(p => p.trim());
-    return parts.length > 1 ? parts[parts.length - 2] : null;
-  }, []);
+        const extractSuburb = useCallback((address) => {
+        if (!address) return null;
+        const parts = address.split(',').map(p => p.trim());
+        return parts.length > 1 ? parts[parts.length - 2] : null;
+        }, []);
+
+        const buildScopeSummary = useCallback((project) => {
+        if (!project.doors || project.doors.length === 0) return null;
+        const doorCount = project.doors.length;
+        const firstDoor = project.doors[0];
+        const doorType = firstDoor.type || 'doors';
+        const dimensions = firstDoor.height && firstDoor.width ? `${firstDoor.height} x ${firstDoor.width}` : '';
+        return `${doorCount}x ${doorType}${dimensions ? ` • ${dimensions}` : ''}`;
+        }, []);
+
+        const hasRequiredTrades = useCallback((projectId) => {
+          return allTradeRequirements.some(t => sameId(t.project_id, projectId) && t.is_required);
+        }, [allTradeRequirements]);
 
   if (showForm) {
     return (
@@ -315,6 +389,7 @@ export default function Projects() {
                 <TabsTrigger value="Quote Sent" className="whitespace-nowrap flex-shrink-0">Quote Sent</TabsTrigger>
                 <TabsTrigger value="Quote Approved" className="whitespace-nowrap flex-shrink-0">Quote Approved</TabsTrigger>
                 <TabsTrigger value="Final Measure" className="whitespace-nowrap flex-shrink-0">Final Measure</TabsTrigger>
+                <TabsTrigger value="Parts Ordered" className="whitespace-nowrap flex-shrink-0">Parts Ordered</TabsTrigger>
                 <TabsTrigger value="Scheduled" className="whitespace-nowrap flex-shrink-0">Scheduled</TabsTrigger>
                 <TabsTrigger value="Completed" className="whitespace-nowrap flex-shrink-0">Completed</TabsTrigger>
                 <TabsTrigger value="Warranty" className="whitespace-nowrap flex-shrink-0">Warranty</TabsTrigger>
@@ -330,8 +405,9 @@ export default function Projects() {
             />
             <label
               htmlFor="project-duplicates-filter"
-              className="text-sm text-[#4B5563] cursor-pointer"
+              className="text-sm text-[#4B5563] cursor-pointer flex items-center gap-1.5"
             >
+              <AlertTriangle className="w-3.5 h-3.5 text-[#D97706]" />
               Show only potential duplicates
             </label>
           </div>
@@ -351,9 +427,24 @@ export default function Projects() {
                       <SelectItem value="Quote Sent">Quote Sent</SelectItem>
                       <SelectItem value="Quote Approved">Quote Approved</SelectItem>
                       <SelectItem value="Final Measure">Final Measure</SelectItem>
+                      <SelectItem value="Parts Ordered">Parts Ordered</SelectItem>
                       <SelectItem value="Scheduled">Scheduled</SelectItem>
                       <SelectItem value="Completed">Completed</SelectItem>
                       <SelectItem value="Warranty">Warranty</SelectItem>
+                    </SelectContent>
+                  </Select>
+
+                  <Select value={partsStatusFilter} onValueChange={setPartsStatusFilter}>
+                    <SelectTrigger className="w-full md:w-[180px] h-10">
+                      <SelectValue placeholder="Parts Status" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="all">All Statuses</SelectItem>
+                      <SelectItem value="Pending">Pending</SelectItem>
+                      <SelectItem value="Ordered">Ordered</SelectItem>
+                      <SelectItem value="Back-ordered">Back-ordered</SelectItem>
+                      <SelectItem value="Delivered">Delivered</SelectItem>
+                      <SelectItem value="Cancelled">Cancelled</SelectItem>
                     </SelectContent>
                   </Select>
 
@@ -383,11 +474,12 @@ export default function Projects() {
                     className="w-full md:w-[160px] h-10"
                   />
 
-                  {(stageFilter !== "all" || startDate || endDate || sortBy !== "created_date") && (
+                  {(stageFilter !== "all" || partsStatusFilter !== "all" || startDate || endDate || sortBy !== "created_date") && (
                     <Button
                       variant="outline"
                       onClick={() => {
                         setStageFilter("all");
+                        setPartsStatusFilter("all");
                         setStartDate("");
                         setEndDate("");
                         setSortBy("created_date");
@@ -423,6 +515,7 @@ export default function Projects() {
             const jobCount = getJobCount(project.id);
             const nextJob = getNextJob(project.id);
             const suburb = extractSuburb(project.address);
+            const scopeSummary = buildScopeSummary(project);
             const freshness = getProjectFreshnessBadge(project);
             
             const freshnessColors = {
@@ -454,10 +547,16 @@ export default function Projects() {
                   <Eye className="w-4 h-4 text-[#6B7280]" />
                 </Button>
                 <CardContent className="p-4">
+                  {/* Top row */}
                   <div className="mb-3">
                     <div className="flex items-center gap-2 mb-2 pr-8">
                       <h3 className="text-[18px] font-semibold text-[#111827] leading-[1.2]">{project.title}</h3>
                       <DuplicateBadge record={project} size="sm" />
+                      {allParts.filter(p => sameId(p.project_id, project.id)).some(detectShortage) && (
+                        <span className="inline-flex items-center rounded-full bg-red-100 text-red-700 px-2 py-0.5 text-xs font-medium">
+                          Shortage
+                        </span>
+                      )}
                     </div>
                     <div className="flex items-center gap-2 flex-wrap">
                       <Badge className={freshnessColors[freshness.color]}>
@@ -474,9 +573,15 @@ export default function Projects() {
                         <ProjectTypeBadge value={project.project_type} />
                       )}
                       <ProjectStatusBadge value={project.status} />
+                      {hasRequiredTrades(project.id) && (
+                        <span className="rounded-full bg-amber-100 px-2 py-0.5 text-[10px] text-amber-700 font-medium">
+                          Third-party required
+                        </span>
+                      )}
                     </div>
-                  </div>
+                    </div>
 
+                  {/* Second row */}
                   <div className="flex items-center gap-4 mb-3 text-[#4B5563] flex-wrap">
                     <div className="flex items-center gap-1.5">
                       <User className="w-4 h-4" />
@@ -493,6 +598,16 @@ export default function Projects() {
                     )}
                   </div>
 
+                  {/* Third row */}
+                  {project.stage && (
+                    <div className="flex items-center gap-3 mb-3">
+                      <Badge variant="outline" className="font-medium text-[12px] leading-[1.35] border-[#E5E7EB]">
+                        {project.stage.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase())}
+                      </Badge>
+                    </div>
+                  )}
+
+                  {/* Bottom row */}
                   <div className="flex items-center justify-between text-[14px] leading-[1.4] pt-3 border-t border-[#E5E7EB]">
                     <span className="text-[#4B5563] font-medium">
                       Jobs: <span className="text-[#111827] font-semibold">{isJobsLoading ? '...' : jobCount}</span>

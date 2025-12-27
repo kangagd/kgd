@@ -34,7 +34,8 @@ import { ChevronDown, MoreVertical } from "lucide-react";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import ProjectChangeHistoryModal from "./ProjectChangeHistoryModal";
 import ProjectStageSelector from "./ProjectStageSelector";
-
+import PartsSection from "./PartsSection";
+import LogisticsTimeline from "./LogisticsTimeline";
 import ProjectSummary from "./ProjectSummary";
 import ProjectVisitsTab from "./ProjectVisitsTab";
 import FinancialsTab from "./FinancialsTab";
@@ -57,10 +58,10 @@ import MarkAsLostModal from "./MarkAsLostModal";
 import LinkInvoiceModal from "../invoices/LinkInvoiceModal";
 import ProjectChatModal from "./ProjectChatModal";
 import { PROJECT_STAGE_AUTOMATION } from "@/components/domain/projectStageAutomationConfig";
-
+import ProjectPartsPanel from "./ProjectPartsPanel";
 import HandoverReportModal from "../handover/HandoverReportModal";
 import ProjectContactsPanel from "./ProjectContactsPanel";
-
+import ThirdPartyTradesPanel from "./ThirdPartyTradesPanel";
 import BackButton from "../common/BackButton";
 import { getProjectFreshnessBadge } from "../utils/freshness";
 import DocumentListItem from "./DocumentListItem";
@@ -76,7 +77,7 @@ import LatestVisitCard from "./LatestVisitCard";
 import ActivityTimeline from "./ActivityTimeline";
 import ActivityTab from "./ActivityTab";
 import RequirementsTab from "./RequirementsTab";
-
+import PartsTab from "./PartsTab";
 import DerivedAttentionItems from "./DerivedAttentionItems";
 
 const statusColors = {
@@ -140,7 +141,7 @@ export default function ProjectDetails({ project: initialProject, onClose, onEdi
   const [isGeneratingHandover, setIsGeneratingHandover] = useState(false);
   const [showActivityModal, setShowActivityModal] = useState(false);
   const [contactsOpen, setContactsOpen] = useState(false);
-
+  const [tradesOpen, setTradesOpen] = useState(false);
   const [tasksOpen, setTasksOpen] = useState(true);
   const [visitsOpen, setVisitsOpen] = useState(true);
   const [mediaDocsOpen, setMediaDocsOpen] = useState(false);
@@ -150,7 +151,7 @@ export default function ProjectDetails({ project: initialProject, onClose, onEdi
   const [projectInfoOpen, setProjectInfoOpen] = useState(false);
   const [customerDrawerOpen, setCustomerDrawerOpen] = useState(false);
   const [commandMenuOpen, setCommandMenuOpen] = useState(false);
-
+  const addTradeRef = React.useRef(null);
 
   // Get email thread ID from props, URL params, or project's source
   const urlParams = new URLSearchParams(window.location.search);
@@ -204,7 +205,34 @@ export default function ProjectDetails({ project: initialProject, onClose, onEdi
     enabled: !!project.id
   });
 
+  const { data: parts = [] } = useQuery({
+    queryKey: ['projectParts', project.id],
+    queryFn: () => base44.entities.Part.filter({ project_id: project.id }),
+    enabled: !!project.id
+  });
 
+  const { data: priceListItems = [] } = useQuery({
+    queryKey: ['priceListItems'],
+    queryFn: () => base44.entities.PriceListItem.list(),
+  });
+
+  const { data: inventoryQuantities = [] } = useQuery({
+    queryKey: ['inventoryQuantities'],
+    queryFn: () => base44.entities.InventoryQuantity.list(),
+  });
+
+  const inventoryByItem = React.useMemo(() => {
+    const map = {};
+    for (const item of priceListItems) {
+      map[item.id] = (map[item.id] || 0) + (item.stock_level || 0);
+    }
+    for (const iq of inventoryQuantities) {
+      if (iq.price_list_item_id && iq.location_type === 'vehicle') {
+        map[iq.price_list_item_id] = (map[iq.price_list_item_id] || 0) + (iq.quantity_on_hand || 0);
+      }
+    }
+    return map;
+  }, [priceListItems, inventoryQuantities]);
 
   const { data: customer } = useQuery({
     queryKey: ['customer', project.customer_id],
@@ -265,7 +293,11 @@ export default function ProjectDetails({ project: initialProject, onClose, onEdi
     enabled: !!project.id
   });
 
-
+  const { data: tradeRequirements = [] } = useQuery({
+    queryKey: ['projectTrades', project.id],
+    queryFn: () => base44.entities.ProjectTradeRequirement.filter({ project_id: project.id }),
+    enabled: !!project.id
+  });
 
   const { data: projectTasks = [] } = useQuery({
     queryKey: ['projectTasks', project.id],
@@ -276,8 +308,9 @@ export default function ProjectDetails({ project: initialProject, onClose, onEdi
   // Auto-expand panels based on content
   React.useEffect(() => {
     if (projectContacts.length > 0 && !contactsOpen) setContactsOpen(true);
+    if (tradeRequirements.length > 0 && !tradesOpen) setTradesOpen(true);
     if (((project.image_urls && project.image_urls.length > 0) || project.quote_url || project.invoice_url || (project.other_documents && project.other_documents.length > 0) || handoverReports.length > 0) && !mediaDocsOpen) setMediaDocsOpen(true);
-  }, [projectContacts, project.image_urls, project.quote_url, project.invoice_url, project.other_documents, handoverReports]);
+  }, [projectContacts, tradeRequirements, project.image_urls, project.quote_url, project.invoice_url, project.other_documents, handoverReports]);
 
   const { data: xeroInvoices = [] } = useQuery({
     queryKey: ['projectXeroInvoices', project.id],
@@ -304,7 +337,11 @@ export default function ProjectDetails({ project: initialProject, onClose, onEdi
     enabled: !!project.id
   });
 
-
+  const { data: purchaseOrders = [] } = useQuery({
+    queryKey: ['projectPurchaseOrders', project.id],
+    queryFn: () => base44.entities.PurchaseOrder.filter({ project_id: project.id }),
+    enabled: !!project.id
+  });
 
   const { data: projectEmails = [] } = useQuery({
     queryKey: ['projectEmails', project.id],
@@ -1513,7 +1550,7 @@ Format as HTML bullet points using <ul> and <li> tags. Include only the most cri
                 {showRequirementsTab && (
                   <TabsTrigger value="requirements" className="flex-1 whitespace-nowrap">Requirements</TabsTrigger>
                 )}
-
+                <TabsTrigger value="parts" className="flex-1 whitespace-nowrap">Parts</TabsTrigger>
                 <TabsTrigger value="invoices" className="flex-1 whitespace-nowrap">Invoices</TabsTrigger>
                 {(user?.role === 'admin' || user?.role === 'manager') && (
                   <TabsTrigger value="financials" className="flex-1 whitespace-nowrap">Financials</TabsTrigger>
@@ -1836,7 +1873,13 @@ Format as HTML bullet points using <ul> and <li> tags. Include only the most cri
             </TabsContent>
           )}
 
-
+          <TabsContent value="parts" className="mt-3">
+            <PartsTab 
+              project={project}
+              parts={parts}
+              inventoryByItem={inventoryByItem}
+            />
+          </TabsContent>
 
           <TabsContent value="activity" className="mt-3">
             <ActivityTab 

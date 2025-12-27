@@ -8,6 +8,8 @@ export default function DerivedAttentionItems({
   quotes = [],
   invoices = [],
   jobs = [],
+  parts = [],
+  purchaseOrders = [],
   emails = [],
   manualLogs = [],
   onNavigateToTab
@@ -17,6 +19,8 @@ export default function DerivedAttentionItems({
     quotes,
     invoices,
     jobs,
+    parts,
+    purchaseOrders,
     emails,
     manualLogs
   });

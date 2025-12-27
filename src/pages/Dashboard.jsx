@@ -5,7 +5,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { ProjectStatusBadge } from "../components/common/StatusBadge";
-import { Plus, Clock, Briefcase, Calendar, CheckCircle, FolderKanban, CheckSquare, Trash2 } from "lucide-react";
+import { Plus, Clock, Briefcase, Calendar, CheckCircle, FolderKanban, CheckSquare, Truck, Package, Trash2 } from "lucide-react";
 import { format, parseISO } from "date-fns";
 import { useNavigate } from "react-router-dom";
 import { createPageUrl } from "@/utils";
@@ -72,6 +72,28 @@ export default function Dashboard() {
     .slice(0, 5);
 
   const isAdminOrManager = user?.role === 'admin' || user?.role === 'manager';
+
+  const { data: allPurchaseOrders = [] } = useQuery({
+    queryKey: ['recentPurchaseOrders'],
+    queryFn: () => base44.entities.PurchaseOrder.list('-updated_date', 5),
+    enabled: isAdminOrManager,
+  });
+
+  const recentPurchaseOrders = allPurchaseOrders.filter(po => po.status !== 'received').slice(0, 5);
+
+  const logisticsJobs = jobs.filter(j => 
+    j.job_type === 'Logistics' || 
+    j.vehicle_id || 
+    j.purchase_order_id ||
+    j.third_party_trade_id
+  ).slice(0, 5);
+
+  // Fetch suppliers for logistics jobs
+  const { data: suppliers = [] } = useQuery({
+    queryKey: ['suppliers'],
+    queryFn: () => base44.entities.Supplier.list('name'),
+    enabled: isAdminOrManager && logisticsJobs.length > 0,
+  });
 
   const today = new Date().toISOString().split('T')[0];
   const tomorrow = new Date(Date.now() + 86400000).toISOString().split('T')[0];
@@ -347,7 +369,123 @@ export default function Dashboard() {
           )}
         </div>
 
+        {isAdminOrManager && (
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
+            {/* Logistics Jobs */}
+            <div className="bg-white rounded-xl border border-[#E5E7EB] p-7 shadow-sm">
+              <div className="flex items-center justify-between mb-6">
+                <h2 className="text-[22px] font-semibold text-[#111827] leading-[1.2]">Logistics Jobs</h2>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => navigate(createPageUrl("Logistics"))}
+                  className="text-[#6B7280] hover:text-[#111827] text-sm"
+                >
+                  View All →
+                </Button>
+              </div>
+              {logisticsJobs.length === 0 ? (
+                <div className="text-center py-16">
+                  <Truck className="w-14 h-14 mx-auto text-[#D1D5DB] mb-4" />
+                  <p className="text-[14px] text-[#4B5563] leading-[1.4] font-normal">No logistics jobs</p>
+                </div>
+              ) : (
+                <div className="space-y-3">
+                  {logisticsJobs.map(job => {
+                    const po = job.purchase_order_id ? allPurchaseOrders.find(p => p.id === job.purchase_order_id) : null;
+                    const supplierName = po?.supplier_name || job.customer_name;
+                    
+                    return (
+                      <div 
+                        key={job.id} 
+                        className="p-4 rounded-xl border border-[#E5E7EB] hover:bg-[#F9FAFB] hover:border-[#FAE008] transition-all cursor-pointer"
+                        onClick={() => navigate(createPageUrl("Jobs") + `?jobId=${job.id}`)}
+                      >
+                        <div className="flex items-start gap-3">
+                          <div className="w-8 h-8 bg-[#FAE008]/10 rounded-lg flex items-center justify-center flex-shrink-0">
+                            <Truck className="w-4 h-4 text-[#111827]" />
+                          </div>
+                          <div className="flex-1 min-w-0">
+                            <h4 className="text-[14px] font-medium text-[#111827] leading-[1.4]">
+                              #{job.job_number} {job.job_type_name || 'Logistics'}
+                            </h4>
+                            {supplierName && (
+                              <p className="text-[12px] font-medium text-[#111827] leading-[1.35]">{supplierName}</p>
+                            )}
+                            <p className="text-[12px] text-[#6B7280] leading-[1.35] truncate">{job.address_full || job.address}</p>
+                            {job.scheduled_date && (
+                              <p className="text-[12px] text-[#6B7280] leading-[1.35] mt-1">
+                                {format(parseISO(job.scheduled_date), 'MMM d')}
+                                {job.scheduled_time && ` • ${job.scheduled_time}`}
+                              </p>
+                            )}
+                          </div>
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              )}
+            </div>
 
+            {/* Purchase Order Updates */}
+            <div className="bg-white rounded-xl border border-[#E5E7EB] p-7 shadow-sm">
+              <div className="flex items-center justify-between mb-6">
+                <h2 className="text-[22px] font-semibold text-[#111827] leading-[1.2]">Purchase Orders</h2>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => navigate(createPageUrl("Suppliers"))}
+                  className="text-[#6B7280] hover:text-[#111827] text-sm"
+                >
+                  View All →
+                </Button>
+              </div>
+              {recentPurchaseOrders.length === 0 ? (
+                <div className="text-center py-16">
+                  <Package className="w-14 h-14 mx-auto text-[#D1D5DB] mb-4" />
+                  <p className="text-[14px] text-[#4B5563] leading-[1.4] font-normal">No active purchase orders</p>
+                </div>
+              ) : (
+                <div className="space-y-3">
+                  {recentPurchaseOrders.map(po => {
+                    const statusColors = {
+                      draft: 'bg-gray-100 text-gray-700 border-gray-200',
+                      sent: 'bg-blue-50 text-blue-700 border-blue-200',
+                      partially_received: 'bg-orange-50 text-orange-700 border-orange-200',
+                      received: 'bg-green-50 text-green-700 border-green-200'
+                    };
+                    return (
+                      <div 
+                        key={po.id} 
+                        className="p-4 rounded-xl border border-[#E5E7EB] hover:bg-[#F9FAFB] hover:border-[#FAE008] transition-all cursor-pointer"
+                        onClick={() => navigate(createPageUrl("Suppliers"))}
+                      >
+                        <div className="flex items-start justify-between mb-2">
+                          <div className="flex-1">
+                            <h4 className="text-[14px] font-medium text-[#111827] leading-[1.4]">
+                              {po.po_number || 'Draft PO'}
+                            </h4>
+                            <p className="text-[12px] text-[#6B7280] leading-[1.35]">{po.supplier_name}</p>
+                          </div>
+                          <Badge variant="outline" className={`capitalize text-[10px] px-1.5 py-0 ${statusColors[po.status]}`}>
+                            {po.status?.replace('_', ' ')}
+                          </Badge>
+                        </div>
+                        <div className="flex items-center justify-between text-[12px] text-[#6B7280]">
+                          <span>${po.total_amount_ex_tax?.toFixed(2) || '0.00'}</span>
+                          {po.expected_date && (
+                            <span>ETA: {format(parseISO(po.expected_date), 'MMM d')}</span>
+                          )}
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              )}
+            </div>
+          </div>
+        )}
 
         {user?.role === 'admin' && (
           <MaintenanceRemindersCard user={user} />

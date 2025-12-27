@@ -1,0 +1,310 @@
+/**
+ * Part Configuration
+ * Central source of truth for Part status and location values
+ */
+
+export const PART_STATUS = {
+  PENDING: "pending",
+  ON_ORDER: "on_order",
+  IN_TRANSIT: "in_transit",
+  IN_LOADING_BAY: "in_loading_bay",
+  IN_STORAGE: "in_storage",
+  IN_VEHICLE: "in_vehicle",
+  INSTALLED: "installed",
+  CANCELLED: "cancelled",
+};
+
+/**
+ * STRICT RULES FOR INVENTORY READINESS
+ * 
+ * READY TO PICK means:
+ * - The item is physically available
+ * - AND can be assigned to a vehicle immediately
+ * - AND requires no supplier interaction
+ * 
+ * An item is READY TO PICK only if ALL of these conditions are met:
+ * 1. status IN ("in_storage", "in_vehicle")
+ * 2. location IN ("warehouse_storage", "vehicle") AND NOT "supplier"
+ * 3. If PO exists: status NOT IN ("Draft", "Sent", "On Order")
+ * 4. If PO exists: received_date IS NOT NULL (physically received)
+ * 
+ * SAFETY RULE: If there is any ambiguity, default to NOT READY TO PICK
+ */
+export function isPartAvailable(part) {
+  if (!part) return false;
+  
+  // RULE 1: Status must be in usable state (physically available)
+  const hasUsableStatus = 
+    part.status === PART_STATUS.IN_STORAGE || 
+    part.status === PART_STATUS.IN_VEHICLE;
+  
+  if (!hasUsableStatus) return false;
+  
+  // RULE 2: Must NOT be at supplier
+  if (part.location === PART_LOCATION.SUPPLIER) return false;
+  
+  // RULE 3: If linked to a PO, check PO status
+  if (part.purchase_order_id || part.po_number) {
+    // DISALLOWED PO statuses for picking
+    const disallowedStatuses = ["draft", "sent", "on_order", "confirmed", "on order"];
+    
+    // If we have PO status info, check it
+    if (part.po_status) {
+      const normalizedPOStatus = part.po_status.toLowerCase().trim();
+      if (disallowedStatuses.includes(normalizedPOStatus)) {
+        return false;
+      }
+    }
+    
+    // RULE 4: If PO has received_date field, it must be set
+    // (null received_date means not physically received yet)
+    if ('received_date' in part && !part.received_date) {
+      return false;
+    }
+  }
+  
+  // RULE 5: Special handling for supplier pickup
+  if (part.supplier_pickup_required === true && part.pickup_confirmed !== true) {
+    return false;
+  }
+  
+  return true;
+}
+
+/**
+ * SHORTAGES LOGIC
+ * 
+ * An item appears under SHORTAGES if:
+ * - Required quantity > available quantity
+ * - OR status = "Pending"
+ * - OR status = "On Order"
+ * - OR any condition that makes it not Ready to Pick
+ * 
+ * Excludes: Cancelled and Installed items
+ */
+export function isPartShortage(part) {
+  if (!part) return false;
+  
+  // Cancelled or installed parts are not shortages
+  if (part.status === PART_STATUS.CANCELLED || part.status === PART_STATUS.INSTALLED) {
+    return false;
+  }
+  
+  // Explicitly treat "pending" and "on_order" as shortages
+  if (part.status === PART_STATUS.PENDING || part.status === PART_STATUS.ON_ORDER) {
+    return true;
+  }
+  
+  // If not physically available, it's a shortage
+  return !isPartAvailable(part);
+}
+
+export const PART_STATUS_OPTIONS = Object.values(PART_STATUS);
+
+export const PART_STATUS_LABELS = {
+  pending: "Pending",
+  on_order: "On Order",
+  in_transit: "In Transit",
+  in_loading_bay: "In Loading Bay",
+  in_storage: "In Storage",
+  in_vehicle: "In Vehicle",
+  installed: "Installed",
+  cancelled: "Cancelled",
+};
+
+export function getPartStatusLabel(status) {
+  return PART_STATUS_LABELS[status] || status || "Unknown";
+}
+
+/**
+ * PICKABLE STATUSES - Strict eligibility check for pick list
+ * Parts can only appear in "Ready to Pick / Assigned" if their normalized status is in this set
+ */
+export const PICKABLE_STATUSES = new Set([
+  PART_STATUS.IN_LOADING_BAY,
+  PART_STATUS.IN_STORAGE,
+  PART_STATUS.IN_VEHICLE,
+]);
+
+/**
+ * Get normalized part status (always use this for status checks)
+ */
+export function getNormalizedPartStatus(part) {
+  return normaliseLegacyPartStatus(part?.status, part);
+}
+
+/**
+ * Check if a part is pickable (can appear in "Ready to Pick / Assigned")
+ * This is the single source of truth for pick list eligibility
+ * 
+ * Uses the full isPartAvailable() logic to ensure only truly ready parts appear
+ */
+export function isPickablePart(part) {
+  if (!part) return false;
+  
+  // Cancelled and installed parts are never pickable
+  if (part.status === PART_STATUS.CANCELLED || part.status === PART_STATUS.INSTALLED) {
+    return false;
+  }
+  
+  // Use the strict availability check
+  return isPartAvailable(part);
+}
+
+export const PART_CATEGORIES = [
+  "Door",
+  "Motor",
+  "Posts",
+  "Tracks",
+  "Small Parts",
+  "Hardware",
+  "Other"
+];
+
+export const PART_LOCATION = {
+  SUPPLIER: "supplier",
+  LOADING_BAY: "loading_bay",
+  WAREHOUSE_STORAGE: "warehouse_storage",
+  VEHICLE: "vehicle",
+  CLIENT_SITE: "client_site",
+};
+
+export const PART_LOCATION_OPTIONS = Object.values(PART_LOCATION);
+
+export const PART_LOCATION_LABELS = {
+  supplier: "At Supplier",
+  loading_bay: "Loading Bay",
+  warehouse_storage: "Warehouse Storage",
+  vehicle: "In Vehicle",
+  client_site: "At Client Site",
+};
+
+export function getPartLocationLabel(location) {
+  return PART_LOCATION_LABELS[location] || location || "Unknown";
+}
+
+// Normalize legacy part status values
+export function normaliseLegacyPartStatus(status, part = null) {
+  if (!status) {
+    // If no status but has PO info, default to on_order
+    if (part?.purchase_order_id || part?.po_number || part?.order_reference) {
+      return PART_STATUS.ON_ORDER;
+    }
+    return PART_STATUS.PENDING;
+  }
+
+  switch (status.toLowerCase().replace(/\s+/g, "_")) {
+    case "pending":
+      return PART_STATUS.PENDING;
+
+    case "ordered":
+    case "on_order":
+      return PART_STATUS.ON_ORDER;
+
+    case "back-ordered":
+    case "back_ordered":
+    case "in_transit":
+      return PART_STATUS.IN_TRANSIT;
+
+    case "delivered":
+    case "arrived":
+    case "in_loading_bay":
+      return PART_STATUS.IN_LOADING_BAY;
+
+    case "in_storage":
+      return PART_STATUS.IN_STORAGE;
+
+    case "on_vehicle":
+    case "in_vehicle":
+    case "with_technician":
+      return PART_STATUS.IN_VEHICLE;
+
+    case "installed":
+    case "at_client_site":
+      return PART_STATUS.INSTALLED;
+
+    case "returned":
+    case "cancelled":
+      return PART_STATUS.CANCELLED;
+
+    default:
+      // If unknown status but has PO info, default to on_order
+      if (part?.purchase_order_id || part?.po_number || part?.order_reference) {
+        return PART_STATUS.ON_ORDER;
+      }
+      return status;
+  }
+}
+
+// Normalize legacy part location values
+export function normaliseLegacyPartLocation(location) {
+  if (!location) return PART_LOCATION.SUPPLIER;
+
+  const normalized = location.toLowerCase().replace(/\s+/g, "_");
+  
+  if (normalized.includes("supplier") || normalized === "on_order") {
+    return PART_LOCATION.SUPPLIER;
+  }
+  if (normalized.includes("delivery_bay") || normalized.includes("loading_bay") || normalized.includes("delivery") || normalized.includes("at_delivery")) {
+    return PART_LOCATION.LOADING_BAY;
+  }
+  if (normalized.includes("warehouse") || normalized.includes("storage")) {
+    return PART_LOCATION.WAREHOUSE_STORAGE;
+  }
+  if (normalized.includes("technician") || normalized.includes("vehicle")) {
+    return PART_LOCATION.VEHICLE;
+  }
+  if (normalized.includes("client") || normalized.includes("site")) {
+    return PART_LOCATION.CLIENT_SITE;
+  }
+  
+  return location;
+}
+
+/**
+ * Map PO status to Part status
+ * Ensures parts always reflect their linked PO's state
+ */
+export function mapPoStatusToPartStatus(poStatus) {
+  if (!poStatus) return PART_STATUS.PENDING;
+  
+  const normalized = poStatus.toLowerCase().trim();
+  
+  switch (normalized) {
+    case "draft":
+      return PART_STATUS.PENDING;
+    
+    case "sent":
+    case "on_order":
+    case "on order":
+      return PART_STATUS.ON_ORDER;
+    
+    case "in_transit":
+    case "in transit":
+    case "partially_received":
+      return PART_STATUS.IN_TRANSIT;
+    
+    case "in_loading_bay":
+    case "in loading bay":
+    case "received":
+    case "delivered":
+      return PART_STATUS.IN_LOADING_BAY;
+    
+    case "in_storage":
+    case "in storage":
+      return PART_STATUS.IN_STORAGE;
+    
+    case "in_vehicle":
+    case "in vehicle":
+      return PART_STATUS.IN_VEHICLE;
+    
+    case "installed":
+      return PART_STATUS.INSTALLED;
+    
+    case "cancelled":
+      return PART_STATUS.PENDING;
+    
+    default:
+      return PART_STATUS.PENDING;
+  }
+}
