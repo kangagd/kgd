@@ -69,7 +69,39 @@ Deno.serve(async (req) => {
 
         const updated = await base44.asServiceRole.entities.PurchaseOrder.update(id, updateData);
         
-        return Response.json({ success: true, purchaseOrder: updated });
+        // Auto-create Logistics Job if conditions are met
+        let logisticsJob = null;
+        const shouldHaveLogisticsJob =
+            !updated.linked_logistics_job_id &&
+            (
+                (updated.delivery_method === 'delivery' && normalizedStatus === PO_STATUS.IN_LOADING_BAY) ||
+                (updated.delivery_method === 'pickup' && normalizedStatus === PO_STATUS.IN_LOADING_BAY)
+            );
+
+        if (shouldHaveLogisticsJob) {
+            try {
+                const jobResponse = await base44.asServiceRole.functions.invoke("createLogisticsJobForPO", {
+                    purchase_order_id: updated.id,
+                    scheduled_date: updated.expected_date || new Date().toISOString().split("T")[0],
+                });
+
+                if (jobResponse?.data?.success && jobResponse.data?.job) {
+                    logisticsJob = jobResponse.data.job;
+                    await base44.asServiceRole.entities.PurchaseOrder.update(updated.id, {
+                        linked_logistics_job_id: logisticsJob.id,
+                    });
+                    updated.linked_logistics_job_id = logisticsJob.id;
+                }
+            } catch (error) {
+                console.error("Error auto-creating logistics job:", error);
+            }
+        }
+        
+        return Response.json({ 
+            success: true, 
+            purchaseOrder: updated,
+            ...(logisticsJob ? { logisticsJob } : {})
+        });
     } catch (error) {
         return Response.json({ error: error.message }, { status: 500 });
     }
