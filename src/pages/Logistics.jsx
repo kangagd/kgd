@@ -4,6 +4,7 @@ import { useDebounce } from "@/components/common/useDebounce";
 import { sameId } from "@/components/utils/id";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import * as purchaseOrdersApi from "@/components/api/purchaseOrdersApi";
+import { isLegacyPurchasingReadOnly } from "@/config/featureFlags";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
@@ -555,6 +556,12 @@ export default function Logistics() {
             <p className="text-sm text-[#6B7280] mt-1">
               Track purchase orders, logistics jobs, and parts movement
             </p>
+            {isLegacyPurchasingReadOnly() && (
+              <p className="text-xs text-amber-600 mt-1 flex items-center gap-1">
+                <AlertCircle className="w-3 h-3" />
+                Legacy purchasing is read-only. Use Purchasing V2.
+              </p>
+            )}
           </div>
           <div className="flex items-center gap-3">
             {viewMode === "orders" && (
@@ -602,15 +609,15 @@ export default function Logistics() {
                     supplier_id: suppliers[0].id,
                     project_id: null
                   });
-                  
+
                   // Optimistically add to cache
                   queryClient.setQueryData(['purchaseOrders'], (prev = []) => {
                     return [newPO, ...prev];
                   });
-                  
+
                   setSelectedPoId(newPO.id);
                   toast.success("Draft Purchase Order created");
-                  
+
                   // Invalidate caches
                   queryClient.invalidateQueries({ queryKey: ['purchaseOrders'] });
                 } catch (error) {
@@ -618,6 +625,7 @@ export default function Logistics() {
                 }
               }}
               className="bg-[#FAE008] text-[#111827] hover:bg-[#E5CF07] font-semibold shadow-sm hover:shadow-md transition h-9 px-4 text-sm rounded-xl"
+              disabled={isLegacyPurchasingReadOnly()}
             >
               <Plus className="w-4 h-4 mr-2" />
               Create Purchase Order
@@ -706,6 +714,7 @@ export default function Logistics() {
                             value={uiPo.status}
                             onValueChange={(value) => handleUpdatePoStatus(po, value)}
                             onClick={(e) => e.stopPropagation()}
+                            disabled={isLegacyPurchasingReadOnly()}
                           >
                             <SelectTrigger className="h-6 w-full text-[10px] px-2 border-0 bg-slate-100 text-slate-700">
                               <SelectValue>
