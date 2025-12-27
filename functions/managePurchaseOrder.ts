@@ -687,19 +687,14 @@ Deno.serve(async (req) => {
                 return Response.json({ error: 'id and status are required' }, { status: 400 });
             }
 
-            const validStatuses = Object.values(PO_STATUS);
-            console.log('[updateStatus] Validation check:', {
-                receivedStatus: status,
-                statusType: typeof status,
-                statusLength: status?.length,
-                validStatuses,
-                includes: validStatuses.includes(status),
-                exactMatch: validStatuses.some(s => s === status),
-                comparison: validStatuses.map(s => ({ valid: s, received: status, match: s === status }))
-            });
+            // Normalize the status first before validation
+            const normalizedStatus = normaliseLegacyPoStatus(status);
             
-            if (!validStatuses.includes(status)) {
-                return Response.json({ error: `Invalid status. Must be one of: ${validStatuses.join(', ')}` }, { status: 400 });
+            const validStatuses = Object.values(PO_STATUS);
+            if (!validStatuses.includes(normalizedStatus)) {
+                return Response.json({ 
+                    error: `Invalid status "${status}". Must be one of: ${validStatuses.join(', ')}` 
+                }, { status: 400 });
             }
 
             const existing = await base44.asServiceRole.entities.PurchaseOrder.get(id);
@@ -716,7 +711,7 @@ Deno.serve(async (req) => {
             }
 
             const oldStatus = existing.status;
-            const newStatus = normaliseLegacyPoStatus(status);
+            const newStatus = normalizedStatus;
 
             // Normalize canonical reference once from existing data
             let normalizedRef = resolvePoRef({
