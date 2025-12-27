@@ -160,7 +160,7 @@ export default function SupplyLogistics() {
     
     const { draggableId, destination } = result;
     const poId = draggableId;
-    const newStatus = destination.droppableId;
+    const columnId = destination.droppableId;
     
     // Map column IDs to PO statuses
     const statusMap = {
@@ -171,8 +171,19 @@ export default function SupplyLogistics() {
       'completed': PO_STATUS.INSTALLED
     };
     
-    const mappedStatus = statusMap[newStatus];
-    if (!mappedStatus) return;
+    const mappedStatus = statusMap[columnId];
+    
+    console.log('[DRAG END]', {
+      poId,
+      columnId,
+      mappedStatus,
+      PO_STATUS_VALUES: PO_STATUS
+    });
+    
+    if (!mappedStatus) {
+      console.error('[DRAG END] No mapped status for column:', columnId);
+      return;
+    }
     
     updateStatusMutation.mutate({ poId, newStatus: mappedStatus });
   };
