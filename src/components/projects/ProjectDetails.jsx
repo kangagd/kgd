@@ -34,8 +34,7 @@ import { ChevronDown, MoreVertical } from "lucide-react";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import ProjectChangeHistoryModal from "./ProjectChangeHistoryModal";
 import ProjectStageSelector from "./ProjectStageSelector";
-import PartsSection from "./PartsSection";
-import LogisticsTimeline from "./LogisticsTimeline";
+
 import ProjectSummary from "./ProjectSummary";
 import ProjectVisitsTab from "./ProjectVisitsTab";
 import FinancialsTab from "./FinancialsTab";
@@ -58,10 +57,10 @@ import MarkAsLostModal from "./MarkAsLostModal";
 import LinkInvoiceModal from "../invoices/LinkInvoiceModal";
 import ProjectChatModal from "./ProjectChatModal";
 import { PROJECT_STAGE_AUTOMATION } from "@/components/domain/projectStageAutomationConfig";
-import ProjectPartsPanel from "./ProjectPartsPanel";
+
 import HandoverReportModal from "../handover/HandoverReportModal";
 import ProjectContactsPanel from "./ProjectContactsPanel";
-import ThirdPartyTradesPanel from "./ThirdPartyTradesPanel";
+
 import BackButton from "../common/BackButton";
 import { getProjectFreshnessBadge } from "../utils/freshness";
 import DocumentListItem from "./DocumentListItem";
@@ -77,7 +76,7 @@ import LatestVisitCard from "./LatestVisitCard";
 import ActivityTimeline from "./ActivityTimeline";
 import ActivityTab from "./ActivityTab";
 import RequirementsTab from "./RequirementsTab";
-import PartsTab from "./PartsTab";
+
 import DerivedAttentionItems from "./DerivedAttentionItems";
 
 const statusColors = {
@@ -141,7 +140,7 @@ export default function ProjectDetails({ project: initialProject, onClose, onEdi
   const [isGeneratingHandover, setIsGeneratingHandover] = useState(false);
   const [showActivityModal, setShowActivityModal] = useState(false);
   const [contactsOpen, setContactsOpen] = useState(false);
-  const [tradesOpen, setTradesOpen] = useState(false);
+
   const [tasksOpen, setTasksOpen] = useState(true);
   const [visitsOpen, setVisitsOpen] = useState(true);
   const [mediaDocsOpen, setMediaDocsOpen] = useState(false);
@@ -151,7 +150,7 @@ export default function ProjectDetails({ project: initialProject, onClose, onEdi
   const [projectInfoOpen, setProjectInfoOpen] = useState(false);
   const [customerDrawerOpen, setCustomerDrawerOpen] = useState(false);
   const [commandMenuOpen, setCommandMenuOpen] = useState(false);
-  const addTradeRef = React.useRef(null);
+
 
   // Get email thread ID from props, URL params, or project's source
   const urlParams = new URLSearchParams(window.location.search);
