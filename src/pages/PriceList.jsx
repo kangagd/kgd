@@ -9,10 +9,7 @@ import { Search, DollarSign, Plus, Pencil, Trash2, PackagePlus, PackageMinus, Al
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Checkbox } from "@/components/ui/checkbox";
 import PriceListItemForm from "../components/pricelist/PriceListItemForm";
-import StockAdjustmentModal from "../components/pricelist/StockAdjustmentModal";
 import PriceListCard from "../components/pricelist/PriceListCard";
-import { LOCATION_TYPE } from "@/components/domain/inventoryConfig";
-import { useMemo } from "react";
 import BackButton from "../components/common/BackButton";
 import { createPageUrl } from "@/utils";
 
@@ -20,11 +17,8 @@ import { createPageUrl } from "@/utils";
 export default function PriceList() {
   const [searchTerm, setSearchTerm] = useState("");
   const [categoryFilter, setCategoryFilter] = useState("all");
-  const [showStockOnly, setShowStockOnly] = useState(false);
-  const [stockFilter, setStockFilter] = useState("all");
   const [showForm, setShowForm] = useState(false);
   const [editingItem, setEditingItem] = useState(null);
-  const [adjustingStock, setAdjustingStock] = useState(null);
   const [user, setUser] = useState(null);
   const queryClient = useQueryClient();
 
@@ -46,32 +40,7 @@ export default function PriceList() {
     refetchInterval: 15000, // Refetch every 15 seconds
   });
 
-  const { data: inventoryQuantities = [] } = useQuery({
-    queryKey: ["inventory-quantities"],
-    queryFn: () => base44.entities.InventoryQuantity.list("id"),
-  });
 
-  const inventorySummaryByItem = useMemo(() => {
-    const map = {};
-    for (const iq of inventoryQuantities) {
-      if (!iq.price_list_item_id) continue;
-      if (!map[iq.price_list_item_id]) {
-        map[iq.price_list_item_id] = {
-          total_on_hand: 0,
-          total_in_vehicles: 0,
-          total_in_warehouse: 0,
-        };
-      }
-      const summary = map[iq.price_list_item_id];
-      summary.total_on_hand += iq.quantity_on_hand || 0;
-      if (iq.location_type === LOCATION_TYPE.VEHICLE) {
-        summary.total_in_vehicles += iq.quantity_on_hand || 0;
-      } else if (iq.location_type === LOCATION_TYPE.WAREHOUSE) {
-        summary.total_in_warehouse += iq.quantity_on_hand || 0;
-      }
-    }
-    return map;
-  }, [inventoryQuantities]);
 
   const createItemMutation = useMutation({
     mutationFn: (data) => base44.entities.PriceListItem.create(data),
@@ -106,25 +75,14 @@ export default function PriceList() {
 
     const matchesCategory = categoryFilter === "all" || item.category === categoryFilter;
 
-    const matchesStock =
-    stockFilter === "all" ||
-    (stockFilter === "low" && item.stock_level <= item.min_stock_level && item.track_inventory !== false) ||
-    (stockFilter === "out" && item.stock_level === 0 && item.track_inventory !== false);
-
-    const matchesInventoryType = !showStockOnly || item.track_inventory !== false;
-
-    return matchesSearch && matchesCategory && matchesStock && matchesInventoryType;
+    return matchesSearch && matchesCategory;
   });
 
   const categories = ["Service", "Motor", "Remotes/Accessories"];
   const isAdmin = user?.role === 'admin';
   const isManager = user?.role === 'manager';
   const isAdminOrManager = isAdmin || isManager;
-  const isTechnician = user?.is_field_technician && !isAdminOrManager;
-  const canModifyStock = isAdminOrManager || isTechnician;
   const canEditPriceList = isAdminOrManager;
-  const lowStockCount = priceItems.filter((item) => item.stock_level <= item.min_stock_level && item.stock_level > 0 && item.track_inventory !== false).length;
-  const outOfStockCount = priceItems.filter((item) => item.stock_level === 0 && item.track_inventory !== false).length;
 
   const handleSubmit = (data) => {
     if (editingItem) {
@@ -143,10 +101,6 @@ export default function PriceList() {
     if (window.confirm('Are you sure you want to delete this item?')) {
       deleteItemMutation.mutate(id);
     }
-  };
-
-  const handleStockAdjust = (item) => {
-    setAdjustingStock(item);
   };
 
   if (showForm) {
@@ -186,44 +140,7 @@ export default function PriceList() {
           )}
         </div>
 
-        <div className="mb-4 flex flex-col sm:flex-row sm:justify-between sm:items-center gap-3">
-          <div className="flex gap-3 flex-wrap">
-            {lowStockCount > 0 && (
-              <Button
-                variant="outline"
-                onClick={() => setStockFilter(stockFilter === "low" ? "all" : "low")}
-                className={`${stockFilter === "low" ? "bg-amber-50 border-amber-300" : ""}`}
-              >
-                <AlertCircle className="w-4 h-4 mr-2 text-amber-600" />
-                <span className="text-amber-900">{lowStockCount} Low Stock</span>
-              </Button>
-            )}
-            {outOfStockCount > 0 && (
-              <Button
-                variant="outline"
-                onClick={() => setStockFilter(stockFilter === "out" ? "all" : "out")}
-                className={`${stockFilter === "out" ? "bg-red-50 border-red-300" : ""}`}
-              >
-                <Package className="w-4 h-4 mr-2 text-red-600" />
-                <span className="text-red-900">{outOfStockCount} Out of Stock</span>
-              </Button>
-            )}
-          </div>
 
-          <div className="flex items-center space-x-2">
-            <Checkbox 
-              id="stock-only" 
-              checked={showStockOnly} 
-              onCheckedChange={setShowStockOnly} 
-            />
-            <label
-              htmlFor="stock-only"
-              className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70 cursor-pointer select-none text-gray-700"
-            >
-              Stock Items Only
-            </label>
-          </div>
-        </div>
 
         <div className="flex flex-col gap-4 mb-6">
           <div className="relative w-full">
@@ -272,23 +189,14 @@ export default function PriceList() {
                 key={item.id}
                 item={item}
                 isAdmin={canEditPriceList}
-                canModifyStock={canModifyStock}
                 onEdit={handleEdit}
                 onDelete={handleDelete}
-                onStockAdjust={handleStockAdjust}
-                inventorySummary={inventorySummaryByItem[item.id]}
                 canViewCosts={isAdminOrManager}
               />
             ))}
           </div>
         )}
       </div>
-
-      <StockAdjustmentModal
-        item={adjustingStock}
-        open={!!adjustingStock}
-        onClose={() => setAdjustingStock(null)}
-      />
     </div>
   );
 }
