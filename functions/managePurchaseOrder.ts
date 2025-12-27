@@ -396,7 +396,7 @@ Deno.serve(async (req) => {
           name, eta, expected_date, attachments, vehicle_id
         } = await req.json();
 
-        // Action: create
+        // Action: create (fully functional)
         if (action === 'create') {
             if (!supplier_id || !line_items || line_items.length === 0) {
                 return Response.json({ error: 'supplier_id and non-empty line_items are required' }, { status: 400 });
@@ -1142,7 +1142,10 @@ Deno.serve(async (req) => {
             return Response.json({ success: true, po });
         }
 
-        return Response.json({ error: 'Invalid action' }, { status: 400 });
+        // Supported actions: create, update, updateStatus, delete, getOrCreateProjectSupplierDraft, markAsSent
+        return Response.json({ 
+            error: 'Invalid action. Supported: create, update, updateStatus, delete, getOrCreateProjectSupplierDraft, markAsSent' 
+        }, { status: 400 });
 
     } catch (error) {
         return Response.json({ error: error.message }, { status: 500 });
