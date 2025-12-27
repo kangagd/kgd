@@ -8,21 +8,17 @@ import Fleet from './pages/Fleet';
 import Home from './pages/Home';
 import Inbox from './pages/Inbox';
 import Jobs from './pages/Jobs';
-import Logistics from './pages/Logistics';
 import MyVehicle from './pages/MyVehicle';
 import Notifications from './pages/Notifications';
 import Organisations from './pages/Organisations';
-import PartsHardwareAdmin from './pages/PartsHardwareAdmin';
 import Photos from './pages/Photos';
 import PriceList from './pages/PriceList';
 import Projects from './pages/Projects';
-import PurchaseOrders from './pages/PurchaseOrders';
 import Reports from './pages/Reports';
 import RoleSettings from './pages/RoleSettings';
 import SamplesLibrary from './pages/SamplesLibrary';
 import Schedule from './pages/Schedule';
 import Suppliers from './pages/Suppliers';
-import SupplyLogistics from './pages/SupplyLogistics';
 import Tasks from './pages/Tasks';
 import Team from './pages/Team';
 import ToolsAdmin from './pages/ToolsAdmin';
@@ -41,21 +37,17 @@ export const PAGES = {
     "Home": Home,
     "Inbox": Inbox,
     "Jobs": Jobs,
-    "Logistics": Logistics,
     "MyVehicle": MyVehicle,
     "Notifications": Notifications,
     "Organisations": Organisations,
-    "PartsHardwareAdmin": PartsHardwareAdmin,
     "Photos": Photos,
     "PriceList": PriceList,
     "Projects": Projects,
-    "PurchaseOrders": PurchaseOrders,
     "Reports": Reports,
     "RoleSettings": RoleSettings,
     "SamplesLibrary": SamplesLibrary,
     "Schedule": Schedule,
     "Suppliers": Suppliers,
-    "SupplyLogistics": SupplyLogistics,
     "Tasks": Tasks,
     "Team": Team,
     "ToolsAdmin": ToolsAdmin,
