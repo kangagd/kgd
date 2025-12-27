@@ -688,6 +688,16 @@ Deno.serve(async (req) => {
             }
 
             const validStatuses = Object.values(PO_STATUS);
+            console.log('[updateStatus] Validation check:', {
+                receivedStatus: status,
+                statusType: typeof status,
+                statusLength: status?.length,
+                validStatuses,
+                includes: validStatuses.includes(status),
+                exactMatch: validStatuses.some(s => s === status),
+                comparison: validStatuses.map(s => ({ valid: s, received: status, match: s === status }))
+            });
+            
             if (!validStatuses.includes(status)) {
                 return Response.json({ error: `Invalid status. Must be one of: ${validStatuses.join(', ')}` }, { status: 400 });
             }
